@@ -29,7 +29,7 @@ Core Ever-SDK client library is written in Rust, with bindings in 11 programming
 
 ### Rust (core library)
 
-Repository: https://github.com/tonlabs/ever-sdk
+Repository: https://github.com/tvmlabs/tvm-sdk
 
 **What is Core Client Library?**
 
@@ -45,17 +45,17 @@ Client Library exposes all the functionality through a few of exported functions
 
 ### Official Javascript(Typescript) binding
 
-Repository: [JavaScript SDK](https://github.com/tonlabs/ever-sdk-js)
+Repository: [JavaScript SDK](https://github.com/tvmlabs/tvm-sdk-js)
 
-You need to install core package and the package with binary for your platform. [See the documentation.](https://github.com/tonlabs/ever-sdk-js#library-distribution)
+You need to install core package and the package with binary for your platform. [See the documentation.](https://github.com/tvmlabs/tvm-sdk-js#library-distribution)
 
 | Platform                       | Package                                                                                                           |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| core package for all platforms | [@eversdk/core](https://github.com/tonlabs/ever-sdk-js#install-core-package)                                      |
-| Node.js                        | [@eversdk/lib-node](https://github.com/tonlabs/ever-sdk-js#nodejs)                                                |
-| Web                            | [@eversdk/lib-web](https://github.com/tonlabs/ever-sdk-js#web)                                                    |
-| React-Native                   | [@eversdk/lib-react-native](https://github.com/tonlabs/ever-sdk-js#react-native)                                  |
-| React-Native with JSI support  | [@eversdk/lib-react-native-jsi](https://github.com/tonlabs/ever-sdk-js/tree/master/packages/lib-react-native-jsi) |
+| core package for all platforms | [@eversdk/core](https://github.com/tvmlabs/tvm-sdk-js#install-core-package)                                      |
+| Node.js                        | [@eversdk/lib-node](https://github.com/tvmlabs/tvm-sdk-js#nodejs)                                                |
+| Web                            | [@eversdk/lib-web](https://github.com/tvmlabs/tvm-sdk-js#web)                                                    |
+| React-Native                   | [@eversdk/lib-react-native](https://github.com/tvmlabs/tvm-sdk-js#react-native)                                  |
+| React-Native with JSI support  | [@eversdk/lib-react-native-jsi](https://github.com/tvmlabs/tvm-sdk-js/tree/master/packages/lib-react-native-jsi) |
 
 ### Community bindings
 

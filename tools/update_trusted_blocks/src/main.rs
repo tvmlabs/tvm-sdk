@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::env;
+use std::sync::Arc;
 
 use serde_json::json;
-use ton_client::ClientContext;
-use ton_client::net::{OrderBy, ParamsOfQueryCollection, query_collection, SortDirection};
-use ton_client::proofs::{ParamsOfProofBlockData, proof_block_data};
-use ton_types::{Result, UInt256};
+use tvm_client::net::{query_collection, OrderBy, ParamsOfQueryCollection, SortDirection};
+use tvm_client::proofs::{proof_block_data, ParamsOfProofBlockData};
+use tvm_client::ClientContext;
+use tvm_types::{Result, UInt256};
 
 fn with_project(endpoint: &str) -> String {
     let key = "EVERCLOUD_AUTH_PROJECT";
@@ -28,15 +28,11 @@ async fn query_network_keyblocks(
     trusted_blocks: Option<Vec<(u32, [u8; 32])>>,
 ) -> Result<Vec<(u32, [u8; 32])>> {
     println!("*** [{}] ***", endpoint);
-    let context = Arc::new(
-        ClientContext::new(
-            serde_json::from_value(json!({
-                "network": {
-                    "endpoints": [endpoint],
-                }
-            }))?
-        )?
-    );
+    let context = Arc::new(ClientContext::new(serde_json::from_value(json!({
+        "network": {
+            "endpoints": [endpoint],
+        }
+    }))?)?);
 
     println!("Zerostate root_hash: {}", zs_root_hash.as_hex_string());
 
@@ -64,15 +60,15 @@ async fn query_network_keyblocks(
                         "gt": last_seq_no,
                     }
                 })),
-                order: Some(vec![
-                    OrderBy {
-                        path: "seq_no".to_string(),
-                        direction: SortDirection::ASC,
-                    },
-                ]),
+                order: Some(vec![OrderBy {
+                    path: "seq_no".to_string(),
+                    direction: SortDirection::ASC,
+                }]),
                 ..Default::default()
-            }
-        ).await?.result;
+            },
+        )
+        .await?
+        .result;
 
         if key_blocks.is_empty() {
             println!("*** [{} done] ***", endpoint);
@@ -80,17 +76,26 @@ async fn query_network_keyblocks(
         }
 
         for key_block in key_blocks {
-            let seq_no = key_block["seq_no"].as_u64()
-                    .expect("Field `seq_no` must be an integer") as u32;
+            let seq_no = key_block["seq_no"]
+                .as_u64()
+                .expect("Field `seq_no` must be an integer") as u32;
             print!("Proof for key_block #{}...", seq_no);
-            proof_block_data(Arc::clone(&context), ParamsOfProofBlockData {
-                block: key_block.clone(),
-            }).await?;
-            let root_hash = UInt256::from_str(key_block["id"].as_str()
-                .expect("Field `id` must be a string"))?;
+            proof_block_data(
+                Arc::clone(&context),
+                ParamsOfProofBlockData {
+                    block: key_block.clone(),
+                },
+            )
+            .await?;
+            let root_hash = <UInt256 as std::str::FromStr>::from_str(
+                key_block["id"]
+                    .as_str()
+                    .expect("Field `id` must be a string"),
+            )?;
             println!(" OK. root_hash: {}", root_hash.as_hex_string());
 
-            let gen_utime = key_block["gen_utime"].as_u64()
+            let gen_utime = key_block["gen_utime"]
+                .as_u64()
                 .expect("Field `gen_utime` must be an integer");
             if seq_no != last_seq_no {
                 last_seq_no = seq_no;
@@ -109,35 +114,44 @@ async fn query_network_keyblocks(
 async fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
-        eprintln!("Usage: {} <file name with path to save trusted key blocks>", args[0]);
+        eprintln!(
+            "Usage: {} <file name with path to save trusted key blocks>",
+            args[0]
+        );
         std::process::exit(1);
     }
 
     let networks = [
-        ("mainnet.evercloud.dev", "58ffca1a178daff705de54216e5433c9bd2e7d850070d334d38997847ab9e845"),
-        ("devnet.evercloud.dev", "cd81dae0c23d78e7c3eb5903f2a7bd98889991d36a26812a9163ca0f29c47093"),
+        (
+            "mainnet.evercloud.dev",
+            "58ffca1a178daff705de54216e5433c9bd2e7d850070d334d38997847ab9e845",
+        ),
+        (
+            "devnet.evercloud.dev",
+            "cd81dae0c23d78e7c3eb5903f2a7bd98889991d36a26812a9163ca0f29c47093",
+        ),
     ];
 
     let mut trusted_key_blocks = match std::fs::read(&args[1]) {
         Ok(data) => {
             println!("Updating trusted blocks list in {}", &args[1]);
             bincode::deserialize(&data)?
-        },
+        }
         Err(_) => {
             println!("Creating new trusted blocks list in {}", &args[1]);
             HashMap::new()
         }
     };
 
-
     for (network, zs_root_hash) in networks {
-        let zs_root_hash = UInt256::from_str(zs_root_hash)?;
+        let zs_root_hash = <UInt256 as std::str::FromStr>::from_str(zs_root_hash)?;
         let endpoint = with_project(network).to_owned();
         let value = query_network_keyblocks(
             endpoint,
-            zs_root_hash,
-            trusted_key_blocks.remove(&zs_root_hash.inner()),
-        ).await?;
+            zs_root_hash.clone(),
+            trusted_key_blocks.remove(&zs_root_hash.clone().inner()),
+        )
+        .await?;
         trusted_key_blocks.insert(zs_root_hash.inner(), value);
     }
 
