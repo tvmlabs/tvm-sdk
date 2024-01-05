@@ -1,4 +1,4 @@
-# Ever SDK
+# TVM SDK
 
 Client libraries for DApp development in TVM blockchains (Everscale, Gosh, TON, Venom Blockchain, etc).
 
