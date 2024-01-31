@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
+use std::fmt::Formatter;
 
 // use ed25519_dalek::Digest;
-use failure::bail;
 use sha2::Digest;
-use tvm_block::{
-    CatchainConfig, ConfigParams, UnixTime32, ValidatorDescr, ValidatorSet, WorkchainDescr,
-    Workchains,
-};
+use tvm_block::CatchainConfig;
+use tvm_block::ConfigParams;
+use tvm_block::UnixTime32;
+use tvm_block::ValidatorDescr;
+use tvm_block::ValidatorSet;
+use tvm_block::WorkchainDescr;
+use tvm_block::Workchains;
 use tvm_types::Result;
 
 use crate::proofs::Signatures;
@@ -38,12 +41,11 @@ pub fn try_calc_subset_for_workchain(
     cc_seqno: u32,
     _time: UnixTime32,
 ) -> Result<Option<(Vec<ValidatorDescr>, u32)>> {
-    // In a case of old block proof it doesn't contain workchains in config, so 1 workchain by default
-    let workchains = config
-        .workchains()
-        .unwrap_or_else(|_| SINGLE_WORKCHAIN.clone());
+    // In a case of old block proof it doesn't contain workchains in config, so 1
+    // workchain by default
+    let workchains = config.workchains().unwrap_or_else(|_| SINGLE_WORKCHAIN.clone());
     match workchains.len()? as i32 {
-        0 => bail!("workchain's description is empty"),
+        0 => anyhow::bail!("workchain's description is empty"),
         1 => validator_set
             .calc_subset(cc_config, shard_pfx, workchain_id, cc_seqno, _time)
             .map(|e| Some(e)),
@@ -66,7 +68,8 @@ pub fn try_calc_subset_for_workchain(
                     .calc_subset(cc_config, shard_pfx, workchain_id, cc_seqno, _time)
                     .map(|e| Some(e))
             } else {
-                // Not enough validators -- config is ok, but we can't validate the shard at the moment
+                // Not enough validators -- config is ok, but we can't validate the shard at the
+                // moment
                 Ok(None)
             }
         }
@@ -92,7 +95,7 @@ pub fn calc_subset_for_workchain(
         time,
     )? {
         Some(x) => Ok(x),
-        None => bail!(
+        None => anyhow::bail!(
             "Not enough validators from total {} for workchain {}:{:016X} cc_seqno: {}",
             validator_set.list().len(),
             workchain_id,
@@ -157,7 +160,7 @@ pub(crate) fn check_crypto_signatures(
         let key = AdnlKeyId(sign.node_id_short.as_array().clone());
         if let Some(vd) = validators_map.get(&key) {
             if !vd.verify_signature(data, &sign.sign) {
-                bail!("bad signature from validator with pub_key {}", key)
+                anyhow::bail!("bad signature from validator with pub_key {}", key)
             }
             weight += vd.weight;
         }
