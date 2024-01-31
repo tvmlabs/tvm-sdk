@@ -1,49 +1,48 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
-use crate::client::{ClientContext, NetworkParams};
-use crate::error::ClientResult;
-use crate::{
-    boc::{
-        blockchain_config::{extract_config_from_block, extract_config_from_zerostate},
-        internal::deserialize_object_from_base64,
-    },
-    net::{OrderBy, ParamsOfQueryCollection, ServerLink, SortDirection},
-};
 use std::sync::Arc;
-use tvm_block::{Deserializable, GlobalCapabilities};
+
+use tvm_block::Deserializable;
+use tvm_block::GlobalCapabilities;
 use tvm_executor::BlockchainConfig;
+
+use crate::boc::blockchain_config::extract_config_from_block;
+use crate::boc::blockchain_config::extract_config_from_zerostate;
+use crate::boc::internal::deserialize_object_from_base64;
+use crate::client::ClientContext;
+use crate::client::NetworkParams;
+use crate::error::ClientResult;
+use crate::net::OrderBy;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::ServerLink;
+use crate::net::SortDirection;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ResultOfGetSignatureId {
-    /// Signature ID for configured network if it should be used in messages signature
+    /// Signature ID for configured network if it should be used in messages
+    /// signature
     pub signature_id: Option<i32>,
 }
 
-/// Returns signature ID for configured network if it should be used in messages signature
+/// Returns signature ID for configured network if it should be used in messages
+/// signature
 #[api_function]
 pub async fn get_signature_id(
     context: std::sync::Arc<ClientContext>,
 ) -> ClientResult<ResultOfGetSignatureId> {
     let params = get_default_params(&context).await?;
-    if params
-        .blockchain_config
-        .has_capability(GlobalCapabilities::CapSignatureWithId)
-    {
-        Ok(ResultOfGetSignatureId {
-            signature_id: Some(params.global_id),
-        })
+    if params.blockchain_config.has_capability(GlobalCapabilities::CapSignatureWithId) {
+        Ok(ResultOfGetSignatureId { signature_id: Some(params.global_id) })
     } else {
         Ok(ResultOfGetSignatureId { signature_id: None })
     }
@@ -77,10 +76,7 @@ pub(crate) async fn get_default_params(
     } else {
         offline_config()
     };
-    let params = NetworkParams {
-        blockchain_config: Arc::new(config),
-        global_id,
-    };
+    let params = NetworkParams { blockchain_config: Arc::new(config), global_id };
 
     *params_lock = Some(params.clone());
 
@@ -111,10 +107,7 @@ pub(crate) async fn query_network_params(
 
     let (config, global_id) = if let Some(block_boc) = key_block[0]["boc"].as_str() {
         let block = deserialize_object_from_base64(block_boc, "block")?;
-        (
-            extract_config_from_block(&block.object)?,
-            block.object.global_id(),
-        )
+        (extract_config_from_block(&block.object)?, block.object.global_id())
     } else {
         let zerostate = link
             .query_collection(
@@ -137,10 +130,7 @@ pub(crate) async fn query_network_params(
         )?;
 
         let zerostate = deserialize_object_from_base64(boc, "block")?;
-        (
-            extract_config_from_zerostate(&zerostate.object)?,
-            zerostate.object.global_id(),
-        )
+        (extract_config_from_zerostate(&zerostate.object)?, zerostate.object.global_id())
     };
 
     let config = BlockchainConfig::with_config(config)

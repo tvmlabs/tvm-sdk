@@ -6,7 +6,8 @@ use tvm_abi::contract::MAX_SUPPORTED_VERSION;
 use tvm_abi::token::Tokenizer;
 use tvm_abi::TokenValue;
 
-use crate::abi::{AbiParam, Error};
+use crate::abi::AbiParam;
+use crate::abi::Error;
 use crate::boc::internal::serialize_cell_to_boc;
 use crate::boc::BocCacheType;
 use crate::error::ClientResult;
@@ -18,7 +19,8 @@ pub struct ParamsOfAbiEncodeBoc {
     pub params: Vec<AbiParam>,
     /// Parameters and values as a JSON structure
     pub data: Value,
-    /// Cache type to put the result. The BOC itself returned if no cache type provided
+    /// Cache type to put the result. The BOC itself returned if no cache type
+    /// provided
     pub boc_cache: Option<BocCacheType>,
 }
 

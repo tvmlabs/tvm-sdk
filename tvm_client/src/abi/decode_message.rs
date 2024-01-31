@@ -1,17 +1,23 @@
-use crate::abi::{Error, FunctionHeader};
-use crate::boc::internal::deserialize_object_from_boc;
-use crate::client::ClientContext;
-use crate::encoding::{decode_abi_number, slice_from_cell};
-use crate::error::ClientResult;
-use crate::{abi::types::Abi, boc::internal::deserialize_cell_from_boc};
-use serde_json::Value;
 use std::sync::Arc;
+
+use serde_json::Value;
 use tvm_abi::contract::DecodedMessage;
 use tvm_abi::token::Detokenizer;
-use tvm_sdk::{AbiContract, AbiEvent, AbiFunction};
+use tvm_sdk::AbiContract;
+use tvm_sdk::AbiEvent;
+use tvm_sdk::AbiFunction;
 use tvm_types::SliceData;
 
 use super::types::extend_data_to_sign;
+use crate::abi::types::Abi;
+use crate::abi::Error;
+use crate::abi::FunctionHeader;
+use crate::boc::internal::deserialize_cell_from_boc;
+use crate::boc::internal::deserialize_object_from_boc;
+use crate::client::ClientContext;
+use crate::encoding::decode_abi_number;
+use crate::encoding::slice_from_cell;
+use crate::error::ClientResult;
 
 #[derive(Serialize, Deserialize, ApiType, PartialEq, Debug, Clone)]
 pub enum DataLayout {
@@ -71,12 +77,7 @@ impl DecodedMessageBody {
         header: Option<FunctionHeader>,
     ) -> tvm_types::Result<Self> {
         let value = Detokenizer::detokenize_to_json_value(&decoded.tokens)?;
-        Ok(Self {
-            body_type,
-            name: decoded.function_name,
-            value: Some(value),
-            header,
-        })
+        Ok(Self { body_type, name: decoded.function_name, value: Some(value), header })
     }
 }
 
@@ -90,8 +91,9 @@ pub struct ParamsOfDecodeMessage {
     /// Message BOC
     pub message: String,
 
-    /// Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
-    /// Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:
+    /// Flag allowing partial BOC decoding when ABI doesn't describe the full
+    /// body BOC. Controls decoder behaviour when after decoding all
+    /// described in ABI params there are some data left in BOC:
     /// `true` - return decoded values
     /// `false` - return error of incomplete BOC deserialization (default)
     #[serde(default)]
@@ -101,8 +103,8 @@ pub struct ParamsOfDecodeMessage {
     pub function_name: Option<String>,
 
     // For external (inbound and outbound) messages data_layout parameter is ignored.
-    // For internal: by default SDK tries to decode as output and then if decode is not successfull - tries as input.
-    // If explicitly specified then tries only the specified layout.
+    // For internal: by default SDK tries to decode as output and then if decode is not successfull
+    // - tries as input. If explicitly specified then tries only the specified layout.
     pub data_layout: Option<DataLayout>,
 }
 
@@ -128,9 +130,7 @@ pub fn decode_message(
             data_layout,
         )
     } else {
-        Err(Error::invalid_message_for_decode(
-            "The message body is empty",
-        ))
+        Err(Error::invalid_message_for_decode("The message body is empty"))
     }
 }
 
@@ -147,8 +147,9 @@ pub struct ParamsOfDecodeMessageBody {
     /// True if the body belongs to the internal message.
     pub is_internal: bool,
 
-    /// Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
-    /// Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:
+    /// Flag allowing partial BOC decoding when ABI doesn't describe the full
+    /// body BOC. Controls decoder behaviour when after decoding all
+    /// described in ABI params there are some data left in BOC:
     /// `true` - return decoded values
     /// `false` - return error of incomplete BOC deserialization (default)
     #[serde(default)]
@@ -157,8 +158,8 @@ pub struct ParamsOfDecodeMessageBody {
     /// Function name or function id if is known in advance
     pub function_name: Option<String>,
 
-    // By default SDK tries to decode as output and then if decode is not successfull - tries as input.
-    // If explicitly specified then tries only the specified layout.
+    // By default SDK tries to decode as output and then if decode is not successfull - tries as
+    // input. If explicitly specified then tries only the specified layout.
     pub data_layout: Option<DataLayout>,
 }
 
@@ -239,11 +240,7 @@ fn decode_unknown_function(
         .map_err(|err| {
             Error::invalid_message_for_decode(format!("Can't decode function header: {}", err))
         })?;
-        DecodedMessageBody::new(
-            MessageBodyType::Input,
-            input,
-            FunctionHeader::from(&header)?,
-        )
+        DecodedMessageBody::new(MessageBodyType::Input, input, FunctionHeader::from(&header)?)
     };
     match data_layout {
         Some(DataLayout::Input) => decode_input(),
@@ -271,10 +268,7 @@ fn decode_with_function(
                     .map_err(|err| Error::invalid_message_for_decode(err))?;
                 DecodedMessageBody::new(
                     MessageBodyType::Output,
-                    DecodedMessage {
-                        function_name: function_name.clone(),
-                        tokens: decoded,
-                    },
+                    DecodedMessage { function_name: function_name.clone(), tokens: decoded },
                     None,
                 )
             };
@@ -291,10 +285,7 @@ fn decode_with_function(
                 .map_err(|err| Error::invalid_message_for_decode(err))?;
                 DecodedMessageBody::new(
                     MessageBodyType::Input,
-                    DecodedMessage {
-                        function_name: function_name.clone(),
-                        tokens: decoded,
-                    },
+                    DecodedMessage { function_name: function_name.clone(), tokens: decoded },
                     FunctionHeader::from(&header)?,
                 )
             };
@@ -316,10 +307,7 @@ fn decode_with_function(
             let decoded = event
                 .decode_input(body, allow_partial)
                 .map_err(|err| Error::invalid_message_for_decode(err))?;
-            let decoded = DecodedMessage {
-                function_name,
-                tokens: decoded,
-            };
+            let decoded = DecodedMessage { function_name, tokens: decoded };
             DecodedMessageBody::new(MessageBodyType::Event, decoded, None)
         }
     }
@@ -337,9 +325,8 @@ fn find_abi_function<'a>(abi: &'a AbiContract, name: &str) -> ClientResult<AbiFu
         Ok(AbiFunctionVariant::Event(event))
     } else {
         let function_id: u32 = decode_abi_number(name)?;
-        if let Ok(function) = abi
-            .function_by_id(function_id, true)
-            .or_else(|_| abi.function_by_id(function_id, true))
+        if let Ok(function) =
+            abi.function_by_id(function_id, true).or_else(|_| abi.function_by_id(function_id, true))
         {
             Ok(AbiFunctionVariant::Function(function))
         } else if let Ok(event) = abi.event_by_id(function_id) {
@@ -358,8 +345,8 @@ pub struct ParamsOfGetSignatureData {
     /// Message BOC encoded in `base64`.
     pub message: String,
 
-    /// Signature ID to be used in unsigned data preparing when CapSignatureWithId
-    /// capability is enabled
+    /// Signature ID to be used in unsigned data preparing when
+    /// CapSignatureWithId capability is enabled
     pub signature_id: Option<i32>,
 }
 
@@ -372,7 +359,8 @@ pub struct ResultOfGetSignatureData {
     pub unsigned: String,
 }
 
-/// Extracts signature from message body and calculates hash to verify the signature
+/// Extracts signature from message body and calculates hash to verify the
+/// signature
 #[api_function]
 pub async fn get_signature_data(
     context: Arc<ClientContext>,
@@ -394,8 +382,6 @@ pub async fn get_signature_data(
             unsigned: base64::encode(&unsigned.unwrap()),
         })
     } else {
-        Err(Error::invalid_message_for_decode(
-            "The message body is empty",
-        ))
+        Err(Error::invalid_message_for_decode("The message body is empty"))
     }
 }

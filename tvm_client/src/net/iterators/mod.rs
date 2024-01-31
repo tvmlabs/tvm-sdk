@@ -1,15 +1,13 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
 pub(crate) mod block;
 pub(crate) mod block_iterator;
@@ -19,14 +17,18 @@ pub(crate) mod transaction_iterator;
 #[cfg(test)]
 mod tests;
 
-use crate::client::ClientContext;
-use crate::error::ClientResult;
-use crate::net::{query_collection, ParamsOfQueryCollection};
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::sync::Arc;
+
 use rand::RngCore;
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 use tokio::sync::Mutex;
+
+use crate::client::ClientContext;
+use crate::error::ClientResult;
+use crate::net::query_collection;
+use crate::net::ParamsOfQueryCollection;
 
 #[async_trait::async_trait]
 pub trait ChainIterator {
@@ -67,10 +69,10 @@ pub struct ParamsOfIteratorNext {
 pub struct ResultOfIteratorNext {
     /// Next available items.
     ///
-    /// Note that `iterator_next` can return an empty items and `has_more` equals to `true`.
-    /// In this case the application have to continue iteration.
-    /// Such situation can take place when there is no data yet but
-    /// the requested `end_time` is not reached.
+    /// Note that `iterator_next` can return an empty items and `has_more`
+    /// equals to `true`. In this case the application have to continue
+    /// iteration. Such situation can take place when there is no data yet
+    /// but the requested `end_time` is not reached.
     pub items: Vec<Value>,
 
     /// Indicates that there are more available items in iterated range.
@@ -115,18 +117,11 @@ pub async fn iterator_next(
             .await
             .get(&params.iterator)
             .map(|x| x.clone())
-            .ok_or(crate::client::Error::invalid_handle(
-                params.iterator,
-                "iterator",
-            ))?
+            .ok_or(crate::client::Error::invalid_handle(params.iterator, "iterator"))?
     };
     let mut locked = iterator.lock().await;
     locked
-        .next(
-            &context,
-            params.limit.unwrap_or(1),
-            params.return_resume_state.unwrap_or(false),
-        )
+        .next(&context, params.limit.unwrap_or(1), params.return_resume_state.unwrap_or(false))
         .await
 }
 
@@ -148,10 +143,7 @@ pub async fn remove_iterator(
             .lock()
             .await
             .remove(&params.handle)
-            .ok_or(crate::client::Error::invalid_handle(
-                params.handle,
-                "iterator",
-            ))?
+            .ok_or(crate::client::Error::invalid_handle(params.handle, "iterator"))?
     };
     iterator.lock().await.after_remove(&context);
     Ok(())
@@ -162,12 +154,7 @@ async fn register_iterator(
     iterator: Box<dyn ChainIterator + Sync + Send>,
 ) -> ClientResult<RegisteredIterator> {
     let handle = rand::thread_rng().next_u32();
-    context
-        .net
-        .iterators
-        .lock()
-        .await
-        .insert(handle, Arc::new(Mutex::new(iterator)));
+    context.net.iterators.lock().await.insert(handle, Arc::new(Mutex::new(iterator)));
     Ok(RegisteredIterator { handle })
 }
 
@@ -180,9 +167,8 @@ pub(crate) async fn query_by_ids(
     let mut items = Vec::new();
     let mut tail_ids = ids;
     while !tail_ids.is_empty() {
-        let head_ids = tail_ids
-            .splice(..tail_ids.len().min(40), Vec::default())
-            .collect::<Vec<String>>();
+        let head_ids =
+            tail_ids.splice(..tail_ids.len().min(40), Vec::default()).collect::<Vec<String>>();
         let mut head_by_id = HashMap::new();
         let mut query_queue: HashSet<String> = head_ids.iter().cloned().collect();
         while !query_queue.is_empty() {

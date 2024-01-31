@@ -1,26 +1,27 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
 #![allow(dead_code)]
+
+use std::str::FromStr;
+
+use num_bigint::BigInt;
+use num_traits::cast::NumCast;
+use tvm_block::MsgAddressInt;
+use tvm_types::Cell;
+use tvm_types::SliceData;
 
 use crate::client;
 use crate::crypto::internal::tvm_crc16;
 use crate::error::ClientResult;
-use num_bigint::BigInt;
-use num_traits::cast::NumCast;
-use std::str::FromStr;
-use tvm_block::MsgAddressInt;
-use tvm_types::{Cell, SliceData};
 
 //------------------------------------------------------------------------------------------------------
 
@@ -81,12 +82,8 @@ pub(crate) fn decode_std_base64(data: &str) -> ClientResult<MsgAddressInt> {
         return Err(client::Error::invalid_address("CRC mismatch", &data).into());
     };
 
-    MsgAddressInt::with_standart(
-        None,
-        vec[1] as i8,
-        SliceData::from_raw(vec[2..34].to_vec(), 256),
-    )
-    .map_err(|err| client::Error::invalid_address(err, &data).into())
+    MsgAddressInt::with_standart(None, vec[1] as i8, SliceData::from_raw(vec[2..34].to_vec(), 256))
+        .map_err(|err| client::Error::invalid_address(err, &data).into())
 }
 
 fn encode_base64(
@@ -109,11 +106,7 @@ fn encode_base64(
 
         let result = base64::encode(&vec);
 
-        if as_url {
-            Ok(result.replace('/', "_").replace('+', "-"))
-        } else {
-            Ok(result)
-        }
+        if as_url { Ok(result.replace('/', "_").replace('+', "-")) } else { Ok(result) }
     } else {
         Err(client::Error::invalid_address("Non-std address", &address.to_string()).into())
     }

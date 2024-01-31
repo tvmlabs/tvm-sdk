@@ -1,37 +1,42 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::sync::Arc;
-
-use serde::Deserialize;
-use serde_json::Value;
 
 use branch::Branch;
 use filter::Filter;
+use serde::Deserialize;
+use serde_json::Value;
 use state::State;
+use tvm_block::ShardIdent;
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::iterators::block::{
-    shard_ident_parse, shard_ident_to_string, BlockFields, MasterBlock, RefFields,
-    BLOCK_TRAVERSE_FIELDS,
-};
+use crate::net::iterators::block::shard_ident_parse;
+use crate::net::iterators::block::shard_ident_to_string;
+use crate::net::iterators::block::BlockFields;
+use crate::net::iterators::block::MasterBlock;
+use crate::net::iterators::block::RefFields;
+use crate::net::iterators::block::BLOCK_TRAVERSE_FIELDS;
 use crate::net::iterators::block_iterator::state::StateBuilder;
-use crate::net::iterators::{query_by_ids, register_iterator, ResultOfIteratorNext};
-use crate::net::{query_collection, ChainIterator, ParamsOfQueryCollection, RegisteredIterator};
-use tvm_block::ShardIdent;
+use crate::net::iterators::query_by_ids;
+use crate::net::iterators::register_iterator;
+use crate::net::iterators::ResultOfIteratorNext;
+use crate::net::query_collection;
+use crate::net::ChainIterator;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::RegisteredIterator;
 
 mod branch;
 mod filter;
@@ -92,35 +97,18 @@ impl BlockIterator {
                 next.push(block);
             }
         }
-        Ok(Self {
-            filter,
-            state: State {
-                branches,
-                visited_merge_blocks: HashSet::new(),
-                next,
-            },
-        })
+        Ok(Self { filter, state: State { branches, visited_merge_blocks: HashSet::new(), next } })
     }
 
     pub(crate) fn get_resume_state(&self) -> ResumeState {
         ResumeState {
-            shards: self
-                .filter
-                .shards
-                .iter()
-                .map(|x| shard_ident_to_string(x))
-                .collect(),
+            shards: self.filter.shards.iter().map(|x| shard_ident_to_string(x)).collect(),
             start_time: self.filter.start_time,
             end_time: self.filter.end_time,
             result_fields: self.filter.result_fields.clone(),
             branches: self.state.branches.clone(),
             visited_merge_blocks: self.state.visited_merge_blocks.clone(),
-            next: self
-                .state
-                .next
-                .iter()
-                .map(|x| BlockFields(x).id().to_string())
-                .collect(),
+            next: self.state.next.iter().map(|x| BlockFields(x).id().to_string()).collect(),
         }
     }
 
@@ -169,25 +157,15 @@ impl BlockIterator {
         block_ids: Vec<String>,
         fields: &str,
     ) -> ClientResult<Vec<Value>> {
-        query_by_ids(
-            context,
-            "blocks",
-            block_ids,
-            &format!("{} {}", BLOCK_TRAVERSE_FIELDS, fields),
-        )
-        .await
+        query_by_ids(context, "blocks", block_ids, &format!("{} {}", BLOCK_TRAVERSE_FIELDS, fields))
+            .await
     }
 
     async fn query_next(&mut self, context: &Arc<ClientContext>) -> ClientResult<()> {
-        let mut builder = StateBuilder::new(
-            &self.filter,
-            &self.state.visited_merge_blocks,
-            context.env.now_ms(),
-        );
+        let mut builder =
+            StateBuilder::new(&self.filter, &self.state.visited_merge_blocks, context.env.now_ms());
 
-        let mut next_blocks = self
-            .query_next_blocks(context, &self.state.branches)
-            .await?;
+        let mut next_blocks = self.query_next_blocks(context, &self.state.branches).await?;
 
         for branch in &self.state.branches {
             if let Some(mut next) = next_blocks.remove(&branch.block_id) {
@@ -220,9 +198,8 @@ impl BlockIterator {
         let mut branches: Vec<&Branch> = branches.iter().collect();
         let mut next_blocks: HashMap<String, Vec<Value>> = HashMap::new();
         while !branches.is_empty() {
-            let prev_ids = branches
-                .splice(..branches.len().min(40), Vec::default())
-                .collect::<Vec<_>>();
+            let prev_ids =
+                branches.splice(..branches.len().min(40), Vec::default()).collect::<Vec<_>>();
 
             let prev_ids_by = |l: NextLink| {
                 prev_ids
@@ -288,17 +265,10 @@ impl ChainIterator for BlockIterator {
             items.push(self.state.next.remove(0));
         }
 
-        let resume_state = if return_resume_state {
-            Some(self.get_resume_state_value()?)
-        } else {
-            None
-        };
+        let resume_state =
+            if return_resume_state { Some(self.get_resume_state_value()?) } else { None };
 
-        Ok(ResultOfIteratorNext {
-            has_more: self.state.has_more(),
-            items,
-            resume_state,
-        })
+        Ok(ResultOfIteratorNext { has_more: self.state.has_more(), items, resume_state })
     }
 
     fn after_remove(&mut self, _context: &Arc<ClientContext>) {}
@@ -326,9 +296,9 @@ pub struct ParamsOfCreateBlockIterator {
 
     /// Shard prefix filter.
     ///
-    /// If the application specifies this parameter and it is not the empty array
-    /// then the iteration will include items related to accounts that belongs to
-    /// the specified shard prefixes.
+    /// If the application specifies this parameter and it is not the empty
+    /// array then the iteration will include items related to accounts that
+    /// belongs to the specified shard prefixes.
     /// Shard prefix must be represented as a string "workchain:prefix".
     /// Where `workchain` is a signed integer and the `prefix` if a hexadecimal
     /// representation if the 64-bit unsigned integer with tagged shard prefix.
@@ -352,18 +322,19 @@ pub struct ParamsOfCreateBlockIterator {
 ///
 /// Iterated range can be reduced with some filters:
 /// - `start_time` – the bottom time range. Only blocks with `gen_utime`
-/// more or equal to this value is iterated. If this parameter is omitted then there is
-/// no bottom time edge, so all blocks since zero state is iterated.
+/// more or equal to this value is iterated. If this parameter is omitted then
+/// there is no bottom time edge, so all blocks since zero state is iterated.
 /// - `end_time` – the upper time range. Only blocks with `gen_utime`
 /// less then this value is iterated. If this parameter is omitted then there is
 /// no upper time edge, so iterator never finishes.
-/// - `shard_filter` – workchains and shard prefixes that reduce the set of interesting
-/// blocks. Block conforms to the shard filter if it belongs to the filter workchain
-/// and the first bits of block's `shard` fields matches to the shard prefix.
-/// Only blocks with suitable shard are iterated.
+/// - `shard_filter` – workchains and shard prefixes that reduce the set of
+///   interesting
+/// blocks. Block conforms to the shard filter if it belongs to the filter
+/// workchain and the first bits of block's `shard` fields matches to the shard
+/// prefix. Only blocks with suitable shard are iterated.
 ///
-/// Items iterated is a JSON objects with block data. The minimal set of returned
-/// fields is:
+/// Items iterated is a JSON objects with block data. The minimal set of
+/// returned fields is:
 /// ```text
 /// id
 /// gen_utime
@@ -380,17 +351,14 @@ pub struct ParamsOfCreateBlockIterator {
 /// ```
 /// Application can request additional fields in the `result` parameter.
 ///
-/// Application should call the `remove_iterator` when iterator is no longer required.
+/// Application should call the `remove_iterator` when iterator is no longer
+/// required.
 #[api_function]
 pub async fn create_block_iterator(
     context: Arc<ClientContext>,
     params: ParamsOfCreateBlockIterator,
 ) -> ClientResult<RegisteredIterator> {
-    register_iterator(
-        &context,
-        Box::new(BlockIterator::new(&context, params).await?),
-    )
-    .await
+    register_iterator(&context, Box::new(BlockIterator::new(&context, params).await?)).await
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
@@ -403,17 +371,15 @@ pub struct ParamsOfResumeBlockIterator {
 
 /// Resumes block iterator.
 ///
-/// The iterator stays exactly at the same position where the `resume_state` was caught.
+/// The iterator stays exactly at the same position where the `resume_state` was
+/// caught.
 ///
-/// Application should call the `remove_iterator` when iterator is no longer required.
+/// Application should call the `remove_iterator` when iterator is no longer
+/// required.
 #[api_function]
 pub async fn resume_block_iterator(
     context: Arc<ClientContext>,
     params: ParamsOfResumeBlockIterator,
 ) -> ClientResult<RegisteredIterator> {
-    register_iterator(
-        &context,
-        Box::new(BlockIterator::resume(&context, params).await?),
-    )
-    .await
+    register_iterator(&context, Box::new(BlockIterator::resume(&context, params).await?)).await
 }

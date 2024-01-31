@@ -1,50 +1,62 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use super::{tc_destroy_string, tc_read_string, tc_request, tc_request_sync};
-use crate::abi::{
-    encode_message, Abi, CallSet, DeploySet, ParamsOfEncodeMessage, ResultOfEncodeMessage, Signer,
-};
-use crate::client::*;
-use crate::crypto::internal::hex_decode_secret_const;
-use crate::crypto::mnemonic::ed25519_keys_from_secret_bytes;
-use crate::crypto::{
-    ParamsOfNaclSignDetached, ParamsOfNaclSignKeyPairFromSecret, ResultOfNaclSignDetached,
-};
-use crate::json_interface::interop::{ResponseType, StringData};
-use crate::json_interface::modules::{AbiModule, ProcessingModule};
-use crate::json_interface::runtime::Runtime;
-use crate::net::{ParamsOfQuery, ResultOfQuery};
-use crate::processing::{ParamsOfProcessMessage, ResultOfProcessMessage};
-use crate::{
-    crypto::KeyPair,
-    error::{ClientError, ClientResult},
-    net::{ParamsOfQueryTransactionTree, ResultOfQueryTransactionTree},
-    tc_create_context, tc_destroy_context, ContextHandle,
-};
+use std::collections::HashMap;
+use std::pin::Pin;
+use std::sync::Arc;
+
 use api_info::ApiModule;
 use futures::Future;
 use num_traits::FromPrimitive;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::HashMap;
-use std::pin::Pin;
-use std::sync::Arc;
-use tokio::sync::{
-    oneshot::{channel, Sender},
-    Mutex,
-};
+use tokio::sync::oneshot::channel;
+use tokio::sync::oneshot::Sender;
+use tokio::sync::Mutex;
+
+use super::tc_destroy_string;
+use super::tc_read_string;
+use super::tc_request;
+use super::tc_request_sync;
+use crate::abi::encode_message;
+use crate::abi::Abi;
+use crate::abi::CallSet;
+use crate::abi::DeploySet;
+use crate::abi::ParamsOfEncodeMessage;
+use crate::abi::ResultOfEncodeMessage;
+use crate::abi::Signer;
+use crate::client::*;
+use crate::crypto::internal::hex_decode_secret_const;
+use crate::crypto::mnemonic::ed25519_keys_from_secret_bytes;
+use crate::crypto::KeyPair;
+use crate::crypto::ParamsOfNaclSignDetached;
+use crate::crypto::ParamsOfNaclSignKeyPairFromSecret;
+use crate::crypto::ResultOfNaclSignDetached;
+use crate::error::ClientError;
+use crate::error::ClientResult;
+use crate::json_interface::interop::ResponseType;
+use crate::json_interface::interop::StringData;
+use crate::json_interface::modules::AbiModule;
+use crate::json_interface::modules::ProcessingModule;
+use crate::json_interface::runtime::Runtime;
+use crate::net::ParamsOfQuery;
+use crate::net::ParamsOfQueryTransactionTree;
+use crate::net::ResultOfQuery;
+use crate::net::ResultOfQueryTransactionTree;
+use crate::processing::ParamsOfProcessMessage;
+use crate::processing::ResultOfProcessMessage;
+use crate::tc_create_context;
+use crate::tc_destroy_context;
+use crate::ContextHandle;
 
 mod common;
 
@@ -106,11 +118,7 @@ impl log::Log for SimpleLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        println!(
-            "{} {}",
-            chrono::prelude::Utc::now().timestamp_millis(),
-            record.args()
-        );
+        println!("{} {}", chrono::prelude::Utc::now().timestamp_millis(), record.args());
     }
 
     fn flush(&self) {}
@@ -143,10 +151,7 @@ struct TestRuntime {
 
 impl TestRuntime {
     fn new() -> Self {
-        Self {
-            next_request_id: 1,
-            requests: HashMap::new(),
-        }
+        Self { next_request_id: 1, requests: HashMap::new() }
     }
 
     fn gen_request_id(&mut self) -> u32 {
@@ -194,9 +199,7 @@ impl<'a, P: Serialize, R: DeserializeOwned> AsyncFuncWrapper<'a, P, R> {
         CT: FromPrimitive,
         CR: DeserializeOwned,
     {
-        self.client
-            .request_async_callback(&self.name, params, callback)
-            .await
+        self.client.request_async_callback(&self.name, params, callback).await
     }
 }
 
@@ -367,11 +370,7 @@ impl TestClient {
 
     pub fn queries_protocol() -> Option<String> {
         let protocol = env::queries_protocol().trim().to_string();
-        if protocol.is_empty() {
-            None
-        } else {
-            Some(protocol)
-        }
+        if protocol.is_empty() { None } else { Some(protocol) }
     }
 
     pub fn node_se() -> bool {
@@ -383,19 +382,11 @@ impl TestClient {
     }
 
     pub fn contracts_path(abi_version: Option<u8>) -> String {
-        format!(
-            "{}abi_v{}/",
-            ROOT_CONTRACTS_PATH,
-            abi_version.unwrap_or(Self::abi_version())
-        )
+        format!("{}abi_v{}/", ROOT_CONTRACTS_PATH, abi_version.unwrap_or(Self::abi_version()))
     }
 
     pub fn abi(name: &str, version: Option<u8>) -> Abi {
-        Self::read_abi(format!(
-            "{}{}.abi.json",
-            Self::contracts_path(version),
-            name
-        ))
+        Self::read_abi(format!("{}{}.abi.json", Self::contracts_path(version), name))
     }
 
     pub fn tvc(name: &str, abi_version: Option<u8>) -> Option<String> {
@@ -441,18 +432,12 @@ impl TestClient {
 
         unsafe {
             let response = tc_create_context(StringData::new(&config.to_string()));
-            Self {
-                context: parse_sync_response(response).unwrap(),
-            }
+            Self { context: parse_sync_response(response).unwrap() }
         }
     }
 
     pub(crate) fn request_json(&self, method: &str, params: Value) -> ClientResult<Value> {
-        let params_json = if params.is_null() {
-            String::new()
-        } else {
-            params.to_string()
-        };
+        let params_json = if params.is_null() { String::new() } else { params.to_string() };
         parse_sync_response(unsafe {
             tc_request_sync(
                 self.context,
@@ -468,20 +453,22 @@ impl TestClient {
         R: DeserializeOwned,
     {
         let params = serde_json::to_value(params).unwrap();
-        self.request_json(method, params)
-            .map(|result| serde_json::from_value(result).unwrap())
+        self.request_json(method, params).map(|result| serde_json::from_value(result).unwrap())
     }
 
     fn on_result(request_id: u32, params_json: String, response_type: u32, finished: bool) {
         // we have to process callback in another thread because:
-        // 1. processing must be async because sender which resolves function result is async
-        // 2. `rt_handle.enter` function processes task in background without ability to wait for its completion.
-        //  But we need to preserve the order of `on_result` calls processing, otherwise call with
-        //  `finished` = true can be processed before previous call and remove callback handler
-        //  while it's still needed
-        // 3. `rt_handle.block_on` function can't be used in current thread because thread is in async
-        //  context so we have to spawn another thread and use `rt_handle.block_on` function there
-        //  and then wait for thread completion
+        // 1. processing must be async because sender which resolves function result is
+        //    async
+        // 2. `rt_handle.enter` function processes task in background without ability to
+        //    wait for its completion.
+        //  But we need to preserve the order of `on_result` calls processing, otherwise
+        // call with  `finished` = true can be processed before previous call
+        // and remove callback handler  while it's still needed
+        // 3. `rt_handle.block_on` function can't be used in current thread because
+        //    thread is in async
+        //  context so we have to spawn another thread and use `rt_handle.block_on`
+        // function there  and then wait for thread completion
         let rt_handle = tokio::runtime::Handle::current();
         std::thread::spawn(move || {
             rt_handle.block_on(Self::on_result_async(
@@ -501,7 +488,8 @@ impl TestClient {
         response_type: u32,
         finished: bool,
     ) {
-        //log::debug!("on_result response-type: {} params_json: {}", response_type, params_json);
+        // log::debug!("on_result response-type: {} params_json: {}", response_type,
+        // params_json);
         let requests = &mut TEST_RUNTIME.lock().await.requests;
         let request = requests.get_mut(&request_id).unwrap();
 
@@ -550,7 +538,7 @@ impl TestClient {
             Box::pin(callback(params, response_type))
                 as Pin<Box<dyn Future<Output = ()> + Send + Sync>>
         };
-        //let callback = Box::new(callback);
+        // let callback = Box::new(callback);
         let (request_id, receiver) = {
             let mut runtime = TEST_RUNTIME.lock().await;
             let id = runtime.gen_request_id();
@@ -559,17 +547,15 @@ impl TestClient {
                 id,
                 RequestData {
                     sender: Some(sender),
-                    callback: Box::new(callback), // as Box<dyn Fn(String, u32) -> Pin<Box<dyn Future<Output = ()> + Send + Sync>> + Send + Sync>
+                    callback: Box::new(callback), /* as Box<dyn Fn(String, u32) -> Pin<Box<dyn
+                                                   * Future<Output = ()> + Send + Sync>> + Send +
+                                                   * Sync> */
                 },
             );
             (id, receiver)
         };
         unsafe {
-            let params_json = if params.is_null() {
-                String::new()
-            } else {
-                params.to_string()
-            };
+            let params_json = if params.is_null() { String::new() } else { params.to_string() };
             tc_request(
                 self.context,
                 StringData::new(&method.to_string()),
@@ -610,13 +596,11 @@ impl TestClient {
         P: Serialize,
         R: DeserializeOwned,
     {
-        self.request_async_callback(method, params, Self::default_callback)
-            .await
+        self.request_async_callback(method, params, Self::default_callback).await
     }
 
     pub(crate) fn request_no_params<R: DeserializeOwned>(&self, method: &str) -> ClientResult<R> {
-        self.request_json(method, Value::Null)
-            .map(|result| serde_json::from_value(result).unwrap())
+        self.request_json(method, Value::Null).map(|result| serde_json::from_value(result).unwrap())
     }
 
     pub(crate) async fn encode_message(
@@ -674,11 +658,7 @@ impl TestClient {
             })
             .await
             .unwrap();
-        result
-            .result
-            .pointer_mut("/data/blockchain/account/info")
-            .unwrap()
-            .take()
+        result.result.pointer_mut("/data/blockchain/account/info").unwrap().take()
     }
 
     pub(crate) async fn net_process_function(
@@ -766,9 +746,7 @@ impl TestClient {
                 Self::giver_abi(),
                 function,
                 input,
-                Signer::Keys {
-                    keys: Self::giver_keys(),
-                },
+                Signer::Keys { keys: Self::giver_keys() },
             )
             .await
             .unwrap();
@@ -782,10 +760,7 @@ impl TestClient {
             .request_async(
                 "net.query_transaction_tree",
                 ParamsOfQueryTransactionTree {
-                    in_msg: run_result.transaction["in_msg"]
-                        .as_str()
-                        .unwrap()
-                        .to_string(),
+                    in_msg: run_result.transaction["in_msg"].as_str().unwrap().to_string(),
                     ..Default::default()
                 },
             )
@@ -800,10 +775,7 @@ impl TestClient {
         account: &str,
         value: Option<u64>,
     ) -> ResultOfProcessMessage {
-        self.context()
-            .clone()
-            .env
-            .block_on(self.get_tokens_from_giver_async(account, value))
+        self.context().clone().env.block_on(self.get_tokens_from_giver_async(account, value))
     }
 
     pub(crate) async fn deploy_with_giver_async(
@@ -817,10 +789,7 @@ impl TestClient {
 
         let _ = self
             .net_process_message(
-                ParamsOfProcessMessage {
-                    message_encode_params: params,
-                    send_events: false,
-                },
+                ParamsOfProcessMessage { message_encode_params: params, send_events: false },
                 Self::default_callback,
             )
             .await
@@ -830,17 +799,14 @@ impl TestClient {
     }
 
     pub(crate) fn generate_sign_keys(&self) -> KeyPair {
-        self.request("crypto.generate_random_sign_keys", ())
-            .unwrap()
+        self.request("crypto.generate_random_sign_keys", ()).unwrap()
     }
 
     pub fn sign_detached(&self, data: &str, keys: &KeyPair) -> String {
         let sign_keys: KeyPair = self
             .request(
                 "crypto.nacl_sign_keypair_from_secret_key",
-                ParamsOfNaclSignKeyPairFromSecret {
-                    secret: keys.secret.clone(),
-                },
+                ParamsOfNaclSignKeyPairFromSecret { secret: keys.secret.clone() },
             )
             .unwrap();
         let result: ResultOfNaclSignDetached = self
@@ -860,9 +826,7 @@ impl TestClient {
             "client.resolve_app_request",
             ParamsOfResolveAppRequest {
                 app_request_id,
-                result: AppRequestResult::Ok {
-                    result: json!(result),
-                },
+                result: AppRequestResult::Ok { result: json!(result) },
             },
         )
         .await

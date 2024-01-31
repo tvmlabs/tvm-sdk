@@ -1,11 +1,22 @@
-use super::dinterface::{
-    decode_answer_id, get_num_arg, get_arg, DebotInterface, InterfaceResult,
-};
+use serde_json::Value as JsonValue;
+
+use super::dinterface::decode_answer_id;
+use super::dinterface::get_arg;
+use super::dinterface::get_num_arg;
+use super::dinterface::DebotInterface;
+use super::dinterface::InterfaceResult;
 use super::TonClient;
 use crate::abi::Abi;
-use crate::debot::json_lib_utils::{pack, Value};
-use crate::net::{wait_for_collection, query_collection, query, OrderBy, ParamsOfQueryCollection, ParamsOfWaitForCollection, SortDirection, ParamsOfQuery};
-use serde_json::Value as JsonValue;
+use crate::debot::json_lib_utils::pack;
+use crate::debot::json_lib_utils::Value;
+use crate::net::query;
+use crate::net::query_collection;
+use crate::net::wait_for_collection;
+use crate::net::OrderBy;
+use crate::net::ParamsOfQuery;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::ParamsOfWaitForCollection;
+use crate::net::SortDirection;
 
 const ABI: &str = r#"
 {
@@ -105,13 +116,7 @@ impl QueryInterface {
         .to_owned();
 
         let result = self
-            .collection_query(
-                collection_name,
-                query_filter,
-                return_filter,
-                limit,
-                order_by,
-            )
+            .collection_query(collection_name, query_filter, return_filter, limit, order_by)
             .await;
         let (status, objects) = match result {
             Ok(json_objects) => match Self::pack_objects(json_objects) {
@@ -174,18 +179,12 @@ impl QueryInterface {
             Some(serde_json::from_str(&filter).map_err(|_| QueryStatus::FilterError)?);
         let result = wait_for_collection(
             self.ton.clone(),
-            ParamsOfWaitForCollection {
-                collection,
-                filter,
-                result,
-                timeout: Some(timeout),
-            },
+            ParamsOfWaitForCollection { collection, filter, result, timeout: Some(timeout) },
         )
         .await
         .map_err(|_| QueryStatus::NetworkError)?;
         Ok(result.result)
     }
-
 
     async fn wait_for_collection(&self, args: &JsonValue) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
@@ -203,12 +202,7 @@ impl QueryInterface {
         .to_owned();
 
         let result = self
-            .run_wait_for_collection(
-                collection_name,
-                query_filter,
-                return_filter,
-                timeout,
-            )
+            .run_wait_for_collection(collection_name, query_filter, return_filter, timeout)
             .await;
 
         let (status, object) = match result {
@@ -228,10 +222,11 @@ impl QueryInterface {
         ))
     }
 
-
     fn get_query_variables(&self, variables: String) -> Result<Option<JsonValue>, QueryStatus> {
         if !variables.is_empty() {
-            serde_json::from_str(&variables).map(|x| Some(x)).map_err(|_| QueryStatus::VariablesError)
+            serde_json::from_str(&variables)
+                .map(|x| Some(x))
+                .map_err(|_| QueryStatus::VariablesError)
         } else {
             Ok(None)
         }
@@ -244,15 +239,9 @@ impl QueryInterface {
     ) -> Result<JsonValue, QueryStatus> {
         let variables = self.get_query_variables(variables)?;
 
-        let result = query(
-            self.ton.clone(),
-            ParamsOfQuery {
-                query: query_str,
-                variables,
-            },
-        )
-        .await
-        .map_err(|_| QueryStatus::NetworkError)?;
+        let result = query(self.ton.clone(), ParamsOfQuery { query: query_str, variables })
+            .await
+            .map_err(|_| QueryStatus::NetworkError)?;
 
         Ok(result.result)
     }
@@ -262,12 +251,7 @@ impl QueryInterface {
         let query_str = get_arg(args, "query")?;
         let variables_str = get_arg(args, "variables")?;
 
-        let result = self
-            .run_query(
-                query_str,
-                variables_str
-            )
-            .await;
+        let result = self.run_query(query_str, variables_str).await;
 
         let (status, object) = match result {
             Ok(json_object) => match pack(json_object) {
@@ -286,8 +270,6 @@ impl QueryInterface {
         ))
     }
 }
-
-
 
 #[async_trait::async_trait]
 impl DebotInterface for QueryInterface {

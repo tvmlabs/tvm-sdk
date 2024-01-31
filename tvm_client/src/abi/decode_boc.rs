@@ -1,14 +1,16 @@
+use std::convert::TryInto;
+use std::sync::Arc;
+
+use serde_json;
+use serde_json::Value;
+use tvm_abi::token::Detokenizer;
+
 use crate::abi::types::AbiParam;
 use crate::abi::Error;
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::client::ClientContext;
 use crate::encoding::slice_from_cell;
 use crate::error::ClientResult;
-use serde_json;
-use serde_json::Value;
-use std::convert::TryInto;
-use std::sync::Arc;
-use tvm_abi::token::Detokenizer;
 
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfDecodeBoc {
@@ -38,14 +40,16 @@ pub struct ResultOfDecodeBoc {
 ///
 /// To solve this problem we introduce a new ABI type `Ref(<ParamType>)`
 /// which allows to store `ParamType` ABI parameter in cell reference and, thus,
-/// decode manually encoded BOCs. This type is available only in `decode_boc` function
-/// and will not be available in ABI messages encoding until it is included into some ABI revision.
+/// decode manually encoded BOCs. This type is available only in `decode_boc`
+/// function and will not be available in ABI messages encoding until it is
+/// included into some ABI revision.
 ///
-/// Such BOC descriptions covers most users needs. If someone wants to decode some BOC which
-/// can not be described by these rules (i.e. BOC with TLB containing constructors of flags
-/// defining some parsing conditions) then they can decode the fields up to fork condition,
-/// check the parsed data manually, expand the parsing schema and then decode the whole BOC
-/// with the full schema.
+/// Such BOC descriptions covers most users needs. If someone wants to decode
+/// some BOC which can not be described by these rules (i.e. BOC with TLB
+/// containing constructors of flags defining some parsing conditions) then they
+/// can decode the fields up to fork condition, check the parsed data manually,
+/// expand the parsing schema and then decode the whole BOC with the full
+/// schema.
 
 #[api_function]
 pub fn decode_boc(

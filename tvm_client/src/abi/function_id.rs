@@ -1,8 +1,9 @@
-use crate::client::ClientContext;
-use crate::error::ClientResult;
 use std::sync::Arc;
 
-use super::{Abi, Error};
+use super::Abi;
+use super::Error;
+use crate::client::ClientContext;
+use crate::error::ClientResult;
 
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfCalcFunctionId {
@@ -10,8 +11,8 @@ pub struct ParamsOfCalcFunctionId {
     pub abi: Abi,
     /// Contract function name
     pub function_name: String,
-    /// If set to `true` output function ID will be returned which is used in contract response.
-    /// Default is `false`
+    /// If set to `true` output function ID will be returned which is used in
+    /// contract response. Default is `false`
     pub output: Option<bool>,
 }
 
@@ -28,7 +29,8 @@ pub fn calc_function_id(
     params: ParamsOfCalcFunctionId,
 ) -> ClientResult<ResultOfCalcFunctionId> {
     let abi = params.abi.abi()?;
-    let function = abi.function(&params.function_name)
+    let function = abi
+        .function(&params.function_name)
         .map_err(|_| Error::invalid_function_name(&params.function_name))?;
 
     let function_id = if params.output.unwrap_or_default() {

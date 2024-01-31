@@ -1,16 +1,24 @@
+use std::sync::Arc;
+
+use serde_json::Value;
+use tvm_abi::Contract;
+
 use super::calltype::ContractCall;
-use super::dinterface::{get_arg, DebotInterface, InterfaceResult};
+use super::dinterface::get_arg;
+use super::dinterface::DebotInterface;
+use super::dinterface::InterfaceResult;
+use crate::abi::decode_message;
+use crate::abi::Abi;
+use crate::abi::ParamsOfDecodeMessage;
 use crate::abi::Signer;
-use crate::abi::{decode_message, Abi, ParamsOfDecodeMessage};
-use crate::boc::{parse_message, ParamsOfParse};
-use crate::crypto::{get_signing_box, KeyPair};
+use crate::boc::parse_message;
+use crate::boc::ParamsOfParse;
+use crate::crypto::get_signing_box;
+use crate::crypto::KeyPair;
 use crate::debot::BrowserCallbacks;
 use crate::debot::DEngine;
 use crate::debot::TonClient;
 use crate::encoding::decode_abi_bigint;
-use serde_json::Value;
-use std::sync::Arc;
-use tvm_abi::Contract;
 
 const ABI: &str = r#"
 {
@@ -60,12 +68,7 @@ impl MsgInterface {
         debot_abi: Abi,
         browser: Arc<dyn BrowserCallbacks + Send + Sync>,
     ) -> Self {
-        Self {
-            ton,
-            debot_addr,
-            debot_abi,
-            browser,
-        }
+        Self { ton, debot_addr, debot_abi, browser }
     }
 
     async fn send_with_keypair(&self, args: &Value) -> InterfaceResult {
@@ -75,32 +78,20 @@ impl MsgInterface {
         let secret = get_arg(args, "sec")?;
         let secret = decode_abi_bigint(&secret).map_err(|e| format!("{}", e))?;
         let kpair = KeyPair::new(format!("{:064x}", public), format!("{:064x}", secret));
-        let signing_box = get_signing_box(self.ton.clone(), kpair)
-            .await
+        let signing_box =
+            get_signing_box(self.ton.clone(), kpair).await.map_err(|e| format!("{}", e))?.handle;
+        let parsed_msg = parse_message(self.ton.clone(), ParamsOfParse { boc: message.clone() })
             .map_err(|e| format!("{}", e))?
-            .handle;
-        let parsed_msg = parse_message(
-            self.ton.clone(),
-            ParamsOfParse {
-                boc: message.clone(),
-            },
-        )
-        .map_err(|e| format!("{}", e))?
-        .parsed;
-        let dest = parsed_msg["dst"]
-            .as_str()
-            .ok_or(format!("failed to parse dst address"))?
-            .to_owned();
-        let target_state = DEngine::load_state(self.ton.clone(), dest)
-            .await
-            .map_err(|e| format!("{}", e))?;
+            .parsed;
+        let dest =
+            parsed_msg["dst"].as_str().ok_or(format!("failed to parse dst address"))?.to_owned();
+        let target_state =
+            DEngine::load_state(self.ton.clone(), dest).await.map_err(|e| format!("{}", e))?;
         let callobj = ContractCall::new(
             self.browser.clone(),
             self.ton.clone(),
             message,
-            Signer::SigningBox {
-                handle: signing_box,
-            },
+            Signer::SigningBox { handle: signing_box },
             target_state,
             self.debot_addr.clone(),
             false,
@@ -120,30 +111,20 @@ impl MsgInterface {
         .map_err(|e| format!("failed to decode message: {}", e))?;
         let abi_str = self.debot_abi.json_string().unwrap();
         let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{}", e))?;
-        let answer_id = contract
-            .function(&result.name)
-            .map_err(|e| format!("{}", e))?
-            .get_input_id();
+        let answer_id =
+            contract.function(&result.name).map_err(|e| format!("{}", e))?.get_input_id();
         Ok((answer_id, result.value.unwrap_or_default()))
     }
 
     async fn send_async(&self, args: &Value) -> InterfaceResult {
         let message = get_arg(args, "message")?;
-        let parsed_msg = parse_message(
-            self.ton.clone(),
-            ParamsOfParse {
-                boc: message.clone(),
-            },
-        )
-        .map_err(|e| format!("{}", e))?
-        .parsed;
-        let dest = parsed_msg["dst"]
-            .as_str()
-            .ok_or(format!("failed to parse dst address"))?
-            .to_owned();
-        let target_state = DEngine::load_state(self.ton.clone(), dest)
-            .await
-            .map_err(|e| format!("{}", e))?;
+        let parsed_msg = parse_message(self.ton.clone(), ParamsOfParse { boc: message.clone() })
+            .map_err(|e| format!("{}", e))?
+            .parsed;
+        let dest =
+            parsed_msg["dst"].as_str().ok_or(format!("failed to parse dst address"))?.to_owned();
+        let target_state =
+            DEngine::load_state(self.ton.clone(), dest).await.map_err(|e| format!("{}", e))?;
         let callobj = ContractCall::new(
             self.browser.clone(),
             self.ton.clone(),
@@ -168,10 +149,8 @@ impl MsgInterface {
         .map_err(|e| format!("failed to decode message: {}", e))?;
         let abi_str = self.debot_abi.json_string().unwrap();
         let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{}", e))?;
-        let answer_id = contract
-            .function(&result.name)
-            .map_err(|e| format!("{}", e))?
-            .get_input_id();
+        let answer_id =
+            contract.function(&result.name).map_err(|e| format!("{}", e))?.get_input_id();
         Ok((answer_id, result.value.unwrap_or_default()))
     }
 }

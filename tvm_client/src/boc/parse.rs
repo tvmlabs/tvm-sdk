@@ -1,24 +1,23 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
+use serde_json::Value;
+use tvm_block::Deserializable;
+
+use super::internal::deserialize_cell_from_boc;
+use super::internal::deserialize_object_from_cell;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::boc::Error;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use serde_json::Value;
-use tvm_block::Deserializable;
-
-use super::internal::{deserialize_cell_from_boc, deserialize_object_from_cell};
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]
 pub struct ParamsOfParse {
@@ -72,9 +71,7 @@ pub fn parse_message(
     )
     .map_err(|err| Error::serialization_error(err, "message"))?;
 
-    Ok(ResultOfParse {
-        parsed: parsed.into(),
-    })
+    Ok(ResultOfParse { parsed: parsed.into() })
 }
 
 /// Parses transaction boc into a JSON
@@ -108,9 +105,7 @@ pub fn parse_transaction(
     )
     .map_err(|err| Error::serialization_error(err, "transaction"))?;
 
-    Ok(ResultOfParse {
-        parsed: parsed.into(),
-    })
+    Ok(ResultOfParse { parsed: parsed.into() })
 }
 
 /// Parses account boc into a JSON
@@ -154,9 +149,7 @@ pub fn parse_account(
     )
     .map_err(|err| Error::serialization_error(err, "account"))?;
 
-    Ok(ResultOfParse {
-        parsed: parsed.into(),
-    })
+    Ok(ResultOfParse { parsed: parsed.into() })
 }
 
 /// Parses block boc into a JSON
@@ -184,9 +177,7 @@ pub fn parse_block(
     )
     .map_err(|err| Error::serialization_error(err, "block"))?;
 
-    Ok(ResultOfParse {
-        parsed: parsed.into(),
-    })
+    Ok(ResultOfParse { parsed: parsed.into() })
 }
 
 /// Parses shardstate boc into a JSON
@@ -219,16 +210,11 @@ pub fn parse_shardstate(
     )
     .map_err(|err| Error::serialization_error(err, "shardstate"))?;
 
-    Ok(ResultOfParse {
-        parsed: parsed.into(),
-    })
+    Ok(ResultOfParse { parsed: parsed.into() })
 }
 
 pub fn source_boc(parsed: &Value) -> ClientResult<String> {
-    Ok(parsed["boc"]
-        .as_str()
-        .ok_or(Error::missing_source_boc())?
-        .into())
+    Ok(parsed["boc"].as_str().ok_or(Error::missing_source_boc())?.into())
 }
 
 pub fn required_boc(parsed: &Option<Value>) -> ClientResult<String> {

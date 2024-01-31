@@ -1,33 +1,36 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
-use crate::boc::internal::{deserialize_cell_from_base64, serialize_cell_to_base64};
+use core::result::Result::Err;
+use core::result::Result::Ok;
+use std::ops::Deref;
+use std::slice::Iter;
+
+use serde_json::Value;
+use tvm_types::BuilderData;
+use tvm_vm::stack::continuation::ContinuationData;
+use tvm_vm::stack::integer::IntegerData;
+use tvm_vm::stack::StackItem;
+
+use crate::boc::internal::deserialize_cell_from_base64;
+use crate::boc::internal::serialize_cell_to_base64;
 use crate::encoding::slice_from_cell;
 use crate::error::ClientResult;
 use crate::tvm::Error;
-use core::result::Result::{Err, Ok};
-use serde_json::Value;
-use std::ops::Deref;
-use std::slice::Iter;
-use tvm_types::BuilderData;
-use tvm_vm::stack::StackItem;
-use tvm_vm::stack::{continuation::ContinuationData, integer::IntegerData};
 
 enum ProcessingResult<'a> {
     Serialized(Value),
     Nested(Box<dyn Iterator<Item = &'a StackItem> + 'a>),
-    //LevelUp,
+    // LevelUp,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -107,7 +110,8 @@ pub fn deserialize_items(values: Iter<Value>) -> ClientResult<Vec<StackItem>> {
 
 fn serialize_integer_data(data: &IntegerData) -> String {
     let hex = data.to_str_radix(16);
-    // all negative numbers and positive numbers less than u128::MAX are encoded as decimal
+    // all negative numbers and positive numbers less than u128::MAX are encoded as
+    // decimal
     if hex.starts_with("-") || hex.len() <= 32 {
         data.to_str_radix(10)
     } else {
@@ -214,11 +218,7 @@ fn parse_integer_data(s: &String) -> ClientResult<IntegerData> {
         let without_hex_prefix = s.replace("0x", "").replace("0X", "");
         IntegerData::from_str_radix(
             without_hex_prefix.as_str(),
-            if s.len() == without_hex_prefix.len() {
-                10
-            } else {
-                16
-            },
+            if s.len() == without_hex_prefix.len() { 10 } else { 16 },
         )
         .map_err(|err| Error::invalid_input_stack(err, &Value::String(s.clone())))?
     })

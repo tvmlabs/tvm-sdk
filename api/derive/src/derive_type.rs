@@ -1,14 +1,23 @@
-use crate::utils::{doc_from, field_from, field_to_tokens, fields_from, find_attr_value};
 use api_info;
 use quote::quote;
-use syn::{Attribute, Data, DataEnum, DeriveInput, Expr, Lit, Variant};
+use syn::Attribute;
+use syn::Data;
+use syn::DataEnum;
+use syn::DeriveInput;
+use syn::Expr;
+use syn::Lit;
+use syn::Variant;
+
+use crate::utils::doc_from;
+use crate::utils::field_from;
+use crate::utils::field_to_tokens;
+use crate::utils::fields_from;
+use crate::utils::find_attr_value;
 
 pub fn impl_api_type(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse::<DeriveInput>(input).expect("Derive input");
     let ty = match input.data {
-        Data::Struct(ref data) => api_info::Type::Struct {
-            fields: fields_from(&data.fields),
-        },
+        Data::Struct(ref data) => api_info::Type::Struct { fields: fields_from(&data.fields) },
         Data::Enum(ref data) => enum_type(data, &input.attrs),
         _ => panic!("ApiType can only be derived for structures"),
     };
@@ -26,12 +35,7 @@ pub fn impl_api_type(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 }
 
 fn enum_type(data: &DataEnum, attrs: &Vec<Attribute>) -> api_info::Type {
-    if data
-        .variants
-        .iter()
-        .find(|v| !v.fields.is_empty())
-        .is_some()
-    {
+    if data.variants.iter().find(|v| !v.fields.is_empty()).is_some() {
         enum_of_types(data, attrs)
     } else {
         enum_of_consts(data)
@@ -55,16 +59,12 @@ fn enum_of_types(data: &DataEnum, attrs: &Vec<Attribute>) -> api_info::Type {
         }
         field_from(Some(&v.ident), &v.attrs, variant_type)
     });
-    api_info::Type::EnumOfTypes {
-        types: types.collect(),
-    }
+    api_info::Type::EnumOfTypes { types: types.collect() }
 }
 
 fn enum_of_consts(data: &DataEnum) -> api_info::Type {
     let consts = data.variants.iter().map(|v| const_from(v));
-    api_info::Type::EnumOfConsts {
-        consts: consts.collect(),
-    }
+    api_info::Type::EnumOfConsts { consts: consts.collect() }
 }
 
 fn const_from(v: &Variant) -> api_info::Const {
@@ -80,12 +80,7 @@ fn const_from(v: &Variant) -> api_info::Const {
         }
         None => api_info::ConstValue::None {},
     };
-    api_info::Const {
-        name,
-        value,
-        summary,
-        description,
-    }
+    api_info::Const { name, value, summary, description }
 }
 
 fn value_from_lit(lit: &Lit) -> api_info::ConstValue {

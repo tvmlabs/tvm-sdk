@@ -1,14 +1,18 @@
-use crate::abi::{DeploySet, Error, Signer};
+use std::convert::TryInto;
+use std::sync::Arc;
+
+use serde_json::Value;
+use tvm_abi::PublicKeyData;
+use tvm_sdk::ContractImage;
+use tvm_types::Cell;
+
+use crate::abi::DeploySet;
+use crate::abi::Error;
+use crate::abi::Signer;
 use crate::crypto::internal::decode_public_key;
 use crate::encoding::hex_decode;
 use crate::error::ClientResult;
 use crate::ClientContext;
-use serde_json::Value;
-use std::convert::TryInto;
-use std::sync::Arc;
-use tvm_abi::PublicKeyData;
-use tvm_sdk::ContractImage;
-use tvm_types::Cell;
 
 /// Combines `hex` encoded `signature` with `base64` encoded `unsigned_message`.
 /// Returns signed message encoded with `base64`.
@@ -36,9 +40,7 @@ pub(crate) fn add_sign_to_message_body(
         .map_err(|err| Error::attach_signature_failed(err))?;
     let body = tvm_abi::add_sign_to_function_call(
         abi,
-        signature
-            .try_into()
-            .map_err(|err| Error::attach_signature_failed(err))?,
+        signature.try_into().map_err(|err| Error::attach_signature_failed(err))?,
         public_key
             .map(|slice| slice.try_into())
             .transpose()
@@ -47,9 +49,7 @@ pub(crate) fn add_sign_to_message_body(
     )
     .map_err(|err| Error::attach_signature_failed(err))?;
     Ok(tvm_types::boc::write_boc(
-        &body
-            .into_cell()
-            .map_err(|err| Error::attach_signature_failed(err))?,
+        &body.into_cell().map_err(|err| Error::attach_signature_failed(err))?,
     )
     .map_err(|err| Error::attach_signature_failed(err))?)
 }
@@ -117,10 +117,7 @@ pub(crate) fn resolve_pubkey(
         return Ok(deploy_set.initial_pubkey.clone());
     }
 
-    if let Some(pubkey) = image
-        .get_public_key()
-        .map_err(|err| Error::invalid_tvc_image(err))?
-    {
+    if let Some(pubkey) = image.get_public_key().map_err(|err| Error::invalid_tvc_image(err))? {
         if !is_empty_pubkey(&pubkey) {
             return Ok(Some(hex::encode(pubkey.as_ref())));
         }

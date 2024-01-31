@@ -2,8 +2,10 @@ mod enums;
 mod others;
 
 use api_info;
-
-use api_info::{ApiModule, ApiType, Field, Type};
+use api_info::ApiModule;
+use api_info::ApiType;
+use api_info::Field;
+use api_info::Type;
 
 fn reflect<T: ApiType>() {
     let info = serde_json::to_string_pretty(&T::api()).unwrap();
@@ -28,32 +30,15 @@ impl ExpectType {
         expected: &Vec<(&'static str, ExpectType)>,
         parent_hint: &str,
     ) {
-        assert_eq!(
-            actual.len(),
-            expected.len(),
-            "Unexpected field count for {}",
-            parent_hint
-        );
+        assert_eq!(actual.len(), expected.len(), "Unexpected field count for {}", parent_hint);
         for i in 0..actual.len() {
-            assert_eq!(
-                actual[i].name, expected[i].0,
-                "Unexpected field for {}",
-                parent_hint
-            );
-            expected[i].1.check(
-                &actual[i].value,
-                &format!("{}.{}", parent_hint, actual[i].name),
-            );
+            assert_eq!(actual[i].name, expected[i].0, "Unexpected field for {}", parent_hint);
+            expected[i].1.check(&actual[i].value, &format!("{}.{}", parent_hint, actual[i].name));
         }
     }
 
     fn unexpected(actual: &Type, expected: &str, parent_hint: &str) {
-        panic!(
-            "Expected {} but {} found for {}",
-            expected,
-            type_name(actual),
-            parent_hint
-        )
+        panic!("Expected {} but {} found for {}", expected, type_name(actual), parent_hint)
     }
 
     fn check(&self, ty: &Type, parent_hint: &str) {
@@ -104,14 +89,12 @@ fn type_name(ty: &Type) -> String {
         Type::Any => "Any".to_string(),
         Type::Boolean => "Boolean".to_string(),
         Type::String => "String".to_string(),
-        Type::Number {
-            number_type,
-            number_size,
-        } => format!("Number({:?},{})", number_type, number_size),
-        Type::BigInt {
-            number_type,
-            number_size,
-        } => format!("BigInt({:?},{})", number_type, number_size),
+        Type::Number { number_type, number_size } => {
+            format!("Number({:?},{})", number_type, number_size)
+        }
+        Type::BigInt { number_type, number_size } => {
+            format!("BigInt({:?},{})", number_type, number_size)
+        }
         Type::Ref { name } => format!("Ref({})", name),
         Type::Optional { inner } => format!("Optional({})", type_name(inner)),
         Type::Array { item } => format!("Array({})", type_name(item)),

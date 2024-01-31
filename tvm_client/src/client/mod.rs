@@ -1,15 +1,13 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
 mod client;
 mod client_env;
@@ -18,11 +16,15 @@ pub(crate) mod errors;
 mod std_client_env;
 pub(crate) mod storage;
 #[cfg(not(feature = "wasm-base"))]
-pub(crate) use std_client_env::{ClientEnv, LocalStorage};
+pub(crate) use std_client_env::ClientEnv;
+#[cfg(not(feature = "wasm-base"))]
+pub(crate) use std_client_env::LocalStorage;
 #[cfg(feature = "wasm-base")]
 mod wasm_client_env;
 #[cfg(feature = "wasm-base")]
-pub(crate) use wasm_client_env::{ClientEnv, LocalStorage};
+pub(crate) use wasm_client_env::ClientEnv;
+#[cfg(feature = "wasm-base")]
+pub(crate) use wasm_client_env::LocalStorage;
 
 #[cfg(not(feature = "wasm-base"))]
 #[cfg(test)]
@@ -35,16 +37,21 @@ mod tests;
 #[cfg(test)]
 mod network_mock;
 
-pub use client::{ClientConfig, ClientContext};
-pub use errors::{Error, ErrorCode};
+use std::sync::Arc;
 
-pub(crate) use client::{AppObject, NetworkParams};
-pub(crate) use client_env::{FetchMethod, FetchResult, WebSocket};
+use api_info::API;
+pub(crate) use client::AppObject;
+pub use client::ClientConfig;
+pub use client::ClientContext;
+pub(crate) use client::NetworkParams;
+pub(crate) use client_env::FetchMethod;
+pub(crate) use client_env::FetchResult;
+pub(crate) use client_env::WebSocket;
+pub use errors::Error;
+pub use errors::ErrorCode;
 
 use crate::error::ClientResult;
 use crate::json_interface::runtime::Runtime;
-use api_info::API;
-use std::sync::Arc;
 
 pub(crate) const LOCAL_STORAGE_DEFAULT_DIR_NAME: &str = ".tonclient";
 
@@ -88,9 +95,7 @@ pub struct ResultOfVersion {
 /// Returns Core Library version
 #[api_function]
 pub fn version(_context: Arc<ClientContext>) -> ClientResult<ResultOfVersion> {
-    Ok(ResultOfVersion {
-        version: core_version(),
-    })
+    Ok(ResultOfVersion { version: core_version() })
 }
 
 #[derive(ApiType, Default, Serialize, Deserialize)]
@@ -101,9 +106,7 @@ pub struct ResultOfGetApiReference {
 /// Returns Core Library API reference
 #[api_function]
 pub fn get_api_reference(_context: Arc<ClientContext>) -> ClientResult<ResultOfGetApiReference> {
-    Ok(ResultOfGetApiReference {
-        api: Runtime::api().clone(),
-    })
+    Ok(ResultOfGetApiReference { api: Runtime::api().clone() })
 }
 
 #[derive(ApiType, Default, Serialize, Deserialize, Clone)]
@@ -125,12 +128,8 @@ pub struct ResultOfBuildInfo {
 /// Returns detailed information about this build.
 #[api_function]
 pub fn build_info(_context: Arc<ClientContext>) -> ClientResult<ResultOfBuildInfo> {
-    Ok(
-        serde_json::from_str(include_build_info!()).unwrap_or(ResultOfBuildInfo {
-            build_number: 0,
-            dependencies: vec![],
-        }),
-    )
+    Ok(serde_json::from_str(include_build_info!())
+        .unwrap_or(ResultOfBuildInfo { build_number: 0, dependencies: vec![] }))
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
@@ -158,9 +157,7 @@ pub enum AppRequestResult {
 
 impl Default for AppRequestResult {
     fn default() -> Self {
-        AppRequestResult::Error {
-            text: Default::default(),
-        }
+        AppRequestResult::Error { text: Default::default() }
     }
 }
 
@@ -186,9 +183,7 @@ pub async fn resolve_app_request(
         .remove(&request_id)
         .ok_or(Error::no_such_request(request_id))?;
 
-    sender
-        .send(params.result)
-        .map_err(|_| Error::can_not_send_request_result(request_id))
+    sender.send(params.result).map_err(|_| Error::can_not_send_request_result(request_id))
 }
 
 /// Returns Core Library API reference

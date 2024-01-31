@@ -1,6 +1,6 @@
-use crate::net::{ParamsOfQueryCollection, ResultOfQueryCollection};
-
 use super::*;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::ResultOfQueryCollection;
 
 #[test]
 fn test_parallel_requests() {
@@ -78,7 +78,7 @@ fn test_deferred_init() {
             }),
         )
         .unwrap_err();
-    //println!("{:#?}", result);
+    // println!("{:#?}", result);
 
     assert_eq!(result.code, crate::net::ErrorCode::QueryFailed as u32);
 }

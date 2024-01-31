@@ -1,14 +1,20 @@
-use crate::message_monitor::message::{MessageMonitoringParams, MessageMonitoringResult};
-use crate::message_monitor::monitor_queues::{BufferedMessages, MonitorQueues, ADDING_TIMEOUT_MS};
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
+
+use crate::message_monitor::message::MessageMonitoringParams;
+use crate::message_monitor::message::MessageMonitoringResult;
+use crate::message_monitor::monitor_queues::BufferedMessages;
+use crate::message_monitor::monitor_queues::MonitorQueues;
+use crate::message_monitor::monitor_queues::ADDING_TIMEOUT_MS;
 use crate::message_monitor::queue::BufferedMessage;
 use crate::sdk_services::MessageMonitorSdkServices;
 use crate::NetSubscription;
-use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex, RwLock};
 
 /// The main message monitor object.
 /// Incorporates and serves all message monitoring queues.
-///
 pub struct MessageMonitor<Sdk: MessageMonitorSdkServices + Send + Sync + 'static> {
     state: Arc<MonitorState<Sdk>>,
 }
@@ -35,7 +41,8 @@ pub struct MonitoringQueueInfo {
 
 #[derive(Deserialize, Serialize, ApiType, Copy, Clone)]
 pub enum MonitorFetchWaitMode {
-    /// If there are no resolved results yet, then monitor awaits for the next resolved result.
+    /// If there are no resolved results yet, then monitor awaits for the next
+    /// resolved result.
     AtLeastOne,
 
     /// Monitor waits until all unresolved messages will be resolved.
@@ -48,9 +55,7 @@ pub enum MonitorFetchWaitMode {
 
 impl<SdkServices: MessageMonitorSdkServices + Send + Sync> MessageMonitor<SdkServices> {
     pub fn new(sdk: SdkServices) -> Self {
-        Self {
-            state: Arc::new(MonitorState::new(sdk)),
-        }
+        Self { state: Arc::new(MonitorState::new(sdk)) }
     }
 
     pub fn monitor_messages(
@@ -66,9 +71,7 @@ impl<SdkServices: MessageMonitorSdkServices + Send + Sync> MessageMonitor<SdkSer
         queue: &str,
         wait_mode: MonitorFetchWaitMode,
     ) -> crate::error::Result<Vec<MessageMonitoringResult>> {
-        self.state
-            .fetch_next_monitor_results(queue, wait_mode)
-            .await
+        self.state.fetch_next_monitor_results(queue, wait_mode).await
     }
 
     pub fn get_queue_info(&self, queue: &str) -> crate::error::Result<MonitoringQueueInfo> {
@@ -102,10 +105,7 @@ impl<Sdk: MessageMonitorSdkServices + Send + Sync> MonitorState<Sdk> {
         }
         let mut buffered = Vec::new();
         for message in messages {
-            buffered.push(BufferedMessage {
-                hash: message.message.hash(&self.sdk)?,
-                message,
-            });
+            buffered.push(BufferedMessage { hash: message.message.hash(&self.sdk)?, message });
         }
 
         let mut queues = self.queues.write().unwrap();
@@ -192,10 +192,7 @@ impl<Sdk: MessageMonitorSdkServices + Send + Sync> MonitorState<Sdk> {
             .sdk
             .subscribe_for_recent_ext_in_message_statuses(buffered.messages, callback)
             .await?;
-        self.active_subscriptions
-            .lock()
-            .unwrap()
-            .insert(subscription.0, buffered.hashes);
+        self.active_subscriptions.lock().unwrap().insert(subscription.0, buffered.hashes);
         Ok(())
     }
 
@@ -231,10 +228,7 @@ impl<Sdk: MessageMonitorSdkServices + Send + Sync> MonitorState<Sdk> {
                 }
             }
         }
-        empty_subscriptions
-            .into_iter()
-            .map(|x| NetSubscription(x))
-            .collect()
+        empty_subscriptions.into_iter().map(|x| NetSubscription(x)).collect()
     }
 
     fn fetch_next(

@@ -1,30 +1,36 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
 use std::sync::Arc;
 
-use crate::client::{AppObject, ClientContext, Error};
-use crate::crypto::{EncryptionBoxInfo, RegisteredEncryptionBox, RegisteredSigningBox, SigningBox};
-use crate::crypto::boxes::crypto_box::{AppPasswordProvider, ParamsOfCreateCryptoBox, RegisteredCryptoBox, ResultOfGetPassword};
+use crate::client::AppObject;
+use crate::client::ClientContext;
+use crate::client::Error;
+use crate::crypto::boxes::crypto_box::AppPasswordProvider;
+use crate::crypto::boxes::crypto_box::ParamsOfCreateCryptoBox;
+use crate::crypto::boxes::crypto_box::RegisteredCryptoBox;
+use crate::crypto::boxes::crypto_box::ResultOfGetPassword;
 use crate::crypto::boxes::encryption_box::EncryptionBox;
 use crate::crypto::internal::hex_decode_secret_const;
+use crate::crypto::EncryptionBoxInfo;
+use crate::crypto::RegisteredEncryptionBox;
+use crate::crypto::RegisteredSigningBox;
+use crate::crypto::SigningBox;
 use crate::encoding::base64_decode;
 use crate::error::ClientResult;
 
 /// Signing box callbacks.
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
-#[serde(tag="type")]
+#[serde(tag = "type")]
 pub enum ParamsOfAppSigningBox {
     /// Get signing box public key
     GetPublicKey,
@@ -37,7 +43,7 @@ pub enum ParamsOfAppSigningBox {
 
 /// Returning values from signing box callbacks.
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
-#[serde(tag="type")]
+#[serde(tag = "type")]
 pub enum ResultOfAppSigningBox {
     /// Result of getting public key
     GetPublicKey {
@@ -68,24 +74,23 @@ impl SigningBox for ExternalSigningBox {
 
         match response {
             ResultOfAppSigningBox::GetPublicKey { public_key } => {
-               crate::encoding::hex_decode(&public_key)
-            },
-            _ => Err(Error::unexpected_callback_response(
-                "SigningBoxGetPublicKey", &response))
+                crate::encoding::hex_decode(&public_key)
+            }
+            _ => Err(Error::unexpected_callback_response("SigningBoxGetPublicKey", &response)),
         }
     }
 
     async fn sign(&self, _context: Arc<ClientContext>, unsigned: &[u8]) -> ClientResult<Vec<u8>> {
-        let response = self.app_object.call(ParamsOfAppSigningBox::Sign {
-            unsigned: base64::encode(unsigned)
-        }).await?;
+        let response = self
+            .app_object
+            .call(ParamsOfAppSigningBox::Sign { unsigned: base64::encode(unsigned) })
+            .await?;
 
         match response {
             ResultOfAppSigningBox::Sign { signature: signed } => {
-               crate::encoding::hex_decode(&signed)
-            },
-            _ => Err(Error::unexpected_callback_response(
-                "SigningBoxSign", &response))
+                crate::encoding::hex_decode(&signed)
+            }
+            _ => Err(Error::unexpected_callback_response("SigningBoxSign", &response)),
         }
     }
 }
@@ -101,7 +106,7 @@ pub(crate) async fn register_signing_box(
 
 /// Interface for data encryption/decryption
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
-#[serde(tag="type")]
+#[serde(tag = "type")]
 pub enum ParamsOfAppEncryptionBox {
     /// Get encryption box info
     GetInfo,
@@ -114,17 +119,15 @@ pub enum ParamsOfAppEncryptionBox {
     Decrypt {
         /// Data, encoded in Base64
         data: String,
-    }
+    },
 }
 
 /// Returning values from signing box callbacks.
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
-#[serde(tag="type")]
+#[serde(tag = "type")]
 pub enum ResultOfAppEncryptionBox {
     /// Result of getting encryption box info
-    GetInfo {
-        info: EncryptionBoxInfo,
-    },
+    GetInfo { info: EncryptionBoxInfo },
     /// Result of encrypting data
     Encrypt {
         /// Encrypted data, encoded in Base64
@@ -154,8 +157,7 @@ impl EncryptionBox for ExternalEncryptionBox {
 
         match response {
             ResultOfAppEncryptionBox::GetInfo { info } => Ok(info),
-            _ => Err(Error::unexpected_callback_response(
-                "EncryptionBoxGetInfo", &response))
+            _ => Err(Error::unexpected_callback_response("EncryptionBoxGetInfo", &response)),
         }
     }
 
@@ -165,8 +167,7 @@ impl EncryptionBox for ExternalEncryptionBox {
 
         match response {
             ResultOfAppEncryptionBox::Encrypt { data } => Ok(data),
-            _ => Err(Error::unexpected_callback_response(
-                "EncryptionBoxEncrypt", &response))
+            _ => Err(Error::unexpected_callback_response("EncryptionBoxEncrypt", &response)),
         }
     }
 
@@ -176,8 +177,7 @@ impl EncryptionBox for ExternalEncryptionBox {
 
         match response {
             ResultOfAppEncryptionBox::Decrypt { data } => Ok(data),
-            _ => Err(Error::unexpected_callback_response(
-                "EncryptionBoxDecrypt", &response))
+            _ => Err(Error::unexpected_callback_response("EncryptionBoxDecrypt", &response)),
         }
     }
 }
@@ -201,30 +201,31 @@ pub(crate) async fn register_encryption_box(
 ///
 /// Application should generate a temporary nacl_box_keypair
 /// and encrypt the password with naclbox function using nacl_box_keypair.secret
-/// and encryption_public_key keys + nonce = 24-byte prefix of encryption_public_key.
+/// and encryption_public_key keys + nonce = 24-byte prefix of
+/// encryption_public_key.
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
-#[serde(tag="type")]
+#[serde(tag = "type")]
 pub enum ParamsOfAppPasswordProvider {
     GetPassword {
         /// Temporary library pubkey, that is used on application side for
-        /// password encryption, along with application temporary private key and nonce.
-        /// Used for password decryption on library side.
+        /// password encryption, along with application temporary private key
+        /// and nonce. Used for password decryption on library side.
         encryption_public_key: String,
-    }
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
-#[serde(tag="type")]
+#[serde(tag = "type")]
 pub enum ResultOfAppPasswordProvider {
     GetPassword {
         /// Password, encrypted and encoded to base64.
         /// Crypto box uses this password to decrypt its secret (seed phrase).
         encrypted_password: String,
-        /// Hex encoded public key of a temporary key pair, used for password encryption
-        /// on application side. Used together with `encryption_public_key` to decode
-        /// `encrypted_password`.
+        /// Hex encoded public key of a temporary key pair, used for password
+        /// encryption on application side. Used together with
+        /// `encryption_public_key` to decode `encrypted_password`.
         app_encryption_pubkey: String,
-    }
+    },
 }
 
 struct ExternalPasswordProvider {
@@ -233,13 +234,16 @@ struct ExternalPasswordProvider {
 
 #[async_trait::async_trait]
 impl AppPasswordProvider for ExternalPasswordProvider {
-    async fn get_password(&self, encryption_public_key: &sodalite::BoxPublicKey) -> ClientResult<ResultOfGetPassword> {
+    async fn get_password(
+        &self,
+        encryption_public_key: &sodalite::BoxPublicKey,
+    ) -> ClientResult<ResultOfGetPassword> {
         let ResultOfAppPasswordProvider::GetPassword { encrypted_password, app_encryption_pubkey } =
-            self.app_object.call(
-                ParamsOfAppPasswordProvider::GetPassword {
+            self.app_object
+                .call(ParamsOfAppPasswordProvider::GetPassword {
                     encryption_public_key: hex::encode(encryption_public_key),
-                },
-            ).await?;
+                })
+                .await?;
 
         Ok(ResultOfGetPassword {
             encrypted_password: base64_decode(&encrypted_password)?,
@@ -250,15 +254,17 @@ impl AppPasswordProvider for ExternalPasswordProvider {
 
 /// Creates a Crypto Box instance.
 ///
-/// Crypto Box is a root crypto object, that encapsulates some secret (seed phrase usually)
-/// in encrypted form and acts as a factory for all crypto primitives used in SDK:
-/// keys for signing and encryption, derived from this secret.
+/// Crypto Box is a root crypto object, that encapsulates some secret (seed
+/// phrase usually) in encrypted form and acts as a factory for all crypto
+/// primitives used in SDK: keys for signing and encryption, derived from this
+/// secret.
 ///
-/// Crypto Box encrypts original Seed Phrase with salt and password that is retrieved
-/// from `password_provider` callback, implemented on Application side.
+/// Crypto Box encrypts original Seed Phrase with salt and password that is
+/// retrieved from `password_provider` callback, implemented on Application
+/// side.
 ///
-/// When used, decrypted secret shows up in core library's memory for a very short period
-/// of time and then is immediately overwritten with zeroes.
+/// When used, decrypted secret shows up in core library's memory for a very
+/// short period of time and then is immediately overwritten with zeroes.
 #[api_function]
 pub(crate) async fn create_crypto_box(
     context: Arc<ClientContext>,
@@ -269,5 +275,6 @@ pub(crate) async fn create_crypto_box(
         context,
         params,
         Arc::new(ExternalPasswordProvider { app_object: password_provider }),
-    ).await
+    )
+    .await
 }

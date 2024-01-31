@@ -1,8 +1,16 @@
-use super::{context::str_hex_to_utf8, Error, JsonValue, TonClient};
-use crate::boc::{get_compiler_version, parse_account, ParamsOfGetCompilerVersion, ParamsOfParse};
+use serde::Deserialize;
+use serde::Deserializer;
+
+use super::context::str_hex_to_utf8;
+use super::Error;
+use super::JsonValue;
+use super::TonClient;
+use crate::boc::get_compiler_version;
+use crate::boc::parse_account;
+use crate::boc::ParamsOfGetCompilerVersion;
+use crate::boc::ParamsOfParse;
 use crate::encoding::account_decode;
 use crate::error::ClientResult;
-use serde::{Deserialize, Deserializer};
 
 #[derive(Deserialize, Default, Debug, Clone)]
 #[serde(default)]
@@ -53,7 +61,8 @@ pub(crate) fn parse_debot_info(value: Option<JsonValue>) -> Result<DInfo, String
     let value = value.unwrap_or(json!({}));
     let mut info: DInfo = serde_json::from_value(value)
         .map_err(|e| format!("failed to parse \"DebotInfo\": {}", e))?;
-    // Ignore error because debot ABI can be loaded in 2 ways: as string or as bytes.
+    // Ignore error because debot ABI can be loaded in 2 ways: as string or as
+    // bytes.
     let _ = convert_to_utf8(&mut info.dabi);
     Ok(info)
 }
@@ -63,17 +72,12 @@ pub(crate) fn fetch_target_abi_version(
     account_boc: String,
 ) -> ClientResult<String> {
     let json_value = parse_account(ton.clone(), ParamsOfParse { boc: account_boc })?.parsed;
-    let code = json_value["code"]
-        .as_str()
-        .ok_or(Error::debot_has_no_code())?
-        .to_owned();
+    let code = json_value["code"].as_str().ok_or(Error::debot_has_no_code())?.to_owned();
     let result = get_compiler_version(ton.clone(), ParamsOfGetCompilerVersion { code });
 
     // If If DeBot's code does not contain version or SDK failed to read version,
     // then set empty string.
-    let version = result
-        .map(|r| r.version.unwrap_or_default())
-        .unwrap_or_default();
+    let version = result.map(|r| r.version.unwrap_or_default()).unwrap_or_default();
     let mut iter = version.split(' ');
     let dabi_version = if let Some("sol") = iter.next() {
         // if DeBot's code contains version and it's a solidity DeBot

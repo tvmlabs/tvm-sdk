@@ -1,6 +1,10 @@
-use crate::message_monitor::queue::{BufferedMessage, MonitoringQueue};
-use crate::{MessageMonitoringParams, MonitoringQueueInfo};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
+
+use crate::message_monitor::queue::BufferedMessage;
+use crate::message_monitor::queue::MonitoringQueue;
+use crate::MessageMonitoringParams;
+use crate::MonitoringQueueInfo;
 
 pub(crate) const ADDING_TIMEOUT_MS: u64 = 1000;
 const FETCHING_TIMEOUT_MS: u64 = 5000;
@@ -18,24 +22,15 @@ pub struct BufferedMessages {
 
 impl MonitorQueues {
     pub fn new() -> Self {
-        Self {
-            queues: HashMap::new(),
-            last_adding_time_ms: 0,
-            last_fetching_time_ms: 0,
-        }
+        Self { queues: HashMap::new(), last_adding_time_ms: 0, last_fetching_time_ms: 0 }
     }
 
     pub fn ensure(&mut self, name: &str) -> &mut MonitoringQueue {
-        self.queues
-            .entry(name.to_string())
-            .or_insert_with(|| MonitoringQueue::new())
+        self.queues.entry(name.to_string()).or_insert_with(|| MonitoringQueue::new())
     }
 
     pub fn get_info(&self, queue: &str) -> MonitoringQueueInfo {
-        self.queues
-            .get(queue)
-            .map(|x| x.get_info())
-            .unwrap_or_default()
+        self.queues.get(queue).map(|x| x.get_info()).unwrap_or_default()
     }
 
     pub fn remove(&mut self, queue: &str) {
@@ -54,10 +49,7 @@ impl MonitorQueues {
     }
 
     pub fn has_buffered(&self) -> bool {
-        self.queues
-            .values()
-            .find(|x| !x.buffered.is_empty())
-            .is_some()
+        self.queues.values().find(|x| !x.buffered.is_empty()).is_some()
     }
 
     pub fn get_buffered(&self, now_ms: u64) -> Option<BufferedMessages> {
@@ -69,10 +61,7 @@ impl MonitorQueues {
             return None;
         }
 
-        let mut buffered = BufferedMessages {
-            messages: Vec::new(),
-            hashes: HashSet::new(),
-        };
+        let mut buffered = BufferedMessages { messages: Vec::new(), hashes: HashSet::new() };
         for queue in self.queues.values() {
             for message in &queue.buffered {
                 if !buffered.hashes.contains(&message.hash) {
@@ -81,11 +70,7 @@ impl MonitorQueues {
                 }
             }
         }
-        if !buffered.messages.is_empty() {
-            Some(buffered)
-        } else {
-            None
-        }
+        if !buffered.messages.is_empty() { Some(buffered) } else { None }
     }
 
     pub fn start_resolving(&mut self, now_ms: u64, hashes: HashSet<String>) {

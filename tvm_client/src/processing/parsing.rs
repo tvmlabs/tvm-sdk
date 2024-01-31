@@ -1,11 +1,17 @@
-use crate::abi::{decode_message, Abi, MessageBodyType, ParamsOfDecodeMessage};
-use crate::boc::{parse_transaction, ParamsOfParse};
+use std::sync::Arc;
+
+use serde_json::Value;
+
+use crate::abi::decode_message;
+use crate::abi::Abi;
+use crate::abi::MessageBodyType;
+use crate::abi::ParamsOfDecodeMessage;
+use crate::boc::parse_transaction;
+use crate::boc::ParamsOfParse;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
 use crate::processing::fetching::TransactionBoc;
 use crate::processing::types::DecodedOutput;
-use serde_json::Value;
-use std::sync::Arc;
 
 pub(crate) fn parse_transaction_boc(
     context: Arc<ClientContext>,
@@ -15,16 +21,7 @@ pub(crate) fn parse_transaction_boc(
     for message in transaction.out_messages {
         messages.push(message.boc);
     }
-    Ok((
-        parse_transaction(
-            context,
-            ParamsOfParse {
-                boc: transaction.boc,
-            },
-        )?
-        .parsed,
-        messages,
-    ))
+    Ok((parse_transaction(context, ParamsOfParse { boc: transaction.boc })?.parsed, messages))
 }
 
 pub(crate) fn decode_output(
@@ -37,11 +34,7 @@ pub(crate) fn decode_output(
     for message in messages {
         let decode_result = decode_message(
             context.clone(),
-            ParamsOfDecodeMessage {
-                message,
-                abi: abi.clone(),
-                ..Default::default()
-            },
+            ParamsOfDecodeMessage { message, abi: abi.clone(), ..Default::default() },
         );
         let decoded = match decode_result {
             Ok(decoded) => {
@@ -54,8 +47,5 @@ pub(crate) fn decode_output(
         };
         out_messages.push(decoded);
     }
-    Ok(DecodedOutput {
-        out_messages,
-        output,
-    })
+    Ok(DecodedOutput { out_messages, output })
 }
