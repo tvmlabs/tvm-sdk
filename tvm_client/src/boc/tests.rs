@@ -17,6 +17,8 @@ use serde_json::Value;
 use tvm_block::MsgAddrStd;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
@@ -269,7 +271,7 @@ fn test_unpinned_cache() {
     let boc2 = TestClient::tvc(crate::tests::SUBSCRIBE, None).unwrap();
 
     let boc_max_size =
-        std::cmp::max(base64::decode(&boc1).unwrap().len(), base64::decode(&boc2).unwrap().len());
+        std::cmp::max(base64_decode(&boc1).unwrap().len(), base64_decode(&boc2).unwrap().len());
     let client = TestClient::new_with_config(json!({
         "boc": {
             "cache_max_size": boc_max_size / 1024 + 1
@@ -320,7 +322,7 @@ fn get_boc_depth() {
     let result: ResultOfGetBocDepth = client
         .request(
             "boc.get_boc_depth",
-            ParamsOfGetBocDepth { boc: base64::encode(include_bytes!("test_data/account.boc")) },
+            ParamsOfGetBocDepth { boc: base64_encode(include_bytes!("test_data/account.boc")) },
         )
         .unwrap();
 
@@ -385,7 +387,7 @@ fn parse_account() {
     let result: ResultOfParse = client
         .request(
             "boc.parse_account",
-            ParamsOfParse { boc: base64::encode(&include_bytes!("test_data/account.boc")) },
+            ParamsOfParse { boc: base64_encode(&include_bytes!("test_data/account.boc")) },
         )
         .unwrap();
 
@@ -419,7 +421,7 @@ fn parse_pruned_account() {
     let boc = proof.write_to_bytes().unwrap();
 
     let result: ResultOfParse =
-        client.request("boc.parse_account", ParamsOfParse { boc: base64::encode(&boc) }).unwrap();
+        client.request("boc.parse_account", ParamsOfParse { boc: base64_encode(&boc) }).unwrap();
 
     assert_eq!(
         result.parsed["id"],
@@ -485,7 +487,7 @@ fn parse_shardstate() {
             ParamsOfParseShardstate {
                 id: String::from("zerostate:-1"),
                 workchain_id: -1,
-                boc: base64::encode(&include_bytes!("test_data/zerostate.boc")),
+                boc: base64_encode(&include_bytes!("test_data/zerostate.boc")),
             },
         )
         .unwrap();
@@ -503,30 +505,27 @@ fn get_blockchain_config() {
         .request(
             "boc.get_blockchain_config",
             ParamsOfGetBlockchainConfig {
-                block_boc: base64::encode(&include_bytes!("test_data/block.boc")),
+                block_boc: base64_encode(&include_bytes!("test_data/block.boc")),
             },
         )
         .unwrap();
 
-    assert_eq!(result.config_boc, base64::encode(&include_bytes!("test_data/block_config.boc")));
+    assert_eq!(result.config_boc, base64_encode(&include_bytes!("test_data/block_config.boc")));
 
     let result: ResultOfGetBlockchainConfig = client
         .request(
             "boc.get_blockchain_config",
             ParamsOfGetBlockchainConfig {
-                block_boc: base64::encode(&include_bytes!("test_data/zerostate.boc")),
+                block_boc: base64_encode(&include_bytes!("test_data/zerostate.boc")),
             },
         )
         .unwrap();
 
-    assert_eq!(
-        result.config_boc,
-        base64::encode(&include_bytes!("test_data/zerostate_config.boc"))
-    );
+    assert_eq!(result.config_boc, base64_encode(&include_bytes!("test_data/zerostate_config.boc")));
 }
 
 fn read_salted_boc(name: &str) -> String {
-    base64::encode(&std::fs::read("src/boc/test_data/salt/".to_owned() + name).unwrap())
+    base64_encode(&std::fs::read("src/boc/test_data/salt/".to_owned() + name).unwrap())
 }
 
 fn check_salt(
@@ -712,7 +711,7 @@ fn test_state_init_encode() {
 
     check_encode_state_init(&client, state_init.unwrap(), decoded);
 
-    let state_init = base64::encode(include_bytes!("test_data/state_init_lib.boc"));
+    let state_init = base64_encode(include_bytes!("test_data/state_init_lib.boc"));
     let decoded = ResultOfDecodeStateInit {
         code: Some(String::from(
             "te6ccgEBBAEAhwABFP8A9KQT9LzyyAsBAgEgAwIA36X//3aiaGmP6f/o5CxSZ4WPkOeF/+T2qmRnxET/s2X/wQgC+vCAfQFANeegZLh9gEB354V/wQgD39JAfQFANeegZLhkZ82JA6Mrm6RBCAOt5or9AUA156BF6kMrY2N5YQO7e5NjIQxni2S4fYB9gEAAAtI=",

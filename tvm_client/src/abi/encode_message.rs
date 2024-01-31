@@ -7,6 +7,7 @@ use tvm_block::CurrencyCollection;
 use tvm_block::MsgAddressInt;
 use tvm_sdk::ContractImage;
 use tvm_sdk::FunctionCallSet;
+use tvm_types::base64_encode;
 use tvm_types::Cell;
 
 use super::types::extend_data_to_sign;
@@ -550,8 +551,8 @@ pub async fn encode_message(
             .await?;
 
     Ok(ResultOfEncodeMessage {
-        message: base64::encode(&message),
-        data_to_sign: data_to_sign.map(|data| base64::encode(&data)),
+        message: base64_encode(&message),
+        data_to_sign: data_to_sign.map(|data| base64_encode(&data)),
         address: account_encode(&address),
         message_id: get_boc_hash(&message)?,
     })
@@ -711,7 +712,7 @@ pub fn encode_internal_message(
     };
 
     Ok(ResultOfEncodeInternalMessage {
-        message: base64::encode(&message),
+        message: base64_encode(&message),
         address: account_encode(&address),
         message_id: get_boc_hash(&message)?,
     })
@@ -847,15 +848,15 @@ pub async fn encode_message_body(
                 &body,
             )?;
             return Ok(ResultOfEncodeMessageBody {
-                body: base64::encode(&body),
+                body: base64_encode(&body),
                 data_to_sign: None,
             });
         }
     }
 
     Ok(ResultOfEncodeMessageBody {
-        body: base64::encode(&body),
-        data_to_sign: data_to_sign.map(|x| base64::encode(&x)),
+        body: base64_encode(&body),
+        data_to_sign: data_to_sign.map(|x| base64_encode(&x)),
     })
 }
 
@@ -899,7 +900,7 @@ pub fn attach_signature(
         &boc.bytes("message")?,
     )?;
     Ok(ResultOfAttachSignature {
-        message: base64::encode(&signed),
+        message: base64_encode(&signed),
         message_id: get_boc_hash(&signed)?,
     })
 }
@@ -939,5 +940,5 @@ pub fn attach_signature_to_message_body(
         Some(&hex_decode(&params.public_key)?),
         &boc.bytes("message body")?,
     )?;
-    Ok(ResultOfAttachSignatureToMessageBody { body: base64::encode(&signed) })
+    Ok(ResultOfAttachSignatureToMessageBody { body: base64_encode(&signed) })
 }

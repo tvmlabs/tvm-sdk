@@ -1,4 +1,6 @@
 use serde_json::Value;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 
 use super::dinterface::decode_answer_id;
 use super::dinterface::get_arg;
@@ -66,7 +68,7 @@ impl Base64Interface {
     fn encode(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let data_to_encode = hex::decode(&get_arg(args, "data")?).map_err(|e| format!("{}", e))?;
-        let encoded = base64::encode(&data_to_encode);
+        let encoded = base64_encode(&data_to_encode);
         Ok((answer_id, json!({ "base64": encoded })))
     }
 
@@ -74,7 +76,7 @@ impl Base64Interface {
         let answer_id = decode_answer_id(args)?;
         let str_to_decode = get_arg(args, "base64")?;
         let decoded =
-            base64::decode(&str_to_decode).map_err(|e| format!("invalid base64: {}", e))?;
+            base64_decode(&str_to_decode).map_err(|e| format!("invalid base64: {}", e))?;
         Ok((answer_id, json!({ "data": hex::encode(decoded) })))
     }
 }

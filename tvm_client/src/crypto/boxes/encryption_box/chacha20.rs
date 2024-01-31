@@ -4,6 +4,7 @@ use chacha20::cipher::NewStreamCipher;
 use chacha20::cipher::SyncStreamCipher;
 use chacha20::Key;
 use chacha20::Nonce;
+use tvm_types::base64_encode;
 use zeroize::Zeroize;
 
 use crate::crypto::internal::hex_decode_secret;
@@ -52,7 +53,7 @@ impl ChaCha20EncryptionBox {
         let mut data = SecretBuf(base64_decode(data)?);
         cipher.apply_keystream(&mut data.0);
 
-        Ok(base64::encode(&data.0))
+        Ok(base64_encode(&data.0))
     }
 }
 

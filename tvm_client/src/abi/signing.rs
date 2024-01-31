@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use tvm_types::base64_encode;
+
 use crate::crypto::KeyPair;
 use crate::crypto::SigningBoxHandle;
 use crate::error::ClientResult;
@@ -11,7 +13,7 @@ pub enum Signer {
     /// No keys are provided. Creates an unsigned message.
     None,
     /// Only public key is provided in unprefixed hex string format to generate
-    /// unsigned message and `data_to_sign` which can be signed later.  
+    /// unsigned message and `data_to_sign` which can be signed later.
     External { public_key: String },
     /// Key pair is provided for signing
     Keys { keys: KeyPair },
@@ -44,7 +46,7 @@ impl Signer {
                     context,
                     crate::crypto::ParamsOfSigningBoxSign {
                         signing_box: handle.clone(),
-                        unsigned: base64::encode(data_to_sign),
+                        unsigned: base64_encode(data_to_sign),
                     },
                 )
                 .await?;

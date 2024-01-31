@@ -14,6 +14,7 @@ use std::fmt::Formatter;
 
 use base64::Engine;
 use ed25519_dalek::SigningKey;
+use tvm_types::base64_encode;
 
 use super::internal::hex_decode_secret_const;
 use super::internal::SecretBufConst;
@@ -147,7 +148,7 @@ pub fn sign(
 ) -> ClientResult<ResultOfSign> {
     let (signed, signature) =
         sign_using_keys(&base64_decode(&params.unsigned)?, &params.keys.decode()?)?;
-    Ok(ResultOfSign { signed: base64::encode(&signed), signature: hex::encode(signature) })
+    Ok(ResultOfSign { signed: base64_encode(&signed), signature: hex::encode(signature) })
 }
 
 //-------------------------------------------------------------------------------- verify_signature
@@ -184,5 +185,5 @@ pub fn verify_signature(
     )
     .map_err(|_| crypto::Error::nacl_sign_failed("verify signature failed"))?;
     unsigned.resize(len, 0);
-    Ok(ResultOfVerifySignature { unsigned: base64::encode(&unsigned) })
+    Ok(ResultOfVerifySignature { unsigned: base64_encode(&unsigned) })
 }

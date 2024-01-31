@@ -14,6 +14,8 @@ use std::str::FromStr;
 
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 use tvm_types::UInt256;
 
 use crate::boc::BocCacheType;
@@ -32,7 +34,7 @@ pub fn deserialize_cell_from_base64(
     b64: &str,
     name: &str,
 ) -> ClientResult<(Vec<u8>, tvm_types::Cell)> {
-    let bytes = base64::decode(&b64)
+    let bytes = base64_decode(&b64)
         .map_err(|err| Error::invalid_boc(format!("error decode {} BOC base64: {}", name, err)))?;
 
     let cell = tvm_types::boc::read_single_root_boc(&bytes).map_err(|err| {
@@ -102,7 +104,7 @@ pub fn serialize_cell_to_bytes(cell: &tvm_types::Cell, name: &str) -> ClientResu
 }
 
 pub fn serialize_cell_to_base64(cell: &tvm_types::Cell, name: &str) -> ClientResult<String> {
-    Ok(base64::encode(&serialize_cell_to_bytes(cell, name)?))
+    Ok(base64_encode(&serialize_cell_to_bytes(cell, name)?))
 }
 
 pub fn serialize_object_to_base64<S: Serializable>(object: &S, name: &str) -> ClientResult<String> {

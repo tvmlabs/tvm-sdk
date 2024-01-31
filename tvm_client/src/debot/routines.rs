@@ -1,5 +1,7 @@
 use chrono::Local;
 use chrono::TimeZone;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 
 use super::TonClient;
 use crate::boc::parse_account;
@@ -97,7 +99,7 @@ pub async fn call_routine(
             debug!("encryptAuth({})", arg_json);
             let encrypted = nacl_box(ton, arg_json)?;
             Ok(json!({
-                "encrypted": hex::encode(base64::decode(&encrypted).unwrap())
+                "encrypted": hex::encode(base64_decode(&encrypted).unwrap())
             }))
         }
         "genKeypairFromSecret" => {
@@ -114,7 +116,7 @@ pub async fn call_routine(
             let arg_json = arg_json?;
             debug!("genRandom({})", arg_json);
             let rnd = generate_random(ton, &arg_json)?;
-            let buf = base64::decode(&rnd)
+            let buf = base64_decode(&rnd)
                 .map_err(|e| format!("failed to decode random buffer to byte array: {}", e))?;
             Ok(json!({ "buffer": hex::encode(buf) }))
         }
@@ -188,7 +190,7 @@ pub(super) fn format_arg(params: &serde_json::Value, i: usize) -> String {
 pub(super) fn load_boc_from_file(_ton: TonClient, arg: &str) -> Result<String, String> {
     let boc =
         std::fs::read(arg).map_err(|e| format!(r#"failed to read boc file "{}": {}"#, arg, e))?;
-    Ok(base64::encode(&boc))
+    Ok(base64_encode(&boc))
 }
 
 pub(super) async fn sign_hash(
@@ -201,7 +203,7 @@ pub(super) async fn sign_hash(
     let result = signing_box_sign(
         ton,
         ParamsOfSigningBoxSign {
-            unsigned: base64::encode(&hash_as_bigint.to_bytes_be().1),
+            unsigned: base64_encode(&hash_as_bigint.to_bytes_be().1),
             signing_box: signer,
         },
     )
@@ -229,7 +231,7 @@ pub(super) fn nacl_box(ton: TonClient, args: serde_json::Value) -> Result<String
     let result = crate::crypto::nacl_box(
         ton,
         ParamsOfNaclBox {
-            decrypted: base64::encode(&get_arg(&args, "decrypted")?),
+            decrypted: base64_encode(&get_arg(&args, "decrypted")?),
             nonce: get_arg(&args, "nonce")?,
             their_public: hex::encode(public.to_bytes_be().1),
             secret: hex::encode(secret.to_bytes_be().1),

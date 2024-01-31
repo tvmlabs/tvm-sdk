@@ -21,6 +21,7 @@ use aes::NewBlockCipher;
 use base64::Engine;
 use block_modes::BlockMode;
 use block_modes::Cbc;
+use tvm_types::base64_encode;
 use zeroize::ZeroizeOnDrop;
 
 use super::CipherMode;
@@ -164,7 +165,7 @@ impl EncryptionBox for AesEncryptionBox {
             }
             _ => return Err(Error::unsupported_cipher_mode(&format!("{:?}", self.mode))),
         };
-        Ok(base64::encode(result))
+        Ok(base64_encode(result))
     }
 
     /// Decrypts data
@@ -182,6 +183,6 @@ impl EncryptionBox for AesEncryptionBox {
             }
             _ => return Err(Error::unsupported_cipher_mode(&format!("{:?}", self.mode))),
         }
-        Ok(base64::encode(&data))
+        Ok(base64_encode(&data))
     }
 }

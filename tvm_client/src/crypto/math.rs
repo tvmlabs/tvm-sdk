@@ -13,6 +13,7 @@ use std::fmt::Display;
 
 use num_bigint::BigInt;
 use rand::RngCore;
+use tvm_types::base64_encode;
 
 use crate::client::ClientContext;
 use crate::crypto;
@@ -229,5 +230,5 @@ pub fn generate_random_bytes(
     let mut bytes: Vec<u8> = Vec::new();
     bytes.resize(params.length as usize, 0);
     rng.fill_bytes(&mut bytes);
-    Ok(ResultOfGenerateRandomBytes { bytes: base64::encode(&bytes) })
+    Ok(ResultOfGenerateRandomBytes { bytes: base64_encode(&bytes) })
 }
