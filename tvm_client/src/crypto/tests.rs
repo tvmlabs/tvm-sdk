@@ -3,6 +3,9 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
+
 use super::*;
 use crate::client::ParamsOfAppRequest;
 use crate::crypto::boxes::crypto_box::BoxEncryptionAlgorithm;
@@ -78,11 +81,11 @@ use crate::json_interface::crypto::ResultOfAppSigningBox;
 use crate::tests::TestClient;
 
 fn base64_from_hex(hex: &str) -> String {
-    base64::encode(&hex::decode(hex).unwrap())
+    base64_encode(&hex::decode(hex).unwrap())
 }
 
 fn text_from_base64(b64: &str) -> String {
-    String::from_utf8(base64::decode(b64).unwrap()).unwrap()
+    String::from_utf8(base64_decode(b64).unwrap()).unwrap()
 }
 
 #[test]
@@ -95,7 +98,7 @@ fn encryption() {
         .request(
             "crypto.chacha20",
             ParamsOfChaCha20 {
-                data: base64::encode("Message"),
+                data: base64_encode("Message"),
                 key: key.clone(),
                 nonce: nonce.clone(),
             },
@@ -157,7 +160,7 @@ fn hash() {
     let result: ResultOfHash = client
         .request(
             "crypto.sha512",
-            ParamsOfHash { data: base64::encode("Message to hash with sha 512") },
+            ParamsOfHash { data: base64_encode("Message to hash with sha 512") },
         )
         .unwrap();
     assert_eq!(
@@ -168,7 +171,7 @@ fn hash() {
     let result: ResultOfHash = client
         .request(
             "crypto.sha256",
-            ParamsOfHash { data: base64::encode("Message to hash with sha 256") },
+            ParamsOfHash { data: base64_encode("Message to hash with sha 256") },
         )
         .unwrap();
     assert_eq!("16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5", result.hash);
@@ -194,7 +197,7 @@ fn hash() {
     let result: ResultOfHash = client
         .request(
             "crypto.sha256",
-            ParamsOfHash { data: base64::encode("Message to hash with sha 256") },
+            ParamsOfHash { data: base64_encode("Message to hash with sha 256") },
         )
         .unwrap();
     assert_eq!("16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5", result.hash);
@@ -225,7 +228,7 @@ fn keys() {
         .request(
             "crypto.sign",
             ParamsOfSign {
-                unsigned: base64::encode("Test Message"),
+                unsigned: base64_encode("Test Message"),
                 keys: KeyPair {
                     public: "1869b7ef29d58026217e9cf163cbfbd0de889bdf1bf4daebf5433a312f5b8d6e"
                         .into(),
@@ -260,8 +263,8 @@ fn scrypt() {
         .request(
             "crypto.scrypt",
             ParamsOfScrypt {
-                password: base64::encode("Test Password"),
-                salt: base64::encode("Test Salt"),
+                password: base64_encode("Test Password"),
+                salt: base64_encode("Test Salt"),
                 log_n: 10,
                 r: 8,
                 p: 16,
@@ -293,7 +296,7 @@ fn nacl() {
     assert_eq!(result.public, "aa5533618573860a7e1bf19f34bd292871710ed5b2eafa0dcdbb33405f2231c6");
 
     let result: ResultOfNaclSign = client.request("crypto.nacl_sign", ParamsOfNaclSign {
-        unsigned: base64::encode("Test Message"),
+        unsigned: base64_encode("Test Message"),
         secret: "56b6a77093d6fdf14e593f36275d872d75de5b341942376b2a08759f3cbae78f1869b7ef29d58026217e9cf163cbfbd0de889bdf1bf4daebf5433a312f5b8d6e".into(),
     }).unwrap();
     assert_eq!(
@@ -308,7 +311,7 @@ fn nacl() {
     assert_eq!(text_from_base64(&result.unsigned), "Test Message");
 
     let result: ResultOfNaclSignDetached = client.request("crypto.nacl_sign_detached", ParamsOfNaclSign {
-        unsigned: base64::encode("Test Message"),
+        unsigned: base64_encode("Test Message"),
         secret: "56b6a77093d6fdf14e593f36275d872d75de5b341942376b2a08759f3cbae78f1869b7ef29d58026217e9cf163cbfbd0de889bdf1bf4daebf5433a312f5b8d6e".into(),
     }).unwrap();
     assert_eq!(
@@ -320,7 +323,7 @@ fn nacl() {
         .request(
             "crypto.nacl_sign_detached_verify",
             ParamsOfNaclSignDetachedVerify {
-                unsigned: base64::encode("Test Message"),
+                unsigned: base64_encode("Test Message"),
                 signature: signature.clone(),
                 public: "1869b7ef29d58026217e9cf163cbfbd0de889bdf1bf4daebf5433a312f5b8d6e".into(),
             },
@@ -332,7 +335,7 @@ fn nacl() {
         .request(
             "crypto.nacl_sign_detached_verify",
             ParamsOfNaclSignDetachedVerify {
-                unsigned: base64::encode("Test Message 1"),
+                unsigned: base64_encode("Test Message 1"),
                 signature: signature.clone(),
                 public: "1869b7ef29d58026217e9cf163cbfbd0de889bdf1bf4daebf5433a312f5b8d6e".into(),
             },
@@ -361,7 +364,7 @@ fn nacl() {
         .request(
             "crypto.nacl_box",
             ParamsOfNaclBox {
-                decrypted: base64::encode("Test Message"),
+                decrypted: base64_encode("Test Message"),
                 nonce: "cd7f99924bf422544046e83595dd5803f17536f5c9a11746".into(),
                 their_public: "c4e2d9fe6a6baf8d1812b799856ef2a306291be7a7024837ad33a8530db79c6b"
                     .into(),
@@ -393,7 +396,7 @@ fn nacl() {
         .request(
             "crypto.nacl_secret_box",
             ParamsOfNaclSecretBox {
-                decrypted: base64::encode("Test Message"),
+                decrypted: base64_encode("Test Message"),
                 nonce: "2a33564717595ebe53d91a785b9e068aba625c8453a76e45".into(),
                 key: "8f68445b4e78c000fe4d6b7fc826879c1e63e3118379219a754ae66327764bd8".into(),
             },
@@ -419,7 +422,7 @@ fn nacl() {
         .request(
             "crypto.nacl_secret_box",
             ParamsOfNaclSecretBox {
-                decrypted: base64::encode("Text with \' and \" and : {}"),
+                decrypted: base64_encode("Text with \' and \" and : {}"),
                 nonce: "2a33564717595ebe53d91a785b9e068aba625c8453a76e45".into(),
                 key: "8f68445b4e78c000fe4d6b7fc826879c1e63e3118379219a754ae66327764bd8".into(),
             },
@@ -795,7 +798,7 @@ async fn test_signing_box() {
 
     assert_eq!(box_pubkey.pubkey, keys.public);
 
-    let unsigned = base64::encode("Test Message");
+    let unsigned = base64_encode("Test Message");
     let box_sign: ResultOfSigningBoxSign = client
         .request_async(
             "crypto.signing_box_sign",
@@ -864,7 +867,7 @@ async fn test_aes_params(key: &str, data: &str, encrypted: &str) {
     let iv = hex::encode(&std::fs::read("src/crypto/test_data/aes.iv.bin").unwrap());
     let key = hex::encode(&std::fs::read(key).unwrap());
     let data = std::fs::read(data).unwrap();
-    let encrypted = base64::encode(&std::fs::read(encrypted).unwrap());
+    let encrypted = base64_encode(&std::fs::read(encrypted).unwrap());
 
     let box_handle = client
         .request_async::<_, RegisteredEncryptionBox>(
@@ -886,7 +889,7 @@ async fn test_aes_params(key: &str, data: &str, encrypted: &str) {
             "crypto.encryption_box_encrypt",
             ParamsOfEncryptionBoxEncrypt {
                 encryption_box: box_handle.clone(),
-                data: base64::encode(&data.clone()),
+                data: base64_encode(&data.clone()),
             },
         )
         .await
@@ -902,7 +905,7 @@ async fn test_aes_params(key: &str, data: &str, encrypted: &str) {
         .await
         .unwrap();
 
-    assert_eq!(base64::decode(&result.data).unwrap()[..data.len()], data);
+    assert_eq!(base64_decode(&result.data).unwrap()[..data.len()], data);
 
     let _: () = client
         .request_async(
@@ -953,7 +956,7 @@ async fn test_chacha20_encryption_box() {
         .unwrap()
         .handle;
 
-    let decrypted: String = base64::encode("Message");
+    let decrypted: String = base64_encode("Message");
 
     let result: ResultOfEncryptionBoxEncrypt = client
         .request_async(
@@ -1024,7 +1027,7 @@ async fn test_nacl_encryption_box() {
         .unwrap()
         .handle;
 
-    let decrypted: String = base64::encode("Test Message");
+    let decrypted: String = base64_encode("Test Message");
 
     let result: ResultOfEncryptionBoxEncrypt = client
         .request_async(
@@ -1092,7 +1095,7 @@ async fn test_nacl_secret_encryption_box() {
         .unwrap()
         .handle;
 
-    let decrypted: String = base64::encode("Test Message");
+    let decrypted: String = base64_encode("Test Message");
 
     let result: ResultOfEncryptionBoxEncrypt = client
         .request_async(
@@ -1161,7 +1164,7 @@ fn password_provider(
                 .request_async(
                     "crypto.nacl_box",
                     ParamsOfNaclBox {
-                        decrypted: base64::encode(&hex::decode(password_hash.as_ref()).unwrap()),
+                        decrypted: base64_encode(&hex::decode(password_hash.as_ref()).unwrap()),
                         nonce: encryption_public_key[..48].to_string(),
                         their_public: encryption_public_key,
                         secret: keypair.secret.clone(),

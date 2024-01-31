@@ -275,7 +275,7 @@ impl ProofHelperEngineImpl {
 
         let boc = zerostates[0].get_str("boc")?;
 
-        Ok(base64::decode(boc)?)
+        Ok(base64_decode(boc)?)
     }
 
     pub(crate) async fn query_file_hash_from_next_block(
@@ -332,7 +332,7 @@ impl ProofHelperEngineImpl {
             let block_json = &blocks[0];
             let boc_base64 = block_json.get_str("boc")?;
 
-            Ok(base64::decode(boc_base64)?)
+            Ok(base64_decode(boc_base64)?)
         }
     }
 

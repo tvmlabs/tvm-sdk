@@ -10,6 +10,7 @@
 // limitations under the License.
 
 use ed25519_dalek::Verifier;
+use tvm_types::base64_encode;
 use zeroize::Zeroize;
 use zeroize::ZeroizeOnDrop;
 
@@ -83,7 +84,7 @@ pub fn nacl_sign(
     params: ParamsOfNaclSign,
 ) -> ClientResult<ResultOfNaclSign> {
     let signed = sign(&base64_decode(&params.unsigned)?, &hex_decode_secret(&params.secret)?)?;
-    Ok(ResultOfNaclSign { signed: base64::encode(&signed) })
+    Ok(ResultOfNaclSign { signed: base64_encode(&signed) })
 }
 
 //------------------------------------------------------------------------------ nacl_sign_detached
@@ -158,7 +159,7 @@ pub fn nacl_sign_open(
     )
     .map_err(|_| Error::nacl_sign_failed("box sign open failed"))?;
     unsigned.resize(len, 0);
-    Ok(ResultOfNaclSignOpen { unsigned: base64::encode(&unsigned) })
+    Ok(ResultOfNaclSignOpen { unsigned: base64_encode(&unsigned) })
 }
 
 //----------------------------------------------------------------------- nacl_sign_detached_verify
@@ -292,7 +293,7 @@ pub fn nacl_box(
     )
     .map_err(|_| Error::nacl_box_failed("box failed"))?;
     padded_output.drain(..16);
-    Ok(ResultOfNaclBox { encrypted: base64::encode(&padded_output) })
+    Ok(ResultOfNaclBox { encrypted: base64_encode(&padded_output) })
 }
 
 //----------------------------------------------------------------------------------- nacl_box_open
@@ -331,7 +332,7 @@ pub fn nacl_box_open(
         &hex_decode_secret_const(&params.their_public)?.0,
         &hex_decode_secret(&params.secret)?,
     )?;
-    Ok(ResultOfNaclBoxOpen { decrypted: base64::encode(&padded_output) })
+    Ok(ResultOfNaclBoxOpen { decrypted: base64_encode(&padded_output) })
 }
 
 pub fn nacl_box_open_internal(
@@ -381,7 +382,7 @@ pub fn nacl_secret_box(
     sodalite::secretbox(&mut padded_output, &padded_input, &nonce, &key.0)
         .map_err(|_| Error::nacl_secret_box_failed("secret box failed"))?;
     padded_output.drain(..16);
-    Ok(ResultOfNaclBox { encrypted: base64::encode(&padded_output) })
+    Ok(ResultOfNaclBox { encrypted: base64_encode(&padded_output) })
 }
 
 //---------------------------------------------------------------------------- nacl_secret_box_open
@@ -414,7 +415,7 @@ pub fn nacl_secret_box_open(
     sodalite::secretbox_open(&mut padded_output, &padded_input, &nonce, &key.0)
         .map_err(|_| Error::nacl_secret_box_failed("secret box open failed"))?;
     padded_output.drain(..32);
-    Ok(ResultOfNaclBoxOpen { decrypted: base64::encode(&padded_output) })
+    Ok(ResultOfNaclBoxOpen { decrypted: base64_encode(&padded_output) })
 }
 
 // Internals

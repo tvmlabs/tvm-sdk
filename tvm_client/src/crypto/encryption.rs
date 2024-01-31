@@ -16,6 +16,7 @@ use chacha20::cipher::NewStreamCipher;
 use chacha20::cipher::SyncStreamCipher;
 use chacha20::Key;
 use chacha20::Nonce;
+use tvm_types::base64_encode;
 use zeroize::ZeroizeOnDrop;
 
 use super::internal::hex_decode_secret;
@@ -60,5 +61,5 @@ pub fn chacha20(
     let mut cipher = chacha20::ChaCha20::new(Key::from_slice(&key), Nonce::from_slice(&nonce));
     let mut data = base64_decode(&params.data)?;
     cipher.apply_keystream(&mut data);
-    Ok(ResultOfChaCha20 { data: base64::encode(&data) })
+    Ok(ResultOfChaCha20 { data: base64_encode(&data) })
 }

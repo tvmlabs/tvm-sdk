@@ -431,7 +431,7 @@ impl LocalStorage {
     ) -> ClientResult<Option<Vec<u8>>> {
         Ok(Self::read_str(local_storage_path, storage_name, key)
             .await?
-            .map(|content_base64| base64::decode(&content_base64))
+            .map(|content_base64| base64_decode(&content_base64))
             .transpose()
             .map_err(|err| Error::local_storage_error(err))?)
     }
@@ -442,7 +442,7 @@ impl LocalStorage {
         key: &str,
         value: &[u8],
     ) -> ClientResult<()> {
-        Self::write_str(local_storage_path, storage_name, key, &base64::encode(value)).await
+        Self::write_str(local_storage_path, storage_name, key, &base64_encode(value)).await
     }
 
     async fn read_str(

@@ -27,6 +27,7 @@ use serde_json::Value;
 use tokio::sync::watch;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
+use tvm_types::base64_encode;
 use tvm_types::UInt256;
 
 use super::ErrorCode;
@@ -736,7 +737,7 @@ impl ServerLink {
         value: &[u8],
         endpoint: Option<&Endpoint>,
     ) -> ClientResult<Option<ClientError>> {
-        let request = PostRequest { id: base64::encode(key), body: base64::encode(value) };
+        let request = PostRequest { id: base64_encode(key), body: base64_encode(value) };
 
         let result = self.query(&GraphQLQuery::with_post_requests(&[request]), endpoint).await;
 
@@ -756,7 +757,7 @@ impl ServerLink {
     ) -> ClientResult<Option<ClientError>> {
         let mut requests = Vec::with_capacity(messages.len());
         for (hash, boc) in messages {
-            requests.push(PostRequest { id: base64::encode(hash.as_slice()), body: boc })
+            requests.push(PostRequest { id: base64_encode(hash.as_slice()), body: boc })
         }
         let result = self.query(&GraphQLQuery::with_post_requests(&requests), endpoint).await;
 

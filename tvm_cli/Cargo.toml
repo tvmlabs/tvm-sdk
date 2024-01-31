@@ -20,6 +20,7 @@ serde = "1.0.196"
 serde_derive = "1.0.196"
 serde_json = "1.0.113"
 tvm_client = { path = "../tvm_client" }
+tvm_types = { git = "https://github.com/tvmlabs/tvm-types", tag = "3.0.1" }
 
 [dev-dependencies]
 assert_cmd = "2.0.13"

@@ -1,4 +1,6 @@
 use api_info::ApiModule;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 
 use super::*;
 use crate::encoding::AccountAddressType;
@@ -72,7 +74,7 @@ async fn test_calc_storage_fee() {
         .request_async(
             "utils.calc_storage_fee",
             ParamsOfCalcStorageFee {
-                account: base64::encode(&include_bytes!("../boc/test_data/account.boc")),
+                account: base64_encode(&include_bytes!("../boc/test_data/account.boc")),
                 period: 1000,
             },
         )
@@ -96,11 +98,11 @@ fn test_compression() {
     let compressed: ResultOfCompressZstd = client
         .request(
             "utils.compress_zstd",
-            ParamsOfCompressZstd { uncompressed: base64::encode(uncompressed), level: Some(21) },
+            ParamsOfCompressZstd { uncompressed: base64_encode(uncompressed), level: Some(21) },
         )
         .unwrap();
 
-    assert_ne!(base64::decode(&compressed.compressed).unwrap(), uncompressed);
+    assert_ne!(base64_decode(&compressed.compressed).unwrap(), uncompressed);
 
     let decompressed: ResultOfDecompressZstd = client
         .request(
@@ -109,7 +111,7 @@ fn test_compression() {
         )
         .unwrap();
 
-    let decompressed = base64::decode(&decompressed.decompressed).unwrap();
+    let decompressed = base64_decode(&decompressed.decompressed).unwrap();
 
     assert_eq!(decompressed, uncompressed);
 }
@@ -138,7 +140,7 @@ fn test_decompression() {
         )
         .unwrap();
 
-    let decompressed = base64::decode(&decompressed.decompressed).unwrap();
+    let decompressed = base64_decode(&decompressed.decompressed).unwrap();
 
     assert_eq!(decompressed, uncompressed);
 }

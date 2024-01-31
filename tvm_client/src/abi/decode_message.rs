@@ -6,6 +6,7 @@ use tvm_abi::token::Detokenizer;
 use tvm_sdk::AbiContract;
 use tvm_sdk::AbiEvent;
 use tvm_sdk::AbiFunction;
+use tvm_types::base64_encode;
 use tvm_types::SliceData;
 
 use super::types::extend_data_to_sign;
@@ -379,7 +380,7 @@ pub async fn get_signature_data(
         let unsigned = extend_data_to_sign(&context, params.signature_id, Some(hash)).await?;
         Ok(ResultOfGetSignatureData {
             signature: hex::encode(&signature),
-            unsigned: base64::encode(&unsigned.unwrap()),
+            unsigned: base64_encode(&unsigned.unwrap()),
         })
     } else {
         Err(Error::invalid_message_for_decode("The message body is empty"))

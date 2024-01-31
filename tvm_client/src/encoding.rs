@@ -73,7 +73,7 @@ pub(crate) fn decode_std_base64(data: &str) -> ClientResult<MsgAddressInt> {
     // conversion from base64url
     let data = data.replace('_', "/").replace('-', "+");
 
-    let vec = base64::decode(&data).map_err(|err| client::Error::invalid_address(err, &data))?;
+    let vec = base64_decode(&data).map_err(|err| client::Error::invalid_address(err, &data))?;
 
     // check CRC and address tag
     let crc = tvm_crc16(&vec[..34]).to_be_bytes();
@@ -104,7 +104,7 @@ fn encode_base64(
         let crc = tvm_crc16(&vec);
         vec.extend_from_slice(&crc.to_be_bytes());
 
-        let result = base64::encode(&vec);
+        let result = tvm_types::base64_encode(&vec);
 
         if as_url { Ok(result.replace('/', "_").replace('+', "-")) } else { Ok(result) }
     } else {
@@ -123,7 +123,7 @@ pub(crate) fn hex_decode(hex: &str) -> ClientResult<Vec<u8>> {
 }
 
 pub(crate) fn base64_decode(base64: &str) -> ClientResult<Vec<u8>> {
-    base64::decode(base64).map_err(|err| client::Error::invalid_base64(base64, err))
+    tvm_types::base64_decode(base64).map_err(|err| client::Error::invalid_base64(base64, err))
 }
 
 pub(crate) fn long_num_to_json_string(num: u64) -> String {

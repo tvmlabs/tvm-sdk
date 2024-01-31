@@ -4,6 +4,7 @@ use std::sync::Arc;
 use ed25519_dalek::SigningKey;
 use lockfree::map::ReadGuard;
 use tokio::sync::RwLock;
+use tvm_types::base64_encode;
 use zeroize::Zeroize;
 
 use crate::crypto::boxes::crypto_box::encryption::decrypt_secret;
@@ -282,7 +283,7 @@ pub async fn get_crypto_box_info(
     params: RegisteredCryptoBox,
 ) -> ClientResult<ResultOfGetCryptoBoxInfo> {
     Ok(ResultOfGetCryptoBoxInfo {
-        encrypted_secret: base64::encode(
+        encrypted_secret: base64_encode(
             &get_crypto_box(&context, &params.handle)?.val().encrypted_secret.0,
         ),
     })

@@ -562,7 +562,7 @@ impl BlockProof {
         let id = BlockIdExt::with_params(shard_id, seq_no, root_hash, file_hash);
 
         let signatures_json = &value["signatures"];
-        let root_boc = base64::decode(signatures_json.get_str("proof")?)?;
+        let root_boc = base64_decode(signatures_json.get_str("proof")?)?;
 
         let root = tvm_types::boc::read_single_root_boc(&root_boc)?;
 

@@ -1,4 +1,6 @@
 use serde_json::Value;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 
 use super::dinterface::decode_answer_id;
 use super::dinterface::get_arg;
@@ -417,19 +419,19 @@ impl SdkInterface {
     fn get_random(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let rnd = routines::generate_random(self.ton.clone(), args)?;
-        let buf = base64::decode(&rnd)
+        let buf = base64_decode(&rnd)
             .map_err(|e| format!("failed to decode random buffer to byte array: {}", e))?;
         Ok((answer_id, json!({ "buffer": hex::encode(buf) })))
     }
 
     fn chacha20(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
-        let data = base64::encode(&hex::decode(&get_arg(args, "data")?).unwrap());
+        let data = base64_encode(&hex::decode(&get_arg(args, "data")?).unwrap());
         let nonce = get_arg(args, "nonce")?;
         let key = get_arg(args, "key")?;
         let result = chacha20(self.ton.clone(), ParamsOfChaCha20 { data, key, nonce })
             .map_err(|e| format!("{}", e))?;
-        Ok((answer_id, json!({ "output": hex::encode(&base64::decode(&result.data).unwrap()) })))
+        Ok((answer_id, json!({ "output": hex::encode(&base64_decode(&result.data).unwrap()) })))
     }
 
     fn mnemonic_from_random(&self, args: &Value) -> InterfaceResult {
@@ -571,7 +573,7 @@ impl SdkInterface {
 
     fn nacl_box(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
-        let decrypted = base64::encode(
+        let decrypted = base64_encode(
             &hex::decode(&get_arg(args, "decrypted")?).map_err(|e| format!("{}", e))?,
         );
         let nonce = get_arg(&args, "nonce")?;
@@ -589,13 +591,13 @@ impl SdkInterface {
         .map_err(|e| format!("{}", e))?;
         Ok((
             answer_id,
-            json!({ "encrypted": hex::encode(&base64::decode(&result.encrypted).map_err(|e| format!("{}", e))?) }),
+            json!({ "encrypted": hex::encode(&base64_decode(&result.encrypted).map_err(|e| format!("{}", e))?) }),
         ))
     }
 
     fn nacl_box_open(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
-        let encrypted = base64::encode(
+        let encrypted = base64_encode(
             &hex::decode(&get_arg(args, "encrypted")?).map_err(|e| format!("{}", e))?,
         );
         let nonce = get_arg(&args, "nonce")?;
@@ -613,7 +615,7 @@ impl SdkInterface {
         .map_err(|e| format!("{}", e))?;
         Ok((
             answer_id,
-            json!({ "decrypted": hex::encode(&base64::decode(&result.decrypted).map_err(|e| format!("{}", e))?) }),
+            json!({ "decrypted": hex::encode(&base64_decode(&result.decrypted).map_err(|e| format!("{}", e))?) }),
         ))
     }
 
@@ -667,7 +669,7 @@ impl SdkInterface {
         let answer_id = decode_answer_id(args)?;
         let encryption_box = EncryptionBoxHandle(get_num_arg::<u32>(args, "boxHandle")?);
         let data =
-            base64::encode(&hex::decode(&get_arg(args, "data")?).map_err(|e| format!("{}", e))?);
+            base64_encode(&hex::decode(&get_arg(args, "data")?).map_err(|e| format!("{}", e))?);
         let result = if encrypt {
             encryption_box_encrypt(
                 self.ton.clone(),
@@ -688,7 +690,7 @@ impl SdkInterface {
 
         let (result, data) = match result {
             Ok(data) => {
-                let data = base64::decode(&data)
+                let data = base64_decode(&data)
                     .map(|x| hex::encode(x))
                     .map_err(|e| format!("failed to decode base64: {}", e))?;
                 (0, data)
@@ -765,7 +767,7 @@ impl SdkInterface {
             self.ton.clone(),
             ParamsOfSigningBoxSign {
                 signing_box: box_handle.into(),
-                unsigned: base64::encode(sign_hash.as_slice()),
+                unsigned: base64_encode(sign_hash.as_slice()),
             },
         )
         .await

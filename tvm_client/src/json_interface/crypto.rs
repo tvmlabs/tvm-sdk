@@ -12,6 +12,8 @@
 
 use std::sync::Arc;
 
+use tvm_types::base64_encode;
+
 use crate::client::AppObject;
 use crate::client::ClientContext;
 use crate::client::Error;
@@ -83,7 +85,7 @@ impl SigningBox for ExternalSigningBox {
     async fn sign(&self, _context: Arc<ClientContext>, unsigned: &[u8]) -> ClientResult<Vec<u8>> {
         let response = self
             .app_object
-            .call(ParamsOfAppSigningBox::Sign { unsigned: base64::encode(unsigned) })
+            .call(ParamsOfAppSigningBox::Sign { unsigned: base64_encode(unsigned) })
             .await?;
 
         match response {

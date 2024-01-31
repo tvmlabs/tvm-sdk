@@ -2,6 +2,7 @@ use api_info::ApiModule;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_struct::scheme::TVC;
+use tvm_types::base64_encode;
 
 use crate::abi::CallSet;
 use crate::abi::DecodedMessageBody;
@@ -604,7 +605,7 @@ async fn test_deploy_from_tvc_v1() {
         resolve_state_init_cell(&client.context(), &events_state_init.clone().unwrap()).unwrap();
     let state_init =
         deserialize_object_from_cell::<StateInit>(state_init_cell.clone(), "state init").unwrap();
-    let tvc = base64::encode(
+    let tvc = base64_encode(
         &TVC::new(Some(state_init.code.clone().unwrap()), Some("Some Contract".to_string()))
             .write_to_bytes()
             .unwrap(),

@@ -16,6 +16,7 @@ use tvm_block::ShardHashes;
 use tvm_block::ShardIdent;
 use tvm_block::ShardStateUnsplit;
 use tvm_block::MASTERCHAIN_ID;
+use tvm_types::base64_decode;
 use tvm_types::Result;
 use tvm_types::UInt256;
 
@@ -563,8 +564,8 @@ async fn test_query_shard_block_bocs() -> Result<()> {
     let bocs = engine.query_shard_block_bocs(&shard, 99..102).await?;
 
     assert_eq!(bocs.len(), 3);
-    assert_eq!(bocs[0], base64::decode(SHARD_BLOCK_0_A000000000000000_99_BOC)?);
-    assert_eq!(bocs[2], base64::decode(SHARD_BLOCK_0_A000000000000000_101_BOC)?);
+    assert_eq!(bocs[0], base64_decode(SHARD_BLOCK_0_A000000000000000_99_BOC)?);
+    assert_eq!(bocs[2], base64_decode(SHARD_BLOCK_0_A000000000000000_101_BOC)?);
 
     Ok(())
 }
@@ -573,10 +574,10 @@ async fn test_query_shard_block_bocs() -> Result<()> {
 async fn test_check_shard_block() -> Result<()> {
     let engine = create_engine_mainnet();
 
-    let boc_99 = base64::decode(SHARD_BLOCK_0_A000000000000000_99_BOC)?;
+    let boc_99 = base64_decode(SHARD_BLOCK_0_A000000000000000_99_BOC)?;
     engine.check_shard_block(&boc_99).await?;
 
-    let boc_101 = base64::decode(SHARD_BLOCK_0_A000000000000000_101_BOC)?;
+    let boc_101 = base64_decode(SHARD_BLOCK_0_A000000000000000_101_BOC)?;
     engine.check_shard_block(&boc_101).await?;
 
     Ok(())
@@ -995,7 +996,7 @@ async fn test_transaction_get_required_data() -> Result<()> {
 
         assert_eq!(id.as_hex_string(), ID,);
         assert_eq!(block_id, "eb7c28f1d301dff2d6ec899fb5ee18d9478f397b10c16a6f6aabb6535686266e");
-        assert_eq!(boc, base64::decode(BOC)?);
+        assert_eq!(boc, base64_decode(BOC)?);
         assert_eq!(transaction.logical_time(), 0x11d2d21e3781);
 
         Ok(())
@@ -1084,7 +1085,7 @@ async fn test_message_get_required_data() -> Result<()> {
 
         assert_eq!(id.as_hex_string(), message_id,);
         assert_eq!(trans_id, message_trans_id);
-        assert_eq!(boc, base64::decode(message_boc)?);
+        assert_eq!(boc, base64_decode(message_boc)?);
         assert_eq!(
             message.dst_ref().map(|addr| addr.to_string()),
             dst_account_address.map(|str| str.to_string()),

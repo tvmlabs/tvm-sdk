@@ -27,6 +27,7 @@ use tvm_client::tc_read_string;
 use tvm_client::tc_request_sync;
 use tvm_client::ContextHandle;
 use tvm_client::StringData;
+use tvm_types::base64_encode;
 
 use crate::errors::CliError;
 
@@ -59,7 +60,7 @@ fn include_json(json_ref: &str) -> Result<String, CliError> {
     } else {
         let ref_bytes = std::fs::read(&ref_file)
             .map_err(|e| CliError::with_message(format!("Include [{}] failed: {}", ref_file, e)))?;
-        Ok(format!("\"{}\"", base64::encode(&ref_bytes)))
+        Ok(format!("\"{}\"", base64_encode(&ref_bytes)))
     }
 }
 

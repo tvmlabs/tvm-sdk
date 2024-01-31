@@ -22,6 +22,7 @@ use serde_json::Value;
 use tokio::sync::oneshot::channel;
 use tokio::sync::oneshot::Sender;
 use tokio::sync::Mutex;
+use tvm_types::base64_encode;
 
 use super::tc_destroy_string;
 use super::tc_read_string;
@@ -390,13 +391,13 @@ impl TestClient {
     }
 
     pub fn tvc(name: &str, abi_version: Option<u8>) -> Option<String> {
-        Some(base64::encode(
+        Some(base64_encode(
             &std::fs::read(format!("{}{}.tvc", Self::contracts_path(abi_version), name)).unwrap(),
         ))
     }
 
     pub fn icon(name: &str, abi_version: Option<u8>) -> String {
-        let image_base64 = base64::encode(
+        let image_base64 = base64_encode(
             &std::fs::read(format!("{}{}.png", Self::contracts_path(abi_version), name)).unwrap(),
         );
         format!("data:image/png;base64,{}", image_base64)

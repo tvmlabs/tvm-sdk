@@ -12,6 +12,8 @@ use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_sdk::ContractImage;
 use tvm_struct::scheme::TVC;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 use tvm_types::Result;
@@ -456,7 +458,7 @@ fn test_is_empty_pubkey() -> Result<()> {
 #[test]
 fn test_resolve_pubkey() -> Result<()> {
     let context = crate::ClientContext::new(crate::ClientConfig::default()).unwrap();
-    let tvc = base64::encode(include_bytes!("../tests/contracts/abi_v2/Hello.tvc"));
+    let tvc = base64_encode(include_bytes!("../tests/contracts/abi_v2/Hello.tvc"));
     let mut deploy_set = DeploySet { tvc: Some(tvc.clone()), ..Default::default() };
     let mut image = create_tvc_image("", true, None, resolve_state_init_cell(&context, &tvc)?)?;
     assert!(resolve_pubkey(&deploy_set, &image, &None)?.is_none());
@@ -581,7 +583,7 @@ async fn test_encode_message_pubkey_internal(
         image.set_public_key(tvc_pubkey)?;
     }
 
-    let tvc = base64::encode(&image.serialize()?);
+    let tvc = base64_encode(&image.serialize()?);
 
     let deploy_params = ParamsOfEncodeMessage {
         abi: abi.clone(),
@@ -755,7 +757,7 @@ async fn test_encode_internal_message_run(
     if dst.is_some() {
         assert_eq!(&result.address, dst.as_ref().unwrap());
     }
-    assert_eq!(result.message_id, get_boc_hash(&base64::decode(&result.message)?)?);
+    assert_eq!(result.message_id, get_boc_hash(&base64_decode(&result.message)?)?);
     if let Some(expected_boc) = expected_boc {
         assert_eq!(&result.message, expected_boc);
     }
@@ -798,7 +800,7 @@ async fn test_encode_internal_message_deploy(
         .await?;
 
     assert_eq!(result.address, image.msg_address(0).to_string());
-    assert_eq!(result.message_id, get_boc_hash(&base64::decode(&result.message)?)?);
+    assert_eq!(result.message_id, get_boc_hash(&base64_decode(&result.message)?)?);
     if let Some(expected_boc) = expected_boc {
         assert_eq!(&result.message, expected_boc);
     }
@@ -1342,7 +1344,7 @@ async fn test_deploy_code_variants_with_fn<
         convert_parsed(&encoded_with_state_init, ignore_data)
     );
 
-    let tvc = base64::encode(
+    let tvc = base64_encode(
         &TVC::new(
             Some(state_init.code.clone().unwrap()),
             Some(

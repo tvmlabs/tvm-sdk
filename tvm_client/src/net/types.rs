@@ -11,6 +11,7 @@
 
 use serde::Deserialize;
 use serde::Deserializer;
+use tvm_types::base64_encode;
 
 pub const MESSAGES_COLLECTION: &str = "messages";
 pub const ACCOUNTS_COLLECTION: &str = "accounts";
@@ -328,7 +329,7 @@ impl NetworkConfig {
             let auth = if is_jwt {
                 format!("Bearer {}", key)
             } else {
-                format!("Basic {}", base64::encode(format!(":{}", key).as_bytes()))
+                format!("Basic {}", base64_encode(format!(":{}", key).as_bytes()))
             };
             Some(("Authorization".into(), auth))
         } else {

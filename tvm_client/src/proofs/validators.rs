@@ -12,6 +12,7 @@ use tvm_block::ValidatorDescr;
 use tvm_block::ValidatorSet;
 use tvm_block::WorkchainDescr;
 use tvm_block::Workchains;
+use tvm_types::base64_encode;
 use tvm_types::Result;
 
 use crate::proofs::Signatures;
@@ -134,7 +135,7 @@ impl AdnlKeyId {
 
 impl Display for AdnlKeyId {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        write!(f, "{}", base64::encode(self.data()))
+        write!(f, "{}", base64_encode(self.data()))
     }
 }
 
