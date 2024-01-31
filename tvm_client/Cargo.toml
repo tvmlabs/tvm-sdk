@@ -1,9 +1,8 @@
 [package]
 name = "tvm_client"
-version = "1.45.1"
+version = "1.46.0"
 authors = [ "TON Labs LTD <support@tonlabs.io>" ]
 edition = "2018"
-license = "Apache-2.0"
 build = "build.rs"
 
 [lib]
@@ -21,18 +20,19 @@ api_info = { path = "../api/info" }
 tvm_sdk = { default-features = false, path = "../tvm_sdk" }
 tvm_client_processing = { default-features = false, path = "../tvm_client_processing" }
 
-tvm_abi = { git = "https://github.com/tvmlabs/tvm-abi", branch = "main" }
-tvm_block = { git = "https://github.com/tvmlabs/tvm-block", branch = "main" }
-tvm_block_json = { git = "https://github.com/tvmlabs/tvm-block-json", branch = "main" }
-tvm_types = { git = "https://github.com/tvmlabs/tvm-types", branch = "main" }
-tvm_executor = { features = ["signature_with_id"], git = "https://github.com/tvmlabs/tvm-executor", branch = "main" }
-tvm_vm = { features = ["signature_with_id", "signature_no_check"], git = "https://github.com/tvmlabs/tvm-vm", branch = "main" }
-tvm_struct = { git = "https://github.com/tvmlabs/tvm-struct", branch = "main" }
+tvm_abi = { git = "https://github.com/tvmlabs/tvm-abi", tag = "3.0.0" }
+tvm_block = { git = "https://github.com/tvmlabs/tvm-block", tag = "2.0.0" }
+tvm_block_json = { git = "https://github.com/tvmlabs/tvm-block-json", tag = "0.8.0" }
+tvm_types = { git = "https://github.com/tvmlabs/tvm-types", tag = "3.0.1" }
+tvm_executor = { features = ["signature_with_id"], git = "https://github.com/tvmlabs/tvm-executor", tag = "2.0.0" }
+tvm_vm = { features = ["signature_with_id", "signature_no_check"], git = "https://github.com/tvmlabs/tvm-vm", tag = "2.0.0" }
+tvm_struct = { git = "https://github.com/tvmlabs/tvm-struct", tag = "2.0.0" }
 
 lockfree = { git = "https://github.com/tvmlabs/lockfree", package = "lockfree" }
 sodalite = { features = [ "rand" ], git = "https://github.com/tvmlabs/sodalite" }
 
 
+anyhow = "1.0.79"
 aes = "0.7.4"
 async-trait = "0.1.40"
 base58 = "0.1.0"
@@ -44,7 +44,6 @@ chacha20 = "0.6.0"
 chrono = "0.4.6"
 crc = "3.0"
 ed25519-dalek = "2.0"
-failure = "0.1"
 futures = "0.3.4"
 hex = "0.3.2"
 hmac = "0.11.0"
@@ -65,6 +64,7 @@ serde_json = "1.0.41"
 serde_repr = "0.1.7"
 sha2 = "0.9.5"
 tiny-bip39 = "0.8.2"
+thiserror = "1.0.56"
 tokio = { default-features = false, features = [ "sync" ], version = "1.4" }
 tokio-stream = { default-features = false, version = "0.1" }
 zeroize = { features = [ "zeroize_derive" ], version = "1.3" }

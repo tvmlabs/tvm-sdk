@@ -1,29 +1,30 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+
+use std::convert::TryFrom;
+
+use tvm_block::AccStatusChange;
+use tvm_block::ComputeSkipReason;
+use tvm_block::GetRepresentationHash;
+use tvm_block::TrComputePhase;
+use tvm_block::TransactionDescr;
+use tvm_block::TransactionProcessingStatus;
+use tvm_types::Result;
 
 use crate::error::SdkError;
 use crate::json_helper;
 use crate::types::grams_to_u64;
 use crate::types::StringId;
-use crate::{Message, MessageId};
-
-use tvm_block::{
-    AccStatusChange, ComputeSkipReason, GetRepresentationHash, TrComputePhase, TransactionDescr,
-    TransactionProcessingStatus,
-};
-use tvm_types::Result;
-
-use std::convert::TryFrom;
+use crate::Message;
+use crate::MessageId;
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(default)]
@@ -82,15 +83,13 @@ pub struct Transaction {
 }
 
 impl TryFrom<&tvm_block::Transaction> for Transaction {
-    type Error = failure::Error;
+    type Error = anyhow::Error;
+
     fn try_from(transaction: &tvm_block::Transaction) -> Result<Self> {
         let descr = if let TransactionDescr::Ordinary(descr) = transaction.read_description()? {
             descr
         } else {
-            return Err(SdkError::InvalidData {
-                msg: "Invalid transaction type".to_owned(),
-            }
-            .into());
+            return Err(SdkError::InvalidData { msg: "Invalid transaction type".to_owned() }.into());
         };
 
         let storage_phase = if let Some(phase) = descr.storage_ph {
@@ -154,7 +153,7 @@ impl TryFrom<&tvm_block::Transaction> for Transaction {
             now: transaction.now(),
             in_msg,
             out_msgs,
-            out_messages: out_messages,
+            out_messages,
             aborted: descr.aborted,
             total_fees: grams_to_u64(&transaction.total_fees().grams)?,
             storage: storage_phase,
@@ -172,12 +171,14 @@ pub struct TransactionFees {
     pub storage_fee: u64,
     /// Fee for processing
     pub gas_fee: u64,
-    /// Deprecated. Contains the same data as total_fwd_fees field. Deprecated because of
-    /// its confusing name, that is not the same with GraphQL API Transaction type's field.
+    /// Deprecated. Contains the same data as total_fwd_fees field. Deprecated
+    /// because of its confusing name, that is not the same with GraphQL API
+    /// Transaction type's field.
     pub out_msgs_fwd_fee: u64,
     /// Deprecated. Contains the same data as account_fees field
     pub total_account_fees: u64,
-    /// Deprecated because it means total value sent in the transaction, which does not relate to any fees.
+    /// Deprecated because it means total value sent in the transaction, which
+    /// does not relate to any fees.
     pub total_output: u64,
     /// Fee for inbound external message import.
     pub ext_in_msg_fee: u64,
@@ -188,7 +189,8 @@ pub struct TransactionFees {
     pub account_fees: u64,
 }
 
-// The struct represents performed transaction and allows to access their properties.
+// The struct represents performed transaction and allows to access their
+// properties.
 impl Transaction {
     // Returns transaction's processing status
     pub fn status(&self) -> TransactionProcessingStatus {
@@ -231,37 +233,27 @@ impl Transaction {
             total_action_fees = action.total_action_fees;
         }
         // `transaction.total_fees` is calculated as
-        // `transaction.total_fees = inbound_fwd_fees + storage_fees + gas_fees + total_action_fees`
-        // but this total_fees is fees collected the validators, not the all fees taken from account
+        // `transaction.total_fees = inbound_fwd_fees + storage_fees + gas_fees +
+        // total_action_fees` but this total_fees is fees collected the
+        // validators, not the all fees taken from account
         // because total_action_fees contains only part of all forward fees
-        // to get all fees paid by account we need exchange `total_action_fees part` to `out_msgs_fwd_fee`
+        // to get all fees paid by account we need exchange `total_action_fees part` to
+        // `out_msgs_fwd_fee`
         let total_account_fees =
             self.total_fees as i128 - total_action_fees as i128 + fees.out_msgs_fwd_fee as i128;
-        fees.total_account_fees = if total_account_fees > 0 {
-            total_account_fees as u64
-        } else {
-            0
-        };
-        // inbound_fwd_fees is not represented in transaction fields so need to calculate it
+        fees.total_account_fees =
+            if total_account_fees > 0 { total_account_fees as u64 } else { 0 };
+        // inbound_fwd_fees is not represented in transaction fields so need to
+        // calculate it
         let in_msg_fwd_fee = fees.total_account_fees as i128
             - fees.storage_fee as i128
             - fees.gas_fee as i128
             - fees.out_msgs_fwd_fee as i128;
-        fees.in_msg_fwd_fee = if in_msg_fwd_fee > 0 {
-            in_msg_fwd_fee as u64
-        } else {
-            0
-        };
+        fees.in_msg_fwd_fee = if in_msg_fwd_fee > 0 { in_msg_fwd_fee as u64 } else { 0 };
 
-        let total_output = self
-            .out_messages
-            .iter()
-            .fold(0u128, |acc, msg| acc + msg.value as u128);
-        fees.total_output = if total_output <= std::u64::MAX as u128 {
-            total_output as u64
-        } else {
-            0
-        };
+        let total_output = self.out_messages.iter().fold(0u128, |acc, msg| acc + msg.value as u128);
+        fees.total_output =
+            if total_output <= std::u64::MAX as u128 { total_output as u64 } else { 0 };
 
         fees.ext_in_msg_fee = fees.in_msg_fwd_fee;
         fees.account_fees = fees.total_account_fees;

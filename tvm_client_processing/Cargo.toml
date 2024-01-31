@@ -1,17 +1,16 @@
 [package]
 name = "tvm_client_processing"
-version = "1.45.1"
+version = "1.46.0"
 authors = [ "TON Labs LTD <support@tonlabs.io>" ]
 edition = "2018"
-license = "Apache-2.0"
 
 [lib]
 name = "tvm_client_processing"
 crate-type = [ "cdylib", "rlib", "staticlib" ]
 
 [dependencies]
-tvm_block = { git = "https://github.com/tvmlabs/tvm-block", branch = "main" }
-tvm_types = { git = "https://github.com/tvmlabs/tvm-types", branch = "main" }
+tvm_block = { git = "https://github.com/tvmlabs/tvm-block", tag = "2.0.0" }
+tvm_types = { git = "https://github.com/tvmlabs/tvm-types", tag = "3.0.1" }
 
 api_derive = { path = "../api/derive" }
 api_info = { path = "../api/info" }
