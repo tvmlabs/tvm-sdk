@@ -1,31 +1,34 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use super::Error;
-use crate::boc::internal::{
-    deserialize_cell_from_base64, deserialize_cell_from_boc, serialize_cell_to_base64,
-    DeserializedBoc,
-};
-use crate::client::ClientContext;
-use crate::error::ClientResult;
-
-use lru::LruCache;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::iter::FromIterator;
 #[allow(unused_imports)]
 use std::str::FromStr;
-use std::sync::{Arc, Mutex, RwLock};
-use tvm_types::{Cell, UInt256};
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
+
+use lru::LruCache;
+use tvm_types::Cell;
+use tvm_types::UInt256;
+
+use super::Error;
+use crate::boc::internal::deserialize_cell_from_base64;
+use crate::boc::internal::deserialize_cell_from_boc;
+use crate::boc::internal::serialize_cell_to_base64;
+use crate::boc::internal::DeserializedBoc;
+use crate::client::ClientContext;
+use crate::error::ClientResult;
 
 pub const SHA256_SIZE: usize = 32;
 pub const DEPTH_SIZE: usize = 2;
@@ -79,14 +82,15 @@ fn calc_tree_size(cell: &Cell) -> usize {
 #[derive(Serialize, Deserialize, Clone, ApiType, Debug)]
 #[serde(tag = "type")]
 pub enum BocCacheType {
-    /// Pin the BOC with `pin` name. Such BOC will not be removed from cache until it is unpinned
-    /// BOCs can have several pins and each of the pins has reference counter indicating how many
-    /// times the BOC was pinned with the pin. BOC is removed from cache after all references for all
+    /// Pin the BOC with `pin` name. Such BOC will not be removed from cache
+    /// until it is unpinned BOCs can have several pins and each of the pins
+    /// has reference counter indicating how many times the BOC was pinned
+    /// with the pin. BOC is removed from cache after all references for all
     /// pins are unpinned with `cache_unpin` function calls.
     Pinned { pin: String },
     /// BOC is placed into a common BOC pool with limited size regulated by LRU
-    /// (least recently used) cache lifecycle. BOC resides there until it is replaced
-    /// with other BOCs if it is not used
+    /// (least recently used) cache lifecycle. BOC resides there until it is
+    /// replaced with other BOCs if it is not used
     Unpinned,
 }
 
@@ -124,10 +128,7 @@ impl Bocs {
             .unwrap_or(std::usize::MAX);
         Bocs {
             pinned: RwLock::default(),
-            cached: Mutex::new(CachedBocs {
-                bocs: LruCache::unbounded(),
-                cache_size: 0,
-            }),
+            cached: Mutex::new(CachedBocs { bocs: LruCache::unbounded(), cache_size: 0 }),
             max_cache_size,
         }
     }
@@ -136,16 +137,9 @@ impl Bocs {
         let mut lock = self.pinned.write().unwrap();
         lock.entry(hash)
             .and_modify(|entry| {
-                entry
-                    .pins
-                    .entry(pin.clone())
-                    .and_modify(|refs| *refs += 1)
-                    .or_insert(1);
+                entry.pins.entry(pin.clone()).and_modify(|refs| *refs += 1).or_insert(1);
             })
-            .or_insert_with(|| PinnedBoc {
-                pins: HashMap::from_iter([(pin, 1)]),
-                cell,
-            });
+            .or_insert_with(|| PinnedBoc { pins: HashMap::from_iter([(pin, 1)]), cell });
     }
 
     pub(crate) fn unpin(&self, pin: &str, hash: Option<UInt256>) {
@@ -213,10 +207,7 @@ impl Bocs {
     ) -> ClientResult<(DeserializedBoc, Cell)> {
         if boc.starts_with("*") {
             let hash = UInt256::from_str(&boc[1..]).map_err(|err| {
-                Error::invalid_boc(format!(
-                    "BOC start with `*` but contains invalid hash: {}",
-                    err
-                ))
+                Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {}", err))
             })?;
 
             let cell = self.get(&hash).ok_or(Error::boc_ref_not_found(boc))?;
@@ -243,20 +234,11 @@ impl Bocs {
     }
 
     fn get_pinned(&self, hash: &UInt256) -> Option<Cell> {
-        self.pinned
-            .read()
-            .unwrap()
-            .get(hash)
-            .map(|entry| entry.cell.clone())
+        self.pinned.read().unwrap().get(hash).map(|entry| entry.cell.clone())
     }
 
     fn get_cached(&self, hash: &UInt256) -> Option<Cell> {
-        self.cached
-            .lock()
-            .unwrap()
-            .bocs
-            .get(hash)
-            .map(|entry| entry.cell.clone())
+        self.cached.lock().unwrap().bocs.get(hash).map(|entry| entry.cell.clone())
     }
 
     pub(crate) fn get(&self, hash: &UInt256) -> Option<Cell> {
@@ -334,9 +316,7 @@ pub fn cache_set(
     context
         .bocs
         .add(params.cache_type, cell, size)
-        .map(|hash| ResultOfBocCacheSet {
-            boc_ref: format!("*{:x}", hash),
-        })
+        .map(|hash| ResultOfBocCacheSet { boc_ref: format!("*{:x}", hash) })
 }
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]
@@ -359,11 +339,8 @@ pub fn cache_get(
 ) -> ClientResult<ResultOfBocCacheGet> {
     let hash = parse_boc_ref(&params.boc_ref)?;
 
-    let boc = context
-        .bocs
-        .get(&hash)
-        .map(|cell| serialize_cell_to_base64(&cell, "BOC"))
-        .transpose()?;
+    let boc =
+        context.bocs.get(&hash).map(|cell| serialize_cell_to_base64(&cell, "BOC")).transpose()?;
 
     Ok(ResultOfBocCacheGet { boc })
 }
@@ -372,19 +349,18 @@ pub fn cache_get(
 pub struct ParamsOfBocCacheUnpin {
     /// Pinned name
     pub pin: String,
-    /// Reference to the cached BOC. If it is provided then only referenced BOC is unpinned
+    /// Reference to the cached BOC. If it is provided then only referenced BOC
+    /// is unpinned
     pub boc_ref: Option<String>,
 }
 /// Unpin BOCs with specified pin defined in the `cache_set`.
 
-/// Decrease pin reference counter for BOCs with specified pin defined in the `cache_set`.
-/// BOCs which have only 1 pin and its reference counter become 0 will be removed from cache
+/// Decrease pin reference counter for BOCs with specified pin defined in the
+/// `cache_set`. BOCs which have only 1 pin and its reference counter become 0
+/// will be removed from cache
 #[api_function]
 pub fn cache_unpin(context: Arc<ClientContext>, params: ParamsOfBocCacheUnpin) -> ClientResult<()> {
-    let hash = params
-        .boc_ref
-        .map(|string| parse_boc_ref(&string))
-        .transpose()?;
+    let hash = params.boc_ref.map(|string| parse_boc_ref(&string)).transpose()?;
     context.bocs.unpin(&params.pin, hash);
     Ok(())
 }
@@ -400,18 +376,11 @@ impl CachedBoc {
     pub fn new(context: Arc<ClientContext>, boc: String, pin: String) -> ClientResult<Self> {
         let boc_ref = cache_set(
             context.clone(),
-            ParamsOfBocCacheSet {
-                boc,
-                cache_type: BocCacheType::Pinned { pin: pin.clone() },
-            },
+            ParamsOfBocCacheSet { boc, cache_type: BocCacheType::Pinned { pin: pin.clone() } },
         )?
         .boc_ref;
 
-        Ok(Self {
-            context,
-            boc_ref,
-            pin,
-        })
+        Ok(Self { context, boc_ref, pin })
     }
 
     pub fn boc_ref(&self) -> String {

@@ -1,50 +1,81 @@
+use std::convert::TryInto;
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+
 use super::*;
 use crate::client::ParamsOfAppRequest;
-use crate::crypto::boxes::crypto_box::{
-    BoxEncryptionAlgorithm, ChaCha20ParamsCB, CryptoBoxSecret, ParamsOfCreateCryptoBox,
-    ParamsOfGetEncryptionBoxFromCryptoBox, ParamsOfGetSigningBoxFromCryptoBox, RegisteredCryptoBox,
-    ResultOfGetCryptoBoxInfo, ResultOfGetCryptoBoxSeedPhrase,
-};
+use crate::crypto::boxes::crypto_box::BoxEncryptionAlgorithm;
+use crate::crypto::boxes::crypto_box::ChaCha20ParamsCB;
+use crate::crypto::boxes::crypto_box::CryptoBoxSecret;
+use crate::crypto::boxes::crypto_box::ParamsOfCreateCryptoBox;
+use crate::crypto::boxes::crypto_box::ParamsOfGetEncryptionBoxFromCryptoBox;
+use crate::crypto::boxes::crypto_box::ParamsOfGetSigningBoxFromCryptoBox;
+use crate::crypto::boxes::crypto_box::RegisteredCryptoBox;
+use crate::crypto::boxes::crypto_box::ResultOfGetCryptoBoxInfo;
+use crate::crypto::boxes::crypto_box::ResultOfGetCryptoBoxSeedPhrase;
 use crate::crypto::boxes::encryption_box::nacl_box::NaclBoxParamsEB;
 use crate::crypto::boxes::encryption_box::nacl_secret_box::NaclSecretBoxParamsEB;
 use crate::crypto::boxes::encryption_box::ParamsOfCreateEncryptionBox;
-use crate::crypto::encscrypt::{ParamsOfScrypt, ResultOfScrypt};
-use crate::crypto::hash::{ParamsOfHash, ResultOfHash};
-use crate::crypto::hdkey::{
-    ParamsOfHDKeyDeriveFromXPrv, ParamsOfHDKeyDeriveFromXPrvPath, ParamsOfHDKeyPublicFromXPrv,
-    ParamsOfHDKeySecretFromXPrv, ParamsOfHDKeyXPrvFromMnemonic, ResultOfHDKeyDeriveFromXPrv,
-    ResultOfHDKeyDeriveFromXPrvPath, ResultOfHDKeyPublicFromXPrv, ResultOfHDKeySecretFromXPrv,
-    ResultOfHDKeyXPrvFromMnemonic,
-};
-use crate::crypto::keys::{
-    strip_secret, KeyPair, ParamsOfConvertPublicKeyToTonSafeFormat, ParamsOfSign,
-    ParamsOfVerifySignature, ResultOfConvertPublicKeyToTonSafeFormat, ResultOfSign,
-    ResultOfVerifySignature,
-};
-use crate::crypto::math::{
-    ParamsOfFactorize, ParamsOfGenerateRandomBytes, ParamsOfModularPower, ParamsOfTonCrc16,
-    ResultOfFactorize, ResultOfGenerateRandomBytes, ResultOfModularPower, ResultOfTonCrc16,
-};
-use crate::crypto::mnemonic::{
-    ParamsOfMnemonicDeriveSignKeys, ParamsOfMnemonicFromEntropy, ParamsOfMnemonicFromRandom,
-    ParamsOfMnemonicVerify, ParamsOfMnemonicWords, ResultOfMnemonicFromEntropy,
-    ResultOfMnemonicFromRandom, ResultOfMnemonicVerify, ResultOfMnemonicWords,
-};
-use crate::crypto::nacl::{
-    ParamsOfNaclBox, ParamsOfNaclBoxKeyPairFromSecret, ParamsOfNaclBoxOpen, ParamsOfNaclSecretBox,
-    ParamsOfNaclSecretBoxOpen, ParamsOfNaclSign, ParamsOfNaclSignKeyPairFromSecret,
-    ParamsOfNaclSignOpen, ResultOfNaclBox, ResultOfNaclBoxOpen, ResultOfNaclSign,
-    ResultOfNaclSignDetached, ResultOfNaclSignOpen,
-};
-use crate::crypto::{ParamsOfChaCha20, ResultOfChaCha20};
-use crate::json_interface::crypto::{
-    ParamsOfAppPasswordProvider, ParamsOfAppSigningBox, ResultOfAppPasswordProvider,
-    ResultOfAppSigningBox,
-};
+use crate::crypto::encscrypt::ParamsOfScrypt;
+use crate::crypto::encscrypt::ResultOfScrypt;
+use crate::crypto::hash::ParamsOfHash;
+use crate::crypto::hash::ResultOfHash;
+use crate::crypto::hdkey::ParamsOfHDKeyDeriveFromXPrv;
+use crate::crypto::hdkey::ParamsOfHDKeyDeriveFromXPrvPath;
+use crate::crypto::hdkey::ParamsOfHDKeyPublicFromXPrv;
+use crate::crypto::hdkey::ParamsOfHDKeySecretFromXPrv;
+use crate::crypto::hdkey::ParamsOfHDKeyXPrvFromMnemonic;
+use crate::crypto::hdkey::ResultOfHDKeyDeriveFromXPrv;
+use crate::crypto::hdkey::ResultOfHDKeyDeriveFromXPrvPath;
+use crate::crypto::hdkey::ResultOfHDKeyPublicFromXPrv;
+use crate::crypto::hdkey::ResultOfHDKeySecretFromXPrv;
+use crate::crypto::hdkey::ResultOfHDKeyXPrvFromMnemonic;
+use crate::crypto::keys::strip_secret;
+use crate::crypto::keys::KeyPair;
+use crate::crypto::keys::ParamsOfConvertPublicKeyToTonSafeFormat;
+use crate::crypto::keys::ParamsOfSign;
+use crate::crypto::keys::ParamsOfVerifySignature;
+use crate::crypto::keys::ResultOfConvertPublicKeyToTonSafeFormat;
+use crate::crypto::keys::ResultOfSign;
+use crate::crypto::keys::ResultOfVerifySignature;
+use crate::crypto::math::ParamsOfFactorize;
+use crate::crypto::math::ParamsOfGenerateRandomBytes;
+use crate::crypto::math::ParamsOfModularPower;
+use crate::crypto::math::ParamsOfTonCrc16;
+use crate::crypto::math::ResultOfFactorize;
+use crate::crypto::math::ResultOfGenerateRandomBytes;
+use crate::crypto::math::ResultOfModularPower;
+use crate::crypto::math::ResultOfTonCrc16;
+use crate::crypto::mnemonic::ParamsOfMnemonicDeriveSignKeys;
+use crate::crypto::mnemonic::ParamsOfMnemonicFromEntropy;
+use crate::crypto::mnemonic::ParamsOfMnemonicFromRandom;
+use crate::crypto::mnemonic::ParamsOfMnemonicVerify;
+use crate::crypto::mnemonic::ParamsOfMnemonicWords;
+use crate::crypto::mnemonic::ResultOfMnemonicFromEntropy;
+use crate::crypto::mnemonic::ResultOfMnemonicFromRandom;
+use crate::crypto::mnemonic::ResultOfMnemonicVerify;
+use crate::crypto::mnemonic::ResultOfMnemonicWords;
+use crate::crypto::nacl::ParamsOfNaclBox;
+use crate::crypto::nacl::ParamsOfNaclBoxKeyPairFromSecret;
+use crate::crypto::nacl::ParamsOfNaclBoxOpen;
+use crate::crypto::nacl::ParamsOfNaclSecretBox;
+use crate::crypto::nacl::ParamsOfNaclSecretBoxOpen;
+use crate::crypto::nacl::ParamsOfNaclSign;
+use crate::crypto::nacl::ParamsOfNaclSignKeyPairFromSecret;
+use crate::crypto::nacl::ParamsOfNaclSignOpen;
+use crate::crypto::nacl::ResultOfNaclBox;
+use crate::crypto::nacl::ResultOfNaclBoxOpen;
+use crate::crypto::nacl::ResultOfNaclSign;
+use crate::crypto::nacl::ResultOfNaclSignDetached;
+use crate::crypto::nacl::ResultOfNaclSignOpen;
+use crate::crypto::ParamsOfChaCha20;
+use crate::crypto::ResultOfChaCha20;
+use crate::json_interface::crypto::ParamsOfAppPasswordProvider;
+use crate::json_interface::crypto::ParamsOfAppSigningBox;
+use crate::json_interface::crypto::ResultOfAppPasswordProvider;
+use crate::json_interface::crypto::ResultOfAppSigningBox;
 use crate::tests::TestClient;
-use std::convert::TryInto;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 
 fn base64_from_hex(hex: &str) -> String {
     base64::encode(&hex::decode(hex).unwrap())
@@ -90,12 +121,7 @@ fn math() {
     let client = TestClient::new();
 
     let result: ResultOfFactorize = client
-        .request(
-            "crypto.factorize",
-            ParamsOfFactorize {
-                composite: "17ED48941A08F981".into(),
-            },
-        )
+        .request("crypto.factorize", ParamsOfFactorize { composite: "17ED48941A08F981".into() })
         .unwrap();
     assert_eq!("494C553B", result.factors[0]);
     assert_eq!("53911073", result.factors[1]);
@@ -113,20 +139,12 @@ fn math() {
     assert_eq!("63bfdf", result.modular_power);
 
     let result: ResultOfTonCrc16 = client
-        .request(
-            "crypto.tvm_crc16",
-            ParamsOfTonCrc16 {
-                data: base64_from_hex("0123456789abcdef"),
-            },
-        )
+        .request("crypto.tvm_crc16", ParamsOfTonCrc16 { data: base64_from_hex("0123456789abcdef") })
         .unwrap();
     assert_eq!(result.crc, 43349);
 
     let result: ResultOfGenerateRandomBytes = client
-        .request(
-            "crypto.generate_random_bytes",
-            ParamsOfGenerateRandomBytes { length: 32 },
-        )
+        .request("crypto.generate_random_bytes", ParamsOfGenerateRandomBytes { length: 32 })
         .unwrap();
     assert_eq!(result.bytes.len(), 44);
 }
@@ -139,25 +157,21 @@ fn hash() {
     let result: ResultOfHash = client
         .request(
             "crypto.sha512",
-            ParamsOfHash {
-                data: base64::encode("Message to hash with sha 512"),
-            },
+            ParamsOfHash { data: base64::encode("Message to hash with sha 512") },
         )
         .unwrap();
-    assert_eq!("2616a44e0da827f0244e93c2b0b914223737a6129bc938b8edf2780ac9482960baa9b7c7cdb11457c1cebd5ae77e295ed94577f32d4c963dc35482991442daa5", result.hash);
+    assert_eq!(
+        "2616a44e0da827f0244e93c2b0b914223737a6129bc938b8edf2780ac9482960baa9b7c7cdb11457c1cebd5ae77e295ed94577f32d4c963dc35482991442daa5",
+        result.hash
+    );
 
     let result: ResultOfHash = client
         .request(
             "crypto.sha256",
-            ParamsOfHash {
-                data: base64::encode("Message to hash with sha 256"),
-            },
+            ParamsOfHash { data: base64::encode("Message to hash with sha 256") },
         )
         .unwrap();
-    assert_eq!(
-        "16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5",
-        result.hash
-    );
+    assert_eq!("16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5", result.hash);
 
     let result: ResultOfHash = client
         .request(
@@ -167,36 +181,23 @@ fn hash() {
             },
         )
         .unwrap();
-    assert_eq!(
-        "16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5",
-        result.hash
-    );
+    assert_eq!("16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5", result.hash);
 
     let result: ResultOfHash = client
         .request(
             "crypto.sha256",
-            ParamsOfHash {
-                data: "TWVzc2FnZSB0byBoYXNoIHdpdGggc2hhIDI1Ng==".into(),
-            },
+            ParamsOfHash { data: "TWVzc2FnZSB0byBoYXNoIHdpdGggc2hhIDI1Ng==".into() },
         )
         .unwrap();
-    assert_eq!(
-        "16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5",
-        result.hash
-    );
+    assert_eq!("16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5", result.hash);
 
     let result: ResultOfHash = client
         .request(
             "crypto.sha256",
-            ParamsOfHash {
-                data: base64::encode("Message to hash with sha 256"),
-            },
+            ParamsOfHash { data: base64::encode("Message to hash with sha 256") },
         )
         .unwrap();
-    assert_eq!(
-        "16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5",
-        result.hash
-    );
+    assert_eq!("16fd057308dd358d5a9b3ba2de766b2dfd5e308478fc1f7ba5988db2493852f5", result.hash);
 }
 
 #[test]
@@ -213,14 +214,9 @@ fn keys() {
             },
         )
         .unwrap();
-    assert_eq!(
-        "PuYGEX9Zreg-CX4Psz5dKehzW9qCs794oBVUKqqFO7aWAOTD",
-        result.tvm_public_key
-    );
+    assert_eq!("PuYGEX9Zreg-CX4Psz5dKehzW9qCs794oBVUKqqFO7aWAOTD", result.tvm_public_key);
 
-    let result: KeyPair = client
-        .request_no_params("crypto.generate_random_sign_keys")
-        .unwrap();
+    let result: KeyPair = client.request_no_params("crypto.generate_random_sign_keys").unwrap();
     assert_eq!(result.public.len(), 64);
     assert_eq!(result.secret.len(), 64);
     assert_ne!(result.secret, result.public);
@@ -239,8 +235,14 @@ fn keys() {
             },
         )
         .unwrap();
-    assert_eq!(result.signed, "+wz+QO6l1slgZS5s65BNqKcu4vz24FCJz4NSAxef9lu0jFfs8x3PzSZRC+pn5k8+aJi3xYMA3BQzglQmjK3hA1Rlc3QgTWVzc2FnZQ==");
-    assert_eq!(result.signature, "fb0cfe40eea5d6c960652e6ceb904da8a72ee2fcf6e05089cf835203179ff65bb48c57ecf31dcfcd26510bea67e64f3e6898b7c58300dc14338254268cade103");
+    assert_eq!(
+        result.signed,
+        "+wz+QO6l1slgZS5s65BNqKcu4vz24FCJz4NSAxef9lu0jFfs8x3PzSZRC+pn5k8+aJi3xYMA3BQzglQmjK3hA1Rlc3QgTWVzc2FnZQ=="
+    );
+    assert_eq!(
+        result.signature,
+        "fb0cfe40eea5d6c960652e6ceb904da8a72ee2fcf6e05089cf835203179ff65bb48c57ecf31dcfcd26510bea67e64f3e6898b7c58300dc14338254268cade103"
+    );
 
     let result: ResultOfVerifySignature = client.request("crypto.verify_signature", ParamsOfVerifySignature {
         signed: base64_from_hex("fb0cfe40eea5d6c960652e6ceb904da8a72ee2fcf6e05089cf835203179ff65bb48c57ecf31dcfcd26510bea67e64f3e6898b7c58300dc14338254268cade10354657374204d657373616765"),
@@ -267,7 +269,10 @@ fn scrypt() {
             },
         )
         .unwrap();
-    assert_eq!(result.key, "52e7fcf91356eca55fc5d52f16f5d777e3521f54e3c570c9bbb7df58fc15add73994e5db42be368de7ebed93c9d4f21f9be7cc453358d734b04a057d0ed3626d");
+    assert_eq!(
+        result.key,
+        "52e7fcf91356eca55fc5d52f16f5d777e3521f54e3c570c9bbb7df58fc15add73994e5db42be368de7ebed93c9d4f21f9be7cc453358d734b04a057d0ed3626d"
+    );
 }
 
 #[test]
@@ -285,16 +290,16 @@ fn nacl() {
             },
         )
         .unwrap();
-    assert_eq!(
-        result.public,
-        "aa5533618573860a7e1bf19f34bd292871710ed5b2eafa0dcdbb33405f2231c6"
-    );
+    assert_eq!(result.public, "aa5533618573860a7e1bf19f34bd292871710ed5b2eafa0dcdbb33405f2231c6");
 
     let result: ResultOfNaclSign = client.request("crypto.nacl_sign", ParamsOfNaclSign {
         unsigned: base64::encode("Test Message"),
         secret: "56b6a77093d6fdf14e593f36275d872d75de5b341942376b2a08759f3cbae78f1869b7ef29d58026217e9cf163cbfbd0de889bdf1bf4daebf5433a312f5b8d6e".into(),
     }).unwrap();
-    assert_eq!(result.signed, "+wz+QO6l1slgZS5s65BNqKcu4vz24FCJz4NSAxef9lu0jFfs8x3PzSZRC+pn5k8+aJi3xYMA3BQzglQmjK3hA1Rlc3QgTWVzc2FnZQ==");
+    assert_eq!(
+        result.signed,
+        "+wz+QO6l1slgZS5s65BNqKcu4vz24FCJz4NSAxef9lu0jFfs8x3PzSZRC+pn5k8+aJi3xYMA3BQzglQmjK3hA1Rlc3QgTWVzc2FnZQ=="
+    );
 
     let result: ResultOfNaclSignOpen = client.request("crypto.nacl_sign_open", ParamsOfNaclSignOpen {
         signed: base64_from_hex("fb0cfe40eea5d6c960652e6ceb904da8a72ee2fcf6e05089cf835203179ff65bb48c57ecf31dcfcd26510bea67e64f3e6898b7c58300dc14338254268cade10354657374204d657373616765"),
@@ -306,7 +311,10 @@ fn nacl() {
         unsigned: base64::encode("Test Message"),
         secret: "56b6a77093d6fdf14e593f36275d872d75de5b341942376b2a08759f3cbae78f1869b7ef29d58026217e9cf163cbfbd0de889bdf1bf4daebf5433a312f5b8d6e".into(),
     }).unwrap();
-    assert_eq!(result.signature, "fb0cfe40eea5d6c960652e6ceb904da8a72ee2fcf6e05089cf835203179ff65bb48c57ecf31dcfcd26510bea67e64f3e6898b7c58300dc14338254268cade103");
+    assert_eq!(
+        result.signature,
+        "fb0cfe40eea5d6c960652e6ceb904da8a72ee2fcf6e05089cf835203179ff65bb48c57ecf31dcfcd26510bea67e64f3e6898b7c58300dc14338254268cade103"
+    );
     let signature = result.signature;
     let result: ResultOfNaclSignDetachedVerify = client
         .request(
@@ -347,10 +355,7 @@ fn nacl() {
             },
         )
         .unwrap();
-    assert_eq!(
-        result.public,
-        "a53b003d3ffc1e159355cb37332d67fc235a7feb6381e36c803274074dc3933a"
-    );
+    assert_eq!(result.public, "a53b003d3ffc1e159355cb37332d67fc235a7feb6381e36c803274074dc3933a");
 
     let result: ResultOfNaclBox = client
         .request(
@@ -430,10 +435,7 @@ fn nacl() {
             },
         )
         .unwrap();
-    assert_eq!(
-        text_from_base64(&d.decrypted),
-        "Text with \' and \" and : {}"
-    );
+    assert_eq!(text_from_base64(&d.decrypted), "Text with \' and \" and : {}");
 }
 
 #[test]
@@ -448,10 +450,7 @@ fn mnemonic() {
     assert_eq!(params.dictionary, None);
 
     let result: ResultOfMnemonicWords = client
-        .request(
-            "crypto.mnemonic_words",
-            ParamsOfMnemonicWords { dictionary: None },
-        )
+        .request("crypto.mnemonic_words", ParamsOfMnemonicWords { dictionary: None })
         .unwrap();
     assert_eq!(result.words.split(" ").count(), 2048);
 
@@ -513,11 +512,7 @@ fn mnemonic() {
     let result: ResultOfMnemonicVerify = client
         .request(
             "crypto.mnemonic_verify",
-            ParamsOfMnemonicVerify {
-                phrase: "one two".into(),
-                dictionary: None,
-                word_count: None,
-            },
+            ParamsOfMnemonicVerify { phrase: "one two".into(), dictionary: None, word_count: None },
         )
         .unwrap();
     assert_eq!(result.valid, false);
@@ -531,15 +526,10 @@ fn mnemonic() {
     let result: ResultOfConvertPublicKeyToTonSafeFormat = client
         .request(
             "crypto.convert_public_key_to_tvm_safe_format",
-            ParamsOfConvertPublicKeyToTonSafeFormat {
-                public_key: result.public.clone(),
-            },
+            ParamsOfConvertPublicKeyToTonSafeFormat { public_key: result.public.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.tvm_public_key,
-        "PuYTvCuf__YXhp-4jv3TXTHL0iK65ImwxG0RGrYc1sP3H4KS"
-    );
+    assert_eq!(result.tvm_public_key, "PuYTvCuf__YXhp-4jv3TXTHL0iK65ImwxG0RGrYc1sP3H4KS");
 
     let result: KeyPair = client.request("crypto.mnemonic_derive_sign_keys", ParamsOfMnemonicDeriveSignKeys {
         phrase: "unit follow zone decline glare flower crisp vocal adapt magic much mesh cherry teach mechanic rain float vicious solution assume hedgehog rail sort chuckle".into(),
@@ -550,15 +540,10 @@ fn mnemonic() {
     let result: ResultOfConvertPublicKeyToTonSafeFormat = client
         .request(
             "crypto.convert_public_key_to_tvm_safe_format",
-            ParamsOfConvertPublicKeyToTonSafeFormat {
-                public_key: result.public.clone(),
-            },
+            ParamsOfConvertPublicKeyToTonSafeFormat { public_key: result.public.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.tvm_public_key,
-        "PubDdJkMyss2qHywFuVP1vzww0TpsLxnRNnbifTCcu-XEgW0"
-    );
+    assert_eq!(result.tvm_public_key, "PubDdJkMyss2qHywFuVP1vzww0TpsLxnRNnbifTCcu-XEgW0");
 
     let result: KeyPair = client.request(
         "crypto.mnemonic_derive_sign_keys",
@@ -574,23 +559,15 @@ fn mnemonic() {
     let result: ResultOfConvertPublicKeyToTonSafeFormat = client
         .request(
             "crypto.convert_public_key_to_tvm_safe_format",
-            ParamsOfConvertPublicKeyToTonSafeFormat {
-                public_key: result.public.clone(),
-            },
+            ParamsOfConvertPublicKeyToTonSafeFormat { public_key: result.public.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.tvm_public_key,
-        "PuZhw8W5ejPJwKA68RL7sn4_RNmeH4BIU_mEK7em5d4_-cIx"
-    );
+    assert_eq!(result.tvm_public_key, "PuZhw8W5ejPJwKA68RL7sn4_RNmeH4BIU_mEK7em5d4_-cIx");
 
     let result: ResultOfMnemonicFromRandom = client
         .request(
             "crypto.mnemonic_from_random",
-            ParamsOfMnemonicFromRandom {
-                dictionary: None,
-                word_count: None,
-            },
+            ParamsOfMnemonicFromRandom { dictionary: None, word_count: None },
         )
         .unwrap();
     assert_eq!(result.phrase.split(" ").count(), 12);
@@ -642,15 +619,10 @@ fn mnemonic() {
     let result: ResultOfConvertPublicKeyToTonSafeFormat = client
         .request(
             "crypto.convert_public_key_to_tvm_safe_format",
-            ParamsOfConvertPublicKeyToTonSafeFormat {
-                public_key: result.public.clone(),
-            },
+            ParamsOfConvertPublicKeyToTonSafeFormat { public_key: result.public.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.tvm_public_key,
-        "PuZdw_KyXIzo8IksTrERN3_WoAoYTyK7OvM-yaLk711sUIB3"
-    );
+    assert_eq!(result.tvm_public_key, "PuZdw_KyXIzo8IksTrERN3_WoAoYTyK7OvM-yaLk711sUIB3");
 }
 
 #[test]
@@ -670,33 +642,26 @@ fn hdkey() {
             },
         )
         .unwrap();
-    assert_eq!(master.xprv, "xprv9s21ZrQH143K25JhKqEwvJW7QAiVvkmi4WRenBZanA6kxHKtKAQQKwZG65kCyW5jWJ8NY9e3GkRoistUjjcpHNsGBUv94istDPXvqGNuWpC");
+    assert_eq!(
+        master.xprv,
+        "xprv9s21ZrQH143K25JhKqEwvJW7QAiVvkmi4WRenBZanA6kxHKtKAQQKwZG65kCyW5jWJ8NY9e3GkRoistUjjcpHNsGBUv94istDPXvqGNuWpC"
+    );
 
     let result: ResultOfHDKeySecretFromXPrv = client
         .request(
             "crypto.hdkey_secret_from_xprv",
-            ParamsOfHDKeySecretFromXPrv {
-                xprv: master.xprv.clone(),
-            },
+            ParamsOfHDKeySecretFromXPrv { xprv: master.xprv.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.secret,
-        "0c91e53128fa4d67589d63a6c44049c1068ec28a63069a55ca3de30c57f8b365"
-    );
+    assert_eq!(result.secret, "0c91e53128fa4d67589d63a6c44049c1068ec28a63069a55ca3de30c57f8b365");
 
     let result: ResultOfHDKeyPublicFromXPrv = client
         .request(
             "crypto.hdkey_public_from_xprv",
-            ParamsOfHDKeyPublicFromXPrv {
-                xprv: master.xprv.clone(),
-            },
+            ParamsOfHDKeyPublicFromXPrv { xprv: master.xprv.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.public,
-        "7b70008d0c40992283d488b1046739cf827afeabf647a5f07c4ad1e7e45a6f89"
-    );
+    assert_eq!(result.public, "7b70008d0c40992283d488b1046739cf827afeabf647a5f07c4ad1e7e45a6f89");
 
     let child: ResultOfHDKeyDeriveFromXPrv = client
         .request(
@@ -708,33 +673,26 @@ fn hdkey() {
             },
         )
         .unwrap();
-    assert_eq!(child.xprv, "xprv9uZwtSeoKf1swgAkVVCEUmC2at6t7MCJoHnBbn1MWJZyxQ4cySkVXPyNh7zjf9VjsP4vEHDDD2a6R35cHubg4WpzXRzniYiy8aJh1gNnBKv");
+    assert_eq!(
+        child.xprv,
+        "xprv9uZwtSeoKf1swgAkVVCEUmC2at6t7MCJoHnBbn1MWJZyxQ4cySkVXPyNh7zjf9VjsP4vEHDDD2a6R35cHubg4WpzXRzniYiy8aJh1gNnBKv"
+    );
 
     let result: ResultOfHDKeySecretFromXPrv = client
         .request(
             "crypto.hdkey_secret_from_xprv",
-            ParamsOfHDKeySecretFromXPrv {
-                xprv: child.xprv.clone(),
-            },
+            ParamsOfHDKeySecretFromXPrv { xprv: child.xprv.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.secret,
-        "518afc6489b61d4b738ee9ad9092815fa014ffa6e9a280fa17f84d95f31adb91"
-    );
+    assert_eq!(result.secret, "518afc6489b61d4b738ee9ad9092815fa014ffa6e9a280fa17f84d95f31adb91");
 
     let result: ResultOfHDKeyPublicFromXPrv = client
         .request(
             "crypto.hdkey_public_from_xprv",
-            ParamsOfHDKeyPublicFromXPrv {
-                xprv: child.xprv.clone(),
-            },
+            ParamsOfHDKeyPublicFromXPrv { xprv: child.xprv.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.public,
-        "b45e1297a5e767341a6eaaac9e20f8ccd7556a0106298316f1272e461b6fbe98"
-    );
+    assert_eq!(result.public, "b45e1297a5e767341a6eaaac9e20f8ccd7556a0106298316f1272e461b6fbe98");
 
     let second: ResultOfHDKeyDeriveFromXPrvPath = client
         .request(
@@ -745,33 +703,26 @@ fn hdkey() {
             },
         )
         .unwrap();
-    assert_eq!(second.xprv, "xprvA1KNMo63UcGjmDF1bX39Cw2BXGUwrwMjeD5qvQ3tA3qS3mZQkGtpf4DHq8FDLKAvAjXsYGLHDP2dVzLu9ycta8PXLuSYib2T3vzLf3brVgZ");
+    assert_eq!(
+        second.xprv,
+        "xprvA1KNMo63UcGjmDF1bX39Cw2BXGUwrwMjeD5qvQ3tA3qS3mZQkGtpf4DHq8FDLKAvAjXsYGLHDP2dVzLu9ycta8PXLuSYib2T3vzLf3brVgZ"
+    );
 
     let result: ResultOfHDKeySecretFromXPrv = client
         .request(
             "crypto.hdkey_secret_from_xprv",
-            ParamsOfHDKeySecretFromXPrv {
-                xprv: second.xprv.clone(),
-            },
+            ParamsOfHDKeySecretFromXPrv { xprv: second.xprv.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.secret,
-        "1c566ade41169763b155761406d3cef08b29b31cf8014f51be08c0cb4e67c5e1"
-    );
+    assert_eq!(result.secret, "1c566ade41169763b155761406d3cef08b29b31cf8014f51be08c0cb4e67c5e1");
 
     let result: ResultOfHDKeyPublicFromXPrv = client
         .request(
             "crypto.hdkey_public_from_xprv",
-            ParamsOfHDKeyPublicFromXPrv {
-                xprv: second.xprv.clone(),
-            },
+            ParamsOfHDKeyPublicFromXPrv { xprv: second.xprv.clone() },
         )
         .unwrap();
-    assert_eq!(
-        result.public,
-        "302a832bad9e5c9906422a82c28b39ae465dcd60178480f7309e183ee34b5e83"
-    );
+    assert_eq!(result.public, "302a832bad9e5c9906422a82c28b39ae465dcd60178480f7309e183ee34b5e83");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -797,18 +748,14 @@ async fn test_signing_box() {
                     let result: ResultOfSigningBoxGetPublicKey = client
                         .request_async(
                             "crypto.signing_box_get_public_key",
-                            RegisteredSigningBox {
-                                handle: keys_box_handle.into(),
-                            },
+                            RegisteredSigningBox { handle: keys_box_handle.into() },
                         )
                         .await
                         .unwrap();
                     client
                         .resolve_app_request(
                             request.app_request_id,
-                            ResultOfAppSigningBox::GetPublicKey {
-                                public_key: result.pubkey,
-                            },
+                            ResultOfAppSigningBox::GetPublicKey { public_key: result.pubkey },
                         )
                         .await;
                 }
@@ -826,9 +773,7 @@ async fn test_signing_box() {
                     client
                         .resolve_app_request(
                             request.app_request_id,
-                            ResultOfAppSigningBox::Sign {
-                                signature: result.signature,
-                            },
+                            ResultOfAppSigningBox::Sign { signature: result.signature },
                         )
                         .await;
                 }
@@ -837,17 +782,13 @@ async fn test_signing_box() {
         futures::future::ready(())
     };
 
-    let external_box: RegisteredSigningBox = client
-        .request_async_callback("crypto.register_signing_box", (), callback)
-        .await
-        .unwrap();
+    let external_box: RegisteredSigningBox =
+        client.request_async_callback("crypto.register_signing_box", (), callback).await.unwrap();
 
     let box_pubkey: ResultOfSigningBoxGetPublicKey = client
         .request_async(
             "crypto.signing_box_get_public_key",
-            RegisteredSigningBox {
-                handle: external_box.handle.clone(),
-            },
+            RegisteredSigningBox { handle: external_box.handle.clone() },
         )
         .await
         .unwrap();
@@ -866,18 +807,15 @@ async fn test_signing_box() {
         .await
         .unwrap();
 
-    let keys_sign: ResultOfSign = client
-        .request("crypto.sign", ParamsOfSign { unsigned, keys })
-        .unwrap();
+    let keys_sign: ResultOfSign =
+        client.request("crypto.sign", ParamsOfSign { unsigned, keys }).unwrap();
 
     assert_eq!(box_sign.signature, keys_sign.signature);
 
     let _: () = client
         .request_async(
             "crypto.remove_signing_box",
-            RegisteredSigningBox {
-                handle: external_box.handle,
-            },
+            RegisteredSigningBox { handle: external_box.handle },
         )
         .await
         .unwrap();
@@ -885,9 +823,7 @@ async fn test_signing_box() {
     let _: () = client
         .request_async(
             "crypto.remove_signing_box",
-            RegisteredSigningBox {
-                handle: keys_box_handle.into(),
-            },
+            RegisteredSigningBox { handle: keys_box_handle.into() },
         )
         .await
         .unwrap();
@@ -961,10 +897,7 @@ async fn test_aes_params(key: &str, data: &str, encrypted: &str) {
     let result: ResultOfEncryptionBoxDecrypt = client
         .request_async(
             "crypto.encryption_box_decrypt",
-            ParamsOfEncryptionBoxDecrypt {
-                encryption_box: box_handle.clone(),
-                data: encrypted,
-            },
+            ParamsOfEncryptionBoxDecrypt { encryption_box: box_handle.clone(), data: encrypted },
         )
         .await
         .unwrap();
@@ -1038,10 +971,7 @@ async fn test_chacha20_encryption_box() {
     let result: ResultOfEncryptionBoxDecrypt = client
         .request_async(
             "crypto.encryption_box_decrypt",
-            ParamsOfEncryptionBoxDecrypt {
-                encryption_box: box_handle.clone(),
-                data: result.data,
-            },
+            ParamsOfEncryptionBoxDecrypt { encryption_box: box_handle.clone(), data: result.data },
         )
         .await
         .unwrap();
@@ -1051,9 +981,7 @@ async fn test_chacha20_encryption_box() {
     let result: ResultOfEncryptionBoxGetInfo = client
         .request_async(
             "crypto.encryption_box_get_info",
-            ParamsOfEncryptionBoxGetInfo {
-                encryption_box: box_handle,
-            },
+            ParamsOfEncryptionBoxGetInfo { encryption_box: box_handle },
         )
         .await
         .unwrap();
@@ -1077,7 +1005,8 @@ async fn test_nacl_encryption_box() {
     const NONCE: &str = "cd7f99924bf422544046e83595dd5803f17536f5c9a11746";
     const SECRET: &str = "d9b9dc5033fb416134e5d2107fdbacab5aadb297cb82dbdcd137d663bac59f7f";
     const PUBLIC: &str = "c4e2d9fe6a6baf8d1812b799856ef2a306291be7a7024837ad33a8530db79c6b";
-    // const THEIR_SECRET: &str = "1b843d37249fdf235f17b200f5033ada1fbea88b19106b3c8be89d70a3db7b8d";
+    // const THEIR_SECRET: &str =
+    // "1b843d37249fdf235f17b200f5033ada1fbea88b19106b3c8be89d70a3db7b8d";
     const THEIR_PUBLIC: &str = "ecd5620fa18704ee7a55d8af9577bdff60ea009a5a298ca7433850643160ef2d";
 
     let box_handle = client
@@ -1113,10 +1042,7 @@ async fn test_nacl_encryption_box() {
     let result: ResultOfEncryptionBoxDecrypt = client
         .request_async(
             "crypto.encryption_box_decrypt",
-            ParamsOfEncryptionBoxDecrypt {
-                encryption_box: box_handle.clone(),
-                data: result.data,
-            },
+            ParamsOfEncryptionBoxDecrypt { encryption_box: box_handle.clone(), data: result.data },
         )
         .await
         .unwrap();
@@ -1126,9 +1052,7 @@ async fn test_nacl_encryption_box() {
     let result: ResultOfEncryptionBoxGetInfo = client
         .request_async(
             "crypto.encryption_box_get_info",
-            ParamsOfEncryptionBoxGetInfo {
-                encryption_box: box_handle,
-            },
+            ParamsOfEncryptionBoxGetInfo { encryption_box: box_handle },
         )
         .await
         .unwrap();
@@ -1186,10 +1110,7 @@ async fn test_nacl_secret_encryption_box() {
     let result: ResultOfEncryptionBoxDecrypt = client
         .request_async(
             "crypto.encryption_box_decrypt",
-            ParamsOfEncryptionBoxDecrypt {
-                encryption_box: box_handle.clone(),
-                data: result.data,
-            },
+            ParamsOfEncryptionBoxDecrypt { encryption_box: box_handle.clone(), data: result.data },
         )
         .await
         .unwrap();
@@ -1199,9 +1120,7 @@ async fn test_nacl_secret_encryption_box() {
     let result: ResultOfEncryptionBoxGetInfo = client
         .request_async(
             "crypto.encryption_box_get_info",
-            ParamsOfEncryptionBoxGetInfo {
-                encryption_box: box_handle,
-            },
+            ParamsOfEncryptionBoxGetInfo { encryption_box: box_handle },
         )
         .await
         .unwrap();
@@ -1233,9 +1152,8 @@ fn password_provider(
         let on_callback = Arc::clone(&on_callback);
         tokio::spawn(async move {
             on_callback();
-            let ParamsOfAppPasswordProvider::GetPassword {
-                encryption_public_key,
-            } = serde_json::from_value(request.request_data).unwrap();
+            let ParamsOfAppPasswordProvider::GetPassword { encryption_public_key } =
+                serde_json::from_value(request.request_data).unwrap();
 
             let keypair: KeyPair = client.request_no_params("crypto.nacl_box_keypair").unwrap();
 
@@ -1288,10 +1206,7 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
         .await?;
 
     let seed_phrase: ResultOfGetCryptoBoxSeedPhrase = client
-        .request_async(
-            "crypto.get_crypto_box_seed_phrase",
-            RegisteredCryptoBox { handle },
-        )
+        .request_async("crypto.get_crypto_box_seed_phrase", RegisteredCryptoBox { handle })
         .await?;
 
     let verify_result: ResultOfMnemonicVerify = client
@@ -1307,9 +1222,8 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
 
     assert!(verify_result.valid);
 
-    let crypto_box_info: ResultOfGetCryptoBoxInfo = client
-        .request_async("crypto.get_crypto_box_info", RegisteredCryptoBox { handle })
-        .await?;
+    let crypto_box_info: ResultOfGetCryptoBoxInfo =
+        client.request_async("crypto.get_crypto_box_info", RegisteredCryptoBox { handle }).await?;
 
     let RegisteredCryptoBox { handle } = client
         .request_async_callback(
@@ -1325,10 +1239,7 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
         .await?;
 
     let seed_phrase2: ResultOfGetCryptoBoxSeedPhrase = client
-        .request_async(
-            "crypto.get_crypto_box_seed_phrase",
-            RegisteredCryptoBox { handle },
-        )
+        .request_async("crypto.get_crypto_box_seed_phrase", RegisteredCryptoBox { handle })
         .await?;
 
     assert_eq!(seed_phrase.phrase, seed_phrase2.phrase);
@@ -1349,10 +1260,7 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
         .await?;
 
     let seed_phrase3: ResultOfGetCryptoBoxSeedPhrase = client
-        .request_async(
-            "crypto.get_crypto_box_seed_phrase",
-            RegisteredCryptoBox { handle },
-        )
+        .request_async("crypto.get_crypto_box_seed_phrase", RegisteredCryptoBox { handle })
         .await?;
 
     assert_eq!(seed_phrase.phrase, seed_phrase3.phrase);
@@ -1405,9 +1313,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     let ResultOfSigningBoxGetPublicKey { pubkey } = client
         .request_async(
             "crypto.signing_box_get_public_key",
-            RegisteredSigningBox {
-                handle: signing_box.handle.clone(),
-            },
+            RegisteredSigningBox { handle: signing_box.handle.clone() },
         )
         .await?;
 
@@ -1417,9 +1323,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     let _: ResultOfSigningBoxGetPublicKey = client
         .request_async(
             "crypto.signing_box_get_public_key",
-            RegisteredSigningBox {
-                handle: signing_box.handle.clone(),
-            },
+            RegisteredSigningBox { handle: signing_box.handle.clone() },
         )
         .await?;
 
@@ -1442,9 +1346,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
         let _: ResultOfSigningBoxGetPublicKey = client
             .request_async(
                 "crypto.signing_box_get_public_key",
-                RegisteredSigningBox {
-                    handle: signing_box.handle.clone(),
-                },
+                RegisteredSigningBox { handle: signing_box.handle.clone() },
             )
             .await?;
 
@@ -1454,9 +1356,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     client
         .request_async(
             "crypto.clear_crypto_box_secret_cache",
-            RegisteredCryptoBox {
-                handle: crypto_box.handle.clone(),
-            },
+            RegisteredCryptoBox { handle: crypto_box.handle.clone() },
         )
         .await?;
 
@@ -1466,9 +1366,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
         let _: ResultOfSigningBoxGetPublicKey = client
             .request_async(
                 "crypto.signing_box_get_public_key",
-                RegisteredSigningBox {
-                    handle: signing_box.handle.clone(),
-                },
+                RegisteredSigningBox { handle: signing_box.handle.clone() },
             )
             .await?;
 
@@ -1527,9 +1425,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     let result: ResultOfEncryptionBoxGetInfo = client
         .request_async(
             "crypto.encryption_box_get_info",
-            ParamsOfEncryptionBoxGetInfo {
-                encryption_box: encryption_box.handle.clone(),
-            },
+            ParamsOfEncryptionBoxGetInfo { encryption_box: encryption_box.handle.clone() },
         )
         .await?;
 
@@ -1550,9 +1446,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     let _: ResultOfEncryptionBoxGetInfo = client
         .request_async(
             "crypto.encryption_box_get_info",
-            ParamsOfEncryptionBoxGetInfo {
-                encryption_box: encryption_box.handle.clone(),
-            },
+            ParamsOfEncryptionBoxGetInfo { encryption_box: encryption_box.handle.clone() },
         )
         .await?;
 
@@ -1578,9 +1472,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
         let _: ResultOfEncryptionBoxGetInfo = client
             .request_async(
                 "crypto.encryption_box_get_info",
-                ParamsOfEncryptionBoxGetInfo {
-                    encryption_box: encryption_box.handle.clone(),
-                },
+                ParamsOfEncryptionBoxGetInfo { encryption_box: encryption_box.handle.clone() },
             )
             .await?;
 
@@ -1590,9 +1482,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     client
         .request_async(
             "crypto.clear_crypto_box_secret_cache",
-            RegisteredCryptoBox {
-                handle: crypto_box.handle.clone(),
-            },
+            RegisteredCryptoBox { handle: crypto_box.handle.clone() },
         )
         .await?;
 
@@ -1602,9 +1492,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
         let _: ResultOfEncryptionBoxGetInfo = client
             .request_async(
                 "crypto.encryption_box_get_info",
-                ParamsOfEncryptionBoxGetInfo {
-                    encryption_box: encryption_box.handle.clone(),
-                },
+                ParamsOfEncryptionBoxGetInfo { encryption_box: encryption_box.handle.clone() },
             )
             .await?;
 

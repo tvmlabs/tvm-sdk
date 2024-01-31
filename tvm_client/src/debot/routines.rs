@@ -1,13 +1,22 @@
-use chrono::{Local, TimeZone};
-use crate::boc::{parse_account, ParamsOfParse};
-use crate::crypto::{
-    generate_random_bytes, nacl_box_keypair_from_secret_key, signing_box_sign, KeyPair,
-    ParamsOfGenerateRandomBytes, ParamsOfNaclBox, ParamsOfNaclBoxKeyPairFromSecret,
-    ParamsOfSigningBoxSign, SigningBoxHandle,
-};
-use crate::encoding::{decode_abi_bigint, decode_abi_number};
-use crate::net::{query_collection, ParamsOfQueryCollection};
+use chrono::Local;
+use chrono::TimeZone;
+
 use super::TonClient;
+use crate::boc::parse_account;
+use crate::boc::ParamsOfParse;
+use crate::crypto::generate_random_bytes;
+use crate::crypto::nacl_box_keypair_from_secret_key;
+use crate::crypto::signing_box_sign;
+use crate::crypto::KeyPair;
+use crate::crypto::ParamsOfGenerateRandomBytes;
+use crate::crypto::ParamsOfNaclBox;
+use crate::crypto::ParamsOfNaclBoxKeyPairFromSecret;
+use crate::crypto::ParamsOfSigningBoxSign;
+use crate::crypto::SigningBoxHandle;
+use crate::encoding::decode_abi_bigint;
+use crate::encoding::decode_abi_number;
+use crate::net::query_collection;
+use crate::net::ParamsOfQueryCollection;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub(super) struct ResultOfGetAccountState {
@@ -33,7 +42,6 @@ impl Default for ResultOfGetAccountState {
             data: String::new(),
             lib: String::new(),
         }
-
     }
 }
 
@@ -57,20 +65,12 @@ pub async fn call_routine(
         }
         "getBalance" => {
             debug!("getBalance({})", arg);
-            let args = if arg_json.is_err() {
-                json!({ "addr": arg })
-            } else {
-                arg_json?
-            };
+            let args = if arg_json.is_err() { json!({ "addr": arg }) } else { arg_json? };
             let balance = get_balance(ton, &args).await?;
             Ok(json!({ "arg1": balance }))
         }
         "getAccountState" => {
-            let args = if arg_json.is_err() {
-                json!({ "addr": arg })
-            } else {
-                arg_json?
-            };
+            let args = if arg_json.is_err() { json!({ "addr": arg }) } else { arg_json? };
             debug!("getAccountState({})", args);
             let acc = get_account_state(ton, &args).await;
             serde_json::to_value(acc)
@@ -196,9 +196,7 @@ pub(super) async fn sign_hash(
     arg_json: serde_json::Value,
     signer: SigningBoxHandle,
 ) -> Result<String, String> {
-    let hash_str = arg_json["hash"]
-        .as_str()
-        .ok_or(format!(r#""hash" argument not found"#))?;
+    let hash_str = arg_json["hash"].as_str().ok_or(format!(r#""hash" argument not found"#))?;
     let hash_as_bigint = decode_abi_bigint(hash_str).map_err(|err| err.to_string())?;
     let result = signing_box_sign(
         ton,
@@ -222,10 +220,7 @@ pub(super) fn generate_random(ton: TonClient, args: &serde_json::Value) -> Resul
 }
 
 fn get_arg(args: &serde_json::Value, name: &str) -> Result<String, String> {
-    args[name]
-        .as_str()
-        .ok_or(format!("\"{}\" not found", name))
-        .map(|v| v.to_string())
+    args[name].as_str().ok_or(format!("\"{}\" not found", name)).map(|v| v.to_string())
 }
 
 pub(super) fn nacl_box(ton: TonClient, args: serde_json::Value) -> Result<String, String> {
@@ -251,9 +246,7 @@ pub(super) fn nacl_box_gen_keypair(
     let secret = decode_abi_bigint(&get_arg(&args, "secret")?).map_err(|e| e.to_string())?;
     let result = nacl_box_keypair_from_secret_key(
         ton,
-        ParamsOfNaclBoxKeyPairFromSecret {
-            secret: hex::encode(secret.to_bytes_be().1),
-        },
+        ParamsOfNaclBoxKeyPairFromSecret { secret: hex::encode(secret.to_bytes_be().1) },
     )
     .map_err(|e| format!(" failed to generate keypair from secret: {}", e))?;
     Ok(result)
@@ -264,19 +257,17 @@ pub(super) async fn get_account_state(
     args: &serde_json::Value,
 ) -> ResultOfGetAccountState {
     match get_account(ton, args).await {
-        Ok(acc) => {
-            serde_json::from_value(acc)
-                .map_err(|e| {
-                    debug!("failed to deserialize account json: {}", e);
-                    e
-                })
-                .unwrap_or_default()
-        },
+        Ok(acc) => serde_json::from_value(acc)
+            .map_err(|e| {
+                debug!("failed to deserialize account json: {}", e);
+                e
+            })
+            .unwrap_or_default(),
         Err(e) => {
             debug!("getAccountState failed: {}", e);
             let def = ResultOfGetAccountState::default();
             def
-        },
+        }
     }
 }
 
@@ -305,14 +296,9 @@ pub(super) async fn get_account(
         return Err(format!("account not found"));
     }
 
-    let acc = parse_account(
-        ton,
-        ParamsOfParse {
-            boc: get_arg(&accounts.swap_remove(0), "boc")?,
-        },
-    )
-    .map_err(|e| format!("failed to parse account from boc: {}", e))?
-    .parsed;
+    let acc = parse_account(ton, ParamsOfParse { boc: get_arg(&accounts.swap_remove(0), "boc")? })
+        .map_err(|e| format!("failed to parse account from boc: {}", e))?
+        .parsed;
 
     Ok(acc)
 }

@@ -1,10 +1,12 @@
-use crate::crypto;
-use crate::error::ClientResult;
-use ed25519_dalek::{SigningKey, VerifyingKey};
+use ed25519_dalek::SigningKey;
+use ed25519_dalek::VerifyingKey;
 use hmac::*;
 use sha2::Digest;
 use sha2::Sha512;
 use zeroize::Zeroize;
+
+use crate::crypto;
+use crate::error::ClientResult;
 
 const XMODEM: crc::Crc<u16> = crc::Crc::<u16>::new(&crc::CRC_16_XMODEM);
 
@@ -16,6 +18,7 @@ pub(crate) struct SecretBuf(pub Vec<u8>);
 
 impl std::ops::Deref for SecretBuf {
     type Target = [u8];
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -50,6 +53,7 @@ impl<const N: usize> Drop for SecretBufConst<N> {
 
 impl<const N: usize> std::ops::Deref for SecretBufConst<N> {
     type Target = [u8];
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }

@@ -1,22 +1,30 @@
+use std::convert::TryFrom;
+use std::sync::Arc;
+
+use serde_json::Value;
+use tvm_block::MsgAddressInt;
+use tvm_sdk::Block;
+
 use crate::abi::Abi;
 use crate::boc::internal::deserialize_object_from_base64;
 use crate::client::ClientContext;
-use crate::error::{AddNetworkUrl, ClientResult};
-use crate::net::{
-    wait_for_collection, ParamsOfWaitForCollection, MAX_TIMEOUT, TRANSACTIONS_COLLECTION,
-};
+use crate::error::AddNetworkUrl;
+use crate::error::ClientResult;
+use crate::net::wait_for_collection;
+use crate::net::ParamsOfWaitForCollection;
+use crate::net::MAX_TIMEOUT;
+use crate::net::TRANSACTIONS_COLLECTION;
 use crate::processing::blocks_walking::wait_next_block;
-use crate::processing::internal::{can_retry_network_error, resolve_error};
-use crate::processing::parsing::{decode_output, parse_transaction_boc};
-use crate::processing::{
-    Error, ParamsOfWaitForTransaction, ProcessingEvent, ResultOfProcessMessage,
-};
-use crate::tvm::check_transaction::{calc_transaction_fees, extract_error};
-use serde_json::Value;
-use std::convert::TryFrom;
-use std::sync::Arc;
-use tvm_block::MsgAddressInt;
-use tvm_sdk::Block;
+use crate::processing::internal::can_retry_network_error;
+use crate::processing::internal::resolve_error;
+use crate::processing::parsing::decode_output;
+use crate::processing::parsing::parse_transaction_boc;
+use crate::processing::Error;
+use crate::processing::ParamsOfWaitForTransaction;
+use crate::processing::ProcessingEvent;
+use crate::processing::ResultOfProcessMessage;
+use crate::tvm::check_transaction::calc_transaction_fees;
+use crate::tvm::check_transaction::extract_error;
 
 pub async fn fetch_next_shard_block<F: futures::Future<Output = ()> + Send>(
     context: &Arc<ClientContext>,
@@ -259,12 +267,7 @@ pub async fn fetch_transaction_result(
         None
     };
 
-    Ok(ResultOfProcessMessage {
-        transaction,
-        out_messages,
-        decoded: abi_decoded,
-        fees,
-    })
+    Ok(ResultOfProcessMessage { transaction, out_messages, decoded: abi_decoded, fees })
 }
 
 async fn fetch_transaction_boc(

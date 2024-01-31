@@ -1,28 +1,29 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
+use std::fmt;
 use std::sync::Arc;
 
 use serde::de::Error;
+use serde::Serializer;
 use serde_json::Value;
-use std::fmt;
+use tvm_block::ShardIdent;
 
 use crate::error::ClientResult;
-use crate::net::{query_collection, OrderBy, ParamsOfQueryCollection, SortDirection};
+use crate::net::query_collection;
+use crate::net::OrderBy;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::SortDirection;
 use crate::ClientContext;
-use serde::Serializer;
-use tvm_block::ShardIdent;
 
 pub const BLOCK_TRAVERSE_FIELDS: &str = r#"
     id
@@ -81,9 +82,11 @@ impl<'a> ShardIdentFields<'a> {
     pub fn workchain_id(&self) -> i32 {
         self.0["workchain_id"].as_i64().unwrap_or(0) as i32
     }
+
     pub fn shard(&self) -> &str {
         self.0["shard"].as_str().unwrap_or("")
     }
+
     pub fn shard_ident(&self) -> ClientResult<ShardIdent> {
         shard_ident(self.workchain_id(), self.shard())
     }
@@ -227,6 +230,7 @@ impl<'a> ShardHashFields<'a> {
     pub fn as_shard_ident(&self) -> ShardIdentFields {
         ShardIdentFields(self.0)
     }
+
     pub fn descr(&self) -> Option<DescrFields> {
         self.0.get("descr").map(|x| DescrFields(x))
     }
@@ -236,9 +240,7 @@ pub(crate) struct MasterFields<'a>(&'a Value);
 
 impl<'a> MasterFields<'a> {
     pub fn shard_hashes(&self) -> Option<Vec<ShardHashFields>> {
-        self.0["shard_hashes"]
-            .as_array()
-            .map(|x| x.iter().map(|x| ShardHashFields(x)).collect())
+        self.0["shard_hashes"].as_array().map(|x| x.iter().map(|x| ShardHashFields(x)).collect())
     }
 }
 
@@ -289,9 +291,7 @@ impl MasterBlock {
             blocks.reverse();
         }
 
-        Err(crate::net::Error::invalid_server_response(
-            "missing master blocks",
-        ))
+        Err(crate::net::Error::invalid_server_response("missing master blocks"))
     }
 
     async fn query_blocks(
@@ -306,10 +306,7 @@ impl MasterBlock {
             ParamsOfQueryCollection {
                 collection: "blocks".to_string(),
                 filter: Some(filter),
-                order: Some(vec![OrderBy {
-                    path: "gen_utime".to_string(),
-                    direction,
-                }]),
+                order: Some(vec![OrderBy { path: "gen_utime".to_string(), direction }]),
                 result: format!("{} {}", BLOCK_MASTER_FIELDS, fields),
                 limit: Some(limit),
             },
@@ -339,11 +336,7 @@ pub(crate) fn shard_ident_parse(s: &str) -> ClientResult<ShardIdent> {
 }
 
 pub(crate) fn shard_ident_to_string(shard: &ShardIdent) -> String {
-    format!(
-        "{}:{:016x}",
-        shard.workchain_id(),
-        shard.shard_prefix_with_tag()
-    )
+    format!("{}:{:016x}", shard.workchain_id(), shard.shard_prefix_with_tag())
 }
 
 pub(crate) fn serialize_shard_ident<S>(

@@ -1,19 +1,23 @@
-use tokio::sync::Mutex;
-
-use crate::abi::{CallSet, DeploySet, ParamsOfEncodeMessage, Signer};
-use crate::error::ClientError;
-use crate::processing::ParamsOfProcessMessage;
-use crate::tests::{TestClient, HELLO};
-
-use super::*;
-use crate::client::NetworkMock;
-use crate::net::subscriptions::ParamsOfSubscribe;
-use crate::net::tvm_gql::GraphQLQuery;
-use crate::ClientConfig;
-use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::vec;
+
+use serde_json::Value;
+use tokio::sync::Mutex;
+
+use super::*;
+use crate::abi::CallSet;
+use crate::abi::DeploySet;
+use crate::abi::ParamsOfEncodeMessage;
+use crate::abi::Signer;
+use crate::client::NetworkMock;
+use crate::error::ClientError;
+use crate::net::subscriptions::ParamsOfSubscribe;
+use crate::net::tvm_gql::GraphQLQuery;
+use crate::processing::ParamsOfProcessMessage;
+use crate::tests::TestClient;
+use crate::tests::HELLO;
+use crate::ClientConfig;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn bad_request() {
@@ -26,17 +30,17 @@ async fn bad_request() {
     let result = client
         .request_async::<_, ResultOfQuery>(
             "net.query",
-            ParamsOfQuery {
-                query: r#"query { accounts { id }"#.to_string(),
-                variables: None,
-            },
+            ParamsOfQuery { query: r#"query { accounts { id }"#.to_string(), variables: None },
         )
         .await;
 
     if let Err(err) = result {
         println!("{:?}", err);
         assert_eq!(err.code, ErrorCode::QueryFailed as u32);
-        assert_eq!(err.message, "Query failed: Graphql server returned error: Syntax Error: Expected Name, found <EOF>..");
+        assert_eq!(
+            err.message,
+            "Query failed: Graphql server returned error: Syntax Error: Expected Name, found <EOF>.."
+        );
     } else {
         panic!("Error expected");
     }
@@ -136,10 +140,7 @@ async fn auth_header() {
         }
     }));
     assert_eq!(
-        Some((
-            "Authorization".to_string(),
-            "Basic OnNlY3JldA==".to_string()
-        )),
+        Some(("Authorization".to_string(), "Basic OnNlY3JldA==".to_string())),
         client.context().config.network.get_auth_header()
     );
     let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
@@ -159,33 +160,18 @@ async fn auth_header() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn endpoints_with_graphql_suffix() {
     let url = TestClient::endpoints()[0].clone();
-    let url = if let Some(url) = url.strip_suffix("/graphql") {
-        url.to_string()
-    } else {
-        url
-    };
+    let url = if let Some(url) = url.strip_suffix("/graphql") { url.to_string() } else { url };
 
     let client = TestClient::new_with_config(json!({
         "network": {
             "endpoints": vec![format!("{}/graphql", url)]
         }
     }));
-    let endpoint = client
-        .context()
-        .get_server_link()
-        .unwrap()
-        .get_query_endpoint()
-        .await
-        .unwrap();
+    let endpoint = client.context().get_server_link().unwrap().get_query_endpoint().await.unwrap();
 
     assert_eq!(
-        endpoint
-            .query_url
-            .trim_start_matches("http://")
-            .trim_start_matches("https://"),
-        format!("{}/graphql", url)
-            .trim_start_matches("http://")
-            .trim_start_matches("https://"),
+        endpoint.query_url.trim_start_matches("http://").trim_start_matches("https://"),
+        format!("{}/graphql", url).trim_start_matches("http://").trim_start_matches("https://"),
     );
 
     let client = TestClient::new_with_config(json!({
@@ -193,21 +179,10 @@ async fn endpoints_with_graphql_suffix() {
             "endpoints": vec![url.clone()]
         }
     }));
-    let endpoint = client
-        .context()
-        .get_server_link()
-        .unwrap()
-        .get_query_endpoint()
-        .await
-        .unwrap();
+    let endpoint = client.context().get_server_link().unwrap().get_query_endpoint().await.unwrap();
     assert_eq!(
-        endpoint
-            .query_url
-            .trim_start_matches("http://")
-            .trim_start_matches("https://"),
-        format!("{}/graphql", url)
-            .trim_start_matches("http://")
-            .trim_start_matches("https://"),
+        endpoint.query_url.trim_start_matches("http://").trim_start_matches("https://"),
+        format!("{}/graphql", url).trim_start_matches("http://").trim_start_matches("https://"),
     );
 }
 
@@ -259,10 +234,7 @@ async fn query() {
     let info: ResultOfQuery = client
         .request_async(
             "net.query",
-            ParamsOfQuery {
-                query: "query{info{version}}".to_owned(),
-                variables: None,
-            },
+            ParamsOfQuery { query: "query{info{version}}".to_owned(), variables: None },
         )
         .await
         .unwrap();
@@ -278,10 +250,7 @@ fn query_sync() {
     let info: ResultOfQuery = client
         .request(
             "net.query",
-            ParamsOfQuery {
-                query: "query{info{version}}".to_owned(),
-                variables: None,
-            },
+            ParamsOfQuery { query: "query{info{version}}".to_owned(), variables: None },
         )
         .unwrap();
 
@@ -290,10 +259,7 @@ fn query_sync() {
 
     let result: ClientResult<ResultOfQuery> = client.request(
         "net.query",
-        ParamsOfQuery {
-            query: "query{info111{version}}".to_owned(),
-            variables: None,
-        },
+        ParamsOfQuery { query: "query{info111{version}}".to_owned(), variables: None },
     );
 
     assert!(result.is_err());
@@ -411,9 +377,7 @@ async fn wait_for() {
 
     let client = TestClient::new();
 
-    client
-        .get_tokens_from_giver_async(&client.giver_address().await, None)
-        .await;
+    client.get_tokens_from_giver_async(&client.giver_address().await, None).await;
 
     request.await.unwrap();
 }
@@ -438,25 +402,15 @@ async fn message_sending_addresses() {
     })
     .unwrap();
     let link = client.get_server_link().unwrap();
-    link.update_stat(
-        &vec!["a".to_string(), "e".to_string()],
-        EndpointStat::MessageUndelivered,
-    )
-    .await;
-    let bad: HashSet<_> = vec!["a".to_string(), "e".to_string()]
-        .iter()
-        .cloned()
-        .collect();
+    link.update_stat(&vec!["a".to_string(), "e".to_string()], EndpointStat::MessageUndelivered)
+        .await;
+    let bad: HashSet<_> = vec!["a".to_string(), "e".to_string()].iter().cloned().collect();
     for _ in 0..100 {
         let addresses = link.get_addresses_for_sending().await;
         let tail: HashSet<_> = addresses[addresses.len() - 2..].iter().cloned().collect();
         assert_eq!(tail, bad);
     }
-    link.update_stat(
-        &vec!["a".to_string(), "e".to_string()],
-        EndpointStat::MessageDelivered,
-    )
-    .await;
+    link.update_stat(&vec!["a".to_string(), "e".to_string()], EndpointStat::MessageDelivered).await;
     let mut a_good = false;
     let mut e_good = false;
     for _ in 0..100 {
@@ -479,18 +433,12 @@ async fn subscribe_for_transactions_with_addresses() {
     let keys = subscription_client.generate_sign_keys();
     let deploy_params = ParamsOfEncodeMessage {
         abi: TestClient::abi(HELLO, None),
-        deploy_set: Some(DeploySet {
-            tvc: TestClient::tvc(HELLO, None),
-            ..Default::default()
-        }),
+        deploy_set: Some(DeploySet { tvc: TestClient::tvc(HELLO, None), ..Default::default() }),
         signer: Signer::Keys { keys: keys.clone() },
         call_set: CallSet::some_with_function("constructor"),
         ..Default::default()
     };
-    let msg = subscription_client
-        .encode_message(deploy_params.clone())
-        .await
-        .unwrap();
+    let msg = subscription_client.encode_message(deploy_params.clone()).await.unwrap();
     let transactions = std::sync::Arc::new(Mutex::new(vec![]));
     let transactions_copy1 = transactions.clone();
     let transactions_copy2 = transactions.clone();
@@ -516,10 +464,7 @@ async fn subscribe_for_transactions_with_addresses() {
         async move {
             match result {
                 Ok(result) => {
-                    println!(
-                        "Transaction 1 {}, {}",
-                        result.result["id"], result.result["status"]
-                    );
+                    println!("Transaction 1 {}, {}", result.result["id"], result.result["status"]);
                     assert_eq!(result.result["account_addr"], address1);
                     transactions_copy.lock().await.push(result.result);
                 }
@@ -559,7 +504,8 @@ async fn subscribe_for_transactions_with_addresses() {
         assert_eq!(notifications.len(), 0);
     }
 
-    // create second subscription before suspend because it waits for resume at start
+    // create second subscription before suspend because it waits for resume at
+    // start
     let callback2 = move |result: serde_json::Value, response_type: SubscriptionResponseType| {
         let result = match response_type {
             SubscriptionResponseType::Ok => {
@@ -575,10 +521,7 @@ async fn subscribe_for_transactions_with_addresses() {
         async move {
             match result {
                 Ok(result) => {
-                    println!(
-                        "Transaction 2 {}, {}",
-                        result.result["id"], result.result["status"]
-                    );
+                    println!("Transaction 2 {}, {}", result.result["id"], result.result["status"]);
                     assert_eq!(result.result["account_addr"], address2);
                     transactions_copy.lock().await.push(result.result);
                 }
@@ -604,18 +547,12 @@ async fn subscribe_for_transactions_with_addresses() {
         ).await.unwrap();
 
     // suspend subscription
-    let _: () = subscription_client
-        .request_async("net.suspend", ())
-        .await
-        .unwrap();
+    let _: () = subscription_client.request_async("net.suspend", ()).await.unwrap();
 
     // deploy to create second transaction
     client
         .net_process_message(
-            ParamsOfProcessMessage {
-                message_encode_params: deploy_params,
-                send_events: false,
-            },
+            ParamsOfProcessMessage { message_encode_params: deploy_params, send_events: false },
             TestClient::default_callback,
         )
         .await
@@ -635,10 +572,7 @@ async fn subscribe_for_transactions_with_addresses() {
     }
 
     // resume subscription
-    let _: () = subscription_client
-        .request_async("net.resume", ())
-        .await
-        .unwrap();
+    let _: () = subscription_client.request_async("net.resume", ()).await.unwrap();
 
     // run contract function to create third transaction
     client
@@ -663,13 +597,7 @@ async fn subscribe_for_transactions_with_addresses() {
 
     // check that third transaction is now received after resume
     let transactions = transactions.lock().await.clone();
-    println!(
-        "{:?}",
-        transactions
-            .iter()
-            .map(|x| x["id"].to_string())
-            .collect::<Vec<String>>()
-    );
+    println!("{:?}", transactions.iter().map(|x| x["id"].to_string()).collect::<Vec<String>>());
     assert_eq!(transactions.len(), 3);
     assert_ne!(transactions[0]["id"], transactions[2]["id"]);
     // and both subscriptions received notification about resume
@@ -680,14 +608,8 @@ async fn subscribe_for_transactions_with_addresses() {
     assert_eq!(notifications[3].code, Error::network_module_resumed().code);
     assert!(!notifications[3].data["query_url"].is_null());
 
-    let _: () = subscription_client
-        .request_async("net.unsubscribe", handle1)
-        .await
-        .unwrap();
-    let _: () = subscription_client
-        .request_async("net.unsubscribe", handle2)
-        .await
-        .unwrap();
+    let _: () = subscription_client.request_async("net.unsubscribe", handle1).await.unwrap();
+    let _: () = subscription_client.request_async("net.unsubscribe", handle2).await.unwrap();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -728,16 +650,11 @@ async fn subscribe_for_messages() {
         .await
         .unwrap();
 
-    client
-        .get_tokens_from_giver_async(&client.giver_address().await, None)
-        .await;
+    client.get_tokens_from_giver_async(&client.giver_address().await, None).await;
 
     assert_eq!(messages.lock().await.len(), 0);
 
-    let _: () = client
-        .request_async("net.unsubscribe", handle)
-        .await
-        .unwrap();
+    let _: () = client.request_async("net.unsubscribe", handle).await.unwrap();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -747,9 +664,7 @@ async fn find_last_shard_block() {
     let block: ResultOfFindLastShardBlock = client
         .request_async(
             "net.find_last_shard_block",
-            ParamsOfFindLastShardBlock {
-                address: client.giver_address().await,
-            },
+            ParamsOfFindLastShardBlock { address: client.giver_address().await },
         )
         .await
         .unwrap();
@@ -786,9 +701,7 @@ async fn test_wait_resume() {
     let start = std::time::Instant::now();
 
     let duration = tokio::spawn(async move {
-        client_copy
-            .fetch_account(&client_copy.giver_address().await)
-            .await;
+        client_copy.fetch_account(&client_copy.giver_address().await).await;
 
         start.elapsed().as_millis()
     });
@@ -833,12 +746,7 @@ async fn test_query_counterparties() {
                 ParamsOfQueryCounterparties {
                     account: account.clone(),
                     first: Some(5),
-                    after: Some(
-                        counterparties1.result[4]["cursor"]
-                            .as_str()
-                            .unwrap()
-                            .to_owned(),
-                    ),
+                    after: Some(counterparties1.result[4]["cursor"].as_str().unwrap().to_owned()),
                     result: "counterparty last_message_id cursor".to_owned(),
                 },
             )
@@ -863,14 +771,8 @@ async fn query_block_id(client: &Arc<ClientContext>) -> ClientResult<String> {
 }
 
 async fn get_query_url(client: &Arc<ClientContext>) -> String {
-    let mut url = client
-        .get_server_link()
-        .unwrap()
-        .get_query_endpoint()
-        .await
-        .unwrap()
-        .query_url
-        .clone();
+    let mut url =
+        client.get_server_link().unwrap().get_query_endpoint().await.unwrap().query_url.clone();
     if let Some(stripped) = url.strip_prefix("http://") {
         url = stripped.to_string();
     }
@@ -887,10 +789,7 @@ async fn get_query_url(client: &Arc<ClientContext>) -> String {
 async fn retry_query_on_network_errors() {
     let client = Arc::new(
         ClientContext::new(ClientConfig {
-            network: NetworkConfig {
-                endpoints: Some(vec!["a".into()]),
-                ..Default::default()
-            },
+            network: NetworkConfig { endpoints: Some(vec!["a".into()]), ..Default::default() },
             ..Default::default()
         })
         .unwrap(),
@@ -1158,13 +1057,7 @@ async fn querying_endpoint_selection() {
         })
         .unwrap(),
     );
-    NetworkMock::build()
-        .url("a")
-        .delay(100)
-        .repeat(3)
-        .network_err()
-        .reset_client(&client)
-        .await;
+    NetworkMock::build().url("a").delay(100).repeat(3).network_err().reset_client(&client).await;
     let result = crate::net::query_collection(
         client.clone(),
         ParamsOfQueryCollection {
@@ -1390,10 +1283,7 @@ async fn transaction_tree() {
         .request_async(
             "net.query_transaction_tree",
             ParamsOfQueryTransactionTree {
-                in_msg: run_result.transaction["in_msg"]
-                    .as_str()
-                    .unwrap()
-                    .to_string(),
+                in_msg: run_result.transaction["in_msg"].as_str().unwrap().to_string(),
                 abi_registry: Some(abi_registry.clone()),
                 transaction_max_count: Some(0),
                 ..Default::default()
@@ -1444,17 +1334,11 @@ async fn transaction_tree() {
         .iter()
         .map(|x| x["id"].as_str().unwrap().to_string())
         .collect::<HashSet<String>>();
-    let actual_message_ids = result
-        .messages
-        .iter()
-        .map(|x| x.id.clone())
-        .collect::<HashSet<String>>();
+    let actual_message_ids =
+        result.messages.iter().map(|x| x.id.clone()).collect::<HashSet<String>>();
     assert_eq!(actual_message_ids.len(), 3);
-    let actual_transaction_ids = result
-        .transactions
-        .iter()
-        .map(|x| x.id.clone())
-        .collect::<HashSet<String>>();
+    let actual_transaction_ids =
+        result.transactions.iter().map(|x| x.id.clone()).collect::<HashSet<String>>();
 
     assert_eq!(ref_message_ids, actual_message_ids);
     assert_eq!(ref_transaction_ids, actual_transaction_ids);
@@ -1495,18 +1379,21 @@ async fn order_by_fallback() {
     )
     .unwrap();
     assert_eq!(params.order.unwrap()[0].path, "id");
-    assert!(serde_json::from_str::<ParamsOfQueryCollection>(
-        r#"
+    assert!(
+        serde_json::from_str::<ParamsOfQueryCollection>(
+            r#"
         {
             "collection": "messages",
             "result": "id",
             "orderBy": [{"path": "id", "direction": "ASC"}]
         }
         "#,
-    )
-    .is_err());
-    assert!(serde_json::from_str::<ParamsOfQueryCollection>(
-        r#"
+        )
+        .is_err()
+    );
+    assert!(
+        serde_json::from_str::<ParamsOfQueryCollection>(
+            r#"
         {
             "collection": "messages",
             "result": "id",
@@ -1518,8 +1405,9 @@ async fn order_by_fallback() {
             ]
         }
         "#,
-    )
-    .is_err());
+        )
+        .is_err()
+    );
     let client = TestClient::new();
 
     let result: ClientResult<ResultOfQueryCollection> = client
@@ -1565,7 +1453,10 @@ async fn order_by_fallback() {
 #[test]
 fn test_subscription_gql() {
     let query = GraphQLQuery::with_collection_subscription("counterparties", &Value::Null, "id");
-    assert_eq!(query.query, "subscription counterparties($filter: CounterpartyFilter) { counterparties(filter: $filter) { id } }");
+    assert_eq!(
+        query.query,
+        "subscription counterparties($filter: CounterpartyFilter) { counterparties(filter: $filter) { id } }"
+    );
 
     let query = GraphQLQuery::with_collection_subscription("messages", &Value::Null, "id");
     assert_eq!(
@@ -1589,10 +1480,7 @@ async fn low_level_subscribe() {
             }
         }
         .unwrap();
-        let id = result.result["messages"]["id"]
-            .as_str()
-            .unwrap()
-            .to_string();
+        let id = result.result["messages"]["id"].as_str().unwrap().to_string();
         let messages_copy = messages_copy.clone();
         async move {
             messages_copy.lock().await.push(id);
@@ -1622,17 +1510,12 @@ async fn low_level_subscribe() {
         .await
         .unwrap();
 
-    client
-        .get_tokens_from_giver_async(&client.giver_address().await, None)
-        .await;
+    client.get_tokens_from_giver_async(&client.giver_address().await, None).await;
 
     std::thread::sleep(std::time::Duration::from_millis(1000));
     assert_ne!(messages.lock().await.len(), 0);
 
-    let _: () = client
-        .request_async("net.unsubscribe", handle)
-        .await
-        .unwrap();
+    let _: () = client.request_async("net.unsubscribe", handle).await.unwrap();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1683,11 +1566,7 @@ async fn return_network_error_on_subscribe() {
         }
     }));
 
-    NetworkMock::build()
-        .url("a")
-        .network_err()
-        .reset_client(&client.context())
-        .await;
+    NetworkMock::build().url("a").network_err().reset_client(&client.context()).await;
 
     let result: ClientResult<ResultOfSubscribeCollection> = client
         .request_async_callback(

@@ -1,23 +1,24 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
-use crate::client::{FetchResult, WebSocket};
-use crate::error::ClientResult;
-use crate::ClientContext;
+use std::collections::HashMap;
+
 use futures::SinkExt;
 use serde_json::Value;
-use std::collections::HashMap;
+
+use crate::client::FetchResult;
+use crate::client::WebSocket;
+use crate::error::ClientResult;
+use crate::ClientContext;
 
 #[derive(Debug, Clone)]
 pub(crate) struct FetchMock {
@@ -37,11 +38,7 @@ impl FetchMock {
             let _ = env.set_timer(delay).await;
         }
         let mut result = self.result;
-        let id = if self.id != 0 {
-            format!(" {}", self.id)
-        } else {
-            String::default()
-        };
+        let id = if self.id != 0 { format!(" {}", self.id) } else { String::default() };
         if let Ok(result) = &mut result {
             result.url = url.split("?").next().unwrap_or("").to_string();
         }
@@ -81,10 +78,7 @@ impl NetworkMock {
     }
 
     pub(crate) fn new() -> Self {
-        Self {
-            fetches: None,
-            messages: None,
-        }
+        Self { fetches: None, messages: None }
     }
 
     fn extract_messages(&mut self, url: &str) -> Vec<MessageMock> {
@@ -175,15 +169,7 @@ impl NetworkMock {
     #[cfg(not(feature = "wasm-base"))]
     #[cfg(test)]
     pub async fn get_len(client: &ClientContext) -> usize {
-        client
-            .env
-            .network_mock
-            .read()
-            .await
-            .fetches
-            .as_ref()
-            .map(|x| x.len())
-            .unwrap_or(0)
+        client.env.network_mock.read().await.fetches.as_ref().map(|x| x.len()).unwrap_or(0)
     }
 
     #[cfg(not(feature = "wasm-base"))]
@@ -323,19 +309,13 @@ impl NetworkMockBuilder {
     }
 
     pub fn network_err(&mut self) -> &mut Self {
-        self.push_fetch(Err(crate::client::Error::http_request_send_error(
-            "Network error",
-        )))
+        self.push_fetch(Err(crate::client::Error::http_request_send_error("Network error")))
     }
 
     #[cfg(not(feature = "wasm-base"))]
     #[cfg(test)]
     pub async fn reset_client(&self, client: &ClientContext) {
-        client
-            .get_server_link()
-            .unwrap()
-            .invalidate_querying_endpoint()
-            .await;
+        client.get_server_link().unwrap().invalidate_querying_endpoint().await;
         let mut network_mock = client.env.network_mock.write().await;
         network_mock.fetches = Some(self.fetches.clone());
         network_mock.messages = Some(self.messages.clone());

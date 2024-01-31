@@ -1,23 +1,25 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use crate::boc::{BocCacheType, Error};
-use crate::error::ClientResult;
-use crate::ClientContext;
 #[allow(unused_imports)]
 use std::str::FromStr;
-use tvm_block::{Deserializable, Serializable};
+
+use tvm_block::Deserializable;
+use tvm_block::Serializable;
 use tvm_types::UInt256;
+
+use crate::boc::BocCacheType;
+use crate::boc::Error;
+use crate::error::ClientResult;
+use crate::ClientContext;
 
 pub(crate) fn get_boc_hash(boc: &[u8]) -> ClientResult<String> {
     let cells =
@@ -50,16 +52,9 @@ pub fn deserialize_object_from_cell<S: Deserializable>(
         }
         _ => "",
     };
-    let tip_full = if tip.len() > 0 {
-        format!(".\nTip: {}", tip)
-    } else {
-        "".to_string()
-    };
+    let tip_full = if tip.len() > 0 { format!(".\nTip: {}", tip) } else { "".to_string() };
     S::construct_from_cell(cell).map_err(|err| {
-        Error::invalid_boc(format!(
-            "cannot deserialize {} from BOC: {}{}",
-            name, err, tip_full
-        ))
+        Error::invalid_boc(format!("cannot deserialize {} from BOC: {}{}", name, err, tip_full))
     })
 }
 
@@ -92,20 +87,14 @@ pub fn deserialize_object_from_base64<S: Deserializable>(
     let (bytes, cell) = deserialize_cell_from_base64(b64, name)?;
     let object = deserialize_object_from_cell(cell.clone(), name)?;
 
-    Ok(DeserializedObject {
-        boc: DeserializedBoc::Bytes(bytes),
-        cell,
-        object,
-    })
+    Ok(DeserializedObject { boc: DeserializedBoc::Bytes(bytes), cell, object })
 }
 
 pub fn serialize_object_to_cell<S: Serializable>(
     object: &S,
     name: &str,
 ) -> ClientResult<tvm_types::Cell> {
-    Ok(object
-        .serialize()
-        .map_err(|err| Error::serialization_error(err, name))?)
+    Ok(object.serialize().map_err(|err| Error::serialization_error(err, name))?)
 }
 
 pub fn serialize_cell_to_bytes(cell: &tvm_types::Cell, name: &str) -> ClientResult<Vec<u8>> {
@@ -158,10 +147,7 @@ pub fn serialize_cell_to_boc(
     boc_cache: Option<BocCacheType>,
 ) -> ClientResult<String> {
     if let Some(cache_type) = boc_cache {
-        context
-            .bocs
-            .add(cache_type, cell, None)
-            .map(|hash| format!("*{:x}", hash))
+        context.bocs.add(cache_type, cell, None).map(|hash| format!("*{:x}", hash))
     } else {
         serialize_cell_to_base64(&cell, name)
     }

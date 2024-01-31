@@ -1,5 +1,8 @@
-use serde_derive::{Deserialize, Serialize};
-use crate::tests::{reflect, reflect_module};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
+use crate::tests::reflect;
+use crate::tests::reflect_module;
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
 pub struct StringId(String);
@@ -70,4 +73,3 @@ fn test_dev() {
     reflect::<FooHandle>();
     println!("{}", serde_json::to_string_pretty(&_foo_api()).unwrap());
 }
-

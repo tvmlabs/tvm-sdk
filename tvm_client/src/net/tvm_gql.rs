@@ -1,23 +1,24 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
+use serde::de::Error;
+use serde::Deserialize;
+use serde::Deserializer;
 use serde_json::Value;
 
-use crate::error::{ClientError, ClientResult};
+use crate::error::ClientError;
+use crate::error::ClientResult;
 use crate::net::gql::GraphQLMessageFromClient;
 use crate::net::ParamsOfWaitForCollection;
-use serde::{de::Error, Deserialize, Deserializer};
 
 const COUNTERPARTIES_COLLECTION: &str = "counterparties";
 const FETCH_ADDITIONAL_TIMEOUT: u32 = 5000;
@@ -65,7 +66,8 @@ pub struct PostRequest {
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ParamsOfAggregateCollection {
-    /// Collection name (accounts, blocks, transactions, messages, block_signatures)
+    /// Collection name (accounts, blocks, transactions, messages,
+    /// block_signatures)
     pub collection: String,
     /// Collection filter
     pub filter: Option<Value>,
@@ -75,7 +77,8 @@ pub struct ParamsOfAggregateCollection {
 
 #[derive(Serialize, ApiType, Default, Clone)]
 pub struct ParamsOfQueryCollection {
-    /// Collection name (accounts, blocks, transactions, messages, block_signatures)
+    /// Collection name (accounts, blocks, transactions, messages,
+    /// block_signatures)
     pub collection: String,
     /// Collection filter
     pub filter: Option<Value>,
@@ -174,11 +177,7 @@ impl ParamsOfQueryOperation {
         match self {
             ParamsOfQueryOperation::AggregateCollection(_) => {
                 let doc_type = self.doc_type();
-                format!(
-                    "aggregate{}{}",
-                    doc_type,
-                    if doc_type.ends_with("s") { "" } else { "s" }
-                )
+                format!("aggregate{}{}", doc_type, if doc_type.ends_with("s") { "" } else { "s" })
             }
             ParamsOfQueryOperation::QueryCollection(p) => p.collection.clone(),
             ParamsOfQueryOperation::WaitForCollection(p) => p.collection.clone(),
@@ -473,12 +472,7 @@ impl GraphQLQuery {
     }
 
     pub fn with_subscription(subscription: String, variables: Option<Value>) -> Self {
-        Self {
-            query: subscription,
-            variables,
-            timeout: None,
-            is_batch: false,
-        }
+        Self { query: subscription, variables, timeout: None, is_batch: false }
     }
 
     pub fn with_collection_subscription(table: &str, filter: &Value, fields: &str) -> Self {
@@ -492,24 +486,14 @@ impl GraphQLQuery {
         let variables = Some(json!({
             "filter" : filter,
         }));
-        Self {
-            query,
-            variables,
-            timeout: None,
-            is_batch: false,
-        }
+        Self { query, variables, timeout: None, is_batch: false }
     }
 
     pub fn with_post_requests(requests: &[PostRequest]) -> Self {
         let query = "mutation postRequests($requests:[Request]){postRequests(requests:$requests)}"
             .to_owned();
         let variables = Some(json!({ "requests": serde_json::json!(requests) }));
-        Self {
-            query,
-            variables,
-            timeout: None,
-            is_batch: false,
-        }
+        Self { query, variables, timeout: None, is_batch: false }
     }
 
     pub fn filter_type_for_collection(collection: &str) -> String {

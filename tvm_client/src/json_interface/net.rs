@@ -1,22 +1,22 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
 use super::request::Request;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::{ParamsOfSubscribeCollection, ResultOfSubscribeCollection, ResultOfSubscription};
 use crate::net::subscriptions::ParamsOfSubscribe;
+use crate::net::ParamsOfSubscribeCollection;
+use crate::net::ResultOfSubscribeCollection;
+use crate::net::ResultOfSubscription;
 
 /// Creates a collection subscription
 ///
@@ -60,7 +60,6 @@ use crate::net::subscriptions::ParamsOfSubscribe;
 /// - If application monitors sequence of some blockchain objects
 /// (for example transactions of the specific account): application must
 /// refresh all cached (or visible to user) lists where this sequences presents.
-///
 #[api_function]
 pub(crate) async fn subscribe_collection(
     context: std::sync::Arc<ClientContext>,
@@ -116,7 +115,6 @@ pub(crate) async fn subscribe_collection(
 /// - If application monitors sequence of some objects
 /// (for example transactions of the specific account): application must
 /// refresh all cached (or visible to user) lists where this sequences presents.
-///
 #[api_function]
 pub(crate) async fn subscribe(
     context: std::sync::Arc<ClientContext>,

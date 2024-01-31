@@ -1,17 +1,16 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
+use serde::Deserializer;
 
 pub const MESSAGES_COLLECTION: &str = "messages";
 pub const ACCOUNTS_COLLECTION: &str = "accounts";
@@ -160,22 +159,24 @@ pub enum NetworkQueriesProtocol {
     HTTP,
 
     /// All GraphQL queries will be served using single web socket connection.
-    /// SDK is tested to reliably handle 5000 parallel network requests (sending and processing
-    /// messages, quering and awaiting blockchain data)
+    /// SDK is tested to reliably handle 5000 parallel network requests (sending
+    /// and processing messages, quering and awaiting blockchain data)
     WS,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ApiType)]
 pub struct NetworkConfig {
-    /// **This field is deprecated, but left for backward-compatibility.** Evernode endpoint.
+    /// **This field is deprecated, but left for backward-compatibility.**
+    /// Evernode endpoint.
     pub server_address: Option<String>,
 
-    /// List of Evernode endpoints. Any correct URL format can be specified, including IP addresses.
-    /// This parameter is prevailing over `server_address`.
-    /// Check the full list of [supported network endpoints](https://docs.evercloud.dev/products/evercloud/networks-endpoints).
+    /// List of Evernode endpoints. Any correct URL format can be specified,
+    /// including IP addresses. This parameter is prevailing over
+    /// `server_address`. Check the full list of [supported network endpoints](https://docs.evercloud.dev/products/evercloud/networks-endpoints).
     pub endpoints: Option<Vec<String>>,
 
-    /// Deprecated. You must use `network.max_reconnect_timeout` that allows to specify maximum network resolving timeout.
+    /// Deprecated. You must use `network.max_reconnect_timeout` that allows to
+    /// specify maximum network resolving timeout.
     #[serde(
         default = "default_network_retries_count",
         deserialize_with = "deserialize_network_retries_count"
@@ -199,8 +200,9 @@ pub struct NetworkConfig {
     pub reconnect_timeout: u32,
 
     /// The number of automatic message processing retries that SDK performs
-    /// in case of `Message Expired (507)` error - but only for those messages which
-    /// local emulation was successful or failed with replay protection error.
+    /// in case of `Message Expired (507)` error - but only for those messages
+    /// which local emulation was successful or failed with replay
+    /// protection error.
     ///
     /// Default is 5.
     #[serde(
@@ -233,7 +235,8 @@ pub struct NetworkConfig {
     /// **DEPRECATED**: This parameter was deprecated.
     pub out_of_sync_threshold: Option<u32>,
 
-    /// Maximum number of randomly chosen endpoints the library uses to broadcast a message.
+    /// Maximum number of randomly chosen endpoints the library uses to
+    /// broadcast a message.
     ///
     /// Default is 1.
     #[serde(
@@ -254,28 +257,22 @@ pub struct NetworkConfig {
     )]
     pub latency_detection_interval: u32,
 
-    /// Maximum value for the endpoint's blockchain data synchronization latency (time-lag).
-    /// Library periodically checks the current endpoint for blockchain
-    /// data synchronization latency.
+    /// Maximum value for the endpoint's blockchain data synchronization latency
+    /// (time-lag). Library periodically checks the current endpoint for
+    /// blockchain data synchronization latency.
     /// If the latency (time-lag) is less then `NetworkConfig.max_latency`
     /// then library selects another endpoint.
     ///
     /// Must be specified in milliseconds. Default is 60000 (1 min).
-    #[serde(
-        default = "default_max_latency",
-        deserialize_with = "deserialize_max_latency"
-    )]
+    #[serde(default = "default_max_latency", deserialize_with = "deserialize_max_latency")]
     pub max_latency: u32,
 
-    /// Default timeout for http requests. Is is used when no timeout specified for the request to
-    /// limit the answer waiting time. If no answer received during the timeout requests ends with
-    /// error.
+    /// Default timeout for http requests. Is is used when no timeout specified
+    /// for the request to limit the answer waiting time. If no answer
+    /// received during the timeout requests ends with error.
     ///
     /// Must be specified in milliseconds. Default is 60000 (1 min).
-    #[serde(
-        default = "default_query_timeout",
-        deserialize_with = "deserialize_query_timeout"
-    )]
+    #[serde(default = "default_query_timeout", deserialize_with = "deserialize_query_timeout")]
     pub query_timeout: u32,
 
     /// Queries protocol. `HTTP` or `WS`.
@@ -287,19 +284,20 @@ pub struct NetworkConfig {
     )]
     pub queries_protocol: NetworkQueriesProtocol,
 
-    /// UNSTABLE. First REMP status awaiting timeout. If no status received during the timeout than fallback
-    /// transaction scenario is activated.
+    /// UNSTABLE. First REMP status awaiting timeout. If no status received
+    /// during the timeout than fallback transaction scenario is activated.
     ///
-    /// Must be specified in milliseconds. Default is 1 (1 ms) in order to start fallback scenario
-    /// together with REMP statuses processing while REMP is not properly tuned yet.
+    /// Must be specified in milliseconds. Default is 1 (1 ms) in order to start
+    /// fallback scenario together with REMP statuses processing while REMP
+    /// is not properly tuned yet.
     #[serde(
         default = "default_first_remp_status_timeout",
         deserialize_with = "deserialize_first_remp_status_timeout"
     )]
     pub first_remp_status_timeout: u32,
 
-    /// UNSTABLE. Subsequent REMP status awaiting timeout. If no status received during the timeout than fallback
-    /// transaction scenario is activated.
+    /// UNSTABLE. Subsequent REMP status awaiting timeout. If no status received
+    /// during the timeout than fallback transaction scenario is activated.
     ///
     /// Must be specified in milliseconds. Default is 5000 (5 sec).
     #[serde(
@@ -308,13 +306,15 @@ pub struct NetworkConfig {
     )]
     pub next_remp_status_timeout: u32,
 
-    /// Network signature ID which is used by VM in signature verifying instructions if capability
-    /// `CapSignatureWithId` is enabled in blockchain configuration parameters.
+    /// Network signature ID which is used by VM in signature verifying
+    /// instructions if capability `CapSignatureWithId` is enabled in
+    /// blockchain configuration parameters.
     ///
-    /// This parameter should be set to `global_id` field from any blockchain block if network can
-    /// not be reachable at the moment of message encoding and the message is aimed to be sent into
-    /// network with `CapSignatureWithId` enabled. Otherwise signature ID is detected automatically
-    /// inside message encoding functions
+    /// This parameter should be set to `global_id` field from any blockchain
+    /// block if network can not be reachable at the moment of message
+    /// encoding and the message is aimed to be sent into network with
+    /// `CapSignatureWithId` enabled. Otherwise signature ID is detected
+    /// automatically inside message encoding functions
     pub signature_id: Option<i32>,
 
     /// Access key to GraphQL API (Project secret)

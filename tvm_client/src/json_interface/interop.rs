@@ -1,27 +1,26 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
+
+use std::ffi::c_void;
+use std::ptr::null;
+
+use serde_json::Value;
 
 use super::request::Request;
 use super::runtime::Runtime;
 use crate::client::Error;
 use crate::error::ClientResult;
-use serde_json::Value;
-use std::ffi::c_void;
-use std::ptr::null;
 
 pub type ContextHandle = u32;
-
 
 #[derive(Serialize, Deserialize, Clone, num_derive::FromPrimitive)]
 
@@ -178,11 +177,7 @@ pub unsafe extern "C" fn tc_destroy_string(string: *const String) {
 
 #[no_mangle]
 pub unsafe extern "C" fn tc_read_string(string: *const String) -> StringData {
-    if string.is_null() {
-        StringData::default()
-    } else {
-        StringData::new(&*string)
-    }
+    if string.is_null() { StringData::default() } else { StringData::new(&*string) }
 }
 
 #[repr(C)]
@@ -194,17 +189,11 @@ pub struct StringData {
 
 impl StringData {
     pub fn new(s: &String) -> Self {
-        Self {
-            content: s.as_ptr(),
-            len: s.len() as u32,
-        }
+        Self { content: s.as_ptr(), len: s.len() as u32 }
     }
 
     pub fn default() -> Self {
-        Self {
-            content: null(),
-            len: 0,
-        }
+        Self { content: null(), len: 0 }
     }
 
     pub fn to_string(&self) -> String {

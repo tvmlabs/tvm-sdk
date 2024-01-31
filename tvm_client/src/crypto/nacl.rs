@@ -1,26 +1,32 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use crate::client::ClientContext;
-use crate::crypto::internal::{key192, key256, key512};
-use crate::crypto::keys::KeyPair;
-use crate::crypto::{internal, Error};
-use crate::encoding::{base64_decode, hex_decode};
-use crate::error::ClientResult;
 use ed25519_dalek::Verifier;
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use zeroize::Zeroize;
+use zeroize::ZeroizeOnDrop;
 
-use super::internal::{SecretBufConst, hex_decode_secret, hex_decode_secret_const, decode_public_key};
+use super::internal::decode_public_key;
+use super::internal::hex_decode_secret;
+use super::internal::hex_decode_secret_const;
+use super::internal::SecretBufConst;
+use crate::client::ClientContext;
+use crate::crypto::internal;
+use crate::crypto::internal::key192;
+use crate::crypto::internal::key256;
+use crate::crypto::internal::key512;
+use crate::crypto::keys::KeyPair;
+use crate::crypto::Error;
+use crate::encoding::base64_decode;
+use crate::encoding::hex_decode;
+use crate::error::ClientResult;
 
 // Signing
 
@@ -76,13 +82,8 @@ pub fn nacl_sign(
     _context: std::sync::Arc<ClientContext>,
     params: ParamsOfNaclSign,
 ) -> ClientResult<ResultOfNaclSign> {
-    let signed = sign(
-        &base64_decode(&params.unsigned)?,
-        &hex_decode_secret(&params.secret)?,
-    )?;
-    Ok(ResultOfNaclSign {
-        signed: base64::encode(&signed),
-    })
+    let signed = sign(&base64_decode(&params.unsigned)?, &hex_decode_secret(&params.secret)?)?;
+    Ok(ResultOfNaclSign { signed: base64::encode(&signed) })
 }
 
 //------------------------------------------------------------------------------ nacl_sign_detached
@@ -117,9 +118,7 @@ pub fn nacl_sign_detached(
         &base64_decode(&params.unsigned)?,
         &hex_decode_secret(&params.secret)?,
     )?;
-    Ok(ResultOfNaclSignDetached {
-        signature: hex::encode(signature),
-    })
+    Ok(ResultOfNaclSignDetached { signature: hex::encode(signature) })
 }
 
 //---------------------------------------------------------------------------------- nacl_sign_open
@@ -159,9 +158,7 @@ pub fn nacl_sign_open(
     )
     .map_err(|_| Error::nacl_sign_failed("box sign open failed"))?;
     unsigned.resize(len, 0);
-    Ok(ResultOfNaclSignOpen {
-        unsigned: base64::encode(&unsigned),
-    })
+    Ok(ResultOfNaclSignOpen { unsigned: base64::encode(&unsigned) })
 }
 
 //----------------------------------------------------------------------- nacl_sign_detached_verify
@@ -191,7 +188,8 @@ pub fn nacl_sign_detached_verify(
 ) -> ClientResult<ResultOfNaclSignDetachedVerify> {
     let public = decode_public_key(&params.public)?;
     let message = base64_decode(&params.unsigned)?;
-    let signature = ed25519_dalek::Signature::from_bytes(&key512(&hex_decode(&params.signature)?)?.0);
+    let signature =
+        ed25519_dalek::Signature::from_bytes(&key512(&hex_decode(&params.signature)?)?.0);
     let succeeded = public.verify(&message, &signature).is_ok();
     Ok(ResultOfNaclSignDetachedVerify { succeeded })
 }
@@ -271,8 +269,8 @@ pub struct ResultOfNaclBox {
 
 /// Public key authenticated encryption
 ///
-/// Encrypt and authenticate a message using the senders secret key, the receivers public
-/// key, and a nonce.
+/// Encrypt and authenticate a message using the senders secret key, the
+/// receivers public key, and a nonce.
 #[api_function]
 pub fn nacl_box(
     _context: std::sync::Arc<ClientContext>,
@@ -294,9 +292,7 @@ pub fn nacl_box(
     )
     .map_err(|_| Error::nacl_box_failed("box failed"))?;
     padded_output.drain(..16);
-    Ok(ResultOfNaclBox {
-        encrypted: base64::encode(&padded_output),
-    })
+    Ok(ResultOfNaclBox { encrypted: base64::encode(&padded_output) })
 }
 
 //----------------------------------------------------------------------------------- nacl_box_open
@@ -322,8 +318,8 @@ pub struct ResultOfNaclBoxOpen {
     pub decrypted: String,
 }
 
-/// Decrypt and verify the cipher text using the receivers secret key, the senders public
-/// key, and the nonce.
+/// Decrypt and verify the cipher text using the receivers secret key, the
+/// senders public key, and the nonce.
 #[api_function]
 pub fn nacl_box_open(
     _context: std::sync::Arc<ClientContext>,
@@ -335,9 +331,7 @@ pub fn nacl_box_open(
         &hex_decode_secret_const(&params.their_public)?.0,
         &hex_decode_secret(&params.secret)?,
     )?;
-    Ok(ResultOfNaclBoxOpen {
-        decrypted: base64::encode(&padded_output),
-    })
+    Ok(ResultOfNaclBoxOpen { decrypted: base64::encode(&padded_output) })
 }
 
 pub fn nacl_box_open_internal(
@@ -346,25 +340,14 @@ pub fn nacl_box_open_internal(
     their_public: &sodalite::BoxPublicKey,
     secret: &[u8],
 ) -> ClientResult<Vec<u8>> {
-    let (mut padded_output, padded_input, nonce, secret) = prepare_to_convert(
-        encrypted,
-        nonce,
-        secret,
-        16,
-    )?;
-    sodalite::box_open(
-        &mut padded_output,
-        &padded_input,
-        &nonce,
-        their_public,
-        &secret.0,
-    )
+    let (mut padded_output, padded_input, nonce, secret) =
+        prepare_to_convert(encrypted, nonce, secret, 16)?;
+    sodalite::box_open(&mut padded_output, &padded_input, &nonce, their_public, &secret.0)
         .map_err(|_| Error::nacl_box_failed("box open failed"))?;
     padded_output.drain(..32);
 
     Ok(padded_output)
 }
-
 
 // Secret Box
 
@@ -398,9 +381,7 @@ pub fn nacl_secret_box(
     sodalite::secretbox(&mut padded_output, &padded_input, &nonce, &key.0)
         .map_err(|_| Error::nacl_secret_box_failed("secret box failed"))?;
     padded_output.drain(..16);
-    Ok(ResultOfNaclBox {
-        encrypted: base64::encode(&padded_output),
-    })
+    Ok(ResultOfNaclBox { encrypted: base64::encode(&padded_output) })
 }
 
 //---------------------------------------------------------------------------- nacl_secret_box_open
@@ -433,9 +414,7 @@ pub fn nacl_secret_box_open(
     sodalite::secretbox_open(&mut padded_output, &padded_input, &nonce, &key.0)
         .map_err(|_| Error::nacl_secret_box_failed("secret box open failed"))?;
     padded_output.drain(..32);
-    Ok(ResultOfNaclBoxOpen {
-        decrypted: base64::encode(&padded_output),
-    })
+    Ok(ResultOfNaclBoxOpen { decrypted: base64::encode(&padded_output) })
 }
 
 // Internals

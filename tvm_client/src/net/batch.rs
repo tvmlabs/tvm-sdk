@@ -1,22 +1,20 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
 use serde_json::Value;
 
-use crate::client::ClientContext;
-use crate::error::{AddNetworkUrl, ClientResult};
-
 use super::Error;
+use crate::client::ClientContext;
+use crate::error::AddNetworkUrl;
+use crate::error::ClientResult;
 use crate::net::tvm_gql::ParamsOfQueryOperation;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]

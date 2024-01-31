@@ -1,9 +1,13 @@
-use crate::abi::Error;
-use crate::error::{ClientError, ClientResult};
-use crate::ClientContext;
 use std::convert::TryInto;
 use std::sync::Arc;
-use tvm_abi::{Token, TokenValue};
+
+use tvm_abi::Token;
+use tvm_abi::TokenValue;
+
+use crate::abi::Error;
+use crate::error::ClientError;
+use crate::error::ClientResult;
+use crate::ClientContext;
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default)]
 pub struct AbiHandle(u32);
@@ -31,9 +35,7 @@ impl Abi {
                 Ok(serde_json::to_string(abi).map_err(|err| Error::invalid_abi(err))?)
             }
             Self::Json(abi) => Ok(abi.clone()),
-            _ => Err(crate::client::Error::not_implemented(
-                "ABI handles are not supported yet",
-            )),
+            _ => Err(crate::client::Error::not_implemented("ABI handles are not supported yet")),
         }
     }
 
@@ -116,7 +118,8 @@ impl TryInto<tvm_abi::Param> for AbiParam {
 /// The ABI function header.
 ///
 /// Includes several hidden function parameters that contract
-/// uses for security, message delivery monitoring and replay protection reasons.
+/// uses for security, message delivery monitoring and replay protection
+/// reasons.
 ///
 /// The actual set of header fields depends on the contract's ABI.
 /// If a contract's ABI does not include some headers, then they are not filled.
@@ -124,8 +127,10 @@ impl TryInto<tvm_abi::Param> for AbiParam {
 pub struct FunctionHeader {
     /// Message expiration timestamp (UNIX time) in seconds.
     ///
-    /// If not specified - calculated automatically from message_expiration_timeout(),
-    /// try_index and message_expiration_timeout_grow_factor() (if ABI includes `expire` header).
+    /// If not specified - calculated automatically from
+    /// message_expiration_timeout(), try_index and
+    /// message_expiration_timeout_grow_factor() (if ABI includes `expire`
+    /// header).
     pub expire: Option<u32>,
 
     /// Message creation time in milliseconds.
@@ -135,34 +140,29 @@ pub struct FunctionHeader {
 
     /// Public key is used by the contract to check the signature.
     ///
-    /// Encoded in `hex`. If not specified, method fails with exception (if ABI includes `pubkey` header)..
+    /// Encoded in `hex`. If not specified, method fails with exception (if ABI
+    /// includes `pubkey` header)..
     pub pubkey: Option<String>,
 }
 
 fn required_time(token: &Token) -> ClientResult<u64> {
     match &token.value {
         TokenValue::Time(v) => Ok(v.clone()),
-        _ => Err(Error::invalid_message_for_decode(
-            "`time` header has invalid format",
-        )),
+        _ => Err(Error::invalid_message_for_decode("`time` header has invalid format")),
     }
 }
 
 fn required_expire(token: &Token) -> ClientResult<u32> {
     match &token.value {
         TokenValue::Expire(v) => Ok(v.clone()),
-        _ => Err(Error::invalid_message_for_decode(
-            "`expire` header has invalid format",
-        )),
+        _ => Err(Error::invalid_message_for_decode("`expire` header has invalid format")),
     }
 }
 
 fn required_pubkey(token: &Token) -> ClientResult<Option<String>> {
     match token.value {
         TokenValue::PublicKey(key) => Ok(key.as_ref().map(|x| hex::encode(&x))),
-        _ => Err(Error::invalid_message_for_decode(
-            "`pubkey` header has invalid format",
-        )),
+        _ => Err(Error::invalid_message_for_decode("`pubkey` header has invalid format")),
     }
 }
 
@@ -192,9 +192,7 @@ pub(crate) async fn resolve_signature_id(
         return Ok(Some(signature_id));
     }
 
-    Ok(crate::net::get_signature_id(context.clone())
-        .await?
-        .signature_id)
+    Ok(crate::net::get_signature_id(context.clone()).await?.signature_id)
 }
 
 pub(crate) async fn extend_data_to_sign(
