@@ -12,7 +12,7 @@
 use std::fmt::Debug;
 use std::fmt::Formatter;
 
-use base64::URL_SAFE;
+use base64::Engine;
 use ed25519_dalek::SigningKey;
 
 use super::internal::hex_decode_secret_const;
@@ -106,7 +106,7 @@ pub fn convert_public_key_to_tvm_safe_format(
     tvm_public_key.push((hash >> 8) as u8);
     tvm_public_key.push((hash & 255) as u8);
     Ok(ResultOfConvertPublicKeyToTonSafeFormat {
-        tvm_public_key: base64::encode_config(&tvm_public_key, URL_SAFE),
+        tvm_public_key: base64::engine::general_purpose::URL_SAFE.encode(tvm_public_key),
     })
 }
 

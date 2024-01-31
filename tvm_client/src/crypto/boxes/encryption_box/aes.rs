@@ -18,6 +18,7 @@ use aes::BlockCipher;
 use aes::BlockDecrypt;
 use aes::BlockEncrypt;
 use aes::NewBlockCipher;
+use base64::Engine;
 use block_modes::BlockMode;
 use block_modes::Cbc;
 use zeroize::ZeroizeOnDrop;
@@ -124,7 +125,8 @@ impl AesEncryptionBox {
 
         let mut vec = vec![0u8; aligned_size];
 
-        let size = base64::decode_config_slice(data, base64::STANDARD, &mut vec)
+        let size = base64::engine::general_purpose::STANDARD
+            .decode_slice(data, &mut vec)
             .map_err(|err| crate::client::Error::invalid_base64(data, err))?;
 
         Ok((vec, size))
