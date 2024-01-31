@@ -2,26 +2,26 @@
 name = "tvm_sdk"
 version = "1.46.0"
 edition = "2018"
-authors = [ "TON Labs LTD <support@tonlabs.io>" ]
+authors = ["TON Labs LTD <support@tonlabs.io>"]
 
 [dependencies]
 tvm_abi = { git = "https://github.com/tvmlabs/tvm-abi", tag = "3.0.0" }
 tvm_block = { git = "https://github.com/tvmlabs/tvm-block", tag = "2.0.0" }
 tvm_types = { git = "https://github.com/tvmlabs/tvm-types", tag = "3.0.1" }
 
-api_info = { path = "../api/info" }
 api_derive = { path = "../api/derive" }
+api_info = { path = "../api/info" }
 
 anyhow = "1.0.79"
-num-bigint = "0.4"
-sha2 = "0.9"
-serde_json = "1.0.41"
-serde = "1.0.91"
-serde_derive = "1.0.91"
-hex = "0.3.2"
-lazy_static = "1.1.0"
-base64 = "0.10.0"
-chrono = "0.4.9"
+base64 = "0.21.7"
+chrono = "0.4.33"
+hex = "0.4.3"
+lazy_static = "1.4.0"
+log = "0.4.20"
+num-bigint = "0.4.4"
+num-traits = "0.2.17"
+serde = "1.0.196"
+serde_derive = "1.0.196"
+serde_json = "1.0.113"
+sha2 = "0.10.8"
 thiserror = "1.0.56"
-num-traits = "0.2"
-log = "0.4.11"

@@ -1,24 +1,27 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use crate::MessageType;
-use serde::de::Error;
 use std::fmt;
 use std::str::FromStr;
-use tvm_block::{
-    AccStatusChange, AccountStatus, ComputeSkipReason, MsgAddressInt, TransactionProcessingStatus,
-};
+
+use serde::de::Error;
+use tvm_block::AccStatusChange;
+use tvm_block::AccountStatus;
+use tvm_block::ComputeSkipReason;
+use tvm_block::MsgAddressInt;
+use tvm_block::TransactionProcessingStatus;
+use tvm_types::base64_decode;
 use tvm_types::Cell;
+
+use crate::MessageType;
 
 pub struct StringVisitor;
 
@@ -87,6 +90,8 @@ impl<'de> serde::de::Visitor<'de> for U8Visitor {
 }
 
 pub mod opt_cell {
+    use tvm_types::base64_encode;
+
     use super::*;
 
     pub fn deserialize<'de, D>(d: D) -> Result<Option<Cell>, D::Error>
@@ -107,7 +112,7 @@ pub mod opt_cell {
         S: serde::Serializer,
     {
         if let Some(cell) = value {
-            let str_value = base64::encode(&tvm_types::boc::write_boc(&cell).map_err(|err| {
+            let str_value = base64_encode(&tvm_types::boc::write_boc(&cell).map_err(|err| {
                 serde::ser::Error::custom(format!("Cannot serialize BOC: {}", err))
             })?);
             serializer.serialize_some(&str_value)
@@ -121,7 +126,7 @@ pub fn deserialize_tree_of_cells_from_base64<'de, D>(b64: &str) -> Result<Cell, 
 where
     D: serde::Deserializer<'de>,
 {
-    let bytes = base64::decode(&b64)
+    let bytes = base64_decode(&b64)
         .map_err(|err| D::Error::custom(format!("error decode base64: {}", err)))?;
 
     tvm_types::boc::read_single_root_boc(&bytes)
@@ -192,10 +197,7 @@ where
         Ok(2) => Ok(TransactionProcessingStatus::Proposed),
         Ok(3) => Ok(TransactionProcessingStatus::Finalized),
         Ok(4) => Ok(TransactionProcessingStatus::Refused),
-        Ok(num) => Err(D::Error::custom(format!(
-            "Invalid transaction state: {}",
-            num
-        ))),
+        Ok(num) => Err(D::Error::custom(format!("Invalid transaction state: {}", num))),
     }
 }
 
@@ -219,10 +221,7 @@ where
         0 => Ok(AccStatusChange::Unchanged),
         1 => Ok(AccStatusChange::Frozen),
         2 => Ok(AccStatusChange::Deleted),
-        num => Err(D::Error::custom(format!(
-            "Invalid account change state: {}",
-            num
-        ))),
+        num => Err(D::Error::custom(format!("Invalid account change state: {}", num))),
     }
 }
 

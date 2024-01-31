@@ -12,6 +12,7 @@
 use std::fmt;
 
 use num_traits::cast::ToPrimitive;
+use tvm_types::base64_encode;
 use tvm_types::Result;
 use tvm_types::UInt256;
 
@@ -61,7 +62,7 @@ impl fmt::Display for StringId {
 impl StringId {
     pub fn to_base64(&self) -> Result<String> {
         let bytes = self.to_bytes()?;
-        Ok(base64::encode(&bytes))
+        Ok(base64_encode(&bytes))
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
