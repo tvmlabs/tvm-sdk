@@ -1,10 +1,10 @@
 [workspace]
-exclude = [ "examples/rust" ]
+exclude = ["examples/rust"]
 members = [
-    "tvm_sdk",
+    "api/test",
+    "tools/update_trusted_blocks",
+    "tvm_cli",
     "tvm_client",
     "tvm_client_processing",
-    "tvm_cli",
-    "api/test",
-    "tools/update_trusted_blocks"
+    "tvm_sdk",
 ]

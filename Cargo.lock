@@ -3030,7 +3030,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "zeroize",
- "zstd 0.11.2+zstd.1.5.2",
+ "zstd",
 ]
 
 [[package]]
@@ -3073,9 +3073,9 @@ dependencies = [
  "anyhow",
  "api_derive",
  "api_info",
- "base64 0.10.1",
+ "base64 0.21.7",
  "chrono",
- "hex 0.3.2",
+ "hex 0.4.3",
  "lazy_static",
  "log",
  "num-bigint",
@@ -3083,7 +3083,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "sha2 0.9.9",
+ "sha2 0.10.8",
  "thiserror",
  "tvm_abi",
  "tvm_block",
@@ -3163,7 +3163,7 @@ dependencies = [
  "thiserror",
  "tvm_block",
  "tvm_types",
- "zstd 0.13.0",
+ "zstd",
 ]
 
 [[package]]
@@ -3668,30 +3668,11 @@ dependencies = [
 
 [[package]]
 name = "zstd"
-version = "0.11.2+zstd.1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20cc960326ece64f010d2d2107537f26dc589a6573a316bd5b1dba685fa5fde4"
-dependencies = [
- "zstd-safe 5.0.2+zstd.1.5.2",
-]
-
-[[package]]
-name = "zstd"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bffb3309596d527cfcba7dfc6ed6052f1d39dfbd7c867aa2e865e4a449c10110"
 dependencies = [
- "zstd-safe 7.0.0",
-]
-
-[[package]]
-name = "zstd-safe"
-version = "5.0.2+zstd.1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d2a5585e04f9eea4b2a3d1eca508c4dee9592a89ef6f450c11719da0726f4db"
-dependencies = [
- "libc",
- "zstd-sys",
+ "zstd-safe",
 ]
 
 [[package]]

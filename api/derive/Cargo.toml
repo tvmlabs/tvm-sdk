@@ -1,15 +1,15 @@
 [package]
-authors = [ "TON Labs LTD <support@tonlabs.io>" ]
+authors = ["TON Labs LTD <support@tonlabs.io>"]
 edition = "2018"
 name = "api_derive"
 version = "1.46.0"
 
 [dependencies]
+api_info = { path = "../info" }
+proc-macro2 = "1.0.78"
 quote = "1.0.35"
 serde_json = "1.0.113"
-api_info = { path = "../info" }
-syn = { features = [ "full" ], version = "1.0" }
-proc-macro2 = "1.0.78"
+syn = { features = ["full"], version = "1.0" }
 
 [lib]
 proc-macro = true
