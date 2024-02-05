@@ -10,6 +10,7 @@
 // limitations under the License.
 
 use std::collections::HashMap;
+use std::future::IntoFuture;
 
 use futures::Future;
 use futures::FutureExt;
@@ -20,6 +21,8 @@ use indexed_db_futures::IdbDatabase;
 use indexed_db_futures::IdbQuerySource;
 use indexed_db_futures::IdbVersionChangeEvent;
 use js_sys::JSON;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
