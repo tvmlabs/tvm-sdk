@@ -10,12 +10,16 @@
 // limitations under the License.
 //
 
+use std::fs;
+use std::path::Path;
 use std::sync::Arc;
 
+use serde_json::Value;
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
 use tvm_executor::BlockchainConfig;
 
+use super::acki_config;
 use crate::boc::blockchain_config::extract_config_from_block;
 use crate::boc::blockchain_config::extract_config_from_zerostate;
 use crate::boc::internal::deserialize_object_from_base64;
@@ -26,6 +30,8 @@ use crate::net::OrderBy;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::ServerLink;
 use crate::net::SortDirection;
+
+const DEFAULT_ACKI_GLOBAL_ID: i32 = 100;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ResultOfGetSignatureId {
@@ -73,6 +79,7 @@ pub(crate) async fn get_default_params(
 
     let (config, global_id) = if let Ok(link) = context.get_server_link() {
         query_network_params(link).await?
+        // query_network_params_from_file().await?
     } else {
         offline_config()
     };
@@ -123,6 +130,12 @@ pub(crate) async fn query_network_params(
             )
             .await?;
 
+        // if there is no zerostate in the -1 workchain, use the masterchainless network
+        // right now it's hardcoded to AckiNacki network
+        if zerostate.get(0).is_none() {
+            return ackinacki_network().await;
+        }
+
         let boc = zerostate[0]["boc"].as_str().ok_or(
             crate::tvm::Error::can_not_read_blockchain_config(
                 "Can not find key block or zerostate",
@@ -137,4 +150,25 @@ pub(crate) async fn query_network_params(
         .map_err(|err| crate::tvm::Error::can_not_read_blockchain_config(err))?;
 
     Ok((config, global_id))
+}
+
+/// TODO: make it more generic
+pub(crate) async fn ackinacki_network() -> ClientResult<(BlockchainConfig, i32)> {
+    let global_id = DEFAULT_ACKI_GLOBAL_ID;
+    let config = blockchain_config_from_json(&acki_config::get_config()?)?;
+    Ok((config, global_id))
+}
+
+fn read_str(path: &str) -> ClientResult<String> {
+    Ok(fs::read_to_string(Path::new(path))
+        .map_err(|err| crate::tvm::Error::can_not_read_blockchain_config_from_file(err))?)
+}
+
+fn blockchain_config_from_json(json: &str) -> ClientResult<BlockchainConfig> {
+    let map = serde_json::from_str::<serde_json::Map<String, Value>>(&json)
+        .map_err(|err| crate::tvm::Error::json_deserialization_failed(err))?;
+    let config_params = tvm_block_json::parse_config(&map)
+        .map_err(|err| crate::tvm::Error::can_not_parse_config(err))?;
+    BlockchainConfig::with_config(config_params)
+        .map_err(|err| crate::tvm::Error::can_not_convert_config(err))
 }
