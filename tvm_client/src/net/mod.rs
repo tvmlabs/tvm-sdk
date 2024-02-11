@@ -93,6 +93,7 @@ mod tvm_gql;
 pub(crate) mod types;
 mod websocket_link;
 
+mod acki_config;
 mod network;
 #[cfg(not(feature = "wasm-base"))]
 #[cfg(test)]
