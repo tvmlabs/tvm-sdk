@@ -14,7 +14,6 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-
 use serde_json::Value;
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
