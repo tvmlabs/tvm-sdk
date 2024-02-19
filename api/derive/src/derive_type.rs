@@ -1,4 +1,3 @@
-use api_info;
 use quote::quote;
 use syn::Attribute;
 use syn::Data;

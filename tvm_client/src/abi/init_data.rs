@@ -1,7 +1,6 @@
 use std::convert::TryInto;
 use std::sync::Arc;
 
-use serde_json;
 use serde_json::Value;
 use tvm_types::Cell;
 use tvm_types::SliceData;

@@ -3,7 +3,6 @@ mod derive_module;
 mod derive_type;
 mod utils;
 
-extern crate api_info;
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
