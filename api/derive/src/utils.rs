@@ -1,4 +1,3 @@
-use api_info;
 use api_info::NumberType;
 use proc_macro2::TokenStream;
 use quote::quote;

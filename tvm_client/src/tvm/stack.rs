@@ -10,8 +10,6 @@
 // limitations under the License.
 //
 
-use core::result::Result::Err;
-use core::result::Result::Ok;
 use std::ops::Deref;
 use std::slice::Iter;
 

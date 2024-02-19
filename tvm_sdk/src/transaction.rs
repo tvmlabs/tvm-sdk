@@ -9,8 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::convert::TryFrom;
-
 use tvm_block::AccStatusChange;
 use tvm_block::ComputeSkipReason;
 use tvm_block::GetRepresentationHash;

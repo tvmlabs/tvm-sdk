@@ -1,4 +1,3 @@
-use api_info;
 use proc_macro::Span;
 use proc_macro::TokenStream;
 use quote::quote;

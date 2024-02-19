@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use serde_json::Value;
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
@@ -369,9 +370,6 @@ pub(super) struct EncryptionBoxInfoResult {
     pub options: String,
     pub public_info: String,
 }
-
-use std::convert::From;
-use std::convert::TryInto;
 
 use crate::error::ClientError;
 

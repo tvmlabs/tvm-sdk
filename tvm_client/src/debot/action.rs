@@ -1,4 +1,3 @@
-use std::convert::From;
 
 use serde::de;
 use serde::Deserialize;

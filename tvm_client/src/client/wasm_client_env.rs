@@ -24,7 +24,6 @@ use js_sys::JSON;
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::Event;
 use web_sys::IdbTransactionMode;
