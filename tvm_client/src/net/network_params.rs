@@ -14,6 +14,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
+use num_traits::zero;
 use serde_json::Value;
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
@@ -116,7 +117,7 @@ pub(crate) async fn query_network_params(
         let block = deserialize_object_from_base64(block_boc, "block")?;
         (extract_config_from_block(&block.object)?, block.object.global_id())
     } else {
-        let zerostate = link
+        let try_zerostate = link
             .query_collection(
                 ParamsOfQueryCollection {
                     collection: "zerostates".to_owned(),
@@ -128,7 +129,17 @@ pub(crate) async fn query_network_params(
                 },
                 None,
             )
-            .await?;
+            .await;
+
+        // if there is no zerostate collection it will be a GraphQL error
+        // e.g. "message": "AQL: collection or view not found: zerostates (while
+        // parsing)"
+
+        // TODO: make it more subtle (e.g. distinguesh between
+        // regular 500 and no zerostate collection)
+        let Ok(zerostate) = try_zerostate else {
+            return ackinacki_network().await;
+        };
 
         // if there is no zerostate in the -1 workchain, use the masterchainless network
         // right now it's hardcoded to AckiNacki network
