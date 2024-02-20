@@ -77,9 +77,7 @@ impl KeyValueStorage for InMemoryKeyValueStorage {
     async fn get_str(&self, key: &str) -> ClientResult<Option<String>> {
         self.map
             .get(key)
-            .map(|guard| {
-                String::from_utf8(guard.val().clone()).map_err(Error::internal_error)
-            })
+            .map(|guard| String::from_utf8(guard.val().clone()).map_err(Error::internal_error))
             .transpose()
     }
 

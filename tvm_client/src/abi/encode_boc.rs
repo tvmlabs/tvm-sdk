@@ -41,8 +41,8 @@ pub fn encode_boc(
         abi_params.push(param.try_into()?)
     }
 
-    let tokens = Tokenizer::tokenize_all_params(&abi_params, &params.data)
-        .map_err(Error::invalid_abi)?;
+    let tokens =
+        Tokenizer::tokenize_all_params(&abi_params, &params.data).map_err(Error::invalid_abi)?;
 
     let builder = TokenValue::pack_values_into_chain(&tokens, Vec::new(), &MAX_SUPPORTED_VERSION)
         .map_err(Error::invalid_abi)?;

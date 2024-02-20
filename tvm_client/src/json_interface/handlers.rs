@@ -511,9 +511,8 @@ where
 {
     fn handle(&self, context: Arc<ClientContext>, params_json: &str) -> ClientResult<String> {
         match parse_params(params_json) {
-            Ok(params) => (self.handler)(context, params).and_then(|x| {
-                serde_json::to_string(&x).map_err(Error::cannot_serialize_result)
-            }),
+            Ok(params) => (self.handler)(context, params)
+                .and_then(|x| serde_json::to_string(&x).map_err(Error::cannot_serialize_result)),
             Err(err) => Err(err),
         }
     }
@@ -545,9 +544,7 @@ where
 {
     fn handle(&self, context: Arc<ClientContext>, _params_json: &str) -> ClientResult<String> {
         match (self.handler)(context) {
-            Ok(result) => {
-                serde_json::to_string(&result).map_err(Error::cannot_serialize_result)
-            }
+            Ok(result) => serde_json::to_string(&result).map_err(Error::cannot_serialize_result),
             Err(err) => Err(err),
         }
     }

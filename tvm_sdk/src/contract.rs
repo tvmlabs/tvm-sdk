@@ -637,7 +637,9 @@ impl Contract {
         msg_header.ihr_disabled = ihr_disabled;
         msg_header.bounce = bounce;
         let mut msg = TvmMessage::with_int_header(msg_header);
-        if let Some(body) = msg_body { msg.set_body(body) }
+        if let Some(body) = msg_body {
+            msg.set_body(body)
+        }
 
         Ok(msg)
     }
@@ -654,7 +656,9 @@ impl Contract {
 
         let mut msg = TvmMessage::with_ext_in_header(msg_header);
         msg.set_state_init(image.state_init());
-        if let Some(body) = msg_body { msg.set_body(body) }
+        if let Some(body) = msg_body {
+            msg.set_body(body)
+        }
 
         Ok(msg)
     }
@@ -680,7 +684,9 @@ impl Contract {
 
         let mut msg = TvmMessage::with_int_header(msg_header);
         msg.set_state_init(image.state_init());
-        if let Some(body) = msg_body { msg.set_body(body) }
+        if let Some(body) = msg_body {
+            msg.set_body(body)
+        }
 
         Ok(msg)
     }

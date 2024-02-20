@@ -48,7 +48,7 @@ pub fn decode_account_data(
         .decode_storage_fields(slice_from_cell(data)?, params.allow_partial)
         .map_err(Error::invalid_data_for_decode)?;
 
-    let data = Detokenizer::detokenize_to_json_value(&tokens)
-        .map_err(Error::invalid_data_for_decode)?;
+    let data =
+        Detokenizer::detokenize_to_json_value(&tokens).map_err(Error::invalid_data_for_decode)?;
     Ok(ResultOfDecodeAccountData { data })
 }

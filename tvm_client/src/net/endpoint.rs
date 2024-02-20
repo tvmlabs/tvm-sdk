@@ -201,10 +201,8 @@ impl Endpoint {
                 .store(server_time - ((info_request_time + now) / 2) as i64, Ordering::Relaxed);
             if let Some(latency) = info["latency"].as_i64() {
                 self.server_latency.store(latency.unsigned_abs(), Ordering::Relaxed);
-                self.next_latency_detection_time.store(
-                    now + config.latency_detection_interval as u64,
-                    Ordering::Relaxed,
-                );
+                self.next_latency_detection_time
+                    .store(now + config.latency_detection_interval as u64, Ordering::Relaxed);
             }
         }
         self.remp_enabled

@@ -56,8 +56,7 @@ pub(crate) async fn encrypt_secret(
 ) -> ClientResult<SecretBuf> {
     let mut result = generate_nonce();
     let serialized = SecretBuf(
-        bincode::serialize(secret)
-            .map_err(Error::crypto_box_secret_serialization_error)?,
+        bincode::serialize(secret).map_err(Error::crypto_box_secret_serialization_error)?,
     );
     apply_chacha20(context, &serialized.0, password_provider, salt, &result.0).await.map(
         |mut output| {

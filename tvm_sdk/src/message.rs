@@ -20,8 +20,7 @@ use crate::json_helper;
 use crate::types::grams_to_u64;
 use crate::types::StringId;
 
-#[derive(Deserialize, Debug, PartialEq, Clone)]
-#[derive(Default)]
+#[derive(Deserialize, Debug, PartialEq, Clone, Default)]
 pub enum MessageType {
     Internal,
     ExternalInbound,
@@ -29,8 +28,6 @@ pub enum MessageType {
     #[default]
     Unknown,
 }
-
-
 
 pub type MessageId = StringId;
 

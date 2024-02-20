@@ -353,11 +353,8 @@ impl DEngine {
                 } else {
                     None
                 };
-                let args: Option<JsonValue> = if a.misc != EMPTY_CELL {
-                    Some(json!({ "misc": a.misc }))
-                } else {
-                    None
-                };
+                let args: Option<JsonValue> =
+                    if a.misc != EMPTY_CELL { Some(json!({ "misc": a.misc })) } else { None };
                 let result = self.run_sendmsg(&a.name, args, signer.clone()).await?;
                 if let Some(signing_box) = signer {
                     let _ = remove_signing_box(
@@ -388,11 +385,8 @@ impl DEngine {
             AcType::Print => {
                 debug!("print action: {}", a.name);
                 let label = if let Some(args_getter) = a.format_args() {
-                    let args = if a.misc != EMPTY_CELL {
-                        Some(json!({"misc": a.misc}))
-                    } else {
-                        None
-                    };
+                    let args =
+                        if a.misc != EMPTY_CELL { Some(json!({"misc": a.misc})) } else { None };
                     self.run_debot_external(&args_getter, args)
                         .await?
                         .return_value
@@ -457,8 +451,7 @@ impl DEngine {
             self.curr_state = state_to;
             while instant_switch {
                 // TODO: restrict cyclic switches
-                let jump_to_ctx =
-                    self.state_machine.iter().find(|ctx| ctx.id == state_to).cloned();
+                let jump_to_ctx = self.state_machine.iter().find(|ctx| ctx.id == state_to).cloned();
                 if let Some(ctx) = jump_to_ctx {
                     self.browser.switch(state_to).await;
                     self.browser.log(ctx.desc.clone()).await;
@@ -491,7 +484,9 @@ impl DEngine {
                     if !act.desc.is_empty() {
                         self.browser.log(act.desc.clone()).await;
                     }
-                    if let Some(vec) = self.handle_action(&act).await? { vec.iter().for_each(|a| sub_actions.push_back(a.clone())); }
+                    if let Some(vec) = self.handle_action(&act).await? {
+                        vec.iter().for_each(|a| sub_actions.push_back(a.clone()));
+                    }
                     // if instant action wants to switch context then exit and do switch.
                     let to = if act.to == STATE_CURRENT {
                         self.curr_state

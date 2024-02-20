@@ -7,8 +7,7 @@ use super::context::from_abi_num;
 use super::context::from_hex_to_utf8_str;
 use crate::encoding::decode_abi_number;
 
-#[derive(Clone)]
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub enum AcType {
     #[default]
     Empty = 0,
@@ -37,8 +36,6 @@ impl From<u8> for AcType {
         }
     }
 }
-
-
 
 /// Describes a debot action in a Debot Context.
 #[derive(Serialize, Deserialize, Clone, Default)]

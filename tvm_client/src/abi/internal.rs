@@ -48,10 +48,8 @@ pub(crate) fn add_sign_to_message_body(
         unsigned,
     )
     .map_err(Error::attach_signature_failed)?;
-    tvm_types::boc::write_boc(
-        &body.into_cell().map_err(Error::attach_signature_failed)?,
-    )
-    .map_err(Error::attach_signature_failed)
+    tvm_types::boc::write_boc(&body.into_cell().map_err(Error::attach_signature_failed)?)
+        .map_err(Error::attach_signature_failed)
 }
 
 pub(crate) async fn try_to_sign_message(
@@ -68,12 +66,7 @@ pub(crate) async fn try_to_sign_message(
                 .await?
                 .map(|string| hex_decode(&string))
                 .transpose()?;
-            let message = add_sign_to_message(
-                abi,
-                &signature,
-                pubkey.as_deref(),
-                &message,
-            )?;
+            let message = add_sign_to_message(abi, &signature, pubkey.as_deref(), &message)?;
             return Ok((message, None));
         }
     }
@@ -86,8 +79,7 @@ pub(crate) fn create_tvc_image(
     init_params: Option<&Value>,
     state_init: Cell,
 ) -> ClientResult<ContractImage> {
-    let mut image =
-        ContractImage::from_cell(state_init).map_err(Error::invalid_tvc_image)?;
+    let mut image = ContractImage::from_cell(state_init).map_err(Error::invalid_tvc_image)?;
 
     if let Some(params) = init_params {
         image
@@ -138,9 +130,6 @@ pub(crate) fn update_pubkey(
             .map_err(Error::invalid_tvc_image)?;
         Ok(resolved)
     } else {
-        Ok(image
-            .get_public_key()
-            .map_err(Error::invalid_tvc_image)?
-            .map(hex::encode))
+        Ok(image.get_public_key().map_err(Error::invalid_tvc_image)?.map(hex::encode))
     }
 }

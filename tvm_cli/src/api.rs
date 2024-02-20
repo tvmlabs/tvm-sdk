@@ -135,9 +135,7 @@ fn get_api() -> CliResult<API> {
 
 fn write_text_to_out_dir(text: String, out_dir: String) -> CliResult<()> {
     let out_dir = if let Some(stripped) = out_dir.strip_prefix("~/") {
-        dirs::home_dir()
-            .ok_or(CliError::with_message("Home dir not found".into()))?
-            .join(stripped)
+        dirs::home_dir().ok_or(CliError::with_message("Home dir not found".into()))?.join(stripped)
     } else {
         out_dir.into()
     };

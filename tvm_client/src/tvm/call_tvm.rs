@@ -84,8 +84,8 @@ pub(crate) fn call_tvm(
 
     match engine.execute() {
         Err(err) => {
-            let exception = tvm_vm::error::tvm_exception(err)
-                .map_err(Error::unknown_execution_error)?;
+            let exception =
+                tvm_vm::error::tvm_exception(err).map_err(Error::unknown_execution_error)?;
             let code = if let Some(code) = exception.custom_code() {
                 code
             } else {

@@ -30,10 +30,12 @@ pub enum AddressStringFormat {
     AccountId,
     #[default]
     Hex,
-    Base64 { url: bool, test: bool, bounce: bool },
+    Base64 {
+        url: bool,
+        test: bool,
+        bounce: bool,
+    },
 }
-
-
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
 pub struct ParamsOfConvertAddress {
@@ -114,6 +116,5 @@ pub fn get_address_type(
 
 #[cfg(test)]
 pub fn abi_uint(n: u128, size: usize) -> serde_json::Value {
-    serde_json::to_value(tvm_abi::TokenValue::Uint(tvm_abi::Uint::new(n, size)))
-        .unwrap_or_default()
+    serde_json::to_value(tvm_abi::TokenValue::Uint(tvm_abi::Uint::new(n, size))).unwrap_or_default()
 }

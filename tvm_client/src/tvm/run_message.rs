@@ -70,8 +70,6 @@ pub enum AccountForExecutor {
     },
 }
 
-
-
 const UNLIMITED_BALANCE: u64 = u64::MAX;
 
 impl AccountForExecutor {
@@ -291,8 +289,8 @@ pub async fn run_executor_internal(
         call_executor(account.clone(), message, options, contract_info.clone(), show_tips_on_error)
             .await?;
 
-    let sdk_transaction = tvm_sdk::Transaction::try_from(&transaction)
-        .map_err(Error::can_not_read_transaction)?;
+    let sdk_transaction =
+        tvm_sdk::Transaction::try_from(&transaction).map_err(Error::can_not_read_transaction)?;
 
     let fees = calc_transaction_fees(
         &sdk_transaction,
@@ -423,8 +421,7 @@ where
                 let err = match contract_info().await {
                     Ok((address, balance)) => match &err.downcast_ref::<ExecutorError>() {
                         Some(ExecutorError::NoAcceptError(code, exit_arg)) => {
-                            let exit_arg =
-                                exit_arg.as_ref().map(serialize_item).transpose()?;
+                            let exit_arg = exit_arg.as_ref().map(serialize_item).transpose()?;
                             Error::tvm_execution_failed(
                                 err_message,
                                 *code,

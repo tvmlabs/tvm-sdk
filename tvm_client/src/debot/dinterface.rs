@@ -32,8 +32,7 @@ fn decode_msg(client: TonClient, msg_body: String, abi: Abi) -> ClientResult<(St
     let abi = AbiContract::load(abi.as_bytes()).map_err(Error::invalid_json)?;
     let (_, body) = deserialize_cell_from_boc(&client, &msg_body, "message body")?;
     let body = slice_from_cell(body)?;
-    let input =
-        abi.decode_input(body, true, false).map_err(Error::invalid_message_for_decode)?;
+    let input = abi.decode_input(body, true, false).map_err(Error::invalid_message_for_decode)?;
     let value = Detokenizer::detokenize_to_json_value(&input.tokens)
         .map_err(Error::invalid_message_for_decode)?;
     Ok((input.function_name, value))
@@ -105,8 +104,10 @@ pub trait DebotInterfaceExecutor {
         let parsed = parse_message(client.clone(), ParamsOfParse { boc: msg.clone() })
             .map_err(|e| format!("{}", e))?;
 
-        let body =
-            parsed.parsed["body"].as_str().ok_or("parsed message has no body".to_string())?.to_owned();
+        let body = parsed.parsed["body"]
+            .as_str()
+            .ok_or("parsed message has no body".to_string())?
+            .to_owned();
         debug!("interface {} call", interface_id);
         match interfaces.get(interface_id) {
             Some(object) => {

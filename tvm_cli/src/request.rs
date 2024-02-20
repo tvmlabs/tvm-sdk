@@ -73,10 +73,7 @@ fn parse_sync_response<R: DeserializeOwned>(response: *const String) -> Result<R
     match serde_json::from_str::<Value>(&response) {
         Ok(value) => {
             if value["error"].is_object() {
-                Err(CliError::with_message(format!(
-                    "Function failed: {}",
-                    value["error"]
-                )))
+                Err(CliError::with_message(format!("Function failed: {}", value["error"])))
             } else {
                 Ok(serde_json::from_value(value["result"].clone()).unwrap())
             }
@@ -204,7 +201,7 @@ pub fn command(args: &[String]) -> Result<(), CliError> {
         ))
     };
     unsafe { tc_destroy_context(context) };
-    
+
     match response {
         Ok(value) => {
             println!("{}", reformat_json(value)?);

@@ -247,7 +247,8 @@ fn decode_unknown_function(
         Some(DataLayout::Input) => decode_input(),
         Some(DataLayout::Output) => decode_output(),
         None => decode_output()
-            .or_else(|_| decode_input()).map_err(|_| Error::invalid_message_for_decode(ERROR_TIP)),
+            .or_else(|_| decode_input())
+            .map_err(|_| Error::invalid_message_for_decode(ERROR_TIP)),
     }
 }
 
@@ -294,7 +295,8 @@ fn decode_with_function(
                 Some(DataLayout::Input) => decode_input(),
                 Some(DataLayout::Output) => decode_output(),
                 None => decode_output()
-                    .or_else(|_| decode_input()).map_err(|_| Error::invalid_message_for_decode(ERROR_TIP)),
+                    .or_else(|_| decode_input())
+                    .map_err(|_| Error::invalid_message_for_decode(ERROR_TIP)),
             }
         }
         AbiFunctionVariant::Event(event) => {

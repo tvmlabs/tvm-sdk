@@ -286,8 +286,7 @@ impl ContractCall {
     }
 
     pub async fn execute(&self, wait_tx: bool) -> ClientResult<String> {
-        let result =
-            self.decode_and_fix_ext_msg().await.map_err(Error::external_call_failed);
+        let result = self.decode_and_fix_ext_msg().await.map_err(Error::external_call_failed);
         if let Err(e) = result {
             let error_body = build_onerror_body(self.meta.onerror_id, e)?;
             return build_internal_message(&self.dest_addr, &self.debot_addr, error_body);
@@ -455,8 +454,7 @@ impl ContractCall {
             decode_and_fix_ext_msg(&self.msg, now_ms, &self.signer, false, &self.meta, &self.ton)
                 .await?;
         let (func_id, message) = result;
-        let msg =
-            serialize_object_to_base64(&message, "message").map_err(Error::invalid_msg)?;
+        let msg = serialize_object_to_base64(&message, "message").map_err(Error::invalid_msg)?;
         Ok((func_id, msg))
     }
 
@@ -520,10 +518,7 @@ async fn resolve_signer(
             _ => Signer::SigningBox {
                 handle: match msg_signing_box {
                     Some(signing_box_handle) => signing_box_handle,
-                    None => browser
-                        .get_signing_box()
-                        .await
-                        .map_err(Error::external_call_failed)?,
+                    None => browser.get_signing_box().await.map_err(Error::external_call_failed)?,
                 },
             },
         }

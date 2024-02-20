@@ -572,9 +572,8 @@ impl SdkInterface {
 
     fn nacl_box(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
-        let decrypted = base64_encode(
-            hex::decode(get_arg(args, "decrypted")?).map_err(|e| format!("{}", e))?,
-        );
+        let decrypted =
+            base64_encode(hex::decode(get_arg(args, "decrypted")?).map_err(|e| format!("{}", e))?);
         let nonce = get_arg(args, "nonce")?;
         let public = decode_abi_bigint(&get_arg(args, "publicKey")?).map_err(|e| e.to_string())?;
         let secret = decode_abi_bigint(&get_arg(args, "secretKey")?).map_err(|e| e.to_string())?;
@@ -596,9 +595,8 @@ impl SdkInterface {
 
     fn nacl_box_open(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
-        let encrypted = base64_encode(
-            hex::decode(get_arg(args, "encrypted")?).map_err(|e| format!("{}", e))?,
-        );
+        let encrypted =
+            base64_encode(hex::decode(get_arg(args, "encrypted")?).map_err(|e| format!("{}", e))?);
         let nonce = get_arg(args, "nonce")?;
         let public = decode_abi_bigint(&get_arg(args, "publicKey")?).map_err(|e| e.to_string())?;
         let secret = decode_abi_bigint(&get_arg(args, "secretKey")?).map_err(|e| e.to_string())?;
