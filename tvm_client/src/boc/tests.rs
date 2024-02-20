@@ -193,7 +193,7 @@ fn test_pinned_cache() {
         .unwrap()
         .boc_ref;
 
-    assert!(ref1.starts_with("*"));
+    assert!(ref1.starts_with('*'));
     assert_eq!(ref1.len(), 65);
 
     let boc = cache_get.call(ParamsOfBocCacheGet { boc_ref: ref1.clone() }).unwrap();
@@ -387,7 +387,7 @@ fn parse_account() {
     let result: ResultOfParse = client
         .request(
             "boc.parse_account",
-            ParamsOfParse { boc: base64_encode(&include_bytes!("test_data/account.boc")) },
+            ParamsOfParse { boc: base64_encode(include_bytes!("test_data/account.boc")) },
         )
         .unwrap();
 
@@ -421,7 +421,7 @@ fn parse_pruned_account() {
     let boc = proof.write_to_bytes().unwrap();
 
     let result: ResultOfParse =
-        client.request("boc.parse_account", ParamsOfParse { boc: base64_encode(&boc) }).unwrap();
+        client.request("boc.parse_account", ParamsOfParse { boc: base64_encode(boc) }).unwrap();
 
     assert_eq!(
         result.parsed["id"],
@@ -487,7 +487,7 @@ fn parse_shardstate() {
             ParamsOfParseShardstate {
                 id: String::from("zerostate:-1"),
                 workchain_id: -1,
-                boc: base64_encode(&include_bytes!("test_data/zerostate.boc")),
+                boc: base64_encode(include_bytes!("test_data/zerostate.boc")),
             },
         )
         .unwrap();
@@ -505,27 +505,27 @@ fn get_blockchain_config() {
         .request(
             "boc.get_blockchain_config",
             ParamsOfGetBlockchainConfig {
-                block_boc: base64_encode(&include_bytes!("test_data/block.boc")),
+                block_boc: base64_encode(include_bytes!("test_data/block.boc")),
             },
         )
         .unwrap();
 
-    assert_eq!(result.config_boc, base64_encode(&include_bytes!("test_data/block_config.boc")));
+    assert_eq!(result.config_boc, base64_encode(include_bytes!("test_data/block_config.boc")));
 
     let result: ResultOfGetBlockchainConfig = client
         .request(
             "boc.get_blockchain_config",
             ParamsOfGetBlockchainConfig {
-                block_boc: base64_encode(&include_bytes!("test_data/zerostate.boc")),
+                block_boc: base64_encode(include_bytes!("test_data/zerostate.boc")),
             },
         )
         .unwrap();
 
-    assert_eq!(result.config_boc, base64_encode(&include_bytes!("test_data/zerostate_config.boc")));
+    assert_eq!(result.config_boc, base64_encode(include_bytes!("test_data/zerostate_config.boc")));
 }
 
 fn read_salted_boc(name: &str) -> String {
-    base64_encode(&std::fs::read("src/boc/test_data/salt/".to_owned() + name).unwrap())
+    base64_encode(std::fs::read("src/boc/test_data/salt/".to_owned() + name).unwrap())
 }
 
 fn check_salt(

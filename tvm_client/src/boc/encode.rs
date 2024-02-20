@@ -153,7 +153,7 @@ impl<'a> Builder<'a> {
                     append_integer(&mut self.result, *size as usize, value)?;
                 }
                 BuilderOp::BitString { value } => {
-                    append_bitstring(&mut self.result, &value)?;
+                    append_bitstring(&mut self.result, value)?;
                 }
                 BuilderOp::CellBoc { boc } => {
                     self.result
@@ -168,7 +168,7 @@ impl<'a> Builder<'a> {
                 BuilderOp::Address { address } => {
                     account_decode(address)?
                         .write_to(&mut self.result)
-                        .map_err(|err| Error::invalid_boc(err))?;
+                        .map_err(Error::invalid_boc)?;
                 }
             }
         }
@@ -180,7 +180,7 @@ impl<'a> Builder<'a> {
 
 fn append_integer(builder: &mut BuilderData, size: usize, value: &Value) -> ClientResult<()> {
     if let Some(value) = value.as_i64() {
-        append_number(builder, value < 0, BigUint::from(value.abs() as u64), size, "Integer")
+        append_number(builder, value < 0, BigUint::from(value.unsigned_abs()), size, "Integer")
     } else if let Some(str) = value.as_str() {
         parse_integer(builder, str, size)
     } else {
@@ -227,10 +227,10 @@ fn append_number(
 /// Append `size` high bits from the number that is represented as a `string`.
 fn parse_integer(builder: &mut BuilderData, string: &str, size: usize) -> ClientResult<()> {
     let mut num_str = string.trim();
-    let negative = if num_str.starts_with("-") {
+    let negative = if num_str.starts_with('-') {
         num_str = &num_str[1..];
         true
-    } else if num_str.starts_with("+") {
+    } else if num_str.starts_with('+') {
         num_str = &num_str[1..];
         false
     } else {
@@ -264,30 +264,30 @@ fn append_bitstring(builder: &mut BuilderData, string: &str) -> ClientResult<()>
     let mut num_str = string.trim();
 
     // Try parse direct binary form
-    if num_str.starts_with("n") || num_str.starts_with("N") {
+    if num_str.starts_with('n') || num_str.starts_with('N') {
         parse_string(builder, &num_str[1..], false, 2, num_str.len() - 1)?;
         return Ok(());
     }
 
     // Escape from decorations
     if num_str.starts_with("x{") || num_str.starts_with("X{") {
-        if !num_str.ends_with("}") {
+        if !num_str.ends_with('}') {
             return Err(Error::serialization_error("Missing terminating `}`", string));
         }
         num_str = &num_str[2..num_str.len() - 1];
-    } else if num_str.starts_with("x") || num_str.starts_with("X") {
+    } else if num_str.starts_with('x') || num_str.starts_with('X') {
         num_str = &num_str[1..];
     }
 
     // Check if there is a tagged representation
-    if num_str.ends_with("_") {
+    if num_str.ends_with('_') {
         num_str = &num_str[0..num_str.len() - 1];
         // Escape from trailing zeros because of BuilderData doesn't support this
-        while num_str.ends_with("0") {
+        while num_str.ends_with('0') {
             num_str = &num_str[0..num_str.len() - 1];
         }
         // Check if the bitstring isn't empty
-        if num_str != "" && num_str != "8" {
+        if !num_str.is_empty() && num_str != "8" {
             let mut number = BigUint::from_str_radix(num_str, 16)
                 .map_err(|err| Error::serialization_error(err, string))?;
             // If hex string has an odd len, we need to pad it with zero bits at the end

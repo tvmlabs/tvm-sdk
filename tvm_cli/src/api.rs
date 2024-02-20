@@ -59,7 +59,7 @@ fn reduce_type(ty: &Type, module: &Module, api: &API) -> Type {
             args: args.iter().map(|a| reduce_type(a, module, api)).collect(),
         },
         Type::Ref { name } => {
-            if let Some((m, t)) = find_type(&name, module, api) {
+            if let Some((m, t)) = find_type(name, module, api) {
                 Type::Ref { name: format!("{}.{}", m.name, t.name) }
             } else {
                 ty.clone()

@@ -56,7 +56,7 @@ fn print_usage_and_exit() {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let cmd = args.iter().skip(1).next().map(|x| x.as_str());
+    let cmd = args.iter().nth(1).map(|x| x.as_str());
     let result = match cmd.unwrap_or("") {
         "api" => api::command(&args[2..]),
         "request" => request::command(&args[2..]),

@@ -49,7 +49,7 @@ pub fn try_calc_subset_for_workchain(
         0 => anyhow::bail!("workchain's description is empty"),
         1 => validator_set
             .calc_subset(cc_config, shard_pfx, workchain_id, cc_seqno, _time)
-            .map(|e| Some(e)),
+            .map(Some),
         count => {
             let mut list = Vec::new();
             for descr in validator_set.list() {
@@ -67,7 +67,7 @@ pub fn try_calc_subset_for_workchain(
                 )?;
                 validator_set
                     .calc_subset(cc_config, shard_pfx, workchain_id, cc_seqno, _time)
-                    .map(|e| Some(e))
+                    .map(Some)
             } else {
                 // Not enough validators -- config is ok, but we can't validate the shard at the
                 // moment
@@ -120,7 +120,7 @@ impl AdnlKeyId {
     /// Calculate key ID
     fn calc_id(type_id: i32, pub_key: &[u8; 32]) -> Self {
         let mut sha = sha2::Sha256::new();
-        sha.update(&type_id.to_le_bytes());
+        sha.update(type_id.to_le_bytes());
         sha.update(pub_key);
         let buf = sha.finalize();
         let src = buf.as_slice();
@@ -158,7 +158,7 @@ pub(crate) fn check_crypto_signatures(
     // Check signatures
     let mut weight = 0;
     for sign in signatures.pure_signatures() {
-        let key = AdnlKeyId(sign.node_id_short.as_array().clone());
+        let key = AdnlKeyId(*sign.node_id_short.as_array());
         if let Some(vd) = validators_map.get(&key) {
             if !vd.verify_signature(data, &sign.sign) {
                 anyhow::bail!("bad signature from validator with pub_key {}", key)

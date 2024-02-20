@@ -55,7 +55,7 @@ pub(crate) fn blockchain_config_from_boc(
 ) -> ClientResult<BlockchainConfig> {
     let config_params = deserialize_object_from_boc(context, b64, "blockchain config")?;
     BlockchainConfig::with_config(config_params.object)
-        .map_err(|err| Error::can_not_read_blockchain_config(err))
+        .map_err(Error::can_not_read_blockchain_config)
 }
 
 impl ResolvedExecutionOptions {

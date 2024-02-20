@@ -31,12 +31,7 @@ pub struct Module {
 impl Module {
     pub fn find_type(&self, name: &str) -> Option<&Field> {
         // TODO: Searching now is O(n), can speed up, if needed
-        for field in &self.types {
-            if field.name == name {
-                return Some(field);
-            }
-        }
-        None
+        self.types.iter().find(|&field| field.name == name)
     }
 }
 

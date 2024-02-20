@@ -95,11 +95,11 @@ impl Error {
     }
 
     pub fn transaction_aborted() -> ClientError {
-        let error = error(
+        
+        error(
             ErrorCode::TransactionAborted,
             "Transaction was aborted by unknown reason".to_string(),
-        );
-        error
+        )
     }
 
     pub fn tvm_execution_skipped(
@@ -363,7 +363,7 @@ impl Error {
             None => return None,
         };
 
-        deserialize_cell_from_base64(&base64_value, "contract_error")
+        deserialize_cell_from_base64(base64_value, "contract_error")
             .map(|(_bytes, cell)| cell)
             .ok()
     }
@@ -464,6 +464,6 @@ impl StdContractError {
             StdContractError::NoKeyInData => "Contract is probably deployed incorrectly",
             _ => "",
         };
-        if tip.len() > 0 { Some(tip) } else { None }
+        if !tip.is_empty() { Some(tip) } else { None }
     }
 }

@@ -51,12 +51,12 @@ pub async fn fetch_next_shard_block<F: futures::Future<Output = ()> + Send>(
         }
 
         // Fetch next block
-        match wait_next_block(context, block_id.into(), &address, Some(timeout)).await {
+        match wait_next_block(context, block_id, address, Some(timeout)).await {
             Ok(block) => return Ok(block),
             Err(err) => {
                 let is_retryable_error = crate::client::Error::is_network_error(&err)
                     || err.code == crate::net::ErrorCode::WaitForTimeout as u32;
-                let error = Error::fetch_block_failed(err, &message_id, &block_id.to_string());
+                let error = Error::fetch_block_failed(err, message_id, &block_id.to_string());
 
                 // Notify app about error
                 if params.send_events {
@@ -205,7 +205,7 @@ pub async fn fetch_transaction_result(
     let transaction_object = deserialize_object_from_base64(&transaction_boc.boc, "transaction")?;
 
     let transaction = tvm_sdk::Transaction::try_from(&transaction_object.object)
-        .map_err(|err| crate::tvm::Error::can_not_read_transaction(err))?;
+        .map_err(crate::tvm::Error::can_not_read_transaction)?;
 
     let local_result = if transaction.is_aborted() {
         let error = match extract_error(&transaction, get_contract_info.clone(), true).await {
@@ -223,7 +223,7 @@ pub async fn fetch_transaction_result(
                 false,
             )
             .await
-            .add_network_url_from_context(&context)
+            .add_network_url_from_context(context)
             .await
             .map_err(|mut error| {
                 error.data["transaction_id"] = transaction.id().to_string().into();
@@ -244,7 +244,7 @@ pub async fn fetch_transaction_result(
                     || exit_code == crate::tvm::StdContractError::ExtMessageExpired as i32)
             {
                 Error::message_expired(
-                    &message_id,
+                    message_id,
                     shard_block_id,
                     expiration_time,
                     block_time,
@@ -287,7 +287,7 @@ async fn fetch_transaction_boc(
         };
         match fetch_result {
             Ok(value) => {
-                return Ok(TransactionBoc::from(value, message_id, shard_block_id)?);
+                return TransactionBoc::from(value, message_id, shard_block_id);
             }
             Err(error) => {
                 // If network retries timeout has reached, return error

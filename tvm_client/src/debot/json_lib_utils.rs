@@ -14,21 +14,19 @@ use crate::boc::internal::deserialize_cell_from_base64;
 use crate::boc::internal::serialize_cell_to_base64;
 #[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
+#[derive(Default)]
 pub enum ValKind {
     String = 0,
     Number = 1,
     Bool = 2,
     Array = 3,
     Object = 4,
+    #[default]
     Null = 5,
     Cell = 6,
 }
 
-impl Default for ValKind {
-    fn default() -> Self {
-        ValKind::Null
-    }
-}
+
 
 #[derive(Serialize, Deserialize, Default)]
 struct Cell {
@@ -173,9 +171,9 @@ fn try_replace_hyphens(obj: &mut JsonValue, pointer: &str, name: &str) -> Result
 fn string_to_hex(obj: &mut JsonValue, pointer: &str) -> Result<(), String> {
     let val_str = obj
         .pointer(pointer)
-        .ok_or_else(|| format!("argument not found"))?
+        .ok_or_else(|| "argument not found".to_string())?
         .as_str()
-        .ok_or_else(|| format!("argument not a string"))?;
+        .ok_or_else(|| "argument not a string".to_string())?;
     *obj.pointer_mut(pointer).unwrap() = json!(hex::encode(val_str));
     Ok(())
 }
@@ -187,7 +185,7 @@ pub(crate) fn bypass_json(
     string_or_bytes: ParamType,
 ) -> Result<(), String> {
     let pointer = format!("{}/{}", top_pointer, p.name);
-    if let None = obj.pointer(&pointer) {
+    if obj.pointer(&pointer).is_none() {
         try_replace_hyphens(obj, top_pointer, &p.name)?;
     }
     match p.kind {
@@ -223,8 +221,7 @@ pub(crate) fn bypass_json(
                 .ok_or_else(|| format!("\"{}\" not found", pointer))?
                 .as_object()
                 .ok_or_else(|| String::from("Failed to retrieve an object"))?
-                .keys()
-                .map(|k| k.clone())
+                .keys().cloned()
                 .collect();
             for key in keys {
                 bypass_json(

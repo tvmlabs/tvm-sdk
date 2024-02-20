@@ -30,7 +30,7 @@ pub fn compress_zstd(uncompressed: &[u8], level: Option<i32>) -> ClientResult<Ve
 
     let mut compressed = Vec::new();
     zstd::stream::copy_encode(&mut Cursor::new(uncompressed), &mut compressed, level)
-        .map_err(|err| super::errors::Error::compression_error(err))?;
+        .map_err(super::errors::Error::compression_error)?;
 
     Ok(compressed)
 }
@@ -39,7 +39,7 @@ pub fn compress_zstd(uncompressed: &[u8], level: Option<i32>) -> ClientResult<Ve
 pub fn decompress_zstd(compressed: &[u8]) -> ClientResult<Vec<u8>> {
     let mut decompressed = Vec::new();
     zstd::stream::copy_decode(&mut Cursor::new(compressed), &mut decompressed)
-        .map_err(|err| super::errors::Error::decompression_error(err))?;
+        .map_err(super::errors::Error::decompression_error)?;
 
     Ok(decompressed)
 }

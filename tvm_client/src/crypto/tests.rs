@@ -81,7 +81,7 @@ use crate::json_interface::crypto::ResultOfAppSigningBox;
 use crate::tests::TestClient;
 
 fn base64_from_hex(hex: &str) -> String {
-    base64_encode(&hex::decode(hex).unwrap())
+    base64_encode(hex::decode(hex).unwrap())
 }
 
 fn text_from_base64(b64: &str) -> String {
@@ -329,7 +329,7 @@ fn nacl() {
             },
         )
         .unwrap();
-    assert_eq!(result.succeeded, true);
+    assert!(result.succeeded);
 
     let result: ResultOfNaclSignDetachedVerify = client
         .request(
@@ -341,7 +341,7 @@ fn nacl() {
             },
         )
         .unwrap();
-    assert_eq!(result.succeeded, false);
+    assert!(!result.succeeded);
 
     // Box
 
@@ -455,7 +455,7 @@ fn mnemonic() {
     let result: ResultOfMnemonicWords = client
         .request("crypto.mnemonic_words", ParamsOfMnemonicWords { dictionary: None })
         .unwrap();
-    assert_eq!(result.words.split(" ").count(), 2048);
+    assert_eq!(result.words.split(' ').count(), 2048);
 
     for dictionary in 1..9 {
         for word_count in &[12u8, 15, 18, 21, 24] {
@@ -468,7 +468,7 @@ fn mnemonic() {
                     },
                 )
                 .unwrap();
-            assert_eq!(result.phrase.split(" ").count(), *word_count as usize);
+            assert_eq!(result.phrase.split(' ').count(), *word_count as usize);
         }
     }
 
@@ -508,7 +508,7 @@ fn mnemonic() {
                     },
                 )
                 .unwrap();
-            assert_eq!(verify_result.valid, true);
+            assert!(verify_result.valid);
         }
     }
 
@@ -518,7 +518,7 @@ fn mnemonic() {
             ParamsOfMnemonicVerify { phrase: "one two".into(), dictionary: None, word_count: None },
         )
         .unwrap();
-    assert_eq!(result.valid, false);
+    assert!(!result.valid);
 
     let result: KeyPair = client.request("crypto.mnemonic_derive_sign_keys", ParamsOfMnemonicDeriveSignKeys {
         phrase: "unit follow zone decline glare flower crisp vocal adapt magic much mesh cherry teach mechanic rain float vicious solution assume hedgehog rail sort chuckle".into(),
@@ -573,7 +573,7 @@ fn mnemonic() {
             ParamsOfMnemonicFromRandom { dictionary: None, word_count: None },
         )
         .unwrap();
-    assert_eq!(result.phrase.split(" ").count(), 12);
+    assert_eq!(result.phrase.split(' ').count(), 12);
 
     let result: ResultOfMnemonicFromRandom = client
         .request(
@@ -584,7 +584,7 @@ fn mnemonic() {
             },
         )
         .unwrap();
-    assert_eq!(result.phrase.split(" ").count(), 12);
+    assert_eq!(result.phrase.split(' ').count(), 12);
 
     let result: ResultOfMnemonicFromRandom = client
         .request(
@@ -595,7 +595,7 @@ fn mnemonic() {
             },
         )
         .unwrap();
-    assert_eq!(result.phrase.split(" ").count(), 12);
+    assert_eq!(result.phrase.split(' ').count(), 12);
 
     let result: ResultOfMnemonicFromEntropy = client
         .request(
@@ -864,10 +864,10 @@ fn test_debug_keypair_secret_stripped() {
 async fn test_aes_params(key: &str, data: &str, encrypted: &str) {
     let client = std::sync::Arc::new(TestClient::new());
 
-    let iv = hex::encode(&std::fs::read("src/crypto/test_data/aes.iv.bin").unwrap());
-    let key = hex::encode(&std::fs::read(key).unwrap());
+    let iv = hex::encode(std::fs::read("src/crypto/test_data/aes.iv.bin").unwrap());
+    let key = hex::encode(std::fs::read(key).unwrap());
     let data = std::fs::read(data).unwrap();
-    let encrypted = base64_encode(&std::fs::read(encrypted).unwrap());
+    let encrypted = base64_encode(std::fs::read(encrypted).unwrap());
 
     let box_handle = client
         .request_async::<_, RegisteredEncryptionBox>(
@@ -1359,7 +1359,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     client
         .request_async(
             "crypto.clear_crypto_box_secret_cache",
-            RegisteredCryptoBox { handle: crypto_box.handle.clone() },
+            RegisteredCryptoBox { handle: crypto_box.handle },
         )
         .await?;
 
@@ -1485,7 +1485,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     client
         .request_async(
             "crypto.clear_crypto_box_secret_cache",
-            RegisteredCryptoBox { handle: crypto_box.handle.clone() },
+            RegisteredCryptoBox { handle: crypto_box.handle },
         )
         .await?;
 

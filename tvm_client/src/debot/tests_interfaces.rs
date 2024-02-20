@@ -304,8 +304,8 @@ impl EncryptionBox for NaclBoxEncryption {
     async fn get_info(&self, _context: Arc<ClientContext>) -> ClientResult<EncryptionBoxInfo> {
         // emulate getnifo
         Ok(EncryptionBoxInfo {
-            hdpath: Some(format!("m/44'/396'/0'/0/1")),
-            algorithm: Some(format!("NaclBox")),
+            hdpath: Some("m/44'/396'/0'/0/1".to_string()),
+            algorithm: Some("NaclBox".to_string()),
             options: Some(json!({"nonce": self.nonce, "theirPubkey": self.their_key })),
             public: Some(json!({"key": MY_TEST_PUBKEY})),
         })
@@ -377,7 +377,7 @@ impl Terminal {
     }
 
     fn print(&mut self, answer_id: u32, message: &str) -> (u32, Value) {
-        assert!(self.messages.len() > 0, "Unexpected terminal message received: \"{}\"", message);
+        assert!(!self.messages.is_empty(), "Unexpected terminal message received: \"{}\"", message);
         assert_eq!(self.messages.remove(0), message, "Terminal message assert failed");
         (answer_id, json!({}))
     }

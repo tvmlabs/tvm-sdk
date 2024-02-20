@@ -52,7 +52,7 @@ pub fn encode_account(
     account.set_balance(CurrencyCollection::from(params.balance.unwrap_or(100000000000)));
     account
         .try_activate_by_init_code_hash(&state_init.object, false)
-        .map_err(|err| Error::invalid_tvc_image(err))?;
+        .map_err(Error::invalid_tvc_image)?;
     account.set_last_tr_time(params.last_trans_lt.unwrap_or(0));
     Ok(ResultOfEncodeAccount {
         account: serialize_object_to_boc(&context, &account, "account", params.boc_cache)?,

@@ -64,7 +64,7 @@ impl ResumeState {
     fn get_shards(&self) -> ClientResult<Vec<ShardIdent>> {
         let mut result = Vec::new();
         for shard in &self.shards {
-            result.push(shard_ident_parse(&shard)?)
+            result.push(shard_ident_parse(shard)?)
         }
         Ok(result)
     }
@@ -102,7 +102,7 @@ impl BlockIterator {
 
     pub(crate) fn get_resume_state(&self) -> ResumeState {
         ResumeState {
-            shards: self.filter.shards.iter().map(|x| shard_ident_to_string(x)).collect(),
+            shards: self.filter.shards.iter().map(shard_ident_to_string).collect(),
             start_time: self.filter.start_time,
             end_time: self.filter.end_time,
             result_fields: self.filter.result_fields.clone(),

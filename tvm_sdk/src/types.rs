@@ -31,25 +31,25 @@ impl From<UInt256> for StringId {
 
 impl From<String> for StringId {
     fn from(id: String) -> Self {
-        StringId { 0: id }
+        StringId(id)
     }
 }
 
 impl From<&str> for StringId {
     fn from(id: &str) -> Self {
-        StringId { 0: id.to_owned() }
+        StringId(id.to_owned())
     }
 }
 
 impl From<Vec<u8>> for StringId {
     fn from(id: Vec<u8>) -> Self {
-        StringId { 0: hex::encode(id) }
+        StringId(hex::encode(id))
     }
 }
 
 impl From<&[u8]> for StringId {
     fn from(id: &[u8]) -> Self {
-        StringId { 0: hex::encode(id) }
+        StringId(hex::encode(id))
     }
 }
 
@@ -62,7 +62,7 @@ impl fmt::Display for StringId {
 impl StringId {
     pub fn to_base64(&self) -> Result<String> {
         let bytes = self.to_bytes()?;
-        Ok(base64_encode(&bytes))
+        Ok(base64_encode(bytes))
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {

@@ -57,7 +57,7 @@ pub(crate) async fn encrypt_secret(
     let mut result = generate_nonce();
     let serialized = SecretBuf(
         bincode::serialize(secret)
-            .map_err(|err| Error::crypto_box_secret_serialization_error(err))?,
+            .map_err(Error::crypto_box_secret_serialization_error)?,
     );
     apply_chacha20(context, &serialized.0, password_provider, salt, &result.0).await.map(
         |mut output| {
@@ -75,7 +75,7 @@ pub(crate) async fn decrypt_secret(
 ) -> ClientResult<SecretInternal> {
     let (nonce, encrypted_secret) = encrypted_secret.split_at(NONCE_LEN);
     let data = apply_chacha20(context, encrypted_secret, password_provider, salt, nonce).await?;
-    bincode::deserialize(&data.0).map_err(|err| Error::crypto_box_secret_deserialization_error(err))
+    bincode::deserialize(&data.0).map_err(Error::crypto_box_secret_deserialization_error)
 }
 
 async fn get_password(password_provider: &PasswordProvider) -> ClientResult<SecretBuf> {

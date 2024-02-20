@@ -637,7 +637,7 @@ impl Contract {
         msg_header.ihr_disabled = ihr_disabled;
         msg_header.bounce = bounce;
         let mut msg = TvmMessage::with_int_header(msg_header);
-        msg_body.map(|body| msg.set_body(body));
+        if let Some(body) = msg_body { msg.set_body(body) }
 
         Ok(msg)
     }
@@ -654,7 +654,7 @@ impl Contract {
 
         let mut msg = TvmMessage::with_ext_in_header(msg_header);
         msg.set_state_init(image.state_init());
-        msg_body.map(|body| msg.set_body(body));
+        if let Some(body) = msg_body { msg.set_body(body) }
 
         Ok(msg)
     }
@@ -680,7 +680,7 @@ impl Contract {
 
         let mut msg = TvmMessage::with_int_header(msg_header);
         msg.set_state_init(image.state_init());
-        msg_body.map(|body| msg.set_body(body));
+        if let Some(body) = msg_body { msg.set_body(body) }
 
         Ok(msg)
     }
@@ -692,7 +692,7 @@ impl Contract {
 
     /// Deserializes tree of cells from byte array into `SliceData`
     pub fn deserialize_tree_to_slice(data: &[u8]) -> Result<SliceData> {
-        SliceData::load_cell(tvm_types::boc::read_single_root_boc(&data)?)
+        SliceData::load_cell(tvm_types::boc::read_single_root_boc(data)?)
     }
 
     pub fn get_dst_from_msg(msg: &[u8]) -> Result<MsgAddressInt> {

@@ -249,7 +249,7 @@ impl TestClient {
         AsyncFuncWrapper {
             client: self,
             name: format!("{}.{}", module.name, function.name),
-            p: std::marker::PhantomData::default(),
+            p: std::marker::PhantomData,
         }
     }
 
@@ -267,7 +267,7 @@ impl TestClient {
         AsyncFuncWrapper {
             client: self,
             name: format!("{}.{}", module.name, function.name),
-            p: std::marker::PhantomData::default(),
+            p: std::marker::PhantomData,
         }
     }
 
@@ -284,7 +284,7 @@ impl TestClient {
         FuncWrapper {
             client: self,
             name: format!("{}.{}", module.name, function.name),
-            p: std::marker::PhantomData::default(),
+            p: std::marker::PhantomData,
         }
     }
 
@@ -362,7 +362,7 @@ impl TestClient {
 
     pub fn endpoints() -> Vec<String> {
         env::endpoints()
-            .split(",")
+            .split(',')
             .map(|x| x.trim())
             .filter(|x| !x.is_empty())
             .map(|x| x.to_string())
@@ -392,13 +392,13 @@ impl TestClient {
 
     pub fn tvc(name: &str, abi_version: Option<u8>) -> Option<String> {
         Some(base64_encode(
-            &std::fs::read(format!("{}{}.tvc", Self::contracts_path(abi_version), name)).unwrap(),
+            std::fs::read(format!("{}{}.tvc", Self::contracts_path(abi_version), name)).unwrap(),
         ))
     }
 
     pub fn icon(name: &str, abi_version: Option<u8>) -> String {
         let image_base64 = base64_encode(
-            &std::fs::read(format!("{}{}.png", Self::contracts_path(abi_version), name)).unwrap(),
+            std::fs::read(format!("{}{}.png", Self::contracts_path(abi_version), name)).unwrap(),
         );
         format!("data:image/png;base64,{}", image_base64)
     }
@@ -565,8 +565,8 @@ impl TestClient {
                 on_result,
             );
         };
-        let response = receiver.await.unwrap();
-        response
+        
+        receiver.await.unwrap()
     }
 
     pub(crate) async fn request_async_callback<P, R, CR, CT, CF>(

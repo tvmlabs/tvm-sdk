@@ -102,15 +102,15 @@ impl From<DAction> for DebotAction {
     }
 }
 
-impl Into<DAction> for DebotAction {
-    fn into(self) -> DAction {
+impl From<DebotAction> for DAction {
+    fn from(val: DebotAction) -> Self {
         DAction {
-            desc: self.description,
-            name: self.name,
-            action_type: self.action_type.into(),
-            to: self.to,
-            attrs: self.attributes,
-            misc: self.misc,
+            desc: val.description,
+            name: val.name,
+            action_type: val.action_type.into(),
+            to: val.to,
+            attrs: val.attributes,
+            misc: val.misc,
         }
     }
 }
@@ -265,7 +265,7 @@ pub async fn init(
 
     let handle = context.get_next_id();
     context.debots.insert(handle, Mutex::new(dengine));
-    let debot_abi = info.dabi.clone().unwrap_or(String::new());
+    let debot_abi = info.dabi.clone().unwrap_or_default();
     Ok(RegisteredDebot { debot_handle: DebotHandle(handle), info, debot_abi })
 }
 

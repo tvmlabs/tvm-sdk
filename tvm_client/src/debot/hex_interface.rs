@@ -56,8 +56,8 @@ impl HexInterface {
     fn decode(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let str_to_decode = get_arg(args, "hexstr")?;
-        let decoded = hex::decode(&str_to_decode).map_err(|e| format!("invalid hex: {}", e))?;
-        Ok((answer_id, json!({ "data": hex::encode(&decoded) })))
+        let decoded = hex::decode(str_to_decode).map_err(|e| format!("invalid hex: {}", e))?;
+        Ok((answer_id, json!({ "data": hex::encode(decoded) })))
     }
 }
 

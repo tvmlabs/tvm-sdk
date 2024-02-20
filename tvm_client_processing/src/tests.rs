@@ -1,4 +1,3 @@
-use std::mem;
 use std::sync::Arc;
 use std::sync::RwLock;
 use std::time::Duration;
@@ -116,7 +115,7 @@ async fn test_fetch_wait_all() {
     assert_eq!(results, vec![]);
 
     // Check that spawned thread has received all monitoring messages
-    let results = mem::replace(&mut *fetched.write().unwrap(), Vec::new());
+    let results = std::mem::take(&mut *fetched.write().unwrap());
     assert_eq!(
         sorted(results, |x| &x.hash),
         vec![

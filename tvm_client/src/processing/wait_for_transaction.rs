@@ -215,13 +215,13 @@ async fn process_remp_message<F: futures::Future<Output = ()> + Send>(
 
     match status {
         RempStatus::RejectedByFullnode(data) => {
-            Ok(Some(process_rejected_status(context.clone(), params, &message_dst, data).await))
+            Ok(Some(process_rejected_status(context.clone(), params, message_dst, data).await))
         }
         RempStatus::Finalized(data) => Ok(Some(Ok(process_finalized_status(
             context.clone(),
             params,
             message_id,
-            &message_dst,
+            message_dst,
             data,
         )
         .await?))),
@@ -330,7 +330,7 @@ async fn wait_by_block_walking<F: futures::Future<Output = ()> + Send>(
 
         let block = fetching::fetch_next_shard_block(
             &context,
-            &params,
+            params,
             &address,
             &shard_block_id,
             &message_id,

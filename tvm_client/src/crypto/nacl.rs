@@ -84,7 +84,7 @@ pub fn nacl_sign(
     params: ParamsOfNaclSign,
 ) -> ClientResult<ResultOfNaclSign> {
     let signed = sign(&base64_decode(&params.unsigned)?, &hex_decode_secret(&params.secret)?)?;
-    Ok(ResultOfNaclSign { signed: base64_encode(&signed) })
+    Ok(ResultOfNaclSign { signed: base64_encode(signed) })
 }
 
 //------------------------------------------------------------------------------ nacl_sign_detached
@@ -208,7 +208,7 @@ fn prepare_to_convert(
     padded_input.extend(input);
     let mut padded_output = Vec::new();
     padded_output.resize(padded_input.len(), 0);
-    Ok((padded_output, padded_input, key192(&nonce)?.0, key256(&key)?))
+    Ok((padded_output, padded_input, key192(nonce)?.0, key256(key)?))
 }
 
 //-------------------------------------------------------------------------------- nacl_box_keypair
@@ -332,7 +332,7 @@ pub fn nacl_box_open(
         &hex_decode_secret_const(&params.their_public)?.0,
         &hex_decode_secret(&params.secret)?,
     )?;
-    Ok(ResultOfNaclBoxOpen { decrypted: base64_encode(&padded_output) })
+    Ok(ResultOfNaclBoxOpen { decrypted: base64_encode(padded_output) })
 }
 
 pub fn nacl_box_open_internal(

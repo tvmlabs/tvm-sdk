@@ -41,7 +41,7 @@ pub async fn batch_query(
     let results = server_link
         .batch_query(&params.operations, None)
         .await
-        .map_err(|err| Error::queries_query_failed(err))
+        .map_err(Error::queries_query_failed)
         .add_network_url(server_link)
         .await?;
 

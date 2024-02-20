@@ -400,7 +400,7 @@ fn add_time_strings(value: &mut Value, paths: &HashSet<&'static str>, path: Json
                 add_time_strings(value, paths, path.join_field(key));
             }
         }
-        _ => return,
+        _ => (),
     }
 }
 

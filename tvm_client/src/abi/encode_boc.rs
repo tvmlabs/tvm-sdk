@@ -42,12 +42,12 @@ pub fn encode_boc(
     }
 
     let tokens = Tokenizer::tokenize_all_params(&abi_params, &params.data)
-        .map_err(|err| Error::invalid_abi(err))?;
+        .map_err(Error::invalid_abi)?;
 
     let builder = TokenValue::pack_values_into_chain(&tokens, Vec::new(), &MAX_SUPPORTED_VERSION)
-        .map_err(|err| Error::invalid_abi(err))?;
+        .map_err(Error::invalid_abi)?;
 
-    let cell = builder.into_cell().map_err(|err| Error::invalid_abi(err))?;
+    let cell = builder.into_cell().map_err(Error::invalid_abi)?;
 
     Ok(ResultOfAbiEncodeBoc {
         boc: serialize_cell_to_boc(&context, cell, "ABI params", params.boc_cache)?,

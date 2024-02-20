@@ -47,7 +47,7 @@ pub fn compress_zstd(
     let compressed =
         crate::utils::compression::compress_zstd(uncompressed.as_slice(), params.level)?;
 
-    Ok(ResultOfCompressZstd { compressed: base64_encode(&compressed) })
+    Ok(ResultOfCompressZstd { compressed: base64_encode(compressed) })
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
@@ -68,11 +68,11 @@ pub fn decompress_zstd(
     _context: std::sync::Arc<ClientContext>,
     params: ParamsOfDecompressZstd,
 ) -> ClientResult<ResultOfDecompressZstd> {
-    let compressed = base64_decode(&params.compressed).map_err(|err| {
+    let compressed = base64_decode(params.compressed).map_err(|err| {
         crate::utils::Error::decompression_error(format!("Unable to decode BASE64: {}", err))
     })?;
 
     let decompressed = crate::utils::compression::decompress_zstd(compressed.as_slice())?;
 
-    Ok(ResultOfDecompressZstd { decompressed: base64_encode(&decompressed) })
+    Ok(ResultOfDecompressZstd { decompressed: base64_encode(decompressed) })
 }

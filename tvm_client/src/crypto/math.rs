@@ -152,9 +152,7 @@ pub fn factorize(
         let mut p1 = g;
         let mut p2 = composite / g;
         if p1 > p2 {
-            let tmp = p1;
-            p1 = p2;
-            p2 = tmp;
+            std::mem::swap(&mut p1, &mut p2);
         }
         Ok(ResultOfFactorize { factors: [format!("{:X}", p1), format!("{:X}", p2)] })
     } else {
@@ -165,17 +163,17 @@ pub fn factorize(
 fn gcd(mut a: u64, mut b: u64) -> u64 {
     while a != 0 && b != 0 {
         while (b & 1) == 0 {
-            b = b.clone() >> 1;
+            b >>= 1;
         }
 
         while (a & 1) == 0 {
-            a = a.clone() >> 1;
+            a >>= 1;
         }
 
         if a > b {
-            a = a.clone() - b;
+            a -= b;
         } else {
-            b = b.clone() - a;
+            b -= a;
         }
     }
 

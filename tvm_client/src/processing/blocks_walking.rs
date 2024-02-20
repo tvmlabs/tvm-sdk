@@ -218,5 +218,5 @@ fn check_shard_match(
     address: &MsgAddressInt,
 ) -> ClientResult<bool> {
     tvm_sdk::Contract::check_shard_match(shard_descr, address)
-        .map_err(|err| Error::can_not_check_block_shard(err))
+        .map_err(Error::can_not_check_block_shard)
 }

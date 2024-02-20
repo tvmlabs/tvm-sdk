@@ -184,10 +184,10 @@ pub struct TransactionNode {
 impl TransactionNode {
     fn from(value: &Value, message: &MessageNode) -> ClientResult<Self> {
         Ok(Self {
-            id: message.dst_transaction_id.clone().unwrap_or_else(|| String::default()),
+            id: message.dst_transaction_id.clone().unwrap_or_default(),
             in_msg: message.id.clone(),
             aborted: value["aborted"].as_bool().unwrap_or(false),
-            account_addr: message.dst.clone().unwrap_or_else(|| String::default()),
+            account_addr: message.dst.clone().unwrap_or_default(),
             exit_code: value["compute"]["exit_code"].as_u64().map(|x| x as u32),
             total_fees: value["total_fees"].as_str().unwrap_or("0x0").to_string(),
             out_msgs: if let Some(msgs) = value["out_msgs"].as_array() {
@@ -338,7 +338,7 @@ pub async fn query_transaction_tree(
                 MessageNode::from(&message, &context, &params.abi_registry, &src_transactions)?;
             let transaction = &message["dst_transaction"];
             if transaction.is_object() {
-                let transaction_node = TransactionNode::from(&transaction, &message_node)?;
+                let transaction_node = TransactionNode::from(transaction, &message_node)?;
                 for out_msg in &transaction_node.out_msgs {
                     query_queue.push((Some(transaction_node.id.clone()), out_msg.clone()));
                 }

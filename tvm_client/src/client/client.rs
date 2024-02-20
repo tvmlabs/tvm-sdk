@@ -171,17 +171,18 @@ impl ClientContext {
             ParamsOfAppRequest { app_request_id: id, request_data: params },
             ResponseType::AppRequest as u32,
         );
-        let result = receiver.await.map_err(|err| Error::can_not_receive_request_result(err))?;
+        let result = receiver.await.map_err(Error::can_not_receive_request_result)?;
 
         match result {
             AppRequestResult::Error { text } => Err(Error::app_request_error(&text)),
             AppRequestResult::Ok { result } => serde_json::from_value(result)
-                .map_err(|err| Error::can_not_parse_request_result(err)),
+                .map_err(Error::can_not_parse_request_result),
         }
     }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ApiType)]
+#[derive(Default)]
 pub struct ClientConfig {
     #[serde(default, deserialize_with = "deserialize_binding_config")]
     pub binding: BindingConfig,
@@ -239,19 +240,7 @@ fn deserialize_proofs_config<'de, D: Deserializer<'de>>(
     Ok(Option::deserialize(deserializer)?.unwrap_or(Default::default()))
 }
 
-impl Default for ClientConfig {
-    fn default() -> Self {
-        Self {
-            binding: Default::default(),
-            network: Default::default(),
-            crypto: Default::default(),
-            abi: Default::default(),
-            boc: Default::default(),
-            proofs: Default::default(),
-            local_storage_path: Default::default(),
-        }
-    }
-}
+
 
 pub(crate) struct AppObject<P: Serialize, R: DeserializeOwned> {
     context: Arc<ClientContext>,

@@ -190,7 +190,9 @@ pub async fn encryption_box_decrypt(
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
+#[derive(Default)]
 pub enum CipherMode {
+    #[default]
     CBC,
     CFB,
     CTR,
@@ -198,11 +200,7 @@ pub enum CipherMode {
     OFB,
 }
 
-impl Default for CipherMode {
-    fn default() -> Self {
-        CipherMode::CBC
-    }
-}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
 #[serde(tag = "type", content = "value")]

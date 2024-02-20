@@ -32,7 +32,7 @@ impl Abi {
     pub fn json_string(&self) -> ClientResult<String> {
         match self {
             Self::Contract(abi) | Self::Serialized(abi) => {
-                Ok(serde_json::to_string(abi).map_err(|err| Error::invalid_abi(err))?)
+                Ok(serde_json::to_string(abi).map_err(Error::invalid_abi)?)
             }
             Self::Json(abi) => Ok(abi.clone()),
             _ => Err(crate::client::Error::not_implemented("ABI handles are not supported yet")),
@@ -40,7 +40,7 @@ impl Abi {
     }
 
     pub fn abi(&self) -> ClientResult<tvm_abi::Contract> {
-        tvm_abi::Contract::load(self.json_string()?.as_bytes()).map_err(|x| Error::invalid_json(x))
+        tvm_abi::Contract::load(self.json_string()?.as_bytes()).map_err(Error::invalid_json)
     }
 }
 
@@ -110,8 +110,8 @@ impl TryInto<tvm_abi::Param> for AbiParam {
     type Error = ClientError;
 
     fn try_into(self) -> ClientResult<tvm_abi::Param> {
-        serde_json::from_value(serde_json::to_value(&self).map_err(|err| Error::invalid_json(err))?)
-            .map_err(|err| Error::invalid_json(err))
+        serde_json::from_value(serde_json::to_value(self).map_err(Error::invalid_json)?)
+            .map_err(Error::invalid_json)
     }
 }
 
@@ -147,36 +147,36 @@ pub struct FunctionHeader {
 
 fn required_time(token: &Token) -> ClientResult<u64> {
     match &token.value {
-        TokenValue::Time(v) => Ok(v.clone()),
+        TokenValue::Time(v) => Ok(*v),
         _ => Err(Error::invalid_message_for_decode("`time` header has invalid format")),
     }
 }
 
 fn required_expire(token: &Token) -> ClientResult<u32> {
     match &token.value {
-        TokenValue::Expire(v) => Ok(v.clone()),
+        TokenValue::Expire(v) => Ok(*v),
         _ => Err(Error::invalid_message_for_decode("`expire` header has invalid format")),
     }
 }
 
 fn required_pubkey(token: &Token) -> ClientResult<Option<String>> {
     match token.value {
-        TokenValue::PublicKey(key) => Ok(key.as_ref().map(|x| hex::encode(&x))),
+        TokenValue::PublicKey(key) => Ok(key.as_ref().map(hex::encode)),
         _ => Err(Error::invalid_message_for_decode("`pubkey` header has invalid format")),
     }
 }
 
 impl FunctionHeader {
     pub fn from(tokens: &Vec<Token>) -> ClientResult<Option<Self>> {
-        if tokens.len() == 0 {
+        if tokens.is_empty() {
             return Ok(None);
         }
         let mut header = FunctionHeader::default();
         for token in tokens {
             match token.name.as_str() {
-                "time" => header.time = Some(required_time(&token)?),
-                "expire" => header.expire = Some(required_expire(&token)?),
-                "pubkey" => header.pubkey = required_pubkey(&token)?,
+                "time" => header.time = Some(required_time(token)?),
+                "expire" => header.expire = Some(required_expire(token)?),
+                "pubkey" => header.pubkey = required_pubkey(token)?,
                 _ => (),
             }
         }

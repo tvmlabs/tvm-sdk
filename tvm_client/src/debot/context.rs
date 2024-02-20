@@ -55,6 +55,6 @@ where
     D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(des)?;
-    let s = str_hex_to_utf8(&s).ok_or(format!("failed to convert bytes to utf8 string")).unwrap();
+    let s = str_hex_to_utf8(&s).ok_or("failed to convert bytes to utf8 string".to_string()).unwrap();
     S::from_str(&s).map_err(de::Error::custom)
 }

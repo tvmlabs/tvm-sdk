@@ -21,18 +21,16 @@ use crate::types::grams_to_u64;
 use crate::types::StringId;
 
 #[derive(Deserialize, Debug, PartialEq, Clone)]
+#[derive(Default)]
 pub enum MessageType {
     Internal,
     ExternalInbound,
     ExternalOutbound,
+    #[default]
     Unknown,
 }
 
-impl Default for MessageType {
-    fn default() -> Self {
-        MessageType::Unknown
-    }
-}
+
 
 pub type MessageId = StringId;
 

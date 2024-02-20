@@ -116,7 +116,7 @@ pub fn hdkey_public_from_xprv(
 ) -> ClientResult<ResultOfHDKeyPublicFromXPrv> {
     let key = HDPrivateKey::from_serialized_string(&params.xprv)?;
     let secret = ed25519_dalek::SigningKey::from_bytes(&key.secret().0);
-    Ok(ResultOfHDKeyPublicFromXPrv { public: hex::encode(&secret.verifying_key().to_bytes()) })
+    Ok(ResultOfHDKeyPublicFromXPrv { public: hex::encode(secret.verifying_key().to_bytes()) })
 }
 
 //------------------------------------------------------------ crypto.hdkey_derive_from_xprv
@@ -271,7 +271,7 @@ impl HDPrivateKey {
         BigEndian::write_u32(&mut child.child_number, child_index);
 
         let mut hmac: Hmac<Sha512> = Hmac::new_from_slice(&self.child_chain)
-            .map_err(|err| crypto::Error::bip32_invalid_key(err))?;
+            .map_err(crypto::Error::bip32_invalid_key)?;
 
         let secret_key = SecretKey::parse(&self.key.0).unwrap();
         if hardened && !compliant {
@@ -291,21 +291,21 @@ impl HDPrivateKey {
         let (child_key_bytes, chain_code) = result.split_at(32);
 
         let mut child_secret_key =
-            SecretKey::parse_slice(&child_key_bytes).map_err(|err| Self::map_secp_error(err))?;
+            SecretKey::parse_slice(child_key_bytes).map_err(Self::map_secp_error)?;
         let self_secret_key =
-            SecretKey::parse(&self.key.0).map_err(|err| Self::map_secp_error(err))?;
+            SecretKey::parse(&self.key.0).map_err(Self::map_secp_error)?;
         child_secret_key
             .tweak_add_assign(&self_secret_key)
-            .map_err(|err| Self::map_secp_error(err))?;
+            .map_err(Self::map_secp_error)?;
 
-        child.child_chain.0.copy_from_slice(&chain_code);
+        child.child_chain.0.copy_from_slice(chain_code);
         child.key.0.copy_from_slice(&child_secret_key.serialize());
         Ok(child)
     }
 
     pub(crate) fn derive_path(&self, path: &String, compliant: bool) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = self.clone();
-        for step in path.split("/") {
+        for step in path.split('/') {
             if step == "m" {
             } else {
                 let hardened = step.ends_with('\'');
@@ -462,7 +462,7 @@ impl Ripemd160 {
                 Ripemd160::rotl32(
                     Ripemd160::sum32_4(
                         a,
-                        Ripemd160::f(j.into(), b, c, d),
+                        Ripemd160::f(j, b, c, d),
                         msg[(RIPEMD160_R[j as usize] as u32 + start) as usize],
                         Ripemd160::k(j),
                     ),

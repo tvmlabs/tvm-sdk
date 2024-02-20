@@ -68,8 +68,8 @@ impl TransactionIterator {
             accounts_filter: params
                 .accounts_filter
                 .map(|x| x.iter().cloned().collect())
-                .unwrap_or(Default::default()),
-            result_fields: params.result.unwrap_or(String::default()),
+                .unwrap_or_default(),
+            result_fields: params.result.unwrap_or_default(),
             include_transfers: params.include_transfers.unwrap_or(false),
             next: Vec::new(),
         })
@@ -104,7 +104,7 @@ impl TransactionIterator {
             blocks,
             accounts_filter: accounts_filter
                 .map(|x| x.iter().cloned().collect())
-                .unwrap_or(Default::default()),
+                .unwrap_or_default(),
             result_fields: resume.result_fields,
             include_transfers: resume.include_transfers,
             next,

@@ -64,14 +64,14 @@ pub(crate) struct TransactionFields<'a>(pub &'a Value);
 
 impl<'a> TransactionFields<'a> {
     pub fn bounce(&self) -> Option<TransactionBounceFields> {
-        self.0.get("bounce").map(|x| TransactionBounceFields(x))
+        self.0.get("bounce").map(TransactionBounceFields)
     }
 
     pub fn in_message(&self) -> Option<MessageFields> {
-        self.0.get("in_message").map(|x| MessageFields(x))
+        self.0.get("in_message").map(MessageFields)
     }
 
     pub fn out_messages(&self) -> Option<Vec<MessageFields>> {
-        self.0["out_messages"].as_array().map(|x| x.iter().map(|x| MessageFields(x)).collect())
+        self.0["out_messages"].as_array().map(|x| x.iter().map(MessageFields).collect())
     }
 }

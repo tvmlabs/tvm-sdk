@@ -99,7 +99,7 @@ impl NetworkInterface {
             .fetch(
                 &url,
                 if body.is_some() { FetchMethod::Post } else { FetchMethod::Get },
-                if header_map.len() > 0 { Some(header_map) } else { None },
+                if !header_map.is_empty() { Some(header_map) } else { None },
                 body,
                 self.client.config.network.query_timeout,
             )

@@ -96,7 +96,7 @@ impl State {
         let bytes = base64::engine::general_purpose::STANDARD.decode(boc).map_err(|err| {
             Error::invalid_boc(format!("error decode {} BOC base64: {}", name, err))
         })?;
-        tvm_types::boc::read_single_root_boc(&bytes).map_err(|err| {
+        tvm_types::boc::read_single_root_boc(bytes).map_err(|err| {
             Error::invalid_boc(format!("{} BOC deserialization error: {}", name, err))
         })
     }

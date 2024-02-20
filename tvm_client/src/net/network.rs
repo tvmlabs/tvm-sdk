@@ -41,7 +41,7 @@ pub struct NetworkContext {
 
 impl NetworkContext {
     pub(crate) fn get_server_link(&self) -> ClientResult<&ServerLink> {
-        self.server_link.as_ref().ok_or_else(|| client::Error::net_module_not_init())
+        self.server_link.as_ref().ok_or_else(client::Error::net_module_not_init)
     }
 
     pub async fn query_collection(
@@ -86,7 +86,7 @@ impl NetworkContext {
         let subscription = server_link
             .subscribe_collection(&collection, filter.as_ref().unwrap_or(&json!({})), &result)
             .await
-            .map_err(|err| net::Error::queries_subscribe_failed(err))
+            .map_err(net::Error::queries_subscribe_failed)
             .add_network_url(server_link)
             .await?;
         self.run_subscription(subscription, callback).await
@@ -102,7 +102,7 @@ impl NetworkContext {
         let subscription = server_link
             .subscribe(subscription, variables)
             .await
-            .map_err(|err| net::Error::queries_subscribe_failed(err))
+            .map_err(net::Error::queries_subscribe_failed)
             .add_network_url(server_link)
             .await?;
         self.run_subscription(subscription, callback).await

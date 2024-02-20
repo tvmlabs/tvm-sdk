@@ -64,7 +64,7 @@ impl<'h> ModuleReg<'h> {
                 return;
             }
         }
-        if self.module.types.iter().find(|x| x.name == ty.name).is_none() {
+        if !self.module.types.iter().any(|x| x.name == ty.name) {
             self.module.types.push(ty);
         }
     }

@@ -91,7 +91,7 @@ impl AesEncryptionBox {
         C: BlockCipher + BlockEncrypt + BlockDecrypt + NewBlockCipher,
         B: BlockMode<C, block_modes::block_padding::ZeroPadding>,
     {
-        B::new_from_slices(key, iv).map_err(|err| Error::cannot_create_cipher(err))
+        B::new_from_slices(key, iv).map_err(Error::cannot_create_cipher)
     }
 
     fn encrypt_data<'a, C, B>(
@@ -138,7 +138,7 @@ impl AesEncryptionBox {
 impl EncryptionBox for AesEncryptionBox {
     /// Gets encryption box information
     async fn get_info(&self, _context: Arc<ClientContext>) -> ClientResult<EncryptionBoxInfo> {
-        let iv = if self.iv.len() != 0 { Some(hex::encode(&self.iv)) } else { None };
+        let iv = if !self.iv.is_empty() { Some(hex::encode(&self.iv)) } else { None };
 
         let aes_info = AesInfo { mode: self.mode.clone(), iv };
 

@@ -115,7 +115,7 @@ impl Request {
         if finished {
             self.finished.store(finished, Ordering::Relaxed);
         }
-        return false;
+        false
     }
 
     fn call_response_handler(&self, params_json: String, response_type: u32, finished: bool) {

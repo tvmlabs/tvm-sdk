@@ -161,7 +161,7 @@ pub async fn set_endpoints(
     context: std::sync::Arc<ClientContext>,
     params: EndpointsSet,
 ) -> ClientResult<()> {
-    if params.endpoints.len() == 0 {
+    if params.endpoints.is_empty() {
         return Err(Error::no_endpoints_provided());
     }
 
