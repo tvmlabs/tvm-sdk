@@ -349,7 +349,7 @@ fn get_doc(element_summary: String, element_description: String) -> (String, Str
     (summary, description.trim().into())
 }
 
-pub(crate) fn doc_from(attrs: &Vec<Attribute>) -> (Option<String>, Option<String>) {
+pub(crate) fn doc_from(attrs: &[Attribute]) -> (Option<String>, Option<String>) {
     let mut summary = String::new();
     let mut description = String::new();
 
