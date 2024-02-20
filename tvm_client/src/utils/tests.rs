@@ -3,7 +3,6 @@ use tvm_types::base64_decode;
 use tvm_types::base64_encode;
 
 use super::*;
-use crate::encoding::AccountAddressType;
 use crate::error::ClientResult;
 use crate::json_interface::modules::UtilsModule;
 use crate::json_interface::utils::ParamsOfCompressZstd;
