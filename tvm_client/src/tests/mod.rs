@@ -771,6 +771,7 @@ impl TestClient {
         run_result
     }
 
+    #[cfg(not(feature = "wasm-base"))]
     pub(crate) fn get_tokens_from_giver_sync(
         &self,
         account: &str,

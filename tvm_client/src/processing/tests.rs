@@ -687,6 +687,7 @@ async fn test_deploy_from_tvc_v1() {
 }
 
 #[test]
+#[cfg(not(feature = "wasm-base"))]
 fn test_process_message_sync() {
     TestClient::init_log();
     let client = TestClient::new();
