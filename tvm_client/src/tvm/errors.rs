@@ -95,7 +95,6 @@ impl Error {
     }
 
     pub fn transaction_aborted() -> ClientError {
-        
         error(
             ErrorCode::TransactionAborted,
             "Transaction was aborted by unknown reason".to_string(),
@@ -363,9 +362,7 @@ impl Error {
             None => return None,
         };
 
-        deserialize_cell_from_base64(base64_value, "contract_error")
-            .map(|(_bytes, cell)| cell)
-            .ok()
+        deserialize_cell_from_base64(base64_value, "contract_error").map(|(_bytes, cell)| cell).ok()
     }
 
     fn load_boc_data(cell: &Cell) -> Vec<u8> {

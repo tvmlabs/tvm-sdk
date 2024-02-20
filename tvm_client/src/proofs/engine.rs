@@ -929,9 +929,7 @@ impl ProofHelperEngineImpl {
         //       2. also add `write_trusted_block()` and `remove_untrusted_block()` (or
         //          `trust_block()` for moving block from untrusted to trusted storage)
         //          functions.
-        self.write_block(&root_hash.as_hex_string(), boc)
-            .await
-            .map_err(Error::internal_error)?;
+        self.write_block(&root_hash.as_hex_string(), boc).await.map_err(Error::internal_error)?;
 
         let info = block.read_info().map_err(Error::invalid_data)?;
         if info.shard().is_masterchain() {

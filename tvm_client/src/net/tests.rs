@@ -402,8 +402,7 @@ async fn message_sending_addresses() {
     })
     .unwrap();
     let link = client.get_server_link().unwrap();
-    link.update_stat(&["a".to_string(), "e".to_string()], EndpointStat::MessageUndelivered)
-        .await;
+    link.update_stat(&["a".to_string(), "e".to_string()], EndpointStat::MessageUndelivered).await;
     let bad: HashSet<_> = ["a".to_string(), "e".to_string()].iter().cloned().collect();
     for _ in 0..100 {
         let addresses = link.get_addresses_for_sending().await;

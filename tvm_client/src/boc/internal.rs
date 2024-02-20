@@ -24,8 +24,7 @@ use crate::error::ClientResult;
 use crate::ClientContext;
 
 pub(crate) fn get_boc_hash(boc: &[u8]) -> ClientResult<String> {
-    let cells =
-        tvm_types::boc::read_single_root_boc(boc).map_err(Error::invalid_boc)?;
+    let cells = tvm_types::boc::read_single_root_boc(boc).map_err(Error::invalid_boc)?;
     let id: Vec<u8> = cells.repr_hash().as_slice()[..].into();
     Ok(hex::encode(id))
 }

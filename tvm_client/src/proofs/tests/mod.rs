@@ -1080,8 +1080,7 @@ async fn test_message_get_required_data() -> Result<()> {
         message_trans_id: &str,
         dst_account_address: Option<&str>,
     ) -> Result<()> {
-        let (id, trans_id, boc, message) =
-            message_get_required_data(engine, &message_json).await?;
+        let (id, trans_id, boc, message) = message_get_required_data(engine, &message_json).await?;
 
         assert_eq!(id.as_hex_string(), message_id,);
         assert_eq!(trans_id, message_trans_id);

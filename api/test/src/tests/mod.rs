@@ -1,7 +1,6 @@
 mod enums;
 mod others;
 
-
 use api_info::ApiModule;
 use api_info::ApiType;
 use api_info::Field;
@@ -25,11 +24,7 @@ enum ExpectType {
 }
 
 impl ExpectType {
-    fn check_fields(
-        actual: &[Field],
-        expected: &[(&'static str, ExpectType)],
-        parent_hint: &str,
-    ) {
+    fn check_fields(actual: &[Field], expected: &[(&'static str, ExpectType)], parent_hint: &str) {
         assert_eq!(actual.len(), expected.len(), "Unexpected field count for {}", parent_hint);
         for i in 0..actual.len() {
             assert_eq!(actual[i].name, expected[i].0, "Unexpected field for {}", parent_hint);

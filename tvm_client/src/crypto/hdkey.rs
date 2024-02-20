@@ -270,8 +270,8 @@ impl HDPrivateKey {
         let child_index = if hardened { 0x80000000 | child_index } else { child_index };
         BigEndian::write_u32(&mut child.child_number, child_index);
 
-        let mut hmac: Hmac<Sha512> = Hmac::new_from_slice(&self.child_chain)
-            .map_err(crypto::Error::bip32_invalid_key)?;
+        let mut hmac: Hmac<Sha512> =
+            Hmac::new_from_slice(&self.child_chain).map_err(crypto::Error::bip32_invalid_key)?;
 
         let secret_key = SecretKey::parse(&self.key.0).unwrap();
         if hardened && !compliant {
@@ -292,11 +292,8 @@ impl HDPrivateKey {
 
         let mut child_secret_key =
             SecretKey::parse_slice(child_key_bytes).map_err(Self::map_secp_error)?;
-        let self_secret_key =
-            SecretKey::parse(&self.key.0).map_err(Self::map_secp_error)?;
-        child_secret_key
-            .tweak_add_assign(&self_secret_key)
-            .map_err(Self::map_secp_error)?;
+        let self_secret_key = SecretKey::parse(&self.key.0).map_err(Self::map_secp_error)?;
+        child_secret_key.tweak_add_assign(&self_secret_key).map_err(Self::map_secp_error)?;
 
         child.child_chain.0.copy_from_slice(chain_code);
         child.key.0.copy_from_slice(&child_secret_key.serialize());

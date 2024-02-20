@@ -89,10 +89,10 @@ impl ClientEnv {
     fn string_map_to_header_map(headers: HashMap<String, String>) -> ClientResult<HeaderMap> {
         let mut map = HeaderMap::new();
         for (key, value) in headers {
-            let header_name = HeaderName::from_str(key.as_str())
-                .map_err(Error::http_request_create_error)?;
-            let header_value = HeaderValue::from_str(value.as_str())
-                .map_err(Error::http_request_create_error)?;
+            let header_name =
+                HeaderName::from_str(key.as_str()).map_err(Error::http_request_create_error)?;
+            let header_value =
+                HeaderValue::from_str(value.as_str()).map_err(Error::http_request_create_error)?;
             map.insert(header_name, header_value);
         }
         Ok(map)
@@ -212,8 +212,7 @@ impl ClientEnv {
                 return fetch.get_result(self, url).await;
             }
         }
-        let method = Method::from_str(method.as_str())
-            .map_err(Error::http_request_create_error)?;
+        let method = Method::from_str(method.as_str()).map_err(Error::http_request_create_error)?;
 
         let mut request = self
             .http_client

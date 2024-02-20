@@ -24,8 +24,6 @@ pub enum Signer {
     SigningBox { handle: SigningBoxHandle },
 }
 
-
-
 impl Signer {
     pub async fn sign(
         &self,

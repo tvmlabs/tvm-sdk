@@ -47,9 +47,9 @@ pub fn try_calc_subset_for_workchain(
     let workchains = config.workchains().unwrap_or_else(|_| SINGLE_WORKCHAIN.clone());
     match workchains.len()? as i32 {
         0 => anyhow::bail!("workchain's description is empty"),
-        1 => validator_set
-            .calc_subset(cc_config, shard_pfx, workchain_id, cc_seqno, _time)
-            .map(Some),
+        1 => {
+            validator_set.calc_subset(cc_config, shard_pfx, workchain_id, cc_seqno, _time).map(Some)
+        }
         count => {
             let mut list = Vec::new();
             for descr in validator_set.list() {

@@ -267,7 +267,7 @@ pub(super) async fn get_account_state(
             .unwrap_or_default(),
         Err(e) => {
             debug!("getAccountState failed: {}", e);
-            
+
             ResultOfGetAccountState::default()
         }
     }

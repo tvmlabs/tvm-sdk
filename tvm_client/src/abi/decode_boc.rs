@@ -70,7 +70,7 @@ pub fn decode_boc(
     )
     .map_err(Error::invalid_data_for_decode)?;
 
-    let data = Detokenizer::detokenize_to_json_value(&tokens)
-        .map_err(Error::invalid_data_for_decode)?;
+    let data =
+        Detokenizer::detokenize_to_json_value(&tokens).map_err(Error::invalid_data_for_decode)?;
     Ok(ResultOfDecodeBoc { data })
 }

@@ -146,9 +146,7 @@ impl<'a> BlockFields<'a> {
     }
 
     pub fn account_blocks(&self) -> Option<Vec<AccountBlockFields>> {
-        self.0["account_blocks"]
-            .as_array()
-            .map(|x| x.iter().map(AccountBlockFields).collect())
+        self.0["account_blocks"].as_array().map(|x| x.iter().map(AccountBlockFields).collect())
     }
 
     fn has_shards(&self) -> bool {

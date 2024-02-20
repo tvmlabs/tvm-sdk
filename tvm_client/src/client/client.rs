@@ -175,14 +175,14 @@ impl ClientContext {
 
         match result {
             AppRequestResult::Error { text } => Err(Error::app_request_error(&text)),
-            AppRequestResult::Ok { result } => serde_json::from_value(result)
-                .map_err(Error::can_not_parse_request_result),
+            AppRequestResult::Ok { result } => {
+                serde_json::from_value(result).map_err(Error::can_not_parse_request_result)
+            }
         }
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, ApiType)]
-#[derive(Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, ApiType, Default)]
 pub struct ClientConfig {
     #[serde(default, deserialize_with = "deserialize_binding_config")]
     pub binding: BindingConfig,
@@ -239,8 +239,6 @@ fn deserialize_proofs_config<'de, D: Deserializer<'de>>(
 ) -> Result<ProofsConfig, D::Error> {
     Ok(Option::deserialize(deserializer)?.unwrap_or(Default::default()))
 }
-
-
 
 pub(crate) struct AppObject<P: Serialize, R: DeserializeOwned> {
     context: Arc<ClientContext>,

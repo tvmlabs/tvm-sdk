@@ -90,8 +90,9 @@ pub fn request_sync(context: ContextHandle, function_name: String, params_json: 
     let context = Runtime::required_context(context);
     let result_value = match context {
         Ok(context) => match Runtime::dispatch_sync(context, function_name, params_json) {
-            Ok(result_json) => serde_json::from_str(&result_json)
-                .map_err(Error::cannot_serialize_result),
+            Ok(result_json) => {
+                serde_json::from_str(&result_json).map_err(Error::cannot_serialize_result)
+            }
             Err(err) => Err(err),
         },
         Err(_) => Err(Error::invalid_context_handle(context_handle)),

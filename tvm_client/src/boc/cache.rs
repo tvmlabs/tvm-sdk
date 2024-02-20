@@ -96,8 +96,6 @@ pub enum BocCacheType {
     Unpinned,
 }
 
-
-
 pub struct PinnedBoc {
     pins: HashMap<String, u32>,
     cell: Cell,

@@ -177,8 +177,7 @@ fn read_str(path: &str) -> ClientResult<String> {
 fn blockchain_config_from_json(json: &str) -> ClientResult<BlockchainConfig> {
     let map = serde_json::from_str::<serde_json::Map<String, Value>>(json)
         .map_err(crate::tvm::Error::json_deserialization_failed)?;
-    let config_params = tvm_block_json::parse_config(&map)
-        .map_err(crate::tvm::Error::can_not_parse_config)?;
-    BlockchainConfig::with_config(config_params)
-        .map_err(crate::tvm::Error::can_not_convert_config)
+    let config_params =
+        tvm_block_json::parse_config(&map).map_err(crate::tvm::Error::can_not_parse_config)?;
+    BlockchainConfig::with_config(config_params).map_err(crate::tvm::Error::can_not_convert_config)
 }

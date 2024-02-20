@@ -75,8 +75,7 @@ impl Base64Interface {
     fn decode(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let str_to_decode = get_arg(args, "base64")?;
-        let decoded =
-            base64_decode(str_to_decode).map_err(|e| format!("invalid base64: {}", e))?;
+        let decoded = base64_decode(str_to_decode).map_err(|e| format!("invalid base64: {}", e))?;
         Ok((answer_id, json!({ "data": hex::encode(decoded) })))
     }
 }

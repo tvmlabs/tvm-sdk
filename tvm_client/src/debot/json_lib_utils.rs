@@ -26,8 +26,6 @@ pub enum ValKind {
     Cell = 6,
 }
 
-
-
 #[derive(Serialize, Deserialize, Default)]
 struct Cell {
     cell: String,
@@ -221,7 +219,8 @@ pub(crate) fn bypass_json(
                 .ok_or_else(|| format!("\"{}\" not found", pointer))?
                 .as_object()
                 .ok_or_else(|| String::from("Failed to retrieve an object"))?
-                .keys().cloned()
+                .keys()
+                .cloned()
                 .collect();
             for key in keys {
                 bypass_json(

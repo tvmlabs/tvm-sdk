@@ -64,9 +64,7 @@ impl Filter {
         if self.shards.is_empty() {
             true
         } else {
-            self.shards
-                .iter()
-                .any(|x| x.is_ancestor_for(shard) || shard.is_ancestor_for(x))
+            self.shards.iter().any(|x| x.is_ancestor_for(shard) || shard.is_ancestor_for(x))
         }
     }
 

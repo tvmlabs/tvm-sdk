@@ -189,8 +189,7 @@ pub async fn encryption_box_decrypt(
     })
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
-#[derive(Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq, Default)]
 pub enum CipherMode {
     #[default]
     CBC,
@@ -199,8 +198,6 @@ pub enum CipherMode {
     ECB,
     OFB,
 }
-
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
 #[serde(tag = "type", content = "value")]

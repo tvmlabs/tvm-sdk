@@ -224,9 +224,7 @@ impl QueryInterface {
 
     fn get_query_variables(&self, variables: String) -> Result<Option<JsonValue>, QueryStatus> {
         if !variables.is_empty() {
-            serde_json::from_str(&variables)
-                .map(Some)
-                .map_err(|_| QueryStatus::VariablesError)
+            serde_json::from_str(&variables).map(Some).map_err(|_| QueryStatus::VariablesError)
         } else {
             Ok(None)
         }

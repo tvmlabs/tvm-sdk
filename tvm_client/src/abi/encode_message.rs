@@ -841,16 +841,8 @@ pub async fn encode_message_body(
     if let Some(unsigned) = &data_to_sign {
         if let Some(signature) = params.signer.sign(context.clone(), unsigned).await? {
             let pubkey = public.map(|string| hex_decode(&string)).transpose()?;
-            let body = add_sign_to_message_body(
-                &abi,
-                &signature,
-                pubkey.as_deref(),
-                &body,
-            )?;
-            return Ok(ResultOfEncodeMessageBody {
-                body: base64_encode(body),
-                data_to_sign: None,
-            });
+            let body = add_sign_to_message_body(&abi, &signature, pubkey.as_deref(), &body)?;
+            return Ok(ResultOfEncodeMessageBody { body: base64_encode(body), data_to_sign: None });
         }
     }
 

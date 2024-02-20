@@ -565,7 +565,7 @@ impl TestClient {
                 on_result,
             );
         };
-        
+
         receiver.await.unwrap()
     }
 

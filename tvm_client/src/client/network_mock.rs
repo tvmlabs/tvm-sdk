@@ -124,8 +124,7 @@ impl NetworkMock {
             Some(WebSocket {
                 receiver: Box::pin(client_receiver),
                 sender: Box::pin(
-                    client_sender
-                        .sink_map_err(crate::client::Error::websocket_send_error),
+                    client_sender.sink_map_err(crate::client::Error::websocket_send_error),
                 ),
             })
         } else {
