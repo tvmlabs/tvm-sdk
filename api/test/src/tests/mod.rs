@@ -26,8 +26,8 @@ enum ExpectType {
 
 impl ExpectType {
     fn check_fields(
-        actual: &Vec<Field>,
-        expected: &Vec<(&'static str, ExpectType)>,
+        actual: &[Field],
+        expected: &[(&'static str, ExpectType)],
         parent_hint: &str,
     ) {
         assert_eq!(actual.len(), expected.len(), "Unexpected field count for {}", parent_hint);
