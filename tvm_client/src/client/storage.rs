@@ -78,7 +78,7 @@ impl KeyValueStorage for InMemoryKeyValueStorage {
         self.map
             .get(key)
             .map(|guard| {
-                String::from_utf8(guard.val().clone()).map_err(|err| Error::internal_error(err))
+                String::from_utf8(guard.val().clone()).map_err(Error::internal_error)
             })
             .transpose()
     }

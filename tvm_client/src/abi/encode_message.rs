@@ -141,19 +141,19 @@ fn resolve_header(
     context: &Arc<ClientContext>,
     abi: &Contract,
 ) -> ClientResult<Option<FunctionHeader>> {
-    if abi.header().len() == 0 {
+    if abi.header().is_empty() {
         return Ok(None);
     }
     let now = context.env.now_ms();
-    let required = |name: &str| abi.header().iter().find(|x| x.name == name).is_some();
+    let required = |name: &str| abi.header().iter().any(|x| x.name == name);
     Ok(Some(FunctionHeader {
         time: if required("time") {
-            Some(header.map_or(None, |x| x.time).unwrap_or_else(|| now))
+            Some(header.and_then(|x| x.time).unwrap_or(now))
         } else {
             None
         },
         expire: if required("expire") {
-            Some(header.map_or(None, |x| x.expire).unwrap_or_else(|| {
+            Some(header.and_then(|x| x.expire).unwrap_or_else(|| {
                 let config = &context.config.abi;
                 let timeout = calc_timeout(
                     config.message_expiration_timeout,
@@ -166,7 +166,7 @@ fn resolve_header(
             None
         },
         pubkey: if required("pubkey") {
-            header.map_or(None, |x| x.pubkey.clone()).or(pubkey.map(|x| x.to_string()))
+            header.and_then(|x| x.pubkey.clone()).or(pubkey.map(|x| x.to_string()))
         } else {
             None
         },
@@ -196,7 +196,7 @@ impl CallSet {
         abi: &str,
         internal: bool,
     ) -> ClientResult<FunctionCallSet> {
-        let contract = Contract::load(abi.as_bytes()).map_err(|x| Error::invalid_json(x))?;
+        let contract = Contract::load(abi.as_bytes()).map_err(Error::invalid_json)?;
         let header = if internal {
             None
         } else {
@@ -217,7 +217,7 @@ impl CallSet {
         Ok(FunctionCallSet {
             abi: abi.to_string(),
             func,
-            header: header.as_ref().map(|x| header_to_string(x)),
+            header: header.as_ref().map(header_to_string),
             input: self.input.as_ref().map(|x| x.to_string()).unwrap_or("{}".into()),
         })
     }
@@ -332,13 +332,13 @@ fn encode_deploy(
                     pubkey,
                     processing_try_index,
                     &context,
-                    &abi,
+                    abi,
                     false,
                 )?,
                 image,
                 workchain,
             )
-            .map_err(|err| Error::encode_deploy_message_failed(err))?;
+            .map_err(Error::encode_deploy_message_failed)?;
             (unsigned.message, Some(unsigned.data_to_sign), address)
         }
     })
@@ -358,14 +358,14 @@ fn encode_int_deploy(
     let address = image.msg_address(workchain_id);
     let message = tvm_sdk::Contract::get_int_deploy_message_bytes(
         src,
-        &call_set.to_function_call_set(None, None, &context, &abi, true)?,
+        &call_set.to_function_call_set(None, None, &context, abi, true)?,
         image,
         workchain_id,
         ihr_disabled,
         bounce,
         value,
     )
-    .map_err(|err| Error::encode_deploy_message_failed(err))?;
+    .map_err(Error::encode_deploy_message_failed)?;
 
     Ok((message, address))
 }
@@ -376,11 +376,11 @@ fn encode_empty_deploy(
 ) -> ClientResult<(Vec<u8>, Option<Vec<u8>>, MsgAddressInt)> {
     let address = image.msg_address(workchain);
     let message = tvm_sdk::Contract::construct_deploy_message_no_constructor(image, workchain)
-        .map_err(|x| Error::encode_deploy_message_failed(x))?;
+        .map_err(Error::encode_deploy_message_failed)?;
 
     Ok((
         tvm_sdk::Contract::serialize_message(&message)
-            .map_err(|x| Error::encode_deploy_message_failed(x))?
+            .map_err(Error::encode_deploy_message_failed)?
             .0,
         None,
         address,
@@ -404,11 +404,11 @@ fn encode_empty_int_deploy(
         bounce,
         value,
     )
-    .map_err(|x| Error::encode_deploy_message_failed(x))?;
+    .map_err(Error::encode_deploy_message_failed)?;
 
     Ok((
         tvm_sdk::Contract::serialize_message(&message)
-            .map_err(|x| Error::encode_deploy_message_failed(x))?
+            .map_err(Error::encode_deploy_message_failed)?
             .0,
         address,
     ))
@@ -525,7 +525,7 @@ pub async fn encode_message(
                 image,
                 workchain,
                 call_set,
-                public.as_ref().map(|x| x.as_str()),
+                public.as_deref(),
                 &params.signer,
                 params.processing_try_index,
             )?
@@ -538,7 +538,7 @@ pub async fn encode_message(
             &params,
             &abi_string,
             call_set,
-            public.as_ref().map(|x| x.as_str()),
+            public.as_deref(),
             params.processing_try_index,
         )?
     } else {
@@ -552,7 +552,7 @@ pub async fn encode_message(
 
     Ok(ResultOfEncodeMessage {
         message: base64_encode(&message),
-        data_to_sign: data_to_sign.map(|data| base64_encode(&data)),
+        data_to_sign: data_to_sign.map(base64_encode),
         address: account_encode(&address),
         message_id: get_boc_hash(&message)?,
     })
@@ -786,7 +786,7 @@ pub async fn encode_message_body(
 
     let public = params.signer.resolve_public_key(context.clone()).await?;
     let call = params.call_set.to_function_call_set(
-        public.as_ref().map(|x| x.as_str()),
+        public.as_deref(),
         params.processing_try_index,
         &context,
         &abi,
@@ -844,11 +844,11 @@ pub async fn encode_message_body(
             let body = add_sign_to_message_body(
                 &abi,
                 &signature,
-                pubkey.as_ref().map(|vec| vec.as_slice()),
+                pubkey.as_deref(),
                 &body,
             )?;
             return Ok(ResultOfEncodeMessageBody {
-                body: base64_encode(&body),
+                body: base64_encode(body),
                 data_to_sign: None,
             });
         }
@@ -856,7 +856,7 @@ pub async fn encode_message_body(
 
     Ok(ResultOfEncodeMessageBody {
         body: base64_encode(&body),
-        data_to_sign: data_to_sign.map(|x| base64_encode(&x)),
+        data_to_sign: data_to_sign.map(base64_encode),
     })
 }
 
@@ -940,5 +940,5 @@ pub fn attach_signature_to_message_body(
         Some(&hex_decode(&params.public_key)?),
         &boc.bytes("message body")?,
     )?;
-    Ok(ResultOfAttachSignatureToMessageBody { body: base64_encode(&signed) })
+    Ok(ResultOfAttachSignatureToMessageBody { body: base64_encode(signed) })
 }

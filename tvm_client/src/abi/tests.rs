@@ -483,7 +483,7 @@ fn test_resolve_pubkey() -> Result<()> {
 
     let resolved = resolve_pubkey(&deploy_set, &image, &external_pub_key)?;
 
-    assert_eq!(resolved, Some(hex::encode(&tvc_pubkey_1)));
+    assert_eq!(resolved, Some(hex::encode(tvc_pubkey_1)));
 
     let initial_pub_key =
         Some("1234567890123456789012345678901234567890123456789012345678901234".to_owned());
@@ -583,13 +583,13 @@ async fn test_encode_message_pubkey_internal(
         image.set_public_key(tvc_pubkey)?;
     }
 
-    let tvc = base64_encode(&image.serialize()?);
+    let tvc = base64_encode(image.serialize()?);
 
     let deploy_params = ParamsOfEncodeMessage {
         abi: abi.clone(),
         deploy_set: Some(DeploySet {
             tvc: Some(tvc),
-            initial_pubkey: initial_pubkey.map(|key| hex::encode(key)),
+            initial_pubkey: initial_pubkey.map(hex::encode),
             ..Default::default()
         }),
         signer: if let Some(key) = signer_pubkey {
@@ -742,7 +742,7 @@ async fn test_encode_internal_message_run(
         .request_async(
             "abi.encode_internal_message",
             ParamsOfEncodeInternalMessage {
-                abi: abi.map(|x| x.clone()),
+                abi: abi.cloned(),
                 src_address: src.clone(),
                 address: dst.clone(),
                 deploy_set: None,
@@ -951,7 +951,7 @@ fn test_init_data() {
         )
         .unwrap();
     assert_eq!(result.initial_data, json!({}));
-    assert_eq!(result.initial_pubkey, hex::encode(&[0u8; 32]));
+    assert_eq!(result.initial_pubkey, hex::encode([0u8; 32]));
 
     let result: ResultOfEncodeInitialData = client
         .request(
@@ -976,7 +976,7 @@ fn test_init_data() {
             ParamsOfEncodeInitialData {
                 abi: abi.clone(),
                 initial_data: Some(initial_data.clone()),
-                initial_pubkey: Some(hex::encode(&[0x22u8; 32])),
+                initial_pubkey: Some(hex::encode([0x22u8; 32])),
                 boc_cache: None,
             },
         )
@@ -991,7 +991,7 @@ fn test_init_data() {
                 abi: abi.clone(),
                 data: data.clone(),
                 initial_data: Some(initial_data.clone()),
-                initial_pubkey: Some(hex::encode(&[0x22u8; 32])),
+                initial_pubkey: Some(hex::encode([0x22u8; 32])),
                 boc_cache: None,
             },
         )
@@ -1005,7 +1005,7 @@ fn test_init_data() {
         )
         .unwrap();
     assert_eq!(result.initial_data, initial_data.clone());
-    assert_eq!(result.initial_pubkey, hex::encode(&[0x22u8; 32]));
+    assert_eq!(result.initial_pubkey, hex::encode([0x22u8; 32]));
 
     let encode_result: ResultOfEncodeInitialData = client
         .request(
@@ -1345,7 +1345,7 @@ async fn test_deploy_code_variants_with_fn<
     );
 
     let tvc = base64_encode(
-        &TVC::new(
+        TVC::new(
             Some(state_init.code.clone().unwrap()),
             Some(
                 "Some Contract\nSome Toolchain\ncompiled at: 123\nsold: v1.2.3\nlinker: v1.2.3"

@@ -29,13 +29,13 @@ use crate::boc::internal::deserialize_cell_from_boc;
 
 fn decode_msg(client: TonClient, msg_body: String, abi: Abi) -> ClientResult<(String, Value)> {
     let abi = abi.json_string()?;
-    let abi = AbiContract::load(abi.as_bytes()).map_err(|e| Error::invalid_json(e))?;
+    let abi = AbiContract::load(abi.as_bytes()).map_err(Error::invalid_json)?;
     let (_, body) = deserialize_cell_from_boc(&client, &msg_body, "message body")?;
     let body = slice_from_cell(body)?;
     let input =
-        abi.decode_input(body, true, false).map_err(|e| Error::invalid_message_for_decode(e))?;
+        abi.decode_input(body, true, false).map_err(Error::invalid_message_for_decode)?;
     let value = Detokenizer::detokenize_to_json_value(&input.tokens)
-        .map_err(|e| Error::invalid_message_for_decode(e))?;
+        .map_err(Error::invalid_message_for_decode)?;
     Ok((input.function_name, value))
 }
 
@@ -71,7 +71,7 @@ pub trait DebotInterface {
 
 #[async_trait::async_trait]
 pub trait DebotInterfaceExecutor {
-    fn get_interfaces<'a>(&'a self) -> &'a HashMap<String, Arc<dyn DebotInterface + Send + Sync>>;
+    fn get_interfaces(&self) -> &HashMap<String, Arc<dyn DebotInterface + Send + Sync>>;
     fn get_client(&self) -> TonClient;
 
     async fn try_execute(
@@ -106,7 +106,7 @@ pub trait DebotInterfaceExecutor {
             .map_err(|e| format!("{}", e))?;
 
         let body =
-            parsed.parsed["body"].as_str().ok_or(format!("parsed message has no body"))?.to_owned();
+            parsed.parsed["body"].as_str().ok_or("parsed message has no body".to_string())?.to_owned();
         debug!("interface {} call", interface_id);
         match interfaces.get(interface_id) {
             Some(object) => {
@@ -152,7 +152,7 @@ pub struct BuiltinInterfaces {
 
 #[async_trait::async_trait]
 impl DebotInterfaceExecutor for BuiltinInterfaces {
-    fn get_interfaces<'a>(&'a self) -> &'a HashMap<String, Arc<dyn DebotInterface + Send + Sync>> {
+    fn get_interfaces(&self) -> &HashMap<String, Arc<dyn DebotInterface + Send + Sync>> {
         &self.interfaces
     }
 
@@ -193,7 +193,7 @@ impl BuiltinInterfaces {
 
 pub fn decode_answer_id(args: &Value) -> Result<u32, String> {
     decode_abi_number::<u32>(
-        args["answerId"].as_str().ok_or(format!("answer id not found in argument list"))?,
+        args["answerId"].as_str().ok_or("answer id not found in argument list".to_string())?,
     )
     .map_err(|e| format!("{}", e))
 }
@@ -220,7 +220,7 @@ pub fn get_array_strings(args: &Value, name: &str) -> Result<Vec<String>, String
     let mut strings = vec![];
     for elem in array {
         let string =
-            elem.as_str().ok_or_else(|| format!("array element is invalid: must be string"))?;
+            elem.as_str().ok_or_else(|| "array element is invalid: must be string".to_string())?;
         strings.push(string.to_owned());
     }
     Ok(strings)

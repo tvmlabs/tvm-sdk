@@ -52,7 +52,7 @@ fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResul
                 for error_message in errors.iter() {
                     error.message.push_str(&format!("\nTip: {}", error_message));
                 }
-                if suggest_use_helper_for.len() > 0 {
+                if !suggest_use_helper_for.is_empty() {
                     error.data["suggest_use_helper_for"] = Value::Array(
                         suggest_use_helper_for
                             .iter()
@@ -77,7 +77,7 @@ struct ProcessingPath {
 impl ProcessingPath {
     fn append(&self, field_name: &str) -> Self {
         let mut path = self.path.clone();
-        if field_name.len() > 0 {
+        if !field_name.is_empty() {
             path.push(field_name.to_string());
         } else {
             path.push(ENUM_VALUE_FIELD.to_string());
@@ -100,7 +100,7 @@ fn check_params_for_known_errors(
 ) {
     let mut class_name = None;
     while let Type::Ref { ref name } = field.value {
-        if let Some(field_ref) = Runtime::api().find_type(&name) {
+        if let Some(field_ref) = Runtime::api().find_type(name) {
             field = field_ref;
             class_name = Some(name.as_str());
         }
@@ -109,7 +109,7 @@ fn check_params_for_known_errors(
     let value = match &field.value {
         Type::Optional { inner } => {
             if let Some(value) = value {
-                check_type(path, &class_name, &inner, value, errors, suggest_use_helper_for);
+                check_type(path, &class_name, inner, value, errors, suggest_use_helper_for);
             }
             return;
         }
@@ -143,7 +143,7 @@ fn check_type(
                     check_type(
                         &path.append(&format!("{}[{}]", path.resolve_field_name(), index)),
                         class_name,
-                        &item,
+                        item,
                         &vec[index],
                         errors,
                         suggest_use_helper_for,
@@ -191,7 +191,7 @@ fn check_type(
                     };
                     if let Some(enum_type) = types.iter().find(|item| item.name == type_name) {
                         check_params_for_known_errors(
-                            &path,
+                            path,
                             enum_type,
                             Some(value),
                             errors,
@@ -229,7 +229,7 @@ fn get_incorrect_enum_errors(
         .collect::<Vec<String>>()
         .join(", ");
 
-    static SUGGEST_USE_HELPER_FOR_SORTED: &[&'static str] = &["Abi", "Signer"];
+    static SUGGEST_USE_HELPER_FOR_SORTED: &[&str] = &["Abi", "Signer"];
 
     errors.push(format!(
         "Field \"{field}\" must be a structure:\n\
@@ -512,7 +512,7 @@ where
     fn handle(&self, context: Arc<ClientContext>, params_json: &str) -> ClientResult<String> {
         match parse_params(params_json) {
             Ok(params) => (self.handler)(context, params).and_then(|x| {
-                serde_json::to_string(&x).map_err(|err| Error::cannot_serialize_result(err))
+                serde_json::to_string(&x).map_err(Error::cannot_serialize_result)
             }),
             Err(err) => Err(err),
         }
@@ -546,7 +546,7 @@ where
     fn handle(&self, context: Arc<ClientContext>, _params_json: &str) -> ClientResult<String> {
         match (self.handler)(context) {
             Ok(result) => {
-                serde_json::to_string(&result).map_err(|err| Error::cannot_serialize_result(err))
+                serde_json::to_string(&result).map_err(Error::cannot_serialize_result)
             }
             Err(err) => Err(err),
         }

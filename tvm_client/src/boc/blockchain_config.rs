@@ -54,7 +54,7 @@ pub fn get_blockchain_config(
     let bytes = tvm_types::boc::write_boc(&cell)
         .map_err(|err| Error::serialization_error(err, "config cells to bytes"))?;
 
-    Ok(ResultOfGetBlockchainConfig { config_boc: base64_encode(&bytes) })
+    Ok(ResultOfGetBlockchainConfig { config_boc: base64_encode(bytes) })
 }
 
 pub(crate) fn extract_config_from_block(

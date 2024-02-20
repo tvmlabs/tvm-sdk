@@ -157,7 +157,7 @@ pub(crate) async fn query_network_params(
     };
 
     let config = BlockchainConfig::with_config(config)
-        .map_err(|err| crate::tvm::Error::can_not_read_blockchain_config(err))?;
+        .map_err(crate::tvm::Error::can_not_read_blockchain_config)?;
 
     Ok((config, global_id))
 }
@@ -170,15 +170,15 @@ pub(crate) async fn ackinacki_network() -> ClientResult<(BlockchainConfig, i32)>
 }
 
 fn read_str(path: &str) -> ClientResult<String> {
-    Ok(fs::read_to_string(Path::new(path))
-        .map_err(|err| crate::tvm::Error::can_not_read_blockchain_config_from_file(err))?)
+    fs::read_to_string(Path::new(path))
+        .map_err(crate::tvm::Error::can_not_read_blockchain_config_from_file)
 }
 
 fn blockchain_config_from_json(json: &str) -> ClientResult<BlockchainConfig> {
-    let map = serde_json::from_str::<serde_json::Map<String, Value>>(&json)
-        .map_err(|err| crate::tvm::Error::json_deserialization_failed(err))?;
+    let map = serde_json::from_str::<serde_json::Map<String, Value>>(json)
+        .map_err(crate::tvm::Error::json_deserialization_failed)?;
     let config_params = tvm_block_json::parse_config(&map)
-        .map_err(|err| crate::tvm::Error::can_not_parse_config(err))?;
+        .map_err(crate::tvm::Error::can_not_parse_config)?;
     BlockchainConfig::with_config(config_params)
-        .map_err(|err| crate::tvm::Error::can_not_convert_config(err))
+        .map_err(crate::tvm::Error::can_not_convert_config)
 }

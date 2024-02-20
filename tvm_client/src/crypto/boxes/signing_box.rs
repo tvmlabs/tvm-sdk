@@ -49,7 +49,7 @@ impl KeysSigningBox {
     }
 
     pub fn from_encoded(key_pair: KeyPair) -> ClientResult<Self> {
-        key_pair.decode().map(|pair| Self::new(pair))
+        key_pair.decode().map(Self::new)
     }
 }
 
@@ -114,7 +114,7 @@ pub async fn signing_box_get_public_key(
 
     let key = signing_box.1.get_public_key(Arc::clone(&context)).await?;
 
-    Ok(ResultOfSigningBoxGetPublicKey { pubkey: hex::encode(&key) })
+    Ok(ResultOfSigningBoxGetPublicKey { pubkey: hex::encode(key) })
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default, PartialEq)]
@@ -147,7 +147,7 @@ pub async fn signing_box_sign(
 
     let signed = signing_box.1.sign(Arc::clone(&context), &unsigned).await?;
 
-    Ok(ResultOfSigningBoxSign { signature: hex::encode(&signed) })
+    Ok(ResultOfSigningBoxSign { signature: hex::encode(signed) })
 }
 
 /// Removes signing box from SDK.

@@ -163,7 +163,7 @@ async fn ws_send(ws: &mut WSSender, message: GraphQLMessageFromClient) -> Client
     if result.is_err() {
         *ws = Box::pin(
             futures::sink::drain()
-                .sink_map_err(|err| crate::client::Error::websocket_send_error(err)),
+                .sink_map_err(crate::client::Error::websocket_send_error),
         );
     }
     result
@@ -408,7 +408,7 @@ impl LinkHandler {
             }
             GraphQLMessageFromServer::ConnectionError { error } => {
                 next_phase = self
-                    .handle_network_error(Error::graphql_connection_error(&vec![error]), false)
+                    .handle_network_error(Error::graphql_connection_error(&[error]), false)
                     .await;
             }
             GraphQLMessageFromServer::Data { id, data, errors } => {

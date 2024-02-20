@@ -34,7 +34,7 @@ impl Error {
     }
 
     pub fn invalid_signer(message: String) -> ClientError {
-        error(ErrorCode::InvalidSigner, message.into())
+        error(ErrorCode::InvalidSigner, message)
     }
 
     pub fn required_address_missing_for_encode_message() -> ClientError {

@@ -59,7 +59,7 @@ pub fn encode_external_in_message(
             .unwrap_or_else(|| Ok(MsgAddressExt::AddrNone))
             .map_err(|err| {
                 crate::client::errors::Error::invalid_address(
-                    &err.to_string(),
+                    err.to_string(),
                     &src.unwrap_or_default(),
                 )
             })?,
@@ -77,7 +77,7 @@ pub fn encode_external_in_message(
         msg.set_body(slice_from_cell(cell)?);
     }
 
-    let hash = msg.hash().map_err(|err| crate::client::errors::Error::internal_error(err))?;
+    let hash = msg.hash().map_err(crate::client::errors::Error::internal_error)?;
     let boc = serialize_object_to_boc(&context, &msg, "message", params.boc_cache)?;
     Ok(ResultOfEncodeExternalInMessage { message: boc, message_id: hex::encode(hash) })
 }

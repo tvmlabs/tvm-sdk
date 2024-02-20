@@ -78,22 +78,20 @@ pub fn serialize_items<'a>(
                     stack.push((vec![], nested_iter));
                 }
             }
-        } else {
-            if let Some((parent_vec, _)) = stack.last_mut() {
-                // list starts from tuple with 2 elements: some value and null,
-                // the value becomes the last list item
-                if vec.len() == 2 && vec[1] == Value::Null && flatten_lists {
-                    vec.resize(1, Value::Null);
-                    list_items = Some(vec);
-                } else if let Some(list) = list_items.take() {
-                    vec.extend(list.into_iter());
-                    list_items = Some(vec);
-                } else {
-                    parent_vec.push(Value::Array(vec));
-                }
+        } else if let Some((parent_vec, _)) = stack.last_mut() {
+            // list starts from tuple with 2 elements: some value and null,
+            // the value becomes the last list item
+            if vec.len() == 2 && vec[1] == Value::Null && flatten_lists {
+                vec.resize(1, Value::Null);
+                list_items = Some(vec);
+            } else if let Some(list) = list_items.take() {
+                vec.extend(list);
+                list_items = Some(vec);
             } else {
-                return Ok(Value::Array(vec));
+                parent_vec.push(Value::Array(vec));
             }
+        } else {
+            return Ok(Value::Array(vec));
         }
     }
 }
@@ -110,7 +108,7 @@ fn serialize_integer_data(data: &IntegerData) -> String {
     let hex = data.to_str_radix(16);
     // all negative numbers and positive numbers less than u128::MAX are encoded as
     // decimal
-    if hex.starts_with("-") || hex.len() <= 32 {
+    if hex.starts_with('-') || hex.len() <= 32 {
         data.to_str_radix(10)
     } else {
         // positive numbers between u128::MAX and u256::MAX are padded to 64 hex symbols
@@ -124,7 +122,7 @@ fn serialize_integer_data(data: &IntegerData) -> String {
     }
 }
 
-pub fn serialize_item<'a>(item: &'a StackItem) -> ClientResult<Value> {
+pub fn serialize_item(item: &StackItem) -> ClientResult<Value> {
     Ok(serialize_items(Box::new(vec![item].into_iter()), false)?[0].take())
 }
 
@@ -169,7 +167,7 @@ pub fn deserialize_item(value: &Value) -> ClientResult<StackItem> {
                 return Err(Error::invalid_input_stack("Invalid number value", value));
             }
         }
-        Value::String(s) => StackItem::integer(parse_integer_data(&s)?),
+        Value::String(s) => StackItem::integer(parse_integer_data(s)?),
         Value::Array(array) => StackItem::tuple(deserialize_items(array.iter())?),
         Value::Object(_) => {
             let object = serde_json::from_value(value.clone()).map_err(|err| {

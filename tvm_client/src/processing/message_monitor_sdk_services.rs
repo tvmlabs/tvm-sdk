@@ -77,7 +77,7 @@ fn deserialize_subscription_data(
         crate::net::Error::invalid_server_response("missing required `recentExtInMessageStatuses`")
     })?;
     let result = serde_json::from_value::<GraphQLMessageMonitoringResult>(statuses.clone())
-        .map_err(|err| crate::net::Error::invalid_server_response(err))?
+        .map_err(crate::net::Error::invalid_server_response)?
         .into();
     Ok(vec![result])
 }

@@ -34,7 +34,7 @@ impl DerivedKey {
         let scrypt_params = scrypt::Params::new(14, 8, 1).expect("Scrypt params setup failed");
         let mut key = SecretBuf(vec![0; 32]);
         scrypt::scrypt(password, salt.as_bytes(), &scrypt_params, &mut key.0)
-            .map_err(|err| crypto::Error::scrypt_failed(err))?;
+            .map_err(crypto::Error::scrypt_failed)?;
         Ok(key)
     }
 }
@@ -125,7 +125,7 @@ impl DerivedKeys {
     }
 
     fn touch(&self, hash: &SecretHash) -> Option<SecretBuf> {
-        self.cache.write().unwrap().touch(&hash).map(|x| x.clone())
+        self.cache.write().unwrap().touch(hash).cloned()
     }
 
     fn clean_and_check_stop_timer(&self) -> bool {
@@ -138,6 +138,6 @@ impl DerivedKeys {
         key: &SecretBuf,
         calculation_time: u64,
     ) -> bool {
-        self.cache.write().unwrap().put_and_check_start_timer(&hash, &key, calculation_time)
+        self.cache.write().unwrap().put_and_check_start_timer(hash, key, calculation_time)
     }
 }

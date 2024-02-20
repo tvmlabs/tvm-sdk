@@ -59,7 +59,7 @@ impl Error {
             }
         }
 
-        return None;
+        None
     }
 
     pub fn queries_query_failed(mut err: ClientError) -> ClientError {

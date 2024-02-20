@@ -9,8 +9,10 @@ use crate::ClientContext;
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
 #[serde(tag = "type")]
+#[derive(Default)]
 pub enum Signer {
     /// No keys are provided. Creates an unsigned message.
+    #[default]
     None,
     /// Only public key is provided in unprefixed hex string format to generate
     /// unsigned message and `data_to_sign` which can be signed later.
@@ -22,11 +24,7 @@ pub enum Signer {
     SigningBox { handle: SigningBoxHandle },
 }
 
-impl Default for Signer {
-    fn default() -> Self {
-        Signer::None
-    }
-}
+
 
 impl Signer {
     pub async fn sign(

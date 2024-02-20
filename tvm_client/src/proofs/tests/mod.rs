@@ -687,7 +687,7 @@ fn print_object_type(
 ) {
     for i in 0..object_type.fields.len() {
         let field = &object_type.fields[i];
-        if field.arguments.iter().find(|arg| arg.name == "when").is_some() {
+        if field.arguments.iter().any(|arg| arg.name == "when") {
             continue;
         }
         let type_name = resolve_type_name(&field.field_type);
@@ -982,8 +982,8 @@ async fn test_proof_block_data() -> Result<()> {
 
 #[tokio::test]
 async fn test_transaction_get_required_data() -> Result<()> {
-    const ID: &'static str = "5b532e2ec17ac84b4efa92703192368dd4ed8a2729f2be2b0ee4e0665368f7c0";
-    const BOC: &'static str = "\
+    const ID: &str = "5b532e2ec17ac84b4efa92703192368dd4ed8a2729f2be2b0ee4e0665368f7c0";
+    const BOC: &str = "\
             te6ccgECBgEAATMAA69wT2TGr7/z3RDYumcHeQrJZw1UDzepRIsDN7qmpakqysAAAR0tIeN4FanEM9ilnr+FQpc\
             mlTEG3AXJ47njjdUvtmEBGza8vWswAAEdLSDvVDYWPE5wABQIBQQBAgUgMDQDAgBpYAAAAJYAAAAEAAYAAAAAAA\
             UZroTxe4+LIgJql1/1Xxqxn95KdodE0heN+mO7Uz4QekCQJrwAoEJmUBfXhAAAAAAAAAAAADAAAAAAAAAAAAAAA\
@@ -992,7 +992,7 @@ async fn test_transaction_get_required_data() -> Result<()> {
 
     async fn test(engine: &ProofHelperEngineImpl, transaction_json: Value) -> Result<()> {
         let (id, block_id, boc, transaction) =
-            transaction_get_required_data(&engine, &transaction_json).await?;
+            transaction_get_required_data(engine, &transaction_json).await?;
 
         assert_eq!(id.as_hex_string(), ID,);
         assert_eq!(block_id, "eb7c28f1d301dff2d6ec899fb5ee18d9478f397b10c16a6f6aabb6535686266e");
@@ -1081,7 +1081,7 @@ async fn test_message_get_required_data() -> Result<()> {
         dst_account_address: Option<&str>,
     ) -> Result<()> {
         let (id, trans_id, boc, message) =
-            message_get_required_data(&engine, &message_json).await?;
+            message_get_required_data(engine, &message_json).await?;
 
         assert_eq!(id.as_hex_string(), message_id,);
         assert_eq!(trans_id, message_trans_id);
@@ -1102,7 +1102,7 @@ async fn test_message_get_required_data() -> Result<()> {
         dst_account_address: Option<&str>,
     ) -> Result<()> {
         test(
-            &engine,
+            engine,
             json!({
                 "id": message_id,
             }),
@@ -1114,7 +1114,7 @@ async fn test_message_get_required_data() -> Result<()> {
         .await?;
 
         test(
-            &engine,
+            engine,
             json!({
                 "boc": message_boc,
             }),

@@ -42,7 +42,7 @@ pub enum ResponseType {
 
 pub fn create_context(config: String) -> String {
     let context = Runtime::create_context(&config.to_string());
-    convert_result_to_sync_response(context.map(|x| Value::from(x)))
+    convert_result_to_sync_response(context.map(Value::from))
 }
 
 pub fn destroy_context(context: ContextHandle) {
@@ -91,7 +91,7 @@ pub fn request_sync(context: ContextHandle, function_name: String, params_json: 
     let result_value = match context {
         Ok(context) => match Runtime::dispatch_sync(context, function_name, params_json) {
             Ok(result_json) => serde_json::from_str(&result_json)
-                .map_err(|err| Error::cannot_serialize_result(err)),
+                .map_err(Error::cannot_serialize_result),
             Err(err) => Err(err),
         },
         Err(_) => Err(Error::invalid_context_handle(context_handle)),

@@ -27,7 +27,7 @@ pub struct CommandLine {
 
 impl CommandLine {
     pub fn get_opt(&self, names: &str) -> Option<&str> {
-        names.split("|").find_map(|x| self.options.get(x.trim()).map(|x| x.as_str()))
+        names.split('|').find_map(|x| self.options.get(x.trim()).map(|x| x.as_str()))
     }
 
     pub fn parse(args: &[String]) -> Result<Self, CliError> {
@@ -37,7 +37,7 @@ impl CommandLine {
 
         for arg in args {
             match state {
-                ParseState::OptionOrArg if arg.starts_with("-") => {
+                ParseState::OptionOrArg if arg.starts_with('-') => {
                     option = arg[1..].to_string();
                     state = ParseState::OptionValue
                 }

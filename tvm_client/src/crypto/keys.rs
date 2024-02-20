@@ -118,7 +118,7 @@ pub fn convert_public_key_to_tvm_safe_format(
 pub fn generate_random_sign_keys(_context: std::sync::Arc<ClientContext>) -> ClientResult<KeyPair> {
     let bytes = SecretBufConst(rand::random());
     let sign_key = SigningKey::from_bytes(&bytes.0);
-    Ok(KeyPair::new(hex::encode(&sign_key.verifying_key().to_bytes()), hex::encode(bytes)))
+    Ok(KeyPair::new(hex::encode(sign_key.verifying_key().to_bytes()), hex::encode(bytes)))
 }
 
 //-------------------------------------------------------------------------------------------- sign
@@ -148,7 +148,7 @@ pub fn sign(
 ) -> ClientResult<ResultOfSign> {
     let (signed, signature) =
         sign_using_keys(&base64_decode(&params.unsigned)?, &params.keys.decode()?)?;
-    Ok(ResultOfSign { signed: base64_encode(&signed), signature: hex::encode(signature) })
+    Ok(ResultOfSign { signed: base64_encode(signed), signature: hex::encode(signature) })
 }
 
 //-------------------------------------------------------------------------------- verify_signature

@@ -396,8 +396,7 @@ pub fn decode_state_init(
         .object
         .code
         .clone()
-        .map(|cell| get_compiler_version_from_cell(cell).ok())
-        .flatten()
+        .and_then(|cell| get_compiler_version_from_cell(cell).ok())
         .flatten();
     let code = serialize("code", state_init.object.code, params.boc_cache.clone())?;
 

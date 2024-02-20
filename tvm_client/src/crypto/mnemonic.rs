@@ -231,7 +231,7 @@ pub fn mnemonic_derive_sign_keys(
 ) -> ClientResult<KeyPair> {
     let mnemonic = mnemonics(&context.config.crypto, params.dictionary, params.word_count)?;
     let path = params.path.unwrap_or(context.config.crypto.hdkey_derivation_path.clone());
-    Ok(mnemonic.derive_ed25519_keys_from_phrase(&context.config.crypto, &params.phrase, &path)?)
+    mnemonic.derive_ed25519_keys_from_phrase(&context.config.crypto, &params.phrase, &path)
 }
 
 // Internals
@@ -337,8 +337,8 @@ impl CryptoMnemonic for Bip39Mnemonic {
     }
 
     fn phrase_from_entropy(&self, entropy: &[u8]) -> ClientResult<String> {
-        let mnemonic = Mnemonic::from_entropy(&entropy, self.language)
-            .map_err(|err| crypto::Error::bip39_invalid_entropy(err))?;
+        let mnemonic = Mnemonic::from_entropy(entropy, self.language)
+            .map_err(crypto::Error::bip39_invalid_entropy)?;
         Ok(mnemonic.phrase().into())
     }
 
@@ -349,7 +349,7 @@ impl CryptoMnemonic for Bip39Mnemonic {
     fn seed_from_phrase_and_salt(&self, phrase: &String, salt: &String) -> ClientResult<String> {
         check_phrase(self, phrase)?;
         let mnemonic = Mnemonic::from_phrase(phrase, self.language)
-            .map_err(|err| crypto::Error::bip39_invalid_phrase(err))?;
+            .map_err(crypto::Error::bip39_invalid_phrase)?;
 
         let salt = format!("mnemonic{}", salt);
         let mut seed = vec![0u8; 64];
@@ -361,7 +361,7 @@ impl CryptoMnemonic for Bip39Mnemonic {
     fn entropy_from_phrase(&self, phrase: &String) -> ClientResult<String> {
         check_phrase(self, phrase)?;
         let mnemonic = Mnemonic::from_phrase(phrase, self.language)
-            .map_err(|err| crypto::Error::bip39_invalid_phrase(err))?;
+            .map_err(crypto::Error::bip39_invalid_phrase)?;
         Ok(hex::encode(mnemonic.entropy()))
     }
 }
@@ -395,18 +395,18 @@ impl TonMnemonic {
     }
 
     fn seed_from_string(string: &String, salt: &str, c: u32) -> [u8; 64] {
-        let entropy = Self::entropy_from_string(&string);
+        let entropy = Self::entropy_from_string(string);
         pbkdf2_hmac_sha512(&entropy, salt.as_bytes(), c)
     }
 
     fn is_basic_seed(string: &String) -> bool {
-        let seed = Self::seed_from_string(&string, "TON seed version", 100_000 / 256);
+        let seed = Self::seed_from_string(string, "TON seed version", 100_000 / 256);
         seed[0] == 0
     }
 
     fn internal_is_phrase_valid(&self, phrase: &String) -> bool {
         let mut count = 0u8;
-        for word in phrase.split(" ") {
+        for word in phrase.split(' ') {
             if !TVM_WORDS.contains(&word) {
                 return false;
             }
@@ -418,7 +418,7 @@ impl TonMnemonic {
 
 impl CryptoMnemonic for TonMnemonic {
     fn get_words(&self) -> ClientResult<String> {
-        return Ok(TVM_WORDS.join(" ").to_string());
+        Ok(TVM_WORDS.join(" ").to_string())
     }
 
     fn generate_random_phrase(&self) -> ClientResult<String> {
@@ -435,7 +435,7 @@ impl CryptoMnemonic for TonMnemonic {
             }
             return Ok(phrase);
         }
-        return Err(crypto::Error::mnemonic_generation_failed());
+        Err(crypto::Error::mnemonic_generation_failed())
     }
 
     fn derive_ed25519_keys_from_phrase(
@@ -446,7 +446,7 @@ impl CryptoMnemonic for TonMnemonic {
     ) -> ClientResult<KeyPair> {
         check_phrase(self, phrase)?;
 
-        let seed = Self::seed_from_string(&phrase, "TON default seed", 100_000);
+        let seed = Self::seed_from_string(phrase, "TON default seed", 100_000);
         let master = HDPrivateKey::master(&key256(&seed[32..])?, &key256(&seed[..32])?);
         let derived = master.derive_path(path, default_hdkey_compliant())?;
         ed25519_keys_from_secret_bytes(&derived.secret().0)
@@ -475,7 +475,7 @@ impl CryptoMnemonic for TonMnemonic {
 
     fn entropy_from_phrase(&self, phrase: &String) -> ClientResult<String> {
         check_phrase(self, phrase)?;
-        Ok(hex::encode(Self::entropy_from_string(&phrase).as_ref()))
+        Ok(hex::encode(Self::entropy_from_string(phrase).as_ref()))
     }
 }
 

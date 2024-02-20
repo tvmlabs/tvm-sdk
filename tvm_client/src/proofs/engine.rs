@@ -183,7 +183,7 @@ impl ProofHelperEngineImpl {
 
     async fn put_value(&self, key: &str, value: &Value) -> Result<()> {
         self.storage
-            .put_str(key, &serde_json::to_string(value).map_err(|err| Error::internal_error(err))?)
+            .put_str(key, &serde_json::to_string(value).map_err(Error::internal_error)?)
             .await
             .map_err(|err| err.into())
     }
@@ -209,8 +209,7 @@ impl ProofHelperEngineImpl {
             .storage
             .get_bin(key)
             .await?
-            .map(|vec| vec.try_into().ok().map(|arr| u32::from_le_bytes(arr)))
-            .flatten())
+            .and_then(|vec| vec.try_into().ok().map(u32::from_le_bytes)))
     }
 
     pub(crate) async fn write_metadata_value_u32(&self, key: &str, value: u32) -> Result<()> {
@@ -475,7 +474,7 @@ impl ProofHelperEngineImpl {
         &self,
         mut proofs_sorted: &mut [(u32, Value)],
     ) -> Result<()> {
-        while proofs_sorted.len() > 0 {
+        while !proofs_sorted.is_empty() {
             let mut blocks = Self::preprocess_query_result(
                 query_collection(
                     Arc::clone(&self.context),
@@ -751,7 +750,7 @@ impl ProofHelperEngineImpl {
     }
 
     pub async fn check_shard_block(&self, boc: &[u8]) -> Result<()> {
-        let cell = tvm_types::boc::read_single_root_boc(&boc)?;
+        let cell = tvm_types::boc::read_single_root_boc(boc)?;
         let root_hash = cell.repr_hash();
         let block = Block::construct_from_cell(cell)?;
 
@@ -836,7 +835,7 @@ impl ProofHelperEngineImpl {
                 let mut last_prev_ref_seq_no = top_seq_no;
                 let mut last_prev_ref_root_hash = top_root_hash;
                 for boc in shard_chain.iter().rev() {
-                    let cell = tvm_types::boc::read_single_root_boc(&boc)?;
+                    let cell = tvm_types::boc::read_single_root_boc(boc)?;
                     let root_hash = cell.repr_hash();
                     let block = Block::construct_from_cell(cell)?;
                     let info = block.read_info()?;
@@ -930,17 +929,17 @@ impl ProofHelperEngineImpl {
         //       2. also add `write_trusted_block()` and `remove_untrusted_block()` (or
         //          `trust_block()` for moving block from untrusted to trusted storage)
         //          functions.
-        self.write_block(&root_hash.as_hex_string(), &boc)
+        self.write_block(&root_hash.as_hex_string(), boc)
             .await
-            .map_err(|err| Error::internal_error(err))?;
+            .map_err(Error::internal_error)?;
 
-        let info = block.read_info().map_err(|err| Error::invalid_data(err))?;
+        let info = block.read_info().map_err(Error::invalid_data)?;
         if info.shard().is_masterchain() {
-            self.check_mc_block_proof(info.seq_no(), &root_hash).await
+            self.check_mc_block_proof(info.seq_no(), root_hash).await
         } else {
-            self.check_shard_block(&boc).await
+            self.check_shard_block(boc).await
         }
-        .map_err(|err| Error::proof_check_failed(err))?;
+        .map_err(Error::proof_check_failed)?;
 
         Ok(())
     }

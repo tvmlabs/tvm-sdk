@@ -34,7 +34,7 @@ pub fn impl_api_type(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 }
 
 fn enum_type(data: &DataEnum, attrs: &Vec<Attribute>) -> api_info::Type {
-    if data.variants.iter().find(|v| !v.fields.is_empty()).is_some() {
+    if data.variants.iter().any(|v| !v.fields.is_empty()) {
         enum_of_types(data, attrs)
     } else {
         enum_of_consts(data)
@@ -62,7 +62,7 @@ fn enum_of_types(data: &DataEnum, attrs: &Vec<Attribute>) -> api_info::Type {
 }
 
 fn enum_of_consts(data: &DataEnum) -> api_info::Type {
-    let consts = data.variants.iter().map(|v| const_from(v));
+    let consts = data.variants.iter().map(const_from);
     api_info::Type::EnumOfConsts { consts: consts.collect() }
 }
 

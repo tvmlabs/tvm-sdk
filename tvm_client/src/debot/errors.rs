@@ -77,7 +77,7 @@ impl Error {
     }
 
     pub fn operation_rejected() -> ClientError {
-        error(ErrorCode::DebotOperationRejected, format!("Debot operation was rejected by user"))
+        error(ErrorCode::DebotOperationRejected, "Debot operation was rejected by user".to_string())
     }
 
     pub fn browser_callback_failed(err: impl Display) -> ClientError {
@@ -88,6 +88,6 @@ impl Error {
     }
 
     pub fn debot_has_no_code() -> ClientError {
-        error(ErrorCode::DebotNoCode, format!("Debot has no code"))
+        error(ErrorCode::DebotNoCode, "Debot has no code".to_string())
     }
 }

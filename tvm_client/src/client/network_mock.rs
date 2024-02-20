@@ -40,7 +40,7 @@ impl FetchMock {
         let mut result = self.result;
         let id = if self.id != 0 { format!(" {}", self.id) } else { String::default() };
         if let Ok(result) = &mut result {
-            result.url = url.split("?").next().unwrap_or("").to_string();
+            result.url = url.split('?').next().unwrap_or("").to_string();
         }
         let (text, find, replace_with) = match &result {
             Ok(ok) => (format!("{:?}", ok), "FetchResult", "✅"),
@@ -69,7 +69,7 @@ fn same_endpoints(url1: &str, url2: &str) -> bool {
     }
     let a = reduce_url(url1);
     let b = reduce_url(url2);
-    return a.starts_with(&b) || b.starts_with(&a);
+    a.starts_with(&b) || b.starts_with(&a)
 }
 
 impl NetworkMock {
@@ -106,7 +106,7 @@ impl NetworkMock {
         url: &str,
     ) -> Option<WebSocket> {
         let mut messages = self.extract_messages(url);
-        if messages.len() > 0 {
+        if !messages.is_empty() {
             let (client_sender, server_receiver) = futures::channel::mpsc::channel::<String>(10);
             let (mut server_sender, client_receiver) =
                 futures::channel::mpsc::channel::<ClientResult<String>>(10);
@@ -125,7 +125,7 @@ impl NetworkMock {
                 receiver: Box::pin(client_receiver),
                 sender: Box::pin(
                     client_sender
-                        .sink_map_err(|err| crate::client::Error::websocket_send_error(err)),
+                        .sink_map_err(crate::client::Error::websocket_send_error),
                 ),
             })
         } else {
@@ -154,7 +154,7 @@ impl NetworkMock {
             if let Some(delay) = fetch.delay {
                 log.push_str(&format!(" {} ms ", delay));
             }
-            log.push_str(" ");
+            log.push(' ');
             log.push_str(url);
             if let Some(body) = &body {
                 log.push_str(&format!("\n  ⤷ {}", body));

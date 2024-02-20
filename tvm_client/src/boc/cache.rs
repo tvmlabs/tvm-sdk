@@ -81,6 +81,7 @@ fn calc_tree_size(cell: &Cell) -> usize {
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Debug)]
 #[serde(tag = "type")]
+#[derive(Default)]
 pub enum BocCacheType {
     /// Pin the BOC with `pin` name. Such BOC will not be removed from cache
     /// until it is unpinned BOCs can have several pins and each of the pins
@@ -91,14 +92,11 @@ pub enum BocCacheType {
     /// BOC is placed into a common BOC pool with limited size regulated by LRU
     /// (least recently used) cache lifecycle. BOC resides there until it is
     /// replaced with other BOCs if it is not used
+    #[default]
     Unpinned,
 }
 
-impl Default for BocCacheType {
-    fn default() -> Self {
-        BocCacheType::Unpinned
-    }
-}
+
 
 pub struct PinnedBoc {
     pins: HashMap<String, u32>,
@@ -123,9 +121,7 @@ pub struct Bocs {
 
 impl Bocs {
     pub(crate) fn new(max_cache_size: u32) -> Self {
-        let max_cache_size = (max_cache_size as usize)
-            .checked_mul(1024) // kilobytes in config
-            .unwrap_or(std::usize::MAX);
+        let max_cache_size = (max_cache_size as usize).saturating_mul(1024);
         Bocs {
             pinned: RwLock::default(),
             cached: Mutex::new(CachedBocs { bocs: LruCache::unbounded(), cache_size: 0 }),
@@ -178,16 +174,16 @@ impl Bocs {
     }
 
     fn add_cached(&self, hash: UInt256, cell: Cell, size: usize) -> ClientResult<()> {
-        if size > self.max_cache_size as usize {
+        if size > self.max_cache_size {
             return Err(Error::insufficient_cache_size(self.max_cache_size, size));
         }
         let mut lock = self.cached.lock().unwrap();
 
-        if let Some(_) = lock.bocs.get(&hash) {
+        if lock.bocs.get(&hash).is_some() {
             return Ok(());
         }
 
-        while lock.cache_size + size > self.max_cache_size as usize {
+        while lock.cache_size + size > self.max_cache_size {
             let (_, entry) = lock
                 .bocs
                 .pop_lru()
@@ -205,7 +201,7 @@ impl Bocs {
         boc: &str,
         name: &str,
     ) -> ClientResult<(DeserializedBoc, Cell)> {
-        if boc.starts_with("*") {
+        if boc.starts_with('*') {
             let hash = UInt256::from_str(&boc[1..]).map_err(|err| {
                 Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {}", err))
             })?;
@@ -242,11 +238,11 @@ impl Bocs {
     }
 
     pub(crate) fn get(&self, hash: &UInt256) -> Option<Cell> {
-        if let Some(cell) = self.get_pinned(&hash) {
+        if let Some(cell) = self.get_pinned(hash) {
             return Some(cell);
         }
 
-        if let Some(cell) = self.get_cached(&hash) {
+        if let Some(cell) = self.get_cached(hash) {
             return Some(cell);
         }
 
@@ -276,7 +272,7 @@ impl Bocs {
 }
 
 fn parse_boc_ref(boc_ref: &str) -> ClientResult<UInt256> {
-    if !boc_ref.starts_with("*") {
+    if !boc_ref.starts_with('*') {
         return Err(Error::invalid_boc_ref(
             "reference doesn't start with `*`. Did you use the BOC itself instead of reference?",
             boc_ref,

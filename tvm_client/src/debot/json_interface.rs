@@ -59,7 +59,7 @@ impl JsonInterface {
         let json_str = get_arg(args, "json")?;
         let mut json_obj: JsonValue = serde_json::from_str(&json_str)
             .map_err(|e| format!("argument \"json\" is not a valid json: {}", e))?;
-        let _ = self.deserialize_json(&mut json_obj, answer_id)?;
+        self.deserialize_json(&mut json_obj, answer_id)?;
         Ok((
             answer_id,
             json!({
@@ -93,7 +93,7 @@ impl JsonInterface {
             .inputs
             .iter()
             .find(|e| e.name == "obj")
-            .ok_or(format!("\"obj\" argument not found"))?;
+            .ok_or("\"obj\" argument not found".to_string())?;
         if let ParamType::Tuple(params) = &obj.kind {
             for p in params {
                 let pointer = "";

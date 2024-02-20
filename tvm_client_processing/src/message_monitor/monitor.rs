@@ -202,7 +202,7 @@ impl<Sdk: MessageMonitorSdkServices + Send + Sync> MonitorState<Sdk> {
     ) -> Vec<NetSubscription> {
         let mut queues = self.queues.write().unwrap();
         for queue in queues.queues.values_mut() {
-            queue.resolve(&results);
+            queue.resolve(results);
         }
 
         let mut active_subscriptions = self.active_subscriptions.lock().unwrap();
@@ -221,14 +221,12 @@ impl<Sdk: MessageMonitorSdkServices + Send + Sync> MonitorState<Sdk> {
         let mut empty_subscriptions = HashSet::new();
         for (subscription, hashes) in &mut *active_subscriptions {
             for result in results {
-                if hashes.remove(&result.hash) {
-                    if hashes.is_empty() {
-                        empty_subscriptions.insert(*subscription);
-                    }
+                if hashes.remove(&result.hash) && hashes.is_empty() {
+                    empty_subscriptions.insert(*subscription);
                 }
             }
         }
-        empty_subscriptions.into_iter().map(|x| NetSubscription(x)).collect()
+        empty_subscriptions.into_iter().map(NetSubscription).collect()
     }
 
     fn fetch_next(

@@ -1,7 +1,7 @@
 mod enums;
 mod others;
 
-use api_info;
+
 use api_info::ApiModule;
 use api_info::ApiType;
 use api_info::Field;

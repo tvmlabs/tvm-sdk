@@ -68,9 +68,9 @@ pub fn decode_boc(
         &tvm_abi::contract::MAX_SUPPORTED_VERSION,
         params.allow_partial,
     )
-    .map_err(|e| Error::invalid_data_for_decode(e))?;
+    .map_err(Error::invalid_data_for_decode)?;
 
     let data = Detokenizer::detokenize_to_json_value(&tokens)
-        .map_err(|e| Error::invalid_data_for_decode(e))?;
+        .map_err(Error::invalid_data_for_decode)?;
     Ok(ResultOfDecodeBoc { data })
 }

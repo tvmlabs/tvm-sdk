@@ -42,7 +42,7 @@ impl Filter {
             shards,
             start_time: params.start_time,
             end_time: params.end_time,
-            result_fields: params.result.clone().unwrap_or(String::default()),
+            result_fields: params.result.clone().unwrap_or_default(),
         })
     }
 
@@ -66,8 +66,7 @@ impl Filter {
         } else {
             self.shards
                 .iter()
-                .find(|x| x.is_ancestor_for(shard) || shard.is_ancestor_for(x))
-                .is_some()
+                .any(|x| x.is_ancestor_for(shard) || shard.is_ancestor_for(x))
         }
     }
 

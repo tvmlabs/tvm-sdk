@@ -822,7 +822,7 @@ async fn test_resolve_blockchain_config() {
 
     let local_context =
         Arc::new(crate::ClientContext::new(crate::ClientConfig::default()).unwrap());
-    let block_config = base64_encode(&include_bytes!("../boc/test_data/block_config.boc"));
+    let block_config = base64_encode(include_bytes!("../boc/test_data/block_config.boc"));
     let custom_config_params = deserialize_object_from_base64(&block_config, "config").unwrap();
 
     let config = resolve_network_params(&local_context, Some(block_config), None)
@@ -1169,8 +1169,8 @@ async fn test_signature_id() {
     let mut global_version = config.get_global_version().unwrap();
     global_version.capabilities |= GlobalCapabilities::CapSignatureWithId as u64;
     config.set_config(ConfigParamEnum::ConfigParam8(ConfigParam8 { global_version })).unwrap();
-    let config = base64_encode(&config.write_to_bytes().unwrap());
-    let orig_config = base64_encode(&orig_config.raw_config().write_to_bytes().unwrap());
+    let config = base64_encode(config.write_to_bytes().unwrap());
+    let orig_config = base64_encode(orig_config.raw_config().write_to_bytes().unwrap());
 
     let deploy_message: ResultOfEncodeMessage = client
         .request_async(

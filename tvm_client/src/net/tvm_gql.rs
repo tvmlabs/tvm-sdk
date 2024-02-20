@@ -162,14 +162,14 @@ impl ParamsOfQueryOperation {
     fn doc_type(&self) -> String {
         let mut type_words: Vec<String> = self
             .collection()
-            .split_terminator("_")
+            .split_terminator('_')
             .map(|word| {
                 let mut word = word.to_owned();
                 word[..1].make_ascii_uppercase();
                 word
             })
             .collect();
-        type_words[0] = type_words[0].trim_end_matches("s").to_owned();
+        type_words[0] = type_words[0].trim_end_matches('s').to_owned();
         type_words.join("")
     }
 
@@ -177,7 +177,7 @@ impl ParamsOfQueryOperation {
         match self {
             ParamsOfQueryOperation::AggregateCollection(_) => {
                 let doc_type = self.doc_type();
-                format!("aggregate{}{}", doc_type, if doc_type.ends_with("s") { "" } else { "s" })
+                format!("aggregate{}{}", doc_type, if doc_type.ends_with('s') { "" } else { "s" })
             }
             ParamsOfQueryOperation::QueryCollection(p) => p.collection.clone(),
             ParamsOfQueryOperation::WaitForCollection(p) => p.collection.clone(),
@@ -294,7 +294,7 @@ impl QueryOperationBuilder {
                 self.add_query_counterparties_op_params(&p.account, &p.first, &p.after);
             }
         }
-        self.end_op(&op.query_result());
+        self.end_op(op.query_result());
     }
 
     fn add_info(&mut self) {
@@ -309,7 +309,7 @@ impl QueryOperationBuilder {
         fields: &Option<Vec<FieldAggregation>>,
     ) {
         if let Some(ref filter) = filter {
-            self.add_op_param("filter", &filter_type, filter);
+            self.add_op_param("filter", filter_type, filter);
         }
         if let Some(ref fields) = fields {
             if !fields.is_empty() {
@@ -476,7 +476,7 @@ impl GraphQLQuery {
     }
 
     pub fn with_collection_subscription(table: &str, filter: &Value, fields: &str) -> Self {
-        let filter_type = Self::filter_type_for_collection(&table);
+        let filter_type = Self::filter_type_for_collection(table);
 
         let query = format!("subscription {table}($filter: {type}) {{ {table}(filter: $filter) {{ {fields} }} }}",
             type=filter_type,
@@ -500,7 +500,7 @@ impl GraphQLQuery {
         let mut filter_type = if let Some(prefix) = collection.strip_suffix("ies") {
             format!("{}yFilter", prefix)
         } else {
-            format!("{}Filter", collection[0..collection.len() - 1].to_string())
+            format!("{}Filter", &collection[0..collection.len() - 1])
         };
         filter_type[..1].make_ascii_uppercase();
         filter_type

@@ -69,10 +69,10 @@ pub fn scrypt(
     let mut key = SecretBuf(Vec::new());
     key.0.resize(params.dk_len as usize, 0);
     let scrypt_params = scrypt::Params::new(params.log_n, params.r, params.p)
-        .map_err(|err| crypto::Error::scrypt_failed(err))?;
+        .map_err(crypto::Error::scrypt_failed)?;
     let password = base64_decode(&params.password)?;
     let salt = base64_decode(&params.salt)?;
     scrypt::scrypt(&password, &salt, &scrypt_params, &mut key)
-        .map_err(|err| crypto::Error::scrypt_failed(err))?;
+        .map_err(crypto::Error::scrypt_failed)?;
     Ok(ResultOfScrypt { key: hex::encode(&key.0) })
 }

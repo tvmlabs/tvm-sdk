@@ -50,11 +50,13 @@ use crate::tvm::Error;
 
 #[derive(Serialize, Deserialize, ApiType, Debug, Clone)]
 #[serde(tag = "type")]
+#[derive(Default)]
 pub enum AccountForExecutor {
     /// Non-existing account to run a creation internal message.
     /// Should be used with `skip_transaction_check = true` if the message has
     /// no deploy data since transactions on the uninitialized account are
     /// always aborted
+    #[default]
     None,
     /// Emulate uninitialized account to run deploy message
     Uninit,
@@ -68,11 +70,7 @@ pub enum AccountForExecutor {
     },
 }
 
-impl Default for AccountForExecutor {
-    fn default() -> Self {
-        AccountForExecutor::None
-    }
-}
+
 
 const UNLIMITED_BALANCE: u64 = u64::MAX;
 
@@ -96,7 +94,7 @@ impl AccountForExecutor {
             AccountForExecutor::Account { boc, unlimited_balance } => {
                 if unlimited_balance.unwrap_or_default() {
                     let mut account: Account =
-                        deserialize_object_from_boc(context, &boc, "account")?.object;
+                        deserialize_object_from_boc(context, boc, "account")?.object;
                     let original_balance = account
                         .balance()
                         .ok_or_else(|| {
@@ -111,7 +109,7 @@ impl AccountForExecutor {
                     let account = serialize_object_to_cell(&account, "account")?;
                     Ok((account, Some(original_balance)))
                 } else {
-                    let (_, account) = deserialize_cell_from_boc(context, &boc, "account")?;
+                    let (_, account) = deserialize_cell_from_boc(context, boc, "account")?;
                     Ok((account, None))
                 }
             }
@@ -274,7 +272,7 @@ pub async fn run_executor_internal(
 ) -> ClientResult<ResultOfRunExecutor> {
     let message =
         deserialize_object_from_boc::<Message>(&context, &params.message, "message")?.object;
-    let msg_address = message.dst_ref().ok_or_else(|| Error::invalid_message_type())?.clone();
+    let msg_address = message.dst_ref().ok_or_else(Error::invalid_message_type)?.clone();
     let (account, _) = params.account.get_account(&context, msg_address.clone())?;
     let options =
         ResolvedExecutionOptions::from_options(&context, params.execution_options).await?;
@@ -294,7 +292,7 @@ pub async fn run_executor_internal(
             .await?;
 
     let sdk_transaction = tvm_sdk::Transaction::try_from(&transaction)
-        .map_err(|err| Error::can_not_read_transaction(err))?;
+        .map_err(Error::can_not_read_transaction)?;
 
     let fees = calc_transaction_fees(
         &sdk_transaction,
@@ -309,7 +307,7 @@ pub async fn run_executor_internal(
     for i in 0..transaction.msg_count() {
         let message = transaction
             .get_out_msg(i)
-            .map_err(|err| Error::can_not_read_transaction(err))?
+            .map_err(Error::can_not_read_transaction)?
             .ok_or_else(|| Error::can_not_read_transaction("message missing"))?;
         out_messages.push(serialize_object_to_base64(&message, "message")?);
     }
@@ -426,7 +424,7 @@ where
                     Ok((address, balance)) => match &err.downcast_ref::<ExecutorError>() {
                         Some(ExecutorError::NoAcceptError(code, exit_arg)) => {
                             let exit_arg =
-                                exit_arg.as_ref().map(|item| serialize_item(item)).transpose()?;
+                                exit_arg.as_ref().map(serialize_item).transpose()?;
                             Error::tvm_execution_failed(
                                 err_message,
                                 *code,

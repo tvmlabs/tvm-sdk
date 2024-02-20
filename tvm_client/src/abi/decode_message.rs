@@ -69,7 +69,7 @@ impl DecodedMessageBody {
         header: Option<FunctionHeader>,
     ) -> ClientResult<Self> {
         Self::new_with_original_error(body_type, decoded, header)
-            .map_err(|x| Error::invalid_message_for_decode(x))
+            .map_err(Error::invalid_message_for_decode)
     }
 
     fn new_with_original_error(
@@ -189,7 +189,7 @@ fn prepare_decode(
 ) -> ClientResult<(AbiContract, tvm_block::Message)> {
     let abi = params.abi.abi()?;
     let message = deserialize_object_from_boc(context, &params.message, "message")
-        .map_err(|x| Error::invalid_message_for_decode(x))?;
+        .map_err(Error::invalid_message_for_decode)?;
     Ok((abi, message.object))
 }
 
@@ -203,7 +203,7 @@ fn decode_body(
 ) -> ClientResult<DecodedMessageBody> {
     if let Some(function) = function_name {
         decode_with_function(abi, body, is_internal, allow_partial, function, data_layout)
-            .map_err(|err| Error::invalid_message_for_decode(err))
+            .map_err(Error::invalid_message_for_decode)
     } else {
         decode_unknown_function(abi, body, is_internal, allow_partial, data_layout)
     }
@@ -221,7 +221,7 @@ fn decode_unknown_function(
     let decode_output = || {
         let output = abi
             .decode_output(body.clone(), is_internal, allow_partial)
-            .map_err(|err| Error::invalid_message_for_decode(err))?;
+            .map_err(Error::invalid_message_for_decode)?;
         if abi.events().get(&output.function_name).is_some() {
             DecodedMessageBody::new(MessageBodyType::Event, output, None)
         } else {
@@ -231,7 +231,7 @@ fn decode_unknown_function(
     let decode_input = || {
         let input = abi
             .decode_input(body.clone(), is_internal, allow_partial)
-            .map_err(|err| Error::invalid_message_for_decode(err))?;
+            .map_err(Error::invalid_message_for_decode)?;
         let (header, _, _) = tvm_abi::Function::decode_header(
             abi.version(),
             body.clone(),
@@ -247,8 +247,7 @@ fn decode_unknown_function(
         Some(DataLayout::Input) => decode_input(),
         Some(DataLayout::Output) => decode_output(),
         None => decode_output()
-            .or_else(|_| decode_input())
-            .or_else(|_| Err(Error::invalid_message_for_decode(ERROR_TIP))),
+            .or_else(|_| decode_input()).map_err(|_| Error::invalid_message_for_decode(ERROR_TIP)),
     }
 }
 
@@ -266,7 +265,7 @@ fn decode_with_function(
             let decode_output = || {
                 let decoded = function
                     .decode_output(body.clone(), is_internal, allow_partial)
-                    .map_err(|err| Error::invalid_message_for_decode(err))?;
+                    .map_err(Error::invalid_message_for_decode)?;
                 DecodedMessageBody::new(
                     MessageBodyType::Output,
                     DecodedMessage { function_name: function_name.clone(), tokens: decoded },
@@ -276,14 +275,14 @@ fn decode_with_function(
             let decode_input = || {
                 let decoded = function
                     .decode_input(body.clone(), is_internal, allow_partial)
-                    .map_err(|err| Error::invalid_message_for_decode(err))?;
+                    .map_err(Error::invalid_message_for_decode)?;
                 let (header, _, _) = tvm_abi::Function::decode_header(
                     abi.version(),
                     body.clone(),
                     abi.header(),
                     is_internal,
                 )
-                .map_err(|err| Error::invalid_message_for_decode(err))?;
+                .map_err(Error::invalid_message_for_decode)?;
                 DecodedMessageBody::new(
                     MessageBodyType::Input,
                     DecodedMessage { function_name: function_name.clone(), tokens: decoded },
@@ -295,8 +294,7 @@ fn decode_with_function(
                 Some(DataLayout::Input) => decode_input(),
                 Some(DataLayout::Output) => decode_output(),
                 None => decode_output()
-                    .or_else(|_| decode_input())
-                    .or_else(|_| Err(Error::invalid_message_for_decode(ERROR_TIP))),
+                    .or_else(|_| decode_input()).map_err(|_| Error::invalid_message_for_decode(ERROR_TIP)),
             }
         }
         AbiFunctionVariant::Event(event) => {
@@ -307,7 +305,7 @@ fn decode_with_function(
             }
             let decoded = event
                 .decode_input(body, allow_partial)
-                .map_err(|err| Error::invalid_message_for_decode(err))?;
+                .map_err(Error::invalid_message_for_decode)?;
             let decoded = DecodedMessage { function_name, tokens: decoded };
             DecodedMessageBody::new(MessageBodyType::Event, decoded, None)
         }
@@ -376,11 +374,11 @@ pub async fn get_signature_data(
         })?;
         let (signature, hash) = abi
             .get_signature_data(body, Some(address))
-            .map_err(|err| Error::invalid_message_for_decode(err))?;
+            .map_err(Error::invalid_message_for_decode)?;
         let unsigned = extend_data_to_sign(&context, params.signature_id, Some(hash)).await?;
         Ok(ResultOfGetSignatureData {
             signature: hex::encode(&signature),
-            unsigned: base64_encode(&unsigned.unwrap()),
+            unsigned: base64_encode(unsigned.unwrap()),
         })
     } else {
         Err(Error::invalid_message_for_decode("The message body is empty"))

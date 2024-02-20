@@ -209,7 +209,7 @@ pub async fn create_crypto_box(
         }
 
         CryptoBoxSecret::EncryptedSecret { encrypted_secret } => {
-            SecretBuf(base64_decode(&encrypted_secret)?)
+            SecretBuf(base64_decode(encrypted_secret)?)
         }
     };
 

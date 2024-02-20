@@ -54,12 +54,12 @@ lazy_static! {
     static ref DEBOT: Mutex<Option<DebotData>> = Mutex::new(None);
 }
 
-const TEST_DEBOT2: &'static str = "testDebot2";
-const TEST_DEBOT3: &'static str = "testDebot3";
-const TEST_DEBOT4: &'static str = "testDebot4";
-const TEST_DEBOT5: &'static str = "testDebot5";
-const TEST_DEBOTA: &'static str = "tda";
-const TEST_DEBOTB: &'static str = "tdb";
+const TEST_DEBOT2: &str = "testDebot2";
+const TEST_DEBOT3: &str = "testDebot3";
+const TEST_DEBOT4: &str = "testDebot4";
+const TEST_DEBOT5: &str = "testDebot5";
+const TEST_DEBOTA: &str = "tda";
+const TEST_DEBOTB: &str = "tdb";
 
 struct ExpectedTransaction {
     dst: String,
@@ -217,7 +217,7 @@ impl TestBrowser {
             assert_eq!(step.step.inputs.len(), 0);
             assert_eq!(step.step.invokes.len(), 0);
 
-            if step.available_actions.len() == 0 {
+            if step.available_actions.is_empty() {
                 break;
             }
         }
@@ -236,7 +236,7 @@ impl TestBrowser {
     ) {
         let mut info = DebotInfo::default();
         info.dabi = Some(abi);
-        info.dabi_version = format!("2.0");
+        info.dabi_version = "2.0".to_string();
         let state = Arc::new(BrowserData {
             current: Mutex::new(Default::default()),
             next: Mutex::new(steps),
@@ -292,14 +292,14 @@ impl TestBrowser {
                 state.current.lock().await.outputs.push(msg);
             }
             ParamsOfAppDebotBrowser::Switch { context_id } => {
-                assert_eq!(state.switch_started.swap(true, Ordering::Relaxed), false);
+                assert!(!state.switch_started.swap(true, Ordering::Relaxed));
                 if context_id == STATE_EXIT {
                     state.finished.store(true, Ordering::Relaxed);
                 }
                 state.current.lock().await.available_actions.clear();
             }
             ParamsOfAppDebotBrowser::SwitchCompleted => {
-                assert_eq!(state.switch_started.swap(false, Ordering::Relaxed), true);
+                assert!(state.switch_started.swap(false, Ordering::Relaxed));
             }
             ParamsOfAppDebotBrowser::ShowAction { action } => {
                 state.current.lock().await.available_actions.push(action);
@@ -407,7 +407,7 @@ impl TestBrowser {
             let wc = i8::from_str_radix(wc_and_addr[0], 10).unwrap();
 
             if wc == DEBOT_WC {
-                assert_eq!(SUPPORTED_INTERFACES.contains(&interface_id), true);
+                assert!(SUPPORTED_INTERFACES.contains(&interface_id));
                 let abi = if SUPPORTED_INTERFACES[0] == interface_id {
                     Abi::Json(ECHO_ABI.to_owned())
                 } else if SUPPORTED_INTERFACES[1] == interface_id {
@@ -570,7 +570,7 @@ async fn init_debot(client: Arc<TestClient>) -> DebotData {
                 function_name: "constructor".to_owned(),
                 header: None,
                 input: Some(json!({
-                    "targetAbi": hex::encode(&target_abi.json_string().unwrap().as_bytes()),
+                    "targetAbi": hex::encode(target_abi.json_string().unwrap().as_bytes()),
                     "targetAddr": target_addr,
                 })),
             }),
@@ -587,7 +587,7 @@ async fn init_debot(client: Arc<TestClient>) -> DebotData {
             debot_abi.clone(),
             "setAbi",
             json!({
-                "debotAbi": hex::encode(&debot_abi.json_string().unwrap().as_bytes())
+                "debotAbi": hex::encode(debot_abi.json_string().unwrap().as_bytes())
             }),
             Signer::None,
         )
@@ -624,7 +624,7 @@ async fn init_debot2(client: Arc<TestClient>) -> DebotData {
             debot_addr.clone(),
             debot_abi.clone(),
             "setAbi",
-            json!({ "debotAbi": hex::encode(&debot_abi.json_string().unwrap().as_bytes()) }),
+            json!({ "debotAbi": hex::encode(debot_abi.json_string().unwrap().as_bytes()) }),
             Signer::Keys { keys: keys.clone() },
         )
         .await
@@ -649,7 +649,7 @@ async fn init_debot4(client: Arc<TestClient>) -> DebotData {
     let call_set = CallSet::some_with_function_and_input(
         "constructor",
         json!({
-            "targetAbi": hex::encode(&target_abi.json_string().unwrap().as_bytes()),
+            "targetAbi": hex::encode(target_abi.json_string().unwrap().as_bytes()),
             "targetAddr": target_addr,
         }),
     );
@@ -668,7 +668,7 @@ async fn init_debot4(client: Arc<TestClient>) -> DebotData {
             debot_abi.clone(),
             "setAbi",
             json!({
-                "debotAbi": hex::encode(&debot_abi.json_string().unwrap().as_bytes())
+                "debotAbi": hex::encode(debot_abi.json_string().unwrap().as_bytes())
             }),
             Signer::Keys { keys: keys.clone() },
         )
@@ -714,7 +714,7 @@ async fn init_simple_debot(client: Arc<TestClient>, name: &str) -> DebotData {
             debot_addr.clone(),
             debot_abi.clone(),
             "setABI",
-            json!({ "dabi": hex::encode(&debot_abi.json_string().unwrap().as_bytes()) }),
+            json!({ "dabi": hex::encode(debot_abi.json_string().unwrap().as_bytes()) }),
             Signer::Keys { keys: keys.clone() },
         )
         .await
@@ -755,7 +755,7 @@ async fn init_debot5(client: Arc<TestClient>, count: u32) -> (String, String) {
                     debot_addr.clone(),
                     debot_abi.clone(),
                     "setABI",
-                    json!({ "dabi": hex::encode(&debot_abi.json_string().unwrap().as_bytes()) }),
+                    json!({ "dabi": hex::encode(debot_abi.json_string().unwrap().as_bytes()) }),
                     Signer::Keys { keys: keys.clone() },
                 )
                 .await
@@ -799,7 +799,7 @@ async fn init_debot_pair(
         debot1_addr.clone(),
         debot1_abi.clone(),
         "setAbi",
-        json!({ "debotAbi": hex::encode(&debot1_abi.json_string().unwrap().as_bytes()) }),
+        json!({ "debotAbi": hex::encode(debot1_abi.json_string().unwrap().as_bytes()) }),
         Signer::Keys { keys: keys.clone() },
     );
 
@@ -807,7 +807,7 @@ async fn init_debot_pair(
         debot2_addr.clone(),
         debot2_abi.clone(),
         "setAbi",
-        json!({ "debotAbi": hex::encode(&debot2_abi.json_string().unwrap().as_bytes()) }),
+        json!({ "debotAbi": hex::encode(debot2_abi.json_string().unwrap().as_bytes()) }),
         Signer::Keys { keys: keys.clone() },
     );
 
@@ -1084,10 +1084,10 @@ async fn test_debot_inner_interfaces() {
         0,
         vec![format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3")],
     );
-    info.name = Some(format!("TestSdk"));
-    info.version = Some(format!("0.4.0"));
-    info.caption = Some(format!("Test for SDK interface"));
-    info.hello = Some(format!("Hello, I'm a test."));
+    info.name = Some("TestSdk".to_string());
+    info.version = Some("0.4.0".to_string());
+    info.caption = Some("Test for SDK interface".to_string());
+    info.hello = Some("Hello, I'm a test.".to_string());
     TestBrowser::execute_with_details(
         client.clone(),
         debot_addr.clone(),
@@ -1285,7 +1285,7 @@ async fn test_debot_getinfo() {
             interfaces: vec![
                 "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
             ],
-            dabi_version: format!("2.0"),
+            dabi_version: "2.0".to_string(),
         },
         vec![],
     )
@@ -1306,9 +1306,9 @@ async fn test_debot_approve() {
             "0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a".to_owned(),
         ],
     );
-    info.caption = Some(format!("Test for approve callback and signing handle"));
-    info.name = Some(format!("testDebot6"));
-    info.hello = Some(format!("testDebot6"));
+    info.caption = Some("Test for approve callback and signing handle".to_string());
+    info.name = Some("testDebot6".to_string());
+    info.hello = Some("testDebot6".to_string());
     let steps = serde_json::from_value(json!([])).unwrap();
     TestBrowser::execute_with_details(
         client.clone(),
@@ -1372,12 +1372,12 @@ async fn test_debot_json_interface() {
             hello: Some("Test DeBot 7".to_owned()),
             language: Some("en".to_owned()),
             dabi: Some(abi),
-            icon: Some(format!("")),
+            icon: Some(String::new()),
             interfaces: vec![
                 "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
                 "0x442288826041d564ccedc579674f17c1b0a3452df799656a9167a41ab270ec19".to_owned(),
             ],
-            dabi_version: format!("2.0"),
+            dabi_version: "2.0".to_string(),
         },
         vec![],
     )
@@ -1551,7 +1551,7 @@ async fn test_debot_json_parse() {
             format!("0x442288826041d564ccedc579674f17c1b0a3452df799656a9167a41ab270ec19"),
         ],
     );
-    info.dabi_version = format!("2.2");
+    info.dabi_version = "2.2".to_string();
     TestBrowser::execute_with_details(
         client.clone(),
         debot_addr.clone(),
@@ -1628,7 +1628,7 @@ async fn test_debot_target_abi() {
     let DebotData { debot_addr, target_addr: _, keys, abi } =
         init_simple_debot(client.clone(), "testDebot16").await;
     let mut info = build_info(abi, 16, vec![]);
-    info.dabi_version = format!("2.2");
+    info.dabi_version = "2.2".to_string();
     TestBrowser::execute_with_details(
         client.clone(),
         debot_addr.clone(),
@@ -1755,9 +1755,9 @@ fn build_info(abi: String, n: u32, interfaces: Vec<String>) -> DebotInfo {
         hello: Some(name.clone()),
         language: Some("en".to_owned()),
         dabi: Some(abi),
-        icon: Some(format!("")),
+        icon: Some(String::new()),
         interfaces,
-        dabi_version: format!("2.0"),
+        dabi_version: "2.0".to_string(),
     }
 }
 
@@ -1775,9 +1775,9 @@ fn build_info_abi2_2(abi: String, n: u32, interfaces: Vec<String>) -> DebotInfo 
         hello: Some(name.clone()),
         language: Some("en".to_owned()),
         dabi: Some(abi),
-        icon: Some(format!("")),
+        icon: Some(String::new()),
         interfaces,
-        dabi_version: format!("2.2"),
+        dabi_version: "2.2".to_string(),
     }
 }
 
@@ -1787,11 +1787,11 @@ async fn download_account(client: &Arc<TestClient>, addr: &str) -> Option<String
         .request_async(
             "net.query_collection",
             ParamsOfQueryCollection {
-                collection: format!("accounts"),
+                collection: "accounts".to_string(),
                 filter: Some(json!({
                     "id": { "eq": addr }
                 })),
-                result: format!("boc"),
+                result: "boc".to_string(),
                 limit: Some(1),
                 order: None,
             },
@@ -1814,7 +1814,7 @@ async fn assert_get_method(
     returns: Value,
 ) {
     let client = client.clone();
-    let acc_boc = download_account(&client, &addr).await.expect("Account not found");
+    let acc_boc = download_account(&client, addr).await.expect("Account not found");
 
     let call_params = ParamsOfEncodeMessage {
         abi: abi.clone(),

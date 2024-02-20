@@ -240,7 +240,7 @@ async fn query() {
         .unwrap();
 
     let version = info.result["data"]["info"]["version"].as_str().unwrap();
-    assert_eq!(version.split(".").count(), 3);
+    assert_eq!(version.split('.').count(), 3);
 }
 
 #[test]
@@ -255,7 +255,7 @@ fn query_sync() {
         .unwrap();
 
     let version = info.result["data"]["info"]["version"].as_str().unwrap();
-    assert_eq!(version.split(".").count(), 3);
+    assert_eq!(version.split('.').count(), 3);
 
     let result: ClientResult<ResultOfQuery> = client.request(
         "net.query",
@@ -302,7 +302,7 @@ async fn all_accounts() {
         .await
         .unwrap();
 
-    assert!(accounts.result.len() > 0);
+    assert!(!accounts.result.is_empty());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -402,15 +402,15 @@ async fn message_sending_addresses() {
     })
     .unwrap();
     let link = client.get_server_link().unwrap();
-    link.update_stat(&vec!["a".to_string(), "e".to_string()], EndpointStat::MessageUndelivered)
+    link.update_stat(&["a".to_string(), "e".to_string()], EndpointStat::MessageUndelivered)
         .await;
-    let bad: HashSet<_> = vec!["a".to_string(), "e".to_string()].iter().cloned().collect();
+    let bad: HashSet<_> = ["a".to_string(), "e".to_string()].iter().cloned().collect();
     for _ in 0..100 {
         let addresses = link.get_addresses_for_sending().await;
         let tail: HashSet<_> = addresses[addresses.len() - 2..].iter().cloned().collect();
         assert_eq!(tail, bad);
     }
-    link.update_stat(&vec!["a".to_string(), "e".to_string()], EndpointStat::MessageDelivered).await;
+    link.update_stat(&["a".to_string(), "e".to_string()], EndpointStat::MessageDelivered).await;
     let mut a_good = false;
     let mut e_good = false;
     for _ in 0..100 {
@@ -1540,7 +1540,7 @@ async fn query_using_ws() {
         .await
         .unwrap();
 
-    assert!(accounts.result.len() > 0);
+    assert!(!accounts.result.is_empty());
     let messages: ResultOfQueryCollection = client
         .request_async(
             "net.query_collection",
@@ -1554,7 +1554,7 @@ async fn query_using_ws() {
         .await
         .unwrap();
 
-    assert!(messages.result.len() > 0);
+    assert!(!messages.result.is_empty());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

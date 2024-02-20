@@ -74,7 +74,7 @@ async fn test_calc_storage_fee() {
         .request_async(
             "utils.calc_storage_fee",
             ParamsOfCalcStorageFee {
-                account: base64_encode(&include_bytes!("../boc/test_data/account.boc")),
+                account: base64_encode(include_bytes!("../boc/test_data/account.boc")),
                 period: 1000,
             },
         )
@@ -111,7 +111,7 @@ fn test_compression() {
         )
         .unwrap();
 
-    let decompressed = base64_decode(&decompressed.decompressed).unwrap();
+    let decompressed = base64_decode(decompressed.decompressed).unwrap();
 
     assert_eq!(decompressed, uncompressed);
 }
@@ -140,7 +140,7 @@ fn test_decompression() {
         )
         .unwrap();
 
-    let decompressed = base64_decode(&decompressed.decompressed).unwrap();
+    let decompressed = base64_decode(decompressed.decompressed).unwrap();
 
     assert_eq!(decompressed, uncompressed);
 }

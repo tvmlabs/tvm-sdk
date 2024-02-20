@@ -134,21 +134,21 @@ impl<'a> BlockFields<'a> {
     }
 
     pub fn prev_ref(&self) -> Option<RefFields> {
-        self.0.get("prev_ref").map(|x| RefFields(x))
+        self.0.get("prev_ref").map(RefFields)
     }
 
     pub fn prev_alt_ref(&self) -> Option<RefFields> {
-        self.0.get("prev_alt_ref").map(|x| RefFields(x))
+        self.0.get("prev_alt_ref").map(RefFields)
     }
 
     pub fn master(&self) -> Option<MasterFields> {
-        self.0.get("master").map(|x| MasterFields(x))
+        self.0.get("master").map(MasterFields)
     }
 
     pub fn account_blocks(&self) -> Option<Vec<AccountBlockFields>> {
         self.0["account_blocks"]
             .as_array()
-            .map(|x| x.iter().map(|x| AccountBlockFields(x)).collect())
+            .map(|x| x.iter().map(AccountBlockFields).collect())
     }
 
     fn has_shards(&self) -> bool {
@@ -204,7 +204,7 @@ impl<'a> AccountBlockFields<'a> {
     pub fn transactions(&self) -> Option<Vec<AccountBlockTransactionFields>> {
         self.0["transactions"]
             .as_array()
-            .map(|x| x.iter().map(|x| AccountBlockTransactionFields(x)).collect())
+            .map(|x| x.iter().map(AccountBlockTransactionFields).collect())
     }
 }
 
@@ -232,7 +232,7 @@ impl<'a> ShardHashFields<'a> {
     }
 
     pub fn descr(&self) -> Option<DescrFields> {
-        self.0.get("descr").map(|x| DescrFields(x))
+        self.0.get("descr").map(DescrFields)
     }
 }
 
@@ -240,7 +240,7 @@ pub(crate) struct MasterFields<'a>(&'a Value);
 
 impl<'a> MasterFields<'a> {
     pub fn shard_hashes(&self) -> Option<Vec<ShardHashFields>> {
-        self.0["shard_hashes"].as_array().map(|x| x.iter().map(|x| ShardHashFields(x)).collect())
+        self.0["shard_hashes"].as_array().map(|x| x.iter().map(ShardHashFields).collect())
     }
 }
 
@@ -318,16 +318,16 @@ impl MasterBlock {
 
 fn shard_ident(workchain_id: i32, hex_prefix: &str) -> ClientResult<ShardIdent> {
     let prefix =
-        u64::from_str_radix(hex_prefix, 16).map_err(|e| crate::client::Error::internal_error(e))?;
-    Ok(ShardIdent::with_tagged_prefix(workchain_id, prefix)
-        .map_err(|e| crate::client::Error::internal_error(e))?)
+        u64::from_str_radix(hex_prefix, 16).map_err(crate::client::Error::internal_error)?;
+    ShardIdent::with_tagged_prefix(workchain_id, prefix)
+        .map_err(crate::client::Error::internal_error)
 }
 
 pub(crate) fn shard_ident_parse(s: &str) -> ClientResult<ShardIdent> {
-    let (workchain_id, tail) = match s.find(":") {
+    let (workchain_id, tail) = match s.find(':') {
         Some(colon_pos) => {
             let workchain_id = i32::from_str_radix(&s[..colon_pos], 10)
-                .map_err(|e| crate::client::Error::internal_error(e))?;
+                .map_err(crate::client::Error::internal_error)?;
             (workchain_id, &s[colon_pos + 1..])
         }
         None => (0, s),
@@ -346,7 +346,7 @@ pub(crate) fn serialize_shard_ident<S>(
 where
     S: Serializer,
 {
-    serializer.serialize_str(&shard_ident_to_string(&shard_ident))
+    serializer.serialize_str(&shard_ident_to_string(shard_ident))
 }
 
 struct StringVisitor;

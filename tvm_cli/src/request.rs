@@ -46,9 +46,9 @@ fn resolve_json_path<'a>(value: &'a Value, _path: &str) -> &'a Value {
 }
 
 fn include_json(json_ref: &str) -> Result<String, CliError> {
-    let ref_parts: Vec<&str> = json_ref.split("+").collect();
+    let ref_parts: Vec<&str> = json_ref.split('+').collect();
     let home = dirs::home_dir().unwrap().to_str().unwrap().to_string();
-    let ref_file = ref_parts[0].replace("~", home.as_str());
+    let ref_file = ref_parts[0].replace('~', home.as_str());
     let ref_path = if ref_parts.len() > 1 { ref_parts[1] } else { "" };
     if ref_file.ends_with(".json") {
         let ref_string = std::fs::read_to_string(&ref_file)
@@ -60,7 +60,7 @@ fn include_json(json_ref: &str) -> Result<String, CliError> {
     } else {
         let ref_bytes = std::fs::read(&ref_file)
             .map_err(|e| CliError::with_message(format!("Include [{}] failed: {}", ref_file, e)))?;
-        Ok(format!("\"{}\"", base64_encode(&ref_bytes)))
+        Ok(format!("\"{}\"", base64_encode(ref_bytes)))
     }
 }
 
@@ -75,7 +75,7 @@ fn parse_sync_response<R: DeserializeOwned>(response: *const String) -> Result<R
             if value["error"].is_object() {
                 Err(CliError::with_message(format!(
                     "Function failed: {}",
-                    value["error"].to_string()
+                    value["error"]
                 )))
             } else {
                 Ok(serde_json::from_value(value["result"].clone()).unwrap())
@@ -100,7 +100,7 @@ pub fn command(args: &[String]) -> Result<(), CliError> {
     let api = get_api()?;
     for arg in args.iter() {
         match state {
-            ParseState::OptionOrFunctionName if arg.starts_with("-") => {
+            ParseState::OptionOrFunctionName if arg.starts_with('-') => {
                 option = arg[1..].to_string();
                 state = ParseState::OptionValue
             }
@@ -204,12 +204,12 @@ pub fn command(args: &[String]) -> Result<(), CliError> {
         ))
     };
     unsafe { tc_destroy_context(context) };
-    let result = match response {
+    
+    match response {
         Ok(value) => {
             println!("{}", reformat_json(value)?);
             Ok(())
         }
         Err(err) => Err(err),
-    };
-    result
+    }
 }

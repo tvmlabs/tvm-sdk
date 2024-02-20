@@ -26,7 +26,7 @@ impl MonitorQueues {
     }
 
     pub fn ensure(&mut self, name: &str) -> &mut MonitoringQueue {
-        self.queues.entry(name.to_string()).or_insert_with(|| MonitoringQueue::new())
+        self.queues.entry(name.to_string()).or_insert_with(MonitoringQueue::new)
     }
 
     pub fn get_info(&self, queue: &str) -> MonitoringQueueInfo {
@@ -49,7 +49,7 @@ impl MonitorQueues {
     }
 
     pub fn has_buffered(&self) -> bool {
-        self.queues.values().find(|x| !x.buffered.is_empty()).is_some()
+        self.queues.values().any(|x| !x.buffered.is_empty())
     }
 
     pub fn get_buffered(&self, now_ms: u64) -> Option<BufferedMessages> {

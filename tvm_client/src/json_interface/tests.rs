@@ -117,7 +117,7 @@ fn check_client_error_msg(
             expected_tips[i], i, error.message,
         )
     }
-    if expected_helpers_suggestions.len() > 0 {
+    if !expected_helpers_suggestions.is_empty() {
         let actual_classes = error.data["suggest_use_helper_for"].as_array().unwrap();
         assert_eq!(
             actual_classes.len(),

@@ -29,7 +29,7 @@ where
         return Ok(transaction.calc_fees());
     }
 
-    let mut error = match extract_error(&transaction, contract_info, show_tips_on_error).await {
+    let mut error = match extract_error(transaction, contract_info, show_tips_on_error).await {
         Err(err) => err,
         Ok(_) => Error::transaction_aborted(),
     };
@@ -58,7 +58,7 @@ where
 
     if let Some(reason) = &transaction.compute.skipped_reason {
         let (address, balance) = contract_info().await?;
-        return Err(Error::tvm_execution_skipped(&reason, &address, balance));
+        return Err(Error::tvm_execution_skipped(reason, &address, balance));
     }
 
     if transaction.compute.success.is_none() || !transaction.compute.success.unwrap() {

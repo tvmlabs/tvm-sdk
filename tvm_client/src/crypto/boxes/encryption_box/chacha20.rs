@@ -64,7 +64,7 @@ impl EncryptionBox for ChaCha20EncryptionBox {
             algorithm: Some("ChaCha20".to_owned()),
             hdpath: self.hdpath.clone(),
             public: None,
-            options: Some(json!({ "nonce": hex::encode(&self.nonce) })),
+            options: Some(json!({ "nonce": hex::encode(self.nonce) })),
         })
     }
 

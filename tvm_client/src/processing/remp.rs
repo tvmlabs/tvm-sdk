@@ -18,7 +18,7 @@ where
     if "null" == string {
         Ok(serde_json::Value::Null)
     } else {
-        Ok(serde_json::from_str(&string).map_err(|err| serde::de::Error::custom(err))?)
+        Ok(serde_json::from_str(&string).map_err(serde::de::Error::custom)?)
     }
 }
 

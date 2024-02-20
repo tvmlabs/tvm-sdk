@@ -115,8 +115,7 @@ pub async fn iterator_next(
             .iterators
             .lock()
             .await
-            .get(&params.iterator)
-            .map(|x| x.clone())
+            .get(&params.iterator).cloned()
             .ok_or(crate::client::Error::invalid_handle(params.iterator, "iterator"))?
     };
     let mut locked = iterator.lock().await;

@@ -52,7 +52,7 @@ where
 fn convert_to_utf8(hex_str: &mut Option<String>) -> Result<(), String> {
     if let Some(hex) = hex_str {
         *hex_str =
-            Some(str_hex_to_utf8(&hex).ok_or(format!("failed to convert bytes to utf8 string"))?);
+            Some(str_hex_to_utf8(hex).ok_or("failed to convert bytes to utf8 string".to_string())?);
     }
     Ok(())
 }

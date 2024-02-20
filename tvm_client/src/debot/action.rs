@@ -8,7 +8,9 @@ use super::context::from_hex_to_utf8_str;
 use crate::encoding::decode_abi_number;
 
 #[derive(Clone)]
+#[derive(Default)]
 pub enum AcType {
+    #[default]
     Empty = 0,
     RunAction = 1,
     RunMethod = 2,
@@ -36,11 +38,7 @@ impl From<u8> for AcType {
     }
 }
 
-impl Default for AcType {
-    fn default() -> Self {
-        AcType::Empty
-    }
-}
+
 
 /// Describes a debot action in a Debot Context.
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -109,7 +107,7 @@ impl DAction {
     }
 
     pub fn is_instant(&self) -> bool {
-        self.attrs.split(',').find(|val| val.to_owned() == "instant").map(|_| true).unwrap_or(false)
+        self.attrs.split(',').find(|val| *val == "instant").map(|_| true).unwrap_or(false)
     }
 
     pub fn func_attr(&self) -> Option<String> {

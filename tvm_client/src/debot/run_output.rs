@@ -45,8 +45,8 @@ impl RunOutput {
     pub fn decode_actions(&self) -> Result<Option<Vec<DAction>>, String> {
         match self.return_value.as_ref() {
             Some(val) => serde_json::from_value(val["actions"].clone())
-                .map_err(|_| format!("internal error: failed to parse actions"))
-                .map(|v| Some(v)),
+                .map_err(|_| "internal error: failed to parse actions".to_string())
+                .map(Some),
             None => Ok(None),
         }
     }

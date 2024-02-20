@@ -83,7 +83,7 @@ pub(crate) type Key264 = SecretBufConst<33>;
 pub(crate) type Key512 = SecretBufConst<64>;
 
 pub(crate) fn hex_decode_secret(hex: &str) -> ClientResult<SecretBuf> {
-    crate::encoding::hex_decode(hex).map(|data| SecretBuf(data))
+    crate::encoding::hex_decode(hex).map(SecretBuf)
 }
 
 pub(crate) fn hex_decode_secret_const<const N: usize>(
@@ -142,7 +142,7 @@ pub(crate) fn key192(slice: &[u8]) -> ClientResult<Key192> {
 
 pub(crate) fn hmac_sha512(key: &[u8], data: &[u8]) -> [u8; 64] {
     let mut hmac = Hmac::<Sha512>::new_from_slice(key).unwrap();
-    hmac.update(&data);
+    hmac.update(data);
     let mut result = [0u8; 64];
     result.copy_from_slice(&hmac.finalize().into_bytes());
     result

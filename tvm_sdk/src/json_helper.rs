@@ -112,7 +112,7 @@ pub mod opt_cell {
         S: serde::Serializer,
     {
         if let Some(cell) = value {
-            let str_value = base64_encode(&tvm_types::boc::write_boc(&cell).map_err(|err| {
+            let str_value = base64_encode(tvm_types::boc::write_boc(cell).map_err(|err| {
                 serde::ser::Error::custom(format!("Cannot serialize BOC: {}", err))
             })?);
             serializer.serialize_some(&str_value)
@@ -126,10 +126,10 @@ pub fn deserialize_tree_of_cells_from_base64<'de, D>(b64: &str) -> Result<Cell, 
 where
     D: serde::Deserializer<'de>,
 {
-    let bytes = base64_decode(&b64)
+    let bytes = base64_decode(b64)
         .map_err(|err| D::Error::custom(format!("error decode base64: {}", err)))?;
 
-    tvm_types::boc::read_single_root_boc(&bytes)
+    tvm_types::boc::read_single_root_boc(bytes)
         .map_err(|err| D::Error::custom(format!("BOC read error: {}", err)))
 }
 

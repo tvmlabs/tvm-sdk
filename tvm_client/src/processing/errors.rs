@@ -222,6 +222,6 @@ impl Error {
     }
 
     pub fn next_remp_status_timeout() -> ClientError {
-        error(ErrorCode::NextRempStatusTimeout, format!("Next REMP status awaiting timeout"))
+        error(ErrorCode::NextRempStatusTimeout, "Next REMP status awaiting timeout".to_string())
     }
 }

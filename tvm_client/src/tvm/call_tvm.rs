@@ -85,7 +85,7 @@ pub(crate) fn call_tvm(
     match engine.execute() {
         Err(err) => {
             let exception = tvm_vm::error::tvm_exception(err)
-                .map_err(|err| Error::unknown_execution_error(err))?;
+                .map_err(Error::unknown_execution_error)?;
             let code = if let Some(code) = exception.custom_code() {
                 code
             } else {
@@ -132,7 +132,7 @@ pub(crate) fn call_tvm_msg(
     stack
         .push(tvm_vm::int!(balance)) // token balance of contract
         .push(tvm_vm::int!(0)) // token balance of msg
-        .push(StackItem::Cell(msg_cell.into())) // message
+        .push(StackItem::Cell(msg_cell)) // message
         .push(StackItem::Slice(msg.body().unwrap_or_default())) // message body
         .push(function_selector); // function selector
 
@@ -172,7 +172,7 @@ fn build_contract_info(
     init_code_hash: Option<&UInt256>,
 ) -> tvm_vm::SmartContractInfo {
     let mut info = tvm_vm::SmartContractInfo::with_myself(
-        address.serialize().and_then(|cell| SliceData::load_cell(cell)).unwrap_or_default(),
+        address.serialize().and_then(SliceData::load_cell).unwrap_or_default(),
     );
     info.block_lt = block_lt;
     info.trans_lt = tr_lt;

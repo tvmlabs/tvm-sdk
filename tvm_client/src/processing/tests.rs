@@ -77,7 +77,7 @@ fn assert_events(events: &[ProcessingEvent], remp_enabled: bool) {
     };
     let mut i = 0;
     for expected in expected {
-        if let Some(name) = expected.strip_suffix("*") {
+        if let Some(name) = expected.strip_suffix('*') {
             while i < events.len() && processing_event_name(events.get(i)) == name {
                 i += 1;
             }
@@ -340,12 +340,10 @@ async fn test_error_resolving() {
     let remp_enabled = remp_enabled(&client).await;
     let original_code = if remp_enabled {
         ErrorCode::MessageRejected
+    } else if TestClient::abi_version() == 1 {
+        ErrorCode::TransactionWaitTimeout
     } else {
-        if TestClient::abi_version() == 1 {
-            ErrorCode::TransactionWaitTimeout
-        } else {
-            ErrorCode::MessageExpired
-        }
+        ErrorCode::MessageExpired
     } as u32;
 
     // deploy to non-exesting account
@@ -606,7 +604,7 @@ async fn test_deploy_from_tvc_v1() {
     let state_init =
         deserialize_object_from_cell::<StateInit>(state_init_cell.clone(), "state init").unwrap();
     let tvc = base64_encode(
-        &TVC::new(Some(state_init.code.clone().unwrap()), Some("Some Contract".to_string()))
+        TVC::new(Some(state_init.code.clone().unwrap()), Some("Some Contract".to_string()))
             .write_to_bytes()
             .unwrap(),
     );

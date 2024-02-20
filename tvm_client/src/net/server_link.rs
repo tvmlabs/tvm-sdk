@@ -274,11 +274,11 @@ impl NetworkState {
             }
             let mut selected = Err(crate::client::Error::net_module_not_init());
             let mut unauthorised = None;
-            while futures.len() != 0 {
+            while !futures.is_empty() {
                 let (result, _, remain_futures) = futures::future::select_all(futures).await;
                 if let Ok(endpoint) = &result {
                     if endpoint.latency() <= self.config.max_latency as u64 {
-                        if remain_futures.len() > 0 {
+                        if !remain_futures.is_empty() {
                             self.client_env.spawn(async move {
                                 futures::future::join_all(remain_futures).await;
                             });
@@ -369,8 +369,8 @@ fn strip_endpoint(endpoint: &str) -> &str {
     endpoint
         .trim_start_matches("https://")
         .trim_start_matches("http://")
-        .trim_end_matches("/")
-        .trim_end_matches("\\")
+        .trim_end_matches('/')
+        .trim_end_matches('\\')
 }
 
 fn same_endpoint(a: &str, b: &str) -> bool {
@@ -396,7 +396,7 @@ impl ServerLink {
             .clone()
             .or(config.server_address.clone().map(|address| vec![address]))
             .ok_or(crate::client::Error::net_module_not_init())?;
-        if endpoint_addresses.len() == 0 {
+        if endpoint_addresses.is_empty() {
             return Err(crate::client::Error::net_module_not_init());
         }
         let endpoint_addresses = replace_endpoints(endpoint_addresses);
@@ -671,7 +671,7 @@ impl ServerLink {
         let mut result = self.query(&query, endpoint.as_ref()).await?;
         if latency_detection_required {
             let current_endpoint = self.state.get_query_endpoint().await?;
-            let server_info = query.get_server_info(&params, &result)?;
+            let server_info = query.get_server_info(params, &result)?;
             current_endpoint.apply_server_info(
                 &self.client_env,
                 &self.config,
@@ -790,7 +790,7 @@ impl ServerLink {
             self.config.query_timeout,
         )
         .await
-        .add_network_url(&self)
+        .add_network_url(self)
         .await?;
 
         serde_json::from_value(result["data"]["info"]["endpoints"].clone()).map_err(|_| {

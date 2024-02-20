@@ -53,7 +53,7 @@ fn create_runtime() -> ClientResult<Runtime> {
         .enable_io()
         .enable_time()
         .build()
-        .map_err(|err| Error::cannot_create_runtime(err))
+        .map_err(Error::cannot_create_runtime)
 }
 
 pub(crate) struct ClientEnv {
@@ -70,7 +70,7 @@ impl ClientEnv {
         let client = ClientBuilder::new()
             .cookie_provider(cookies.clone())
             .build()
-            .map_err(|err| Error::http_client_create_error(err))?;
+            .map_err(Error::http_client_create_error)?;
 
         let async_runtime_handle = match tokio::runtime::Handle::try_current() {
             Ok(handle) => handle,
@@ -90,9 +90,9 @@ impl ClientEnv {
         let mut map = HeaderMap::new();
         for (key, value) in headers {
             let header_name = HeaderName::from_str(key.as_str())
-                .map_err(|err| Error::http_request_create_error(err))?;
+                .map_err(Error::http_request_create_error)?;
             let header_value = HeaderValue::from_str(value.as_str())
-                .map_err(|err| Error::http_request_create_error(err))?;
+                .map_err(Error::http_request_create_error)?;
             map.insert(header_name, header_value);
         }
         Ok(map)
@@ -180,7 +180,7 @@ impl ClientEnv {
         let (write, read) = client.split();
 
         let write = write
-            .sink_map_err(|err| Error::websocket_send_error(err))
+            .sink_map_err(Error::websocket_send_error)
             .with(|text| async move { Ok(WsMessage::text(text)) });
 
         let read = read.filter_map(|result| async move {
@@ -209,11 +209,11 @@ impl ClientEnv {
         {
             let fetch_mock = { self.network_mock.write().await.dequeue_fetch(url, &body) };
             if let Some(fetch) = fetch_mock {
-                return fetch.get_result(&self, url).await;
+                return fetch.get_result(self, url).await;
             }
         }
         let method = Method::from_str(method.as_str())
-            .map_err(|err| Error::http_request_create_error(err))?;
+            .map_err(Error::http_request_create_error)?;
 
         let mut request = self
             .http_client
@@ -227,14 +227,14 @@ impl ClientEnv {
             request = request.body(body);
         }
 
-        let response = request.send().await.map_err(|err| Error::http_request_send_error(err))?;
+        let response = request.send().await.map_err(Error::http_request_send_error)?;
 
         Ok(FetchResult {
             headers: Self::header_map_to_string_map(response.headers()),
             status: response.status().as_u16(),
             url: response.url().to_string(),
             remote_address: response.remote_addr().map(|x| x.to_string()),
-            body: response.text().await.map_err(|err| Error::http_request_parse_error(err))?,
+            body: response.text().await.map_err(Error::http_request_parse_error)?,
         })
     }
 }
@@ -255,14 +255,14 @@ impl LocalStorage {
     ) -> ClientResult<Self> {
         tokio::fs::create_dir_all(Self::calc_storage_path(&local_storage_path, &storage_name))
             .await
-            .map_err(|err| Error::local_storage_error(err))?;
+            .map_err(Error::local_storage_error)?;
 
         Ok(Self { local_storage_path, storage_name })
     }
 
     fn calc_storage_path(local_storage_path: &Option<String>, storage_name: &str) -> PathBuf {
         let local_storage_path =
-            local_storage_path.clone().map(|path| PathBuf::from(path)).unwrap_or_else(|| {
+            local_storage_path.clone().map(PathBuf::from).unwrap_or_else(|| {
                 home::home_dir().unwrap_or(PathBuf::from("/")).join(LOCAL_STORAGE_DEFAULT_DIR_NAME)
             });
 
@@ -304,17 +304,16 @@ impl KeyValueStorage for LocalStorage {
     async fn put_bin(&self, key: &str, value: &[u8]) -> ClientResult<()> {
         let path = self.key_to_path(key)?;
 
-        tokio::fs::write(&path, value).await.map_err(|err| Error::local_storage_error(err))
+        tokio::fs::write(&path, value).await.map_err(Error::local_storage_error)
     }
 
     /// Get string value by a given key from the storage
     async fn get_str(&self, key: &str) -> ClientResult<Option<String>> {
         self.get_bin(key)
             .await
-            .map(|opt| opt.map(|vec| String::from_utf8(vec)))?
+            .map(|opt| opt.map(String::from_utf8))?
             .transpose()
-            .map_err(|err| Error::local_storage_error(err))
-            .map_err(|err| err.into())
+            .map_err(Error::local_storage_error)
     }
 
     /// Put string value by a given key into the storage
@@ -326,6 +325,6 @@ impl KeyValueStorage for LocalStorage {
     async fn remove(&self, key: &str) -> ClientResult<()> {
         let path = self.key_to_path(key)?;
 
-        tokio::fs::remove_file(&path).await.map_err(|err| Error::local_storage_error(err))
+        tokio::fs::remove_file(&path).await.map_err(Error::local_storage_error)
     }
 }

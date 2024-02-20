@@ -79,9 +79,9 @@ impl Endpoint {
     }
 
     fn expand_address(base_url: &str) -> String {
-        let mut base_url = base_url.trim_end_matches("/").to_lowercase();
+        let mut base_url = base_url.trim_end_matches('/').to_lowercase();
         if !base_url.starts_with(HTTP_PROTOCOL) && !base_url.starts_with(HTTPS_PROTOCOL) {
-            let stripped_url = base_url.split_once(&['/', ':']).map(|x| x.0).unwrap_or(&base_url);
+            let stripped_url = base_url.split_once(['/', ':']).map(|x| x.0).unwrap_or(&base_url);
             let protocol = if stripped_url == "localhost"
                 || stripped_url == "127.0.0.1"
                 || stripped_url == "0.0.0.0"
@@ -180,7 +180,7 @@ impl Endpoint {
         info: &Value,
     ) -> ClientResult<()> {
         if let Some(version) = info["version"].as_str() {
-            let mut parts: Vec<&str> = version.split(".").collect();
+            let mut parts: Vec<&str> = version.split('.').collect();
             parts.resize(3, "0");
             let parse_part = |i: usize| {
                 u32::from_str_radix(parts[i], 10).map_err(|err| {
@@ -200,9 +200,9 @@ impl Endpoint {
             self.server_time_delta
                 .store(server_time - ((info_request_time + now) / 2) as i64, Ordering::Relaxed);
             if let Some(latency) = info["latency"].as_i64() {
-                self.server_latency.store(latency.abs() as u64, Ordering::Relaxed);
+                self.server_latency.store(latency.unsigned_abs(), Ordering::Relaxed);
                 self.next_latency_detection_time.store(
-                    now as u64 + config.latency_detection_interval as u64,
+                    now + config.latency_detection_interval as u64,
                     Ordering::Relaxed,
                 );
             }

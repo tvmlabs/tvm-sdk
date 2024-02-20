@@ -48,7 +48,7 @@ impl Default for ResultOfGetAccountState {
 }
 
 fn string_with_zero() -> String {
-    format!("0")
+    "0".to_string()
 }
 
 pub async fn call_routine(
@@ -99,7 +99,7 @@ pub async fn call_routine(
             debug!("encryptAuth({})", arg_json);
             let encrypted = nacl_box(ton, arg_json)?;
             Ok(json!({
-                "encrypted": hex::encode(base64_decode(&encrypted).unwrap())
+                "encrypted": hex::encode(base64_decode(encrypted).unwrap())
             }))
         }
         "genKeypairFromSecret" => {
@@ -116,7 +116,7 @@ pub async fn call_routine(
             let arg_json = arg_json?;
             debug!("genRandom({})", arg_json);
             let rnd = generate_random(ton, &arg_json)?;
-            let buf = base64_decode(&rnd)
+            let buf = base64_decode(rnd)
                 .map_err(|e| format!("failed to decode random buffer to byte array: {}", e))?;
             Ok(json!({ "buffer": hex::encode(buf) }))
         }
@@ -125,8 +125,8 @@ pub async fn call_routine(
 }
 
 pub fn convert_string_to_tokens(_ton: TonClient, arg: &str) -> Result<String, String> {
-    let parts: Vec<&str> = arg.split(".").collect();
-    if parts.len() >= 1 && parts.len() <= 2 {
+    let parts: Vec<&str> = arg.split('.').collect();
+    if !parts.is_empty() && parts.len() <= 2 {
         let mut result = String::new();
         result += parts[0];
         if parts.len() == 2 {
@@ -153,7 +153,7 @@ pub(super) fn format_string(fstr: &str, params: &serde_json::Value) -> String {
     let mut str_builder = String::new();
     for (i, s) in fstr.split("{}").enumerate() {
         str_builder += s;
-        str_builder += &format_arg(&params, i);
+        str_builder += &format_arg(params, i);
     }
     str_builder
 }
@@ -164,7 +164,7 @@ pub(super) fn format_arg(params: &serde_json::Value, i: usize) -> String {
         return arg.to_owned();
     }
     if let Some(arg) = params["str".to_owned() + &idx].as_str() {
-        return String::from_utf8(hex::decode(arg).unwrap_or(vec![])).unwrap_or(String::new());
+        return String::from_utf8(hex::decode(arg).unwrap_or(vec![])).unwrap_or_default();
     }
     if let Some(arg) = params["number".to_owned() + &idx].as_str() {
         // TODO: need to use big number instead of u64
@@ -190,7 +190,7 @@ pub(super) fn format_arg(params: &serde_json::Value, i: usize) -> String {
 pub(super) fn load_boc_from_file(_ton: TonClient, arg: &str) -> Result<String, String> {
     let boc =
         std::fs::read(arg).map_err(|e| format!(r#"failed to read boc file "{}": {}"#, arg, e))?;
-    Ok(base64_encode(&boc))
+    Ok(base64_encode(boc))
 }
 
 pub(super) async fn sign_hash(
@@ -198,7 +198,7 @@ pub(super) async fn sign_hash(
     arg_json: serde_json::Value,
     signer: SigningBoxHandle,
 ) -> Result<String, String> {
-    let hash_str = arg_json["hash"].as_str().ok_or(format!(r#""hash" argument not found"#))?;
+    let hash_str = arg_json["hash"].as_str().ok_or(r#""hash" argument not found"#.to_string())?;
     let hash_as_bigint = decode_abi_bigint(hash_str).map_err(|err| err.to_string())?;
     let result = signing_box_sign(
         ton,
@@ -213,7 +213,7 @@ pub(super) async fn sign_hash(
 }
 
 pub(super) fn generate_random(ton: TonClient, args: &serde_json::Value) -> Result<String, String> {
-    let len_str = get_arg(&args, "length")?;
+    let len_str = get_arg(args, "length")?;
     let len =
         u32::from_str_radix(&len_str, 10).map_err(|e| format!("failed to parse length: {}", e))?;
     let result = generate_random_bytes(ton, ParamsOfGenerateRandomBytes { length: len })
@@ -231,7 +231,7 @@ pub(super) fn nacl_box(ton: TonClient, args: serde_json::Value) -> Result<String
     let result = crate::crypto::nacl_box(
         ton,
         ParamsOfNaclBox {
-            decrypted: base64_encode(&get_arg(&args, "decrypted")?),
+            decrypted: base64_encode(get_arg(&args, "decrypted")?),
             nonce: get_arg(&args, "nonce")?,
             their_public: hex::encode(public.to_bytes_be().1),
             secret: hex::encode(secret.to_bytes_be().1),
@@ -267,8 +267,8 @@ pub(super) async fn get_account_state(
             .unwrap_or_default(),
         Err(e) => {
             debug!("getAccountState failed: {}", e);
-            let def = ResultOfGetAccountState::default();
-            def
+            
+            ResultOfGetAccountState::default()
         }
     }
 }
@@ -277,7 +277,7 @@ pub(super) async fn get_account(
     ton: TonClient,
     args: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let addr = get_arg(&args, "addr")?.to_lowercase();
+    let addr = get_arg(args, "addr")?.to_lowercase();
     let mut accounts = query_collection(
         ton.clone(),
         ParamsOfQueryCollection {
@@ -294,8 +294,8 @@ pub(super) async fn get_account(
     .map_err(|e| format!("account query failed: {}", e))?
     .result;
 
-    if accounts.len() == 0 {
-        return Err(format!("account not found"));
+    if accounts.is_empty() {
+        return Err("account not found".to_string());
     }
 
     let acc = parse_account(ton, ParamsOfParse { boc: get_arg(&accounts.swap_remove(0), "boc")? })

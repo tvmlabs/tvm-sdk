@@ -79,11 +79,11 @@ pub(crate) fn decode_std_base64(data: &str) -> ClientResult<MsgAddressInt> {
     let crc = tvm_crc16(&vec[..34]).to_be_bytes();
 
     if crc != vec[34..36] || vec[0] & 0x3f != 0x11 {
-        return Err(client::Error::invalid_address("CRC mismatch", &data).into());
+        return Err(client::Error::invalid_address("CRC mismatch", &data));
     };
 
     MsgAddressInt::with_standart(None, vec[1] as i8, SliceData::from_raw(vec[2..34].to_vec(), 256))
-        .map_err(|err| client::Error::invalid_address(err, &data).into())
+        .map_err(|err| client::Error::invalid_address(err, &data))
 }
 
 fn encode_base64(
@@ -108,17 +108,17 @@ fn encode_base64(
 
         if as_url { Ok(result.replace('/', "_").replace('+', "-")) } else { Ok(result) }
     } else {
-        Err(client::Error::invalid_address("Non-std address", &address.to_string()).into())
+        Err(client::Error::invalid_address("Non-std address", &address.to_string()))
     }
 }
 
 pub(crate) fn hex_decode(hex: &str) -> ClientResult<Vec<u8>> {
-    if hex.starts_with("x") || hex.starts_with("X") {
+    if hex.starts_with('x') || hex.starts_with('X') {
         hex_decode(&hex[1..])
     } else if hex.starts_with("0x") || hex.starts_with("0X") {
         hex_decode(&hex[2..])
     } else {
-        hex::decode(hex).map_err(|err| client::Error::invalid_hex(&hex, err))
+        hex::decode(hex).map_err(|err| client::Error::invalid_hex(hex, err))
     }
 }
 
@@ -132,9 +132,9 @@ pub(crate) fn long_num_to_json_string(num: u64) -> String {
 
 pub fn decode_abi_bigint(string: &str) -> ClientResult<BigInt> {
     let result = if string.starts_with("-0x") || string.starts_with("-0X") {
-        BigInt::parse_bytes(&string[3..].as_bytes(), 16).map(|number| -number)
+        BigInt::parse_bytes(string[3..].as_bytes(), 16).map(|number| -number)
     } else if string.starts_with("0x") || string.starts_with("0X") {
-        BigInt::parse_bytes(&string[2..].as_bytes(), 16)
+        BigInt::parse_bytes(string[2..].as_bytes(), 16)
     } else {
         BigInt::parse_bytes(string.as_bytes(), 10)
     };
@@ -148,5 +148,5 @@ pub fn decode_abi_number<N: NumCast>(string: &str) -> ClientResult<N> {
 }
 
 pub fn slice_from_cell(cell: Cell) -> ClientResult<SliceData> {
-    SliceData::load_cell(cell).map_err(|err| client::Error::invalid_data(err))
+    SliceData::load_cell(cell).map_err(client::Error::invalid_data)
 }

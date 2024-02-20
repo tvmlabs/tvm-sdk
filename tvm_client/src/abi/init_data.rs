@@ -81,7 +81,7 @@ fn update_initial_data_internal(
             let abi = abi.json_string()?;
             let data = slice_from_cell(data)?;
             tvm_abi::json_abi::update_contract_data(&abi, &init_data.to_string(), data)
-                .map_err(|err| Error::encode_init_data_failed(err))?
+                .map_err(Error::encode_init_data_failed)?
                 .into_cell()
         }
         _ => data,
@@ -90,11 +90,11 @@ fn update_initial_data_internal(
     match initial_pubkey {
         Some(pubkey) => {
             let data = slice_from_cell(data)?;
-            let pubkey = hex_decode(&pubkey)?.try_into().map_err(|vec: Vec<u8>| {
+            let pubkey = hex_decode(pubkey)?.try_into().map_err(|vec: Vec<u8>| {
                 Error::encode_init_data_failed(format!("invalid public key size {}", vec.len()))
             })?;
             Ok(tvm_abi::Contract::insert_pubkey(data, &pubkey)
-                .map_err(|err| Error::encode_init_data_failed(err))?
+                .map_err(Error::encode_init_data_failed)?
                 .into_cell())
         }
         _ => Ok(data),
@@ -103,7 +103,7 @@ fn update_initial_data_internal(
 
 fn default_init_data() -> ClientResult<Cell> {
     tvm_abi::Contract::insert_pubkey(Default::default(), &[0; tvm_types::ED25519_PUBLIC_KEY_LENGTH])
-        .map_err(|err| Error::encode_init_data_failed(err))
+        .map_err(Error::encode_init_data_failed)
         .map(SliceData::into_cell)
 }
 
@@ -148,7 +148,7 @@ pub fn encode_initial_data(
                 &params.abi.json_string()?,
                 params.initial_data.map(|data| data.to_string()).as_deref(),
             )
-            .map_err(|err| Error::encode_init_data_failed(err))?,
+            .map_err(Error::encode_init_data_failed)?,
         )?
     } else {
         update_initial_data_internal(
@@ -212,14 +212,14 @@ pub fn decode_initial_data(
 
     let tokens = abi
         .decode_data(data.clone(), params.allow_partial)
-        .map_err(|e| Error::invalid_data_for_decode(e))?;
+        .map_err(Error::invalid_data_for_decode)?;
 
     let initial_data = tvm_abi::token::Detokenizer::detokenize_to_json_value(&tokens)
-        .map_err(|e| Error::invalid_data_for_decode(e))?;
+        .map_err(Error::invalid_data_for_decode)?;
 
     let initial_pubkey = tvm_abi::Contract::get_pubkey(&data)
-        .map_err(|e| Error::invalid_data_for_decode(e))?
+        .map_err(Error::invalid_data_for_decode)?
         .ok_or_else(|| Error::invalid_data_for_decode("no public key in contract data"))?;
 
-    Ok(ResultOfDecodeInitialData { initial_data, initial_pubkey: hex::encode(&initial_pubkey) })
+    Ok(ResultOfDecodeInitialData { initial_data, initial_pubkey: hex::encode(initial_pubkey) })
 }

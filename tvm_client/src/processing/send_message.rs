@@ -87,12 +87,12 @@ impl SendingMessage {
         abi: Option<&Abi>,
     ) -> ClientResult<Self> {
         // Check message
-        let deserialized = deserialize_object_from_boc::<Message>(&context, serialized, "message")?;
+        let deserialized = deserialize_object_from_boc::<Message>(context, serialized, "message")?;
         let id = deserialized.cell.repr_hash().as_hex_string();
         let dst = deserialized.object.dst().ok_or(Error::message_has_not_destination_address())?;
 
         let message_expiration_time =
-            get_message_expiration_time(context.clone(), abi, &serialized)?;
+            get_message_expiration_time(context.clone(), abi, serialized)?;
         if let Some(message_expiration_time) = message_expiration_time {
             if message_expiration_time <= context.env.now_ms() {
                 return Err(Error::message_already_expired());
@@ -114,7 +114,7 @@ impl SendingMessage {
             })
             .await;
         }
-        let shard_block_id = match find_last_shard_block(&context, &self.dst, None).await {
+        let shard_block_id = match find_last_shard_block(context, &self.dst, None).await {
             Ok(block) => block.to_string(),
             Err(err) => {
                 if let Some(callback) = &callback {
@@ -148,7 +148,7 @@ impl SendingMessage {
             return net
                 .send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint))
                 .await
-                .add_endpoint_from_context(&context, &endpoint)
+                .add_endpoint_from_context(context, &endpoint)
                 .await
                 .map(|_| vec![address]);
         }
@@ -183,7 +183,7 @@ impl SendingMessage {
                 last_result = Some(result);
             }
         }
-        if succeeded.len() > 0 {
+        if !succeeded.is_empty() {
             return Ok(succeeded);
         }
         Err(if let Some(Err(err)) = last_result {

@@ -74,7 +74,7 @@ pub(crate) fn get_message_expiration_time(
         .unwrap_or_default(),
         None => None,
     };
-    let time = header.as_ref().map_or(None, |x| x.expire).map(|x| x as u64 * 1000);
+    let time = header.as_ref().and_then(|x| x.expire).map(|x| x as u64 * 1000);
     Ok(time)
 }
 
@@ -160,15 +160,15 @@ pub(crate) async fn resolve_error(
                 Some(insert_position) => {
                     original_error.message = format!(
                         "{}.\nPossible reason: {}.{}",
-                        &original_error.message[..insert_position].trim_end().trim_end_matches("."),
-                        remove_exit_code(&exit_code, err.message.trim_end_matches(".")),
+                        &original_error.message[..insert_position].trim_end().trim_end_matches('.'),
+                        remove_exit_code(&exit_code, err.message.trim_end_matches('.')),
                         &original_error.message[insert_position..],
                     )
                 }
                 None => {
                     original_error.message = format!(
                         "{}.\nPossible reason: {}",
-                        original_error.message.trim_end_matches("."),
+                        original_error.message.trim_end_matches('.'),
                         remove_exit_code(&exit_code, &err.message),
                     )
                 }
@@ -179,7 +179,7 @@ pub(crate) async fn resolve_error(
         Ok(message) => {
             original_error.message = format!(
                 "{}. {}. Possible reason: message has not been delivered",
-                original_error.message.trim_end_matches("."),
+                original_error.message.trim_end_matches('.'),
                 message,
             );
             if original_error.code == ErrorCode::MessageExpired as u32 {

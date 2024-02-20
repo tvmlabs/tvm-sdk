@@ -162,14 +162,14 @@ pub async fn proof_block_data(
     params: ParamsOfProofBlockData,
 ) -> ClientResult<()> {
     let engine =
-        ProofHelperEngineImpl::new(context).await.map_err(|err| Error::proof_check_failed(err))?;
+        ProofHelperEngineImpl::new(context).await.map_err(Error::proof_check_failed)?;
 
     let id_opt = params.block["id"].as_str();
 
     let boc = if let Some(boc) = params.block["boc"].as_str() {
         base64_decode(boc)?
     } else if let Some(id) = id_opt {
-        engine.download_block_boc(id).await.map_err(|err| Error::proof_check_failed(err))?
+        engine.download_block_boc(id).await.map_err(Error::proof_check_failed)?
     } else {
         return Err(Error::invalid_data("Block's BOC or id are required"));
     };
@@ -179,7 +179,7 @@ pub async fn proof_block_data(
     engine.proof_block_boc(&root_hash, &block, &boc).await?;
 
     let block_json =
-        json::serialize_block(root_hash, block, boc).map_err(|err| Error::invalid_data(err))?;
+        json::serialize_block(root_hash, block, boc).map_err(Error::invalid_data)?;
 
     json::compare_blocks(&params.block, &block_json)
 }
@@ -219,22 +219,22 @@ pub async fn proof_transaction_data(
     params: ParamsOfProofTransactionData,
 ) -> ClientResult<()> {
     let engine =
-        ProofHelperEngineImpl::new(context).await.map_err(|err| Error::proof_check_failed(err))?;
+        ProofHelperEngineImpl::new(context).await.map_err(Error::proof_check_failed)?;
 
     let (root_hash, block_id, boc, transaction) =
         transaction_get_required_data(&engine, &params.transaction).await?;
 
     let block_boc =
-        engine.download_block_boc(&block_id).await.map_err(|err| Error::invalid_data(err))?;
+        engine.download_block_boc(&block_id).await.map_err(Error::invalid_data)?;
 
     let (block, block_id) = deserialize_object_from_boc_bin(&block_boc)?;
 
     engine.proof_block_boc(&block_id, &block, &block_boc).await?;
 
-    let block_info = block.read_info().map_err(|err| Error::invalid_data(err))?;
-    let block_extra = block.read_extra().map_err(|err| Error::invalid_data(err))?;
+    let block_info = block.read_info().map_err(Error::invalid_data)?;
+    let block_extra = block.read_extra().map_err(Error::invalid_data)?;
     let account_blocks =
-        block_extra.read_account_blocks().map_err(|err| Error::invalid_data(err))?;
+        block_extra.read_account_blocks().map_err(Error::invalid_data)?;
 
     let mut transaction_found_in_block = false;
     account_blocks
@@ -247,7 +247,7 @@ pub async fn proof_transaction_data(
                 Ok(true)
             })
         })
-        .map_err(|err| Error::internal_error(err))?;
+        .map_err(Error::internal_error)?;
 
     if !transaction_found_in_block {
         return Err(Error::proof_check_failed(format!(
@@ -264,7 +264,7 @@ pub async fn proof_transaction_data(
         block_info.shard().workchain_id(),
         boc,
     )
-    .map_err(|err| Error::invalid_data(err))?;
+    .map_err(Error::invalid_data)?;
 
     json::compare_transactions(&params.transaction, &transaction_json)
 }
@@ -307,7 +307,7 @@ pub async fn proof_message_data(
 ) -> ClientResult<()> {
     let engine = ProofHelperEngineImpl::new(Arc::clone(&context))
         .await
-        .map_err(|err| Error::proof_check_failed(err))?;
+        .map_err(Error::proof_check_failed)?;
 
     let (root_hash, transaction_id, boc, message) =
         message_get_required_data(&engine, &params.message).await?;
@@ -315,7 +315,7 @@ pub async fn proof_message_data(
     let transaction_json = engine
         .query_transaction_data(&transaction_id, "id boc in_msg out_msgs")
         .await
-        .map_err(|err| Error::proof_check_failed(err))?;
+        .map_err(Error::proof_check_failed)?;
 
     if !is_transaction_refers_to_message(
         &transaction_json,
@@ -331,7 +331,7 @@ pub async fn proof_message_data(
         .await?;
 
     let message_json =
-        json::serialize_message(root_hash, message, boc).map_err(|err| Error::invalid_data(err))?;
+        json::serialize_message(root_hash, message, boc).map_err(Error::invalid_data)?;
 
     json::compare_messages(&params.message, &message_json)
 }
@@ -341,7 +341,7 @@ pub(crate) async fn transaction_get_required_data<'trans>(
     transaction_json: &'trans Value,
 ) -> ClientResult<(UInt256, Cow<'trans, str>, Vec<u8>, Transaction)> {
     let id_opt = Cow::Borrowed(&transaction_json["id"]);
-    let mut block_id_opt = transaction_json["block_id"].as_str().map(|str| Cow::Borrowed(str));
+    let mut block_id_opt = transaction_json["block_id"].as_str().map(Cow::Borrowed);
     let mut boc_opt = Cow::Borrowed(&transaction_json["boc"]);
 
     if id_opt.is_null() && boc_opt.is_null() {
@@ -390,17 +390,17 @@ async fn transaction_query_required_fields<'trans>(
         fields.push("block_id");
     }
 
-    if fields.len() > 0 {
+    if !fields.is_empty() {
         let mut transaction_json = engine
             .query_transaction_data(id, &fields.join(" "))
             .await
-            .map_err(|err| Error::proof_check_failed(err))?;
+            .map_err(Error::proof_check_failed)?;
         if boc_opt.is_null() {
             *boc_opt = Cow::Owned(transaction_json["boc"].take());
         }
         if block_id_opt.is_none() {
             *block_id_opt =
-                transaction_json["block_id"].take_string().map(|string| Cow::Owned(string));
+                transaction_json["block_id"].take_string().map(Cow::Owned);
         }
     }
 
@@ -415,11 +415,7 @@ async fn message_get_required_data<'msg>(
     let mut trans_id_opt = if let Some(dst_id_str) = message_json["dst_transaction"]["id"].as_str()
     {
         Some(Cow::Borrowed(dst_id_str))
-    } else if let Some(src_id_str) = message_json["src_transaction"]["id"].as_str() {
-        Some(Cow::Borrowed(src_id_str))
-    } else {
-        None
-    };
+    } else { message_json["src_transaction"]["id"].as_str().map(Cow::Borrowed) };
     let mut boc_opt = Cow::Borrowed(&message_json["boc"]);
 
     if id_opt.is_null() && boc_opt.is_null() {
@@ -469,11 +465,11 @@ async fn message_query_required_fields<'msg>(
         fields.push("dst_transaction(timeout: 0){id}");
     }
 
-    if fields.len() > 0 {
+    if !fields.is_empty() {
         let mut message_json = engine
             .query_message_data(id, &fields.join(" "))
             .await
-            .map_err(|err| Error::proof_check_failed(err))?;
+            .map_err(Error::proof_check_failed)?;
         if boc_opt.is_null() {
             *boc_opt = Cow::Owned(message_json["boc"].take());
         }
@@ -564,7 +560,7 @@ impl BlockProof {
         let signatures_json = &value["signatures"];
         let root_boc = base64_decode(signatures_json.get_str("proof")?)?;
 
-        let root = tvm_types::boc::read_single_root_boc(&root_boc)?;
+        let root = tvm_types::boc::read_single_root_boc(root_boc)?;
 
         let mut pure_signatures = Vec::new();
         let signatures_json_vec = signatures_json.get_array("signatures")?;
@@ -690,7 +686,7 @@ impl BlockProof {
             )
         }
         let prev_key_block_seqno = virt_block.read_info()?.prev_key_block_seqno();
-        if prev_key_block_proof.id().seq_no as u32 != prev_key_block_seqno {
+        if prev_key_block_proof.id().seq_no != prev_key_block_seqno {
             anyhow::bail!(
                 "Can't verify block {} using key block {} because the block declares different \
                     previous key block seqno {}",
@@ -725,7 +721,7 @@ impl BlockProof {
         virt_block_info: &BlockInfo,
     ) -> Result<()> {
         if virt_block_info.key_block() {
-            self.pre_check_key_block_proof(&virt_block)?;
+            self.pre_check_key_block_proof(virt_block)?;
         }
 
         let (validators, validators_hash_short) =
@@ -906,7 +902,7 @@ impl BlockProof {
         }
         // Check signatures
         let checked_data =
-            Block::build_data_for_sign(&self.id().root_hash(), &self.id().file_hash());
+            Block::build_data_for_sign(self.id().root_hash(), self.id().file_hash());
         let total_weight: u64 = validators_list.iter().map(|v| v.weight).sum();
         let weight = check_crypto_signatures(&self.signatures, &validators_list, &checked_data)
             .map_err(|err| {
