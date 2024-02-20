@@ -13,12 +13,10 @@ use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
 
 use futures::future::BoxFuture;
 use futures::future::FutureExt;
 use serde_json::Value;
-use tokio::sync::Mutex;
 
 use super::tests_interfaces::*;
 use super::*;
