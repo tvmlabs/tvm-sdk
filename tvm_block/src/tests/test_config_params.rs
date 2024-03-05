@@ -17,8 +17,6 @@ use tvm_types::read_single_root_boc;
 
 use super::*;
 use crate::write_read_and_assert;
-use crate::Serializable;
-use crate::ValidatorDescr;
 use crate::VarUInteger32;
 
 fn get_config_param0() -> ConfigParam0 {

@@ -10,7 +10,6 @@
 // limitations under the License.
 
 use std::cmp;
-use std::convert::TryInto;
 use std::fmt;
 use std::fmt::LowerHex;
 use std::fmt::UpperHex;

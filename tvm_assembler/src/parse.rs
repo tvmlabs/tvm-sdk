@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::cmp::PartialOrd;
 use std::ops::Bound;
 use std::ops::Range;
 use std::ops::RangeBounds;

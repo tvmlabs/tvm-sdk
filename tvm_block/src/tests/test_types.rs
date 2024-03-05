@@ -11,7 +11,6 @@
 
 use num::CheckedAdd;
 use num::CheckedSub;
-use Cell;
 
 use super::*;
 use crate::write_read_and_assert;

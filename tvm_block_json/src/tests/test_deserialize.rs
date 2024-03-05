@@ -13,19 +13,8 @@
 // limitations under the License.
 
 use tvm_block::ConfigCopyleft;
-use tvm_block::ConfigParam3;
-use tvm_block::ConfigParam32;
-use tvm_block::ConfigParam33;
-use tvm_block::ConfigParam35;
-use tvm_block::ConfigParam36;
-use tvm_block::ConfigParam37;
-use tvm_block::ConfigParam39;
-use tvm_block::ConfigParam4;
-use tvm_block::ConfigParam6;
 use tvm_block::ConfigVotingSetup;
-use tvm_block::DelectorParams;
 use tvm_block::Number16;
-use tvm_block::SigPubKey;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;

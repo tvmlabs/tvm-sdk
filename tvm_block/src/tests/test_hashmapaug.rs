@@ -16,10 +16,8 @@ use std::fmt;
 
 use tvm_types::hm_label;
 use tvm_types::HashmapSubtree;
-use tvm_types::IBitstring;
 
 use super::*;
-use crate::define_HashmapAugE;
 use crate::AddSub;
 use crate::Grams;
 

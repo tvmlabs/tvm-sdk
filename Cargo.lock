@@ -3559,17 +3559,12 @@ name = "tvm_abi"
 version = "1.47.0"
 dependencies = [
  "anyhow",
- "base64 0.21.7",
- "byteorder",
  "chrono",
  "hex",
  "num-bigint",
  "num-traits",
- "pretty_assertions",
  "serde",
- "serde_derive",
  "serde_json",
- "sha2 0.10.8",
  "thiserror",
  "tvm_block",
  "tvm_types 1.47.0",
@@ -3607,7 +3602,6 @@ dependencies = [
  "num-traits",
  "serde",
  "serde_json",
- "thiserror",
  "tvm_types 1.47.0",
  "tvm_vm",
 ]

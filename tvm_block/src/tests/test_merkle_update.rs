@@ -30,7 +30,6 @@ use crate::Grams;
 use crate::HashmapE;
 use crate::HashmapType;
 use crate::InternalMessageHeader;
-use crate::MerkleProof;
 use crate::Message;
 use crate::MsgAddressInt;
 use crate::MsgEnvelope;

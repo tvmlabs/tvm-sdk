@@ -12,7 +12,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::convert::TryInto;
 use std::str::FromStr;
 
 use serde_json::Map;

@@ -15,9 +15,8 @@ hex.workspace = true
 log.workspace = true
 num.workspace = true
 num-traits.workspace = true
-serde = { features = ["derive"], workspace = true }
+serde.workspace = true
 serde_json.workspace = true
-thiserror.workspace = true
 #
 tvm_types.workspace = true
 tvm_vm.workspace = true

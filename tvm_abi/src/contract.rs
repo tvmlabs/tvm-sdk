@@ -15,7 +15,6 @@ use std::fmt::Display;
 use std::io;
 
 use serde::de::Error as SerdeError;
-use serde_json;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
 use tvm_types::error;

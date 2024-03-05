@@ -19,7 +19,6 @@ use crate::signature::BlockProof;
 use crate::write_read_and_assert;
 use crate::ShardIdent;
 use crate::BASE_WORKCHAIN_ID;
-use crate::MASTERCHAIN_ID;
 
 #[test]
 fn test_validator_info_new_default() {

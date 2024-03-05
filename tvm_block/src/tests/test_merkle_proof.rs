@@ -9,14 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::collections::HashSet;
 use std::fs::File;
 
 use tvm_types::BocReader;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::CellType;
-use tvm_types::UsageTree;
 
 use super::*;
 use crate::blocks::BlkPrevInfo;
@@ -24,7 +19,6 @@ use crate::blocks::BlockExtra;
 use crate::blocks::ExtBlkRef;
 use crate::blocks::ValueFlow;
 use crate::shard::ShardIdent;
-use crate::Serializable;
 
 #[test]
 fn test_merkle_proof_invalid_arg() {

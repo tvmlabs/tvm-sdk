@@ -12,7 +12,6 @@
 //! ABI param and parsing for it.
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::convert::TryInto;
 use std::str::FromStr;
 
 use num_bigint::BigInt;

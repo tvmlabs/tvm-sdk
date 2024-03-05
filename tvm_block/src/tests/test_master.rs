@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
 use std::collections::HashSet;
 
 use rand::Rng;
@@ -18,11 +17,7 @@ use tvm_types::read_single_root_boc;
 use super::*;
 use crate::transactions::tests::generate_test_shard_account_block;
 use crate::write_read_and_assert;
-use crate::Block;
 use crate::BlockExtra;
-use crate::Deserializable;
-use crate::ExtBlkRef;
-use crate::HashmapAugType;
 use crate::MsgAddressInt;
 use crate::ShardStateUnsplit;
 use crate::BASE_WORKCHAIN_ID;
