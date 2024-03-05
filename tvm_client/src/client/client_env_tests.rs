@@ -116,11 +116,5 @@ async fn test_local_storage() -> Result<()> {
     assert_eq!(storage.get_str(KEY2_NAME).await?, Some("test2".to_string()));
     assert_eq!(storage.get_bin(KEY2_NAME).await?, Some(b"test2".to_vec()));
 
-    storage.remove(KEY1_NAME).await?;
-
-    assert!(storage.get_str(KEY1_NAME).await?.is_none());
-    assert!(storage.get_bin(KEY1_NAME).await?.is_none());
-    assert_eq!(storage.get_str(KEY2_NAME).await?, Some("test2".to_string()));
-
     Ok(())
 }

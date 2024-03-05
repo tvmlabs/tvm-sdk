@@ -12,7 +12,7 @@ use crate::abi::ParamsOfEncodeMessage;
 use crate::abi::Signer;
 use crate::client::NetworkMock;
 use crate::error::ClientError;
-use crate::net::subscriptions::ParamsOfSubscribe;
+// use crate::net::subscriptions::ParamsOfSubscribe;
 use crate::net::tvm_gql::GraphQLQuery;
 use crate::processing::ParamsOfProcessMessage;
 use crate::tests::TestClient;

@@ -9,17 +9,13 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-
 use bip39::Language;
 use bip39::Mnemonic;
 use bip39::MnemonicType;
 use ed25519_dalek::SigningKey;
-use hmac::Hmac;
-use pbkdf2::pbkdf2;
 use rand::RngCore;
 use serde_repr::Deserialize_repr;
 use serde_repr::Serialize_repr;
-use sha2::Sha512;
 use zeroize::Zeroize;
 use zeroize::ZeroizeOnDrop;
 
@@ -275,8 +271,6 @@ pub trait CryptoMnemonic {
     ) -> ClientResult<KeyPair>;
     fn phrase_from_entropy(&self, entropy: &[u8]) -> ClientResult<String>;
     fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool>;
-    fn seed_from_phrase_and_salt(&self, phrase: &String, salt: &String) -> ClientResult<String>;
-    fn entropy_from_phrase(&self, phrase: &String) -> ClientResult<String>;
 }
 
 pub(super) fn check_phrase(mnemonic: &dyn CryptoMnemonic, phrase: &String) -> ClientResult<()> {
@@ -343,25 +337,6 @@ impl CryptoMnemonic for Bip39Mnemonic {
 
     fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool> {
         Ok(Mnemonic::validate(phrase.as_str(), self.language).is_ok())
-    }
-
-    fn seed_from_phrase_and_salt(&self, phrase: &String, salt: &String) -> ClientResult<String> {
-        check_phrase(self, phrase)?;
-        let mnemonic = Mnemonic::from_phrase(phrase, self.language)
-            .map_err(crypto::Error::bip39_invalid_phrase)?;
-
-        let salt = format!("mnemonic{}", salt);
-        let mut seed = vec![0u8; 64];
-        pbkdf2::<Hmac<Sha512>>(mnemonic.phrase().as_bytes(), salt.as_bytes(), 2048, &mut seed);
-        Ok(hex::encode(seed))
-    }
-
-    #[allow(dead_code)]
-    fn entropy_from_phrase(&self, phrase: &String) -> ClientResult<String> {
-        check_phrase(self, phrase)?;
-        let mnemonic = Mnemonic::from_phrase(phrase, self.language)
-            .map_err(crypto::Error::bip39_invalid_phrase)?;
-        Ok(hex::encode(mnemonic.entropy()))
     }
 }
 
@@ -465,16 +440,6 @@ impl CryptoMnemonic for TonMnemonic {
 
     fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool> {
         Ok(self.internal_is_phrase_valid(phrase))
-    }
-
-    fn seed_from_phrase_and_salt(&self, phrase: &String, salt: &String) -> ClientResult<String> {
-        check_phrase(self, phrase)?;
-        Ok(hex::encode(Self::seed_from_string(phrase, salt, 100_000).as_ref()))
-    }
-
-    fn entropy_from_phrase(&self, phrase: &String) -> ClientResult<String> {
-        check_phrase(self, phrase)?;
-        Ok(hex::encode(Self::entropy_from_string(phrase).as_ref()))
     }
 }
 

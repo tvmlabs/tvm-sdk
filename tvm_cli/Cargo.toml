@@ -1,10 +1,17 @@
 [package]
-description = "TON CLient Command Line Tool"
-homepage = "https://tvmlabs.io"
-keywords = ["TVM", "SDK", "smart contract", "tvmlabs"]
-name = "tvm_cli"
+description = "command line tool for TVM compatible blockchains"
+documentation = "https://www.tvmlabs.io"
+homepage = "https://www.tvmlabs.io"
+keywords = [
+    #
+    "TVM",
+    "SDK",
+    "smart contract",
+    "tvmlabs",
+    "solidity",
+]
+name = "tvm-cli"
 readme = "README.md"
-repository = "https://github.com/tvmlabs/tvm-sdk"
 #
 version.workspace = true
 rust-version.workspace = true
@@ -12,19 +19,52 @@ rust-version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [dependencies]
-api_info = { path = "../api/info" }
+anyhow.workspace = true
+async-trait.workspace = true
 base64.workspace = true
-dirs.workspace = true
-json5.workspace = true
+chrono.workspace = true
+clap = "2"
+futures.workspace = true
+hex.workspace = true
+indicatif = "0.17.7"
+log = { workspace = true, features = ["std"] }
+num-bigint.workspace = true
+num-traits.workspace = true
+qr2term = "0.3.1"
 regex.workspace = true
-serde.workspace = true
+reqwest = { workspace = true, features = ["rustls-tls-webpki-roots"] }
+serde = { features = ["derive"], workspace = true }
 serde_derive.workspace = true
 serde_json.workspace = true
-tvm_client = { path = "../tvm_client" }
+simplelog = "0.12.1"
+thiserror.workspace = true
+tokio = { features = ["full"], workspace = true }
+tokio-retry = "0.3.0"
+url = "2.5.0"
+#
+tvm_abi.workspace = true
+tvm_assembler.workspace = true
+tvm_block.workspace = true
+tvm_block_json.workspace = true
+tvm_client = { workspace = true, features = ["std", "rustls-tls-webpki-roots"] }
+tvm_executor.workspace = true
+tvm_sdk.workspace = true
 tvm_types.workspace = true
+tvm_vm.workspace = true
 
 [dev-dependencies]
 assert_cmd = "2.0.13"
+lazy_static = "1.4.0"
 predicates = "3.1.0"
+string-error = "0.1.0"
+
+[[bin]]
+name = "tvm-cli"
+path = "src/main.rs"
+
+[[bin]]
+name = "__tvm-cli_completion"
+path = "src/completion.rs"

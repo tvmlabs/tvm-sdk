@@ -616,6 +616,7 @@ impl TestClient {
         encode.call(params).await
     }
 
+    #[cfg(not(feature = "wasm-base"))]
     pub(crate) fn encode_message_sync(
         &self,
         params: ParamsOfEncodeMessage,
@@ -641,6 +642,7 @@ impl TestClient {
         process.call_with_callback(params, callback).await
     }
 
+    #[cfg(not(feature = "wasm-base"))]
     pub(crate) fn process_message_sync(
         &self,
         params: ParamsOfProcessMessage,
