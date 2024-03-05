@@ -104,7 +104,7 @@ use tvm_types::read_single_root_boc;
 use tvm_types::Result;
 use tvm_types::UInt256;
 
-trait ParseJson {
+pub trait ParseJson {
     fn as_uint256(&self) -> Result<UInt256>;
     fn as_base64(&self) -> Result<Vec<u8>>;
     fn as_int(&self) -> Result<i32>;
