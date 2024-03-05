@@ -1,0 +1,16 @@
+[package]
+name = "tvm_struct"
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+hex-literal = "0.4.1"
+thiserror.workspace = true
+#
+tvm_block.workspace = true
+tvm_types.workspace = true

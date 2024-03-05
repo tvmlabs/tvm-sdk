@@ -1,6 +1,12 @@
-use crate::tests::{_enum, _number, _string, _struct};
-use api_info::{ApiType, Field};
-use serde_derive::{Deserialize, Serialize};
+use api_info::ApiType;
+use api_info::Field;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
+use crate::tests::_enum;
+use crate::tests::_number;
+use crate::tests::_string;
+use crate::tests::_struct;
 
 #[derive(Serialize, Deserialize, ApiType)]
 #[serde(tag = "type")]
@@ -12,11 +18,8 @@ pub enum EnumTypesWithoutValue {
 #[test]
 fn test_enum_without_value() {
     let api: Field = EnumTypesWithoutValue::api();
-    _enum([
-        ("Foo", _struct([("", _string())])),
-        ("Bar", _struct([("", _number())])),
-    ])
-    .check(&api.value, "EnumTypesWithoutValue");
+    _enum([("Foo", _struct([("", _string())])), ("Bar", _struct([("", _number())]))])
+        .check(&api.value, "EnumTypesWithoutValue");
 }
 
 #[derive(Serialize, Deserialize, ApiType)]

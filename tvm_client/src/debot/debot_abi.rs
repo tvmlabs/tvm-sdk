@@ -1,4 +1,4 @@
-pub const DEBOT_ABI: &'static str = r#"{
+pub const DEBOT_ABI: &str = r#"{
 	"ABI version": 2,
     "version": "2.2",
 	"header": ["pubkey", "time", "expire"],

@@ -1,29 +1,34 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
-use crate::client::{AppObject, ClientContext, Error};
-use crate::error::ClientResult;
-use crate::json_interface::runtime::Runtime;
-use api_info::{ApiType, Field, Type};
+use std::marker::PhantomData;
+use std::sync::Arc;
+
+use api_info::ApiType;
+use api_info::Field;
+use api_info::Type;
 use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
-use std::marker::PhantomData;
-use std::sync::Arc;
+
 use super::request::Request;
-use super::runtime::{AsyncHandler, SyncHandler};
+use super::runtime::AsyncHandler;
+use super::runtime::SyncHandler;
+use crate::client::AppObject;
+use crate::client::ClientContext;
+use crate::client::Error;
+use crate::error::ClientResult;
+use crate::json_interface::runtime::Runtime;
 
 const ENUM_TYPE_TAG: &str = "type";
 const ENUM_VALUE_FIELD: &str = "value";
@@ -47,11 +52,12 @@ fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResul
                 for error_message in errors.iter() {
                     error.message.push_str(&format!("\nTip: {}", error_message));
                 }
-                if suggest_use_helper_for.len() > 0 {
+                if !suggest_use_helper_for.is_empty() {
                     error.data["suggest_use_helper_for"] = Value::Array(
-                        suggest_use_helper_for.iter()
+                        suggest_use_helper_for
+                            .iter()
                             .map(|s| Value::String(s.to_string()))
-                            .collect()
+                            .collect(),
                     );
                 }
             } else {
@@ -71,7 +77,7 @@ struct ProcessingPath {
 impl ProcessingPath {
     fn append(&self, field_name: &str) -> Self {
         let mut path = self.path.clone();
-        if field_name.len() > 0 {
+        if !field_name.is_empty() {
             path.push(field_name.to_string());
         } else {
             path.push(ENUM_VALUE_FIELD.to_string());
@@ -81,9 +87,7 @@ impl ProcessingPath {
     }
 
     fn resolve_field_name(&self) -> &str {
-        self.path.last()
-            .map(|string| string.as_str())
-            .unwrap_or("<unresolved>")
+        self.path.last().map(|string| string.as_str()).unwrap_or("<unresolved>")
     }
 }
 
@@ -96,33 +100,29 @@ fn check_params_for_known_errors(
 ) {
     let mut class_name = None;
     while let Type::Ref { ref name } = field.value {
-        if let Some(field_ref) = Runtime::api().find_type(&name) {
+        if let Some(field_ref) = Runtime::api().find_type(name) {
             field = field_ref;
             class_name = Some(name.as_str());
         }
-    };
+    }
 
     let value = match &field.value {
         Type::Optional { inner } => {
             if let Some(value) = value {
-                check_type(path, &class_name, &inner, value, errors, suggest_use_helper_for);
+                check_type(path, &class_name, inner, value, errors, suggest_use_helper_for);
             }
             return;
         }
-        _ => {
-            match value {
-                Some(value) => value,
-                None => {
-                    errors.push(
-                        format!(
-                            r#"Field "{}" value is expected, but not provided."#,
-                            path.resolve_field_name(),
-                        )
-                    );
-                    return;
-                },
+        _ => match value {
+            Some(value) => value,
+            None => {
+                errors.push(format!(
+                    r#"Field "{}" value is expected, but not provided."#,
+                    path.resolve_field_name(),
+                ));
+                return;
             }
-        }
+        },
     };
 
     check_type(path, &class_name, &field.value, value, errors, suggest_use_helper_for);
@@ -143,20 +143,18 @@ fn check_type(
                     check_type(
                         &path.append(&format!("{}[{}]", path.resolve_field_name(), index)),
                         class_name,
-                        &item,
+                        item,
                         &vec[index],
                         errors,
                         suggest_use_helper_for,
                     );
                 }
             } else {
-                errors.push(
-                    format!(
-                        "Field \"{}\" is expected to be an array, but actual value is {:?}.",
-                        path.resolve_field_name(),
-                        value,
-                    )
-                );
+                errors.push(format!(
+                    "Field \"{}\" is expected to be an array, but actual value is {:?}.",
+                    path.resolve_field_name(),
+                    value,
+                ));
             }
         }
         Type::Struct { ref fields } => {
@@ -171,13 +169,11 @@ fn check_type(
                     )
                 }
             } else {
-                errors.push(
-                    format!(
-                        "Field \"{}\" is expected to be an object, but actual value is {:?}.",
-                        path.resolve_field_name(),
-                        value,
-                    )
-                );
+                errors.push(format!(
+                    "Field \"{}\" is expected to be an object, but actual value is {:?}.",
+                    path.resolve_field_name(),
+                    value,
+                ));
             }
         }
         Type::EnumOfTypes { types } => {
@@ -186,15 +182,16 @@ fn check_type(
                     let type_name = match type_name.as_str() {
                         Some(type_name) => type_name,
                         None => {
-                            errors.push(
-                                format!("Field \"{}\" is expected to be `String`.", ENUM_TYPE_TAG)
-                            );
+                            errors.push(format!(
+                                "Field \"{}\" is expected to be `String`.",
+                                ENUM_TYPE_TAG
+                            ));
                             return;
                         }
                     };
                     if let Some(enum_type) = types.iter().find(|item| item.name == type_name) {
                         check_params_for_known_errors(
-                            &path,
+                            path,
                             enum_type,
                             Some(value),
                             errors,
@@ -226,12 +223,13 @@ fn get_incorrect_enum_errors(
     errors: &mut Vec<String>,
     suggest_use_helper_for: &mut Vec<&'static str>,
 ) {
-    let types_str = types.iter()
+    let types_str = types
+        .iter()
         .map(|field| format!(r#""{}""#, field.name))
         .collect::<Vec<String>>()
         .join(", ");
 
-    static SUGGEST_USE_HELPER_FOR_SORTED: &[&'static str] = &["Abi", "Signer"];
+    static SUGGEST_USE_HELPER_FOR_SORTED: &[&str] = &["Abi", "Signer"];
 
     errors.push(format!(
         "Field \"{field}\" must be a structure:\n\
@@ -273,10 +271,7 @@ where
     F: Send + Fn(Arc<ClientContext>, P, Arc<Request>) -> Fut + 'static,
 {
     pub fn new(handler: F) -> Self {
-        Self {
-            handler: Arc::new(handler),
-            phantom: PhantomData,
-        }
+        Self { handler: Arc::new(handler), phantom: PhantomData }
     }
 }
 
@@ -328,10 +323,7 @@ where
     F: Send + Fn(Arc<ClientContext>, P, AppObject<AP, AR>) -> Fut + 'static,
 {
     pub fn new(handler: F) -> Self {
-        Self {
-            handler: Arc::new(handler),
-            phantom: PhantomData,
-        }
+        Self { handler: Arc::new(handler), phantom: PhantomData }
     }
 }
 
@@ -383,10 +375,7 @@ where
     F: Send + Fn(Arc<ClientContext>, AppObject<AP, AR>) -> Fut + 'static,
 {
     pub fn new(handler: F) -> Self {
-        Self {
-            handler: Arc::new(handler),
-            phantom: PhantomData,
-        }
+        Self { handler: Arc::new(handler), phantom: PhantomData }
     }
 }
 
@@ -430,10 +419,7 @@ where
     F: Send + Fn(Arc<ClientContext>, P) -> Fut + 'static,
 {
     pub fn new(handler: F) -> Self {
-        Self {
-            handler: Arc::new(handler),
-            phantom: PhantomData,
-        }
+        Self { handler: Arc::new(handler), phantom: PhantomData }
     }
 }
 
@@ -477,10 +463,7 @@ where
     F: Send + Fn(Arc<ClientContext>) -> Fut + 'static,
 {
     pub fn new(handler: F) -> Self {
-        Self {
-            handler: Arc::new(handler),
-            phantom: PhantomData,
-        }
+        Self { handler: Arc::new(handler), phantom: PhantomData }
     }
 }
 
@@ -516,10 +499,7 @@ where
     F: Fn(Arc<ClientContext>, P) -> ClientResult<R>,
 {
     pub fn new(handler: F) -> Self {
-        Self {
-            handler,
-            phantom: PhantomData,
-        }
+        Self { handler, phantom: PhantomData }
     }
 }
 
@@ -531,9 +511,8 @@ where
 {
     fn handle(&self, context: Arc<ClientContext>, params_json: &str) -> ClientResult<String> {
         match parse_params(params_json) {
-            Ok(params) => (self.handler)(context, params).and_then(|x| {
-                serde_json::to_string(&x).map_err(|err| Error::cannot_serialize_result(err))
-            }),
+            Ok(params) => (self.handler)(context, params)
+                .and_then(|x| serde_json::to_string(&x).map_err(Error::cannot_serialize_result)),
             Err(err) => Err(err),
         }
     }
@@ -554,10 +533,7 @@ where
     F: Fn(Arc<ClientContext>) -> ClientResult<R>,
 {
     pub fn new(handler: F) -> Self {
-        Self {
-            handler,
-            phantom: PhantomData,
-        }
+        Self { handler, phantom: PhantomData }
     }
 }
 
@@ -568,9 +544,7 @@ where
 {
     fn handle(&self, context: Arc<ClientContext>, _params_json: &str) -> ClientResult<String> {
         match (self.handler)(context) {
-            Ok(result) => {
-                serde_json::to_string(&result).map_err(|err| Error::cannot_serialize_result(err))
-            }
+            Ok(result) => serde_json::to_string(&result).map_err(Error::cannot_serialize_result),
             Err(err) => Err(err),
         }
     }

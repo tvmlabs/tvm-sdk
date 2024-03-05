@@ -1,13 +1,21 @@
-use proc_macro::{Span, TokenStream};
-use crate::utils::{doc_from, field_from, function_to_tokens, get_value_of, type_from};
-use api_info;
+use proc_macro::Span;
+use proc_macro::TokenStream;
 use quote::quote;
-use syn::{FnArg, Ident, Item, ItemFn, Meta, Pat, ReturnType};
+use syn::FnArg;
+use syn::Ident;
+use syn::Item;
+use syn::ItemFn;
+use syn::Meta;
+use syn::Pat;
+use syn::ReturnType;
 
-pub fn impl_api_function(
-    attr: TokenStream,
-    item: TokenStream,
-) -> TokenStream {
+use crate::utils::doc_from;
+use crate::utils::field_from;
+use crate::utils::function_to_tokens;
+use crate::utils::get_value_of;
+use crate::utils::type_from;
+
+pub fn impl_api_function(attr: TokenStream, item: TokenStream) -> TokenStream {
     let syn_func = match syn::parse::<Item>(item.clone()).unwrap() {
         Item::Fn(ref f) => f.clone(),
         _ => panic!("api_function can only be applied to functions"),
@@ -38,14 +46,7 @@ fn function_from(meta: Option<Meta>, func: ItemFn) -> api_info::Function {
     let (summary, description) = doc_from(&func.attrs);
     let params = func.sig.inputs.iter().map(field_from_fn_arg).collect();
     let result = type_from_return_type(&func.sig.output);
-    api_info::Function {
-        name: api_name,
-        params,
-        result,
-        errors: None,
-        summary,
-        description,
-    }
+    api_info::Function { name: api_name, params, result, errors: None, summary, description }
 }
 
 fn field_from_fn_arg(a: &FnArg) -> api_info::Field {

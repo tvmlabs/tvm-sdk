@@ -1,22 +1,26 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+
+use std::fmt::Display;
+
+use serde_json::Value;
+use thiserror::Error;
+use tvm_block::AccStatusChange;
+use tvm_block::ComputeSkipReason;
+use tvm_block::MsgAddressInt;
+use tvm_types::Cell;
+use tvm_types::ExceptionCode;
 
 use crate::boc::internal::deserialize_cell_from_base64;
 use crate::error::ClientError;
-use serde_json::Value;
-use std::fmt::Display;
-use tvm_block::{AccStatusChange, ComputeSkipReason, MsgAddressInt};
-use tvm_types::{Cell, ExceptionCode};
 
 #[derive(ApiType)]
 pub enum ErrorCode {
@@ -49,17 +53,13 @@ impl Error {
             format!("Invalid JSON value for stack item ({}): {}", stack, err),
         )
     }
+
     pub fn invalid_account_boc<E: Display>(err: E) -> ClientError {
-        error(
-            ErrorCode::InvalidAccountBoc,
-            format!("Invalid account BOC: {}", err),
-        )
+        error(ErrorCode::InvalidAccountBoc, format!("Invalid account BOC: {}", err))
     }
+
     pub fn can_not_read_transaction<E: Display>(err: E) -> ClientError {
-        error(
-            ErrorCode::CanNotReadTransaction,
-            format!("Can not read transaction: {}", err),
-        )
+        error(ErrorCode::CanNotReadTransaction, format!("Can not read transaction: {}", err))
     }
 
     pub fn can_not_read_blockchain_config<E: Display>(err: E) -> ClientError {
@@ -69,12 +69,36 @@ impl Error {
         )
     }
 
+    pub fn can_not_read_blockchain_config_from_file<E: Display>(err: E) -> ClientError {
+        error(
+            ErrorCode::CanNotReadBlockchainConfig,
+            format!("Can not read blockchain config from file: {}", err),
+        )
+    }
+
+    pub fn json_deserialization_failed<E: Display>(err: E) -> ClientError {
+        error(
+            ErrorCode::CanNotReadBlockchainConfig,
+            format!("Deserialization blockchain config was failed: {}", err),
+        )
+    }
+
+    pub fn can_not_parse_config<E: Display>(err: E) -> ClientError {
+        error(
+            ErrorCode::CanNotReadBlockchainConfig,
+            format!("Can not parse blockchain config: {}", err),
+        )
+    }
+
+    pub fn can_not_convert_config<E: Display>(err: E) -> ClientError {
+        error(ErrorCode::CanNotReadBlockchainConfig, format!("Can not convert config: {}", err))
+    }
+
     pub fn transaction_aborted() -> ClientError {
-        let error = error(
+        error(
             ErrorCode::TransactionAborted,
             "Transaction was aborted by unknown reason".to_string(),
-        );
-        error
+        )
     }
 
     pub fn tvm_execution_skipped(
@@ -116,27 +140,25 @@ impl Error {
         );
 
         if show_tips && !error.message.to_lowercase().contains("exit code") {
-            error
-                .message
-                .push_str(&format!(", exit code: {}", exit_code));
+            error.message.push_str(&format!(", exit code: {}", exit_code));
 
             let tip = match exit_code {
                 0 => Some(
                     "You either forgot to add tvm.accept() into the contract's method, or try to \
-                    run a get method on-chain (and it fails because it does not have tvm.accept())."
+                    run a get method on-chain (and it fails because it does not have tvm.accept()).",
                 ),
 
                 40 => Some(
                     "Check that:\n\
                     1. you specified 'Pragma AbiHeader pubkey' in the contract code;\n\
-                    2. your private key suits your public key."
+                    2. your private key suits your public key.",
                 ),
 
                 52 => Some(
                     "If this error occurs in 100% cases then you specified the wrong ABI. \
                     If it appears occasionally then the contract supports timestamp-based replay \
                     protection and does not allow to call it so often (call it with 5 seconds \
-                    timeout)."
+                    timeout).",
                 ),
 
                 _ => None,
@@ -175,9 +197,7 @@ impl Error {
             }
         } else if let Some(ref exit_arg) = exit_arg {
             if let Some(error_message) = Self::read_error_message(exit_arg) {
-                error
-                    .message
-                    .push_str(&format!(", contract error: \"{}\"", error_message));
+                error.message.push_str(&format!(", contract error: \"{}\"", error_message));
                 error.data["contract_error"] = error_message.into();
             }
         }
@@ -251,10 +271,7 @@ impl Error {
     }
 
     pub fn account_is_suspended(address: &MsgAddressInt) -> ClientError {
-        let mut error = error(
-            ErrorCode::AccountIsSuspended,
-            "Account is suspended.".to_owned(),
-        );
+        let mut error = error(ErrorCode::AccountIsSuspended, "Account is suspended.".to_owned());
 
         error.data = serde_json::json!({
             "account_address": address.to_string(),
@@ -312,10 +329,7 @@ impl Error {
     }
 
     pub fn internal_error<E: Display>(err: E) -> ClientError {
-        error(
-            ErrorCode::InternalError,
-            format!("TVM internal error: {}", err),
-        )
+        error(ErrorCode::InternalError, format!("TVM internal error: {}", err))
     }
 
     fn read_error_message(exit_arg: &Value) -> Option<String> {
@@ -348,9 +362,7 @@ impl Error {
             None => return None,
         };
 
-        deserialize_cell_from_base64(&base64_value, "contract_error")
-            .map(|(_bytes, cell)| cell)
-            .ok()
+        deserialize_cell_from_base64(base64_value, "contract_error").map(|(_bytes, cell)| cell).ok()
     }
 
     fn load_boc_data(cell: &Cell) -> Vec<u8> {
@@ -364,51 +376,51 @@ impl Error {
     }
 }
 
-#[derive(Clone, Copy, Debug, num_derive::FromPrimitive, PartialEq, failure::Fail)]
+#[derive(Clone, Copy, Debug, num_derive::FromPrimitive, PartialEq, Error)]
 pub enum StdContractError {
-    #[fail(display = "Invalid signature")]
+    #[error("Invalid signature")]
     InvalidSignature = 40,
-    #[fail(display = "Requested method was not found in the contract")]
+    #[error("Requested method was not found in the contract")]
     MethodNotFound = 41,
-    #[fail(display = "Dictionary of methods was not found")]
+    #[error("Dictionary of methods was not found")]
     MethodsDictNotFound = 42,
-    #[fail(display = "Unsupported ABI version")]
+    #[error("Unsupported ABI version")]
     UnsupportedAbiVersion = 43,
-    #[fail(display = "Public key was not found in persistent data")]
+    #[error("Public key was not found in persistent data")]
     PubKeyNotFound = 44,
-    #[fail(display = "Signature was not found in the message")]
+    #[error("Signature was not found in the message")]
     SignNotFount = 45,
-    #[fail(display = "Global data dictionary is invalid")]
+    #[error("Global data dictionary is invalid")]
     DataDictInvalid = 46,
-    #[fail(display = "Smart contract info was not found")]
+    #[error("Smart contract info was not found")]
     ScInfoNotFound = 47,
-    #[fail(display = "Invalid inbound message")]
+    #[error("Invalid inbound message")]
     InvalidMsg = 48,
-    #[fail(display = "Invalid state of persistent data")]
+    #[error("Invalid state of persistent data")]
     InvalidDataState = 49,
-    #[fail(display = "Array index is out of range")]
+    #[error("Array index is out of range")]
     IndexOutOfRange = 50,
-    #[fail(display = "Constructor was already called")]
+    #[error("Constructor was already called")]
     ConstructorAlreadyCalled = 51,
-    #[fail(display = "Replay protection exception")]
+    #[error("Replay protection exception")]
     ReplayProtection = 52,
-    #[fail(display = "Address unpack error")]
+    #[error("Address unpack error")]
     AddressUnpackError = 53,
-    #[fail(display = "Pop from empty array")]
+    #[error("Pop from empty array")]
     PopEmptyArray = 54,
-    #[fail(display = "Bad StateInit cell for tvm_insert_pubkey. Data was not found.")]
+    #[error("Bad StateInit cell for tvm_insert_pubkey. Data was not found.")]
     DataNotFound = 55,
-    #[fail(display = "map.pollFirst() for empty map")]
+    #[error("map.pollFirst() for empty map")]
     PollEmptyMap = 56,
-    #[fail(display = "External inbound message is expired")]
+    #[error("External inbound message is expired")]
     ExtMessageExpired = 57,
-    #[fail(display = "External inbound message has no signature but has public key")]
+    #[error("External inbound message has no signature but has public key")]
     MsgHasNoSignButHasKey = 58,
-    #[fail(display = "Contract has no receive or no fallback functions")]
+    #[error("Contract has no receive or no fallback functions")]
     NoFallback = 59,
-    #[fail(display = "Contract has no fallback function but function ID is wrong")]
+    #[error("Contract has no fallback function but function ID is wrong")]
     NoFallbackIdWrong = 60,
-    #[fail(display = "No public key in persistent data")]
+    #[error("No public key in persistent data")]
     NoKeyInData = 61,
 }
 
@@ -449,10 +461,6 @@ impl StdContractError {
             StdContractError::NoKeyInData => "Contract is probably deployed incorrectly",
             _ => "",
         };
-        if tip.len() > 0 {
-            Some(tip)
-        } else {
-            None
-        }
+        if !tip.is_empty() { Some(tip) } else { None }
     }
 }

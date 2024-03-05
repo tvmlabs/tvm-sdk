@@ -1,20 +1,19 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+
+use tvm_block::AccStatusChange;
+use tvm_sdk::Transaction;
 
 use super::errors::Error;
 use crate::error::ClientResult;
-use tvm_block::AccStatusChange;
-use tvm_sdk::Transaction;
 
 pub(crate) async fn calc_transaction_fees<F>(
     transaction: &Transaction,
@@ -30,7 +29,7 @@ where
         return Ok(transaction.calc_fees());
     }
 
-    let mut error = match extract_error(&transaction, contract_info, show_tips_on_error).await {
+    let mut error = match extract_error(transaction, contract_info, show_tips_on_error).await {
         Err(err) => err,
         Ok(_) => Error::transaction_aborted(),
     };
@@ -53,17 +52,13 @@ where
     if let Some(storage) = &transaction.storage {
         if storage.status_change != AccStatusChange::Unchanged {
             let (address, balance) = contract_info().await?;
-            return Err(Error::storage_phase_failed(
-                &storage.status_change,
-                &address,
-                balance,
-            ));
+            return Err(Error::storage_phase_failed(&storage.status_change, &address, balance));
         }
     }
 
     if let Some(reason) = &transaction.compute.skipped_reason {
         let (address, balance) = contract_info().await?;
-        return Err(Error::tvm_execution_skipped(&reason, &address, balance));
+        return Err(Error::tvm_execution_skipped(reason, &address, balance));
     }
 
     if transaction.compute.success.is_none() || !transaction.compute.success.unwrap() {

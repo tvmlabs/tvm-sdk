@@ -1,0 +1,12 @@
+/*
+    Below is the structure of a TVC (TVM Smart Contract)
+    that can be helpful for writing TVM smart contracts
+    to disk in .tvc format. This structure includes the
+    code and a snake-like encoded cell that can holds
+    metadata in human readable format (utf8 stirng).
+*/
+
+nothing$0 {X:Type} = Maybe X;
+just$1 {X:Type} value:X = Maybe X;
+
+tvc#a2f0b81c code:(Maybe ^Cell) desc:(Maybe ^Cell) = TVC;

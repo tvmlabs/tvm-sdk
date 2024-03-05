@@ -3,25 +3,36 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use failure::{bail, err_msg};
-use serde::{Deserialize, Deserializer};
-use serde_json::Value;
-use tvm_block::{
-    Block, BlockIdExt, BlockInfo, CryptoSignature, CryptoSignaturePair, Deserializable,
-    HashmapAugType, MerkleProof, Message, ShardIdent, ShardStateUnsplit, Transaction,
-    ValidatorDescr,
-};
-use tvm_types::Result;
-use tvm_types::{Cell, SliceData, UInt256};
-
 pub(crate) use errors::ErrorCode;
+use serde::Deserialize;
+use serde::Deserializer;
+use serde_json::Value;
+use tvm_block::Block;
+use tvm_block::BlockIdExt;
+use tvm_block::BlockInfo;
+use tvm_block::CryptoSignature;
+use tvm_block::CryptoSignaturePair;
+use tvm_block::Deserializable;
+use tvm_block::HashmapAugType;
+use tvm_block::MerkleProof;
+use tvm_block::Message;
+use tvm_block::ShardIdent;
+use tvm_block::ShardStateUnsplit;
+use tvm_block::Transaction;
+use tvm_block::ValidatorDescr;
+use tvm_types::Cell;
+use tvm_types::Result;
+use tvm_types::SliceData;
+use tvm_types::UInt256;
 
-use crate::boc::internal::{deserialize_object_from_base64, deserialize_object_from_boc_bin};
+use crate::boc::internal::deserialize_object_from_base64;
+use crate::boc::internal::deserialize_object_from_boc_bin;
 use crate::encoding::base64_decode;
 use crate::error::ClientResult;
 use crate::proofs::engine::ProofHelperEngineImpl;
 use crate::proofs::errors::Error;
-use crate::proofs::validators::{calc_subset_for_workchain, check_crypto_signatures};
+use crate::proofs::validators::calc_subset_for_workchain;
+use crate::proofs::validators::check_crypto_signatures;
 use crate::utils::json::JsonHelper;
 use crate::ClientContext;
 
@@ -36,9 +47,10 @@ mod tests;
 #[derive(Deserialize, Serialize, Debug, Clone, ApiType)]
 pub struct ProofsConfig {
     /// Cache proofs in the local storage. Default is `true`.
-    /// If this value is set to `true`, downloaded proofs and master-chain BOCs are saved into the
-    /// persistent local storage (e.g. file system for native environments or browser's IndexedDB
-    /// for the web); otherwise all the data is cached only in memory in current client's context
+    /// If this value is set to `true`, downloaded proofs and master-chain BOCs
+    /// are saved into the persistent local storage (e.g. file system for
+    /// native environments or browser's IndexedDB for the web); otherwise
+    /// all the data is cached only in memory in current client's context
     /// and will be lost after destruction of the client.
     #[serde(
         default = "default_cache_in_local_storage",
@@ -59,98 +71,104 @@ fn deserialize_cache_in_local_storage<'de, D: Deserializer<'de>>(
 
 impl Default for ProofsConfig {
     fn default() -> Self {
-        Self {
-            cache_in_local_storage: default_cache_in_local_storage(),
-        }
+        Self { cache_in_local_storage: default_cache_in_local_storage() }
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]
 pub struct ParamsOfProofBlockData {
     /// Single block's data, retrieved from TONOS API, that needs proof.
-    /// Required fields are `id` and/or top-level `boc` (for block identification), others are
-    /// optional.
+    /// Required fields are `id` and/or top-level `boc` (for block
+    /// identification), others are optional.
     pub block: Value,
 }
 
-/// Proves that a given block's data, which is queried from TONOS API, can be trusted.
+/// Proves that a given block's data, which is queried from TONOS API, can be
+/// trusted.
 ///
 /// This function checks block proofs and compares given data with the proven.
 /// If the given data differs from the proven, the exception will be thrown.
-/// The input param is a single block's JSON object, which was queried from DApp server using
-/// functions such as `net.query`, `net.query_collection` or `net.wait_for_collection`.
-/// If block's BOC is not provided in the JSON, it will be queried from DApp server
-/// (in this case it is required to provide at least `id` of block).
+/// The input param is a single block's JSON object, which was queried from DApp
+/// server using functions such as `net.query`, `net.query_collection` or
+/// `net.wait_for_collection`. If block's BOC is not provided in the JSON, it
+/// will be queried from DApp server (in this case it is required to provide at
+/// least `id` of block).
 ///
-/// Please note, that joins (like `signatures` in `Block`) are separated entities and not supported,
-/// so function will throw an exception in a case if JSON being checked has such entities in it.
+/// Please note, that joins (like `signatures` in `Block`) are separated
+/// entities and not supported, so function will throw an exception in a case if
+/// JSON being checked has such entities in it.
 ///
-/// If `cache_in_local_storage` in config is set to `true` (default), downloaded proofs and
-/// master-chain BOCs are saved into the persistent local storage (e.g. file system for native
-/// environments or browser's IndexedDB for the web); otherwise all the data is cached only in
-/// memory in current client's context and will be lost after destruction of the client.
+/// If `cache_in_local_storage` in config is set to `true` (default), downloaded
+/// proofs and master-chain BOCs are saved into the persistent local storage
+/// (e.g. file system for native environments or browser's IndexedDB for the
+/// web); otherwise all the data is cached only in memory in current client's
+/// context and will be lost after destruction of the client.
 ///
 /// **Why Proofs are needed**
 ///
-/// Proofs are needed to ensure that the data downloaded from a DApp server is real blockchain
-/// data. Checking proofs can protect from the malicious DApp server which can potentially provide
-/// fake data, or also from "Man in the Middle" attacks class.
+/// Proofs are needed to ensure that the data downloaded from a DApp server is
+/// real blockchain data. Checking proofs can protect from the malicious DApp
+/// server which can potentially provide fake data, or also from "Man in the
+/// Middle" attacks class.
 ///
 /// **What Proofs are**
 ///
-/// Simply, proof is a list of signatures of validators', which have signed this particular master-
-/// block.
+/// Simply, proof is a list of signatures of validators', which have signed this
+/// particular master- block.
 ///
-/// The very first validator set's public keys are included in the zero-state. Whe know a root hash
-/// of the zero-state, because it is stored in the network configuration file, it is our authority
-/// root. For proving zero-state it is enough to calculate and compare its root hash.
+/// The very first validator set's public keys are included in the zero-state.
+/// Whe know a root hash of the zero-state, because it is stored in the network
+/// configuration file, it is our authority root. For proving zero-state it is
+/// enough to calculate and compare its root hash.
 ///
-/// In each new validator cycle the validator set is changed. The new one is stored in a key-block,
-/// which is signed by the validator set, which we already trust, the next validator set will be
-/// stored to the new key-block and signed by the current validator set, and so on.
+/// In each new validator cycle the validator set is changed. The new one is
+/// stored in a key-block, which is signed by the validator set, which we
+/// already trust, the next validator set will be stored to the new key-block
+/// and signed by the current validator set, and so on.
 ///
-/// In order to prove any block in the master-chain we need to check, that it has been signed by
-/// a trusted validator set. So we need to check all key-blocks' proofs, started from the zero-state
-/// and until the block, which we want to prove. But it can take a lot of time and traffic to
-/// download and prove all key-blocks on a client. For solving this, special trusted blocks are used
-/// in Ever-SDK.
+/// In order to prove any block in the master-chain we need to check, that it
+/// has been signed by a trusted validator set. So we need to check all
+/// key-blocks' proofs, started from the zero-state and until the block, which
+/// we want to prove. But it can take a lot of time and traffic to download and
+/// prove all key-blocks on a client. For solving this, special trusted blocks
+/// are used in Ever-SDK.
 ///
-/// The trusted block is the authority root, as well, as the zero-state. Each trusted block is the
-/// `id` (e.g. `root_hash`) of the already proven key-block. There can be plenty of trusted
-/// blocks, so there can be a lot of authority roots. The hashes of trusted blocks for MainNet
-/// and DevNet are hardcoded in SDK in a separated binary file (trusted_key_blocks.bin) and is
+/// The trusted block is the authority root, as well, as the zero-state. Each
+/// trusted block is the `id` (e.g. `root_hash`) of the already proven
+/// key-block. There can be plenty of trusted blocks, so there can be a lot of
+/// authority roots. The hashes of trusted blocks for MainNet and DevNet are
+/// hardcoded in SDK in a separated binary file (trusted_key_blocks.bin) and is
 /// being updated for each release by using `update_trusted_blocks` utility.
 ///
-/// See [update_trusted_blocks](../../../tools/update_trusted_blocks) directory for more info.
+/// See [update_trusted_blocks](../../../tools/update_trusted_blocks) directory
+/// for more info.
 ///
-/// In future SDK releases, one will also be able to provide their hashes of trusted blocks for
-/// other networks, besides for MainNet and DevNet.
-/// By using trusted key-blocks, in order to prove any block, we can prove chain of key-blocks to
-/// the closest previous trusted key-block, not only to the zero-state.
+/// In future SDK releases, one will also be able to provide their hashes of
+/// trusted blocks for other networks, besides for MainNet and DevNet.
+/// By using trusted key-blocks, in order to prove any block, we can prove chain
+/// of key-blocks to the closest previous trusted key-block, not only to the
+/// zero-state.
 ///
-/// But shard-blocks don't have proofs on DApp server. In this case, in order to prove any shard-
-/// block data, we search for a corresponding master-block, which contains the root hash of this
-/// shard-block, or some shard block which is linked to that block in shard-chain. After proving
-/// this master-block, we traverse through each link and calculate and compare hashes with links,
-/// one-by-one. After that we can ensure that this shard-block has also been proven.
+/// But shard-blocks don't have proofs on DApp server. In this case, in order to
+/// prove any shard- block data, we search for a corresponding master-block,
+/// which contains the root hash of this shard-block, or some shard block which
+/// is linked to that block in shard-chain. After proving this master-block, we
+/// traverse through each link and calculate and compare hashes with links,
+/// one-by-one. After that we can ensure that this shard-block has also been
+/// proven.
 #[api_function]
 pub async fn proof_block_data(
     context: Arc<ClientContext>,
     params: ParamsOfProofBlockData,
 ) -> ClientResult<()> {
-    let engine = ProofHelperEngineImpl::new(context)
-        .await
-        .map_err(|err| Error::proof_check_failed(err))?;
+    let engine = ProofHelperEngineImpl::new(context).await.map_err(Error::proof_check_failed)?;
 
     let id_opt = params.block["id"].as_str();
 
     let boc = if let Some(boc) = params.block["boc"].as_str() {
         base64_decode(boc)?
     } else if let Some(id) = id_opt {
-        engine
-            .download_block_boc(id)
-            .await
-            .map_err(|err| Error::proof_check_failed(err))?
+        engine.download_block_boc(id).await.map_err(Error::proof_check_failed)?
     } else {
         return Err(Error::invalid_data("Block's BOC or id are required"));
     };
@@ -159,66 +177,59 @@ pub async fn proof_block_data(
 
     engine.proof_block_boc(&root_hash, &block, &boc).await?;
 
-    let block_json =
-        json::serialize_block(root_hash, block, boc).map_err(|err| Error::invalid_data(err))?;
+    let block_json = json::serialize_block(root_hash, block, boc).map_err(Error::invalid_data)?;
 
     json::compare_blocks(&params.block, &block_json)
 }
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]
 pub struct ParamsOfProofTransactionData {
-    /// Single transaction's data as queried from DApp server, without modifications.
-    /// The required fields are `id` and/or top-level `boc`, others are optional.
-    /// In order to reduce network requests count, it is recommended to provide `block_id` and `boc`
-    /// of transaction.
+    /// Single transaction's data as queried from DApp server, without
+    /// modifications. The required fields are `id` and/or top-level `boc`,
+    /// others are optional. In order to reduce network requests count, it
+    /// is recommended to provide `block_id` and `boc` of transaction.
     pub transaction: Value,
 }
 
-/// Proves that a given transaction's data, which is queried from TONOS API, can be trusted.
+/// Proves that a given transaction's data, which is queried from TONOS API, can
+/// be trusted.
 ///
-/// This function requests the corresponding block, checks block proofs, ensures that given
-/// transaction exists in the proven block and compares given data with the proven.
-/// If the given data differs from the proven, the exception will be thrown.
-/// The input parameter is a single transaction's JSON object (see params description),
-/// which was queried from TONOS API using functions such as `net.query`, `net.query_collection`
-/// or `net.wait_for_collection`.
+/// This function requests the corresponding block, checks block proofs, ensures
+/// that given transaction exists in the proven block and compares given data
+/// with the proven. If the given data differs from the proven, the exception
+/// will be thrown. The input parameter is a single transaction's JSON object
+/// (see params description), which was queried from TONOS API using functions
+/// such as `net.query`, `net.query_collection` or `net.wait_for_collection`.
 ///
-/// If transaction's BOC and/or `block_id` are not provided in the JSON, they will be queried from
-/// TONOS API.
+/// If transaction's BOC and/or `block_id` are not provided in the JSON, they
+/// will be queried from TONOS API.
 ///
-/// Please note, that joins (like `account`, `in_message`, `out_messages`, etc. in `Transaction`
-/// entity) are separated entities and not supported, so function will throw an exception in a case
-/// if JSON being checked has such entities in it.
+/// Please note, that joins (like `account`, `in_message`, `out_messages`, etc.
+/// in `Transaction` entity) are separated entities and not supported, so
+/// function will throw an exception in a case if JSON being checked has such
+/// entities in it.
 ///
-/// For more information about proofs checking, see description of `proof_block_data` function.
+/// For more information about proofs checking, see description of
+/// `proof_block_data` function.
 #[api_function]
 pub async fn proof_transaction_data(
     context: Arc<ClientContext>,
     params: ParamsOfProofTransactionData,
 ) -> ClientResult<()> {
-    let engine = ProofHelperEngineImpl::new(context)
-        .await
-        .map_err(|err| Error::proof_check_failed(err))?;
+    let engine = ProofHelperEngineImpl::new(context).await.map_err(Error::proof_check_failed)?;
 
     let (root_hash, block_id, boc, transaction) =
         transaction_get_required_data(&engine, &params.transaction).await?;
 
-    let block_boc = engine
-        .download_block_boc(&block_id)
-        .await
-        .map_err(|err| Error::invalid_data(err))?;
+    let block_boc = engine.download_block_boc(&block_id).await.map_err(Error::invalid_data)?;
 
     let (block, block_id) = deserialize_object_from_boc_bin(&block_boc)?;
 
-    engine
-        .proof_block_boc(&block_id, &block, &block_boc)
-        .await?;
+    engine.proof_block_boc(&block_id, &block, &block_boc).await?;
 
-    let block_info = block.read_info().map_err(|err| Error::invalid_data(err))?;
-    let block_extra = block.read_extra().map_err(|err| Error::invalid_data(err))?;
-    let account_blocks = block_extra
-        .read_account_blocks()
-        .map_err(|err| Error::invalid_data(err))?;
+    let block_info = block.read_info().map_err(Error::invalid_data)?;
+    let block_extra = block.read_extra().map_err(Error::invalid_data)?;
+    let account_blocks = block_extra.read_account_blocks().map_err(Error::invalid_data)?;
 
     let mut transaction_found_in_block = false;
     account_blocks
@@ -231,7 +242,7 @@ pub async fn proof_transaction_data(
                 Ok(true)
             })
         })
-        .map_err(|err| Error::internal_error(err))?;
+        .map_err(Error::internal_error)?;
 
     if !transaction_found_in_block {
         return Err(Error::proof_check_failed(format!(
@@ -248,37 +259,42 @@ pub async fn proof_transaction_data(
         block_info.shard().workchain_id(),
         boc,
     )
-    .map_err(|err| Error::invalid_data(err))?;
+    .map_err(Error::invalid_data)?;
 
     json::compare_transactions(&params.transaction, &transaction_json)
 }
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]
 pub struct ParamsOfProofMessageData {
-    /// Single message's data as queried from DApp server, without modifications.
-    /// The required fields are `id` and/or top-level `boc`, others are optional.
-    /// In order to reduce network requests count, it is recommended to provide at least
-    /// `boc` of message and non-null `src_transaction.id` or `dst_transaction.id`.
+    /// Single message's data as queried from DApp server, without
+    /// modifications. The required fields are `id` and/or top-level `boc`,
+    /// others are optional. In order to reduce network requests count, it
+    /// is recommended to provide at least `boc` of message and non-null
+    /// `src_transaction.id` or `dst_transaction.id`.
     pub message: Value,
 }
 
-/// Proves that a given message's data, which is queried from TONOS API, can be trusted.
+/// Proves that a given message's data, which is queried from TONOS API, can be
+/// trusted.
 ///
-/// This function first proves the corresponding transaction, ensures that the proven transaction
-/// refers to the given message and compares given data with the proven.
-/// If the given data differs from the proven, the exception will be thrown.
-/// The input parameter is a single message's JSON object (see params description),
-/// which was queried from TONOS API using functions such as `net.query`, `net.query_collection`
-/// or `net.wait_for_collection`.
+/// This function first proves the corresponding transaction, ensures that the
+/// proven transaction refers to the given message and compares given data with
+/// the proven. If the given data differs from the proven, the exception will be
+/// thrown. The input parameter is a single message's JSON object (see params
+/// description), which was queried from TONOS API using functions such as
+/// `net.query`, `net.query_collection` or `net.wait_for_collection`.
 ///
-/// If message's BOC and/or non-null `src_transaction.id` or `dst_transaction.id` are not provided
-/// in the JSON, they will be queried from TONOS API.
+/// If message's BOC and/or non-null `src_transaction.id` or
+/// `dst_transaction.id` are not provided in the JSON, they will be queried from
+/// TONOS API.
 ///
-/// Please note, that joins (like `block`, `dst_account`, `dst_transaction`, `src_account`,
-/// `src_transaction`, etc. in `Message` entity) are separated entities and not supported,
-/// so function will throw an exception in a case if JSON being checked has such entities in it.
+/// Please note, that joins (like `block`, `dst_account`, `dst_transaction`,
+/// `src_account`, `src_transaction`, etc. in `Message` entity) are separated
+/// entities and not supported, so function will throw an exception in a case if
+/// JSON being checked has such entities in it.
 ///
-/// For more information about proofs checking, see description of `proof_block_data` function.
+/// For more information about proofs checking, see description of
+/// `proof_block_data` function.
 #[api_function]
 pub async fn proof_message_data(
     context: Arc<ClientContext>,
@@ -286,7 +302,7 @@ pub async fn proof_message_data(
 ) -> ClientResult<()> {
     let engine = ProofHelperEngineImpl::new(Arc::clone(&context))
         .await
-        .map_err(|err| Error::proof_check_failed(err))?;
+        .map_err(Error::proof_check_failed)?;
 
     let (root_hash, transaction_id, boc, message) =
         message_get_required_data(&engine, &params.message).await?;
@@ -294,7 +310,7 @@ pub async fn proof_message_data(
     let transaction_json = engine
         .query_transaction_data(&transaction_id, "id boc in_msg out_msgs")
         .await
-        .map_err(|err| Error::proof_check_failed(err))?;
+        .map_err(Error::proof_check_failed)?;
 
     if !is_transaction_refers_to_message(
         &transaction_json,
@@ -306,16 +322,11 @@ pub async fn proof_message_data(
         )));
     }
 
-    proof_transaction_data(
-        context,
-        ParamsOfProofTransactionData {
-            transaction: transaction_json,
-        },
-    )
-    .await?;
+    proof_transaction_data(context, ParamsOfProofTransactionData { transaction: transaction_json })
+        .await?;
 
     let message_json =
-        json::serialize_message(root_hash, message, boc).map_err(|err| Error::invalid_data(err))?;
+        json::serialize_message(root_hash, message, boc).map_err(Error::invalid_data)?;
 
     json::compare_messages(&params.message, &message_json)
 }
@@ -325,15 +336,11 @@ pub(crate) async fn transaction_get_required_data<'trans>(
     transaction_json: &'trans Value,
 ) -> ClientResult<(UInt256, Cow<'trans, str>, Vec<u8>, Transaction)> {
     let id_opt = Cow::Borrowed(&transaction_json["id"]);
-    let mut block_id_opt = transaction_json["block_id"]
-        .as_str()
-        .map(|str| Cow::Borrowed(str));
+    let mut block_id_opt = transaction_json["block_id"].as_str().map(Cow::Borrowed);
     let mut boc_opt = Cow::Borrowed(&transaction_json["boc"]);
 
     if id_opt.is_null() && boc_opt.is_null() {
-        return Err(Error::invalid_data(
-            "Transaction's `boc` or id are required",
-        ));
+        return Err(Error::invalid_data("Transaction's `boc` or id are required"));
     }
 
     if let Some(id) = id_opt.as_str() {
@@ -378,18 +385,16 @@ async fn transaction_query_required_fields<'trans>(
         fields.push("block_id");
     }
 
-    if fields.len() > 0 {
+    if !fields.is_empty() {
         let mut transaction_json = engine
             .query_transaction_data(id, &fields.join(" "))
             .await
-            .map_err(|err| Error::proof_check_failed(err))?;
+            .map_err(Error::proof_check_failed)?;
         if boc_opt.is_null() {
             *boc_opt = Cow::Owned(transaction_json["boc"].take());
         }
         if block_id_opt.is_none() {
-            *block_id_opt = transaction_json["block_id"]
-                .take_string()
-                .map(|string| Cow::Owned(string));
+            *block_id_opt = transaction_json["block_id"].take_string().map(Cow::Owned);
         }
     }
 
@@ -404,10 +409,8 @@ async fn message_get_required_data<'msg>(
     let mut trans_id_opt = if let Some(dst_id_str) = message_json["dst_transaction"]["id"].as_str()
     {
         Some(Cow::Borrowed(dst_id_str))
-    } else if let Some(src_id_str) = message_json["src_transaction"]["id"].as_str() {
-        Some(Cow::Borrowed(src_id_str))
     } else {
-        None
+        message_json["src_transaction"]["id"].as_str().map(Cow::Borrowed)
     };
     let mut boc_opt = Cow::Borrowed(&message_json["boc"]);
 
@@ -458,11 +461,11 @@ async fn message_query_required_fields<'msg>(
         fields.push("dst_transaction(timeout: 0){id}");
     }
 
-    if fields.len() > 0 {
+    if !fields.is_empty() {
         let mut message_json = engine
             .query_message_data(id, &fields.join(" "))
             .await
-            .map_err(|err| Error::proof_check_failed(err))?;
+            .map_err(Error::proof_check_failed)?;
         if boc_opt.is_null() {
             *boc_opt = Cow::Owned(message_json["boc"].take());
         }
@@ -551,9 +554,9 @@ impl BlockProof {
         let id = BlockIdExt::with_params(shard_id, seq_no, root_hash, file_hash);
 
         let signatures_json = &value["signatures"];
-        let root_boc = base64::decode(signatures_json.get_str("proof")?)?;
+        let root_boc = base64_decode(signatures_json.get_str("proof")?)?;
 
-        let root = tvm_types::boc::read_single_root_boc(&root_boc)?;
+        let root = tvm_types::boc::read_single_root_boc(root_boc)?;
 
         let mut pure_signatures = Vec::new();
         let signatures_json_vec = signatures_json.get_array("signatures")?;
@@ -569,26 +572,19 @@ impl BlockProof {
             validator_list_hash_short: signatures_json.get_u32("validator_list_hash_short")?,
             catchain_seqno: signatures_json.get_u32("catchain_seqno")?,
             sig_weight: u64::from_str_radix(
-                signatures_json
-                    .get_str("sig_weight")?
-                    .trim_start_matches("0x"),
+                signatures_json.get_str("sig_weight")?.trim_start_matches("0x"),
                 16,
             )?,
             pure_signatures,
         };
 
-        Ok(Self {
-            id,
-            root,
-            signatures,
-        })
+        Ok(Self { id, root, signatures })
     }
 
     pub fn deserialize(data: &[u8]) -> Result<Self> {
         let proof = tvm_block::BlockProof::construct_from_bytes(data)?;
-        let signatures = proof
-            .signatures
-            .ok_or_else(|| err_msg("Signatures must be filled"))?;
+        let signatures =
+            proof.signatures.ok_or_else(|| anyhow::anyhow!("Signatures must be filled"))?;
 
         let mut pure_signatures = Vec::new();
         tvm_types::HashmapType::iterate_slices(
@@ -625,14 +621,14 @@ impl BlockProof {
             MerkleProof::construct_from(&mut SliceData::load_cell(self.root.clone())?)?;
         let block_virt_root = merkle_proof.proof.clone().virtualize(1);
         if *self.id().root_hash() != block_virt_root.repr_hash() {
-            bail!(
+            anyhow::bail!(
                 "merkle proof has invalid virtual hash (found: {}, expected: {})",
                 block_virt_root.repr_hash(),
                 self.id(),
             )
         }
         if block_virt_root.repr_hash() != self.id().root_hash {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with incorrect root hash: \
                     expected {:x}, found: {:x} ",
                 self.id(),
@@ -640,15 +636,12 @@ impl BlockProof {
                 block_virt_root.repr_hash()
             )
         }
-        Ok((
-            Block::construct_from_cell(block_virt_root.clone())?,
-            block_virt_root,
-        ))
+        Ok((Block::construct_from_cell(block_virt_root.clone())?, block_virt_root))
     }
 
     pub async fn check_proof(&self, engine: &impl ProofHelperEngine) -> Result<(Block, BlockInfo)> {
         if !self.id().shard().is_masterchain() {
-            bail!("Only masterchain block proofs are supported");
+            anyhow::bail!("Only masterchain block proofs are supported");
         }
 
         let (virt_block, virt_block_info) = self.pre_check_block_proof()?;
@@ -677,20 +670,20 @@ impl BlockProof {
         virt_block_info: &BlockInfo,
     ) -> Result<()> {
         if !self.id().shard().is_masterchain() {
-            bail!(
+            anyhow::bail!(
                 "Can't verify non masterchain block {} using previous key masterchain block",
                 self.id(),
             )
         }
         if !prev_key_block_proof.id().shard().is_masterchain() {
-            bail!(
+            anyhow::bail!(
                 "Invalid previous key block: it's id {} doesn't belong to the masterchain",
                 prev_key_block_proof.id(),
             )
         }
         let prev_key_block_seqno = virt_block.read_info()?.prev_key_block_seqno();
-        if prev_key_block_proof.id().seq_no as u32 != prev_key_block_seqno {
-            bail!(
+        if prev_key_block_proof.id().seq_no != prev_key_block_seqno {
+            anyhow::bail!(
                 "Can't verify block {} using key block {} because the block declares different \
                     previous key block seqno {}",
                 self.id(),
@@ -699,7 +692,7 @@ impl BlockProof {
             )
         }
         if prev_key_block_proof.id().seq_no >= self.id().seq_no {
-            bail!(
+            anyhow::bail!(
                 "Can't verify block {} using key block {} with larger or equal seqno",
                 self.id(),
                 prev_key_block_proof.id(),
@@ -724,7 +717,7 @@ impl BlockProof {
         virt_block_info: &BlockInfo,
     ) -> Result<()> {
         if virt_block_info.key_block() {
-            self.pre_check_key_block_proof(&virt_block)?;
+            self.pre_check_key_block_proof(virt_block)?;
         }
 
         let (validators, validators_hash_short) =
@@ -741,7 +734,7 @@ impl BlockProof {
         let _state_update = virt_block.read_state_update()?;
 
         if info.version() != 0 {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with incorrect block info's version {}",
                 self.id(),
                 info.version(),
@@ -749,7 +742,7 @@ impl BlockProof {
         }
 
         if info.seq_no() != self.id().seq_no() {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with seq_no {}, but {} is expected",
                 self.id(),
                 info.seq_no(),
@@ -758,7 +751,7 @@ impl BlockProof {
         }
 
         if info.shard() != self.id().shard() {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with shard id {}, but {} is expected",
                 self.id(),
                 info.shard(),
@@ -767,7 +760,7 @@ impl BlockProof {
         }
 
         if info.read_master_ref()?.is_some() != (!info.shard().is_masterchain()) {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with invalid not_master flag \
                     in block info",
                 self.id(),
@@ -777,7 +770,7 @@ impl BlockProof {
         if self.id().shard().is_masterchain()
             && (info.after_merge() || info.before_split() || info.after_split())
         {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with a block info which declares \
                     split/merge for a masterchain block",
                 self.id(),
@@ -785,7 +778,7 @@ impl BlockProof {
         }
 
         if info.after_merge() && info.after_split() {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with a block info which declares both \
                     after merge and after split flags",
                 self.id(),
@@ -793,7 +786,7 @@ impl BlockProof {
         }
 
         if info.after_split() && (info.shard().is_full()) {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with a block info which declares both \
                     after_split flag and non zero shard prefix",
                 self.id(),
@@ -801,7 +794,7 @@ impl BlockProof {
         }
 
         if info.after_merge() && !info.shard().can_split() {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof with a block info which declares both \
                     after_merge flag and shard prefix which can't split anymore",
                 self.id(),
@@ -809,7 +802,7 @@ impl BlockProof {
         }
 
         if info.key_block() && !self.id().shard().is_masterchain() {
-            bail!(
+            anyhow::bail!(
                 "proof for block {} contains a Merkle proof which declares non master chain but \
                     key block",
                 self.id(),
@@ -856,15 +849,14 @@ impl BlockProof {
         let (virt_key_block, prev_key_block_info) = prev_key_block_proof.pre_check_block_proof()?;
 
         if !prev_key_block_info.key_block() {
-            bail!(
+            anyhow::bail!(
                 "proof for key block {} contains a Merkle proof which declares non key block",
                 prev_key_block_proof.id(),
             )
         }
 
-        let (validator_set, cc_config) = virt_key_block
-            .read_cur_validator_set_and_cc_conf()
-            .map_err(|err| {
+        let (validator_set, cc_config) =
+            virt_key_block.read_cur_validator_set_and_cc_conf().map_err(|err| {
                 Error::invalid_data(format!(
                     "While checking proof for {}: can't extract config params from key block's \
                         proof {}: {}",
@@ -878,7 +870,7 @@ impl BlockProof {
             .read_extra()?
             .read_custom()?
             .and_then(|custom| custom.config().cloned())
-            .ok_or_else(|| err_msg("State doesn't contain `custom` field"))?;
+            .ok_or_else(|| anyhow::anyhow!("State doesn't contain `custom` field"))?;
         calc_subset_for_workchain(
             &validator_set,
             &config,
@@ -897,7 +889,7 @@ impl BlockProof {
     ) -> Result<()> {
         // Pre checks
         if self.signatures.validator_list_hash_short() != list_hash_short {
-            bail!(
+            anyhow::bail!(
                 "Bad validator set hash in proof for block {}, calculated: {}, found: {}",
                 self.id(),
                 list_hash_short,
@@ -905,8 +897,7 @@ impl BlockProof {
             );
         }
         // Check signatures
-        let checked_data =
-            Block::build_data_for_sign(&self.id().root_hash(), &self.id().file_hash());
+        let checked_data = Block::build_data_for_sign(self.id().root_hash(), self.id().file_hash());
         let total_weight: u64 = validators_list.iter().map(|v| v.weight).sum();
         let weight = check_crypto_signatures(&self.signatures, &validators_list, &checked_data)
             .map_err(|err| {
@@ -919,7 +910,7 @@ impl BlockProof {
 
         // Check weight
         if weight != self.signatures.sig_weight() {
-            bail!(
+            anyhow::bail!(
                 "Proof for {}: total signature weight mismatch: declared: {}, calculated: {}",
                 self.id(),
                 self.signatures.sig_weight(),
@@ -928,7 +919,7 @@ impl BlockProof {
         }
 
         if weight * 3 <= total_weight * 2 {
-            bail!("Proof for {}: too small signatures weight", self.id(),);
+            anyhow::bail!("Proof for {}: too small signatures weight", self.id(),);
         }
 
         Ok(())
@@ -940,13 +931,13 @@ impl BlockProof {
         block_info: &BlockInfo,
     ) -> Result<(Vec<ValidatorDescr>, u32)> {
         if !self.id().shard().is_masterchain() {
-            bail!(
+            anyhow::bail!(
                 "Can't check proof for non master block {} using master state",
                 self.id(),
             );
         }
         if block_info.prev_key_block_seqno() > 0 {
-            bail!(
+            anyhow::bail!(
                 "Can't check proof for block {} using zerostate, because it is older than \
                     the previous key block with seq_no {}",
                 self.id(),
@@ -957,7 +948,7 @@ impl BlockProof {
         let (cur_validator_set, cc_config) = zerostate.read_cur_validator_set_and_cc_conf()?;
         let mc_state_extra = zerostate
             .read_custom()?
-            .ok_or_else(|| err_msg("Can't read custom field from the zerostate"))?;
+            .ok_or_else(|| anyhow::anyhow!("Can't read custom field from the zerostate"))?;
 
         let (validators, hash_short) = calc_subset_for_workchain(
             &cur_validator_set,
@@ -999,7 +990,7 @@ async fn resolve_initial_trusted_key_block(
         return Ok((seq_no, UInt256::from_slice(root_hash)));
     }
 
-    bail!(
+    anyhow::bail!(
         "Unable to resolve trusted key-block for network with zerostate root_hash: `{}`",
         network_uid.zerostate_root_hash,
     )

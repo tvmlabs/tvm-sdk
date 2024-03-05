@@ -1,11 +1,18 @@
-use proc_macro2::TokenStream;
-use api_info;
 use api_info::NumberType;
+use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{
-    AngleBracketedGenericArguments, Attribute, Fields, GenericArgument, Lit, Meta, MetaNameValue,
-    NestedMeta, Path, PathArguments, Type, TypeArray,
-};
+use syn::AngleBracketedGenericArguments;
+use syn::Attribute;
+use syn::Fields;
+use syn::GenericArgument;
+use syn::Lit;
+use syn::Meta;
+use syn::MetaNameValue;
+use syn::NestedMeta;
+use syn::Path;
+use syn::PathArguments;
+use syn::Type;
+use syn::TypeArray;
 
 pub(crate) fn field_from(
     name: Option<&syn::Ident>,
@@ -14,9 +21,7 @@ pub(crate) fn field_from(
 ) -> api_info::Field {
     let (summary, description) = doc_from(attrs);
     let value = if has_attr_value("serde", "default", attrs) {
-        api_info::Type::Optional {
-            inner: Box::new(value),
-        }
+        api_info::Type::Optional { inner: Box::new(value) }
     } else {
         value
     };
@@ -25,12 +30,7 @@ pub(crate) fn field_from(
     } else {
         name.map(|x| x.to_string()).unwrap_or("".into())
     };
-    api_info::Field {
-        name,
-        summary,
-        description,
-        value,
-    }
+    api_info::Field { name, summary, description, value }
 }
 
 pub(crate) fn module_from(name: Option<&syn::Ident>, attrs: &Vec<Attribute>) -> api_info::Module {
@@ -40,13 +40,7 @@ pub(crate) fn module_from(name: Option<&syn::Ident>, attrs: &Vec<Attribute>) -> 
     } else {
         name.map(|x| x.to_string()).unwrap_or("".into())
     };
-    api_info::Module {
-        name,
-        summary,
-        description,
-        types: vec![],
-        functions: vec![],
-    }
+    api_info::Module { name, summary, description, types: vec![], functions: vec![] }
 }
 
 pub(crate) fn doc_to_tokens(
@@ -121,7 +115,7 @@ pub(crate) fn const_to_tokens(c: &api_info::Const) -> TokenStream {
 
 pub(crate) fn function_to_tokens(m: &api_info::Function) -> TokenStream {
     let name = &m.name;
-    let params = m.params.iter().map(|x| field_to_tokens(x));
+    let params = m.params.iter().map(field_to_tokens);
     let result = type_to_tokens(&m.result);
     let (summary, description) = doc_to_tokens(&m.summary, &m.description);
     quote! {
@@ -149,17 +143,11 @@ fn type_to_tokens(t: &api_info::Type) -> TokenStream {
         api_info::Type::None {} => quote! { api_info::Type::None {} },
         api_info::Type::Any {} => quote! { api_info::Type::Any {} },
         api_info::Type::Boolean {} => quote! { api_info::Type::Boolean {} },
-        api_info::Type::Number {
-            number_type,
-            number_size: size,
-        } => {
+        api_info::Type::Number { number_type, number_size: size } => {
             let number_type_tokens = number_type_to_tokens(number_type);
             quote! { api_info::Type::Number { number_type: #number_type_tokens, number_size: #size } }
         }
-        api_info::Type::BigInt {
-            number_type,
-            number_size: size,
-        } => {
+        api_info::Type::BigInt { number_type, number_size: size } => {
             let number_type_tokens = number_type_to_tokens(number_type);
             quote! { api_info::Type::BigInt { number_type: #number_type_tokens, number_size: #size } }
         }
@@ -176,19 +164,19 @@ fn type_to_tokens(t: &api_info::Type) -> TokenStream {
             quote! { api_info::Type::Array { item: #item_type.into() } }
         }
         api_info::Type::Struct { fields } => {
-            let field_types = fields.iter().map(|x| field_to_tokens(x));
+            let field_types = fields.iter().map(field_to_tokens);
             quote! { api_info::Type::Struct { fields: vec![#(#field_types),*] } }
         }
         api_info::Type::EnumOfConsts { consts } => {
-            let consts = consts.iter().map(|x| const_to_tokens(x));
+            let consts = consts.iter().map(const_to_tokens);
             quote! { api_info::Type::EnumOfConsts { consts: vec![#(#consts),*] } }
         }
         api_info::Type::EnumOfTypes { types } => {
-            let types = types.iter().map(|x| field_to_tokens(x));
+            let types = types.iter().map(field_to_tokens);
             quote! { api_info::Type::EnumOfTypes { types: vec![#(#types),*] } }
         }
         api_info::Type::Generic { name, args } => {
-            let types = args.iter().map(|x| type_to_tokens(x));
+            let types = args.iter().map(type_to_tokens);
             quote! { api_info::Type::Generic { name: #name.into(), args: vec![#(#types),*] } }
         }
     }
@@ -222,9 +210,7 @@ pub(crate) fn type_from(ty: &Type) -> api_info::Type {
 }
 
 fn array_type_from(ty: &TypeArray) -> api_info::Type {
-    api_info::Type::Array {
-        item: Box::new(type_from(ty.elem.as_ref())),
-    }
+    api_info::Type::Array { item: Box::new(type_from(ty.elem.as_ref())) }
 }
 
 fn type_from_path(path: &Path) -> api_info::Type {
@@ -232,7 +218,7 @@ fn type_from_path(path: &Path) -> api_info::Type {
         let name = unqualified_type_name(segment.ident.to_string());
         if let Some(result) = match &segment.arguments {
             PathArguments::None => Some(resolve_type_name(name)),
-            PathArguments::AngleBracketed(args) => generic_type_from(name, &args),
+            PathArguments::AngleBracketed(args) => generic_type_from(name, args),
             _ => None,
         } {
             return result;
@@ -240,10 +226,7 @@ fn type_from_path(path: &Path) -> api_info::Type {
     }
     panic!(
         "Unsupported type {:?}",
-        path.segments
-            .last()
-            .map(|x| x.ident.to_string())
-            .unwrap_or(String::new())
+        path.segments.last().map(|x| x.ident.to_string()).unwrap_or_default()
     )
 }
 
@@ -296,7 +279,7 @@ fn generic_type_from(
 }
 
 fn replace_tabs(s: &str) -> String {
-    s.split("\t").collect::<Vec<&str>>().join("    ").trim_end().into()
+    s.split('\t').collect::<Vec<&str>>().join("    ").trim_end().into()
 }
 
 fn get_leading_spaces(s: &str) -> usize {
@@ -314,7 +297,7 @@ fn reduce_lines(lines: Vec<String>) -> Vec<String> {
     let mut min_leading_spaces = None;
     let mut reduced = Vec::new();
     for line in &lines {
-        let line = replace_tabs(&line);
+        let line = replace_tabs(line);
         if !line.is_empty() {
             let leading_spaces = get_leading_spaces(&line);
             if min_leading_spaces.is_none() || leading_spaces < min_leading_spaces.unwrap() {
@@ -333,12 +316,11 @@ fn reduce_lines(lines: Vec<String>) -> Vec<String> {
     reduced
 }
 
-
 fn get_doc(element_summary: String, element_description: String) -> (String, String) {
     if element_description.trim().is_empty() {
         return (element_summary, String::new());
     }
-    let lines = reduce_lines(element_description.split("\n").map(|s| s.into()).collect());
+    let lines = reduce_lines(element_description.split('\n').map(|s| s.into()).collect());
     let mut summary = String::new();
     let mut summary_complete = false;
     let mut description = String::new();
@@ -346,43 +328,40 @@ fn get_doc(element_summary: String, element_description: String) -> (String, Str
         if summary_complete {
             if !line.is_empty() || !description.is_empty() {
                 description.push_str(line);
-                description.push_str("\n");
+                description.push('\n');
             }
         } else if !line.is_empty() {
             if !summary.is_empty() {
-                summary.push_str(" ");
+                summary.push(' ');
             }
             if let Some(dot_pos) = line.find(". ").or(line.find(".\n")) {
                 summary.push_str(&line[0..(dot_pos + 1)]);
                 summary_complete = true;
-                description.push_str(&line[(dot_pos + 1)..].trim_start());
-                description.push_str(" ");
+                description.push_str(line[(dot_pos + 1)..].trim_start());
+                description.push(' ');
             } else {
                 summary.push_str(line);
             }
-        } else {
-            if !summary.is_empty() {
-                summary_complete = true;
-            }
+        } else if !summary.is_empty() {
+            summary_complete = true;
         }
     }
     (summary, description.trim().into())
 }
 
-
-pub(crate) fn doc_from(attrs: &Vec<Attribute>) -> (Option<String>, Option<String>) {
+pub(crate) fn doc_from(attrs: &[Attribute]) -> (Option<String>, Option<String>) {
     let mut summary = String::new();
     let mut description = String::new();
 
     fn try_add(doc: &mut String, s: &str) {
         if !doc.is_empty() {
-            doc.push_str("\n");
+            doc.push('\n');
         }
         doc.push_str(s);
     }
 
     for attr in attrs.iter() {
-        match DocAttr::from(&attr) {
+        match DocAttr::from(attr) {
             DocAttr::Doc(text) => try_add(&mut description, &text),
             DocAttr::Summary(text) => try_add(&mut summary, &text),
             _ => (),
@@ -395,11 +374,7 @@ pub(crate) fn doc_from(attrs: &Vec<Attribute>) -> (Option<String>, Option<String
         }
     }
     fn non_empty(s: String) -> Option<String> {
-        if s.is_empty() {
-            None
-        } else {
-            Some(s)
-        }
+        if s.is_empty() { None } else { Some(s) }
     }
     let (summary, description) = get_doc(summary, description);
     (non_empty(summary), non_empty(description))
@@ -415,15 +390,13 @@ impl DocAttr {
     fn from(attr: &Attribute) -> DocAttr {
         match attr.parse_meta() {
             Ok(Meta::NameValue(ref meta)) => {
-                return get_value_of("doc", meta)
-                    .map(|x| DocAttr::Doc(x))
-                    .unwrap_or(DocAttr::None);
+                return get_value_of("doc", meta).map(DocAttr::Doc).unwrap_or(DocAttr::None);
             }
             Ok(Meta::List(ref list)) => {
                 if path_is(&list.path, "doc") {
                     if let Some(NestedMeta::Meta(Meta::NameValue(meta))) = list.nested.first() {
-                        return get_value_of("summary", &meta)
-                            .map(|x| DocAttr::Summary(x))
+                        return get_value_of("summary", meta)
+                            .map(DocAttr::Summary)
                             .unwrap_or(DocAttr::None);
                     }
                 }
@@ -500,16 +473,9 @@ fn unqualified_type_name(qualified_name: String) -> String {
 }
 
 pub(crate) fn path_is(path: &Path, expected: &str) -> bool {
-    if let Some(ident) = path.get_ident() {
-        ident.to_string() == expected
-    } else {
-        false
-    }
+    if let Some(ident) = path.get_ident() { *ident == expected } else { false }
 }
 
 pub fn fields_from(fields: &Fields) -> Vec<api_info::Field> {
-    fields
-        .iter()
-        .map(|f| field_from(f.ident.as_ref(), &f.attrs, type_from(&f.ty)))
-        .collect()
+    fields.iter().map(|f| field_from(f.ident.as_ref(), &f.attrs, type_from(&f.ty))).collect()
 }

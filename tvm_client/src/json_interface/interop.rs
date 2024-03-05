@@ -1,27 +1,26 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
+
+use std::ffi::c_void;
+use std::ptr::null;
+
+use serde_json::Value;
 
 use super::request::Request;
 use super::runtime::Runtime;
 use crate::client::Error;
 use crate::error::ClientResult;
-use serde_json::Value;
-use std::ffi::c_void;
-use std::ptr::null;
 
 pub type ContextHandle = u32;
-
 
 #[derive(Serialize, Deserialize, Clone, num_derive::FromPrimitive)]
 
@@ -43,7 +42,7 @@ pub enum ResponseType {
 
 pub fn create_context(config: String) -> String {
     let context = Runtime::create_context(&config.to_string());
-    convert_result_to_sync_response(context.map(|x| Value::from(x)))
+    convert_result_to_sync_response(context.map(Value::from))
 }
 
 pub fn destroy_context(context: ContextHandle) {
@@ -91,8 +90,9 @@ pub fn request_sync(context: ContextHandle, function_name: String, params_json: 
     let context = Runtime::required_context(context);
     let result_value = match context {
         Ok(context) => match Runtime::dispatch_sync(context, function_name, params_json) {
-            Ok(result_json) => serde_json::from_str(&result_json)
-                .map_err(|err| Error::cannot_serialize_result(err)),
+            Ok(result_json) => {
+                serde_json::from_str(&result_json).map_err(Error::cannot_serialize_result)
+            }
             Err(err) => Err(err),
         },
         Err(_) => Err(Error::invalid_context_handle(context_handle)),
@@ -178,11 +178,7 @@ pub unsafe extern "C" fn tc_destroy_string(string: *const String) {
 
 #[no_mangle]
 pub unsafe extern "C" fn tc_read_string(string: *const String) -> StringData {
-    if string.is_null() {
-        StringData::default()
-    } else {
-        StringData::new(&*string)
-    }
+    if string.is_null() { StringData::default() } else { StringData::new(&*string) }
 }
 
 #[repr(C)]
@@ -194,17 +190,11 @@ pub struct StringData {
 
 impl StringData {
     pub fn new(s: &String) -> Self {
-        Self {
-            content: s.as_ptr(),
-            len: s.len() as u32,
-        }
+        Self { content: s.as_ptr(), len: s.len() as u32 }
     }
 
     pub fn default() -> Self {
-        Self {
-            content: null(),
-            len: 0,
-        }
+        Self { content: null(), len: 0 }
     }
 
     pub fn to_string(&self) -> String {

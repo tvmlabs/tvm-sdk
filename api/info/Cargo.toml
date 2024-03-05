@@ -1,13 +1,17 @@
 [package]
-authors = [ 'TON Labs LTD <support@tonlabs.io>' ]
-edition = '2018'
-name = 'api_info'
-version = '1.45.1'
+name = "api_info"
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
-serde = '1.0.115'
-serde_derive = '1.0.104'
-serde_json = '1.0.57'
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
 
 [lib]
-name = 'api_info'
+name = "api_info"

@@ -1,9 +1,14 @@
-use super::dinterface::{decode_answer_id, get_arg, DebotInterface, InterfaceResult};
+use serde_json::Value as JsonValue;
+use tvm_abi::Contract;
+use tvm_abi::ParamType;
+
+use super::dinterface::decode_answer_id;
+use super::dinterface::get_arg;
+use super::dinterface::DebotInterface;
+use super::dinterface::InterfaceResult;
 use super::json_lib_utils::bypass_json;
 use crate::abi::Abi;
 use crate::debot::json_lib_utils::pack;
-use serde_json::Value as JsonValue;
-use tvm_abi::{Contract, ParamType};
 
 const ABI: &str = r#"
 {
@@ -46,9 +51,7 @@ pub struct JsonInterface {
 
 impl JsonInterface {
     pub fn new(abi: &str) -> Self {
-        Self {
-            debot_abi: abi.to_owned(),
-        }
+        Self { debot_abi: abi.to_owned() }
     }
 
     fn deserialize(&self, args: &JsonValue) -> InterfaceResult {
@@ -56,7 +59,7 @@ impl JsonInterface {
         let json_str = get_arg(args, "json")?;
         let mut json_obj: JsonValue = serde_json::from_str(&json_str)
             .map_err(|e| format!("argument \"json\" is not a valid json: {}", e))?;
-        let _ = self.deserialize_json(&mut json_obj, answer_id)?;
+        self.deserialize_json(&mut json_obj, answer_id)?;
         Ok((
             answer_id,
             json!({
@@ -90,7 +93,7 @@ impl JsonInterface {
             .inputs
             .iter()
             .find(|e| e.name == "obj")
-            .ok_or(format!("\"obj\" argument not found"))?;
+            .ok_or("\"obj\" argument not found".to_string())?;
         if let ParamType::Tuple(params) = &obj.kind {
             for p in params {
                 let pointer = "";

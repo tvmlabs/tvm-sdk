@@ -1,26 +1,32 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
+use std::fmt::Debug;
+use std::fmt::Formatter;
+
+use base64::Engine;
+use ed25519_dalek::SigningKey;
+use tvm_types::base64_encode;
+
+use super::internal::hex_decode_secret_const;
+use super::internal::SecretBufConst;
 use crate::client::ClientContext;
 use crate::crypto;
-use crate::crypto::internal::{decode_public_key, decode_secret_key, sign_using_keys, tvm_crc16};
-use crate::encoding::{base64_decode, hex_decode};
+use crate::crypto::internal::decode_public_key;
+use crate::crypto::internal::decode_secret_key;
+use crate::crypto::internal::sign_using_keys;
+use crate::crypto::internal::tvm_crc16;
+use crate::encoding::base64_decode;
+use crate::encoding::hex_decode;
 use crate::error::ClientResult;
-use base64::URL_SAFE;
-use ed25519_dalek::SigningKey;
-use std::fmt::{Debug, Formatter};
-
-use super::internal::{hex_decode_secret_const, SecretBufConst};
 
 pub(crate) fn strip_secret(secret: &str) -> String {
     const SECRET_SHOW_LEN: usize = 8;
@@ -28,11 +34,7 @@ pub(crate) fn strip_secret(secret: &str) -> String {
         return format!(r#""{}""#, secret);
     }
 
-    format!(
-        r#""{}..." ({} chars)"#,
-        &secret[..SECRET_SHOW_LEN],
-        secret.len(),
-    )
+    format!(r#""{}..." ({} chars)"#, &secret[..SECRET_SHOW_LEN], secret.len(),)
 }
 
 //----------------------------------------------------------------------------------------- KeyPair
@@ -105,7 +107,7 @@ pub fn convert_public_key_to_tvm_safe_format(
     tvm_public_key.push((hash >> 8) as u8);
     tvm_public_key.push((hash & 255) as u8);
     Ok(ResultOfConvertPublicKeyToTonSafeFormat {
-        tvm_public_key: base64::encode_config(&tvm_public_key, URL_SAFE),
+        tvm_public_key: base64::engine::general_purpose::URL_SAFE.encode(tvm_public_key),
     })
 }
 
@@ -116,10 +118,7 @@ pub fn convert_public_key_to_tvm_safe_format(
 pub fn generate_random_sign_keys(_context: std::sync::Arc<ClientContext>) -> ClientResult<KeyPair> {
     let bytes = SecretBufConst(rand::random());
     let sign_key = SigningKey::from_bytes(&bytes.0);
-    Ok(KeyPair::new(
-        hex::encode(&sign_key.verifying_key().to_bytes()),
-        hex::encode(bytes),
-    ))
+    Ok(KeyPair::new(hex::encode(sign_key.verifying_key().to_bytes()), hex::encode(bytes)))
 }
 
 //-------------------------------------------------------------------------------------------- sign
@@ -149,10 +148,7 @@ pub fn sign(
 ) -> ClientResult<ResultOfSign> {
     let (signed, signature) =
         sign_using_keys(&base64_decode(&params.unsigned)?, &params.keys.decode()?)?;
-    Ok(ResultOfSign {
-        signed: base64::encode(&signed),
-        signature: hex::encode(signature),
-    })
+    Ok(ResultOfSign { signed: base64_encode(signed), signature: hex::encode(signature) })
 }
 
 //-------------------------------------------------------------------------------- verify_signature
@@ -189,7 +185,5 @@ pub fn verify_signature(
     )
     .map_err(|_| crypto::Error::nacl_sign_failed("verify signature failed"))?;
     unsigned.resize(len, 0);
-    Ok(ResultOfVerifySignature {
-        unsigned: base64::encode(&unsigned),
-    })
+    Ok(ResultOfVerifySignature { unsigned: base64_encode(&unsigned) })
 }

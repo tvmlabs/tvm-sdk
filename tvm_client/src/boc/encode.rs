@@ -1,17 +1,23 @@
+use std::ops::ShlAssign;
 use std::slice::Iter;
 
-use crate::{error::ClientResult, ClientContext};
+use num_bigint::BigInt;
+use num_bigint::BigUint;
+use num_bigint::Sign;
+use num_traits::Num;
 use serde_json::Value;
 use tvm_block::Serializable;
-use tvm_types::{BuilderData, Cell, IBitstring};
+use tvm_types::BuilderData;
+use tvm_types::Cell;
+use tvm_types::IBitstring;
 
-use super::{internal::serialize_cell_to_boc, Error};
+use super::internal::serialize_cell_to_boc;
+use super::Error;
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::boc::BocCacheType;
 use crate::encoding::account_decode;
-use num_bigint::{BigInt, BigUint, Sign};
-use num_traits::Num;
-use std::ops::ShlAssign;
+use crate::error::ClientResult;
+use crate::ClientContext;
 
 /// Cell builder operation.
 #[derive(Serialize, Deserialize, Clone, ApiType)]
@@ -24,8 +30,7 @@ pub enum BuilderOp {
         /// Value:
         /// - `Number` containing integer number. e.g. `123`, `-123`.
         /// - Decimal string. e.g. `"123"`, `"-123"`.
-        /// - `0x` prefixed hexadecimal string.
-        ///   e.g `0x123`, `0X123`, `-0x123`.
+        /// - `0x` prefixed hexadecimal string. e.g `0x123`, `0X123`, `-0x123`.
         value: Value,
     },
     /// Append bit string to cell data.
@@ -66,10 +71,7 @@ pub enum BuilderOp {
 
 impl Default for BuilderOp {
     fn default() -> Self {
-        Self::Integer {
-            size: 0,
-            value: Value::from(0),
-        }
+        Self::Integer { size: 0, value: Value::from(0) }
     }
 }
 
@@ -133,23 +135,17 @@ struct Builder<'a> {
 }
 
 enum BuildResult<'a> {
-    Nested {
-        nested: Builder<'a>,
-        prev: Builder<'a>,
-    },
+    Nested { nested: Builder<'a>, prev: Builder<'a> },
     Complete(Cell),
 }
 
 impl<'a> Builder<'a> {
     fn new(builder: &'a Vec<BuilderOp>) -> Self {
-        Self {
-            input: builder.iter(),
-            result: BuilderData::new(),
-        }
+        Self { input: builder.iter(), result: BuilderData::new() }
     }
 
-    /// Append data using operation iterator until the end or the nested cell operation.
-    /// Returns resulting cell or nested Builder.
+    /// Append data using operation iterator until the end or the nested cell
+    /// operation. Returns resulting cell or nested Builder.
     fn build(mut self, context: &std::sync::Arc<ClientContext>) -> ClientResult<BuildResult<'a>> {
         while let Some(op) = self.input.next() {
             match op {
@@ -157,7 +153,7 @@ impl<'a> Builder<'a> {
                     append_integer(&mut self.result, *size as usize, value)?;
                 }
                 BuilderOp::BitString { value } => {
-                    append_bitstring(&mut self.result, &value)?;
+                    append_bitstring(&mut self.result, value)?;
                 }
                 BuilderOp::CellBoc { boc } => {
                     self.result
@@ -167,33 +163,24 @@ impl<'a> Builder<'a> {
                         .map_err(|err| Error::serialization_error(err, "encode_boc"))?;
                 }
                 BuilderOp::Cell { ref builder } => {
-                    return Ok(BuildResult::Nested {
-                        nested: Self::new(builder),
-                        prev: self,
-                    });
+                    return Ok(BuildResult::Nested { nested: Self::new(builder), prev: self });
                 }
                 BuilderOp::Address { address } => {
                     account_decode(address)?
                         .write_to(&mut self.result)
-                        .map_err(|err| Error::invalid_boc(err))?;
+                        .map_err(Error::invalid_boc)?;
                 }
             }
         }
-        Ok(BuildResult::Complete(self.result.into_cell().map_err(
-            |err| Error::serialization_error(err, "encode_boc"),
-        )?))
+        Ok(BuildResult::Complete(
+            self.result.into_cell().map_err(|err| Error::serialization_error(err, "encode_boc"))?,
+        ))
     }
 }
 
 fn append_integer(builder: &mut BuilderData, size: usize, value: &Value) -> ClientResult<()> {
     if let Some(value) = value.as_i64() {
-        append_number(
-            builder,
-            value < 0,
-            BigUint::from(value.abs() as u64),
-            size,
-            "Integer",
-        )
+        append_number(builder, value < 0, BigUint::from(value.unsigned_abs()), size, "Integer")
     } else if let Some(str) = value.as_str() {
         parse_integer(builder, str, size)
     } else {
@@ -233,19 +220,17 @@ fn append_number(
     while bytes.len() > expected_len {
         bytes.remove(0);
     }
-    builder
-        .append_raw(&bytes, size)
-        .map_err(|err| Error::serialization_error(err, name))?;
+    builder.append_raw(&bytes, size).map_err(|err| Error::serialization_error(err, name))?;
     Ok(())
 }
 
 /// Append `size` high bits from the number that is represented as a `string`.
 fn parse_integer(builder: &mut BuilderData, string: &str, size: usize) -> ClientResult<()> {
     let mut num_str = string.trim();
-    let negative = if num_str.starts_with("-") {
+    let negative = if num_str.starts_with('-') {
         num_str = &num_str[1..];
         true
-    } else if num_str.starts_with("+") {
+    } else if num_str.starts_with('+') {
         num_str = &num_str[1..];
         false
     } else {
@@ -279,33 +264,30 @@ fn append_bitstring(builder: &mut BuilderData, string: &str) -> ClientResult<()>
     let mut num_str = string.trim();
 
     // Try parse direct binary form
-    if num_str.starts_with("n") || num_str.starts_with("N") {
+    if num_str.starts_with('n') || num_str.starts_with('N') {
         parse_string(builder, &num_str[1..], false, 2, num_str.len() - 1)?;
         return Ok(());
     }
 
     // Escape from decorations
     if num_str.starts_with("x{") || num_str.starts_with("X{") {
-        if !num_str.ends_with("}") {
-            return Err(Error::serialization_error(
-                "Missing terminating `}`",
-                string,
-            ));
+        if !num_str.ends_with('}') {
+            return Err(Error::serialization_error("Missing terminating `}`", string));
         }
         num_str = &num_str[2..num_str.len() - 1];
-    } else if num_str.starts_with("x") || num_str.starts_with("X") {
+    } else if num_str.starts_with('x') || num_str.starts_with('X') {
         num_str = &num_str[1..];
     }
 
     // Check if there is a tagged representation
-    if num_str.ends_with("_") {
+    if num_str.ends_with('_') {
         num_str = &num_str[0..num_str.len() - 1];
         // Escape from trailing zeros because of BuilderData doesn't support this
-        while num_str.ends_with("0") {
+        while num_str.ends_with('0') {
             num_str = &num_str[0..num_str.len() - 1];
         }
         // Check if the bitstring isn't empty
-        if num_str != "" && num_str != "8" {
+        if !num_str.is_empty() && num_str != "8" {
             let mut number = BigUint::from_str_radix(num_str, 16)
                 .map_err(|err| Error::serialization_error(err, string))?;
             // If hex string has an odd len, we need to pad it with zero bits at the end

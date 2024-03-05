@@ -1,23 +1,23 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
 use serde_json::Value;
 
-use crate::client::ClientContext;
-use crate::error::{AddNetworkUrl, ClientResult};
-use crate::net::{ParamsOfQueryCollection, ParamsOfQueryCounterparties, ServerLink};
-
 use super::Error;
+use crate::client::ClientContext;
+use crate::error::AddNetworkUrl;
+use crate::error::ClientResult;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::ParamsOfQueryCounterparties;
+use crate::net::ServerLink;
 
 //------------------------------------------------------------------------------------------ query
 
@@ -50,11 +50,7 @@ where
                 .add_network_url(server_link)
                 .await
         }
-        Err(err) => {
-            Err(Error::queries_query_failed(err))
-                .add_network_url(server_link)
-                .await?
-        }
+        Err(err) => Err(Error::queries_query_failed(err)).add_network_url(server_link).await?,
     }
 }
 
@@ -72,9 +68,7 @@ pub async fn query(
         timeout: None,
     };
     let result = server_link.query(&query, None).await;
-    Ok(ResultOfQuery {
-        result: deserialize_result(result, server_link).await?,
-    })
+    Ok(ResultOfQuery { result: deserialize_result(result, server_link).await? })
 }
 
 //------------------------------------------------------------------------------- query_collection
@@ -97,16 +91,15 @@ pub async fn query_collection(
 ) -> ClientResult<ResultOfQueryCollection> {
     let server_link = context.get_server_link()?;
     let result = server_link.query_collection(params, None).await;
-    Ok(ResultOfQueryCollection {
-        result: deserialize_result(result, server_link).await?,
-    })
+    Ok(ResultOfQueryCollection { result: deserialize_result(result, server_link).await? })
 }
 
 //---------------------------------------------------------------------------- wait_for_collection
 
 #[derive(Serialize, Deserialize, ApiType, Clone, Default)]
 pub struct ParamsOfWaitForCollection {
-    /// Collection name (accounts, blocks, transactions, messages, block_signatures)
+    /// Collection name (accounts, blocks, transactions, messages,
+    /// block_signatures)
     pub collection: String,
     /// Collection filter
     pub filter: Option<Value>,
@@ -151,16 +144,18 @@ pub async fn wait_for_collection(
 
 //--------------------------------------------------------------------------- aggregate_collection
 
+use serde::de::DeserializeOwned;
+
 use crate::net::tvm_gql::GraphQLQuery;
 use crate::net::ParamsOfAggregateCollection;
-use serde::de::DeserializeOwned;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ResultOfAggregateCollection {
     /// Values for requested fields.
     ///
-    /// Returns an array of strings. Each string refers to the corresponding `fields` item.
-    /// Numeric value is returned as a decimal string representations.
+    /// Returns an array of strings. Each string refers to the corresponding
+    /// `fields` item. Numeric value is returned as a decimal string
+    /// representations.
     pub values: Value,
 }
 
@@ -175,16 +170,16 @@ pub async fn aggregate_collection(
 ) -> ClientResult<ResultOfAggregateCollection> {
     let server_link = context.get_server_link()?;
     let result = server_link.aggregate_collection(params, None).await;
-    Ok(ResultOfAggregateCollection {
-        values: deserialize_result(result, server_link).await?,
-    })
+    Ok(ResultOfAggregateCollection { values: deserialize_result(result, server_link).await? })
 }
 
-/// Allows to query and paginate through the list of accounts that the specified account
-/// has interacted with, sorted by the time of the last internal message between accounts
+/// Allows to query and paginate through the list of accounts that the specified
+/// account has interacted with, sorted by the time of the last internal message
+/// between accounts
 ///
-/// *Attention* this query retrieves data from 'Counterparties' service which is not supported in
-/// the opensource version of DApp Server (and will not be supported) as well as in Evernode SE (will be supported in SE in future),
+/// *Attention* this query retrieves data from 'Counterparties' service which is
+/// not supported in the opensource version of DApp Server (and will not be
+/// supported) as well as in Evernode SE (will be supported in SE in future),
 /// but is always accessible via [EVER OS Clouds](../ton-os-api/networks.md)
 #[api_function]
 pub async fn query_counterparties(
@@ -193,7 +188,5 @@ pub async fn query_counterparties(
 ) -> ClientResult<ResultOfQueryCollection> {
     let server_link = context.get_server_link()?;
     let result = server_link.query_counterparties(params).await;
-    Ok(ResultOfQueryCollection {
-        result: deserialize_result(result, server_link).await?,
-    })
+    Ok(ResultOfQueryCollection { result: deserialize_result(result, server_link).await? })
 }

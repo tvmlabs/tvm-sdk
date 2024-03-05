@@ -1,22 +1,17 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
 mod action;
 mod activity;
 mod base64_interface;
-mod hex_interface;
-mod json_interface;
-mod json_lib_utils;
 mod browser;
 pub mod calltype;
 mod context;
@@ -25,7 +20,10 @@ mod dengine;
 mod dinterface;
 mod errors;
 mod helpers;
+mod hex_interface;
 mod info;
+mod json_interface;
+mod json_lib_utils;
 mod msg_interface;
 mod network_interface;
 mod query_interface;
@@ -37,32 +35,41 @@ mod tests;
 #[cfg(test)]
 mod tests_interfaces;
 
-#[cfg(not(feature = "wasm-base"))]
-pub use calltype::prepare_ext_in_message;
+use std::sync::Arc;
 
 pub use action::DAction;
-pub use activity::{DebotActivity, Spending};
+pub use activity::DebotActivity;
+pub use activity::Spending;
 pub use browser::BrowserCallbacks;
-pub use context::{DContext, STATE_EXIT, STATE_ZERO};
+#[cfg(not(feature = "wasm-base"))]
+pub use calltype::prepare_ext_in_message;
+pub use context::DContext;
+pub use context::STATE_EXIT;
+pub use context::STATE_ZERO;
 pub use dengine::DEngine;
-pub use dinterface::{DebotInterface, DebotInterfaceExecutor, InterfaceResult};
-pub use errors::{Error, ErrorCode};
+pub use dinterface::DebotInterface;
+pub use dinterface::DebotInterfaceExecutor;
+pub use dinterface::InterfaceResult;
+pub use errors::Error;
+pub use errors::ErrorCode;
 use info::DInfo;
+use tokio::sync::Mutex;
+
 use crate::error::ClientResult;
 use crate::ClientContext;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 pub const DEBOT_WC: i8 = -31; // 0xDB
 
 type TonClient = Arc<ClientContext>;
 type JsonValue = serde_json::Value;
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Handle of registered in SDK debot
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Handle of registered in
+/// SDK debot
 #[derive(Serialize, Deserialize, Default, ApiType, Clone)]
 pub struct DebotHandle(u32);
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes a debot action in a Debot Context.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes a debot action
+/// in a Debot Context.
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default, PartialEq)]
 pub struct DebotAction {
     /// A short action description. Should be used by Debot Browser as name of
@@ -95,20 +102,21 @@ impl From<DAction> for DebotAction {
     }
 }
 
-impl Into<DAction> for DebotAction {
-    fn into(self) -> DAction {
+impl From<DebotAction> for DAction {
+    fn from(val: DebotAction) -> Self {
         DAction {
-            desc: self.description,
-            name: self.name,
-            action_type: self.action_type.into(),
-            to: self.to,
-            attrs: self.attributes,
-            misc: self.misc,
+            desc: val.description,
+            name: val.name,
+            action_type: val.action_type.into(),
+            to: val.to,
+            attrs: val.attributes,
+            misc: val.misc,
         }
     }
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes DeBot metadata.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes DeBot
+/// metadata.
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default, PartialEq)]
 pub struct DebotInfo {
     /// DeBot short name.
@@ -150,15 +158,15 @@ impl From<DInfo> for DebotInfo {
             hello: info.hello,
             language: info.language,
             dabi: info.dabi,
-            icon : info.icon,
+            icon: info.icon,
             interfaces: info.interfaces,
             dabi_version: info.dabi_version,
         }
     }
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters to start DeBot.
-/// DeBot must be already initialized with init() function.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters to start
+/// DeBot. DeBot must be already initialized with init() function.
 #[derive(Serialize, Deserialize, Default, ApiType)]
 pub struct ParamsOfStart {
     /// Debot handle which references an instance of debot engine.
@@ -175,13 +183,11 @@ pub struct ParamsOfStart {
 /// since the debot tries to display all actions from the context 0 to the user.
 ///
 /// When the debot starts SDK registers `BrowserCallbacks` AppObject.
-/// Therefore when `debote.remove` is called the debot is being deleted and the callback is called
-/// with `finish`=`true` which indicates that it will never be used again.
+/// Therefore when `debote.remove` is called the debot is being deleted and the
+/// callback is called with `finish`=`true` which indicates that it will never
+/// be used again.
 #[api_function]
-pub async fn start(
-    context: Arc<ClientContext>,
-    params: ParamsOfStart,
-) -> ClientResult<()> {
+pub async fn start(context: Arc<ClientContext>, params: ParamsOfStart) -> ClientResult<()> {
     let mutex = context
         .debots
         .get(&params.debot_handle.0)
@@ -190,7 +196,8 @@ pub async fn start(
     dengine.start().await.map_err(Error::start_failed)
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters to fetch DeBot metadata.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters to fetch
+/// DeBot metadata.
 #[derive(Serialize, Deserialize, Default, ApiType)]
 pub struct ParamsOfFetch {
     /// Debot smart contract address.
@@ -204,7 +211,8 @@ pub struct ResultOfFetch {
     pub info: DebotInfo,
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Fetches DeBot metadata from blockchain.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Fetches DeBot metadata
+/// from blockchain.
 ///
 /// Downloads DeBot from blockchain and creates and fetches its metadata.
 #[api_function]
@@ -213,18 +221,20 @@ pub async fn fetch(
     params: ParamsOfFetch,
 ) -> ClientResult<ResultOfFetch> {
     Ok(ResultOfFetch {
-        info : DEngine::fetch(context, params.address).await.map_err(Error::fetch_failed)?.into()
+        info: DEngine::fetch(context, params.address).await.map_err(Error::fetch_failed)?.into(),
     })
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters to init DeBot.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters to init
+/// DeBot.
 #[derive(Serialize, Deserialize, Default, ApiType)]
 pub struct ParamsOfInit {
     /// Debot smart contract address
     pub address: String,
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Structure for storing debot handle returned from `init` function.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Structure for storing
+/// debot handle returned from `init` function.
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct RegisteredDebot {
     /// Debot handle which references an instance of debot engine.
@@ -235,12 +245,13 @@ pub struct RegisteredDebot {
     pub info: DebotInfo,
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Creates an instance of DeBot.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Creates an instance of
+/// DeBot.
 ///
 /// Downloads DeBot smart contract (code and data) from blockchain and creates
 /// an instance of Debot Engine for it.
-/// Returns a debot handle which can be used later in `start`, `execute` or `send` functions.
-/// # Remarks
+/// Returns a debot handle which can be used later in `start`, `execute` or
+/// `send` functions. # Remarks
 /// It does not switch debot to context 0. Browser Callbacks are not called.
 /// Can be used to invoke DeBot without starting.
 pub async fn init(
@@ -254,11 +265,12 @@ pub async fn init(
 
     let handle = context.get_next_id();
     context.debots.insert(handle, Mutex::new(dengine));
-    let debot_abi = info.dabi.clone().unwrap_or(String::new());
+    let debot_abi = info.dabi.clone().unwrap_or_default();
     Ok(RegisteredDebot { debot_handle: DebotHandle(handle), info, debot_abi })
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters for executing debot action.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters for executing
+/// debot action.
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfExecute {
     /// Debot handle which references an instance of debot engine.
@@ -273,7 +285,8 @@ pub struct ParamsOfExecute {
 /// Calls Debot Browser Callbacks if needed.
 ///
 /// # Remarks
-/// Chain of actions can be executed if input action generates a list of subactions.
+/// Chain of actions can be executed if input action generates a list of
+/// subactions.
 #[api_function]
 pub async fn execute(context: Arc<ClientContext>, params: ParamsOfExecute) -> ClientResult<()> {
     let mutex = context
@@ -281,10 +294,7 @@ pub async fn execute(context: Arc<ClientContext>, params: ParamsOfExecute) -> Cl
         .get(&params.debot_handle.0)
         .ok_or(Error::invalid_handle(params.debot_handle.0))?;
     let mut dengine = mutex.1.lock().await;
-    dengine
-        .execute_action(&params.action.into())
-        .await
-        .map_err(Error::execute_failed)
+    dengine.execute_action(&params.action.into()).await.map_err(Error::execute_failed)
 }
 
 /// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md)
@@ -296,14 +306,16 @@ pub struct ParamsOfRemove {
 
 /// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Destroys debot handle.
 ///
-/// Removes handle from Client Context and drops debot engine referenced by that handle.
+/// Removes handle from Client Context and drops debot engine referenced by that
+/// handle.
 #[api_function]
 pub fn remove(context: Arc<ClientContext>, params: ParamsOfRemove) -> ClientResult<()> {
     context.debots.remove(&params.debot_handle.0);
     Ok(())
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters of `send` function.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters of `send`
+/// function.
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfSend {
     /// Debot handle which references an instance of debot engine.
@@ -314,7 +326,8 @@ pub struct ParamsOfSend {
 
 /// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Sends message to Debot.
 ///
-/// Used by Debot Browser to send response on Dinterface call or from other Debots.
+/// Used by Debot Browser to send response on Dinterface call or from other
+/// Debots.
 #[api_function]
 pub async fn send(context: Arc<ClientContext>, params: ParamsOfSend) -> ClientResult<()> {
     let mutex = context
@@ -322,7 +335,5 @@ pub async fn send(context: Arc<ClientContext>, params: ParamsOfSend) -> ClientRe
         .get(&params.debot_handle.0)
         .ok_or(Error::invalid_handle(params.debot_handle.0))?;
     let mut dengine = mutex.1.lock().await;
-    dengine
-        .send(params.message)
-        .await
+    dengine.send(params.message).await
 }

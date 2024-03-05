@@ -1,15 +1,13 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
 use std::sync::Arc;
 
@@ -17,7 +15,8 @@ use lockfree::map::ReadGuard;
 use serde_json::Value;
 
 use crate::client::ClientContext;
-use crate::crypto::{CryptoBoxHandle, Error};
+use crate::crypto::CryptoBoxHandle;
+use crate::crypto::Error;
 use crate::error::ClientResult;
 
 pub(crate) mod aes;
@@ -57,8 +56,8 @@ pub trait EncryptionBox: Send + Sync {
     async fn decrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String>;
     /// Zeroize all secret data
     async fn drop_secret(&self, _crypto_box_handle: CryptoBoxHandle) {
-        // Not implemented by default, but must be implemented for encryption boxes that created
-        // from crypto boxes.
+        // Not implemented by default, but must be implemented for encryption
+        // boxes that created from crypto boxes.
     }
 }
 
@@ -76,16 +75,16 @@ pub async fn register_encryption_box(
     let id = context.get_next_id();
     context.boxes.encryption_boxes.insert(id, Box::new(encryption_box));
 
-    Ok(RegisteredEncryptionBox {
-        handle: EncryptionBoxHandle(id),
-    })
+    Ok(RegisteredEncryptionBox { handle: EncryptionBoxHandle(id) })
 }
 
 fn get_registered_encryption_box<'context>(
     context: &'context Arc<ClientContext>,
-    handle: &EncryptionBoxHandle
+    handle: &EncryptionBoxHandle,
 ) -> ClientResult<ReadGuard<'context, u32, Box<dyn EncryptionBox>>> {
-    context.boxes.encryption_boxes
+    context
+        .boxes
+        .encryption_boxes
         .get(&handle.0)
         .ok_or(Error::encryption_box_not_registered(handle.0))
 }
@@ -122,7 +121,7 @@ pub async fn encryption_box_get_info(
         info: get_registered_encryption_box(&context, &params.encryption_box)?
             .val()
             .get_info(Arc::clone(&context))
-            .await?
+            .await?,
     })
 }
 
@@ -134,7 +133,6 @@ pub struct ParamsOfEncryptionBoxEncrypt {
     pub data: String,
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default, PartialEq)]
 pub struct ResultOfEncryptionBoxEncrypt {
     /// Encrypted data, encoded in Base64. Padded to cipher block size
@@ -142,9 +140,10 @@ pub struct ResultOfEncryptionBoxEncrypt {
 }
 
 /// Encrypts data using given encryption box
-/// Note. Block cipher algorithms pad data to cipher block size so encrypted data can be longer then
-/// original data. Client should store the original data size after encryption and use it after
-/// decryption to retrieve the original data from decrypted data.
+/// Note. Block cipher algorithms pad data to cipher block size so encrypted
+/// data can be longer then original data. Client should store the original data
+/// size after encryption and use it after decryption to retrieve the original
+/// data from decrypted data.
 #[api_function]
 pub async fn encryption_box_encrypt(
     context: Arc<ClientContext>,
@@ -154,7 +153,7 @@ pub async fn encryption_box_encrypt(
         data: get_registered_encryption_box(&context, &params.encryption_box)?
             .val()
             .encrypt(Arc::clone(&context), &params.data)
-            .await?
+            .await?,
     })
 }
 
@@ -173,9 +172,10 @@ pub struct ResultOfEncryptionBoxDecrypt {
 }
 
 /// Decrypts data using given encryption box
-/// Note. Block cipher algorithms pad data to cipher block size so encrypted data can be longer then
-/// original data. Client should store the original data size after encryption and use it after
-/// decryption to retrieve the original data from decrypted data.
+/// Note. Block cipher algorithms pad data to cipher block size so encrypted
+/// data can be longer then original data. Client should store the original data
+/// size after encryption and use it after decryption to retrieve the original
+/// data from decrypted data.
 #[api_function]
 pub async fn encryption_box_decrypt(
     context: Arc<ClientContext>,
@@ -185,23 +185,18 @@ pub async fn encryption_box_decrypt(
         data: get_registered_encryption_box(&context, &params.encryption_box)?
             .val()
             .decrypt(Arc::clone(&context), &params.data)
-            .await?
+            .await?,
     })
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq, Default)]
 pub enum CipherMode {
+    #[default]
     CBC,
     CFB,
     CTR,
     ECB,
     OFB,
-}
-
-impl Default for CipherMode {
-    fn default() -> Self {
-        CipherMode::CBC
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
@@ -221,7 +216,8 @@ impl Default for EncryptionAlgorithm {
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default)]
 pub struct ParamsOfCreateEncryptionBox {
-    /// Encryption algorithm specifier including cipher parameters (key, IV, etc)
+    /// Encryption algorithm specifier including cipher parameters (key, IV,
+    /// etc)
     pub algorithm: EncryptionAlgorithm,
 }
 
@@ -232,16 +228,25 @@ pub async fn create_encryption_box(
     params: ParamsOfCreateEncryptionBox,
 ) -> ClientResult<RegisteredEncryptionBox> {
     match params.algorithm {
-        EncryptionAlgorithm::AES(params) =>
-            register_encryption_box(context, aes::AesEncryptionBox::new(params)?).await,
+        EncryptionAlgorithm::AES(params) => {
+            register_encryption_box(context, aes::AesEncryptionBox::new(params)?).await
+        }
 
-        EncryptionAlgorithm::ChaCha20(params) =>
-            register_encryption_box(context, chacha20::ChaCha20EncryptionBox::new(params, None)?).await,
+        EncryptionAlgorithm::ChaCha20(params) => {
+            register_encryption_box(context, chacha20::ChaCha20EncryptionBox::new(params, None)?)
+                .await
+        }
 
-        EncryptionAlgorithm::NaclBox(params) =>
-            register_encryption_box(context, nacl_box::NaclEncryptionBox::new(params, None)).await,
+        EncryptionAlgorithm::NaclBox(params) => {
+            register_encryption_box(context, nacl_box::NaclEncryptionBox::new(params, None)).await
+        }
 
-        EncryptionAlgorithm::NaclSecretBox(params) =>
-            register_encryption_box(context, nacl_secret_box::NaclSecretEncryptionBox::new(params, None)).await,
+        EncryptionAlgorithm::NaclSecretBox(params) => {
+            register_encryption_box(
+                context,
+                nacl_secret_box::NaclSecretEncryptionBox::new(params, None),
+            )
+            .await
+        }
     }
 }

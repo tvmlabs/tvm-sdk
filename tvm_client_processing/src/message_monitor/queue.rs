@@ -1,8 +1,12 @@
-use crate::message_monitor::MessageMonitoringResult;
-use crate::{MessageMonitoringParams, MonitorFetchWaitMode, MonitoringQueueInfo};
-use serde_json::Value;
 use std::collections::HashMap;
 use std::mem;
+
+use serde_json::Value;
+
+use crate::message_monitor::MessageMonitoringResult;
+use crate::MessageMonitoringParams;
+use crate::MonitorFetchWaitMode;
+use crate::MonitoringQueueInfo;
 
 #[derive(Clone)]
 pub(crate) struct BufferedMessage {
@@ -37,11 +41,7 @@ impl MonitoringQueue {
 
 impl MonitoringQueue {
     pub fn new() -> Self {
-        Self {
-            buffered: Vec::new(),
-            resolving: HashMap::new(),
-            results: Vec::new(),
-        }
+        Self { buffered: Vec::new(), resolving: HashMap::new(), results: Vec::new() }
     }
 
     pub fn fetch_next(
@@ -52,15 +52,9 @@ impl MonitoringQueue {
             MonitorFetchWaitMode::NoWait => true,
             MonitorFetchWaitMode::AtLeastOne => !self.results.is_empty(),
             MonitorFetchWaitMode::All => {
-                self.buffered.is_empty()
-                    && self.resolving.is_empty()
-                    && !self.results.is_empty()
+                self.buffered.is_empty() && self.resolving.is_empty() && !self.results.is_empty()
             }
         };
-        if is_ready {
-            Some(mem::take(&mut self.results))
-        } else {
-            None
-        }
+        if is_ready { Some(mem::take(&mut self.results)) } else { None }
     }
 }

@@ -1,22 +1,35 @@
-use crate::abi::internal::{
-    add_sign_to_message, add_sign_to_message_body, create_tvc_image, try_to_sign_message,
-    update_pubkey,
-};
-use crate::abi::{Abi, Error, FunctionHeader, Signer};
-use crate::boc::internal::{deserialize_cell_from_boc, get_boc_hash};
-use crate::boc::tvc::{resolve_state_init_cell, state_init_with_code};
-use crate::client::ClientContext;
-use crate::encoding::{account_decode, account_encode, decode_abi_number, hex_decode};
-use crate::error::ClientResult;
-use serde_json::Value;
 use std::str::FromStr;
 use std::sync::Arc;
+
+use serde_json::Value;
 use tvm_abi::Contract;
-use tvm_block::{CurrencyCollection, MsgAddressInt};
-use tvm_sdk::{ContractImage, FunctionCallSet};
+use tvm_block::CurrencyCollection;
+use tvm_block::MsgAddressInt;
+use tvm_sdk::ContractImage;
+use tvm_sdk::FunctionCallSet;
+use tvm_types::base64_encode;
 use tvm_types::Cell;
 
 use super::types::extend_data_to_sign;
+use crate::abi::internal::add_sign_to_message;
+use crate::abi::internal::add_sign_to_message_body;
+use crate::abi::internal::create_tvc_image;
+use crate::abi::internal::try_to_sign_message;
+use crate::abi::internal::update_pubkey;
+use crate::abi::Abi;
+use crate::abi::Error;
+use crate::abi::FunctionHeader;
+use crate::abi::Signer;
+use crate::boc::internal::deserialize_cell_from_boc;
+use crate::boc::internal::get_boc_hash;
+use crate::boc::tvc::resolve_state_init_cell;
+use crate::boc::tvc::state_init_with_code;
+use crate::client::ClientContext;
+use crate::encoding::account_decode;
+use crate::encoding::account_encode;
+use crate::encoding::decode_abi_number;
+use crate::encoding::hex_decode;
+use crate::error::ClientResult;
 
 //--------------------------------------------------------------------------- encode_deploy_message
 
@@ -38,16 +51,17 @@ pub struct DeploySet {
     /// List of initial values for contract's public variables.
     pub initial_data: Option<Value>,
 
-    /// Optional public key that can be provided in deploy set in order to substitute one
-    /// in TVM file or provided by Signer.
+    /// Optional public key that can be provided in deploy set in order to
+    /// substitute one in TVM file or provided by Signer.
     ///
     /// Public key resolving priority:
     /// 1. Public key from deploy set.
     /// 2. Public key, specified in TVM file.
     /// 3. Public key, provided by Signer.
     ///
-    /// Applicable only for contracts with ABI version < 2.4. Contract initial public key should be
-    /// explicitly provided inside `initial_data` since ABI 2.4
+    /// Applicable only for contracts with ABI version < 2.4. Contract initial
+    /// public key should be explicitly provided inside `initial_data` since
+    /// ABI 2.4
     pub initial_pubkey: Option<String>,
 }
 
@@ -74,7 +88,9 @@ impl DeploySet {
             }
             (None, None, Some(state_init)) => {
                 if self.initial_data.is_some() || self.initial_pubkey.is_some() {
-                    error("Only `workchain_id` parameter is allowed if `state_init` parameter is provided")
+                    error(
+                        "Only `workchain_id` parameter is allowed if `state_init` parameter is provided",
+                    )
                 } else {
                     Ok(deserialize_cell_from_boc(context, state_init, "state init")?.1)
                 }
@@ -106,18 +122,11 @@ pub struct CallSet {
 
 impl CallSet {
     pub fn some_with_function(function: &str) -> Option<Self> {
-        Some(Self {
-            function_name: function.into(),
-            header: None,
-            input: None,
-        })
+        Some(Self { function_name: function.into(), header: None, input: None })
     }
+
     pub fn some_with_function_and_input(function: &str, input: Value) -> Option<Self> {
-        Some(Self {
-            function_name: function.into(),
-            input: Some(input),
-            header: None,
-        })
+        Some(Self { function_name: function.into(), input: Some(input), header: None })
     }
 }
 
@@ -132,19 +141,19 @@ fn resolve_header(
     context: &Arc<ClientContext>,
     abi: &Contract,
 ) -> ClientResult<Option<FunctionHeader>> {
-    if abi.header().len() == 0 {
+    if abi.header().is_empty() {
         return Ok(None);
     }
     let now = context.env.now_ms();
-    let required = |name: &str| abi.header().iter().find(|x| x.name == name).is_some();
+    let required = |name: &str| abi.header().iter().any(|x| x.name == name);
     Ok(Some(FunctionHeader {
         time: if required("time") {
-            Some(header.map_or(None, |x| x.time).unwrap_or_else(|| now))
+            Some(header.and_then(|x| x.time).unwrap_or(now))
         } else {
             None
         },
         expire: if required("expire") {
-            Some(header.map_or(None, |x| x.expire).unwrap_or_else(|| {
+            Some(header.and_then(|x| x.expire).unwrap_or_else(|| {
                 let config = &context.config.abi;
                 let timeout = calc_timeout(
                     config.message_expiration_timeout,
@@ -157,9 +166,7 @@ fn resolve_header(
             None
         },
         pubkey: if required("pubkey") {
-            header
-                .map_or(None, |x| x.pubkey.clone())
-                .or(pubkey.map(|x| x.to_string()))
+            header.and_then(|x| x.pubkey.clone()).or(pubkey.map(|x| x.to_string()))
         } else {
             None
         },
@@ -189,17 +196,11 @@ impl CallSet {
         abi: &str,
         internal: bool,
     ) -> ClientResult<FunctionCallSet> {
-        let contract = Contract::load(abi.as_bytes()).map_err(|x| Error::invalid_json(x))?;
+        let contract = Contract::load(abi.as_bytes()).map_err(Error::invalid_json)?;
         let header = if internal {
             None
         } else {
-            resolve_header(
-                self.header.as_ref(),
-                pubkey,
-                processing_try_index,
-                context,
-                &contract,
-            )?
+            resolve_header(self.header.as_ref(), pubkey, processing_try_index, context, &contract)?
         };
 
         let func = match decode_abi_number::<u32>(&self.function_name) {
@@ -216,12 +217,8 @@ impl CallSet {
         Ok(FunctionCallSet {
             abi: abi.to_string(),
             func,
-            header: header.as_ref().map(|x| header_to_string(x)),
-            input: self
-                .input
-                .as_ref()
-                .map(|x| x.to_string())
-                .unwrap_or("{}".into()),
+            header: header.as_ref().map(header_to_string),
+            input: self.input.as_ref().map(|x| x.to_string()).unwrap_or("{}".into()),
         })
     }
 }
@@ -254,7 +251,8 @@ pub struct ParamsOfEncodeMessage {
 
     /// Processing try index.
     ///
-    /// Used in message processing with retries (if contract's ABI includes "expire" header).
+    /// Used in message processing with retries (if contract's ABI includes
+    /// "expire" header).
     ///
     /// Encoder uses the provided try index to calculate message
     /// expiration time. The 1st message expiration time is specified in
@@ -267,8 +265,8 @@ pub struct ParamsOfEncodeMessage {
     /// Default value is 0.
     pub processing_try_index: Option<u8>,
 
-    /// Signature ID to be used in data to sign preparing when CapSignatureWithId
-    /// capability is enabled
+    /// Signature ID to be used in data to sign preparing when
+    /// CapSignatureWithId capability is enabled
     pub signature_id: Option<i32>,
 }
 
@@ -280,8 +278,9 @@ pub struct ResultOfEncodeMessage {
     /// Optional data to be signed encoded in `base64`.
     ///
     /// Returned in case of `Signer::External`. Can be used for external
-    /// message signing. Is this case you need to use this data to create signature and
-    /// then produce signed message using `abi.attach_signature`.
+    /// message signing. Is this case you need to use this data to create
+    /// signature and then produce signed message using
+    /// `abi.attach_signature`.
     pub data_to_sign: Option<String>,
 
     /// Destination address.
@@ -295,9 +294,7 @@ fn required_public_key(public_key: Option<String>) -> ClientResult<String> {
     if let Some(public_key) = public_key {
         Ok(public_key)
     } else {
-        Err(Error::encode_deploy_message_failed(
-            "Public key doesn't provided.",
-        ))
+        Err(Error::encode_deploy_message_failed("Public key doesn't provided."))
     }
 }
 
@@ -335,13 +332,13 @@ fn encode_deploy(
                     pubkey,
                     processing_try_index,
                     &context,
-                    &abi,
+                    abi,
                     false,
                 )?,
                 image,
                 workchain,
             )
-            .map_err(|err| Error::encode_deploy_message_failed(err))?;
+            .map_err(Error::encode_deploy_message_failed)?;
             (unsigned.message, Some(unsigned.data_to_sign), address)
         }
     })
@@ -361,14 +358,14 @@ fn encode_int_deploy(
     let address = image.msg_address(workchain_id);
     let message = tvm_sdk::Contract::get_int_deploy_message_bytes(
         src,
-        &call_set.to_function_call_set(None, None, &context, &abi, true)?,
+        &call_set.to_function_call_set(None, None, &context, abi, true)?,
         image,
         workchain_id,
         ihr_disabled,
         bounce,
         value,
     )
-    .map_err(|err| Error::encode_deploy_message_failed(err))?;
+    .map_err(Error::encode_deploy_message_failed)?;
 
     Ok((message, address))
 }
@@ -379,11 +376,11 @@ fn encode_empty_deploy(
 ) -> ClientResult<(Vec<u8>, Option<Vec<u8>>, MsgAddressInt)> {
     let address = image.msg_address(workchain);
     let message = tvm_sdk::Contract::construct_deploy_message_no_constructor(image, workchain)
-        .map_err(|x| Error::encode_deploy_message_failed(x))?;
+        .map_err(Error::encode_deploy_message_failed)?;
 
     Ok((
         tvm_sdk::Contract::serialize_message(&message)
-            .map_err(|x| Error::encode_deploy_message_failed(x))?
+            .map_err(Error::encode_deploy_message_failed)?
             .0,
         None,
         address,
@@ -407,11 +404,11 @@ fn encode_empty_int_deploy(
         bounce,
         value,
     )
-    .map_err(|x| Error::encode_deploy_message_failed(x))?;
+    .map_err(Error::encode_deploy_message_failed)?;
 
     Ok((
         tvm_sdk::Contract::serialize_message(&message)
-            .map_err(|x| Error::encode_deploy_message_failed(x))?
+            .map_err(Error::encode_deploy_message_failed)?
             .0,
         address,
     ))
@@ -425,10 +422,8 @@ fn encode_run(
     pubkey: Option<&str>,
     processing_try_index: Option<u8>,
 ) -> ClientResult<(Vec<u8>, Option<Vec<u8>>, MsgAddressInt)> {
-    let address = params
-        .address
-        .as_ref()
-        .ok_or(Error::required_address_missing_for_encode_message())?;
+    let address =
+        params.address.as_ref().ok_or(Error::required_address_missing_for_encode_message())?;
     let address = account_decode(address)?;
     Ok(match params.signer {
         Signer::None => {
@@ -470,27 +465,29 @@ fn encode_run(
 /// both signed and unsigned.
 ///
 /// Use cases include messages of any possible type:
-/// - deploy with initial function call (i.e. `constructor` or any other function that is used for some kind
+/// - deploy with initial function call (i.e. `constructor` or any other
+///   function that is used for some kind
 /// of initialization);
 /// - deploy without initial function call;
 /// - signed/unsigned + data for signing.
 ///
 /// `Signer` defines how the message should or shouldn't be signed:
 ///
-/// `Signer::None` creates an unsigned message. This may be needed in case of some public methods,
-/// that do not require authorization by pubkey.
+/// `Signer::None` creates an unsigned message. This may be needed in case of
+/// some public methods, that do not require authorization by pubkey.
 ///
-/// `Signer::External` takes public key and returns `data_to_sign` for later signing.
-/// Use `attach_signature` method with the result signature to get the signed message.
+/// `Signer::External` takes public key and returns `data_to_sign` for later
+/// signing. Use `attach_signature` method with the result signature to get the
+/// signed message.
 ///
 /// `Signer::Keys` creates a signed message with provided key pair.
 ///
-/// [SOON] `Signer::SigningBox` Allows using a special interface to implement signing
-/// without private key disclosure to SDK. For instance, in case of using a cold wallet or HSM,
-/// when application calls some API to sign data.
+/// [SOON] `Signer::SigningBox` Allows using a special interface to implement
+/// signing without private key disclosure to SDK. For instance, in case of
+/// using a cold wallet or HSM, when application calls some API to sign data.
 ///
-/// There is an optional public key can be provided in deploy set in order to substitute one
-/// in TVM file.
+/// There is an optional public key can be provided in deploy set in order to
+/// substitute one in TVM file.
 ///
 /// Public key resolving priority:
 /// 1. Public key from deploy set.
@@ -507,9 +504,7 @@ pub async fn encode_message(
 
     let public = params.signer.resolve_public_key(context.clone()).await?;
     let (message, data_to_sign, address) = if let Some(deploy_set) = params.deploy_set {
-        let workchain = deploy_set
-            .workchain_id
-            .unwrap_or(context.config.abi.workchain);
+        let workchain = deploy_set.workchain_id.unwrap_or(context.config.abi.workchain);
         let mut image = create_tvc_image(
             &abi_string,
             abi_contract.data_map_supported(),
@@ -530,7 +525,7 @@ pub async fn encode_message(
                 image,
                 workchain,
                 call_set,
-                public.as_ref().map(|x| x.as_str()),
+                public.as_deref(),
                 &params.signer,
                 params.processing_try_index,
             )?
@@ -543,7 +538,7 @@ pub async fn encode_message(
             &params,
             &abi_string,
             call_set,
-            public.as_ref().map(|x| x.as_str()),
+            public.as_deref(),
             params.processing_try_index,
         )?
     } else {
@@ -551,18 +546,13 @@ pub async fn encode_message(
     };
 
     let data_to_sign = extend_data_to_sign(&context, params.signature_id, data_to_sign).await?;
-    let (message, data_to_sign) = try_to_sign_message(
-        context.clone(),
-        &abi_string,
-        message,
-        data_to_sign,
-        &params.signer,
-    )
-    .await?;
+    let (message, data_to_sign) =
+        try_to_sign_message(context.clone(), &abi_string, message, data_to_sign, &params.signer)
+            .await?;
 
     Ok(ResultOfEncodeMessage {
-        message: base64::encode(&message),
-        data_to_sign: data_to_sign.map(|data| base64::encode(&data)),
+        message: base64_encode(&message),
+        data_to_sign: data_to_sign.map(base64_encode),
         address: account_encode(&address),
         message_id: get_boc_hash(&message)?,
     })
@@ -623,13 +613,14 @@ pub struct ResultOfEncodeInternalMessage {
 /// Allows to encode deploy and function call messages.
 ///
 /// Use cases include messages of any possible type:
-/// - deploy with initial function call (i.e. `constructor` or any other function that is used for some kind
+/// - deploy with initial function call (i.e. `constructor` or any other
+///   function that is used for some kind
 /// of initialization);
 /// - deploy without initial function call;
 /// - simple function call
 ///
-/// There is an optional public key can be provided in deploy set in order to substitute one
-/// in TVM file.
+/// There is an optional public key can be provided in deploy set in order to
+/// substitute one in TVM file.
 ///
 /// Public key resolving priority:
 /// 1. Public key from deploy set.
@@ -649,24 +640,17 @@ pub fn encode_internal_message(
     let value = CurrencyCollection::with_grams(u64::from_str(&params.value).map_err(|err| {
         Error::encode_run_message_failed(
             err,
-            params
-                .call_set
-                .as_ref()
-                .map(|call_set| call_set.function_name.as_str()),
+            params.call_set.as_ref().map(|call_set| call_set.function_name.as_str()),
         )
     })?);
 
     let (message, address) = if let Some(deploy_set) = params.deploy_set {
-        let abi = params
-            .abi
-            .ok_or_else(|| Error::invalid_abi("abi is undefined"))?;
+        let abi = params.abi.ok_or_else(|| Error::invalid_abi("abi is undefined"))?;
 
         let abi_contract = abi.abi()?;
         let abi_string = abi.json_string()?;
 
-        let workchain_id = deploy_set
-            .workchain_id
-            .unwrap_or(context.config.abi.workchain);
+        let workchain_id = deploy_set.workchain_id.unwrap_or(context.config.abi.workchain);
 
         let mut image = create_tvc_image(
             &abi_string,
@@ -693,26 +677,15 @@ pub fn encode_internal_message(
                 value,
             )?
         } else {
-            encode_empty_int_deploy(
-                src_address,
-                image,
-                workchain_id,
-                ihr_disabled,
-                bounce,
-                value,
-            )?
+            encode_empty_int_deploy(src_address, image, workchain_id, ihr_disabled, bounce, value)?
         }
     } else {
-        let address = params
-            .address
-            .as_ref()
-            .ok_or(Error::required_address_missing_for_encode_message())?;
+        let address =
+            params.address.as_ref().ok_or(Error::required_address_missing_for_encode_message())?;
         let address = account_decode(address)?;
         if let Some(call_set) = &params.call_set {
-            let abi = params
-                .abi
-                .ok_or_else(|| Error::invalid_abi("abi is undefined"))?
-                .json_string()?;
+            let abi =
+                params.abi.ok_or_else(|| Error::invalid_abi("abi is undefined"))?.json_string()?;
             let message = tvm_sdk::Contract::construct_call_int_message_json(
                 address.clone(),
                 src_address,
@@ -739,7 +712,7 @@ pub fn encode_internal_message(
     };
 
     Ok(ResultOfEncodeInternalMessage {
-        message: base64::encode(&message),
+        message: base64_encode(&message),
         address: account_encode(&address),
         message_id: get_boc_hash(&message)?,
     })
@@ -779,13 +752,14 @@ pub struct ParamsOfEncodeMessageBody {
 
     /// Destination address of the message
     ///
-    /// Since ABI version 2.3 destination address of external inbound message is used in message
-    /// body signature calculation. Should be provided when signed external inbound message body is
-    /// created. Otherwise can be omitted.
+    /// Since ABI version 2.3 destination address of external inbound message is
+    /// used in message body signature calculation. Should be provided when
+    /// signed external inbound message body is created. Otherwise can be
+    /// omitted.
     pub address: Option<String>,
 
-    /// Signature ID to be used in data to sign preparing when CapSignatureWithId
-    /// capability is enabled
+    /// Signature ID to be used in data to sign preparing when
+    /// CapSignatureWithId capability is enabled
     pub signature_id: Option<i32>,
 }
 
@@ -812,7 +786,7 @@ pub async fn encode_message_body(
 
     let public = params.signer.resolve_public_key(context.clone()).await?;
     let call = params.call_set.to_function_call_set(
-        public.as_ref().map(|x| x.as_str()),
+        public.as_deref(),
         params.processing_try_index,
         &context,
         &abi,
@@ -867,22 +841,14 @@ pub async fn encode_message_body(
     if let Some(unsigned) = &data_to_sign {
         if let Some(signature) = params.signer.sign(context.clone(), unsigned).await? {
             let pubkey = public.map(|string| hex_decode(&string)).transpose()?;
-            let body = add_sign_to_message_body(
-                &abi,
-                &signature,
-                pubkey.as_ref().map(|vec| vec.as_slice()),
-                &body,
-            )?;
-            return Ok(ResultOfEncodeMessageBody {
-                body: base64::encode(&body),
-                data_to_sign: None,
-            });
+            let body = add_sign_to_message_body(&abi, &signature, pubkey.as_deref(), &body)?;
+            return Ok(ResultOfEncodeMessageBody { body: base64_encode(body), data_to_sign: None });
         }
     }
 
     Ok(ResultOfEncodeMessageBody {
-        body: base64::encode(&body),
-        data_to_sign: data_to_sign.map(|x| base64::encode(&x)),
+        body: base64_encode(&body),
+        data_to_sign: data_to_sign.map(base64_encode),
     })
 }
 
@@ -926,7 +892,7 @@ pub fn attach_signature(
         &boc.bytes("message")?,
     )?;
     Ok(ResultOfAttachSignature {
-        message: base64::encode(&signed),
+        message: base64_encode(&signed),
         message_id: get_boc_hash(&signed)?,
     })
 }
@@ -966,7 +932,5 @@ pub fn attach_signature_to_message_body(
         Some(&hex_decode(&params.public_key)?),
         &boc.bytes("message body")?,
     )?;
-    Ok(ResultOfAttachSignatureToMessageBody {
-        body: base64::encode(&signed),
-    })
+    Ok(ResultOfAttachSignatureToMessageBody { body: base64_encode(signed) })
 }

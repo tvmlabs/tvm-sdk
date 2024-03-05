@@ -1,19 +1,20 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+
+use std::fmt;
 
 use num_traits::cast::ToPrimitive;
-use std::fmt;
-use tvm_types::{Result, UInt256};
+use tvm_types::base64_encode;
+use tvm_types::Result;
+use tvm_types::UInt256;
 
 use crate::error::SdkError;
 
@@ -30,25 +31,25 @@ impl From<UInt256> for StringId {
 
 impl From<String> for StringId {
     fn from(id: String) -> Self {
-        StringId { 0: id }
+        StringId(id)
     }
 }
 
 impl From<&str> for StringId {
     fn from(id: &str) -> Self {
-        StringId { 0: id.to_owned() }
+        StringId(id.to_owned())
     }
 }
 
 impl From<Vec<u8>> for StringId {
     fn from(id: Vec<u8>) -> Self {
-        StringId { 0: hex::encode(id) }
+        StringId(hex::encode(id))
     }
 }
 
 impl From<&[u8]> for StringId {
     fn from(id: &[u8]) -> Self {
-        StringId { 0: hex::encode(id) }
+        StringId(hex::encode(id))
     }
 }
 
@@ -61,7 +62,7 @@ impl fmt::Display for StringId {
 impl StringId {
     pub fn to_base64(&self) -> Result<String> {
         let bytes = self.to_bytes()?;
-        Ok(base64::encode(&bytes))
+        Ok(base64_encode(bytes))
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
@@ -71,9 +72,6 @@ impl StringId {
 
 pub fn grams_to_u64(grams: &tvm_block::types::Grams) -> Result<u64> {
     grams.as_u128().to_u64().ok_or_else(|| {
-        SdkError::InvalidData {
-            msg: format!("Cannot convert grams value {}", grams),
-        }
-        .into()
+        SdkError::InvalidData { msg: format!("Cannot convert grams value {}", grams) }.into()
     })
 }

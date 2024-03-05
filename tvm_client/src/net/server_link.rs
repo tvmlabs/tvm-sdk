@@ -1,38 +1,54 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use crate::client::{ClientEnv, FetchMethod};
-use crate::error::{AddNetworkUrl, ClientError, ClientResult};
+use std::cmp::max;
+use std::cmp::min;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::pin::Pin;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+
+use futures::Future;
+use futures::Stream;
+use futures::StreamExt;
+use rand::seq::SliceRandom;
+use serde_json::Value;
+use tokio::sync::watch;
+use tokio::sync::Mutex;
+use tokio::sync::RwLock;
+use tvm_types::base64_encode;
+use tvm_types::UInt256;
+
+use super::ErrorCode;
+use crate::client::ClientEnv;
+use crate::client::FetchMethod;
+use crate::error::AddNetworkUrl;
+use crate::error::ClientError;
+use crate::error::ClientResult;
 use crate::net::endpoint::Endpoint;
 use crate::net::tvm_gql::GraphQLQuery;
 use crate::net::types::NetworkQueriesProtocol;
 use crate::net::websocket_link::WebsocketLink;
-use crate::net::{
-    Error, GraphQLQueryEvent, NetworkConfig, ParamsOfAggregateCollection, ParamsOfQueryCollection,
-    ParamsOfQueryCounterparties, ParamsOfQueryOperation, ParamsOfWaitForCollection, PostRequest,
-};
-use futures::{Future, Stream, StreamExt};
-use rand::seq::SliceRandom;
-use serde_json::Value;
-use std::cmp::{max, min};
-use std::collections::{HashMap, HashSet};
-use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::Arc;
-use tokio::sync::{watch, Mutex, RwLock};
-use tvm_types::UInt256;
-
-use super::ErrorCode;
+use crate::net::Error;
+use crate::net::GraphQLQueryEvent;
+use crate::net::NetworkConfig;
+use crate::net::ParamsOfAggregateCollection;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::ParamsOfQueryCounterparties;
+use crate::net::ParamsOfQueryOperation;
+use crate::net::ParamsOfWaitForCollection;
+use crate::net::PostRequest;
 
 pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
@@ -80,13 +96,7 @@ async fn query_by_url(
     timeout: u32,
 ) -> ClientResult<Value> {
     let response = client_env
-        .fetch(
-            &format!("{}?query={}", address, query),
-            FetchMethod::Get,
-            None,
-            None,
-            timeout,
-        )
+        .fetch(&format!("{}?query={}", address, query), FetchMethod::Get, None, None, timeout)
         .await?;
 
     response.body_as_json()
@@ -99,11 +109,8 @@ impl NetworkState {
         endpoint_addresses: Vec<String>,
     ) -> Self {
         let (sender, receiver) = watch::channel(false);
-        let regulation = SuspendRegulation {
-            sender,
-            internal_suspend: false,
-            external_suspend: false,
-        };
+        let regulation =
+            SuspendRegulation { sender, internal_suspend: false, external_suspend: false };
         let has_multiple_endpoints = AtomicBool::new(endpoint_addresses.len() > 1);
         Self {
             client_env,
@@ -185,8 +192,7 @@ impl NetworkState {
     }
 
     pub async fn set_endpoint_addresses(&self, addresses: Vec<String>) {
-        self.has_multiple_endpoints
-            .store(addresses.len() > 1, Ordering::Relaxed);
+        self.has_multiple_endpoints.store(addresses.len() > 1, Ordering::Relaxed);
         *self.endpoint_addresses.write().await = addresses;
     }
 
@@ -246,8 +252,7 @@ impl NetworkState {
     pub async fn resolve_endpoint(&self, address: &str) -> ClientResult<Arc<Endpoint>> {
         let endpoint = Endpoint::resolve(&self.client_env, &self.config, address).await?;
         let endpoint = Arc::new(endpoint);
-        self.add_resolved_endpoint(address.to_owned(), endpoint.clone())
-            .await;
+        self.add_resolved_endpoint(address.to_owned(), endpoint.clone()).await;
         Ok(endpoint)
     }
 
@@ -265,17 +270,15 @@ impl NetworkState {
             for address in self.endpoint_addresses.read().await.iter() {
                 let address = address.clone();
                 let self_copy = self.clone();
-                futures.push(Box::pin(async move {
-                    self_copy.resolve_endpoint(&address).await
-                }));
+                futures.push(Box::pin(async move { self_copy.resolve_endpoint(&address).await }));
             }
             let mut selected = Err(crate::client::Error::net_module_not_init());
             let mut unauthorised = None;
-            while futures.len() != 0 {
+            while !futures.is_empty() {
                 let (result, _, remain_futures) = futures::future::select_all(futures).await;
                 if let Ok(endpoint) = &result {
                     if endpoint.latency() <= self.config.max_latency as u64 {
-                        if remain_futures.len() > 0 {
+                        if !remain_futures.is_empty() {
                             self.client_env.spawn(async move {
                                 futures::future::join_all(remain_futures).await;
                             });
@@ -302,10 +305,7 @@ impl NetworkState {
             if !self.can_retry_network_error(start) {
                 return selected;
             }
-            let _ = self
-                .client_env
-                .set_timer(self.next_resume_timeout() as u64)
-                .await;
+            let _ = self.client_env.set_timer(self.next_resume_timeout() as u64).await;
         }
     }
 
@@ -335,13 +335,7 @@ impl NetworkState {
 
     pub async fn add_resolved_endpoint(&self, address: String, endpoint: Arc<Endpoint>) {
         let mut lock = self.resolved_endpoints.write().await;
-        lock.insert(
-            address,
-            ResolvedEndpoint {
-                endpoint,
-                time_added: self.client_env.now_ms(),
-            },
-        );
+        lock.insert(address, ResolvedEndpoint { endpoint, time_added: self.client_env.now_ms() });
     }
 
     pub async fn get_resolved_endpoint(&self, address: &str) -> Option<Arc<Endpoint>> {
@@ -375,8 +369,8 @@ fn strip_endpoint(endpoint: &str) -> &str {
     endpoint
         .trim_start_matches("https://")
         .trim_start_matches("http://")
-        .trim_end_matches("/")
-        .trim_end_matches("\\")
+        .trim_end_matches('/')
+        .trim_end_matches('\\')
 }
 
 fn same_endpoint(a: &str, b: &str) -> bool {
@@ -402,16 +396,13 @@ impl ServerLink {
             .clone()
             .or(config.server_address.clone().map(|address| vec![address]))
             .ok_or(crate::client::Error::net_module_not_init())?;
-        if endpoint_addresses.len() == 0 {
+        if endpoint_addresses.is_empty() {
             return Err(crate::client::Error::net_module_not_init());
         }
         let endpoint_addresses = replace_endpoints(endpoint_addresses);
 
-        let state = Arc::new(NetworkState::new(
-            client_env.clone(),
-            config.clone(),
-            endpoint_addresses,
-        ));
+        let state =
+            Arc::new(NetworkState::new(client_env.clone(), config.clone(), endpoint_addresses));
 
         Ok(ServerLink {
             config: config.clone(),
@@ -674,16 +665,13 @@ impl ServerLink {
         } else {
             false
         };
-        let mut query = GraphQLQuery::build(
-            params,
-            latency_detection_required,
-            self.config.wait_for_timeout,
-        );
+        let mut query =
+            GraphQLQuery::build(params, latency_detection_required, self.config.wait_for_timeout);
         let info_request_time = self.client_env.now_ms();
         let mut result = self.query(&query, endpoint.as_ref()).await?;
         if latency_detection_required {
             let current_endpoint = self.state.get_query_endpoint().await?;
-            let server_info = query.get_server_info(&params, &result)?;
+            let server_info = query.get_server_info(params, &result)?;
             current_endpoint.apply_server_info(
                 &self.client_env,
                 &self.config,
@@ -716,10 +704,7 @@ impl ServerLink {
         endpoint: Option<Endpoint>,
     ) -> ClientResult<Value> {
         Ok(self
-            .batch_query(
-                &[ParamsOfQueryOperation::WaitForCollection(params)],
-                endpoint,
-            )
+            .batch_query(&[ParamsOfQueryOperation::WaitForCollection(params)], endpoint)
             .await?
             .remove(0))
     }
@@ -730,10 +715,7 @@ impl ServerLink {
         endpoint: Option<Endpoint>,
     ) -> ClientResult<Value> {
         Ok(self
-            .batch_query(
-                &[ParamsOfQueryOperation::AggregateCollection(params)],
-                endpoint,
-            )
+            .batch_query(&[ParamsOfQueryOperation::AggregateCollection(params)], endpoint)
             .await?
             .remove(0))
     }
@@ -755,17 +737,12 @@ impl ServerLink {
         value: &[u8],
         endpoint: Option<&Endpoint>,
     ) -> ClientResult<Option<ClientError>> {
-        let request = PostRequest {
-            id: base64::encode(key),
-            body: base64::encode(value),
-        };
+        let request = PostRequest { id: base64_encode(key), body: base64_encode(value) };
 
-        let result = self
-            .query(&GraphQLQuery::with_post_requests(&[request]), endpoint)
-            .await;
+        let result = self.query(&GraphQLQuery::with_post_requests(&[request]), endpoint).await;
 
-        // send message is always successful in order to process case when server received message
-        // but client didn't receive response
+        // send message is always successful in order to process case when server
+        // received message but client didn't receive response
         if let Err(err) = &result {
             log::warn!("Post message error: {}", err.message);
         }
@@ -780,17 +757,12 @@ impl ServerLink {
     ) -> ClientResult<Option<ClientError>> {
         let mut requests = Vec::with_capacity(messages.len());
         for (hash, boc) in messages {
-            requests.push(PostRequest {
-                id: base64::encode(hash.as_slice()),
-                body: boc,
-            })
+            requests.push(PostRequest { id: base64_encode(hash.as_slice()), body: boc })
         }
-        let result = self
-            .query(&GraphQLQuery::with_post_requests(&requests), endpoint)
-            .await;
+        let result = self.query(&GraphQLQuery::with_post_requests(&requests), endpoint).await;
 
-        // Send messages is always successful in order to process case when server received message
-        // but client didn't receive response
+        // Send messages is always successful in order to process case when server
+        // received message but client didn't receive response
         if let Err(err) = &result {
             log::warn!("Send messages error: {}", err.message);
         }
@@ -818,7 +790,7 @@ impl ServerLink {
             self.config.query_timeout,
         )
         .await
-        .add_network_url(&self)
+        .add_network_url(self)
         .await?;
 
         serde_json::from_value(result["data"]["info"]["endpoints"].clone()).map_err(|_| {

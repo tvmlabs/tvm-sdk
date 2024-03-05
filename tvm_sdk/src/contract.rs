@@ -1,32 +1,44 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use crate::error::SdkError;
-use crate::json_helper;
-use crate::{AbiContract, MessageId};
+use std::io::Read;
+use std::io::Seek;
 
 use chrono::prelude::Utc;
 use serde_json::Value;
-use std::convert::{Into, TryInto};
-use std::io::{Read, Seek};
 use tvm_abi::json_abi::DecodedMessage;
 use tvm_abi::PublicKeyData;
-use tvm_block::{
-    AccountIdPrefixFull, CurrencyCollection, Deserializable, ExternalInboundMessageHeader,
-    GetRepresentationHash, InternalMessageHeader, Message as TvmMessage, MsgAddressInt,
-    Serializable, ShardIdent, StateInit,
-};
-use tvm_types::{error, fail, AccountId, BocReader, Ed25519PrivateKey, Result, SliceData};
+use tvm_block::AccountIdPrefixFull;
+use tvm_block::CurrencyCollection;
+use tvm_block::Deserializable;
+use tvm_block::ExternalInboundMessageHeader;
+use tvm_block::GetRepresentationHash;
+use tvm_block::InternalMessageHeader;
+use tvm_block::Message as TvmMessage;
+use tvm_block::MsgAddressInt;
+use tvm_block::Serializable;
+use tvm_block::ShardIdent;
+use tvm_block::StateInit;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::AccountId;
+use tvm_types::BocReader;
+use tvm_types::Ed25519PrivateKey;
+use tvm_types::Result;
+use tvm_types::SliceData;
+
+use crate::error::SdkError;
+use crate::json_helper;
+use crate::AbiContract;
+use crate::MessageId;
 
 pub struct Contract {}
 
@@ -90,9 +102,7 @@ impl ContractImage {
     where
         T: Read + Seek,
     {
-        let cell = BocReader::new()
-            .read(state_init_bag)?
-            .withdraw_single_root()?;
+        let cell = BocReader::new().read(state_init_bag)?.withdraw_single_root()?;
         let state_init: StateInit = StateInit::construct_from_cell(cell)?;
         let id = state_init.hash()?.into();
 
@@ -143,18 +153,18 @@ impl ContractImage {
     pub fn get_serialized_code(&self) -> Result<Vec<u8>> {
         match &self.state_init.code {
             Some(cell) => tvm_types::boc::write_boc(cell),
-            None => bail!(SdkError::InvalidData {
-                msg: "State init has no code".to_owned()
-            }),
+            None => {
+                anyhow::bail!(SdkError::InvalidData { msg: "State init has no code".to_owned() })
+            }
         }
     }
 
     pub fn get_serialized_data(&self) -> Result<Vec<u8>> {
         match &self.state_init.data {
             Some(cell) => tvm_types::boc::write_boc(cell),
-            None => bail!(SdkError::InvalidData {
-                msg: "State init has no data".to_owned()
-            }),
+            None => {
+                anyhow::bail!(SdkError::InvalidData { msg: "State init has no data".to_owned() })
+            }
         }
     }
 
@@ -180,7 +190,7 @@ impl ContractImage {
         }
     }
 
-    ///Allows to change initial values for public contract variables
+    /// Allows to change initial values for public contract variables
     pub fn update_data(
         &mut self,
         data_map_supported: bool,
@@ -235,7 +245,8 @@ impl Contract {
         )
     }
 
-    /// Decodes output parameters returned by contract function call from serialized message body
+    /// Decodes output parameters returned by contract function call from
+    /// serialized message body
     pub fn decode_function_response_from_bytes_json(
         abi: &str,
         function: &str,
@@ -258,7 +269,8 @@ impl Contract {
         tvm_abi::json_abi::decode_unknown_function_response(abi, response, internal, allow_partial)
     }
 
-    /// Decodes output parameters returned by contract function call from serialized message body
+    /// Decodes output parameters returned by contract function call from
+    /// serialized message body
     pub fn decode_unknown_function_response_from_bytes_json(
         abi: &str,
         response: &[u8],
@@ -280,7 +292,8 @@ impl Contract {
         tvm_abi::json_abi::decode_unknown_function_call(abi, response, internal, allow_partial)
     }
 
-    /// Decodes output parameters returned by contract function call from serialized message body
+    /// Decodes output parameters returned by contract function call from
+    /// serialized message body
     pub fn decode_unknown_function_call_from_bytes_json(
         abi: &str,
         response: &[u8],
@@ -318,12 +331,7 @@ impl Contract {
             SliceData::load_cell(msg_body.into_cell()?)?,
         )?;
         let (body, id) = Self::serialize_message(&msg)?;
-        Ok(SdkMessage {
-            id,
-            serialized_message: body,
-            message: msg,
-            address,
-        })
+        Ok(SdkMessage { id, serialized_message: body, message: msg, address })
     }
 
     // Packs given inputs by abi into an internal Message struct.
@@ -375,16 +383,11 @@ impl Contract {
             msg_body,
         )?;
         let (body, id) = Self::serialize_message(&msg)?;
-        Ok(SdkMessage {
-            id,
-            serialized_message: body,
-            message: msg,
-            address: dst_address,
-        })
+        Ok(SdkMessage { id, serialized_message: body, message: msg, address: dst_address })
     }
 
-    // Packs given inputs by abi into Message struct without sign and returns data to sign.
-    // Sign should be then added with `add_sign_to_message` function
+    // Packs given inputs by abi into Message struct without sign and returns data
+    // to sign. Sign should be then added with `add_sign_to_message` function
     // Works with json representation of input and abi.
     pub fn get_call_message_bytes_for_signing(
         address: MsgAddressInt,
@@ -402,10 +405,8 @@ impl Contract {
         let msg =
             Self::create_ext_in_message(address, SliceData::load_cell(msg_body.into_cell()?)?)?;
 
-        Self::serialize_message(&msg).map(|(msg_data, _id)| MessageToSign {
-            message: msg_data,
-            data_to_sign,
-        })
+        Self::serialize_message(&msg)
+            .map(|(msg_data, _id)| MessageToSign { message: msg_data, data_to_sign })
     }
 
     // ------- Deploy constructing functions -------
@@ -440,12 +441,7 @@ impl Contract {
         };
         let (body, id) = Self::serialize_message(&msg)?;
 
-        Ok(SdkMessage {
-            id,
-            serialized_message: body,
-            message: msg,
-            address,
-        })
+        Ok(SdkMessage { id, serialized_message: body, message: msg, address })
     }
 
     // Packs given image and body into Message struct.
@@ -485,9 +481,9 @@ impl Contract {
         Self::create_int_deploy_message(src, None, image, workchain_id, ihr_disabled, bounce, value)
     }
 
-    // Packs given image and input into Message struct without signature and returns data to sign.
-    // Signature should be then added with `add_sign_to_message` function
-    // Works with json representation of input and abi.
+    // Packs given image and input into Message struct without signature and returns
+    // data to sign. Signature should be then added with `add_sign_to_message`
+    // function Works with json representation of input and abi.
     pub fn get_deploy_message_bytes_for_signing(
         params: &FunctionCallSet,
         image: ContractImage,
@@ -504,14 +500,12 @@ impl Contract {
         let cell = SliceData::load_cell(msg_body.into_cell()?)?;
         let msg = Self::create_ext_deploy_message(Some(cell), image, workchain_id)?;
 
-        Self::serialize_message(&msg).map(|(msg_data, _id)| MessageToSign {
-            message: msg_data,
-            data_to_sign,
-        })
+        Self::serialize_message(&msg)
+            .map(|(msg_data, _id)| MessageToSign { message: msg_data, data_to_sign })
     }
 
-    // Packs given image and input into Message struct with internal header and returns data.
-    // Works with json representation of input and abi.
+    // Packs given image and input into Message struct with internal header and
+    // returns data. Works with json representation of input and abi.
     pub fn get_int_deploy_message_bytes(
         src: Option<MsgAddressInt>,
         params: &FunctionCallSet,
@@ -558,9 +552,9 @@ impl Contract {
 
         let mut message: TvmMessage = TvmMessage::construct_from(&mut slice)?;
 
-        let body = message.body().ok_or(error!(SdkError::InvalidData {
-            msg: "No message body".to_owned()
-        }))?;
+        let body = message
+            .body()
+            .ok_or(error!(SdkError::InvalidData { msg: "No message body".to_owned() }))?;
 
         let signed_body = tvm_abi::add_sign_to_function_call(
             abi,
@@ -572,18 +566,13 @@ impl Contract {
 
         let address = match message.dst_ref() {
             Some(address) => address.clone(),
-            None => fail!(SdkError::InternalError {
-                msg: "No address in signed message".to_owned()
-            }),
+            None => {
+                fail!(SdkError::InternalError { msg: "No address in signed message".to_owned() })
+            }
         };
         let (body, id) = Self::serialize_message(&message)?;
 
-        Ok(SdkMessage {
-            id,
-            address,
-            serialized_message: body,
-            message,
-        })
+        Ok(SdkMessage { id, address, serialized_message: body, message })
     }
 
     // Add sign to message, returned by `get_deploy_message_bytes_for_signing` or
@@ -599,9 +588,9 @@ impl Contract {
 
         let mut message: TvmMessage = TvmMessage::construct_from(&mut slice)?;
 
-        let body = message.body().ok_or(error!(SdkError::InvalidData {
-            msg: "No message body".to_owned()
-        }))?;
+        let body = message
+            .body()
+            .ok_or(error!(SdkError::InvalidData { msg: "No message body".to_owned() }))?;
 
         let signed_body = abi.add_sign_to_encoded_input(
             signature.try_into()?,
@@ -612,18 +601,13 @@ impl Contract {
 
         let address = match message.dst_ref() {
             Some(address) => address.clone(),
-            None => fail!(SdkError::InternalError {
-                msg: "No address in signed message".to_owned()
-            }),
+            None => {
+                fail!(SdkError::InternalError { msg: "No address in signed message".to_owned() })
+            }
         };
         let (body, id) = Self::serialize_message(&message)?;
 
-        Ok(SdkMessage {
-            id,
-            address,
-            serialized_message: body,
-            message,
-        })
+        Ok(SdkMessage { id, address, serialized_message: body, message })
     }
 
     fn create_ext_in_message(address: MsgAddressInt, msg_body: SliceData) -> Result<TvmMessage> {
@@ -653,7 +637,9 @@ impl Contract {
         msg_header.ihr_disabled = ihr_disabled;
         msg_header.bounce = bounce;
         let mut msg = TvmMessage::with_int_header(msg_header);
-        msg_body.map(|body| msg.set_body(body));
+        if let Some(body) = msg_body {
+            msg.set_body(body)
+        }
 
         Ok(msg)
     }
@@ -670,7 +656,9 @@ impl Contract {
 
         let mut msg = TvmMessage::with_ext_in_header(msg_header);
         msg.set_state_init(image.state_init());
-        msg_body.map(|body| msg.set_body(body));
+        if let Some(body) = msg_body {
+            msg.set_body(body)
+        }
 
         Ok(msg)
     }
@@ -696,30 +684,27 @@ impl Contract {
 
         let mut msg = TvmMessage::with_int_header(msg_header);
         msg.set_state_init(image.state_init());
-        msg_body.map(|body| msg.set_body(body));
+        if let Some(body) = msg_body {
+            msg.set_body(body)
+        }
 
         Ok(msg)
     }
 
     pub fn serialize_message(msg: &TvmMessage) -> Result<(Vec<u8>, MessageId)> {
         let cells = msg.write_to_new_cell()?.into_cell()?;
-        Ok((
-            tvm_types::boc::write_boc(&cells)?,
-            (&cells.repr_hash().as_slice()[..]).into(),
-        ))
+        Ok((tvm_types::boc::write_boc(&cells)?, (&cells.repr_hash().as_slice()[..]).into()))
     }
 
     /// Deserializes tree of cells from byte array into `SliceData`
     pub fn deserialize_tree_to_slice(data: &[u8]) -> Result<SliceData> {
-        SliceData::load_cell(tvm_types::boc::read_single_root_boc(&data)?)
+        SliceData::load_cell(tvm_types::boc::read_single_root_boc(data)?)
     }
 
     pub fn get_dst_from_msg(msg: &[u8]) -> Result<MsgAddressInt> {
         match Contract::deserialize_message(msg)?.dst_ref() {
             Some(address) => Ok(address.clone()),
-            None => fail!(SdkError::InvalidData {
-                msg: "Wrong message type (extOut)".to_owned()
-            }),
+            None => fail!(SdkError::InvalidData { msg: "Wrong message type (extOut)".to_owned() }),
         }
     }
 

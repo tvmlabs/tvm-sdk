@@ -1,55 +1,80 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-pub use batch::{batch_query, ParamsOfBatchQuery, ResultOfBatchQuery};
+pub use batch::batch_query;
+pub use batch::ParamsOfBatchQuery;
+pub use batch::ResultOfBatchQuery;
 pub(crate) use endpoint::Endpoint;
-pub use errors::{Error, ErrorCode};
-pub use iterators::block_iterator::{
-    create_block_iterator, resume_block_iterator, ParamsOfCreateBlockIterator,
-    ParamsOfResumeBlockIterator,
-};
-pub use iterators::transaction_iterator::{
-    create_transaction_iterator, resume_transaction_iterator, ParamsOfCreateTransactionIterator,
-    ParamsOfResumeTransactionIterator,
-};
-pub use iterators::{
-    iterator_next, remove_iterator, ChainIterator, ParamsOfIteratorNext, RegisteredIterator,
-    ResultOfIteratorNext,
-};
-pub use network_params::{get_signature_id, ResultOfGetSignatureId};
-pub use queries::{
-    aggregate_collection, query, query_collection, query_counterparties, wait_for_collection,
-    ParamsOfQuery, ParamsOfWaitForCollection, ResultOfAggregateCollection, ResultOfQuery,
-    ResultOfQueryCollection, ResultOfWaitForCollection,
-};
-pub(crate) use server_link::{EndpointStat, NetworkState, ServerLink, MAX_TIMEOUT};
-pub use subscriptions::{
-    subscribe, subscribe_collection, unsubscribe, ParamsOfSubscribe, ParamsOfSubscribeCollection,
-    ResultOfSubscribeCollection, ResultOfSubscription, SubscriptionResponseType,
-};
-pub use transaction_tree::{
-    query_transaction_tree, MessageNode, ParamsOfQueryTransactionTree,
-    ResultOfQueryTransactionTree, TransactionNode,
-};
-pub use tvm_gql::{
-    AggregationFn, FieldAggregation, GraphQLQueryEvent, OrderBy, ParamsOfAggregateCollection,
-    ParamsOfQueryCollection, ParamsOfQueryCounterparties, ParamsOfQueryOperation, PostRequest,
-    SortDirection,
-};
-pub use types::{
-    NetworkConfig, NetworkQueriesProtocol, ACCOUNTS_COLLECTION, BLOCKS_COLLECTION,
-    MESSAGES_COLLECTION, TRANSACTIONS_COLLECTION,
-};
+pub use errors::Error;
+pub use errors::ErrorCode;
+pub use iterators::block_iterator::create_block_iterator;
+pub use iterators::block_iterator::resume_block_iterator;
+pub use iterators::block_iterator::ParamsOfCreateBlockIterator;
+pub use iterators::block_iterator::ParamsOfResumeBlockIterator;
+pub use iterators::iterator_next;
+pub use iterators::remove_iterator;
+pub use iterators::transaction_iterator::create_transaction_iterator;
+pub use iterators::transaction_iterator::resume_transaction_iterator;
+pub use iterators::transaction_iterator::ParamsOfCreateTransactionIterator;
+pub use iterators::transaction_iterator::ParamsOfResumeTransactionIterator;
+pub use iterators::ChainIterator;
+pub use iterators::ParamsOfIteratorNext;
+pub use iterators::RegisteredIterator;
+pub use iterators::ResultOfIteratorNext;
+pub use network_params::get_signature_id;
+pub use network_params::ResultOfGetSignatureId;
+pub use queries::aggregate_collection;
+pub use queries::query;
+pub use queries::query_collection;
+pub use queries::query_counterparties;
+pub use queries::wait_for_collection;
+pub use queries::ParamsOfQuery;
+pub use queries::ParamsOfWaitForCollection;
+pub use queries::ResultOfAggregateCollection;
+pub use queries::ResultOfQuery;
+pub use queries::ResultOfQueryCollection;
+pub use queries::ResultOfWaitForCollection;
+pub(crate) use server_link::EndpointStat;
+pub(crate) use server_link::NetworkState;
+pub(crate) use server_link::ServerLink;
+pub(crate) use server_link::MAX_TIMEOUT;
+pub use subscriptions::subscribe;
+pub use subscriptions::subscribe_collection;
+pub use subscriptions::unsubscribe;
+pub use subscriptions::ParamsOfSubscribe;
+pub use subscriptions::ParamsOfSubscribeCollection;
+pub use subscriptions::ResultOfSubscribeCollection;
+pub use subscriptions::ResultOfSubscription;
+pub use subscriptions::SubscriptionResponseType;
+pub use transaction_tree::query_transaction_tree;
+pub use transaction_tree::MessageNode;
+pub use transaction_tree::ParamsOfQueryTransactionTree;
+pub use transaction_tree::ResultOfQueryTransactionTree;
+pub use transaction_tree::TransactionNode;
+pub use tvm_gql::AggregationFn;
+pub use tvm_gql::FieldAggregation;
+pub use tvm_gql::GraphQLQueryEvent;
+pub use tvm_gql::OrderBy;
+pub use tvm_gql::ParamsOfAggregateCollection;
+pub use tvm_gql::ParamsOfQueryCollection;
+pub use tvm_gql::ParamsOfQueryCounterparties;
+pub use tvm_gql::ParamsOfQueryOperation;
+pub use tvm_gql::PostRequest;
+pub use tvm_gql::SortDirection;
+pub use types::NetworkConfig;
+pub use types::NetworkQueriesProtocol;
+pub use types::ACCOUNTS_COLLECTION;
+pub use types::BLOCKS_COLLECTION;
+pub use types::MESSAGES_COLLECTION;
+pub use types::TRANSACTIONS_COLLECTION;
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;
@@ -68,6 +93,7 @@ mod tvm_gql;
 pub(crate) mod types;
 mod websocket_link;
 
+mod acki_config;
 mod network;
 #[cfg(not(feature = "wasm-base"))]
 #[cfg(test)]
@@ -112,9 +138,7 @@ pub async fn find_last_shard_block(
     let block_id =
         crate::processing::blocks_walking::find_last_shard_block(&context, &address, None).await?;
 
-    Ok(ResultOfFindLastShardBlock {
-        block_id: block_id.to_string(),
-    })
+    Ok(ResultOfFindLastShardBlock { block_id: block_id.to_string() })
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
@@ -128,9 +152,7 @@ pub struct EndpointsSet {
 pub async fn fetch_endpoints(context: std::sync::Arc<ClientContext>) -> ClientResult<EndpointsSet> {
     let client = context.get_server_link()?;
 
-    Ok(EndpointsSet {
-        endpoints: client.fetch_endpoint_addresses().await?,
-    })
+    Ok(EndpointsSet { endpoints: client.fetch_endpoint_addresses().await? })
 }
 
 /// Sets the list of endpoints to use on reinit
@@ -139,14 +161,11 @@ pub async fn set_endpoints(
     context: std::sync::Arc<ClientContext>,
     params: EndpointsSet,
 ) -> ClientResult<()> {
-    if params.endpoints.len() == 0 {
+    if params.endpoints.is_empty() {
         return Err(Error::no_endpoints_provided());
     }
 
-    context
-        .get_server_link()?
-        .set_endpoints(params.endpoints)
-        .await;
+    context.get_server_link()?.set_endpoints(params.endpoints).await;
 
     Ok(())
 }

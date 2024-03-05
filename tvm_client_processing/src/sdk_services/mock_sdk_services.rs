@@ -1,11 +1,22 @@
-use crate::message_monitor::{CellFromBoc, MessageMonitoringParams, MessageMonitoringResult};
-use crate::{error, Error, MessageMonitorSdkServices, NetSubscription};
-use base64::Engine;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::future::Future;
-use std::sync::{Arc, Mutex, RwLock};
-use std::time::{Duration, SystemTime};
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
+use std::time::Duration;
+use std::time::SystemTime;
+
+use base64::Engine;
 use tvm_types::Cell;
+
+use crate::error;
+use crate::message_monitor::CellFromBoc;
+use crate::message_monitor::MessageMonitoringParams;
+use crate::message_monitor::MessageMonitoringResult;
+use crate::Error;
+use crate::MessageMonitorSdkServices;
+use crate::NetSubscription;
 
 #[derive(Clone)]
 pub struct MockSdkServices {
@@ -52,10 +63,7 @@ impl State {
     fn find_results(
         &self,
         messages: HashMap<String, MessageMonitoringParams>,
-    ) -> (
-        Vec<MessageMonitoringResult>,
-        HashMap<String, MessageMonitoringParams>,
-    ) {
+    ) -> (Vec<MessageMonitoringResult>, HashMap<String, MessageMonitoringParams>) {
         let recent = self.results.read().unwrap();
         let mut found = Vec::new();
         let mut not_found = HashMap::new();
@@ -85,12 +93,10 @@ impl State {
     }
 
     fn cell_from_boc(boc: &str, name: &str) -> error::Result<Cell> {
-        let bytes = base64::engine::general_purpose::STANDARD
-            .decode(boc)
-            .map_err(|err| {
-                Error::invalid_boc(format!("error decode {} BOC base64: {}", name, err))
-            })?;
-        tvm_types::boc::read_single_root_boc(&bytes).map_err(|err| {
+        let bytes = base64::engine::general_purpose::STANDARD.decode(boc).map_err(|err| {
+            Error::invalid_boc(format!("error decode {} BOC base64: {}", name, err))
+        })?;
+        tvm_types::boc::read_single_root_boc(bytes).map_err(|err| {
             Error::invalid_boc(format!("{} BOC deserialization error: {}", name, err))
         })
     }
@@ -124,9 +130,7 @@ impl MessageMonitorSdkServices for MockSdkServices {
         messages: Vec<MessageMonitoringParams>,
         callback: impl Fn(error::Result<Vec<MessageMonitoringResult>>) -> F + Send + Sync + 'static,
     ) -> error::Result<NetSubscription> {
-        Ok(NetSubscription(
-            self.state.clone().subscribe(messages, callback),
-        ))
+        Ok(NetSubscription(self.state.clone().subscribe(messages, callback)))
     }
 
     async fn unsubscribe(&self, subscription: NetSubscription) -> error::Result<()> {
@@ -148,9 +152,6 @@ impl MessageMonitorSdkServices for MockSdkServices {
     }
 
     fn now_ms(&self) -> u64 {
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() as u64
+        SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis() as u64
     }
 }

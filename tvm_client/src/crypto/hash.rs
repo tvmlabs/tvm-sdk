@@ -1,20 +1,19 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+
+use sha2::Digest;
 
 use crate::client::ClientContext;
 use crate::encoding::base64_decode;
 use crate::error::ClientResult;
-use sha2::Digest;
 
 //--------------------------------------------------------------------------------------------- sha
 
@@ -38,9 +37,7 @@ pub fn sha256(
 ) -> ClientResult<ResultOfHash> {
     let mut hasher = sha2::Sha256::new();
     hasher.update(base64_decode(&params.data)?);
-    Ok(ResultOfHash {
-        hash: hex::encode(hasher.finalize().to_vec()),
-    })
+    Ok(ResultOfHash { hash: hex::encode(hasher.finalize()) })
 }
 
 /// Calculates SHA512 hash of the specified data.
@@ -51,7 +48,5 @@ pub fn sha512(
 ) -> ClientResult<ResultOfHash> {
     let mut hasher = sha2::Sha512::new();
     hasher.update(base64_decode(&params.data)?);
-    Ok(ResultOfHash {
-        hash: hex::encode(hasher.finalize().to_vec()),
-    })
+    Ok(ResultOfHash { hash: hex::encode(hasher.finalize()) })
 }
