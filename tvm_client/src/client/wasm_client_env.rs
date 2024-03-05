@@ -494,29 +494,6 @@ impl LocalStorage {
             .await
             .map_err(|err| Error::local_storage_error(err.message()))
     }
-
-    async fn remove_internal(
-        local_storage_path: &Option<String>,
-        storage_name: &str,
-        key: &str,
-    ) -> ClientResult<()> {
-        let db = Self::open_db(local_storage_path, storage_name).await?;
-
-        let tx = db
-            .transaction_on_one_with_mode(storage_name, IdbTransactionMode::Readwrite)
-            .map_err(|err| Error::local_storage_error(err.message()))?;
-
-        let store = tx
-            .object_store(storage_name)
-            .map_err(|err| Error::local_storage_error(err.message()))?;
-
-        store
-            .delete(&JsValue::from_str(key))
-            .map_err(|err| Error::local_storage_error(err.message()))?
-            .into_future()
-            .await
-            .map_err(|err| Error::local_storage_error(err.message()))
-    }
 }
 
 #[async_trait::async_trait]
