@@ -999,8 +999,8 @@ fn test_transaction_into_json_q() {
 
 fn test_json_block(blockhash: &str, mode: SerializationMode) {
     let filename = format!("{}.boc", blockhash);
-    let in_path = Path::new("src/tests/data").join(&filename);
-    let boc = read(in_path.clone()).expect(&format!("Error reading file {:?}", in_path));
+    let in_path = Path::new("src/tests/data").join(filename);
+    let boc = read(in_path.clone()).unwrap_or_else(|_| panic!("Error reading file {:?}", in_path));
     let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
 
     let block = Block::construct_from_cell(cell).unwrap();
@@ -1019,15 +1019,15 @@ fn test_get_config() {
     let filename =
         "src/tests/data/9C9906A80D020952E0192DC60C0B2BF1F55FE9A9E065606E8FE25C08BD1AA6B2.boc";
     let in_path = Path::new(filename);
-    let boc = read(in_path).expect(&format!("Error reading file {:?}", filename));
-    let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
+    let boc = read(in_path).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
+    let cell = read_single_root_boc(boc).expect("Error deserializing single root BOC");
 
     let block = Block::construct_from_cell(cell).unwrap();
 
     let extra = block.read_extra().unwrap();
     let master = extra.read_custom().unwrap().unwrap();
     let config = master.config().unwrap();
-    let json = serialize_config_param(&config, 12).unwrap();
+    let json = serialize_config_param(config, 12).unwrap();
     let etalon = r#"{
   "p12": [
     {
@@ -1153,7 +1153,7 @@ fn test_crafted_key_block_into_json() {
     let filename =
         "src/tests/data/48377CD82FF8091D6A45908727C8D4E5FC521603E5633AF3AC8C9E45F9579D5B.boc";
     let in_path = Path::new(filename);
-    let boc = read(in_path).expect(&format!("Error reading file {:?}", filename));
+    let boc = read(in_path).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
     let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
     // println!("slice = {}", root_cell);
     let key = base64_decode("7w3fX5jiuo8PyQoFaEL+K9pE/XvbKjH63i0JcraLlBM=").unwrap();
@@ -1359,8 +1359,8 @@ fn test_serialize_shard_descr() {
 
 #[test]
 fn test_db_serialize_block_proof() {
-    let boc = read("src/tests/data/block_proof").expect(&format!("Error reading proof file"));
-    let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
+    let boc = read("src/tests/data/block_proof").expect("Error reading proof file");
+    let cell = read_single_root_boc(boc).expect("Error deserializing single root BOC");
 
     let proof = BlockProof::construct_from_cell(cell).unwrap();
 
@@ -1374,7 +1374,7 @@ fn test_db_serialize_block_proof() {
 
 fn prepare_shard_state_json(name: &str, workchain_id: i32, mode: SerializationMode) -> String {
     let boc = read(format!("src/tests/data/states/{}", name))
-        .expect(&format!("Error reading file {:?}", name));
+        .unwrap_or_else(|_| panic!("Error reading file {:?}", name));
     let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
     let id = format!("state:{:x}", cell.repr_hash());
 
@@ -1574,10 +1574,7 @@ fn se_deserialise_remp_status(status: RempMessageStatus) {
     .into_boxed();
     let signature = vec![1, 2, 3, 4];
 
-    let json = format!(
-        "{}",
-        serde_json::json!(db_serialize_remp_status(&rr, &signature).unwrap()).to_string()
-    );
+    let json = serde_json::json!(db_serialize_remp_status(&rr, &signature).unwrap()).to_string();
     println!("{}", json);
 
     let map = serde_json::from_str::<Map<String, Value>>(&json).unwrap();
@@ -1597,15 +1594,13 @@ fn test_se_deserialise_remp_accepted() {
                 1830539,
                 "18AFCDD25BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFCDD25BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            )
-            .into(),
+            ),
             master_id: BlockIdExt::with_params(
                 tvm_block::ShardIdent::with_tagged_prefix(-1, 0x8000_0000_0000_0000).unwrap(),
                 1830539,
                 "18AFCD115BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFC2225BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            )
-            .into(),
+            ),
         },
     ));
 }
@@ -1619,8 +1614,7 @@ fn test_se_deserialise_remp_duplicate() {
                 1830539,
                 "18AFCDD25BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFCDD25BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            )
-            .into(),
+            ),
         },
     ));
 }
@@ -1635,8 +1629,7 @@ fn test_se_deserialise_remp_ignored() {
                 1830539,
                 "18AFCDD25BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFCDD25BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            )
-            .into(),
+            ),
         },
     ));
 }
@@ -1656,8 +1649,7 @@ fn test_se_deserialise_remp_rejected() {
                 1830539,
                 "18AFCDD25BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFCDD25BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            )
-            .into(),
+            ),
             error: "eror 1 2 3".to_string(),
         },
     ));
