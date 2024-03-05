@@ -1,8 +1,12 @@
 [package]
 name = "tvm_sdk"
-version = "1.46.0"
-edition = "2021"
-authors = ["TVM Labs <support@tvmlabs.io>"]
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
 tvm_abi.workspace = true
