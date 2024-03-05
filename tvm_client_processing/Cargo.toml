@@ -1,29 +1,33 @@
 [package]
 name = "tvm_client_processing"
-version = "1.46.0"
-authors = ["TON Labs LTD <support@tonlabs.io>"]
-edition = "2018"
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [lib]
 name = "tvm_client_processing"
 crate-type = ["cdylib", "rlib", "staticlib"]
 
 [dependencies]
-tvm_block = { git = "https://github.com/tvmlabs/tvm-block", tag = "2.0.0" }
-tvm_types = { git = "https://github.com/tvmlabs/tvm-types", tag = "3.0.1" }
-
+async-trait.workspace = true
+base64.workspace = true
+futures.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+serde_repr.workspace = true
+tokio = { default-features = false, features = ["sync"], version = "1.4" }
+#
+tvm_block.workspace = true
+tvm_types.workspace = true
+#
 api_derive = { path = "../api/derive" }
 api_info = { path = "../api/info" }
-
-async-trait = "0.1.40"
-base64 = "0.21.0"
-futures = "0.3.4"
-log = "0.4.11"
-serde = "1.0.91"
-serde_derive = "1.0.91"
-serde_json = "1.0.41"
-serde_repr = "0.1.7"
-tokio = { default-features = false, features = ["sync"], version = "1.4" }
 
 [dev-dependencies]
 tokio = { default-features = false, features = ["sync", "rt-multi-thread", "macros", "time", "net", "fs"], version = "1.4" }

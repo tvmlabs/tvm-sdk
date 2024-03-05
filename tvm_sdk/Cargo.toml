@@ -5,9 +5,9 @@ edition = "2021"
 authors = ["TVM Labs <support@tvmlabs.io>"]
 
 [dependencies]
-tvm_abi = { git = "https://github.com/tvmlabs/tvm-abi", tag = "3.0.0" }
-tvm_block = { git = "https://github.com/tvmlabs/tvm-block", tag = "2.0.0" }
-tvm_types = { git = "https://github.com/tvmlabs/tvm-types", tag = "3.0.1" }
+tvm_abi.workspace = true
+tvm_block.workspace = true
+tvm_types.workspace = true
 
 api_derive = { path = "../api/derive" }
 api_info = { path = "../api/info" }
