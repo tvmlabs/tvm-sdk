@@ -86,7 +86,8 @@ impl BuildInfo {
             })
             .collect();
         Ok(Self {
-            build_number: build_number.parse::<u32>()
+            build_number: build_number
+                .parse::<u32>()
                 .unwrap_or_else(|_| panic!("Invalid build number [{}]", build_number)),
             dependencies,
         })
