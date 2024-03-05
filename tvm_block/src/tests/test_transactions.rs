@@ -11,7 +11,6 @@
 
 #[allow(unused_imports)] // TBD when types fixed
 use std::str::FromStr;
-use std::sync::Arc;
 
 use super::*;
 use crate::write_read_and_assert;

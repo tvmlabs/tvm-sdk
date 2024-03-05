@@ -13,7 +13,6 @@
 #![deny(renamed_and_removed_lints)]
 
 use std::any::Any;
-use std::convert::TryFrom;
 use std::fmt;
 use std::hash::Hash;
 use std::io::Read;

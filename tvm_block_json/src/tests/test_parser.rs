@@ -22,13 +22,11 @@ use tvm_block::GetRepresentationHash;
 use tvm_block::InMsg;
 use tvm_block::OutMsg;
 use tvm_types::read_single_root_boc;
-use tvm_types::UInt256;
 
 use super::*;
 use crate::block_parser::reducers::JsonFieldsReducer;
 use crate::block_parser::MINTER_ADDRESS;
 use crate::NoTrace;
-use crate::ParsedBlock;
 
 #[derive(Default)]
 pub struct ParseOptions {

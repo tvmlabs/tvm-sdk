@@ -50,7 +50,6 @@ pub mod parser {
     use pom::char_class::hex_digit;
     use pom::parser::*;
     use pom::Parser;
-    use pom::{self};
 
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
     pub enum Type {

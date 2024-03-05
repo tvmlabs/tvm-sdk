@@ -9,13 +9,10 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
 use tvm_types::dictionary::HashmapE;
 use tvm_types::ed25519_generate_private_key;
-use tvm_types::BuilderData;
 use tvm_types::Ed25519PublicKey;
-use tvm_types::SliceData;
 
 use crate::json_abi::*;
 

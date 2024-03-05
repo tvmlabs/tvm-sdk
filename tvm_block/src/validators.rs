@@ -12,7 +12,6 @@
 use std::borrow::Cow;
 use std::cmp::min;
 use std::cmp::Ordering;
-use std::convert::TryInto;
 use std::io::Cursor;
 use std::io::Write;
 

@@ -18,14 +18,7 @@ use std::path::Path;
 use pretty_assertions::assert_eq;
 use tvm_api::ton::ton_node::rempmessagestatus;
 use tvm_api::IntoBoxed;
-use tvm_block::generate_test_account_by_init_code_hash;
-use tvm_block::ShardStateUnsplit;
-use tvm_block::Transaction;
-use tvm_block::TransactionProcessingStatus;
 use tvm_types::base64_decode;
-use tvm_types::read_single_root_boc;
-use tvm_types::write_boc;
-use tvm_types::AccountId;
 use tvm_types::IBitstring;
 
 use super::*;

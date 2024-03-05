@@ -14,8 +14,6 @@ use std::io::Read;
 use ed25519_dalek::SigningKey;
 use ed25519_dalek::VerifyingKey;
 use tvm_types::read_boc;
-use tvm_types::Cell;
-use tvm_types::UInt256;
 
 use super::*;
 use crate::config_params::ConfigParamEnum;

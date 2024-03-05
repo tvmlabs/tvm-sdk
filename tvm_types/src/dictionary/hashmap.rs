@@ -12,14 +12,8 @@
 use std::fmt;
 
 use super::*;
-use crate::cell::BuilderData;
-use crate::cell::Cell;
-use crate::cell::SliceData;
 use crate::error;
 use crate::fail;
-use crate::types::ExceptionCode;
-use crate::GasConsumer;
-use crate::Result;
 
 ///////////////////////////////////////////////
 /// Length of key should not exceed bit_len

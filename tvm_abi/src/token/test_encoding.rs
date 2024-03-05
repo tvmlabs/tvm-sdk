@@ -10,7 +10,6 @@
 // limitations under the License.
 
 use std::collections::BTreeMap;
-use std::iter::FromIterator;
 use std::str::FromStr;
 
 use num_bigint::BigInt;

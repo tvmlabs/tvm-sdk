@@ -13,10 +13,8 @@ use std::collections::HashSet;
 use std::str::FromStr;
 
 use tvm_types::read_single_root_boc;
-use tvm_types::SliceData;
 
 use super::*;
-use crate::AccountIdPrefixFull;
 use crate::BlockIdExt;
 
 fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {

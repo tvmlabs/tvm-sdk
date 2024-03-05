@@ -15,7 +15,6 @@ use crate::write_read_and_assert;
 use crate::CurrencyCollection;
 use crate::InternalMessageHeader;
 use crate::MsgAddressInt;
-use crate::ShardIdent;
 use crate::StateInit;
 use crate::TickTock;
 
