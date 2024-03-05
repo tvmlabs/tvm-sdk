@@ -25,12 +25,34 @@ version = "1.47.0"
 rust-version = "1.76.0"
 
 authors = ["TVM Labs <hello@tvmlabs.io>"]
+repository = "https://github.com/tvmlabs/tvm-sdk"
 edition = "2021"
 license = "GPL-3.0"
 
 [workspace.lints.rust]
 # aim to have fmt::Debug implemented for all our public types
 missing_debug_implementations = "warn"
+
+[profile.profiling]
+debug = 1
+inherits = 'release'
+
+[profile.dev]
+# Must always use panic = "abort" to avoid needing to define the unstable eh_personality lang item.
+panic = "abort"
+# Enable only a small amount of optimization in debug mode
+opt-level = 1
+
+# Enable high optimizations for dependencies, but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+opt-level = "z"   # Optimize for size.
+lto = true        # Enable Link Time Optimization
+codegen-units = 1 # Reduce number of codegen units to increase optimizations.
+panic = "abort"   # Abort on panic
+strip = true      # Automatically strip symbols from the binary.
 
 [workspace.dependencies]
 aes-ctr = "0.6.0"

@@ -1,7 +1,6 @@
 [package]
 description = "command line tool for TVM compatible blockchains"
 documentation = "https://www.tvmlabs.io"
-edition = "2021"
 homepage = "https://www.tvmlabs.io"
 keywords = [
     #
@@ -13,29 +12,14 @@ keywords = [
 ]
 name = "tvm-cli"
 readme = "README.md"
-repository = "https://github.com/tvmlabs/tvm-cli"
-version = "0.39.0"
-
-[profile.profiling]
-debug = 1
-inherits = 'release'
-
-[profile.dev]
-# Must always use panic = "abort" to avoid needing to define the unstable eh_personality lang item.
-panic = "abort"
-# Enable only a small amount of optimization in debug mode
-opt-level = 1
-
-# Enable high optimizations for dependencies, but not for our code:
-[profile.dev.package."*"]
-opt-level = 3
-
-[profile.release]
-opt-level = "z"   # Optimize for size.
-lto = true        # Enable Link Time Optimization
-codegen-units = 1 # Reduce number of codegen units to increase optimizations.
-panic = "abort"   # Abort on panic
-strip = true      # Automatically strip symbols from the binary.
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
 anyhow.workspace = true
@@ -52,7 +36,7 @@ num-traits.workspace = true
 qr2term = "0.3.1"
 regex.workspace = true
 reqwest = { workspace = true, features = ["rustls-tls-webpki-roots"] }
-serde = { features = ["derive"], version = "1.0.196" }
+serde = { features = ["derive"], workspace = true }
 serde_derive.workspace = true
 serde_json.workspace = true
 simplelog = "0.12.1"
