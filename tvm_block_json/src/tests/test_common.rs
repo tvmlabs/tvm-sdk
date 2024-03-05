@@ -15,14 +15,14 @@
  */
 
 fn assert_json_eq(json: &str, expected: &str, name: &str) {
-    let expected = expected.replace("\r", "");
-    let expected = if let Some(expected) = expected.strip_suffix("\n") {
+    let expected = expected.replace('\r', "");
+    let expected = if let Some(expected) = expected.strip_suffix('\n') {
         expected.to_string()
     } else {
         expected
     };
     if json != expected {
-        std::fs::write(format!("target/{}.json", name), &json).unwrap();
+        std::fs::write(format!("target/{}.json", name), json).unwrap();
         panic!("json != expected")
     }
 }
