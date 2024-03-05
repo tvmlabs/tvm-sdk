@@ -1,11 +1,16 @@
+use std::collections::VecDeque;
+
+use tvm_block::Message;
+use tvm_block::MsgAddressInt;
+
 use super::action::DAction;
 use super::calltype::DebotCallType;
-use super::{JsonValue, DEBOT_WC};
-use crate::boc::internal::{deserialize_object_from_base64, serialize_object_to_base64};
+use super::JsonValue;
+use super::DEBOT_WC;
+use crate::boc::internal::deserialize_object_from_base64;
+use crate::boc::internal::serialize_object_to_base64;
 use crate::encoding::account_decode;
 use crate::error::ClientError;
-use std::collections::VecDeque;
-use tvm_block::{Message, MsgAddressInt};
 
 #[derive(Default)]
 pub(super) struct RunOutput {
@@ -40,8 +45,8 @@ impl RunOutput {
     pub fn decode_actions(&self) -> Result<Option<Vec<DAction>>, String> {
         match self.return_value.as_ref() {
             Some(val) => serde_json::from_value(val["actions"].clone())
-                .map_err(|_| format!("internal error: failed to parse actions"))
-                .map(|v| Some(v)),
+                .map_err(|_| "internal error: failed to parse actions".to_string())
+                .map(Some),
             None => Ok(None),
         }
     }
@@ -82,11 +87,7 @@ impl RunOutput {
                 if let Ok(msg_base64) = serialize_object_to_base64(&msg, "message") {
                     self.calls.push_back(DebotCallType::Interface {
                         msg: msg_base64,
-                        id: wc_and_addr
-                            .get(1)
-                            .map(|x| x.to_owned())
-                            .unwrap_or("0")
-                            .to_string(),
+                        id: wc_and_addr.get(1).map(|x| x.to_owned()).unwrap_or("0").to_string(),
                     });
                 }
                 return None;
@@ -107,8 +108,7 @@ impl RunOutput {
                     msg.set_src_address(std_addr.clone());
                 }
                 if let Ok(msg_base64) = serialize_object_to_base64(&msg, "message") {
-                    self.calls
-                        .push_back(DebotCallType::Invoke { msg: msg_base64 });
+                    self.calls.push_back(DebotCallType::Invoke { msg: msg_base64 });
                 }
                 return None;
             }
@@ -141,20 +141,14 @@ impl RunOutput {
                 // distinguish a get-method call from external call.
                 // Most accurate method - to check flags in src address.
                 let mut body_slice = body_slice.clone();
-                let dest = msg
-                    .0
-                    .header()
-                    .get_dst_address()
-                    .map(|x| x.to_string())
-                    .unwrap_or_default();
+                let dest =
+                    msg.0.header().get_dst_address().map(|x| x.to_string()).unwrap_or_default();
                 if let Ok(bit) = body_slice.get_next_bit() {
                     if call_or_get && bit {
-                        self.calls
-                            .push_back(DebotCallType::External { msg: msg.1, dest });
+                        self.calls.push_back(DebotCallType::External { msg: msg.1, dest });
                         return None;
                     } else if !call_or_get && !bit {
-                        self.calls
-                            .push_back(DebotCallType::GetMethod { msg: msg.1, dest });
+                        self.calls.push_back(DebotCallType::GetMethod { msg: msg.1, dest });
                         return None;
                     }
                 }

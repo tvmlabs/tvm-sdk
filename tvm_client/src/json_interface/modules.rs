@@ -1,16 +1,14 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
 use super::registrar::ModuleReg;
 use super::runtime::RuntimeHandlers;
@@ -81,10 +79,7 @@ fn register_crypto(handlers: &mut RuntimeHandlers) {
     // Math
 
     module.register_sync_fn(crate::crypto::factorize, crate::crypto::math::factorize_api);
-    module.register_sync_fn(
-        crate::crypto::modular_power,
-        crate::crypto::math::modular_power_api,
-    );
+    module.register_sync_fn(crate::crypto::modular_power, crate::crypto::math::modular_power_api);
     module.register_sync_fn(crate::crypto::tvm_crc16, crate::crypto::math::tvm_crc16_api);
     module.register_sync_fn(
         crate::crypto::generate_random_bytes,
@@ -115,10 +110,7 @@ fn register_crypto(handlers: &mut RuntimeHandlers) {
 
     // Scrypt
 
-    module.register_sync_fn(
-        crate::crypto::encscrypt::scrypt,
-        crate::crypto::encscrypt::scrypt_api,
-    );
+    module.register_sync_fn(crate::crypto::encscrypt::scrypt, crate::crypto::encscrypt::scrypt_api);
 
     // NaCl
 
@@ -127,10 +119,7 @@ fn register_crypto(handlers: &mut RuntimeHandlers) {
         crate::crypto::nacl::nacl_sign_keypair_from_secret_key_api,
     );
     module.register_sync_fn(crate::crypto::nacl_sign, crate::crypto::nacl::nacl_sign_api);
-    module.register_sync_fn(
-        crate::crypto::nacl_sign_open,
-        crate::crypto::nacl::nacl_sign_open_api,
-    );
+    module.register_sync_fn(crate::crypto::nacl_sign_open, crate::crypto::nacl::nacl_sign_open_api);
     module.register_sync_fn(
         crate::crypto::nacl_sign_detached,
         crate::crypto::nacl::nacl_sign_detached_api,
@@ -149,14 +138,9 @@ fn register_crypto(handlers: &mut RuntimeHandlers) {
         crate::crypto::nacl::nacl_box_keypair_from_secret_key_api,
     );
     module.register_sync_fn(crate::crypto::nacl_box, crate::crypto::nacl::nacl_box_api);
-    module.register_sync_fn(
-        crate::crypto::nacl_box_open,
-        crate::crypto::nacl::nacl_box_open_api,
-    );
-    module.register_sync_fn(
-        crate::crypto::nacl_secret_box,
-        crate::crypto::nacl::nacl_secret_box_api,
-    );
+    module.register_sync_fn(crate::crypto::nacl_box_open, crate::crypto::nacl::nacl_box_open_api);
+    module
+        .register_sync_fn(crate::crypto::nacl_secret_box, crate::crypto::nacl::nacl_secret_box_api);
     module.register_sync_fn(
         crate::crypto::nacl_secret_box_open,
         crate::crypto::nacl::nacl_secret_box_open_api,
@@ -210,10 +194,7 @@ fn register_crypto(handlers: &mut RuntimeHandlers) {
 
     // Encryption
 
-    module.register_sync_fn(
-        crate::crypto::chacha20,
-        crate::crypto::encryption::chacha20_api,
-    );
+    module.register_sync_fn(crate::crypto::chacha20, crate::crypto::encryption::chacha20_api);
 
     // Boxes
 
@@ -369,14 +350,8 @@ fn register_abi(handlers: &mut RuntimeHandlers) {
         crate::abi::decode_initial_data,
         crate::abi::init_data::decode_initial_data_api,
     );
-    module.register_sync_fn(
-        crate::abi::decode_boc,
-        crate::abi::decode_boc::decode_boc_api,
-    );
-    module.register_sync_fn(
-        crate::abi::encode_boc,
-        crate::abi::encode_boc::encode_boc_api,
-    );
+    module.register_sync_fn(crate::abi::decode_boc, crate::abi::decode_boc::decode_boc_api);
+    module.register_sync_fn(crate::abi::encode_boc, crate::abi::encode_boc::encode_boc_api);
     module.register_sync_fn(
         crate::abi::calc_function_id,
         crate::abi::function_id::calc_function_id_api,
@@ -402,35 +377,18 @@ fn register_boc(handlers: &mut RuntimeHandlers) {
 
     module.register_error_code::<crate::boc::ErrorCode>();
     module.register_sync_fn(crate::boc::decode_tvc, crate::boc::tvc::decode_tvc_api);
-    module.register_sync_fn(
-        crate::boc::parse_message,
-        crate::boc::parse::parse_message_api,
-    );
-    module.register_sync_fn(
-        crate::boc::parse_transaction,
-        crate::boc::parse::parse_transaction_api,
-    );
-    module.register_sync_fn(
-        crate::boc::parse_account,
-        crate::boc::parse::parse_account_api,
-    );
+    module.register_sync_fn(crate::boc::parse_message, crate::boc::parse::parse_message_api);
+    module
+        .register_sync_fn(crate::boc::parse_transaction, crate::boc::parse::parse_transaction_api);
+    module.register_sync_fn(crate::boc::parse_account, crate::boc::parse::parse_account_api);
     module.register_sync_fn(crate::boc::parse_block, crate::boc::parse::parse_block_api);
-    module.register_sync_fn(
-        crate::boc::parse_shardstate,
-        crate::boc::parse::parse_shardstate_api,
-    );
+    module.register_sync_fn(crate::boc::parse_shardstate, crate::boc::parse::parse_shardstate_api);
     module.register_sync_fn(
         crate::boc::get_blockchain_config,
         crate::boc::blockchain_config::get_blockchain_config_api,
     );
-    module.register_sync_fn(
-        crate::boc::get_boc_hash,
-        crate::boc::common::get_boc_hash_api,
-    );
-    module.register_sync_fn(
-        crate::boc::get_boc_depth,
-        crate::boc::common::get_boc_depth_api,
-    );
+    module.register_sync_fn(crate::boc::get_boc_hash, crate::boc::common::get_boc_hash_api);
+    module.register_sync_fn(crate::boc::get_boc_depth, crate::boc::common::get_boc_depth_api);
     module.register_sync_fn(
         crate::boc::get_code_from_tvc,
         crate::boc::state_init::get_code_from_tvc_api,
@@ -439,14 +397,8 @@ fn register_boc(handlers: &mut RuntimeHandlers) {
     module.register_sync_fn(crate::boc::cache_set, crate::boc::cache::cache_set_api);
     module.register_sync_fn(crate::boc::cache_unpin, crate::boc::cache::cache_unpin_api);
     module.register_sync_fn(crate::boc::encode_boc, crate::boc::encode::encode_boc_api);
-    module.register_sync_fn(
-        crate::boc::get_code_salt,
-        crate::boc::state_init::get_code_salt_api,
-    );
-    module.register_sync_fn(
-        crate::boc::set_code_salt,
-        crate::boc::state_init::set_code_salt_api,
-    );
+    module.register_sync_fn(crate::boc::get_code_salt, crate::boc::state_init::get_code_salt_api);
+    module.register_sync_fn(crate::boc::set_code_salt, crate::boc::state_init::set_code_salt_api);
     module.register_sync_fn(
         crate::boc::decode_state_init,
         crate::boc::state_init::decode_state_init_api,
@@ -485,10 +437,8 @@ fn register_net(handlers: &mut RuntimeHandlers) {
 
     module.register_async_fn(crate::net::query, crate::net::queries::query_api);
     module.register_async_fn(crate::net::batch_query, crate::net::batch::batch_query_api);
-    module.register_async_fn(
-        crate::net::query_collection,
-        crate::net::queries::query_collection_api,
-    );
+    module
+        .register_async_fn(crate::net::query_collection, crate::net::queries::query_collection_api);
     module.register_async_fn(
         crate::net::aggregate_collection,
         crate::net::queries::aggregate_collection_api,
@@ -497,10 +447,7 @@ fn register_net(handlers: &mut RuntimeHandlers) {
         crate::net::wait_for_collection,
         crate::net::queries::wait_for_collection_api,
     );
-    module.register_async_fn(
-        crate::net::unsubscribe,
-        crate::net::subscriptions::unsubscribe_api,
-    );
+    module.register_async_fn(crate::net::unsubscribe, crate::net::subscriptions::unsubscribe_api);
     module.register_async_fn_with_callback(
         super::net::subscribe_collection,
         super::net::subscribe_collection_api,
@@ -592,14 +539,10 @@ fn register_processing(handlers: &mut RuntimeHandlers) {
         crate::processing::fetch_next_monitor_results,
         crate::processing::fetch_next_monitor_results_api,
     );
-    module.register_sync_fn(
-        crate::processing::cancel_monitor,
-        crate::processing::cancel_monitor_api,
-    );
-    module.register_async_fn(
-        crate::processing::send_messages,
-        crate::processing::send_messages_api,
-    );
+    module
+        .register_sync_fn(crate::processing::cancel_monitor, crate::processing::cancel_monitor_api);
+    module
+        .register_async_fn(crate::processing::send_messages, crate::processing::send_messages_api);
 
     module.register_async_fn_with_callback(
         super::processing::send_message,
@@ -628,10 +571,7 @@ fn register_tvm(handlers: &mut RuntimeHandlers) {
     module.register_type::<crate::tvm::types::ExecutionOptions>();
     module.register_type::<crate::tvm::AccountForExecutor>();
     module.register_type::<crate::tvm::TransactionFees>();
-    module.register_async_fn(
-        crate::tvm::run_executor,
-        crate::tvm::run_message::run_executor_api,
-    );
+    module.register_async_fn(crate::tvm::run_executor, crate::tvm::run_message::run_executor_api);
     module.register_async_fn(crate::tvm::run_tvm, crate::tvm::run_message::run_tvm_api);
     module.register_async_fn(crate::tvm::run_get, crate::tvm::run_get::run_get_api);
     module.register();
@@ -661,14 +601,12 @@ fn register_utils(handlers: &mut RuntimeHandlers) {
     #[cfg(feature = "include-zstd")]
     module.register_sync_fn(super::utils::compress_zstd, super::utils::compress_zstd_api);
     #[cfg(feature = "include-zstd")]
-    module.register_sync_fn(
-        super::utils::decompress_zstd,
-        super::utils::decompress_zstd_api,
-    );
+    module.register_sync_fn(super::utils::decompress_zstd, super::utils::decompress_zstd_api);
     module.register();
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Module for working with debot.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Module for working with
+/// debot.
 #[derive(ApiModule)]
 #[api_module(name = "debot")]
 pub struct DebotModule;
@@ -695,7 +633,8 @@ fn register_debot(handlers: &mut RuntimeHandlers) {
     module.register();
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Module for proving data, retrieved from TONOS API.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Module for proving data,
+/// retrieved from TONOS API.
 #[derive(ApiModule)]
 #[api_module(name = "proofs")]
 pub struct ProofsModule;
@@ -708,10 +647,7 @@ fn register_proofs(handlers: &mut RuntimeHandlers) {
     module.register_type::<crate::proofs::ParamsOfProofTransactionData>();
     module.register_type::<crate::proofs::ParamsOfProofMessageData>();
 
-    module.register_async_fn(
-        crate::proofs::proof_block_data,
-        crate::proofs::proof_block_data_api,
-    );
+    module.register_async_fn(crate::proofs::proof_block_data, crate::proofs::proof_block_data_api);
     module.register_async_fn(
         crate::proofs::proof_transaction_data,
         crate::proofs::proof_transaction_data_api,

@@ -1,15 +1,19 @@
 [package]
-authors = [ 'TON Labs LTD <support@tonlabs.io>' ]
-edition = '2018'
-name = 'api_test'
-version = '1.45.1'
+name = "api_test"
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
-serde = '1.0.115'
-serde_derive = '1.0.115'
-serde_json = '1.0.57'
-api_derive = { path = '../derive' }
-api_info = { path = '../info' }
+api_derive = { path = "../derive" }
+api_info = { path = "../info" }
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
 
 [lib]
-name = 'api_test'
+name = "api_test"

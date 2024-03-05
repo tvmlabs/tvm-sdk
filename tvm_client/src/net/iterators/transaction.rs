@@ -1,16 +1,14 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
 use serde_json::Value;
 
@@ -40,12 +38,15 @@ impl<'a> MessageFields<'a> {
     pub fn id(&self) -> &str {
         self.0["id"].as_str().unwrap_or("")
     }
+
     pub fn value(&self) -> &str {
         self.0["value"].as_str().unwrap_or("")
     }
+
     pub fn src(&self) -> &str {
         self.0["src"].as_str().unwrap_or("")
     }
+
     pub fn dst(&self) -> &str {
         self.0["dst"].as_str().unwrap_or("")
     }
@@ -63,14 +64,14 @@ pub(crate) struct TransactionFields<'a>(pub &'a Value);
 
 impl<'a> TransactionFields<'a> {
     pub fn bounce(&self) -> Option<TransactionBounceFields> {
-        self.0.get("bounce").map(|x| TransactionBounceFields(x))
+        self.0.get("bounce").map(TransactionBounceFields)
     }
+
     pub fn in_message(&self) -> Option<MessageFields> {
-        self.0.get("in_message").map(|x| MessageFields(x))
+        self.0.get("in_message").map(MessageFields)
     }
+
     pub fn out_messages(&self) -> Option<Vec<MessageFields>> {
-        self.0["out_messages"]
-            .as_array()
-            .map(|x| x.iter().map(|x| MessageFields(x)).collect())
+        self.0["out_messages"].as_array().map(|x| x.iter().map(MessageFields).collect())
     }
 }

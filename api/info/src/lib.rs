@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct API {
@@ -30,12 +31,7 @@ pub struct Module {
 impl Module {
     pub fn find_type(&self, name: &str) -> Option<&Field> {
         // TODO: Searching now is O(n), can speed up, if needed
-        for field in &self.types {
-            if field.name == name {
-                return Some(field);
-            }
-        }
-        None
+        self.types.iter().find(|&field| field.name == name)
     }
 }
 
@@ -133,46 +129,28 @@ pub enum Type {
 impl Type {
     pub fn u(size: usize) -> Type {
         if size > 32 {
-            Type::BigInt {
-                number_type: NumberType::UInt,
-                number_size: size,
-            }
+            Type::BigInt { number_type: NumberType::UInt, number_size: size }
         } else {
-            Type::Number {
-                number_type: NumberType::UInt,
-                number_size: size,
-            }
+            Type::Number { number_type: NumberType::UInt, number_size: size }
         }
     }
+
     pub fn i(size: usize) -> Type {
         if size > 32 {
-            Type::BigInt {
-                number_type: NumberType::Int,
-                number_size: size,
-            }
+            Type::BigInt { number_type: NumberType::Int, number_size: size }
         } else {
-            Type::Number {
-                number_type: NumberType::Int,
-                number_size: size,
-            }
+            Type::Number { number_type: NumberType::Int, number_size: size }
         }
     }
+
     pub fn f(size: usize) -> Type {
-        Type::Number {
-            number_type: NumberType::Float,
-            number_size: size,
-        }
+        Type::Number { number_type: NumberType::Float, number_size: size }
     }
 }
 
 impl ApiType for () {
     fn api() -> Field {
-        Field {
-            name: "unit".into(),
-            summary: None,
-            description: None,
-            value: Type::None {},
-        }
+        Field { name: "unit".into(), summary: None, description: None, value: Type::None {} }
     }
 }
 

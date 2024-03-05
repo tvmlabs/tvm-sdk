@@ -1,41 +1,50 @@
-use crate::abi::decode_message::DataLayout;
-use crate::abi::encode_message::{
-    CallSet, DeploySet, ParamsOfAttachSignature, ParamsOfEncodeInternalMessage,
-    ParamsOfEncodeMessage, ResultOfAttachSignature, ResultOfEncodeInternalMessage,
-    ResultOfEncodeMessage,
-};
-use crate::abi::internal::{create_tvc_image, is_empty_pubkey, resolve_pubkey};
-use crate::abi::{FunctionHeader, ParamsOfDecodeMessageBody, Signer};
-use crate::boc::internal::{
-    deserialize_cell_from_base64, deserialize_object_from_base64, deserialize_object_from_cell,
-    get_boc_hash, serialize_cell_to_base64, serialize_object_to_base64,
-};
-use crate::boc::{
-    parse_message, ParamsOfDecodeStateInit, ParamsOfGetCodeFromTvc, ParamsOfParse,
-    ResultOfDecodeStateInit, ResultOfEncodeBoc, ResultOfGetCodeFromTvc,
-};
-use crate::crypto::KeyPair;
-use crate::encoding::account_decode;
-use crate::tests::{TestClient, EVENTS, EVENTS_OLD, HELLO, T24_INIT_DATA};
-use crate::utils::conversion::abi_uint;
-use crate::{
-    abi::decode_message::{DecodedMessageBody, MessageBodyType, ParamsOfDecodeMessage},
-    boc::ResultOfParse,
-};
 use std::future::Future;
-
-use crate::boc::tvc::resolve_state_init_cell;
-use serde_json::Value;
 use std::io::Cursor;
-use tvm_abi::{Contract, PublicKeyData};
-use tvm_block::{
-    CurrencyCollection, Deserializable, InternalMessageHeader, Message, Serializable, StateInit,
-};
+
+use serde_json::Value;
+use tvm_abi::Contract;
+use tvm_abi::PublicKeyData;
+use tvm_block::CurrencyCollection;
+use tvm_block::Deserializable;
+use tvm_block::InternalMessageHeader;
+use tvm_block::Message;
+use tvm_block::Serializable;
+use tvm_block::StateInit;
 use tvm_sdk::ContractImage;
 use tvm_struct::scheme::TVC;
-use tvm_types::{BuilderData, IBitstring, Result};
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
+use tvm_types::BuilderData;
+use tvm_types::IBitstring;
+use tvm_types::Result;
 
 use super::*;
+use crate::abi::internal::create_tvc_image;
+use crate::abi::internal::is_empty_pubkey;
+use crate::abi::internal::resolve_pubkey;
+use crate::boc::internal::deserialize_cell_from_base64;
+use crate::boc::internal::deserialize_object_from_base64;
+use crate::boc::internal::deserialize_object_from_cell;
+use crate::boc::internal::get_boc_hash;
+use crate::boc::internal::serialize_cell_to_base64;
+use crate::boc::internal::serialize_object_to_base64;
+use crate::boc::parse_message;
+use crate::boc::tvc::resolve_state_init_cell;
+use crate::boc::ParamsOfDecodeStateInit;
+use crate::boc::ParamsOfGetCodeFromTvc;
+use crate::boc::ParamsOfParse;
+use crate::boc::ResultOfDecodeStateInit;
+use crate::boc::ResultOfEncodeBoc;
+use crate::boc::ResultOfGetCodeFromTvc;
+use crate::boc::ResultOfParse;
+use crate::crypto::KeyPair;
+use crate::encoding::account_decode;
+use crate::tests::TestClient;
+use crate::tests::EVENTS;
+use crate::tests::EVENTS_OLD;
+use crate::tests::HELLO;
+use crate::tests::T24_INIT_DATA;
+use crate::utils::conversion::abi_uint;
 
 struct EncodeCheckEthalons {
     pub deploy_unsigned_message: &'static str,
@@ -102,9 +111,8 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
     let time: u64 = 1599458364291;
     let expire: u32 = 1599458404;
 
-    let signing_box: crate::crypto::RegisteredSigningBox = client
-        .request("crypto.get_signing_box", keys.clone())
-        .unwrap();
+    let signing_box: crate::crypto::RegisteredSigningBox =
+        client.request("crypto.get_signing_box", keys.clone()).unwrap();
 
     let msg: ParamsOfEncodeMessage = serde_json::from_str(
         r#"{
@@ -127,10 +135,7 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
 
     let deploy_params = |signing: Signer| ParamsOfEncodeMessage {
         abi: abi.clone(),
-        deploy_set: Some(DeploySet {
-            tvc: events_tvc.clone(),
-            ..Default::default()
-        }),
+        deploy_set: Some(DeploySet { tvc: events_tvc.clone(), ..Default::default() }),
         call_set: Some(CallSet {
             function_name: "constructor".into(),
             header: Some(FunctionHeader {
@@ -147,16 +152,11 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
     let unsigned: ResultOfEncodeMessage = client
         .request(
             "abi.encode_message",
-            deploy_params(Signer::External {
-                public_key: keys.public.clone(),
-            }),
+            deploy_params(Signer::External { public_key: keys.public.clone() }),
         )
         .unwrap();
     assert_eq!(unsigned.message, ethalons.deploy_unsigned_message);
-    assert_eq!(
-        unsigned.data_to_sign.as_ref().unwrap(),
-        ethalons.deploy_unsigned_data_to_sign
-    );
+    assert_eq!(unsigned.data_to_sign.as_ref().unwrap(), ethalons.deploy_unsigned_data_to_sign);
     let signature = client.sign_detached(&unsigned.data_to_sign.unwrap(), &keys);
     assert_eq!(signature, ethalons.deploy_signature);
     let signed: ResultOfAttachSignature = client
@@ -173,26 +173,20 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
     assert_eq!(signed.message, ethalons.deploy_signed_message);
 
     let signed: ResultOfEncodeMessage = client
-        .request(
-            "abi.encode_message",
-            deploy_params(Signer::Keys { keys: keys.clone() }),
-        )
+        .request("abi.encode_message", deploy_params(Signer::Keys { keys: keys.clone() }))
         .unwrap();
     assert_eq!(signed.message, ethalons.deploy_signed_message);
 
     let signed_with_box: ResultOfEncodeMessage = client
         .request(
             "abi.encode_message",
-            deploy_params(Signer::SigningBox {
-                handle: signing_box.handle.clone(),
-            }),
+            deploy_params(Signer::SigningBox { handle: signing_box.handle.clone() }),
         )
         .unwrap();
     assert_eq!(signed_with_box.message, ethalons.deploy_signed_message);
 
-    let without_sign: ResultOfEncodeMessage = client
-        .request("abi.encode_message", deploy_params(Signer::None))
-        .unwrap();
+    let without_sign: ResultOfEncodeMessage =
+        client.request("abi.encode_message", deploy_params(Signer::None)).unwrap();
     assert_eq!(without_sign.message, ethalons.deploy_without_sign_message);
 
     // check run params
@@ -203,11 +197,7 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
         abi: abi.clone(),
         call_set: Some(CallSet {
             function_name: "returnValue".into(),
-            header: Some(FunctionHeader {
-                pubkey: None,
-                time: Some(time),
-                expire: Some(expire),
-            }),
+            header: Some(FunctionHeader { pubkey: None, time: Some(time), expire: Some(expire) }),
             input: Some(json!({
                 "id": "0"
             })),
@@ -225,9 +215,8 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
         ..Default::default()
     };
     let extract_body = |message| {
-        let unsigned_parsed: ResultOfParse = client
-            .request("boc.parse_message", ParamsOfParse { boc: message })
-            .unwrap();
+        let unsigned_parsed: ResultOfParse =
+            client.request("boc.parse_message", ParamsOfParse { boc: message }).unwrap();
         unsigned_parsed.parsed["body"].as_str().unwrap().to_owned()
     };
 
@@ -236,25 +225,18 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
     let unsigned: ResultOfEncodeMessage = client
         .request(
             "abi.encode_message",
-            run_params(Signer::External {
-                public_key: keys.public.clone(),
-            }),
+            run_params(Signer::External { public_key: keys.public.clone() }),
         )
         .unwrap();
     assert_eq!(unsigned.message, ethalons.run_unsigned_message);
-    assert_eq!(
-        unsigned.data_to_sign.clone().unwrap(),
-        ethalons.run_unsigned_data_to_sign
-    );
+    assert_eq!(unsigned.data_to_sign.clone().unwrap(), ethalons.run_unsigned_data_to_sign);
 
     let unsigned_body = extract_body(unsigned.message.clone());
 
     let unsigned_body_encoded: ResultOfEncodeMessageBody = client
         .request(
             "abi.encode_message_body",
-            body_params(run_params(Signer::External {
-                public_key: keys.public.clone(),
-            })),
+            body_params(run_params(Signer::External { public_key: keys.public.clone() })),
         )
         .unwrap();
     assert_eq!(unsigned_body_encoded.body, unsigned_body);
@@ -306,10 +288,7 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
     // encoding signed
 
     let signed: ResultOfEncodeMessage = client
-        .request(
-            "abi.encode_message",
-            run_params(Signer::Keys { keys: keys.clone() }),
-        )
+        .request("abi.encode_message", run_params(Signer::Keys { keys: keys.clone() }))
         .unwrap();
     assert_eq!(signed.message, ethalons.run_signed_message);
 
@@ -324,9 +303,7 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
     let signed: ResultOfEncodeMessage = client
         .request(
             "abi.encode_message",
-            run_params(Signer::SigningBox {
-                handle: signing_box.handle.clone(),
-            }),
+            run_params(Signer::SigningBox { handle: signing_box.handle.clone() }),
         )
         .unwrap();
     assert_eq!(signed.message, ethalons.run_signed_message);
@@ -334,24 +311,17 @@ fn test_encode_v2_params(ethalons: EncodeCheckEthalons, signature_id: Option<i32
     let signed: ResultOfEncodeMessageBody = client
         .request(
             "abi.encode_message_body",
-            body_params(run_params(Signer::SigningBox {
-                handle: signing_box.handle.clone(),
-            })),
+            body_params(run_params(Signer::SigningBox { handle: signing_box.handle.clone() })),
         )
         .unwrap();
     assert_eq!(signed.body, signed_body);
 
-    let no_pubkey: ResultOfEncodeMessage = client
-        .request("abi.encode_message", run_params(Signer::None))
-        .unwrap();
+    let no_pubkey: ResultOfEncodeMessage =
+        client.request("abi.encode_message", run_params(Signer::None)).unwrap();
     assert_eq!(no_pubkey.message, ethalons.run_without_sign_message);
 
-    let no_pubkey_body: ResultOfEncodeMessageBody = client
-        .request(
-            "abi.encode_message_body",
-            body_params(run_params(Signer::None)),
-        )
-        .unwrap();
+    let no_pubkey_body: ResultOfEncodeMessageBody =
+        client.request("abi.encode_message_body", body_params(run_params(Signer::None))).unwrap();
     assert_eq!(no_pubkey_body.body, extract_body(no_pubkey.message));
 }
 
@@ -372,14 +342,8 @@ fn decode_v2() {
                 },
             )
             .unwrap();
-        let parsed: ResultOfParse = client
-            .request(
-                "boc.parse_message",
-                ParamsOfParse {
-                    boc: message.into(),
-                },
-            )
-            .unwrap();
+        let parsed: ResultOfParse =
+            client.request("boc.parse_message", ParamsOfParse { boc: message.into() }).unwrap();
         let body = parsed.parsed["body"].as_str().unwrap().to_owned();
         let result_body: DecodedMessageBody = client
             .request(
@@ -407,7 +371,12 @@ fn decode_v2() {
             pubkey: Some("4c7c408ff1ddebb8d6405ee979c716a14fdd6cc08124107a61d3c25597099499".into()),
         }),
     };
-    assert_eq!(expected, decode_events("te6ccgEBAwEAvAABRYgAC31qq9KF9Oifst6LU9U6FQSQQRlCSEMo+A3LN5MvphIMAQHhrd/b+MJ5Za+AygBc5qS/dVIPnqxCsM9PvqfVxutK+lnQEKzQoRTLYO6+jfM8TF4841bdNjLQwIDWL4UVFdxIhdMfECP8d3ruNZAXul5xxahT91swIEkEHph08JVlwmUmQAAAXRnJcuDX1XMZBW+LBKACAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="));
+    assert_eq!(
+        expected,
+        decode_events(
+            "te6ccgEBAwEAvAABRYgAC31qq9KF9Oifst6LU9U6FQSQQRlCSEMo+A3LN5MvphIMAQHhrd/b+MJ5Za+AygBc5qS/dVIPnqxCsM9PvqfVxutK+lnQEKzQoRTLYO6+jfM8TF4841bdNjLQwIDWL4UVFdxIhdMfECP8d3ruNZAXul5xxahT91swIEkEHph08JVlwmUmQAAAXRnJcuDX1XMZBW+LBKACAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        )
+    );
 
     let expected = DecodedMessageBody {
         body_type: MessageBodyType::Event,
@@ -417,7 +386,12 @@ fn decode_v2() {
         })),
         header: None,
     };
-    assert_eq!(expected, decode_events("te6ccgEBAQEAVQAApeACvg5/pmQpY4m61HmJ0ne+zjHJu3MNG8rJxUDLbHKBu/AAAAAAAAAMJL6z6ro48sYvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABA"));
+    assert_eq!(
+        expected,
+        decode_events(
+            "te6ccgEBAQEAVQAApeACvg5/pmQpY4m61HmJ0ne+zjHJu3MNG8rJxUDLbHKBu/AAAAAAAAAMJL6z6ro48sYvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABA"
+        )
+    );
 
     let result: DecodedMessageBody = client.request("abi.decode_message_body", ParamsOfDecodeMessageBody {
         abi: events_abi.clone(),
@@ -446,7 +420,12 @@ fn decode_v2() {
         })),
         header: None,
     };
-    assert_eq!(expected, decode_events("te6ccgEBAQEAVQAApeACvg5/pmQpY4m61HmJ0ne+zjHJu3MNG8rJxUDLbHKBu/AAAAAAAAAMKr6z6rxK3xYJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABA"));
+    assert_eq!(
+        expected,
+        decode_events(
+            "te6ccgEBAQEAVQAApeACvg5/pmQpY4m61HmJ0ne+zjHJu3MNG8rJxUDLbHKBu/AAAAAAAAAMKr6z6rxK3xYJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABA"
+        )
+    );
 }
 
 #[test]
@@ -464,11 +443,8 @@ fn test_is_empty_pubkey() -> Result<()> {
 #[test]
 fn test_resolve_pubkey() -> Result<()> {
     let context = crate::ClientContext::new(crate::ClientConfig::default()).unwrap();
-    let tvc = base64::encode(include_bytes!("../tests/contracts/abi_v2/Hello.tvc"));
-    let mut deploy_set = DeploySet {
-        tvc: Some(tvc.clone()),
-        ..Default::default()
-    };
+    let tvc = base64_encode(include_bytes!("../tests/contracts/abi_v2/Hello.tvc"));
+    let mut deploy_set = DeploySet { tvc: Some(tvc.clone()), ..Default::default() };
     let mut image = create_tvc_image("", true, None, resolve_state_init_cell(&context, &tvc)?)?;
     assert!(resolve_pubkey(&deploy_set, &image, &None)?.is_none());
 
@@ -492,7 +468,7 @@ fn test_resolve_pubkey() -> Result<()> {
 
     let resolved = resolve_pubkey(&deploy_set, &image, &external_pub_key)?;
 
-    assert_eq!(resolved, Some(hex::encode(&tvc_pubkey_1)));
+    assert_eq!(resolved, Some(hex::encode(tvc_pubkey_1)));
 
     let initial_pub_key =
         Some("1234567890123456789012345678901234567890123456789012345678901234".to_owned());
@@ -592,19 +568,17 @@ async fn test_encode_message_pubkey_internal(
         image.set_public_key(tvc_pubkey)?;
     }
 
-    let tvc = base64::encode(&image.serialize()?);
+    let tvc = base64_encode(image.serialize()?);
 
     let deploy_params = ParamsOfEncodeMessage {
         abi: abi.clone(),
         deploy_set: Some(DeploySet {
             tvc: Some(tvc),
-            initial_pubkey: initial_pubkey.map(|key| hex::encode(key)),
+            initial_pubkey: initial_pubkey.map(hex::encode),
             ..Default::default()
         }),
         signer: if let Some(key) = signer_pubkey {
-            Signer::External {
-                public_key: hex::encode(key),
-            }
+            Signer::External { public_key: hex::encode(key) }
         } else {
             Signer::None
         },
@@ -612,15 +586,11 @@ async fn test_encode_message_pubkey_internal(
         ..Default::default()
     };
 
-    let result: ResultOfEncodeMessage = client
-        .request_async("abi.encode_message", deploy_params)
-        .await?;
+    let result: ResultOfEncodeMessage =
+        client.request_async("abi.encode_message", deploy_params).await?;
 
     let message = Message::construct_from_base64(&result.message)?;
-    let state_init = message
-        .state_init()
-        .expect("Expected State Init")
-        .write_to_bytes()?;
+    let state_init = message.state_init().expect("Expected State Init").write_to_bytes()?;
     let image = ContractImage::from_state_init(&mut Cursor::new(state_init))?;
     let public_key = image.get_public_key()?;
 
@@ -630,9 +600,7 @@ async fn test_encode_message_pubkey_internal(
 }
 
 fn gen_pubkey() -> PublicKeyData {
-    tvm_types::ed25519_generate_private_key()
-        .unwrap()
-        .verifying_key()
+    tvm_types::ed25519_generate_private_key().unwrap().verifying_key()
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -677,11 +645,7 @@ async fn test_encode_internal_message() -> Result<()> {
     test_encode_internal_message_run(
         &client,
         Some(&abi),
-        Some(CallSet {
-            function_name: "sayHello".into(),
-            header: None,
-            input: None,
-        }),
+        Some(CallSet { function_name: "sayHello".into(), header: None, input: None }),
         None,
         Some(address.clone()),
         Some(expected_boc),
@@ -691,11 +655,7 @@ async fn test_encode_internal_message() -> Result<()> {
     test_encode_internal_message_run(
         &client,
         Some(&abi),
-        Some(CallSet {
-            function_name: format!("0x{:x}", func_id),
-            header: None,
-            input: None,
-        }),
+        Some(CallSet { function_name: format!("0x{:x}", func_id), header: None, input: None }),
         None,
         Some(address.clone()),
         Some(expected_boc),
@@ -705,11 +665,7 @@ async fn test_encode_internal_message() -> Result<()> {
     test_encode_internal_message_run(
         &client,
         Some(&abi),
-        Some(CallSet {
-            function_name: format!("{}", func_id),
-            header: None,
-            input: None,
-        }),
+        Some(CallSet { function_name: format!("{}", func_id), header: None, input: None }),
         None,
         Some(address.clone()),
         Some(expected_boc),
@@ -771,7 +727,7 @@ async fn test_encode_internal_message_run(
         .request_async(
             "abi.encode_internal_message",
             ParamsOfEncodeInternalMessage {
-                abi: abi.map(|x| x.clone()),
+                abi: abi.cloned(),
                 src_address: src.clone(),
                 address: dst.clone(),
                 deploy_set: None,
@@ -786,29 +742,17 @@ async fn test_encode_internal_message_run(
     if dst.is_some() {
         assert_eq!(&result.address, dst.as_ref().unwrap());
     }
-    assert_eq!(
-        result.message_id,
-        get_boc_hash(&base64::decode(&result.message)?)?
-    );
+    assert_eq!(result.message_id, get_boc_hash(&base64_decode(&result.message)?)?);
     if let Some(expected_boc) = expected_boc {
         assert_eq!(&result.message, expected_boc);
     }
 
-    let parsed: ResultOfParse = client
-        .request_async(
-            "boc.parse_message",
-            ParamsOfParse {
-                boc: result.message,
-            },
-        )
-        .await?;
+    let parsed: ResultOfParse =
+        client.request_async("boc.parse_message", ParamsOfParse { boc: result.message }).await?;
 
     assert_eq!(parsed.parsed["msg_type_name"], "internal");
     assert_eq!(parsed.parsed["src"], src.unwrap_or("".to_owned()).as_str());
-    assert_eq!(
-        parsed.parsed["dst"],
-        dst.unwrap_or(result.address.to_owned()).as_str()
-    );
+    assert_eq!(parsed.parsed["dst"], dst.unwrap_or(result.address.to_owned()).as_str());
     assert_eq!(parsed.parsed["value"], "0x3b9aca00");
     assert_eq!(parsed.parsed["bounce"], true);
     assert_eq!(parsed.parsed["ihr_disabled"], true);
@@ -831,10 +775,7 @@ async fn test_encode_internal_message_deploy(
                 abi: Some(abi.clone()),
                 src_address: None,
                 address: None,
-                deploy_set: Some(DeploySet {
-                    tvc: tvc.clone(),
-                    ..Default::default()
-                }),
+                deploy_set: Some(DeploySet { tvc: tvc.clone(), ..Default::default() }),
                 call_set,
                 value: "1000000000".to_string(),
                 bounce: None,
@@ -844,29 +785,18 @@ async fn test_encode_internal_message_deploy(
         .await?;
 
     assert_eq!(result.address, image.msg_address(0).to_string());
-    assert_eq!(
-        result.message_id,
-        get_boc_hash(&base64::decode(&result.message)?)?
-    );
+    assert_eq!(result.message_id, get_boc_hash(&base64_decode(&result.message)?)?);
     if let Some(expected_boc) = expected_boc {
         assert_eq!(&result.message, expected_boc);
     }
 
-    let parsed: ResultOfParse = client
-        .request_async(
-            "boc.parse_message",
-            ParamsOfParse {
-                boc: result.message,
-            },
-        )
-        .await?;
+    let parsed: ResultOfParse =
+        client.request_async("boc.parse_message", ParamsOfParse { boc: result.message }).await?;
 
     let code_from_tvc: ResultOfGetCodeFromTvc = client
         .request_async(
             "boc.get_code_from_tvc",
-            ParamsOfGetCodeFromTvc {
-                tvc: tvc.clone().unwrap_or_default(),
-            },
+            ParamsOfGetCodeFromTvc { tvc: tvc.clone().unwrap_or_default() },
         )
         .await?;
 
@@ -894,7 +824,9 @@ fn test_tips() {
     ).expect_err("Error expected");
 
     assert!(
-        err.message.contains("Tip: Please check that you have specified the message's BOC, not body, as a parameter."),
+        err.message.contains(
+            "Tip: Please check that you have specified the message's BOC, not body, as a parameter."
+        ),
         "{}",
         err.message
     );
@@ -909,8 +841,7 @@ fn test_tips() {
     ).expect_err("Error expected");
 
     assert!(
-        err.message
-            .contains("Tip: Please check that you specified message's body, not full BOC."),
+        err.message.contains("Tip: Please check that you specified message's body, not full BOC."),
         "{}",
         err.message
     );
@@ -955,11 +886,7 @@ fn test_decode_account_data() {
     let decoded = client
         .request::<_, ResultOfDecodeAccountData>(
             "abi.decode_account_data",
-            ParamsOfDecodeAccountData {
-                data,
-                abi,
-                allow_partial: false,
-            },
+            ParamsOfDecodeAccountData { data, abi, allow_partial: false },
         )
         .unwrap()
         .data;
@@ -992,10 +919,7 @@ fn test_init_data() {
     let data = client
         .request::<_, ResultOfDecodeStateInit>(
             "boc.decode_state_init",
-            ParamsOfDecodeStateInit {
-                state_init: tvc.unwrap(),
-                boc_cache: None,
-            },
+            ParamsOfDecodeStateInit { state_init: tvc.unwrap(), boc_cache: None },
         )
         .unwrap()
         .data
@@ -1012,15 +936,12 @@ fn test_init_data() {
         )
         .unwrap();
     assert_eq!(result.initial_data, json!({}));
-    assert_eq!(result.initial_pubkey, hex::encode(&[0u8; 32]));
+    assert_eq!(result.initial_pubkey, hex::encode([0u8; 32]));
 
     let result: ResultOfEncodeInitialData = client
         .request(
             "abi.encode_initial_data",
-            ParamsOfEncodeInitialData {
-                abi: abi.clone(),
-                ..Default::default()
-            },
+            ParamsOfEncodeInitialData { abi: abi.clone(), ..Default::default() },
         )
         .unwrap();
 
@@ -1031,8 +952,7 @@ fn test_init_data() {
         "s": "some string",
     });
 
-    const ENCODED_INITIAL_DATA: &str =
-        "te6ccgEBBwEARwABAcABAgPPoAQCAQFIAwAWc29tZSBzdHJpbmcCASAGBQA\
+    const ENCODED_INITIAL_DATA: &str = "te6ccgEBBwEARwABAcABAgPPoAQCAQFIAwAWc29tZSBzdHJpbmcCASAGBQA\
         DHuAAQQiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIoA==";
 
     let result: ResultOfEncodeInitialData = client
@@ -1041,7 +961,7 @@ fn test_init_data() {
             ParamsOfEncodeInitialData {
                 abi: abi.clone(),
                 initial_data: Some(initial_data.clone()),
-                initial_pubkey: Some(hex::encode(&[0x22u8; 32])),
+                initial_pubkey: Some(hex::encode([0x22u8; 32])),
                 boc_cache: None,
             },
         )
@@ -1056,7 +976,7 @@ fn test_init_data() {
                 abi: abi.clone(),
                 data: data.clone(),
                 initial_data: Some(initial_data.clone()),
-                initial_pubkey: Some(hex::encode(&[0x22u8; 32])),
+                initial_pubkey: Some(hex::encode([0x22u8; 32])),
                 boc_cache: None,
             },
         )
@@ -1066,15 +986,11 @@ fn test_init_data() {
     let result: ResultOfDecodeInitialData = client
         .request(
             "abi.decode_initial_data",
-            ParamsOfDecodeInitialData {
-                abi: abi.clone(),
-                data: result.data,
-                allow_partial: false,
-            },
+            ParamsOfDecodeInitialData { abi: abi.clone(), data: result.data, allow_partial: false },
         )
         .unwrap();
     assert_eq!(result.initial_data, initial_data.clone());
-    assert_eq!(result.initial_pubkey, hex::encode(&[0x22u8; 32]));
+    assert_eq!(result.initial_pubkey, hex::encode([0x22u8; 32]));
 
     let encode_result: ResultOfEncodeInitialData = client
         .request(
@@ -1113,32 +1029,20 @@ fn test_decode_boc() {
     let boc = serialize_cell_to_base64(&builder.into_cell().unwrap(), "").unwrap();
 
     let mut params = vec![
-        AbiParam {
-            name: "a".to_owned(),
-            param_type: "uint32".to_owned(),
-            ..Default::default()
-        },
+        AbiParam { name: "a".to_owned(), param_type: "uint32".to_owned(), ..Default::default() },
         AbiParam {
             name: "b".to_owned(),
             param_type: "ref(int64)".to_owned(),
             ..Default::default()
         },
-        AbiParam {
-            name: "c".to_owned(),
-            param_type: "bool".to_owned(),
-            ..Default::default()
-        },
+        AbiParam { name: "c".to_owned(), param_type: "bool".to_owned(), ..Default::default() },
     ];
 
     let client = TestClient::new();
     let decoded = client
         .request::<_, ResultOfDecodeBoc>(
             "abi.decode_boc",
-            ParamsOfDecodeBoc {
-                boc: boc.clone(),
-                params: params.clone(),
-                allow_partial: false,
-            },
+            ParamsOfDecodeBoc { boc: boc.clone(), params: params.clone(), allow_partial: false },
         )
         .unwrap()
         .data;
@@ -1157,11 +1061,7 @@ fn test_decode_boc() {
     let decoded = client
         .request::<_, ResultOfDecodeBoc>(
             "abi.decode_boc",
-            ParamsOfDecodeBoc {
-                boc: boc.clone(),
-                params: params.clone(),
-                allow_partial: true,
-            },
+            ParamsOfDecodeBoc { boc: boc.clone(), params: params.clone(), allow_partial: true },
         )
         .unwrap()
         .data;
@@ -1190,11 +1090,7 @@ fn test_encode_boc() {
             param_type: "uint128".to_owned(),
             ..Default::default()
         },
-        AbiParam {
-            name: "bounce".to_owned(),
-            param_type: "bool".to_owned(),
-            ..Default::default()
-        },
+        AbiParam { name: "bounce".to_owned(), param_type: "bool".to_owned(), ..Default::default() },
     ];
 
     let boc = client
@@ -1396,10 +1292,7 @@ async fn test_deploy_code_variants_with_fn<
         pubkey.clone(),
         initial_data.clone(),
         None,
-        Some(serialize_cell_to_base64(
-            &state_init.code.clone().unwrap(),
-            "state init",
-        )?),
+        Some(serialize_cell_to_base64(&state_init.code.clone().unwrap(), "state init")?),
         None,
     )
     .await;
@@ -1436,8 +1329,8 @@ async fn test_deploy_code_variants_with_fn<
         convert_parsed(&encoded_with_state_init, ignore_data)
     );
 
-    let tvc = base64::encode(
-        &TVC::new(
+    let tvc = base64_encode(
+        TVC::new(
             Some(state_init.code.clone().unwrap()),
             Some(
                 "Some Contract\nSome Toolchain\ncompiled at: 123\nsold: v1.2.3\nlinker: v1.2.3"
@@ -1447,15 +1340,8 @@ async fn test_deploy_code_variants_with_fn<
         .write_to_bytes()
         .unwrap(),
     );
-    let encoded_with_tvc = encode(
-        abi.clone(),
-        pubkey.clone(),
-        initial_data.clone(),
-        Some(tvc),
-        None,
-        None,
-    )
-    .await;
+    let encoded_with_tvc =
+        encode(abi.clone(), pubkey.clone(), initial_data.clone(), Some(tvc), None, None).await;
     assert_eq!(
         convert_parsed(&encoded_with_unknown_tvc, ignore_data),
         convert_parsed(&encoded_with_tvc, ignore_data)
@@ -1491,14 +1377,7 @@ async fn encode_internal_deploy(
         )
         .await
         .unwrap();
-    parse_message(
-        client.context().clone(),
-        ParamsOfParse {
-            boc: encoded.message,
-        },
-    )
-    .unwrap()
-    .parsed
+    parse_message(client.context().clone(), ParamsOfParse { boc: encoded.message }).unwrap().parsed
 }
 
 async fn encode_deploy(
@@ -1528,14 +1407,7 @@ async fn encode_deploy(
         )
         .await
         .unwrap();
-    parse_message(
-        client.context().clone(),
-        ParamsOfParse {
-            boc: encoded.message,
-        },
-    )
-    .unwrap()
-    .parsed
+    parse_message(client.context().clone(), ParamsOfParse { boc: encoded.message }).unwrap().parsed
 }
 
 fn convert_parsed(value: &Value, strip_data: bool) -> Value {

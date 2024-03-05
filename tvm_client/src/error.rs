@@ -1,8 +1,11 @@
-use crate::client::{binding_config, core_version};
-use crate::net;
+use std::fmt::Display;
+
 use chrono::TimeZone;
 use serde_json::Value;
-use std::fmt::Display;
+
+use crate::client::binding_config;
+use crate::client::core_version;
+use crate::net;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, ApiType)]
 pub struct ClientError {
@@ -28,8 +31,7 @@ pub(crate) trait AddNetworkUrl: Sized {
     }
 
     async fn add_network_url(self, client: &net::ServerLink) -> Self {
-        self.add_network_url_from_state(client.state().as_ref())
-            .await
+        self.add_network_url_from_state(client.state().as_ref()).await
     }
 
     async fn add_network_url_from_context(self, client: &crate::ClientContext) -> Self {
@@ -84,26 +86,22 @@ impl AddNetworkUrl for ClientError {
 
 impl Display for ClientError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if f.alternate() {
-            write!(f, "{:#}", json!(self))
-        } else {
-            write!(f, "{}", self.message)
-        }
+        if f.alternate() { write!(f, "{:#}", json!(self)) } else { write!(f, "{}", self.message) }
     }
 }
 
 impl std::error::Error for ClientError {}
 
 impl ClientError {
+    pub const ABI: isize = 300;
+    pub const BOC: isize = 200;
     pub const CLIENT: isize = 0;
     pub const CRYPTO: isize = 100;
-    pub const BOC: isize = 200;
-    pub const ABI: isize = 300;
-    pub const TVM: isize = 400;
-    pub const PROCESSING: isize = 500;
-    pub const NET: isize = 600;
-    pub const UTILS: isize = 700;
     pub const DEBOT: isize = 800;
+    pub const NET: isize = 600;
+    pub const PROCESSING: isize = 500;
+    pub const TVM: isize = 400;
+    pub const UTILS: isize = 700;
 
     pub fn new(code: u32, message: String, data: Value) -> Self {
         let mut data = data;
@@ -112,11 +110,7 @@ impl ClientError {
             data["binding_library"] = Value::String(binding.library);
             data["binding_version"] = Value::String(binding.version);
         }
-        Self {
-            code,
-            message,
-            data,
-        }
+        Self { code, message, data }
     }
 
     pub fn with_code_message(code: u32, message: String) -> Self {
@@ -148,12 +142,5 @@ impl ClientError {
 }
 
 pub(crate) fn format_time(time: u32) -> String {
-    format!(
-        "{} ({})",
-        chrono::Local
-            .timestamp_opt(time as i64, 0)
-            .unwrap()
-            .to_rfc2822(),
-        time
-    )
+    format!("{} ({})", chrono::Local.timestamp_opt(time as i64, 0).unwrap().to_rfc2822(), time)
 }

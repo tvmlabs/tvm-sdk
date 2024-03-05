@@ -1,6 +1,8 @@
-use crate::{error, MessageMonitorSdkServices};
 use serde_json::Value;
 use tvm_types::Cell;
+
+use crate::error;
+use crate::MessageMonitorSdkServices;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ApiType)]
 #[serde(tag = "type")]
@@ -33,10 +35,9 @@ impl MonitoredMessage {
     ) -> crate::Result<String> {
         Ok(match self {
             MonitoredMessage::HashAddress { hash, .. } => hash.clone(),
-            MonitoredMessage::Boc { boc } => converter
-                .convert(boc, "message")?
-                .repr_hash()
-                .as_hex_string(),
+            MonitoredMessage::Boc { boc } => {
+                converter.convert(boc, "message")?.repr_hash().as_hex_string()
+            }
         })
     }
 }
@@ -45,8 +46,8 @@ impl MonitoredMessage {
 pub struct MessageMonitoringParams {
     /// Monitored message identification.
     /// Can be provided as a message's BOC or (hash, address) pair.
-    /// BOC is a preferable way because it helps to determine possible error reason (using TVM
-    /// execution of the message).
+    /// BOC is a preferable way because it helps to determine possible error
+    /// reason (using TVM execution of the message).
     pub message: MonitoredMessage,
 
     /// Block time
@@ -54,7 +55,8 @@ pub struct MessageMonitoringParams {
     pub wait_until: u32,
 
     /// User defined data associated with this message.
-    /// Helps to identify this message when user received `MessageMonitoringResult`.
+    /// Helps to identify this message when user received
+    /// `MessageMonitoringResult`.
     pub user_data: Option<Value>,
 }
 
@@ -75,20 +77,22 @@ pub struct MessageMonitoringResult {
     pub error: Option<String>,
 
     /// User defined data related to this message.
-    /// This is the same value as passed before with `MessageMonitoringParams` or `SendMessageParams`.
+    /// This is the same value as passed before with `MessageMonitoringParams`
+    /// or `SendMessageParams`.
     pub user_data: Option<Value>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ApiType)]
 pub enum MessageMonitoringStatus {
-    /// Returned when the messages was processed and included into finalized block
-    /// before `wait_until` block time.
+    /// Returned when the messages was processed and included into finalized
+    /// block before `wait_until` block time.
     Finalized,
-    /// Returned when the message was not processed until `wait_until` block time.
+    /// Returned when the message was not processed until `wait_until` block
+    /// time.
     Timeout,
     /// Reserved for future statuses. Is never returned.
-    /// Application should wait for one of the `Finalized` or `Timeout` statuses.
-    /// All other statuses are intermediate.
+    /// Application should wait for one of the `Finalized` or `Timeout`
+    /// statuses. All other statuses are intermediate.
     Reserved,
 }
 

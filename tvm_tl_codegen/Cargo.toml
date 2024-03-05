@@ -1,0 +1,23 @@
+[package]
+name = "tvm_tl_codegen"
+description = "Code generator for TL-schema"
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+crc = "1.8"
+pom = "1.1"
+proc-macro2 = "1.0.78"
+quote = "1.0.35"
+serde.workspace = true
+serde_derive.workspace = true
+syn = "2.0.48"
+
+[features]
+default = ["reformat"]
+reformat = []

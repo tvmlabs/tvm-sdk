@@ -1,29 +1,39 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+
+use base58::*;
+use byteorder::BigEndian;
+use byteorder::ByteOrder;
+use byteorder::LittleEndian;
+use hmac::*;
+use libsecp256k1::PublicKey;
+use libsecp256k1::SecretKey;
+use pbkdf2::pbkdf2;
+use sha2::Digest;
+use sha2::Sha512;
+use zeroize::ZeroizeOnDrop;
 
 use crate::client::ClientContext;
 use crate::crypto;
-use crate::crypto::internal::{key256, key512, sha256, Key256, Key264};
-use crate::crypto::mnemonic::{check_phrase, mnemonics};
-use crate::crypto::{default_hdkey_compliant, MnemonicDictionary};
-use crate::error::{ClientError, ClientResult};
-use base58::*;
-use byteorder::{BigEndian, ByteOrder, LittleEndian};
-use hmac::*;
-use pbkdf2::pbkdf2;
-use libsecp256k1::{SecretKey, PublicKey};
-use sha2::{Digest, Sha512};
-use zeroize::ZeroizeOnDrop;
+use crate::crypto::default_hdkey_compliant;
+use crate::crypto::internal::key256;
+use crate::crypto::internal::key512;
+use crate::crypto::internal::sha256;
+use crate::crypto::internal::Key256;
+use crate::crypto::internal::Key264;
+use crate::crypto::mnemonic::check_phrase;
+use crate::crypto::mnemonic::mnemonics;
+use crate::crypto::MnemonicDictionary;
+use crate::error::ClientError;
+use crate::error::ClientResult;
 
 //----------------------------------------------------------------- crypto.hdkey_xprv_from_mnemonic
 
@@ -43,7 +53,8 @@ pub struct ResultOfHDKeyXPrvFromMnemonic {
     pub xprv: String,
 }
 
-/// Generates an extended master private key that will be the root for all the derived keys
+/// Generates an extended master private key that will be the root for all the
+/// derived keys
 #[api_function]
 pub fn hdkey_xprv_from_mnemonic(
     context: std::sync::Arc<ClientContext>,
@@ -105,9 +116,7 @@ pub fn hdkey_public_from_xprv(
 ) -> ClientResult<ResultOfHDKeyPublicFromXPrv> {
     let key = HDPrivateKey::from_serialized_string(&params.xprv)?;
     let secret = ed25519_dalek::SigningKey::from_bytes(&key.secret().0);
-    Ok(ResultOfHDKeyPublicFromXPrv {
-        public: hex::encode(&secret.verifying_key().to_bytes()),
-    })
+    Ok(ResultOfHDKeyPublicFromXPrv { public: hex::encode(secret.verifying_key().to_bytes()) })
 }
 
 //------------------------------------------------------------ crypto.hdkey_derive_from_xprv
@@ -128,21 +137,16 @@ pub struct ResultOfHDKeyDeriveFromXPrv {
     pub xprv: String,
 }
 
-/// Returns extended private key derived from the specified extended private key and child index
+/// Returns extended private key derived from the specified extended private key
+/// and child index
 #[api_function]
 pub fn hdkey_derive_from_xprv(
     _context: std::sync::Arc<ClientContext>,
     params: ParamsOfHDKeyDeriveFromXPrv,
 ) -> ClientResult<ResultOfHDKeyDeriveFromXPrv> {
     let xprv = HDPrivateKey::from_serialized_string(&params.xprv)?;
-    let derived = xprv.derive(
-        params.child_index,
-        params.hardened,
-        default_hdkey_compliant(),
-    )?;
-    Ok(ResultOfHDKeyDeriveFromXPrv {
-        xprv: derived.serialize_to_string(),
-    })
+    let derived = xprv.derive(params.child_index, params.hardened, default_hdkey_compliant())?;
+    Ok(ResultOfHDKeyDeriveFromXPrv { xprv: derived.serialize_to_string() })
 }
 
 //-------------------------------------------------------------- crypto.hdkey_derive_from_xprv_path
@@ -169,9 +173,7 @@ pub fn hdkey_derive_from_xprv_path(
 ) -> ClientResult<ResultOfHDKeyDeriveFromXPrvPath> {
     let xprv = HDPrivateKey::from_serialized_string(&params.xprv)?;
     Ok(ResultOfHDKeyDeriveFromXPrvPath {
-        xprv: xprv
-            .derive_path(&params.path, default_hdkey_compliant())?
-            .serialize_to_string(),
+        xprv: xprv.derive_path(&params.path, default_hdkey_compliant())?.serialize_to_string(),
     })
 }
 
@@ -236,7 +238,9 @@ impl HDPrivateKey {
             libsecp256k1::Error::InvalidRecoveryId => {
                 crypto::Error::bip32_invalid_key("InvalidRecoveryId")
             }
-            libsecp256k1::Error::InvalidMessage => crypto::Error::bip32_invalid_key("InvalidMessage"),
+            libsecp256k1::Error::InvalidMessage => {
+                crypto::Error::bip32_invalid_key("InvalidMessage")
+            }
             libsecp256k1::Error::InvalidInputLength => {
                 crypto::Error::bip32_invalid_key("InvalidInputLength")
             }
@@ -263,20 +267,16 @@ impl HDPrivateKey {
 
         child.parent_fingerprint.copy_from_slice(&fingerprint[0..4]);
 
-        let child_index = if hardened {
-            0x80000000 | child_index
-        } else {
-            child_index
-        };
+        let child_index = if hardened { 0x80000000 | child_index } else { child_index };
         BigEndian::write_u32(&mut child.child_number, child_index);
 
-        let mut hmac: Hmac<Sha512> = Hmac::new_from_slice(&self.child_chain)
-            .map_err(|err| crypto::Error::bip32_invalid_key(err))?;
+        let mut hmac: Hmac<Sha512> =
+            Hmac::new_from_slice(&self.child_chain).map_err(crypto::Error::bip32_invalid_key)?;
 
         let secret_key = SecretKey::parse(&self.key.0).unwrap();
         if hardened && !compliant {
-            // The private key serialization in this case will not be exactly 32 bytes and can be
-            // any smaller value, and the value is not zero-padded.
+            // The private key serialization in this case will not be exactly 32 bytes and
+            // can be any smaller value, and the value is not zero-padded.
             hmac.update(&[0]);
             hmac.update(&secret_key.serialize());
         } else if hardened {
@@ -291,31 +291,24 @@ impl HDPrivateKey {
         let (child_key_bytes, chain_code) = result.split_at(32);
 
         let mut child_secret_key =
-            SecretKey::parse_slice(&child_key_bytes).map_err(|err| Self::map_secp_error(err))?;
-        let self_secret_key =
-            SecretKey::parse(&self.key.0).map_err(|err| Self::map_secp_error(err))?;
-        child_secret_key
-            .tweak_add_assign(&self_secret_key)
-            .map_err(|err| Self::map_secp_error(err))?;
+            SecretKey::parse_slice(child_key_bytes).map_err(Self::map_secp_error)?;
+        let self_secret_key = SecretKey::parse(&self.key.0).map_err(Self::map_secp_error)?;
+        child_secret_key.tweak_add_assign(&self_secret_key).map_err(Self::map_secp_error)?;
 
-        child.child_chain.0.copy_from_slice(&chain_code);
+        child.child_chain.0.copy_from_slice(chain_code);
         child.key.0.copy_from_slice(&child_secret_key.serialize());
         Ok(child)
     }
 
     pub(crate) fn derive_path(&self, path: &String, compliant: bool) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = self.clone();
-        for step in path.split("/") {
+        for step in path.split('/') {
             if step == "m" {
             } else {
                 let hardened = step.ends_with('\'');
-                let index: u32 = (if hardened {
-                    &step[0..(step.len() - 1)]
-                } else {
-                    step
-                })
-                .parse()
-                .map_err(|_| crypto::Error::bip32_invalid_derive_path(path))?;
+                let index: u32 = (if hardened { &step[0..(step.len() - 1)] } else { step })
+                    .parse()
+                    .map_err(|_| crypto::Error::bip32_invalid_derive_path(path))?;
                 child = child.derive(index, hardened, compliant)?;
             }
         }
@@ -440,6 +433,7 @@ impl Ripemd160 {
     fn sum32(a: u32, b: u32) -> u32 {
         a.wrapping_add(b)
     }
+
     fn sum32_3(a: u32, b: u32, c: u32) -> u32 {
         a.wrapping_add(b).wrapping_add(c)
     }
@@ -465,7 +459,7 @@ impl Ripemd160 {
                 Ripemd160::rotl32(
                     Ripemd160::sum32_4(
                         a,
-                        Ripemd160::f(j.into(), b, c, d),
+                        Ripemd160::f(j, b, c, d),
                         msg[(RIPEMD160_R[j as usize] as u32 + start) as usize],
                         Ripemd160::k(j),
                     ),

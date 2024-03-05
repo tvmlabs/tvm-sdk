@@ -2,7 +2,7 @@
 
 Client libraries for DApp development in TVM blockchains (TON, Acki Nacki, Venom Blockchain, Everscale).
 
-Core Ever-SDK client library is written in Rust, with bindings in 11 programming languages.
+Core TVM-SDK client library is written in Rust, with bindings in 11 programming languages.
 
 ![image](https://github.com/tvmlabs/tvm-sdk/assets/39991771/1f0fff3e-4d33-4d26-81f0-959abaec2f7d)
 

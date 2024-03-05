@@ -1,3 +1,9 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
+use num_traits::cast::NumCast;
+use serde_json::Value;
+
 use super::base64_interface::Base64Interface;
 use super::hex_interface::HexInterface;
 use super::json_lib_utils::bypass_json;
@@ -5,35 +11,30 @@ use super::network_interface::NetworkInterface;
 use super::query_interface::QueryInterface;
 use super::sdk_interface::SdkInterface;
 use super::JsonValue;
-use crate::boc::{parse_message, ParamsOfParse};
+use crate::abi::Abi;
+use crate::abi::Error;
+use crate::boc::parse_message;
+use crate::boc::ParamsOfParse;
 use crate::debot::TonClient;
 use crate::encoding::decode_abi_number;
-use crate::{
-    abi::{Abi, Error},
-    encoding::slice_from_cell,
-    error::ClientResult,
-};
-use num_traits::cast::NumCast;
-use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::Arc;
+use crate::encoding::slice_from_cell;
+use crate::error::ClientResult;
 pub type InterfaceResult = Result<(u32, Value), String>;
-use tvm_abi::{Contract, ParamType};
+use tvm_abi::token::Detokenizer;
+use tvm_abi::Contract;
+use tvm_abi::ParamType;
+use tvm_sdk::AbiContract;
 
 use crate::boc::internal::deserialize_cell_from_boc;
-use tvm_abi::token::Detokenizer;
-use tvm_sdk::AbiContract;
 
 fn decode_msg(client: TonClient, msg_body: String, abi: Abi) -> ClientResult<(String, Value)> {
     let abi = abi.json_string()?;
-    let abi = AbiContract::load(abi.as_bytes()).map_err(|e| Error::invalid_json(e))?;
+    let abi = AbiContract::load(abi.as_bytes()).map_err(Error::invalid_json)?;
     let (_, body) = deserialize_cell_from_boc(&client, &msg_body, "message body")?;
     let body = slice_from_cell(body)?;
-    let input = abi
-        .decode_input(body, true, false)
-        .map_err(|e| Error::invalid_message_for_decode(e))?;
+    let input = abi.decode_input(body, true, false).map_err(Error::invalid_message_for_decode)?;
     let value = Detokenizer::detokenize_to_json_value(&input.tokens)
-        .map_err(|e| Error::invalid_message_for_decode(e))?;
+        .map_err(Error::invalid_message_for_decode)?;
     Ok((input.function_name, value))
 }
 
@@ -69,7 +70,7 @@ pub trait DebotInterface {
 
 #[async_trait::async_trait]
 pub trait DebotInterfaceExecutor {
-    fn get_interfaces<'a>(&'a self) -> &'a HashMap<String, Arc<dyn DebotInterface + Send + Sync>>;
+    fn get_interfaces(&self) -> &HashMap<String, Arc<dyn DebotInterface + Send + Sync>>;
     fn get_client(&self) -> TonClient;
 
     async fn try_execute(
@@ -78,14 +79,9 @@ pub trait DebotInterfaceExecutor {
         interface_id: &String,
         abi_version: &str,
     ) -> Option<InterfaceResult> {
-        let res = Self::execute(
-            self.get_client(),
-            msg,
-            interface_id,
-            self.get_interfaces(),
-            abi_version,
-        )
-        .await;
+        let res =
+            Self::execute(self.get_client(), msg, interface_id, self.get_interfaces(), abi_version)
+                .await;
         match res.as_ref() {
             Err(_) => Some(res),
             Ok(val) => {
@@ -110,7 +106,7 @@ pub trait DebotInterfaceExecutor {
 
         let body = parsed.parsed["body"]
             .as_str()
-            .ok_or(format!("parsed message has no body"))?
+            .ok_or("parsed message has no body".to_string())?
             .to_owned();
         debug!("interface {} call", interface_id);
         match interfaces.get(interface_id) {
@@ -157,9 +153,10 @@ pub struct BuiltinInterfaces {
 
 #[async_trait::async_trait]
 impl DebotInterfaceExecutor for BuiltinInterfaces {
-    fn get_interfaces<'a>(&'a self) -> &'a HashMap<String, Arc<dyn DebotInterface + Send + Sync>> {
+    fn get_interfaces(&self) -> &HashMap<String, Arc<dyn DebotInterface + Send + Sync>> {
         &self.interfaces
     }
+
     fn get_client(&self) -> TonClient {
         self.client.clone()
     }
@@ -197,18 +194,13 @@ impl BuiltinInterfaces {
 
 pub fn decode_answer_id(args: &Value) -> Result<u32, String> {
     decode_abi_number::<u32>(
-        args["answerId"]
-            .as_str()
-            .ok_or(format!("answer id not found in argument list"))?,
+        args["answerId"].as_str().ok_or("answer id not found in argument list".to_string())?,
     )
     .map_err(|e| format!("{}", e))
 }
 
 pub fn get_arg(args: &Value, name: &str) -> Result<String, String> {
-    args[name]
-        .as_str()
-        .ok_or(format!("\"{}\" not found", name))
-        .map(|v| v.to_string())
+    args[name].as_str().ok_or(format!("\"{}\" not found", name)).map(|v| v.to_string())
 }
 
 pub fn get_num_arg<T>(args: &Value, name: &str) -> Result<T, String>
@@ -221,20 +213,15 @@ where
 }
 
 pub fn get_bool_arg(args: &Value, name: &str) -> Result<bool, String> {
-    args[name]
-        .as_bool()
-        .ok_or(format!("\"{}\" not found", name))
+    args[name].as_bool().ok_or(format!("\"{}\" not found", name))
 }
 
 pub fn get_array_strings(args: &Value, name: &str) -> Result<Vec<String>, String> {
-    let array = args[name]
-        .as_array()
-        .ok_or(format!("\"{}\" is invalid: must be array", name))?;
+    let array = args[name].as_array().ok_or(format!("\"{}\" is invalid: must be array", name))?;
     let mut strings = vec![];
     for elem in array {
-        let string = elem
-            .as_str()
-            .ok_or_else(|| format!("array element is invalid: must be string"))?;
+        let string =
+            elem.as_str().ok_or_else(|| "array element is invalid: must be string".to_string())?;
         strings.push(string.to_owned());
     }
     Ok(strings)

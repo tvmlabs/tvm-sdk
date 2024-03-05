@@ -3,7 +3,6 @@ mod derive_module;
 mod derive_type;
 mod utils;
 
-extern crate api_info;
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
@@ -34,12 +33,10 @@ extern crate quote;
 #[proc_macro]
 pub fn include_build_info(_input: TokenStream) -> TokenStream {
     let content = match std::fs::read_to_string(
-        std::env::current_dir()
-            .unwrap()
-            .join("tvm_client/src/build_info.json"),
+        std::env::current_dir().unwrap().join("tvm_client/src/build_info.json"),
     ) {
         Err(_e) => return quote!("").into(),
         Ok(content) => content,
     };
-    return quote!(#content).into();
+    quote!(#content).into()
 }

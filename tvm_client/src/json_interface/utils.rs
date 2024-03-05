@@ -1,18 +1,19 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
-use crate::ClientContext;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
+
 use crate::error::ClientResult;
+use crate::ClientContext;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
 pub struct ParamsOfCompressZstd {
@@ -22,7 +23,8 @@ pub struct ParamsOfCompressZstd {
     /// Where:
     /// 1 - lowest compression level (fastest compression);
     /// 21 - highest compression level (slowest compression).
-    /// If level is omitted, the default compression level is used (currently `3`).
+    /// If level is omitted, the default compression level is used (currently
+    /// `3`).
     pub level: Option<i32>,
 }
 
@@ -38,17 +40,14 @@ pub fn compress_zstd(
     _context: std::sync::Arc<ClientContext>,
     params: ParamsOfCompressZstd,
 ) -> ClientResult<ResultOfCompressZstd> {
-    let uncompressed = base64::decode(&params.uncompressed)
-        .map_err(
-            |err|
-                crate::utils::Error::compression_error(format!("Unable to decode BASE64: {}", err))
-        )?;
+    let uncompressed = base64_decode(&params.uncompressed).map_err(|err| {
+        crate::utils::Error::compression_error(format!("Unable to decode BASE64: {}", err))
+    })?;
 
-    let compressed = crate::utils::compression::compress_zstd(uncompressed.as_slice(), params.level)?;
+    let compressed =
+        crate::utils::compression::compress_zstd(uncompressed.as_slice(), params.level)?;
 
-    Ok(ResultOfCompressZstd {
-        compressed: base64::encode(&compressed),
-    })
+    Ok(ResultOfCompressZstd { compressed: base64_encode(compressed) })
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
@@ -69,15 +68,11 @@ pub fn decompress_zstd(
     _context: std::sync::Arc<ClientContext>,
     params: ParamsOfDecompressZstd,
 ) -> ClientResult<ResultOfDecompressZstd> {
-    let compressed = base64::decode(&params.compressed)
-        .map_err(
-            |err|
-                crate::utils::Error::decompression_error(format!("Unable to decode BASE64: {}", err))
-        )?;
+    let compressed = base64_decode(params.compressed).map_err(|err| {
+        crate::utils::Error::decompression_error(format!("Unable to decode BASE64: {}", err))
+    })?;
 
     let decompressed = crate::utils::compression::decompress_zstd(compressed.as_slice())?;
 
-    Ok(ResultOfDecompressZstd {
-        decompressed: base64::encode(&decompressed),
-    })
+    Ok(ResultOfDecompressZstd { decompressed: base64_encode(decompressed) })
 }

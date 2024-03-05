@@ -2,27 +2,42 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use failure::bail;
-use graphql_parser::schema::{Definition, ObjectType, Type, TypeDefinition};
+use graphql_parser::schema::Definition;
+use graphql_parser::schema::ObjectType;
+use graphql_parser::schema::Type;
+use graphql_parser::schema::TypeDefinition;
 use serde_json::Value;
-use tvm_block::{
-    BinTreeType, Block, BlockIdExt, Deserializable, InRefValue, ShardHashes, ShardIdent,
-    ShardStateUnsplit, MASTERCHAIN_ID,
-};
-use tvm_types::{Result, UInt256};
+use tvm_block::BinTreeType;
+use tvm_block::Block;
+use tvm_block::BlockIdExt;
+use tvm_block::Deserializable;
+use tvm_block::InRefValue;
+use tvm_block::ShardHashes;
+use tvm_block::ShardIdent;
+use tvm_block::ShardStateUnsplit;
+use tvm_block::MASTERCHAIN_ID;
+use tvm_types::base64_decode;
+use tvm_types::Result;
+use tvm_types::UInt256;
 
 use crate::client::storage::InMemoryKeyValueStorage;
-use crate::net::{query_collection, ParamsOfQueryCollection};
+use crate::net::query_collection;
+use crate::net::ParamsOfQueryCollection;
 use crate::proofs::engine::ProofHelperEngineImpl;
-use crate::proofs::validators::{
-    calc_subset_for_workchain, calc_workchain_id, calc_workchain_id_by_adnl_id,
-};
-use crate::proofs::{
-    is_transaction_refers_to_message, message_get_required_data, proof_message_data,
-    proof_transaction_data, resolve_initial_trusted_key_block, transaction_get_required_data,
-    BlockProof, ParamsOfProofBlockData, ParamsOfProofMessageData, ParamsOfProofTransactionData,
-    INITIAL_TRUSTED_KEY_BLOCKS,
-};
+use crate::proofs::is_transaction_refers_to_message;
+use crate::proofs::message_get_required_data;
+use crate::proofs::proof_message_data;
+use crate::proofs::proof_transaction_data;
+use crate::proofs::resolve_initial_trusted_key_block;
+use crate::proofs::transaction_get_required_data;
+use crate::proofs::validators::calc_subset_for_workchain;
+use crate::proofs::validators::calc_workchain_id;
+use crate::proofs::validators::calc_workchain_id_by_adnl_id;
+use crate::proofs::BlockProof;
+use crate::proofs::ParamsOfProofBlockData;
+use crate::proofs::ParamsOfProofMessageData;
+use crate::proofs::ParamsOfProofTransactionData;
+use crate::proofs::INITIAL_TRUSTED_KEY_BLOCKS;
 use crate::tests::TestClient;
 use crate::ClientContext;
 
@@ -86,10 +101,7 @@ fn test_validator_set() -> Result<()> {
     let block = Block::construct_from_file("src/proofs/tests/data/key_block.boc")?;
     let custom = block.read_extra()?.read_custom()?.unwrap();
     let config = custom.config().unwrap();
-    assert!(
-        config.prev_validator_set_present()?,
-        "key block must be after elections"
-    );
+    assert!(config.prev_validator_set_present()?, "key block must be after elections");
 
     let vset = config.validator_set()?;
     assert_eq!(vset.list().len(), 21);
@@ -101,8 +113,8 @@ fn test_validator_set() -> Result<()> {
 
     // vset.list().iter().enumerate().for_each(|(i,descr)| {
     //     let real_id = calc_workchain_id(descr);
-    //     println!("{}: pub_key: {} real_id: {}", i, hex::encode(descr.public_key.as_slice()), real_id);
-    // });
+    //     println!("{}: pub_key: {} real_id: {}", i,
+    // hex::encode(descr.public_key.as_slice()), real_id); });
 
     for workchain_id in -1..=1 {
         // println!("workchain_id: {}", workchain_id);
@@ -119,7 +131,8 @@ fn test_validator_set() -> Result<()> {
         assert_eq!(subset.0.len(), 7);
         subset.0.iter().enumerate().for_each(|(_i, descr)| {
             let real_id = calc_workchain_id(descr);
-            // println!("{}: pub_key: {} real_id: {}", i, hex::encode(descr.public_key.as_slice()), real_id);
+            // println!("{}: pub_key: {} real_id: {}", i,
+            // hex::encode(descr.public_key.as_slice()), real_id);
             assert_eq!(real_id, workchain_id);
         });
     }
@@ -159,14 +172,15 @@ fn check_any_keyblock_validator_set(file_name: &str) -> Result<()> {
 
     // let vset = config.validator_set()?;
     // let election_id = vset.utime_since();
-    // println!("elections: {} total validators: {}", election_id, vset.list().len());
+    // println!("elections: {} total validators: {}", election_id,
+    // vset.list().len());
 
     let cc_seqno = block.read_info()?.gen_catchain_seqno();
 
     // vset.list().iter().enumerate().for_each(|(i,descr)| {
     //     let id = calc_workchain_id(descr);
-    //     println!("{}: pub_key: {} id: {}", i, hex::encode(descr.public_key.as_slice()), id);
-    // });
+    //     println!("{}: pub_key: {} id: {}", i,
+    // hex::encode(descr.public_key.as_slice()), id); });
 
     let count = config.workchains()?.len()? as i32;
     for workchain_id in -1..count {
@@ -195,7 +209,8 @@ fn check_any_keyblock_validator_set(file_name: &str) -> Result<()> {
             assert_eq!(subset.0.len(), 7);
             subset.0.iter().enumerate().for_each(|(_i, descr)| {
                 let real_id = calc_workchain_id(descr);
-                // println!("{}: pub_key: {} real_id: {}", i, hex::encode(descr.public_key.as_slice()), real_id);
+                // println!("{}: pub_key: {} real_id: {}", i,
+                // hex::encode(descr.public_key.as_slice()), real_id);
                 assert_eq!(real_id, workchain_id);
             });
         }
@@ -220,13 +235,7 @@ async fn test_query_current_network_zerostate_root_hash() -> Result<()> {
     let client = TestClient::new_with_config(mainnet_config());
 
     assert_eq!(
-        client
-            .context()
-            .net
-            .query_current_network_uid()
-            .await?
-            .zerostate_root_hash
-            .as_hex_string(),
+        client.context().net.query_current_network_uid().await?.zerostate_root_hash.as_hex_string(),
         MAINNET_ZEROSTATE_ROOT_HASH,
     );
 
@@ -241,36 +250,18 @@ async fn test_get_current_network_zerostate_root_hash() -> Result<()> {
     assert!(context.net.network_uid.read().await.is_none());
 
     assert_eq!(
-        context
-            .net
-            .get_current_network_uid()
-            .await?
-            .zerostate_root_hash
-            .as_hex_string(),
+        context.net.get_current_network_uid().await?.zerostate_root_hash.as_hex_string(),
         MAINNET_ZEROSTATE_ROOT_HASH,
     );
 
     assert_eq!(
-        context
-            .net
-            .network_uid
-            .read()
-            .await
-            .as_ref()
-            .unwrap()
-            .zerostate_root_hash
-            .as_hex_string(),
+        context.net.network_uid.read().await.as_ref().unwrap().zerostate_root_hash.as_hex_string(),
         MAINNET_ZEROSTATE_ROOT_HASH,
     );
 
     // Second time in order to ensure that value wasn't broken after caching:
     assert_eq!(
-        context
-            .net
-            .get_current_network_uid()
-            .await?
-            .zerostate_root_hash
-            .as_hex_string(),
+        context.net.get_current_network_uid().await?.zerostate_root_hash.as_hex_string(),
         MAINNET_ZEROSTATE_ROOT_HASH,
     );
 
@@ -310,34 +301,16 @@ async fn test_metadata_storage() -> Result<()> {
     assert!(engine.read_metadata_value_u32(KEY).await?.is_none());
 
     engine.write_metadata_value_u32(KEY, TEST1_VALUE).await?;
-    assert_eq!(
-        engine.read_metadata_value_u32(KEY).await?,
-        Some(TEST1_VALUE)
-    );
+    assert_eq!(engine.read_metadata_value_u32(KEY).await?, Some(TEST1_VALUE));
 
-    engine
-        .update_metadata_value_u32(KEY, TEST2_VALUE, std::cmp::min)
-        .await?;
-    assert_eq!(
-        engine.read_metadata_value_u32(KEY).await?,
-        Some(TEST1_VALUE)
-    );
+    engine.update_metadata_value_u32(KEY, TEST2_VALUE, std::cmp::min).await?;
+    assert_eq!(engine.read_metadata_value_u32(KEY).await?, Some(TEST1_VALUE));
 
-    engine
-        .update_metadata_value_u32(KEY, TEST2_VALUE, std::cmp::max)
-        .await?;
-    assert_eq!(
-        engine.read_metadata_value_u32(KEY).await?,
-        Some(TEST2_VALUE)
-    );
+    engine.update_metadata_value_u32(KEY, TEST2_VALUE, std::cmp::max).await?;
+    assert_eq!(engine.read_metadata_value_u32(KEY).await?, Some(TEST2_VALUE));
 
-    engine
-        .update_metadata_value_u32(KEY, TEST1_VALUE, std::cmp::min)
-        .await?;
-    assert_eq!(
-        engine.read_metadata_value_u32(KEY).await?,
-        Some(TEST1_VALUE)
-    );
+    engine.update_metadata_value_u32(KEY, TEST1_VALUE, std::cmp::min).await?;
+    assert_eq!(engine.read_metadata_value_u32(KEY).await?, Some(TEST1_VALUE));
 
     Ok(())
 }
@@ -445,10 +418,7 @@ async fn test_add_file_hashes() -> Result<()> {
     engine.add_mc_blocks_file_hashes(&mut proofs).await?;
 
     for (seq_no, proof) in &proofs {
-        let file_hash = engine
-            .query_file_hash_from_next_block(*seq_no)
-            .await?
-            .unwrap();
+        let file_hash = engine.query_file_hash_from_next_block(*seq_no).await?.unwrap();
         assert_eq!(proof["file_hash"].as_str().unwrap(), file_hash);
     }
 
@@ -478,12 +448,7 @@ async fn test_mc_proofs() -> Result<()> {
 
     assert_eq!(storage.count(), 2);
     assert_eq!(engine.read_zs_right_bound().await?, 0);
-    assert_eq!(
-        engine
-            .read_trusted_block_right_bound(trusted_seq_no)
-            .await?,
-        trusted_seq_no
-    );
+    assert_eq!(engine.read_trusted_block_right_bound(trusted_seq_no).await?, trusted_seq_no);
 
     Ok(())
 }
@@ -496,17 +461,21 @@ async fn test_extract_top_shard_block() -> Result<()> {
         .await?;
     let block = Block::construct_from_bytes(&boc)?;
 
-    assert!(ProofHelperEngineImpl::extract_top_shard_block(
-        &block,
-        &ShardIdent::with_tagged_prefix(0, 0x8000000000000000)?,
-    )
-    .is_err());
+    assert!(
+        ProofHelperEngineImpl::extract_top_shard_block(
+            &block,
+            &ShardIdent::with_tagged_prefix(0, 0x8000000000000000)?,
+        )
+        .is_err()
+    );
 
-    assert!(ProofHelperEngineImpl::extract_top_shard_block(
-        &block,
-        &ShardIdent::with_tagged_prefix(1, 0x2000000000000000)?,
-    )
-    .is_err());
+    assert!(
+        ProofHelperEngineImpl::extract_top_shard_block(
+            &block,
+            &ShardIdent::with_tagged_prefix(1, 0x2000000000000000)?,
+        )
+        .is_err()
+    );
 
     assert_eq!(
         ProofHelperEngineImpl::extract_top_shard_block(
@@ -541,33 +510,26 @@ async fn test_query_closest_mc_block_for_shard_block() -> Result<()> {
 
     let mut first_mc_seq_no = 100;
     assert_eq!(
-        engine
-            .query_closest_mc_block_for_shard_block(&mut first_mc_seq_no, &shard, 113)
-            .await?,
+        engine.query_closest_mc_block_for_shard_block(&mut first_mc_seq_no, &shard, 113).await?,
         Some(100),
     );
 
     first_mc_seq_no = 99;
     assert_eq!(
-        engine
-            .query_closest_mc_block_for_shard_block(&mut first_mc_seq_no, &shard, 113)
-            .await?,
+        engine.query_closest_mc_block_for_shard_block(&mut first_mc_seq_no, &shard, 113).await?,
         Some(99),
     );
 
     first_mc_seq_no = 95;
     assert_eq!(
-        engine
-            .query_closest_mc_block_for_shard_block(&mut first_mc_seq_no, &shard, 109)
-            .await?,
+        engine.query_closest_mc_block_for_shard_block(&mut first_mc_seq_no, &shard, 109).await?,
         Some(96),
     );
 
     Ok(())
 }
 
-const SHARD_BLOCK_0_A000000000000000_99_BOC: &str =
-    "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
+const SHARD_BLOCK_0_A000000000000000_99_BOC: &str = "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
     mHAAAAAIQBAAAAYwAAAAACAAAAAIAAAAAAAAAAXrQHmgAAAAAG6gUAAAAAAAbqBQGyfCu9AAAAAgAAAFMAAAAAx\
     AAAAAMAAAAAAAAALgUGAhG45I37QO5rKAQHCAqKBGFR1tD1H1YJuvT+AeffTPjAYu+ZO8nWZmHsiOcBjgwT+aoe\
     0gsBG0P0h0luP4GaSgcCgYy5IjwTqZXSIYYyFU8AAgACCQoDiUoz9v0VXplWHvmULzKidbstN+VVAHO6e3HYwO8\
@@ -580,8 +542,7 @@ const SHARD_BLOCK_0_A000000000000000_99_BOC: &str =
     kyULAB6NgIjmhTkRuAtJVIIbgsceAUzOrk7wzgAa7BQAAAAAAAAAAAAACmAAAAAA1Z+Af//////////////////\
     ////////////////////////wAADACAAAQL5eHt0";
 
-const SHARD_BLOCK_0_A000000000000000_101_BOC: &str =
-    "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
+const SHARD_BLOCK_0_A000000000000000_101_BOC: &str = "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
     mHAAAAAIQBAAAAZQAAAAACAAAAAIAAAAAAAAAAXrQHngAAAAAHCImAAAAAAAcIiYGyfCu9AAAAAgAAAFUAAAAAx\
     AAAAAMAAAAAAAAALgUGAhG45I37QO5rKAQHCAqKBO5sAcF2Ymt7CdQz/5dUOh0WyFdnKDN0tgG6P6udwTloEhUx\
     yRwpTzXcIqlKUPMO1c8qSnjjb5j9+2wRS/PnHCoAAgACCQoDiUoz9v17zLkiB8uYo0dn+vy/FUZwk6AL+dQyhFY\
@@ -603,14 +564,8 @@ async fn test_query_shard_block_bocs() -> Result<()> {
     let bocs = engine.query_shard_block_bocs(&shard, 99..102).await?;
 
     assert_eq!(bocs.len(), 3);
-    assert_eq!(
-        bocs[0],
-        base64::decode(SHARD_BLOCK_0_A000000000000000_99_BOC)?
-    );
-    assert_eq!(
-        bocs[2],
-        base64::decode(SHARD_BLOCK_0_A000000000000000_101_BOC)?
-    );
+    assert_eq!(bocs[0], base64_decode(SHARD_BLOCK_0_A000000000000000_99_BOC)?);
+    assert_eq!(bocs[2], base64_decode(SHARD_BLOCK_0_A000000000000000_101_BOC)?);
 
     Ok(())
 }
@@ -619,10 +574,10 @@ async fn test_query_shard_block_bocs() -> Result<()> {
 async fn test_check_shard_block() -> Result<()> {
     let engine = create_engine_mainnet();
 
-    let boc_99 = base64::decode(SHARD_BLOCK_0_A000000000000000_99_BOC)?;
+    let boc_99 = base64_decode(SHARD_BLOCK_0_A000000000000000_99_BOC)?;
     engine.check_shard_block(&boc_99).await?;
 
-    let boc_101 = base64::decode(SHARD_BLOCK_0_A000000000000000_101_BOC)?;
+    let boc_101 = base64_decode(SHARD_BLOCK_0_A000000000000000_101_BOC)?;
     engine.check_shard_block(&boc_101).await?;
 
     Ok(())
@@ -647,22 +602,30 @@ async fn test_check_mc_proof() -> Result<()> {
         )
         .await?;
 
-    assert!(engine
-        .check_mc_block_proof(
-            101,
-            &UInt256::from_str("01872c85facaa85405518a759dfac2625bc94b9e85b965cf3875d2331db9ad95")?,
-        )
-        .await
-        .is_err(),);
+    assert!(
+        engine
+            .check_mc_block_proof(
+                101,
+                &UInt256::from_str(
+                    "01872c85facaa85405518a759dfac2625bc94b9e85b965cf3875d2331db9ad95"
+                )?,
+            )
+            .await
+            .is_err(),
+    );
 
     // From cache:
-    assert!(engine
-        .check_mc_block_proof(
-            100,
-            &UInt256::from_str("1111111111111111111111111111111111111111111111111111111111111111")?,
-        )
-        .await
-        .is_err(),);
+    assert!(
+        engine
+            .check_mc_block_proof(
+                100,
+                &UInt256::from_str(
+                    "1111111111111111111111111111111111111111111111111111111111111111"
+                )?,
+            )
+            .await
+            .is_err(),
+    );
 
     Ok(())
 }
@@ -724,12 +687,7 @@ fn print_object_type(
 ) {
     for i in 0..object_type.fields.len() {
         let field = &object_type.fields[i];
-        if field
-            .arguments
-            .iter()
-            .find(|arg| arg.name == "when")
-            .is_some()
-        {
+        if field.arguments.iter().any(|arg| arg.name == "when") {
             continue;
         }
         let type_name = resolve_type_name(&field.field_type);
@@ -743,12 +701,7 @@ fn print_object_type(
         output.push_str(&field.name);
         if let Some(typ) = known_types.get(&type_name) {
             output.push('{');
-            print_object_type(
-                typ,
-                known_types,
-                format!("{}{}/", path, field_ident),
-                output,
-            );
+            print_object_type(typ, known_types, format!("{}{}/", path, field_ident), output);
             output.push('}');
         }
     }
@@ -779,7 +732,7 @@ fn gen_full_schema_query(object_type: &str) -> Result<String> {
         }
     }
 
-    bail!("Object type is not found in the schema: {}", object_type)
+    anyhow::bail!("Object type is not found in the schema: {}", object_type)
 }
 
 #[tokio::test]
@@ -796,9 +749,7 @@ async fn test_proof_block_data() -> Result<()> {
     client
         .request_async(
             "proofs.proof_block_data",
-            ParamsOfProofBlockData {
-                block: block_json.clone(),
-            },
+            ParamsOfProofBlockData { block: block_json.clone() },
         )
         .await?;
 
@@ -807,35 +758,35 @@ async fn test_proof_block_data() -> Result<()> {
     client
         .request_async(
             "proofs.proof_block_data",
-            ParamsOfProofBlockData {
-                block: block_json.clone(),
-            },
+            ParamsOfProofBlockData { block: block_json.clone() },
         )
         .await?;
 
     block_json["boc"] = SHARD_BLOCK_0_A000000000000000_99_BOC.into();
 
-    assert!(client
-        .request_async::<_, ()>(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData {
-                block: block_json.clone()
-            },
-        )
-        .await
-        .is_err());
+    assert!(
+        client
+            .request_async::<_, ()>(
+                "proofs.proof_block_data",
+                ParamsOfProofBlockData { block: block_json.clone() },
+            )
+            .await
+            .is_err()
+    );
 
     block_json["boc"] = Value::Null;
     block_json["prev_ref"]["root_hash"] =
         "0000000000000000000000000000000000000000000000000000000000000000".into();
 
-    assert!(client
-        .request_async::<_, ()>(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json },
-        )
-        .await
-        .is_err());
+    assert!(
+        client
+            .request_async::<_, ()>(
+                "proofs.proof_block_data",
+                ParamsOfProofBlockData { block: block_json },
+            )
+            .await
+            .is_err()
+    );
 
     let proof_json = query_block_data(
         client.context(),
@@ -863,13 +814,15 @@ async fn test_proof_block_data() -> Result<()> {
     )
     .await?;
 
-    assert!(client
-        .request_async::<_, ()>(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: proof_json },
-        )
-        .await
-        .is_err());
+    assert!(
+        client
+            .request_async::<_, ()>(
+                "proofs.proof_block_data",
+                ParamsOfProofBlockData { block: proof_json },
+            )
+            .await
+            .is_err()
+    );
 
     let decimal_fields = r#"
         id
@@ -1005,9 +958,7 @@ async fn test_proof_block_data() -> Result<()> {
     client
         .request_async(
             "proofs.proof_block_data",
-            ParamsOfProofBlockData {
-                block: block_json.clone(),
-            },
+            ParamsOfProofBlockData { block: block_json.clone() },
         )
         .await?;
 
@@ -1022,9 +973,7 @@ async fn test_proof_block_data() -> Result<()> {
     client
         .request_async(
             "proofs.proof_block_data",
-            ParamsOfProofBlockData {
-                block: block_json.clone(),
-            },
+            ParamsOfProofBlockData { block: block_json.clone() },
         )
         .await?;
 
@@ -1033,8 +982,8 @@ async fn test_proof_block_data() -> Result<()> {
 
 #[tokio::test]
 async fn test_transaction_get_required_data() -> Result<()> {
-    const ID: &'static str = "5b532e2ec17ac84b4efa92703192368dd4ed8a2729f2be2b0ee4e0665368f7c0";
-    const BOC: &'static str = "\
+    const ID: &str = "5b532e2ec17ac84b4efa92703192368dd4ed8a2729f2be2b0ee4e0665368f7c0";
+    const BOC: &str = "\
             te6ccgECBgEAATMAA69wT2TGr7/z3RDYumcHeQrJZw1UDzepRIsDN7qmpakqysAAAR0tIeN4FanEM9ilnr+FQpc\
             mlTEG3AXJ47njjdUvtmEBGza8vWswAAEdLSDvVDYWPE5wABQIBQQBAgUgMDQDAgBpYAAAAJYAAAAEAAYAAAAAAA\
             UZroTxe4+LIgJql1/1Xxqxn95KdodE0heN+mO7Uz4QekCQJrwAoEJmUBfXhAAAAAAAAAAAADAAAAAAAAAAAAAAA\
@@ -1043,14 +992,11 @@ async fn test_transaction_get_required_data() -> Result<()> {
 
     async fn test(engine: &ProofHelperEngineImpl, transaction_json: Value) -> Result<()> {
         let (id, block_id, boc, transaction) =
-            transaction_get_required_data(&engine, &transaction_json).await?;
+            transaction_get_required_data(engine, &transaction_json).await?;
 
         assert_eq!(id.as_hex_string(), ID,);
-        assert_eq!(
-            block_id,
-            "eb7c28f1d301dff2d6ec899fb5ee18d9478f397b10c16a6f6aabb6535686266e"
-        );
-        assert_eq!(boc, base64::decode(BOC)?);
+        assert_eq!(block_id, "eb7c28f1d301dff2d6ec899fb5ee18d9478f397b10c16a6f6aabb6535686266e");
+        assert_eq!(boc, base64_decode(BOC)?);
         assert_eq!(transaction.logical_time(), 0x11d2d21e3781);
 
         Ok(())
@@ -1090,9 +1036,7 @@ async fn test_proof_transaction_data() -> Result<()> {
 
     proof_transaction_data(
         client.context(),
-        ParamsOfProofTransactionData {
-            transaction: transaction_json,
-        },
+        ParamsOfProofTransactionData { transaction: transaction_json },
     )
     .await?;
 
@@ -1119,9 +1063,7 @@ async fn test_proof_transaction_data() -> Result<()> {
 
     proof_transaction_data(
         client.context(),
-        ParamsOfProofTransactionData {
-            transaction: transaction_json,
-        },
+        ParamsOfProofTransactionData { transaction: transaction_json },
     )
     .await?;
 
@@ -1138,12 +1080,11 @@ async fn test_message_get_required_data() -> Result<()> {
         message_trans_id: &str,
         dst_account_address: Option<&str>,
     ) -> Result<()> {
-        let (id, trans_id, boc, message) =
-            message_get_required_data(&engine, &message_json).await?;
+        let (id, trans_id, boc, message) = message_get_required_data(engine, &message_json).await?;
 
         assert_eq!(id.as_hex_string(), message_id,);
         assert_eq!(trans_id, message_trans_id);
-        assert_eq!(boc, base64::decode(message_boc)?);
+        assert_eq!(boc, base64_decode(message_boc)?);
         assert_eq!(
             message.dst_ref().map(|addr| addr.to_string()),
             dst_account_address.map(|str| str.to_string()),
@@ -1160,7 +1101,7 @@ async fn test_message_get_required_data() -> Result<()> {
         dst_account_address: Option<&str>,
     ) -> Result<()> {
         test(
-            &engine,
+            engine,
             json!({
                 "id": message_id,
             }),
@@ -1172,7 +1113,7 @@ async fn test_message_get_required_data() -> Result<()> {
         .await?;
 
         test(
-            &engine,
+            engine,
             json!({
                 "boc": message_boc,
             }),
@@ -1252,13 +1193,8 @@ async fn test_proof_message_data() -> Result<()> {
     )
     .await?;
 
-    proof_message_data(
-        client.context(),
-        ParamsOfProofMessageData {
-            message: message_json,
-        },
-    )
-    .await?;
+    proof_message_data(client.context(), ParamsOfProofMessageData { message: message_json })
+        .await?;
 
     let message_json = query_message_data(
         client.context(),
@@ -1276,13 +1212,8 @@ async fn test_proof_message_data() -> Result<()> {
     )
     .await?;
 
-    proof_message_data(
-        client.context(),
-        ParamsOfProofMessageData {
-            message: message_json,
-        },
-    )
-    .await?;
+    proof_message_data(client.context(), ParamsOfProofMessageData { message: message_json })
+        .await?;
 
     Ok(())
 }

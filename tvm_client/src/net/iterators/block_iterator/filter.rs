@@ -1,23 +1,22 @@
-/*
- * Copyright 2018-2021 TON Labs LTD.
- *
- * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
- * this file except in compliance with the License.
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+//
 
+use serde_json::Value;
 use tvm_block::ShardIdent;
 
 use crate::error::ClientResult;
-use crate::net::iterators::block::{shard_ident_parse, BlockFields};
+use crate::net::iterators::block::shard_ident_parse;
+use crate::net::iterators::block::BlockFields;
 use crate::net::iterators::block_iterator::ParamsOfCreateBlockIterator;
-use serde_json::Value;
 
 #[derive(Clone)]
 pub(crate) struct Filter {
@@ -43,7 +42,7 @@ impl Filter {
             shards,
             start_time: params.start_time,
             end_time: params.end_time,
-            result_fields: params.result.clone().unwrap_or(String::default()),
+            result_fields: params.result.clone().unwrap_or_default(),
         })
     }
 
@@ -65,10 +64,7 @@ impl Filter {
         if self.shards.is_empty() {
             true
         } else {
-            self.shards
-                .iter()
-                .find(|x| x.is_ancestor_for(shard) || shard.is_ancestor_for(x))
-                .is_some()
+            self.shards.iter().any(|x| x.is_ancestor_for(shard) || shard.is_ancestor_for(x))
         }
     }
 
@@ -79,10 +75,8 @@ impl Filter {
         Ok(self.match_shard(&shard) && self.match_end_time(time))
     }
 
-    /**
-     * @param {Block} block
-     * @return {boolean}
-     */
+    /// @param {Block} block
+    /// @return {boolean}
     pub fn is_required_to_iterate(&self, block: &Value) -> ClientResult<bool> {
         let fields = BlockFields(block);
         let shard = fields.as_shard_ident().shard_ident()?;

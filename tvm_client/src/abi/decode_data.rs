@@ -1,13 +1,14 @@
+use std::sync::Arc;
+
+use serde_json::Value;
+use tvm_abi::token::Detokenizer;
+
 use crate::abi::types::Abi;
 use crate::abi::Error;
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::client::ClientContext;
 use crate::encoding::slice_from_cell;
 use crate::error::ClientResult;
-use serde_json;
-use serde_json::Value;
-use std::sync::Arc;
-use tvm_abi::token::Detokenizer;
 
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfDecodeAccountData {
@@ -17,8 +18,9 @@ pub struct ParamsOfDecodeAccountData {
     /// Data BOC or BOC handle
     pub data: String,
 
-    /// Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
-    /// Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:
+    /// Flag allowing partial BOC decoding when ABI doesn't describe the full
+    /// body BOC. Controls decoder behaviour when after decoding all
+    /// described in ABI params there are some data left in BOC:
     /// `true` - return decoded values
     /// `false` - return error of incomplete BOC deserialization (default)
     #[serde(default)]
@@ -44,9 +46,9 @@ pub fn decode_account_data(
 
     let tokens = abi
         .decode_storage_fields(slice_from_cell(data)?, params.allow_partial)
-        .map_err(|e| Error::invalid_data_for_decode(e))?;
+        .map_err(Error::invalid_data_for_decode)?;
 
-    let data = Detokenizer::detokenize_to_json_value(&tokens)
-        .map_err(|e| Error::invalid_data_for_decode(e))?;
+    let data =
+        Detokenizer::detokenize_to_json_value(&tokens).map_err(Error::invalid_data_for_decode)?;
     Ok(ResultOfDecodeAccountData { data })
 }

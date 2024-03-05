@@ -1,7 +1,9 @@
 use proc_macro::TokenStream;
-use crate::utils::{module_from, module_to_tokens};
 use quote::quote;
 use syn::DeriveInput;
+
+use crate::utils::module_from;
+use crate::utils::module_to_tokens;
 
 pub fn impl_api_module(input: TokenStream) -> TokenStream {
     let input = syn::parse::<DeriveInput>(input).expect("Derive input");

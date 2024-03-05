@@ -1,38 +1,36 @@
-use crate::message_monitor::{
-    MessageMonitor, MessageMonitoringParams, MessageMonitoringResult, MessageMonitoringStatus,
-    MessageMonitoringTransaction, MonitorFetchWaitMode,
-};
-use crate::sdk_services::MockSdkServices;
-use crate::MonitoredMessage;
-use std::mem;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use std::sync::RwLock;
 use std::time::Duration;
+
 use tokio::time::sleep;
 use tvm_block::MsgAddrStd;
-use tvm_types::{AccountId, UInt256};
+use tvm_types::AccountId;
+use tvm_types::UInt256;
+
+use crate::message_monitor::MessageMonitor;
+use crate::message_monitor::MessageMonitoringParams;
+use crate::message_monitor::MessageMonitoringResult;
+use crate::message_monitor::MessageMonitoringStatus;
+use crate::message_monitor::MessageMonitoringTransaction;
+use crate::message_monitor::MonitorFetchWaitMode;
+use crate::sdk_services::MockSdkServices;
+use crate::MonitoredMessage;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_fetch() {
     let api = sdk_services();
     let mon = MessageMonitor::new(api.clone());
-    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)])
-        .unwrap();
+    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)]).unwrap();
     let info = mon.get_queue_info("1").unwrap();
     assert_eq!(info.resolved, 0);
     assert_eq!(info.unresolved, 2);
-    let results = mon
-        .fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait)
-        .await
-        .unwrap();
+    let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait).await.unwrap();
     assert_eq!(results, vec![]);
     api.add_recent_ext_in_messages(vec![
         msg_res(1, MessageMonitoringStatus::Finalized),
         msg_res(2, MessageMonitoringStatus::Finalized),
     ]);
-    let results = mon
-        .fetch_next_monitor_results("1", MonitorFetchWaitMode::All)
-        .await
-        .unwrap();
+    let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::All).await.unwrap();
     assert_eq!(
         sorted(results, |x| &x.hash),
         vec![
@@ -46,8 +44,7 @@ async fn test_fetch() {
 async fn test_cancel_monitor() {
     let api = sdk_services();
     let mon = MessageMonitor::new(api.clone());
-    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)])
-        .unwrap();
+    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)]).unwrap();
     let info = mon.get_queue_info("1").unwrap();
     assert_eq!(info.resolved, 0);
     assert_eq!(info.unresolved, 2);
@@ -61,21 +58,14 @@ async fn test_cancel_monitor() {
 async fn test_fetch_at_least_one() {
     let api = sdk_services();
     let mon = MessageMonitor::new(api.clone());
-    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)])
-        .unwrap();
-    let results = mon
-        .fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait)
-        .await
-        .unwrap();
+    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)]).unwrap();
+    let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait).await.unwrap();
     assert_eq!(results, vec![]);
     api.add_recent_ext_in_messages(vec![
         msg_res(1, MessageMonitoringStatus::Finalized),
         msg_res(2, MessageMonitoringStatus::Finalized),
     ]);
-    let results = mon
-        .fetch_next_monitor_results("1", MonitorFetchWaitMode::All)
-        .await
-        .unwrap();
+    let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::All).await.unwrap();
     assert_eq!(
         sorted(results, |x| &x.hash),
         vec![
@@ -83,10 +73,7 @@ async fn test_fetch_at_least_one() {
             msg_res(2, MessageMonitoringStatus::Finalized)
         ]
     );
-    let results = mon
-        .fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait)
-        .await
-        .unwrap();
+    let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait).await.unwrap();
     assert_eq!(results.len(), 0);
 }
 
@@ -96,8 +83,7 @@ async fn test_fetch_wait_all() {
     let mon = Arc::new(MessageMonitor::new(api.clone()));
 
     // Start monitoring for [1, 2] messages
-    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)])
-        .unwrap();
+    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)]).unwrap();
 
     sleep(Duration::from_millis(1100)).await;
 
@@ -106,18 +92,13 @@ async fn test_fetch_wait_all() {
     let results_from_spawned = fetched.clone();
     let spawned_mon = mon.clone();
     tokio::spawn(async move {
-        let results = spawned_mon
-            .fetch_next_monitor_results("1", MonitorFetchWaitMode::All)
-            .await
-            .unwrap();
+        let results =
+            spawned_mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::All).await.unwrap();
         *results_from_spawned.write().unwrap() = results;
     });
 
     // Resolved queue must be empty yet
-    let results = mon
-        .fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait)
-        .await
-        .unwrap();
+    let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait).await.unwrap();
     assert_eq!(results, vec![]);
 
     // Resolve [1, 2] messages
@@ -130,14 +111,11 @@ async fn test_fetch_wait_all() {
     sleep(Duration::from_millis(1000)).await;
 
     // Queue should be empty
-    let results = mon
-        .fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait)
-        .await
-        .unwrap();
+    let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait).await.unwrap();
     assert_eq!(results, vec![]);
 
     // Check that spawned thread has received all monitoring messages
-    let results = mem::replace(&mut *fetched.write().unwrap(), Vec::new());
+    let results = std::mem::take(&mut *fetched.write().unwrap());
     assert_eq!(
         sorted(results, |x| &x.hash),
         vec![
@@ -154,8 +132,7 @@ async fn test_mon_info() {
     let info = mon.get_queue_info("1").unwrap();
     assert_eq!(info.resolved, 0);
     assert_eq!(info.unresolved, 0);
-    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)])
-        .unwrap();
+    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)]).unwrap();
     sleep(Duration::from_millis(1100)).await;
     let info = mon.get_queue_info("1").unwrap();
     assert_eq!(info.resolved, 0);
@@ -172,8 +149,7 @@ async fn test_buffering() {
     let api = sdk_services();
     let mon = MessageMonitor::new(api.clone());
 
-    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)])
-        .unwrap();
+    mon.monitor_messages("1", vec![msg(1, 1), msg(2, 2)]).unwrap();
     tokio::time::sleep(Duration::from_millis(100)).await;
     assert_eq!(
         api.active_subscription_count(),
@@ -188,8 +164,7 @@ async fn test_buffering() {
         "first subscription should be started after 1 second"
     );
 
-    mon.monitor_messages("1", vec![msg(3, 3), msg(4, 4)])
-        .unwrap();
+    mon.monitor_messages("1", vec![msg(3, 3), msg(4, 4)]).unwrap();
     tokio::time::sleep(Duration::from_millis(100)).await;
     assert_eq!(
         api.active_subscription_count(),
@@ -206,11 +181,7 @@ async fn test_buffering() {
 
     api.add_recent_ext_in_messages(vec![msg_res(1, MessageMonitoringStatus::Finalized)]);
     tokio::time::sleep(Duration::from_millis(200)).await;
-    assert_eq!(
-        api.active_subscription_count(),
-        2,
-        "both subscriptions should be active"
-    );
+    assert_eq!(api.active_subscription_count(), 2, "both subscriptions should be active");
 
     api.add_recent_ext_in_messages(vec![msg_res(2, MessageMonitoringStatus::Finalized)]);
     tokio::time::sleep(Duration::from_millis(200)).await;
@@ -222,11 +193,7 @@ async fn test_buffering() {
 
     api.add_recent_ext_in_messages(vec![msg_res(3, MessageMonitoringStatus::Finalized)]);
     tokio::time::sleep(Duration::from_millis(200)).await;
-    assert_eq!(
-        api.active_subscription_count(),
-        1,
-        "second subscription should be active"
-    );
+    assert_eq!(api.active_subscription_count(), 1, "second subscription should be active");
 
     api.add_recent_ext_in_messages(vec![msg_res(4, MessageMonitoringStatus::Finalized)]);
     tokio::time::sleep(Duration::from_millis(200)).await;
@@ -242,20 +209,13 @@ fn hash(n: usize) -> String {
 }
 
 fn addr(a: usize) -> String {
-    MsgAddrStd::with_address(
-        None,
-        0,
-        AccountId::from(UInt256::from_be_bytes(&a.to_be_bytes())),
-    )
-    .to_string()
+    MsgAddrStd::with_address(None, 0, AccountId::from(UInt256::from_be_bytes(&a.to_be_bytes())))
+        .to_string()
 }
 
 fn msg(h: usize, w: u32) -> MessageMonitoringParams {
     MessageMonitoringParams {
-        message: MonitoredMessage::HashAddress {
-            hash: hash(h),
-            address: addr(h),
-        },
+        message: MonitoredMessage::HashAddress { hash: hash(h), address: addr(h) },
         wait_until: w,
         user_data: None,
     }

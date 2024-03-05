@@ -1,21 +1,21 @@
-/*
-* Copyright 2018-2021 TON Labs LTD.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright 2018-2021 TON Labs LTD.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
+
+use tvm_block::Serializable;
+use tvm_types::base64_encode;
 
 use super::internal::deserialize_object_from_boc;
 use crate::boc::Error;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use tvm_block::Serializable;
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]
 pub struct ParamsOfGetBlockchainConfig {
@@ -48,16 +48,13 @@ pub fn get_blockchain_config(
         extract_config_from_zerostate(&zerostate.object)?
     };
 
-    let cell = config
-        .serialize()
-        .map_err(|err| Error::serialization_error(err, "config to cells"))?;
+    let cell =
+        config.serialize().map_err(|err| Error::serialization_error(err, "config to cells"))?;
 
     let bytes = tvm_types::boc::write_boc(&cell)
         .map_err(|err| Error::serialization_error(err, "config cells to bytes"))?;
 
-    Ok(ResultOfGetBlockchainConfig {
-        config_boc: base64::encode(&bytes),
-    })
+    Ok(ResultOfGetBlockchainConfig { config_boc: base64_encode(bytes) })
 }
 
 pub(crate) fn extract_config_from_block(

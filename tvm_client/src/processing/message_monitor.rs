@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
+use tvm_client_processing::MessageMonitoringParams;
+use tvm_client_processing::MessageMonitoringResult;
+use tvm_client_processing::MonitorFetchWaitMode;
+use tvm_client_processing::MonitoringQueueInfo;
+
 use crate::error::ClientResult;
 use crate::ClientContext;
-use std::sync::Arc;
-use tvm_client_processing::{
-    MessageMonitoringParams, MessageMonitoringResult, MonitorFetchWaitMode, MonitoringQueueInfo,
-};
 
 #[derive(Deserialize, Default, ApiType)]
 pub struct ParamsOfMonitorMessages {
@@ -15,35 +18,36 @@ pub struct ParamsOfMonitorMessages {
 
 /// Starts monitoring for the processing results of the specified messages.
 ///
-/// Message monitor performs background monitoring for a message processing results
-/// for the specified set of messages.
+/// Message monitor performs background monitoring for a message processing
+/// results for the specified set of messages.
 ///
 /// Message monitor can serve several isolated monitoring queues.
-/// Each monitor queue has a unique application defined identifier (or name) used
-/// to separate several queue's.
+/// Each monitor queue has a unique application defined identifier (or name)
+/// used to separate several queue's.
 ///
 /// There are two important lists inside of the monitoring queue:
 ///
-/// - unresolved messages: contains messages requested by the application for monitoring
-///   and not yet resolved;
+/// - unresolved messages: contains messages requested by the application for
+///   monitoring and not yet resolved;
 ///
-/// - resolved results: contains resolved processing results for monitored messages.
+/// - resolved results: contains resolved processing results for monitored
+///   messages.
 ///
 /// Each monitoring queue tracks own unresolved and resolved lists.
 /// Application can add more messages to the monitoring queue at any time.
 ///
 /// Message monitor accumulates resolved results.
-/// Application should fetch this results with `fetchNextMonitorResults` function.
+/// Application should fetch this results with `fetchNextMonitorResults`
+/// function.
 ///
-/// When both unresolved and resolved lists becomes empty, monitor stops any background activity
-/// and frees all allocated internal memory.
+/// When both unresolved and resolved lists becomes empty, monitor stops any
+/// background activity and frees all allocated internal memory.
 ///
-/// If monitoring queue with specified name already exists then messages will be added
-/// to the unresolved list.
+/// If monitoring queue with specified name already exists then messages will be
+/// added to the unresolved list.
 ///
-/// If monitoring queue with specified name does not exist then monitoring queue will be created
-/// with specified unresolved messages.
-///
+/// If monitoring queue with specified name does not exist then monitoring queue
+/// will be created with specified unresolved messages.
 #[api_function]
 pub fn monitor_messages(
     context: Arc<ClientContext>,
@@ -93,7 +97,8 @@ pub struct ParamsOfGetMonitorInfo {
     pub queue: String,
 }
 
-/// Returns summary information about current state of the specified monitoring queue.
+/// Returns summary information about current state of the specified monitoring
+/// queue.
 #[api_function]
 pub fn get_monitor_info(
     context: Arc<ClientContext>,
