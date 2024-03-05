@@ -10,8 +10,6 @@
 // limitations under the License.
 //
 
-use std::fs;
-use std::path::Path;
 use std::sync::Arc;
 
 use serde_json::Value;
@@ -167,11 +165,6 @@ pub(crate) async fn ackinacki_network() -> ClientResult<(BlockchainConfig, i32)>
     let global_id = DEFAULT_ACKI_GLOBAL_ID;
     let config = blockchain_config_from_json(&acki_config::get_config()?)?;
     Ok((config, global_id))
-}
-
-fn read_str(path: &str) -> ClientResult<String> {
-    fs::read_to_string(Path::new(path))
-        .map_err(crate::tvm::Error::can_not_read_blockchain_config_from_file)
 }
 
 fn blockchain_config_from_json(json: &str) -> ClientResult<BlockchainConfig> {
