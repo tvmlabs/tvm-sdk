@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-
 use bip39::Language;
 use bip39::Mnemonic;
 use bip39::MnemonicType;
