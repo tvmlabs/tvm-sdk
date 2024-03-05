@@ -318,11 +318,4 @@ impl KeyValueStorage for LocalStorage {
     async fn put_str(&self, key: &str, value: &str) -> ClientResult<()> {
         self.put_bin(key, value.as_bytes()).await
     }
-
-    /// Remove value by a given key
-    async fn remove(&self, key: &str) -> ClientResult<()> {
-        let path = self.key_to_path(key)?;
-
-        tokio::fs::remove_file(&path).await.map_err(Error::local_storage_error)
-    }
 }

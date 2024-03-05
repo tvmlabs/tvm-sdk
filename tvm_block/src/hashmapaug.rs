@@ -876,7 +876,7 @@ pub trait HashmapAugType<
 }
 
 // TODO: move private operations here
-trait HashmapAugOperations {}
+pub trait HashmapAugOperations {}
 
 pub trait HashmapAugRemover<
     K: Deserializable + Serializable,

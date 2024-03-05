@@ -19,9 +19,6 @@ pub trait KeyValueStorage: Send + Sync {
 
     /// Put string value by a given key into the storage
     async fn put_str(&self, key: &str, value: &str) -> ClientResult<()>;
-
-    /// Remove value by a given key
-    async fn remove(&self, key: &str) -> ClientResult<()>;
 }
 
 pub struct InMemoryKeyValueStorage {
@@ -83,11 +80,6 @@ impl KeyValueStorage for InMemoryKeyValueStorage {
 
     async fn put_str(&self, key: &str, value: &str) -> ClientResult<()> {
         self.map.insert(key.to_string(), value.as_bytes().to_vec());
-        Ok(())
-    }
-
-    async fn remove(&self, key: &str) -> ClientResult<()> {
-        self.map.remove(key);
         Ok(())
     }
 }

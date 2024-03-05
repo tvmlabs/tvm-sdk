@@ -1,0 +1,1205 @@
+.version sol 0.52.0
+
+.macro constructor
+DROP
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7_with_init_storage$
+}
+GETGLOB 6
+THROWIF 51
+ENDS
+ACCEPT
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.macro sendAnswer
+DROP
+GETGLOB 6
+THROWIFNOT 76
+.loc fakeDepool.sol, 22
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $sendAnswer_internal_macro$
+}
+IFREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	sendAnswer_internal
+.type	sendAnswer_internal, @function
+CALL $sendAnswer_internal_macro$
+
+.macro sendAnswer_internal_macro
+.loc fakeDepool.sol, 23
+PUSHINT 222
+PUSHINT 11
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x39896800000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro addOrdinaryStake
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 26
+LDU 64
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $addOrdinaryStake_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	addOrdinaryStake_internal
+.type	addOrdinaryStake_internal, @function
+CALL $addOrdinaryStake_internal_macro$
+
+.macro addOrdinaryStake_internal_macro
+.loc fakeDepool.sol, 27
+SETGLOB 11
+.loc fakeDepool.sol, 28
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 29
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 30
+PUSHINT 222
+PUSHINT 11
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro addVestingStake
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 33
+LDU 64
+LDMSGADDRQ
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDMSGADDR
+}
+IFNOT
+LDUQ 32
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDU 32
+}
+IFNOT
+LDUQ 32
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDU 32
+}
+IFNOT
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $addVestingStake_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	addVestingStake_internal
+.type	addVestingStake_internal, @function
+CALL $addVestingStake_internal_macro$
+
+.macro addVestingStake_internal_macro
+.loc fakeDepool.sol, 34
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 35
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 36
+ROLL 3
+SETGLOB 11
+.loc fakeDepool.sol, 37
+ROT
+SETGLOB 13
+.loc fakeDepool.sol, 38
+SWAP
+SETGLOB 14
+.loc fakeDepool.sol, 39
+SETGLOB 15
+.loc fakeDepool.sol, 40
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro addLockStake
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 43
+LDU 64
+LDMSGADDRQ
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDMSGADDR
+}
+IFNOT
+LDUQ 32
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDU 32
+}
+IFNOT
+LDUQ 32
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDU 32
+}
+IFNOT
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $addLockStake_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	addLockStake_internal
+.type	addLockStake_internal, @function
+CALL $addLockStake_internal_macro$
+
+.macro addLockStake_internal_macro
+.loc fakeDepool.sol, 44
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 45
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 46
+ROLL 3
+SETGLOB 11
+.loc fakeDepool.sol, 47
+ROT
+SETGLOB 13
+.loc fakeDepool.sol, 48
+SWAP
+SETGLOB 14
+.loc fakeDepool.sol, 49
+SETGLOB 15
+.loc fakeDepool.sol, 50
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro withdrawFromPoolingRound
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 53
+LDU 64
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $withdrawFromPoolingRound_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	withdrawFromPoolingRound_internal
+.type	withdrawFromPoolingRound_internal, @function
+CALL $withdrawFromPoolingRound_internal_macro$
+
+.macro withdrawFromPoolingRound_internal_macro
+.loc fakeDepool.sol, 54
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 55
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 56
+SETGLOB 11
+.loc fakeDepool.sol, 57
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro withdrawPart
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 60
+LDU 64
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $withdrawPart_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	withdrawPart_internal
+.type	withdrawPart_internal, @function
+CALL $withdrawPart_internal_macro$
+
+.macro withdrawPart_internal_macro
+.loc fakeDepool.sol, 61
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 62
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 63
+SETGLOB 11
+.loc fakeDepool.sol, 64
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro withdrawAll
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 67
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $withdrawAll_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	withdrawAll_internal
+.type	withdrawAll_internal, @function
+CALL $withdrawAll_internal_macro$
+
+.macro withdrawAll_internal_macro
+.loc fakeDepool.sol, 68
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 69
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 70
+FALSE
+SETGLOB 16
+.loc fakeDepool.sol, 71
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro cancelWithdrawal
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 74
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $cancelWithdrawal_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	cancelWithdrawal_internal
+.type	cancelWithdrawal_internal, @function
+CALL $cancelWithdrawal_internal_macro$
+
+.macro cancelWithdrawal_internal_macro
+.loc fakeDepool.sol, 75
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 76
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 77
+TRUE
+SETGLOB 16
+.loc fakeDepool.sol, 78
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro transferStake
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 81
+LDMSGADDRQ
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDMSGADDR
+}
+IFNOT
+LDUQ 64
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDU 64
+}
+IFNOT
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $transferStake_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	transferStake_internal
+.type	transferStake_internal, @function
+CALL $transferStake_internal_macro$
+
+.macro transferStake_internal_macro
+.loc fakeDepool.sol, 82
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 83
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 84
+SETGLOB 11
+.loc fakeDepool.sol, 85
+SETGLOB 13
+.loc fakeDepool.sol, 86
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro ticktock
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 89
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $ticktock_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	ticktock_internal
+.type	ticktock_internal, @function
+CALL $ticktock_internal_macro$
+
+.macro ticktock_internal_macro
+.loc fakeDepool.sol, 90
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 91
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 92
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x17b000000000000000000000000001_
+STSLICER
+ENDC
+PUSHINT 1
+SENDRAWMSG
+.loc fakeDepool.sol, 94
+PUSHSLICE x8000000000000000000000000000000000000000000000000000000000000000005_
+PUSHSLICE xc00000000000000000000000004516371200000001
+NEWC
+STSLICE
+STSLICE
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro receiveFunds
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 97
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $receiveFunds_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	receiveFunds_internal
+.type	receiveFunds_internal, @function
+CALL $receiveFunds_internal_macro$
+
+.macro receiveFunds_internal_macro
+.loc fakeDepool.sol, 98
+GETGLOB 9
+SETGLOB 12
+.loc fakeDepool.sol, 99
+DEPTH
+ADDCONST -2
+PICK
+SETGLOB 17
+.loc fakeDepool.sol, 0
+
+.macro getData
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 102
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $getData_internal_macro$
+}
+PUSH S7
+PUSHCONT {
+	PUSH S9
+	CTOS
+	LDU 2
+	LDMSGADDR
+	DROP
+	NIP
+	NEWC
+	STSLICECONST xc
+	STSLICE
+	PUSHINT 1
+	STUR 98
+	REVERSE 8, 0
+	NEWC
+	STSLICECONST xbb14f64b
+	STU 64
+	STSLICE
+	ROLLREV 5
+	NEWC
+	STSLICE
+	STU 32
+	STU 32
+	STI 1
+	STU 128
+	STBREFR
+	STBREFR
+	ENDC
+	PUSHINT 0
+	SENDRAWMSG
+}
+PUSHCONT {
+	BLKDROP 7
+}
+IFELSE
+IFREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	getData_internal
+.type	getData_internal, @function
+CALL $getData_internal_macro$
+
+.macro getData_internal_macro
+.loc fakeDepool.sol, 104
+GETGLOB 11
+GETGLOB 12
+GETGLOB 13
+GETGLOB 14
+GETGLOB 15
+GETGLOB 16
+GETGLOB 17
+.loc fakeDepool.sol, 0
+
+.macro setVestingDonor
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 107
+LDMSGADDRQ
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDMSGADDR
+}
+IFNOT
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $setVestingDonor_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	setVestingDonor_internal
+.type	setVestingDonor_internal, @function
+CALL $setVestingDonor_internal_macro$
+
+.macro setVestingDonor_internal_macro
+.loc fakeDepool.sol, 108
+SETGLOB 13
+.loc fakeDepool.sol, 109
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro setLockDonor
+DROP
+GETGLOB 6
+THROWIFNOT 76
+GETGLOB 2
+ISNULL
+IFREF {
+	CALL $c4_to_c7$
+}
+.loc fakeDepool.sol, 112
+LDMSGADDRQ
+PUSHCONT {
+	LDREF
+	ENDS
+	CTOS
+	LDMSGADDR
+}
+IFNOT
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $setLockDonor_internal_macro$
+}
+CALLREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	setLockDonor_internal
+.type	setLockDonor_internal, @function
+CALL $setLockDonor_internal_macro$
+
+.macro setLockDonor_internal_macro
+.loc fakeDepool.sol, 113
+SETGLOB 13
+.loc fakeDepool.sol, 114
+PUSHINT 0
+DUP
+GETGLOB 9
+NEWC
+STSLICECONST x62_
+STSLICE
+PUSHSLICE x4075bcd150000000000000000000000000007e213c89_
+STSLICER
+STU 32
+STU 64
+ENDC
+PUSHINT 0
+SENDRAWMSG
+.loc fakeDepool.sol, 0
+
+.macro error
+DROP
+GETGLOB 6
+THROWIFNOT 76
+.loc fakeDepool.sol, 117
+LDU 256
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $error_internal_macro$
+}
+IFREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	error_internal
+.type	error_internal, @function
+CALL $error_internal_macro$
+
+.macro error_internal_macro
+.loc fakeDepool.sol, 118
+PUSHINT 2
+MAX
+THROWANY
+.loc fakeDepool.sol, 0
+
+.macro outOfGas
+DROP
+GETGLOB 6
+THROWIFNOT 76
+.loc fakeDepool.sol, 121
+ENDS
+.loc fakeDepool.sol, 0
+CALLREF {
+	CALL $outOfGas_internal_macro$
+}
+IFREF {
+	CALL $c7_to_c4$
+}
+THROW 0
+
+.globl	outOfGas_internal
+.type	outOfGas_internal, @function
+CALL $outOfGas_internal_macro$
+
+.macro outOfGas_internal_macro
+.loc fakeDepool.sol, 122
+NEWDICT
+.loc fakeDepool.sol, 123
+PUSHINT 0
+.loc fakeDepool.sol, 124
+PUSHCONT {
+	DUP
+	PUSHINT 9999
+	LEQ
+}
+PUSHCONT {
+	.loc fakeDepool.sol, 125
+	PUSH3 S0, S1, S0
+	NEWC
+	STU 256
+	ROTREV
+	PUSHINT 256
+	DICTUSETB
+	POP S2
+	.loc fakeDepool.sol, 0
+}
+WHILE
+DROP2
+.loc fakeDepool.sol, 0
+
+.macro c7_to_c4
+GETGLOB 17
+GETGLOB 16
+GETGLOB 15
+GETGLOB 14
+GETGLOB 13
+GETGLOB 12
+GETGLOB 11
+GETGLOB 10
+GETGLOB 3
+GETGLOB 2
+NEWC
+STU 256
+STU 64
+STONE
+STU 256
+STU 64
+ROLLREV 6
+NEWC
+STSLICE
+ROLLREV 5
+NEWC
+STSLICE
+STU 32
+STU 32
+STI 1
+STU 128
+STBREFR
+STBREFR
+ENDC
+POPROOT
+
+.macro c4_to_c7
+PUSHROOT
+CTOS
+LDU 256 ; pubkey c4
+LDU 64 ; pubkey timestamp c4
+LDU 1 ; ctor flag
+NIP
+LDU 256
+LDU 64
+LDREF
+ENDS
+CTOS
+LDMSGADDR
+LDREF
+ENDS
+CTOS
+LDMSGADDR
+LDU 32
+LDU 32
+LDI 1
+LDU 128
+ENDS
+SETGLOB 17
+SETGLOB 16
+SETGLOB 15
+SETGLOB 14
+SETGLOB 13
+SETGLOB 12
+SETGLOB 11
+SETGLOB 10
+SETGLOB 3
+SETGLOB 2
+
+.macro c4_to_c7_with_init_storage
+PUSHROOT
+CTOS
+SBITS
+GTINT 1
+PUSHREFCONT {
+	CALL $c4_to_c7$
+}
+PUSHCONT {
+	PUSHINT 0
+	PUSHROOT
+	CTOS
+	PLDDICT ; D
+	PUSHINT 1
+	OVER
+	PUSHINT 64
+	DICTUGET
+	PUSHCONT {
+		PLDU 256
+	}
+	PUSHCONT {
+		PUSHINT 0
+	}
+	IFELSE
+	SETGLOB 10
+	PUSHINT 0
+	SETGLOB 11
+	PUSHSLICE x8000000000000000000000000000000000000000000000000000000000000000001_
+	SETGLOB 12
+	PUSHSLICE x8000000000000000000000000000000000000000000000000000000000000000001_
+	SETGLOB 13
+	PUSHINT 0
+	SETGLOB 14
+	PUSHINT 0
+	SETGLOB 15
+	PUSHINT 0
+	SETGLOB 16
+	PUSHINT 0
+	SETGLOB 17
+	PUSHINT 64
+	DICTUGET
+	THROWIFNOT 61
+	PLDU 256
+	SETGLOB 2
+	PUSHINT 0 ; timestamp
+	SETGLOB 3
+}
+IFELSE
+
+.internal-alias :main_internal, 0
+.internal :main_internal
+PUSHROOT
+CTOS
+SBITS
+NEQINT 1
+SETGLOB 6
+PUSH S2
+CTOS
+LDU 4 ; bounced tail
+LDMSGADDR ; bounced src tail
+DROP
+SETGLOB 9
+MODPOW2 1
+IFRET
+OVER
+SEMPTY ; isEmpty
+IFJMPREF {
+	GETGLOB 6
+	THROWIFNOT 76
+}
+OVER
+LDUQ 32  ; [funcId] body' ok
+THROWIFNOT 60 ; funcId body'
+OVER
+IFNOTJMPREF {
+	GETGLOB 6
+	THROWIFNOT 76
+}
+SWAP
+CALLREF {
+	CALL $public_function_selector$
+}
+THROW 60
+
+.internal-alias :main_external, -1
+.internal :main_external
+PUSHROOT
+CTOS
+SBITS
+NEQINT 1
+SETGLOB 6
+PUSHSLICE x8000000000000000000000000000000000000000000000000000000000000000001_
+SETGLOB 9
+OVER
+CALLREF {
+	CALL $c4_to_c7_with_init_storage$
+}
+LDU 1 ; haveSign msgSlice
+SWAP
+PUSHCONT {
+	PUSHINT 512
+	LDSLICEX ; signatureSlice msgSlice
+	DUP
+	HASHSU ; signatureSlice msgSlice hashMsgSlice
+	ROT
+	GETGLOB 2
+	CHKSIGNU ; msgSlice isSigned
+	THROWIFNOT 40 ; msgSlice
+}
+IF
+LDU 64 ; timestamp msgSlice
+SWAP
+CALL $replay_protection_macro$
+LDU 32 ; expireAt msgSlice
+SWAP
+NOW ; msgSlice expireAt now
+GREATER ; msgSlice expireAt>now
+THROWIFNOT 57
+LDU 32 ; funcId body
+SWAP
+CALLREF {
+	CALL $public_function_selector$
+}
+THROW 60
+
+.macro public_function_selector
+DUP
+PUSHINT 2073458374
+LEQ
+IFJMPREF {
+	DUP
+	PUSHINT 322401098
+	LEQ
+	IFJMPREF {
+		DUP
+		PUSHINT 5549867
+		EQUAL
+		IFJMPREF {
+			CALL $sendAnswer$
+		}
+		DUP
+		PUSHINT 179050749
+		EQUAL
+		IFJMPREF {
+			CALL $addOrdinaryStake$
+		}
+		DUP
+		PUSHINT 317981552
+		EQUAL
+		IFJMPREF {
+			CALL $withdrawAll$
+		}
+		DUP
+		PUSHINT 322401098
+		EQUAL
+		IFJMPREF {
+			CALL $cancelWithdrawal$
+		}
+	}
+	DUP
+	PUSHINT 1236773697
+	LEQ
+	IFJMPREF {
+		DUP
+		PUSHINT 679516195
+		EQUAL
+		IFJMPREF {
+			CALL $ticktock$
+		}
+		DUP
+		PUSHINT 991229515
+		EQUAL
+		IFJMPREF {
+			CALL $getData$
+		}
+		DUP
+		PUSHINT 1081738786
+		EQUAL
+		IFJMPREF {
+			CALL $addLockStake$
+		}
+		DUP
+		PUSHINT 1236773697
+		EQUAL
+		IFJMPREF {
+			CALL $setLockDonor$
+		}
+	}
+	DUP
+	PUSHINT 1749338091
+	LEQ
+	IFJMPREF {
+		DUP
+		PUSHINT 1315323457
+		EQUAL
+		IFJMPREF {
+			CALL $outOfGas$
+		}
+		DUP
+		PUSHINT 1473519816
+		EQUAL
+		IFJMPREF {
+			CALL $setVestingDonor$
+		}
+		DUP
+		PUSHINT 1745928014
+		EQUAL
+		IFJMPREF {
+			CALL $transferStake$
+		}
+		DUP
+		PUSHINT 1749338091
+		EQUAL
+		IFJMPREF {
+			CALL $receiveFunds$
+		}
+	}
+	DUP
+	PUSHINT 2073458374
+	LEQ
+	IFJMPREF {
+		DUP
+		PUSHINT 1756716863
+		EQUAL
+		IFJMPREF {
+			CALL $constructor$
+		}
+		DUP
+		PUSHINT 1903783592
+		EQUAL
+		IFJMPREF {
+			CALL $addVestingStake$
+		}
+		DUP
+		PUSHINT 1961843497
+		EQUAL
+		IFJMPREF {
+			CALL $withdrawFromPoolingRound$
+		}
+		DUP
+		PUSHINT 2073458374
+		EQUAL
+		IFJMPREF {
+			CALL $withdrawPart$
+		}
+	}
+}
+DUP
+PUSHINT 2142639138
+EQUAL
+IFJMPREF {
+	CALL $error$
+}
+
