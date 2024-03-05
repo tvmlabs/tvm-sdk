@@ -1,0 +1,176 @@
+name: Prerelease
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+env:
+  release: ${{ startsWith(github.ref, 'refs/tags/') && github.repository == 'tvmlabs/tvm-cli' }}
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        result:
+          - tvm-cli-darwin-arm64
+          - tvm-cli-darwin-amd64
+          - tvm-cli-linux-arm64
+          - tvm-cli-linux-amd64
+
+        include:
+          # targets
+          - result: tvm-cli-darwin-arm64
+            target: aarch64-apple-darwin
+            os: macos-13
+
+          - result: tvm-cli-darwin-amd64
+            target: x86_64-apple-darwin
+            os: macos-13
+
+          - result: tvm-cli-linux-arm64
+            target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+
+          - result: tvm-cli-linux-amd64
+            target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+
+    name: Build ${{ matrix.target }}
+
+    env:
+      CARGO_TERM_COLOR: always
+      SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }} # Setting this env var enables the caching
+      RUSTC_WRAPPER: sccache
+      CMAKE_C_COMPILER_LAUNCHER: sccache
+      CMAKE_CXX_COMPILER_LAUNCHER: sccache
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set VERSION
+        id: version
+        run: |
+          echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
+
+      - name: Configure sccache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Setup cargo cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: builder-${{ runner.os }}-cargo
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux tools
+        if: startsWith(matrix.os, 'ubuntu-')
+        env:
+          packages: >-
+            build-essential
+            cmake
+            curl
+            clang
+            librocksdb-dev
+            protobuf-compiler
+            python3-pip
+        run: |
+          sudo apt update -yq
+          sudo apt install -yq $packages
+          pip3 install ziglang
+          [[ -f ~/.cargo/bin/cargo-zigbuild ]] || cargo install cargo-zigbuild
+
+      - name: Install MacOS tools
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          brew install protobuf
+
+      - name: Build Binary
+        env:
+          CARGO_INCREMENTAL: 0  # important for cache size too
+          CARGO_NET_RETRY: 10
+          RUST_BACKTRACE: full
+          RUSTUP_MAX_RETRIES: 10
+        run: |
+          cargo update
+
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            cargo build -r --target ${{ matrix.target }}
+          else
+            cargo zigbuild -r --target ${{ matrix.target }}
+          fi
+
+          ls -lA target/${{ matrix.target }}/release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: target/${{ matrix.target }}/release/tvm-cli
+          name: ${{ matrix.result }}
+          if-no-files-found: error
+          retention-days: 3
+
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+
+  release:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        result:
+          - tvm-cli-darwin-arm64
+          - tvm-cli-darwin-amd64
+          - tvm-cli-linux-arm64
+          - tvm-cli-linux-amd64
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Make archive
+        run: |
+          chmod +x ${{ matrix.result }}/*
+          cd ${{ matrix.result }}
+          tar -czvf ../${{ matrix.result }}.tar.gz .
+
+      - name: Upload Draft
+        uses: softprops/action-gh-release@v1
+        if: env.release != 'true'
+        with:
+          draft: true
+          tag_name: ${{ github.ref_name }}-${{ github.run_number }}
+          files: |
+            ${{ matrix.result }}.tar.gz
+          body: ""
+
+      - name: Upload Prerelease
+        uses: softprops/action-gh-release@v1
+        if: env.release == 'true'
+        with:
+          prerelease: true
+          tag_name: ${{ github.ref_name }}
+          files: |
+            ${{ matrix.result }}.tar.gz
+          name: "Version: ${{ github.ref_name }}"
+          body: ""

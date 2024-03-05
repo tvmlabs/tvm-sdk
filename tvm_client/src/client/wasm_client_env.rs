@@ -562,14 +562,4 @@ impl KeyValueStorage for LocalStorage {
         })
         .await?
     }
-
-    async fn remove(&self, key: &str) -> ClientResult<()> {
-        let local_storage_path = self.local_storage_path.clone();
-        let storage_name = self.storage_name.clone();
-        let key = key.to_owned();
-        execute_spawned(move || async move {
-            Self::remove_internal(&local_storage_path, &storage_name, &key).await
-        })
-        .await?
-    }
 }
