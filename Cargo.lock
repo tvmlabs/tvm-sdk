@@ -3611,7 +3611,6 @@ name = "tvm_block_json"
 version = "1.47.0"
 dependencies = [
  "anyhow",
- "base64 0.21.7",
  "hex",
  "lazy_static",
  "log",
@@ -3794,7 +3793,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tl_codegen"
-version = "0.1.0"
+version = "1.47.0"
 dependencies = [
  "crc 1.8.1",
  "pom",

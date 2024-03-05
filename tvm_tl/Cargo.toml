@@ -1,3 +1,0 @@
-[workspace]
-resolver = "2"
-members = ["tvm_api", "tvm_tl_codegen"]
