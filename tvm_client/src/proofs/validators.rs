@@ -1,9 +1,7 @@
 use std::collections::HashMap;
-use std::convert::TryInto;
 use std::fmt::Display;
 use std::fmt::Formatter;
 
-// use ed25519_dalek::Digest;
 use sha2::Digest;
 use tvm_block::CatchainConfig;
 use tvm_block::ConfigParams;

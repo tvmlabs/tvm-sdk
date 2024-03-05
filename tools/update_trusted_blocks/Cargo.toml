@@ -13,7 +13,7 @@ bincode = "1.3.3"
 serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true
-tokio = { default-features = false, features = ["sync", "fs"], workspace = true }
+tokio = { workspace = true, features = ["sync", "fs"] }
 #
 tvm_client = { path = "../../tvm_client" }
 tvm_types.workspace = true

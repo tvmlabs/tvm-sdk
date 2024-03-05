@@ -11,7 +11,6 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::iter::FromIterator;
 #[allow(unused_imports)]
 use std::str::FromStr;
 use std::sync::Arc;

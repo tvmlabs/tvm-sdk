@@ -1,9 +1,13 @@
 [package]
 name = "tvm_client"
-version = "1.46.0"
-authors = ["TON Labs LTD <support@tonlabs.io>"]
-edition = "2018"
 build = "build.rs"
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [lib]
 name = "tvm_client"
@@ -49,31 +53,31 @@ hex = "0.4.3"
 hmac = "0.11.0"
 lazy_static = "1.4.0"
 libsecp256k1 = "0.6.0"
-log = "0.4.20"
-lru = "0.12.2"
-num-bigint = "0.4.4"
-num-derive = "0.4.1"
-num-traits = "0.2.17"
+log.workspace = true
+lru.workspace = true
+num-bigint.workspace = true
+num-derive.workspace = true
+num-traits.workspace = true
 pbkdf2 = { default-features = false, version = "0.8.0" }
 rand = "0.8.5"
 regex = "1.10.3"
 scrypt = { default-features = false, version = "0.7.0" }
-serde = "1.0.196"
-serde_derive = "1.0.196"
-serde_json = "1.0.113"
-serde_repr = "0.1.18"
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+serde_repr.workspace = true
 sha2 = "0.9.5"
-thiserror = "1.0.56"
+thiserror.workspace = true
 tiny-bip39 = "1.0.0"
-tokio = { default-features = false, features = ["sync"], workspace = true }
-tokio-stream = { default-features = false, workspace = true }
+tokio = { features = ["sync"], workspace = true }
+tokio-stream = { workspace = true }
 zeroize = { features = ["zeroize_derive"], version = "1.7.0" }
 
 # optional
 zstd = { default-features = false, optional = true, version = "0.13.0" }
 
 # optional for std
-reqwest = { features = ["cookies"], optional = true, workspace = true, default-features = false }
+reqwest = { features = ["cookies"], optional = true, workspace = true }
 tokio-tungstenite = { optional = true, workspace = true }
 
 # optional for wasm

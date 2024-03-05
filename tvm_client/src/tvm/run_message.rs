@@ -10,7 +10,6 @@
 // limitations under the License.
 //
 
-use std::convert::TryFrom;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 

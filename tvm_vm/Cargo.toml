@@ -47,5 +47,3 @@ name = "benchmarks"
 
 [lib]
 bench = false
-
-[profile]

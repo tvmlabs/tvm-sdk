@@ -42,6 +42,7 @@ clap = "4.4"
 crc = "3.0.1"
 curve25519-dalek = "4.1.1"
 diffy = "0.3.0"
+dirs = "5.0.1"
 ed25519 = "2.2.3"
 ed25519-dalek = "2.1.0"
 external-ip = "4.2.0"
@@ -49,9 +50,11 @@ extfmt = "0.1.1"
 futures = "0.3"
 hex = "0.4.3"
 hex-literal = "0.4.1"
+json5 = "0.4.1"
 lazy_static = "1.4.0"
 lockfree = { git = "https://github.com/tvmlabs/lockfree" }
 log = "0.4.20"
+lru = "0.12.3"
 metrics = "0.22"
 num = "0.4.1"
 num-bigint = "0.4.4"
@@ -61,6 +64,7 @@ ordered-float = "4.2.0"
 proc-macro2 = "1.0.78"
 quote = "1.0.35"
 rand = "0.8.5"
+regex = "1.10.3"
 reqwest = "0.11.24"
 secstr = "0.5.1"
 serde = "1.0.197"
@@ -73,8 +77,6 @@ smallvec = "1.13.1"
 thiserror = "1.0.56"
 tokio = "1.36.0"
 tokio-stream = "0.1.14"
-# TODO: upgrade when reqwest supports http@1, tungstenite 0.20.0 is the last version which uses http@0.2
-tokio-tungstenite = "=0.20.0"
 x25519-dalek = "2.0.0"
 zstd = "0.13.0"
 #
@@ -92,3 +94,7 @@ tvm_sdk = { path = "./tvm_sdk" }
 tvm_struct = { path = "./tvm_struct" }
 tvm_types = { path = "./tvm_types" }
 tvm_vm = { path = "./tvm_vm" }
+
+[workspace.dependencies.tokio-tungstenite]
+# TODO: upgrade when reqwest supports http@1, tungstenite 0.20.0 is the last version which uses http@0.2
+version = "<0.21.0"

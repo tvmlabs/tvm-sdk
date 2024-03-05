@@ -13,6 +13,6 @@ external-ip.workspace = true
 log.workspace = true
 log4rs = { version = "1.2.0" }
 serde_json.workspace = true
-tokio = { workspace = true, default-features = false }
+tokio.workspace = true
 #
-tvm_types = { workspace = true, default-features = false }
+tvm_types.workspace = true
