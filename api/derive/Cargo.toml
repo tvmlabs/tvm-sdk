@@ -1,14 +1,18 @@
 [package]
-authors = ["TON Labs LTD <support@tonlabs.io>"]
-edition = "2018"
 name = "api_derive"
-version = "1.46.0"
+#
+version.workspace = true
+rust-version.workspace = true
+#
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
 api_info = { path = "../info" }
-proc-macro2 = "1.0.78"
-quote = "1.0.35"
-serde_json = "1.0.113"
+proc-macro2.workspace = true
+quote.workspace = true
+serde_json.workspace = true
 syn = { features = ["full"], version = "1.0" }
 
 [lib]
