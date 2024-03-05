@@ -20,15 +20,15 @@ api_info = { path = "../api/info" }
 tvm_client_processing = { default-features = false, path = "../tvm_client_processing" }
 tvm_sdk = { default-features = false, path = "../tvm_sdk" }
 
-tvm_abi = { git = "https://github.com/tvmlabs/tvm-abi", tag = "3.0.0" }
-tvm_block = { git = "https://github.com/tvmlabs/tvm-block", tag = "2.0.0" }
-tvm_block_json = { git = "https://github.com/tvmlabs/tvm-block-json", tag = "0.8.0" }
-tvm_executor = { features = ["signature_with_id"], git = "https://github.com/tvmlabs/tvm-executor", tag = "2.0.0" }
-tvm_struct = { git = "https://github.com/tvmlabs/tvm-struct", tag = "2.0.0" }
-tvm_types = { git = "https://github.com/tvmlabs/tvm-types", tag = "3.0.1" }
-tvm_vm = { features = ["signature_with_id", "signature_no_check"], git = "https://github.com/tvmlabs/tvm-vm", tag = "2.0.0" }
+tvm_abi.workspace = true
+tvm_block.workspace = true
+tvm_block_json.workspace = true
+tvm_executor = { workspace = true, features = ["signature_with_id"] }
+tvm_struct.workspace = true
+tvm_types.workspace = true
+tvm_vm = { workspace = true, features = ["signature_with_id", "signature_no_check"] }
 
-lockfree = { git = "https://github.com/tvmlabs/lockfree", package = "lockfree" }
+lockfree.workspace = true
 sodalite = { features = ["rand"], git = "https://github.com/tvmlabs/sodalite" }
 
 

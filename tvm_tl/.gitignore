@@ -1,0 +1,5 @@
+.idea
+target
+Cargo.lock
+/ton_api/src/ton
+/ton_api/src/ton.rs

@@ -1,0 +1,11 @@
+/.idea/
+/target/
+/Cargo.lock
+/libs/
+/*.dylib
+/*.so
+/*.lib
+/*.dll
+
+.vscode
+.DS_Store
