@@ -3705,47 +3705,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tvm-cli"
-version = "1.47.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "async-trait",
- "base64 0.21.7",
- "chrono",
- "clap 2.34.0",
- "futures",
- "hex",
- "indicatif",
- "lazy_static",
- "log",
- "num-bigint",
- "num-traits",
- "predicates",
- "qr2term",
- "regex",
- "reqwest",
- "serde",
- "serde_derive",
- "serde_json",
- "simplelog",
- "string-error",
- "thiserror",
- "tokio",
- "tokio-retry",
- "tvm_abi",
- "tvm_assembler",
- "tvm_block",
- "tvm_block_json",
- "tvm_client",
- "tvm_executor",
- "tvm_sdk",
- "tvm_types",
- "tvm_vm",
- "url",
-]
-
-[[package]]
 name = "tvm_abi"
 version = "1.47.0"
 dependencies = [
@@ -3836,6 +3795,47 @@ dependencies = [
  "tvm_api",
  "tvm_block",
  "tvm_types",
+]
+
+[[package]]
+name = "tvm_cli"
+version = "1.47.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "async-trait",
+ "base64 0.21.7",
+ "chrono",
+ "clap 2.34.0",
+ "futures",
+ "hex",
+ "indicatif",
+ "lazy_static",
+ "log",
+ "num-bigint",
+ "num-traits",
+ "predicates",
+ "qr2term",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "simplelog",
+ "string-error",
+ "thiserror",
+ "tokio",
+ "tokio-retry",
+ "tvm_abi",
+ "tvm_assembler",
+ "tvm_block",
+ "tvm_block_json",
+ "tvm_client",
+ "tvm_executor",
+ "tvm_sdk",
+ "tvm_types",
+ "tvm_vm",
+ "url",
 ]
 
 [[package]]

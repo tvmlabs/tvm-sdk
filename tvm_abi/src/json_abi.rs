@@ -49,7 +49,7 @@ pub fn encode_function_call(
         HashMap::new()
     };
     // add public key into header
-    if sign_key.is_some() && header_tokens.get("pubkey").is_none() {
+    if sign_key.is_some() && !header_tokens.contains_key("pubkey") {
         header_tokens.insert(
             "pubkey".to_owned(),
             TokenValue::PublicKey(sign_key.as_ref().map(|sign_key| sign_key.verifying_key())),

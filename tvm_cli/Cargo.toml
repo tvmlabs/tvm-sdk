@@ -10,7 +10,7 @@ keywords = [
     "tvmlabs",
     "solidity",
 ]
-name = "tvm-cli"
+name = "tvm_cli"
 readme = "README.md"
 #
 version.workspace = true
