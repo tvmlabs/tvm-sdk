@@ -89,7 +89,7 @@ proc-macro2 = "1.0.78"
 quote = "1.0.35"
 rand = "0.8.5"
 regex = "1.10.3"
-reqwest = "0.11.24"
+reqwest = { version = "0.11.24", default-features = false, features = ["rustls-tls-webpki-roots"] }
 secstr = "0.5.1"
 serde = "1.0.197"
 serde_derive = "1.0.197"
@@ -99,7 +99,7 @@ sha2 = "0.10.8"
 similar = "2.4.0"
 smallvec = "1.13.1"
 thiserror = "1.0.56"
-tokio = "1.36.0"
+tokio = { default-features = false, version = "1.36.0" }
 tokio-stream = "0.1.14"
 x25519-dalek = "2.0.0"
 zstd = "0.13.0"
@@ -110,7 +110,7 @@ tvm_assembler = { path = "./tvm_assembler" }
 tvm_block = { path = "./tvm_block" }
 tvm_block_json = { path = "./tvm_block_json" }
 tvm_cli = { path = "./tvm_cli" }
-tvm_client = { path = "./tvm_client" }
+tvm_client = { path = "./tvm_client", default-features = false }
 tvm_client_processing = { path = "./tvm_client_processing" }
 tvm_common = { path = "./tvm_common" }
 tvm_executor = { path = "./tvm_executor" }
