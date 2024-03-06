@@ -111,9 +111,9 @@ jobs:
           cargo update
 
           if [[ "${{ runner.os }}" == "macOS" ]]; then
-            cargo build -r --target ${{ matrix.target }}
+            cargo build -r --target ${{ matrix.target }} --bin tvm-cli
           else
-            cargo zigbuild -r --target ${{ matrix.target }}
+            cargo zigbuild -r --target ${{ matrix.target }} --bin tvm-cli
           fi
 
           ls -lA target/${{ matrix.target }}/release
