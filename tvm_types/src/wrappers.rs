@@ -257,3 +257,36 @@ impl<'a> Crc32<'a> {
 pub fn crc32_digest(data: impl AsRef<[u8]>) -> u32 {
     CASTAGNOLI.checksum(data.as_ref())
 }
+
+#[cfg(test)]
+mod tests {
+    use base64::decoded_len_estimate;
+
+    use super::*;
+
+    #[test]
+    fn test_base64_encode_decode() {
+        let input = "hello world тест 1234567890!@#$%^&*";
+        let decoded = base64_decode(base64_encode(input)).unwrap();
+        assert_eq!(decoded, input.as_bytes());
+    }
+
+    #[test]
+    fn test_base64_decode_encode() {
+        // convert number to base64 string
+        let input = format!("{:X}", 1234567890);
+        let output = base64_encode(base64_decode(&input).unwrap());
+        assert_eq!(input, output);
+    }
+
+    #[test]
+    fn test_base64_decode_to_slice() {
+        let input = "hello world тест 1234567890!@#$%^&*";
+        let encoded = base64_encode(input);
+
+        let mut output = vec![0; decoded_len_estimate(encoded.len())];
+
+        base64_decode_to_slice(encoded, &mut output).unwrap();
+        assert_eq!(input.as_bytes(), &output);
+    }
+}
