@@ -37,6 +37,10 @@ missing_debug_implementations = "warn"
 debug = 1
 inherits = 'release'
 
+[profile.test]
+# IMPORTANT! because with "abort" it will complain https://github.com/rust-lang/cargo/issues/6313
+panic = "unwind"
+
 [profile.dev]
 # Must always use panic = "abort" to avoid needing to define the unstable eh_personality lang item.
 panic = "abort"
