@@ -62,9 +62,21 @@ pub fn base64_decode(input: impl AsRef<[u8]>) -> Result<Vec<u8>> {
 
 pub fn base64_decode_to_slice(input: impl AsRef<[u8]>, output: &mut [u8]) -> Result<()> {
     let result = STANDARD.decode_slice(input, output)?;
-    if output.len() != result {
-        fail!("not enough bytes to decode only {}", result)
+    if output.len() < result {
+        fail!("not enough bytes to decode {} bytes", result)
     }
+    Ok(())
+}
+
+/// Decodes the Base64-encoded data, ensuring the exact size of the output slice
+/// after truncation
+pub fn base64_decode_to_exact_slice(input: impl AsRef<[u8]>, output: &mut [u8]) -> Result<()> {
+    let mut buf = Vec::new();
+    STANDARD.decode_vec(input, &mut buf)?;
+    if output.len() != buf.len() {
+        fail!("result slice {} != output buffer length {}", buf.len(), output.len())
+    }
+    output.copy_from_slice(&buf[..output.len()]);
     Ok(())
 }
 
@@ -288,5 +300,24 @@ mod tests {
 
         base64_decode_to_slice(encoded, &mut output).unwrap();
         assert_eq!(input.as_bytes(), &output);
+    }
+
+    #[test]
+    fn test_base64_decode_to_exact_slice() {
+        let input = "hello world тест 1234567890!@#$%^&*";
+        let encoded = base64_encode(input);
+
+        let mut output = vec![0; decoded_len_estimate(encoded.len())];
+
+        base64_decode_to_exact_slice(encoded, &mut output).unwrap();
+        assert_eq!(input.as_bytes(), &output);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_output_length_mismatch() {
+        let input = "SGVsbG8gV29ybGQh"; // Base64-encoded string "Hello World!"
+        let mut output = [0u8; 10]; // Output buffer with a length mismatch
+        base64_decode_to_exact_slice(input, &mut output).unwrap();
     }
 }
