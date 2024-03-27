@@ -78,6 +78,11 @@ fn default_config() -> Config {
     Config::new()
 }
 
+#[cfg(feature = "acki-nacki")]
+fn default_gossip_seeds() -> Vec<String> {
+    Vec::new()
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Config {
     #[serde(default = "default_url")]
@@ -122,6 +127,9 @@ pub struct Config {
     ////////////////////////////////
     #[serde(default = "default_endpoints")]
     pub endpoints: Vec<String>,
+    #[cfg(feature = "acki-nacki")]
+    #[serde(default = "default_gossip_seeds")]
+    pub gossip_seeds: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -170,6 +178,8 @@ impl Default for Config {
             debug_fail: default_trace(),
             project_id: None,
             access_key: None,
+            #[cfg(feature = "acki-nacki")]
+            gossip_seeds: default_gossip_seeds(),
         }
     }
 }
@@ -214,6 +224,8 @@ impl Config {
             debug_fail: default_trace(),
             project_id: None,
             access_key: None,
+            #[cfg(feature = "acki-nacki")]
+            gossip_seeds: default_gossip_seeds(),
         }
     }
 }
@@ -468,6 +480,18 @@ pub fn set_config(
         let empty: Vec<String> = Vec::new();
         config.endpoints = full_config.endpoints_map.get(&resolved_url).unwrap_or(&empty).clone();
         config.url = resolved_url;
+    }
+    #[cfg(feature = "acki-nacki")]
+    if let Some(s) = matches.value_of("GOSSIP_SEEDS") {
+        config.gossip_seeds = s
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .split(',')
+            .map(|s| s.trim()
+                .trim_start_matches('"')
+                .trim_end_matches('"')
+                .to_string())
+            .collect();
     }
     if let Some(s) = matches.value_of("ADDR") {
         config.addr = Some(s.to_string());
