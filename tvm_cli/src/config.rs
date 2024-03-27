@@ -487,10 +487,7 @@ pub fn set_config(
             .trim_start_matches('[')
             .trim_end_matches(']')
             .split(',')
-            .map(|s| s.trim()
-                .trim_start_matches('"')
-                .trim_end_matches('"')
-                .to_string())
+            .map(|s| s.trim().trim_start_matches('"').trim_end_matches('"').to_string())
             .collect();
     }
     if let Some(s) = matches.value_of("ADDR") {

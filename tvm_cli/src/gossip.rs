@@ -1,6 +1,10 @@
 #[cfg(feature = "acki-nacki")]
-use chitchat::{ChitchatId, ClusterStateSnapshot};
-use serde_derive::{Deserialize, Serialize};
+use chitchat::ChitchatId;
+#[cfg(feature = "acki-nacki")]
+use chitchat::ClusterStateSnapshot;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
 use crate::config::Config;
 
 #[cfg(feature = "acki-nacki")]
