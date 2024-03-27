@@ -187,7 +187,7 @@ checksum = "5ad32ce52e4161730f7098c077cd2ed6229b5804ccf99e5366be1ab72a98b4e1"
 
 [[package]]
 name = "api_derive"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "api_info",
  "proc-macro2",
@@ -198,7 +198,7 @@ dependencies = [
 
 [[package]]
 name = "api_info"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "serde",
  "serde_derive",
@@ -207,7 +207,7 @@ dependencies = [
 
 [[package]]
 name = "api_test"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "api_derive",
  "api_info",
@@ -489,6 +489,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17cc5e6b5ab06331c33589842070416baa137e8b0eb912b008cfd4a78ada7919"
 
 [[package]]
+name = "chitchat"
+version = "0.8.0"
+source = "git+https://github.com/gosh-sh/chitchat.git#c3ac1874aac9479f1602c2a5a652873b4e4310c1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bytes",
+ "itertools 0.12.1",
+ "rand 0.8.5",
+ "serde",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -738,7 +754,7 @@ dependencies = [
  "clap 4.5.1",
  "criterion-plot",
  "is-terminal",
- "itertools",
+ "itertools 0.10.5",
  "num-traits",
  "once_cell",
  "oorandom",
@@ -759,7 +775,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b50826342786a51a89e2da3a28f1c32b06e387201bc2d19791f622c673706b1"
 dependencies = [
  "cast",
- "itertools",
+ "itertools 0.10.5",
 ]
 
 [[package]]
@@ -1729,6 +1745,15 @@ name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
 dependencies = [
  "either",
 ]
@@ -3561,6 +3586,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -3706,7 +3732,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_abi"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3722,7 +3748,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_api"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -3742,7 +3768,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_assembler"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "clap 4.5.1",
@@ -3758,7 +3784,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -3778,7 +3804,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block_json"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "hex",
@@ -3799,12 +3825,13 @@ dependencies = [
 
 [[package]]
 name = "tvm_cli"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "assert_cmd",
  "async-trait",
  "base64 0.21.7",
+ "chitchat",
  "chrono",
  "clap 2.34.0",
  "futures",
@@ -3840,7 +3867,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "aes",
  "anyhow",
@@ -3908,7 +3935,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client_processing"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "api_derive",
  "api_info",
@@ -3927,7 +3954,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_common"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "external-ip",
  "log",
@@ -3939,7 +3966,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_executor"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "lazy_static",
@@ -3952,7 +3979,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_sdk"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "api_derive",
@@ -3976,7 +4003,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_struct"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "hex-literal",
  "thiserror",
@@ -3986,7 +4013,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tl_codegen"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "crc 1.8.1",
  "pom",
@@ -3999,7 +4026,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_types"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "aes-ctr",
  "anyhow",
@@ -4029,7 +4056,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_vm"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "anyhow",
  "criterion",
@@ -4127,7 +4154,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "update_trusted_blocks"
-version = "1.47.0"
+version = "1.47.1"
 dependencies = [
  "bincode",
  "serde",
