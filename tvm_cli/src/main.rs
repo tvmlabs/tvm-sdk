@@ -34,6 +34,8 @@ mod run;
 mod sendfile;
 mod test;
 mod voting;
+#[cfg(feature = "acki-nacki")]
+mod gossip;
 
 use std::collections::BTreeMap;
 use std::env;
@@ -94,6 +96,8 @@ use crate::account::dump_accounts;
 use crate::config::resolve_net_name;
 use crate::config::FullConfig;
 use crate::getconfig::gen_update_config_message;
+#[cfg(feature = "acki-nacki")]
+use crate::gossip::resolve_gossip_to_endpoints;
 use crate::helpers::abi_from_matches_or_config;
 use crate::helpers::default_config_name;
 use crate::helpers::global_config_path;
@@ -675,6 +679,13 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(config_endpoint_cmd)
         .subcommand(alias_cmd);
 
+    #[cfg(feature = "acki-nacki")]
+    let config_cmd = config_cmd
+        .arg(Arg::with_name("GOSSIP_SEEDS")
+            .long("--gossip-seeds")
+            .takes_value(true)
+            .help("Gossip seeds to work with Acki-Nacki network."));
+
     let account_cmd = SubCommand::with_name("account")
         .setting(AppSettings::AllowLeadingHyphen)
         .about("Obtains and prints account information.")
@@ -1031,6 +1042,9 @@ async fn command_parser(matches: &ArgMatches<'_>, is_json: bool) -> Result<(), S
     }
 
     full_config.config.is_json |= is_json;
+    #[cfg(feature = "acki-nacki")]
+    let mut config = &mut full_config.config;
+    #[cfg(not(feature = "acki-nacki"))]
     let config = &mut full_config.config;
 
     if let Some(url) = matches.value_of("NETWORK") {
@@ -1039,6 +1053,9 @@ async fn command_parser(matches: &ArgMatches<'_>, is_json: bool) -> Result<(), S
         config.endpoints = full_config.endpoints_map.get(&resolved_url).unwrap_or(&empty).clone();
         config.url = resolved_url;
     }
+
+    #[cfg(feature = "acki-nacki")]
+    resolve_gossip_to_endpoints(&mut config).await.map_err(|e| e.to_string())?;
 
     if let Some(m) = matches.subcommand_matches("callx") {
         return callx_command(m, &full_config).await;
