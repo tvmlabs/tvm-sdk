@@ -26,6 +26,8 @@ mod depool;
 mod depool_abi;
 mod genaddr;
 mod getconfig;
+#[cfg(feature = "acki-nacki")]
+mod gossip;
 mod helpers;
 mod message;
 mod multisig;
@@ -34,8 +36,6 @@ mod run;
 mod sendfile;
 mod test;
 mod voting;
-#[cfg(feature = "acki-nacki")]
-mod gossip;
 
 use std::collections::BTreeMap;
 use std::env;
@@ -680,11 +680,12 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(alias_cmd);
 
     #[cfg(feature = "acki-nacki")]
-    let config_cmd = config_cmd
-        .arg(Arg::with_name("GOSSIP_SEEDS")
+    let config_cmd = config_cmd.arg(
+        Arg::with_name("GOSSIP_SEEDS")
             .long("--gossip-seeds")
             .takes_value(true)
-            .help("Gossip seeds to work with Acki-Nacki network."));
+            .help("Gossip seeds to work with Acki-Nacki network."),
+    );
 
     let account_cmd = SubCommand::with_name("account")
         .setting(AppSettings::AllowLeadingHyphen)
