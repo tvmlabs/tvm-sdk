@@ -82,13 +82,16 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
-
+        let start = std::time::Instant::now();
+        log::trace!(target: "executor", "execute_with_params start");
         let revert_anycast =
             self.config.global_version() >= VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
 
         let in_msg =
             in_msg.ok_or_else(|| error!("Ordinary transaction must have input message"))?;
+        log::trace!(target: "executor", "execute_with_params before serialize message {}", start.elapsed().as_millis());
         let in_msg_cell = in_msg.serialize()?; // TODO: get from outside
+        log::trace!(target: "executor", "execute_with_params after serialize message {}", start.elapsed().as_millis());
         let is_masterchain = in_msg.dst_workchain_id() == Some(MASTERCHAIN_ID);
         log::debug!(
             target: "executor",
@@ -138,7 +141,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         tr.set_logical_time(lt);
         tr.set_now(params.block_unixtime);
         tr.set_in_msg_cell(in_msg_cell.clone());
-
+        log::trace!(target: "executor", "execute_with_params create transaction {}", start.elapsed().as_millis());
         let mut description = TransactionDescrOrdinary {
             credit_first: !bounce,
             ..TransactionDescrOrdinary::default()
@@ -163,7 +166,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
             tr.add_fee_grams(&in_fwd_fee)?;
         }
-
+        log::trace!(target: "executor", "execute_with_params start credit {}", start.elapsed().as_millis());
         if description.credit_first && !is_ext_msg {
             description.credit_ph = match self.credit_phase(
                 account,
@@ -178,6 +181,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 ))),
             };
         }
+        log::trace!(target: "executor", "execute_with_params after credit {}", start.elapsed().as_millis());
         let due_before_storage = account.due_payment().map(|due| due.as_u128());
         let mut storage_fee;
         description.storage_ph = match self.storage_phase(
@@ -202,7 +206,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 e
             ))),
         };
-
+        log::trace!(target: "executor", "execute_with_params after storage {}", start.elapsed().as_millis());
         if description.credit_first && msg_balance.grams > acc_balance.grams {
             msg_balance.grams = acc_balance.grams;
         }
@@ -237,6 +241,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             now = Instant::now();
         }
 
+        log::trace!(target: "executor", "execute_with_params start prepare for compute {}", start.elapsed().as_millis());
         let config_params = self.config().raw_config().config_params.data().cloned();
         let mut smc_info = SmartContractInfo {
             capabilities: self.config().raw_config().capabilities(),
@@ -264,6 +269,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             .push(StackItem::Slice(in_msg.body().unwrap_or_default()))
             .push(boolean!(is_ext_msg));
         log::debug!(target: "executor", "compute_phase");
+        log::trace!(target: "executor", "execute_with_params start compute {}", start.elapsed().as_millis());
         let (compute_ph, actions, new_data) = match self.compute_phase(
             Some(in_msg),
             account,
@@ -285,12 +291,14 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
             }
         };
+        log::trace!(target: "executor", "execute_with_params after compute {}", start.elapsed().as_millis());
         let mut out_msgs = vec![];
         let mut action_phase_processed = false;
         let mut compute_phase_gas_fees = Grams::zero();
         let mut copyleft = None;
         description.compute_ph = compute_ph;
         let mut new_acc_balance = acc_balance.clone();
+        log::trace!(target: "executor", "execute_with_params before action {}", start.elapsed().as_millis());
         description.action = match &description.compute_ph {
             TrComputePhase::Vm(phase) => {
                 compute_phase_gas_fees = phase.gas_fees;
@@ -343,7 +351,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             self.timings[1].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
             now = Instant::now();
         }
-
+        log::trace!(target: "executor", "execute_with_params check aborted {}", start.elapsed().as_millis());
         description.aborted = match description.action.as_ref() {
             Some(phase) => {
                 log::debug!(
@@ -366,6 +374,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         };
 
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
+        log::trace!(target: "executor", "execute_with_params before bounce {}", start.elapsed().as_millis());
         if description.aborted && !is_ext_msg && bounce {
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
@@ -401,6 +410,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
             }
         }
+        log::trace!(target: "executor", "execute_with_params after bounce {}", start.elapsed().as_millis());
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {
             *account = Account::default();
         }
@@ -415,6 +425,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         self.timings[2].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
         tr.set_copyleft_reward(copyleft);
+        log::trace!(target: "executor", "execute_with_params end {}", start.elapsed().as_millis());
         Ok(tr)
     }
 

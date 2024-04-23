@@ -183,17 +183,26 @@ pub trait TransactionExecutor {
         account_root: &mut Cell,
         params: ExecuteParams,
     ) -> Result<Transaction> {
+        let mut start = std::time::Instant::now();
+        log::trace!(target: "executor", "execute_with_libs_and_params start");
         let old_hash = account_root.repr_hash();
+        log::trace!(target: "executor", "execute_with_libs_and_params account hash {}", start.elapsed().as_millis());
         let mut account = Account::construct_from_cell(account_root.clone())?;
+        log::trace!(target: "executor", "execute_with_libs_and_params construct account {}", start.elapsed().as_millis());
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
+        log::trace!(target: "executor", "execute_with_libs_and_params execute finished {}", start.elapsed().as_millis());
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
         } else {
             account.update_storage_stat()?;
         }
+        log::trace!(target: "executor", "execute_with_libs_and_params update storage {}", start.elapsed().as_millis());
         *account_root = account.serialize()?;
+        log::trace!(target: "executor", "execute_with_libs_and_params serialize account {}", start.elapsed().as_millis());
         let new_hash = account_root.repr_hash();
+        log::trace!(target: "executor", "execute_with_libs_and_params account hash {}", start.elapsed().as_millis());
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
+        log::trace!(target: "executor", "execute_with_libs_and_params write state update {}", start.elapsed().as_millis());
         Ok(transaction)
     }
 
