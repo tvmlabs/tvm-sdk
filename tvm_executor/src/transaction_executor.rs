@@ -379,10 +379,13 @@ pub trait TransactionExecutor {
         is_special: bool,
         params: &ExecuteParams,
     ) -> Result<(TrComputePhase, Option<Cell>, Option<Cell>)> {
+        let start = std::time::Instant::now();
+        log::debug!(target: "executor", "compute_phase start");
         let mut result_acc = acc.clone();
         let mut vm_phase = TrComputePhaseVm::default();
         let init_code_hash = self.config().has_capability(GlobalCapabilities::CapInitCodeHash);
         let libs_disabled = !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
+
         let is_external = if let Some(msg) = msg {
             if let Some(header) = msg.int_header() {
                 log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
@@ -414,12 +417,15 @@ pub trait TransactionExecutor {
         };
         log::debug!(target: "executor", "acc balance: {}", acc_balance.grams);
         log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
+        log::debug!(target: "executor", "compute_phase prepare {}", start.elapsed().as_millis());
         let is_ordinary = self.ordinary_transaction();
         if acc_balance.grams.is_zero() {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
+
         let gas_config = self.config().get_gas_config(is_masterchain);
+        log::debug!(target: "executor", "compute_phase get gas config {}", start.elapsed().as_millis());
         let gas = init_gas(
             acc_balance.grams.as_u128(),
             msg_balance.grams.as_u128(),
@@ -433,6 +439,7 @@ pub trait TransactionExecutor {
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
 
+        log::debug!(target: "executor", "compute_phase before compute state {}", start.elapsed().as_millis());
         let mut libs = vec![];
         if let Some(msg) = msg {
             if let Some(state_init) = msg.state_init() {
@@ -447,6 +454,7 @@ pub trait TransactionExecutor {
                 return Ok((TrComputePhase::skipped(reason), None, None));
             }
         };
+        log::debug!(target: "executor", "compute_phase after compute state {}", start.elapsed().as_millis());
 
         vm_phase.gas_credit = match gas.get_gas_credit() as u32 {
             0 => None,
@@ -471,6 +479,7 @@ pub trait TransactionExecutor {
                 return Ok((TrComputePhase::Vm(vm_phase), None, None));
             }
         }
+        log::debug!(target: "executor", "compute_phase code prepared {}", start.elapsed().as_millis());
         let code = result_acc.get_code().unwrap_or_default();
         let data = result_acc.get_data().unwrap_or_default();
         libs.push(result_acc.libraries().inner());
@@ -481,6 +490,8 @@ pub trait TransactionExecutor {
         if let Some(init_code_hash) = result_acc.init_code_hash() {
             smc_info.set_init_code_hash(init_code_hash.clone());
         }
+
+        log::debug!(target: "executor", "compute_phase prepare vm {}", start.elapsed().as_millis());
         let mut vm = VMSetup::with_context(
             SliceData::load_cell(code)?,
             VMSetupContext {
@@ -512,7 +523,9 @@ pub trait TransactionExecutor {
             vm.set_trace_callback(move |engine, info| trace_callback(engine, info));
         }
 
+        log::debug!(target: "executor", "compute_phase start execution {}", start.elapsed().as_millis());
         let result = vm.execute();
+        log::debug!(target: "executor", "compute_phase after execution {}", start.elapsed().as_millis());
         log::trace!(target: "executor", "execute result: {:?}", result);
         let mut raw_exit_arg = None;
         match result {
@@ -543,6 +556,7 @@ pub trait TransactionExecutor {
         vm_phase.success = vm.get_committed_state().is_committed();
         log::debug!(target: "executor", "VM terminated with exit code {}", vm_phase.exit_code);
 
+        log::debug!(target: "executor", "compute_phase exit code {}", start.elapsed().as_millis());
         // calc gas fees
         let gas = vm.get_gas();
         let credit = gas.get_gas_credit() as u32;
@@ -594,6 +608,8 @@ pub trait TransactionExecutor {
         };
 
         *acc = result_acc;
+
+        log::debug!(target: "executor", "compute_phase finish {}", start.elapsed().as_millis());
         Ok((TrComputePhase::Vm(vm_phase), out_actions, new_data))
     }
 
