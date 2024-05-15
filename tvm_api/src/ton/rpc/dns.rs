@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.resolve`\n\n```text\ndns.resolve account_address:accountAddress name:string category:int32 ttl:int32 = dns.Resolved;\n```\n"]
 pub struct Resolve {
@@ -13,7 +12,6 @@ impl crate::BareSerialize for Resolve {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf71acecf)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Resolve { account_address, name, category, ttl } = self;
         _ser.write_bare::<crate::ton::accountaddress::AccountAddress>(account_address)?;
@@ -38,12 +36,15 @@ impl crate::BoxedDeserialize for Resolve {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf71acecf)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf71acecf) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf71acecf) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Resolve {

@@ -10,7 +10,9 @@
 // limitations under the License.
 
 use std::borrow::Cow;
+use std::time::Instant;
 
+use bls12_381::Bls12;
 use ed25519::Signature;
 use ed25519_dalek::Verifier;
 use ed25519_dalek::VerifyingKey;
@@ -30,6 +32,11 @@ use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
+
+
+
+
+
 
 const PUBLIC_KEY_BITS: usize = PUBLIC_KEY_BYTES * 8;
 const SIGNATURE_BITS: usize = SIGNATURE_BYTES * 8;
@@ -107,6 +114,8 @@ fn preprocess_signed_data<'a>(_engine: &Engine, data: &'a [u8]) -> Cow<'a, [u8]>
 }
 
 fn check_signature(engine: &mut Engine, name: &'static str, hash: bool) -> Status {
+    let start = Instant::now();
+
     engine.load_instruction(Instruction::new(name))?;
     fetch_stack(engine, 3)?;
     let pub_key = engine
@@ -148,28 +157,34 @@ fn check_signature(engine: &mut Engine, name: &'static str, hash: bool) -> Statu
     let signature = match Signature::try_from(&signature[..SIGNATURE_BYTES]) {
         Ok(signature) => signature,
         Err(err) =>
-        {
-            #[allow(clippy::collapsible_else_if)]
-            if engine.check_capabilities(GlobalCapabilities::CapsTvmBugfixes2022 as u64) {
-                engine.cc.stack.push(boolean!(false));
-                return Ok(());
-            } else {
-                if hash {
+            {
+                #[allow(clippy::collapsible_else_if)]
+                if engine.check_capabilities(GlobalCapabilities::CapsTvmBugfixes2022 as u64) {
                     engine.cc.stack.push(boolean!(false));
                     return Ok(());
                 } else {
-                    return err!(ExceptionCode::FatalError, "cannot load signature {}", err);
+                    if hash {
+                        engine.cc.stack.push(boolean!(false));
+                        return Ok(());
+                    } else {
+                        return err!(ExceptionCode::FatalError, "cannot load signature {}", err);
+                    }
                 }
             }
-        }
     };
     let data = preprocess_signed_data(engine, data.as_ref());
     #[cfg(feature = "signature_no_check")]
-    let result =
+        let result =
         engine.modifiers.chksig_always_succeed || pub_key.verify(&data, &signature).is_ok();
     #[cfg(not(feature = "signature_no_check"))]
-    let result = pub_key.verify(&data, &signature).is_ok();
+        let result = pub_key.verify(&data, &signature).is_ok();
+
+    let duration = start.elapsed();
+
+    println!("Time elapsed by chcksign is: {:?}", duration);
+
     engine.cc.stack.push(boolean!(result));
+    println!("%%%result: {:?}", result);
     Ok(())
 }
 

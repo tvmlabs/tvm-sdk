@@ -22,6 +22,7 @@ use crate::executor::blockchain::*;
 use crate::executor::config::*;
 use crate::executor::continuation::*;
 use crate::executor::crypto::*;
+use crate::executor::zk::*;
 use crate::executor::currency::*;
 use crate::executor::deserialization::*;
 use crate::executor::dictionary::*;
@@ -932,6 +933,7 @@ impl Handlers {
                 .set(0x02, execute_sha256u)
                 .set(0x10, execute_chksignu)
                 .set(0x11, execute_chksigns)
+                .set(0x12, execute_vrgrth16)
                 .set(0x40, execute_cdatasizeq)
                 .set(0x41, execute_cdatasize)
                 .set(0x42, execute_sdatasizeq)

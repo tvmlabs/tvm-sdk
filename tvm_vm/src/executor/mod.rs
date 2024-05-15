@@ -36,6 +36,7 @@ mod stack;
 mod tuple;
 mod types;
 
+
 pub use engine::*;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -45,6 +46,8 @@ use tvm_types::Result;
 #[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
+pub mod zk;
+
 
 pub trait Mask {
     fn bit(&self, bits: Self) -> bool;

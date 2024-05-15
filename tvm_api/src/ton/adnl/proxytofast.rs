@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.proxyToFast`\n\n```text\nadnl.proxyToFast ip:int port:int date:int signature:int256 = adnl.ProxyToSign;\n```\n"]
 pub struct ProxyToFast {
@@ -13,7 +12,6 @@ impl crate::BareSerialize for ProxyToFast {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb4ee21d6)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ProxyToFast { ip, port, date, signature } = self;
         _ser.write_bare::<crate::ton::int>(ip)?;
@@ -36,7 +34,6 @@ impl crate::BareDeserialize for ProxyToFast {
 }
 impl crate::IntoBoxed for ProxyToFast {
     type Boxed = crate::ton::adnl::ProxyToSign;
-
     fn into_boxed(self) -> crate::ton::adnl::ProxyToSign {
         crate::ton::adnl::ProxyToSign::Adnl_ProxyToFast(self)
     }

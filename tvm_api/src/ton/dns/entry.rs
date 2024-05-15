@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.entry`\n\n```text\ndns.entry name:string category:int32 entry:dns.EntryData = dns.Entry;\n```\n"]
 pub struct Entry {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for Entry {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x922eaab8)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Entry { name, category, entry } = self;
         _ser.write_bare::<crate::ton::string>(name)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for Entry {
 }
 impl crate::IntoBoxed for Entry {
     type Boxed = crate::ton::dns::Entry;
-
     fn into_boxed(self) -> crate::ton::dns::Entry {
         crate::ton::dns::Entry::Dns_Entry(self)
     }

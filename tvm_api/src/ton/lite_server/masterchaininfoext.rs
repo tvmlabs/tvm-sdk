@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.masterchainInfoExt`\n\n```text\nliteServer.masterchainInfoExt mode:# version:int capabilities:long last:tonNode.blockIdExt last_utime:int now:int state_root_hash:int256 init:tonNode.zeroStateIdExt = liteServer.MasterchainInfoExt;\n```\n"]
 pub struct MasterchainInfoExt {
@@ -17,7 +16,6 @@ impl crate::BareSerialize for MasterchainInfoExt {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa8cce0f5)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let MasterchainInfoExt {
             mode,
@@ -57,7 +55,6 @@ impl crate::BareDeserialize for MasterchainInfoExt {
 }
 impl crate::IntoBoxed for MasterchainInfoExt {
     type Boxed = crate::ton::lite_server::MasterchainInfoExt;
-
     fn into_boxed(self) -> crate::ton::lite_server::MasterchainInfoExt {
         crate::ton::lite_server::MasterchainInfoExt::LiteServer_MasterchainInfoExt(self)
     }

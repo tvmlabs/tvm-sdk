@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `logStreamFile`\n\n```text\nlogStreamFile path:string max_file_size:int53 = LogStream;\n```\n"]
 pub struct LogStreamFile {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for LogStreamFile {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8ff02a56)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let LogStreamFile { path, max_file_size } = self;
         _ser.write_bare::<crate::ton::string>(path)?;
@@ -30,7 +28,6 @@ impl crate::BareDeserialize for LogStreamFile {
 }
 impl crate::IntoBoxed for LogStreamFile {
     type Boxed = crate::ton::LogStream;
-
     fn into_boxed(self) -> crate::ton::LogStream {
         crate::ton::LogStream::LogStreamFile(self)
     }

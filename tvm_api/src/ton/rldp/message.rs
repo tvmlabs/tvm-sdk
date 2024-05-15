@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `rldp.answer`\n\n```text\nrldp.answer query_id:int256 data:bytes = rldp.Message;\n```\n"]
 pub struct Answer {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for Answer {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa3fc5c03)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Answer { query_id, data } = self;
         _ser.write_bare::<crate::ton::int256>(query_id)?;
@@ -30,7 +28,6 @@ impl crate::BareDeserialize for Answer {
 }
 impl crate::IntoBoxed for Answer {
     type Boxed = crate::ton::rldp::Message;
-
     fn into_boxed(self) -> crate::ton::rldp::Message {
         crate::ton::rldp::Message::Rldp_Answer(self)
     }
@@ -46,7 +43,6 @@ impl crate::BareSerialize for Message {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7d1bcd1e)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Message { id, data } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -65,7 +61,6 @@ impl crate::BareDeserialize for Message {
 }
 impl crate::IntoBoxed for Message {
     type Boxed = crate::ton::rldp::Message;
-
     fn into_boxed(self) -> crate::ton::rldp::Message {
         crate::ton::rldp::Message::Rldp_Message(self)
     }
@@ -83,7 +78,6 @@ impl crate::BareSerialize for Query {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8a794d69)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Query { query_id, max_answer_size, timeout, data } = self;
         _ser.write_bare::<crate::ton::int256>(query_id)?;
@@ -106,7 +100,6 @@ impl crate::BareDeserialize for Query {
 }
 impl crate::IntoBoxed for Query {
     type Boxed = crate::ton::rldp::Message;
-
     fn into_boxed(self) -> crate::ton::rldp::Message {
         crate::ton::rldp::Message::Rldp_Query(self)
     }
