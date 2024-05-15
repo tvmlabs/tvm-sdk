@@ -582,7 +582,7 @@ impl Namespace {
 
         let contents = quote!(#( #items )*);
 
-        let filename = if has_submodules { path.join("mod.rs") } else { path.with_extension("rs") };
+        let filename = if has_submodules { path.join("zk_stuff") } else { path.with_extension("rs") };
 
         let dir = filename
             .parent()

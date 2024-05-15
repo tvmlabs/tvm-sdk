@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.signature`\n\n```text\nengine.validator.signature signature:bytes = engine.validator.Signature;\n```\n"]
 pub struct Signature {
@@ -15,7 +14,6 @@ impl crate::BareSerialize for Signature {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xfb6c4328)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Signature { signature } = self;
         _ser.write_bare::<crate::ton::bytes>(signature)?;
@@ -32,7 +30,6 @@ impl crate::BareDeserialize for Signature {
 }
 impl crate::IntoBoxed for Signature {
     type Boxed = crate::ton::engine::validator::Signature;
-
     fn into_boxed(self) -> crate::ton::engine::validator::Signature {
         crate::ton::engine::validator::Signature::Engine_Validator_Signature(self)
     }

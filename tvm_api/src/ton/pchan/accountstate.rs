@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `pchan.accountState`\n\n```text\npchan.accountState config:pchan.config state:pchan.State description:string = AccountState;\n```\n"]
 pub struct AccountState {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for AccountState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x60226f78)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let AccountState { config, state, description } = self;
         _ser.write_bare::<crate::ton::pchan::config::Config>(config)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for AccountState {
 }
 impl crate::IntoBoxed for AccountState {
     type Boxed = crate::ton::AccountState;
-
     fn into_boxed(self) -> crate::ton::AccountState {
         crate::ton::AccountState::Pchan_AccountState(self)
     }

@@ -18,7 +18,7 @@ members = [
     "tvm_struct",
     "tvm_tl_codegen",
     "tvm_types",
-    "tvm_vm", "vrgrth",
+    "tvm_vm", "tvm_tests",
 ]
 [workspace.package]
 version = "1.47.0"
@@ -125,6 +125,10 @@ tvm_sdk = { path = "./tvm_sdk" }
 tvm_struct = { path = "./tvm_struct" }
 tvm_types = { path = "./tvm_types" }
 tvm_vm = { path = "./tvm_vm" }
+
+
+
+
 
 [workspace.dependencies.tokio-tungstenite]
 # TODO: upgrade when reqwest supports http@1, tungstenite 0.20.0 is the last version which uses http@0.2

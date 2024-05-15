@@ -36,7 +36,6 @@ mod stack;
 mod tuple;
 mod types;
 
-pub mod zk_stuff;
 
 pub use engine::*;
 use tvm_types::BuilderData;
@@ -47,7 +46,7 @@ use tvm_types::Result;
 #[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
-mod zk;
+pub mod zk;
 
 
 pub trait Mask {

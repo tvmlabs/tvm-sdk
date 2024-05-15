@@ -44,11 +44,8 @@ ark-std = "0.4.0"
 #
 tvm_block.workspace = true
 tvm_types.workspace = true
-#fastcrypto-zkp = "0.1.3"
 fastcrypto = "0.1.8"
 num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
-
-im = "15"
 
 once_cell = "1.16"
 schemars = "0.8.10"

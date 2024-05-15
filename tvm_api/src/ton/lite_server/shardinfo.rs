@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.shardInfo`\n\n```text\nliteServer.shardInfo id:tonNode.blockIdExt shardblk:tonNode.blockIdExt shard_proof:bytes shard_descr:bytes = liteServer.ShardInfo;\n```\n"]
 pub struct ShardInfo {
@@ -13,7 +12,6 @@ impl crate::BareSerialize for ShardInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x9fe6cd84)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ShardInfo { id, shardblk, shard_proof, shard_descr } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
@@ -36,7 +34,6 @@ impl crate::BareDeserialize for ShardInfo {
 }
 impl crate::IntoBoxed for ShardInfo {
     type Boxed = crate::ton::lite_server::ShardInfo;
-
     fn into_boxed(self) -> crate::ton::lite_server::ShardInfo {
         crate::ton::lite_server::ShardInfo::LiteServer_ShardInfo(self)
     }

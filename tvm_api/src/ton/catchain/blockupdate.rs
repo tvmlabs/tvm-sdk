@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.blockUpdate`\n\n```text\ncatchain.blockUpdate block:catchain.block = catchain.Update;\n```\n"]
 pub struct BlockUpdate {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for BlockUpdate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x236758c4)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockUpdate { block } = self;
         _ser.write_bare::<crate::ton::catchain::block::Block>(block)?;
@@ -27,7 +25,6 @@ impl crate::BareDeserialize for BlockUpdate {
 }
 impl crate::IntoBoxed for BlockUpdate {
     type Boxed = crate::ton::catchain::Update;
-
     fn into_boxed(self) -> crate::ton::catchain::Update {
         crate::ton::catchain::Update::Catchain_BlockUpdate(self)
     }
