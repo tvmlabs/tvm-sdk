@@ -12,6 +12,9 @@
 
 use std::sync::Arc;
 
+use futures::future;
+use futures::stream::FuturesUnordered;
+use futures::StreamExt;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 
@@ -155,47 +158,53 @@ impl SendingMessage {
 
         let addresses = context.get_server_link()?.get_addresses_for_sending().await;
         let mut last_result = None::<ClientResult<String>>;
-        let succeeded_limit = context.config.network.sending_endpoint_count as usize;
+
+        let mut futures = FuturesUnordered::new();
         let mut succeeded = Vec::new();
-        'sending: for selected_addresses in addresses.chunks(succeeded_limit) {
-            let mut futures = vec![];
-            for address in selected_addresses {
-                let context = context.clone();
-                let message = self.clone();
-                futures.push(Box::pin(async move {
-                    let result = message.send_to_address(context.clone(), address).await;
-                    if result.is_err() {
-                        context
-                            .get_server_link()?
-                            .update_stat(&[address.to_owned()], EndpointStat::MessageUndelivered)
-                            .await;
-                    }
-                    result
-                }));
-            }
-            for result in futures::future::join_all(futures).await {
-                if let Ok(address) = &result {
-                    succeeded.push(address.clone());
-                    if succeeded.len() >= succeeded_limit {
-                        break 'sending;
-                    }
+
+        for address in addresses {
+            let message = self.clone();
+            let context = context.clone();
+            futures.push(tokio::spawn(async move {
+                let result = message.send_to_address(&context, &address).await;
+                if result.is_err() {
+                    context
+                        .get_server_link()?
+                        .update_stat(&[address.to_owned()], EndpointStat::MessageUndelivered)
+                        .await;
                 }
-                last_result = Some(result);
+                result
+            }));
+        }
+
+        while let Some(join_result) = futures.next().await {
+            let Ok(result) = join_result else {
+                // NOTE: if JoinHandle fails to join we still can get success from another
+                // parallel request
+                continue;
+            };
+
+            if let Ok(address) = result {
+                succeeded.push(address);
+                break; // exit after first success
             }
+            last_result = Some(result);
         }
-        if !succeeded.is_empty() {
-            return Ok(succeeded);
-        }
-        Err(if let Some(Err(err)) = last_result {
-            err
+
+        if succeeded.is_empty() {
+            if let Some(Err(err)) = last_result {
+                Err(err)
+            } else {
+                Err(Error::block_not_found("no endpoints".to_string()))
+            }
         } else {
-            Error::block_not_found("no endpoints".to_string())
-        })
+            Ok(succeeded)
+        }
     }
 
     async fn send_to_address(
         &self,
-        context: Arc<ClientContext>,
+        context: &Arc<ClientContext>,
         address: &str,
     ) -> ClientResult<String> {
         let link = context.get_server_link()?;
