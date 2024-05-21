@@ -660,8 +660,9 @@ impl ServerLink {
         let latency_detection_required = if endpoint.is_some() {
             false
         } else if self.state.has_multiple_endpoints() {
-            let endpoint = self.state.get_query_endpoint().await?;
-            self.client_env.now_ms() > endpoint.next_latency_detection_time()
+            // let endpoint = self.state.get_query_endpoint().await?;
+            // self.client_env.now_ms() > endpoint.next_latency_detection_time()
+            false
         } else {
             false
         };
