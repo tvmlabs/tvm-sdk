@@ -12,7 +12,6 @@
 
 use std::sync::Arc;
 
-use futures::future;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
 use tvm_block::Message;

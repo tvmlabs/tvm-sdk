@@ -22,9 +22,7 @@ const TESTNET: &str = "net.evercloud.dev";
 const MAINNET: &str = "main.evercloud.dev";
 pub const LOCALNET: &str = "http://127.0.0.1/";
 
-fn default_url() -> String {
-    TESTNET.to_string()
-}
+fn default_url() -> String { "".to_string() }
 
 fn default_wc() -> i32 {
     0
@@ -188,7 +186,7 @@ impl Default for FullConfig {
 impl Config {
     fn new() -> Self {
         let url = default_url();
-        let endpoints = FullConfig::default_map()[&url].clone();
+        let endpoints = default_endpoints();
         Config {
             url,
             wc: default_wc(),
@@ -370,9 +368,8 @@ pub fn clear_config(
     let config = &mut full_config.config;
     let is_json = config.is_json || is_json;
     if matches.is_present("URL") {
-        let url = default_url();
-        config.endpoints = FullConfig::default_map()[&url].clone();
-        config.url = url;
+        config.endpoints = default_endpoints();
+        config.url = default_url();
     }
     if matches.is_present("ADDR") {
         config.addr = None;
@@ -468,6 +465,11 @@ pub fn set_config(
         let empty: Vec<String> = Vec::new();
         config.endpoints = full_config.endpoints_map.get(&resolved_url).unwrap_or(&empty).clone();
         config.url = resolved_url;
+    }
+    if let Some(s) = matches.value_of("ENDPOINTS") {
+        let endpoints_vec = s.split(',')
+            .map(|s| s.to_string()).collect();
+        config.endpoints = endpoints_vec;
     }
     if let Some(s) = matches.value_of("ADDR") {
         config.addr = Some(s.to_string());

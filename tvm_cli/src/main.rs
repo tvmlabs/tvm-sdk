@@ -671,6 +671,10 @@ async fn main_internal() -> Result<(), String> {
             .long("--access_key")
             .takes_value(true)
             .help("Project secret or JWT in Evercloud (dashboard.evercloud.dev)."))
+        .arg(Arg::with_name("ENDPOINTS")
+            .long("--endpoints")
+            .takes_value(true)
+            .help("List of network endpoint divided with comma"))
         .subcommand(config_clear_cmd)
         .subcommand(config_endpoint_cmd)
         .subcommand(alias_cmd);
@@ -1526,11 +1530,9 @@ fn config_command(
             full_config.print_aliases();
             return Ok(());
         } else {
-            if matches.args.is_empty() {
-                return Err("At least one option must be specified".to_string());
+            if !matches.args.is_empty() {
+                result = set_config(&mut full_config, matches, is_json);
             }
-
-            result = set_config(&mut full_config, matches, is_json);
         }
     }
     println!(
