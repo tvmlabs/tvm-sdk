@@ -620,23 +620,22 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
 }
 ///////////////////////////////////
 
-//this vrgrth16 works only for zklogin stuff for now, later it will be reworked for universal purpose
-pub(crate) fn execute_vrgrth16(engine: &mut Engine) -> Status {
+pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     let start = Instant::now();
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16"))?;
     fetch_stack(engine, 3);
 
     let vk_index = engine.cmd.var(0).as_small_integer().unwrap() as u32;
-    println!("from vrgrth16 vk_index: {:?}", vk_index);
+    println!("from vergrth16 vk_index: {:?}", vk_index);
 
 
     let public_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let public_inputs_as_bytes = unpack_data_from_cell(public_inputs_slice, engine)?;
-    println!("from vrgrth16 value public_inputs_as_bytes: {:?}", public_inputs_as_bytes);
+    println!("from vergrth16 value public_inputs_as_bytes: {:?}", public_inputs_as_bytes);
 
     let proof_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
     let proof_as_bytes = unpack_data_from_cell(proof_slice, engine)?;
-    println!("from vrgrth16 value proof_as_bytes: {:?}", proof_as_bytes);
+    println!("from vergrth16 value proof_as_bytes: {:?}", proof_as_bytes);
 
     let proof = ProofWrapper::deserialize(&proof_as_bytes)?;
     let public_inputs = FieldElementWrapper::deserialize_vector(&public_inputs_as_bytes)?;

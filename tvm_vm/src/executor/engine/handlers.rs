@@ -386,7 +386,9 @@ impl Handlers {
                 .set(0x22, execute_diff_patch_binary_not_quiet)
                 .set(0x23, execute_diff_patch_binary_zip_not_quiet)
                 .set(0x24, execute_diff_patch_binary_quiet)
-                .set(0x25, execute_diff_patch_binary_zip_quiet);
+                .set(0x25, execute_diff_patch_binary_zip_quiet)
+                .set(0x26, execute_vergrth16);
+
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
@@ -933,7 +935,6 @@ impl Handlers {
                 .set(0x02, execute_sha256u)
                 .set(0x10, execute_chksignu)
                 .set(0x11, execute_chksigns)
-                .set(0x12, execute_vrgrth16)
                 .set(0x40, execute_cdatasizeq)
                 .set(0x41, execute_cdatasize)
                 .set(0x42, execute_sdatasizeq)

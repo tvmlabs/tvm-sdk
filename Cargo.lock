@@ -5348,6 +5348,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "tvm_tests"
+version = "1.47.0"
+dependencies = [
+ "anyhow",
+ "ark-std",
+ "base64 0.13.1",
+ "base64ct",
+ "criterion 0.4.0",
+ "diffy 0.2.2",
+ "ed25519 1.5.3",
+ "ed25519-dalek 1.0.1",
+ "fastcrypto",
+ "fastcrypto-zkp",
+ "hex",
+ "lazy_static",
+ "libloading 0.6.7",
+ "log",
+ "log4rs",
+ "num",
+ "num-traits",
+ "pprof 0.11.1",
+ "pretty_assertions",
+ "rand 0.7.3",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_repr",
+ "similar",
+ "tvm_assembler",
+ "tvm_block",
+ "tvm_types",
+ "tvm_vm",
+ "zstd 0.11.2+zstd.1.5.2",
+]
+
+[[package]]
 name = "tvm_tl_codegen"
 version = "1.47.0"
 dependencies = [
@@ -5596,42 +5632,6 @@ name = "void"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
-
-[[package]]
-name = "vrgrth"
-version = "1.47.0"
-dependencies = [
- "anyhow",
- "ark-std",
- "base64 0.13.1",
- "base64ct",
- "criterion 0.4.0",
- "diffy 0.2.2",
- "ed25519 1.5.3",
- "ed25519-dalek 1.0.1",
- "fastcrypto",
- "fastcrypto-zkp",
- "hex",
- "lazy_static",
- "libloading 0.6.7",
- "log",
- "log4rs",
- "num",
- "num-traits",
- "pprof 0.11.1",
- "pretty_assertions",
- "rand 0.7.3",
- "serde",
- "serde_derive",
- "serde_json",
- "serde_repr",
- "similar",
- "tvm_assembler",
- "tvm_block",
- "tvm_types",
- "tvm_vm",
- "zstd 0.11.2+zstd.1.5.2",
-]
 
 [[package]]
 name = "wait-timeout"

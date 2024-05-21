@@ -1,5 +1,5 @@
 [package]
-name = "vrgrth"
+name = "tvm_tests"
 version.workspace = true
 rust-version.workspace = true
 authors.workspace = true
@@ -10,8 +10,8 @@ license.workspace = true
 [dependencies]
 tvm_block.workspace = true
 tvm_types.workspace = true
-tvm_assembler.workspace = true
-tvm_vm.workspace = true
+tvm_assembler = {workspace = true, features = ['gosh']}
+tvm_vm = {workspace = true, features = ['gosh']}
 
 libloading = '0.6'
 log4rs = '1.2'

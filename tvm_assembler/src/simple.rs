@@ -93,7 +93,6 @@ impl Engine {
         CHKNAN                               => 0xC5
         CHKDEPTH                             => 0x69
         CHKSIGNS                             => 0xF9, 0x11
-        VERGRTH16                            => 0xF9, 0x12
         CHKSIGNU                             => 0xF9, 0x10
         CHKTUPLE                             => 0x6F, 0x30
         CMP                                  => 0xBF
@@ -838,6 +837,8 @@ impl Engine {
         DIFF_PATCH_BINARY_ZIP                => 0xC7, 0x23
         DIFF_PATCH_BINARYQ                   => 0xC7, 0x24
         DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
+        VERGRTH16                            => 0xC7, 0x26
+
     }
 
     /*#[cfg(feature = "groth")]
