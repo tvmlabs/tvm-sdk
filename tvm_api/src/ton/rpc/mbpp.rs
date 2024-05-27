@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `mbpp.submitNewShardBlock`\n\n```text\nmbpp.submitNewShardBlock block:mbpp.newShardBlock last_known_mc_block:int = mbpp.NewMcBlock;\n```\n"]
 pub struct SubmitNewShardBlock {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for SubmitNewShardBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0e70042c)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let SubmitNewShardBlock { block, last_known_mc_block } = self;
         _ser.write_bare::<crate::ton::mbpp::newshardblock::NewShardBlock>(block)?;
@@ -30,15 +32,12 @@ impl crate::BoxedDeserialize for SubmitNewShardBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0e70042c)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x0e70042c) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x0e70042c) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for SubmitNewShardBlock {

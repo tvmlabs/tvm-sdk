@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.Broadcast`\n\n```text\noverlay.broadcast src:PublicKey certificate:overlay.Certificate flags:int data:bytes date:int signature:bytes = overlay.Broadcast;\n\noverlay.broadcastFec src:PublicKey certificate:overlay.Certificate data_hash:int256 data_size:int flags:int\n          data:bytes seqno:int fec:fec.Type date:int signature:bytes = overlay.Broadcast;\n\noverlay.broadcastFecShort src:PublicKey certificate:overlay.Certificate broadcast_hash:int256 part_data_hash:int256 seqno:int signature:bytes = overlay.Broadcast;\n\noverlay.broadcastNotFound = overlay.Broadcast;\n\noverlay.fec.completed hash:int256 = overlay.Broadcast;\n\noverlay.fec.received hash:int256 = overlay.Broadcast;\n\noverlay.unicast data:bytes = overlay.Broadcast;\n```\n"]
 pub enum Broadcast {
@@ -17,6 +18,7 @@ impl Broadcast {
             _ => None,
         }
     }
+
     pub fn certificate(&self) -> Option<&crate::ton::overlay::Certificate> {
         match self {
             Broadcast::Overlay_Broadcast(ref x) => Some(&x.certificate),
@@ -25,6 +27,7 @@ impl Broadcast {
             _ => None,
         }
     }
+
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
             Broadcast::Overlay_Broadcast(ref x) => Some(&x.data),
@@ -33,18 +36,21 @@ impl Broadcast {
             _ => None,
         }
     }
+
     pub fn data_hash(&self) -> Option<&crate::ton::int256> {
         match self {
             Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.data_hash),
             _ => None,
         }
     }
+
     pub fn data_size(&self) -> Option<&crate::ton::int> {
         match self {
             Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.data_size),
             _ => None,
         }
     }
+
     pub fn date(&self) -> Option<&crate::ton::int> {
         match self {
             Broadcast::Overlay_Broadcast(ref x) => Some(&x.date),
@@ -52,12 +58,14 @@ impl Broadcast {
             _ => None,
         }
     }
+
     pub fn fec(&self) -> Option<&crate::ton::fec::Type> {
         match self {
             Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.fec),
             _ => None,
         }
     }
+
     pub fn flags(&self) -> Option<&crate::ton::int> {
         match self {
             Broadcast::Overlay_Broadcast(ref x) => Some(&x.flags),
@@ -65,6 +73,7 @@ impl Broadcast {
             _ => None,
         }
     }
+
     pub fn hash(&self) -> Option<&crate::ton::int256> {
         match self {
             Broadcast::Overlay_Fec_Completed(ref x) => Some(&x.hash),
@@ -72,12 +81,14 @@ impl Broadcast {
             _ => None,
         }
     }
+
     pub fn part_data_hash(&self) -> Option<&crate::ton::int256> {
         match self {
             Broadcast::Overlay_BroadcastFecShort(ref x) => Some(&x.part_data_hash),
             _ => None,
         }
     }
+
     pub fn seqno(&self) -> Option<&crate::ton::int> {
         match self {
             Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.seqno),
@@ -85,6 +96,7 @@ impl Broadcast {
             _ => None,
         }
     }
+
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
             Broadcast::Overlay_Broadcast(ref x) => Some(&x.signature),
@@ -93,6 +105,7 @@ impl Broadcast {
             _ => None,
         }
     }
+
     pub fn src(&self) -> Option<&crate::ton::PublicKey> {
         match self {
             Broadcast::Overlay_Broadcast(ref x) => Some(&x.src),
@@ -133,6 +146,7 @@ impl crate::BoxedDeserialize for Broadcast {
             crate::ConstructorNumber(0x33534e24),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -172,6 +186,7 @@ impl BroadcastList {
             BroadcastList::Overlay_BroadcastList(ref x) => &x.hashes,
         }
     }
+
     pub fn only(self) -> crate::ton::overlay::broadcastlist::BroadcastList {
         match self {
             BroadcastList::Overlay_BroadcastList(x) => x,
@@ -197,6 +212,7 @@ impl crate::BoxedDeserialize for BroadcastList {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x18d1dedf)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -222,18 +238,21 @@ impl Certificate {
             _ => None,
         }
     }
+
     pub fn issued_by(&self) -> Option<&crate::ton::PublicKey> {
         match self {
             Certificate::Overlay_Certificate(ref x) => Some(&x.issued_by),
             _ => None,
         }
     }
+
     pub fn max_size(&self) -> Option<&crate::ton::int> {
         match self {
             Certificate::Overlay_Certificate(ref x) => Some(&x.max_size),
             _ => None,
         }
     }
+
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
             Certificate::Overlay_Certificate(ref x) => Some(&x.signature),
@@ -259,6 +278,7 @@ impl crate::BoxedDeserialize for Certificate {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe09ed731), crate::ConstructorNumber(0x32dabccf)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -284,6 +304,7 @@ impl crate::BoxedDeserialize for Option<crate::ton::overlay::certificate::Certif
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x32dabccf), crate::ConstructorNumber(0xe09ed731)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -308,21 +329,25 @@ impl CertificateId {
             CertificateId::Overlay_CertificateId(ref x) => &x.expire_at,
         }
     }
+
     pub fn max_size(&self) -> &crate::ton::int {
         match self {
             CertificateId::Overlay_CertificateId(ref x) => &x.max_size,
         }
     }
+
     pub fn node(&self) -> &crate::ton::int256 {
         match self {
             CertificateId::Overlay_CertificateId(ref x) => &x.node,
         }
     }
+
     pub fn overlay_id(&self) -> &crate::ton::int256 {
         match self {
             CertificateId::Overlay_CertificateId(ref x) => &x.overlay_id,
         }
     }
+
     pub fn only(self) -> crate::ton::overlay::certificateid::CertificateId {
         match self {
             CertificateId::Overlay_CertificateId(x) => x,
@@ -348,6 +373,7 @@ impl crate::BoxedDeserialize for CertificateId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8fae60b9)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -371,6 +397,7 @@ impl Message {
             Message::Overlay_Message(ref x) => &x.overlay,
         }
     }
+
     pub fn only(self) -> crate::ton::overlay::message::Message {
         match self {
             Message::Overlay_Message(x) => x,
@@ -394,6 +421,7 @@ impl crate::BoxedDeserialize for Message {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x75252420)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -417,21 +445,25 @@ impl Node {
             Node::Overlay_Node(ref x) => &x.id,
         }
     }
+
     pub fn overlay(&self) -> &crate::ton::int256 {
         match self {
             Node::Overlay_Node(ref x) => &x.overlay,
         }
     }
+
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             Node::Overlay_Node(ref x) => &x.signature,
         }
     }
+
     pub fn version(&self) -> &crate::ton::int {
         match self {
             Node::Overlay_Node(ref x) => &x.version,
         }
     }
+
     pub fn only(self) -> crate::ton::overlay::node::Node {
         match self {
             Node::Overlay_Node(x) => x,
@@ -455,6 +487,7 @@ impl crate::BoxedDeserialize for Node {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb86b8a83)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -478,6 +511,7 @@ impl Nodes {
             Nodes::Overlay_Nodes(ref x) => &x.nodes,
         }
     }
+
     pub fn only(self) -> crate::ton::overlay::nodes::Nodes {
         match self {
             Nodes::Overlay_Nodes(x) => x,
@@ -501,6 +535,7 @@ impl crate::BoxedDeserialize for Nodes {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe487290e)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `pub.aes`\n\n```text\npub.aes key:int256 = PublicKey;\n```\n"]
 pub struct Aes {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Aes {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x2dbcadd4)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Aes { key } = self;
         _ser.write_bare::<crate::ton::int256>(key)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Aes {
 }
 impl crate::IntoBoxed for Aes {
     type Boxed = crate::ton::PublicKey;
+
     fn into_boxed(self) -> crate::ton::PublicKey {
         crate::ton::PublicKey::Pub_Aes(self)
     }
@@ -39,6 +42,7 @@ impl crate::BareSerialize for Bls {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x99d1d8e9)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Bls { bls_key } = self;
         _ser.write_bare::<crate::ton::bytes>(bls_key)?;
@@ -55,6 +59,7 @@ impl crate::BareDeserialize for Bls {
 }
 impl crate::IntoBoxed for Bls {
     type Boxed = crate::ton::PublicKey;
+
     fn into_boxed(self) -> crate::ton::PublicKey {
         crate::ton::PublicKey::Pub_Bls(self)
     }
@@ -69,6 +74,7 @@ impl crate::BareSerialize for Ed25519 {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4813b4c6)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Ed25519 { key } = self;
         _ser.write_bare::<crate::ton::int256>(key)?;
@@ -85,6 +91,7 @@ impl crate::BareDeserialize for Ed25519 {
 }
 impl crate::IntoBoxed for Ed25519 {
     type Boxed = crate::ton::PublicKey;
+
     fn into_boxed(self) -> crate::ton::PublicKey {
         crate::ton::PublicKey::Pub_Ed25519(self)
     }
@@ -99,6 +106,7 @@ impl crate::BareSerialize for Overlay {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x34ba45cb)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Overlay { name } = self;
         _ser.write_bare::<crate::ton::bytes>(name)?;
@@ -115,6 +123,7 @@ impl crate::BareDeserialize for Overlay {
 }
 impl crate::IntoBoxed for Overlay {
     type Boxed = crate::ton::PublicKey;
+
     fn into_boxed(self) -> crate::ton::PublicKey {
         crate::ton::PublicKey::Pub_Overlay(self)
     }
@@ -129,6 +138,7 @@ impl crate::BareSerialize for Unenc {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb61f450a)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Unenc { data } = self;
         _ser.write_bare::<crate::ton::bytes>(data)?;
@@ -145,6 +155,7 @@ impl crate::BareDeserialize for Unenc {
 }
 impl crate::IntoBoxed for Unenc {
     type Boxed = crate::ton::PublicKey;
+
     fn into_boxed(self) -> crate::ton::PublicKey {
         crate::ton::PublicKey::Pub_Unenc(self)
     }

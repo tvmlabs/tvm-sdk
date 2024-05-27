@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.oneSessionStat`\n\n```text\nengine.validator.oneSessionStat session_id:string stats:(vector engine.validator.oneStat) = engine.OneSessionStat;\n```\n"]
 pub struct OneSessionStat {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for OneSessionStat {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xadf42035)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let OneSessionStat { session_id, stats } = self;
         _ser.write_bare::<crate::ton::string>(session_id)?;
@@ -32,6 +34,7 @@ impl crate::BareDeserialize for OneSessionStat {
 }
 impl crate::IntoBoxed for OneSessionStat {
     type Boxed = crate::ton::engine::OneSessionStat;
+
     fn into_boxed(self) -> crate::ton::engine::OneSessionStat {
         crate::ton::engine::OneSessionStat::Engine_Validator_OneSessionStat(self)
     }

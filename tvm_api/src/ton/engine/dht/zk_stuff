@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.dht.Config`\n\n```text\nengine.dht.config dht:(vector engine.dht) gc:engine.gc = engine.dht.Config;\n```\n"]
 pub enum Config {
@@ -10,11 +11,13 @@ impl Config {
             Config::Engine_Dht_Config(ref x) => &x.dht,
         }
     }
+
     pub fn gc(&self) -> &crate::ton::engine::gc::Gc {
         match self {
             Config::Engine_Dht_Config(ref x) => &x.gc,
         }
     }
+
     pub fn only(self) -> crate::ton::engine::dht::config::Config {
         match self {
             Config::Engine_Dht_Config(x) => x,
@@ -38,6 +41,7 @@ impl crate::BoxedDeserialize for Config {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf43d80c6)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -60,6 +64,7 @@ impl crate::BareSerialize for Dht {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x5de9f2fa)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Dht { id } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -76,6 +81,7 @@ impl crate::BareDeserialize for Dht {
 }
 impl crate::IntoBoxed for Dht {
     type Boxed = crate::ton::engine::Dht;
+
     fn into_boxed(self) -> crate::ton::engine::Dht {
         crate::ton::engine::Dht::Engine_Dht(self)
     }

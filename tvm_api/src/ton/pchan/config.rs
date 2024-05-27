@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `pchan.config`\n\n```text\npchan.config alice_public_key:string alice_address:accountAddress bob_public_key:string bob_address:accountAddress init_timeout:int32 close_timeout:int32 channel_id:int64 = pchan.Config;\n```\n"]
 pub struct Config {
@@ -15,6 +16,7 @@ impl crate::BareSerialize for Config {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8486f436)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Config {
             alice_public_key,
@@ -59,6 +61,7 @@ impl crate::BareDeserialize for Config {
 }
 impl crate::IntoBoxed for Config {
     type Boxed = crate::ton::pchan::Config;
+
     fn into_boxed(self) -> crate::ton::pchan::Config {
         crate::ton::pchan::Config::Pchan_Config(self)
     }

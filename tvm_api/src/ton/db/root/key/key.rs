@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.root.key.blockDb`\n\n```text\ndb.root.key.blockDb version:int = db.root.Key;\n```\n"]
 pub struct BlockDb {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for BlockDb {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3012bf40)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockDb { version } = self;
         _ser.write_bare::<crate::ton::int>(version)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for BlockDb {
 }
 impl crate::IntoBoxed for BlockDb {
     type Boxed = crate::ton::db::root::Key;
+
     fn into_boxed(self) -> crate::ton::db::root::Key {
         crate::ton::db::root::Key::Db_Root_Key_BlockDb(self)
     }
@@ -39,6 +42,7 @@ impl crate::BareSerialize for CellDb {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x72f9b33e)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let CellDb { version } = self;
         _ser.write_bare::<crate::ton::int>(version)?;
@@ -55,6 +59,7 @@ impl crate::BareDeserialize for CellDb {
 }
 impl crate::IntoBoxed for CellDb {
     type Boxed = crate::ton::db::root::Key;
+
     fn into_boxed(self) -> crate::ton::db::root::Key {
         crate::ton::db::root::Key::Db_Root_Key_CellDb(self)
     }

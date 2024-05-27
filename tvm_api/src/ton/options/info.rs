@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `options.info`\n\n```text\noptions.info config_info:options.configInfo = options.Info;\n```\n"]
 pub struct Info {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Info {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xfc251c80)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Info { config_info } = self;
         _ser.write_bare::<crate::ton::options::configinfo::ConfigInfo>(config_info)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Info {
 }
 impl crate::IntoBoxed for Info {
     type Boxed = crate::ton::options::Info;
+
     fn into_boxed(self) -> crate::ton::options::Info {
         crate::ton::options::Info::Options_Info(self)
     }

@@ -42,7 +42,7 @@ use crate::types::Exception;
 use crate::utils::bytes_to_string;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
-use once_cell::sync::Lazy;
+//use once_cell::sync::Lazy;
 use ark_serialize::CanonicalDeserialize;
 use thiserror::Error;
 
@@ -326,20 +326,20 @@ impl ProofWrapper {
 **/
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-static GLOBAL_VERIFYING_KEY: Lazy<PreparedVerifyingKey<Bn254>> = Lazy::new(global_pvk);
+//static GLOBAL_VERIFYING_KEY: Lazy<PreparedVerifyingKey<Bn254>> = Lazy::new(global_pvk);
 
 /// Corresponding to proofs generated from prover-dev. Used in devnet/testnet.
-static INSECURE_VERIFYING_KEY: Lazy<PreparedVerifyingKey<Bn254>> = Lazy::new(insecure_pvk);
+//static INSECURE_VERIFYING_KEY: Lazy<PreparedVerifyingKey<Bn254>> = Lazy::new(insecure_pvk);
 
-static ZKP_VERIFYING_KEYS: Lazy<HashMap<u32, PreparedVerifyingKey<Bn254>>> = Lazy::new(keys);
+//static ZKP_VERIFYING_KEYS: Lazy<HashMap<u32, PreparedVerifyingKey<Bn254>>> = Lazy::new(keys);
 
 //todo: will contain our keys later, key ould be a hash of verification key
-fn keys() -> HashMap<u32, PreparedVerifyingKey<Bn254>> {
+/*fn keys() -> HashMap<u32, PreparedVerifyingKey<Bn254>> {
     let mut h = HashMap::new();
     h.insert(0, insecure_pvk());
     h.insert(1, global_pvk());
     h
-}
+}*/
 
 /// Load a fixed verifying key from zkLogin.vkey output. This is based on a local setup and should not use in production.
 fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
@@ -641,7 +641,13 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     let public_inputs = FieldElementWrapper::deserialize_vector(&public_inputs_as_bytes)?;
     let x: Vec<Fr> = public_inputs.iter().map(|x| x.0).collect();
 
-    let vk = ZKP_VERIFYING_KEYS.get(&vk_index).unwrap();//&GLOBAL_VERIFYING_KEY;
+    let vk = if (vk_index == 0) {
+        insecure_pvk()
+    } else {
+        global_pvk()
+    };
+
+        //ZKP_VERIFYING_KEYS.get(&vk_index).unwrap();//&GLOBAL_VERIFYING_KEY;
     println!("vk data = {:?}", vk.alpha_g1_beta_g2.to_string());
     //todo: add alternative for elliptic curve (may be we need bls curve also?), read from stack curve id
     let res = Groth16::<Bn254>::verify_with_processed_vk(&vk, &x, &proof.0)

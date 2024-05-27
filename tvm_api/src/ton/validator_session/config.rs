@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.config`\n\n```text\nvalidatorSession.config catchain_idle_timeout:double catchain_max_deps:int round_candidates:int next_candidate_delay:double round_attempt_duration:int\n        max_round_attempts:int max_block_size:int max_collated_data_size:int = validatorSession.Config;\n```\n"]
 pub struct Config {
@@ -16,6 +17,7 @@ impl crate::BareSerialize for Config {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb661fdc3)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Config {
             catchain_idle_timeout,
@@ -64,6 +66,7 @@ impl crate::BareDeserialize for Config {
 }
 impl crate::IntoBoxed for Config {
     type Boxed = crate::ton::validator_session::Config;
+
     fn into_boxed(self) -> crate::ton::validator_session::Config {
         crate::ton::validator_session::Config::ValidatorSession_Config(self)
     }
@@ -86,6 +89,7 @@ impl crate::BareSerialize for ConfigNew {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf7afa99c)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ConfigNew {
             catchain_idle_timeout,
@@ -138,6 +142,7 @@ impl crate::BareDeserialize for ConfigNew {
 }
 impl crate::IntoBoxed for ConfigNew {
     type Boxed = crate::ton::validator_session::Config;
+
     fn into_boxed(self) -> crate::ton::validator_session::Config {
         crate::ton::validator_session::Config::ValidatorSession_ConfigNew(self)
     }

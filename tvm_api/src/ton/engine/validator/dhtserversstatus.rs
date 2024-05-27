@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.dhtServersStatus`\n\n```text\nengine.validator.dhtServersStatus servers:(vector engine.validator.dhtServerStatus) = engine.validator.DhtServersStatus;\n```\n"]
 pub struct DhtServersStatus {
@@ -12,6 +13,7 @@ impl crate::BareSerialize for DhtServersStatus {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x2b38fd28)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DhtServersStatus { servers } = self;
         _ser.write_bare::<crate::ton::vector<
@@ -34,6 +36,7 @@ impl crate::BareDeserialize for DhtServersStatus {
 }
 impl crate::IntoBoxed for DhtServersStatus {
     type Boxed = crate::ton::engine::validator::DhtServersStatus;
+
     fn into_boxed(self) -> crate::ton::engine::validator::DhtServersStatus {
         crate::ton::engine::validator::DhtServersStatus::Engine_Validator_DhtServersStatus(self)
     }

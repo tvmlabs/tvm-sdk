@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.candidate.id`\n\n```text\ndb.candidate.id source:PublicKey id:tonNode.blockIdExt collated_data_file_hash:int256 = db.candidate.Id;\n```\n"]
 pub struct Id {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for Id {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x37c0b287)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Id { source, id, collated_data_file_hash } = self;
         _ser.write_boxed::<crate::ton::PublicKey>(source)?;
@@ -31,6 +33,7 @@ impl crate::BareDeserialize for Id {
 }
 impl crate::IntoBoxed for Id {
     type Boxed = crate::ton::db::candidate::Id;
+
     fn into_boxed(self) -> crate::ton::db::candidate::Id {
         crate::ton::db::candidate::Id::Db_Candidate_Id(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.Action`\n\n```text\ndns.actionDelete name:string category:int32 = dns.Action;\n\ndns.actionDeleteAll = dns.Action;\n\ndns.actionSet entry:dns.entry = dns.Action;\n```\n"]
 pub enum Action {
@@ -13,12 +14,14 @@ impl Action {
             _ => None,
         }
     }
+
     pub fn entry(&self) -> Option<&crate::ton::dns::entry::Entry> {
         match self {
             Action::Dns_ActionSet(ref x) => Some(&x.entry),
             _ => None,
         }
     }
+
     pub fn name(&self) -> Option<&crate::ton::string> {
         match self {
             Action::Dns_ActionDelete(ref x) => Some(&x.name),
@@ -49,6 +52,7 @@ impl crate::BoxedDeserialize for Action {
             crate::ConstructorNumber(0xae0bb1c3),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -76,16 +80,19 @@ impl Entry {
             Entry::Dns_Entry(ref x) => &x.category,
         }
     }
+
     pub fn entry(&self) -> &crate::ton::dns::EntryData {
         match self {
             Entry::Dns_Entry(ref x) => &x.entry,
         }
     }
+
     pub fn name(&self) -> &crate::ton::string {
         match self {
             Entry::Dns_Entry(ref x) => &x.name,
         }
     }
+
     pub fn only(self) -> crate::ton::dns::entry::Entry {
         match self {
             Entry::Dns_Entry(x) => x,
@@ -109,6 +116,7 @@ impl crate::BoxedDeserialize for Entry {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x922eaab8)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -137,24 +145,28 @@ impl EntryData {
             _ => None,
         }
     }
+
     pub fn bytes(&self) -> Option<&crate::ton::bytes> {
         match self {
             EntryData::Dns_EntryDataUnknown(ref x) => Some(&x.bytes),
             _ => None,
         }
     }
+
     pub fn resolver(&self) -> Option<&crate::ton::AccountAddress> {
         match self {
             EntryData::Dns_EntryDataNextResolver(ref x) => Some(&x.resolver),
             _ => None,
         }
     }
+
     pub fn smc_address(&self) -> Option<&crate::ton::AccountAddress> {
         match self {
             EntryData::Dns_EntryDataSmcAddress(ref x) => Some(&x.smc_address),
             _ => None,
         }
     }
+
     pub fn text(&self) -> Option<&crate::ton::string> {
         match self {
             EntryData::Dns_EntryDataText(ref x) => Some(&x.text),
@@ -191,6 +203,7 @@ impl crate::BoxedDeserialize for EntryData {
             crate::ConstructorNumber(0xb35ad380),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -226,6 +239,7 @@ impl Resolved {
             Resolved::Dns_Resolved(ref x) => &x.entries,
         }
     }
+
     pub fn only(self) -> crate::ton::dns::resolved::Resolved {
         match self {
             Resolved::Dns_Resolved(x) => x,
@@ -249,6 +263,7 @@ impl crate::BoxedDeserialize for Resolved {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7c970596)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

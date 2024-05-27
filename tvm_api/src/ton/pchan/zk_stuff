@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `pchan.Action`\n\n```text\npchan.actionClose extra_A:int64 extra_B:int64 promise:pchan.promise = pchan.Action;\n\npchan.actionInit inc_A:int64 inc_B:int64 min_A:int64 min_B:int64 = pchan.Action;\n\npchan.actionTimeout = pchan.Action;\n```\n"]
 pub enum Action {
@@ -13,36 +14,42 @@ impl Action {
             _ => None,
         }
     }
+
     pub fn extra_B(&self) -> Option<&crate::ton::int64> {
         match self {
             Action::Pchan_ActionClose(ref x) => Some(&x.extra_B),
             _ => None,
         }
     }
+
     pub fn inc_A(&self) -> Option<&crate::ton::int64> {
         match self {
             Action::Pchan_ActionInit(ref x) => Some(&x.inc_A),
             _ => None,
         }
     }
+
     pub fn inc_B(&self) -> Option<&crate::ton::int64> {
         match self {
             Action::Pchan_ActionInit(ref x) => Some(&x.inc_B),
             _ => None,
         }
     }
+
     pub fn min_A(&self) -> Option<&crate::ton::int64> {
         match self {
             Action::Pchan_ActionInit(ref x) => Some(&x.min_A),
             _ => None,
         }
     }
+
     pub fn min_B(&self) -> Option<&crate::ton::int64> {
         match self {
             Action::Pchan_ActionInit(ref x) => Some(&x.min_B),
             _ => None,
         }
     }
+
     pub fn promise(&self) -> Option<&crate::ton::pchan::promise::Promise> {
         match self {
             Action::Pchan_ActionClose(ref x) => Some(&x.promise),
@@ -73,6 +80,7 @@ impl crate::BoxedDeserialize for Action {
             crate::ConstructorNumber(0x771e80f3),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -100,36 +108,43 @@ impl Config {
             Config::Pchan_Config(ref x) => &x.alice_address,
         }
     }
+
     pub fn alice_public_key(&self) -> &crate::ton::string {
         match self {
             Config::Pchan_Config(ref x) => &x.alice_public_key,
         }
     }
+
     pub fn bob_address(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
             Config::Pchan_Config(ref x) => &x.bob_address,
         }
     }
+
     pub fn bob_public_key(&self) -> &crate::ton::string {
         match self {
             Config::Pchan_Config(ref x) => &x.bob_public_key,
         }
     }
+
     pub fn channel_id(&self) -> &crate::ton::int64 {
         match self {
             Config::Pchan_Config(ref x) => &x.channel_id,
         }
     }
+
     pub fn close_timeout(&self) -> &crate::ton::int32 {
         match self {
             Config::Pchan_Config(ref x) => &x.close_timeout,
         }
     }
+
     pub fn init_timeout(&self) -> &crate::ton::int32 {
         match self {
             Config::Pchan_Config(ref x) => &x.init_timeout,
         }
     }
+
     pub fn only(self) -> crate::ton::pchan::config::Config {
         match self {
             Config::Pchan_Config(x) => x,
@@ -153,6 +168,7 @@ impl crate::BoxedDeserialize for Config {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8486f436)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -176,21 +192,25 @@ impl Promise {
             Promise::Pchan_Promise(ref x) => &x.channel_id,
         }
     }
+
     pub fn promise_A(&self) -> &crate::ton::int64 {
         match self {
             Promise::Pchan_Promise(ref x) => &x.promise_A,
         }
     }
+
     pub fn promise_B(&self) -> &crate::ton::int64 {
         match self {
             Promise::Pchan_Promise(ref x) => &x.promise_B,
         }
     }
+
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             Promise::Pchan_Promise(ref x) => &x.signature,
         }
     }
+
     pub fn only(self) -> crate::ton::pchan::promise::Promise {
         match self {
             Promise::Pchan_Promise(x) => x,
@@ -214,6 +234,7 @@ impl crate::BoxedDeserialize for Promise {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa20e945d)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -241,6 +262,7 @@ impl State {
             State::Pchan_StatePayout(ref x) => &x.A,
         }
     }
+
     pub fn B(&self) -> &crate::ton::int64 {
         match self {
             State::Pchan_StateClose(ref x) => &x.B,
@@ -248,6 +270,7 @@ impl State {
             State::Pchan_StatePayout(ref x) => &x.B,
         }
     }
+
     pub fn expire_at(&self) -> Option<&crate::ton::int53> {
         match self {
             State::Pchan_StateClose(ref x) => Some(&x.expire_at),
@@ -255,6 +278,7 @@ impl State {
             _ => None,
         }
     }
+
     pub fn min_A(&self) -> Option<&crate::ton::int64> {
         match self {
             State::Pchan_StateClose(ref x) => Some(&x.min_A),
@@ -262,6 +286,7 @@ impl State {
             _ => None,
         }
     }
+
     pub fn min_B(&self) -> Option<&crate::ton::int64> {
         match self {
             State::Pchan_StateClose(ref x) => Some(&x.min_B),
@@ -269,6 +294,7 @@ impl State {
             _ => None,
         }
     }
+
     pub fn signed_A(&self) -> Option<&crate::ton::Bool> {
         match self {
             State::Pchan_StateClose(ref x) => Some(&x.signed_A),
@@ -276,6 +302,7 @@ impl State {
             _ => None,
         }
     }
+
     pub fn signed_B(&self) -> Option<&crate::ton::Bool> {
         match self {
             State::Pchan_StateClose(ref x) => Some(&x.signed_B),
@@ -307,6 +334,7 @@ impl crate::BoxedDeserialize for State {
             crate::ConstructorNumber(0x279e1447),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block.dep`\n\n```text\ncatchain.block.dep src:int height:int data_hash:int256 signature:bytes = catchain.block.Dep;\n```\n"]
 pub struct Dep {
@@ -17,6 +18,7 @@ impl crate::BareSerialize for Dep {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x5a1ad14f)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Dep { src, height, data_hash, signature } = self;
         _ser.write_bare::<crate::ton::int>(src)?;
@@ -39,6 +41,7 @@ impl crate::BareDeserialize for Dep {
 }
 impl crate::IntoBoxed for Dep {
     type Boxed = crate::ton::catchain::block::Dep;
+
     fn into_boxed(self) -> crate::ton::catchain::block::Dep {
         crate::ton::catchain::block::Dep::Catchain_Block_Dep(self)
     }

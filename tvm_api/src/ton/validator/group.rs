@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validator.group`\n\n```text\nvalidator.group workchain:int shard:long catchain_seqno:int config_hash:int256 members:(vector validator.groupMember) = validator.Group;\n```\n"]
 pub struct Group {
@@ -16,6 +17,7 @@ impl crate::BareSerialize for Group {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf8d87ea1)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Group { workchain, shard, catchain_seqno, config_hash, members } = self;
         _ser.write_bare::<crate::ton::int>(workchain)?;
@@ -46,6 +48,7 @@ impl crate::BareDeserialize for Group {
 }
 impl crate::IntoBoxed for Group {
     type Boxed = crate::ton::validator::Group;
+
     fn into_boxed(self) -> crate::ton::validator::Group {
         crate::ton::validator::Group::Validator_Group(self)
     }
@@ -68,6 +71,7 @@ impl crate::BareSerialize for GroupEx {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x1c924dfe)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GroupEx { workchain, shard, vertical_seqno, catchain_seqno, config_hash, members } =
             self;
@@ -101,6 +105,7 @@ impl crate::BareDeserialize for GroupEx {
 }
 impl crate::IntoBoxed for GroupEx {
     type Boxed = crate::ton::validator::Group;
+
     fn into_boxed(self) -> crate::ton::validator::Group {
         crate::ton::validator::Group::Validator_GroupEx(self)
     }
@@ -124,6 +129,7 @@ impl crate::BareSerialize for GroupNew {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x9843a14d)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GroupNew {
             workchain,
@@ -174,6 +180,7 @@ impl crate::BareDeserialize for GroupNew {
 }
 impl crate::IntoBoxed for GroupNew {
     type Boxed = crate::ton::validator::Group;
+
     fn into_boxed(self) -> crate::ton::validator::Group {
         crate::ton::validator::Group::Validator_GroupNew(self)
     }

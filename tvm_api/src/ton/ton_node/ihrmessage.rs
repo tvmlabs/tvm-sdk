@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.ihrMessage`\n\n```text\ntonNode.ihrMessage data:bytes = tonNode.IhrMessage;\n```\n"]
 pub struct IhrMessage {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for IhrMessage {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4534c307)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let IhrMessage { data } = self;
         _ser.write_bare::<crate::ton::bytes>(data)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for IhrMessage {
 }
 impl crate::IntoBoxed for IhrMessage {
     type Boxed = crate::ton::ton_node::IhrMessage;
+
     fn into_boxed(self) -> crate::ton::ton_node::IhrMessage {
         crate::ton::ton_node::IhrMessage::TonNode_IhrMessage(self)
     }

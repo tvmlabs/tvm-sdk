@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.sendMsgStatus`\n\n```text\nliteServer.sendMsgStatus status:int = liteServer.SendMsgStatus;\n```\n"]
 pub struct SendMsgStatus {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for SendMsgStatus {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3950e597)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let SendMsgStatus { status } = self;
         _ser.write_bare::<crate::ton::int>(status)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for SendMsgStatus {
 }
 impl crate::IntoBoxed for SendMsgStatus {
     type Boxed = crate::ton::lite_server::SendMsgStatus;
+
     fn into_boxed(self) -> crate::ton::lite_server::SendMsgStatus {
         crate::ton::lite_server::SendMsgStatus::LiteServer_SendMsgStatus(self)
     }

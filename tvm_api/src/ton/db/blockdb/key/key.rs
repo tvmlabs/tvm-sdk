@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.blockdb.key.lru`\n\n```text\ndb.blockdb.key.lru id:tonNode.blockIdExt = db.blockdb.Key;\n```\n"]
 pub struct Lru {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Lru {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x50bc963a)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Lru { id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Lru {
 }
 impl crate::IntoBoxed for Lru {
     type Boxed = crate::ton::db::blockdb::Key;
+
     fn into_boxed(self) -> crate::ton::db::blockdb::Key {
         crate::ton::db::blockdb::Key::Db_Blockdb_Key_Lru(self)
     }
@@ -39,6 +42,7 @@ impl crate::BareSerialize for Value {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7f57d173)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Value { id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
@@ -55,6 +59,7 @@ impl crate::BareDeserialize for Value {
 }
 impl crate::IntoBoxed for Value {
     type Boxed = crate::ton::db::blockdb::Key;
+
     fn into_boxed(self) -> crate::ton::db::blockdb::Key {
         crate::ton::db::blockdb::Key::Db_Blockdb_Key_Value(self)
     }

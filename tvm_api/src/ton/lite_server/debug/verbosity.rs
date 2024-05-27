@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.debug.verbosity`\n\n```text\nliteServer.debug.verbosity value:int = liteServer.debug.Verbosity;\n```\n"]
 pub struct Verbosity {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Verbosity {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x5d404733)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Verbosity { value } = self;
         _ser.write_bare::<crate::ton::int>(value)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Verbosity {
 }
 impl crate::IntoBoxed for Verbosity {
     type Boxed = crate::ton::lite_server::debug::Verbosity;
+
     fn into_boxed(self) -> crate::ton::lite_server::debug::Verbosity {
         crate::ton::lite_server::debug::Verbosity::LiteServer_Debug_Verbosity(self)
     }

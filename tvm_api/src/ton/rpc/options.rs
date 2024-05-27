@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `options.setConfig`\n\n```text\noptions.setConfig config:config = options.ConfigInfo;\n```\n"]
 pub struct SetConfig {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for SetConfig {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x6f76ebc3)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let SetConfig { config } = self;
         _ser.write_bare::<crate::ton::config::Config>(config)?;
@@ -27,15 +29,12 @@ impl crate::BoxedDeserialize for SetConfig {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6f76ebc3)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x6f76ebc3) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x6f76ebc3) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for SetConfig {
@@ -56,6 +55,7 @@ impl crate::BareSerialize for ValidateConfig {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xeb51ba39)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValidateConfig { config } = self;
         _ser.write_bare::<crate::ton::config::Config>(config)?;
@@ -74,15 +74,12 @@ impl crate::BoxedDeserialize for ValidateConfig {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xeb51ba39)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xeb51ba39) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xeb51ba39) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for ValidateConfig {

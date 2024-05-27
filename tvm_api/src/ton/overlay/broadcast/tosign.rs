@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.broadcast.toSign`\n\n```text\noverlay.broadcast.toSign hash:int256 date:int = overlay.broadcast.ToSign;\n```\n"]
 pub struct ToSign {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for ToSign {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xfa374e7c)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ToSign { hash, date } = self;
         _ser.write_bare::<crate::ton::int256>(hash)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for ToSign {
 }
 impl crate::IntoBoxed for ToSign {
     type Boxed = crate::ton::overlay::broadcast::ToSign;
+
     fn into_boxed(self) -> crate::ton::overlay::broadcast::ToSign {
         crate::ton::overlay::broadcast::ToSign::Overlay_Broadcast_ToSign(self)
     }

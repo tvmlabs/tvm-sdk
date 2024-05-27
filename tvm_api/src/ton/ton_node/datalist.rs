@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.dataList`\n\n```text\ntonNode.dataList data:(vector bytes) = tonNode.DataList;\n```\n"]
 pub struct DataList {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for DataList {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x14f43313)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DataList { data } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::bytes>>(data)?;
@@ -26,6 +28,7 @@ impl crate::BareDeserialize for DataList {
 }
 impl crate::IntoBoxed for DataList {
     type Boxed = crate::ton::ton_node::DataList;
+
     fn into_boxed(self) -> crate::ton::ton_node::DataList {
         crate::ton::ton_node::DataList::TonNode_DataList(self)
     }

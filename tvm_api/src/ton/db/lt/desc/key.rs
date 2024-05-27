@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.desc.key`\n\n```text\ndb.lt.desc.key workchain:int shard:long = db.lt.Key;\n```\n"]
 pub struct Key {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for Key {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf1e3e791)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Key { workchain, shard } = self;
         _ser.write_bare::<crate::ton::int>(workchain)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for Key {
 }
 impl crate::IntoBoxed for Key {
     type Boxed = crate::ton::db::lt::Key;
+
     fn into_boxed(self) -> crate::ton::db::lt::Key {
         crate::ton::db::lt::Key::Db_Lt_Desc_Key(self)
     }

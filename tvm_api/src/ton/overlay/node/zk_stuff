@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.node`\n\n```text\noverlay.node id:PublicKey overlay:int256 version:int signature:bytes = overlay.Node;\n```\n"]
 pub struct Node {
@@ -17,6 +18,7 @@ impl crate::BareSerialize for Node {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb86b8a83)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Node { id, overlay, version, signature } = self;
         _ser.write_boxed::<crate::ton::PublicKey>(id)?;
@@ -39,6 +41,7 @@ impl crate::BareDeserialize for Node {
 }
 impl crate::IntoBoxed for Node {
     type Boxed = crate::ton::overlay::Node;
+
     fn into_boxed(self) -> crate::ton::overlay::Node {
         crate::ton::overlay::Node::Overlay_Node(self)
     }
@@ -54,16 +57,19 @@ impl ToSign {
             ToSign::Overlay_Node_ToSign(ref x) => &x.id,
         }
     }
+
     pub fn overlay(&self) -> &crate::ton::int256 {
         match self {
             ToSign::Overlay_Node_ToSign(ref x) => &x.overlay,
         }
     }
+
     pub fn version(&self) -> &crate::ton::int {
         match self {
             ToSign::Overlay_Node_ToSign(ref x) => &x.version,
         }
     }
+
     pub fn only(self) -> crate::ton::overlay::node::tosign::ToSign {
         match self {
             ToSign::Overlay_Node_ToSign(x) => x,
@@ -87,6 +93,7 @@ impl crate::BoxedDeserialize for ToSign {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x03d8a8e1)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

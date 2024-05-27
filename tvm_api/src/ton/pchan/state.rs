@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `pchan.stateClose`\n\n```text\npchan.stateClose signed_A:Bool signed_B:Bool min_A:int64 min_B:int64 expire_at:int53 A:int64 B:int64 = pchan.State;\n```\n"]
 pub struct StateClose {
@@ -15,6 +16,7 @@ impl crate::BareSerialize for StateClose {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x34e201f3)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StateClose { signed_A, signed_B, min_A, min_B, expire_at, A, B } = self;
         _ser.write_boxed::<crate::ton::Bool>(signed_A)?;
@@ -43,6 +45,7 @@ impl crate::BareDeserialize for StateClose {
 }
 impl crate::IntoBoxed for StateClose {
     type Boxed = crate::ton::pchan::State;
+
     fn into_boxed(self) -> crate::ton::pchan::State {
         crate::ton::pchan::State::Pchan_StateClose(self)
     }
@@ -63,6 +66,7 @@ impl crate::BareSerialize for StateInit {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb92a0cf8)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StateInit { signed_A, signed_B, min_A, min_B, expire_at, A, B } = self;
         _ser.write_boxed::<crate::ton::Bool>(signed_A)?;
@@ -91,6 +95,7 @@ impl crate::BareDeserialize for StateInit {
 }
 impl crate::IntoBoxed for StateInit {
     type Boxed = crate::ton::pchan::State;
+
     fn into_boxed(self) -> crate::ton::pchan::State {
         crate::ton::pchan::State::Pchan_StateInit(self)
     }
@@ -106,6 +111,7 @@ impl crate::BareSerialize for StatePayout {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x279e1447)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StatePayout { A, B } = self;
         _ser.write_bare::<crate::ton::int64>(A)?;
@@ -124,6 +130,7 @@ impl crate::BareDeserialize for StatePayout {
 }
 impl crate::IntoBoxed for StatePayout {
     type Boxed = crate::ton::pchan::State;
+
     fn into_boxed(self) -> crate::ton::pchan::State {
         crate::ton::pchan::State::Pchan_StatePayout(self)
     }

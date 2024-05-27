@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.difference`\n\n```text\ncatchain.difference sent_upto:(vector int) = catchain.Difference;\n```\n"]
 pub struct Difference {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Difference {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x1415d1ca)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Difference { sent_upto } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(sent_upto)?;
@@ -26,6 +28,7 @@ impl crate::BareDeserialize for Difference {
 }
 impl crate::IntoBoxed for Difference {
     type Boxed = crate::ton::catchain::Difference;
+
     fn into_boxed(self) -> crate::ton::catchain::Difference {
         crate::ton::catchain::Difference::Catchain_Difference(self)
     }
@@ -41,6 +44,7 @@ impl crate::BareSerialize for DifferenceFork {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4927c06f)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DifferenceFork { left, right } = self;
         _ser.write_bare::<crate::ton::catchain::block::dep::Dep>(left)?;
@@ -59,6 +63,7 @@ impl crate::BareDeserialize for DifferenceFork {
 }
 impl crate::IntoBoxed for DifferenceFork {
     type Boxed = crate::ton::catchain::Difference;
+
     fn into_boxed(self) -> crate::ton::catchain::Difference {
         crate::ton::catchain::Difference::Catchain_DifferenceFork(self)
     }

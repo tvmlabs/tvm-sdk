@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.actionDelete`\n\n```text\ndns.actionDelete name:string category:int32 = dns.Action;\n```\n"]
 pub struct ActionDelete {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for ActionDelete {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x2e34b7e2)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ActionDelete { name, category } = self;
         _ser.write_bare::<crate::ton::string>(name)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for ActionDelete {
 }
 impl crate::IntoBoxed for ActionDelete {
     type Boxed = crate::ton::dns::Action;
+
     fn into_boxed(self) -> crate::ton::dns::Action {
         crate::ton::dns::Action::Dns_ActionDelete(self)
     }
@@ -42,6 +45,7 @@ impl crate::BareSerialize for ActionSet {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xae0bb1c3)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ActionSet { entry } = self;
         _ser.write_bare::<crate::ton::dns::entry::Entry>(entry)?;
@@ -58,6 +62,7 @@ impl crate::BareDeserialize for ActionSet {
 }
 impl crate::IntoBoxed for ActionSet {
     type Boxed = crate::ton::dns::Action;
+
     fn into_boxed(self) -> crate::ton::dns::Action {
         crate::ton::dns::Action::Dns_ActionSet(self)
     }

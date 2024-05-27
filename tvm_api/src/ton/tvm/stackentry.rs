@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.stackEntryBuilder`\n\n```text\ntvm.stackEntryBuilder builder:tvm.builder = tvm.StackEntry;\n```\n"]
 pub struct StackEntryBuilder {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for StackEntryBuilder {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8e5615d8)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StackEntryBuilder { builder } = self;
         _ser.write_bare::<crate::ton::tvm::builder::Builder>(builder)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for StackEntryBuilder {
 }
 impl crate::IntoBoxed for StackEntryBuilder {
     type Boxed = crate::ton::tvm::StackEntry;
+
     fn into_boxed(self) -> crate::ton::tvm::StackEntry {
         crate::ton::tvm::StackEntry::Tvm_StackEntryBuilder(self)
     }
@@ -39,6 +42,7 @@ impl crate::BareSerialize for StackEntryCell {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4db16f20)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StackEntryCell { cell } = self;
         _ser.write_bare::<crate::ton::tvm::cell::Cell>(cell)?;
@@ -55,6 +59,7 @@ impl crate::BareDeserialize for StackEntryCell {
 }
 impl crate::IntoBoxed for StackEntryCell {
     type Boxed = crate::ton::tvm::StackEntry;
+
     fn into_boxed(self) -> crate::ton::tvm::StackEntry {
         crate::ton::tvm::StackEntry::Tvm_StackEntryCell(self)
     }
@@ -69,6 +74,7 @@ impl crate::BareSerialize for StackEntryList {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb9442d8b)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StackEntryList { list } = self;
         _ser.write_boxed::<crate::ton::tvm::List>(list)?;
@@ -85,6 +91,7 @@ impl crate::BareDeserialize for StackEntryList {
 }
 impl crate::IntoBoxed for StackEntryList {
     type Boxed = crate::ton::tvm::StackEntry;
+
     fn into_boxed(self) -> crate::ton::tvm::StackEntry {
         crate::ton::tvm::StackEntry::Tvm_StackEntryList(self)
     }
@@ -99,6 +106,7 @@ impl crate::BareSerialize for StackEntryNumber {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x50fb3dbe)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StackEntryNumber { number } = self;
         _ser.write_boxed::<crate::ton::tvm::Number>(number)?;
@@ -115,6 +123,7 @@ impl crate::BareDeserialize for StackEntryNumber {
 }
 impl crate::IntoBoxed for StackEntryNumber {
     type Boxed = crate::ton::tvm::StackEntry;
+
     fn into_boxed(self) -> crate::ton::tvm::StackEntry {
         crate::ton::tvm::StackEntry::Tvm_StackEntryNumber(self)
     }
@@ -129,6 +138,7 @@ impl crate::BareSerialize for StackEntrySlice {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x532d6b25)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StackEntrySlice { slice } = self;
         _ser.write_bare::<crate::ton::tvm::slice::Slice>(slice)?;
@@ -145,6 +155,7 @@ impl crate::BareDeserialize for StackEntrySlice {
 }
 impl crate::IntoBoxed for StackEntrySlice {
     type Boxed = crate::ton::tvm::StackEntry;
+
     fn into_boxed(self) -> crate::ton::tvm::StackEntry {
         crate::ton::tvm::StackEntry::Tvm_StackEntrySlice(self)
     }
@@ -159,6 +170,7 @@ impl crate::BareSerialize for StackEntryTuple {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf69e63dc)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let StackEntryTuple { tuple } = self;
         _ser.write_boxed::<crate::ton::tvm::Tuple>(tuple)?;
@@ -175,6 +187,7 @@ impl crate::BareDeserialize for StackEntryTuple {
 }
 impl crate::IntoBoxed for StackEntryTuple {
     type Boxed = crate::ton::tvm::StackEntry;
+
     fn into_boxed(self) -> crate::ton::tvm::StackEntry {
         crate::ton::tvm::StackEntry::Tvm_StackEntryTuple(self)
     }

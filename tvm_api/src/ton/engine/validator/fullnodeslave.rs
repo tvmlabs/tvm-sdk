@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.fullNodeSlave`\n\n```text\nengine.validator.fullNodeSlave ip:int port:int adnl:PublicKey = engine.validator.FullNodeSlave;\n```\n"]
 pub struct FullNodeSlave {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for FullNodeSlave {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x88256b79)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let FullNodeSlave { ip, port, adnl } = self;
         _ser.write_bare::<crate::ton::int>(ip)?;
@@ -31,6 +33,7 @@ impl crate::BareDeserialize for FullNodeSlave {
 }
 impl crate::IntoBoxed for FullNodeSlave {
     type Boxed = crate::ton::engine::validator::FullNodeSlave;
+
     fn into_boxed(self) -> crate::ton::engine::validator::FullNodeSlave {
         crate::ton::engine::validator::FullNodeSlave::Engine_Validator_FullNodeSlave(self)
     }

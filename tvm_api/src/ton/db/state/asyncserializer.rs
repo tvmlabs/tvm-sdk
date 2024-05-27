@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.state.asyncSerializer`\n\n```text\ndb.state.asyncSerializer block:tonNode.blockIdExt last:tonNode.blockIdExt last_ts:int = db.state.AsyncSerializer;\n```\n"]
 pub struct AsyncSerializer {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for AsyncSerializer {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd32f29a1)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let AsyncSerializer { block, last, last_ts } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -31,6 +33,7 @@ impl crate::BareDeserialize for AsyncSerializer {
 }
 impl crate::IntoBoxed for AsyncSerializer {
     type Boxed = crate::ton::db::state::AsyncSerializer;
+
     fn into_boxed(self) -> crate::ton::db::state::AsyncSerializer {
         crate::ton::db::state::AsyncSerializer::Db_State_AsyncSerializer(self)
     }

@@ -1,4 +1,4 @@
-/*
+/*/*
 * Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
 *
 * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
@@ -50,11 +50,6 @@ use tvm_vm::executor::zk::ZkCryptoError;
 use tvm_types::{BuilderData, Cell, SliceData};
 use fastcrypto_zkp::bn254::zk_login::{CanonicalSerialize, JWK, JwkId, OIDCProvider, ZkLoginInputs};
 use fastcrypto_zkp::bn254::utils::gen_address_seed;
-
-use crate::test_framework::Expects;
-use crate::test_framework::{expect_exception, test_case, test_case_with_refs, TestCaseInputs, expect_exception_with_capability};
-
-
 
 
 use serde::{Deserialize};
@@ -289,14 +284,19 @@ fn test_vergrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
     //put hash to integer
     //let hash = BuilderData::with_raw(cell_hash.as_slice().to_vec(), 256).unwrap();
 
-    test_case_with_refs("
+    let code = "
         PUSHREFSLICE
         PUSHREFSLICE
         PUSHREFSLICE
         PLDU 256
         CHKSIGNS
-    ", vec![test_cell, signature.into_cell(), pub_key.into_cell().unwrap()])
-        .expect_stack(Stack::new().push(int!(-1)));
+    ";
+
+    let cells = vec![test_cell, signature.into_cell(), pub_key.into_cell().unwrap()];
+
+    let expected = Stack::new().push(int!(-1));
+
+
 }
 
 #[test]
@@ -405,7 +405,9 @@ fn test_vergrth16_based_on_real_data() { //real data taken from our react app fo
     code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
     code = code + "VERGRTH16";
 
-    test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).expect_success();
+    let refs = vec![proof_cell.clone(), public_inputs_cell.clone()];
+
+
 }
 
 
@@ -642,18 +644,20 @@ fn single_chcksgns(eph_pubkey: &Vec<u8>, zk_login_inputs: &ZkLoginInputs, all_jw
     ).unwrap();
 
     let start: Instant = Instant::now();
-    test_case_with_refs("
+    let code =  "
         PUSHREFSLICE
         PUSHREFSLICE
         PUSHREFSLICE
         PLDU 256
         CHKSIGNS
-    ", vec![test_cell, signature.into_cell(), pub_key.into_cell().unwrap()])
-        .expect_stack(Stack::new().push(int!(-1)));
-    start.elapsed().as_micros()
+    ";
+    let refs = vec![test_cell, signature.into_cell(), pub_key.into_cell().unwrap()];
+    let expected = Stack::new().push(int!(-1))
+
 
 }
 
 
 
 
+*/

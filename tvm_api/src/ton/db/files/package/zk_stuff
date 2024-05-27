@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.files.package.FirstBlock`\n\n```text\ndb.files.package.firstBlock workchain:int shard:long seqno:int unixtime:int lt:long = db.files.package.FirstBlock;\n```\n"]
 pub enum FirstBlock {
@@ -10,26 +11,31 @@ impl FirstBlock {
             FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.lt,
         }
     }
+
     pub fn seqno(&self) -> &crate::ton::int {
         match self {
             FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.seqno,
         }
     }
+
     pub fn shard(&self) -> &crate::ton::long {
         match self {
             FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.shard,
         }
     }
+
     pub fn unixtime(&self) -> &crate::ton::int {
         match self {
             FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.unixtime,
         }
     }
+
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
             FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.workchain,
         }
     }
+
     pub fn only(self) -> crate::ton::db::files::package::firstblock::FirstBlock {
         match self {
             FirstBlock::Db_Files_Package_FirstBlock(x) => x,
@@ -55,6 +61,7 @@ impl crate::BoxedDeserialize for FirstBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x701269e7)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -78,6 +85,7 @@ impl Value {
             Value::Db_Files_Package_Value(ref x) => &x.deleted,
         }
     }
+
     pub fn firstblocks(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::db::files::package::firstblock::FirstBlock>
@@ -86,21 +94,25 @@ impl Value {
             Value::Db_Files_Package_Value(ref x) => &x.firstblocks,
         }
     }
+
     pub fn key(&self) -> &crate::ton::Bool {
         match self {
             Value::Db_Files_Package_Value(ref x) => &x.key,
         }
     }
+
     pub fn package_id(&self) -> &crate::ton::int {
         match self {
             Value::Db_Files_Package_Value(ref x) => &x.package_id,
         }
     }
+
     pub fn temp(&self) -> &crate::ton::Bool {
         match self {
             Value::Db_Files_Package_Value(ref x) => &x.temp,
         }
     }
+
     pub fn only(self) -> crate::ton::db::files::package::value::Value {
         match self {
             Value::Db_Files_Package_Value(x) => x,
@@ -124,6 +136,7 @@ impl crate::BoxedDeserialize for Value {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe44cd52b)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

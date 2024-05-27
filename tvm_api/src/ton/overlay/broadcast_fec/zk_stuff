@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.broadcastFec.Id`\n\n```text\noverlay.broadcastFec.id src:int256 type:int256 data_hash:int256 size:int flags:int = overlay.broadcastFec.Id;\n```\n"]
 pub enum Id {
@@ -10,26 +11,31 @@ impl Id {
             Id::Overlay_BroadcastFec_Id(ref x) => &x.data_hash,
         }
     }
+
     pub fn flags(&self) -> &crate::ton::int {
         match self {
             Id::Overlay_BroadcastFec_Id(ref x) => &x.flags,
         }
     }
+
     pub fn size(&self) -> &crate::ton::int {
         match self {
             Id::Overlay_BroadcastFec_Id(ref x) => &x.size,
         }
     }
+
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
             Id::Overlay_BroadcastFec_Id(ref x) => &x.src,
         }
     }
+
     pub fn type_(&self) -> &crate::ton::int256 {
         match self {
             Id::Overlay_BroadcastFec_Id(ref x) => &x.type_,
         }
     }
+
     pub fn only(self) -> crate::ton::overlay::broadcast_fec::id::Id {
         match self {
             Id::Overlay_BroadcastFec_Id(x) => x,
@@ -53,6 +59,7 @@ impl crate::BoxedDeserialize for Id {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xfb3155a6)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -76,16 +83,19 @@ impl PartId {
             PartId::Overlay_BroadcastFec_PartId(ref x) => &x.broadcast_hash,
         }
     }
+
     pub fn data_hash(&self) -> &crate::ton::int256 {
         match self {
             PartId::Overlay_BroadcastFec_PartId(ref x) => &x.data_hash,
         }
     }
+
     pub fn seqno(&self) -> &crate::ton::int {
         match self {
             PartId::Overlay_BroadcastFec_PartId(ref x) => &x.seqno,
         }
     }
+
     pub fn only(self) -> crate::ton::overlay::broadcast_fec::partid::PartId {
         match self {
             PartId::Overlay_BroadcastFec_PartId(x) => x,
@@ -111,6 +121,7 @@ impl crate::BoxedDeserialize for PartId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa46962d0)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

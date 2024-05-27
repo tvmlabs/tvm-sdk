@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.files.index.Value`\n\n```text\ndb.files.index.value packages:(vector int) key_packages:(vector int) temp_packages:(vector int) = db.files.index.Value;\n```\n"]
 pub enum Value {
@@ -10,16 +11,19 @@ impl Value {
             Value::Db_Files_Index_Value(ref x) => &x.key_packages,
         }
     }
+
     pub fn packages(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
         match self {
             Value::Db_Files_Index_Value(ref x) => &x.packages,
         }
     }
+
     pub fn temp_packages(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
         match self {
             Value::Db_Files_Index_Value(ref x) => &x.temp_packages,
         }
     }
+
     pub fn only(self) -> crate::ton::db::files::index::value::Value {
         match self {
             Value::Db_Files_Index_Value(x) => x,
@@ -43,6 +47,7 @@ impl crate::BoxedDeserialize for Value {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa2b1dafc)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonEngine.networkProtocol.confirmValidation`\n\n```text\ntonEngine.networkProtocol.confirmValidation \n    id:long \n    peer:int \n    result:long\n    block_seq_no:int\n    block_start_lt:long\n    block_end_lt:long\n    block_gen_utime:int\n= tonEngine.NetworkProtocol;\n```\n"]
 pub struct ConfirmValidation {
@@ -15,6 +16,7 @@ impl crate::BareSerialize for ConfirmValidation {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x249e0c6f)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ConfirmValidation {
             id,
@@ -59,6 +61,7 @@ impl crate::BareDeserialize for ConfirmValidation {
 }
 impl crate::IntoBoxed for ConfirmValidation {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_ConfirmValidation(
             Box::new(self),
@@ -76,6 +79,7 @@ impl crate::BareSerialize for EmptyStepRequest {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xdd6c0307)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let EmptyStepRequest { id, empty_step } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -94,6 +98,7 @@ impl crate::BareDeserialize for EmptyStepRequest {
 }
 impl crate::IntoBoxed for EmptyStepRequest {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_EmptyStepRequest(self)
     }
@@ -109,6 +114,7 @@ impl crate::BareSerialize for Error {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xee45fe5f)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Error { err_code, msg } = self;
         _ser.write_bare::<crate::ton::int>(err_code)?;
@@ -127,6 +133,7 @@ impl crate::BareDeserialize for Error {
 }
 impl crate::IntoBoxed for Error {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_Error(self)
     }
@@ -142,6 +149,7 @@ impl crate::BareSerialize for RawData {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x6ae8a01b)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RawData { id, data } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -160,6 +168,7 @@ impl crate::BareDeserialize for RawData {
 }
 impl crate::IntoBoxed for RawData {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_RawData(self)
     }
@@ -176,6 +185,7 @@ impl crate::BareSerialize for ReflectToDbRequest {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x291ada1e)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ReflectToDbRequest { id, transaction, account } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -196,6 +206,7 @@ impl crate::BareDeserialize for ReflectToDbRequest {
 }
 impl crate::IntoBoxed for ReflectToDbRequest {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_ReflectToDbRequest(self)
     }
@@ -211,6 +222,7 @@ impl crate::BareSerialize for ReflectToDbResponse {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xaacd0ece)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ReflectToDbResponse { id, result } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -229,6 +241,7 @@ impl crate::BareDeserialize for ReflectToDbResponse {
 }
 impl crate::IntoBoxed for ReflectToDbResponse {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_ReflectToDbResponse(self)
     }
@@ -245,6 +258,7 @@ impl crate::BareSerialize for RequestBlockByNumber {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xfc5c9887)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RequestBlockByNumber { id, seq_no, vert_seq_no } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -265,6 +279,7 @@ impl crate::BareDeserialize for RequestBlockByNumber {
 }
 impl crate::IntoBoxed for RequestBlockByNumber {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_RequestBlockByNumber(
             self,
@@ -282,6 +297,7 @@ impl crate::BareSerialize for RequestLastEqualShard {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xba2b9a5a)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RequestLastEqualShard { id, shard_hash } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -300,6 +316,7 @@ impl crate::BareDeserialize for RequestLastEqualShard {
 }
 impl crate::IntoBoxed for RequestLastEqualShard {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_RequestLastEqualShard(
             self,
@@ -316,6 +333,7 @@ impl crate::BareSerialize for RequestNodeInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x11d0a25b)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RequestNodeInfo { id } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -332,6 +350,7 @@ impl crate::BareDeserialize for RequestNodeInfo {
 }
 impl crate::IntoBoxed for RequestNodeInfo {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_RequestNodeInfo(self)
     }
@@ -347,6 +366,7 @@ impl crate::BareSerialize for ResponceBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x5d721f0d)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ResponceBlock { id, signed_block } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -365,6 +385,7 @@ impl crate::BareDeserialize for ResponceBlock {
 }
 impl crate::IntoBoxed for ResponceBlock {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_ResponceBlock(self)
     }
@@ -381,6 +402,7 @@ impl crate::BareSerialize for ResponseLastEqualShard {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7f5d7f88)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ResponseLastEqualShard { id, seq_no, vert_seq_no } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -401,6 +423,7 @@ impl crate::BareDeserialize for ResponseLastEqualShard {
 }
 impl crate::IntoBoxed for ResponseLastEqualShard {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_ResponseLastEqualShard(
             self,
@@ -421,6 +444,7 @@ impl crate::BareSerialize for ResponseNodeInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x23b74379)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ResponseNodeInfo { id, validator_no, workchain, shard_prefix, shard_pfx_len } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -445,6 +469,7 @@ impl crate::BareDeserialize for ResponseNodeInfo {
 }
 impl crate::IntoBoxed for ResponseNodeInfo {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_ResponseNodeInfo(self)
     }
@@ -460,6 +485,7 @@ impl crate::BareSerialize for SendMessageRequest {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7a70345a)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let SendMessageRequest { id, message } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -478,6 +504,7 @@ impl crate::BareDeserialize for SendMessageRequest {
 }
 impl crate::IntoBoxed for SendMessageRequest {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_SendMessageRequest(self)
     }
@@ -493,6 +520,7 @@ impl crate::BareSerialize for SendMessageResponse {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0a1055ed)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let SendMessageResponse { id, result } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -511,6 +539,7 @@ impl crate::BareDeserialize for SendMessageResponse {
 }
 impl crate::IntoBoxed for SendMessageResponse {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_SendMessageResponse(self)
     }
@@ -526,6 +555,7 @@ impl crate::BareSerialize for Test1 {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7afa2679)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Test1 { id, hash } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -544,6 +574,7 @@ impl crate::BareDeserialize for Test1 {
 }
 impl crate::IntoBoxed for Test1 {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_Test1(self)
     }
@@ -559,6 +590,7 @@ impl crate::BareSerialize for Test2 {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc745311c)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Test2 { id, flag } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -577,6 +609,7 @@ impl crate::BareDeserialize for Test2 {
 }
 impl crate::IntoBoxed for Test2 {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_Test2(self)
     }
@@ -592,6 +625,7 @@ impl crate::BareSerialize for Test3 {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xee49ed91)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Test3 { id, port } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -610,6 +644,7 @@ impl crate::BareDeserialize for Test3 {
 }
 impl crate::IntoBoxed for Test3 {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_Test3(self)
     }
@@ -625,6 +660,7 @@ impl crate::BareSerialize for ValidationRequest {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xdc0928a1)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValidationRequest { id, signed_block } = self;
         _ser.write_bare::<crate::ton::long>(id)?;
@@ -643,6 +679,7 @@ impl crate::BareDeserialize for ValidationRequest {
 }
 impl crate::IntoBoxed for ValidationRequest {
     type Boxed = crate::ton::ton_engine::NetworkProtocol;
+
     fn into_boxed(self) -> crate::ton::ton_engine::NetworkProtocol {
         crate::ton::ton_engine::NetworkProtocol::TonEngine_NetworkProtocol_ValidationRequest(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validator.config.random.local`\n\n```text\nvalidator.config.random.local addr_list:adnl.addressList = validator.config.Local;\n```\n"]
 pub struct Local {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Local {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x59839462)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Local { addr_list } = self;
         _ser.write_bare::<crate::ton::adnl::addresslist::AddressList>(addr_list)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Local {
 }
 impl crate::IntoBoxed for Local {
     type Boxed = crate::ton::validator::config::Local;
+
     fn into_boxed(self) -> crate::ton::validator::config::Local {
         crate::ton::validator::config::Local::Validator_Config_Random_Local(self)
     }

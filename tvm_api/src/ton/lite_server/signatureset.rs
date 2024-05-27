@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.signatureSet`\n\n```text\nliteServer.signatureSet validator_set_hash:int catchain_seqno:int signatures:(vector liteServer.signature) = liteServer.SignatureSet;\n```\n"]
 pub struct SignatureSet {
@@ -12,6 +13,7 @@ impl crate::BareSerialize for SignatureSet {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf644a6e6)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let SignatureSet { validator_set_hash, catchain_seqno, signatures } = self;
         _ser.write_bare::<crate::ton::int>(validator_set_hash)?;
@@ -35,6 +37,7 @@ impl crate::BareDeserialize for SignatureSet {
 }
 impl crate::IntoBoxed for SignatureSet {
     type Boxed = crate::ton::lite_server::SignatureSet;
+
     fn into_boxed(self) -> crate::ton::lite_server::SignatureSet {
         crate::ton::lite_server::SignatureSet::LiteServer_SignatureSet(self)
     }
