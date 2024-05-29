@@ -657,6 +657,7 @@ impl ServerLink {
         params: &[ParamsOfQueryOperation],
         endpoint: Option<Endpoint>,
     ) -> ClientResult<Vec<Value>> {
+        #[cfg(not(feature = "acki-nacki"))]
         let latency_detection_required = if endpoint.is_some() {
             false
         } else if self.state.has_multiple_endpoints() {
@@ -665,6 +666,8 @@ impl ServerLink {
         } else {
             false
         };
+        #[cfg(feature = "acki-nacki")]
+        let latency_detection_required = false;
         let mut query =
             GraphQLQuery::build(params, latency_detection_required, self.config.wait_for_timeout);
         let info_request_time = self.client_env.now_ms();

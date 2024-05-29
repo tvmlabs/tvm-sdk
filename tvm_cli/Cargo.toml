@@ -6,7 +6,7 @@ keywords = [
     #
     "TVM",
     "SDK",
-    "smart contract",
+    "smart-contract",
     "tvmlabs",
     "solidity",
 ]
@@ -25,6 +25,7 @@ repository.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
 base64.workspace = true
+chitchat = { git = "https://github.com/gosh-sh/chitchat.git", optional = true }
 chrono.workspace = true
 clap = "2"
 futures.workspace = true
@@ -68,3 +69,6 @@ path = "src/main.rs"
 [[bin]]
 name = "__tvm-cli_completion"
 path = "src/completion.rs"
+
+[features]
+acki-nacki = ["tvm_client/acki-nacki", "dep:chitchat"]
