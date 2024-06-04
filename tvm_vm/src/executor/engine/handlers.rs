@@ -43,6 +43,7 @@ use crate::executor::stack::*;
 use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+use crate::executor::zk::execute_vergrth16;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
@@ -385,7 +386,8 @@ impl Handlers {
                 .set(0x22, execute_diff_patch_binary_not_quiet)
                 .set(0x23, execute_diff_patch_binary_zip_not_quiet)
                 .set(0x24, execute_diff_patch_binary_quiet)
-                .set(0x25, execute_diff_patch_binary_zip_quiet);
+                .set(0x25, execute_diff_patch_binary_zip_quiet)
+                .set(0x26, execute_vergrth16);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
