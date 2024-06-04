@@ -24,23 +24,22 @@ serde_json.workspace = true
 #serde.workspace = true
 thiserror.workspace = true
 zstd = { default-features = false, optional = true, version = "0.13.0" }
-#bellman = { git = "https://github.com/zkcrypto/bellman" }
-bls12_381 = "0.8"
+#bls12_381 = "0.8"
 
 
-ark-bls12-381 = "0.4.0"
-ark-bn254 = "0.4.0"
-ark-ec = { version = "0.4.1" }
-ark-ff = { version = "0.4.1", features = ["asm"] }
-ark-groth16 = { version = "0.4.0", default-features = false }
-ark-relations = "0.4.0"
-ark-serialize = "0.4.1"
-ark-snark = "0.4.0"
-blst = "0.3.11"
+#ark-bls12-381 = "0.4.0"
+#ark-bn254 = "0.4.0"
+#ark-ec = { version = "0.4.1" }
+#ark-ff = { version = "0.4.1", features = ["asm"] }
+#ark-groth16 = { version = "0.4.0", default-features = false }
+#ark-relations = "0.4.0"
+#ark-serialize = "0.4.1"
+#ark-snark = "0.4.0"
+#blst = "0.3.11"
 byte-slice-cast = "1.2.2"
-ark-crypto-primitives = { version = "0.4.0", features = ["r1cs", "prf"] }
-ark-r1cs-std = "0.4.0"
-ark-std = "0.4.0"
+#ark-crypto-primitives = { version = "0.4.0", features = ["r1cs", "prf"] }
+#ark-r1cs-std = "0.4.0"
+#ark-std = "0.4.0"
 #
 tvm_block.workspace = true
 tvm_types.workspace = true
