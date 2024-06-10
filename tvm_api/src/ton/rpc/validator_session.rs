@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.downloadCandidate`\n\n```text\nvalidatorSession.downloadCandidate round:int id:validatorSession.candidateId = validatorSession.Candidate;\n```\n"]
 pub struct DownloadCandidate {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for DownloadCandidate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe0fd3df5)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadCandidate { round, id } = self;
         _ser.write_bare::<crate::ton::int>(round)?;
@@ -32,12 +30,15 @@ impl crate::BoxedDeserialize for DownloadCandidate {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe0fd3df5)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xe0fd3df5) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xe0fd3df5) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadCandidate {
@@ -58,7 +59,6 @@ impl crate::BareSerialize for Ping {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x680449ad)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Ping { hash } = self;
         _ser.write_bare::<crate::ton::long>(hash)?;
@@ -77,12 +77,15 @@ impl crate::BoxedDeserialize for Ping {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x680449ad)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x680449ad) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x680449ad) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Ping {

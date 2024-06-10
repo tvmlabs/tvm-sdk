@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.config.Global`\n\n```text\ndht.config.global static_nodes:dht.nodes k:int a:int = dht.config.Global;\n```\n"]
 pub enum Global {
@@ -11,19 +10,16 @@ impl Global {
             Global::Dht_Config_Global(ref x) => &x.a,
         }
     }
-
     pub fn k(&self) -> &crate::ton::int {
         match self {
             Global::Dht_Config_Global(ref x) => &x.k,
         }
     }
-
     pub fn static_nodes(&self) -> &crate::ton::dht::nodes::Nodes {
         match self {
             Global::Dht_Config_Global(ref x) => &x.static_nodes,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::config::global::Global {
         match self {
             Global::Dht_Config_Global(x) => x,
@@ -47,7 +43,6 @@ impl crate::BoxedDeserialize for Global {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x84ceca07)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -73,7 +68,6 @@ impl Local {
             _ => None,
         }
     }
-
     pub fn id(&self) -> Option<&crate::ton::adnl::id::short::Short> {
         match self {
             Local::Dht_Config_Local(ref x) => Some(&x.id),
@@ -99,7 +93,6 @@ impl crate::BoxedDeserialize for Local {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x76204a6f), crate::ConstructorNumber(0x9beb2577)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

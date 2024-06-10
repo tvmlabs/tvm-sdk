@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `smc.getCode`\n\n```text\nsmc.getCode id:int53 = tvm.Cell;\n```\n"]
 pub struct GetCode {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for GetCode {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x81e61b98)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetCode { id } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
@@ -29,12 +27,15 @@ impl crate::BoxedDeserialize for GetCode {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x81e61b98)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x81e61b98) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x81e61b98) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetCode {
@@ -55,7 +56,6 @@ impl crate::BareSerialize for GetData {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe6835349)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetData { id } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
@@ -74,12 +74,15 @@ impl crate::BoxedDeserialize for GetData {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe6835349)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xe6835349) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xe6835349) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetData {
@@ -100,7 +103,6 @@ impl crate::BareSerialize for GetState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf338a9eb)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetState { id } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
@@ -119,12 +121,15 @@ impl crate::BoxedDeserialize for GetState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf338a9eb)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf338a9eb) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf338a9eb) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetState {
@@ -145,7 +150,6 @@ impl crate::BareSerialize for Load {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xca25d03f)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Load { account_address } = self;
         _ser.write_bare::<crate::ton::accountaddress::AccountAddress>(account_address)?;
@@ -164,12 +168,15 @@ impl crate::BoxedDeserialize for Load {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xca25d03f)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xca25d03f) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xca25d03f) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Load {
@@ -192,7 +199,6 @@ impl crate::BareSerialize for RunGetMethod {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf0c905aa)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunGetMethod { id, method, stack } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
@@ -219,12 +225,15 @@ impl crate::BoxedDeserialize for RunGetMethod {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf0c905aa)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf0c905aa) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf0c905aa) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for RunGetMethod {
@@ -247,7 +256,6 @@ impl crate::BareSerialize for RunTvm {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa83be941)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunTvm { mode, account_address, stack } = self;
         _ser.write_bare::<crate::ton::int>(mode)?;
@@ -274,12 +282,15 @@ impl crate::BoxedDeserialize for RunTvm {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa83be941)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xa83be941) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xa83be941) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for RunTvm {
@@ -303,7 +314,6 @@ impl crate::BareSerialize for RunTvmByBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x607c4db1)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunTvmByBlock { mode, account_id, block_root_hash, stack } = self;
         _ser.write_bare::<crate::ton::int>(mode)?;
@@ -332,12 +342,15 @@ impl crate::BoxedDeserialize for RunTvmByBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x607c4db1)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x607c4db1) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x607c4db1) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for RunTvmByBlock {
@@ -359,7 +372,6 @@ impl crate::BareSerialize for RunTvmMsg {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xef831db1)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunTvmMsg { mode, message } = self;
         _ser.write_bare::<crate::ton::int>(mode)?;
@@ -380,12 +392,15 @@ impl crate::BoxedDeserialize for RunTvmMsg {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xef831db1)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xef831db1) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xef831db1) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for RunTvmMsg {
@@ -408,7 +423,6 @@ impl crate::BareSerialize for RunTvmMsgByBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x03758f4e)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunTvmMsgByBlock { mode, block_root_hash, message } = self;
         _ser.write_bare::<crate::ton::int>(mode)?;
@@ -431,12 +445,15 @@ impl crate::BoxedDeserialize for RunTvmMsgByBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x03758f4e)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x03758f4e) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x03758f4e) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for RunTvmMsgByBlock {

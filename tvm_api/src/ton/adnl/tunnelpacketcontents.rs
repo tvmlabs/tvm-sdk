@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.tunnelPacketContents`\n\n```text\nadnl.tunnelPacketContents \n  rand1:bytes \n  flags:# \n  from_ip:flags.0?int\n  from_port:flags.0?int\n  message:flags.1?bytes \n  statistics:flags.2?bytes\n  payment:flags.3?bytes\n  rand2:bytes \n        = adnl.TunnelPacketContents;\n```\n"]
 pub struct TunnelPacketContents {
@@ -16,7 +15,6 @@ impl crate::BareSerialize for TunnelPacketContents {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc59138b4)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let TunnelPacketContents { rand1, from_ip, from_port, message, statistics, payment, rand2 } =
             self;
@@ -94,7 +92,6 @@ impl crate::BareDeserialize for TunnelPacketContents {
 }
 impl crate::IntoBoxed for TunnelPacketContents {
     type Boxed = crate::ton::adnl::TunnelPacketContents;
-
     fn into_boxed(self) -> crate::ton::adnl::TunnelPacketContents {
         crate::ton::adnl::TunnelPacketContents::Adnl_TunnelPacketContents(self)
     }

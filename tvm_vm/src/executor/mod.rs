@@ -46,6 +46,7 @@ use tvm_types::Result;
 #[path = "../tests/test_executor.rs"]
 mod tests;
 mod zk;
+mod poseidon_stuff;
 
 
 pub trait Mask {

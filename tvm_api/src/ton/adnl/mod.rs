@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.Address`\n\n```text\nadnl.address.tunnel to:int256 pubkey:PublicKey = adnl.Address;\n\nadnl.address.udp ip:int port:int = adnl.Address;\n\nadnl.address.udp6 ip:int128 port:int = adnl.Address;\n```\n"]
 pub enum Address {
@@ -15,14 +14,12 @@ impl Address {
             _ => None,
         }
     }
-
     pub fn pubkey(&self) -> Option<&crate::ton::PublicKey> {
         match self {
             Address::Adnl_Address_Tunnel(ref x) => Some(&x.pubkey),
             _ => None,
         }
     }
-
     pub fn to(&self) -> Option<&crate::ton::int256> {
         match self {
             Address::Adnl_Address_Tunnel(ref x) => Some(&x.to),
@@ -53,7 +50,6 @@ impl crate::BoxedDeserialize for Address {
             crate::ConstructorNumber(0xe31d63fa),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -83,31 +79,26 @@ impl AddressList {
             AddressList::Adnl_AddressList(ref x) => &x.addrs,
         }
     }
-
     pub fn expire_at(&self) -> &crate::ton::int {
         match self {
             AddressList::Adnl_AddressList(ref x) => &x.expire_at,
         }
     }
-
     pub fn priority(&self) -> &crate::ton::int {
         match self {
             AddressList::Adnl_AddressList(ref x) => &x.priority,
         }
     }
-
     pub fn reinit_date(&self) -> &crate::ton::int {
         match self {
             AddressList::Adnl_AddressList(ref x) => &x.reinit_date,
         }
     }
-
     pub fn version(&self) -> &crate::ton::int {
         match self {
             AddressList::Adnl_AddressList(ref x) => &x.version,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::addresslist::AddressList {
         match self {
             AddressList::Adnl_AddressList(x) => x,
@@ -131,7 +122,6 @@ impl crate::BoxedDeserialize for AddressList {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x2227e658)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -163,7 +153,6 @@ impl Message {
             _ => None,
         }
     }
-
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
             Message::Adnl_Message_Custom(ref x) => Some(&x.data),
@@ -171,7 +160,6 @@ impl Message {
             _ => None,
         }
     }
-
     pub fn date(&self) -> Option<&crate::ton::int> {
         match self {
             Message::Adnl_Message_ConfirmChannel(ref x) => Some(&x.date),
@@ -180,14 +168,12 @@ impl Message {
             _ => None,
         }
     }
-
     pub fn hash(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::Adnl_Message_Part(ref x) => Some(&x.hash),
             _ => None,
         }
     }
-
     pub fn key(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::Adnl_Message_ConfirmChannel(ref x) => Some(&x.key),
@@ -195,28 +181,24 @@ impl Message {
             _ => None,
         }
     }
-
     pub fn offset(&self) -> Option<&crate::ton::int> {
         match self {
             Message::Adnl_Message_Part(ref x) => Some(&x.offset),
             _ => None,
         }
     }
-
     pub fn peer_key(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::Adnl_Message_ConfirmChannel(ref x) => Some(&x.peer_key),
             _ => None,
         }
     }
-
     pub fn query(&self) -> Option<&crate::ton::bytes> {
         match self {
             Message::Adnl_Message_Query(ref x) => Some(&x.query),
             _ => None,
         }
     }
-
     pub fn query_id(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::Adnl_Message_Answer(ref x) => Some(&x.query_id),
@@ -224,7 +206,6 @@ impl Message {
             _ => None,
         }
     }
-
     pub fn total_size(&self) -> Option<&crate::ton::int> {
         match self {
             Message::Adnl_Message_Part(ref x) => Some(&x.total_size),
@@ -265,7 +246,6 @@ impl crate::BoxedDeserialize for Message {
             crate::ConstructorNumber(0x10c20520),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -308,13 +288,11 @@ impl Node {
             Node::Adnl_Node(ref x) => &x.addr_list,
         }
     }
-
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
             Node::Adnl_Node(ref x) => &x.id,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::node::Node {
         match self {
             Node::Adnl_Node(x) => x,
@@ -338,7 +316,6 @@ impl crate::BoxedDeserialize for Node {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6b561285)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -362,7 +339,6 @@ impl Nodes {
             Nodes::Adnl_Nodes(ref x) => &x.nodes,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::nodes::Nodes {
         match self {
             Nodes::Adnl_Nodes(x) => x,
@@ -386,7 +362,6 @@ impl crate::BoxedDeserialize for Nodes {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa209db56)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -410,37 +385,31 @@ impl PacketContents {
             PacketContents::Adnl_PacketContents(ref x) => x.address.as_ref(),
         }
     }
-
     pub fn confirm_seqno(&self) -> Option<&crate::ton::long> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.confirm_seqno.as_ref(),
         }
     }
-
     pub fn dst_reinit_date(&self) -> Option<&crate::ton::int> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.dst_reinit_date.as_ref(),
         }
     }
-
     pub fn from(&self) -> Option<&crate::ton::PublicKey> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.from.as_ref(),
         }
     }
-
     pub fn from_short(&self) -> Option<&crate::ton::adnl::id::short::Short> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.from_short.as_ref(),
         }
     }
-
     pub fn message(&self) -> Option<&crate::ton::adnl::Message> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.message.as_ref(),
         }
     }
-
     pub fn messages(
         &self,
     ) -> Option<&crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Message>> {
@@ -448,31 +417,26 @@ impl PacketContents {
             PacketContents::Adnl_PacketContents(ref x) => x.messages.as_ref(),
         }
     }
-
     pub fn priority_address(&self) -> Option<&crate::ton::adnl::addresslist::AddressList> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.priority_address.as_ref(),
         }
     }
-
     pub fn rand1(&self) -> &crate::ton::bytes {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => &x.rand1,
         }
     }
-
     pub fn rand2(&self) -> &crate::ton::bytes {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => &x.rand2,
         }
     }
-
     pub fn recv_addr_list_version(&self) -> Option<&crate::ton::int> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.recv_addr_list_version.as_ref(),
         }
     }
-
     pub fn recv_priority_addr_list_version(&self) -> Option<&crate::ton::int> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => {
@@ -480,25 +444,21 @@ impl PacketContents {
             }
         }
     }
-
     pub fn reinit_date(&self) -> Option<&crate::ton::int> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.reinit_date.as_ref(),
         }
     }
-
     pub fn seqno(&self) -> Option<&crate::ton::long> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.seqno.as_ref(),
         }
     }
-
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.signature.as_ref(),
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::packetcontents::PacketContents {
         match self {
             PacketContents::Adnl_PacketContents(x) => x,
@@ -524,7 +484,6 @@ impl crate::BoxedDeserialize for PacketContents {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd142cd89)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -548,7 +507,6 @@ impl Pong {
             Pong::Adnl_Pong(ref x) => &x.value,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::pong::Pong {
         match self {
             Pong::Adnl_Pong(x) => x,
@@ -572,7 +530,6 @@ impl crate::BoxedDeserialize for Pong {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x20747c0e)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -598,7 +555,6 @@ impl Proxy {
             Proxy::Adnl_Proxy_None(ref x) => &x.id,
         }
     }
-
     pub fn shared_secret(&self) -> Option<&crate::ton::bytes> {
         match self {
             Proxy::Adnl_Proxy_Fast(ref x) => Some(&x.shared_secret),
@@ -624,7 +580,6 @@ impl crate::BoxedDeserialize for Proxy {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x3a8b45b5), crate::ConstructorNumber(0x3532487b)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -657,14 +612,12 @@ impl ProxyControlPacket {
             _ => None,
         }
     }
-
     pub fn ip(&self) -> Option<&crate::ton::int> {
         match self {
             ProxyControlPacket::Adnl_ProxyControlPacketRegister(ref x) => Some(&x.ip),
             _ => None,
         }
     }
-
     pub fn port(&self) -> Option<&crate::ton::int> {
         match self {
             ProxyControlPacket::Adnl_ProxyControlPacketRegister(ref x) => Some(&x.port),
@@ -703,7 +656,6 @@ impl crate::BoxedDeserialize for ProxyControlPacket {
             crate::ConstructorNumber(0xc309b23f),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -722,43 +674,36 @@ impl ProxyPacketHeader {
             ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.adnl_start_time.as_ref(),
         }
     }
-
     pub fn date(&self) -> Option<&crate::ton::int> {
         match self {
             ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.date.as_ref(),
         }
     }
-
     pub fn ip(&self) -> Option<&crate::ton::int> {
         match self {
             ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.ip.as_ref(),
         }
     }
-
     pub fn port(&self) -> Option<&crate::ton::int> {
         match self {
             ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.port.as_ref(),
         }
     }
-
     pub fn proxy_id(&self) -> &crate::ton::int256 {
         match self {
             ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => &x.proxy_id,
         }
     }
-
     pub fn seqno(&self) -> Option<&crate::ton::long> {
         match self {
             ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.seqno.as_ref(),
         }
     }
-
     pub fn signature(&self) -> &crate::ton::int256 {
         match self {
             ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => &x.signature,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::proxypacketheader::ProxyPacketHeader {
         match self {
             ProxyPacketHeader::Adnl_ProxyPacketHeader(x) => x,
@@ -786,7 +731,6 @@ impl crate::BoxedDeserialize for ProxyPacketHeader {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x08693c78)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -810,31 +754,26 @@ impl ProxyTo {
             ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.data_hash,
         }
     }
-
     pub fn date(&self) -> &crate::ton::int {
         match self {
             ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.date,
         }
     }
-
     pub fn ip(&self) -> &crate::ton::int {
         match self {
             ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.ip,
         }
     }
-
     pub fn port(&self) -> &crate::ton::int {
         match self {
             ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.port,
         }
     }
-
     pub fn shared_secret(&self) -> &crate::ton::int256 {
         match self {
             ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.shared_secret,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::proxytofasthash::ProxyToFastHash {
         match self {
             ProxyTo::Adnl_ProxyToFastHash(x) => x,
@@ -858,7 +797,6 @@ impl crate::BoxedDeserialize for ProxyTo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xddbdf85e)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -882,25 +820,21 @@ impl ProxyToSign {
             ProxyToSign::Adnl_ProxyToFast(ref x) => &x.date,
         }
     }
-
     pub fn ip(&self) -> &crate::ton::int {
         match self {
             ProxyToSign::Adnl_ProxyToFast(ref x) => &x.ip,
         }
     }
-
     pub fn port(&self) -> &crate::ton::int {
         match self {
             ProxyToSign::Adnl_ProxyToFast(ref x) => &x.port,
         }
     }
-
     pub fn signature(&self) -> &crate::ton::int256 {
         match self {
             ProxyToSign::Adnl_ProxyToFast(ref x) => &x.signature,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::proxytofast::ProxyToFast {
         match self {
             ProxyToSign::Adnl_ProxyToFast(x) => x,
@@ -924,7 +858,6 @@ impl crate::BoxedDeserialize for ProxyToSign {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb4ee21d6)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -948,43 +881,36 @@ impl TunnelPacketContents {
             TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.from_ip.as_ref(),
         }
     }
-
     pub fn from_port(&self) -> Option<&crate::ton::int> {
         match self {
             TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.from_port.as_ref(),
         }
     }
-
     pub fn message(&self) -> Option<&crate::ton::bytes> {
         match self {
             TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.message.as_ref(),
         }
     }
-
     pub fn payment(&self) -> Option<&crate::ton::bytes> {
         match self {
             TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.payment.as_ref(),
         }
     }
-
     pub fn rand1(&self) -> &crate::ton::bytes {
         match self {
             TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => &x.rand1,
         }
     }
-
     pub fn rand2(&self) -> &crate::ton::bytes {
         match self {
             TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => &x.rand2,
         }
     }
-
     pub fn statistics(&self) -> Option<&crate::ton::bytes> {
         match self {
             TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.statistics.as_ref(),
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::tunnelpacketcontents::TunnelPacketContents {
         match self {
             TunnelPacketContents::Adnl_TunnelPacketContents(x) => x,
@@ -1012,7 +938,6 @@ impl crate::BoxedDeserialize for TunnelPacketContents {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc59138b4)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

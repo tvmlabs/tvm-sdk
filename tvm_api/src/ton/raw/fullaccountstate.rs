@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.fullAccountState`\n\n```text\nraw.fullAccountState balance:int64 code:bytes data:bytes last_transaction_id:internal.transactionId block_id:tonNode.blockIdExt frozen_hash:bytes sync_utime:int53 = raw.FullAccountState;\n```\n"]
 pub struct FullAccountState {
@@ -16,7 +15,6 @@ impl crate::BareSerialize for FullAccountState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc265ac17)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let FullAccountState {
             balance,
@@ -54,7 +52,6 @@ impl crate::BareDeserialize for FullAccountState {
 }
 impl crate::IntoBoxed for FullAccountState {
     type Boxed = crate::ton::raw::FullAccountState;
-
     fn into_boxed(self) -> crate::ton::raw::FullAccountState {
         crate::ton::raw::FullAccountState::Raw_FullAccountState(self)
     }

@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `fec.Type`\n\n```text\nfec.online data_size:int symbol_size:int symbols_count:int = fec.Type;\n\nfec.raptorQ data_size:int symbol_size:int symbols_count:int = fec.Type;\n\nfec.roundRobin data_size:int symbol_size:int symbols_count:int = fec.Type;\n```\n"]
 pub enum Type {
@@ -15,7 +14,6 @@ impl Type {
             Type::Fec_RoundRobin(ref x) => &x.data_size,
         }
     }
-
     pub fn symbol_size(&self) -> &crate::ton::int {
         match self {
             Type::Fec_Online(ref x) => &x.symbol_size,
@@ -23,7 +21,6 @@ impl Type {
             Type::Fec_RoundRobin(ref x) => &x.symbol_size,
         }
     }
-
     pub fn symbols_count(&self) -> &crate::ton::int {
         match self {
             Type::Fec_Online(ref x) => &x.symbols_count,
@@ -55,7 +52,6 @@ impl crate::BoxedDeserialize for Type {
             crate::ConstructorNumber(0x32f528e4),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

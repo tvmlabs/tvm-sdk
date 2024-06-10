@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `keyStoreTypeDirectory`\n\n```text\nkeyStoreTypeDirectory directory:string = KeyStoreType;\n```\n"]
 pub struct KeyStoreTypeDirectory {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for KeyStoreTypeDirectory {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe969122a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let KeyStoreTypeDirectory { directory } = self;
         _ser.write_bare::<crate::ton::string>(directory)?;
@@ -27,7 +25,6 @@ impl crate::BareDeserialize for KeyStoreTypeDirectory {
 }
 impl crate::IntoBoxed for KeyStoreTypeDirectory {
     type Boxed = crate::ton::KeyStoreType;
-
     fn into_boxed(self) -> crate::ton::KeyStoreType {
         crate::ton::KeyStoreType::KeyStoreTypeDirectory(self)
     }

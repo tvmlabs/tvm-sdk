@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.Addr`\n\n```text\nengine.addr ip:int port:int categories:(vector int) priority_categories:(vector int) = engine.Addr;\n\nengine.addrProxy in_ip:int in_port:int out_ip:int out_port:int \n          proxy_type:adnl.Proxy categories:(vector int) priority_categories:(vector int) = engine.Addr;\n```\n"]
 pub enum Addr {
@@ -13,56 +12,48 @@ impl Addr {
             Addr::Engine_AddrProxy(ref x) => &x.categories,
         }
     }
-
     pub fn in_ip(&self) -> Option<&crate::ton::int> {
         match self {
             Addr::Engine_AddrProxy(ref x) => Some(&x.in_ip),
             _ => None,
         }
     }
-
     pub fn in_port(&self) -> Option<&crate::ton::int> {
         match self {
             Addr::Engine_AddrProxy(ref x) => Some(&x.in_port),
             _ => None,
         }
     }
-
     pub fn ip(&self) -> Option<&crate::ton::int> {
         match self {
             Addr::Engine_Addr(ref x) => Some(&x.ip),
             _ => None,
         }
     }
-
     pub fn out_ip(&self) -> Option<&crate::ton::int> {
         match self {
             Addr::Engine_AddrProxy(ref x) => Some(&x.out_ip),
             _ => None,
         }
     }
-
     pub fn out_port(&self) -> Option<&crate::ton::int> {
         match self {
             Addr::Engine_AddrProxy(ref x) => Some(&x.out_port),
             _ => None,
         }
     }
-
     pub fn port(&self) -> Option<&crate::ton::int> {
         match self {
             Addr::Engine_Addr(ref x) => Some(&x.port),
             _ => None,
         }
     }
-
     pub fn priority_categories(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
         match self {
             Addr::Engine_Addr(ref x) => &x.priority_categories,
             Addr::Engine_AddrProxy(ref x) => &x.priority_categories,
         }
     }
-
     pub fn proxy_type(&self) -> Option<&crate::ton::adnl::Proxy> {
         match self {
             Addr::Engine_AddrProxy(ref x) => Some(&x.proxy_type),
@@ -88,7 +79,6 @@ impl crate::BoxedDeserialize for Addr {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xef311fec), crate::ConstructorNumber(0x8adf6549)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -115,13 +105,11 @@ impl Adnl {
             Adnl::Engine_Adnl(ref x) => &x.category,
         }
     }
-
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
             Adnl::Engine_Adnl(ref x) => &x.id,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::adnl::Adnl {
         match self {
             Adnl::Engine_Adnl(x) => x,
@@ -145,7 +133,6 @@ impl crate::BoxedDeserialize for Adnl {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x62d76550)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -172,19 +159,16 @@ impl ControlInterface {
             ControlInterface::Engine_ControlInterface(ref x) => &x.allowed,
         }
     }
-
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
             ControlInterface::Engine_ControlInterface(ref x) => &x.id,
         }
     }
-
     pub fn port(&self) -> &crate::ton::int {
         match self {
             ControlInterface::Engine_ControlInterface(ref x) => &x.port,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::controlinterface::ControlInterface {
         match self {
             ControlInterface::Engine_ControlInterface(x) => x,
@@ -212,7 +196,6 @@ impl crate::BoxedDeserialize for ControlInterface {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x31816fab)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -236,13 +219,11 @@ impl ControlProcess {
             ControlProcess::Engine_ControlProcess(ref x) => &x.id,
         }
     }
-
     pub fn permissions(&self) -> &crate::ton::int {
         match self {
             ControlProcess::Engine_ControlProcess(ref x) => &x.permissions,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::controlprocess::ControlProcess {
         match self {
             ControlProcess::Engine_ControlProcess(x) => x,
@@ -268,7 +249,6 @@ impl crate::BoxedDeserialize for ControlProcess {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6ac04817)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -292,7 +272,6 @@ impl Dht {
             Dht::Engine_Dht(ref x) => &x.id,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::dht::Dht {
         match self {
             Dht::Engine_Dht(x) => x,
@@ -316,7 +295,6 @@ impl crate::BoxedDeserialize for Dht {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5de9f2fa)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -340,7 +318,6 @@ impl Gc {
             Gc::Engine_Gc(ref x) => &x.ids,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::gc::Gc {
         match self {
             Gc::Engine_Gc(x) => x,
@@ -364,7 +341,6 @@ impl crate::BoxedDeserialize for Gc {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbfbd987b)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -388,13 +364,11 @@ impl LiteServer {
             LiteServer::Engine_LiteServer(ref x) => &x.id,
         }
     }
-
     pub fn port(&self) -> &crate::ton::int {
         match self {
             LiteServer::Engine_LiteServer(ref x) => &x.port,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::liteserver::LiteServer {
         match self {
             LiteServer::Engine_LiteServer(x) => x,
@@ -418,7 +392,6 @@ impl crate::BoxedDeserialize for LiteServer {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbb708efe)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -442,7 +415,6 @@ impl OneSessionStat {
             OneSessionStat::Engine_Validator_OneSessionStat(ref x) => &x.session_id,
         }
     }
-
     pub fn stats(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::onestat::OneStat>
@@ -451,7 +423,6 @@ impl OneSessionStat {
             OneSessionStat::Engine_Validator_OneSessionStat(ref x) => &x.stats,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::validator::onesessionstat::OneSessionStat {
         match self {
             OneSessionStat::Engine_Validator_OneSessionStat(x) => x,
@@ -479,7 +450,6 @@ impl crate::BoxedDeserialize for OneSessionStat {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xadf42035)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -511,25 +481,21 @@ impl Validator {
             Validator::Engine_Validator(ref x) => &x.adnl_addrs,
         }
     }
-
     pub fn election_date(&self) -> &crate::ton::int {
         match self {
             Validator::Engine_Validator(ref x) => &x.election_date,
         }
     }
-
     pub fn expire_at(&self) -> &crate::ton::int {
         match self {
             Validator::Engine_Validator(ref x) => &x.expire_at,
         }
     }
-
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
             Validator::Engine_Validator(ref x) => &x.id,
         }
     }
-
     pub fn temp_keys(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validatortempkey::ValidatorTempKey>
@@ -538,7 +504,6 @@ impl Validator {
             Validator::Engine_Validator(ref x) => &x.temp_keys,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::validator::Validator {
         match self {
             Validator::Engine_Validator(x) => x,
@@ -562,7 +527,6 @@ impl crate::BoxedDeserialize for Validator {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x885fea29)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -586,13 +550,11 @@ impl ValidatorAdnlAddress {
             ValidatorAdnlAddress::Engine_ValidatorAdnlAddress(ref x) => &x.expire_at,
         }
     }
-
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
             ValidatorAdnlAddress::Engine_ValidatorAdnlAddress(ref x) => &x.id,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress {
         match self {
             ValidatorAdnlAddress::Engine_ValidatorAdnlAddress(x) => x,
@@ -620,7 +582,6 @@ impl crate::BoxedDeserialize for ValidatorAdnlAddress {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd34545be)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -639,13 +600,11 @@ impl ValidatorTempKey {
             ValidatorTempKey::Engine_ValidatorTempKey(ref x) => &x.expire_at,
         }
     }
-
     pub fn key(&self) -> &crate::ton::int256 {
         match self {
             ValidatorTempKey::Engine_ValidatorTempKey(ref x) => &x.key,
         }
     }
-
     pub fn only(self) -> crate::ton::engine::validatortempkey::ValidatorTempKey {
         match self {
             ValidatorTempKey::Engine_ValidatorTempKey(x) => x,
@@ -673,7 +632,6 @@ impl crate::BoxedDeserialize for ValidatorTempKey {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5e4ad6de)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
