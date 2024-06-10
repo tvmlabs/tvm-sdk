@@ -45,6 +45,9 @@ use tvm_types::Result;
 #[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
+mod zk;
+mod poseidon_stuff;
+
 
 pub trait Mask {
     fn bit(&self, bits: Self) -> bool;

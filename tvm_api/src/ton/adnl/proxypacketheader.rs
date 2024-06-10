@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.proxyPacketHeader`\n\n```text\nadnl.proxyPacketHeader\n  proxy_id:int256\n  flags:# \n  ip:flags.0?int\n  port:flags.0?int\n  adnl_start_time:flags.1?int\n  seqno:flags.2?long\n  date:flags.3?int\n  signature:int256 = adnl.ProxyPacketHeader;\n```\n"]
 pub struct ProxyPacketHeader {
@@ -16,7 +15,6 @@ impl crate::BareSerialize for ProxyPacketHeader {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x08693c78)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ProxyPacketHeader { proxy_id, ip, port, adnl_start_time, seqno, date, signature } =
             self;
@@ -94,7 +92,6 @@ impl crate::BareDeserialize for ProxyPacketHeader {
 }
 impl crate::IntoBoxed for ProxyPacketHeader {
     type Boxed = crate::ton::adnl::ProxyPacketHeader;
-
     fn into_boxed(self) -> crate::ton::adnl::ProxyPacketHeader {
         crate::ton::adnl::ProxyPacketHeader::Adnl_ProxyPacketHeader(self)
     }

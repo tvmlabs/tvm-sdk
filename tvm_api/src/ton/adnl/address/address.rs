@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.address.tunnel`\n\n```text\nadnl.address.tunnel to:int256 pubkey:PublicKey = adnl.Address;\n```\n"]
 pub struct Tunnel {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for Tunnel {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x092b02eb)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Tunnel { to, pubkey } = self;
         _ser.write_bare::<crate::ton::int256>(to)?;
@@ -30,7 +28,6 @@ impl crate::BareDeserialize for Tunnel {
 }
 impl crate::IntoBoxed for Tunnel {
     type Boxed = crate::ton::adnl::Address;
-
     fn into_boxed(self) -> crate::ton::adnl::Address {
         crate::ton::adnl::Address::Adnl_Address_Tunnel(self)
     }
@@ -46,7 +43,6 @@ impl crate::BareSerialize for Udp {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x670da6e7)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Udp { ip, port } = self;
         _ser.write_bare::<crate::ton::int>(ip)?;
@@ -65,7 +61,6 @@ impl crate::BareDeserialize for Udp {
 }
 impl crate::IntoBoxed for Udp {
     type Boxed = crate::ton::adnl::Address;
-
     fn into_boxed(self) -> crate::ton::adnl::Address {
         crate::ton::adnl::Address::Adnl_Address_Udp(self)
     }
@@ -81,7 +76,6 @@ impl crate::BareSerialize for Udp6 {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe31d63fa)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Udp6 { ip, port } = self;
         _ser.write_bare::<crate::ton::int128>(ip)?;
@@ -100,7 +94,6 @@ impl crate::BareDeserialize for Udp6 {
 }
 impl crate::IntoBoxed for Udp6 {
     type Boxed = crate::ton::adnl::Address;
-
     fn into_boxed(self) -> crate::ton::adnl::Address {
         crate::ton::adnl::Address::Adnl_Address_Udp6(self)
     }

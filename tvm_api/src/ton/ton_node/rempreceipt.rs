@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempReceipt`\n\n```text\ntonNode.rempReceipt message_id:int256 status:tonNode.RempMessageStatus timestamp:long source_id:int256 = tonNode.RempReceipt;\n```\n"]
 pub struct RempReceipt {
@@ -13,7 +12,6 @@ impl crate::BareSerialize for RempReceipt {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3122b7a2)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempReceipt { message_id, status, timestamp, source_id } = self;
         _ser.write_bare::<crate::ton::int256>(message_id)?;
@@ -36,7 +34,6 @@ impl crate::BareDeserialize for RempReceipt {
 }
 impl crate::IntoBoxed for RempReceipt {
     type Boxed = crate::ton::ton_node::RempReceipt;
-
     fn into_boxed(self) -> crate::ton::ton_node::RempReceipt {
         crate::ton::ton_node::RempReceipt::TonNode_RempReceipt(self)
     }

@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.accountState`\n\n```text\ndns.accountState wallet_id:int64 = AccountState;\n```\n"]
 pub struct AccountState {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for AccountState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x66fad86a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let AccountState { wallet_id } = self;
         _ser.write_bare::<crate::ton::int64>(wallet_id)?;
@@ -27,7 +25,6 @@ impl crate::BareDeserialize for AccountState {
 }
 impl crate::IntoBoxed for AccountState {
     type Boxed = crate::ton::AccountState;
-
     fn into_boxed(self) -> crate::ton::AccountState {
         crate::ton::AccountState::Dns_AccountState(self)
     }

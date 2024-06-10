@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `actionDns`\n\n```text\nactionDns actions:vector<dns.Action> = Action;\n```\n"]
 pub struct ActionDns {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for ActionDns {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x47273021)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ActionDns { actions } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::dns::Action>>(actions)?;
@@ -28,7 +26,6 @@ impl crate::BareDeserialize for ActionDns {
 }
 impl crate::IntoBoxed for ActionDns {
     type Boxed = crate::ton::Action;
-
     fn into_boxed(self) -> crate::ton::Action {
         crate::ton::Action::ActionDns(self)
     }
@@ -44,7 +41,6 @@ impl crate::BareSerialize for ActionMsg {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0eb67750)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ActionMsg { messages, allow_send_to_uninited } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::msg::message::Message>>(
@@ -65,7 +61,6 @@ impl crate::BareDeserialize for ActionMsg {
 }
 impl crate::IntoBoxed for ActionMsg {
     type Boxed = crate::ton::Action;
-
     fn into_boxed(self) -> crate::ton::Action {
         crate::ton::Action::ActionMsg(self)
     }
@@ -80,7 +75,6 @@ impl crate::BareSerialize for ActionPchan {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa72dc5e1)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ActionPchan { action } = self;
         _ser.write_boxed::<crate::ton::pchan::Action>(action)?;
@@ -97,7 +91,6 @@ impl crate::BareDeserialize for ActionPchan {
 }
 impl crate::IntoBoxed for ActionPchan {
     type Boxed = crate::ton::Action;
-
     fn into_boxed(self) -> crate::ton::Action {
         crate::ton::Action::ActionPchan(self)
     }
@@ -112,7 +105,6 @@ impl crate::BareSerialize for ActionRwallet {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf90237c5)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ActionRwallet { action } = self;
         _ser.write_bare::<crate::ton::rwallet::actioninit::ActionInit>(action)?;
@@ -129,7 +121,6 @@ impl crate::BareDeserialize for ActionRwallet {
 }
 impl crate::IntoBoxed for ActionRwallet {
     type Boxed = crate::ton::Action;
-
     fn into_boxed(self) -> crate::ton::Action {
         crate::ton::Action::ActionRwallet(self)
     }

@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.broadcastFec.partId`\n\n```text\noverlay.broadcastFec.partId broadcast_hash:int256 data_hash:int256 seqno:int = overlay.broadcastFec.PartId;\n```\n"]
 pub struct PartId {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for PartId {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa46962d0)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PartId { broadcast_hash, data_hash, seqno } = self;
         _ser.write_bare::<crate::ton::int256>(broadcast_hash)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for PartId {
 }
 impl crate::IntoBoxed for PartId {
     type Boxed = crate::ton::overlay::broadcast_fec::PartId;
-
     fn into_boxed(self) -> crate::ton::overlay::broadcast_fec::PartId {
         crate::ton::overlay::broadcast_fec::PartId::Overlay_BroadcastFec_PartId(self)
     }

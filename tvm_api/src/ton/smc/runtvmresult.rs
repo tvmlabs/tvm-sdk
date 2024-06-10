@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `smc.runTvmResultException`\n\n```text\nsmc.runTvmResultException block_root_hash:int256 exit_code:int exit_arg:tvm.StackEntry = smc.RunTvmResult;\n```\n"]
 pub struct RunTvmResultException {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for RunTvmResultException {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x2e68fba6)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunTvmResultException { block_root_hash, exit_code, exit_arg } = self;
         _ser.write_bare::<crate::ton::int256>(block_root_hash)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for RunTvmResultException {
 }
 impl crate::IntoBoxed for RunTvmResultException {
     type Boxed = crate::ton::smc::RunTvmResult;
-
     fn into_boxed(self) -> crate::ton::smc::RunTvmResult {
         crate::ton::smc::RunTvmResult::Smc_RunTvmResultException(self)
     }
@@ -55,7 +52,6 @@ impl crate::BareSerialize for RunTvmResultOk {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x19ce6fd6)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunTvmResultOk {
             mode,
@@ -127,7 +123,6 @@ impl crate::BareDeserialize for RunTvmResultOk {
 }
 impl crate::IntoBoxed for RunTvmResultOk {
     type Boxed = crate::ton::smc::RunTvmResult;
-
     fn into_boxed(self) -> crate::ton::smc::RunTvmResult {
         crate::ton::smc::RunTvmResult::Smc_RunTvmResultOk(self)
     }

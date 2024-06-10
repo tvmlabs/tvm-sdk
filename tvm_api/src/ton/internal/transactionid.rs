@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `internal.transactionId`\n\n```text\ninternal.transactionId lt:int64 hash:bytes = internal.TransactionId;\n```\n"]
 pub struct TransactionId {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for TransactionId {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc5050322)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let TransactionId { lt, hash } = self;
         _ser.write_bare::<crate::ton::int64>(lt)?;
@@ -30,7 +28,6 @@ impl crate::BareDeserialize for TransactionId {
 }
 impl crate::IntoBoxed for TransactionId {
     type Boxed = crate::ton::internal::TransactionId;
-
     fn into_boxed(self) -> crate::ton::internal::TransactionId {
         crate::ton::internal::TransactionId::Internal_TransactionId(self)
     }

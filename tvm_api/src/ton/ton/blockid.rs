@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `ton.blockId`\n\n```text\nton.blockId root_cell_hash:int256 file_hash:int256 = ton.BlockId;\n```\n"]
 pub struct BlockId {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for BlockId {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc50b6e70)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockId { root_cell_hash, file_hash } = self;
         _ser.write_bare::<crate::ton::int256>(root_cell_hash)?;
@@ -30,7 +28,6 @@ impl crate::BareDeserialize for BlockId {
 }
 impl crate::IntoBoxed for BlockId {
     type Boxed = crate::ton::ton::BlockId;
-
     fn into_boxed(self) -> crate::ton::ton::BlockId {
         crate::ton::ton::BlockId::Ton_BlockId(self)
     }
@@ -46,7 +43,6 @@ impl crate::BareSerialize for BlockIdApprove {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x2dd44a49)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockIdApprove { root_cell_hash, file_hash } = self;
         _ser.write_bare::<crate::ton::int256>(root_cell_hash)?;
@@ -65,7 +61,6 @@ impl crate::BareDeserialize for BlockIdApprove {
 }
 impl crate::IntoBoxed for BlockIdApprove {
     type Boxed = crate::ton::ton::BlockId;
-
     fn into_boxed(self) -> crate::ton::ton::BlockId {
         crate::ton::ton::BlockId::Ton_BlockIdApprove(self)
     }

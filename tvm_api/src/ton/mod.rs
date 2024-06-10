@@ -13,7 +13,6 @@ impl AccountAddress {
             AccountAddress::AccountAddress(ref x) => &x.account_address,
         }
     }
-
     pub fn only(self) -> crate::ton::accountaddress::AccountAddress {
         match self {
             AccountAddress::AccountAddress(x) => x,
@@ -37,7 +36,6 @@ impl crate::BoxedDeserialize for AccountAddress {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x2d09bdab)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -63,7 +61,6 @@ impl AccountList {
             AccountList::AccountList(ref x) => &x.accounts,
         }
     }
-
     pub fn only(self) -> crate::ton::accountlist::AccountList {
         match self {
             AccountList::AccountList(x) => x,
@@ -87,7 +84,6 @@ impl crate::BoxedDeserialize for AccountList {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x783eb255)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -113,7 +109,6 @@ impl AccountRevisionList {
             AccountRevisionList::AccountRevisionList(ref x) => &x.revisions,
         }
     }
-
     pub fn only(self) -> crate::ton::accountrevisionlist::AccountRevisionList {
         match self {
             AccountRevisionList::AccountRevisionList(x) => x,
@@ -141,7 +136,6 @@ impl crate::BoxedDeserialize for AccountRevisionList {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x1f6c64ca)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -176,21 +170,18 @@ impl AccountState {
             _ => None,
         }
     }
-
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
             AccountState::Raw_AccountState(ref x) => Some(&x.data),
             _ => None,
         }
     }
-
     pub fn description(&self) -> Option<&crate::ton::string> {
         match self {
             AccountState::Pchan_AccountState(ref x) => Some(&x.description),
             _ => None,
         }
     }
-
     pub fn frozen_hash(&self) -> Option<&crate::ton::bytes> {
         match self {
             AccountState::Raw_AccountState(ref x) => Some(&x.frozen_hash),
@@ -198,7 +189,6 @@ impl AccountState {
             _ => None,
         }
     }
-
     pub fn seqno(&self) -> Option<&crate::ton::int32> {
         match self {
             AccountState::Rwallet_AccountState(ref x) => Some(&x.seqno),
@@ -210,21 +200,18 @@ impl AccountState {
             _ => None,
         }
     }
-
     pub fn state(&self) -> Option<&crate::ton::pchan::State> {
         match self {
             AccountState::Pchan_AccountState(ref x) => Some(&x.state),
             _ => None,
         }
     }
-
     pub fn unlocked_balance(&self) -> Option<&crate::ton::int64> {
         match self {
             AccountState::Rwallet_AccountState(ref x) => Some(&x.unlocked_balance),
             _ => None,
         }
     }
-
     pub fn wallet_id(&self) -> Option<&crate::ton::int64> {
         match self {
             AccountState::Dns_AccountState(ref x) => Some(&x.wallet_id),
@@ -279,7 +266,6 @@ impl crate::BoxedDeserialize for AccountState {
             crate::ConstructorNumber(0x9f7aa84a),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -346,14 +332,12 @@ impl Action {
             _ => None,
         }
     }
-
     pub fn allow_send_to_uninited(&self) -> Option<&crate::ton::Bool> {
         match self {
             Action::ActionMsg(ref x) => Some(&x.allow_send_to_uninited),
             _ => None,
         }
     }
-
     pub fn messages(
         &self,
     ) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::msg::message::Message>> {
@@ -390,7 +374,6 @@ impl crate::BoxedDeserialize for Action {
             crate::ConstructorNumber(0xf90237c5),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -424,7 +407,6 @@ impl AdnlAddress {
             AdnlAddress::AdnlAddress(ref x) => &x.adnl_address,
         }
     }
-
     pub fn only(self) -> crate::ton::adnladdress::AdnlAddress {
         match self {
             AdnlAddress::AdnlAddress(x) => x,
@@ -448,7 +430,6 @@ impl crate::BoxedDeserialize for AdnlAddress {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0431950c)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -472,7 +453,6 @@ impl Bip39Hints {
             Bip39Hints::Bip39Hints(ref x) => &x.words,
         }
     }
-
     pub fn only(self) -> crate::ton::bip39hints::Bip39Hints {
         match self {
             Bip39Hints::Bip39Hints(x) => x,
@@ -496,7 +476,6 @@ impl crate::BoxedDeserialize for Bip39Hints {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x3c559c00)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -529,7 +508,6 @@ impl crate::BoxedDeserialize for Bool {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbc799737), crate::ConstructorNumber(0x997275b5)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -552,25 +530,21 @@ impl Config {
             Config::Config(ref x) => &x.blockchain_name,
         }
     }
-
     pub fn config(&self) -> &crate::ton::string {
         match self {
             Config::Config(ref x) => &x.config,
         }
     }
-
     pub fn ignore_cache(&self) -> &crate::ton::Bool {
         match self {
             Config::Config(ref x) => &x.ignore_cache,
         }
     }
-
     pub fn use_callbacks_for_network(&self) -> &crate::ton::Bool {
         match self {
             Config::Config(ref x) => &x.use_callbacks_for_network,
         }
     }
-
     pub fn only(self) -> crate::ton::config::Config {
         match self {
             Config::Config(x) => x,
@@ -594,7 +568,6 @@ impl crate::BoxedDeserialize for Config {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa44e0238)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -618,7 +591,6 @@ impl Data {
             Data::Data(ref x) => &x.bytes,
         }
     }
-
     pub fn only(self) -> crate::ton::data::Data {
         match self {
             Data::Data(x) => x,
@@ -642,7 +614,6 @@ impl crate::BoxedDeserialize for Data {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe747a971)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -666,13 +637,11 @@ impl Error {
             Error::Error(ref x) => &x.code,
         }
     }
-
     pub fn message(&self) -> &crate::ton::string {
         match self {
             Error::Error(ref x) => &x.message,
         }
     }
-
     pub fn only(self) -> crate::ton::error::Error {
         match self {
             Error::Error(x) => x,
@@ -696,7 +665,6 @@ impl crate::BoxedDeserialize for Error {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x9bdd8f1a)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -720,7 +688,6 @@ impl ExportedEncryptedKey {
             ExportedEncryptedKey::ExportedEncryptedKey(ref x) => &x.data,
         }
     }
-
     pub fn only(self) -> crate::ton::exportedencryptedkey::ExportedEncryptedKey {
         match self {
             ExportedEncryptedKey::ExportedEncryptedKey(x) => x,
@@ -748,7 +715,6 @@ impl crate::BoxedDeserialize for ExportedEncryptedKey {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x78a9fe54)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -772,7 +738,6 @@ impl ExportedKey {
             ExportedKey::ExportedKey(ref x) => &x.word_list,
         }
     }
-
     pub fn only(self) -> crate::ton::exportedkey::ExportedKey {
         match self {
             ExportedKey::ExportedKey(x) => x,
@@ -796,7 +761,6 @@ impl crate::BoxedDeserialize for ExportedKey {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa99e39d7)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -820,7 +784,6 @@ impl ExportedPemKey {
             ExportedPemKey::ExportedPemKey(ref x) => &x.pem,
         }
     }
-
     pub fn only(self) -> crate::ton::exportedpemkey::ExportedPemKey {
         match self {
             ExportedPemKey::ExportedPemKey(x) => x,
@@ -844,7 +807,6 @@ impl crate::BoxedDeserialize for ExportedPemKey {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x54f700bd)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -868,7 +830,6 @@ impl ExportedUnencryptedKey {
             ExportedUnencryptedKey::ExportedUnencryptedKey(ref x) => &x.data,
         }
     }
-
     pub fn only(self) -> crate::ton::exportedunencryptedkey::ExportedUnencryptedKey {
         match self {
             ExportedUnencryptedKey::ExportedUnencryptedKey(x) => x,
@@ -896,7 +857,6 @@ impl crate::BoxedDeserialize for ExportedUnencryptedKey {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x2b839ae8)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -922,25 +882,21 @@ impl Fees {
             Fees::Fees(ref x) => &x.fwd_fee,
         }
     }
-
     pub fn gas_fee(&self) -> &crate::ton::int53 {
         match self {
             Fees::Fees(ref x) => &x.gas_fee,
         }
     }
-
     pub fn in_fwd_fee(&self) -> &crate::ton::int53 {
         match self {
             Fees::Fees(ref x) => &x.in_fwd_fee,
         }
     }
-
     pub fn storage_fee(&self) -> &crate::ton::int53 {
         match self {
             Fees::Fees(ref x) => &x.storage_fee,
         }
     }
-
     pub fn only(self) -> crate::ton::fees::Fees {
         match self {
             Fees::Fees(x) => x,
@@ -964,7 +920,6 @@ impl crate::BoxedDeserialize for Fees {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x63e9e6bc)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -988,43 +943,36 @@ impl FullAccountState {
             FullAccountState::FullAccountState(ref x) => &x.account_state,
         }
     }
-
     pub fn address(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
             FullAccountState::FullAccountState(ref x) => &x.address,
         }
     }
-
     pub fn balance(&self) -> &crate::ton::int64 {
         match self {
             FullAccountState::FullAccountState(ref x) => &x.balance,
         }
     }
-
     pub fn block_id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             FullAccountState::FullAccountState(ref x) => &x.block_id,
         }
     }
-
     pub fn last_transaction_id(&self) -> &crate::ton::internal::transactionid::TransactionId {
         match self {
             FullAccountState::FullAccountState(ref x) => &x.last_transaction_id,
         }
     }
-
     pub fn revision(&self) -> &crate::ton::int32 {
         match self {
             FullAccountState::FullAccountState(ref x) => &x.revision,
         }
     }
-
     pub fn sync_utime(&self) -> &crate::ton::int53 {
         match self {
             FullAccountState::FullAccountState(ref x) => &x.sync_utime,
         }
     }
-
     pub fn only(self) -> crate::ton::fullaccountstate::FullAccountState {
         match self {
             FullAccountState::FullAccountState(x) => x,
@@ -1048,7 +996,6 @@ impl crate::BoxedDeserialize for FullAccountState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8419b860)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1094,7 +1041,6 @@ impl Hashable {
             _ => None,
         }
     }
-
     pub fn approved(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_BlockCandidate(ref x) => Some(&x.approved),
@@ -1102,21 +1048,18 @@ impl Hashable {
             _ => None,
         }
     }
-
     pub fn approved_blocks(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.approved_blocks),
             _ => None,
         }
     }
-
     pub fn attempts(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.attempts),
             _ => None,
         }
     }
-
     pub fn block(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_BlockCandidate(ref x) => Some(&x.block),
@@ -1127,21 +1070,18 @@ impl Hashable {
             _ => None,
         }
     }
-
     pub fn collated_data_file_hash(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_SentBlock(ref x) => Some(&x.collated_data_file_hash),
             _ => None,
         }
     }
-
     pub fn cur_round(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSession(ref x) => Some(&x.cur_round),
             _ => None,
         }
     }
-
     pub fn data(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_CntSortedVector(ref x) => Some(&x.data),
@@ -1149,70 +1089,60 @@ impl Hashable {
             _ => None,
         }
     }
-
     pub fn file_hash(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_SentBlock(ref x) => Some(&x.file_hash),
             _ => None,
         }
     }
-
     pub fn first_attempt(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.first_attempt),
             _ => None,
         }
     }
-
     pub fn left(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_Pair(ref x) => Some(&x.left),
             _ => None,
         }
     }
-
     pub fn locked_block(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.locked_block),
             _ => None,
         }
     }
-
     pub fn locked_round(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.locked_round),
             _ => None,
         }
     }
-
     pub fn node(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_Vote(ref x) => Some(&x.node),
             _ => None,
         }
     }
-
     pub fn old_rounds(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSession(ref x) => Some(&x.old_rounds),
             _ => None,
         }
     }
-
     pub fn right(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_Pair(ref x) => Some(&x.right),
             _ => None,
         }
     }
-
     pub fn root_hash(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_SentBlock(ref x) => Some(&x.root_hash),
             _ => None,
         }
     }
-
     pub fn seqno(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionOldRound(ref x) => Some(&x.seqno),
@@ -1221,14 +1151,12 @@ impl Hashable {
             _ => None,
         }
     }
-
     pub fn signature(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_BlockSignature(ref x) => Some(&x.signature),
             _ => None,
         }
     }
-
     pub fn signatures(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionOldRound(ref x) => Some(&x.signatures),
@@ -1236,35 +1164,30 @@ impl Hashable {
             _ => None,
         }
     }
-
     pub fn src(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_SentBlock(ref x) => Some(&x.src),
             _ => None,
         }
     }
-
     pub fn ts(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSession(ref x) => Some(&x.ts),
             _ => None,
         }
     }
-
     pub fn vote_for(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionRoundAttempt(ref x) => Some(&x.vote_for),
             _ => None,
         }
     }
-
     pub fn vote_for_inited(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_ValidatorSessionRoundAttempt(ref x) => Some(&x.vote_for_inited),
             _ => None,
         }
     }
-
     pub fn votes(&self) -> Option<&crate::ton::int> {
         match self {
             Hashable::Hashable_BlockCandidateAttempt(ref x) => Some(&x.votes),
@@ -1338,7 +1261,6 @@ impl crate::BoxedDeserialize for Hashable {
             crate::ConstructorNumber(0xaebf2bc5),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1438,28 +1360,24 @@ impl InitialAccountState {
             _ => None,
         }
     }
-
     pub fn config(&self) -> Option<&crate::ton::pchan::config::Config> {
         match self {
             InitialAccountState::Pchan_InitialAccountState(ref x) => Some(&x.config),
             _ => None,
         }
     }
-
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
             InitialAccountState::Raw_InitialAccountState(ref x) => Some(&x.data),
             _ => None,
         }
     }
-
     pub fn init_public_key(&self) -> Option<&crate::ton::string> {
         match self {
             InitialAccountState::Rwallet_InitialAccountState(ref x) => Some(&x.init_public_key),
             _ => None,
         }
     }
-
     pub fn public_key(&self) -> Option<&crate::ton::string> {
         match self {
             InitialAccountState::Dns_InitialAccountState(ref x) => Some(&x.public_key),
@@ -1476,7 +1394,6 @@ impl InitialAccountState {
             _ => None,
         }
     }
-
     pub fn wallet_id(&self) -> Option<&crate::ton::int64> {
         match self {
             InitialAccountState::Dns_InitialAccountState(ref x) => Some(&x.wallet_id),
@@ -1551,7 +1468,6 @@ impl crate::BoxedDeserialize for InitialAccountState {
             crate::ConstructorNumber(0xf8f65540),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1573,7 +1489,6 @@ impl InputKey {
             _ => None,
         }
     }
-
     pub fn local_password(&self) -> Option<&crate::ton::secureBytes> {
         match self {
             InputKey::InputKeyRegular(ref x) => Some(&x.local_password),
@@ -1594,7 +1509,6 @@ impl crate::BoxedDeserialize for InputKey {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbffb39be), crate::ConstructorNumber(0xdee5469e)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1620,7 +1534,6 @@ impl crate::BoxedDeserialize for Option<crate::ton::inputkey::InputKeyRegular> {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbffb39be), crate::ConstructorNumber(0xdee5469e)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1652,7 +1565,6 @@ impl crate::BoxedDeserialize for Int8 {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x05cb0099)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1674,13 +1586,11 @@ impl Key {
             Key::Key(ref x) => &x.public_key,
         }
     }
-
     pub fn secret(&self) -> &crate::ton::secureBytes {
         match self {
             Key::Key(ref x) => &x.secret,
         }
     }
-
     pub fn only(self) -> crate::ton::key::Key {
         match self {
             Key::Key(x) => x,
@@ -1704,7 +1614,6 @@ impl crate::BoxedDeserialize for Key {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8a1493d5)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1751,7 +1660,6 @@ impl crate::BoxedDeserialize for KeyStoreType {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe969122a), crate::ConstructorNumber(0x826c09c7)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1777,7 +1685,6 @@ impl crate::BoxedDeserialize for Option<crate::ton::keystoretype::KeyStoreTypeDi
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x826c09c7), crate::ConstructorNumber(0xe969122a)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1806,7 +1713,6 @@ impl LogStream {
             _ => None,
         }
     }
-
     pub fn path(&self) -> Option<&crate::ton::string> {
         match self {
             LogStream::LogStreamFile(ref x) => Some(&x.path),
@@ -1832,7 +1738,6 @@ impl crate::BoxedDeserialize for LogStream {
             crate::ConstructorNumber(0x8ff02a56),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1858,7 +1763,6 @@ impl LogTags {
             LogTags::LogTags(ref x) => &x.tags,
         }
     }
-
     pub fn only(self) -> crate::ton::logtags::LogTags {
         match self {
             LogTags::LogTags(x) => x,
@@ -1882,7 +1786,6 @@ impl crate::BoxedDeserialize for LogTags {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa056b3d7)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1906,7 +1809,6 @@ impl LogVerbosityLevel {
             LogVerbosityLevel::LogVerbosityLevel(ref x) => &x.verbosity_level,
         }
     }
-
     pub fn only(self) -> crate::ton::logverbositylevel::LogVerbosityLevel {
         match self {
             LogVerbosityLevel::LogVerbosityLevel(x) => x,
@@ -1932,7 +1834,6 @@ impl crate::BoxedDeserialize for LogVerbosityLevel {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x676443ea)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1963,7 +1864,6 @@ impl crate::BoxedDeserialize for Ok {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd4edbe69)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1985,13 +1885,11 @@ impl Options {
             Options::Options(ref x) => &x.config,
         }
     }
-
     pub fn keystore_type(&self) -> &crate::ton::KeyStoreType {
         match self {
             Options::Options(ref x) => &x.keystore_type,
         }
     }
-
     pub fn only(self) -> crate::ton::options::Options {
         match self {
             Options::Options(x) => x,
@@ -2015,7 +1913,6 @@ impl crate::BoxedDeserialize for Options {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8d4c29f9)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2043,7 +1940,6 @@ impl PrivateKey {
             _ => None,
         }
     }
-
     pub fn key(&self) -> Option<&crate::ton::int256> {
         match self {
             PrivateKey::Pk_Aes(ref x) => Some(&x.key),
@@ -2051,7 +1947,6 @@ impl PrivateKey {
             _ => None,
         }
     }
-
     pub fn name(&self) -> Option<&crate::ton::bytes> {
         match self {
             PrivateKey::Pk_Overlay(ref x) => Some(&x.name),
@@ -2084,7 +1979,6 @@ impl crate::BoxedDeserialize for PrivateKey {
             crate::ConstructorNumber(0xb1db9b30),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2122,14 +2016,12 @@ impl PublicKey {
             _ => None,
         }
     }
-
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
             PublicKey::Pub_Unenc(ref x) => Some(&x.data),
             _ => None,
         }
     }
-
     pub fn key(&self) -> Option<&crate::ton::int256> {
         match self {
             PublicKey::Pub_Aes(ref x) => Some(&x.key),
@@ -2137,7 +2029,6 @@ impl PublicKey {
             _ => None,
         }
     }
-
     pub fn name(&self) -> Option<&crate::ton::bytes> {
         match self {
             PublicKey::Pub_Overlay(ref x) => Some(&x.name),
@@ -2172,7 +2063,6 @@ impl crate::BoxedDeserialize for PublicKey {
             crate::ConstructorNumber(0xb61f450a),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2211,14 +2101,12 @@ impl SyncState {
             _ => None,
         }
     }
-
     pub fn from_seqno(&self) -> Option<&crate::ton::int32> {
         match self {
             SyncState::SyncStateInProgress(ref x) => Some(&x.from_seqno),
             _ => None,
         }
     }
-
     pub fn to_seqno(&self) -> Option<&crate::ton::int32> {
         match self {
             SyncState::SyncStateInProgress(ref x) => Some(&x.to_seqno),
@@ -2239,7 +2127,6 @@ impl crate::BoxedDeserialize for SyncState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x53f33909), crate::ConstructorNumber(0x066bc4c7)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2265,7 +2152,6 @@ impl crate::BoxedDeserialize for Option<crate::ton::syncstate::SyncStateInProgre
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x53f33909), crate::ConstructorNumber(0x066bc4c7)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2290,25 +2176,21 @@ impl UnpackedAccountAddress {
             UnpackedAccountAddress::UnpackedAccountAddress(ref x) => &x.addr,
         }
     }
-
     pub fn bounceable(&self) -> &crate::ton::Bool {
         match self {
             UnpackedAccountAddress::UnpackedAccountAddress(ref x) => &x.bounceable,
         }
     }
-
     pub fn testnet(&self) -> &crate::ton::Bool {
         match self {
             UnpackedAccountAddress::UnpackedAccountAddress(ref x) => &x.testnet,
         }
     }
-
     pub fn workchain_id(&self) -> &crate::ton::int32 {
         match self {
             UnpackedAccountAddress::UnpackedAccountAddress(ref x) => &x.workchain_id,
         }
     }
-
     pub fn only(self) -> crate::ton::unpackedaccountaddress::UnpackedAccountAddress {
         match self {
             UnpackedAccountAddress::UnpackedAccountAddress(x) => x,
@@ -2336,7 +2218,6 @@ impl crate::BoxedDeserialize for UnpackedAccountAddress {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x70d41436)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2364,14 +2245,12 @@ impl Update {
             _ => None,
         }
     }
-
     pub fn id(&self) -> Option<&crate::ton::int64> {
         match self {
             Update::UpdateSendLiteServerQuery(ref x) => Some(&x.id),
             _ => None,
         }
     }
-
     pub fn sync_state(&self) -> Option<&crate::ton::SyncState> {
         match self {
             Update::UpdateSyncState(ref x) => Some(&x.sync_state),
@@ -2397,7 +2276,6 @@ impl crate::BoxedDeserialize for Update {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa34e95dc), crate::ConstructorNumber(0x47c823de)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

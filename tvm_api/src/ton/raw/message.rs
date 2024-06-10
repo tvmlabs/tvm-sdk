@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.message`\n\n```text\nraw.message source:accountAddress destination:accountAddress value:int64 fwd_fee:int64 ihr_fee:int64 created_lt:int64 body_hash:bytes msg_data:msg.Data = raw.Message;\n```\n"]
 pub struct Message {
@@ -17,7 +16,6 @@ impl crate::BareSerialize for Message {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x518b724f)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Message {
             source,
@@ -66,7 +64,6 @@ impl crate::BareDeserialize for Message {
 }
 impl crate::IntoBoxed for Message {
     type Boxed = crate::ton::raw::Message;
-
     fn into_boxed(self) -> crate::ton::raw::Message {
         crate::ton::raw::Message::Raw_Message(self)
     }

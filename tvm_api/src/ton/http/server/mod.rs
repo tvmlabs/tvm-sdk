@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `http.server.Config`\n\n```text\nhttp.server.config dhs:(vector http.server.dnsEntry) local_hosts:(vector http.server.host) = http.server.Config;\n```\n"]
 pub enum Config {
@@ -13,7 +12,6 @@ impl Config {
             Config::Http_Server_Config(ref x) => &x.dhs,
         }
     }
-
     pub fn local_hosts(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::server::host::Host> {
@@ -21,7 +19,6 @@ impl Config {
             Config::Http_Server_Config(ref x) => &x.local_hosts,
         }
     }
-
     pub fn only(self) -> crate::ton::http::server::config::Config {
         match self {
             Config::Http_Server_Config(x) => x,
@@ -45,7 +42,6 @@ impl crate::BoxedDeserialize for Config {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x3a1477fc)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -69,13 +65,11 @@ impl DnsEntry {
             DnsEntry::Http_Server_DnsEntry(ref x) => &x.addr,
         }
     }
-
     pub fn domain(&self) -> &crate::ton::string {
         match self {
             DnsEntry::Http_Server_DnsEntry(ref x) => &x.domain,
         }
     }
-
     pub fn only(self) -> crate::ton::http::server::dnsentry::DnsEntry {
         match self {
             DnsEntry::Http_Server_DnsEntry(x) => x,
@@ -99,7 +93,6 @@ impl crate::BoxedDeserialize for DnsEntry {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd8726096)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -123,25 +116,21 @@ impl Host {
             Host::Http_Server_Host(ref x) => &x.adnl_id,
         }
     }
-
     pub fn domains(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::string> {
         match self {
             Host::Http_Server_Host(ref x) => &x.domains,
         }
     }
-
     pub fn ip(&self) -> &crate::ton::int {
         match self {
             Host::Http_Server_Host(ref x) => &x.ip,
         }
     }
-
     pub fn port(&self) -> &crate::ton::int {
         match self {
             Host::Http_Server_Host(ref x) => &x.port,
         }
     }
-
     pub fn only(self) -> crate::ton::http::server::host::Host {
         match self {
             Host::Http_Server_Host(x) => x,
@@ -165,7 +154,6 @@ impl crate::BoxedDeserialize for Host {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc57de2a7)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

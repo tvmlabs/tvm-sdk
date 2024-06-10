@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.el.Value`\n\n```text\ndb.lt.el.value id:tonNode.blockIdExt lt:long ts:int = db.lt.el.Value;\n```\n"]
 pub enum Value {
@@ -11,19 +10,16 @@ impl Value {
             Value::Db_Lt_El_Value(ref x) => &x.id,
         }
     }
-
     pub fn lt(&self) -> &crate::ton::long {
         match self {
             Value::Db_Lt_El_Value(ref x) => &x.lt,
         }
     }
-
     pub fn ts(&self) -> &crate::ton::int {
         match self {
             Value::Db_Lt_El_Value(ref x) => &x.ts,
         }
     }
-
     pub fn only(self) -> crate::ton::db::lt::el::value::Value {
         match self {
             Value::Db_Lt_El_Value(x) => x,
@@ -47,7 +43,6 @@ impl crate::BoxedDeserialize for Value {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x95e65f64)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

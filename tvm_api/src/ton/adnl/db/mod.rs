@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.db.Key`\n\n```text\nadnl.db.node.key local_id:int256 peer_id:int256 = adnl.db.Key;\n```\n"]
 pub enum Key {
@@ -11,13 +10,11 @@ impl Key {
             Key::Adnl_Db_Node_Key(ref x) => &x.local_id,
         }
     }
-
     pub fn peer_id(&self) -> &crate::ton::int256 {
         match self {
             Key::Adnl_Db_Node_Key(ref x) => &x.peer_id,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::db::node::key::Key {
         match self {
             Key::Adnl_Db_Node_Key(x) => x,
@@ -41,7 +38,6 @@ impl crate::BoxedDeserialize for Key {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc5a3e42e)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
