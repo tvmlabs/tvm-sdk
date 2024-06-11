@@ -42,11 +42,11 @@ use tvm_types::Cell;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 
+mod poseidon_stuff;
 #[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
 mod zk;
-
 
 pub trait Mask {
     fn bit(&self, bits: Self) -> bool;

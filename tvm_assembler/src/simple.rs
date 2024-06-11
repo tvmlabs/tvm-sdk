@@ -859,7 +859,7 @@ impl Engine {
         #[cfg(feature = "gosh")]
         self.add_commands(Self::enumerate_diff_commands());
 
-        #[cfg(feature = "groth")]
-        self.add_commands(Self::enumerate_groth_commands());
+        // #[cfg(feature = "groth")]
+        // self.add_commands(Self::enumerate_groth_commands());
     }
 }
