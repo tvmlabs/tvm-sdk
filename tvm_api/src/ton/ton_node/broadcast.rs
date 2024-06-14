@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.blockBroadcast`\n\n```text\ntonNode.blockBroadcast id:tonNode.blockIdExt catchain_seqno:int validator_set_hash:int \n              signatures:(vector tonNode.blockSignature) \n              proof:bytes data:bytes = tonNode.Broadcast;\n```\n"]
 pub struct BlockBroadcast {
@@ -16,7 +15,6 @@ impl crate::BareSerialize for BlockBroadcast {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xae2e1105)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockBroadcast { id, catchain_seqno, validator_set_hash, signatures, proof, data } =
             self;
@@ -50,7 +48,6 @@ impl crate::BareDeserialize for BlockBroadcast {
 }
 impl crate::IntoBoxed for BlockBroadcast {
     type Boxed = crate::ton::ton_node::Broadcast;
-
     fn into_boxed(self) -> crate::ton::ton_node::Broadcast {
         crate::ton::ton_node::Broadcast::TonNode_BlockBroadcast(self)
     }
@@ -70,7 +67,6 @@ impl crate::BareSerialize for BlockCandidateBroadcast {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x2f8cdf1d)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockCandidateBroadcast {
             id,
@@ -111,7 +107,6 @@ impl crate::BareDeserialize for BlockCandidateBroadcast {
 }
 impl crate::IntoBoxed for BlockCandidateBroadcast {
     type Boxed = crate::ton::ton_node::Broadcast;
-
     fn into_boxed(self) -> crate::ton::ton_node::Broadcast {
         crate::ton::ton_node::Broadcast::TonNode_BlockCandidateBroadcast(self)
     }
@@ -127,7 +122,6 @@ impl crate::BareSerialize for ConnectivityCheckBroadcast {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x336c53d9)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ConnectivityCheckBroadcast { pub_key, padding } = self;
         _ser.write_bare::<crate::ton::int256>(pub_key)?;
@@ -146,7 +140,6 @@ impl crate::BareDeserialize for ConnectivityCheckBroadcast {
 }
 impl crate::IntoBoxed for ConnectivityCheckBroadcast {
     type Boxed = crate::ton::ton_node::Broadcast;
-
     fn into_boxed(self) -> crate::ton::ton_node::Broadcast {
         crate::ton::ton_node::Broadcast::TonNode_ConnectivityCheckBroadcast(self)
     }
@@ -161,7 +154,6 @@ impl crate::BareSerialize for ExternalMessageBroadcast {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3d1b1867)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ExternalMessageBroadcast { message } = self;
         _ser.write_bare::<crate::ton::ton_node::externalmessage::ExternalMessage>(message)?;
@@ -179,7 +171,6 @@ impl crate::BareDeserialize for ExternalMessageBroadcast {
 }
 impl crate::IntoBoxed for ExternalMessageBroadcast {
     type Boxed = crate::ton::ton_node::Broadcast;
-
     fn into_boxed(self) -> crate::ton::ton_node::Broadcast {
         crate::ton::ton_node::Broadcast::TonNode_ExternalMessageBroadcast(self)
     }
@@ -194,7 +185,6 @@ impl crate::BareSerialize for IhrMessageBroadcast {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x525da4b3)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let IhrMessageBroadcast { message } = self;
         _ser.write_bare::<crate::ton::ton_node::ihrmessage::IhrMessage>(message)?;
@@ -211,7 +201,6 @@ impl crate::BareDeserialize for IhrMessageBroadcast {
 }
 impl crate::IntoBoxed for IhrMessageBroadcast {
     type Boxed = crate::ton::ton_node::Broadcast;
-
     fn into_boxed(self) -> crate::ton::ton_node::Broadcast {
         crate::ton::ton_node::Broadcast::TonNode_IhrMessageBroadcast(self)
     }
@@ -226,7 +215,6 @@ impl crate::BareSerialize for NewShardBlockBroadcast {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0af2fabc)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let NewShardBlockBroadcast { block } = self;
         _ser.write_bare::<crate::ton::ton_node::newshardblock::NewShardBlock>(block)?;
@@ -243,7 +231,6 @@ impl crate::BareDeserialize for NewShardBlockBroadcast {
 }
 impl crate::IntoBoxed for NewShardBlockBroadcast {
     type Boxed = crate::ton::ton_node::Broadcast;
-
     fn into_boxed(self) -> crate::ton::ton_node::Broadcast {
         crate::ton::ton_node::Broadcast::TonNode_NewShardBlockBroadcast(self)
     }
@@ -264,7 +251,6 @@ impl crate::BareSerialize for QueueUpdateBroadcast {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x9b00bad5)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let QueueUpdateBroadcast {
             id,
@@ -304,7 +290,6 @@ impl crate::BareDeserialize for QueueUpdateBroadcast {
 }
 impl crate::IntoBoxed for QueueUpdateBroadcast {
     type Boxed = crate::ton::ton_node::Broadcast;
-
     fn into_boxed(self) -> crate::ton::ton_node::Broadcast {
         crate::ton::ton_node::Broadcast::TonNode_QueueUpdateBroadcast(self)
     }

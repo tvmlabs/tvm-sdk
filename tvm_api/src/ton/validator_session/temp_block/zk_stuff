@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.tempBlock.Id`\n\n```text\nvalidatorSession.candidate.id round:int256 block_hash:int256 = validatorSession.tempBlock.Id;\n```\n"]
 pub enum Id {
@@ -13,13 +12,11 @@ impl Id {
             Id::ValidatorSession_Candidate_Id(ref x) => &x.block_hash,
         }
     }
-
     pub fn round(&self) -> &crate::ton::int256 {
         match self {
             Id::ValidatorSession_Candidate_Id(ref x) => &x.round,
         }
     }
-
     pub fn only(
         self,
     ) -> crate::ton::validator_session::temp_block::validator_session::candidate::id::Id {
@@ -45,7 +42,6 @@ impl crate::BoxedDeserialize for Id {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbcd74139)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

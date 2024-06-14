@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `config.global`\n\n```text\nconfig.global adnl:adnl.config.global dht:dht.config.global validator:validator.config.global = config.Global;\n```\n"]
 pub struct Global {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for Global {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf4269fd2)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Global { adnl, dht, validator } = self;
         _ser.write_bare::<crate::ton::adnl::config::global::Global>(adnl)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for Global {
 }
 impl crate::IntoBoxed for Global {
     type Boxed = crate::ton::config::Global;
-
     fn into_boxed(self) -> crate::ton::config::Global {
         crate::ton::config::Global::Config_Global(self)
     }

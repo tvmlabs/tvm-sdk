@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `config`\n\n```text\nconfig config:string blockchain_name:string use_callbacks_for_network:Bool ignore_cache:Bool = Config;\n```\n"]
 pub struct Config {
@@ -13,7 +12,6 @@ impl crate::BareSerialize for Config {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa44e0238)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Config { config, blockchain_name, use_callbacks_for_network, ignore_cache } = self;
         _ser.write_bare::<crate::ton::string>(config)?;
@@ -36,7 +34,6 @@ impl crate::BareDeserialize for Config {
 }
 impl crate::IntoBoxed for Config {
     type Boxed = crate::ton::Config;
-
     fn into_boxed(self) -> crate::ton::Config {
         crate::ton::Config::Config(self)
     }
@@ -52,19 +49,16 @@ impl Global {
             Global::Config_Global(ref x) => &x.adnl,
         }
     }
-
     pub fn dht(&self) -> &crate::ton::dht::config::global::Global {
         match self {
             Global::Config_Global(ref x) => &x.dht,
         }
     }
-
     pub fn validator(&self) -> &crate::ton::validator::config::global::Global {
         match self {
             Global::Config_Global(ref x) => &x.validator,
         }
     }
-
     pub fn only(self) -> crate::ton::config::global::Global {
         match self {
             Global::Config_Global(x) => x,
@@ -88,7 +82,6 @@ impl crate::BoxedDeserialize for Global {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf4269fd2)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -114,13 +107,11 @@ impl Local {
             Local::Config_Local(ref x) => &x.control,
         }
     }
-
     pub fn dht(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::dht::config::Local> {
         match self {
             Local::Config_Local(ref x) => &x.dht,
         }
     }
-
     pub fn liteservers(
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::liteserver::config::Local> {
@@ -128,7 +119,6 @@ impl Local {
             Local::Config_Local(ref x) => &x.liteservers,
         }
     }
-
     pub fn local_ids(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::id::config::local::Local> {
@@ -136,7 +126,6 @@ impl Local {
             Local::Config_Local(ref x) => &x.local_ids,
         }
     }
-
     pub fn validators(
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::validator::config::Local> {
@@ -144,7 +133,6 @@ impl Local {
             Local::Config_Local(ref x) => &x.validators,
         }
     }
-
     pub fn only(self) -> crate::ton::config::local::Local {
         match self {
             Local::Config_Local(x) => x,
@@ -168,7 +156,6 @@ impl crate::BoxedDeserialize for Local {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x789e915c)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

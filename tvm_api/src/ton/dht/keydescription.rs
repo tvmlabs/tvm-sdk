@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.keyDescription`\n\n```text\ndht.keyDescription key:dht.key id:PublicKey update_rule:dht.UpdateRule signature:bytes = dht.KeyDescription;\n```\n"]
 pub struct KeyDescription {
@@ -18,7 +17,6 @@ impl crate::BareSerialize for KeyDescription {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x281d4e05)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let KeyDescription { key, id, update_rule, signature } = self;
         _ser.write_bare::<crate::ton::dht::key::Key>(key)?;
@@ -41,7 +39,6 @@ impl crate::BareDeserialize for KeyDescription {
 }
 impl crate::IntoBoxed for KeyDescription {
     type Boxed = crate::ton::dht::KeyDescription;
-
     fn into_boxed(self) -> crate::ton::dht::KeyDescription {
         crate::ton::dht::KeyDescription::Dht_KeyDescription(self)
     }

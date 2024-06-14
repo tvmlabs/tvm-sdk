@@ -1,15 +1,3 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
-
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -37,8 +25,8 @@ pub(crate) trait AsyncHandler {
 // Handlers
 
 pub(crate) struct RuntimeHandlers {
-    sync_handlers: HashMap<String, Box<dyn SyncHandler + Sync>>,
-    async_handlers: HashMap<String, Box<dyn AsyncHandler + Sync>>,
+    sync_handlers: HashMap<String, Box<dyn SyncHandler + Sync + Send>>,
+    async_handlers: HashMap<String, Box<dyn AsyncHandler + Sync + Send>>,
     api: API,
 }
 
@@ -57,11 +45,19 @@ impl RuntimeHandlers {
         self.api.modules.push(module);
     }
 
-    pub fn register_sync(&mut self, function_name: String, handler: Box<dyn SyncHandler + Sync>) {
+    pub fn register_sync(
+        &mut self,
+        function_name: String,
+        handler: Box<dyn SyncHandler + Sync + Send>,
+    ) {
         self.sync_handlers.insert(function_name, handler);
     }
 
-    pub fn register_async(&mut self, function_name: String, handler: Box<dyn AsyncHandler + Sync>) {
+    pub fn register_async(
+        &mut self,
+        function_name: String,
+        handler: Box<dyn AsyncHandler + Sync + Send>,
+    ) {
         self.async_handlers.insert(function_name, handler);
     }
 }

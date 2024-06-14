@@ -33,8 +33,8 @@ rand = '0.7'
 diffy = { optional = true, version = '0.2.2' }
 similar = { features = [ 'bytes' ], optional = true, version = '2.2.0' }
 zstd = { default-features = false, optional = true, version = '0.11' }
-# fastcrypto-zkp = "0.1.3"
-# fastcrypto = "0.1.8"
+fastcrypto-zkp = "0.1.3"
+fastcrypto = "0.1.8"
 ark-std = "0.4.0"
 
 base64ct ={ version = "1.5.3", features = ["alloc"]}

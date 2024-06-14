@@ -37,7 +37,11 @@ impl crate::BoxedDeserialize for AddLogMessage {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x5f36cfec) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x5f36cfec) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for AddLogMessage {
@@ -85,7 +89,11 @@ impl crate::BoxedDeserialize for ChangeLocalPassword {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xe81037bf) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xe81037bf) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ChangeLocalPassword {
@@ -123,7 +131,11 @@ impl crate::BoxedDeserialize for Close {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xb933e17f) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xb933e17f) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Close {
@@ -174,7 +186,11 @@ impl crate::BoxedDeserialize for CreateNewKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x910d8210) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x910d8210) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for CreateNewKey {
@@ -231,7 +247,11 @@ impl crate::BoxedDeserialize for CreateQuery {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf18b20c5) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf18b20c5) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for CreateQuery {
@@ -279,7 +299,11 @@ impl crate::BoxedDeserialize for Decrypt {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x155685ae) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x155685ae) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Decrypt {
@@ -317,7 +341,11 @@ impl crate::BoxedDeserialize for DeleteAllKeys {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x5fe3fb23) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x5fe3fb23) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DeleteAllKeys {
@@ -362,7 +390,11 @@ impl crate::BoxedDeserialize for DeleteKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xa1d948cd) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xa1d948cd) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DeleteKey {
@@ -410,7 +442,11 @@ impl crate::BoxedDeserialize for Encrypt {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x936f4b1c) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x936f4b1c) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Encrypt {
@@ -458,7 +494,11 @@ impl crate::BoxedDeserialize for ExportEncryptedKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x0d02097f) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x0d02097f) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ExportEncryptedKey {
@@ -503,7 +543,11 @@ impl crate::BoxedDeserialize for ExportKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x9f4cd973) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x9f4cd973) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ExportKey {
@@ -551,7 +595,11 @@ impl crate::BoxedDeserialize for ExportPemKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xd9a8a3ba) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xd9a8a3ba) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ExportPemKey {
@@ -596,7 +644,11 @@ impl crate::BoxedDeserialize for ExportUnencryptedKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xda2bc740) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xda2bc740) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ExportUnencryptedKey {
@@ -647,7 +699,11 @@ impl crate::BoxedDeserialize for GetAccountAddress {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x1e8ba5c8) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x1e8ba5c8) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetAccountAddress {
@@ -692,7 +748,11 @@ impl crate::BoxedDeserialize for GetAccountState {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x81daf446) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x81daf446) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetAccountState {
@@ -737,7 +797,11 @@ impl crate::BoxedDeserialize for GetBip39Hints {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x8f5e5dea) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x8f5e5dea) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetBip39Hints {
@@ -775,7 +839,11 @@ impl crate::BoxedDeserialize for GetLogStream {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x45984b5b) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x45984b5b) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetLogStream {
@@ -820,7 +888,11 @@ impl crate::BoxedDeserialize for GetLogTagVerbosityLevel {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x38af2d83) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x38af2d83) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetLogTagVerbosityLevel {
@@ -858,7 +930,11 @@ impl crate::BoxedDeserialize for GetLogTags {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf0d569da) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf0d569da) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetLogTags {
@@ -896,7 +972,11 @@ impl crate::BoxedDeserialize for GetLogVerbosityLevel {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x23689ae4) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x23689ae4) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetLogVerbosityLevel {
@@ -944,7 +1024,11 @@ impl crate::BoxedDeserialize for GuessAccount {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x986d6c60) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x986d6c60) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GuessAccount {
@@ -992,7 +1076,11 @@ impl crate::BoxedDeserialize for GuessAccountRevision {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x6eb892a2) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x6eb892a2) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GuessAccountRevision {
@@ -1046,7 +1134,11 @@ impl crate::BoxedDeserialize for ImportEncryptedKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x2724d3de) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x2724d3de) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ImportEncryptedKey {
@@ -1097,7 +1189,11 @@ impl crate::BoxedDeserialize for ImportKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xa0296119) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xa0296119) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ImportKey {
@@ -1148,7 +1244,11 @@ impl crate::BoxedDeserialize for ImportPemKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x048d8d51) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x048d8d51) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ImportPemKey {
@@ -1199,7 +1299,11 @@ impl crate::BoxedDeserialize for ImportUnencryptedKey {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xb9635915) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xb9635915) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for ImportUnencryptedKey {
@@ -1244,7 +1348,11 @@ impl crate::BoxedDeserialize for Init {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xc45c22b6) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xc45c22b6) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Init {
@@ -1295,7 +1403,11 @@ impl crate::BoxedDeserialize for Kdf {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x9c96737d) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x9c96737d) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Kdf {
@@ -1343,7 +1455,11 @@ impl crate::BoxedDeserialize for OnLiteServerQueryError {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xd79f46b3) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xd79f46b3) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for OnLiteServerQueryError {
@@ -1391,7 +1507,11 @@ impl crate::BoxedDeserialize for OnLiteServerQueryResult {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x7a92da5e) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x7a92da5e) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for OnLiteServerQueryResult {
@@ -1439,7 +1559,11 @@ impl crate::BoxedDeserialize for PackAccountAddress {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xad3c39ec) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xad3c39ec) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PackAccountAddress {
@@ -1484,7 +1608,11 @@ impl crate::BoxedDeserialize for RunTests {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x8669354d) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x8669354d) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for RunTests {
@@ -1529,7 +1657,11 @@ impl crate::BoxedDeserialize for SetLogStream {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xaeaff791) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xaeaff791) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for SetLogStream {
@@ -1577,7 +1709,11 @@ impl crate::BoxedDeserialize for SetLogTagVerbosityLevel {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x8317d696) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x8317d696) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for SetLogTagVerbosityLevel {
@@ -1622,7 +1758,11 @@ impl crate::BoxedDeserialize for SetLogVerbosityLevel {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xedea07d2) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xedea07d2) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for SetLogVerbosityLevel {
@@ -1660,7 +1800,11 @@ impl crate::BoxedDeserialize for Sync {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf89f182b) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf89f182b) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Sync {
@@ -1705,7 +1849,11 @@ impl crate::BoxedDeserialize for UnpackAccountAddress {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xd7528049) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xd7528049) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for UnpackAccountAddress {

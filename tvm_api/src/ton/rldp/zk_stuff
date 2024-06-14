@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `rldp.Message`\n\n```text\nrldp.answer query_id:int256 data:bytes = rldp.Message;\n\nrldp.message id:int256 data:bytes = rldp.Message;\n\nrldp.query query_id:int256 max_answer_size:long timeout:int data:bytes = rldp.Message;\n```\n"]
 pub enum Message {
@@ -15,21 +14,18 @@ impl Message {
             Message::Rldp_Query(ref x) => &x.data,
         }
     }
-
     pub fn id(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::Rldp_Message(ref x) => Some(&x.id),
             _ => None,
         }
     }
-
     pub fn max_answer_size(&self) -> Option<&crate::ton::long> {
         match self {
             Message::Rldp_Query(ref x) => Some(&x.max_answer_size),
             _ => None,
         }
     }
-
     pub fn query_id(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::Rldp_Answer(ref x) => Some(&x.query_id),
@@ -37,7 +33,6 @@ impl Message {
             _ => None,
         }
     }
-
     pub fn timeout(&self) -> Option<&crate::ton::int> {
         match self {
             Message::Rldp_Query(ref x) => Some(&x.timeout),
@@ -68,7 +63,6 @@ impl crate::BoxedDeserialize for Message {
             crate::ConstructorNumber(0x8a794d69),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -101,14 +95,12 @@ impl MessagePart {
             _ => None,
         }
     }
-
     pub fn fec_type(&self) -> Option<&crate::ton::fec::Type> {
         match self {
             MessagePart::Rldp_MessagePart(ref x) => Some(&x.fec_type),
             _ => None,
         }
     }
-
     pub fn part(&self) -> &crate::ton::int {
         match self {
             MessagePart::Rldp_Complete(ref x) => &x.part,
@@ -116,7 +108,6 @@ impl MessagePart {
             MessagePart::Rldp_MessagePart(ref x) => &x.part,
         }
     }
-
     pub fn seqno(&self) -> Option<&crate::ton::int> {
         match self {
             MessagePart::Rldp_Confirm(ref x) => Some(&x.seqno),
@@ -124,14 +115,12 @@ impl MessagePart {
             _ => None,
         }
     }
-
     pub fn total_size(&self) -> Option<&crate::ton::long> {
         match self {
             MessagePart::Rldp_MessagePart(ref x) => Some(&x.total_size),
             _ => None,
         }
     }
-
     pub fn transfer_id(&self) -> &crate::ton::int256 {
         match self {
             MessagePart::Rldp_Complete(ref x) => &x.transfer_id,
@@ -163,7 +152,6 @@ impl crate::BoxedDeserialize for MessagePart {
             crate::ConstructorNumber(0x185c22cc),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.error`\n\n```text\nliteServer.error code:int message:string = liteServer.Error;\n```\n"]
 pub struct Error {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for Error {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xbba9e148)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Error { code, message } = self;
         _ser.write_bare::<crate::ton::int>(code)?;
@@ -30,7 +28,6 @@ impl crate::BareDeserialize for Error {
 }
 impl crate::IntoBoxed for Error {
     type Boxed = crate::ton::lite_server::Error;
-
     fn into_boxed(self) -> crate::ton::lite_server::Error {
         crate::ton::lite_server::Error::LiteServer_Error(self)
     }

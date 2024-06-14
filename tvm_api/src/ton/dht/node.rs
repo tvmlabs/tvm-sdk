@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.node`\n\n```text\ndht.node id:PublicKey addr_list:adnl.addressList version:int signature:bytes = dht.Node;\n```\n"]
 pub struct Node {
@@ -18,7 +17,6 @@ impl crate::BareSerialize for Node {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x84533248)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Node { id, addr_list, version, signature } = self;
         _ser.write_boxed::<crate::ton::PublicKey>(id)?;
@@ -41,7 +39,6 @@ impl crate::BareDeserialize for Node {
 }
 impl crate::IntoBoxed for Node {
     type Boxed = crate::ton::dht::Node;
-
     fn into_boxed(self) -> crate::ton::dht::Node {
         crate::ton::dht::Node::Dht_Node(self)
     }

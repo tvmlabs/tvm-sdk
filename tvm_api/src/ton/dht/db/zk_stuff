@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.db.Bucket`\n\n```text\ndht.db.bucket nodes:dht.nodes = dht.db.Bucket;\n```\n"]
 pub enum Bucket {
@@ -11,7 +10,6 @@ impl Bucket {
             Bucket::Dht_Db_Bucket(ref x) => &x.nodes,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::db::bucket::Bucket {
         match self {
             Bucket::Dht_Db_Bucket(x) => x,
@@ -35,7 +33,6 @@ impl crate::BoxedDeserialize for Bucket {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb39cfa6c)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -59,7 +56,6 @@ impl Key {
             Key::Dht_Db_Key_Bucket(ref x) => &x.id,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::db::key::bucket::Bucket {
         match self {
             Key::Dht_Db_Key_Bucket(x) => x,
@@ -83,7 +79,6 @@ impl crate::BoxedDeserialize for Key {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa368ae4c)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

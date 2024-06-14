@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.id.Short`\n\n```text\nadnl.id.short id:int256 = adnl.id.Short;\n```\n"]
 pub enum Short {
@@ -11,7 +10,6 @@ impl Short {
             Short::Adnl_Id_Short(ref x) => &x.id,
         }
     }
-
     pub fn only(self) -> crate::ton::adnl::id::short::Short {
         match self {
             Short::Adnl_Id_Short(x) => x,
@@ -35,7 +33,6 @@ impl crate::BoxedDeserialize for Short {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x3e3f654f)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

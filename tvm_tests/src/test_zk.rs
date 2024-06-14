@@ -1,4 +1,4 @@
-/*/*
+/*
 * Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
 *
 * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
@@ -54,6 +54,7 @@ use fastcrypto_zkp::bn254::utils::gen_address_seed;
 
 use serde::{Deserialize};
 use serde_derive::Serialize;
+use crate::test_framework::{Expects, test_case_with_refs};
 
 
 pub const SUI_DATA_FROM_REACT_1: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6ImJ4bW5KVzMxcnV6S01HaXIwMVlQR1lMMHhEWSIsIm5iZiI6MTcxNTY4NzAzNiwiaWF0IjoxNzE1Njg3MzM2LCJleHAiOjE3MTU2OTA5MzYsImp0aSI6IjliNjAxZDI1ZjAwMzY0MGMyODg5YTJhMDQ3Nzg5MzgyY2IxY2ZlODcifQ.rTa9KA9HoYm04Agj71D0kDkvsCZ35SeeihBGbABYckBRxaUlCy6LQ-sEaVOTgvnL_DgVn7hx8g3sSmnhJ9kHzj5e6gtUoxoWAe8PuGyK2bmqhmPrQMeEps9f6m2EToQCIA_Id4fGCjSCktjJBi47QHT_Dhe6isHdKk1pgSshOyvCF1VjIvyyeGY5iWQ4cIRBMQNlNBT11o6T01SY6B9DtiiFN_0-ok5taIjQgtMNG6Cwr3tCnqXftuGGQrHlx15y8VgCPODYi-wOtvUbzI2yfx53PmRD_L8O50cMNCrCRE3yYR5MNOu1LlQ_EACy5UFsCJR35xRz84nv-6Iyrufx1g\",\"userPassToIntFormat\":\"981021191041055255531141165751\",\"ephemeralKeyPair\":{\"keypair\":{\"publicKey\":{\"0\":155,\"1\":147,\"2\":37,\"3\":82,\"4\":183,\"5\":109,\"6\":227,\"7\":144,\"8\":85,\"9\":248,\"10\":20,\"11\":45,\"12\":92,\"13\":103,\"14\":160,\"15\":221,\"16\":101,\"17\":44,\"18\":30,\"19\":86,\"20\":96,\"21\":85,\"22\":24,\"23\":224,\"24\":106,\"25\":63,\"26\":13,\"27\":130,\"28\":8,\"29\":119,\"30\":247,\"31\":67},\"secretKey\":{\"0\":192,\"1\":16,\"2\":35,\"3\":54,\"4\":100,\"5\":14,\"6\":88,\"7\":217,\"8\":164,\"9\":21,\"10\":154,\"11\":233,\"12\":248,\"13\":208,\"14\":188,\"15\":4,\"16\":52,\"17\":244,\"18\":125,\"19\":103,\"20\":99,\"21\":26,\"22\":225,\"23\":60,\"24\":140,\"25\":75,\"26\":228,\"27\":157,\"28\":137,\"29\":220,\"30\":1,\"31\":65,\"32\":155,\"33\":147,\"34\":37,\"35\":82,\"36\":183,\"37\":109,\"38\":227,\"39\":144,\"40\":85,\"41\":248,\"42\":20,\"43\":45,\"44\":92,\"45\":103,\"46\":160,\"47\":221,\"48\":101,\"49\":44,\"50\":30,\"51\":86,\"52\":96,\"53\":85,\"54\":24,\"55\":224,\"56\":106,\"57\":63,\"58\":13,\"59\":130,\"60\":8,\"61\":119,\"62\":247,\"63\":67}}},\"zkAddr\":\"0x290623ea2fe67e77502c931e015e910720b59cf99994bfe872da851245a6adb8\",\"zkProofs\":{\"proofPoints\":{\"a\":[\"4240296169193969312736577528388333411353554120022978085193148043577551744781\",\"5805161066003598301896048908428560240907086333477483881772048922050706263054\",\"1\"],\"b\":[[\"12834391737669124973917765536412427456985620342194191639017091262766903638891\",\"17565396762846717347409742387259908749145765976354144805005547481529916658455\"],[\"10704310067924910937030159163683742097178285875135929496314190235513445131794\",\"5158907077493606386023392148737817037260820737072162547798816810512684527243\"],[\"1\",\"0\"]],\"c\":[\"1422540522119231707130773229384414857146368773886805969586218853559909475064\",\"8843079196273712399340537238369227864378150337693574970239878271571912585171\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extendedEphemeralPublicKey\":\"AJuTJVK3beOQVfgULVxnoN1lLB5WYFUY4Go/DYIId/dD\"}";
@@ -146,19 +147,10 @@ fn gen_keypair() -> ed25519_dalek::Keypair {
     ed25519_dalek::Keypair::generate(&mut rand::thread_rng())
 }
 
-fn secretKeyFromIntegerMap(keyData: HashMap<String,u8>)->Vec<u8>{
-    let mut vec: Vec<u8> = Vec::new();
-    for i in 0..=31 {
-        if let Some(value) = keyData.get(&i.to_string()) {
-            vec.push(value.clone());
-        }
-    }
-    return vec;
-}
 
 #[test]
-fn test_vergrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
-    println!("===================================== START VERGRTH16 TEST =====================================");
+fn test_vrgrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
+    println!("===================================== START VRGRTH16 TEST =====================================");
 
     let user_pass_salt = "206703048842351542647799591018316385612";
     // Generate an ephemeral key pair.
@@ -284,23 +276,18 @@ fn test_vergrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
     //put hash to integer
     //let hash = BuilderData::with_raw(cell_hash.as_slice().to_vec(), 256).unwrap();
 
-    let code = "
+    test_case_with_refs("
         PUSHREFSLICE
         PUSHREFSLICE
         PUSHREFSLICE
         PLDU 256
         CHKSIGNS
-    ";
-
-    let cells = vec![test_cell, signature.into_cell(), pub_key.into_cell().unwrap()];
-
-    let expected = Stack::new().push(int!(-1));
-
-
+    ", vec![test_cell, signature.into_cell(), pub_key.into_cell().unwrap()])
+        .expect_stack(Stack::new().push(int!(-1)));
 }
 
 #[test]
-fn test_vergrth16_based_on_real_data() { //real data taken from our react app for zklogin tests
+fn test_vrgrth16_based_on_real_data() { //real data taken from our react app for zklogin tests
     // {"alg":"RS256","kid":"a3b762f871cdb3bae0044c649622fc1396eda3e3","typ":"JWT"}
     // {"iss":"https://accounts.google.com","azp":"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com",
     // "aud":"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com","sub":"112897468626716626103",
@@ -405,14 +392,22 @@ fn test_vergrth16_based_on_real_data() { //real data taken from our react app fo
     code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
     code = code + "VERGRTH16";
 
-    let refs = vec![proof_cell.clone(), public_inputs_cell.clone()];
-
-
+    test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).expect_success();
 }
 
+fn secretKeyFromIntegerMap(keyData: HashMap<String,u8>)->Vec<u8>{
+    let mut vec: Vec<u8> = Vec::new();
+    for i in 0..=31 {
+        if let Some(value) = keyData.get(&i.to_string()) {
+            vec.push(value.clone());
+        }
+    }
+    return vec;
+}
 
+#[ignore]
 #[test]
-fn test_eval_time_vergrth16() {
+fn test_eval_time_vrgrth16() {
     //todo: later n must be extracted from 3d part of jwt
     let content: JWK = JWK {
         kty: "RSA".to_string(),
@@ -542,7 +537,7 @@ fn test_eval_time_vergrth16() {
         let zk_login_inputs = ZkLoginInputs::from_json(
             &*proof_and_jwt.to_string(), &*zk_seed.to_string()).unwrap();
 
-        let time_for_vergrth16 = single_vergrth16(&eph_pubkey, &zk_login_inputs, &all_jwk);
+        let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk);
         let time_for_chcksgns = single_chcksgns(&eph_pubkey, &zk_login_inputs, &all_jwk);
         println!("time_for_vergrth16 is {time_for_vergrth16}");
         println!("time_for_chcksgns is {time_for_chcksgns}");
@@ -600,7 +595,7 @@ fn prepare_proof_and_public_key_cells_for_stack(eph_pubkey: &Vec<u8>, zk_login_i
 
 
 
-fn single_vergrth16(eph_pubkey: &Vec<u8>, zk_login_inputs: &ZkLoginInputs, all_jwk: &HashMap<JwkId, JWK>) -> u128 {
+fn single_vrgrth16(eph_pubkey: &Vec<u8>, zk_login_inputs: &ZkLoginInputs, all_jwk: &HashMap<JwkId, JWK>) -> u128 {
     let (proof_cell, public_inputs_cell) = prepare_proof_and_public_key_cells_for_stack(eph_pubkey, zk_login_inputs, all_jwk);
 
     let verification_key_id: u32 = 0;
@@ -644,20 +639,20 @@ fn single_chcksgns(eph_pubkey: &Vec<u8>, zk_login_inputs: &ZkLoginInputs, all_jw
     ).unwrap();
 
     let start: Instant = Instant::now();
-    let code =  "
+    test_case_with_refs("
         PUSHREFSLICE
         PUSHREFSLICE
         PUSHREFSLICE
         PLDU 256
         CHKSIGNS
-    ";
-    let refs = vec![test_cell, signature.into_cell(), pub_key.into_cell().unwrap()];
-    let expected = Stack::new().push(int!(-1))
-
+    ", vec![test_cell, signature.into_cell(), pub_key.into_cell().unwrap()])
+        .expect_stack(Stack::new().push(int!(-1)));
+    start.elapsed().as_micros()
 
 }
 
 
 
 
-*/
+
+

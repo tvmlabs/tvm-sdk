@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `ton.BlockId`\n\n```text\nton.blockId root_cell_hash:int256 file_hash:int256 = ton.BlockId;\n\nton.blockIdApprove root_cell_hash:int256 file_hash:int256 = ton.BlockId;\n```\n"]
 pub enum BlockId {
@@ -13,7 +12,6 @@ impl BlockId {
             BlockId::Ton_BlockIdApprove(ref x) => &x.file_hash,
         }
     }
-
     pub fn root_cell_hash(&self) -> &crate::ton::int256 {
         match self {
             BlockId::Ton_BlockId(ref x) => &x.root_cell_hash,
@@ -39,7 +37,6 @@ impl crate::BoxedDeserialize for BlockId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc50b6e70), crate::ConstructorNumber(0x2dd44a49)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
