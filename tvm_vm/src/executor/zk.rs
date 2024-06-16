@@ -39,62 +39,22 @@ use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
 use crate::types::Exception;
-use crate::utils::bytes_to_string;
+use crate::utils::{bytes_to_string, unpack_string_from_cell};
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
 //use once_cell::sync::Lazy;
-use ark_serialize::CanonicalDeserialize;
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use serde_json::Value;
 use thiserror::Error;
+use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
+use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
+use crate::executor::zk_stuff::error::ZkCryptoError;
+use crate::executor::zk_stuff::utils::split_to_two_frs;
+use crate::executor::zk_stuff::zk_login::{Claim, hash_ascii_str_to_field, hash_to_field, MAX_HEADER_LEN, MAX_ISS_LEN_B64, PACK_WIDTH};
+use crate::stack::StackItem::Cell;
+
 
 pub type ZkCryptoResult<T> = Result<T, ZkCryptoError>;
-
-/// Collection of errors to be used in fastcrypto.
-#[derive(Clone, Debug, Error, Eq, PartialEq)]
-pub enum ZkCryptoError {
-    /// Invalid value was given to the function
-    #[error("Invalid value was given to the function")]
-    InvalidInput,
-
-    /// Input is to short.
-    #[error("Expected input of length at least {0}")]
-    InputTooShort(usize),
-
-    /// Input is to long.
-    #[error("Expected input of length at most {0}")]
-    InputTooLong(usize),
-
-    /// Input length is wrong.
-    #[error("Expected input of length exactly {0}")]
-    InputLengthWrong(usize),
-
-    /// Invalid signature was given to the function
-    #[error("Invalid signature was given to the function")]
-    InvalidSignature,
-
-    /// Invalid proof was given to the function
-    #[error("Invalid proof was given to the function")]
-    InvalidProof,
-
-    /// Not enough inputs were given to the function, retry with more
-    #[error("Not enough inputs were given to the function, retry with more")]
-    NotEnoughInputs,
-
-    /// Invalid message was given to the function
-    #[error("Invalid message was given to the function")]
-    InvalidMessage,
-
-    /// Message should be ignored
-    #[error("Message should be ignored")]
-    IgnoredMessage,
-
-    /// General cryptographic error.
-    #[error("General cryptographic error: {0}")]
-    GeneralError(String),
-
-    /// General opaque cryptographic error.
-    #[error("General cryptographic error")]
-    GeneralOpaqueError,
-}
 
 /// Size of scalars in the BN254 construction.
 pub const SCALAR_SIZE: usize = 32;
@@ -672,6 +632,110 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
 
     Ok(())
 }
+
+pub(crate) fn execute_poseidon(engine: &mut Engine) -> Status {
+    engine.load_instruction(crate::executor::types::Instruction::new("POSEIDON"))?;
+    fetch_stack(engine, 4);
+
+   /**/ let zkaddr_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
+    let zkaddr = unpack_string_from_cell(zkaddr_slice, engine)?;
+    println!("from poseidon value zkaddr: {:?}", zkaddr);
+
+    let epk_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+    let epk_as_bytes = unpack_data_from_cell(epk_slice, engine)?;
+    println!("from poseidon value epk_as_bytes: {:?}", hex::encode(epk_as_bytes.clone()));
+
+    let header_and_iss_base64_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
+    let header_and_iss_base64 = unpack_string_from_cell(header_and_iss_base64_slice, engine)?;
+    println!("from poseidon value header_and_iss_base64: {:?}", header_and_iss_base64);
+
+    let modulus_slice = SliceData::load_cell_ref(engine.cmd.var(3).as_cell()?)?;
+    let modulus = unpack_data_from_cell(modulus_slice, engine)?;
+    println!("from poseidon value modulus: {:?}",modulus);/**/
+
+    let max_epoch = 10; //todo: read from stack later
+
+    let public_inputs = calculate_poseidon_hash(
+        &*zkaddr,
+        &*header_and_iss_base64,
+        &epk_as_bytes,
+        &modulus,
+        max_epoch
+    ).unwrap();
+
+
+    let mut public_inputs_as_bytes = vec![];
+    public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+    println!("from poseidon public_inputs_as_bytes : {:?}", public_inputs_as_bytes.clone());
+    //println!("from poseidon public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
+
+    engine.cc.stack.push(Cell(public_inputs_cell));/**/
+
+    Ok(())
+
+}
+
+
+pub fn calculate_poseidon_hash(
+        address_seed: &str,
+        header_and_iss_base64: &str,
+        eph_pk_bytes: &[u8],
+        modulus: &[u8],
+        max_epoch: u64,
+
+    ) -> Result<Bn254Fr, ZkCryptoError>/**/ {
+        /*if header_base64.len() > MAX_HEADER_LEN as usize {
+            return Err(ZkCryptoError::GeneralError("Header too long".to_string()));
+        }*/
+
+        let address_seed = Bn254FrElement::from_str(address_seed).unwrap();
+        let addr_seed = (&address_seed).into();
+
+        let (first, second) = split_to_two_frs(eph_pk_bytes).unwrap();
+
+        let max_epoch_f = (&Bn254FrElement::from_str(&max_epoch.to_string()).unwrap()).into();
+
+        let v: Value = serde_json::from_str(header_and_iss_base64).unwrap();
+
+        let header_base64 = v["headerBase64"].as_str().unwrap();
+        println!("header_base64 {}", header_base64);
+
+        let issBase64Details = v["issBase64Details"].as_object().unwrap();
+        println!("issBase64Details {:?}", issBase64Details);
+
+        let index_mod_4 = issBase64Details["indexMod4"].as_i64().unwrap().to_string();
+
+        println!("index_mod_4 {:?}", index_mod_4);
+
+        let iss_base64_details_value = issBase64Details["value"].as_str().unwrap();
+
+        println!("iss_base64_details_value {:?}", iss_base64_details_value);
+
+
+
+        let index_mod_4_f =
+            (&Bn254FrElement::from_str(&index_mod_4).unwrap()).into();
+
+        let iss_base64_f =
+            hash_ascii_str_to_field(&iss_base64_details_value, MAX_ISS_LEN_B64).unwrap();
+        let header_f = hash_ascii_str_to_field(&header_base64, MAX_HEADER_LEN).unwrap();
+        let modulus_f = hash_to_field(&[BigUint::from_bytes_be(modulus)], 2048, PACK_WIDTH).unwrap();
+
+        poseidon_zk_login(vec![
+            first,
+            second,
+            addr_seed,
+            max_epoch_f,
+            iss_base64_f,
+            index_mod_4_f,
+            header_f,
+            modulus_f,
+        ])
+}
+
+
 
 
 

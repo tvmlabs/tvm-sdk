@@ -46,6 +46,12 @@ tvm_block.workspace = true
 tvm_types.workspace = true
 num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
 
+#fastcrypto-zkp = "0.1.3"
+
+fastcrypto = "0.1.8" #only temporary
+neptune = { version = "13.0.0", default_features = false }
+
+
 once_cell = "1.16"
 schemars = "0.8.10"
 serde = { version = "1.0.156", features = ["derive"] }

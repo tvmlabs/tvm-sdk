@@ -46,15 +46,16 @@ use tvm_vm::{
     utils::{pack_string_to_cell, pack_data_to_cell, unpack_string_from_cell},
 };
 
-use tvm_vm::executor::zk::ZkCryptoError;
+use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
 use tvm_types::{BuilderData, Cell, SliceData};
-use fastcrypto_zkp::bn254::zk_login::{CanonicalSerialize, JWK, JwkId, OIDCProvider, ZkLoginInputs};
+use fastcrypto_zkp::bn254::zk_login::{CanonicalSerialize, Claim, JWK, JwkId, OIDCProvider, ZkLoginInputs};
 use fastcrypto_zkp::bn254::utils::gen_address_seed;
 
 
 use serde::{Deserialize};
 use serde_derive::Serialize;
-use crate::test_framework::{Expects, test_case_with_refs};
+use tvm_vm::executor::zk::calculate_poseidon_hash;
+use crate::test_framework::{Expects, test_case, test_case_with_refs};
 
 
 pub const SUI_DATA_FROM_REACT_1: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6ImJ4bW5KVzMxcnV6S01HaXIwMVlQR1lMMHhEWSIsIm5iZiI6MTcxNTY4NzAzNiwiaWF0IjoxNzE1Njg3MzM2LCJleHAiOjE3MTU2OTA5MzYsImp0aSI6IjliNjAxZDI1ZjAwMzY0MGMyODg5YTJhMDQ3Nzg5MzgyY2IxY2ZlODcifQ.rTa9KA9HoYm04Agj71D0kDkvsCZ35SeeihBGbABYckBRxaUlCy6LQ-sEaVOTgvnL_DgVn7hx8g3sSmnhJ9kHzj5e6gtUoxoWAe8PuGyK2bmqhmPrQMeEps9f6m2EToQCIA_Id4fGCjSCktjJBi47QHT_Dhe6isHdKk1pgSshOyvCF1VjIvyyeGY5iWQ4cIRBMQNlNBT11o6T01SY6B9DtiiFN_0-ok5taIjQgtMNG6Cwr3tCnqXftuGGQrHlx15y8VgCPODYi-wOtvUbzI2yfx53PmRD_L8O50cMNCrCRE3yYR5MNOu1LlQ_EACy5UFsCJR35xRz84nv-6Iyrufx1g\",\"userPassToIntFormat\":\"981021191041055255531141165751\",\"ephemeralKeyPair\":{\"keypair\":{\"publicKey\":{\"0\":155,\"1\":147,\"2\":37,\"3\":82,\"4\":183,\"5\":109,\"6\":227,\"7\":144,\"8\":85,\"9\":248,\"10\":20,\"11\":45,\"12\":92,\"13\":103,\"14\":160,\"15\":221,\"16\":101,\"17\":44,\"18\":30,\"19\":86,\"20\":96,\"21\":85,\"22\":24,\"23\":224,\"24\":106,\"25\":63,\"26\":13,\"27\":130,\"28\":8,\"29\":119,\"30\":247,\"31\":67},\"secretKey\":{\"0\":192,\"1\":16,\"2\":35,\"3\":54,\"4\":100,\"5\":14,\"6\":88,\"7\":217,\"8\":164,\"9\":21,\"10\":154,\"11\":233,\"12\":248,\"13\":208,\"14\":188,\"15\":4,\"16\":52,\"17\":244,\"18\":125,\"19\":103,\"20\":99,\"21\":26,\"22\":225,\"23\":60,\"24\":140,\"25\":75,\"26\":228,\"27\":157,\"28\":137,\"29\":220,\"30\":1,\"31\":65,\"32\":155,\"33\":147,\"34\":37,\"35\":82,\"36\":183,\"37\":109,\"38\":227,\"39\":144,\"40\":85,\"41\":248,\"42\":20,\"43\":45,\"44\":92,\"45\":103,\"46\":160,\"47\":221,\"48\":101,\"49\":44,\"50\":30,\"51\":86,\"52\":96,\"53\":85,\"54\":24,\"55\":224,\"56\":106,\"57\":63,\"58\":13,\"59\":130,\"60\":8,\"61\":119,\"62\":247,\"63\":67}}},\"zkAddr\":\"0x290623ea2fe67e77502c931e015e910720b59cf99994bfe872da851245a6adb8\",\"zkProofs\":{\"proofPoints\":{\"a\":[\"4240296169193969312736577528388333411353554120022978085193148043577551744781\",\"5805161066003598301896048908428560240907086333477483881772048922050706263054\",\"1\"],\"b\":[[\"12834391737669124973917765536412427456985620342194191639017091262766903638891\",\"17565396762846717347409742387259908749145765976354144805005547481529916658455\"],[\"10704310067924910937030159163683742097178285875135929496314190235513445131794\",\"5158907077493606386023392148737817037260820737072162547798816810512684527243\"],[\"1\",\"0\"]],\"c\":[\"1422540522119231707130773229384414857146368773886805969586218853559909475064\",\"8843079196273712399340537238369227864378150337693574970239878271571912585171\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extendedEphemeralPublicKey\":\"AJuTJVK3beOQVfgULVxnoN1lLB5WYFUY4Go/DYIId/dD\"}";
@@ -147,6 +148,125 @@ fn gen_keypair() -> ed25519_dalek::Keypair {
     ed25519_dalek::Keypair::generate(&mut rand::thread_rng())
 }
 
+#[test]
+fn test_poseidon_plus_vrgrth16() {
+    /** Common data generation **/
+
+    let user_pass_salt = "206703048842351542647799591018316385612";
+
+    // Generate an ephemeral key pair.
+    let ephemeral_kp = Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+    let mut eph_pubkey = vec![0x00];
+    eph_pubkey.extend(ephemeral_kp.public().as_ref());
+
+    println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
+    let len = eph_pubkey.clone().len();
+    println!("len eph_pubkey: {:?}", len);
+
+    let zk_seed = gen_address_seed(
+        user_pass_salt,
+        "sub",
+        "106294049240999307923",
+        "25769832374-famecqrhe2gkebt5fvqms2263046lj96.apps.googleusercontent.com",
+    ).unwrap();
+
+    println!("zk_seed: {}", zk_seed);
+
+    let proof_and_jwt =  "{\"proofPoints\":{\"a\":[\"8247215875293406890829839156897863742504615191361518281091302475904551111016\",\"6872980335748205979379321982220498484242209225765686471076081944034292159666\",\"1\"],\"b\":[[\"21419680064642047510915171723230639588631899775315750803416713283740137406807\",\"21566716915562037737681888858382287035712341650647439119820808127161946325890\"],[\"17867714710686394159919998503724240212517838710399045289784307078087926404555\",\"21812769875502013113255155836896615164559280911997219958031852239645061854221\"],[\"1\",\"0\"]],\"c\":[\"7530826803702928198368421787278524256623871560746240215547076095911132653214\",\"16244547936249959771862454850485726883972969173921727256151991751860694123976\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
+
+    let issAndHeaderBase64Details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
+    println!("issAndHeaderBase64Details: {}", issAndHeaderBase64Details);
+
+    let zk_login_inputs = ZkLoginInputs::from_json(
+        &*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+
+    let content: JWK = JWK {
+        kty: "RSA".to_string(),
+        e: "AQAB".to_string(),
+        n: "oUriU8GqbRw-avcMn95DGW1cpZR1IoM6L7krfrWvLSSCcSX6Ig117o25Yk7QWBiJpaPV0FbP7Y5-DmThZ3SaF0AXW-3BsKPEXfFfeKVc6vBqk3t5mKlNEowjdvNTSzoOXO5UIHwsXaxiJlbMRalaFEUm-2CKgmXl1ss_yGh1OHkfnBiGsfQUndKoHiZuDzBMGw8Sf67am_Ok-4FShK0NuR3-q33aB_3Z7obC71dejSLWFOEcKUVCaw6DGVuLog3x506h1QQ1r0FXKOQxnmqrRgpoHqGSouuG35oZve1vgCU4vLZ6EAgBAbC0KL35I7_0wUDSMpiAvf7iZxzJVbspkQ".to_string(),
+        alg: "RS256".to_string(),
+    };
+
+    let mut all_jwk = HashMap::new();
+    all_jwk.insert(
+        JwkId::new(
+            OIDCProvider::Google.get_config().iss,
+            "6f7254101f56e41cf35c9926de84a2d552b4c6f1".to_string(),
+        ),
+        content,
+    );
+
+    let (iss, kid) = (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+
+    let jwk = all_jwk
+        .get(&JwkId::new(iss.clone(), kid.clone()))
+        .ok_or_else(|| {
+            ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+        }).unwrap();
+
+    // Decode modulus to bytes.
+    let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n).map_err(|_| {
+        ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+    }).unwrap();
+
+    println!("modulus: {:?}", modulus);
+
+    let max_epoch = 10;
+
+    /** calcs poseidon **/
+
+    println!("====== Start Poseidon ========");
+
+    let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
+
+    let issAndHeaderBase64Details_cell = pack_string_to_cell(&issAndHeaderBase64Details.clone(), &mut 0).unwrap();
+
+    let eph_pubkey_cell = pack_data_to_cell(&eph_pubkey.clone(), &mut 0).unwrap();
+
+    let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
+
+    let mut code = "PUSHREF \n".to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"POSEIDON \n".to_string();
+    test_case_with_refs(code.as_str(), vec![modulus_cell, issAndHeaderBase64Details_cell,  eph_pubkey_cell, zk_seed_cell]).expect_success();
+
+
+    /** calcs vergrth16 **/
+
+    println!("====== Start Vergrth16 ========");
+
+    let proof  = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+    let public_inputs = &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+
+    let mut proof_as_bytes = vec![];
+    proof.serialize_compressed(&mut proof_as_bytes).unwrap();
+    println!("proof_as_bytes : {:?}", proof_as_bytes);
+    println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
+
+    let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
+
+    let mut public_inputs_as_bytes = vec![];
+    public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+    println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+    println!("public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
+
+    let verification_key_id: u32 = 1;
+
+    let mut code = "PUSHREF \n".to_string();
+    code = code + "PUSHREF \n";
+    code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
+    code = code + "VERGRTH16";
+
+    test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).expect_success();
+
+}
+
+
+
 
 #[test]
 fn test_vrgrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
@@ -180,6 +300,8 @@ fn test_vrgrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
 
     let zk_login_inputs = ZkLoginInputs::from_json(
         &*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+
+
 
     let content: JWK = JWK {
         kty: "RSA".to_string(),

@@ -36,6 +36,8 @@ mod stack;
 mod tuple;
 mod types;
 
+pub mod zk_stuff;
+
 
 pub use engine::*;
 use tvm_types::BuilderData;
