@@ -388,7 +388,7 @@ impl Handlers {
                 .set(0x24, execute_diff_patch_binary_quiet)
                 .set(0x25, execute_diff_patch_binary_zip_quiet)
                 .set(0x26, execute_vergrth16)
-                .set(0x27, execute_poseidon);
+                .set(0x27, execute_poseidon_zk_login);
 
         }
         self.add_subset(0xC7, &mut c7_handlers)

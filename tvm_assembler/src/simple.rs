@@ -838,7 +838,7 @@ impl Engine {
         DIFF_PATCH_BINARYQ                   => 0xC7, 0x24
         DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
         VERGRTH16                            => 0xC7, 0x26
-        POSEIDON                            => 0xC7, 0x27
+        POSEIDON_ZKLOGIN                     => 0xC7, 0x27
 
     }
 

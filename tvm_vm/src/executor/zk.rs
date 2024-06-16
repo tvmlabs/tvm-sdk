@@ -633,7 +633,7 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     Ok(())
 }
 
-pub(crate) fn execute_poseidon(engine: &mut Engine) -> Status {
+pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("POSEIDON"))?;
     fetch_stack(engine, 4);
 

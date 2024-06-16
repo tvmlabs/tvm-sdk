@@ -229,7 +229,7 @@ fn test_poseidon_plus_vrgrth16() {
     code = code + &*"PUSHREF \n".to_string();
     code = code + &*"PUSHREF \n".to_string();
     code = code + &*"PUSHREF \n".to_string();
-    code = code + &*"POSEIDON \n".to_string();
+    code = code + &*"POSEIDON_ZKLOGIN \n".to_string();
     test_case_with_refs(code.as_str(), vec![modulus_cell, issAndHeaderBase64Details_cell,  eph_pubkey_cell, zk_seed_cell]).expect_success();
 
 
