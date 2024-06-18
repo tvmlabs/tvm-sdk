@@ -1,6 +1,5 @@
 [package]
 name = "tvm_cli"
-version = '0.37.0'
 description = "command line tool for TVM compatible blockchains"
 documentation = "https://www.tvmlabs.io"
 homepage = "https://www.tvmlabs.io"
