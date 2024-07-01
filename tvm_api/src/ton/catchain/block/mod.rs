@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block`\n\n```text\ncatchain.block incarnation:int256 src:int height:int data:catchain.block.data signature:bytes = catchain.Block;\n```\n"]
 pub struct Block {
@@ -19,7 +18,6 @@ impl crate::BareSerialize for Block {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd6554174)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Block { incarnation, src, height, data, signature } = self;
         _ser.write_bare::<crate::ton::int256>(incarnation)?;
@@ -44,7 +42,6 @@ impl crate::BareDeserialize for Block {
 }
 impl crate::IntoBoxed for Block {
     type Boxed = crate::ton::catchain::Block;
-
     fn into_boxed(self) -> crate::ton::catchain::Block {
         crate::ton::catchain::Block::Catchain_Block(self)
     }
@@ -62,13 +59,11 @@ impl Data {
             Data::Catchain_Block_Data(ref x) => &x.deps,
         }
     }
-
     pub fn prev(&self) -> &crate::ton::catchain::block::dep::Dep {
         match self {
             Data::Catchain_Block_Data(ref x) => &x.prev,
         }
     }
-
     pub fn only(self) -> crate::ton::catchain::block::data::Data {
         match self {
             Data::Catchain_Block_Data(x) => x,
@@ -92,7 +87,6 @@ impl crate::BoxedDeserialize for Data {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf8aca620)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -116,25 +110,21 @@ impl Dep {
             Dep::Catchain_Block_Dep(ref x) => &x.data_hash,
         }
     }
-
     pub fn height(&self) -> &crate::ton::int {
         match self {
             Dep::Catchain_Block_Dep(ref x) => &x.height,
         }
     }
-
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             Dep::Catchain_Block_Dep(ref x) => &x.signature,
         }
     }
-
     pub fn src(&self) -> &crate::ton::int {
         match self {
             Dep::Catchain_Block_Dep(ref x) => &x.src,
         }
     }
-
     pub fn only(self) -> crate::ton::catchain::block::dep::Dep {
         match self {
             Dep::Catchain_Block_Dep(x) => x,
@@ -158,7 +148,6 @@ impl crate::BoxedDeserialize for Dep {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5a1ad14f)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -182,25 +171,21 @@ impl Id {
             Id::Catchain_Block_Id(ref x) => &x.data_hash,
         }
     }
-
     pub fn height(&self) -> &crate::ton::int {
         match self {
             Id::Catchain_Block_Id(ref x) => &x.height,
         }
     }
-
     pub fn incarnation(&self) -> &crate::ton::int256 {
         match self {
             Id::Catchain_Block_Id(ref x) => &x.incarnation,
         }
     }
-
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
             Id::Catchain_Block_Id(ref x) => &x.src,
         }
     }
-
     pub fn only(self) -> crate::ton::catchain::block::id::Id {
         match self {
             Id::Catchain_Block_Id(x) => x,
@@ -224,7 +209,6 @@ impl crate::BoxedDeserialize for Id {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x24fe98ba)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

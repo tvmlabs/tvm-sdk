@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.appliedShardsInfo`\n\n```text\nraw.appliedShardsInfo shards:vector<tonNode.blockIdExt> = raw.appliedShardsInfo;\n```\n"]
 pub enum AppliedShardsInfo {
@@ -13,7 +12,6 @@ impl AppliedShardsInfo {
             AppliedShardsInfo::Raw_AppliedShardsInfo(ref x) => &x.shards,
         }
     }
-
     pub fn only(self) -> crate::ton::raw::appliedshardsinfo::AppliedShardsInfo {
         match self {
             AppliedShardsInfo::Raw_AppliedShardsInfo(x) => x,
@@ -41,7 +39,6 @@ impl crate::BoxedDeserialize for AppliedShardsInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x683ae48f)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -65,43 +62,36 @@ impl FullAccountState {
             FullAccountState::Raw_FullAccountState(ref x) => &x.balance,
         }
     }
-
     pub fn block_id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             FullAccountState::Raw_FullAccountState(ref x) => &x.block_id,
         }
     }
-
     pub fn code(&self) -> &crate::ton::bytes {
         match self {
             FullAccountState::Raw_FullAccountState(ref x) => &x.code,
         }
     }
-
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
             FullAccountState::Raw_FullAccountState(ref x) => &x.data,
         }
     }
-
     pub fn frozen_hash(&self) -> &crate::ton::bytes {
         match self {
             FullAccountState::Raw_FullAccountState(ref x) => &x.frozen_hash,
         }
     }
-
     pub fn last_transaction_id(&self) -> &crate::ton::internal::transactionid::TransactionId {
         match self {
             FullAccountState::Raw_FullAccountState(ref x) => &x.last_transaction_id,
         }
     }
-
     pub fn sync_utime(&self) -> &crate::ton::int53 {
         match self {
             FullAccountState::Raw_FullAccountState(ref x) => &x.sync_utime,
         }
     }
-
     pub fn only(self) -> crate::ton::raw::fullaccountstate::FullAccountState {
         match self {
             FullAccountState::Raw_FullAccountState(x) => x,
@@ -127,7 +117,6 @@ impl crate::BoxedDeserialize for FullAccountState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc265ac17)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -151,49 +140,41 @@ impl Message {
             Message::Raw_Message(ref x) => &x.body_hash,
         }
     }
-
     pub fn created_lt(&self) -> &crate::ton::int64 {
         match self {
             Message::Raw_Message(ref x) => &x.created_lt,
         }
     }
-
     pub fn destination(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
             Message::Raw_Message(ref x) => &x.destination,
         }
     }
-
     pub fn fwd_fee(&self) -> &crate::ton::int64 {
         match self {
             Message::Raw_Message(ref x) => &x.fwd_fee,
         }
     }
-
     pub fn ihr_fee(&self) -> &crate::ton::int64 {
         match self {
             Message::Raw_Message(ref x) => &x.ihr_fee,
         }
     }
-
     pub fn msg_data(&self) -> &crate::ton::msg::Data {
         match self {
             Message::Raw_Message(ref x) => &x.msg_data,
         }
     }
-
     pub fn source(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
             Message::Raw_Message(ref x) => &x.source,
         }
     }
-
     pub fn value(&self) -> &crate::ton::int64 {
         match self {
             Message::Raw_Message(ref x) => &x.value,
         }
     }
-
     pub fn only(self) -> crate::ton::raw::message::Message {
         match self {
             Message::Raw_Message(x) => x,
@@ -217,7 +198,6 @@ impl crate::BoxedDeserialize for Message {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x518b724f)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -266,7 +246,6 @@ impl crate::BoxedDeserialize for ShardAccountMeta {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xdc93781a), crate::ConstructorNumber(0x6b946589)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -292,7 +271,6 @@ impl crate::BoxedDeserialize for Option<crate::ton::raw::shardaccountmeta::Shard
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6b946589), crate::ConstructorNumber(0xdc93781a)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -336,7 +314,6 @@ impl crate::BoxedDeserialize for ShardAccountState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x4ee44d79), crate::ConstructorNumber(0xc5a7834f)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -362,7 +339,6 @@ impl crate::BoxedDeserialize for Option<crate::ton::raw::shardaccountstate::Shar
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x4ee44d79), crate::ConstructorNumber(0xc5a7834f)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -387,25 +363,21 @@ impl Transaction {
             Transaction::Raw_Transaction(ref x) => &x.data,
         }
     }
-
     pub fn fee(&self) -> &crate::ton::int64 {
         match self {
             Transaction::Raw_Transaction(ref x) => &x.fee,
         }
     }
-
     pub fn in_msg(&self) -> &crate::ton::raw::message::Message {
         match self {
             Transaction::Raw_Transaction(ref x) => &x.in_msg,
         }
     }
-
     pub fn other_fee(&self) -> &crate::ton::int64 {
         match self {
             Transaction::Raw_Transaction(ref x) => &x.other_fee,
         }
     }
-
     pub fn out_msgs(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::raw::message::Message> {
@@ -413,25 +385,21 @@ impl Transaction {
             Transaction::Raw_Transaction(ref x) => &x.out_msgs,
         }
     }
-
     pub fn storage_fee(&self) -> &crate::ton::int64 {
         match self {
             Transaction::Raw_Transaction(ref x) => &x.storage_fee,
         }
     }
-
     pub fn transaction_id(&self) -> &crate::ton::internal::transactionid::TransactionId {
         match self {
             Transaction::Raw_Transaction(ref x) => &x.transaction_id,
         }
     }
-
     pub fn utime(&self) -> &crate::ton::int53 {
         match self {
             Transaction::Raw_Transaction(ref x) => &x.utime,
         }
     }
-
     pub fn only(self) -> crate::ton::raw::transaction::Transaction {
         match self {
             Transaction::Raw_Transaction(x) => x,
@@ -455,7 +423,6 @@ impl crate::BoxedDeserialize for Transaction {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x70828481)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -479,7 +446,6 @@ impl Transactions {
             Transactions::Raw_Transactions(ref x) => &x.previous_transaction_id,
         }
     }
-
     pub fn transactions(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::raw::transaction::Transaction> {
@@ -487,7 +453,6 @@ impl Transactions {
             Transactions::Raw_Transactions(ref x) => &x.transactions,
         }
     }
-
     pub fn only(self) -> crate::ton::raw::transactions::Transactions {
         match self {
             Transactions::Raw_Transactions(x) => x,
@@ -511,7 +476,6 @@ impl crate::BoxedDeserialize for Transactions {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x84fae8ed)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

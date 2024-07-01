@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rmqMessage`\n\n```text\ntonNode.rmqMessage message:bytes message_id:int256 source_key_id:int256 source_idx:int masterchain_seqno:int = tonNode.rmqRecord;\n```\n"]
 pub struct RmqMessage {
@@ -14,7 +13,6 @@ impl crate::BareSerialize for RmqMessage {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0de77432)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RmqMessage { message, message_id, source_key_id, source_idx, masterchain_seqno } = self;
         _ser.write_bare::<crate::ton::bytes>(message)?;
@@ -39,7 +37,6 @@ impl crate::BareDeserialize for RmqMessage {
 }
 impl crate::IntoBoxed for RmqMessage {
     type Boxed = crate::ton::ton_node::RmqRecord;
-
     fn into_boxed(self) -> crate::ton::ton_node::RmqRecord {
         crate::ton::ton_node::RmqRecord::TonNode_RmqMessage(self)
     }
@@ -55,7 +52,6 @@ impl crate::BareSerialize for RmqMessageDigest {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x974cd134)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RmqMessageDigest { masterchain_seqno, messages } = self;
         _ser.write_bare::<crate::ton::int>(masterchain_seqno)?;
@@ -75,7 +71,6 @@ impl crate::BareDeserialize for RmqMessageDigest {
 }
 impl crate::IntoBoxed for RmqMessageDigest {
     type Boxed = crate::ton::ton_node::RmqRecord;
-
     fn into_boxed(self) -> crate::ton::ton_node::RmqRecord {
         crate::ton::ton_node::RmqRecord::TonNode_RmqMessageDigest(self)
     }

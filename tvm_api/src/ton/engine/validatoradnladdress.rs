@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validatorAdnlAddress`\n\n```text\nengine.validatorAdnlAddress id:int256 expire_at:int = engine.ValidatorAdnlAddress;\n```\n"]
 pub struct ValidatorAdnlAddress {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for ValidatorAdnlAddress {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd34545be)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValidatorAdnlAddress { id, expire_at } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -30,7 +28,6 @@ impl crate::BareDeserialize for ValidatorAdnlAddress {
 }
 impl crate::IntoBoxed for ValidatorAdnlAddress {
     type Boxed = crate::ton::engine::ValidatorAdnlAddress;
-
     fn into_boxed(self) -> crate::ton::engine::ValidatorAdnlAddress {
         crate::ton::engine::ValidatorAdnlAddress::Engine_ValidatorAdnlAddress(self)
     }

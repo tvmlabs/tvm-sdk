@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.key`\n\n```text\ndht.key id:int256 name:bytes idx:int = dht.Key;\n```\n"]
 pub struct Key {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for Key {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf667de8f)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Key { id, name, idx } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for Key {
 }
 impl crate::IntoBoxed for Key {
     type Boxed = crate::ton::dht::Key;
-
     fn into_boxed(self) -> crate::ton::dht::Key {
         crate::ton::dht::Key::Dht_Key(self)
     }

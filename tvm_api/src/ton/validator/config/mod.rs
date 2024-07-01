@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `validator.config.Global`\n\n```text\nvalidator.config.global zero_state:tonNode.blockIdExt init_block:tonNode.blockIdExt hardforks:(vector tonNode.blockIdExt) = validator.config.Global;\n```\n"]
 pub enum Global {
@@ -13,19 +12,16 @@ impl Global {
             Global::Validator_Config_Global(ref x) => &x.hardforks,
         }
     }
-
     pub fn init_block(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             Global::Validator_Config_Global(ref x) => &x.init_block,
         }
     }
-
     pub fn zero_state(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             Global::Validator_Config_Global(ref x) => &x.zero_state,
         }
     }
-
     pub fn only(self) -> crate::ton::validator::config::global::Global {
         match self {
             Global::Validator_Config_Global(x) => x,
@@ -49,7 +45,6 @@ impl crate::BoxedDeserialize for Global {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x867dff6a)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -75,7 +70,6 @@ impl Local {
             _ => None,
         }
     }
-
     pub fn id(&self) -> Option<&crate::ton::adnl::id::short::Short> {
         match self {
             Local::Validator_Config_Local(ref x) => Some(&x.id),
@@ -101,7 +95,6 @@ impl crate::BoxedDeserialize for Local {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x664bff68), crate::ConstructorNumber(0x59839462)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

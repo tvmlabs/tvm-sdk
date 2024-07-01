@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.proxyControlPacketPing`\n\n```text\nadnl.proxyControlPacketPing id:int256 = adnl.ProxyControlPacket;\n```\n"]
 pub struct ProxyControlPacketPing {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for ProxyControlPacketPing {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3796e44b)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ProxyControlPacketPing { id } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -27,7 +25,6 @@ impl crate::BareDeserialize for ProxyControlPacketPing {
 }
 impl crate::IntoBoxed for ProxyControlPacketPing {
     type Boxed = crate::ton::adnl::ProxyControlPacket;
-
     fn into_boxed(self) -> crate::ton::adnl::ProxyControlPacket {
         crate::ton::adnl::ProxyControlPacket::Adnl_ProxyControlPacketPing(self)
     }
@@ -42,7 +39,6 @@ impl crate::BareSerialize for ProxyControlPacketPong {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4bd1dbfc)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ProxyControlPacketPong { id } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -59,7 +55,6 @@ impl crate::BareDeserialize for ProxyControlPacketPong {
 }
 impl crate::IntoBoxed for ProxyControlPacketPong {
     type Boxed = crate::ton::adnl::ProxyControlPacket;
-
     fn into_boxed(self) -> crate::ton::adnl::ProxyControlPacket {
         crate::ton::adnl::ProxyControlPacket::Adnl_ProxyControlPacketPong(self)
     }
@@ -75,7 +70,6 @@ impl crate::BareSerialize for ProxyControlPacketRegister {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc309b23f)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ProxyControlPacketRegister { ip, port } = self;
         _ser.write_bare::<crate::ton::int>(ip)?;
@@ -94,7 +88,6 @@ impl crate::BareDeserialize for ProxyControlPacketRegister {
 }
 impl crate::IntoBoxed for ProxyControlPacketRegister {
     type Boxed = crate::ton::adnl::ProxyControlPacket;
-
     fn into_boxed(self) -> crate::ton::adnl::ProxyControlPacket {
         crate::ton::adnl::ProxyControlPacket::Adnl_ProxyControlPacketRegister(self)
     }

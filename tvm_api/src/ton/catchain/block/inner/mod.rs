@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block.inner.Data`\n\n```text\ncatchain.block.data.badBlock block:catchain.block = catchain.block.inner.Data;\n\ncatchain.block.data.fork left:catchain.block.Dep right:catchain.block.Dep = catchain.block.inner.Data;\n\ncatchain.block.data.nop = catchain.block.inner.Data;\n\ncatchain.block.data.vector msgs:(vector bytes) = catchain.block.inner.Data;\n```\n"]
 pub enum Data {
@@ -19,21 +18,18 @@ impl Data {
             _ => None,
         }
     }
-
     pub fn left(&self) -> Option<&crate::ton::catchain::block::Dep> {
         match self {
             Data::Catchain_Block_Data_Fork(ref x) => Some(&x.left),
             _ => None,
         }
     }
-
     pub fn msgs(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::bytes>> {
         match self {
             Data::Catchain_Block_Data_Vector(ref x) => Some(&x.msgs),
             _ => None,
         }
     }
-
     pub fn right(&self) -> Option<&crate::ton::catchain::block::Dep> {
         match self {
             Data::Catchain_Block_Data_Fork(ref x) => Some(&x.right),
@@ -68,7 +64,6 @@ impl crate::BoxedDeserialize for Data {
             crate::ConstructorNumber(0x64a92f2a),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

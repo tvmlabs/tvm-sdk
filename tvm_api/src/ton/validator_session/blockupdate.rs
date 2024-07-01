@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.blockUpdate`\n\n```text\nvalidatorSession.blockUpdate ts:long actions:(vector validatorSession.round.Message) state:int = validatorSession.BlockUpdate;\n```\n"]
 pub struct BlockUpdate {
@@ -13,7 +12,6 @@ impl crate::BareSerialize for BlockUpdate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x9283ce37)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockUpdate { ts, actions, state } = self;
         _ser.write_bare::<crate::ton::long>(ts)?;
@@ -37,7 +35,6 @@ impl crate::BareDeserialize for BlockUpdate {
 }
 impl crate::IntoBoxed for BlockUpdate {
     type Boxed = crate::ton::validator_session::BlockUpdate;
-
     fn into_boxed(self) -> crate::ton::validator_session::BlockUpdate {
         crate::ton::validator_session::BlockUpdate::ValidatorSession_BlockUpdate(self)
     }

@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempAcceptedCompact`\n\n```text\ntonNode.rempAcceptedCompact level:byte block_id_index:byte master_id_index:byte = tonNode.RempMessageStatusCompact;\n```\n"]
 pub struct RempAcceptedCompact {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for RempAcceptedCompact {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8f092f0f)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempAcceptedCompact { level, block_id_index, master_id_index } = self;
         _ser.write_bare::<crate::ton::byte>(level)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for RempAcceptedCompact {
 }
 impl crate::IntoBoxed for RempAcceptedCompact {
     type Boxed = crate::ton::ton_node::RempMessageStatusCompact;
-
     fn into_boxed(self) -> crate::ton::ton_node::RempMessageStatusCompact {
         crate::ton::ton_node::RempMessageStatusCompact::TonNode_RempAcceptedCompact(self)
     }
@@ -48,7 +45,6 @@ impl crate::BareSerialize for RempDuplicateCompact {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x16b33de4)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempDuplicateCompact { block_id_index } = self;
         _ser.write_bare::<crate::ton::byte>(block_id_index)?;
@@ -65,7 +61,6 @@ impl crate::BareDeserialize for RempDuplicateCompact {
 }
 impl crate::IntoBoxed for RempDuplicateCompact {
     type Boxed = crate::ton::ton_node::RempMessageStatusCompact;
-
     fn into_boxed(self) -> crate::ton::ton_node::RempMessageStatusCompact {
         crate::ton::ton_node::RempMessageStatusCompact::TonNode_RempDuplicateCompact(self)
     }
@@ -81,7 +76,6 @@ impl crate::BareSerialize for RempIgnoredCompact {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xbd26c204)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempIgnoredCompact { level, block_id_index } = self;
         _ser.write_bare::<crate::ton::byte>(level)?;
@@ -100,7 +94,6 @@ impl crate::BareDeserialize for RempIgnoredCompact {
 }
 impl crate::IntoBoxed for RempIgnoredCompact {
     type Boxed = crate::ton::ton_node::RempMessageStatusCompact;
-
     fn into_boxed(self) -> crate::ton::ton_node::RempMessageStatusCompact {
         crate::ton::ton_node::RempMessageStatusCompact::TonNode_RempIgnoredCompact(self)
     }
@@ -117,7 +110,6 @@ impl crate::BareSerialize for RempRejectedCompact {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x15a2b254)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempRejectedCompact { level, block_id_index, error } = self;
         _ser.write_bare::<crate::ton::byte>(level)?;
@@ -138,7 +130,6 @@ impl crate::BareDeserialize for RempRejectedCompact {
 }
 impl crate::IntoBoxed for RempRejectedCompact {
     type Boxed = crate::ton::ton_node::RempMessageStatusCompact;
-
     fn into_boxed(self) -> crate::ton::ton_node::RempMessageStatusCompact {
         crate::ton::ton_node::RempMessageStatusCompact::TonNode_RempRejectedCompact(self)
     }
@@ -154,7 +145,6 @@ impl crate::BareSerialize for RempSentToValidatorsCompact {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3f854835)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempSentToValidatorsCompact { sent_to, total_validators } = self;
         _ser.write_bare::<crate::ton::byte>(sent_to)?;
@@ -173,7 +163,6 @@ impl crate::BareDeserialize for RempSentToValidatorsCompact {
 }
 impl crate::IntoBoxed for RempSentToValidatorsCompact {
     type Boxed = crate::ton::ton_node::RempMessageStatusCompact;
-
     fn into_boxed(self) -> crate::ton::ton_node::RempMessageStatusCompact {
         crate::ton::ton_node::RempMessageStatusCompact::TonNode_RempSentToValidatorsCompact(self)
     }

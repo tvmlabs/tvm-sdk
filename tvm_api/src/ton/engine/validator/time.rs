@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.time`\n\n```text\nengine.validator.time time:int = engine.validator.Time;\n```\n"]
 pub struct Time {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for Time {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xdf5fa1fe)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Time { time } = self;
         _ser.write_bare::<crate::ton::int>(time)?;
@@ -27,7 +25,6 @@ impl crate::BareDeserialize for Time {
 }
 impl crate::IntoBoxed for Time {
     type Boxed = crate::ton::engine::validator::Time;
-
     fn into_boxed(self) -> crate::ton::engine::validator::Time {
         crate::ton::engine::validator::Time::Engine_Validator_Time(self)
     }

@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.info`\n\n```text\nliteServer.info now:int53 version:int32 capabilities:int64 = liteServer.Info;\n```\n"]
 pub struct Info {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for Info {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb57bfe73)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Info { now, version, capabilities } = self;
         _ser.write_bare::<crate::ton::int53>(now)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for Info {
 }
 impl crate::IntoBoxed for Info {
     type Boxed = crate::ton::lite_server::Info;
-
     fn into_boxed(self) -> crate::ton::lite_server::Info {
         crate::ton::lite_server::Info::LiteServer_Info(self)
     }
