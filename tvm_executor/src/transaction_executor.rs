@@ -1682,7 +1682,7 @@ fn check_libraries(init: &StateInit, disable_set_lib: bool, text: &str, msg: &Me
 /// uninit according bounce flag: if bounce, account will be uninit that save
 /// money.
 fn account_from_message(
-    msg: &Message,
+    msg: &Messacge,
     msg_remaining_balance: &CurrencyCollection,
     check_address: bool,
     init_code_hash: bool,
@@ -1696,6 +1696,7 @@ fn account_from_message(
                 if check_libraries(init, disable_set_lib, text, msg) {
                     return Account::active_by_init_code_hash(
                         hdr.dst.clone(),
+                        UInt256::new(),
                         msg_remaining_balance.clone(),
                         0,
                         init.clone(),
@@ -1721,7 +1722,7 @@ fn account_from_message(
         );
         None
     } else {
-        Some(Account::uninit(hdr.dst.clone(), 0, 0, msg_remaining_balance.clone()))
+        Some(Account::uninit(hdr.dst.clone(), UInt256::new(), 0, 0, msg_remaining_balance.clone()))
     }
 }
 

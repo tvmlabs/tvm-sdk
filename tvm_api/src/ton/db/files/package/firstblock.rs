@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.files.package.firstBlock`\n\n```text\ndb.files.package.firstBlock workchain:int shard:long seqno:int unixtime:int lt:long = db.files.package.FirstBlock;\n```\n"]
 pub struct FirstBlock {
@@ -14,7 +13,6 @@ impl crate::BareSerialize for FirstBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x701269e7)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let FirstBlock { workchain, shard, seqno, unixtime, lt } = self;
         _ser.write_bare::<crate::ton::int>(workchain)?;
@@ -39,7 +37,6 @@ impl crate::BareDeserialize for FirstBlock {
 }
 impl crate::IntoBoxed for FirstBlock {
     type Boxed = crate::ton::db::files::package::FirstBlock;
-
     fn into_boxed(self) -> crate::ton::db::files::package::FirstBlock {
         crate::ton::db::files::package::FirstBlock::Db_Files_Package_FirstBlock(self)
     }

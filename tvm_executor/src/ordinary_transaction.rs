@@ -35,6 +35,7 @@ use tvm_types::fail;
 use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::UInt256;
 use tvm_vm::boolean;
 use tvm_vm::int;
 use tvm_vm::stack::integer::IntegerData;
@@ -398,7 +399,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 acc_balance = original_acc_balance;
             } else if account.is_none() && !acc_balance.is_zero()? {
                 *account =
-                    Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
+                    Account::uninit(account_address.clone(), UInt256::new(), 0, last_paid, acc_balance.clone());
             }
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {

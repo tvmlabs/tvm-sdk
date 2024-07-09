@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.root.Config`\n\n```text\ndb.root.config celldb_version:int blockdb_version:int = db.root.Config;\n```\n"]
 pub enum Config {
@@ -11,13 +10,11 @@ impl Config {
             Config::Db_Root_Config(ref x) => &x.blockdb_version,
         }
     }
-
     pub fn celldb_version(&self) -> &crate::ton::int {
         match self {
             Config::Db_Root_Config(ref x) => &x.celldb_version,
         }
     }
-
     pub fn only(self) -> crate::ton::db::root::config::Config {
         match self {
             Config::Db_Root_Config(x) => x,
@@ -41,7 +38,6 @@ impl crate::BoxedDeserialize for Config {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd61182a1)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -65,19 +61,16 @@ impl DbDescription {
             DbDescription::Db_Root_DbDescription(ref x) => &x.first_masterchain_block_id,
         }
     }
-
     pub fn flags(&self) -> &crate::ton::int {
         match self {
             DbDescription::Db_Root_DbDescription(ref x) => &x.flags,
         }
     }
-
     pub fn version(&self) -> &crate::ton::int {
         match self {
             DbDescription::Db_Root_DbDescription(ref x) => &x.version,
         }
     }
-
     pub fn only(self) -> crate::ton::db::root::dbdescription::DbDescription {
         match self {
             DbDescription::Db_Root_DbDescription(x) => x,
@@ -103,7 +96,6 @@ impl crate::BoxedDeserialize for DbDescription {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb41873f3)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -155,7 +147,6 @@ impl crate::BoxedDeserialize for Key {
             crate::ConstructorNumber(0x13c33284),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

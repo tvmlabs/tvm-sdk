@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.currentTime`\n\n```text\nliteServer.currentTime now:int = liteServer.CurrentTime;\n```\n"]
 pub struct CurrentTime {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for CurrentTime {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe953000d)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let CurrentTime { now } = self;
         _ser.write_bare::<crate::ton::int>(now)?;
@@ -27,7 +25,6 @@ impl crate::BareDeserialize for CurrentTime {
 }
 impl crate::IntoBoxed for CurrentTime {
     type Boxed = crate::ton::lite_server::CurrentTime;
-
     fn into_boxed(self) -> crate::ton::lite_server::CurrentTime {
         crate::ton::lite_server::CurrentTime::LiteServer_CurrentTime(self)
     }

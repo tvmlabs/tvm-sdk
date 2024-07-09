@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `options.ConfigInfo`\n\n```text\noptions.configInfo default_wallet_id:int64 default_rwallet_init_public_key:string = options.ConfigInfo;\n```\n"]
 pub enum ConfigInfo {
@@ -11,13 +10,11 @@ impl ConfigInfo {
             ConfigInfo::Options_ConfigInfo(ref x) => &x.default_rwallet_init_public_key,
         }
     }
-
     pub fn default_wallet_id(&self) -> &crate::ton::int64 {
         match self {
             ConfigInfo::Options_ConfigInfo(ref x) => &x.default_wallet_id,
         }
     }
-
     pub fn only(self) -> crate::ton::options::configinfo::ConfigInfo {
         match self {
             ConfigInfo::Options_ConfigInfo(x) => x,
@@ -41,7 +38,6 @@ impl crate::BoxedDeserialize for ConfigInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x07b75f16)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -65,7 +61,6 @@ impl Info {
             Info::Options_Info(ref x) => &x.config_info,
         }
     }
-
     pub fn only(self) -> crate::ton::options::info::Info {
         match self {
             Info::Options_Info(x) => x,
@@ -89,7 +84,6 @@ impl crate::BoxedDeserialize for Info {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xfc251c80)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -113,7 +107,6 @@ impl crate::BareSerialize for Options {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8d4c29f9)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Options { config, keystore_type } = self;
         _ser.write_bare::<crate::ton::config::Config>(config)?;
@@ -132,7 +125,6 @@ impl crate::BareDeserialize for Options {
 }
 impl crate::IntoBoxed for Options {
     type Boxed = crate::ton::Options;
-
     fn into_boxed(self) -> crate::ton::Options {
         crate::ton::Options::Options(self)
     }

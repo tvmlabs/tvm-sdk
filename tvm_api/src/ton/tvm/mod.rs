@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.Builder`\n\n```text\ntvm.builder bytes:bytes = tvm.Builder;\n```\n"]
 pub enum Builder {
@@ -11,7 +10,6 @@ impl Builder {
             Builder::Tvm_Builder(ref x) => &x.bytes,
         }
     }
-
     pub fn only(self) -> crate::ton::tvm::builder::Builder {
         match self {
             Builder::Tvm_Builder(x) => x,
@@ -35,7 +33,6 @@ impl crate::BoxedDeserialize for Builder {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xccf52e6d)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -59,7 +56,6 @@ impl Cell {
             Cell::Tvm_Cell(ref x) => &x.bytes,
         }
     }
-
     pub fn only(self) -> crate::ton::tvm::cell::Cell {
         match self {
             Cell::Tvm_Cell(x) => x,
@@ -83,7 +79,6 @@ impl crate::BoxedDeserialize for Cell {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe75ba3a1)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -107,7 +102,6 @@ impl List {
             List::Tvm_List(ref x) => &x.elements,
         }
     }
-
     pub fn only(self) -> crate::ton::tvm::list::List {
         match self {
             List::Tvm_List(x) => x,
@@ -131,7 +125,6 @@ impl crate::BoxedDeserialize for List {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x4bb78d08)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -155,7 +148,6 @@ impl Number {
             Number::Tvm_NumberDecimal(ref x) => &x.number,
         }
     }
-
     pub fn only(self) -> crate::ton::tvm::numberdecimal::NumberDecimal {
         match self {
             Number::Tvm_NumberDecimal(x) => x,
@@ -179,7 +171,6 @@ impl crate::BoxedDeserialize for Number {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x45e296b3)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -203,7 +194,6 @@ impl Slice {
             Slice::Tvm_Slice(ref x) => &x.bytes,
         }
     }
-
     pub fn only(self) -> crate::ton::tvm::slice::Slice {
         match self {
             Slice::Tvm_Slice(x) => x,
@@ -227,7 +217,6 @@ impl crate::BoxedDeserialize for Slice {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x20068ae7)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -259,35 +248,30 @@ impl StackEntry {
             _ => None,
         }
     }
-
     pub fn cell(&self) -> Option<&crate::ton::tvm::cell::Cell> {
         match self {
             StackEntry::Tvm_StackEntryCell(ref x) => Some(&x.cell),
             _ => None,
         }
     }
-
     pub fn list(&self) -> Option<&crate::ton::tvm::List> {
         match self {
             StackEntry::Tvm_StackEntryList(ref x) => Some(&x.list),
             _ => None,
         }
     }
-
     pub fn number(&self) -> Option<&crate::ton::tvm::Number> {
         match self {
             StackEntry::Tvm_StackEntryNumber(ref x) => Some(&x.number),
             _ => None,
         }
     }
-
     pub fn slice(&self) -> Option<&crate::ton::tvm::slice::Slice> {
         match self {
             StackEntry::Tvm_StackEntrySlice(ref x) => Some(&x.slice),
             _ => None,
         }
     }
-
     pub fn tuple(&self) -> Option<&crate::ton::tvm::Tuple> {
         match self {
             StackEntry::Tvm_StackEntryTuple(ref x) => Some(&x.tuple),
@@ -328,7 +312,6 @@ impl crate::BoxedDeserialize for StackEntry {
             crate::ConstructorNumber(0x169541f2),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -369,7 +352,6 @@ impl Tuple {
             Tuple::Tvm_Tuple(ref x) => &x.elements,
         }
     }
-
     pub fn only(self) -> crate::ton::tvm::tuple::Tuple {
         match self {
             Tuple::Tvm_Tuple(x) => x,
@@ -393,7 +375,6 @@ impl crate::BoxedDeserialize for Tuple {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xaeb3ba63)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

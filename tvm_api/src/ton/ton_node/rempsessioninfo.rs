@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempSessionInfo`\n\n```text\ntonNode.rempSessionInfo workchain:int shard:long vertical_seqno:int last_key_block_seqno:int \n        catchain_seqno:int config_hash:int256\n        members:(vector validator.groupMember) = tonNode.RempSessionInfo;\n```\n"]
 pub struct RempSessionInfo {
@@ -19,7 +18,6 @@ impl crate::BareSerialize for RempSessionInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x71c8c164)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempSessionInfo {
             workchain,
@@ -70,7 +68,6 @@ impl crate::BareDeserialize for RempSessionInfo {
 }
 impl crate::IntoBoxed for RempSessionInfo {
     type Boxed = crate::ton::ton_node::RempSessionInfo;
-
     fn into_boxed(self) -> crate::ton::ton_node::RempSessionInfo {
         crate::ton::ton_node::RempSessionInfo::TonNode_RempSessionInfo(self)
     }

@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.ArchiveInfo`\n\n```text\ntonNode.archiveInfo id:long = tonNode.ArchiveInfo;\n\ntonNode.archiveNotFound = tonNode.ArchiveInfo;\n```\n"]
 pub enum ArchiveInfo {
@@ -32,7 +31,6 @@ impl crate::BoxedDeserialize for ArchiveInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x19efff8c), crate::ConstructorNumber(0x99291683)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -58,7 +56,6 @@ impl crate::BoxedDeserialize for Option<crate::ton::ton_node::archiveinfo::Archi
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x99291683), crate::ConstructorNumber(0x19efff8c)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -83,37 +80,31 @@ impl BlockCandidateStatus {
             BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.approvals_signature,
         }
     }
-
     pub fn candidate_id(&self) -> &crate::ton::int256 {
         match self {
             BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.candidate_id,
         }
     }
-
     pub fn created_timestamp(&self) -> &crate::ton::long {
         match self {
             BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.created_timestamp,
         }
     }
-
     pub fn deliveries_signature(&self) -> &crate::ton::bytes {
         match self {
             BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.deliveries_signature,
         }
     }
-
     pub fn merges_cnt(&self) -> &crate::ton::int {
         match self {
             BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.merges_cnt,
         }
     }
-
     pub fn rejections_signature(&self) -> &crate::ton::bytes {
         match self {
             BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.rejections_signature,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::blockcandidatestatus::BlockCandidateStatus {
         match self {
             BlockCandidateStatus::TonNode_BlockCandidateStatus(x) => x,
@@ -141,7 +132,6 @@ impl crate::BoxedDeserialize for BlockCandidateStatus {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbc31fb7c)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -187,7 +177,6 @@ impl crate::BoxedDeserialize for BlockDescription {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x46a1d088), crate::ConstructorNumber(0x8384ae95)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -215,7 +204,6 @@ impl crate::BoxedDeserialize for Option<crate::ton::ton_node::blockdescription::
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8384ae95), crate::ConstructorNumber(0x46a1d088)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -240,19 +228,16 @@ impl BlockId {
             BlockId::TonNode_BlockId(ref x) => &x.seqno,
         }
     }
-
     pub fn shard(&self) -> &crate::ton::long {
         match self {
             BlockId::TonNode_BlockId(ref x) => &x.shard,
         }
     }
-
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
             BlockId::TonNode_BlockId(ref x) => &x.workchain,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::blockid::BlockId {
         match self {
             BlockId::TonNode_BlockId(x) => x,
@@ -276,7 +261,6 @@ impl crate::BoxedDeserialize for BlockId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb7cdb167)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -301,13 +285,11 @@ impl BlockSignature {
             BlockSignature::TonNode_BlockSignature(ref x) => &x.signature,
         }
     }
-
     pub fn who(&self) -> &crate::ton::int256 {
         match self {
             BlockSignature::TonNode_BlockSignature(ref x) => &x.who,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::blocksignature::BlockSignature {
         match self {
             BlockSignature::TonNode_BlockSignature(x) => x,
@@ -333,7 +315,6 @@ impl crate::BoxedDeserialize for BlockSignature {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x50f03c33)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -359,13 +340,11 @@ impl BlocksDescription {
             BlocksDescription::TonNode_BlocksDescription(ref x) => &x.ids,
         }
     }
-
     pub fn incomplete(&self) -> &crate::ton::Bool {
         match self {
             BlocksDescription::TonNode_BlocksDescription(ref x) => &x.incomplete,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::blocksdescription::BlocksDescription {
         match self {
             BlocksDescription::TonNode_BlocksDescription(x) => x,
@@ -393,7 +372,6 @@ impl crate::BoxedDeserialize for BlocksDescription {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd62a612c)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -426,7 +404,6 @@ impl Broadcast {
             _ => None,
         }
     }
-
     pub fn catchain_seqno(&self) -> Option<&crate::ton::int> {
         match self {
             Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.catchain_seqno),
@@ -434,35 +411,30 @@ impl Broadcast {
             _ => None,
         }
     }
-
     pub fn collated_data(&self) -> Option<&crate::ton::bytes> {
         match self {
             Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.collated_data),
             _ => None,
         }
     }
-
     pub fn collated_data_file_hash(&self) -> Option<&crate::ton::int256> {
         match self {
             Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.collated_data_file_hash),
             _ => None,
         }
     }
-
     pub fn created_by(&self) -> Option<&crate::ton::int256> {
         match self {
             Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.created_by),
             _ => None,
         }
     }
-
     pub fn created_timestamp(&self) -> Option<&crate::ton::long> {
         match self {
             Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.created_timestamp),
             _ => None,
         }
     }
-
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
             Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.data),
@@ -471,7 +443,6 @@ impl Broadcast {
             _ => None,
         }
     }
-
     pub fn id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.id),
@@ -480,28 +451,24 @@ impl Broadcast {
             _ => None,
         }
     }
-
     pub fn padding(&self) -> Option<&crate::ton::bytes> {
         match self {
             Broadcast::TonNode_ConnectivityCheckBroadcast(ref x) => Some(&x.padding),
             _ => None,
         }
     }
-
     pub fn proof(&self) -> Option<&crate::ton::bytes> {
         match self {
             Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.proof),
             _ => None,
         }
     }
-
     pub fn pub_key(&self) -> Option<&crate::ton::int256> {
         match self {
             Broadcast::TonNode_ConnectivityCheckBroadcast(ref x) => Some(&x.pub_key),
             _ => None,
         }
     }
-
     pub fn signatures(
         &self,
     ) -> Option<
@@ -513,14 +480,12 @@ impl Broadcast {
             _ => None,
         }
     }
-
     pub fn target_wc(&self) -> Option<&crate::ton::int> {
         match self {
             Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.target_wc),
             _ => None,
         }
     }
-
     pub fn validator_set_hash(&self) -> Option<&crate::ton::int> {
         match self {
             Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.validator_set_hash),
@@ -568,7 +533,6 @@ impl crate::BoxedDeserialize for Broadcast {
             crate::ConstructorNumber(0x9b00bad5),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -614,13 +578,11 @@ impl Capabilities {
             Capabilities::TonNode_Capabilities(ref x) => &x.capabilities,
         }
     }
-
     pub fn version(&self) -> &crate::ton::int {
         match self {
             Capabilities::TonNode_Capabilities(ref x) => &x.version,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::capabilities::Capabilities {
         match self {
             Capabilities::TonNode_Capabilities(x) => x,
@@ -646,7 +608,6 @@ impl crate::BoxedDeserialize for Capabilities {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf5bf60c0)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -670,7 +631,6 @@ impl Data {
             Data::TonNode_Data(ref x) => &x.data,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::data::Data {
         match self {
             Data::TonNode_Data(x) => x,
@@ -694,7 +654,6 @@ impl crate::BoxedDeserialize for Data {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x560a2484)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -720,21 +679,18 @@ impl DataFull {
             _ => None,
         }
     }
-
     pub fn id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             DataFull::TonNode_DataFull(ref x) => Some(&x.id),
             _ => None,
         }
     }
-
     pub fn is_link(&self) -> Option<&crate::ton::Bool> {
         match self {
             DataFull::TonNode_DataFull(ref x) => Some(&x.is_link),
             _ => None,
         }
     }
-
     pub fn proof(&self) -> Option<&crate::ton::bytes> {
         match self {
             DataFull::TonNode_DataFull(ref x) => Some(&x.proof),
@@ -760,7 +716,6 @@ impl crate::BoxedDeserialize for DataFull {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbe589f93), crate::ConstructorNumber(0x576e85ca)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -786,7 +741,6 @@ impl crate::BoxedDeserialize for Option<crate::ton::ton_node::datafull::DataFull
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x576e85ca), crate::ConstructorNumber(0xbe589f93)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -811,7 +765,6 @@ impl DataList {
             DataList::TonNode_DataList(ref x) => &x.data,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::datalist::DataList {
         match self {
             DataList::TonNode_DataList(x) => x,
@@ -835,7 +788,6 @@ impl crate::BoxedDeserialize for DataList {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x14f43313)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -859,7 +811,6 @@ impl ExternalMessage {
             ExternalMessage::TonNode_ExternalMessage(ref x) => &x.data,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::externalmessage::ExternalMessage {
         match self {
             ExternalMessage::TonNode_ExternalMessage(x) => x,
@@ -887,7 +838,6 @@ impl crate::BoxedDeserialize for ExternalMessage {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xdc75a209)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -911,7 +861,6 @@ impl IhrMessage {
             IhrMessage::TonNode_IhrMessage(ref x) => &x.data,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::ihrmessage::IhrMessage {
         match self {
             IhrMessage::TonNode_IhrMessage(x) => x,
@@ -935,7 +884,6 @@ impl crate::BoxedDeserialize for IhrMessage {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x4534c307)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -961,19 +909,16 @@ impl KeyBlocks {
             KeyBlocks::TonNode_KeyBlocks(ref x) => &x.blocks,
         }
     }
-
     pub fn error(&self) -> &crate::ton::Bool {
         match self {
             KeyBlocks::TonNode_KeyBlocks(ref x) => &x.error,
         }
     }
-
     pub fn incomplete(&self) -> &crate::ton::Bool {
         match self {
             KeyBlocks::TonNode_KeyBlocks(ref x) => &x.incomplete,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::keyblocks::KeyBlocks {
         match self {
             KeyBlocks::TonNode_KeyBlocks(x) => x,
@@ -997,7 +942,6 @@ impl crate::BoxedDeserialize for KeyBlocks {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x07664d59)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1021,19 +965,16 @@ impl NewShardBlock {
             NewShardBlock::TonNode_NewShardBlock(ref x) => &x.block,
         }
     }
-
     pub fn cc_seqno(&self) -> &crate::ton::int {
         match self {
             NewShardBlock::TonNode_NewShardBlock(ref x) => &x.cc_seqno,
         }
     }
-
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
             NewShardBlock::TonNode_NewShardBlock(ref x) => &x.data,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::newshardblock::NewShardBlock {
         match self {
             NewShardBlock::TonNode_NewShardBlock(x) => x,
@@ -1059,7 +1000,6 @@ impl crate::BoxedDeserialize for NewShardBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa49dc229)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1092,7 +1032,6 @@ impl crate::BoxedDeserialize for Prepared {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe2c33da6), crate::ConstructorNumber(0xeac4bbcd)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1132,7 +1071,6 @@ impl crate::BoxedDeserialize for PreparedProof {
             crate::ConstructorNumber(0x3dff328d),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1165,7 +1103,6 @@ impl crate::BoxedDeserialize for PreparedState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x32390a51), crate::ConstructorNumber(0x375bcb6d)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1190,13 +1127,11 @@ impl RempCatchainMessageIds {
             RempCatchainMessageIds::TonNode_RempCatchainMessageIds(ref x) => &x.id,
         }
     }
-
     pub fn uid(&self) -> &crate::ton::int256 {
         match self {
             RempCatchainMessageIds::TonNode_RempCatchainMessageIds(ref x) => &x.uid,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds {
         match self {
             RempCatchainMessageIds::TonNode_RempCatchainMessageIds(x) => x,
@@ -1224,7 +1159,6 @@ impl crate::BoxedDeserialize for RempCatchainMessageIds {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5509db82)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1247,21 +1181,18 @@ impl RempCatchainRecord {
             RempCatchainRecord::TonNode_RempCatchainMessageDigest(ref x) => &x.masterchain_seqno,
         }
     }
-
     pub fn message(&self) -> Option<&crate::ton::bytes> {
         match self {
             RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => Some(&x.message),
             _ => None,
         }
     }
-
     pub fn message_id(&self) -> Option<&crate::ton::int256> {
         match self {
             RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => Some(&x.message_id),
             _ => None,
         }
     }
-
     pub fn messages(
         &self,
     ) -> Option<
@@ -1275,14 +1206,12 @@ impl RempCatchainRecord {
             _ => None,
         }
     }
-
     pub fn source_idx(&self) -> Option<&crate::ton::int> {
         match self {
             RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => Some(&x.source_idx),
             _ => None,
         }
     }
-
     pub fn source_key_id(&self) -> Option<&crate::ton::int256> {
         match self {
             RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => Some(&x.source_key_id),
@@ -1314,7 +1243,6 @@ impl crate::BoxedDeserialize for RempCatchainRecord {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe9d6eb1c), crate::ConstructorNumber(0x384e3f84)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1335,7 +1263,6 @@ impl RempCombinedReceipt {
             RempCombinedReceipt::TonNode_RempCombinedReceipt(ref x) => &x.ids,
         }
     }
-
     pub fn receipts(
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::ton_node::RempReceiptCompact> {
@@ -1343,13 +1270,11 @@ impl RempCombinedReceipt {
             RempCombinedReceipt::TonNode_RempCombinedReceipt(ref x) => &x.receipts,
         }
     }
-
     pub fn source_id(&self) -> &crate::ton::int256 {
         match self {
             RempCombinedReceipt::TonNode_RempCombinedReceipt(ref x) => &x.source_id,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::rempcombinedreceipt::RempCombinedReceipt {
         match self {
             RempCombinedReceipt::TonNode_RempCombinedReceipt(x) => x,
@@ -1377,7 +1302,6 @@ impl crate::BoxedDeserialize for RempCombinedReceipt {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x98eb4db1)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1396,25 +1320,21 @@ impl RempMessage {
             RempMessage::TonNode_RempMessage(ref x) => &x.id,
         }
     }
-
     pub fn message(&self) -> &crate::ton::bytes {
         match self {
             RempMessage::TonNode_RempMessage(ref x) => &x.message,
         }
     }
-
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             RempMessage::TonNode_RempMessage(ref x) => &x.signature,
         }
     }
-
     pub fn timestamp(&self) -> &crate::ton::long {
         match self {
             RempMessage::TonNode_RempMessage(ref x) => &x.timestamp,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::rempmessage::RempMessage {
         match self {
             RempMessage::TonNode_RempMessage(x) => x,
@@ -1438,7 +1358,6 @@ impl crate::BoxedDeserialize for RempMessage {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xdd1f6db1)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1485,7 +1404,6 @@ impl crate::BoxedDeserialize for RempMessageLevel {
             crate::ConstructorNumber(0x237e2b37),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1521,14 +1439,12 @@ impl RempMessageStatus {
             _ => None,
         }
     }
-
     pub fn error(&self) -> Option<&crate::ton::string> {
         match self {
             RempMessageStatus::TonNode_RempRejected(ref x) => Some(&x.error),
             _ => None,
         }
     }
-
     pub fn level(&self) -> Option<&crate::ton::ton_node::RempMessageLevel> {
         match self {
             RempMessageStatus::TonNode_RempAccepted(ref x) => Some(&x.level),
@@ -1537,21 +1453,18 @@ impl RempMessageStatus {
             _ => None,
         }
     }
-
     pub fn master_id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             RempMessageStatus::TonNode_RempAccepted(ref x) => Some(&x.master_id),
             _ => None,
         }
     }
-
     pub fn sent_to(&self) -> Option<&crate::ton::int> {
         match self {
             RempMessageStatus::TonNode_RempSentToValidators(ref x) => Some(&x.sent_to),
             _ => None,
         }
     }
-
     pub fn total_validators(&self) -> Option<&crate::ton::int> {
         match self {
             RempMessageStatus::TonNode_RempSentToValidators(ref x) => Some(&x.total_validators),
@@ -1596,7 +1509,6 @@ impl crate::BoxedDeserialize for RempMessageStatus {
             crate::ConstructorNumber(0xb71796af),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1657,14 +1569,12 @@ impl RempMessageStatusCompact {
             _ => None,
         }
     }
-
     pub fn error(&self) -> Option<&crate::ton::string> {
         match self {
             RempMessageStatusCompact::TonNode_RempRejectedCompact(ref x) => Some(&x.error),
             _ => None,
         }
     }
-
     pub fn level(&self) -> Option<&crate::ton::byte> {
         match self {
             RempMessageStatusCompact::TonNode_RempAcceptedCompact(ref x) => Some(&x.level),
@@ -1673,7 +1583,6 @@ impl RempMessageStatusCompact {
             _ => None,
         }
     }
-
     pub fn master_id_index(&self) -> Option<&crate::ton::byte> {
         match self {
             RempMessageStatusCompact::TonNode_RempAcceptedCompact(ref x) => {
@@ -1682,7 +1591,6 @@ impl RempMessageStatusCompact {
             _ => None,
         }
     }
-
     pub fn sent_to(&self) -> Option<&crate::ton::byte> {
         match self {
             RempMessageStatusCompact::TonNode_RempSentToValidatorsCompact(ref x) => {
@@ -1691,7 +1599,6 @@ impl RempMessageStatusCompact {
             _ => None,
         }
     }
-
     pub fn total_validators(&self) -> Option<&crate::ton::byte> {
         match self {
             RempMessageStatusCompact::TonNode_RempSentToValidatorsCompact(ref x) => {
@@ -1748,7 +1655,6 @@ impl crate::BoxedDeserialize for RempMessageStatusCompact {
             crate::ConstructorNumber(0x8434c5b8),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1767,25 +1673,21 @@ impl RempReceipt {
             RempReceipt::TonNode_RempReceipt(ref x) => &x.message_id,
         }
     }
-
     pub fn source_id(&self) -> &crate::ton::int256 {
         match self {
             RempReceipt::TonNode_RempReceipt(ref x) => &x.source_id,
         }
     }
-
     pub fn status(&self) -> &crate::ton::ton_node::RempMessageStatus {
         match self {
             RempReceipt::TonNode_RempReceipt(ref x) => &x.status,
         }
     }
-
     pub fn timestamp(&self) -> &crate::ton::long {
         match self {
             RempReceipt::TonNode_RempReceipt(ref x) => &x.timestamp,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::rempreceipt::RempReceipt {
         match self {
             RempReceipt::TonNode_RempReceipt(x) => x,
@@ -1809,7 +1711,6 @@ impl crate::BoxedDeserialize for RempReceipt {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x3122b7a2)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1833,19 +1734,16 @@ impl RempReceiptCompact {
             RempReceiptCompact::TonNode_RempReceiptCompact(ref x) => &x.message_id,
         }
     }
-
     pub fn receipt(&self) -> &crate::ton::ton_node::RempMessageStatusCompact {
         match self {
             RempReceiptCompact::TonNode_RempReceiptCompact(ref x) => &x.receipt,
         }
     }
-
     pub fn timestamp(&self) -> &crate::ton::long {
         match self {
             RempReceiptCompact::TonNode_RempReceiptCompact(ref x) => &x.timestamp,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::rempreceiptcompact::RempReceiptCompact {
         match self {
             RempReceiptCompact::TonNode_RempReceiptCompact(x) => x,
@@ -1873,7 +1771,6 @@ impl crate::BoxedDeserialize for RempReceiptCompact {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x411c6a07)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1907,7 +1804,6 @@ impl crate::BoxedDeserialize for RempReceived {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x32e5a18a)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1929,19 +1825,16 @@ impl RempSessionInfo {
             RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.catchain_seqno,
         }
     }
-
     pub fn config_hash(&self) -> &crate::ton::int256 {
         match self {
             RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.config_hash,
         }
     }
-
     pub fn last_key_block_seqno(&self) -> &crate::ton::int {
         match self {
             RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.last_key_block_seqno,
         }
     }
-
     pub fn members(
         &self,
     ) -> &crate::ton::vector<
@@ -1952,25 +1845,21 @@ impl RempSessionInfo {
             RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.members,
         }
     }
-
     pub fn shard(&self) -> &crate::ton::long {
         match self {
             RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.shard,
         }
     }
-
     pub fn vertical_seqno(&self) -> &crate::ton::int {
         match self {
             RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.vertical_seqno,
         }
     }
-
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
             RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.workchain,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::rempsessioninfo::RempSessionInfo {
         match self {
             RempSessionInfo::TonNode_RempSessionInfo(x) => x,
@@ -1998,7 +1887,6 @@ impl crate::BoxedDeserialize for RempSessionInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x71c8c164)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2022,13 +1910,11 @@ impl RempSignedReceipt {
             RempSignedReceipt::TonNode_RempSignedReceipt(ref x) => &x.receipt,
         }
     }
-
     pub fn signature(&self) -> &crate::ton::int512 {
         match self {
             RempSignedReceipt::TonNode_RempSignedReceipt(ref x) => &x.signature,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::rempsignedreceipt::RempSignedReceipt {
         match self {
             RempSignedReceipt::TonNode_RempSignedReceipt(x) => x,
@@ -2056,7 +1942,6 @@ impl crate::BoxedDeserialize for RempSignedReceipt {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb361c8dd)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2084,25 +1969,21 @@ impl RempSignedReceiptCompact {
             RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(ref x) => &x.message_id,
         }
     }
-
     pub fn receipt(&self) -> &crate::ton::ton_node::RempMessageStatusCompact {
         match self {
             RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(ref x) => &x.receipt,
         }
     }
-
     pub fn signature(&self) -> &crate::ton::int512 {
         match self {
             RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(ref x) => &x.signature,
         }
     }
-
     pub fn timestamp(&self) -> &crate::ton::long {
         match self {
             RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(ref x) => &x.timestamp,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::rempsignedreceiptcompact::RempSignedReceiptCompact {
         match self {
             RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(x) => x,
@@ -2130,7 +2011,6 @@ impl crate::BoxedDeserialize for RempSignedReceiptCompact {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x9a3cabcf)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2151,35 +2031,30 @@ impl RmqRecord {
             RmqRecord::TonNode_RmqMessageDigest(ref x) => &x.masterchain_seqno,
         }
     }
-
     pub fn message(&self) -> Option<&crate::ton::bytes> {
         match self {
             RmqRecord::TonNode_RmqMessage(ref x) => Some(&x.message),
             _ => None,
         }
     }
-
     pub fn message_id(&self) -> Option<&crate::ton::int256> {
         match self {
             RmqRecord::TonNode_RmqMessage(ref x) => Some(&x.message_id),
             _ => None,
         }
     }
-
     pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::int256>> {
         match self {
             RmqRecord::TonNode_RmqMessageDigest(ref x) => Some(&x.messages),
             _ => None,
         }
     }
-
     pub fn source_idx(&self) -> Option<&crate::ton::int> {
         match self {
             RmqRecord::TonNode_RmqMessage(ref x) => Some(&x.source_idx),
             _ => None,
         }
     }
-
     pub fn source_key_id(&self) -> Option<&crate::ton::int256> {
         match self {
             RmqRecord::TonNode_RmqMessage(ref x) => Some(&x.source_key_id),
@@ -2205,7 +2080,6 @@ impl crate::BoxedDeserialize for RmqRecord {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0de77432), crate::ConstructorNumber(0x974cd134)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2232,25 +2106,21 @@ impl SessionId {
             SessionId::TonNode_SessionId(ref x) => &x.cc_seqno,
         }
     }
-
     pub fn opts_hash(&self) -> &crate::ton::int256 {
         match self {
             SessionId::TonNode_SessionId(ref x) => &x.opts_hash,
         }
     }
-
     pub fn shard(&self) -> &crate::ton::long {
         match self {
             SessionId::TonNode_SessionId(ref x) => &x.shard,
         }
     }
-
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
             SessionId::TonNode_SessionId(ref x) => &x.workchain,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::sessionid::SessionId {
         match self {
             SessionId::TonNode_SessionId(x) => x,
@@ -2274,7 +2144,6 @@ impl crate::BoxedDeserialize for SessionId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7a9236ba)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2298,19 +2167,16 @@ impl ShardPublicOverlayId {
             ShardPublicOverlayId::TonNode_ShardPublicOverlayId(ref x) => &x.shard,
         }
     }
-
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
             ShardPublicOverlayId::TonNode_ShardPublicOverlayId(ref x) => &x.workchain,
         }
     }
-
     pub fn zero_state_file_hash(&self) -> &crate::ton::int256 {
         match self {
             ShardPublicOverlayId::TonNode_ShardPublicOverlayId(ref x) => &x.zero_state_file_hash,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::shardpublicoverlayid::ShardPublicOverlayId {
         match self {
             ShardPublicOverlayId::TonNode_ShardPublicOverlayId(x) => x,
@@ -2338,7 +2204,6 @@ impl crate::BoxedDeserialize for ShardPublicOverlayId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x4d9ed329)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2364,7 +2229,6 @@ impl crate::BoxedDeserialize for Success {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc096244f)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -2386,19 +2250,16 @@ impl ZeroStateIdExt {
             ZeroStateIdExt::TonNode_ZeroStateIdExt(ref x) => &x.file_hash,
         }
     }
-
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
             ZeroStateIdExt::TonNode_ZeroStateIdExt(ref x) => &x.root_hash,
         }
     }
-
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
             ZeroStateIdExt::TonNode_ZeroStateIdExt(ref x) => &x.workchain,
         }
     }
-
     pub fn only(self) -> crate::ton::ton_node::zerostateidext::ZeroStateIdExt {
         match self {
             ZeroStateIdExt::TonNode_ZeroStateIdExt(x) => x,
@@ -2424,7 +2285,6 @@ impl crate::BoxedDeserialize for ZeroStateIdExt {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x1d7235ae)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

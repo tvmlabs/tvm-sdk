@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.zeroStateIdExt`\n\n```text\ntonNode.zeroStateIdExt workchain:int root_hash:int256 file_hash:int256 = tonNode.ZeroStateIdExt;\n```\n"]
 pub struct ZeroStateIdExt {
@@ -12,7 +11,6 @@ impl crate::BareSerialize for ZeroStateIdExt {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x1d7235ae)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ZeroStateIdExt { workchain, root_hash, file_hash } = self;
         _ser.write_bare::<crate::ton::int>(workchain)?;
@@ -33,7 +31,6 @@ impl crate::BareDeserialize for ZeroStateIdExt {
 }
 impl crate::IntoBoxed for ZeroStateIdExt {
     type Boxed = crate::ton::ton_node::ZeroStateIdExt;
-
     fn into_boxed(self) -> crate::ton::ton_node::ZeroStateIdExt {
         crate::ton::ton_node::ZeroStateIdExt::TonNode_ZeroStateIdExt(self)
     }

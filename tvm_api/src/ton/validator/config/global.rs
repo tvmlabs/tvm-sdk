@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validator.config.global`\n\n```text\nvalidator.config.global zero_state:tonNode.blockIdExt init_block:tonNode.blockIdExt hardforks:(vector tonNode.blockIdExt) = validator.config.Global;\n```\n"]
 pub struct Global {
@@ -13,7 +12,6 @@ impl crate::BareSerialize for Global {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x867dff6a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Global { zero_state, init_block, hardforks } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(zero_state)?;
@@ -37,7 +35,6 @@ impl crate::BareDeserialize for Global {
 }
 impl crate::IntoBoxed for Global {
     type Boxed = crate::ton::validator::config::Global;
-
     fn into_boxed(self) -> crate::ton::validator::config::Global {
         crate::ton::validator::config::Global::Validator_Config_Global(self)
     }

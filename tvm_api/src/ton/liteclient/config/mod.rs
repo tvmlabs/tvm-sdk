@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `liteclient.config.Global`\n\n```text\nliteclient.config.global liteservers:(vector liteserver.desc) validator:validator.config.global = liteclient.config.Global;\n```\n"]
 pub enum Global {
@@ -13,13 +12,11 @@ impl Global {
             Global::Liteclient_Config_Global(ref x) => &x.liteservers,
         }
     }
-
     pub fn validator(&self) -> &crate::ton::validator::config::global::Global {
         match self {
             Global::Liteclient_Config_Global(ref x) => &x.validator,
         }
     }
-
     pub fn only(self) -> crate::ton::liteclient::config::global::Global {
         match self {
             Global::Liteclient_Config_Global(x) => x,
@@ -43,7 +40,6 @@ impl crate::BoxedDeserialize for Global {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x088dc0f8)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

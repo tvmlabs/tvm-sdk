@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `rwallet.config`\n\n```text\nrwallet.config start_at:int53 limits:vector<rwallet.limit> = rwallet.Config;\n```\n"]
 pub struct Config {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for Config {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xfae7849a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Config { start_at, limits } = self;
         _ser.write_bare::<crate::ton::int53>(start_at)?;
@@ -32,7 +30,6 @@ impl crate::BareDeserialize for Config {
 }
 impl crate::IntoBoxed for Config {
     type Boxed = crate::ton::rwallet::Config;
-
     fn into_boxed(self) -> crate::ton::rwallet::Config {
         crate::ton::rwallet::Config::Rwallet_Config(self)
     }

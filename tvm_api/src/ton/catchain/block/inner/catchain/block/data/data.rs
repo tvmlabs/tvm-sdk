@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block.data.badBlock`\n\n```text\ncatchain.block.data.badBlock block:catchain.block = catchain.block.inner.Data;\n```\n"]
 pub struct BadBlock {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for BadBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb6025a56)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BadBlock { block } = self;
         _ser.write_bare::<crate::ton::catchain::block::Block>(block)?;
@@ -27,7 +25,6 @@ impl crate::BareDeserialize for BadBlock {
 }
 impl crate::IntoBoxed for BadBlock {
     type Boxed = crate::ton::catchain::block::inner::Data;
-
     fn into_boxed(self) -> crate::ton::catchain::block::inner::Data {
         crate::ton::catchain::block::inner::Data::Catchain_Block_Data_BadBlock(self)
     }
@@ -43,7 +40,6 @@ impl crate::BareSerialize for Fork {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x647a3a52)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Fork { left, right } = self;
         _ser.write_boxed::<crate::ton::catchain::block::Dep>(left)?;
@@ -62,7 +58,6 @@ impl crate::BareDeserialize for Fork {
 }
 impl crate::IntoBoxed for Fork {
     type Boxed = crate::ton::catchain::block::inner::Data;
-
     fn into_boxed(self) -> crate::ton::catchain::block::inner::Data {
         crate::ton::catchain::block::inner::Data::Catchain_Block_Data_Fork(self)
     }
@@ -77,7 +72,6 @@ impl crate::BareSerialize for Vector {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x64a92f2a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Vector { msgs } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::bytes>>(msgs)?;
@@ -95,7 +89,6 @@ impl crate::BareDeserialize for Vector {
 }
 impl crate::IntoBoxed for Vector {
     type Boxed = crate::ton::catchain::block::inner::Data;
-
     fn into_boxed(self) -> crate::ton::catchain::block::inner::Data {
         crate::ton::catchain::block::inner::Data::Catchain_Block_Data_Vector(self)
     }

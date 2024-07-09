@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `msg.Data`\n\n```text\nmsg.dataDecryptedText text:bytes = msg.Data;\n\nmsg.dataEncryptedText text:bytes = msg.Data;\n\nmsg.dataRaw body:bytes init_state:bytes = msg.Data;\n\nmsg.dataText text:bytes = msg.Data;\n```\n"]
 pub enum Data {
@@ -15,14 +14,12 @@ impl Data {
             _ => None,
         }
     }
-
     pub fn init_state(&self) -> Option<&crate::ton::bytes> {
         match self {
             Data::Msg_DataRaw(ref x) => Some(&x.init_state),
             _ => None,
         }
     }
-
     pub fn text(&self) -> Option<&crate::ton::bytes> {
         match self {
             Data::Msg_DataDecryptedText(ref x) => Some(&x.text),
@@ -57,7 +54,6 @@ impl crate::BoxedDeserialize for Data {
             crate::ConstructorNumber(0xeba43290),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -90,13 +86,11 @@ impl DataDecrypted {
             DataDecrypted::Msg_DataDecrypted(ref x) => &x.data,
         }
     }
-
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
             DataDecrypted::Msg_DataDecrypted(ref x) => &x.proof,
         }
     }
-
     pub fn only(self) -> crate::ton::msg::datadecrypted::DataDecrypted {
         match self {
             DataDecrypted::Msg_DataDecrypted(x) => x,
@@ -120,7 +114,6 @@ impl crate::BoxedDeserialize for DataDecrypted {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0ba960e9)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -146,7 +139,6 @@ impl DataDecryptedArray {
             DataDecryptedArray::Msg_DataDecryptedArray(ref x) => &x.elements,
         }
     }
-
     pub fn only(self) -> crate::ton::msg::datadecryptedarray::DataDecryptedArray {
         match self {
             DataDecryptedArray::Msg_DataDecryptedArray(x) => x,
@@ -174,7 +166,6 @@ impl crate::BoxedDeserialize for DataDecryptedArray {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe35c4709)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -198,13 +189,11 @@ impl DataEncrypted {
             DataEncrypted::Msg_DataEncrypted(ref x) => &x.data,
         }
     }
-
     pub fn source(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
             DataEncrypted::Msg_DataEncrypted(ref x) => &x.source,
         }
     }
-
     pub fn only(self) -> crate::ton::msg::dataencrypted::DataEncrypted {
         match self {
             DataEncrypted::Msg_DataEncrypted(x) => x,
@@ -228,7 +217,6 @@ impl crate::BoxedDeserialize for DataEncrypted {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x21a13d51)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -254,7 +242,6 @@ impl DataEncryptedArray {
             DataEncryptedArray::Msg_DataEncryptedArray(ref x) => &x.elements,
         }
     }
-
     pub fn only(self) -> crate::ton::msg::dataencryptedarray::DataEncryptedArray {
         match self {
             DataEncryptedArray::Msg_DataEncryptedArray(x) => x,
@@ -282,7 +269,6 @@ impl crate::BoxedDeserialize for DataEncryptedArray {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x244759b2)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -306,25 +292,21 @@ impl Message {
             Message::Msg_Message(ref x) => &x.amount,
         }
     }
-
     pub fn data(&self) -> &crate::ton::msg::Data {
         match self {
             Message::Msg_Message(ref x) => &x.data,
         }
     }
-
     pub fn destination(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
             Message::Msg_Message(ref x) => &x.destination,
         }
     }
-
     pub fn public_key(&self) -> &crate::ton::string {
         match self {
             Message::Msg_Message(ref x) => &x.public_key,
         }
     }
-
     pub fn only(self) -> crate::ton::msg::message::Message {
         match self {
             Message::Msg_Message(x) => x,
@@ -348,7 +330,6 @@ impl crate::BoxedDeserialize for Message {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8233d034)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
