@@ -1682,7 +1682,7 @@ fn check_libraries(init: &StateInit, disable_set_lib: bool, text: &str, msg: &Me
 /// uninit according bounce flag: if bounce, account will be uninit that save
 /// money.
 fn account_from_message(
-    msg: &Messacge,
+    msg: &Message,
     msg_remaining_balance: &CurrencyCollection,
     check_address: bool,
     init_code_hash: bool,
