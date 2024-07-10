@@ -1132,9 +1132,7 @@ impl Account {
 
     fn read_version(slice: &mut SliceData, _version: u32) -> Result<Self> {
         let addr = Deserializable::construct_from(slice)?;
-        print!("{} addr\n", addr);
         let dapp_id: UInt256 = Deserializable::construct_from(slice)?;
-        print!("{} dapp", hex::encode_upper(dapp_id.clone()));
         let storage_stat = Deserializable::construct_from(slice)?;
         let last_trans_lt = Deserializable::construct_from(slice)?; //last_trans_lt:uint64
         let balance = CurrencyCollection::construct_from(slice)?; //balance:CurrencyCollection
