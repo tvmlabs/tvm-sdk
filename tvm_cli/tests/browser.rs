@@ -184,7 +184,6 @@ fn test_encryptionboxes() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_address_input() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("AddressInput")?;
-
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.timeout(std::time::Duration::from_secs(2))
         .write_stdin(format!(

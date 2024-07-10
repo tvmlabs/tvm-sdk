@@ -87,7 +87,6 @@ impl<T: ParserTracer, R: JsonReducer> BlockParser<T, R> {
         log::debug!("TIME: block deserialize {}ms;   {}", now.elapsed().as_millis(), block_id_str);
 
         let mut result = ParsedBlock::new();
-
         let include_accounts = self.config.accounts.is_some();
         let include_transactions = self.config.transactions.is_some();
         let include_messages = self.config.messages.is_some();

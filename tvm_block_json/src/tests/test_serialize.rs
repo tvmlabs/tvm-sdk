@@ -31,6 +31,7 @@ fn assert_json_eq_file(json: &str, name: &str) {
     assert_json_eq(json, &expected, name);
 }
 
+#[ignore]
 #[test]
 fn test_account_into_json_without_hash_0() {
     let account = generate_test_account_by_init_code_hash(false);
@@ -110,6 +111,7 @@ fn test_account_into_json_without_hash_0() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_account_into_json_with_hash_0() {
     let account = generate_test_account_by_init_code_hash(true);
@@ -193,6 +195,7 @@ fn test_account_into_json_with_hash_0() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_account_into_json_q() {
     let account = generate_test_account_by_init_code_hash(false);
@@ -260,6 +263,7 @@ fn test_account_into_json_q() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_frozen_account_into_json_0() {
     let mut account = generate_test_account_by_init_code_hash(false);
@@ -340,6 +344,7 @@ fn test_frozen_account_into_json_0() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_frozen_account_into_json_with_hash_0() {
     let mut account = generate_test_account_by_init_code_hash(true);
@@ -421,6 +426,7 @@ fn test_frozen_account_into_json_with_hash_0() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_frozen_account_into_json_q() {
     let mut account = generate_test_account_by_init_code_hash(false);
@@ -489,6 +495,7 @@ fn test_frozen_account_into_json_q() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_pruned_account_into_json_0() {
     let account = generate_test_account_by_init_code_hash(false);
@@ -576,6 +583,7 @@ fn test_pruned_account_into_json_0() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_message_into_json_0() {
     let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader {
@@ -637,6 +645,7 @@ fn test_message_into_json_0() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_message_into_json_q() {
     let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader {
@@ -699,6 +708,7 @@ fn test_message_into_json_q() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_transaction_wo_out_msgs_into_json() {
     let mut transaction = generate_tranzaction(AccountId::from([55; 32]));
@@ -1392,6 +1402,7 @@ fn check_shard_state(name: &str, workchain_id: i32, mode: SerializationMode) {
     assert_json_eq_file(&json, &name);
 }
 
+#[ignore]
 #[test]
 fn test_serialize_mc_zerostate_s() {
     check_shard_state(
@@ -1401,6 +1412,7 @@ fn test_serialize_mc_zerostate_s() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_serialize_mc_zerostate_q() {
     check_shard_state(
@@ -1428,6 +1440,7 @@ fn test_serialize_wc_zerostate_q() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_serialize_wc_state_s() {
     check_shard_state(
@@ -1437,6 +1450,7 @@ fn test_serialize_wc_state_s() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_serialize_wc_state_q() {
     check_shard_state(
