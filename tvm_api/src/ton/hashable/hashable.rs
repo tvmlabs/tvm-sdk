@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `hashable.blockCandidate`\n\n```text\nhashable.blockCandidate block:int approved:int = Hashable;\n```\n"]
 pub struct BlockCandidate {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for BlockCandidate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0ba9b10d)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockCandidate { block, approved } = self;
         _ser.write_bare::<crate::ton::int>(block)?;
@@ -30,7 +28,6 @@ impl crate::BareDeserialize for BlockCandidate {
 }
 impl crate::IntoBoxed for BlockCandidate {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_BlockCandidate(self)
     }
@@ -46,7 +43,6 @@ impl crate::BareSerialize for BlockCandidateAttempt {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3f5c7d0b)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockCandidateAttempt { block, votes } = self;
         _ser.write_bare::<crate::ton::int>(block)?;
@@ -65,7 +61,6 @@ impl crate::BareDeserialize for BlockCandidateAttempt {
 }
 impl crate::IntoBoxed for BlockCandidateAttempt {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_BlockCandidateAttempt(self)
     }
@@ -80,7 +75,6 @@ impl crate::BareSerialize for BlockSignature {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x37e192a2)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockSignature { signature } = self;
         _ser.write_bare::<crate::ton::int>(signature)?;
@@ -97,7 +91,6 @@ impl crate::BareDeserialize for BlockSignature {
 }
 impl crate::IntoBoxed for BlockSignature {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_BlockSignature(self)
     }
@@ -113,7 +106,6 @@ impl crate::BareSerialize for BlockVoteCandidate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xcf0d6fe5)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockVoteCandidate { block, approved } = self;
         _ser.write_bare::<crate::ton::int>(block)?;
@@ -132,7 +124,6 @@ impl crate::BareDeserialize for BlockVoteCandidate {
 }
 impl crate::IntoBoxed for BlockVoteCandidate {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_BlockVoteCandidate(self)
     }
@@ -147,7 +138,6 @@ impl crate::BareSerialize for Bool {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xcf61441c)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Bool { value } = self;
         _ser.write_boxed::<crate::ton::Bool>(value)?;
@@ -164,7 +154,6 @@ impl crate::BareDeserialize for Bool {
 }
 impl crate::IntoBoxed for Bool {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_Bool(self)
     }
@@ -179,7 +168,6 @@ impl crate::BareSerialize for Bytes {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0713de12)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Bytes { value } = self;
         _ser.write_bare::<crate::ton::bytes>(value)?;
@@ -196,7 +184,6 @@ impl crate::BareDeserialize for Bytes {
 }
 impl crate::IntoBoxed for Bytes {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_Bytes(self)
     }
@@ -211,7 +198,6 @@ impl crate::BareSerialize for CntSortedVector {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7b964659)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let CntSortedVector { data } = self;
         _ser.write_bare::<crate::ton::int>(data)?;
@@ -228,7 +214,6 @@ impl crate::BareDeserialize for CntSortedVector {
 }
 impl crate::IntoBoxed for CntSortedVector {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_CntSortedVector(self)
     }
@@ -243,7 +228,6 @@ impl crate::BareSerialize for CntVector {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0b286f38)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let CntVector { data } = self;
         _ser.write_bare::<crate::ton::int>(data)?;
@@ -260,7 +244,6 @@ impl crate::BareDeserialize for CntVector {
 }
 impl crate::IntoBoxed for CntVector {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_CntVector(self)
     }
@@ -275,7 +258,6 @@ impl crate::BareSerialize for Int256 {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3a2313cf)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Int256 { value } = self;
         _ser.write_bare::<crate::ton::int256>(value)?;
@@ -292,7 +274,6 @@ impl crate::BareDeserialize for Int256 {
 }
 impl crate::IntoBoxed for Int256 {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_Int256(self)
     }
@@ -307,7 +288,6 @@ impl crate::BareSerialize for Int32 {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd3b59356)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Int32 { value } = self;
         _ser.write_bare::<crate::ton::int>(value)?;
@@ -324,7 +304,6 @@ impl crate::BareDeserialize for Int32 {
 }
 impl crate::IntoBoxed for Int32 {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_Int32(self)
     }
@@ -339,7 +318,6 @@ impl crate::BareSerialize for Int64 {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe7da8e42)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Int64 { value } = self;
         _ser.write_bare::<crate::ton::long>(value)?;
@@ -356,7 +334,6 @@ impl crate::BareDeserialize for Int64 {
 }
 impl crate::IntoBoxed for Int64 {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_Int64(self)
     }
@@ -372,7 +349,6 @@ impl crate::BareSerialize for Pair {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc7e56895)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Pair { left, right } = self;
         _ser.write_bare::<crate::ton::int>(left)?;
@@ -391,7 +367,6 @@ impl crate::BareDeserialize for Pair {
 }
 impl crate::IntoBoxed for Pair {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_Pair(self)
     }
@@ -409,7 +384,6 @@ impl crate::BareSerialize for SentBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xbdb9952b)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let SentBlock { src, root_hash, file_hash, collated_data_file_hash } = self;
         _ser.write_bare::<crate::ton::int>(src)?;
@@ -432,7 +406,6 @@ impl crate::BareDeserialize for SentBlock {
 }
 impl crate::IntoBoxed for SentBlock {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_SentBlock(self)
     }
@@ -449,7 +422,6 @@ impl crate::BareSerialize for ValidatorSession {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x681263d5)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValidatorSession { ts, old_rounds, cur_round } = self;
         _ser.write_bare::<crate::ton::int>(ts)?;
@@ -470,7 +442,6 @@ impl crate::BareDeserialize for ValidatorSession {
 }
 impl crate::IntoBoxed for ValidatorSession {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_ValidatorSession(self)
     }
@@ -488,7 +459,6 @@ impl crate::BareSerialize for ValidatorSessionOldRound {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x478b67a9)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValidatorSessionOldRound { seqno, block, signatures, approve_signatures } = self;
         _ser.write_bare::<crate::ton::int>(seqno)?;
@@ -511,7 +481,6 @@ impl crate::BareDeserialize for ValidatorSessionOldRound {
 }
 impl crate::IntoBoxed for ValidatorSessionOldRound {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_ValidatorSessionOldRound(self)
     }
@@ -533,7 +502,6 @@ impl crate::BareSerialize for ValidatorSessionRound {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x35774fe3)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValidatorSessionRound {
             locked_round,
@@ -582,7 +550,6 @@ impl crate::BareDeserialize for ValidatorSessionRound {
 }
 impl crate::IntoBoxed for ValidatorSessionRound {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_ValidatorSessionRound(self)
     }
@@ -601,7 +568,6 @@ impl crate::BareSerialize for ValidatorSessionRoundAttempt {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4c11ffad)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValidatorSessionRoundAttempt { seqno, votes, precommitted, vote_for_inited, vote_for } =
             self;
@@ -627,7 +593,6 @@ impl crate::BareDeserialize for ValidatorSessionRoundAttempt {
 }
 impl crate::IntoBoxed for ValidatorSessionRoundAttempt {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_ValidatorSessionRoundAttempt(self)
     }
@@ -642,7 +607,6 @@ impl crate::BareSerialize for Vector {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xdf34c36d)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Vector { value } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(value)?;
@@ -659,7 +623,6 @@ impl crate::BareDeserialize for Vector {
 }
 impl crate::IntoBoxed for Vector {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_Vector(self)
     }
@@ -675,7 +638,6 @@ impl crate::BareSerialize for Vote {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xaebf2bc5)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Vote { block, node } = self;
         _ser.write_bare::<crate::ton::int>(block)?;
@@ -694,7 +656,6 @@ impl crate::BareDeserialize for Vote {
 }
 impl crate::IntoBoxed for Vote {
     type Boxed = crate::ton::Hashable;
-
     fn into_boxed(self) -> crate::ton::Hashable {
         crate::ton::Hashable::Hashable_Vote(self)
     }

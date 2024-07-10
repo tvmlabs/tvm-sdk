@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.Key`\n\n```text\ndht.key id:int256 name:bytes idx:int = dht.Key;\n```\n"]
 pub enum Key {
@@ -11,19 +10,16 @@ impl Key {
             Key::Dht_Key(ref x) => &x.id,
         }
     }
-
     pub fn idx(&self) -> &crate::ton::int {
         match self {
             Key::Dht_Key(ref x) => &x.idx,
         }
     }
-
     pub fn name(&self) -> &crate::ton::bytes {
         match self {
             Key::Dht_Key(ref x) => &x.name,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::key::Key {
         match self {
             Key::Dht_Key(x) => x,
@@ -47,7 +43,6 @@ impl crate::BoxedDeserialize for Key {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf667de8f)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -71,25 +66,21 @@ impl KeyDescription {
             KeyDescription::Dht_KeyDescription(ref x) => &x.id,
         }
     }
-
     pub fn key(&self) -> &crate::ton::dht::key::Key {
         match self {
             KeyDescription::Dht_KeyDescription(ref x) => &x.key,
         }
     }
-
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             KeyDescription::Dht_KeyDescription(ref x) => &x.signature,
         }
     }
-
     pub fn update_rule(&self) -> &crate::ton::dht::UpdateRule {
         match self {
             KeyDescription::Dht_KeyDescription(ref x) => &x.update_rule,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::keydescription::KeyDescription {
         match self {
             KeyDescription::Dht_KeyDescription(x) => x,
@@ -115,7 +106,6 @@ impl crate::BoxedDeserialize for KeyDescription {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x281d4e05)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -139,7 +129,6 @@ impl Message {
             Message::Dht_Message(ref x) => &x.node,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::message::Message {
         match self {
             Message::Dht_Message(x) => x,
@@ -163,7 +152,6 @@ impl crate::BoxedDeserialize for Message {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbc0cdb8e)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -187,25 +175,21 @@ impl Node {
             Node::Dht_Node(ref x) => &x.addr_list,
         }
     }
-
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
             Node::Dht_Node(ref x) => &x.id,
         }
     }
-
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             Node::Dht_Node(ref x) => &x.signature,
         }
     }
-
     pub fn version(&self) -> &crate::ton::int {
         match self {
             Node::Dht_Node(ref x) => &x.version,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::node::Node {
         match self {
             Node::Dht_Node(x) => x,
@@ -229,7 +213,6 @@ impl crate::BoxedDeserialize for Node {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x84533248)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -253,7 +236,6 @@ impl Nodes {
             Nodes::Dht_Nodes(ref x) => &x.nodes,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::nodes::Nodes {
         match self {
             Nodes::Dht_Nodes(x) => x,
@@ -277,7 +259,6 @@ impl crate::BoxedDeserialize for Nodes {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7974a0be)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -301,7 +282,6 @@ impl Pong {
             Pong::Dht_Pong(ref x) => &x.random_id,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::pong::Pong {
         match self {
             Pong::Dht_Pong(x) => x,
@@ -325,7 +305,6 @@ impl crate::BoxedDeserialize for Pong {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5a8aef81)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -356,7 +335,6 @@ impl crate::BoxedDeserialize for Stored {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7026fb08)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -393,7 +371,6 @@ impl crate::BoxedDeserialize for UpdateRule {
             crate::ConstructorNumber(0xcc9f31f7),
         ]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -417,25 +394,21 @@ impl Value {
             Value::Dht_Value(ref x) => &x.key,
         }
     }
-
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             Value::Dht_Value(ref x) => &x.signature,
         }
     }
-
     pub fn ttl(&self) -> &crate::ton::int {
         match self {
             Value::Dht_Value(ref x) => &x.ttl,
         }
     }
-
     pub fn value(&self) -> &crate::ton::bytes {
         match self {
             Value::Dht_Value(ref x) => &x.value,
         }
     }
-
     pub fn only(self) -> crate::ton::dht::value::Value {
         match self {
             Value::Dht_Value(x) => x,
@@ -459,7 +432,6 @@ impl crate::BoxedDeserialize for Value {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x90ad27cb)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -485,7 +457,6 @@ impl ValueResult {
             _ => None,
         }
     }
-
     pub fn value(&self) -> Option<&crate::ton::dht::Value> {
         match self {
             ValueResult::Dht_ValueFound(ref x) => Some(&x.value),
@@ -511,7 +482,6 @@ impl crate::BoxedDeserialize for ValueResult {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe40cf774), crate::ConstructorNumber(0xa2620568)]
     }
-
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.downloadBlock`\n\n```text\ntonNode.downloadBlock block:tonNode.blockIdExt = tonNode.Data;\n```\n"]
 pub struct DownloadBlock {
@@ -10,7 +9,6 @@ impl crate::BareSerialize for DownloadBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe27279c3)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlock { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -29,12 +27,15 @@ impl crate::BoxedDeserialize for DownloadBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe27279c3)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xe27279c3) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xe27279c3) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadBlock {
@@ -55,7 +56,6 @@ impl crate::BareSerialize for DownloadBlockFull {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x6a27c49d)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlockFull { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -74,12 +74,15 @@ impl crate::BoxedDeserialize for DownloadBlockFull {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6a27c49d)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x6a27c49d) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x6a27c49d) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadBlockFull {
@@ -100,7 +103,6 @@ impl crate::BareSerialize for DownloadBlockProof {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4bd6478a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlockProof { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -119,12 +121,15 @@ impl crate::BoxedDeserialize for DownloadBlockProof {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x4bd6478a)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x4bd6478a) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x4bd6478a) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadBlockProof {
@@ -145,7 +150,6 @@ impl crate::BareSerialize for DownloadBlockProofLink {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x25b300c6)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlockProofLink { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -164,12 +168,15 @@ impl crate::BoxedDeserialize for DownloadBlockProofLink {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x25b300c6)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x25b300c6) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x25b300c6) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadBlockProofLink {
@@ -190,7 +197,6 @@ impl crate::BareSerialize for DownloadBlockProofLinks {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x28d12b63)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlockProofLinks { blocks } = self;
         _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
@@ -212,12 +218,15 @@ impl crate::BoxedDeserialize for DownloadBlockProofLinks {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x28d12b63)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x28d12b63) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x28d12b63) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadBlockProofLinks {
@@ -238,7 +247,6 @@ impl crate::BareSerialize for DownloadBlockProofs {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa5b053f5)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlockProofs { blocks } = self;
         _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
@@ -260,12 +268,15 @@ impl crate::BoxedDeserialize for DownloadBlockProofs {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa5b053f5)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xa5b053f5) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xa5b053f5) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadBlockProofs {
@@ -286,7 +297,6 @@ impl crate::BareSerialize for DownloadBlocks {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7659c57d)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlocks { blocks } = self;
         _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
@@ -308,12 +318,15 @@ impl crate::BoxedDeserialize for DownloadBlocks {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7659c57d)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x7659c57d) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x7659c57d) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadBlocks {
@@ -334,7 +347,6 @@ impl crate::BareSerialize for DownloadKeyBlockProof {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xec23483a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadKeyBlockProof { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -353,12 +365,15 @@ impl crate::BoxedDeserialize for DownloadKeyBlockProof {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xec23483a)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xec23483a) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xec23483a) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadKeyBlockProof {
@@ -379,7 +394,6 @@ impl crate::BareSerialize for DownloadKeyBlockProofLink {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x12e42ad2)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadKeyBlockProofLink { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -398,12 +412,15 @@ impl crate::BoxedDeserialize for DownloadKeyBlockProofLink {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x12e42ad2)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x12e42ad2) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x12e42ad2) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadKeyBlockProofLink {
@@ -424,7 +441,6 @@ impl crate::BareSerialize for DownloadKeyBlockProofLinks {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x75c38550)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadKeyBlockProofLinks { blocks } = self;
         _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
@@ -446,12 +462,15 @@ impl crate::BoxedDeserialize for DownloadKeyBlockProofLinks {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x75c38550)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x75c38550) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x75c38550) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadKeyBlockProofLinks {
@@ -472,7 +491,6 @@ impl crate::BareSerialize for DownloadKeyBlockProofs {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc327de3a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadKeyBlockProofs { blocks } = self;
         _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
@@ -494,12 +512,15 @@ impl crate::BoxedDeserialize for DownloadKeyBlockProofs {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc327de3a)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xc327de3a) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xc327de3a) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadKeyBlockProofs {
@@ -520,7 +541,6 @@ impl crate::BareSerialize for DownloadNextBlockFull {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x6ea0374a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadNextBlockFull { prev_block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(prev_block)?;
@@ -539,12 +559,15 @@ impl crate::BoxedDeserialize for DownloadNextBlockFull {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6ea0374a)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x6ea0374a) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x6ea0374a) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadNextBlockFull {
@@ -569,7 +592,6 @@ impl crate::BareSerialize for DownloadPersistentMsgQueueSlice {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x32fb50b1)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadPersistentMsgQueueSlice {
             block,
@@ -603,12 +625,15 @@ impl crate::BoxedDeserialize for DownloadPersistentMsgQueueSlice {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x32fb50b1)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x32fb50b1) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x32fb50b1) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadPersistentMsgQueueSlice {
@@ -630,7 +655,6 @@ impl crate::BareSerialize for DownloadPersistentState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7f99e3b8)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadPersistentState { block, masterchain_block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -652,12 +676,15 @@ impl crate::BoxedDeserialize for DownloadPersistentState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7f99e3b8)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x7f99e3b8) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x7f99e3b8) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadPersistentState {
@@ -681,7 +708,6 @@ impl crate::BareSerialize for DownloadPersistentStateSlice {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf5e9e6e3)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadPersistentStateSlice { block, masterchain_block, offset, max_size } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -707,12 +733,15 @@ impl crate::BoxedDeserialize for DownloadPersistentStateSlice {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf5e9e6e3)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf5e9e6e3) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf5e9e6e3) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadPersistentStateSlice {
@@ -734,7 +763,6 @@ impl crate::BareSerialize for DownloadQueueUpdate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb67c0e6c)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadQueueUpdate { block, target_wc } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -755,12 +783,15 @@ impl crate::BoxedDeserialize for DownloadQueueUpdate {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb67c0e6c)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xb67c0e6c) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xb67c0e6c) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadQueueUpdate {
@@ -781,7 +812,6 @@ impl crate::BareSerialize for DownloadZeroState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xadcc1e5a)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadZeroState { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -800,12 +830,15 @@ impl crate::BoxedDeserialize for DownloadZeroState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xadcc1e5a)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xadcc1e5a) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xadcc1e5a) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DownloadZeroState {
@@ -826,7 +859,6 @@ impl crate::BareSerialize for GetArchiveInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7b2dd941)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetArchiveInfo { masterchain_seqno } = self;
         _ser.write_bare::<crate::ton::int>(masterchain_seqno)?;
@@ -845,12 +877,15 @@ impl crate::BoxedDeserialize for GetArchiveInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7b2dd941)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x7b2dd941) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x7b2dd941) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetArchiveInfo {
@@ -873,7 +908,6 @@ impl crate::BareSerialize for GetArchiveSlice {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x203b5168)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetArchiveSlice { archive_id, offset, max_size } = self;
         _ser.write_bare::<crate::ton::long>(archive_id)?;
@@ -896,12 +930,15 @@ impl crate::BoxedDeserialize for GetArchiveSlice {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x203b5168)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x203b5168) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x203b5168) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetArchiveSlice {
@@ -920,7 +957,6 @@ impl crate::BareSerialize for GetCapabilities {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xdee618f8)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         Ok(())
     }
@@ -934,12 +970,15 @@ impl crate::BoxedDeserialize for GetCapabilities {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xdee618f8)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xdee618f8) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xdee618f8) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetCapabilities {
@@ -960,7 +999,6 @@ impl crate::BareSerialize for GetNextBlockDescription {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x1455b0f3)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetNextBlockDescription { prev_block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(prev_block)?;
@@ -979,12 +1017,15 @@ impl crate::BoxedDeserialize for GetNextBlockDescription {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x1455b0f3)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x1455b0f3) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x1455b0f3) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetNextBlockDescription {
@@ -1006,7 +1047,6 @@ impl crate::BareSerialize for GetNextBlocksDescription {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3f2812c4)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetNextBlocksDescription { prev_block, limit } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(prev_block)?;
@@ -1027,12 +1067,15 @@ impl crate::BoxedDeserialize for GetNextBlocksDescription {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x3f2812c4)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x3f2812c4) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x3f2812c4) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetNextBlocksDescription {
@@ -1054,7 +1097,6 @@ impl crate::BareSerialize for GetNextKeyBlockIds {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf2e7cfbb)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetNextKeyBlockIds { block, max_size } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -1075,12 +1117,15 @@ impl crate::BoxedDeserialize for GetNextKeyBlockIds {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf2e7cfbb)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf2e7cfbb) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf2e7cfbb) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetNextKeyBlockIds {
@@ -1103,7 +1148,6 @@ impl crate::BareSerialize for GetPrevBlocksDescription {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x5c6d6cc9)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetPrevBlocksDescription { next_block, limit, cutoff_seqno } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(next_block)?;
@@ -1126,12 +1170,15 @@ impl crate::BoxedDeserialize for GetPrevBlocksDescription {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5c6d6cc9)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x5c6d6cc9) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x5c6d6cc9) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetPrevBlocksDescription {
@@ -1152,7 +1199,6 @@ impl crate::BareSerialize for PrepareBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x75a37f4e)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareBlock { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -1171,12 +1217,15 @@ impl crate::BoxedDeserialize for PrepareBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x75a37f4e)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x75a37f4e) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x75a37f4e) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PrepareBlock {
@@ -1198,7 +1247,6 @@ impl crate::BareSerialize for PrepareBlockProof {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x875c3308)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareBlockProof { block, allow_partial } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -1219,12 +1267,15 @@ impl crate::BoxedDeserialize for PrepareBlockProof {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x875c3308)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x875c3308) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x875c3308) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PrepareBlockProof {
@@ -1246,7 +1297,6 @@ impl crate::BareSerialize for PrepareBlockProofs {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xed79b2b8)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareBlockProofs { blocks, allow_partial } = self;
         _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
@@ -1270,12 +1320,15 @@ impl crate::BoxedDeserialize for PrepareBlockProofs {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xed79b2b8)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xed79b2b8) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xed79b2b8) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PrepareBlockProofs {
@@ -1296,7 +1349,6 @@ impl crate::BareSerialize for PrepareBlocks {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x6affabfc)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareBlocks { blocks } = self;
         _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
@@ -1318,12 +1370,15 @@ impl crate::BoxedDeserialize for PrepareBlocks {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6affabfc)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x6affabfc) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x6affabfc) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PrepareBlocks {
@@ -1345,7 +1400,6 @@ impl crate::BareSerialize for PrepareKeyBlockProof {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x77364c38)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareKeyBlockProof { block, allow_partial } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -1366,12 +1420,15 @@ impl crate::BoxedDeserialize for PrepareKeyBlockProof {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x77364c38)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x77364c38) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x77364c38) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PrepareKeyBlockProof {
@@ -1393,7 +1450,6 @@ impl crate::BareSerialize for PrepareKeyBlockProofs {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8c6cfbe4)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareKeyBlockProofs { blocks, allow_partial } = self;
         _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
@@ -1417,12 +1473,15 @@ impl crate::BoxedDeserialize for PrepareKeyBlockProofs {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8c6cfbe4)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x8c6cfbe4) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x8c6cfbe4) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PrepareKeyBlockProofs {
@@ -1445,7 +1504,6 @@ impl crate::BareSerialize for PreparePersistentMsgQueue {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf4ea081f)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PreparePersistentMsgQueue { block, masterchain_block, target_wc } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -1469,12 +1527,15 @@ impl crate::BoxedDeserialize for PreparePersistentMsgQueue {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf4ea081f)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xf4ea081f) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xf4ea081f) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PreparePersistentMsgQueue {
@@ -1496,7 +1557,6 @@ impl crate::BareSerialize for PreparePersistentState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xfeea269e)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PreparePersistentState { block, masterchain_block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -1518,12 +1578,15 @@ impl crate::BoxedDeserialize for PreparePersistentState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xfeea269e)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xfeea269e) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xfeea269e) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PreparePersistentState {
@@ -1545,7 +1608,6 @@ impl crate::BareSerialize for PrepareQueueUpdate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x2032ce4e)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareQueueUpdate { block, target_wc } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -1566,12 +1628,15 @@ impl crate::BoxedDeserialize for PrepareQueueUpdate {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x2032ce4e)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x2032ce4e) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x2032ce4e) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PrepareQueueUpdate {
@@ -1592,7 +1657,6 @@ impl crate::BareSerialize for PrepareZeroState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x41ce0825)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareZeroState { block } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
@@ -1611,12 +1675,15 @@ impl crate::BoxedDeserialize for PrepareZeroState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x41ce0825)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x41ce0825) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x41ce0825) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for PrepareZeroState {
@@ -1635,7 +1702,6 @@ impl crate::BareSerialize for Query {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x69f324d3)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         Ok(())
     }
@@ -1649,12 +1715,15 @@ impl crate::BoxedDeserialize for Query {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x69f324d3)]
     }
-
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x69f324d3) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x69f324d3) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Query {

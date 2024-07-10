@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.block.archivedInfo`\n\n```text\ndb.block.archivedInfo id:tonNode.blockIdExt flags:# next:flags.0?tonNode.blockIdExt = db.block.Info;\n```\n"]
 pub struct ArchivedInfo {
@@ -11,7 +10,6 @@ impl crate::BareSerialize for ArchivedInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x205f7a51)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ArchivedInfo { id, next } = self;
         let mut _flags = 0u32;
@@ -42,7 +40,6 @@ impl crate::BareDeserialize for ArchivedInfo {
 }
 impl crate::IntoBoxed for ArchivedInfo {
     type Boxed = crate::ton::db::block::Info;
-
     fn into_boxed(self) -> crate::ton::db::block::Info {
         crate::ton::db::block::Info::Db_Block_ArchivedInfo(self)
     }
@@ -65,7 +62,6 @@ impl crate::BareSerialize for Info {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4ac6e727)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Info {
             id,
@@ -193,7 +189,6 @@ impl crate::BareDeserialize for Info {
 }
 impl crate::IntoBoxed for Info {
     type Boxed = crate::ton::db::block::Info;
-
     fn into_boxed(self) -> crate::ton::db::block::Info {
         crate::ton::db::block::Info::Db_Block_Info(self)
     }
@@ -210,7 +205,6 @@ impl crate::BareSerialize for PackedInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x46bb9192)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PackedInfo { id, unixtime, offset } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
@@ -231,7 +225,6 @@ impl crate::BareDeserialize for PackedInfo {
 }
 impl crate::IntoBoxed for PackedInfo {
     type Boxed = crate::ton::db::block::Info;
-
     fn into_boxed(self) -> crate::ton::db::block::Info {
         crate::ton::db::block::Info::Db_Block_PackedInfo(self)
     }

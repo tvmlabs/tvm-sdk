@@ -1,5 +1,4 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.blockLinkBack`\n\n```text\nliteServer.blockLinkBack to_key_block:Bool from:tonNode.blockIdExt to:tonNode.blockIdExt dest_proof:bytes proof:bytes state_proof:bytes = liteServer.BlockLink;\n```\n"]
 pub struct BlockLinkBack {
@@ -15,7 +14,6 @@ impl crate::BareSerialize for BlockLinkBack {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xef7e1bef)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockLinkBack { to_key_block, from, to, dest_proof, proof, state_proof } = self;
         _ser.write_boxed::<crate::ton::Bool>(to_key_block)?;
@@ -42,7 +40,6 @@ impl crate::BareDeserialize for BlockLinkBack {
 }
 impl crate::IntoBoxed for BlockLinkBack {
     type Boxed = crate::ton::lite_server::BlockLink;
-
     fn into_boxed(self) -> crate::ton::lite_server::BlockLink {
         crate::ton::lite_server::BlockLink::LiteServer_BlockLinkBack(self)
     }
@@ -62,7 +59,6 @@ impl crate::BareSerialize for BlockLinkForward {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x520fce1c)
     }
-
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockLinkForward { to_key_block, from, to, dest_proof, config_proof, signatures } =
             self;
@@ -90,7 +86,6 @@ impl crate::BareDeserialize for BlockLinkForward {
 }
 impl crate::IntoBoxed for BlockLinkForward {
     type Boxed = crate::ton::lite_server::BlockLink;
-
     fn into_boxed(self) -> crate::ton::lite_server::BlockLink {
         crate::ton::lite_server::BlockLink::LiteServer_BlockLinkForward(self)
     }
