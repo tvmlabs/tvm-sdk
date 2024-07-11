@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.numberDecimal`\n\n```text\ntvm.numberDecimal number:string = tvm.Number;\n```\n"]
 pub struct NumberDecimal {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for NumberDecimal {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x45e296b3)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let NumberDecimal { number } = self;
         _ser.write_bare::<crate::ton::string>(number)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for NumberDecimal {
 }
 impl crate::IntoBoxed for NumberDecimal {
     type Boxed = crate::ton::tvm::Number;
+
     fn into_boxed(self) -> crate::ton::tvm::Number {
         crate::ton::tvm::Number::Tvm_NumberDecimal(self)
     }

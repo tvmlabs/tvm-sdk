@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.valueFound`\n\n```text\ndht.valueFound value:dht.Value = dht.ValueResult;\n```\n"]
 pub struct ValueFound {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for ValueFound {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe40cf774)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValueFound { value } = self;
         _ser.write_boxed::<crate::ton::dht::Value>(value)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for ValueFound {
 }
 impl crate::IntoBoxed for ValueFound {
     type Boxed = crate::ton::dht::ValueResult;
+
     fn into_boxed(self) -> crate::ton::dht::ValueResult {
         crate::ton::dht::ValueResult::Dht_ValueFound(self)
     }
@@ -39,6 +42,7 @@ impl crate::BareSerialize for ValueNotFound {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa2620568)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ValueNotFound { nodes } = self;
         _ser.write_bare::<crate::ton::dht::nodes::Nodes>(nodes)?;
@@ -55,6 +59,7 @@ impl crate::BareDeserialize for ValueNotFound {
 }
 impl crate::IntoBoxed for ValueNotFound {
     type Boxed = crate::ton::dht::ValueResult;
+
     fn into_boxed(self) -> crate::ton::dht::ValueResult {
         crate::ton::dht::ValueResult::Dht_ValueNotFound(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.state.AsyncSerializer`\n\n```text\ndb.state.asyncSerializer block:tonNode.blockIdExt last:tonNode.blockIdExt last_ts:int = db.state.AsyncSerializer;\n```\n"]
 pub enum AsyncSerializer {
@@ -10,16 +11,19 @@ impl AsyncSerializer {
             AsyncSerializer::Db_State_AsyncSerializer(ref x) => &x.block,
         }
     }
+
     pub fn last(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             AsyncSerializer::Db_State_AsyncSerializer(ref x) => &x.last,
         }
     }
+
     pub fn last_ts(&self) -> &crate::ton::int {
         match self {
             AsyncSerializer::Db_State_AsyncSerializer(ref x) => &x.last_ts,
         }
     }
+
     pub fn only(self) -> crate::ton::db::state::asyncserializer::AsyncSerializer {
         match self {
             AsyncSerializer::Db_State_AsyncSerializer(x) => x,
@@ -47,6 +51,7 @@ impl crate::BoxedDeserialize for AsyncSerializer {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd32f29a1)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -70,6 +75,7 @@ impl DbVersion {
             DbVersion::Db_State_DbVersion(ref x) => &x.version,
         }
     }
+
     pub fn only(self) -> crate::ton::db::state::dbversion::DbVersion {
         match self {
             DbVersion::Db_State_DbVersion(x) => x,
@@ -93,6 +99,7 @@ impl crate::BoxedDeserialize for DbVersion {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd93720f7)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -116,6 +123,7 @@ impl DestroyedSessions {
             DestroyedSessions::Db_State_DestroyedSessions(ref x) => &x.sessions,
         }
     }
+
     pub fn only(self) -> crate::ton::db::state::destroyedsessions::DestroyedSessions {
         match self {
             DestroyedSessions::Db_State_DestroyedSessions(x) => x,
@@ -143,6 +151,7 @@ impl crate::BoxedDeserialize for DestroyedSessions {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xada8d984)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -168,6 +177,7 @@ impl GcBlockId {
             GcBlockId::Db_State_GcBlockId(ref x) => &x.block,
         }
     }
+
     pub fn only(self) -> crate::ton::db::state::gcblockid::GcBlockId {
         match self {
             GcBlockId::Db_State_GcBlockId(x) => x,
@@ -191,6 +201,7 @@ impl crate::BoxedDeserialize for GcBlockId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xdf30bd4f)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -216,6 +227,7 @@ impl Hardforks {
             Hardforks::Db_State_Hardforks(ref x) => &x.blocks,
         }
     }
+
     pub fn only(self) -> crate::ton::db::state::hardforks::Hardforks {
         match self {
             Hardforks::Db_State_Hardforks(x) => x,
@@ -239,6 +251,7 @@ impl crate::BoxedDeserialize for Hardforks {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x85f30d04)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -262,6 +275,7 @@ impl InitBlockId {
             InitBlockId::Db_State_InitBlockId(ref x) => &x.block,
         }
     }
+
     pub fn only(self) -> crate::ton::db::state::initblockid::InitBlockId {
         match self {
             InitBlockId::Db_State_InitBlockId(x) => x,
@@ -285,6 +299,7 @@ impl crate::BoxedDeserialize for InitBlockId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x732c9cf5)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -335,6 +350,7 @@ impl crate::BoxedDeserialize for Key {
             crate::ConstructorNumber(0xc99b3187),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -362,6 +378,7 @@ impl ShardClient {
             ShardClient::Db_State_ShardClient(ref x) => &x.block,
         }
     }
+
     pub fn only(self) -> crate::ton::db::state::shardclient::ShardClient {
         match self {
             ShardClient::Db_State_ShardClient(x) => x,
@@ -385,6 +402,7 @@ impl crate::BoxedDeserialize for ShardClient {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0b16a69d)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

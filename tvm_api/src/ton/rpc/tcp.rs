@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tcp.ping`\n\n```text\ntcp.ping random_id:long = tcp.Pong;\n```\n"]
 pub struct Ping {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Ping {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4d082b9a)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Ping { random_id } = self;
         _ser.write_bare::<crate::ton::long>(random_id)?;
@@ -27,15 +29,12 @@ impl crate::BoxedDeserialize for Ping {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x4d082b9a)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x4d082b9a) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x4d082b9a) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for Ping {

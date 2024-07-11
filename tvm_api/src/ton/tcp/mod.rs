@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `tcp.Message`\n\n```text\ntcp.authentificate nonce:bytes = tcp.Message;\n\ntcp.authentificationComplete key:PublicKey signature:bytes = tcp.Message;\n\ntcp.authentificationNonce nonce:bytes = tcp.Message;\n```\n"]
 pub enum Message {
@@ -13,6 +14,7 @@ impl Message {
             _ => None,
         }
     }
+
     pub fn nonce(&self) -> Option<&crate::ton::bytes> {
         match self {
             Message::Tcp_Authentificate(ref x) => Some(&x.nonce),
@@ -20,6 +22,7 @@ impl Message {
             _ => None,
         }
     }
+
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
             Message::Tcp_AuthentificationComplete(ref x) => Some(&x.signature),
@@ -50,6 +53,7 @@ impl crate::BoxedDeserialize for Message {
             crate::ConstructorNumber(0xe35d4ab6),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -79,6 +83,7 @@ impl Pong {
             Pong::Tcp_Pong(ref x) => &x.random_id,
         }
     }
+
     pub fn only(self) -> crate::ton::tcp::pong::Pong {
         match self {
             Pong::Tcp_Pong(x) => x,
@@ -102,6 +107,7 @@ impl crate::BoxedDeserialize for Pong {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xdc69fb03)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

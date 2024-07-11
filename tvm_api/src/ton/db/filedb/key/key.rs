@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.filedb.key.blockFile`\n\n```text\ndb.filedb.key.blockFile block_id:tonNode.blockIdExt = db.filedb.Key;\n```\n"]
 pub struct BlockFile {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for BlockFile {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb0eae471)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockFile { block_id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block_id)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for BlockFile {
 }
 impl crate::IntoBoxed for BlockFile {
     type Boxed = crate::ton::db::filedb::Key;
+
     fn into_boxed(self) -> crate::ton::db::filedb::Key {
         crate::ton::db::filedb::Key::Db_Filedb_Key_BlockFile(self)
     }
@@ -39,6 +42,7 @@ impl crate::BareSerialize for BlockInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc499d4fc)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockInfo { block_id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block_id)?;
@@ -55,6 +59,7 @@ impl crate::BareDeserialize for BlockInfo {
 }
 impl crate::IntoBoxed for BlockInfo {
     type Boxed = crate::ton::db::filedb::Key;
+
     fn into_boxed(self) -> crate::ton::db::filedb::Key {
         crate::ton::db::filedb::Key::Db_Filedb_Key_BlockInfo(self)
     }
@@ -69,6 +74,7 @@ impl crate::BareSerialize for Candidate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe28a0ab9)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Candidate { id } = self;
         _ser.write_bare::<crate::ton::db::candidate::id::Id>(id)?;
@@ -85,6 +91,7 @@ impl crate::BareDeserialize for Candidate {
 }
 impl crate::IntoBoxed for Candidate {
     type Boxed = crate::ton::db::filedb::Key;
+
     fn into_boxed(self) -> crate::ton::db::filedb::Key {
         crate::ton::db::filedb::Key::Db_Filedb_Key_Candidate(self)
     }
@@ -100,6 +107,7 @@ impl crate::BareSerialize for PersistentStateFile {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xafb6764c)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PersistentStateFile { block_id, masterchain_block_id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block_id)?;
@@ -119,6 +127,7 @@ impl crate::BareDeserialize for PersistentStateFile {
 }
 impl crate::IntoBoxed for PersistentStateFile {
     type Boxed = crate::ton::db::filedb::Key;
+
     fn into_boxed(self) -> crate::ton::db::filedb::Key {
         crate::ton::db::filedb::Key::Db_Filedb_Key_PersistentStateFile(self)
     }
@@ -133,6 +142,7 @@ impl crate::BareSerialize for Proof {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xda954dec)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Proof { block_id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block_id)?;
@@ -149,6 +159,7 @@ impl crate::BareDeserialize for Proof {
 }
 impl crate::IntoBoxed for Proof {
     type Boxed = crate::ton::db::filedb::Key;
+
     fn into_boxed(self) -> crate::ton::db::filedb::Key {
         crate::ton::db::filedb::Key::Db_Filedb_Key_Proof(self)
     }
@@ -163,6 +174,7 @@ impl crate::BareSerialize for ProofLink {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x98fbc5ce)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ProofLink { block_id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block_id)?;
@@ -179,6 +191,7 @@ impl crate::BareDeserialize for ProofLink {
 }
 impl crate::IntoBoxed for ProofLink {
     type Boxed = crate::ton::db::filedb::Key;
+
     fn into_boxed(self) -> crate::ton::db::filedb::Key {
         crate::ton::db::filedb::Key::Db_Filedb_Key_ProofLink(self)
     }
@@ -193,6 +206,7 @@ impl crate::BareSerialize for Signatures {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd7290d0b)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Signatures { block_id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block_id)?;
@@ -209,6 +223,7 @@ impl crate::BareDeserialize for Signatures {
 }
 impl crate::IntoBoxed for Signatures {
     type Boxed = crate::ton::db::filedb::Key;
+
     fn into_boxed(self) -> crate::ton::db::filedb::Key {
         crate::ton::db::filedb::Key::Db_Filedb_Key_Signatures(self)
     }
@@ -223,6 +238,7 @@ impl crate::BareSerialize for ZeroStateFile {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x1252863d)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ZeroStateFile { block_id } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block_id)?;
@@ -239,6 +255,7 @@ impl crate::BareDeserialize for ZeroStateFile {
 }
 impl crate::IntoBoxed for ZeroStateFile {
     type Boxed = crate::ton::db::filedb::Key;
+
     fn into_boxed(self) -> crate::ton::db::filedb::Key {
         crate::ton::db::filedb::Key::Db_Filedb_Key_ZeroStateFile(self)
     }

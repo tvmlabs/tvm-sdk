@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.config.global`\n\n```text\nadnl.config.global static_nodes:adnl.nodes = adnl.config.Global;\n```\n"]
 pub struct Global {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Global {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xbe6f80d0)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Global { static_nodes } = self;
         _ser.write_bare::<crate::ton::adnl::nodes::Nodes>(static_nodes)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Global {
 }
 impl crate::IntoBoxed for Global {
     type Boxed = crate::ton::adnl::config::Global;
+
     fn into_boxed(self) -> crate::ton::adnl::config::Global {
         crate::ton::adnl::config::Global::Adnl_Config_Global(self)
     }

@@ -398,8 +398,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
             } else if account.is_none() && !acc_balance.is_zero()? {
-                *account =
-                    Account::uninit(account_address.clone(), UInt256::new(), 0, last_paid, acc_balance.clone());
+                *account = Account::uninit(
+                    account_address.clone(),
+                    UInt256::new(),
+                    0,
+                    last_paid,
+                    acc_balance.clone(),
+                );
             }
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {

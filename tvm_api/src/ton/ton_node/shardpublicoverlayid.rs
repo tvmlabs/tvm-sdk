@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.shardPublicOverlayId`\n\n```text\ntonNode.shardPublicOverlayId workchain:int shard:long zero_state_file_hash:int256 = tonNode.ShardPublicOverlayId;\n```\n"]
 pub struct ShardPublicOverlayId {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for ShardPublicOverlayId {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x4d9ed329)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ShardPublicOverlayId { workchain, shard, zero_state_file_hash } = self;
         _ser.write_bare::<crate::ton::int>(workchain)?;
@@ -31,6 +33,7 @@ impl crate::BareDeserialize for ShardPublicOverlayId {
 }
 impl crate::IntoBoxed for ShardPublicOverlayId {
     type Boxed = crate::ton::ton_node::ShardPublicOverlayId;
+
     fn into_boxed(self) -> crate::ton::ton_node::ShardPublicOverlayId {
         crate::ton::ton_node::ShardPublicOverlayId::TonNode_ShardPublicOverlayId(self)
     }

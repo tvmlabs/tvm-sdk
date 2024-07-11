@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.Block`\n\n```text\ncatchain.block incarnation:int256 src:int height:int data:catchain.block.data signature:bytes = catchain.Block;\n```\n"]
 pub enum Block {
@@ -10,26 +11,31 @@ impl Block {
             Block::Catchain_Block(ref x) => &x.data,
         }
     }
+
     pub fn height(&self) -> &crate::ton::int {
         match self {
             Block::Catchain_Block(ref x) => &x.height,
         }
     }
+
     pub fn incarnation(&self) -> &crate::ton::int256 {
         match self {
             Block::Catchain_Block(ref x) => &x.incarnation,
         }
     }
+
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             Block::Catchain_Block(ref x) => &x.signature,
         }
     }
+
     pub fn src(&self) -> &crate::ton::int {
         match self {
             Block::Catchain_Block(ref x) => &x.src,
         }
     }
+
     pub fn only(self) -> crate::ton::catchain::block::Block {
         match self {
             Block::Catchain_Block(x) => x,
@@ -53,6 +59,7 @@ impl crate::BoxedDeserialize for Block {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd6554174)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -93,6 +100,7 @@ impl crate::BoxedDeserialize for BlockResult {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb6110884), crate::ConstructorNumber(0x9d2a3047)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -118,6 +126,7 @@ impl crate::BoxedDeserialize for Option<crate::ton::catchain::blockresult::Block
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb6110884), crate::ConstructorNumber(0x9d2a3047)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -144,6 +153,7 @@ impl Blocks {
             Blocks::Catchain_Blocks(ref x) => &x.blocks,
         }
     }
+
     pub fn only(self) -> crate::ton::catchain::blocks::Blocks {
         match self {
             Blocks::Catchain_Blocks(x) => x,
@@ -167,6 +177,7 @@ impl crate::BoxedDeserialize for Blocks {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x50ecd1c1)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -192,12 +203,14 @@ impl Difference {
             _ => None,
         }
     }
+
     pub fn right(&self) -> Option<&crate::ton::catchain::block::dep::Dep> {
         match self {
             Difference::Catchain_DifferenceFork(ref x) => Some(&x.right),
             _ => None,
         }
     }
+
     pub fn sent_upto(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::int>> {
         match self {
             Difference::Catchain_Difference(ref x) => Some(&x.sent_upto),
@@ -223,6 +236,7 @@ impl crate::BoxedDeserialize for Difference {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x1415d1ca), crate::ConstructorNumber(0x4927c06f)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -249,11 +263,13 @@ impl FirstBlock {
             FirstBlock::Catchain_Firstblock(ref x) => &x.nodes,
         }
     }
+
     pub fn unique_hash(&self) -> &crate::ton::int256 {
         match self {
             FirstBlock::Catchain_Firstblock(ref x) => &x.unique_hash,
         }
     }
+
     pub fn only(self) -> crate::ton::catchain::firstblock::Firstblock {
         match self {
             FirstBlock::Catchain_Firstblock(x) => x,
@@ -277,6 +293,7 @@ impl crate::BoxedDeserialize for FirstBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x10c904fb)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -300,6 +317,7 @@ impl Sent {
             Sent::Catchain_Sent(ref x) => &x.cnt,
         }
     }
+
     pub fn only(self) -> crate::ton::catchain::sent::Sent {
         match self {
             Sent::Catchain_Sent(x) => x,
@@ -323,6 +341,7 @@ impl crate::BoxedDeserialize for Sent {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xfaf751af)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -346,6 +365,7 @@ impl Update {
             Update::Catchain_BlockUpdate(ref x) => &x.block,
         }
     }
+
     pub fn only(self) -> crate::ton::catchain::blockupdate::BlockUpdate {
         match self {
             Update::Catchain_BlockUpdate(x) => x,
@@ -369,6 +389,7 @@ impl crate::BoxedDeserialize for Update {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x236758c4)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

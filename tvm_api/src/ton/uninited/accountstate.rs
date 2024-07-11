@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `uninited.accountState`\n\n```text\nuninited.accountState frozen_hash:bytes = AccountState;\n```\n"]
 pub struct AccountState {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for AccountState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x5abd9708)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let AccountState { frozen_hash } = self;
         _ser.write_bare::<crate::ton::bytes>(frozen_hash)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for AccountState {
 }
 impl crate::IntoBoxed for AccountState {
     type Boxed = crate::ton::AccountState;
+
     fn into_boxed(self) -> crate::ton::AccountState {
         crate::ton::AccountState::Uninited_AccountState(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.adnlProxy.Config`\n\n```text\nengine.adnlProxy.config ports:(vector engine.adnlProxy.port) = engine.adnlProxy.Config;\n```\n"]
 pub enum Config {
@@ -12,6 +13,7 @@ impl Config {
             Config::Engine_AdnlProxy_Config(ref x) => &x.ports,
         }
     }
+
     pub fn only(self) -> crate::ton::engine::adnl_proxy::config::Config {
         match self {
             Config::Engine_AdnlProxy_Config(x) => x,
@@ -35,6 +37,7 @@ impl crate::BoxedDeserialize for Config {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6e264101)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -58,26 +61,31 @@ impl Port {
             Port::Engine_AdnlProxy_Port(ref x) => &x.dst_ip,
         }
     }
+
     pub fn dst_port(&self) -> &crate::ton::int {
         match self {
             Port::Engine_AdnlProxy_Port(ref x) => &x.dst_port,
         }
     }
+
     pub fn in_port(&self) -> &crate::ton::int {
         match self {
             Port::Engine_AdnlProxy_Port(ref x) => &x.in_port,
         }
     }
+
     pub fn out_port(&self) -> &crate::ton::int {
         match self {
             Port::Engine_AdnlProxy_Port(ref x) => &x.out_port,
         }
     }
+
     pub fn proxy_type(&self) -> &crate::ton::adnl::Proxy {
         match self {
             Port::Engine_AdnlProxy_Port(ref x) => &x.proxy_type,
         }
     }
+
     pub fn only(self) -> crate::ton::engine::adnl_proxy::port::Port {
         match self {
             Port::Engine_AdnlProxy_Port(x) => x,
@@ -101,6 +109,7 @@ impl crate::BoxedDeserialize for Port {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf901754a)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

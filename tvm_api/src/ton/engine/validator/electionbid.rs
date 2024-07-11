@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.electionBid`\n\n```text\nengine.validator.electionBid election_date:int perm_key:int256 adnl_addr:int256 to_send_payload:bytes = engine.validator.ElectionBid;\n```\n"]
 pub struct ElectionBid {
@@ -12,6 +13,7 @@ impl crate::BareSerialize for ElectionBid {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x23b27a3d)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ElectionBid { election_date, perm_key, adnl_addr, to_send_payload } = self;
         _ser.write_bare::<crate::ton::int>(election_date)?;
@@ -34,6 +36,7 @@ impl crate::BareDeserialize for ElectionBid {
 }
 impl crate::IntoBoxed for ElectionBid {
     type Boxed = crate::ton::engine::validator::ElectionBid;
+
     fn into_boxed(self) -> crate::ton::engine::validator::ElectionBid {
         crate::ton::engine::validator::ElectionBid::Engine_Validator_ElectionBid(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.config.global`\n\n```text\ndht.config.global static_nodes:dht.nodes k:int a:int = dht.config.Global;\n```\n"]
 pub struct Global {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for Global {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x84ceca07)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Global { static_nodes, k, a } = self;
         _ser.write_bare::<crate::ton::dht::nodes::Nodes>(static_nodes)?;
@@ -31,6 +33,7 @@ impl crate::BareDeserialize for Global {
 }
 impl crate::IntoBoxed for Global {
     type Boxed = crate::ton::dht::config::Global;
+
     fn into_boxed(self) -> crate::ton::dht::config::Global {
         crate::ton::dht::config::Global::Dht_Config_Global(self)
     }

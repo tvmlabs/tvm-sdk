@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.blockdb.Key`\n\n```text\ndb.blockdb.key.lru id:tonNode.blockIdExt = db.blockdb.Key;\n\ndb.blockdb.key.value id:tonNode.blockIdExt = db.blockdb.Key;\n```\n"]
 pub enum Key {
@@ -31,6 +32,7 @@ impl crate::BoxedDeserialize for Key {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x50bc963a), crate::ConstructorNumber(0x7f57d173)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -57,16 +59,19 @@ impl Lru {
             Lru::Db_Blockdb_Lru(ref x) => &x.id,
         }
     }
+
     pub fn next(&self) -> &crate::ton::int256 {
         match self {
             Lru::Db_Blockdb_Lru(ref x) => &x.next,
         }
     }
+
     pub fn prev(&self) -> &crate::ton::int256 {
         match self {
             Lru::Db_Blockdb_Lru(ref x) => &x.prev,
         }
     }
+
     pub fn only(self) -> crate::ton::db::blockdb::lru::Lru {
         match self {
             Lru::Db_Blockdb_Lru(x) => x,
@@ -90,6 +95,7 @@ impl crate::BoxedDeserialize for Lru {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc11655b3)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -113,11 +119,13 @@ impl Value {
             Value::Db_Blockdb_Value(ref x) => &x.data,
         }
     }
+
     pub fn next(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             Value::Db_Blockdb_Value(ref x) => &x.next,
         }
     }
+
     pub fn only(self) -> crate::ton::db::blockdb::value::Value {
         match self {
             Value::Db_Blockdb_Value(x) => x,
@@ -141,6 +149,7 @@ impl crate::BoxedDeserialize for Value {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb28ec42d)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

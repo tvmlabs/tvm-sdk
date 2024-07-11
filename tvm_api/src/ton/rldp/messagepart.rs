@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `rldp.complete`\n\n```text\nrldp.complete transfer_id:int256 part:int = rldp.MessagePart;\n```\n"]
 pub struct Complete {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for Complete {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xbc0cb2bf)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Complete { transfer_id, part } = self;
         _ser.write_bare::<crate::ton::int256>(transfer_id)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for Complete {
 }
 impl crate::IntoBoxed for Complete {
     type Boxed = crate::ton::rldp::MessagePart;
+
     fn into_boxed(self) -> crate::ton::rldp::MessagePart {
         crate::ton::rldp::MessagePart::Rldp_Complete(self)
     }
@@ -44,6 +47,7 @@ impl crate::BareSerialize for Confirm {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xf582dc58)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Confirm { transfer_id, part, seqno } = self;
         _ser.write_bare::<crate::ton::int256>(transfer_id)?;
@@ -64,6 +68,7 @@ impl crate::BareDeserialize for Confirm {
 }
 impl crate::IntoBoxed for Confirm {
     type Boxed = crate::ton::rldp::MessagePart;
+
     fn into_boxed(self) -> crate::ton::rldp::MessagePart {
         crate::ton::rldp::MessagePart::Rldp_Confirm(self)
     }
@@ -83,6 +88,7 @@ impl crate::BareSerialize for MessagePart {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x185c22cc)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let MessagePart { transfer_id, fec_type, part, total_size, seqno, data } = self;
         _ser.write_bare::<crate::ton::int256>(transfer_id)?;
@@ -109,6 +115,7 @@ impl crate::BareDeserialize for MessagePart {
 }
 impl crate::IntoBoxed for MessagePart {
     type Boxed = crate::ton::rldp::MessagePart;
+
     fn into_boxed(self) -> crate::ton::rldp::MessagePart {
         crate::ton::rldp::MessagePart::Rldp_MessagePart(self)
     }

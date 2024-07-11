@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.packetContents`\n\n```text\nadnl.packetContents \n  rand1:bytes \n  flags:# \n  from:flags.0?PublicKey \n  from_short:flags.1?adnl.id.short\n  message:flags.2?adnl.Message \n  messages:flags.3?(vector adnl.Message)\n  address:flags.4?adnl.addressList \n  priority_address:flags.5?adnl.addressList\n  seqno:flags.6?long \n  confirm_seqno:flags.7?long \n  recv_addr_list_version:flags.8?int\n  recv_priority_addr_list_version:flags.9?int\n  reinit_date:flags.10?int \n  dst_reinit_date:flags.10?int\n  signature:flags.11?bytes \n  rand2:bytes \n        = adnl.PacketContents;\n```\n"]
 pub struct PacketContents {
@@ -23,6 +24,7 @@ impl crate::BareSerialize for PacketContents {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd142cd89)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PacketContents {
             rand1,
@@ -221,6 +223,7 @@ impl crate::BareDeserialize for PacketContents {
 }
 impl crate::IntoBoxed for PacketContents {
     type Boxed = crate::ton::adnl::PacketContents;
+
     fn into_boxed(self) -> crate::ton::adnl::PacketContents {
         crate::ton::adnl::PacketContents::Adnl_PacketContents(self)
     }

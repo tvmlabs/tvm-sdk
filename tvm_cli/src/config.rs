@@ -253,9 +253,7 @@ pub fn resolve_net_name(url: &str) -> Option<String> {
     if url == "dev" || url == "devnet" {
         return Some(TESTNET.to_string());
     }
-    if url.contains("127.0.0.1") ||
-        url.contains("0.0.0.0") ||
-        url.contains("localhost") {
+    if url.contains("127.0.0.1") || url.contains("0.0.0.0") || url.contains("localhost") {
         return Some(LOCALNET.to_string());
     }
     None

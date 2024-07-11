@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.entryDataAdnlAddress`\n\n```text\ndns.entryDataAdnlAddress adnl_address:AdnlAddress = dns.EntryData;\n```\n"]
 pub struct EntryDataAdnlAddress {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for EntryDataAdnlAddress {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xbd98ba10)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let EntryDataAdnlAddress { adnl_address } = self;
         _ser.write_boxed::<crate::ton::AdnlAddress>(adnl_address)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for EntryDataAdnlAddress {
 }
 impl crate::IntoBoxed for EntryDataAdnlAddress {
     type Boxed = crate::ton::dns::EntryData;
+
     fn into_boxed(self) -> crate::ton::dns::EntryData {
         crate::ton::dns::EntryData::Dns_EntryDataAdnlAddress(self)
     }
@@ -39,6 +42,7 @@ impl crate::BareSerialize for EntryDataNextResolver {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x13b13dc8)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let EntryDataNextResolver { resolver } = self;
         _ser.write_boxed::<crate::ton::AccountAddress>(resolver)?;
@@ -55,6 +59,7 @@ impl crate::BareDeserialize for EntryDataNextResolver {
 }
 impl crate::IntoBoxed for EntryDataNextResolver {
     type Boxed = crate::ton::dns::EntryData;
+
     fn into_boxed(self) -> crate::ton::dns::EntryData {
         crate::ton::dns::EntryData::Dns_EntryDataNextResolver(self)
     }
@@ -69,6 +74,7 @@ impl crate::BareSerialize for EntryDataSmcAddress {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x97197a42)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let EntryDataSmcAddress { smc_address } = self;
         _ser.write_boxed::<crate::ton::AccountAddress>(smc_address)?;
@@ -85,6 +91,7 @@ impl crate::BareDeserialize for EntryDataSmcAddress {
 }
 impl crate::IntoBoxed for EntryDataSmcAddress {
     type Boxed = crate::ton::dns::EntryData;
+
     fn into_boxed(self) -> crate::ton::dns::EntryData {
         crate::ton::dns::EntryData::Dns_EntryDataSmcAddress(self)
     }
@@ -99,6 +106,7 @@ impl crate::BareSerialize for EntryDataText {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd0c3a112)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let EntryDataText { text } = self;
         _ser.write_bare::<crate::ton::string>(text)?;
@@ -115,6 +123,7 @@ impl crate::BareDeserialize for EntryDataText {
 }
 impl crate::IntoBoxed for EntryDataText {
     type Boxed = crate::ton::dns::EntryData;
+
     fn into_boxed(self) -> crate::ton::dns::EntryData {
         crate::ton::dns::EntryData::Dns_EntryDataText(self)
     }
@@ -129,6 +138,7 @@ impl crate::BareSerialize for EntryDataUnknown {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb35ad380)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let EntryDataUnknown { bytes: ref bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
@@ -145,6 +155,7 @@ impl crate::BareDeserialize for EntryDataUnknown {
 }
 impl crate::IntoBoxed for EntryDataUnknown {
     type Boxed = crate::ton::dns::EntryData;
+
     fn into_boxed(self) -> crate::ton::dns::EntryData {
         crate::ton::dns::EntryData::Dns_EntryDataUnknown(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `rwallet.Action`\n\n```text\nrwallet.actionInit config:rwallet.config = rwallet.Action;\n```\n"]
 pub enum Action {
@@ -10,6 +11,7 @@ impl Action {
             Action::Rwallet_ActionInit(ref x) => &x.config,
         }
     }
+
     pub fn only(self) -> crate::ton::rwallet::actioninit::ActionInit {
         match self {
             Action::Rwallet_ActionInit(x) => x,
@@ -33,6 +35,7 @@ impl crate::BoxedDeserialize for Action {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x2533bd6b)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -58,11 +61,13 @@ impl Config {
             Config::Rwallet_Config(ref x) => &x.limits,
         }
     }
+
     pub fn start_at(&self) -> &crate::ton::int53 {
         match self {
             Config::Rwallet_Config(ref x) => &x.start_at,
         }
     }
+
     pub fn only(self) -> crate::ton::rwallet::config::Config {
         match self {
             Config::Rwallet_Config(x) => x,
@@ -86,6 +91,7 @@ impl crate::BoxedDeserialize for Config {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xfae7849a)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -109,11 +115,13 @@ impl Limit {
             Limit::Rwallet_Limit(ref x) => &x.seconds,
         }
     }
+
     pub fn value(&self) -> &crate::ton::int64 {
         match self {
             Limit::Rwallet_Limit(ref x) => &x.value,
         }
     }
+
     pub fn only(self) -> crate::ton::rwallet::limit::Limit {
         match self {
             Limit::Rwallet_Limit(x) => x,
@@ -137,6 +145,7 @@ impl crate::BoxedDeserialize for Limit {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x48def67e)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

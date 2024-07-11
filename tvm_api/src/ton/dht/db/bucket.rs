@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.db.bucket`\n\n```text\ndht.db.bucket nodes:dht.nodes = dht.db.Bucket;\n```\n"]
 pub struct Bucket {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Bucket {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb39cfa6c)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Bucket { nodes } = self;
         _ser.write_bare::<crate::ton::dht::nodes::Nodes>(nodes)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Bucket {
 }
 impl crate::IntoBoxed for Bucket {
     type Boxed = crate::ton::dht::db::Bucket;
+
     fn into_boxed(self) -> crate::ton::dht::db::Bucket {
         crate::ton::dht::db::Bucket::Dht_Db_Bucket(self)
     }

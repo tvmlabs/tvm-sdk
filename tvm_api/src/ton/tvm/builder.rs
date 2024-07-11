@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.builder`\n\n```text\ntvm.builder bytes:bytes = tvm.Builder;\n```\n"]
 pub struct Builder {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Builder {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xccf52e6d)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Builder { bytes: ref bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Builder {
 }
 impl crate::IntoBoxed for Builder {
     type Boxed = crate::ton::tvm::Builder;
+
     fn into_boxed(self) -> crate::ton::tvm::Builder {
         crate::ton::tvm::Builder::Tvm_Builder(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.adnl`\n\n```text\nengine.adnl id:int256 category:int = engine.Adnl;\n```\n"]
 pub struct Adnl {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for Adnl {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x62d76550)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Adnl { id, category } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for Adnl {
 }
 impl crate::IntoBoxed for Adnl {
     type Boxed = crate::ton::engine::Adnl;
+
     fn into_boxed(self) -> crate::ton::engine::Adnl {
         crate::ton::engine::Adnl::Engine_Adnl(self)
     }

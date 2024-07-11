@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `tonEngine.NetworkProtocol`\n\n```text\ntonEngine.networkProtocol.confirmValidation \n    id:long \n    peer:int \n    result:long\n    block_seq_no:int\n    block_start_lt:long\n    block_end_lt:long\n    block_gen_utime:int\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.emptyStepRequest \n    id:long\n    empty_step:bytes\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.error\n    err_code:int \n    msg:string \n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.rawData id:long data:bytes = tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.reflectToDbRequest \n    id:long\n    transaction:bytes\n    account:bytes\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.reflectToDbResponse \n    id:long\n    result:long\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.requestBlockByNumber \n    id:long\n    seq_no:int\n    vert_seq_no:int\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.requestLastEqualShard \n    id:long\n    shard_hash:int256\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.requestNodeInfo \n    id:long\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.responceBlock \n    id:long\n    signed_block:bytes\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.responseLastEqualShard \n    id:long\n    seq_no:int\n    vert_seq_no:int\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.responseNodeInfo \n    id:long\n    validator_no:int\n    workchain:int\n    shard_prefix:long\n    shard_pfx_len:int\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.sendMessageRequest \n    id:long\n    message:bytes\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.sendMessageResponse \n    id:long\n    result:long\n= tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.test1 id:long hash:int256 = tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.test2 id:long flag:Bool = tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.test3 id:long port:int = tonEngine.NetworkProtocol;\n\ntonEngine.networkProtocol.validationRequest \n    id:long\n    signed_block:bytes\n= tonEngine.NetworkProtocol;\n```\n"]
 pub enum NetworkProtocol {
@@ -66,6 +67,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn block_end_lt(&self) -> Option<&crate::ton::long> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ConfirmValidation(ref x) => {
@@ -74,6 +76,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn block_gen_utime(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ConfirmValidation(ref x) => {
@@ -82,6 +85,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn block_seq_no(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ConfirmValidation(ref x) => {
@@ -90,6 +94,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn block_start_lt(&self) -> Option<&crate::ton::long> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ConfirmValidation(ref x) => {
@@ -98,12 +103,14 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_RawData(ref x) => Some(&x.data),
             _ => None,
         }
     }
+
     pub fn empty_step(&self) -> Option<&crate::ton::bytes> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_EmptyStepRequest(ref x) => {
@@ -112,24 +119,28 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn err_code(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_Error(ref x) => Some(&x.err_code),
             _ => None,
         }
     }
+
     pub fn flag(&self) -> Option<&crate::ton::Bool> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_Test2(ref x) => Some(&x.flag),
             _ => None,
         }
     }
+
     pub fn hash(&self) -> Option<&crate::ton::int256> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_Test1(ref x) => Some(&x.hash),
             _ => None,
         }
     }
+
     pub fn id(&self) -> Option<&crate::ton::long> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ConfirmValidation(ref x) => Some(&x.id),
@@ -152,6 +163,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn message(&self) -> Option<&crate::ton::bytes> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_SendMessageRequest(ref x) => {
@@ -160,24 +172,28 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn msg(&self) -> Option<&crate::ton::string> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_Error(ref x) => Some(&x.msg),
             _ => None,
         }
     }
+
     pub fn peer(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ConfirmValidation(ref x) => Some(&x.peer),
             _ => None,
         }
     }
+
     pub fn port(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_Test3(ref x) => Some(&x.port),
             _ => None,
         }
     }
+
     pub fn result(&self) -> Option<&crate::ton::long> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ConfirmValidation(ref x) => Some(&x.result),
@@ -190,6 +206,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn seq_no(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_RequestBlockByNumber(ref x) => {
@@ -201,6 +218,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn shard_hash(&self) -> Option<&crate::ton::int256> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_RequestLastEqualShard(ref x) => {
@@ -209,6 +227,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn shard_pfx_len(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ResponseNodeInfo(ref x) => {
@@ -217,6 +236,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn shard_prefix(&self) -> Option<&crate::ton::long> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ResponseNodeInfo(ref x) => {
@@ -225,6 +245,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn signed_block(&self) -> Option<&crate::ton::bytes> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ResponceBlock(ref x) => {
@@ -236,6 +257,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn transaction(&self) -> Option<&crate::ton::bytes> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ReflectToDbRequest(ref x) => {
@@ -244,6 +266,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn validator_no(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ResponseNodeInfo(ref x) => {
@@ -252,6 +275,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn vert_seq_no(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_RequestBlockByNumber(ref x) => {
@@ -263,6 +287,7 @@ impl NetworkProtocol {
             _ => None,
         }
     }
+
     pub fn workchain(&self) -> Option<&crate::ton::int> {
         match self {
             NetworkProtocol::TonEngine_NetworkProtocol_ResponseNodeInfo(ref x) => {
@@ -361,6 +386,7 @@ impl crate::BoxedDeserialize for NetworkProtocol {
             crate::ConstructorNumber(0xdc0928a1),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

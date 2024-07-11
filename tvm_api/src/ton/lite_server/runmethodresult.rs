@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.runMethodResult`\n\n```text\nliteServer.runMethodResult mode:# id:tonNode.blockIdExt shardblk:tonNode.blockIdExt shard_proof:mode.0?bytes proof:mode.0?bytes state_proof:mode.1?bytes init_c7:mode.3?bytes lib_extras:mode.4?bytes exit_code:int result:mode.2?bytes = liteServer.RunMethodResult;\n```\n"]
 pub struct RunMethodResult {
@@ -18,6 +19,7 @@ impl crate::BareSerialize for RunMethodResult {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa39a616b)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunMethodResult {
             mode,
@@ -110,6 +112,7 @@ impl crate::BareDeserialize for RunMethodResult {
 }
 impl crate::IntoBoxed for RunMethodResult {
     type Boxed = crate::ton::lite_server::RunMethodResult;
+
     fn into_boxed(self) -> crate::ton::lite_server::RunMethodResult {
         crate::ton::lite_server::RunMethodResult::LiteServer_RunMethodResult(self)
     }

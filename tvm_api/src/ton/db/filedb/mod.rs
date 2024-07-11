@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.filedb.Key`\n\n```text\ndb.filedb.key.blockFile block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.blockInfo block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.candidate id:db.candidate.id = db.filedb.Key;\n\ndb.filedb.key.empty = db.filedb.Key;\n\ndb.filedb.key.persistentStateFile block_id:tonNode.blockIdExt masterchain_block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.proof block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.proofLink block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.signatures block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.zeroStateFile block_id:tonNode.blockIdExt = db.filedb.Key;\n```\n"]
 pub enum Key {
@@ -25,12 +26,14 @@ impl Key {
             _ => None,
         }
     }
+
     pub fn id(&self) -> Option<&crate::ton::db::candidate::id::Id> {
         match self {
             Key::Db_Filedb_Key_Candidate(ref x) => Some(&x.id),
             _ => None,
         }
     }
+
     pub fn masterchain_block_id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             Key::Db_Filedb_Key_PersistentStateFile(ref x) => Some(&x.masterchain_block_id),
@@ -73,6 +76,7 @@ impl crate::BoxedDeserialize for Key {
             crate::ConstructorNumber(0x1252863d),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -118,21 +122,25 @@ impl Value {
             Value::Db_Filedb_Value(ref x) => &x.file_hash,
         }
     }
+
     pub fn key(&self) -> &crate::ton::db::filedb::Key {
         match self {
             Value::Db_Filedb_Value(ref x) => &x.key,
         }
     }
+
     pub fn next(&self) -> &crate::ton::int256 {
         match self {
             Value::Db_Filedb_Value(ref x) => &x.next,
         }
     }
+
     pub fn prev(&self) -> &crate::ton::int256 {
         match self {
             Value::Db_Filedb_Value(ref x) => &x.prev,
         }
     }
+
     pub fn only(self) -> crate::ton::db::filedb::value::Value {
         match self {
             Value::Db_Filedb_Value(x) => x,
@@ -156,6 +164,7 @@ impl crate::BoxedDeserialize for Value {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf2dd1a2d)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

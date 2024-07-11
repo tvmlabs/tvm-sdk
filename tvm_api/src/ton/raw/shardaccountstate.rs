@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.shardAccountState`\n\n```text\nraw.shardAccountState shard_account:bytes = raw.ShardAccountState;\n```\n"]
 pub struct ShardAccountState {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for ShardAccountState {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc5a7834f)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ShardAccountState { shard_account } = self;
         _ser.write_bare::<crate::ton::bytes>(shard_account)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for ShardAccountState {
 }
 impl crate::IntoBoxed for ShardAccountState {
     type Boxed = crate::ton::raw::ShardAccountState;
+
     fn into_boxed(self) -> crate::ton::raw::ShardAccountState {
         crate::ton::raw::ShardAccountState::Raw_ShardAccountState(self)
     }

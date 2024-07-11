@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `liteserver.Desc`\n\n```text\nliteserver.desc id:PublicKey ip:int port:int = liteserver.Desc;\n```\n"]
 pub enum Desc {
@@ -10,16 +11,19 @@ impl Desc {
             Desc::Liteserver_Desc(ref x) => &x.id,
         }
     }
+
     pub fn ip(&self) -> &crate::ton::int {
         match self {
             Desc::Liteserver_Desc(ref x) => &x.ip,
         }
     }
+
     pub fn port(&self) -> &crate::ton::int {
         match self {
             Desc::Liteserver_Desc(ref x) => &x.port,
         }
     }
+
     pub fn only(self) -> crate::ton::liteserver::desc::Desc {
         match self {
             Desc::Liteserver_Desc(x) => x,
@@ -43,6 +47,7 @@ impl crate::BoxedDeserialize for Desc {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc449a474)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

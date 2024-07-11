@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.config.Global`\n\n```text\nadnl.config.global static_nodes:adnl.nodes = adnl.config.Global;\n```\n"]
 pub enum Global {
@@ -10,6 +11,7 @@ impl Global {
             Global::Adnl_Config_Global(ref x) => &x.static_nodes,
         }
     }
+
     pub fn only(self) -> crate::ton::adnl::config::global::Global {
         match self {
             Global::Adnl_Config_Global(x) => x,
@@ -33,6 +35,7 @@ impl crate::BoxedDeserialize for Global {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbe6f80d0)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

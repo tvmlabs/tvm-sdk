@@ -692,7 +692,8 @@ fn test_account_modify_state() {
 
     let now = 1600000000;
     let addr = MsgAddressInt::with_standart(None, 0, AccountId::from(hash)).unwrap();
-    let mut acc = Account::uninit(addr, UInt256::new(), 100, now, CurrencyCollection::with_grams(10000000));
+    let mut acc =
+        Account::uninit(addr, UInt256::new(), 100, now, CurrencyCollection::with_grams(10000000));
     assert_eq!(acc.state_init(), None);
     assert_eq!(acc.status(), AccountStatus::AccStateUninit);
 

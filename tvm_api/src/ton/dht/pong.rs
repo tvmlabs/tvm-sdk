@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.pong`\n\n```text\ndht.pong random_id:long = dht.Pong;\n```\n"]
 pub struct Pong {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Pong {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x5a8aef81)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Pong { random_id } = self;
         _ser.write_bare::<crate::ton::long>(random_id)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Pong {
 }
 impl crate::IntoBoxed for Pong {
     type Boxed = crate::ton::dht::Pong;
+
     fn into_boxed(self) -> crate::ton::dht::Pong {
         crate::ton::dht::Pong::Dht_Pong(self)
     }

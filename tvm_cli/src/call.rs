@@ -135,9 +135,11 @@ pub async fn emulate_locally(
             let addr = tvm_block::MsgAddressInt::from_str(addr)
                 .map_err(|e| format!("couldn't decode address: {}", e))?;
             state = base64_encode(
-                &tvm_types::write_boc(&Account::with_address(addr, UInt256::new()).serialize().map_err(|e| {
-                    format!("couldn't create dummy account for deploy emulation: {}", e)
-                })?)
+                &tvm_types::write_boc(
+                    &Account::with_address(addr, UInt256::new()).serialize().map_err(|e| {
+                        format!("couldn't create dummy account for deploy emulation: {}", e)
+                    })?,
+                )
                 .map_err(|e| format!("failed to serialize account cell: {}", e))?,
             );
         } else {

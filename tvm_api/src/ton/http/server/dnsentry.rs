@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `http.server.dnsEntry`\n\n```text\nhttp.server.dnsEntry domain:string addr:adnl.id.short = http.server.DnsEntry;\n```\n"]
 pub struct DnsEntry {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for DnsEntry {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd8726096)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DnsEntry { domain, addr } = self;
         _ser.write_bare::<crate::ton::string>(domain)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for DnsEntry {
 }
 impl crate::IntoBoxed for DnsEntry {
     type Boxed = crate::ton::http::server::DnsEntry;
+
     fn into_boxed(self) -> crate::ton::http::server::DnsEntry {
         crate::ton::http::server::DnsEntry::Http_Server_DnsEntry(self)
     }

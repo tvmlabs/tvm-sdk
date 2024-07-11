@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.pong`\n\n```text\nvalidatorSession.pong hash:long = validatorSession.Pong;\n```\n"]
 pub struct Pong {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Pong {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xdcc6376d)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Pong { hash } = self;
         _ser.write_bare::<crate::ton::long>(hash)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Pong {
 }
 impl crate::IntoBoxed for Pong {
     type Boxed = crate::ton::validator_session::Pong;
+
     fn into_boxed(self) -> crate::ton::validator_session::Pong {
         crate::ton::validator_session::Pong::ValidatorSession_Pong(self)
     }

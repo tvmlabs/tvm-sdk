@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.BlockUpdate`\n\n```text\nvalidatorSession.blockUpdate ts:long actions:(vector validatorSession.round.Message) state:int = validatorSession.BlockUpdate;\n```\n"]
 pub enum BlockUpdate {
@@ -12,16 +13,19 @@ impl BlockUpdate {
             BlockUpdate::ValidatorSession_BlockUpdate(ref x) => &x.actions,
         }
     }
+
     pub fn state(&self) -> &crate::ton::int {
         match self {
             BlockUpdate::ValidatorSession_BlockUpdate(ref x) => &x.state,
         }
     }
+
     pub fn ts(&self) -> &crate::ton::long {
         match self {
             BlockUpdate::ValidatorSession_BlockUpdate(ref x) => &x.ts,
         }
     }
+
     pub fn only(self) -> crate::ton::validator_session::blockupdate::BlockUpdate {
         match self {
             BlockUpdate::ValidatorSession_BlockUpdate(x) => x,
@@ -49,6 +53,7 @@ impl crate::BoxedDeserialize for BlockUpdate {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x9283ce37)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -72,26 +77,31 @@ impl Candidate {
             Candidate::ValidatorSession_Candidate(ref x) => &x.collated_data,
         }
     }
+
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
             Candidate::ValidatorSession_Candidate(ref x) => &x.data,
         }
     }
+
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
             Candidate::ValidatorSession_Candidate(ref x) => &x.root_hash,
         }
     }
+
     pub fn round(&self) -> &crate::ton::int {
         match self {
             Candidate::ValidatorSession_Candidate(ref x) => &x.round,
         }
     }
+
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
             Candidate::ValidatorSession_Candidate(ref x) => &x.src,
         }
     }
+
     pub fn only(self) -> crate::ton::validator_session::candidate::Candidate {
         match self {
             Candidate::ValidatorSession_Candidate(x) => x,
@@ -117,6 +127,7 @@ impl crate::BoxedDeserialize for Candidate {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7d337845)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -140,21 +151,25 @@ impl CandidateId {
             CandidateId::ValidatorSession_CandidateId(ref x) => &x.collated_data_file_hash,
         }
     }
+
     pub fn file_hash(&self) -> &crate::ton::int256 {
         match self {
             CandidateId::ValidatorSession_CandidateId(ref x) => &x.file_hash,
         }
     }
+
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
             CandidateId::ValidatorSession_CandidateId(ref x) => &x.root_hash,
         }
     }
+
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
             CandidateId::ValidatorSession_CandidateId(ref x) => &x.src,
         }
     }
+
     pub fn only(self) -> crate::ton::validator_session::candidateid::CandidateId {
         match self {
             CandidateId::ValidatorSession_CandidateId(x) => x,
@@ -182,6 +197,7 @@ impl crate::BoxedDeserialize for CandidateId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x19fee56c)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -207,48 +223,56 @@ impl Config {
             Config::ValidatorSession_ConfigNew(ref x) => &x.catchain_idle_timeout,
         }
     }
+
     pub fn catchain_max_deps(&self) -> &crate::ton::int {
         match self {
             Config::ValidatorSession_Config(ref x) => &x.catchain_max_deps,
             Config::ValidatorSession_ConfigNew(ref x) => &x.catchain_max_deps,
         }
     }
+
     pub fn max_block_size(&self) -> &crate::ton::int {
         match self {
             Config::ValidatorSession_Config(ref x) => &x.max_block_size,
             Config::ValidatorSession_ConfigNew(ref x) => &x.max_block_size,
         }
     }
+
     pub fn max_collated_data_size(&self) -> &crate::ton::int {
         match self {
             Config::ValidatorSession_Config(ref x) => &x.max_collated_data_size,
             Config::ValidatorSession_ConfigNew(ref x) => &x.max_collated_data_size,
         }
     }
+
     pub fn max_round_attempts(&self) -> &crate::ton::int {
         match self {
             Config::ValidatorSession_Config(ref x) => &x.max_round_attempts,
             Config::ValidatorSession_ConfigNew(ref x) => &x.max_round_attempts,
         }
     }
+
     pub fn new_catchain_ids(&self) -> Option<&crate::ton::Bool> {
         match self {
             Config::ValidatorSession_ConfigNew(ref x) => Some(&x.new_catchain_ids),
             _ => None,
         }
     }
+
     pub fn next_candidate_delay(&self) -> &crate::ton::double {
         match self {
             Config::ValidatorSession_Config(ref x) => &x.next_candidate_delay,
             Config::ValidatorSession_ConfigNew(ref x) => &x.next_candidate_delay,
         }
     }
+
     pub fn round_attempt_duration(&self) -> &crate::ton::int {
         match self {
             Config::ValidatorSession_Config(ref x) => &x.round_attempt_duration,
             Config::ValidatorSession_ConfigNew(ref x) => &x.round_attempt_duration,
         }
     }
+
     pub fn round_candidates(&self) -> &crate::ton::int {
         match self {
             Config::ValidatorSession_Config(ref x) => &x.round_candidates,
@@ -274,6 +298,7 @@ impl crate::BoxedDeserialize for Config {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb661fdc3), crate::ConstructorNumber(0xf7afa99c)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -313,6 +338,7 @@ impl crate::BoxedDeserialize for Message {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xcb9b22e3), crate::ConstructorNumber(0x96a166d1)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -339,6 +365,7 @@ impl Pong {
             Pong::ValidatorSession_Pong(ref x) => &x.hash,
         }
     }
+
     pub fn only(self) -> crate::ton::validator_session::pong::Pong {
         match self {
             Pong::ValidatorSession_Pong(x) => x,
@@ -362,6 +389,7 @@ impl crate::BoxedDeserialize for Pong {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xdcc6376d)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

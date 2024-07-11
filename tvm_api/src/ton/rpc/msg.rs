@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `msg.decrypt`\n\n```text\nmsg.decrypt input_key:InputKey data:msg.dataEncryptedArray = msg.DataDecryptedArray;\n```\n"]
 pub struct Decrypt {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for Decrypt {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0d53cf09)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Decrypt { input_key, data } = self;
         _ser.write_boxed::<crate::ton::InputKey>(input_key)?;
@@ -31,15 +33,12 @@ impl crate::BoxedDeserialize for Decrypt {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0d53cf09)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x0d53cf09) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x0d53cf09) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for Decrypt {
@@ -61,6 +60,7 @@ impl crate::BareSerialize for DecryptWithProof {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8222c881)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DecryptWithProof { proof, data } = self;
         _ser.write_bare::<crate::ton::bytes>(proof)?;
@@ -81,15 +81,12 @@ impl crate::BoxedDeserialize for DecryptWithProof {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8222c881)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x8222c881) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x8222c881) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for DecryptWithProof {
