@@ -80,7 +80,7 @@ async fn test_calc_storage_fee() {
         .await
         .unwrap();
 
-    assert_eq!(result.fee, "330");
+    assert_eq!(result.fee, "2691");
 }
 
 #[test]

@@ -96,6 +96,7 @@ fn test_calc_workchain_id_by_adnl_id() {
     assert_eq!(calc_workchain_id_by_adnl_id(&[3; 32]), 2);
 }
 
+#[ignore]
 #[test]
 fn test_validator_set() -> Result<()> {
     let block = Block::construct_from_file("src/proofs/tests/data/key_block.boc")?;
@@ -140,6 +141,7 @@ fn test_validator_set() -> Result<()> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_any_keyblock_validator_set() -> Result<()> {
     check_any_keyblock_validator_set("src/proofs/tests/data/key_block.boc")

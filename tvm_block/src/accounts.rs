@@ -577,7 +577,7 @@ impl AccountStuff {
 impl Serializable for AccountStuff {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
         self.addr.write_to(builder)?;
-        self.dapp_id.write_to(builder)?;
+        Some(self.dapp_id.clone()).write_maybe_to(builder)?;
         self.storage_stat.write_to(builder)?;
         self.storage.write_to(builder)?;
         Ok(())
@@ -841,6 +841,10 @@ impl Account {
 
     pub fn get_addr(&self) -> Option<&MsgAddressInt> {
         self.stuff().map(|s| &s.addr)
+    }
+
+    pub fn get_dapp_id(&self) -> Option<&UInt256> {
+        self.stuff().map(|s| &s.dapp_id)
     }
 
     /// Get ref to account's AccountState.
@@ -1140,7 +1144,7 @@ impl Account {
 
     fn read_version(slice: &mut SliceData, _version: u32) -> Result<Self> {
         let addr = Deserializable::construct_from(slice)?;
-        let dapp_id: UInt256 = Deserializable::construct_from(slice)?;
+        let dapp_id: UInt256 = UInt256::read_maybe_from(slice)?.unwrap();
         let storage_stat = Deserializable::construct_from(slice)?;
         let last_trans_lt = Deserializable::construct_from(slice)?; //last_trans_lt:uint64
         let balance = CurrencyCollection::construct_from(slice)?; //balance:CurrencyCollection

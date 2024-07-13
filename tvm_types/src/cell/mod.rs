@@ -40,8 +40,8 @@ use crate::Sha256;
 pub const SHA256_SIZE: usize = 32;
 pub const DEPTH_SIZE: usize = 2;
 pub const MAX_REFERENCES_COUNT: usize = 4;
-pub const MAX_DATA_BITS: usize = 1023;
-pub const MAX_DATA_BYTES: usize = 128; // including tag
+pub const MAX_DATA_BITS: usize = 2047;
+pub const MAX_DATA_BYTES: usize = 256; // including tag
 pub const MAX_BIG_DATA_BYTES: usize = 0xff_ff_ff; // 1024 * 1024 * 16 - 1
 pub const MAX_LEVEL: usize = 3;
 pub const MAX_LEVEL_MASK: u8 = 7;

@@ -31,7 +31,6 @@ fn assert_json_eq_file(json: &str, name: &str) {
     assert_json_eq(json, &expected, name);
 }
 
-#[ignore]
 #[test]
 fn test_account_into_json_without_hash_0() {
     let account = generate_test_account_by_init_code_hash(false);
@@ -46,7 +45,8 @@ fn test_account_into_json_without_hash_0() {
   "json_version": 8,
   "id": "983217:0:000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
   "workchain_id": 0,
-  "boc": "te6ccgEBFgEA9gAEfdxMGQuAAACBAYICgwOEBIUFhgaHB4gIiQmKCosLjAyNDY4Ojw+RZAe+AdbzRWLeAAAAAAAAAACi6Q7dAB73wAkEAwEBQ6APQXKvQr0nmUedLZlpXZ5OtG4xRMeRXZRVYp/Nw8xC5ZgCAA8/////////9AAPP/8f//////QBDz/////////0BQEPP/////////QGAQ8/P///////9AcBDw/////////0CAAPP/8///////QCA87AEQoCASAOCwIBIA0MAAcHMS3JAAUEBLECASAQDwAFBAPpAAUEAyECASAVEgIBIBQTAAUEAlkAAwORAAVQskA=",
+  "dapp_id": "0000000000000000000000000000000000000000000000000000000000000000",
+  "boc": "te6ccgECFgEAARYABL3cTBkLgAAAgQGCAoMDhASFBYYGhweICIkJigqLC4wMjQ2ODo8PgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARZAe+AdbzRWLeAAAAAAAAAACi6Q7dAB73wAkEAwEBQ6APQXKvQr0nmUedLZlpXZ5OtG4xRMeRXZRVYp/Nw8xC5ZgCAA8/////////9AAPP/8f//////QBDz/////////0BQEPP/////////QGAQ8/P///////9AcBDw/////////0CAAPP/8///////QCA87AEQoCASAOCwIBIA0MAAcHMS3JAAUEBLECASAQDwAFBAPpAAUEAyECASAVEgIBIBQTAAUEAlkAAwORAAVQskA=",
   "last_paid": 123456789,
   "bits_dec": "991",
   "bits": "23df",
@@ -111,7 +111,6 @@ fn test_account_into_json_without_hash_0() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_account_into_json_with_hash_0() {
     let account = generate_test_account_by_init_code_hash(true);
@@ -128,8 +127,9 @@ fn test_account_into_json_with_hash_0() {
   "json_version": 8,
   "id": "983217:0:000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
   "workchain_id": 0,
-  "boc": "te6ccgECFgEAARYABL0biYMhcAAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8iyBOAA63misW8AAAAAAAAAAFF0h26AD3vnhQLJ5DbtSnn85qIDL3M45rqbL2ylzSoeYveX/SqwkVAkEAwEBQ6APQXKvQr0nmUedLZlpXZ5OtG4xRMeRXZRVYp/Nw8xC5ZgCAA8/////////9AAPP/8f//////QBDz/////////0BQEPP/////////QGAQ8/P///////9AcBDw/////////0CAAPP/8///////QCA87AEQoCASAOCwIBIA0MAAcHMS3JAAUEBLECASAQDwAFBAPpAAUEAyECASAVEgIBIBQTAAUEAlkAAwORAAVQskA=",
-  "boc1": "te6ccgEBFgEA9gAEfdxMGQuAAACBAYICgwOEBIUFhgaHB4gIiQmKCosLjAyNDY4Ojw+RZAnAAdbzRWLeAAAAAAAAAACi6Q7dAB73wAkEAwEBQ6APQXKvQr0nmUedLZlpXZ5OtG4xRMeRXZRVYp/Nw8xC5ZgCAA8/////////9AAPP/8f//////QBDz/////////0BQEPP/////////QGAQ8/P///////9AcBDw/////////0CAAPP/8///////QCA87AEQoCASAOCwIBIA0MAAcHMS3JAAUEBLECASAQDwAFBAPpAAUEAyECASAVEgIBIBQTAAUEAlkAAwORAAVQskA=",
+  "dapp_id": "0000000000000000000000000000000000000000000000000000000000000000",
+  "boc": "te6ccgECFgEAATYABP0biYMhcAAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFkCcAB1vNFYt4AAAAAAAAAAKLpDt0AHvfPCgWTyG3alPP5zUQGXuZxzXU2XtlLmlQ8xe8v+lVhIqCQQDAQFDoA9Bcq9CvSeZR50tmWldnk60bjFEx5FdlFVin83DzELlmAIADz/////////0AA8//x//////9AEPP/////////QFAQ8/////////9AYBDz8////////0BwEPD/////////QIAA8//z//////9AIDzsARCgIBIA4LAgEgDQwABwcxLckABQQEsQIBIBAPAAUEA+kABQQDIQIBIBUSAgEgFBMABQQCWQADA5EABVCyQA==",
+  "boc1": "te6ccgECFgEAARYABL3cTBkLgAAAgQGCAoMDhASFBYYGhweICIkJigqLC4wMjQ2ODo8PgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARZAnAAdbzRWLeAAAAAAAAAACi6Q7dAB73wAkEAwEBQ6APQXKvQr0nmUedLZlpXZ5OtG4xRMeRXZRVYp/Nw8xC5ZgCAA8/////////9AAPP/8f//////QBDz/////////0BQEPP/////////QGAQ8/P///////9AcBDw/////////0CAAPP/8///////QCA87AEQoCASAOCwIBIA0MAAcHMS3JAAUEBLECASAQDwAFBAPpAAUEAyECASAVEgIBIBQTAAUEAlkAAwORAAVQskA=",
   "init_code_hash": "3c28164f21b76a53cfe73510197b99c735d4d97b652e6950f317bcbfe955848a",
   "last_paid": 123456789,
   "bits_dec": "1248",
@@ -195,7 +195,6 @@ fn test_account_into_json_with_hash_0() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_account_into_json_q() {
     let account = generate_test_account_by_init_code_hash(false);
@@ -210,7 +209,8 @@ fn test_account_into_json_q() {
   "json_version": 8,
   "id": "983217:0:000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
   "workchain_id": 0,
-  "boc": "te6ccgEBFgEA9gAEfdxMGQuAAACBAYICgwOEBIUFhgaHB4gIiQmKCosLjAyNDY4Ojw+RZAe+AdbzRWLeAAAAAAAAAACi6Q7dAB73wAkEAwEBQ6APQXKvQr0nmUedLZlpXZ5OtG4xRMeRXZRVYp/Nw8xC5ZgCAA8/////////9AAPP/8f//////QBDz/////////0BQEPP/////////QGAQ8/P///////9AcBDw/////////0CAAPP/8///////QCA87AEQoCASAOCwIBIA0MAAcHMS3JAAUEBLECASAQDwAFBAPpAAUEAyECASAVEgIBIBQTAAUEAlkAAwORAAVQskA=",
+  "dapp_id": "0000000000000000000000000000000000000000000000000000000000000000",
+  "boc": "te6ccgECFgEAARYABL3cTBkLgAAAgQGCAoMDhASFBYYGhweICIkJigqLC4wMjQ2ODo8PgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARZAe+AdbzRWLeAAAAAAAAAACi6Q7dAB73wAkEAwEBQ6APQXKvQr0nmUedLZlpXZ5OtG4xRMeRXZRVYp/Nw8xC5ZgCAA8/////////9AAPP/8f//////QBDz/////////0BQEPP/////////QGAQ8/P///////9AcBDw/////////0CAAPP/8///////QCA87AEQoCASAOCwIBIA0MAAcHMS3JAAUEBLECASAQDwAFBAPpAAUEAyECASAVEgIBIBQTAAUEAlkAAwORAAVQskA=",
   "last_paid": 123456789,
   "bits": "0x3df",
   "cells": "0x16",
@@ -263,7 +263,6 @@ fn test_account_into_json_q() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_frozen_account_into_json_0() {
     let mut account = generate_test_account_by_init_code_hash(false);
@@ -286,7 +285,8 @@ fn test_frozen_account_into_json_0() {
   "json_version": 8,
   "id": "983217:0:000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
   "workchain_id": 0,
-  "boc": "te6ccgEBDgEAogABudxMGQuAAACBAYICgwOEBIUFhgaHB4gIiQmKCosLjAyNDY4Ojw+Q5AQ6AdbzRWLeAAAAAAAAAACi6Q7dABdObwUyRFy3kg41ItCU5XanJx0dk6e0bxwNLsS2/h0EUgECA87ACQICASAGAwIBIAUEAAcHMS3JAAUEBLECASAIBwAFBAPpAAUEAyECASANCgIBIAwLAAUEAlkAAwORAAVQskA=",
+  "dapp_id": "0000000000000000000000000000000000000000000000000000000000000000",
+  "boc": "te6ccgEBDgEAwgAB+dxMGQuAAACBAYICgwOEBIUFhgaHB4gIiQmKCosLjAyNDY4Ojw+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABDkBDoB1vNFYt4AAAAAAAAAAKLpDt0AF05vBTJEXLeSDjUi0JTldqcnHR2Tp7RvHA0uxLb+HQRSAQIDzsAJAgIBIAYDAgEgBQQABwcxLckABQQEsQIBIAgHAAUEA+kABQQDIQIBIA0KAgEgDAsABQQCWQADA5EABVCyQA==",
   "last_paid": 123456789,
   "bits_dec": "541",
   "bits": "221d",
@@ -344,7 +344,6 @@ fn test_frozen_account_into_json_0() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_frozen_account_into_json_with_hash_0() {
     let mut account = generate_test_account_by_init_code_hash(true);
@@ -367,7 +366,8 @@ fn test_frozen_account_into_json_with_hash_0() {
   "json_version": 8,
   "id": "983217:0:000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
   "workchain_id": 0,
-  "boc": "te6ccgEBDgEAwwAB+xuJgyFwAAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyHIDHgDreaKxbwAAAAAAAAAAUXSHboALpzeCmSIuW8kHGpFoSnK7U5OOjsnT2jeOBpdiW38Ogik8KBZPIbdqU8/nNRAZe5nHNdTZe2UuaVDzF7y/6VWEioAECA87ACQICASAGAwIBIAUEAAcHMS3JAAUEBLECASAIBwAFBAPpAAUEAyECASANCgIBIAwLAAUEAlkAAwORAAVQskA=",
+  "dapp_id": "0000000000000000000000000000000000000000000000000000000000000000",
+  "boc": "te6ccgEBDgEA4wABOxuJgyFwAAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eH4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEOQGPAHW80Vi3gAAAAAAAAAAoukO3QAXTm8FMkRct5IONSLQlOV2pycdHZOntG8cDS7Etv4dBFJ4UCyeQ27Up5/OaiAy9zOOa6my9spc0qHmL3l/0qsJFQAQIDzsAJAgIBIAYDAgEgBQQABwcxLckABQQEsQIBIAgHAAUEA+kABQQDIQIBIA0KAgEgDAsABQQCWQADA5EABVCyQA==",
   "init_code_hash": "3c28164f21b76a53cfe73510197b99c735d4d97b652e6950f317bcbfe955848a",
   "last_paid": 123456789,
   "bits_dec": "798",
@@ -426,7 +426,6 @@ fn test_frozen_account_into_json_with_hash_0() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_frozen_account_into_json_q() {
     let mut account = generate_test_account_by_init_code_hash(false);
@@ -449,7 +448,8 @@ fn test_frozen_account_into_json_q() {
   "json_version": 8,
   "id": "983217:0:000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
   "workchain_id": 0,
-  "boc": "te6ccgEBDgEAogABudxMGQuAAACBAYICgwOEBIUFhgaHB4gIiQmKCosLjAyNDY4Ojw+Q5AQ6AdbzRWLeAAAAAAAAAACi6Q7dABdObwUyRFy3kg41ItCU5XanJx0dk6e0bxwNLsS2/h0EUgECA87ACQICASAGAwIBIAUEAAcHMS3JAAUEBLECASAIBwAFBAPpAAUEAyECASANCgIBIAwLAAUEAlkAAwORAAVQskA=",
+  "dapp_id": "0000000000000000000000000000000000000000000000000000000000000000",
+  "boc": "te6ccgEBDgEAwgAB+dxMGQuAAACBAYICgwOEBIUFhgaHB4gIiQmKCosLjAyNDY4Ojw+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABDkBDoB1vNFYt4AAAAAAAAAAKLpDt0AF05vBTJEXLeSDjUi0JTldqcnHR2Tp7RvHA0uxLb+HQRSAQIDzsAJAgIBIAYDAgEgBQQABwcxLckABQQEsQIBIAgHAAUEA+kABQQDIQIBIA0KAgEgDAsABQQCWQADA5EABVCyQA==",
   "last_paid": 123456789,
   "bits": "0x21d",
   "cells": "0xe",
@@ -495,7 +495,7 @@ fn test_frozen_account_into_json_q() {
     );
 }
 
-#[ignore]
+
 #[test]
 fn test_pruned_account_into_json_0() {
     let account = generate_test_account_by_init_code_hash(false);
@@ -583,7 +583,7 @@ fn test_pruned_account_into_json_0() {
     );
 }
 
-#[ignore]
+
 #[test]
 fn test_message_into_json_0() {
     let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader {
@@ -645,7 +645,7 @@ fn test_message_into_json_0() {
     );
 }
 
-#[ignore]
+
 #[test]
 fn test_message_into_json_q() {
     let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader {
@@ -708,7 +708,6 @@ fn test_message_into_json_q() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_transaction_wo_out_msgs_into_json() {
     let mut transaction = generate_tranzaction(AccountId::from([55; 32]));
@@ -769,7 +768,6 @@ fn test_transaction_wo_out_msgs_into_json() {
 #[test]
 fn test_transaction_into_json_0() {
     let transaction = generate_tranzaction(AccountId::from([55; 32]));
-
     let message = transaction.get_out_msg(0).unwrap().unwrap();
     let cell = message.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
@@ -1402,7 +1400,7 @@ fn check_shard_state(name: &str, workchain_id: i32, mode: SerializationMode) {
     assert_json_eq_file(&json, &name);
 }
 
-#[ignore]
+
 #[test]
 fn test_serialize_mc_zerostate_s() {
     check_shard_state(
@@ -1412,7 +1410,7 @@ fn test_serialize_mc_zerostate_s() {
     );
 }
 
-#[ignore]
+
 #[test]
 fn test_serialize_mc_zerostate_q() {
     check_shard_state(
@@ -1440,7 +1438,6 @@ fn test_serialize_wc_zerostate_q() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_serialize_wc_state_s() {
     check_shard_state(
@@ -1450,7 +1447,6 @@ fn test_serialize_wc_state_s() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_serialize_wc_state_q() {
     check_shard_state(

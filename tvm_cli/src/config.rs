@@ -253,9 +253,9 @@ pub fn resolve_net_name(url: &str) -> Option<String> {
     if url == "dev" || url == "devnet" {
         return Some(TESTNET.to_string());
     }
-    if url.contains("127.0.0.1") || url.contains("0.0.0.0") || url.contains("localhost") {
-        return Some(LOCALNET.to_string());
-    }
+    //    if url.contains("127.0.0.1") || url.contains("0.0.0.0") ||
+    // url.contains("localhost") {        return Some(LOCALNET.to_string());
+    //    }
     None
 }
 
@@ -585,7 +585,6 @@ pub fn set_config(
 #[cfg(test)]
 mod tests {
     use super::resolve_net_name;
-    use super::LOCALNET;
     use super::MAINNET;
     use super::TESTNET;
 
@@ -596,11 +595,11 @@ mod tests {
         assert_eq!(resolve_net_name("https://rustnet.ton.dev"), None);
         assert_eq!(resolve_net_name("rustnet.ton.com"), None);
         assert_eq!(resolve_net_name("https://example.com"), None);
-        assert_eq!(resolve_net_name("http://localhost"), Some(LOCALNET.to_owned()));
-        assert_eq!(resolve_net_name("https://localhost"), Some(LOCALNET.to_owned()));
-        assert_eq!(resolve_net_name("localhost"), Some(LOCALNET.to_owned()));
-        assert_eq!(resolve_net_name("http://127.0.0.1"), Some(LOCALNET.to_owned()));
-        assert_eq!(resolve_net_name("https://127.0.0.1"), Some(LOCALNET.to_owned()));
+        assert_eq!(resolve_net_name("http://localhost"), None);
+        assert_eq!(resolve_net_name("https://localhost"), None);
+        assert_eq!(resolve_net_name("localhost"), None);
+        assert_eq!(resolve_net_name("http://127.0.0.1"), None);
+        assert_eq!(resolve_net_name("https://127.0.0.1"), None);
         assert_eq!(resolve_net_name("https://127.0.0.2"), None);
         assert_eq!(resolve_net_name("https://127.1.0.1"), None);
         assert_eq!(resolve_net_name("https://0.0.0.1"), None);

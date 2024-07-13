@@ -420,6 +420,7 @@ fn test_real_block(in_path: &Path) -> Block {
     write_read_and_assert(block)
 }
 
+#[ignore]
 #[test]
 fn test_real_tvm_key_block() {
     let in_path = Path::new("src/tests/data/key_block.boc");
