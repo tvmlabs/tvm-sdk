@@ -498,7 +498,7 @@ fn parse_shardstate() {
     assert_eq!(result.parsed["seq_no"], 0);
 }
 
-#[ignore] //Need MC block
+#[ignore] // Need MC block
 #[test]
 fn get_blockchain_config() {
     let client = TestClient::new();

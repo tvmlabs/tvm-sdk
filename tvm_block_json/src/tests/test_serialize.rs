@@ -495,7 +495,6 @@ fn test_frozen_account_into_json_q() {
     );
 }
 
-
 #[test]
 fn test_pruned_account_into_json_0() {
     let account = generate_test_account_by_init_code_hash(false);
@@ -583,7 +582,6 @@ fn test_pruned_account_into_json_0() {
     );
 }
 
-
 #[test]
 fn test_message_into_json_0() {
     let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader {
@@ -644,7 +642,6 @@ fn test_message_into_json_0() {
 }"#
     );
 }
-
 
 #[test]
 fn test_message_into_json_q() {
@@ -1400,7 +1397,6 @@ fn check_shard_state(name: &str, workchain_id: i32, mode: SerializationMode) {
     assert_json_eq_file(&json, &name);
 }
 
-
 #[test]
 fn test_serialize_mc_zerostate_s() {
     check_shard_state(
@@ -1409,7 +1405,6 @@ fn test_serialize_mc_zerostate_s() {
         SerializationMode::Standart,
     );
 }
-
 
 #[test]
 fn test_serialize_mc_zerostate_q() {

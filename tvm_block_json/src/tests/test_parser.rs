@@ -123,7 +123,6 @@ fn parse_block(
     (boc, cell.repr_hash(), parsed)
 }
 
-
 #[test]
 fn test_transaction_code_hash() {
     println!("MA: {:?}", *MINTER_ADDRESS);
@@ -146,7 +145,6 @@ fn test_transaction_code_hash() {
         "c6eb57829560dcba3fdc9600cbf1cfe8c9f8e1f89a4a9b085f52cb06c4996784"
     );
 }
-
 
 #[test]
 fn test_parse_block() {
@@ -229,7 +227,6 @@ fn test_parse_block() {
     assert_eq!(transactions.len(), 0);
 }
 
-
 #[test]
 fn test_parse_mc_block() {
     // crate::init_logger(None);
@@ -243,7 +240,6 @@ fn test_parse_mc_block() {
     assert!(parsed.transactions[0].body.get("chain_order").is_none());
     assert!(parsed.messages[0].body.get("chain_order").is_none());
 }
-
 
 #[test]
 fn test_parse_fast_finality_block() {
@@ -283,7 +279,6 @@ fn check_msg_chain_order(
         assert!(body.get("dst_chain_order").is_none());
     }
 }
-
 
 #[test]
 fn test_mc_chain_order() {
@@ -329,7 +324,6 @@ fn test_mc_chain_order() {
     }
 }
 
-
 #[test]
 fn test_wc_chain_order() {
     let (_, block_id, parsed) = parse_block(
@@ -367,7 +361,6 @@ fn test_wc_chain_order() {
     }
 }
 
-
 #[test]
 fn test_immediate_chain_order() {
     let (_, _, parsed) = parse_block(
@@ -396,7 +389,6 @@ fn test_immediate_chain_order() {
         check_msg_chain_order(&message.body, &message.id, *src_order, *dst_order);
     }
 }
-
 
 #[test]
 fn test_wc_sharding() {
@@ -428,7 +420,6 @@ fn test_wc_sharding() {
             .collect::<HashMap<String, Option<u32>>>(),
     );
 }
-
 
 #[test]
 fn test_mc_sharding() {
@@ -481,7 +472,6 @@ fn test_mc_sharding() {
     );
 }
 
-
 #[test]
 fn test_ext_in_sharding() {
     let (_, _, parsed) = parse_block(
@@ -516,7 +506,6 @@ fn test_ext_in_sharding() {
             .collect::<HashMap<String, Option<u32>>>(),
     );
 }
-
 
 #[test]
 fn test_ext_out_sharding() {
@@ -577,12 +566,10 @@ fn check_field(body: &Map<String, Value>, pointer: &str, value: &Value) {
     assert_eq!(Value::Object(body.clone()).pointer(pointer), Some(value));
 }
 
-
 #[test]
 fn test_file_hash() {
     println!("0");
-    let (_, _, parsed) =
-        parse_block("block.boc", None);
+    let (_, _, parsed) = parse_block("block.boc", None);
     println!("1");
     check_field(
         &parsed.block.unwrap().body,
@@ -601,7 +588,6 @@ fn test_file_hash() {
         &"0000000000000000000000000000000000000000000000000000000000000000".into(),
     );
 }
-
 
 #[test]
 fn test_reduce_config() {
@@ -631,7 +617,6 @@ fn test_reduce_config() {
         assert!(!trans.body["now"].is_null());
     }
 }
-
 
 #[test]
 fn test_transaction_id_in_msg() {
