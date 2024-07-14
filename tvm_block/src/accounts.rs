@@ -577,7 +577,7 @@ impl AccountStuff {
 impl Serializable for AccountStuff {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
         self.addr.write_to(builder)?;
-        Some(self.dapp_id).write_maybe_to(builder)?;
+        Some(self.dapp_id.clone()).write_maybe_to(builder)?;
         self.storage_stat.write_to(builder)?;
         self.storage.write_to(builder)?;
         Ok(())
@@ -1108,7 +1108,7 @@ impl Account {
         if let Some(stuff) = self.stuff() {
             builder.append_bit_one()?;
             stuff.addr.write_to(builder)?;
-            (stuff.dapp_id).write_maybe_to(builder)?;
+            Some(stuff.dapp_id.clone()).write_maybe_to(builder)?;
             stuff.storage_stat.write_to(builder)?;
             stuff.storage.last_trans_lt.write_to(builder)?; //last_trans_lt:uint64
             stuff.storage.balance.write_to(builder)?; //balance:CurrencyCollection
@@ -1121,7 +1121,7 @@ impl Account {
 
     fn read_original_format(slice: &mut SliceData) -> Result<Self> {
         let addr = Deserializable::construct_from(slice)?;
-        let dapp_id = UInt256::read_maybe_from(slice)?;
+        let dapp_id = UInt256::read_maybe_from(slice)?.unwrap();
         let storage_stat = Deserializable::construct_from(slice)?;
         let last_trans_lt = Deserializable::construct_from(slice)?; //last_trans_lt:uint64
         let balance = Deserializable::construct_from(slice)?; //balance:CurrencyCollection
@@ -1132,7 +1132,7 @@ impl Account {
 
     fn read_version(slice: &mut SliceData, _version: u32) -> Result<Self> {
         let addr = Deserializable::construct_from(slice)?;
-        let dapp_id = UInt256::read_maybe_from(slice)?;
+        let dapp_id = UInt256::read_maybe_from(slice)?.unwrap();
         let storage_stat = Deserializable::construct_from(slice)?;
         let last_trans_lt = Deserializable::construct_from(slice)?; //last_trans_lt:uint64
         let balance = CurrencyCollection::construct_from(slice)?; //balance:CurrencyCollection
