@@ -19,6 +19,7 @@ use std::sync::Mutex;
 
 use tvm_block::AccStatusChange;
 use tvm_block::Account;
+use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
@@ -185,11 +186,26 @@ pub trait TransactionExecutor {
     ) -> Result<Transaction> {
         let old_hash = account_root.repr_hash();
         let mut account = Account::construct_from_cell(account_root.clone())?;
+        let mut old_status = false;
+        if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
+            old_status = true;
+        }
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
         } else {
             account.update_storage_stat()?;
+        }
+        if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
+            if old_status == false { 
+                if let Some(message) = in_msg {
+                    if let Some(_) = message.ext_in_header() {
+                        account.set_dapp_id(account.get_id().unwrap().get_bytestring(0).as_slice().into());
+                    } else {
+                        account.set_dapp_id(message.src().unwrap().address().get_bytestring(0).as_slice().into());
+                    }
+                }
+            }
         }
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();

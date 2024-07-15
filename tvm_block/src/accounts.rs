@@ -489,7 +489,7 @@ impl fmt::Display for AccountStorage {
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-enum AccountState {
+pub enum AccountState {
     #[default]
     AccountUninit,
     AccountActive {
@@ -541,7 +541,7 @@ impl fmt::Display for AccountState {
 }
 
 #[derive(Debug, Clone, Default)]
-struct AccountStuff {
+pub struct AccountStuff {
     addr: MsgAddressInt,
     dapp_id: UInt256,
     storage_stat: StorageInfo,
@@ -798,7 +798,7 @@ impl Account {
         }
     }
 
-    fn stuff(&self) -> Option<&AccountStuff> {
+    pub fn stuff(&self) -> Option<&AccountStuff> {
         self.stuff.as_ref()
     }
 
@@ -845,7 +845,7 @@ impl Account {
 
     /// Get ref to account's AccountState.
     /// Return None if account is empty (AccountNone)
-    fn state(&self) -> Option<&AccountState> {
+    pub fn state(&self) -> Option<&AccountState> {
         self.stuff().map(|s| &s.storage.state)
     }
 
@@ -1169,6 +1169,12 @@ impl Account {
     pub fn set_addr(&mut self, addr: MsgAddressInt) {
         if let Some(s) = self.stuff_mut() {
             s.addr = addr;
+        }
+    }
+
+    pub fn set_dapp_id(&mut self, dapp_id: UInt256) {
+        if let Some(s) = self.stuff_mut() {
+            s.dapp_id = dapp_id;
         }
     }
 
