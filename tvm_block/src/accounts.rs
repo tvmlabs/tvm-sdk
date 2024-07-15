@@ -579,9 +579,11 @@ impl Serializable for AccountStuff {
         let mut builder_stuff = BuilderData::new();
         self.addr.write_to(&mut builder_stuff)?;
         self.dapp_id.write_to(&mut builder_stuff)?;
-        self.storage_stat.write_to(&mut builder_stuff)?;
+        let mut builder_stuff2 = BuilderData::new();
+        self.storage_stat.write_to(&mut builder_stuff2)?;
+        self.storage.write_to(&mut builder_stuff2)?;
         builder.checked_append_reference(builder_stuff.into_cell().unwrap()).unwrap();
-        self.storage.write_to(builder)?;
+        builder.checked_append_reference(builder_stuff2.into_cell().unwrap()).unwrap();
         Ok(())
     }
 }
@@ -1116,11 +1118,13 @@ impl Account {
             builder.append_bit_one()?;
             stuff.addr.write_to(&mut builder_stuff)?;
             stuff.dapp_id.write_to(&mut builder_stuff)?;
-            stuff.storage_stat.write_to(&mut builder_stuff)?;
-            stuff.storage.last_trans_lt.write_to(&mut builder_stuff)?; //last_trans_lt:uint64
-            stuff.storage.balance.write_to(&mut builder_stuff)?; //balance:CurrencyCollection
             builder.checked_append_reference(builder_stuff.into_cell().unwrap()).unwrap();
-            stuff.storage.state.write_to(builder)?; //state:AccountState
+            let mut builder_stuff2 = BuilderData::new();
+            stuff.storage_stat.write_to(&mut builder_stuff2)?;
+            stuff.storage.last_trans_lt.write_to(&mut builder_stuff2)?; //last_trans_lt:uint64
+            stuff.storage.balance.write_to(&mut builder_stuff2)?; //balance:CurrencyCollection
+            stuff.storage.state.write_to(&mut builder_stuff2)?; //state:AccountState
+            builder.checked_append_reference(builder_stuff2.into_cell().unwrap()).unwrap();
         } else {
             builder.append_bit_zero()?;
         }
@@ -1132,24 +1136,28 @@ impl Account {
         let mut slice_builder = SliceData::load_cell(builder).unwrap();
         let addr = Deserializable::construct_from(&mut slice_builder)?;
         let dapp_id = UInt256::construct_from(&mut slice_builder)?;
+        let builder2 = slice.reference(0).unwrap();
+        slice_builder = SliceData::load_cell(builder2).unwrap();
         let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
         let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; //last_trans_lt:uint64
         let balance = Deserializable::construct_from(&mut slice_builder)?; //balance:CurrencyCollection
-        let state = Deserializable::construct_from(slice)?; //state:AccountState
+        let state = Deserializable::construct_from(&mut slice_builder)?; //state:AccountState
         let storage = AccountStorage { last_trans_lt, balance, state, ..AccountStorage::default() };
         Ok(Account::with_stuff(AccountStuff { addr, dapp_id, storage_stat, storage }))
     }
 
-    fn read_version(slice: &mut SliceData, _version: u32) -> Result<Self> {
+    pub fn read_version(slice: &mut SliceData, _version: u32) -> Result<Self> {
         let builder = slice.reference(0).unwrap();
         let mut slice_builder = SliceData::load_cell(builder).unwrap();
         let addr = Deserializable::construct_from(&mut slice_builder)?;
-        let dapp_id = UInt256::read_maybe_from(&mut slice_builder)?.unwrap();
+        let dapp_id = UInt256::construct_from(&mut slice_builder)?;
+        let builder2 = slice.reference(1).unwrap();
+        slice_builder = SliceData::load_cell(builder2).unwrap();
         let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
-        let last_trans_lt = Deserializable::construct_from(slice)?; //last_trans_lt:uint64
-        let balance = CurrencyCollection::construct_from(slice)?; //balance:CurrencyCollection
-        let state = Deserializable::construct_from(slice)?; //state:AccountState
-        let init_code_hash = UInt256::read_maybe_from(slice)?;
+        let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; //last_trans_lt:uint64
+        let balance = CurrencyCollection::construct_from(&mut slice_builder)?; //balance:CurrencyCollection
+        let state = Deserializable::construct_from(&mut slice_builder)?; //state:AccountState
+        let init_code_hash = UInt256::read_maybe_from(&mut slice_builder)?;
         let storage = AccountStorage { last_trans_lt, balance, state, init_code_hash };
         let stuff = AccountStuff { addr, dapp_id, storage_stat, storage };
         Ok(Account::with_stuff(stuff))
