@@ -1131,12 +1131,12 @@ impl Account {
         Ok(())
     }
 
-    fn read_original_format(slice: &mut SliceData) -> Result<Self> {
+    pub fn read_original_format(slice: &mut SliceData) -> Result<Self> {
         let builder = slice.reference(0).unwrap();
         let mut slice_builder = SliceData::load_cell(builder).unwrap();
         let addr = Deserializable::construct_from(&mut slice_builder)?;
         let dapp_id = UInt256::construct_from(&mut slice_builder)?;
-        let builder2 = slice.reference(0).unwrap();
+        let builder2 = slice.reference(1).unwrap();
         slice_builder = SliceData::load_cell(builder2).unwrap();
         let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
         let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; //last_trans_lt:uint64
