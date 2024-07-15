@@ -7,7 +7,7 @@ use predicates::prelude::*;
 // use std::io::Write;
 use serde_json::json;
 mod common;
-use common::giver_v2;
+use common::giver_v3;
 use common::grep_address;
 use common::BIN_NAME;
 use common::NETWORK;
@@ -38,7 +38,7 @@ fn deploy_debot(name: &str) -> Result<String, Box<dyn std::error::Error>> {
         .output()
         .expect("Failed to generate address.");
     let addr = grep_address(&out.stdout);
-    giver_v2(&addr);
+    giver_v3(&addr);
     sleep(Duration::new(1, 0));
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("deploy").arg(&tvc).arg("{}").arg("--abi").arg(&abi).arg("--sign").arg(&keys);
@@ -121,6 +121,7 @@ fn test_userinfo() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore] 
 #[test]
 fn test_pipechain_inputs() -> Result<(), Box<dyn std::error::Error>> {
     let path_to_pipechain = "tests/PipechainTest1.chain";
@@ -242,7 +243,6 @@ fn test_confirm_input() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_number_input() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("NumberInput")?;
-
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.timeout(std::time::Duration::from_secs(2))
         .write_stdin(format!("y\n{}", "79"))

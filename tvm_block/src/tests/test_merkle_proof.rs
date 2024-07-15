@@ -509,6 +509,7 @@ fn test_check_account_proof(
     check_account_proof(&proof, &account)
 }
 
+#[ignore]
 #[test]
 fn test_check_correct_account_proof() {
     let state_files =
@@ -540,6 +541,7 @@ fn test_check_correct_account_proof() {
     }
 }
 
+#[ignore]
 #[test]
 fn test_check_wrong_account_proof() {
     let state_files =

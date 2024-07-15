@@ -220,7 +220,7 @@ impl Config {
 
 const MAIN_ENDPOINTS: &[&str] = &["https://mainnet.evercloud.dev"];
 const NET_ENDPOINTS: &[&str] = &["https://devnet.evercloud.dev"];
-const SE_ENDPOINTS: &[&str] = &["http://0.0.0.0", "http://127.0.0.1", "http://localhost"];
+const SE_ENDPOINTS: &[&str] = &["http://localhost"];
 
 pub fn resolve_net_name(url: &str) -> Option<String> {
     let url_regex = Regex::new(r"^\s*(?:https?://)?(?P<net>\w+\.evercloud\.dev)\s*")

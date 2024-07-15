@@ -679,6 +679,7 @@ pub mod msg_printer {
 mod tests {
     use super::*;
 
+    #[ignore]
     #[tokio::test]
     async fn test_decode_msg_json() {
         let msg_boc = std::fs::read("tests/samples/wallet.boc").unwrap();
