@@ -29,7 +29,6 @@ use crate::sha256_digest;
 
 pub type Status = Result<()>;
 
-
 #[macro_export]
 macro_rules! error {
     ($error:literal) => {
