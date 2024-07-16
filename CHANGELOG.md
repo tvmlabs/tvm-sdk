@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] – 2024-07-10
+
+First release of SDK supporting Acki Nacki protocol.
+
 ## [1.45.1] – 2023-12-19
 
 ### Fixed
