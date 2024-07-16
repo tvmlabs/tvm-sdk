@@ -13,8 +13,8 @@ use std::cmp;
 use std::fmt;
 use std::fmt::LowerHex;
 use std::fmt::UpperHex;
+use std::str;
 use std::str::FromStr;
-use std::str::{self};
 
 pub type Error = failure::Error;
 pub type Result<T> = std::result::Result<T, Error>;
@@ -22,7 +22,7 @@ use num::FromPrimitive;
 use smallvec::SmallVec;
 pub use thiserror::Error;
 
-use crate::base64_decode_to_slice;
+use crate::base64_decode_to_exact_slice;
 use crate::cell::BuilderData;
 use crate::cell::SliceData;
 use crate::sha256_digest;
@@ -224,7 +224,7 @@ impl FromStr for UInt256 {
         match value.len() {
             64 => hex::decode_to_slice(value, &mut result.0)?,
             66 => hex::decode_to_slice(&value[2..], &mut result.0)?,
-            44 => base64_decode_to_slice(value, &mut result.0)?,
+            44 => base64_decode_to_exact_slice(value, &mut result.0)?,
             _ => fail!("invalid account ID string (32 bytes expected), but got string {}", value),
         }
         Ok(result)
@@ -465,3 +465,26 @@ impl<T: std::io::Read> ByteOrderRead for T {
 }
 
 pub type Bitmask = u8;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::base64_encode;
+
+    #[test]
+    fn test_from_str_base64_for_uint256() {
+        for u256_str in [
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "0x9999999999999999999999999999999999999999999999999999999999999999",
+            "0000000000000000000000000000000000000000000000000000000000000001",
+            "9999999999999999999999999999999999999999999999999999999999999999",
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE=",
+        ] {
+            let u256 = UInt256::from_str(u256_str).unwrap();
+            let base64_str = base64_encode(&u256);
+            assert_eq!(u256, UInt256::from_str(base64_str.as_str()).unwrap());
+        }
+    }
+}

@@ -54,6 +54,10 @@ codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = "abort"   # Abort on panic
 strip = true      # Automatically strip symbols from the binary.
 
+[profile.test]
+# IMPORTANT! because with "abort" it will complain https://github.com/rust-lang/cargo/issues/6313
+panic = "unwind"
+
 [workspace.dependencies]
 aes-ctr = "0.6.0"
 anyhow = "1.0.79"
