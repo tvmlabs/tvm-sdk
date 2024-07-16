@@ -126,6 +126,7 @@ pub struct ExecuteParams {
     pub signature_id: i32,
     pub vm_execution_is_block_related: Arc<Mutex<bool>>,
     pub block_collation_was_finished: Arc<Mutex<bool>>,
+    pub src_dapp_id: Option<UInt256>
 }
 
 pub struct ActionPhaseResult {
@@ -166,6 +167,7 @@ impl Default for ExecuteParams {
             signature_id: 0,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
+            src_dapp_id: None
         }
     }
 }
@@ -190,6 +192,7 @@ pub trait TransactionExecutor {
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
             old_status = true;
         }
+        let src_dapp_id = params.src_dapp_id.clone();
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
@@ -202,7 +205,7 @@ pub trait TransactionExecutor {
                     if let Some(_) = message.ext_in_header() {
                         account.set_dapp_id(account.get_id().unwrap().get_bytestring(0).as_slice().into());
                     } else {
-                        account.set_dapp_id(message.src().unwrap().address().get_bytestring(0).as_slice().into());
+                        account.set_dapp_id(src_dapp_id.unwrap());
                     }
                 }
             }
