@@ -202,10 +202,10 @@ pub trait TransactionExecutor {
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
             if old_status == false { 
                 if let Some(message) = in_msg {
-                    if let Some(_) = message.ext_in_header() {
-                        account.set_dapp_id(account.get_id().unwrap().get_bytestring(0).as_slice().into());
-                    } else {
+                    if let Some(_) = message.int_header() {
                         account.set_dapp_id(src_dapp_id.unwrap());
+                    } else {
+                        account.set_dapp_id(account.get_id().unwrap().get_bytestring(0).as_slice().into());
                     }
                 }
             }
