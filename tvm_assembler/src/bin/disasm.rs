@@ -133,8 +133,8 @@ fn subcommand_extract(
     index: usize,
     root: Option<usize>,
 ) -> Status {
-    let boc =
-        std::fs::read(filename).map_err(|e| tvm_types::error!("failed to read input file: {}", e))?;
+    let boc = std::fs::read(filename)
+        .map_err(|e| tvm_types::error!("failed to read input file: {}", e))?;
     let roots = read_boc(boc).map_err(|e| tvm_types::error!("{}", e))?.roots;
 
     let root_index = root.unwrap_or_default();
@@ -164,8 +164,8 @@ fn subcommand_fragment(fragment: String) -> Status {
 }
 
 fn subcommand_text(filename: String, stateinit: bool, full: bool) -> Status {
-    let boc =
-        std::fs::read(filename).map_err(|e| tvm_types::error!("failed to read input file: {}", e))?;
+    let boc = std::fs::read(filename)
+        .map_err(|e| tvm_types::error!("failed to read input file: {}", e))?;
     let roots = read_boc(boc).map_err(|e| tvm_types::error!("{}", e))?.roots;
 
     let roots_count = roots.len();
