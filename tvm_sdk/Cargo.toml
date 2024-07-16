@@ -12,6 +12,7 @@ license.workspace = true
 tvm_abi.workspace = true
 tvm_block.workspace = true
 tvm_types.workspace = true
+failure.workspace = true
 
 api_derive = { path = "../api/derive" }
 api_info = { path = "../api/info" }

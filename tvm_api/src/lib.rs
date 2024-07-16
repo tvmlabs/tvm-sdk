@@ -407,7 +407,7 @@ impl fmt::Display for RempMessageStatus {
 }
 
 impl TryFrom<u8> for RempMessageLevel {
-    type Error = anyhow::Error;
+    type Error = tvm_types::Error;
 
     fn try_from(value: u8) -> Result<Self> {
         Ok(match value {
@@ -573,7 +573,7 @@ pub fn tag_from_data(data: &[u8]) -> u32 {
 }
 
 impl TryFrom<&Arc<dyn KeyOption>> for ton::PublicKey {
-    type Error = anyhow::Error;
+    type Error = tvm_types::Error;
 
     fn try_from(value: &Arc<dyn KeyOption>) -> Result<Self> {
         let key = UInt256::with_array(value.pub_key()?.try_into()?);
@@ -583,7 +583,7 @@ impl TryFrom<&Arc<dyn KeyOption>> for ton::PublicKey {
 }
 
 impl TryFrom<&ton::PublicKey> for Arc<dyn KeyOption> {
-    type Error = anyhow::Error;
+    type Error = tvm_types::Error;
 
     fn try_from(value: &ton::PublicKey) -> Result<Self> {
         match value {

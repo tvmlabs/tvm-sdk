@@ -177,14 +177,14 @@ impl NetworkContext {
             .result;
 
         if blocks.is_empty() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Unable to resolve zerostate's root hash: can't get masterchain block #1"
             );
         }
 
         let prev_ref = &blocks[0]["prev_ref"];
         if prev_ref.is_null() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Unable to resolve zerostate's root hash: prev_ref of the block #1 is not set"
             );
         }
