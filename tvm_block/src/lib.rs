@@ -216,7 +216,7 @@ pub trait Deserializable: Default {
     fn read_from_reference(&mut self, slice: &mut SliceData) -> Result<()> {
         self.read_from_cell(slice.checked_drain_reference()?)
     }
-    fn invalid_tag(t: u32) -> anyhow::Error {
+    fn invalid_tag(t: u32) -> tvm_types::Error {
         let s = std::any::type_name::<Self>().to_string();
         error!(BlockError::InvalidConstructorTag { t, s })
     }

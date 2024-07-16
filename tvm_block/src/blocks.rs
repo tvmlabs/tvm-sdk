@@ -147,7 +147,7 @@ impl Display for BlockIdExt {
 }
 
 impl FromStr for BlockIdExt {
-    type Err = anyhow::Error;
+    type Err = tvm_types::Error;
 
     fn from_str(s: &str) -> Result<Self> {
         // (0:1800000000000000, 1203696, rh

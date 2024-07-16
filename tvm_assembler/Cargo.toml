@@ -11,6 +11,7 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 clap = { features = ["derive"], workspace = true }
+failure.workspace = true
 hex.workspace = true
 log.workspace = true
 num.workspace = true

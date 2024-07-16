@@ -584,7 +584,7 @@ impl BlockProof {
     pub fn deserialize(data: &[u8]) -> Result<Self> {
         let proof = tvm_block::BlockProof::construct_from_bytes(data)?;
         let signatures =
-            proof.signatures.ok_or_else(|| anyhow::anyhow!("Signatures must be filled"))?;
+            proof.signatures.ok_or_else(|| tvm_types::error!("Signatures must be filled"))?;
 
         let mut pure_signatures = Vec::new();
         tvm_types::HashmapType::iterate_slices(
@@ -621,14 +621,14 @@ impl BlockProof {
             MerkleProof::construct_from(&mut SliceData::load_cell(self.root.clone())?)?;
         let block_virt_root = merkle_proof.proof.clone().virtualize(1);
         if *self.id().root_hash() != block_virt_root.repr_hash() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "merkle proof has invalid virtual hash (found: {}, expected: {})",
                 block_virt_root.repr_hash(),
                 self.id(),
             )
         }
         if block_virt_root.repr_hash() != self.id().root_hash {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with incorrect root hash: \
                     expected {:x}, found: {:x} ",
                 self.id(),
@@ -641,7 +641,7 @@ impl BlockProof {
 
     pub async fn check_proof(&self, engine: &impl ProofHelperEngine) -> Result<(Block, BlockInfo)> {
         if !self.id().shard().is_masterchain() {
-            anyhow::bail!("Only masterchain block proofs are supported");
+            tvm_types::fail!("Only masterchain block proofs are supported");
         }
 
         let (virt_block, virt_block_info) = self.pre_check_block_proof()?;
@@ -670,20 +670,20 @@ impl BlockProof {
         virt_block_info: &BlockInfo,
     ) -> Result<()> {
         if !self.id().shard().is_masterchain() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Can't verify non masterchain block {} using previous key masterchain block",
                 self.id(),
             )
         }
         if !prev_key_block_proof.id().shard().is_masterchain() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Invalid previous key block: it's id {} doesn't belong to the masterchain",
                 prev_key_block_proof.id(),
             )
         }
         let prev_key_block_seqno = virt_block.read_info()?.prev_key_block_seqno();
         if prev_key_block_proof.id().seq_no != prev_key_block_seqno {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Can't verify block {} using key block {} because the block declares different \
                     previous key block seqno {}",
                 self.id(),
@@ -692,7 +692,7 @@ impl BlockProof {
             )
         }
         if prev_key_block_proof.id().seq_no >= self.id().seq_no {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Can't verify block {} using key block {} with larger or equal seqno",
                 self.id(),
                 prev_key_block_proof.id(),
@@ -734,7 +734,7 @@ impl BlockProof {
         let _state_update = virt_block.read_state_update()?;
 
         if info.version() != 0 {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with incorrect block info's version {}",
                 self.id(),
                 info.version(),
@@ -742,7 +742,7 @@ impl BlockProof {
         }
 
         if info.seq_no() != self.id().seq_no() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with seq_no {}, but {} is expected",
                 self.id(),
                 info.seq_no(),
@@ -751,7 +751,7 @@ impl BlockProof {
         }
 
         if info.shard() != self.id().shard() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with shard id {}, but {} is expected",
                 self.id(),
                 info.shard(),
@@ -760,7 +760,7 @@ impl BlockProof {
         }
 
         if info.read_master_ref()?.is_some() != (!info.shard().is_masterchain()) {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with invalid not_master flag \
                     in block info",
                 self.id(),
@@ -770,7 +770,7 @@ impl BlockProof {
         if self.id().shard().is_masterchain()
             && (info.after_merge() || info.before_split() || info.after_split())
         {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with a block info which declares \
                     split/merge for a masterchain block",
                 self.id(),
@@ -778,7 +778,7 @@ impl BlockProof {
         }
 
         if info.after_merge() && info.after_split() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with a block info which declares both \
                     after merge and after split flags",
                 self.id(),
@@ -786,7 +786,7 @@ impl BlockProof {
         }
 
         if info.after_split() && (info.shard().is_full()) {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with a block info which declares both \
                     after_split flag and non zero shard prefix",
                 self.id(),
@@ -794,7 +794,7 @@ impl BlockProof {
         }
 
         if info.after_merge() && !info.shard().can_split() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with a block info which declares both \
                     after_merge flag and shard prefix which can't split anymore",
                 self.id(),
@@ -802,7 +802,7 @@ impl BlockProof {
         }
 
         if info.key_block() && !self.id().shard().is_masterchain() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for block {} contains a Merkle proof which declares non master chain but \
                     key block",
                 self.id(),
@@ -849,7 +849,7 @@ impl BlockProof {
         let (virt_key_block, prev_key_block_info) = prev_key_block_proof.pre_check_block_proof()?;
 
         if !prev_key_block_info.key_block() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "proof for key block {} contains a Merkle proof which declares non key block",
                 prev_key_block_proof.id(),
             )
@@ -870,7 +870,7 @@ impl BlockProof {
             .read_extra()?
             .read_custom()?
             .and_then(|custom| custom.config().cloned())
-            .ok_or_else(|| anyhow::anyhow!("State doesn't contain `custom` field"))?;
+            .ok_or_else(|| tvm_types::error!("State doesn't contain `custom` field"))?;
         calc_subset_for_workchain(
             &validator_set,
             &config,
@@ -889,7 +889,7 @@ impl BlockProof {
     ) -> Result<()> {
         // Pre checks
         if self.signatures.validator_list_hash_short() != list_hash_short {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Bad validator set hash in proof for block {}, calculated: {}, found: {}",
                 self.id(),
                 list_hash_short,
@@ -910,7 +910,7 @@ impl BlockProof {
 
         // Check weight
         if weight != self.signatures.sig_weight() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Proof for {}: total signature weight mismatch: declared: {}, calculated: {}",
                 self.id(),
                 self.signatures.sig_weight(),
@@ -919,7 +919,7 @@ impl BlockProof {
         }
 
         if weight * 3 <= total_weight * 2 {
-            anyhow::bail!("Proof for {}: too small signatures weight", self.id(),);
+            tvm_types::fail!("Proof for {}: too small signatures weight", self.id(),);
         }
 
         Ok(())
@@ -931,13 +931,13 @@ impl BlockProof {
         block_info: &BlockInfo,
     ) -> Result<(Vec<ValidatorDescr>, u32)> {
         if !self.id().shard().is_masterchain() {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Can't check proof for non master block {} using master state",
                 self.id(),
             );
         }
         if block_info.prev_key_block_seqno() > 0 {
-            anyhow::bail!(
+            tvm_types::fail!(
                 "Can't check proof for block {} using zerostate, because it is older than \
                     the previous key block with seq_no {}",
                 self.id(),
@@ -948,7 +948,7 @@ impl BlockProof {
         let (cur_validator_set, cc_config) = zerostate.read_cur_validator_set_and_cc_conf()?;
         let mc_state_extra = zerostate
             .read_custom()?
-            .ok_or_else(|| anyhow::anyhow!("Can't read custom field from the zerostate"))?;
+            .ok_or_else(|| tvm_types::error!("Can't read custom field from the zerostate"))?;
 
         let (validators, hash_short) = calc_subset_for_workchain(
             &cur_validator_set,
@@ -990,7 +990,7 @@ async fn resolve_initial_trusted_key_block(
         return Ok((seq_no, UInt256::from_slice(root_hash)));
     }
 
-    anyhow::bail!(
+    tvm_types::fail!(
         "Unable to resolve trusted key-block for network with zerostate root_hash: `{}`",
         network_uid.zerostate_root_hash,
     )

@@ -13,6 +13,7 @@ license.workspace = true
 anyhow.workspace = true
 byteorder.workspace = true
 extfmt.workspace = true
+failure.workspace = true
 hex.workspace = true
 lazy_static.workspace = true
 ordered-float.workspace = true

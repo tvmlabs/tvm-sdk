@@ -36,7 +36,7 @@ fn round_trip_test(filename: &str, check_bin: bool) -> Status {
     let bin0 = &std::fs::read(filename)?;
     let toc0 = read_boc(bin0)?.withdraw_single_root()?;
     let mut asm0 = disasm(&mut SliceData::load_cell(toc0.clone())?)?;
-    let toc1 = crate::compile_code_to_cell(&asm0.clone()).map_err(|e| anyhow::anyhow!("{}", e))?;
+    let toc1 = crate::compile_code_to_cell(&asm0.clone()).map_err(|e| tvm_types::error!("{}", e))?;
     let mut asm1 = disasm(&mut SliceData::load_cell(toc1.clone())?)?;
 
     if !check_bin {
@@ -111,7 +111,7 @@ fn fragments() -> Status {
 fn check_code(name: &str) -> Status {
     let inp = std::fs::read_to_string(format!("src/tests/disasm/{}.in", name))?;
     let out = std::fs::read_to_string(format!("src/tests/disasm/{}.out", name))?;
-    let mut code = crate::compile_code(&inp).map_err(|e| anyhow::anyhow!("{}", e))?;
+    let mut code = crate::compile_code(&inp).map_err(|e| tvm_types::error!("{}", e))?;
     let dis = disasm(&mut code)?;
     if dis == out {
         return Ok(());
@@ -124,7 +124,7 @@ fn check_code(name: &str) -> Status {
             _ => (),
         }
     }
-    Err(anyhow::anyhow!("check failed"))
+    Err(tvm_types::error!("check failed"))
 }
 
 #[test]

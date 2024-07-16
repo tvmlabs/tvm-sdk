@@ -27,6 +27,7 @@ async-trait.workspace = true
 base64.workspace = true
 chrono.workspace = true
 clap = "2"
+failure.workspace = true
 futures.workspace = true
 hex.workspace = true
 indicatif = "0.17.7"
