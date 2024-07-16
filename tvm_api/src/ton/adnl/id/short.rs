@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.id.short`\n\n```text\nadnl.id.short id:int256 = adnl.id.Short;\n```\n"]
 pub struct Short {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Short {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3e3f654f)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Short { id } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Short {
 }
 impl crate::IntoBoxed for Short {
     type Boxed = crate::ton::adnl::id::Short;
+
     fn into_boxed(self) -> crate::ton::adnl::id::Short {
         crate::ton::adnl::id::Short::Adnl_Id_Short(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.blockSignature`\n\n```text\ntonNode.blockSignature who:int256 signature:bytes = tonNode.BlockSignature;\n```\n"]
 pub struct BlockSignature {
@@ -15,6 +16,7 @@ impl crate::BareSerialize for BlockSignature {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x50f03c33)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockSignature { who, signature } = self;
         _ser.write_bare::<crate::ton::int256>(who)?;
@@ -33,6 +35,7 @@ impl crate::BareDeserialize for BlockSignature {
 }
 impl crate::IntoBoxed for BlockSignature {
     type Boxed = crate::ton::ton_node::BlockSignature;
+
     fn into_boxed(self) -> crate::ton::ton_node::BlockSignature {
         crate::ton::ton_node::BlockSignature::TonNode_BlockSignature(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `validator.Group`\n\n```text\nvalidator.group workchain:int shard:long catchain_seqno:int config_hash:int256 members:(vector validator.groupMember) = validator.Group;\n\nvalidator.groupEx workchain:int shard:long vertical_seqno:int catchain_seqno:int config_hash:int256 members:(vector validator.groupMember) = validator.Group;\n\nvalidator.groupNew workchain:int shard:long vertical_seqno:int last_key_block_seqno:int catchain_seqno:int config_hash:int256 members:(vector validator.groupMember) = validator.Group;\n```\n"]
 pub enum Group {
@@ -14,6 +15,7 @@ impl Group {
             Group::Validator_GroupNew(ref x) => &x.catchain_seqno,
         }
     }
+
     pub fn config_hash(&self) -> &crate::ton::int256 {
         match self {
             Group::Validator_Group(ref x) => &x.config_hash,
@@ -21,12 +23,14 @@ impl Group {
             Group::Validator_GroupNew(ref x) => &x.config_hash,
         }
     }
+
     pub fn last_key_block_seqno(&self) -> Option<&crate::ton::int> {
         match self {
             Group::Validator_GroupNew(ref x) => Some(&x.last_key_block_seqno),
             _ => None,
         }
     }
+
     pub fn members(
         &self,
     ) -> &crate::ton::vector<
@@ -39,6 +43,7 @@ impl Group {
             Group::Validator_GroupNew(ref x) => &x.members,
         }
     }
+
     pub fn shard(&self) -> &crate::ton::long {
         match self {
             Group::Validator_Group(ref x) => &x.shard,
@@ -46,6 +51,7 @@ impl Group {
             Group::Validator_GroupNew(ref x) => &x.shard,
         }
     }
+
     pub fn vertical_seqno(&self) -> Option<&crate::ton::int> {
         match self {
             Group::Validator_GroupEx(ref x) => Some(&x.vertical_seqno),
@@ -53,6 +59,7 @@ impl Group {
             _ => None,
         }
     }
+
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
             Group::Validator_Group(ref x) => &x.workchain,
@@ -84,6 +91,7 @@ impl crate::BoxedDeserialize for Group {
             crate::ConstructorNumber(0x9843a14d),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

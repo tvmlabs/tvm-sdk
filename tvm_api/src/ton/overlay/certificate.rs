@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.certificate`\n\n```text\noverlay.certificate issued_by:PublicKey expire_at:int max_size:int signature:bytes = overlay.Certificate;\n```\n"]
 pub struct Certificate {
@@ -17,6 +18,7 @@ impl crate::BareSerialize for Certificate {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xe09ed731)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Certificate { issued_by, expire_at, max_size, signature } = self;
         _ser.write_boxed::<crate::ton::PublicKey>(issued_by)?;
@@ -39,6 +41,7 @@ impl crate::BareDeserialize for Certificate {
 }
 impl crate::IntoBoxed for Certificate {
     type Boxed = crate::ton::overlay::Certificate;
+
     fn into_boxed(self) -> crate::ton::overlay::Certificate {
         crate::ton::overlay::Certificate::Overlay_Certificate(self)
     }

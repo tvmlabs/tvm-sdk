@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.addr`\n\n```text\nengine.addr ip:int port:int categories:(vector int) priority_categories:(vector int) = engine.Addr;\n```\n"]
 pub struct Addr {
@@ -12,6 +13,7 @@ impl crate::BareSerialize for Addr {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xef311fec)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Addr { ip, port, categories, priority_categories } = self;
         _ser.write_bare::<crate::ton::int>(ip)?;
@@ -38,6 +40,7 @@ impl crate::BareDeserialize for Addr {
 }
 impl crate::IntoBoxed for Addr {
     type Boxed = crate::ton::engine::Addr;
+
     fn into_boxed(self) -> crate::ton::engine::Addr {
         crate::ton::engine::Addr::Engine_Addr(self)
     }
@@ -58,6 +61,7 @@ impl crate::BareSerialize for AddrProxy {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8adf6549)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let AddrProxy {
             in_ip,
@@ -106,6 +110,7 @@ impl crate::BareDeserialize for AddrProxy {
 }
 impl crate::IntoBoxed for AddrProxy {
     type Boxed = crate::ton::engine::Addr;
+
     fn into_boxed(self) -> crate::ton::engine::Addr {
         crate::ton::engine::Addr::Engine_AddrProxy(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempCatchainMessageIds`\n\n```text\ntonNode.rempCatchainMessageIds id:int256 uid:int256 = tonNode.rempCatchainMessageIds;\n```\n"]
 pub struct RempCatchainMessageIds {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for RempCatchainMessageIds {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x5509db82)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempCatchainMessageIds { id, uid } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for RempCatchainMessageIds {
 }
 impl crate::IntoBoxed for RempCatchainMessageIds {
     type Boxed = crate::ton::ton_node::RempCatchainMessageIds;
+
     fn into_boxed(self) -> crate::ton::ton_node::RempCatchainMessageIds {
         crate::ton::ton_node::RempCatchainMessageIds::TonNode_RempCatchainMessageIds(self)
     }

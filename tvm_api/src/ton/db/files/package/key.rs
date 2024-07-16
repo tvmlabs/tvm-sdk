@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.files.package.key`\n\n```text\ndb.files.package.key package_id:int key:Bool temp:Bool = db.files.Key;\n```\n"]
 pub struct Key {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for Key {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa504033e)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Key { package_id, key, temp } = self;
         _ser.write_bare::<crate::ton::int>(package_id)?;
@@ -31,6 +33,7 @@ impl crate::BareDeserialize for Key {
 }
 impl crate::IntoBoxed for Key {
     type Boxed = crate::ton::db::files::Key;
+
     fn into_boxed(self) -> crate::ton::db::files::Key {
         crate::ton::db::files::Key::Db_Files_Package_Key(self)
     }

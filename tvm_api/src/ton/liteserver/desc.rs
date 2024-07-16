@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteserver.desc`\n\n```text\nliteserver.desc id:PublicKey ip:int port:int = liteserver.Desc;\n```\n"]
 pub struct Desc {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for Desc {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc449a474)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Desc { id, ip, port } = self;
         _ser.write_boxed::<crate::ton::PublicKey>(id)?;
@@ -31,6 +33,7 @@ impl crate::BareDeserialize for Desc {
 }
 impl crate::IntoBoxed for Desc {
     type Boxed = crate::ton::liteserver::Desc;
+
     fn into_boxed(self) -> crate::ton::liteserver::Desc {
         crate::ton::liteserver::Desc::Liteserver_Desc(self)
     }

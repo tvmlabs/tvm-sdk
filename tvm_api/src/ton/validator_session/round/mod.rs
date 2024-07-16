@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.round.Id`\n\n```text\nvalidatorSession.round.id session:int256 height:long prev_block:int256 seqno:int = validatorSession.round.Id;\n```\n"]
 pub enum Id {
@@ -10,21 +11,25 @@ impl Id {
             Id::ValidatorSession_Round_Id(ref x) => &x.height,
         }
     }
+
     pub fn prev_block(&self) -> &crate::ton::int256 {
         match self {
             Id::ValidatorSession_Round_Id(ref x) => &x.prev_block,
         }
     }
+
     pub fn seqno(&self) -> &crate::ton::int {
         match self {
             Id::ValidatorSession_Round_Id(ref x) => &x.seqno,
         }
     }
+
     pub fn session(&self) -> &crate::ton::int256 {
         match self {
             Id::ValidatorSession_Round_Id(ref x) => &x.session,
         }
     }
+
     pub fn only(self) -> crate::ton::validator_session::round::id::Id {
         match self {
             Id::ValidatorSession_Round_Id(x) => x,
@@ -48,6 +53,7 @@ impl crate::BoxedDeserialize for Id {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0025cfa5)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -98,6 +104,7 @@ impl Message {
             _ => None,
         }
     }
+
     pub fn candidate(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::ValidatorSession_Message_ApprovedBlock(ref x) => Some(&x.candidate),
@@ -109,6 +116,7 @@ impl Message {
             _ => None,
         }
     }
+
     pub fn collated_data_file_hash(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::ValidatorSession_Message_SubmittedBlock(ref x) => {
@@ -117,24 +125,28 @@ impl Message {
             _ => None,
         }
     }
+
     pub fn file_hash(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::ValidatorSession_Message_SubmittedBlock(ref x) => Some(&x.file_hash),
             _ => None,
         }
     }
+
     pub fn reason(&self) -> Option<&crate::ton::bytes> {
         match self {
             Message::ValidatorSession_Message_RejectedBlock(ref x) => Some(&x.reason),
             _ => None,
         }
     }
+
     pub fn root_hash(&self) -> Option<&crate::ton::int256> {
         match self {
             Message::ValidatorSession_Message_SubmittedBlock(ref x) => Some(&x.root_hash),
             _ => None,
         }
     }
+
     pub fn round(&self) -> &crate::ton::int {
         match self {
             Message::ValidatorSession_Message_ApprovedBlock(ref x) => &x.round,
@@ -147,6 +159,7 @@ impl Message {
             Message::ValidatorSession_Message_VoteFor(ref x) => &x.round,
         }
     }
+
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
             Message::ValidatorSession_Message_ApprovedBlock(ref x) => Some(&x.signature),
@@ -200,6 +213,7 @@ impl crate::BoxedDeserialize for Message {
             crate::ConstructorNumber(0x61f0fe2f),
         ]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.controlInterface`\n\n```text\nengine.controlInterface id:int256 port:int allowed:(vector engine.controlProcess) = engine.ControlInterface;\n```\n"]
 pub struct ControlInterface {
@@ -12,6 +13,7 @@ impl crate::BareSerialize for ControlInterface {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x31816fab)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ControlInterface { id, port, allowed } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
@@ -38,6 +40,7 @@ impl crate::BareDeserialize for ControlInterface {
 }
 impl crate::IntoBoxed for ControlInterface {
     type Boxed = crate::ton::engine::ControlInterface;
+
     fn into_boxed(self) -> crate::ton::engine::ControlInterface {
         crate::ton::engine::ControlInterface::Engine_ControlInterface(self)
     }

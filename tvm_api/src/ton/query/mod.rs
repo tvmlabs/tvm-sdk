@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `query.Fees`\n\n```text\nquery.fees source_fees:fees destination_fees:vector<fees> = query.Fees;\n```\n"]
 pub enum Fees {
@@ -12,11 +13,13 @@ impl Fees {
             Fees::Query_Fees(ref x) => &x.destination_fees,
         }
     }
+
     pub fn source_fees(&self) -> &crate::ton::fees::Fees {
         match self {
             Fees::Query_Fees(ref x) => &x.source_fees,
         }
     }
+
     pub fn only(self) -> crate::ton::query::fees::Fees {
         match self {
             Fees::Query_Fees(x) => x,
@@ -40,6 +43,7 @@ impl crate::BoxedDeserialize for Fees {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x603d17be)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -63,26 +67,31 @@ impl Info {
             Info::Query_Info(ref x) => &x.body,
         }
     }
+
     pub fn body_hash(&self) -> &crate::ton::bytes {
         match self {
             Info::Query_Info(ref x) => &x.body_hash,
         }
     }
+
     pub fn id(&self) -> &crate::ton::int53 {
         match self {
             Info::Query_Info(ref x) => &x.id,
         }
     }
+
     pub fn init_state(&self) -> &crate::ton::bytes {
         match self {
             Info::Query_Info(ref x) => &x.init_state,
         }
     }
+
     pub fn valid_until(&self) -> &crate::ton::int53 {
         match self {
             Info::Query_Info(ref x) => &x.valid_until,
         }
     }
+
     pub fn only(self) -> crate::ton::query::info::Info {
         match self {
             Info::Query_Info(x) => x,
@@ -106,6 +115,7 @@ impl crate::BoxedDeserialize for Info {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5689dc70)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

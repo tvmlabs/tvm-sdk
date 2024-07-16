@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.Candidate`\n\n```text\ndb.candidate source:PublicKey id:tonNode.blockIdExt data:bytes collated_data:bytes = db.Candidate;\n```\n"]
 pub enum Candidate {
@@ -10,21 +11,25 @@ impl Candidate {
             Candidate::Db_Candidate(ref x) => &x.collated_data,
         }
     }
+
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
             Candidate::Db_Candidate(ref x) => &x.data,
         }
     }
+
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             Candidate::Db_Candidate(ref x) => &x.id,
         }
     }
+
     pub fn source(&self) -> &crate::ton::PublicKey {
         match self {
             Candidate::Db_Candidate(ref x) => &x.source,
         }
     }
+
     pub fn only(self) -> crate::ton::db::candidate::Candidate {
         match self {
             Candidate::Db_Candidate(x) => x,
@@ -48,6 +53,7 @@ impl crate::BoxedDeserialize for Candidate {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x65d96ada)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

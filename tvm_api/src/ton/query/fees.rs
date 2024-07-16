@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `query.fees`\n\n```text\nquery.fees source_fees:fees destination_fees:vector<fees> = query.Fees;\n```\n"]
 pub struct Fees {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for Fees {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x603d17be)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Fees { source_fees, destination_fees } = self;
         _ser.write_bare::<crate::ton::fees::Fees>(source_fees)?;
@@ -31,6 +33,7 @@ impl crate::BareDeserialize for Fees {
 }
 impl crate::IntoBoxed for Fees {
     type Boxed = crate::ton::query::Fees;
+
     fn into_boxed(self) -> crate::ton::query::Fees {
         crate::ton::query::Fees::Query_Fees(self)
     }

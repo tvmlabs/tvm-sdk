@@ -121,7 +121,7 @@ fn test_userinfo() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[ignore] 
+#[ignore]
 #[test]
 fn test_pipechain_inputs() -> Result<(), Box<dyn std::error::Error>> {
     let path_to_pipechain = "tests/PipechainTest1.chain";

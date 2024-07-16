@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.getBlock`\n\n```text\ncatchain.getBlock block:int256 = catchain.BlockResult;\n```\n"]
 pub struct GetBlock {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for GetBlock {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x093ddd78)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetBlock { block } = self;
         _ser.write_bare::<crate::ton::int256>(block)?;
@@ -27,15 +29,12 @@ impl crate::BoxedDeserialize for GetBlock {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x093ddd78)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x093ddd78) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x093ddd78) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for GetBlock {
@@ -58,6 +57,7 @@ impl crate::BareSerialize for GetBlockHistory {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa8566df6)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetBlockHistory { block, height, stop_if } = self;
         _ser.write_bare::<crate::ton::int256>(block)?;
@@ -81,15 +81,12 @@ impl crate::BoxedDeserialize for GetBlockHistory {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa8566df6)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xa8566df6) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xa8566df6) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for GetBlockHistory {
@@ -110,6 +107,7 @@ impl crate::BareSerialize for GetBlocks {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0329abc2)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetBlocks { blocks } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>(blocks)?;
@@ -129,15 +127,12 @@ impl crate::BoxedDeserialize for GetBlocks {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0329abc2)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x0329abc2) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x0329abc2) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for GetBlocks {
@@ -158,6 +153,7 @@ impl crate::BareSerialize for GetDifference {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd06cced8)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetDifference { rt } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(rt)?;
@@ -176,15 +172,12 @@ impl crate::BoxedDeserialize for GetDifference {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd06cced8)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xd06cced8) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xd06cced8) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for GetDifference {

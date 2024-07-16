@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.tuple`\n\n```text\ntvm.tuple elements:vector<tvm.StackEntry> = tvm.Tuple;\n```\n"]
 pub struct Tuple {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Tuple {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xaeb3ba63)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Tuple { elements } = self;
         _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
@@ -29,6 +31,7 @@ impl crate::BareDeserialize for Tuple {
 }
 impl crate::IntoBoxed for Tuple {
     type Boxed = crate::ton::tvm::Tuple;
+
     fn into_boxed(self) -> crate::ton::tvm::Tuple {
         crate::ton::tvm::Tuple::Tvm_Tuple(self)
     }

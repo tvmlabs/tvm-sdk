@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.celldb.key.Value`\n\n```text\ndb.celldb.key.value hash:int256 = db.celldb.key.Value;\n```\n"]
 pub enum Value {
@@ -10,6 +11,7 @@ impl Value {
             Value::Db_Celldb_Key_Value(ref x) => &x.hash,
         }
     }
+
     pub fn only(self) -> crate::ton::db::celldb::key::value::Value {
         match self {
             Value::Db_Celldb_Key_Value(x) => x,
@@ -33,6 +35,7 @@ impl crate::BoxedDeserialize for Value {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5bb13923)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

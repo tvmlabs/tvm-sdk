@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.AccountId`\n\n```text\nliteServer.accountId workchain:int id:int256 = liteServer.AccountId;\n```\n"]
 pub enum AccountId {
@@ -10,11 +11,13 @@ impl AccountId {
             AccountId::LiteServer_AccountId(ref x) => &x.id,
         }
     }
+
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
             AccountId::LiteServer_AccountId(ref x) => &x.workchain,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::accountid::AccountId {
         match self {
             AccountId::LiteServer_AccountId(x) => x,
@@ -38,6 +41,7 @@ impl crate::BoxedDeserialize for AccountId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x75a0e2c5)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -61,26 +65,31 @@ impl AccountState {
             AccountState::LiteServer_AccountState(ref x) => &x.id,
         }
     }
+
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
             AccountState::LiteServer_AccountState(ref x) => &x.proof,
         }
     }
+
     pub fn shard_proof(&self) -> &crate::ton::bytes {
         match self {
             AccountState::LiteServer_AccountState(ref x) => &x.shard_proof,
         }
     }
+
     pub fn shardblk(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             AccountState::LiteServer_AccountState(ref x) => &x.shardblk,
         }
     }
+
     pub fn state(&self) -> &crate::ton::bytes {
         match self {
             AccountState::LiteServer_AccountState(ref x) => &x.state,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::accountstate::AccountState {
         match self {
             AccountState::LiteServer_AccountState(x) => x,
@@ -106,6 +115,7 @@ impl crate::BoxedDeserialize for AccountState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7079c751)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -129,16 +139,19 @@ impl AllShardsInfo {
             AllShardsInfo::LiteServer_AllShardsInfo(ref x) => &x.data,
         }
     }
+
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             AllShardsInfo::LiteServer_AllShardsInfo(ref x) => &x.id,
         }
     }
+
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
             AllShardsInfo::LiteServer_AllShardsInfo(ref x) => &x.proof,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::allshardsinfo::AllShardsInfo {
         match self {
             AllShardsInfo::LiteServer_AllShardsInfo(x) => x,
@@ -164,6 +177,7 @@ impl crate::BoxedDeserialize for AllShardsInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x098fe72d)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -187,11 +201,13 @@ impl BlockData {
             BlockData::LiteServer_BlockData(ref x) => &x.data,
         }
     }
+
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             BlockData::LiteServer_BlockData(ref x) => &x.id,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::blockdata::BlockData {
         match self {
             BlockData::LiteServer_BlockData(x) => x,
@@ -215,6 +231,7 @@ impl crate::BoxedDeserialize for BlockData {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa574ed6c)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -238,16 +255,19 @@ impl BlockHeader {
             BlockHeader::LiteServer_BlockHeader(ref x) => &x.header_proof,
         }
     }
+
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             BlockHeader::LiteServer_BlockHeader(ref x) => &x.id,
         }
     }
+
     pub fn mode(&self) -> &crate::ton::int {
         match self {
             BlockHeader::LiteServer_BlockHeader(ref x) => &x.mode,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::blockheader::BlockHeader {
         match self {
             BlockHeader::LiteServer_BlockHeader(x) => x,
@@ -273,6 +293,7 @@ impl crate::BoxedDeserialize for BlockHeader {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x752d8219)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -298,42 +319,49 @@ impl BlockLink {
             _ => None,
         }
     }
+
     pub fn dest_proof(&self) -> &crate::ton::bytes {
         match self {
             BlockLink::LiteServer_BlockLinkBack(ref x) => &x.dest_proof,
             BlockLink::LiteServer_BlockLinkForward(ref x) => &x.dest_proof,
         }
     }
+
     pub fn from(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             BlockLink::LiteServer_BlockLinkBack(ref x) => &x.from,
             BlockLink::LiteServer_BlockLinkForward(ref x) => &x.from,
         }
     }
+
     pub fn proof(&self) -> Option<&crate::ton::bytes> {
         match self {
             BlockLink::LiteServer_BlockLinkBack(ref x) => Some(&x.proof),
             _ => None,
         }
     }
+
     pub fn signatures(&self) -> Option<&crate::ton::lite_server::SignatureSet> {
         match self {
             BlockLink::LiteServer_BlockLinkForward(ref x) => Some(&x.signatures),
             _ => None,
         }
     }
+
     pub fn state_proof(&self) -> Option<&crate::ton::bytes> {
         match self {
             BlockLink::LiteServer_BlockLinkBack(ref x) => Some(&x.state_proof),
             _ => None,
         }
     }
+
     pub fn to(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             BlockLink::LiteServer_BlockLinkBack(ref x) => &x.to,
             BlockLink::LiteServer_BlockLinkForward(ref x) => &x.to,
         }
     }
+
     pub fn to_key_block(&self) -> &crate::ton::Bool {
         match self {
             BlockLink::LiteServer_BlockLinkBack(ref x) => &x.to_key_block,
@@ -361,6 +389,7 @@ impl crate::BoxedDeserialize for BlockLink {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xef7e1bef), crate::ConstructorNumber(0x520fce1c)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -387,21 +416,25 @@ impl BlockState {
             BlockState::LiteServer_BlockState(ref x) => &x.data,
         }
     }
+
     pub fn file_hash(&self) -> &crate::ton::int256 {
         match self {
             BlockState::LiteServer_BlockState(ref x) => &x.file_hash,
         }
     }
+
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             BlockState::LiteServer_BlockState(ref x) => &x.id,
         }
     }
+
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
             BlockState::LiteServer_BlockState(ref x) => &x.root_hash,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::blockstate::BlockState {
         match self {
             BlockState::LiteServer_BlockState(x) => x,
@@ -425,6 +458,7 @@ impl crate::BoxedDeserialize for BlockState {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xabaddc0c)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -448,6 +482,7 @@ impl BlockTransactions {
             BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.id,
         }
     }
+
     pub fn ids(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::lite_server::transactionid::TransactionId>
@@ -456,21 +491,25 @@ impl BlockTransactions {
             BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.ids,
         }
     }
+
     pub fn incomplete(&self) -> &crate::ton::Bool {
         match self {
             BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.incomplete,
         }
     }
+
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
             BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.proof,
         }
     }
+
     pub fn req_count(&self) -> &crate::ton::int {
         match self {
             BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.req_count,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::blocktransactions::BlockTransactions {
         match self {
             BlockTransactions::LiteServer_BlockTransactions(x) => x,
@@ -498,6 +537,7 @@ impl crate::BoxedDeserialize for BlockTransactions {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbd8cad2b)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -524,21 +564,25 @@ impl ConfigInfo {
             ConfigInfo::LiteServer_ConfigInfo(ref x) => &x.config_proof,
         }
     }
+
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             ConfigInfo::LiteServer_ConfigInfo(ref x) => &x.id,
         }
     }
+
     pub fn mode(&self) -> &crate::ton::int {
         match self {
             ConfigInfo::LiteServer_ConfigInfo(ref x) => &x.mode,
         }
     }
+
     pub fn state_proof(&self) -> &crate::ton::bytes {
         match self {
             ConfigInfo::LiteServer_ConfigInfo(ref x) => &x.state_proof,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::configinfo::ConfigInfo {
         match self {
             ConfigInfo::LiteServer_ConfigInfo(x) => x,
@@ -562,6 +606,7 @@ impl crate::BoxedDeserialize for ConfigInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xae7b272f)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -585,6 +630,7 @@ impl CurrentTime {
             CurrentTime::LiteServer_CurrentTime(ref x) => &x.now,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::currenttime::CurrentTime {
         match self {
             CurrentTime::LiteServer_CurrentTime(x) => x,
@@ -610,6 +656,7 @@ impl crate::BoxedDeserialize for CurrentTime {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xe953000d)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -633,11 +680,13 @@ impl Error {
             Error::LiteServer_Error(ref x) => &x.code,
         }
     }
+
     pub fn message(&self) -> &crate::ton::string {
         match self {
             Error::LiteServer_Error(ref x) => &x.message,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::error::Error {
         match self {
             Error::LiteServer_Error(x) => x,
@@ -661,6 +710,7 @@ impl crate::BoxedDeserialize for Error {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xbba9e148)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -684,16 +734,19 @@ impl Info {
             Info::LiteServer_Info(ref x) => &x.capabilities,
         }
     }
+
     pub fn now(&self) -> &crate::ton::int53 {
         match self {
             Info::LiteServer_Info(ref x) => &x.now,
         }
     }
+
     pub fn version(&self) -> &crate::ton::int32 {
         match self {
             Info::LiteServer_Info(ref x) => &x.version,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::info::Info {
         match self {
             Info::LiteServer_Info(x) => x,
@@ -717,6 +770,7 @@ impl crate::BoxedDeserialize for Info {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb57bfe73)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -740,16 +794,19 @@ impl MasterchainInfo {
             MasterchainInfo::LiteServer_MasterchainInfo(ref x) => &x.init,
         }
     }
+
     pub fn last(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             MasterchainInfo::LiteServer_MasterchainInfo(ref x) => &x.last,
         }
     }
+
     pub fn state_root_hash(&self) -> &crate::ton::int256 {
         match self {
             MasterchainInfo::LiteServer_MasterchainInfo(ref x) => &x.state_root_hash,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::masterchaininfo::MasterchainInfo {
         match self {
             MasterchainInfo::LiteServer_MasterchainInfo(x) => x,
@@ -777,6 +834,7 @@ impl crate::BoxedDeserialize for MasterchainInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x85832881)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -802,41 +860,49 @@ impl MasterchainInfoExt {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.capabilities,
         }
     }
+
     pub fn init(&self) -> &crate::ton::ton_node::zerostateidext::ZeroStateIdExt {
         match self {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.init,
         }
     }
+
     pub fn last(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.last,
         }
     }
+
     pub fn last_utime(&self) -> &crate::ton::int {
         match self {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.last_utime,
         }
     }
+
     pub fn mode(&self) -> &crate::ton::int {
         match self {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.mode,
         }
     }
+
     pub fn now(&self) -> &crate::ton::int {
         match self {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.now,
         }
     }
+
     pub fn state_root_hash(&self) -> &crate::ton::int256 {
         match self {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.state_root_hash,
         }
     }
+
     pub fn version(&self) -> &crate::ton::int {
         match self {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.version,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::masterchaininfoext::MasterchainInfoExt {
         match self {
             MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => x,
@@ -864,6 +930,7 @@ impl crate::BoxedDeserialize for MasterchainInfoExt {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa8cce0f5)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -882,11 +949,13 @@ impl PartialBlockProof {
             PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.complete,
         }
     }
+
     pub fn from(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.from,
         }
     }
+
     pub fn steps(
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::lite_server::BlockLink> {
@@ -894,11 +963,13 @@ impl PartialBlockProof {
             PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.steps,
         }
     }
+
     pub fn to(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.to,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::partialblockproof::PartialBlockProof {
         match self {
             PartialBlockProof::LiteServer_PartialBlockProof(x) => x,
@@ -926,6 +997,7 @@ impl crate::BoxedDeserialize for PartialBlockProof {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x8ed0d2c1)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -952,51 +1024,61 @@ impl RunMethodResult {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => &x.exit_code,
         }
     }
+
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => &x.id,
         }
     }
+
     pub fn init_c7(&self) -> Option<&crate::ton::bytes> {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => x.init_c7.as_ref(),
         }
     }
+
     pub fn lib_extras(&self) -> Option<&crate::ton::bytes> {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => x.lib_extras.as_ref(),
         }
     }
+
     pub fn mode(&self) -> &crate::ton::int {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => &x.mode,
         }
     }
+
     pub fn proof(&self) -> Option<&crate::ton::bytes> {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => x.proof.as_ref(),
         }
     }
+
     pub fn result(&self) -> Option<&crate::ton::bytes> {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => x.result.as_ref(),
         }
     }
+
     pub fn shard_proof(&self) -> Option<&crate::ton::bytes> {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => x.shard_proof.as_ref(),
         }
     }
+
     pub fn shardblk(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => &x.shardblk,
         }
     }
+
     pub fn state_proof(&self) -> Option<&crate::ton::bytes> {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(ref x) => x.state_proof.as_ref(),
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::runmethodresult::RunMethodResult {
         match self {
             RunMethodResult::LiteServer_RunMethodResult(x) => x,
@@ -1024,6 +1106,7 @@ impl crate::BoxedDeserialize for RunMethodResult {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa39a616b)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1049,6 +1132,7 @@ impl SendMsgStatus {
             SendMsgStatus::LiteServer_SendMsgStatus(ref x) => &x.status,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::sendmsgstatus::SendMsgStatus {
         match self {
             SendMsgStatus::LiteServer_SendMsgStatus(x) => x,
@@ -1074,6 +1158,7 @@ impl crate::BoxedDeserialize for SendMsgStatus {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x3950e597)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1097,21 +1182,25 @@ impl ShardInfo {
             ShardInfo::LiteServer_ShardInfo(ref x) => &x.id,
         }
     }
+
     pub fn shard_descr(&self) -> &crate::ton::bytes {
         match self {
             ShardInfo::LiteServer_ShardInfo(ref x) => &x.shard_descr,
         }
     }
+
     pub fn shard_proof(&self) -> &crate::ton::bytes {
         match self {
             ShardInfo::LiteServer_ShardInfo(ref x) => &x.shard_proof,
         }
     }
+
     pub fn shardblk(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             ShardInfo::LiteServer_ShardInfo(ref x) => &x.shardblk,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::shardinfo::ShardInfo {
         match self {
             ShardInfo::LiteServer_ShardInfo(x) => x,
@@ -1135,6 +1224,7 @@ impl crate::BoxedDeserialize for ShardInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x9fe6cd84)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1158,11 +1248,13 @@ impl Signature {
             Signature::LiteServer_Signature(ref x) => &x.node_id_short,
         }
     }
+
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
             Signature::LiteServer_Signature(ref x) => &x.signature,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::signature::Signature {
         match self {
             Signature::LiteServer_Signature(x) => x,
@@ -1186,6 +1278,7 @@ impl crate::BoxedDeserialize for Signature {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa3def855)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1209,6 +1302,7 @@ impl SignatureSet {
             SignatureSet::LiteServer_SignatureSet(ref x) => &x.catchain_seqno,
         }
     }
+
     pub fn signatures(
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::lite_server::signature::Signature> {
@@ -1216,11 +1310,13 @@ impl SignatureSet {
             SignatureSet::LiteServer_SignatureSet(ref x) => &x.signatures,
         }
     }
+
     pub fn validator_set_hash(&self) -> &crate::ton::int {
         match self {
             SignatureSet::LiteServer_SignatureSet(ref x) => &x.validator_set_hash,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::signatureset::SignatureSet {
         match self {
             SignatureSet::LiteServer_SignatureSet(x) => x,
@@ -1246,6 +1342,7 @@ impl crate::BoxedDeserialize for SignatureSet {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xf644a6e6)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1269,21 +1366,25 @@ impl TransactionId {
             TransactionId::LiteServer_TransactionId(ref x) => x.account.as_ref(),
         }
     }
+
     pub fn hash(&self) -> Option<&crate::ton::int256> {
         match self {
             TransactionId::LiteServer_TransactionId(ref x) => x.hash.as_ref(),
         }
     }
+
     pub fn lt(&self) -> Option<&crate::ton::long> {
         match self {
             TransactionId::LiteServer_TransactionId(ref x) => x.lt.as_ref(),
         }
     }
+
     pub fn mode(&self) -> &crate::ton::int {
         match self {
             TransactionId::LiteServer_TransactionId(ref x) => &x.mode,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::transactionid::TransactionId {
         match self {
             TransactionId::LiteServer_TransactionId(x) => x,
@@ -1309,6 +1410,7 @@ impl crate::BoxedDeserialize for TransactionId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb12f65af)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1332,11 +1434,13 @@ impl TransactionId3 {
             TransactionId3::LiteServer_TransactionId3(ref x) => &x.account,
         }
     }
+
     pub fn lt(&self) -> &crate::ton::long {
         match self {
             TransactionId3::LiteServer_TransactionId3(ref x) => &x.lt,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::transactionid3::TransactionId3 {
         match self {
             TransactionId3::LiteServer_TransactionId3(x) => x,
@@ -1364,6 +1468,7 @@ impl crate::BoxedDeserialize for TransactionId3 {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x2c81da77)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1387,16 +1492,19 @@ impl TransactionInfo {
             TransactionInfo::LiteServer_TransactionInfo(ref x) => &x.id,
         }
     }
+
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
             TransactionInfo::LiteServer_TransactionInfo(ref x) => &x.proof,
         }
     }
+
     pub fn transaction(&self) -> &crate::ton::bytes {
         match self {
             TransactionInfo::LiteServer_TransactionInfo(ref x) => &x.transaction,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::transactioninfo::TransactionInfo {
         match self {
             TransactionInfo::LiteServer_TransactionInfo(x) => x,
@@ -1424,6 +1532,7 @@ impl crate::BoxedDeserialize for TransactionInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0edeed47)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1451,11 +1560,13 @@ impl TransactionList {
             TransactionList::LiteServer_TransactionList(ref x) => &x.ids,
         }
     }
+
     pub fn transactions(&self) -> &crate::ton::bytes {
         match self {
             TransactionList::LiteServer_TransactionList(ref x) => &x.transactions,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::transactionlist::TransactionList {
         match self {
             TransactionList::LiteServer_TransactionList(x) => x,
@@ -1483,6 +1594,7 @@ impl crate::BoxedDeserialize for TransactionList {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6f26c60b)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1508,31 +1620,37 @@ impl ValidatorStats {
             ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.complete,
         }
     }
+
     pub fn count(&self) -> &crate::ton::int {
         match self {
             ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.count,
         }
     }
+
     pub fn data_proof(&self) -> &crate::ton::bytes {
         match self {
             ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.data_proof,
         }
     }
+
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
             ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.id,
         }
     }
+
     pub fn mode(&self) -> &crate::ton::int {
         match self {
             ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.mode,
         }
     }
+
     pub fn state_proof(&self) -> &crate::ton::bytes {
         match self {
             ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.state_proof,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::validatorstats::ValidatorStats {
         match self {
             ValidatorStats::LiteServer_ValidatorStats(x) => x,
@@ -1560,6 +1678,7 @@ impl crate::BoxedDeserialize for ValidatorStats {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb9f796d8)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -1583,21 +1702,25 @@ impl Version {
             Version::LiteServer_Version(ref x) => &x.capabilities,
         }
     }
+
     pub fn mode(&self) -> &crate::ton::int {
         match self {
             Version::LiteServer_Version(ref x) => &x.mode,
         }
     }
+
     pub fn now(&self) -> &crate::ton::int {
         match self {
             Version::LiteServer_Version(ref x) => &x.now,
         }
     }
+
     pub fn version(&self) -> &crate::ton::int {
         match self {
             Version::LiteServer_Version(ref x) => &x.version,
         }
     }
+
     pub fn only(self) -> crate::ton::lite_server::version::Version {
         match self {
             Version::LiteServer_Version(x) => x,
@@ -1621,6 +1744,7 @@ impl crate::BoxedDeserialize for Version {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x5a0491e5)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

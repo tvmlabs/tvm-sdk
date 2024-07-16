@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.config`\n\n```text\nengine.validator.config out_port:int addrs:(vector engine.Addr) adnl:(vector engine.adnl) \n        dht:(vector engine.dht)\n        validators:(vector engine.validator) fullnode:int256 fullnodeslaves:(vector engine.validator.fullNodeSlave)\n        fullnodemasters:(vector engine.validator.fullNodeMaster)\n        liteservers:(vector engine.liteServer) control:(vector engine.controlInterface)\n        gc:engine.gc = engine.validator.Config;\n```\n"]
 pub struct Config {
@@ -29,6 +30,7 @@ impl crate::BareSerialize for Config {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xcec219a4)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Config {
             out_port,
@@ -118,6 +120,7 @@ impl crate::BareDeserialize for Config {
 }
 impl crate::IntoBoxed for Config {
     type Boxed = crate::ton::engine::validator::Config;
+
     fn into_boxed(self) -> crate::ton::engine::validator::Config {
         crate::ton::engine::validator::Config::Engine_Validator_Config(self)
     }

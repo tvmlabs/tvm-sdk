@@ -79,7 +79,6 @@ pub fn giver_v2(addr: &str) {
     cmd.assert().success();
 }
 
-
 #[allow(dead_code)]
 pub fn giver_v3(addr: &str) {
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();

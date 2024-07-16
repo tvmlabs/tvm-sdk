@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.findNode`\n\n```text\ndht.findNode key:int256 k:int = dht.Nodes;\n```\n"]
 pub struct FindNode {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for FindNode {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x6ce2ce6b)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let FindNode { key, k } = self;
         _ser.write_bare::<crate::ton::int256>(key)?;
@@ -30,15 +32,12 @@ impl crate::BoxedDeserialize for FindNode {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x6ce2ce6b)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x6ce2ce6b) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x6ce2ce6b) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for FindNode {
@@ -60,6 +59,7 @@ impl crate::BareSerialize for FindValue {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xae4b6011)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let FindValue { key, k } = self;
         _ser.write_bare::<crate::ton::int256>(key)?;
@@ -80,15 +80,12 @@ impl crate::BoxedDeserialize for FindValue {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xae4b6011)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xae4b6011) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xae4b6011) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for FindValue {
@@ -107,6 +104,7 @@ impl crate::BareSerialize for GetSignedAddressList {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xa97948ed)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         Ok(())
     }
@@ -120,15 +118,12 @@ impl crate::BoxedDeserialize for GetSignedAddressList {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xa97948ed)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xa97948ed) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xa97948ed) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for GetSignedAddressList {
@@ -149,6 +144,7 @@ impl crate::BareSerialize for Ping {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xcbeb3f18)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Ping { random_id } = self;
         _ser.write_bare::<crate::ton::long>(random_id)?;
@@ -167,15 +163,12 @@ impl crate::BoxedDeserialize for Ping {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xcbeb3f18)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xcbeb3f18) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xcbeb3f18) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for Ping {
@@ -196,6 +189,7 @@ impl crate::BareSerialize for Query {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x7d530769)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Query { node } = self;
         _ser.write_bare::<crate::ton::dht::node::Node>(node)?;
@@ -214,15 +208,12 @@ impl crate::BoxedDeserialize for Query {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x7d530769)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x7d530769) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x7d530769) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for Query {
@@ -243,6 +234,7 @@ impl crate::BareSerialize for Store {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x34934212)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Store { value } = self;
         _ser.write_bare::<crate::ton::dht::value::Value>(value)?;
@@ -261,15 +253,12 @@ impl crate::BoxedDeserialize for Store {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x34934212)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x34934212) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x34934212) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for Store {

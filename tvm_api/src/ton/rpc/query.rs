@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `query.estimateFees`\n\n```text\nquery.estimateFees id:int53 ignore_chksig:Bool = query.Fees;\n```\n"]
 pub struct EstimateFees {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for EstimateFees {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xc6f54e41)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let EstimateFees { id, ignore_chksig } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
@@ -30,15 +32,12 @@ impl crate::BoxedDeserialize for EstimateFees {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc6f54e41)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xc6f54e41) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xc6f54e41) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for EstimateFees {
@@ -59,6 +58,7 @@ impl crate::BareSerialize for Forget {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xb7c2925f)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Forget { id } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
@@ -77,15 +77,12 @@ impl crate::BoxedDeserialize for Forget {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb7c2925f)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xb7c2925f) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xb7c2925f) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for Forget {
@@ -106,6 +103,7 @@ impl crate::BareSerialize for GetInfo {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xd05b22db)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetInfo { id } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
@@ -124,15 +122,12 @@ impl crate::BoxedDeserialize for GetInfo {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xd05b22db)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xd05b22db) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0xd05b22db) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for GetInfo {
@@ -153,6 +148,7 @@ impl crate::BareSerialize for Send {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x37261573)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Send { id } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
@@ -171,15 +167,12 @@ impl crate::BoxedDeserialize for Send {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x37261573)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x37261573) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x37261573) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for Send {

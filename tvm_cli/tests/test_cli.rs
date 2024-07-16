@@ -933,7 +933,7 @@ fn test_sendfile() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[ignore] //old version boc
+#[ignore] // old version boc
 #[test]
 fn test_account_command() -> Result<(), Box<dyn std::error::Error>> {
     env::set_var("RUST_LOG", "debug");
@@ -1070,7 +1070,7 @@ fn test_account_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[ignore] //old version boc
+#[ignore] // old version boc
 #[test]
 fn test_decode_msg() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -1762,7 +1762,7 @@ fn test_gen_deploy_message() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[ignore] //old version boc
+#[ignore] // old version boc
 #[test]
 fn test_decode_tvc() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -2319,7 +2319,7 @@ fn test_multisig() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[ignore] //old version boc
+#[ignore] // old version boc
 #[test]
 fn test_alternative_syntax() -> Result<(), Box<dyn std::error::Error>> {
     let boc_path = "tests/depool_acc.boc";

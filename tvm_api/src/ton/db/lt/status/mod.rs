@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.status.Value`\n\n```text\ndb.lt.status.value total_shards:int = db.lt.status.Value;\n```\n"]
 pub enum Value {
@@ -10,6 +11,7 @@ impl Value {
             Value::Db_Lt_Status_Value(ref x) => &x.total_shards,
         }
     }
+
     pub fn only(self) -> crate::ton::db::lt::status::value::Value {
         match self {
             Value::Db_Lt_Status_Value(x) => x,
@@ -33,6 +35,7 @@ impl crate::BoxedDeserialize for Value {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xfabeed39)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

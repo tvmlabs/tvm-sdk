@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `msg.dataEncrypted`\n\n```text\nmsg.dataEncrypted source:accountAddress data:msg.Data = msg.DataEncrypted;\n```\n"]
 pub struct DataEncrypted {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for DataEncrypted {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x21a13d51)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DataEncrypted { source, data } = self;
         _ser.write_bare::<crate::ton::accountaddress::AccountAddress>(source)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for DataEncrypted {
 }
 impl crate::IntoBoxed for DataEncrypted {
     type Boxed = crate::ton::msg::DataEncrypted;
+
     fn into_boxed(self) -> crate::ton::msg::DataEncrypted {
         crate::ton::msg::DataEncrypted::Msg_DataEncrypted(self)
     }

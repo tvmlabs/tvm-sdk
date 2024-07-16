@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.blockCandidateStatus`\n\n```text\ntonNode.blockCandidateStatus candidate_id:int256 deliveries_signature:bytes approvals_signature:bytes rejections_signature:bytes merges_cnt:int created_timestamp:long = tonNode.BlockCandidateStatus;\n```\n"]
 pub struct BlockCandidateStatus {
@@ -14,6 +15,7 @@ impl crate::BareSerialize for BlockCandidateStatus {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xbc31fb7c)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockCandidateStatus {
             candidate_id,
@@ -54,6 +56,7 @@ impl crate::BareDeserialize for BlockCandidateStatus {
 }
 impl crate::IntoBoxed for BlockCandidateStatus {
     type Boxed = crate::ton::ton_node::BlockCandidateStatus;
+
     fn into_boxed(self) -> crate::ton::ton_node::BlockCandidateStatus {
         crate::ton::ton_node::BlockCandidateStatus::TonNode_BlockCandidateStatus(self)
     }

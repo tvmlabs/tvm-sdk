@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.slave.sendExtMessage`\n\n```text\ntonNode.slave.sendExtMessage message:tonNode.externalMessage = tonNode.Success;\n```\n"]
 pub struct SendExtMessage {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for SendExtMessage {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x0376f2a9)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let SendExtMessage { message } = self;
         _ser.write_bare::<crate::ton::ton_node::externalmessage::ExternalMessage>(message)?;
@@ -28,15 +30,12 @@ impl crate::BoxedDeserialize for SendExtMessage {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0x0376f2a9)]
     }
+
     fn deserialize_boxed(
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x0376f2a9) {
-            de.read_bare()
-        } else {
-            _invalid_id!(id)
-        }
+        if id == crate::ConstructorNumber(0x0376f2a9) { de.read_bare() } else { _invalid_id!(id) }
     }
 }
 impl crate::BoxedSerialize for SendExtMessage {

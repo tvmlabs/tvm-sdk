@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `exportedUnencryptedKey`\n\n```text\nexportedUnencryptedKey data:secureBytes = ExportedUnencryptedKey;\n```\n"]
 pub struct ExportedUnencryptedKey {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for ExportedUnencryptedKey {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x2b839ae8)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ExportedUnencryptedKey { data } = self;
         _ser.write_bare::<crate::ton::secureBytes>(data)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for ExportedUnencryptedKey {
 }
 impl crate::IntoBoxed for ExportedUnencryptedKey {
     type Boxed = crate::ton::ExportedUnencryptedKey;
+
     fn into_boxed(self) -> crate::ton::ExportedUnencryptedKey {
         crate::ton::ExportedUnencryptedKey::ExportedUnencryptedKey(self)
     }

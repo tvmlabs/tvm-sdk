@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempCombinedReceipt`\n\n```text\ntonNode.rempCombinedReceipt source_id:int256 ids:(vector tonNode.blockIdExt) \n        receipts:(vector tonNode.RempReceiptCompact) = tonNode.RempCombinedReceipt;\n```\n"]
 pub struct RempCombinedReceipt {
@@ -11,6 +12,7 @@ impl crate::BareSerialize for RempCombinedReceipt {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x98eb4db1)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempCombinedReceipt { source_id, ids, receipts } = self;
         _ser.write_bare::<crate::ton::int256>(source_id)?;
@@ -34,6 +36,7 @@ impl crate::BareDeserialize for RempCombinedReceipt {
 }
 impl crate::IntoBoxed for RempCombinedReceipt {
     type Boxed = crate::ton::ton_node::RempCombinedReceipt;
+
     fn into_boxed(self) -> crate::ton::ton_node::RempCombinedReceipt {
         crate::ton::ton_node::RempCombinedReceipt::TonNode_RempCombinedReceipt(self)
     }

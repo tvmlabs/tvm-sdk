@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.shard.value`\n\n```text\ndb.lt.shard.value workchain:int shard:long = db.lt.shard.Value;\n```\n"]
 pub struct Value {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for Value {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x3c739a7b)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Value { workchain, shard } = self;
         _ser.write_bare::<crate::ton::int>(workchain)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for Value {
 }
 impl crate::IntoBoxed for Value {
     type Boxed = crate::ton::db::lt::shard::Value;
+
     fn into_boxed(self) -> crate::ton::db::lt::shard::Value {
         crate::ton::db::lt::shard::Value::Db_Lt_Shard_Value(self)
     }

@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `id.config.local`\n\n```text\nid.config.local id:PrivateKey = id.config.Local;\n```\n"]
 pub struct Local {
@@ -9,6 +10,7 @@ impl crate::BareSerialize for Local {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x92a9c78e)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Local { id } = self;
         _ser.write_boxed::<crate::ton::PrivateKey>(id)?;
@@ -25,6 +27,7 @@ impl crate::BareDeserialize for Local {
 }
 impl crate::IntoBoxed for Local {
     type Boxed = crate::ton::id::config::Local;
+
     fn into_boxed(self) -> crate::ton::id::config::Local {
         crate::ton::id::config::Local::Id_Config_Local(self)
     }

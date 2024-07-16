@@ -630,7 +630,7 @@ impl Account {
         balance: CurrencyCollection,
         last_paid: u32,
         state_init: StateInit,
-        init_code_hash: bool
+        init_code_hash: bool,
     ) -> Result<Self> {
         let mut account = Account::with_stuff(AccountStuff {
             addr,
@@ -648,10 +648,14 @@ impl Account {
     }
 
     /// create unintialized account, only with address and balance
-    pub fn with_address_and_ballance(addr: &MsgAddressInt, dapp_id: UInt256, balance: &CurrencyCollection) -> Self {
+    pub fn with_address_and_ballance(
+        addr: &MsgAddressInt,
+        dapp_id: UInt256,
+        balance: &CurrencyCollection,
+    ) -> Self {
         Account::with_stuff(AccountStuff {
             addr: addr.clone(),
-            dapp_id: dapp_id,
+            dapp_id,
             storage_stat: StorageInfo::default(),
             storage: AccountStorage::with_balance(balance.clone()),
         })
@@ -668,7 +672,11 @@ impl Account {
     }
 
     /// Create initialized account from "constructor internal message"
-    pub fn from_message_by_init_code_hash(msg: &Message, init_code_hash: bool, dapp_id: UInt256) -> Option<Self> {
+    pub fn from_message_by_init_code_hash(
+        msg: &Message,
+        init_code_hash: bool,
+        dapp_id: UInt256,
+    ) -> Option<Self> {
         let hdr = msg.int_header()?;
         if hdr.value().grams.is_zero() {
             return None;
@@ -687,7 +695,7 @@ impl Account {
         }
         let mut account = Account::with_stuff(AccountStuff {
             addr: hdr.dst.clone(),
-            dapp_id: dapp_id,
+            dapp_id,
             storage_stat: StorageInfo::default(),
             storage,
         });
@@ -769,7 +777,7 @@ impl Account {
     ) -> Self {
         Account::with_stuff(AccountStuff {
             addr: addr.clone(),
-            dapp_id: dapp_id,
+            dapp_id,
             storage_stat: storage_stat.clone(),
             storage: storage.clone(),
         })

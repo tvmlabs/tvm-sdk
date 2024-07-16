@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.candidate.id`\n\n```text\nvalidatorSession.candidate.id round:int256 block_hash:int256 = validatorSession.tempBlock.Id;\n```\n"]
 pub struct Id {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for Id {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0xbcd74139)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Id { round, block_hash } = self;
         _ser.write_bare::<crate::ton::int256>(round)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for Id {
 }
 impl crate::IntoBoxed for Id {
     type Boxed = crate::ton::validator_session::temp_block::Id;
+
     fn into_boxed(self) -> crate::ton::validator_session::temp_block::Id {
         crate::ton::validator_session::temp_block::Id::ValidatorSession_Candidate_Id(self)
     }

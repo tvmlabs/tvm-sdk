@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `internal.BlockId`\n\n```text\nton.blockId workchain:int32 shard:int64 seqno:int32 = internal.BlockId;\n```\n"]
 pub enum BlockId {
@@ -10,16 +11,19 @@ impl BlockId {
             BlockId::Ton_BlockId(ref x) => &x.seqno,
         }
     }
+
     pub fn shard(&self) -> &crate::ton::int64 {
         match self {
             BlockId::Ton_BlockId(ref x) => &x.shard,
         }
     }
+
     pub fn workchain(&self) -> &crate::ton::int32 {
         match self {
             BlockId::Ton_BlockId(ref x) => &x.workchain,
         }
     }
+
     pub fn only(self) -> crate::ton::internal::ton::blockid::BlockId {
         match self {
             BlockId::Ton_BlockId(x) => x,
@@ -43,6 +47,7 @@ impl crate::BoxedDeserialize for BlockId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xb9587fa2)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,
@@ -66,11 +71,13 @@ impl TransactionId {
             TransactionId::Internal_TransactionId(ref x) => &x.hash,
         }
     }
+
     pub fn lt(&self) -> &crate::ton::int64 {
         match self {
             TransactionId::Internal_TransactionId(ref x) => &x.lt,
         }
     }
+
     pub fn only(self) -> crate::ton::internal::transactionid::TransactionId {
         match self {
             TransactionId::Internal_TransactionId(x) => x,
@@ -96,6 +103,7 @@ impl crate::BoxedDeserialize for TransactionId {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ConstructorNumber(0xc5050322)]
     }
+
     fn deserialize_boxed(
         _id: crate::ConstructorNumber,
         _de: &mut crate::Deserializer,

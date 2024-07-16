@@ -1,4 +1,5 @@
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `http.header`\n\n```text\nhttp.header name:string value:string = http.Header;\n```\n"]
 pub struct Header {
@@ -10,6 +11,7 @@ impl crate::BareSerialize for Header {
     fn constructor(&self) -> crate::ConstructorNumber {
         crate::ConstructorNumber(0x8e9be511)
     }
+
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Header { name, value } = self;
         _ser.write_bare::<crate::ton::string>(name)?;
@@ -28,6 +30,7 @@ impl crate::BareDeserialize for Header {
 }
 impl crate::IntoBoxed for Header {
     type Boxed = crate::ton::http::Header;
+
     fn into_boxed(self) -> crate::ton::http::Header {
         crate::ton::http::Header::Http_Header(self)
     }
