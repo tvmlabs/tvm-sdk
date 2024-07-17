@@ -188,9 +188,9 @@ pub trait TransactionExecutor {
     ) -> Result<Transaction> {
         let old_hash = account_root.repr_hash();
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let mut old_status = false;
+        let mut is_previous_state_active = false;
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
-            old_status = true;
+            is_previous_state_active = true;
         }
         let src_dapp_id = params.src_dapp_id.clone();
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
@@ -200,15 +200,25 @@ pub trait TransactionExecutor {
             account.update_storage_stat()?;
         }
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
-            if old_status == false {
+            if is_previous_state_active == false {
                 if let Some(message) = in_msg {
                     if let Some(_) = message.int_header() {
-                        account.set_dapp_id(src_dapp_id.unwrap());
+                        account.set_dapp_id(src_dapp_id.clone().unwrap());
                     } else {
                         account.set_dapp_id(
                             account.get_id().unwrap().get_bytestring(0).as_slice().into(),
                         );
                     }
+                }
+            }
+        } 
+        if let Some(message) = in_msg {
+            if let Some(data) = message.int_header() {
+                if src_dapp_id != account.get_dapp_id().cloned() {
+                    let balance = CurrencyCollection::with_grams(min(self.config().get_gas_config(false).cross_dapp_id_limit, data.value.grams.as_u64_quiet()));
+                    let mut orig_balance = account.balance().unwrap().clone();
+                    orig_balance.sub(&balance)?;
+                    account.set_balance(orig_balance);
                 }
             }
         }

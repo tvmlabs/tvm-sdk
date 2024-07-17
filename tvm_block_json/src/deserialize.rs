@@ -494,6 +494,7 @@ impl StateParser {
             flat_gas_limit: param.get_num("flat_gas_limit")? as u64,
             flat_gas_price: param.get_num("flat_gas_price")? as u64,
             max_gas_threshold: 0,
+            cross_dapp_id_limit: param.get_num("cross_dapp_id_limit")? as u64,
         })
     }
 
