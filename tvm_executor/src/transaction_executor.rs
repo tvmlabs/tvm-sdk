@@ -192,9 +192,7 @@ pub trait TransactionExecutor {
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
             is_previous_state_active = true;
         }
-        log::warn!(target: "node_rs", "params: {:#?}", params.src_dapp_id);
         let src_dapp_id = params.src_dapp_id.clone();
-        log::warn!(target: "node_rs", "src_dapp_id: {:#?}", src_dapp_id);
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
@@ -205,7 +203,9 @@ pub trait TransactionExecutor {
             if is_previous_state_active == false {
                 if let Some(message) = in_msg {
                     if let Some(_) = message.int_header() {
-                        account.set_dapp_id(src_dapp_id.clone().unwrap());
+                        if let Some(dapp_id) = src_dapp_id.clone() {
+                            account.set_dapp_id(dapp_id.clone());
+                        }
                     } else {
                         account.set_dapp_id(
                             account.get_id().unwrap().get_bytestring(0).as_slice().into(),
