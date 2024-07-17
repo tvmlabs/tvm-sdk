@@ -404,7 +404,7 @@ fn parse_pruned_account() {
     let client = TestClient::new();
 
     let (account, _) = deserialize_object_from_boc_bin::<tvm_block::Account>(include_bytes!(
-        "test_data/account.boc"
+        "test_data/account1.boc"
     ))
     .unwrap();
 

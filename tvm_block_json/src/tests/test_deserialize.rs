@@ -138,6 +138,7 @@ fn get_gas_limit_prices() -> GasLimitsPrices {
         flat_gas_limit: 80,
         flat_gas_price: 90,
         max_gas_threshold: 0,
+        cross_dapp_id_limit: 10000000,
     };
     glp.max_gas_threshold = glp.calc_max_gas_threshold();
     glp

@@ -1238,7 +1238,7 @@ pub async fn execute_debug(
             freeze_due_limit: 100000000,
             delete_due_limit: 1000000000,
             max_gas_threshold: u128::MAX,
-            cross_dapp_id_limit: 10000000
+            cross_dapp_id_limit: 10000000,
         };
         let c20 = ConfigParamEnum::ConfigParam20(gas.clone());
         let c21 = ConfigParamEnum::ConfigParam21(gas);

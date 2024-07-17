@@ -192,7 +192,9 @@ pub trait TransactionExecutor {
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
             is_previous_state_active = true;
         }
+        log::warn!(target: "node_rs", "params: {:#?}", params.src_dapp_id);
         let src_dapp_id = params.src_dapp_id.clone();
+        log::warn!(target: "node_rs", "src_dapp_id: {:#?}", src_dapp_id);
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
@@ -211,11 +213,14 @@ pub trait TransactionExecutor {
                     }
                 }
             }
-        } 
+        }
         if let Some(message) = in_msg {
             if let Some(data) = message.int_header() {
                 if src_dapp_id != account.get_dapp_id().cloned() {
-                    let balance = CurrencyCollection::with_grams(min(self.config().get_gas_config(false).cross_dapp_id_limit, data.value.grams.as_u64_quiet()));
+                    let balance = CurrencyCollection::with_grams(min(
+                        self.config().get_gas_config(false).cross_dapp_id_limit,
+                        data.value.grams.as_u64_quiet(),
+                    ));
                     let mut orig_balance = account.balance().unwrap().clone();
                     orig_balance.sub(&balance)?;
                     account.set_balance(orig_balance);

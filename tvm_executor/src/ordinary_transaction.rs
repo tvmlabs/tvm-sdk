@@ -124,7 +124,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         if let Some(_) = in_msg.int_header() {
             if params.src_dapp_id != account.get_dapp_id().cloned() {
-                msg_balance.grams = min(self.config().get_gas_config(false).cross_dapp_id_limit.into(), msg_balance.grams); 
+                msg_balance.grams = min(
+                    self.config().get_gas_config(false).cross_dapp_id_limit.into(),
+                    msg_balance.grams,
+                );
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
