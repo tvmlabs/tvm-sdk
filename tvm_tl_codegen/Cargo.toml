@@ -11,6 +11,7 @@ license.workspace = true
 
 [dependencies]
 crc = "1.8"
+failure.workspace = true
 pom = "1.1"
 proc-macro2 = "1.0.78"
 quote = "1.0.35"

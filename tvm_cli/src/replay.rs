@@ -76,7 +76,7 @@ fn construct_blockchain_config_err(
 ) -> tvm_types::Result<BlockchainConfig> {
     let config_cell = config_account
         .get_data()
-        .ok_or(anyhow::anyhow!("Failed to get account's data"))?
+        .ok_or(tvm_types::error!("Failed to get account's data"))?
         .reference(0)
         .ok();
     let config_params =
@@ -543,7 +543,7 @@ pub async fn replay(
 
 pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm_types::Status {
     let context = create_client(config)
-        .map_err(|e| anyhow::anyhow!(format!("Failed to create ctx: {}", e)))?;
+        .map_err(|e| failure::err_msg(format!("Failed to create ctx: {}", e)))?;
 
     let block = query_collection(
         context.clone(),
@@ -563,7 +563,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     .await?;
 
     if block.result.len() != 1 {
-        return Err(anyhow::anyhow!("Failed to fetch the block"));
+        return Err(tvm_types::error!("Failed to fetch the block"));
     }
 
     let mut accounts = vec![];
@@ -592,14 +592,14 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     })?;
 
     if accounts.is_empty() {
-        return Err(anyhow::anyhow!("The block is empty"));
+        return Err(tvm_types::error!("The block is empty"));
     }
 
     for (account, _) in &accounts {
         println!("Fetching transactions of {}", account);
         fetch(config, account.as_str(), format!("{}.txns", account).as_str(), Some(end_lt), false)
             .await
-            .map_err(|err| anyhow::anyhow!(err))?;
+            .map_err(|err| failure::err_msg(err))?;
     }
 
     let config_txns_path = format!("{}.txns", CONFIG_ADDR);
@@ -607,7 +607,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         println!("Fetching transactions of {}", CONFIG_ADDR);
         fetch(config, CONFIG_ADDR, config_txns_path.as_str(), Some(end_lt), false)
             .await
-            .map_err(|err| anyhow::anyhow!(err))?;
+            .map_err(|err| failure::err_msg(err))?;
     }
 
     let acc = accounts[0].0.as_str();
@@ -627,7 +627,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
             None,
         )
         .await
-        .map_err(|err| anyhow::anyhow!(err))?;
+        .map_err(|err| failure::err_msg(err))?;
     } else {
         println!("Using pre-computed config {}", config_path);
     }
@@ -654,7 +654,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
                         None,
                     )
                     .await
-                    .map_err(|err| anyhow::anyhow!(err))
+                    .map_err(|err| failure::err_msg(err))
                     .unwrap();
                 }
             })

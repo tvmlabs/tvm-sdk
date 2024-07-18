@@ -9,6 +9,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+failure.workspace = true
 external-ip.workspace = true
 log.workspace = true
 log4rs = { version = "1.2.0" }

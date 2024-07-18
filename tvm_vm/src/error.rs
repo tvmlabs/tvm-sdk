@@ -33,7 +33,7 @@ pub enum TvmError {
     TvmExceptionFull(Exception, String),
 }
 
-pub fn tvm_exception(err: anyhow::Error) -> Result<Exception> {
+pub fn tvm_exception(err: tvm_types::Error) -> Result<Exception> {
     match err.downcast::<TvmError>() {
         Ok(TvmError::TvmExceptionFull(err, _)) => Ok(err),
         Ok(err) => fail!(err),
@@ -47,7 +47,7 @@ pub fn tvm_exception(err: anyhow::Error) -> Result<Exception> {
     }
 }
 
-pub fn tvm_exception_code(err: &anyhow::Error) -> Option<ExceptionCode> {
+pub fn tvm_exception_code(err: &tvm_types::Error) -> Option<ExceptionCode> {
     match err.downcast_ref::<TvmError>() {
         Some(TvmError::TvmExceptionFull(err, _)) => err.exception_code(),
         Some(_) => None,
@@ -55,7 +55,7 @@ pub fn tvm_exception_code(err: &anyhow::Error) -> Option<ExceptionCode> {
     }
 }
 
-pub fn tvm_exception_or_custom_code(err: &anyhow::Error) -> i32 {
+pub fn tvm_exception_or_custom_code(err: &tvm_types::Error) -> i32 {
     match err.downcast_ref::<TvmError>() {
         Some(TvmError::TvmExceptionFull(err, _)) => err.exception_or_custom_code(),
         Some(_) => ExceptionCode::UnknownError as i32,
@@ -69,7 +69,7 @@ pub fn tvm_exception_or_custom_code(err: &anyhow::Error) -> i32 {
     }
 }
 
-pub fn tvm_exception_full(err: &anyhow::Error) -> Option<Exception> {
+pub fn tvm_exception_full(err: &tvm_types::Error) -> Option<Exception> {
     match err.downcast_ref::<TvmError>() {
         Some(TvmError::TvmExceptionFull(err, _)) => Some(err.clone()),
         Some(_) => None,
@@ -80,9 +80,9 @@ pub fn tvm_exception_full(err: &anyhow::Error) -> Option<Exception> {
 }
 
 pub fn update_error_description(
-    mut err: anyhow::Error,
+    mut err: tvm_types::Error,
     f: impl FnOnce(&str) -> String,
-) -> anyhow::Error {
+) -> tvm_types::Error {
     match err.downcast_mut::<TvmError>() {
         Some(TvmError::TvmExceptionFull(_err, descr)) => *descr = f(descr.as_str()),
         Some(_) => (),

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] – 2024-07-16
+
+### Fixed
+Resolved stack overflow issue: returning an error instead of using `anyhow`.
+
 ## [2.0.0] – 2024-07-10
 
 First release of SDK supporting Acki Nacki protocol.

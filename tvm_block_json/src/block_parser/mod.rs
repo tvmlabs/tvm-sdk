@@ -79,7 +79,7 @@ impl JsonReducer for NoReduce {
 pub fn unix_time_to_system_time(utime: u64) -> Result<SystemTime> {
     SystemTime::UNIX_EPOCH
         .checked_add(Duration::from_secs(utime))
-        .ok_or_else(|| anyhow::anyhow!("Can't convert unix timestamp bytes to SystemTime"))
+        .ok_or_else(|| tvm_types::error!("Can't convert unix timestamp bytes to SystemTime"))
 }
 
 pub(crate) fn get_partition(

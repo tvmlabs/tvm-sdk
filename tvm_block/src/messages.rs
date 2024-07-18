@@ -200,7 +200,7 @@ impl MsgAddressExt {
 }
 
 impl FromStr for MsgAddressExt {
-    type Err = anyhow::Error;
+    type Err = tvm_types::Error;
 
     fn from_str(string: &str) -> Result<Self> {
         match MsgAddress::from_str(string)? {
@@ -277,7 +277,7 @@ impl MsgAddress {
 }
 
 impl FromStr for MsgAddress {
-    type Err = anyhow::Error;
+    type Err = tvm_types::Error;
 
     fn from_str(string: &str) -> Result<Self> {
         let parts: Vec<&str> = string.split(':').take(4).collect();
@@ -372,7 +372,7 @@ impl Default for MsgAddressInt {
 }
 
 impl FromStr for MsgAddressInt {
-    type Err = anyhow::Error;
+    type Err = tvm_types::Error;
 
     fn from_str(string: &str) -> Result<Self> {
         match MsgAddress::from_str(string)? {

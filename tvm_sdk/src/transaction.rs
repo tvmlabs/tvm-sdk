@@ -81,7 +81,7 @@ pub struct Transaction {
 }
 
 impl TryFrom<&tvm_block::Transaction> for Transaction {
-    type Error = anyhow::Error;
+    type Error = tvm_types::Error;
 
     fn try_from(transaction: &tvm_block::Transaction) -> Result<Self> {
         let descr = if let TransactionDescr::Ordinary(descr) = transaction.read_description()? {
