@@ -217,8 +217,9 @@ pub trait TransactionExecutor {
         if let Some(message) = in_msg {
             if let Some(data) = message.int_header() {
                 if src_dapp_id != account.get_dapp_id().cloned() {
+                    let gas_config = self.config().get_gas_config(false);
                     let balance = CurrencyCollection::with_grams(min(
-                        self.config().get_gas_config(false).cross_dapp_id_limit,
+                        (gas_config.gas_credit * gas_config.gas_price / (2 as u64).pow(16)).into(),
                         data.value.grams.as_u64_quiet(),
                     ));
                     let mut orig_balance = account.balance().unwrap().clone();

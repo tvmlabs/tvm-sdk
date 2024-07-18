@@ -124,8 +124,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         if let Some(_) = in_msg.int_header() {
             if params.src_dapp_id != account.get_dapp_id().cloned() {
+                let gas_config = self.config().get_gas_config(false);
                 msg_balance.grams = min(
-                    self.config().get_gas_config(false).cross_dapp_id_limit.into(),
+                    (gas_config.gas_credit * gas_config.gas_price / (2 as u64).pow(16)).into(),
                     msg_balance.grams,
                 );
             }

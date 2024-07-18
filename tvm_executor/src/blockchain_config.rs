@@ -199,7 +199,6 @@ impl TONDefaultConfig for GasLimitsPrices {
             freeze_due_limit: 100000000,
             delete_due_limit: 1000000000,
             max_gas_threshold: 10000000000,
-            cross_dapp_id_limit: 10000000,
         }
     }
 
@@ -215,7 +214,6 @@ impl TONDefaultConfig for GasLimitsPrices {
             freeze_due_limit: 100000000,
             delete_due_limit: 1000000000,
             max_gas_threshold: 1000000000,
-            cross_dapp_id_limit: 10000000,
         }
     }
 }

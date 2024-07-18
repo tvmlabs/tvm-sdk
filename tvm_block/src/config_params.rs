@@ -1610,7 +1610,6 @@ pub struct GasLimitsPrices {
     pub flat_gas_limit: u64,
     pub flat_gas_price: u64,
     pub max_gas_threshold: u128,
-    pub cross_dapp_id_limit: u64,
 }
 
 impl GasLimitsPrices {
