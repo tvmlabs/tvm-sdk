@@ -188,9 +188,9 @@ pub trait TransactionExecutor {
     ) -> Result<Transaction> {
         let old_hash = account_root.repr_hash();
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let mut is_previous_state_active = false;
-        if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
-            is_previous_state_active = true;
+        let mut is_previous_state_active = true;
+        if let Some(AccountState::AccountUninit { }) = account.state() {
+            is_previous_state_active = false;
         }
         let src_dapp_id = params.src_dapp_id.clone();
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;

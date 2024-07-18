@@ -18,6 +18,7 @@ use std::time::Instant;
 
 use tvm_block::AccStatusChange;
 use tvm_block::Account;
+use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
@@ -123,12 +124,14 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         if let Some(_) = in_msg.int_header() {
-            if params.src_dapp_id != account.get_dapp_id().cloned() {
-                let gas_config = self.config().get_gas_config(false);
-                msg_balance.grams = min(
-                    (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
-                    msg_balance.grams,
-                );
+            if let Some(AccountState::AccountUninit { }) = account.state() {
+                if params.src_dapp_id != account.get_dapp_id().cloned() {
+                    let gas_config = self.config().get_gas_config(false);
+                    msg_balance.grams = min(
+                        (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
+                        msg_balance.grams,
+                    );
+                }
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
