@@ -174,7 +174,7 @@ impl Display for LevelMask {
 }
 
 impl TryFrom<u8> for CellType {
-    type Error = anyhow::Error;
+    type Error = crate::Error;
 
     fn try_from(num: u8) -> Result<CellType> {
         let typ = match num {

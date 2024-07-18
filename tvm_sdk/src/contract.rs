@@ -154,7 +154,7 @@ impl ContractImage {
         match &self.state_init.code {
             Some(cell) => tvm_types::boc::write_boc(cell),
             None => {
-                anyhow::bail!(SdkError::InvalidData { msg: "State init has no code".to_owned() })
+                fail!(SdkError::InvalidData { msg: "State init has no code".to_owned() })
             }
         }
     }
@@ -163,7 +163,7 @@ impl ContractImage {
         match &self.state_init.data {
             Some(cell) => tvm_types::boc::write_boc(cell),
             None => {
-                anyhow::bail!(SdkError::InvalidData { msg: "State init has no data".to_owned() })
+                fail!(SdkError::InvalidData { msg: "State init has no data".to_owned() })
             }
         }
     }

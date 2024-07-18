@@ -16,7 +16,8 @@ use std::fmt::UpperHex;
 use std::str;
 use std::str::FromStr;
 
-pub use anyhow::Result;
+pub type Error = failure::Error;
+pub type Result<T> = std::result::Result<T, Error>;
 use num::FromPrimitive;
 use smallvec::SmallVec;
 pub use thiserror::Error;
@@ -31,20 +32,20 @@ pub type Status = Result<()>;
 #[macro_export]
 macro_rules! error {
     ($error:literal) => {
-        anyhow::anyhow!("{} {}:{}", $error, file!(), line!())
+        failure::err_msg(format!("{} {}:{}", $error, file!(), line!()))
     };
     ($error:expr) => {
-        anyhow::Error::from($error)
+        failure::Error::from($error)
     };
     ($fmt:expr, $($arg:tt)+) => {
-        anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())
+        failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
     };
 }
 
 #[macro_export]
 macro_rules! fail {
     ($error:literal) => {
-        return Err(anyhow::anyhow!("{} {}:{}", $error, file!(), line!()))
+        return Err(failure::err_msg(format!("{} {}:{}", $error, file!(), line!())))
     };
     // uncomment to explicit panic for any ExceptionCode
     // (ExceptionCode::CellUnderflow) => {
@@ -54,7 +55,7 @@ macro_rules! fail {
         return Err(error!($error))
     };
     ($fmt:expr, $($arg:tt)*) => {
-        return Err(anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
+        return Err(failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())))
     };
 }
 
@@ -216,7 +217,7 @@ impl From<Vec<u8>> for UInt256 {
 }
 
 impl FromStr for UInt256 {
-    type Err = anyhow::Error;
+    type Err = Error;
 
     fn from_str(value: &str) -> Result<Self> {
         let mut result = Self::default();
@@ -299,7 +300,7 @@ impl From<&UInt256> for AccountId {
 }
 
 impl FromStr for AccountId {
-    type Err = anyhow::Error;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
         let uint: UInt256 = FromStr::from_str(s)?;

@@ -44,7 +44,7 @@ pub fn try_calc_subset_for_workchain(
     // workchain by default
     let workchains = config.workchains().unwrap_or_else(|_| SINGLE_WORKCHAIN.clone());
     match workchains.len()? as i32 {
-        0 => anyhow::bail!("workchain's description is empty"),
+        0 => tvm_types::fail!("workchain's description is empty"),
         1 => {
             validator_set.calc_subset(cc_config, shard_pfx, workchain_id, cc_seqno, _time).map(Some)
         }
@@ -94,7 +94,7 @@ pub fn calc_subset_for_workchain(
         time,
     )? {
         Some(x) => Ok(x),
-        None => anyhow::bail!(
+        None => tvm_types::fail!(
             "Not enough validators from total {} for workchain {}:{:016X} cc_seqno: {}",
             validator_set.list().len(),
             workchain_id,
@@ -159,7 +159,7 @@ pub(crate) fn check_crypto_signatures(
         let key = AdnlKeyId(*sign.node_id_short.as_array());
         if let Some(vd) = validators_map.get(&key) {
             if !vd.verify_signature(data, &sign.sign) {
-                anyhow::bail!("bad signature from validator with pub_key {}", key)
+                tvm_types::fail!("bad signature from validator with pub_key {}", key)
             }
             weight += vd.weight;
         }
