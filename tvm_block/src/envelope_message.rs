@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,29 +6,31 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::cmp::Ordering;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-
+use crate::common_message::CommonMessage;
+use crate::error;
 use crate::error::BlockError;
+use crate::fail;
 use crate::messages::Message;
 use crate::shard::AccountIdPrefixFull;
 use crate::shard::ShardIdent;
 use crate::types::AddSub;
 use crate::types::ChildCell;
 use crate::types::Grams;
+use crate::BuilderData;
+use crate::Cell;
 use crate::Deserializable;
+use crate::IBitstring;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
+use crate::SERDE_OPTS_COMMON_MESSAGE;
+use crate::SERDE_OPTS_EMPTY;
 
 #[cfg(test)]
 #[path = "tests/test_envelope_message.rs"]
@@ -55,10 +57,6 @@ pub enum IntermediateAddress {
 }
 
 impl IntermediateAddress {
-    pub const fn default() -> Self {
-        IntermediateAddress::Regular(IntermediateAddressRegular::default())
-    }
-
     pub fn use_src_bits(use_src_bits: u8) -> Result<Self> {
         let ia = IntermediateAddressRegular::with_use_src_bits(use_src_bits)?;
         Ok(IntermediateAddress::Regular(ia))
@@ -183,10 +181,6 @@ pub struct IntermediateAddressRegular {
 pub static FULL_BITS: u8 = 96;
 
 impl IntermediateAddressRegular {
-    pub const fn default() -> Self {
-        IntermediateAddressRegular { use_dest_bits: 0 }
-    }
-
     pub fn with_use_src_bits(use_src_bits: u8) -> Result<Self> {
         if use_src_bits > FULL_BITS {
             fail!(BlockError::InvalidArg(format!("use_src_bits must be <= {}", FULL_BITS)))
@@ -247,10 +241,6 @@ pub struct IntermediateAddressSimple {
 }
 
 impl IntermediateAddressSimple {
-    pub const fn default() -> Self {
-        Self { workchain_id: 0, addr_pfx: 0 }
-    }
-
     pub const fn with_addr(workchain_id: i8, addr_pfx: u64) -> Self {
         Self { workchain_id, addr_pfx }
     }
@@ -299,10 +289,6 @@ pub struct IntermediateAddressExt {
 }
 
 impl IntermediateAddressExt {
-    pub const fn default() -> Self {
-        Self { workchain_id: 0, addr_pfx: 0 }
-    }
-
     pub const fn with_addr(workchain_id: i32, addr_pfx: u64) -> Self {
         Self { workchain_id, addr_pfx }
     }
@@ -340,28 +326,41 @@ impl Deserializable for IntermediateAddressExt {
     }
 }
 
+const MSG_ENVELOPE_TAG: usize = 0x4;
+const MSG_ENVELOPE_TAG_2: usize = 0x5;
+
 // msg_envelope#4
-//   cur_addr:IntermediateAddress
-//   next_addr:IntermediateAddress
-//   fwd_fee_remaining:Grams
-//   msg:^(Message Any)
-// = MsgEnvelope;
+//   cur_addr:IntnveloMsgEnvelope;
 #[derive(Clone, Default, Debug, Eq, PartialEq)]
 pub struct MsgEnvelope {
     cur_addr: IntermediateAddress,
     next_addr: IntermediateAddress,
     fwd_fee_remaining: Grams,
-    msg: ChildCell<Message>,
+    msg: ChildCell<CommonMessage>,
 }
 
 impl MsgEnvelope {
     /// Create Envelope with message and remainig_fee
     pub fn with_message_and_fee(msg: &Message, fwd_fee_remaining: Grams) -> Result<Self> {
         if !msg.is_internal() {
-            fail!("MsgEnvelope can be made only for internal messages")
+            fail!("MsgEnvelope can be made only for internal messages");
         }
+        let opts = SERDE_OPTS_EMPTY;
         Ok(Self::with_routing(
-            msg.serialize()?,
+            ChildCell::with_struct_and_opts(&CommonMessage::Std(msg.clone()), opts)?,
+            fwd_fee_remaining,
+            IntermediateAddress::full_dest(),
+            IntermediateAddress::full_dest(),
+        ))
+    }
+
+    pub fn with_common_msg_support(msg: &CommonMessage, fwd_fee_remaining: Grams) -> Result<Self> {
+        if !msg.is_internal() {
+            fail!("MsgEnvelope can be made only for internal messages");
+        }
+        let opts = SERDE_OPTS_COMMON_MESSAGE;
+        Ok(Self::with_routing(
+            ChildCell::with_struct_and_opts(msg, opts)?,
             fwd_fee_remaining,
             IntermediateAddress::full_dest(),
             IntermediateAddress::full_dest(),
@@ -369,9 +368,10 @@ impl MsgEnvelope {
     }
 
     /// Create Envelope with message cell and remainig_fee
+    /// TODO should be marked as deprecated and removed if possible
     pub fn with_message_cell_and_fee(msg_cell: Cell, fwd_fee_remaining: Grams) -> Self {
         Self::with_routing(
-            msg_cell,
+            ChildCell::with_cell_and_opts(msg_cell, SERDE_OPTS_EMPTY),
             fwd_fee_remaining,
             IntermediateAddress::full_dest(),
             IntermediateAddress::full_dest(),
@@ -380,18 +380,16 @@ impl MsgEnvelope {
 
     /// Create Envelope with message and remainig_fee and routing settings
     pub fn with_routing(
-        msg_cell: Cell,
+        msg: ChildCell<CommonMessage>,
         fwd_fee_remaining: Grams,
         cur_addr: IntermediateAddress,
         next_addr: IntermediateAddress,
     ) -> Self {
-        MsgEnvelope { cur_addr, next_addr, fwd_fee_remaining, msg: ChildCell::with_cell(msg_cell) }
+        MsgEnvelope { cur_addr, next_addr, fwd_fee_remaining, msg }
     }
 
     /// Create Envelope with hypercube routing params
-    /// TBD
-    #[allow(dead_code)]
-    pub(crate) fn hypercube_routing(
+    pub fn hypercube_routing(
         msg: &Message,
         src_shard: &ShardIdent,
         fwd_fee_remaining: Grams,
@@ -434,17 +432,32 @@ impl MsgEnvelope {
 
     /// Read message struct from envelope
     pub fn read_message(&self) -> Result<Message> {
+        let msg = self.msg.read_struct()?;
+        match msg {
+            CommonMessage::Std(msg) => Ok(msg),
+            _ => fail!(BlockError::UnexpectedStructVariant(
+                "CommonMessage::Std".to_string(),
+                msg.get_type_name()
+            )),
+        }
+    }
+
+    pub fn read_common_message(&self) -> Result<CommonMessage> {
         self.msg.read_struct()
     }
 
     /// Write message struct to envelope
     pub fn write_message(&mut self, value: &Message) -> Result<()> {
-        self.msg.write_struct(value)
+        self.msg.write_struct(&CommonMessage::Std(value.clone()))
     }
 
     /// Return message cell from envelope
     pub fn message_cell(&self) -> Cell {
         self.msg.cell()
+    }
+
+    pub fn msg_cell(&self) -> ChildCell<CommonMessage> {
+        self.msg.clone()
     }
 
     /// Return message hash from envelope
@@ -500,31 +513,48 @@ impl MsgEnvelope {
             self.message_cell().repr_hash()
         )
     }
+
+    pub fn serde_opts(&self) -> u8 {
+        self.msg.serde_opts()
+    }
 }
 
-const MSG_ENVELOPE_TAG: usize = 0x4;
+fn serialize_msgenvelope(x: &MsgEnvelope, cell: &mut BuilderData, opts: u8) -> Result<()> {
+    let tag =
+        if opts & SERDE_OPTS_COMMON_MESSAGE != 0 { MSG_ENVELOPE_TAG_2 } else { MSG_ENVELOPE_TAG };
+    cell.append_bits(tag, 4)?;
+    x.cur_addr.write_with_opts(cell, opts)?;
+    x.next_addr.write_with_opts(cell, opts)?;
+    x.fwd_fee_remaining.write_with_opts(cell, opts)?;
+    cell.checked_append_reference(x.msg.cell())?;
+    Ok(())
+}
 
 impl Serializable for MsgEnvelope {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bits(MSG_ENVELOPE_TAG, 4)?;
-        self.cur_addr.write_to(cell)?;
-        self.next_addr.write_to(cell)?;
-        self.fwd_fee_remaining.write_to(cell)?;
-        cell.checked_append_reference(self.msg.cell())?;
-        Ok(())
+        serialize_msgenvelope(self, cell, SERDE_OPTS_EMPTY)
+    }
+
+    fn write_with_opts(&self, cell: &mut BuilderData, opts: u8) -> Result<()> {
+        serialize_msgenvelope(self, cell, opts)
     }
 }
 
 impl Deserializable for MsgEnvelope {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         let tag = cell.get_next_int(4)? as usize;
-        if tag != MSG_ENVELOPE_TAG {
+        if tag != MSG_ENVELOPE_TAG && tag != MSG_ENVELOPE_TAG_2 {
             fail!(BlockError::InvalidConstructorTag { t: tag as u32, s: "MsgEnvelope".to_string() })
         }
-        self.cur_addr.read_from(cell)?;
-        self.next_addr.read_from(cell)?;
-        self.fwd_fee_remaining.read_from(cell)?;
-        self.msg.read_from_reference(cell)?;
+        let opts = match tag {
+            MSG_ENVELOPE_TAG_2 => SERDE_OPTS_COMMON_MESSAGE,
+            _ => SERDE_OPTS_EMPTY,
+        };
+        self.cur_addr.read_from_with_opts(cell, opts)?;
+        self.next_addr.read_from_with_opts(cell, opts)?;
+        self.fwd_fee_remaining.read_from_with_opts(cell, opts)?;
+        let msg_cell = cell.checked_drain_reference()?;
+        self.msg = ChildCell::with_cell_and_opts(msg_cell, opts);
         Ok(())
     }
 }

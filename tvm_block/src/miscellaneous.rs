@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,22 +6,19 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::fail;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapSubtree;
-use tvm_types::HashmapType;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-
 use crate::define_HashmapE;
+use crate::fail;
+use crate::BuilderData;
+use crate::Cell;
 use crate::Deserializable;
+use crate::HashmapSubtree;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
 
 #[cfg(test)]
 #[path = "tests/test_miscellaneous.rs"]
@@ -117,7 +114,8 @@ define_HashmapE!(IhrPendingInfo, 320, IhrPendingSince);
 
 impl IhrPendingInfo {
     pub fn split_inplace(&mut self, split_key: &SliceData) -> Result<()> {
-        self.0.into_subtree_with_prefix(split_key, &mut 0)
+        self.0 = self.0.subtree_with_prefix(split_key, &mut 0)?;
+        Ok(())
     }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,36 +6,26 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 use std::fs::File;
 use std::io::Read;
 
-use ed25519_dalek::SigningKey;
-use ed25519_dalek::VerifyingKey;
-use tvm_types::read_boc;
-
 use super::*;
 use crate::config_params::ConfigParamEnum;
+use crate::read_boc;
 use crate::write_read_and_assert;
 use crate::Block;
+use crate::Cell;
 use crate::ShardIdent;
 use crate::TopBlockDescr;
-
-#[test]
-fn test_crypto_signature_new_default() {
-    let cs = CryptoSignature::new();
-    let cs2 = CryptoSignature::default();
-
-    assert_eq!(cs, cs2);
-    write_read_and_assert(cs);
-}
+use crate::UInt256;
 
 #[test]
 fn test_crypto_signature_with() {
-    let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
+    let cs = CryptoSignature::with_r_s(&[1; 32], &[2; 32]);
 
-    assert_ne!(cs, CryptoSignature::from_r_s(&[3; 32], &[2; 32]).unwrap());
+    assert_ne!(cs, CryptoSignature::with_r_s(&[3; 32], &[2; 32]));
     write_read_and_assert(cs);
 }
 
@@ -50,7 +40,7 @@ fn test_crypto_signature_pair_new_default() {
 
 #[test]
 fn test_crypto_signature_pair_with() {
-    let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
+    let cs = CryptoSignature::with_r_s(&[1; 32], &[2; 32]);
     let csp = CryptoSignaturePair::with_params(UInt256::from([12; 32]), cs.clone());
 
     assert_ne!(csp, CryptoSignaturePair::with_params(UInt256::from([33; 32]), cs));
@@ -59,36 +49,26 @@ fn test_crypto_signature_pair_with() {
 }
 
 #[test]
-fn test_crypto_sig_pub_key_new_default() {
-    let spk = SigPubKey::new();
-    let spk2 = SigPubKey::default();
-
-    assert_eq!(spk, spk2);
-    write_read_and_assert(spk);
-}
-
-#[test]
 fn test_crypto_sig_pub_keyr_with() {
-    let sk: SigningKey = SigningKey::generate(&mut rand::thread_rng());
-    let pk: VerifyingKey = (&sk).into();
-    let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
+    let keypair = Ed25519KeyOption::generate().unwrap();
+    let spk = SigPubKey::from_bytes(keypair.pub_key().unwrap()).unwrap();
     write_read_and_assert(spk);
 }
 
-fn get_rand_vec() -> Vec<u8> {
-    (0..32).map(|_| rand::random::<u8>()).collect()
+fn get_rand_vec() -> [u8; 32] {
+    (0..32).map(|_| rand::random()).collect::<Vec<u8>>().try_into().unwrap()
 }
 
-fn get_rand_s() -> Vec<u8> {
-    let mut v: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
-    v[31] = 0;
-    v
+fn get_rand_s() -> [u8; 32] {
+    let mut v = (0..31).map(|_| rand::random()).collect::<Vec<u8>>();
+    v.push(0);
+    v.try_into().unwrap()
 }
 
 fn get_crypto_sig_pair() -> CryptoSignaturePair {
     CryptoSignaturePair::with_params(
         UInt256::rand(),
-        CryptoSignature::from_r_s(&get_rand_vec(), &get_rand_s()).unwrap(),
+        CryptoSignature::with_r_s(&get_rand_vec(), &get_rand_s()),
     )
 }
 
@@ -107,7 +87,7 @@ fn test_bsp() -> BlockSignaturesPure {
 
 #[test]
 fn test_crypto_block_signatures_pure() {
-    let bsp = BlockSignaturesPure::new();
+    let bsp = BlockSignaturesPure::default();
     let bsp1 = BlockSignaturesPure::default();
     assert_eq!(bsp, bsp1);
 
@@ -176,6 +156,7 @@ fn read_block(filename: &str) -> (Block, Cell, UInt256) {
         .withdraw_single_root()
         .expect("Error deserializing boc file - expected one root");
     let block = Block::construct_from_cell(root.clone()).expect("error deserializing block");
+
     let hash = UInt256::calc_sha256(&data);
 
     (block, root, hash)

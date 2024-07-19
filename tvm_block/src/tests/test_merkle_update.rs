@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,30 +6,28 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::fs::read;
 use std::path::Path;
 use std::time::Instant;
 
-use tvm_types::read_single_root_boc;
-use tvm_types::write_boc;
-use tvm_types::AccountId;
-use tvm_types::BocWriter;
-use tvm_types::ExceptionCode;
-use tvm_types::UsageTree;
-
 use super::*;
 use crate::define_HashmapE;
 use crate::generate_test_account_by_init_code_hash;
-use crate::hashmapaug::HashmapAugType;
+use crate::read_single_root_boc;
+use crate::write_boc;
+use crate::AccountId;
 use crate::Block;
+use crate::BocWriter;
 use crate::CurrencyCollection;
+use crate::ExceptionCode;
 use crate::Grams;
-use crate::HashmapE;
+use crate::HashmapAugType;
 use crate::HashmapType;
 use crate::InternalMessageHeader;
+use crate::MerkleProof;
 use crate::Message;
 use crate::MsgAddressInt;
 use crate::MsgEnvelope;
@@ -46,6 +44,7 @@ use crate::ShardStateSplit;
 use crate::ShardStateUnsplit;
 use crate::StateInit;
 use crate::TickTock;
+use crate::UsageTree;
 
 #[test]
 fn test_merkle_update() {
@@ -156,8 +155,7 @@ fn test_merkle_update_with_hasmaps() {
 
         let old_cell = acc.serialize().unwrap();
 
-        let mut f = CurrencyCollection::new();
-        f.grams = Grams::new(a as u128).unwrap();
+        let f = CurrencyCollection::with_grams(a as u64);
         acc.add_funds(&f).unwrap();
 
         let data = SliceData::new(vec![

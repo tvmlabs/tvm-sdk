@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,31 +6,18 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::fmt;
 use std::str::FromStr;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-use tvm_types::UsageTree;
-use tvm_types::MAX_DATA_BITS;
-use tvm_types::MAX_REFERENCES_COUNT;
-
 use crate::blocks::Block;
 use crate::define_HashmapE;
+use crate::dictionary::hashmapaug::HashmapAugType;
+use crate::error;
 use crate::error::BlockError;
-use crate::hashmapaug::HashmapAugType;
+use crate::fail;
 use crate::merkle_proof::MerkleProof;
 use crate::shard::MASTERCHAIN_ID;
 use crate::types::AddSub;
@@ -39,11 +26,25 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
+use crate::AccountId;
+use crate::BuilderData;
+use crate::Cell;
+use crate::CommonMessage;
+use crate::CryptoSignature;
 use crate::Deserializable;
 use crate::GetRepresentationHash;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
+use crate::IBitstring;
+use crate::InRefValue;
+use crate::Result;
 use crate::Serializable;
+use crate::ShardIdent;
+use crate::SliceData;
+use crate::UInt256;
+use crate::UsageTree;
+use crate::ValidatorDescr;
+use crate::MAX_DATA_BITS;
+use crate::MAX_REFERENCES_COUNT;
+use crate::SERDE_OPTS_EMPTY;
 
 #[cfg(test)]
 #[path = "tests/test_messages.rs"]
@@ -110,7 +111,7 @@ impl MsgAddrVar {
 
 impl Serializable for MsgAddrVar {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        self.anycast.write_maybe_to(cell)?; // anycast
+        self.anycast.write_to(cell)?; // anycast
         let addr_len = Number9::new(self.address.remaining_bits() as u32)?;
         addr_len.write_to(cell)?; // addr_len
         cell.append_i32(self.workchain_id)?; // workchain_id
@@ -150,7 +151,7 @@ impl Default for MsgAddrStd {
 
 impl Serializable for MsgAddrStd {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        self.anycast.write_maybe_to(cell)?; // anycast
+        self.anycast.write_to(cell)?; // anycast
         self.workchain_id.write_to(cell)?; // workchain_id
         self.address.write_to(cell)?; // address
         Ok(())
@@ -200,7 +201,7 @@ impl MsgAddressExt {
 }
 
 impl FromStr for MsgAddressExt {
-    type Err = tvm_types::Error;
+    type Err = crate::Error;
 
     fn from_str(string: &str) -> Result<Self> {
         match MsgAddress::from_str(string)? {
@@ -277,7 +278,7 @@ impl MsgAddress {
 }
 
 impl FromStr for MsgAddress {
-    type Err = tvm_types::Error;
+    type Err = crate::Error;
 
     fn from_str(string: &str) -> Result<Self> {
         let parts: Vec<&str> = string.split(':').take(4).collect();
@@ -372,7 +373,7 @@ impl Default for MsgAddressInt {
 }
 
 impl FromStr for MsgAddressInt {
-    type Err = tvm_types::Error;
+    type Err = crate::Error;
 
     fn from_str(string: &str) -> Result<Self> {
         match MsgAddress::from_str(string)? {
@@ -398,6 +399,10 @@ impl MsgAddressInt {
         address: AccountId,
     ) -> Result<Self> {
         Ok(MsgAddressInt::AddrStd(MsgAddrStd::with_address(anycast, workchain_id, address)))
+    }
+
+    pub fn standard(workchain_id: i8, address: impl Into<AccountId>) -> Self {
+        MsgAddressInt::AddrStd(MsgAddrStd::with_address(None, workchain_id, address.into()))
     }
 
     pub fn get_address(&self) -> SliceData {
@@ -552,8 +557,8 @@ impl MsgAddressIntOrNone {
 impl fmt::Display for MsgAddressIntOrNone {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            MsgAddressIntOrNone::None => write!(f, ""),
-            MsgAddressIntOrNone::Some(addr) => write!(f, "{}", addr),
+            MsgAddressIntOrNone::None => Ok(()),
+            MsgAddressIntOrNone::Some(addr) => write!(f, "{addr}"),
         }
     }
 }
@@ -677,7 +682,8 @@ impl InternalMessageHeader {
 
 impl Serializable for InternalMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bit_zero()? //tag
+        cell
+            .append_bit_zero()?              //tag
             .append_bit_bool(self.ihr_disabled)?
             .append_bit_bool(self.bounce)?
             .append_bit_bool(self.bounced)?;
@@ -1442,14 +1448,12 @@ impl Message {
         match self.init {
             Some(_) => {
                 if !init_to_ref {
-                    builder
-                        .append_bit_one()? //mayby bit
+                    builder.append_bit_one()?      //mayby bit
                         .append_bit_zero()?; //either bit
                     builder.append_builder(&init_builder)?;
                 } else {
                     // if not enough space in current cell - append as reference
-                    builder
-                        .append_bit_one()? //mayby bit
+                    builder.append_bit_one()?      //mayby bit
                         .append_bit_one()?; //either bit
                     builder.checked_append_reference(init_builder.into_cell()?)?;
                 }
@@ -1550,18 +1554,7 @@ impl Deserializable for Message {
 
 impl InternalMessageHeader {
     pub fn new() -> Self {
-        InternalMessageHeader {
-            ihr_disabled: false,
-            bounce: false,
-            bounced: false,
-            src: MsgAddressIntOrNone::None,
-            dst: MsgAddressInt::default(),
-            value: CurrencyCollection::default(),
-            ihr_fee: Grams::default(),
-            fwd_fee: Grams::default(),
-            created_lt: 0,
-            created_at: UnixTime32::default(),
-        }
+        Self::default()
     }
 }
 
@@ -1709,7 +1702,7 @@ impl StateInit {
     }
 
     pub fn set_library(&mut self, val: Cell) {
-        self.library = StateInitLib::with_hashmap(Some(val));
+        self.library = StateInitLib::with_hashmap(Some(val), SERDE_OPTS_EMPTY);
     }
 
     pub fn set_library_code(&mut self, code: Cell, public: bool) -> Result<()> {
@@ -1720,10 +1713,10 @@ impl StateInit {
 
 impl Serializable for StateInit {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        self.split_depth.write_maybe_to(cell)?;
-        self.special.write_maybe_to(cell)?;
-        self.code.write_maybe_to(cell)?;
-        self.data.write_maybe_to(cell)?;
+        self.split_depth.write_to(cell)?;
+        self.special.write_to(cell)?;
+        self.code.write_to(cell)?;
+        self.data.write_to(cell)?;
         self.library.write_to(cell)?;
         Ok(())
     }
@@ -1731,8 +1724,8 @@ impl Serializable for StateInit {
 
 impl Deserializable for StateInit {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.split_depth = Number5::read_maybe_from(cell)?;
-        self.special = TickTock::read_maybe_from(cell)?;
+        self.split_depth.read_from(cell)?;
+        self.special.read_from(cell)?;
         // code:(Maybe ^Cell)
         self.code = match cell.get_next_bit()? {
             true => Some(cell.checked_drain_reference()?),
@@ -1751,7 +1744,7 @@ impl Deserializable for StateInit {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Default, Eq, PartialEq, Clone, Copy)]
 pub enum MessageProcessingStatus {
     #[default]
     Unknown = 0,
@@ -1764,9 +1757,356 @@ pub enum MessageProcessingStatus {
     Transiting,
 }
 
+///////////////////////////////////////////////////////////////////////////////
+/// Auto-generated code
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct AnycastInfo {
+    pub depth: Number5,
+    pub rewrite_pfx: SliceData,
+}
+
+impl Deserializable for AnycastInfo {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        self.depth.read_from(cell)?;
+        self.rewrite_pfx = cell.get_next_slice(self.depth.as_usize())?;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct MsgAddrExt {
+    pub len: Number9,
+    pub external_address: SliceData,
+}
+
+impl Deserializable for MsgAddrExt {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        self.len.read_from(cell)?;
+        self.external_address = cell.get_next_slice(self.len.as_usize())?;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub enum MsgAddressExt {
+    #[default]
+    AddrNone,
+    AddrExtern(MsgAddrExt),
+}
+
+impl Deserializable for MsgAddressExt {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        let bits = cell.get_next_bits(2)?[0] >> 6;
+        if bits == 0 {
+            *self = MsgAddressExt::AddrNone;
+        }
+        if bits == 1 {
+            let mut data = MsgAddrExt::default();
+            data.read_from(cell)?;
+            *self = MsgAddressExt::AddrExtern(data);
+        }
+        // TODO: add error checking!
+        Ok(())
+    }
+}
+
+// TODO: default Default is not working for MsgAddrStd
+#[derive(Clone, Debug, /* Default, */ PartialEq, Eq, Hash)]
+pub struct MsgAddrStd {
+    pub anycast: Option<AnycastInfo>,
+    pub workchain_id: i8,
+    pub address: AccountId,
+}
+
+impl Deserializable for MsgAddrStd {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        self.anycast.read_from(cell)?;
+        self.workchain_id.read_from(cell)?;
+        self.address = cell.get_next_slice(256)?;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct MsgAddrVar {
+    pub anycast: Option<AnycastInfo>,
+    pub addr_len: Number9,
+    pub workchain_id: i32,
+    pub address: SliceData,
+}
+
+impl Deserializable for MsgAddrVar {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        self.anycast.read_from(cell)?;
+        self.addr_len.read_from(cell)?;
+        self.workchain_id.read_from(cell)?;
+        self.address = cell.get_next_slice(self.addr_len.as_usize())?;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum MsgAddressInt {
+    AddrStd(MsgAddrStd),
+    AddrVar(MsgAddrVar),
+}
+
+impl Deserializable for MsgAddressInt {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        *self = match cell.get_next_int(2)? {
+            0b10 => MsgAddressInt::AddrStd(MsgAddrStd::construct_from(cell)?),
+            0b11 => MsgAddressInt::AddrVar(MsgAddrVar::construct_from(cell)?),
+            _ => fail!(BlockError::Other("Wrong type of address".to_string())),
+        };
+        // TODO: fix autogen for error checking!
+        // let bits = cell.get_next_bits(2)?[0] >> 6;
+        // if bits == 2 {
+        // let mut data = MsgAddrStd::default();
+        // data.read_from(cell)?;
+        // self = MsgAddressInt::AddrStd(data);
+        // }
+        // if bits == 3 {
+        // let mut data = MsgAddrVar::default();
+        // data.read_from(cell)?;
+        // self = MsgAddressInt::AddrVar(data);
+        // }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub enum MsgAddress {
+    #[default]
+    AddrNone,
+    AddrExt(MsgAddrExt),
+    AddrStd(MsgAddrStd),
+    AddrVar(MsgAddrVar),
+}
+
+impl MsgAddress {
+    pub fn to_msg_addr_int(self) -> Option<MsgAddressInt> {
+        match self {
+            MsgAddress::AddrStd(addr) => Some(MsgAddressInt::AddrStd(addr)),
+            MsgAddress::AddrVar(addr) => Some(MsgAddressInt::AddrVar(addr)),
+            MsgAddress::AddrNone | MsgAddress::AddrExt(_) => None,
+        }
+    }
+}
+
+impl Deserializable for MsgAddress {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        let bits = cell.get_next_bits(2)?[0] >> 6;
+        if bits == 0 {
+            *self = MsgAddress::AddrNone;
+        }
+        if bits == 1 {
+            let mut data = MsgAddrExt::default();
+            data.read_from(cell)?;
+            *self = MsgAddress::AddrExt(data);
+        }
+        if bits == 2 {
+            let mut data = MsgAddrStd::default();
+            data.read_from(cell)?;
+            *self = MsgAddress::AddrStd(data);
+        }
+        if bits == 3 {
+            let mut data = MsgAddrVar::default();
+            data.read_from(cell)?;
+            *self = MsgAddress::AddrVar(data);
+        }
+        Ok(())
+    }
+}
+
+pub const MSG_PACK_INFO_TAG: u8 = 0x1; // 4 bits
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct MsgPackInfo {
+    pub seqno: u64,
+    pub shard: ShardIdent,
+    pub round: u64,
+    pub gen_utime_ms: u64,
+    pub prev: UInt256,
+    pub prev_2: Option<UInt256>,
+    pub mc_block: u32,
+}
+
+impl Serializable for MsgPackInfo {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        builder.append_bits(MSG_PACK_INFO_TAG as usize, 4)?;
+        self.seqno.write_to(builder)?;
+        self.shard.write_to(builder)?;
+        self.round.write_to(builder)?;
+        self.gen_utime_ms.write_to(builder)?;
+        self.prev.write_to(builder)?;
+        self.prev_2.write_to(builder)?;
+        self.mc_block.write_to(builder)?;
+        Ok(())
+    }
+}
+
+impl Deserializable for MsgPackInfo {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        let tag = slice.get_next_int(4)? as u8;
+        if tag != MSG_PACK_INFO_TAG {
+            fail!(BlockError::InvalidConstructorTag {
+                t: tag as u32,
+                s: std::any::type_name::<Self>().to_string()
+            })
+        }
+        self.seqno.read_from(slice)?;
+        self.shard.read_from(slice)?;
+        self.round.read_from(slice)?;
+        self.gen_utime_ms.read_from(slice)?;
+        self.prev.read_from(slice)?;
+        self.prev_2.read_from(slice)?;
+        self.mc_block.read_from(slice)?;
+        Ok(())
+    }
+}
+
+define_HashmapE!(ExtMsgMap, 256, InRefValue<CommonMessage>);
+
+pub const MSG_PACK_TAG: u8 = 0x1; // 4 bits
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct MsgPack {
+    pub info: MsgPackInfo,
+    pub messages: ExtMsgMap,
+}
+
+impl Serializable for MsgPack {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        builder.append_bits(MSG_PACK_TAG as usize, 4)?;
+        self.info.write_to(builder)?;
+        self.messages.write_to(builder)?;
+        Ok(())
+    }
+}
+
+impl Deserializable for MsgPack {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        let tag = slice.get_next_int(4)? as u8;
+        if tag != MSG_PACK_TAG {
+            fail!(BlockError::InvalidConstructorTag {
+                t: tag as u32,
+                s: std::any::type_name::<Self>().to_string()
+            })
+        }
+        self.info.read_from(slice)?;
+        self.messages.read_from(slice)?;
+        Ok(())
+    }
+}
+
+define_HashmapE!(MsgPackSignatures, 16, CryptoSignature);
+
+pub const MSG_PACK_PROOF_TAG: u8 = 0x1; // 4 bits
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct MsgPackProof {
+    pub proof: MerkleProof,
+    pub signatures: MsgPackSignatures,
+}
+impl MsgPackProof {
+    pub fn new(pack_root: &Cell, signatures: MsgPackSignatures) -> Result<Self> {
+        let usage_tree = UsageTree::with_root(pack_root.clone());
+        let _pack = MsgPack::construct_from_cell(usage_tree.root_cell())?;
+        let proof = MerkleProof::create_by_usage_tree(pack_root, usage_tree)?;
+        Ok(MsgPackProof { proof, signatures })
+    }
+
+    pub fn virtualize(&self) -> Result<MsgPack> {
+        self.proof.virtualize()
+    }
+
+    pub fn check(
+        &self,
+        seqno: u64,
+        hash: &UInt256,
+        validators_list: &[ValidatorDescr],
+    ) -> Result<u16> {
+        if hash != &self.proof.hash {
+            fail!("Invalid root hash")
+        }
+        if seqno != self.virtualize()?.info.seqno {
+            fail!("Invalid seqno")
+        }
+
+        let mut valid_signatures = 0;
+        self.signatures.iterate_with_keys(|key: u16, sign| {
+            if let Some(vd) = validators_list.get(key as usize) {
+                if !vd.verify_signature(hash.as_slice(), &sign) {
+                    fail!(BlockError::BadSignature)
+                }
+                valid_signatures += 1;
+            }
+            Ok(true)
+        })?;
+
+        Ok(valid_signatures)
+    }
+}
+impl Serializable for MsgPackProof {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        builder.append_bits(MSG_PACK_PROOF_TAG as usize, 4)?;
+        builder.checked_append_reference(self.proof.write_to_new_cell()?.into_cell()?)?;
+        self.signatures.write_to(builder)?;
+        Ok(())
+    }
+}
+
+impl Deserializable for MsgPackProof {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        let tag = slice.get_next_int(4)? as u8;
+        if tag != MSG_PACK_PROOF_TAG {
+            fail!(BlockError::InvalidConstructorTag {
+                t: tag as u32,
+                s: std::any::type_name::<Self>().to_string()
+            })
+        }
+        self.proof.read_from_cell(slice.checked_drain_reference()?)?;
+        self.signatures.read_from(slice)?;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct MsgPackId {
+    pub shard: ShardIdent,
+    pub seqno: u64,
+    pub hash: UInt256,
+}
+
+impl MsgPackId {
+    pub fn new(shard: ShardIdent, seqno: u64, hash: UInt256) -> Self {
+        Self { shard, seqno, hash }
+    }
+}
+
+impl Serializable for MsgPackId {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        self.shard.write_to(builder)?;
+        self.seqno.write_to(builder)?;
+        self.hash.write_to(builder)?;
+        Ok(())
+    }
+}
+
+impl Deserializable for MsgPackId {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.shard.read_from(slice)?;
+        self.seqno.read_from(slice)?;
+        self.hash.read_from(slice)?;
+        Ok(())
+    }
+}
+
 #[allow(dead_code)]
 pub fn generate_big_msg() -> Message {
     let mut msg = Message::with_int_header(InternalMessageHeader::default());
+
     let mut stinit = StateInit::default();
     stinit.set_split_depth(Number5::new(23).unwrap());
     stinit.set_special(TickTock::with_values(false, true));
@@ -1830,175 +2170,13 @@ pub fn generate_big_msg() -> Message {
         0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
         0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
         0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0x80,
-    ])
-    .into_builder();
+    ]);
 
-    body1.checked_append_reference(body2.into_cell().unwrap()).unwrap();
+    body1.checked_append_reference(body2.into_cell()).unwrap();
     body.checked_append_reference(body1.into_cell().unwrap()).unwrap();
 
     msg.set_state_init(stinit);
     msg.set_body(SliceData::load_builder(body).unwrap());
+
     msg
-}
-
-///////////////////////////////////////////////////////////////////////////////
-/// Auto-generated code
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct AnycastInfo {
-    pub depth: Number5,
-    pub rewrite_pfx: SliceData,
-}
-
-impl Deserializable for AnycastInfo {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.depth.read_from(cell)?;
-        self.rewrite_pfx = cell.get_next_slice(self.depth.as_usize())?;
-        Ok(())
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct MsgAddrExt {
-    pub len: Number9,
-    pub external_address: SliceData,
-}
-
-impl Deserializable for MsgAddrExt {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.len.read_from(cell)?;
-        self.external_address = cell.get_next_slice(self.len.as_usize())?;
-        Ok(())
-    }
-}
-
-#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
-pub enum MsgAddressExt {
-    #[default]
-    AddrNone,
-    AddrExtern(MsgAddrExt),
-}
-
-impl Deserializable for MsgAddressExt {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        let bits = cell.get_next_bits(2)?[0] >> 6;
-        if bits == 0 {
-            *self = MsgAddressExt::AddrNone;
-        }
-        if bits == 1 {
-            let mut data = MsgAddrExt::default();
-            data.read_from(cell)?;
-            *self = MsgAddressExt::AddrExtern(data);
-        }
-        // TODO: add error checking!
-        Ok(())
-    }
-}
-
-// TODO: default Default is not working for MsgAddrStd
-#[derive(Clone, Debug, /* Default, */ PartialEq, Eq, Hash)]
-pub struct MsgAddrStd {
-    pub anycast: Option<AnycastInfo>,
-    pub workchain_id: i8,
-    pub address: AccountId,
-}
-
-impl Deserializable for MsgAddrStd {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.anycast = AnycastInfo::read_maybe_from(cell)?;
-        self.workchain_id.read_from(cell)?;
-        self.address = cell.get_next_slice(256)?;
-        Ok(())
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct MsgAddrVar {
-    pub anycast: Option<AnycastInfo>,
-    pub addr_len: Number9,
-    pub workchain_id: i32,
-    pub address: SliceData,
-}
-
-impl Deserializable for MsgAddrVar {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.anycast = AnycastInfo::read_maybe_from(cell)?;
-        self.addr_len.read_from(cell)?;
-        self.workchain_id.read_from(cell)?;
-        self.address = cell.get_next_slice(self.addr_len.as_usize())?;
-        Ok(())
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum MsgAddressInt {
-    AddrStd(MsgAddrStd),
-    AddrVar(MsgAddrVar),
-}
-
-impl Deserializable for MsgAddressInt {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        *self = match cell.get_next_int(2)? {
-            0b10 => MsgAddressInt::AddrStd(MsgAddrStd::construct_from(cell)?),
-            0b11 => MsgAddressInt::AddrVar(MsgAddrVar::construct_from(cell)?),
-            _ => fail!(BlockError::Other("Wrong type of address".to_string())),
-        };
-        // TODO: fix autogen for error checking!
-        // let bits = cell.get_next_bits(2)?[0] >> 6;
-        // if bits == 2 {
-        // let mut data = MsgAddrStd::default();
-        // data.read_from(cell)?;
-        // self = MsgAddressInt::AddrStd(data);
-        // }
-        // if bits == 3 {
-        // let mut data = MsgAddrVar::default();
-        // data.read_from(cell)?;
-        // self = MsgAddressInt::AddrVar(data);
-        // }
-        Ok(())
-    }
-}
-
-#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
-pub enum MsgAddress {
-    #[default]
-    AddrNone,
-    AddrExt(MsgAddrExt),
-    AddrStd(MsgAddrStd),
-    AddrVar(MsgAddrVar),
-}
-
-impl MsgAddress {
-    pub fn to_msg_addr_int(self) -> Option<MsgAddressInt> {
-        match self {
-            MsgAddress::AddrStd(addr) => Some(MsgAddressInt::AddrStd(addr)),
-            MsgAddress::AddrVar(addr) => Some(MsgAddressInt::AddrVar(addr)),
-            MsgAddress::AddrNone | MsgAddress::AddrExt(_) => None,
-        }
-    }
-}
-
-impl Deserializable for MsgAddress {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        let bits = cell.get_next_bits(2)?[0] >> 6;
-        if bits == 0 {
-            *self = MsgAddress::AddrNone;
-        }
-        if bits == 1 {
-            let mut data = MsgAddrExt::default();
-            data.read_from(cell)?;
-            *self = MsgAddress::AddrExt(data);
-        }
-        if bits == 2 {
-            let mut data = MsgAddrStd::default();
-            data.read_from(cell)?;
-            *self = MsgAddress::AddrStd(data);
-        }
-        if bits == 3 {
-            let mut data = MsgAddrVar::default();
-            data.read_from(cell)?;
-            *self = MsgAddress::AddrVar(data);
-        }
-        Ok(())
-    }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,24 +6,12 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::collections::HashMap;
 use std::fmt;
-
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::hm_label;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
+use std::ops::Range;
 
 use crate::bintree::BinTree;
 use crate::bintree::BinTreeType;
@@ -34,10 +22,13 @@ use crate::blocks::ProofChain;
 use crate::config_params::ConfigParams;
 use crate::define_HashmapAugE;
 use crate::define_HashmapE;
+use crate::dictionary::hashmapaug::Augmentable;
+use crate::dictionary::hashmapaug::HashmapAugType;
+use crate::dictionary::hashmapaug::TraverseNextStep;
+use crate::error;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentable;
-use crate::hashmapaug::HashmapAugType;
-use crate::hashmapaug::TraverseNextStep;
+use crate::fail;
+use crate::hm_label;
 use crate::inbound_messages::InMsg;
 use crate::shard::AccountIdPrefixFull;
 use crate::shard::ShardIdent;
@@ -47,12 +38,24 @@ use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
 use crate::types::InRefValue;
 use crate::validators::ValidatorInfo;
+use crate::validators::ValidatorsStat;
+use crate::AccountId;
 use crate::Augmentation;
+use crate::BuilderData;
+use crate::Cell;
 use crate::CopyleftRewards;
 use crate::Deserializable;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
+use crate::HashUpdate;
+use crate::IBitstring;
+use crate::MsgPackId;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
+use crate::VarUInteger32;
+use crate::SERDE_OPTS_COMMON_MESSAGE;
+use crate::SERDE_OPTS_EMPTY;
+use crate::SERDE_OPTS_MEMPOOL_NODES;
 use crate::U15;
 
 #[cfg(test)]
@@ -61,16 +64,6 @@ mod tests;
 
 // _ (HashmapE 32 ^(BinTree ShardDescr)) = ShardHashes;
 // _ (HashmapAugE 96 ShardFeeCreated ShardFeeCreated) = ShardFees;
-//
-// masterchain_block_extra#cca5
-// key_block:(## 1)
-// shard_hashes:ShardHashes
-// shard_fees:ShardFees
-// ^[ prev_blk_signatures:(HashmapE 16 CryptoSignaturePair)
-// recover_create_msg:(Maybe ^InMsg)
-// mint_msg:(Maybe ^InMsg) ]
-// config:key_block?ConfigParams
-// = McBlockExtra;
 define_HashmapE! {ShardHashes, 32, InRefValue<BinTree<ShardDescr>>}
 define_HashmapE! {CryptoSignatures, 16, CryptoSignaturePair}
 define_HashmapAugE! {ShardFees, 96, ShardIdentFull, ShardFeeCreated, ShardFeeCreated}
@@ -408,8 +401,8 @@ impl McShardRecord {
                 fees_collected: value_flow.fees_collected,
                 funds_created: value_flow.created,
                 copyleft_rewards: value_flow.copyleft_rewards,
-                proof_chain: None,
-                collators: None,
+                pack_info: info.read_pack_info()?,
+                ..Default::default()
             },
             block_id,
         })
@@ -476,7 +469,8 @@ impl ShardFees {
             prefix: shard.shard_prefix_with_tag(),
         };
         let fee = ShardFeeCreated { fees, create: created };
-        self.set(&id, &fee, &fee)
+        self.set(&id, &fee, &fee)?;
+        Ok(())
     }
 }
 
@@ -500,10 +494,22 @@ pub struct McBlockExtra {
     recover_create_msg: Option<ChildCell<InMsg>>,
     copyleft_msgs: CopyleftMessages,
     mint_msg: Option<ChildCell<InMsg>>,
+    mesh: MeshHashesExt,
     config: Option<ConfigParams>,
+    validators_stat: ValidatorsStat,
+    serde_opts: u8,
 }
 
 impl McBlockExtra {
+    pub fn with_common_message_support() -> Self {
+        let serde_opts = SERDE_OPTS_COMMON_MESSAGE;
+        Self {
+            serde_opts,
+            copyleft_msgs: CopyleftMessages::with_serde_opts(serde_opts),
+            ..Default::default()
+        }
+    }
+
     /// Get all fees for blockchain
     pub fn total_fee(&self) -> &CurrencyCollection {
         &self.fees.root_extra().fees
@@ -570,7 +576,8 @@ impl McBlockExtra {
     }
 
     pub fn write_recover_create_msg(&mut self, value: Option<&InMsg>) -> Result<()> {
-        self.recover_create_msg = value.map(ChildCell::with_struct).transpose()?;
+        self.recover_create_msg =
+            value.map(|v| ChildCell::with_struct_and_opts(v, self.serde_opts)).transpose()?;
         Ok(())
     }
 
@@ -583,7 +590,8 @@ impl McBlockExtra {
     }
 
     pub fn write_mint_msg(&mut self, value: Option<&InMsg>) -> Result<()> {
-        self.mint_msg = value.map(ChildCell::with_struct).transpose()?;
+        self.mint_msg =
+            value.map(|v| ChildCell::with_struct_and_opts(v, self.serde_opts)).transpose()?;
         Ok(())
     }
 
@@ -606,35 +614,57 @@ impl McBlockExtra {
 
     pub fn write_copyleft_msgs(&mut self, value: &[InMsg]) -> Result<()> {
         for (i, rec) in value.iter().enumerate() {
-            self.copyleft_msgs.setref(&U15(i as i16), &rec.serialize()?)?;
+            self.copyleft_msgs
+                .setref(&U15(i as i16), &rec.serialize_with_opts(self.serde_opts)?)?;
         }
         Ok(())
     }
+
+    pub fn mesh_descr(&self) -> &MeshHashesExt {
+        &self.mesh
+    }
+
+    pub fn mesh_descr_mut(&mut self) -> &mut MeshHashesExt {
+        &mut self.mesh
+    }
+
+    pub fn serde_opts(&self) -> u8 {
+        self.serde_opts
+    }
 }
 
-const MC_BLOCK_EXTRA_TAG: u16 = 0xCCA5;
-const MC_BLOCK_EXTRA_TAG_2: u16 = 0xdc75;
+const MC_BLOCK_EXTRA_TAG: u16 = 0xCCA5; // Original struct.
+const MC_BLOCK_EXTRA_TAG_2: u16 = 0xdc75; // With copyleft, but without common messages and mesh.
+const MC_BLOCK_EXTRA_TAG_3: u16 = 0xdc76; // With common messages and mesh (might be empty),
+// but without copyleft!
 
 impl Deserializable for McBlockExtra {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         let tag = cell.get_next_u16()?;
-        if tag != MC_BLOCK_EXTRA_TAG && tag != MC_BLOCK_EXTRA_TAG_2 {
+        if tag != MC_BLOCK_EXTRA_TAG && tag != MC_BLOCK_EXTRA_TAG_2 && tag != MC_BLOCK_EXTRA_TAG_3 {
             fail!(BlockError::InvalidConstructorTag {
                 t: tag.into(),
                 s: std::any::type_name::<Self>().to_string()
             })
         }
+        self.serde_opts = match tag {
+            MC_BLOCK_EXTRA_TAG_3 => SERDE_OPTS_COMMON_MESSAGE,
+            _ => 0,
+        };
         let key_block = cell.get_next_bit()?;
         self.shards.read_from(cell)?;
         self.fees.read_from(cell)?;
 
         let cell1 = &mut SliceData::load_cell(cell.checked_drain_reference()?)?;
         self.prev_blk_signatures.read_from(cell1)?;
-        self.recover_create_msg = ChildCell::construct_maybe_from_reference(cell1)?;
-        self.mint_msg = ChildCell::construct_maybe_from_reference(cell1)?;
+        self.recover_create_msg.read_from_with_opts(cell1, self.serde_opts)?;
+        self.mint_msg.read_from_with_opts(cell1, self.serde_opts)?;
 
         if tag == MC_BLOCK_EXTRA_TAG_2 {
             self.copyleft_msgs.read_from(cell1)?;
+        } else if tag == MC_BLOCK_EXTRA_TAG_3 {
+            self.mesh.read_from(cell1)?;
+            self.copyleft_msgs = CopyleftMessages::with_serde_opts(self.serde_opts);
         }
 
         self.config = if key_block { Some(ConfigParams::construct_from(cell)?) } else { None };
@@ -645,19 +675,38 @@ impl Deserializable for McBlockExtra {
 
 impl Serializable for McBlockExtra {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        let tag =
-            if self.copyleft_msgs.is_empty() { MC_BLOCK_EXTRA_TAG } else { MC_BLOCK_EXTRA_TAG_2 };
+        self.write_with_opts(cell, SERDE_OPTS_EMPTY)
+    }
+
+    fn write_with_opts(&self, cell: &mut BuilderData, opts: u8) -> Result<()> {
+        let copyleft = !self.copyleft_msgs.is_empty();
+        let common_message = opts & SERDE_OPTS_COMMON_MESSAGE != 0;
+        if copyleft && common_message {
+            fail!("copyleft and common messages is not supported together");
+        }
+        if !self.mesh.is_empty() && !common_message {
+            fail!("mesh is not empty but common messages option is not set");
+        }
+        let tag = if copyleft {
+            MC_BLOCK_EXTRA_TAG_2
+        } else if common_message {
+            MC_BLOCK_EXTRA_TAG_3
+        } else {
+            MC_BLOCK_EXTRA_TAG
+        };
         cell.append_u16(tag)?;
         self.config.is_some().write_to(cell)?;
         self.shards.write_to(cell)?;
         self.fees.write_to(cell)?;
 
         let mut cell1 = self.prev_blk_signatures.write_to_new_cell()?;
-        ChildCell::write_maybe_to(&mut cell1, self.recover_create_msg.as_ref())?;
-        ChildCell::write_maybe_to(&mut cell1, self.mint_msg.as_ref())?;
+        self.recover_create_msg.write_to(&mut cell1)?;
+        self.mint_msg.write_to(&mut cell1)?;
 
-        if !self.copyleft_msgs.is_empty() {
+        if copyleft {
             self.copyleft_msgs.write_to(&mut cell1)?;
+        } else if common_message {
+            self.mesh.write_to(&mut cell1)?;
         }
 
         cell.checked_append_reference(cell1.into_cell()?)?;
@@ -675,12 +724,6 @@ impl Serializable for McBlockExtra {
 pub struct KeyMaxLt {
     pub key: bool,
     pub max_end_lt: u64,
-}
-
-impl KeyMaxLt {
-    pub const fn new() -> KeyMaxLt {
-        KeyMaxLt { key: false, max_end_lt: 0 }
-    }
 }
 
 impl Deserializable for KeyMaxLt {
@@ -906,10 +949,6 @@ pub struct ShardFeeCreated {
 }
 
 impl ShardFeeCreated {
-    pub const fn new() -> ShardFeeCreated {
-        ShardFeeCreated { fees: CurrencyCollection::new(), create: CurrencyCollection::new() }
-    }
-
     pub fn with_fee(fees: CurrencyCollection) -> Self {
         Self { fees, create: CurrencyCollection::default() }
     }
@@ -1162,6 +1201,49 @@ impl Serializable for BlockCreateStats {
     }
 }
 
+define_HashmapE! {MeshHashes, 32, ConnectedNwDescr}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ConnectedNwDescr {
+    pub seq_no: u32,
+    pub root_hash: UInt256,
+    pub file_hash: UInt256,
+    pub imported: VarUInteger32,
+    pub gen_utime: u32,
+}
+
+const CONNECTED_NW_DESCR_TAG: u8 = 0x01;
+
+impl Deserializable for ConnectedNwDescr {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        let tag = slice.get_next_byte()?;
+        if tag != CONNECTED_NW_DESCR_TAG {
+            fail!(BlockError::InvalidConstructorTag {
+                t: tag.into(),
+                s: std::any::type_name::<Self>().to_string()
+            })
+        }
+        self.seq_no.read_from(slice)?;
+        self.root_hash.read_from(slice)?;
+        self.file_hash.read_from(slice)?;
+        self.imported.read_from(slice)?;
+        self.gen_utime.read_from(slice)?;
+        Ok(())
+    }
+}
+
+impl Serializable for ConnectedNwDescr {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        cell.append_u8(CONNECTED_NW_DESCR_TAG)?;
+        self.seq_no.write_to(cell)?;
+        self.root_hash.write_to(cell)?;
+        self.file_hash.write_to(cell)?;
+        self.imported.write_to(cell)?;
+        self.gen_utime.write_to(cell)?;
+        Ok(())
+    }
+}
+
 // masterchain_state_extra#cc26
 // shard_hashes:ShardHashes
 // config:ConfigParams
@@ -1176,6 +1258,7 @@ impl Serializable for BlockCreateStats {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct McStateExtra {
     pub shards: ShardHashes,
+    pub mesh: MeshHashes,
     pub config: ConfigParams,
     pub validator_info: ValidatorInfo,
     pub prev_blocks: OldMcBlocksInfo,
@@ -1184,27 +1267,16 @@ pub struct McStateExtra {
     pub block_create_stats: Option<BlockCreateStats>,
     pub global_balance: CurrencyCollection,
     pub state_copyleft_rewards: CopyleftRewards,
+    pub validators_stat: ValidatorsStat,
 }
 
 const MC_STATE_EXTRA_TAG: u16 = 0xcc26;
+const MC_STATE_CREATE_STATS_FLAG: u16 = 0b0001;
+const MC_STATE_COPYLEFT_FLAG: u16 = 0b0010;
+const MC_STATE_MESH_FLAG: u16 = 0b0100;
+const MC_STATE_VAL_STAT_FLAG: u16 = 0b1000;
 
 impl McStateExtra {
-    // pub const fn new() -> McStateExtra {
-    //     McStateExtra {
-    //         shards: ShardHashes::new(),
-    //         config: ConfigParams::new(),
-    //         validator_info: ValidatorInfo::new(),
-    //         prev_blocks: OldMcBlocksInfo::new(),
-    //         after_key_block: false,
-    //         last_key_block: None,
-    //         block_create_stats: None,
-    //         global_balance: CurrencyCollection::new(),
-    //     }
-    // }
-    pub fn tag() -> u16 {
-        0xcc26
-    }
-
     /// Adds new workchain
     pub fn add_workchain(&mut self, workchain_id: i32, descr: &ShardDescr) -> Result<ShardIdent> {
         let shards = BinTree::with_item(descr)?;
@@ -1260,23 +1332,34 @@ impl Deserializable for McStateExtra {
         let cell1 = &mut SliceData::load_cell(cell.checked_drain_reference()?)?;
         let mut flags = 0u16;
         flags.read_from(cell1)?; // 16 + 0
-        if flags > 3 {
+        if flags > 15 {
             fail!(BlockError::InvalidData(format!(
-                "Invalid flags value ({}). Must be <= 3.",
+                "Invalid flags value ({}). Must be <= 7.",
                 flags
             )))
         }
         self.validator_info.read_from(cell1)?; // 65 + 0
         self.prev_blocks.read_from(cell1)?; // 1 + 1
         self.after_key_block.read_from(cell1)?; // 1 + 0
-        self.last_key_block = ExtBlkRef::read_maybe_from(cell1)?; // 609 + 0
-        self.block_create_stats = if flags & 1 == 0 {
+        self.last_key_block.read_from(cell1)?; // 609 + 0
+        self.block_create_stats = if flags & MC_STATE_CREATE_STATS_FLAG == 0 {
             None
         } else {
             Some(BlockCreateStats::construct_from(cell1)?) // 1 + 1
         };
-        if flags & 2 != 0 {
+        let flag_copileft = flags & MC_STATE_COPYLEFT_FLAG != 0;
+        let flag_val_stat = flags & MC_STATE_VAL_STAT_FLAG != 0;
+        if flag_copileft && flag_val_stat {
+            fail!("state_copyleft_rewards and validators_stats is not supported together");
+        }
+        if flag_copileft {
             self.state_copyleft_rewards.read_from(cell1)?; // 1 + 1
+        }
+        if flags & MC_STATE_MESH_FLAG != 0 {
+            self.mesh.read_from(cell1)?;
+        }
+        if flag_val_stat {
+            self.validators_stat.read_from(cell1)?;
         }
         self.global_balance.read_from(cell)?;
         Ok(())
@@ -1284,32 +1367,48 @@ impl Deserializable for McStateExtra {
 }
 
 impl Serializable for McStateExtra {
-    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_u16(MC_STATE_EXTRA_TAG)?;
-        self.shards.write_to(cell)?;
-        self.config.write_to(cell)?;
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        if !self.state_copyleft_rewards.is_empty() && !self.validators_stat.is_empty() {
+            fail!("state_copyleft_rewards and validators_stats is not supported together");
+        }
+        builder.append_u16(MC_STATE_EXTRA_TAG)?;
+        self.shards.write_to(builder)?;
+        self.config.write_to(builder)?;
 
-        let mut cell1 = BuilderData::new();
+        let mut builder1 = BuilderData::new();
         let mut flags = 0;
         if self.block_create_stats.is_some() {
-            flags += 1u16;
+            flags |= MC_STATE_CREATE_STATS_FLAG;
         }
         if !self.state_copyleft_rewards.is_empty() {
-            flags += 2u16;
+            flags |= MC_STATE_COPYLEFT_FLAG;
         }
-        flags.write_to(&mut cell1)?;
-        self.validator_info.write_to(&mut cell1)?;
-        self.prev_blocks.write_to(&mut cell1)?;
-        self.after_key_block.write_to(&mut cell1)?;
-        self.last_key_block.write_maybe_to(&mut cell1)?;
+        if !self.mesh.is_empty() {
+            flags |= MC_STATE_MESH_FLAG;
+        }
+        if !self.validators_stat.is_empty() {
+            flags |= MC_STATE_VAL_STAT_FLAG;
+        }
+        flags.write_to(&mut builder1)?;
+        self.validator_info.write_to(&mut builder1)?;
+        self.prev_blocks.write_to(&mut builder1)?;
+        self.after_key_block.write_to(&mut builder1)?;
+        self.last_key_block.write_to(&mut builder1)?;
         if let Some(ref block_create_stats) = self.block_create_stats {
-            block_create_stats.write_to(&mut cell1)?;
+            block_create_stats.write_to(&mut builder1)?;
         }
         if !self.state_copyleft_rewards.is_empty() {
-            self.state_copyleft_rewards.write_to(&mut cell1)?;
+            self.state_copyleft_rewards.write_to(&mut builder1)?;
         }
-        cell.checked_append_reference(cell1.into_cell()?)?;
-        self.global_balance.write_to(cell)?;
+        if !self.mesh.is_empty() {
+            self.mesh.write_to(&mut builder1)?;
+        }
+        if !self.validators_stat.is_empty() {
+            self.validators_stat.write_to(&mut builder1)?;
+        }
+        builder.checked_append_reference(builder1.into_cell()?)?;
+
+        self.global_balance.write_to(builder)?;
         Ok(())
     }
 }
@@ -1381,11 +1480,22 @@ impl Serializable for FutureSplitMerge {
     }
 }
 
+// Current ser/de implementation for CollatorRange allows up to 9 validators in
+// mempool because all ranges are stored in one cell
+pub const MEMPOOL_MAX_LEN: usize = 9;
+
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct CollatorRange {
     pub collator: u16,
+    pub mempool: smallvec::SmallVec<[u16; MEMPOOL_MAX_LEN]>,
     pub start: u32,
     pub finish: u32,
+}
+
+impl CollatorRange {
+    pub fn range(&self) -> Range<u32> {
+        self.start..self.finish
+    }
 }
 
 impl fmt::Display for CollatorRange {
@@ -1395,21 +1505,53 @@ impl fmt::Display for CollatorRange {
 }
 
 impl Serializable for CollatorRange {
-    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        self.collator.write_to(cell)?;
-        self.start.write_to(cell)?;
-        self.finish.write_to(cell)?;
+    fn write_with_opts(&self, builder: &mut BuilderData, opts: u8) -> Result<()> {
+        if self.mempool.len() > MEMPOOL_MAX_LEN {
+            fail!("Too many validators in mempool");
+        }
+        self.collator.write_to(builder)?;
+        if opts & SERDE_OPTS_MEMPOOL_NODES != 0 {
+            if self.mempool.len() > u8::MAX as usize {
+                fail!("Too many validators in mempool");
+            }
+            builder.append_u8(self.mempool.len() as u8)?;
+            for v in &self.mempool {
+                v.write_to(builder)?;
+            }
+        }
+        self.start.write_to(builder)?;
+        self.finish.write_to(builder)?;
         Ok(())
+    }
+
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        self.write_with_opts(cell, 0)
     }
 }
 
 impl Deserializable for CollatorRange {
+    fn construct_from_with_opts(slice: &mut SliceData, opts: u8) -> Result<Self> {
+        let collator = u16::construct_from(slice)?;
+        let mempool = if opts & SERDE_OPTS_MEMPOOL_NODES != 0 {
+            let len = slice.get_next_byte()? as usize;
+            if len > MEMPOOL_MAX_LEN {
+                fail!("Too many validators in mempool");
+            }
+            let mut vec = smallvec::SmallVec::<[u16; MEMPOOL_MAX_LEN]>::new();
+            for _ in 0..len {
+                vec.push(u16::construct_from(slice)?);
+            }
+            vec
+        } else {
+            smallvec::SmallVec::<[u16; MEMPOOL_MAX_LEN]>::new()
+        };
+        let start = slice.get_next_u32()?;
+        let finish = slice.get_next_u32()?;
+        Ok(Self { collator, mempool, start, finish })
+    }
+
     fn construct_from(slice: &mut SliceData) -> Result<Self> {
-        Ok(Self {
-            collator: u16::construct_from(slice)?,
-            start: slice.get_next_u32()?,
-            finish: slice.get_next_u32()?,
-        })
+        Self::construct_from_with_opts(slice, 0)
     }
 }
 
@@ -1421,6 +1563,7 @@ pub struct ShardCollators {
     pub next: CollatorRange,
     pub next2: Option<CollatorRange>,
     pub updated_at: u32,
+    pub stat: ValidatorsStat,
 }
 
 impl fmt::Display for ShardCollators {
@@ -1444,16 +1587,25 @@ impl fmt::Display for ShardCollators {
 }
 
 const SHARD_COLLATORS_TAG: u8 = 0x1; // 4 bits
+const SHARD_COLLATORS_TAG_2: u8 = 0x2; // 4 bits
 
 impl Serializable for ShardCollators {
-    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bits(SHARD_COLLATORS_TAG as usize, 4)?;
-        self.prev.write_to(cell)?;
-        self.prev2.write_maybe_to(cell)?;
-        self.current.write_to(cell)?;
-        self.next.write_to(cell)?;
-        self.next2.write_maybe_to(cell)?;
-        self.updated_at.write_to(cell)?;
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        let (tag, opts) = if self.stat.is_empty() {
+            (SHARD_COLLATORS_TAG, SERDE_OPTS_EMPTY)
+        } else {
+            (SHARD_COLLATORS_TAG_2, SERDE_OPTS_MEMPOOL_NODES)
+        };
+        builder.append_bits(tag as usize, 4)?;
+        self.prev.write_with_opts(builder, opts)?;
+        self.prev2.write_with_opts(builder, opts)?;
+        self.current.write_with_opts(builder, opts)?;
+        self.next.write_with_opts(builder, opts)?;
+        self.next2.write_with_opts(builder, opts)?;
+        self.updated_at.write_with_opts(builder, opts)?;
+        if !self.stat.is_empty() {
+            self.stat.write_to_new_cell()?.into_cell()?.write_to(builder)?;
+        }
         Ok(())
     }
 }
@@ -1461,19 +1613,27 @@ impl Serializable for ShardCollators {
 impl Deserializable for ShardCollators {
     fn construct_from(slice: &mut SliceData) -> Result<Self> {
         let tag = slice.get_next_int(4)? as u8;
-        if tag != SHARD_COLLATORS_TAG {
+        if tag != SHARD_COLLATORS_TAG && tag != SHARD_COLLATORS_TAG_2 {
             fail!(BlockError::InvalidConstructorTag {
                 t: tag as u32,
                 s: std::any::type_name::<Self>().to_string()
             })
         }
+        let opts = if tag == SHARD_COLLATORS_TAG_2 { SERDE_OPTS_MEMPOOL_NODES } else { 0 };
         Ok(Self {
-            prev: Deserializable::construct_from(slice)?,
-            prev2: Deserializable::construct_maybe_from(slice)?,
-            current: Deserializable::construct_from(slice)?,
-            next: Deserializable::construct_from(slice)?,
-            next2: Deserializable::construct_maybe_from(slice)?,
-            updated_at: Deserializable::construct_from(slice)?,
+            prev: Deserializable::construct_from_with_opts(slice, opts)?,
+            prev2: Deserializable::construct_from_with_opts(slice, opts)?,
+            current: Deserializable::construct_from_with_opts(slice, opts)?,
+            next: Deserializable::construct_from_with_opts(slice, opts)?,
+            next2: Deserializable::construct_from_with_opts(slice, opts)?,
+            updated_at: Deserializable::construct_from_with_opts(slice, opts)?,
+            stat: if tag == SHARD_COLLATORS_TAG_2 {
+                ValidatorsStat::construct_from(&mut SliceData::load_cell(
+                    slice.checked_drain_reference()?,
+                )?)?
+            } else {
+                ValidatorsStat::default()
+            },
         })
     }
 }
@@ -1607,6 +1767,108 @@ impl RefShardBlocks {
     }
 }
 
+define_HashmapE!(MeshHashesExt, 32, ConnectedNwDescrExt);
+
+const CONNECTED_NW_DESCR_EXT_TAG: u8 = 1; // 4 bits
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct ConnectedNwDescrExt {
+    // Info about out queue from masterchain to connected network
+    pub queue_descr: ConnectedNwOutDescr,
+    pub descr: Option<ConnectedNwDescr>,
+}
+
+impl Deserializable for ConnectedNwDescrExt {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        let tag = slice.get_next_int(4)? as u8;
+        if tag != CONNECTED_NW_DESCR_EXT_TAG {
+            fail!(BlockError::InvalidConstructorTag {
+                t: tag as u32,
+                s: std::any::type_name::<Self>().to_string()
+            })
+        }
+        self.queue_descr.read_from(slice)?;
+        self.descr.read_from(slice)?;
+        Ok(())
+    }
+}
+
+impl Serializable for ConnectedNwDescrExt {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        builder.append_bits(CONNECTED_NW_DESCR_EXT_TAG as usize, 4)?;
+        self.queue_descr.write_to(builder)?;
+        self.descr.write_to(builder)?;
+        Ok(())
+    }
+}
+
+define_HashmapE!(MeshOutDescr, 32, ConnectedNwOutDescr);
+
+const CONNECTED_NW_QUEUE_DESCR_TAG: u8 = 1; // 4 bits
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct ConnectedNwOutDescr {
+    pub out_queue_update: HashUpdate,
+    pub exported: VarUInteger32,
+}
+
+impl Deserializable for ConnectedNwOutDescr {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        let tag = slice.get_next_int(4)? as u8;
+        if tag != CONNECTED_NW_QUEUE_DESCR_TAG {
+            fail!(BlockError::InvalidConstructorTag {
+                t: tag as u32,
+                s: std::any::type_name::<Self>().to_string()
+            })
+        }
+        self.exported.read_from(slice)?;
+        self.out_queue_update.read_from_cell(slice.checked_drain_reference()?)?;
+        Ok(())
+    }
+}
+
+impl Serializable for ConnectedNwOutDescr {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        builder.append_bits(CONNECTED_NW_QUEUE_DESCR_TAG as usize, 4)?;
+        self.exported.write_to(builder)?;
+        builder.checked_append_reference(self.out_queue_update.serialize()?)?;
+        Ok(())
+    }
+}
+
+const PACK_INFO_TAG: u8 = 1; // 4 bits
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct MsgPackProcessingInfo {
+    pub last_id: MsgPackId,
+    pub last_partially_included: Option<UInt256>, /* last included message hash, None if all
+                                                   * messages were included */
+}
+
+impl Serializable for MsgPackProcessingInfo {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        builder.append_bits(PACK_INFO_TAG as usize, 4)?;
+        self.last_id.write_to(builder)?;
+        self.last_partially_included.write_to(builder)?;
+        Ok(())
+    }
+}
+
+impl Deserializable for MsgPackProcessingInfo {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        let tag = slice.get_next_int(4)? as u8;
+        if tag != PACK_INFO_TAG {
+            fail!(BlockError::InvalidConstructorTag {
+                t: tag as u32,
+                s: std::any::type_name::<Self>().to_string()
+            })
+        }
+        self.last_id.read_from(slice)?;
+        self.last_partially_included.read_from(slice)?;
+        Ok(())
+    }
+}
+
 // Shard description (header)
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct ShardDescr {
@@ -1632,6 +1894,8 @@ pub struct ShardDescr {
     pub copyleft_rewards: CopyleftRewards,
     pub proof_chain: Option<ProofChain>, // Some when CapWc2WcQueueUpdates is set
     pub collators: Option<ShardCollators>,
+    pub mesh_msg_queues: MeshOutDescr,
+    pub pack_info: Option<MsgPackProcessingInfo>,
 }
 
 impl ShardDescr {
@@ -1666,6 +1930,8 @@ impl ShardDescr {
             copyleft_rewards: CopyleftRewards::default(),
             proof_chain: None,
             collators: None,
+            mesh_msg_queues: MeshOutDescr::default(),
+            pack_info: None,
         }
     }
 
@@ -1708,6 +1974,14 @@ impl ShardDescr {
             _ => 0,
         }
     }
+
+    pub fn collators(&self) -> Result<&ShardCollators> {
+        self.collators.as_ref().ok_or_else(|| error!("collators field is None"))
+    }
+
+    pub fn collators_mut(&mut self) -> Result<&mut ShardCollators> {
+        self.collators.as_mut().ok_or_else(|| error!("collators field is None"))
+    }
 }
 
 const SHARD_IDENT_TAG_A: u8 = 0xa; // 4 bit
@@ -1715,17 +1989,24 @@ const SHARD_IDENT_TAG_B: u8 = 0xb; // 4 bit
 const SHARD_IDENT_TAG_C: u8 = 0xc; // 4 bit
 const SHARD_IDENT_TAG_D: u8 = 0xd; // 4 bit // with all previous and proof chain
 const SHARD_IDENT_TAG_E: u8 = 0xe; // 4 bit // with proof chain & collators & base shard blocks, without copyleft
+const SHARD_IDENT_TAG_F: u8 = 0xf; // 4 bit // TAG_E + mesh_msg_queues
+const SHARD_IDENT_TAG_G: u8 = 0x9; // 4 bit // TAG_F + pack_info
 const SHARD_IDENT_TAG_LEN: usize = 4;
+
+const SHARD_IDENT_TAGS: [u8; 7] = [
+    SHARD_IDENT_TAG_A,
+    SHARD_IDENT_TAG_B,
+    SHARD_IDENT_TAG_C,
+    SHARD_IDENT_TAG_D,
+    SHARD_IDENT_TAG_E,
+    SHARD_IDENT_TAG_F,
+    SHARD_IDENT_TAG_G,
+];
 
 impl Deserializable for ShardDescr {
     fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
         let tag = slice.get_next_int(SHARD_IDENT_TAG_LEN)? as u8;
-        let wrong_tag = tag != SHARD_IDENT_TAG_A
-            && tag != SHARD_IDENT_TAG_B
-            && tag != SHARD_IDENT_TAG_C
-            && tag != SHARD_IDENT_TAG_D
-            && tag != SHARD_IDENT_TAG_E;
-        if wrong_tag {
+        if !SHARD_IDENT_TAGS.contains(&tag) {
             fail!(BlockError::InvalidConstructorTag {
                 t: tag as u32,
                 s: std::any::type_name::<Self>().to_string()
@@ -1781,14 +2062,21 @@ impl Deserializable for ShardDescr {
                 let proof_chain = ProofChain::construct_from(&mut slice1)?;
                 self.proof_chain = Some(proof_chain);
             }
-            SHARD_IDENT_TAG_E => {
+            SHARD_IDENT_TAG_E | SHARD_IDENT_TAG_F | SHARD_IDENT_TAG_G => {
                 let mut slice1 = SliceData::load_cell(slice.checked_drain_reference()?)?;
                 self.fees_collected.read_from(&mut slice1)?;
                 self.funds_created.read_from(&mut slice1)?;
-                self.proof_chain = Vec::<Cell>::read_maybe_from(&mut slice1)?;
-                self.collators = ShardCollators::read_maybe_from(&mut slice1)?;
+                self.proof_chain.read_from(&mut slice1)?;
+                self.collators.read_from(&mut slice1)?;
+                if tag == SHARD_IDENT_TAG_G {
+                    let mut slice2 = SliceData::load_cell(slice1.checked_drain_reference()?)?;
+                    self.pack_info.read_from(&mut slice2)?;
+                }
             }
             _ => (),
+        }
+        if tag == SHARD_IDENT_TAG_F {
+            self.mesh_msg_queues.read_from(slice)?;
         }
 
         Ok(())
@@ -1797,16 +2085,18 @@ impl Deserializable for ShardDescr {
 
 impl Serializable for ShardDescr {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        let mut tag = SHARD_IDENT_TAG_A;
-        if self.proof_chain.is_some() {
+        let mut tag = SHARD_IDENT_TAG_A; // TAG_B is not used at all.
+
+        if self.pack_info.is_some() {
+            tag = SHARD_IDENT_TAG_G;
+        } else if !self.mesh_msg_queues.is_empty() {
+            tag = SHARD_IDENT_TAG_F;
+        } else if self.collators.is_some() {
+            tag = SHARD_IDENT_TAG_E;
+        } else if self.proof_chain.is_some() {
             tag = SHARD_IDENT_TAG_D;
         } else if !self.copyleft_rewards.is_empty() {
             tag = SHARD_IDENT_TAG_C
-        } else if self.collators.is_some() {
-            if !self.copyleft_rewards.is_empty() {
-                fail!("copyleft_rewards is not supported in fast_finality mode");
-            }
-            tag = SHARD_IDENT_TAG_E;
         }
 
         cell.append_bits(tag as usize, SHARD_IDENT_TAG_LEN)?;
@@ -1850,9 +2140,17 @@ impl Serializable for ShardDescr {
         self.fees_collected.write_to(&mut child)?;
         self.funds_created.write_to(&mut child)?;
         match tag {
-            SHARD_IDENT_TAG_E => {
-                self.proof_chain.write_maybe_to(&mut child)?;
-                self.collators.write_maybe_to(&mut child)?;
+            SHARD_IDENT_TAG_E | SHARD_IDENT_TAG_F | SHARD_IDENT_TAG_G => {
+                if !self.copyleft_rewards.is_empty() {
+                    fail!("copyleft_rewards is not supported with 'collators' or 'mesh_msg_queues'")
+                }
+                self.proof_chain.write_to(&mut child)?;
+                self.collators.write_to(&mut child)?;
+                if tag == SHARD_IDENT_TAG_G {
+                    let mut child2 = BuilderData::new();
+                    self.pack_info.write_to(&mut child2)?;
+                    child.checked_append_reference(child2.into_cell()?)?;
+                }
             }
             SHARD_IDENT_TAG_D => {
                 let proof_chain = self
@@ -1873,6 +2171,9 @@ impl Serializable for ShardDescr {
             _ => (),
         }
         cell.checked_append_reference(child.into_cell()?)?;
+        if !self.mesh_msg_queues.is_empty() {
+            self.mesh_msg_queues.write_to(cell)?;
+        }
 
         Ok(())
     }

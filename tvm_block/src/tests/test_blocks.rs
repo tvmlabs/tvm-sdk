@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,24 +6,36 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::fs::read;
 use std::fs::read_dir;
 use std::path::Path;
-
-use tvm_types::read_boc;
-use tvm_types::read_single_root_boc;
+use std::str::FromStr;
 
 use super::*;
 use crate::bintree::BinTreeType;
-use crate::hashmapaug::HashmapAugType;
+use crate::read_boc;
+use crate::read_single_root_boc;
+use crate::transactions::tests::create_test_transaction_set;
 use crate::transactions::tests::generate_test_shard_account_block;
+use crate::types::AddSub;
+use crate::types::Grams;
 use crate::write_read_and_assert;
 use crate::AccountBlock;
+use crate::AccountId;
+use crate::Cell;
+use crate::CommonMessage;
+use crate::HashmapAugType;
+use crate::HashmapE;
 use crate::Message;
+use crate::MsgEnvelope;
+use crate::MsgPackId;
+use crate::OutMsg;
 use crate::TickTock;
+use crate::Transaction;
+use crate::UsageTree;
 
 #[test]
 fn test_serialize_tick_tock() {
@@ -39,22 +51,23 @@ fn test_serialize_tick_tock() {
 
 fn test_blockinfo(block_info: BlockInfo) {
     let mut block_extra = BlockExtra::new();
-    block_extra.write_account_blocks(&generate_test_shard_account_block()).unwrap();
+    block_extra.write_account_blocks(&generate_test_shard_account_block(SERDE_OPTS_EMPTY)).unwrap();
 
     let mut collection = CurrencyCollection::with_grams(3);
     collection.set_other(1005004, 2_000_003).unwrap();
 
     let value_flow = ValueFlow {
         from_prev_blk: collection,
-        to_next_blk: CurrencyCollection::new(),
-        imported: CurrencyCollection::new(),
-        exported: CurrencyCollection::new(),
-        fees_collected: CurrencyCollection::new(),
-        fees_imported: CurrencyCollection::new(),
-        recovered: CurrencyCollection::new(),
-        created: CurrencyCollection::new(),
-        minted: CurrencyCollection::new(),
+        to_next_blk: CurrencyCollection::default(),
+        imported: CurrencyCollection::default(),
+        exported: CurrencyCollection::default(),
+        fees_collected: CurrencyCollection::default(),
+        fees_imported: CurrencyCollection::default(),
+        recovered: CurrencyCollection::default(),
+        created: CurrencyCollection::default(),
+        minted: CurrencyCollection::default(),
         copyleft_rewards: CopyleftRewards::new(),
+        mesh_exported: MeshExported::new(),
     };
 
     let state_update = MerkleUpdate::default();
@@ -168,6 +181,38 @@ fn test_blockinfo_some_some_none() {
 }
 
 #[test]
+fn test_blockinfo_with_pack() {
+    let mut info = BlockInfo::new();
+    info.set_shard(ShardIdent::with_workchain_id(0x22222222).unwrap());
+    info.set_seq_no(std::u32::MAX - 22).unwrap();
+    info.set_prev_stuff(
+        false,
+        &BlkPrevInfo::Block {
+            prev: ExtBlkRef {
+                end_lt: 1,
+                seq_no: 1000,
+                root_hash: UInt256::from([10; 32]),
+                file_hash: UInt256::from([10; 32]),
+            },
+        },
+    )
+    .unwrap();
+    info.write_pack_info(Some(&MsgPackProcessingInfo {
+        last_id: MsgPackId::new(
+            ShardIdent::with_tagged_prefix(0, 0x4000_0000_0000_0000_u64).unwrap(),
+            2339488,
+            UInt256::rand(),
+        ),
+        last_partially_included: Some(UInt256::rand()),
+    }))
+    .unwrap();
+    test_blockinfo(info.clone());
+
+    info.write_pack_info(None).unwrap();
+    test_blockinfo(info);
+}
+
+#[test]
 fn test_currency_collection() {
     let mut cc = CurrencyCollection::from_grams(Grams::one());
     cc.set_other(500, 9_000_000 + 777).unwrap();
@@ -253,6 +298,7 @@ fn test_value_flow() {
         created: created.clone(),
         minted: minted.clone(),
         copyleft_rewards,
+        mesh_exported: MeshExported::new(),
     };
 
     write_read_and_assert(value_flow);
@@ -268,6 +314,7 @@ fn test_value_flow() {
         created,
         minted,
         copyleft_rewards: CopyleftRewards::default(),
+        mesh_exported: MeshExported::new(),
     };
 
     write_read_and_assert(value_flow_without_copyleft);
@@ -281,7 +328,7 @@ fn read_file_de_and_serialise(filename: &Path) -> Cell {
 }
 
 #[test]
-fn test_real_tvm_boc() {
+fn test_real_ton_boc() {
     for entry in read_dir(Path::new("src/tests/data")).expect("Error reading BOCs dir") {
         let entry = entry.unwrap();
         let in_path = entry.path();
@@ -301,7 +348,7 @@ fn test_real_tvm_boc() {
 }
 
 #[test]
-fn test_real_tvm_mgs() {
+fn test_real_ton_mgs() {
     // let in_path = Path::new("src/tests/data/wallet-query.boc");
     // let in_path = Path::new("src/tests/data/new-wallet-query.boc");
     // let in_path = Path::new("src/tests/data/send-to-query.boc");
@@ -421,7 +468,7 @@ fn test_real_block(in_path: &Path) -> Block {
 }
 
 #[test]
-fn test_real_tvm_key_block() {
+fn test_real_ton_key_block() {
     let in_path = Path::new("src/tests/data/key_block.boc");
     let block = test_real_block(in_path);
 
@@ -429,15 +476,14 @@ fn test_real_tvm_key_block() {
         if let Some(c) = custom.config() {
             crate::config_params::dump_config(&c.config_params);
             // let bytes =
-            // tvm_types::serialize_toc(c.config_params.data().unwrap()).
-            // unwrap(); std::fs::write("src/tests/data/config.boc",
-            // bytes).unwrap();
+            // serialize_toc(c.config_params.data().unwrap()).unwrap();
+            // std::fs::write("src/tests/data/config.boc", bytes).unwrap();
         }
     }
 }
 
 #[test]
-fn test_all_real_tvm_block_with_transaction() {
+fn test_all_real_ton_block_with_transaction() {
     for entry in read_dir(Path::new("src/tests/data/block_with_transaction"))
         .expect("Error reading BOCs dir")
     {
@@ -458,7 +504,7 @@ fn test_all_real_tvm_block_with_transaction() {
 }
 
 #[test]
-fn test_real_tvm_config() {
+fn test_real_ton_config() {
     // to get current config run lite_client with saveconfig config.boc
     let in_path = Path::new("src/tests/data/config.boc");
     println!("Config file: {:?}", in_path);
@@ -487,8 +533,7 @@ fn test_block_id_ext() {
 
 #[test]
 fn test_block_id_ext_from_str() {
-    let id1: BlockIdExt =
-        "(0:1800000000000000, 1203696, rh 59b6e56610aa5df5e8ee4cc5f1081cd5d08473f10e0899f7763d580b2a635f90, fh 1b4d177339538562d10166d87823783b7e747ee80d85d033459928fd0605a126)"
+    let id1: BlockIdExt = "(0:1800000000000000, 1203696, rh 59b6e56610aa5df5e8ee4cc5f1081cd5d08473f10e0899f7763d580b2a635f90, fh 1b4d177339538562d10166d87823783b7e747ee80d85d033459928fd0605a126)"
         .parse().unwrap();
 
     let id2 = BlockIdExt::with_params(
@@ -502,8 +547,7 @@ fn test_block_id_ext_from_str() {
 
     assert_eq!(id1, id2);
 
-    let id1: BlockIdExt =
-        "(-1:8000000000000000, 994703, rh 04da9f61d063d49a5bb4e0c253ed81e1e2a27513e77d630a9aca1e29971fbf4e, fh ba1059b7a17104b4b44742326076e8394f21c1a1dd21fc1b3737d3ca8d779756)"
+    let id1: BlockIdExt = "(-1:8000000000000000, 994703, rh 04da9f61d063d49a5bb4e0c253ed81e1e2a27513e77d630a9aca1e29971fbf4e, fh ba1059b7a17104b4b44742326076e8394f21c1a1dd21fc1b3737d3ca8d779756)"
         .parse().unwrap();
 
     let id2 = BlockIdExt::with_params(
@@ -720,4 +764,199 @@ fn block_info_serde() {
         assert_eq!(deserialized.gen_utime_ms(), gen_utime_ms);
     }
     assert_eq!(block_info, deserialized);
+}
+
+fn create_test_block(opts: u8) -> Block {
+    let mut outmsg_descr = OutMsgDescr::with_serde_opts(opts);
+    let trans_data = create_test_transaction_set();
+    let (enveloped, mut tr) = if opts & SERDE_OPTS_COMMON_MESSAGE != 0 {
+        (
+            MsgEnvelope::with_common_msg_support(&CommonMessage::Std(Message::default()), 1.into())
+                .unwrap(),
+            Transaction::with_common_msg_support(trans_data.account_id),
+        )
+    } else {
+        (
+            MsgEnvelope::with_message_and_fee(&Message::default(), 1.into()).unwrap(),
+            Transaction::with_address_and_status(
+                trans_data.account_id,
+                trans_data.orig_status.clone(),
+            ),
+        )
+    };
+    for ref msg in trans_data.out_msgs {
+        tr.add_out_message(msg).unwrap();
+    }
+    tr.write_in_msg(Some(&trans_data.in_msg)).unwrap();
+    tr.set_logical_time(trans_data.lt);
+    tr.orig_status = trans_data.orig_status;
+    let out_msg = OutMsg::new(
+        ChildCell::with_struct_and_opts(&enveloped, opts).unwrap(),
+        ChildCell::with_struct_and_opts(&tr, opts).unwrap(),
+    );
+    outmsg_descr.insert(&out_msg).unwrap();
+    let mut block_extra = if opts & SERDE_OPTS_COMMON_MESSAGE != 0 {
+        BlockExtra::with_common_msg_support()
+    } else {
+        BlockExtra::new()
+    };
+    block_extra.write_account_blocks(&generate_test_shard_account_block(opts)).unwrap();
+    block_extra.write_out_msg_descr(&outmsg_descr).unwrap();
+
+    let block_info = BlockInfo::new();
+    let value_flow = ValueFlow::default();
+    let state_update = MerkleUpdate::default();
+    let updates = Some(OutQueueUpdates::new());
+
+    if opts & SERDE_OPTS_COMMON_MESSAGE != 0 {
+        Block::with_common_msg_support(
+            1,
+            &block_info,
+            &value_flow,
+            &state_update,
+            updates,
+            &block_extra,
+        )
+        .unwrap()
+    } else {
+        Block::with_out_queue_updates(1, block_info, value_flow, state_update, updates, block_extra)
+            .unwrap()
+    }
+}
+
+#[test]
+fn test_serde_block_options_empty() {
+    let mut block = create_test_block(SERDE_OPTS_EMPTY);
+    block.out_msg_queue_updates = None;
+    let cell = block.serialize().unwrap();
+    let block2 = Block::construct_from_cell(cell.clone()).unwrap();
+    let block3 =
+        Block::construct_from_cell_with_opts(cell.clone(), SERDE_OPTS_COMMON_MESSAGE).unwrap();
+    assert_eq!(block, block2);
+    assert_eq!(block2, block3);
+    assert!(matches!(block3.serialize_with_opts(SERDE_OPTS_COMMON_MESSAGE), Err(_)));
+}
+
+#[test]
+fn test_serde_block_options_commonmsg() {
+    let block = create_test_block(SERDE_OPTS_COMMON_MESSAGE);
+    let cell = block.serialize_with_opts(SERDE_OPTS_COMMON_MESSAGE).unwrap();
+    assert!(matches!(block.serialize(), Err(_)));
+    let block1 =
+        Block::construct_from_cell_with_opts(cell.clone(), SERDE_OPTS_COMMON_MESSAGE).unwrap();
+    let block2 = Block::construct_from_cell(cell.clone()).unwrap();
+    assert_eq!(block1, block2);
+}
+
+#[test]
+fn test_block_with_common_message() -> Result<()> {
+    let block = create_test_block(SERDE_OPTS_COMMON_MESSAGE);
+
+    let err = block.serialize().unwrap_err();
+    assert!(matches!(err.downcast_ref().unwrap(), &BlockError::MismatchedSerdeOptions(_, _, _)));
+
+    let err = block.serialize_with_opts(SERDE_OPTS_EMPTY).unwrap_err();
+    assert!(matches!(err.downcast_ref().unwrap(), &BlockError::MismatchedSerdeOptions(_, _, _)));
+
+    let cell = block.serialize_with_opts(SERDE_OPTS_COMMON_MESSAGE)?;
+
+    let block2 = Block::construct_from_cell_with_opts(cell.clone(), SERDE_OPTS_COMMON_MESSAGE)?;
+    let extra = block2.read_extra()?;
+    let msg_descr = extra.read_out_msg_descr()?;
+    assert_eq!(msg_descr.serde_opts(), SERDE_OPTS_COMMON_MESSAGE);
+
+    let mut msg = None;
+    let _ = msg_descr
+        .iterate_objects(|x| {
+            let enveloped = x.read_out_message()?.unwrap();
+            msg = Some(enveloped.read_common_message()?);
+            Ok(true)
+        })
+        .unwrap();
+    let msg = msg.unwrap();
+    assert_eq!(msg.get_std().unwrap(), &Message::default());
+
+    let block3 = Block::construct_from_cell(cell)?;
+    assert_eq!(block2, block3);
+    Ok(())
+}
+
+#[test]
+fn test_block_queue_updates_serde() {
+    let mut block = create_test_block(SERDE_OPTS_COMMON_MESSAGE);
+    block.out_msg_queue_updates = None;
+    let cell = block.serialize_with_opts(SERDE_OPTS_COMMON_MESSAGE).unwrap();
+    let block2 = Block::construct_from_cell_with_opts(cell, SERDE_OPTS_COMMON_MESSAGE).unwrap();
+    assert_eq!(block2.out_msg_queue_updates, None);
+}
+
+fn create_block_proof() -> MerkleProof {
+    let block_root =
+        read_single_root_boc(std::fs::read("src/tests/data/key_block.boc").unwrap()).unwrap();
+    let usage_tree = UsageTree::with_root(block_root.clone());
+    let block = Block::construct_from_cell(usage_tree.root_cell()).unwrap();
+    block.read_info().unwrap();
+    block.read_state_update().unwrap();
+    MerkleProof::create_by_usage_tree(&block_root, usage_tree).unwrap()
+}
+
+#[test]
+fn test_mesh_kit_serde() {
+    let mut mesh_kit = MeshKit::default();
+    mesh_kit.mc_block_part = create_block_proof();
+    mesh_kit.queues = MeshMsgQueuesKit::default();
+    mesh_kit
+        .queues
+        .add_queue(
+            &ShardIdent::with_tagged_prefix(0, 0x4000_0000_0000_0000_u64).unwrap(),
+            OutMsgQueueInfo::default(),
+        )
+        .unwrap();
+    mesh_kit
+        .queues
+        .add_queue(
+            &ShardIdent::with_tagged_prefix(0, 0xc000_0000_0000_0000_u64).unwrap(),
+            OutMsgQueueInfo::default(),
+        )
+        .unwrap();
+
+    let cell = mesh_kit.serialize().unwrap();
+    let mesh_kit2 = MeshKit::construct_from_cell(cell).unwrap();
+    assert_eq!(mesh_kit, mesh_kit2);
+}
+
+#[test]
+fn test_mesh_update_serde() {
+    let mut mesh_update = MeshUpdate::default();
+    mesh_update.mc_block_part = create_block_proof();
+    mesh_update.queue_updates = MeshMsgQueueUpdates::default();
+    mesh_update
+        .queue_updates
+        .add_queue_update(
+            &ShardIdent::with_tagged_prefix(0, 0x4000_0000_0000_0000_u64).unwrap(),
+            MerkleUpdate::default(),
+        )
+        .unwrap();
+    mesh_update
+        .queue_updates
+        .add_queue_update(
+            &ShardIdent::with_tagged_prefix(0, 0xc000_0000_0000_0000_u64).unwrap(),
+            MerkleUpdate::default(),
+        )
+        .unwrap();
+
+    mesh_update
+        .queue_updates
+        .get_queue_update(&ShardIdent::with_tagged_prefix(0, 0x4000_0000_0000_0000_u64).unwrap())
+        .unwrap()
+        .unwrap();
+    mesh_update
+        .queue_updates
+        .get_queue_update(&ShardIdent::with_tagged_prefix(0, 0xc000_0000_0000_0000_u64).unwrap())
+        .unwrap()
+        .unwrap();
+
+    let cell = mesh_update.serialize().unwrap();
+    let mesh_update2 = MeshUpdate::construct_from_cell(cell).unwrap();
+    assert_eq!(mesh_update, mesh_update2);
 }

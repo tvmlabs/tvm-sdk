@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,37 +6,35 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::cmp::max;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::UInt256;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::CellType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UsageTree;
-
 use crate::accounts::Account;
 use crate::blocks::Block;
 use crate::blocks::BlockInfo;
 use crate::blocks::BlockSeqNoAndShard;
+use crate::dictionary::hashmapaug::HashmapAugType;
 use crate::error::BlockError;
-use crate::hashmapaug::HashmapAugType;
+use crate::fail;
 use crate::merkle_update::MerkleUpdate;
 use crate::messages::Message;
 use crate::shard::ShardStateUnsplit;
 use crate::transactions::Transaction;
+use crate::types::UInt256;
+use crate::BuilderData;
+use crate::Cell;
+use crate::CellType;
 use crate::Deserializable;
 use crate::GetRepresentationHash;
+use crate::IBitstring;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UsageTree;
 
 #[cfg(test)]
 #[path = "tests/test_merkle_proof.rs"]
@@ -104,7 +102,8 @@ impl MerkleProof {
             ))
         }
         let mut done_cells = HashMap::new();
-        let proof = Self::create_raw(root, &is_include, &|_| false, 0, &mut None, &mut done_cells)?;
+        let proof =
+            MerkleProof::create_raw(root, &is_include, &|_| false, 0, &mut None, &mut done_cells)?;
 
         Ok(MerkleProof { hash: root.repr_hash(), depth: root.repr_depth(), proof })
     }
@@ -127,7 +126,7 @@ impl MerkleProof {
             ))
         }
         let mut done_cells = HashMap::new();
-        let proof = Self::create_raw(
+        let proof = MerkleProof::create_raw(
             root,
             &is_include,
             &is_include_subtree,
@@ -145,12 +144,11 @@ impl MerkleProof {
         is_include_subtree: &impl Fn(&UInt256) -> bool,
         merkle_depth: u8,
         pruned_branches: &mut Option<HashSet<UInt256>>,
-        done_cells: &mut HashMap<UInt256, Cell>,
+        done_cells: &mut HashMap<UInt256, Cell>, // map with pruned cells
     ) -> Result<Cell> {
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
 
         let mut proof_cell = BuilderData::from_cell(cell)?;
-        let mut child_mask = cell.level_mask();
         let n = cell.references_count();
         for i in 0..n {
             let child = cell.reference(i)?;
@@ -158,9 +156,12 @@ impl MerkleProof {
             let proof_child = if let Some(c) = done_cells.get(&child_repr_hash) {
                 c.clone()
             } else if is_include_subtree(&child_repr_hash) {
-                child.clone()
-            } else if child.references_count() == 0 || is_include(&child.repr_hash()) {
-                Self::create_raw(
+                child
+            } else if child.references_count() == 0 {
+                done_cells.insert(child_repr_hash, child.clone());
+                child
+            } else if is_include(&child_repr_hash) {
+                MerkleProof::create_raw(
                     &child,
                     is_include,
                     is_include_subtree,
@@ -175,7 +176,6 @@ impl MerkleProof {
                 }
                 pbc.into_cell()?
             };
-            child_mask |= proof_child.level_mask();
             proof_cell.replace_reference_cell(i, proof_child);
         }
 

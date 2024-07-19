@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,27 +6,17 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::collections::HashSet;
 use std::fmt;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-use tvm_types::UsageTree;
-
+use crate::dictionary::hashmapaug::Augmentation;
+use crate::dictionary::hashmapaug::HashmapAugType;
+use crate::error;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentation;
-use crate::hashmapaug::HashmapAugType;
+use crate::fail;
 use crate::merkle_proof::MerkleProof;
 use crate::messages::AnycastInfo;
 use crate::messages::Message;
@@ -44,12 +34,19 @@ use crate::types::CurrencyCollection;
 use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::VarUInteger7;
+use crate::AccountId;
+use crate::BuilderData;
+use crate::Cell;
 use crate::ConfigParams;
 use crate::Deserializable;
 use crate::GetRepresentationHash;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
+use crate::HashmapType;
+use crate::IBitstring;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
+use crate::UsageTree;
 
 #[cfg(test)]
 #[path = "tests/test_accounts.rs"]
@@ -116,16 +113,8 @@ pub struct StorageUsed {
 }
 
 impl StorageUsed {
-    pub const fn default() -> Self {
-        Self::new()
-    }
-
-    pub const fn new() -> Self {
-        Self {
-            cells: VarUInteger7::default(),
-            bits: VarUInteger7::default(),
-            public_cells: VarUInteger7::default(),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub const fn bits(&self) -> u64 {
@@ -206,12 +195,8 @@ pub struct StorageUsedShort {
 }
 
 impl StorageUsedShort {
-    pub const fn default() -> Self {
-        Self::new()
-    }
-
-    pub const fn new() -> Self {
-        Self { cells: VarUInteger7::default(), bits: VarUInteger7::default() }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub const fn bits(&self) -> u64 {
@@ -284,15 +269,7 @@ pub struct StorageInfo {
 }
 
 impl StorageInfo {
-    pub const fn default() -> Self {
-        Self::new()
-    }
-
-    pub const fn new() -> Self {
-        StorageInfo { used: StorageUsed::default(), last_paid: 0, due_payment: None }
-    }
-
-    pub const fn with_values(last_paid: u32, due_payment: Option<Grams>) -> Self {
+    pub fn with_values(last_paid: u32, due_payment: Option<Grams>) -> Self {
         StorageInfo { used: StorageUsed::default(), last_paid, due_payment }
     }
 
@@ -313,7 +290,7 @@ impl Serializable for StorageInfo {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         self.used.write_to(cell)?;
         cell.append_u32(self.last_paid)?;
-        self.due_payment.write_maybe_to(cell)?;
+        self.due_payment.write_to(cell)?;
         Ok(())
     }
 }
@@ -322,7 +299,7 @@ impl Deserializable for StorageInfo {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         self.used.read_from(cell)?;
         self.last_paid = cell.get_next_u32()?;
-        self.due_payment = Grams::read_maybe_from(cell)?;
+        self.due_payment.read_from(cell)?;
         Ok(())
     }
 }
@@ -345,7 +322,7 @@ impl fmt::Display for StorageInfo {
 /// acc_state_active$10 = AccountStatus;
 /// acc_state_nonexist$11 = AccountStatus;
 
-#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Default, PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
 pub enum AccountStatus {
     #[default]
     AccStateUninit,
@@ -400,16 +377,6 @@ pub struct AccountStorage {
 }
 
 impl AccountStorage {
-    /// Construct empty account storage
-    pub const fn default() -> Self {
-        Self {
-            last_trans_lt: 0,
-            balance: CurrencyCollection::default(),
-            state: AccountState::AccountUninit,
-            init_code_hash: None,
-        }
-    }
-
     /// Construct storage for uninit account
     pub fn unint(balance: CurrencyCollection) -> Self {
         Self { balance, ..Self::default() }
@@ -464,7 +431,7 @@ impl Serializable for AccountStorage {
         self.balance.write_to(cell)?; //balance:CurrencyCollection
         self.state.write_to(cell)?; //state:AccountState
         if self.init_code_hash.is_some() {
-            self.init_code_hash.write_maybe_to(cell)?;
+            self.init_code_hash.write_to(cell)?;
         }
         Ok(())
     }
@@ -582,7 +549,7 @@ impl Serializable for AccountStuff {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Account {
     stuff: Option<AccountStuff>,
 }
@@ -604,14 +571,8 @@ impl PartialEq for Account {
 impl Eq for Account {}
 
 impl Account {
-    /// Create new empty instance of account
-    pub const fn default() -> Self {
-        Self::new()
-    }
-
-    /// Create new empty instance of account
-    pub const fn new() -> Self {
-        Account { stuff: None }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     const fn with_stuff(stuff: AccountStuff) -> Self {
@@ -649,7 +610,7 @@ impl Account {
     }
 
     /// Create unintialize account with zero balance
-    pub const fn with_address(addr: MsgAddressInt) -> Self {
+    pub fn with_address(addr: MsgAddressInt) -> Self {
         Account::with_stuff(AccountStuff {
             addr,
             storage_stat: StorageInfo::default(),
@@ -663,8 +624,7 @@ impl Account {
         if hdr.value().grams.is_zero() {
             return None;
         }
-        let mut storage = AccountStorage::default();
-        storage.balance = hdr.value().clone();
+        let mut storage = AccountStorage { balance: hdr.value().clone(), ..Default::default() };
         if let Some(init) = msg.state_init() {
             init.code()?;
             storage.init_code_hash = match init_code_hash {
@@ -760,6 +720,16 @@ impl Account {
         })
     }
 
+    pub fn system(
+        address: MsgAddressInt,
+        balance: u64,
+        mut state_init: StateInit,
+    ) -> Result<Account> {
+        state_init.special = Some(TickTock::with_values(true, true));
+        let balance = CurrencyCollection::with_grams(balance);
+        Account::active_by_init_code_hash(address, balance, 0, state_init, true)
+    }
+
     pub fn is_none(&self) -> bool {
         self.stuff().is_none()
     }
@@ -811,7 +781,7 @@ impl Account {
         if let Some(stuff) = self.stuff() {
             StorageUsed::calculate_for_struct(&stuff.storage)
         } else {
-            Ok(StorageUsed::new())
+            Ok(StorageUsed::default())
         }
     }
 
@@ -855,20 +825,33 @@ impl Account {
         self.stuff().map(|s| s.storage_stat())
     }
 
-    /// getting to the root of the cell with Code of Smart Contract
-    pub fn get_code(&self) -> Option<Cell> {
-        self.state_init()?.code.clone()
+    /// getting the root of the cell with Code of Smart Contract
+    pub fn code(&self) -> Option<&Cell> {
+        self.state_init()?.code.as_ref()
     }
 
+    /// getting the root of the cell with Code of Smart Contract
+    pub fn get_code(&self) -> Option<Cell> {
+        self.code().cloned()
+    }
+
+    /// getting the hash of the root of the cell with Code of Smart Contract
     pub fn get_code_hash(&self) -> Option<UInt256> {
         Some(self.state_init()?.code.as_ref()?.repr_hash())
     }
 
-    /// getting to the root of the cell with persistent Data of Smart Contract
-    pub fn get_data(&self) -> Option<Cell> {
-        self.state_init()?.data.clone()
+    /// getting the root of the cell with persistent Data of Smart Contract
+    pub fn data(&self) -> Option<&Cell> {
+        self.state_init()?.data.as_ref()
     }
 
+    /// getting the root of the cell with persistent Data of Smart Contract
+    pub fn get_data(&self) -> Option<Cell> {
+        self.data().cloned()
+    }
+
+    /// getting hash of the root of the cell with persistent Data of Smart
+    /// Contract
     pub fn get_data_hash(&self) -> Option<UInt256> {
         Some(self.state_init()?.data.as_ref()?.repr_hash())
     }
@@ -1123,7 +1106,7 @@ impl Account {
         let last_trans_lt = Deserializable::construct_from(slice)?; //last_trans_lt:uint64
         let balance = CurrencyCollection::construct_from(slice)?; //balance:CurrencyCollection
         let state = Deserializable::construct_from(slice)?; //state:AccountState
-        let init_code_hash = UInt256::read_maybe_from(slice)?;
+        let init_code_hash = Deserializable::construct_from(slice)?;
         let storage = AccountStorage { last_trans_lt, balance, state, init_code_hash };
         let stuff = AccountStuff { addr, storage_stat, storage };
         Ok(Account::with_stuff(stuff))
@@ -1167,12 +1150,6 @@ impl Augmentation<DepthBalanceInfo> for Account {
             info.set_split_depth(split_depth);
         }
         Ok(info)
-    }
-}
-
-impl Default for Account {
-    fn default() -> Self {
-        Account::default()
     }
 }
 
@@ -1292,7 +1269,7 @@ impl ShardAccount {
 
 impl Serializable for ShardAccount {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.account.cell())?;
+        self.account.write_to(cell)?;
         self.last_trans_hash.write_to(cell)?;
         self.last_trans_lt.write_to(cell)?;
         Ok(())
@@ -1301,7 +1278,7 @@ impl Serializable for ShardAccount {
 
 impl Deserializable for ShardAccount {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.account.read_from_reference(cell)?;
+        self.account.read_from(cell)?;
         self.last_trans_hash.read_from(cell)?;
         self.last_trans_lt.read_from(cell)?;
         Ok(())
@@ -1362,8 +1339,7 @@ pub fn generate_test_account_by_init_code_hash(init_code_hash: bool) -> Account 
     ]);
     stinit.set_library_code(library.into_cell(), true).unwrap();
 
-    let mut balance = CurrencyCollection::default();
-    balance.grams = 100000000000.into();
+    let mut balance = CurrencyCollection::with_grams(100000000000);
     balance.set_other(1, 100).unwrap();
     balance.set_other(2, 200).unwrap();
     balance.set_other(3, 300).unwrap();

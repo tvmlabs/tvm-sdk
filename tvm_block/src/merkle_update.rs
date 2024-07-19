@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,28 +6,30 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::sync::Arc;
 use std::time::Duration;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::CellType;
-use tvm_types::IBitstring;
-use tvm_types::LevelMask;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-
+use crate::error;
 use crate::error::BlockError;
+use crate::fail;
+use crate::BuilderData;
+use crate::Cell;
+use crate::CellType;
 use crate::Deserializable;
+use crate::IBitstring;
+use crate::LevelMask;
 use crate::MerkleProof;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
 
 #[cfg(test)]
 #[path = "tests/test_merkle_update.rs"]
@@ -37,6 +39,17 @@ mod tests;
 pub struct MerkleUdateApplyMetrics {
     pub loaded_old_cells: usize,
     pub loaded_old_cells_time: Duration,
+}
+
+pub trait CellsFactory: Send + Sync {
+    fn create_cell(self: Arc<Self>, builder: BuilderData) -> Result<Cell>;
+}
+
+pub struct DefaultCellsFactory;
+impl CellsFactory for DefaultCellsFactory {
+    fn create_cell(self: Arc<Self>, builder: BuilderData) -> Result<Cell> {
+        builder.into_cell()
+    }
 }
 
 // !merkle_update {X:Type} old_hash:uint256 new_hash:uint256
@@ -63,6 +76,23 @@ impl Default for MerkleUpdate {
             old,
             new,
         }
+    }
+}
+
+impl Display for MerkleUpdate {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "MerkleUpdate (\
+            old_hash: {:x},\
+            new_hash: {:x},\
+            old_depth: {},\
+            new_depth: {},\
+            old: {:#.2},\
+            new: {:#.2}\
+        )",
+            self.old_hash, self.new_hash, self.old_depth, self.new_depth, self.old, self.new
+        )
     }
 }
 
@@ -298,7 +328,13 @@ impl MerkleUpdate {
         if self.new_hash == self.old_hash {
             Ok(old_root.clone())
         } else {
-            let new_root = self.traverse_on_apply(&self.new, &old_cells, &mut HashMap::new(), 0)?;
+            let new_root = self.traverse_on_apply(
+                &self.new,
+                &old_cells,
+                &mut HashMap::new(),
+                0,
+                &(Arc::new(DefaultCellsFactory) as Arc<dyn CellsFactory>),
+            )?;
 
             // constructed tree's hash have to coinside with self.new_hash
             if new_root.repr_hash() != self.new_hash {
@@ -313,6 +349,17 @@ impl MerkleUpdate {
         &self,
         old_root: &Cell,
     ) -> Result<(Cell, MerkleUdateApplyMetrics)> {
+        self.apply_for_with_cells_factory(
+            old_root,
+            &(Arc::new(DefaultCellsFactory) as Arc<dyn CellsFactory>),
+        )
+    }
+
+    pub fn apply_for_with_cells_factory(
+        &self,
+        old_root: &Cell,
+        factory: &Arc<dyn CellsFactory>,
+    ) -> Result<(Cell, MerkleUdateApplyMetrics)> {
         let mut metrics = MerkleUdateApplyMetrics::default();
 
         let old_cells = self.check(old_root, Some(&mut metrics))?;
@@ -321,7 +368,8 @@ impl MerkleUpdate {
         if self.new_hash == self.old_hash {
             Ok((old_root.clone(), MerkleUdateApplyMetrics::default()))
         } else {
-            let new_root = self.traverse_on_apply(&self.new, &old_cells, &mut HashMap::new(), 0)?;
+            let new_root =
+                self.traverse_on_apply(&self.new, &old_cells, &mut HashMap::new(), 0, factory)?;
 
             // constructed tree's hash have to coinside with self.new_hash
             if new_root.repr_hash() != self.new_hash {
@@ -382,6 +430,7 @@ impl MerkleUpdate {
         old_cells: &HashMap<UInt256, Cell>,
         new_cells: &mut HashMap<UInt256, Cell>,
         merkle_depth: u8,
+        cells_factory: &Arc<dyn CellsFactory>,
     ) -> Result<Cell> {
         // We will recursively construct new skeleton for new cells
         // and connect unchanged branches to it
@@ -409,6 +458,7 @@ impl MerkleUpdate {
                             old_cells,
                             new_cells,
                             child_merkle_depth,
+                            cells_factory,
                         )?;
                         new_cells.insert(new_child_hash, c.clone());
                         c
@@ -429,7 +479,7 @@ impl MerkleUpdate {
                             .clone()
                     } else {
                         // else - just copy this cell (like an ordinary)
-                        update_child.clone()
+                        cells_factory.clone().create_cell(BuilderData::from_cell(update_child)?)?
                     }
                 }
                 _ => fail!("Unknown cell type while applying merkle update!"),
@@ -441,7 +491,7 @@ impl MerkleUpdate {
         // Copy data from update to constructed cell
         new_cell.append_bytestring(&SliceData::load_cell_ref(update_cell)?)?;
 
-        new_cell.into_cell()
+        cells_factory.clone().create_cell(new_cell)
     }
 
     fn traverse_new_on_create(

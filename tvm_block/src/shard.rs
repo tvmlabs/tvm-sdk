@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,49 +6,49 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::{self};
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-
 use crate::accounts::ShardAccount;
 use crate::config_params::CatchainConfig;
 use crate::define_HashmapE;
+use crate::dictionary::hashmapaug::Augmentation;
+use crate::dictionary::hashmapaug::HashmapAugType;
 use crate::envelope_message::FULL_BITS;
+use crate::error;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentation;
-use crate::hashmapaug::HashmapAugType;
+use crate::fail;
 use crate::master::BlkMasterInfo;
 use crate::master::LibDescr;
 use crate::master::McStateExtra;
 use crate::messages::MsgAddressInt;
+use crate::outbound_messages::MeshMsgQueuesInfo;
 use crate::outbound_messages::OutMsgQueueInfo;
+use crate::outbound_messages::OutMsgQueuesInfo;
 use crate::shard_accounts::ShardAccounts;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
 use crate::validators::ValidatorSet;
 use crate::Account;
+use crate::AccountId;
+use crate::BuilderData;
+use crate::Cell;
 use crate::CopyleftRewards;
 use crate::Deserializable;
+use crate::IBitstring;
 use crate::IntermediateAddress;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
+use crate::MsgPackProcessingInfo;
 use crate::RefShardBlocks;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
+use crate::SERDE_OPTS_COMMON_MESSAGE;
+use crate::SERDE_OPTS_EMPTY;
 
 #[cfg(test)]
 #[path = "tests/test_shard.rs"]
@@ -73,10 +73,6 @@ impl Default for AccountIdPrefixFull {
 }
 
 impl AccountIdPrefixFull {
-    pub const fn default() -> Self {
-        Self { workchain_id: INVALID_WORKCHAIN_ID, prefix: 0 }
-    }
-
     /// Tests address for validity (workchain_id != 0x80000000)
     pub fn is_valid(&self) -> bool {
         self.workchain_id != INVALID_WORKCHAIN_ID
@@ -155,13 +151,13 @@ impl AccountIdPrefixFull {
         } else if dest_bits >= FULL_BITS {
             dest.clone()
         } else if dest_bits >= 32 {
-            let mask = u64::max_value() >> (dest_bits - 32);
+            let mask = u64::MAX >> (dest_bits - 32);
             Self {
                 workchain_id: dest.workchain_id,
                 prefix: (dest.prefix & !mask) | (self.prefix & mask),
             }
         } else {
-            let mask = u32::max_value() >> dest_bits;
+            let mask = u32::MAX >> dest_bits;
             Self {
                 workchain_id: (dest.workchain_id & (!mask as i32))
                     | (self.workchain_id & (mask as i32)),
@@ -185,9 +181,7 @@ impl AccountIdPrefixFull {
     }
 
     /// Returns count of the first bits matched in both addresses
-    /// TBD
-    #[allow(dead_code)]
-    pub(crate) fn count_matching_bits(&self, other: &Self) -> u8 {
+    pub fn count_matching_bits(&self, other: &Self) -> u8 {
         if self.workchain_id != other.workchain_id {
             (self.workchain_id ^ other.workchain_id).leading_zeros() as u8
         } else if self.prefix != other.prefix {
@@ -199,10 +193,8 @@ impl AccountIdPrefixFull {
 
     /// Performs Hypercube Routing from self to dest address.
     /// Result: (transit_addr_dest_bits, nh_addr_dest_bits)
-    /// TBD
-    #[allow(dead_code)]
     #[allow(clippy::many_single_char_names)]
-    pub(crate) fn perform_hypercube_routing(
+    pub fn perform_hypercube_routing(
         &self,
         dest: &AccountIdPrefixFull,
         cur_shard: &ShardIdent,
@@ -233,7 +225,7 @@ impl AccountIdPrefixFull {
         let q = dest.prefix ^ t;
         // Top i bits match, next 4 bits differ:
         let mut i = q.leading_zeros() as u8 & 0xFC;
-        let mut m = u64::max_value() >> i;
+        let mut m = u64::MAX >> i;
         loop {
             m >>= 4;
             let h = t ^ (q & !m);
@@ -705,6 +697,8 @@ impl Deserializable for ShardState {
 const SHARD_STATE_SPLIT_PFX: u32 = 0x5f327da5;
 const SHARD_STATE_UNSPLIT_PFX: u32 = 0x9023afe2;
 const SHARD_STATE_UNSPLIT_PFX_2: u32 = 0x9023aeee;
+const SHARD_STATE_UNSPLIT_PFX_3: u32 = 0x9023afff;
+const SHARD_STATE_UNSPLIT_PFX_4: u32 = 0x9023aaaa;
 
 impl Serializable for ShardState {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
@@ -729,7 +723,7 @@ pub struct ShardStateSplit {
 
 impl ShardStateSplit {
     pub fn new() -> Self {
-        ShardStateSplit::default()
+        Self::default()
     }
 
     pub fn with_left_right(left: Cell, right: Cell) -> Self {
@@ -792,7 +786,7 @@ pub struct ShardStateUnsplit {
     gen_time_tail_ms: u16,
     gen_lt: u64,
     min_ref_mc_seqno: u32,
-    out_msg_queue_info: ChildCell<OutMsgQueueInfo>,
+    out_msg_queues_info: ChildCell<OutMsgQueuesInfo>,
     before_split: bool,
     accounts: ChildCell<ShardAccounts>,
     // next fields in separate cell
@@ -810,11 +804,21 @@ pub struct ShardStateUnsplit {
     // This field is present only in shardchain blocks (in case of fast_finality consensus)
     // and contains shard blocks this shardchain block refers to.
     ref_shard_blocks: Option<RefShardBlocks>,
+
+    pack_info: Option<ChildCell<MsgPackProcessingInfo>>,
 }
 
 impl ShardStateUnsplit {
     pub fn with_ident(shard_id: ShardIdent) -> Self {
-        Self { shard_id, ..ShardStateUnsplit::default() }
+        Self::with_ident_and_opts(shard_id, SERDE_OPTS_EMPTY)
+    }
+
+    pub fn with_ident_and_opts(shard_id: ShardIdent, opts: u8) -> Self {
+        Self {
+            shard_id,
+            out_msg_queues_info: ChildCell::with_serde_opts(opts),
+            ..ShardStateUnsplit::default()
+        }
     }
 
     pub fn id(&self) -> String {
@@ -897,15 +901,28 @@ impl ShardStateUnsplit {
     }
 
     pub fn out_msg_queue_info_cell(&self) -> Cell {
-        self.out_msg_queue_info.cell()
+        self.out_msg_queues_info.cell()
     }
 
     pub fn read_out_msg_queue_info(&self) -> Result<OutMsgQueueInfo> {
-        self.out_msg_queue_info.read_struct()
+        self.out_msg_queues_info.read_struct().map(|qs| qs.local_queue)
+    }
+
+    pub fn read_out_msg_queues_info(&self) -> Result<(OutMsgQueueInfo, MeshMsgQueuesInfo)> {
+        self.out_msg_queues_info.read_struct().map(|qs| (qs.local_queue, qs.mesh_queues))
     }
 
     pub fn write_out_msg_queue_info(&mut self, value: &OutMsgQueueInfo) -> Result<()> {
-        self.out_msg_queue_info.write_struct(value)
+        self.out_msg_queues_info.write_struct(&OutMsgQueuesInfo::with_local_queue(value.clone()))
+    }
+
+    pub fn write_out_msg_queues_info(
+        &mut self,
+        local: OutMsgQueueInfo,
+        mesh: MeshMsgQueuesInfo,
+    ) -> Result<()> {
+        self.out_msg_queues_info.set_options(SERDE_OPTS_COMMON_MESSAGE);
+        self.out_msg_queues_info.write_struct(&OutMsgQueuesInfo::with_params(local, mesh))
     }
 
     pub fn before_split(&self) -> bool {
@@ -1128,12 +1145,31 @@ impl ShardStateUnsplit {
             Ok(())
         })
     }
+
+    pub fn read_pack_info(&self) -> Result<Option<MsgPackProcessingInfo>> {
+        match &self.pack_info {
+            None => Ok(None),
+            Some(pack_info) => Ok(Some(pack_info.read_struct()?)),
+        }
+    }
+
+    pub fn write_pack_info(&mut self, value: Option<&MsgPackProcessingInfo>) -> Result<()> {
+        self.pack_info = match value {
+            Some(pack_info) => Some(ChildCell::with_struct(pack_info)?),
+            None => None,
+        };
+        Ok(())
+    }
 }
 
 impl Deserializable for ShardStateUnsplit {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         let tag = cell.get_next_u32()?;
-        if tag != SHARD_STATE_UNSPLIT_PFX && tag != SHARD_STATE_UNSPLIT_PFX_2 {
+        if tag != SHARD_STATE_UNSPLIT_PFX
+            && tag != SHARD_STATE_UNSPLIT_PFX_2
+            && tag != SHARD_STATE_UNSPLIT_PFX_3
+            && tag != SHARD_STATE_UNSPLIT_PFX_4
+        {
             fail!(BlockError::InvalidConstructorTag { t: tag, s: "ShardStateUnsplit".to_string() })
         }
         self.global_id.read_from(cell)?;
@@ -1141,33 +1177,42 @@ impl Deserializable for ShardStateUnsplit {
         self.seq_no.read_from(cell)?;
         self.vert_seq_no.read_from(cell)?;
         self.gen_time.read_from(cell)?;
-        if tag == SHARD_STATE_UNSPLIT_PFX_2 {
+        if tag == SHARD_STATE_UNSPLIT_PFX_2 || tag == SHARD_STATE_UNSPLIT_PFX_3 {
             self.gen_time_tail_ms.read_from(cell)?;
         }
         self.gen_lt.read_from(cell)?;
         self.min_ref_mc_seqno.read_from(cell)?;
-        self.out_msg_queue_info.read_from_reference(cell)?;
+        let opts = if tag == SHARD_STATE_UNSPLIT_PFX_3 || tag == SHARD_STATE_UNSPLIT_PFX_4 {
+            SERDE_OPTS_COMMON_MESSAGE
+        } else {
+            SERDE_OPTS_EMPTY
+        };
+        self.out_msg_queues_info.read_from_with_opts(cell, opts)?;
         self.before_split = cell.get_next_bit()?;
-        self.accounts.read_from_reference(cell)?;
+        self.accounts.read_from(cell)?;
 
-        let cell1 = &mut SliceData::load_cell(cell.checked_drain_reference()?)?;
-        self.overload_history.read_from(cell1)?;
-        self.underload_history.read_from(cell1)?;
-        self.total_balance.read_from(cell1)?;
-        self.total_validator_fees.read_from(cell1)?;
-        self.libraries.read_from(cell1)?;
-        self.master_ref = BlkMasterInfo::read_maybe_from(cell1)?;
+        let slice1 = &mut SliceData::load_cell(cell.checked_drain_reference()?)?;
+        self.overload_history.read_from(slice1)?;
+        self.underload_history.read_from(slice1)?;
+        self.total_balance.read_from(slice1)?;
+        self.total_validator_fees.read_from(slice1)?;
+        self.libraries.read_from(slice1)?;
+        self.master_ref.read_from(slice1)?;
+        if tag == SHARD_STATE_UNSPLIT_PFX_4 {
+            self.pack_info.read_from(slice1)?;
+        } else {
+            self.pack_info = None;
+        }
 
-        if tag == SHARD_STATE_UNSPLIT_PFX {
-            self.custom = ChildCell::construct_maybe_from_reference(cell)?;
+        if tag == SHARD_STATE_UNSPLIT_PFX || self.shard_id.is_masterchain() {
+            self.custom.read_from(cell)?;
             self.ref_shard_blocks = None;
-        } else if tag == SHARD_STATE_UNSPLIT_PFX_2 {
-            if self.shard_id.is_masterchain() {
-                self.custom = ChildCell::construct_maybe_from_reference(cell)?;
-                self.ref_shard_blocks = None;
+        } else {
+            self.custom = None;
+            if tag == SHARD_STATE_UNSPLIT_PFX_2 {
+                self.ref_shard_blocks = Some(RefShardBlocks::construct_from(cell)?)
             } else {
-                self.custom = None;
-                self.ref_shard_blocks = Some(RefShardBlocks::construct_from(cell)?);
+                self.ref_shard_blocks.read_from(cell)?;
             }
         }
 
@@ -1177,7 +1222,17 @@ impl Deserializable for ShardStateUnsplit {
 
 impl Serializable for ShardStateUnsplit {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
-        let tag = if self.ref_shard_blocks.is_some() || self.gen_time_tail_ms != 0 {
+        let common_message = self.out_msg_queues_info.serde_opts() & SERDE_OPTS_COMMON_MESSAGE != 0;
+        let tag = if self.pack_info.is_some() {
+            if !common_message {
+                fail!(
+                    "'pack_info' field must be present only with enabled SERDE_OPTS_COMMON_MESSAGE"
+                );
+            }
+            SHARD_STATE_UNSPLIT_PFX_4
+        } else if common_message {
+            SHARD_STATE_UNSPLIT_PFX_3
+        } else if self.ref_shard_blocks.is_some() || self.gen_time_tail_ms != 0 {
             SHARD_STATE_UNSPLIT_PFX_2
         } else {
             SHARD_STATE_UNSPLIT_PFX
@@ -1188,12 +1243,12 @@ impl Serializable for ShardStateUnsplit {
         self.seq_no.write_to(builder)?;
         self.vert_seq_no.write_to(builder)?;
         self.gen_time.write_to(builder)?;
-        if tag == SHARD_STATE_UNSPLIT_PFX_2 {
+        if tag == SHARD_STATE_UNSPLIT_PFX_2 || tag == SHARD_STATE_UNSPLIT_PFX_3 {
             self.gen_time_tail_ms.write_to(builder)?;
         }
         self.gen_lt.write_to(builder)?;
         self.min_ref_mc_seqno.write_to(builder)?;
-        builder.checked_append_reference(self.out_msg_queue_info.cell())?;
+        builder.checked_append_reference(self.out_msg_queues_info.cell())?;
         builder.append_bit_bool(self.before_split)?;
 
         builder.checked_append_reference(self.accounts.cell())?;
@@ -1204,22 +1259,28 @@ impl Serializable for ShardStateUnsplit {
         self.total_balance.write_to(&mut b2)?;
         self.total_validator_fees.write_to(&mut b2)?;
         self.libraries.write_to(&mut b2)?;
-        self.master_ref.write_maybe_to(&mut b2)?;
+        self.master_ref.write_to(&mut b2)?;
+        if tag == SHARD_STATE_UNSPLIT_PFX_4 {
+            self.pack_info.write_to(&mut b2)?;
+        }
         builder.checked_append_reference(b2.into_cell()?)?;
 
         if tag == SHARD_STATE_UNSPLIT_PFX {
-            ChildCell::write_maybe_to(builder, self.custom.as_ref())?;
-        } else if tag == SHARD_STATE_UNSPLIT_PFX_2 {
+            self.custom.write_to(builder)?;
+        } else {
             if self.custom.is_some() && self.ref_shard_blocks.is_some() {
                 fail!("'custom' and 'ref_shard_blocks' fields must not be present simultaneously");
             }
-            if let Some(rsb) = &self.ref_shard_blocks {
-                rsb.write_to(builder)?;
+            if self.shard_id.is_masterchain() {
+                self.custom.write_to(builder)?;
+            } else if tag == SHARD_STATE_UNSPLIT_PFX_2 {
+                if let Some(rsb) = &self.ref_shard_blocks {
+                    rsb.write_to(builder)?;
+                }
             } else {
-                ChildCell::write_maybe_to(builder, self.custom.as_ref())?;
+                self.ref_shard_blocks.write_to(builder)?;
             }
         }
-
         Ok(())
     }
 }

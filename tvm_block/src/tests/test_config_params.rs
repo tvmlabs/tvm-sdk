@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 EverX. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,23 +6,23 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 #![allow(clippy::inconsistent_digit_grouping, clippy::unusual_byte_groupings)]
 
-use ed25519_dalek::SigningKey;
-use ed25519_dalek::VerifyingKey;
 use rand::Rng;
-use tvm_types::read_single_root_boc;
 
 use super::*;
+use crate::read_single_root_boc;
 use crate::write_read_and_assert;
+use crate::BlockIdExt;
+use crate::Ed25519KeyOption;
+use crate::Serializable;
+use crate::ValidatorDescr;
 use crate::VarUInteger32;
 
 fn get_config_param0() -> ConfigParam0 {
-    let mut c = ConfigParam0::default();
-    c.config_addr = UInt256::from([1; 32]);
-    c
+    ConfigParam0 { config_addr: UInt256::from([1; 32]) }
 }
 
 #[test]
@@ -31,9 +31,7 @@ fn test_config_param_0() {
 }
 
 fn get_config_param1() -> ConfigParam1 {
-    let mut c = ConfigParam1::default();
-    c.elector_addr = UInt256::from([1; 32]);
-    c
+    ConfigParam1 { elector_addr: UInt256::from([1; 32]) }
 }
 
 #[test]
@@ -42,11 +40,11 @@ fn test_config_param_1() {
 }
 
 fn get_config_param16() -> ConfigParam16 {
-    let mut c = ConfigParam16::default();
-    c.max_validators = Number16::from(23424u16);
-    c.max_main_validators = Number16::from(35553u16);
-    c.min_validators = Number16::from(11u16);
-    c
+    ConfigParam16 {
+        max_validators: Number16::from(23424u16),
+        max_main_validators: Number16::from(35553u16),
+        min_validators: Number16::from(11u16),
+    }
 }
 
 #[test]
@@ -55,11 +53,12 @@ fn test_config_param_16() {
 }
 
 fn get_config_param17() -> ConfigParam17 {
-    let mut c = ConfigParam17::default();
-    c.min_stake = Grams::zero();
-    c.max_stake = Grams::one();
-    c.max_stake_factor = 12121;
-    c
+    ConfigParam17 {
+        min_stake: Grams::zero(),
+        max_stake: Grams::one(),
+        min_total_stake: Grams::from(100_000_000),
+        max_stake_factor: 12121,
+    }
 }
 
 #[test]
@@ -69,13 +68,13 @@ fn test_config_param_17() {
 
 fn get_storage_prices() -> StoragePrices {
     let mut rng = rand::thread_rng();
-    let mut st = StoragePrices::default();
-    st.bit_price_ps = rng.gen();
-    st.cell_price_ps = rng.gen();
-    st.mc_bit_price_ps = rng.gen();
-    st.mc_cell_price_ps = rng.gen();
-    st.utime_since = rng.gen();
-    st
+    StoragePrices {
+        bit_price_ps: rng.gen(),
+        cell_price_ps: rng.gen(),
+        mc_bit_price_ps: rng.gen(),
+        mc_cell_price_ps: rng.gen(),
+        utime_since: rng.gen(),
+    }
 }
 
 #[test]
@@ -140,14 +139,14 @@ fn test_config_gas_limit_price() {
 
 fn get_msg_forward_prices() -> MsgForwardPrices {
     let mut rng = rand::thread_rng();
-    let mut mfp = MsgForwardPrices::default();
-    mfp.lump_price = rng.gen();
-    mfp.bit_price = rng.gen();
-    mfp.cell_price = rng.gen();
-    mfp.ihr_price_factor = rng.gen();
-    mfp.first_frac = rng.gen();
-    mfp.next_frac = rng.gen();
-    mfp
+    MsgForwardPrices {
+        lump_price: rng.gen(),
+        bit_price: rng.gen(),
+        cell_price: rng.gen(),
+        ihr_price_factor: rng.gen(),
+        first_frac: rng.gen(),
+        next_frac: rng.gen(),
+    }
 }
 
 #[test]
@@ -159,14 +158,14 @@ fn test_config_msg_forward_prices() {
 
 fn get_cat_chain_config() -> CatchainConfig {
     let mut rng = rand::thread_rng();
-    let mut cc = CatchainConfig::default();
-    cc.shuffle_mc_validators = rng.gen();
-    cc.isolate_mc_validators = rng.gen();
-    cc.mc_catchain_lifetime = rng.gen();
-    cc.shard_catchain_lifetime = rng.gen();
-    cc.shard_validators_lifetime = rng.gen();
-    cc.shard_validators_num = rng.gen();
-    cc
+    CatchainConfig {
+        shuffle_mc_validators: rng.gen(),
+        isolate_mc_validators: rng.gen(),
+        mc_catchain_lifetime: rng.gen(),
+        shard_catchain_lifetime: rng.gen(),
+        shard_validators_lifetime: rng.gen(),
+        shard_validators_num: rng.gen(),
+    }
 }
 
 #[test]
@@ -202,12 +201,9 @@ fn test_config_param_31() {
 
 fn get_validator_set() -> ValidatorSet {
     let mut list = vec![];
-    let mut rng = rand::thread_rng();
     for n in 0..2 {
-        let sk: SigningKey = SigningKey::generate(&mut rng);
-        let pk: VerifyingKey = (&sk).into();
-
-        let key = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
+        let keypair = Ed25519KeyOption::generate().unwrap();
+        let key = SigPubKey::from_bytes(keypair.pub_key().unwrap()).unwrap();
         let vd = ValidatorDescr::with_params(key, n, None, None);
         list.push(vd);
     }
@@ -217,38 +213,38 @@ fn get_validator_set() -> ValidatorSet {
 
 #[test]
 fn test_config_param_32_34_36() {
-    let mut cp32 = ConfigParam32::default();
-    cp32.prev_validators = get_validator_set();
+    let prev_validators = get_validator_set();
+    let cp32 = ConfigParam32 { prev_validators };
     write_read_and_assert(cp32);
 
-    let mut cp34 = ConfigParam34::default();
-    cp34.cur_validators = get_validator_set();
+    let cur_validators = get_validator_set();
+    let cp34 = ConfigParam34 { cur_validators };
     write_read_and_assert(cp34);
 
-    let mut cp36 = ConfigParam36::default();
-    cp36.next_validators = get_validator_set();
+    let next_validators = get_validator_set();
+    let cp36 = ConfigParam36 { next_validators };
     write_read_and_assert(cp36);
 }
 
 fn get_workchain_desc() -> WorkchainDescr {
-    let mut wc = WorkchainDescr::default();
-    wc.enabled_since = 332;
-    wc.accept_msgs = true;
-    wc.active = false;
-    wc.flags = 0x345;
-    wc.max_split = 32;
-    wc.min_split = 2;
-    wc.version = 1;
-    wc.zerostate_file_hash = UInt256::rand();
-    wc.zerostate_root_hash = UInt256::rand();
-
-    if rand::random::<u8>() > 128 {
-        wc.format = WorkchainFormat::Basic(WorkchainFormat1::with_params(123, 453454));
+    let format = if rand::random::<u8>() > 128 {
+        WorkchainFormat::Basic(WorkchainFormat1::with_params(123, 453454))
     } else {
-        wc.format =
-            WorkchainFormat::Extended(WorkchainFormat0::with_params(64, 128, 64, 1).unwrap());
+        WorkchainFormat::Extended(WorkchainFormat0::with_params(64, 128, 64, 1).unwrap())
+    };
+    WorkchainDescr {
+        enabled_since: 332,
+        accept_msgs: true,
+        active: false,
+        flags: 0x345,
+        max_split: 32,
+        min_split: 2,
+        version: 1,
+        zerostate_file_hash: UInt256::rand(),
+        zerostate_root_hash: UInt256::rand(),
+        format,
+        ..Default::default()
     }
-    wc
 }
 
 fn get_config_param11() -> ConfigParam11 {
@@ -495,9 +491,8 @@ fn test_config_params() {
     );
     assert!(!cp.prev_validator_set_present().unwrap());
 
-    let mut cp32 = ConfigParam32::default();
-    cp32.prev_validators = get_validator_set();
-    let c32 = ConfigParamEnum::ConfigParam32(cp32);
+    let prev_validators = get_validator_set();
+    let c32 = ConfigParamEnum::ConfigParam32(ConfigParam32 { prev_validators });
     cp.set_config(c32.clone()).unwrap();
     let c = cp.config(32).unwrap().unwrap();
     assert_eq!(c32, c);
@@ -505,9 +500,8 @@ fn test_config_params() {
     assert!(cp.prev_validator_set_present().unwrap());
     write_read_and_assert(cp.clone());
 
-    let mut cp34 = ConfigParam34::default();
-    cp34.cur_validators = get_validator_set();
-    let c34 = ConfigParamEnum::ConfigParam34(cp34);
+    let cur_validators = get_validator_set();
+    let c34 = ConfigParamEnum::ConfigParam34(ConfigParam34 { cur_validators });
     cp.set_config(c34.clone()).unwrap();
     let c = cp.config(34).unwrap().unwrap();
     assert_eq!(c34, c);
@@ -522,9 +516,8 @@ fn test_config_params() {
     );
     assert!(!cp.next_validator_set_present().unwrap());
 
-    let mut cp36 = ConfigParam36::default();
-    cp36.next_validators = get_validator_set();
-    let c36 = ConfigParamEnum::ConfigParam36(cp36);
+    let next_validators = get_validator_set();
+    let c36 = ConfigParamEnum::ConfigParam36(ConfigParam36 { next_validators });
     cp.set_config(c36.clone()).unwrap();
     let c = cp.config(36).unwrap().unwrap();
     assert_eq!(c36, c);
@@ -563,22 +556,17 @@ fn test_config_params() {
 
 fn get_config_param_39() -> ConfigParam39 {
     let mut cp = ConfigParam39::default();
-    let mut rng = rand::thread_rng();
 
-    let sk: SigningKey = SigningKey::generate(&mut rng);
-    let pk: VerifyingKey = (&sk).into();
-    let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    // let keypair = ed25519_dalek::Keypair::generate(&mut rng);
-    // let spk = SigPubKey::from_bytes(&keypair.public.to_bytes()).unwrap();
-    let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
+    let keypair = Ed25519KeyOption::generate().unwrap();
+    let spk = SigPubKey::from_bytes(keypair.pub_key().unwrap()).unwrap();
+    let cs = CryptoSignature::with_r_s(&[1; 32], &[2; 32]);
     let vtk = ValidatorTempKey::with_params(UInt256::from([3; 32]), spk, 100500, 1562663724);
     let vstk = ValidatorSignedTempKey::with_key_and_signature(vtk, cs);
     cp.insert(&UInt256::from([1; 32]), &vstk).unwrap();
 
-    let sk: SigningKey = SigningKey::generate(&mut rng);
-    let pk: VerifyingKey = (&sk).into();
-    let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    let cs = CryptoSignature::from_r_s(&[6; 32], &[7; 32]).unwrap();
+    let keypair = Ed25519KeyOption::generate().unwrap();
+    let spk = SigPubKey::from_bytes(keypair.pub_key().unwrap()).unwrap();
+    let cs = CryptoSignature::with_r_s(&[6; 32], &[7; 32]);
     let vtk = ValidatorTempKey::with_params(UInt256::from([8; 32]), spk, 500100, 1562664724);
     let vstk = ValidatorSignedTempKey::with_key_and_signature(vtk, cs);
     cp.insert(&UInt256::from([2; 32]), &vstk).unwrap();
@@ -799,8 +787,56 @@ fn test_suspended_addresses() {
     write_read_and_assert(get_suspended_addresses());
 }
 
+fn get_mesh_config() -> MeshConfig {
+    let mut mesh_config = MeshConfig::default();
+    for id in 1..10 {
+        let mut hardforks = vec![];
+        for n in 0..id {
+            hardforks.push(BlockIdExt {
+                shard_id: ShardIdent::masterchain(),
+                seq_no: n,
+                root_hash: UInt256::rand(),
+                file_hash: UInt256::rand(),
+            });
+        }
+
+        let info = ConnectedNwConfig {
+            zerostate: BlockIdExt {
+                shard_id: ShardIdent::masterchain(),
+                seq_no: 0,
+                root_hash: UInt256::rand(),
+                file_hash: UInt256::rand(),
+            },
+            is_active: true,
+            currency_id: id,
+            init_block: BlockIdExt {
+                shard_id: ShardIdent::masterchain(),
+                seq_no: 0,
+                root_hash: UInt256::rand(),
+                file_hash: UInt256::rand(),
+            },
+            emergency_guard_addr: UInt256::rand(),
+            pull_addr: UInt256::rand(),
+            minter_addr: UInt256::rand(),
+            hardforks,
+        };
+
+        write_read_and_assert(info.clone());
+
+        mesh_config.set(&id, &info).unwrap();
+
+        println!("1");
+    }
+    mesh_config
+}
+
 #[test]
-fn test_real_tvm_config_params() {
+fn test_mesh_config() {
+    write_read_and_assert(get_mesh_config());
+}
+
+#[test]
+fn test_real_ton_config_params() {
     let bytes = std::fs::read("src/tests/data/config.boc").unwrap();
     let cell = read_single_root_boc(bytes).unwrap();
     let config1 = ConfigParams::with_address_and_params(UInt256::from([1; 32]), Some(cell));
@@ -830,4 +866,32 @@ fn test_real_tvm_config_params() {
     let key = SliceData::load_builder(14u32.write_to_new_cell().unwrap()).unwrap();
     config2.config_params.remove(key).unwrap();
     assert!(!config2.valid_config_data(true, None).unwrap());
+}
+
+#[test]
+fn test_fast_finality_config() {
+    let config = FastFinalityConfig {
+        split_merge_interval: 1280,
+        collator_range_len: 500,
+        lost_collator_timeout: 600,
+        mempool_validators_count: 5,
+        mempool_rotated_count: 2,
+        unreliability_fine: 10,
+        unreliability_weak_fading: 67,
+        unreliability_strong_fading: 1,
+        unreliability_max: 10054,
+        unreliability_weight: 145,
+        familiarity_collator_fine: 34,
+        familiarity_msgpool_fine: 31,
+        familiarity_fading: 10,
+        familiarity_max: 10,
+        familiarity_weight: 6,
+        busyness_weight: 4,
+        candidates_percentile: 100,
+        busyness_collator_fine: 34,
+        busyness_msgpool_fine: 3,
+    };
+    let cell = config.write_to_new_cell().unwrap().into_cell().unwrap();
+    let config2 = FastFinalityConfig::construct_from_cell(cell).unwrap();
+    assert_eq!(config, config2);
 }

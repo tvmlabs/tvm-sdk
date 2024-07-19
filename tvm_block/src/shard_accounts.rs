@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,34 +6,32 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::fmt;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::hm_label;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapSubtree;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-
 use crate::accounts::Account;
 use crate::accounts::ShardAccount;
 use crate::define_HashmapAugE;
-use crate::hashmapaug::Augmentable;
-use crate::hashmapaug::HashmapAugType;
+use crate::dictionary::hashmapaug::Augmentable;
+use crate::dictionary::hashmapaug::HashmapAugType;
+use crate::error;
+use crate::fail;
+use crate::hm_label;
 use crate::types::CurrencyCollection;
 use crate::types::Number5;
+use crate::AccountId;
 use crate::Augmentation;
+use crate::BuilderData;
+use crate::Cell;
 use crate::Deserializable;
+use crate::HashmapSubtree;
+use crate::IBitstring;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
 
 #[cfg(test)]
 #[path = "tests/test_shard_accounts.rs"]
@@ -65,8 +63,7 @@ impl ShardAccounts {
                     acc_id.clone(),
                     &sh_account.write_to_new_cell()?,
                     &depth_balance_info,
-                )
-                .unwrap();
+                )?;
                 Ok(Some(acc_id))
             }
             _ => Ok(None),
@@ -89,7 +86,7 @@ impl ShardAccounts {
     }
 
     pub fn split_for(&mut self, split_key: &SliceData) -> Result<&DepthBalanceInfo> {
-        self.into_subtree_with_prefix(split_key, &mut 0)?;
+        *self = self.subtree_with_prefix(split_key, &mut 0)?;
         self.update_root_extra()
     }
 }

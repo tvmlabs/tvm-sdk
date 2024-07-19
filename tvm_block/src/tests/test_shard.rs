@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,16 +6,22 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 #![allow(clippy::inconsistent_digit_grouping, clippy::unusual_byte_groupings)]
 use std::collections::HashSet;
 use std::str::FromStr;
 
-use tvm_types::read_single_root_boc;
-
 use super::*;
+use crate::read_single_root_boc;
+use crate::write_read_and_assert_with_opts;
+use crate::AccountIdPrefixFull;
 use crate::BlockIdExt;
+use crate::HashmapType;
+use crate::InRefValue;
+use crate::MeshMsgQueuesInfo;
+use crate::MsgPackId;
+use crate::SliceData;
 
 fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     println!("messages");
@@ -67,7 +73,7 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
 }
 
 #[test]
-fn test_real_tvm_shardstate() {
+fn test_real_ton_shardstate() {
     // getstate (-1,8000000000000000,0)
     let in_path = "src/tests/data/shard_state.boc";
     println!("ShardState file: {:?}", in_path);
@@ -130,7 +136,7 @@ fn test_shard_state_unsplit_serialize_fast_finality() {
 
     let in_path = "src/tests/data/shard_state.boc";
     let bytes = std::fs::read(in_path).unwrap();
-    let root_cell = read_single_root_boc(bytes).unwrap();
+    let root_cell = read_single_root_boc(&bytes).unwrap();
 
     let ss = ShardState::construct_from_cell(root_cell).unwrap();
 
@@ -162,6 +168,73 @@ fn test_shard_state_unsplit_serialize_fast_finality() {
             ss.set_ref_shard_blocks(Some(rsb));
 
             write_read_and_assert(ss);
+        }
+        ShardState::SplitState(_) => {
+            unreachable!()
+        }
+    }
+}
+
+#[test]
+fn test_shard_state_unsplit_serialize_mesh() {
+    let in_path = "src/tests/data/shard_state.boc";
+    let bytes = std::fs::read(in_path).unwrap();
+    let root_cell = read_single_root_boc(&bytes).unwrap();
+
+    let ss = ShardState::construct_from_cell(root_cell).unwrap();
+
+    match ss {
+        ShardState::UnsplitState(mut ss) => {
+            *ss.shard_mut() = ShardIdent::with_tagged_prefix(0, SHARD_FULL).unwrap();
+            ss.write_custom(None).unwrap();
+
+            let local = ss.read_out_msg_queue_info().unwrap();
+            let mut mesh = MeshMsgQueuesInfo::default();
+            mesh.set(&123, &InRefValue(local.clone())).unwrap();
+            ss.set_gen_lt(100500);
+
+            ss.write_out_msg_queues_info(local, mesh).unwrap();
+
+            let ss2 = write_read_and_assert_with_opts(ss, SERDE_OPTS_COMMON_MESSAGE).unwrap();
+
+            assert_eq!(ss2.gen_lt(), 100500);
+
+            assert!(ss2.read_out_msg_queues_info().unwrap().1.len().unwrap() > 0);
+        }
+        ShardState::SplitState(_) => {
+            unreachable!()
+        }
+    }
+}
+
+#[test]
+fn test_shard_state_unsplit_serialize_pack() {
+    let in_path = "src/tests/data/shard_state.boc";
+    let bytes = std::fs::read(in_path).unwrap();
+    let root_cell = read_single_root_boc(&bytes).unwrap();
+
+    let ss = ShardState::construct_from_cell(root_cell).unwrap();
+
+    match ss {
+        ShardState::UnsplitState(mut ss) => {
+            *ss.shard_mut() = ShardIdent::with_tagged_prefix(0, SHARD_FULL).unwrap();
+            ss.write_custom(None).unwrap();
+
+            let local = ss.read_out_msg_queue_info().unwrap();
+            let mesh = MeshMsgQueuesInfo::default();
+            ss.write_out_msg_queues_info(local, mesh).unwrap();
+
+            ss.write_pack_info(Some(&MsgPackProcessingInfo {
+                last_id: MsgPackId::new(
+                    ShardIdent::with_tagged_prefix(0, 0x4000_0000_0000_0000_u64).unwrap(),
+                    2339488,
+                    UInt256::rand(),
+                ),
+                last_partially_included: Some(UInt256::rand()),
+            }))
+            .unwrap();
+
+            write_read_and_assert_with_opts(ss, SERDE_OPTS_COMMON_MESSAGE).unwrap();
         }
         ShardState::SplitState(_) => {
             unreachable!()

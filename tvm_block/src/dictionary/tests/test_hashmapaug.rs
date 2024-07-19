@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,7 +6,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 #![allow(dead_code)] // TODO: maybe you know more efficient way
@@ -14,12 +14,14 @@
 #![allow(clippy::vec_init_then_push)]
 use std::fmt;
 
-use tvm_types::hm_label;
-use tvm_types::HashmapSubtree;
-
 use super::*;
+use crate::define_HashmapAugE;
+use crate::error;
+use crate::hm_label;
 use crate::AddSub;
 use crate::Grams;
+use crate::HashmapSubtree;
+use crate::IBitstring;
 
 #[derive(Eq, Clone, Debug, Default, PartialEq)]
 pub struct GramStruct(Grams);

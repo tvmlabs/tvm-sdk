@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,38 +6,27 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::fmt;
 use std::sync::Arc;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::hm_label;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-use tvm_types::UsageTree;
-
 use crate::accounts::Account;
 use crate::accounts::AccountStatus;
 use crate::accounts::StorageUsedShort;
 use crate::blocks::Block;
+use crate::common_message::CommonMessage;
 use crate::define_HashmapAugE;
 use crate::define_HashmapE;
+use crate::dictionary::hashmapaug::Augmentable;
+use crate::dictionary::hashmapaug::Augmentation;
+use crate::dictionary::hashmapaug::HashmapAugType;
+use crate::error;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentable;
-use crate::hashmapaug::Augmentation;
-use crate::hashmapaug::HashmapAugType;
+use crate::fail;
+use crate::hm_label;
 use crate::merkle_proof::MerkleProof;
-use crate::messages::generate_big_msg;
 use crate::messages::Message;
 use crate::shard::ShardStateUnsplit;
 use crate::types::ChildCell;
@@ -46,14 +35,23 @@ use crate::types::Grams;
 use crate::types::InRefValue;
 use crate::types::VarUInteger3;
 use crate::types::VarUInteger7;
+use crate::AccountId;
+use crate::BuilderData;
+use crate::Cell;
 use crate::Deserializable;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
+use crate::HashmapType;
+use crate::IBitstring;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
+use crate::UsageTree;
+use crate::SERDE_OPTS_COMMON_MESSAGE;
+use crate::SERDE_OPTS_EMPTY;
 
 #[cfg(test)]
 #[path = "tests/test_transactions.rs"]
-pub mod tests;
+pub(crate) mod tests;
 
 // acst_unchanged$0 = AccStatusChange;  // x -> x
 // acst_frozen$10 = AccStatusChange;    // init -> frozen
@@ -94,7 +92,6 @@ impl Deserializable for AccStatusChange {
 // cskip_no_state$00 = ComputeSkipReason;
 // cskip_bad_state$01 = ComputeSkipReason;
 // cskip_no_gas$10 = ComputeSkipReason;
-// cskip_suspended$110 = ComputeSkipReason;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum ComputeSkipReason {
     #[default]
@@ -251,10 +248,10 @@ impl Serializable for TrComputePhase {
             let mut sep_cell = BuilderData::new();
             v.gas_used.write_to(&mut sep_cell)?; // gas_used:(VarUInteger 7)
             v.gas_limit.write_to(&mut sep_cell)?; // gas_limit:(VarUInteger 7)
-            v.gas_credit.write_maybe_to(&mut sep_cell)?; // gas_credit:(Maybe (VarUInteger 3))
+            v.gas_credit.write_to(&mut sep_cell)?; // gas_credit:(Maybe (VarUInteger 3))
             v.mode.write_to(&mut sep_cell)?; // mode:int8
             v.exit_code.write_to(&mut sep_cell)?; // exit_code:int32
-            v.exit_arg.write_maybe_to(&mut sep_cell)?; // exit_arg:(Maybe int32)
+            v.exit_arg.write_to(&mut sep_cell)?; // exit_arg:(Maybe int32)
             v.vm_steps.write_to(&mut sep_cell)?; // vm_steps:uint32
             v.vm_init_state_hash.write_to(&mut sep_cell)?; // vm_init_state_hash:uint256
             v.vm_final_state_hash.write_to(&mut sep_cell)?; // vm_final_state_hash:uint256
@@ -339,7 +336,7 @@ impl TrStoragePhase {
 impl Serializable for TrStoragePhase {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         self.storage_fees_collected.write_to(cell)?;
-        self.storage_fees_due.write_maybe_to(cell)?;
+        self.storage_fees_due.write_to(cell)?;
         self.status_change.write_to(cell)?;
 
         Ok(())
@@ -349,7 +346,7 @@ impl Serializable for TrStoragePhase {
 impl Deserializable for TrStoragePhase {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         self.storage_fees_collected.read_from(cell)?;
-        self.storage_fees_due = Grams::read_maybe_from(cell)?;
+        self.storage_fees_due.read_from(cell)?;
         self.status_change.read_from(cell)?;
 
         Ok(())
@@ -390,10 +387,6 @@ pub enum TrBouncePhase {
 }
 
 impl TrBouncePhase {
-    pub const fn default() -> Self {
-        TrBouncePhase::Negfunds
-    }
-
     pub const fn ok(msg_size: StorageUsedShort, msg_fees: Grams, fwd_fees: Grams) -> Self {
         TrBouncePhase::Ok(TrBouncePhaseOk::with_params(msg_size, msg_fees, fwd_fees))
     }
@@ -467,17 +460,13 @@ impl TrBouncePhaseNofunds {
 // due_fees_collected:(Maybe Grams)
 // credit:CurrencyCollection
 // = TrCreditPhase;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct TrCreditPhase {
     pub due_fees_collected: Option<Grams>,
     pub credit: CurrencyCollection,
 }
 
 impl TrCreditPhase {
-    pub const fn default() -> Self {
-        TrCreditPhase::with_params(None, CurrencyCollection::default())
-    }
-
     pub const fn with_params(
         due_fees_collected: Option<Grams>,
         credit: CurrencyCollection,
@@ -486,15 +475,9 @@ impl TrCreditPhase {
     }
 }
 
-impl Default for TrCreditPhase {
-    fn default() -> Self {
-        TrCreditPhase { due_fees_collected: None, credit: CurrencyCollection::default() }
-    }
-}
-
 impl Serializable for TrCreditPhase {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        self.due_fees_collected.write_maybe_to(cell)?;
+        self.due_fees_collected.write_to(cell)?;
         self.credit.write_to(cell)?;
         Ok(())
     }
@@ -502,7 +485,7 @@ impl Serializable for TrCreditPhase {
 
 impl Deserializable for TrCreditPhase {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.due_fees_collected = Grams::read_maybe_from(cell)?;
+        self.due_fees_collected.read_from(cell)?;
         self.credit.read_from(cell)?;
         Ok(())
     }
@@ -511,7 +494,7 @@ impl Deserializable for TrCreditPhase {
 // tick$0 = TickTock;
 // tock$1 = TickTock;
 // There are two kinds of TickTock: in transaction and in messages.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Default, PartialEq, Eq, Clone, Debug)]
 pub enum TransactionTickTock {
     #[default]
     Tick,
@@ -596,10 +579,10 @@ impl Serializable for TrActionPhase {
             .append_bit_bool(self.valid)? // valid:Bool
             .append_bit_bool(self.no_funds)?; // no_funds:Bool
         self.status_change.write_to(cell)?; // status_change:AccStatusChange
-        self.total_fwd_fees.write_maybe_to(cell)?; // total_fwd_fees:(Maybe Grams)
-        self.total_action_fees.write_maybe_to(cell)?; // total_action_fees:(Maybe Grams)
+        self.total_fwd_fees.write_to(cell)?; // total_fwd_fees:(Maybe Grams)
+        self.total_action_fees.write_to(cell)?; // total_action_fees:(Maybe Grams)
         self.result_code.write_to(cell)?; // result_code:int32
-        self.result_arg.write_maybe_to(cell)?; // result_arg:(Maybe int32)
+        self.result_arg.write_to(cell)?; // result_arg:(Maybe int32)
         self.tot_actions.write_to(cell)?; // tot_actions:uint16
         self.spec_actions.write_to(cell)?; // spec_actions:uint16
         self.skipped_actions.write_to(cell)?; // skipped_actions: uint16
@@ -616,10 +599,10 @@ impl Deserializable for TrActionPhase {
         self.valid = cell.get_next_bit()?; // valid:Bool
         self.no_funds = cell.get_next_bit()?; // no_funds:Bool
         self.status_change.read_from(cell)?; // status_change:AccStatusChange
-        self.total_fwd_fees = Grams::read_maybe_from(cell)?; // total_fwd_fees:(Maybe Grams)
-        self.total_action_fees = Grams::read_maybe_from(cell)?; // total_action_fees:(Maybe Grams)
+        self.total_fwd_fees.read_from(cell)?; // total_fwd_fees:(Maybe Grams)
+        self.total_action_fees.read_from(cell)?; // total_action_fees:(Maybe Grams)
         self.result_code.read_from(cell)?; // result_code:int32
-        self.result_arg = i32::read_maybe_from(cell)?; // result_arg:(Maybe int32)
+        self.result_arg.read_from(cell)?; // result_arg:(Maybe int32)
         self.tot_actions.read_from(cell)?; // tot_actions:uint16
         self.spec_actions.read_from(cell)?; // spec_actions:uint16
         self.skipped_actions.read_from(cell)?; // skipped_actions: uint16
@@ -697,16 +680,16 @@ impl Serializable for TransactionDescrOrdinary {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         // constructor tag is written in TransactionDescr::write_to
         cell.append_bit_bool(self.credit_first)?;
-        self.storage_ph.write_maybe_to(cell)?;
-        self.credit_ph.write_maybe_to(cell)?;
+        self.storage_ph.write_to(cell)?;
+        self.credit_ph.write_to(cell)?;
         self.compute_ph.write_to(cell)?;
         cell.append_bit_bool(self.action.is_some())?;
         cell.append_bit_bool(self.aborted)?;
-        self.bounce.write_maybe_to(cell)?;
+        self.bounce.write_to(cell)?;
         cell.append_bit_bool(self.destroyed)?;
 
         if let Some(a) = &self.action {
-            cell.checked_append_reference(a.serialize()?)?;
+            a.serialize()?.write_to(cell)?;
         }
 
         Ok(())
@@ -717,18 +700,16 @@ impl Deserializable for TransactionDescrOrdinary {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // constructor tag is read in TransactionDescr::write_to
         self.credit_first = cell.get_next_bit()?;
-        self.storage_ph = TrStoragePhase::read_maybe_from(cell)?;
-        self.credit_ph = TrCreditPhase::read_maybe_from(cell)?;
+        self.storage_ph.read_from(cell)?;
+        self.credit_ph.read_from(cell)?;
         self.compute_ph.read_from(cell)?;
         self.action = if cell.get_next_bit()? {
-            let mut ap = TrActionPhase::default();
-            ap.read_from_reference(cell)?;
-            Option::Some(ap)
+            Some(TrActionPhase::construct_from_cell(cell.checked_drain_reference()?)?)
         } else {
-            Option::None
+            None
         };
         self.aborted = cell.get_next_bit()?;
-        self.bounce = TrBouncePhase::read_maybe_from(cell)?;
+        self.bounce.read_from(cell)?;
         self.destroyed = cell.get_next_bit()?;
         Ok(())
     }
@@ -776,7 +757,7 @@ impl Serializable for TransactionDescrTickTock {
         cell.append_bit_bool(self.destroyed)?;
 
         if let Some(a) = &self.action {
-            cell.checked_append_reference(a.serialize()?)?;
+            a.serialize()?.write_to(cell)?;
         }
 
         Ok(())
@@ -789,11 +770,9 @@ impl Deserializable for TransactionDescrTickTock {
         self.storage.read_from(cell)?;
         self.compute_ph.read_from(cell)?;
         self.action = if cell.get_next_bit()? {
-            let mut ap = TrActionPhase::default();
-            ap.read_from_reference(cell)?;
-            Option::Some(ap)
+            Some(TrActionPhase::construct_from_cell(cell.checked_drain_reference()?)?)
         } else {
-            Option::None
+            None
         };
         self.aborted = cell.get_next_bit()?;
         self.destroyed = cell.get_next_bit()?;
@@ -820,12 +799,12 @@ impl Serializable for TransactionDescrSplitPrepare {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         self.split_info.write_to(cell)?;
         self.compute_ph.write_to(cell)?;
-        cell.append_bit_bool(self.action.is_some())?;
-        cell.append_bit_bool(self.aborted)?;
-        cell.append_bit_bool(self.destroyed)?;
+        self.action.is_some().write_to(cell)?;
+        self.aborted.write_to(cell)?;
+        self.destroyed.write_to(cell)?;
 
         if let Some(a) = &self.action {
-            cell.checked_append_reference(a.serialize()?)?;
+            a.serialize()?.write_to(cell)?;
         }
 
         Ok(())
@@ -837,11 +816,9 @@ impl Deserializable for TransactionDescrSplitPrepare {
         self.split_info.read_from(cell)?;
         self.compute_ph.read_from(cell)?;
         self.action = if cell.get_next_bit()? {
-            let mut ap = TrActionPhase::default();
-            ap.read_from_reference(cell)?;
-            Option::Some(ap)
+            Some(TrActionPhase::construct_from_cell(cell.checked_drain_reference()?)?)
         } else {
-            Option::None
+            None
         };
         self.aborted = cell.get_next_bit()?;
         self.destroyed = cell.get_next_bit()?;
@@ -933,14 +910,14 @@ impl Serializable for TransactionDescrMergeInstall {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         self.split_info.write_to(cell)?;
         cell.checked_append_reference(self.prepare_transaction.serialize()?)?;
-        self.credit_ph.write_maybe_to(cell)?;
+        self.credit_ph.write_to(cell)?;
         self.compute_ph.write_to(cell)?;
-        cell.append_bit_bool(self.action.is_some())?;
-        cell.append_bit_bool(self.aborted)?;
-        cell.append_bit_bool(self.destroyed)?;
+        self.action.is_some().write_to(cell)?;
+        self.aborted.write_to(cell)?;
+        self.destroyed.write_to(cell)?;
 
         if let Some(a) = &self.action {
-            cell.checked_append_reference(a.serialize()?)?;
+            a.serialize()?.write_to(cell)?;
         }
 
         Ok(())
@@ -954,14 +931,12 @@ impl Deserializable for TransactionDescrMergeInstall {
         let tr = Transaction::construct_from_reference(cell)?;
         self.prepare_transaction = Arc::new(tr);
 
-        self.credit_ph = TrCreditPhase::read_maybe_from(cell)?;
+        self.credit_ph.read_from(cell)?;
         self.compute_ph.read_from(cell)?;
         self.action = if cell.get_next_bit()? {
-            let mut ap = TrActionPhase::default();
-            ap.read_from_reference(cell)?;
-            Option::Some(ap)
+            Some(TrActionPhase::construct_from_cell(cell.checked_drain_reference()?)?)
         } else {
-            Option::None
+            None
         };
         self.aborted = cell.get_next_bit()?;
         self.destroyed = cell.get_next_bit()?;
@@ -1247,7 +1222,7 @@ impl Deserializable for U15 {
     }
 }
 
-define_HashmapE! {OutMessages, 15, InRefValue<Message>}
+define_HashmapE! {OutMessages, 15, InRefValue<CommonMessage>}
 
 pub type TransactionId = UInt256;
 
@@ -1276,7 +1251,7 @@ pub struct Transaction {
     outmsg_cnt: i16,
     pub orig_status: AccountStatus,
     pub end_status: AccountStatus,
-    pub in_msg: Option<ChildCell<Message>>,
+    pub in_msg: ChildCell<CommonMessage>,
     pub out_msgs: OutMessages,
     total_fees: CurrencyCollection,
     state_update: ChildCell<HashUpdate>,
@@ -1286,7 +1261,9 @@ pub struct Transaction {
 
 impl Transaction {
     /// create new transaction
+    /// TODO Refactor constructors - use one for old msg format and one for new
     pub fn with_address_and_status(account_addr: AccountId, orig_status: AccountStatus) -> Self {
+        let opts = SERDE_OPTS_EMPTY;
         Transaction {
             account_addr,
             lt: 0,
@@ -1296,11 +1273,11 @@ impl Transaction {
             outmsg_cnt: 0,
             orig_status,
             end_status: AccountStatus::AccStateActive,
-            in_msg: None,
-            out_msgs: OutMessages::default(),
+            in_msg: ChildCell::with_serde_opts(opts),
+            out_msgs: OutMessages::with_serde_opts(opts),
             total_fees: CurrencyCollection::default(),
-            state_update: ChildCell::default(),
-            description: ChildCell::default(),
+            state_update: ChildCell::with_serde_opts(opts),
+            description: ChildCell::with_serde_opts(opts),
             copyleft_reward: None,
         }
     }
@@ -1312,6 +1289,7 @@ impl Transaction {
                 .int_dst_account_id()
                 .ok_or_else(|| error!("cannot resolve destination address of message"))?,
         };
+        let opts = SERDE_OPTS_EMPTY;
         Ok(Transaction {
             account_addr,
             lt,
@@ -1321,13 +1299,33 @@ impl Transaction {
             outmsg_cnt: 0,
             orig_status: account.status(),
             end_status: account.status(),
-            in_msg: Some(ChildCell::with_struct(msg)?),
-            out_msgs: OutMessages::default(),
+            in_msg: ChildCell::with_struct_and_opts(&CommonMessage::Std(msg.clone()), opts)?,
+            out_msgs: OutMessages::with_serde_opts(opts),
             total_fees: CurrencyCollection::default(),
-            state_update: ChildCell::default(),
-            description: ChildCell::default(),
+            state_update: ChildCell::with_serde_opts(opts),
+            description: ChildCell::with_serde_opts(opts),
             copyleft_reward: None,
         })
+    }
+
+    pub fn with_common_msg_support(account_addr: AccountId) -> Self {
+        let opts = SERDE_OPTS_COMMON_MESSAGE;
+        Transaction {
+            account_addr,
+            lt: 0,
+            prev_trans_hash: UInt256::default(),
+            prev_trans_lt: 0,
+            now: 0,
+            outmsg_cnt: 0,
+            orig_status: AccountStatus::AccStateNonexist,
+            end_status: AccountStatus::AccStateActive,
+            in_msg: ChildCell::with_serde_opts(opts),
+            out_msgs: OutMessages::with_serde_opts(opts),
+            total_fees: CurrencyCollection::default(),
+            state_update: ChildCell::with_serde_opts(opts),
+            description: ChildCell::with_serde_opts(opts),
+            copyleft_reward: None,
+        }
     }
 
     /// Get account address of transaction
@@ -1388,6 +1386,8 @@ impl Transaction {
         &mut self.total_fees
     }
 
+    /// TODO remove if not used
+    ///
     /// Calculate total transaction fees
     /// transaction fees is the amount fee for all out-messages
     //    pub fn calc_total_fees(&mut self) -> &CurrencyCollection {
@@ -1402,43 +1402,50 @@ impl Transaction {
     //        &self.total_fees
     //    }
 
-    pub fn read_in_msg(&self) -> Result<Option<Message>> {
-        Ok(match self.in_msg {
-            Some(ref in_msg) => Some(in_msg.read_struct()?),
-            None => None,
-        })
+    pub fn read_in_msg(&self) -> Result<Option<CommonMessage>> {
+        match self.in_msg.empty() {
+            true => Ok(None),
+            false => self.in_msg.read_struct().map(Some),
+        }
     }
 
-    pub fn write_in_msg(&mut self, value: Option<&Message>) -> Result<()> {
-        self.in_msg = value.map(ChildCell::with_struct).transpose()?;
-        Ok(())
+    pub fn write_in_msg(&mut self, value: Option<&CommonMessage>) -> Result<()> {
+        match value {
+            Some(m) => self.in_msg.write_struct(m),
+            None => {
+                self.in_msg = ChildCell::with_serde_opts(self.in_msg.serde_opts());
+                Ok(())
+            }
+        }
     }
 
     pub fn set_in_msg_cell(&mut self, msg_cell: Cell) {
-        self.in_msg = Some(ChildCell::with_cell(msg_cell));
+        self.in_msg.set_cell(msg_cell);
     }
 
     pub fn in_msg_cell(&self) -> Option<Cell> {
-        self.in_msg.as_ref().map(|c| c.cell())
+        match self.in_msg.empty() {
+            true => None,
+            false => Some(self.in_msg.cell()),
+        }
     }
 
     /// get output message by index
-    pub fn get_out_msg(&self, index: i16) -> Result<Option<Message>> {
+    pub fn get_out_msg(&self, index: i16) -> Result<Option<CommonMessage>> {
         Ok(self.out_msgs.get(&U15(index))?.map(|msg| msg.0))
     }
 
     /// iterate output messages
     pub fn iterate_out_msgs<F>(&self, mut f: F) -> Result<()>
     where
-        F: FnMut(Message) -> Result<bool>,
+        F: FnMut(CommonMessage) -> Result<bool>,
     {
         self.out_msgs.iterate(|msg| f(msg.0)).map(|_| ())
     }
 
     /// add output message to Hashmap
-    pub fn add_out_message(&mut self, mgs: &Message) -> Result<()> {
-        let msg_cell = mgs.serialize()?;
-
+    pub fn add_out_message(&mut self, msg: &CommonMessage) -> Result<()> {
+        let msg_cell = msg.serialize_with_opts(self.out_msgs.serde_opts())?;
         let mut descr = self.read_description()?;
         descr.append_to_storage_used(&msg_cell);
         self.write_description(&descr)?;
@@ -1578,7 +1585,7 @@ impl Default for Transaction {
             outmsg_cnt: 0,
             orig_status: AccountStatus::AccStateUninit,
             end_status: AccountStatus::AccStateUninit,
-            in_msg: None,
+            in_msg: ChildCell::default(),
             out_msgs: OutMessages::default(),
             total_fees: CurrencyCollection::default(),
             state_update: ChildCell::default(),
@@ -1588,35 +1595,44 @@ impl Default for Transaction {
     }
 }
 const TRANSACTION_TAG: usize = 0x7;
+const TRANSACTION_TAG2: usize = 0x8;
 
 impl Serializable for Transaction {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
-        builder.append_bits(TRANSACTION_TAG, 4)?;
-        self.account_addr.write_to(builder)?; // account_addr: AccountId,
-        builder.append_u64(self.lt)?; // lt: u64,
-        self.prev_trans_hash.write_to(builder)?;
-        self.prev_trans_lt.write_to(builder)?;
-        self.now.write_to(builder)?;
-        builder.append_bits(self.outmsg_cnt as usize, 15)?; // outmsg_cnt: u15
-        self.orig_status.write_to(builder)?; // orig_status: AccountStatus,
-        self.end_status.write_to(builder)?; // end_status: AccountStatus
-        // self.in_msg.write_maybe_to(builder)?;
-        let mut builder1 = BuilderData::new();
-        match &self.in_msg {
-            Some(in_msg) => {
-                builder1.append_bit_one()?;
-                builder1.checked_append_reference(in_msg.cell())?;
-            }
-            None => {
-                builder1.append_bit_zero()?;
-            }
-        };
-        self.out_msgs.write_to(&mut builder1)?;
-        builder.checked_append_reference(builder1.into_cell()?)?;
-        self.total_fees.write_to(builder)?; // total_fees
-        builder.checked_append_reference(self.state_update.cell())?; // ^(HASH_UPDATE Account)
-        builder.checked_append_reference(self.description.cell())?; // ^TransactionDescr
+        self.write_with_opts(builder, SERDE_OPTS_EMPTY)
+    }
 
+    fn write_with_opts(&self, builder: &mut BuilderData, opts: u8) -> Result<()> {
+        let tag =
+            if opts & SERDE_OPTS_COMMON_MESSAGE != 0 { TRANSACTION_TAG2 } else { TRANSACTION_TAG };
+        if self.in_msg.serde_opts() & opts != self.in_msg.serde_opts() {
+            fail!(BlockError::MismatchedSerdeOptions(
+                std::any::type_name::<Self>().to_string(),
+                self.in_msg.serde_opts() as usize,
+                opts as usize,
+            ));
+        }
+        builder.append_bits(tag, 4)?;
+        self.account_addr.write_with_opts(builder, opts)?; // account_addr: AccountId,
+        builder.append_u64(self.lt)?; // lt: u64,
+        self.prev_trans_hash.write_with_opts(builder, opts)?;
+        self.prev_trans_lt.write_with_opts(builder, opts)?;
+        self.now.write_with_opts(builder, opts)?;
+        builder.append_bits(self.outmsg_cnt as usize, 15)?; // outmsg_cnt: u15
+        self.orig_status.write_with_opts(builder, opts)?; // orig_status: AccountStatus,
+        self.end_status.write_with_opts(builder, opts)?; // end_status: AccountStatus
+        let mut builder1 = BuilderData::new();
+        if self.in_msg.empty() {
+            builder1.append_bit_zero()?;
+        } else {
+            builder1.append_bit_one()?;
+            builder1.checked_append_reference(self.in_msg.cell())?;
+        };
+        self.out_msgs.write_with_opts(&mut builder1, opts)?;
+        builder.checked_append_reference(builder1.into_cell()?)?;
+        self.total_fees.write_with_opts(builder, opts)?; // total_fees
+        self.state_update.write_to(builder)?; // ^(HASH_UPDATE Account)
+        self.description.write_to(builder)?; // ^TransactionDescr
         Ok(())
     }
 }
@@ -1624,33 +1640,39 @@ impl Serializable for Transaction {
 impl Deserializable for Transaction {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         let tag = cell.get_next_int(4)? as usize;
-        if tag != TRANSACTION_TAG {
+        if tag != TRANSACTION_TAG && tag != TRANSACTION_TAG2 {
             fail!(BlockError::InvalidConstructorTag { t: tag as u32, s: "Transaction".to_string() })
         }
-        self.account_addr.read_from(cell)?; // account_addr
+        let opts = match tag {
+            TRANSACTION_TAG2 => SERDE_OPTS_COMMON_MESSAGE,
+            _ => SERDE_OPTS_EMPTY,
+        };
+        self.account_addr.read_from_with_opts(cell, opts)?; // account_addr
         self.lt = cell.get_next_u64()?; // lt
-        self.prev_trans_hash.read_from(cell)?;
-        self.prev_trans_lt.read_from(cell)?;
-        self.now.read_from(cell)?;
+        self.prev_trans_hash.read_from_with_opts(cell, opts)?;
+        self.prev_trans_lt.read_from_with_opts(cell, opts)?;
+        self.now.read_from_with_opts(cell, opts)?;
         self.outmsg_cnt = cell.get_next_int(15)? as i16; // outmsg_cnt
-        self.orig_status.read_from(cell)?; // orig_status
-        self.end_status.read_from(cell)?; // end_status
+        self.orig_status.read_from_with_opts(cell, opts)?; // orig_status
+        self.end_status.read_from_with_opts(cell, opts)?; // end_status
         let cell1 = &mut SliceData::load_cell(cell.checked_drain_reference()?)?;
         if cell1.get_next_bit()? {
-            let mut msg = ChildCell::default();
-            msg.read_from_reference(cell1)?;
-            self.in_msg = Some(msg);
+            self.in_msg.read_from_with_opts(cell1, opts)?;
+        } else {
+            self.in_msg = ChildCell::with_serde_opts(opts);
         }
-        self.out_msgs.read_from(cell1)?;
-        self.total_fees.read_from(cell)?; // total_fees
-        self.state_update.read_from_reference(cell)?; // ^(HASH_UPDATE Account)
-        self.description.read_from_reference(cell)?; // ^TransactionDescr
+        self.out_msgs = OutMessages::construct_from_with_opts(cell1, opts)?;
+        self.total_fees.read_from_with_opts(cell, opts)?; // total_fees
+        self.state_update.read_from_with_opts(cell, opts)?; // ^(HASH_UPDATE Account)
+        self.description.read_from_with_opts(cell, opts)?; // ^TransactionDescr
 
         Ok(())
     }
 }
 
 define_HashmapAugE!(Transactions, 64, u64, InRefValue<Transaction>, CurrencyCollection);
+
+define_HashmapE!(MeshTransactions, 32, Transactions);
 
 impl Transactions {
     pub fn insert(&mut self, tr: &Transaction) -> Result<()> {
@@ -1687,6 +1709,7 @@ impl Augmentation<CurrencyCollection> for InRefValue<Transaction> {
 pub struct AccountBlock {
     account_addr: AccountId,
     transactions: Transactions, // HashmapAug 64 ^Transaction CurrencyCollection
+    mesh_transactions: MeshTransactions, // HashmapE 32 Transactions
     state_update: ChildCell<HashUpdate>, // ^(HASH_UPDATE Account)
 }
 
@@ -1703,7 +1726,17 @@ impl AccountBlock {
         AccountBlock {
             account_addr,
             transactions: Transactions::default(),
+            mesh_transactions: MeshTransactions::default(),
             state_update: ChildCell::default(),
+        }
+    }
+
+    pub fn with_address_and_opts(account_addr: AccountId, opts: u8) -> AccountBlock {
+        AccountBlock {
+            account_addr,
+            transactions: Transactions::with_serde_opts(opts),
+            mesh_transactions: MeshTransactions::with_serde_opts(opts),
+            state_update: ChildCell::with_serde_opts(opts),
         }
     }
 
@@ -1720,6 +1753,7 @@ impl AccountBlock {
         Ok(AccountBlock {
             account_addr,
             transactions,
+            mesh_transactions: MeshTransactions::default(),
             state_update: transaction.state_update.clone(),
         })
     }
@@ -1732,13 +1766,17 @@ impl AccountBlock {
         Ok(Self {
             account_addr: account_addr.clone(),
             transactions: transactions.clone(),
+            mesh_transactions: MeshTransactions::with_serde_opts(SERDE_OPTS_COMMON_MESSAGE),
             state_update: ChildCell::with_struct(state_update)?,
         })
     }
 
     /// add transaction to block
     pub fn add_transaction(&mut self, transaction: &Transaction) -> Result<()> {
-        self.add_serialized_transaction(transaction, &transaction.serialize()?)
+        self.add_serialized_transaction(
+            transaction,
+            &transaction.serialize_with_opts(self.transactions.serde_opts())?,
+        )
     }
 
     /// append serialized transaction to block (use to increase speed)
@@ -1752,6 +1790,30 @@ impl AccountBlock {
             transaction_cell,
             transaction.total_fees(),
         )?;
+        Ok(())
+    }
+
+    pub fn add_mesh_transaction(&mut self, nw_id: i32, transaction: &Transaction) -> Result<()> {
+        self.add_serialized_mesh_transaction(
+            nw_id,
+            transaction,
+            &transaction.serialize_with_opts(SERDE_OPTS_COMMON_MESSAGE)?,
+        )
+    }
+
+    pub fn add_serialized_mesh_transaction(
+        &mut self,
+        nw_id: i32,
+        transaction: &Transaction,
+        transaction_cell: &Cell,
+    ) -> Result<()> {
+        let mut trs = if let Some(trs) = self.mesh_transactions.get(&nw_id)? {
+            trs
+        } else {
+            Transactions::with_serde_opts(SERDE_OPTS_COMMON_MESSAGE)
+        };
+        trs.setref(&transaction.logical_time(), transaction_cell, transaction.total_fees())?;
+        self.mesh_transactions.set(&nw_id, &trs)?;
         Ok(())
     }
 
@@ -1786,6 +1848,26 @@ impl AccountBlock {
             true => Ok(0),
             false => self.transactions.len(),
         }
+    }
+
+    /// get sum of all acoount's transactions for connected network with given
+    /// id
+    pub fn total_mesh_fee(&self, nw_id: i32) -> CurrencyCollection {
+        self.mesh_transactions
+            .get(&nw_id)
+            .ok()
+            .flatten()
+            .map(|trs| trs.root_extra().clone())
+            .unwrap_or_default()
+    }
+
+    pub fn transaction_count_mesh(&self, nw_id: i32) -> usize {
+        self.mesh_transactions
+            .get(&nw_id)
+            .ok()
+            .flatten()
+            .map(|trs| trs.len().unwrap_or_default())
+            .unwrap_or_default()
     }
 
     /// update
@@ -1855,33 +1937,67 @@ impl AccountBlock {
 }
 
 const ACCOUNT_BLOCK_TAG: usize = 0x5;
+const ACCOUNT_BLOCK_TAG_2: usize = 0x6;
 
 impl Serializable for AccountBlock {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bits(ACCOUNT_BLOCK_TAG, 4)?;
-        self.account_addr.write_to(cell)?; // account_addr: AccountId,
+        self.write_with_opts(cell, SERDE_OPTS_EMPTY)
+    }
+
+    fn write_with_opts(&self, cell: &mut BuilderData, opts: u8) -> Result<()> {
+        if self.transactions.serde_opts() != opts {
+            fail!(BlockError::MismatchedSerdeOptions(
+                std::any::type_name::<Self>().to_string(),
+                self.transactions.serde_opts() as usize,
+                opts as usize
+            ));
+        }
+        let tag =
+            if self.mesh_transactions.is_empty() { ACCOUNT_BLOCK_TAG } else { ACCOUNT_BLOCK_TAG_2 };
+        if tag == ACCOUNT_BLOCK_TAG_2 && opts & SERDE_OPTS_COMMON_MESSAGE == 0 {
+            fail!(
+                "Account block with mesh transactions must be serialized with SERDE_OPTS_COMMON_MESSAGE"
+            );
+        }
+
+        cell.append_bits(tag, 4)?;
+        self.account_addr.write_to(cell)?;
         self.transactions.write_hashmap_root(cell)?;
-        cell.checked_append_reference(self.state_update.cell())?; // ^(HASH_UPDATE Account)
+        self.state_update.write_to(cell)?;
+        if tag == ACCOUNT_BLOCK_TAG_2 {
+            self.mesh_transactions.write_hashmap_root(cell)?;
+        }
         Ok(())
     }
 }
 
 impl Deserializable for AccountBlock {
     fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.read_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
         let tag = slice.get_next_int(4)? as usize;
-        if tag != ACCOUNT_BLOCK_TAG {
+        if tag != ACCOUNT_BLOCK_TAG && tag != ACCOUNT_BLOCK_TAG_2 {
             fail!(BlockError::InvalidConstructorTag {
                 t: tag as u32,
-                s: "AccountBlock".to_string()
+                s: std::any::type_name::<Self>().to_string()
             })
         }
-        self.account_addr.read_from(slice)?; // account_addr
+        self.account_addr.read_from(slice)?;
 
-        let mut trs = Transactions::default();
+        let mut trs = Transactions::with_serde_opts(opts);
         trs.read_hashmap_root(slice)?;
         self.transactions = trs;
 
-        self.state_update.read_from_reference(slice)?; // ^(HASH_UPDATE Account)
+        self.state_update.read_from(slice)?;
+
+        if tag == ACCOUNT_BLOCK_TAG_2 {
+            let mut mtrs = MeshTransactions::with_serde_opts(SERDE_OPTS_COMMON_MESSAGE);
+            mtrs.read_hashmap_root(slice)?;
+            self.mesh_transactions = mtrs;
+        }
+
         Ok(())
     }
 }
@@ -1904,10 +2020,10 @@ impl ShardAccountBlocks {
     pub fn insert(&mut self, account_block: &AccountBlock) -> Result<()> {
         self.set_builder_serialized(
             account_block.account_addr.clone(),
-            &account_block.write_to_new_cell()?,
+            &account_block.write_to_new_cell_with_opts(self.opts)?,
             account_block.total_fee(),
-        )
-        .map(|_| ())
+        )?;
+        Ok(())
     }
 
     /// adds transaction to account by id from transaction
@@ -1966,7 +2082,7 @@ impl ShardAccountBlocks {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Default, Eq, PartialEq, Clone, Copy)]
 pub enum TransactionProcessingStatus {
     #[default]
     Unknown = 0,
@@ -1974,27 +2090,4 @@ pub enum TransactionProcessingStatus {
     Proposed,
     Finalized,
     Refused,
-}
-
-#[allow(dead_code)]
-pub fn generate_tranzaction(address: AccountId) -> Transaction {
-    let s_in_msg = generate_big_msg();
-    let s_out_msg1 = generate_big_msg();
-    let s_out_msg2 = Message::default();
-    let s_out_msg3 = Message::default();
-
-    let s_status_update = HashUpdate::default();
-    let s_tr_desc = TransactionDescr::default();
-
-    let mut tr = Transaction::with_address_and_status(address, AccountStatus::AccStateActive);
-    tr.set_logical_time(123423);
-    tr.set_end_status(AccountStatus::AccStateFrozen);
-    tr.set_total_fees(CurrencyCollection::with_grams(653));
-    tr.write_in_msg(Some(&s_in_msg)).unwrap();
-    tr.add_out_message(&s_out_msg1).unwrap();
-    tr.add_out_message(&s_out_msg2).unwrap();
-    tr.add_out_message(&s_out_msg3).unwrap();
-    tr.write_state_update(&s_status_update).unwrap();
-    tr.write_description(&s_tr_desc).unwrap();
-    tr
 }
