@@ -3534,7 +3534,6 @@ pub struct FastFinalityConfig {
     pub mempool_validators_count: u32,
     pub mempool_rotated_count: u32, // How many validators are changed beetween sessions.
     // Must be <= mempool_validators_count.
-
     pub unreliability_fine: u16,
     pub unreliability_weak_fading: u16,
     pub unreliability_strong_fading: u16,
@@ -3614,7 +3613,9 @@ impl Deserializable for FastFinalityConfig {
         self.mempool_rotated_count.read_from(slice)?;
         if self.mempool_rotated_count > self.mempool_validators_count {
             fail!(BlockError::InvalidData(
-                "mempool_rotated_count must be less or equal to mempool_validators_count".to_string()))
+                "mempool_rotated_count must be less or equal to mempool_validators_count"
+                    .to_string()
+            ))
         }
         self.unreliability_fine.read_from(slice)?;
         self.unreliability_weak_fading.read_from(slice)?;

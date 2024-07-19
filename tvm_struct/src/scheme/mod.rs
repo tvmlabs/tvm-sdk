@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use thiserror::Error;
+use tvm_block::fail;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
 use tvm_block::Deserializable;
+use tvm_block::IBitstring;
+use tvm_block::Result;
 use tvm_block::Serializable;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::SliceData;
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum DeserializationError {
     #[error("unexpected tlb tag")]
     UnexpectedTLBTag,
@@ -98,7 +98,7 @@ pub fn slice_load_string_ref(slice: &mut SliceData) -> Result<String> {
 }
 
 impl Serializable for TVC {
-    fn write_to(&self, builder: &mut BuilderData) -> tvm_types::Result<()> {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
         builder.append_u32(Self::TVC_TAG)?;
 
         if let Some(c) = &self.code {
@@ -120,10 +120,10 @@ impl Serializable for TVC {
 }
 
 impl Deserializable for TVC {
-    fn read_from(&mut self, slice: &mut SliceData) -> tvm_types::Result<()> {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
         let tag = slice.get_next_u32()?;
         if tag != Self::TVC_TAG {
-            return Err(DeserializationError::UnexpectedTLBTag.into());
+            fail!(DeserializationError::UnexpectedTLBTag);
         }
 
         if slice.get_next_bit()? {

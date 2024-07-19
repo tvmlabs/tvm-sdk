@@ -47,9 +47,10 @@ groth = [  ]
 signature_with_id = [  ]
 std = [  ]
 
-#[[bench]]
-#harness = false
-#name = 'benchmarks'
-#
-#[lib]
-#bench = false
+[[bench]]
+harness = false
+name = 'benchmarks'
+
+[lib]
+bench = false
+
