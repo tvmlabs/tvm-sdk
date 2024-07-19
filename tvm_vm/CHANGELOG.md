@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version 2.2.0
+
+- Use modern crates anyhow and thiserror instead of failure
+
+## Version 2.1.9
+
+- Fixed BLS_* instructions behavior in case of bad data
+
+## Version 2.1.8
+
+- Fix build warnings
+
+## Version 2.1.4
+
+- Removed using ed25519 crates directly
+
+## Version 2.1.0
+
+- the crate was renamed from `ton_vm` to `ever_vm`
+- supported renaming of other crates
+
+## Version 2.0.0
+
+- Added BLS commands set
+
+## Version 1.9.7
+
+- Changed exception type when storing NaN integer on stack
+
+## Version 1.9.5
+
+- Bugfixes
+
+## Version 1.9.3
+
+- Check the type of exotic cell for ENDXC insn
+
+## Version 1.9.2
+
+- Revise the price of signature checking instructions
+
+## Version 1.9.1
+
+- Fix a gas computation bug in stack moving
+
+## Version 1.9.0
+
+- Fix ENDS insn: account for refs too
+
 ## Version 1.8.217
 
 - BLS pubkey dummy

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -11,30 +11,23 @@
 
 use std::borrow::Cow;
 
-use ed25519::Signature;
-use ed25519_dalek::Verifier;
-use ed25519_dalek::VerifyingKey;
+use tvm_block::BuilderData;
+use tvm_block::Ed25519PublicKey;
+use tvm_block::ExceptionCode;
+use tvm_block::GasConsumer;
 use tvm_block::GlobalCapabilities;
-use tvm_types::error;
-use tvm_types::BuilderData;
-use tvm_types::ExceptionCode;
-use tvm_types::GasConsumer;
-use tvm_types::UInt256;
+use tvm_block::UInt256;
+use tvm_block::ED25519_PUBLIC_KEY_LENGTH;
+use tvm_block::ED25519_SIGNATURE_LENGTH;
 
-use crate::error::TvmError;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
+use crate::executor::gas::gas_state::Gas;
 use crate::executor::types::Instruction;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
-
-const PUBLIC_KEY_BITS: usize = PUBLIC_KEY_BYTES * 8;
-const SIGNATURE_BITS: usize = SIGNATURE_BYTES * 8;
-const PUBLIC_KEY_BYTES: usize = ed25519_dalek::PUBLIC_KEY_LENGTH;
-const SIGNATURE_BYTES: usize = ed25519_dalek::SIGNATURE_LENGTH;
 
 fn hash_to_uint(bits: impl AsRef<[u8]>) -> IntegerData {
     IntegerData::from_unsigned_bytes_be(bits)
@@ -107,20 +100,24 @@ fn preprocess_signed_data<'a>(_engine: &Engine, data: &'a [u8]) -> Cow<'a, [u8]>
 }
 
 fn check_signature(engine: &mut Engine, name: &'static str, hash: bool) -> Status {
+    if engine.check_capabilities(GlobalCapabilities::CapTvmV19 as u64) {
+        engine.checked_signatures_count = engine.checked_signatures_count.saturating_add(1);
+        engine.try_use_gas(Gas::check_signature_price(engine.checked_signatures_count))?;
+    }
     engine.load_instruction(Instruction::new(name))?;
     fetch_stack(engine, 3)?;
     let pub_key = engine
         .cmd
         .var(0)
         .as_integer()?
-        .as_builder::<UnsignedIntegerBigEndianEncoding>(PUBLIC_KEY_BITS)?;
+        .as_builder::<UnsignedIntegerBigEndianEncoding>(ED25519_PUBLIC_KEY_LENGTH * 8)?;
     engine.cmd.var(1).as_slice()?;
     if hash {
         engine.cmd.var(2).as_integer()?;
     } else {
         engine.cmd.var(2).as_slice()?;
     }
-    if engine.cmd.var(1).as_slice()?.remaining_bits() < SIGNATURE_BITS {
+    if engine.cmd.var(1).as_slice()?.remaining_bits() < ED25519_SIGNATURE_LENGTH * 8 {
         return err!(ExceptionCode::CellUnderflow);
     }
     let data = if hash {
@@ -133,7 +130,7 @@ fn check_signature(engine: &mut Engine, name: &'static str, hash: bool) -> Statu
         }
         DataForSignature::Slice(engine.cmd.var(2).as_slice()?.get_bytestring(0))
     };
-    let pub_key = match VerifyingKey::try_from(pub_key.data()) {
+    let pub_key = match Ed25519PublicKey::from_bytes(pub_key.data().try_into()?) {
         Ok(pub_key) => pub_key,
         Err(err) => {
             if engine.check_capabilities(GlobalCapabilities::CapsTvmBugfixes2022 as u64) {
@@ -145,30 +142,23 @@ fn check_signature(engine: &mut Engine, name: &'static str, hash: bool) -> Statu
         }
     };
     let signature = engine.cmd.var(1).as_slice()?.get_bytestring(0);
-    let signature = match Signature::try_from(&signature[..SIGNATURE_BYTES]) {
-        Ok(signature) => signature,
-        Err(err) =>
-        {
-            #[allow(clippy::collapsible_else_if)]
-            if engine.check_capabilities(GlobalCapabilities::CapsTvmBugfixes2022 as u64) {
-                engine.cc.stack.push(boolean!(false));
-                return Ok(());
-            } else {
-                if hash {
-                    engine.cc.stack.push(boolean!(false));
-                    return Ok(());
-                } else {
-                    return err!(ExceptionCode::FatalError, "cannot load signature {}", err);
-                }
-            }
+    if signature.len() < ED25519_SIGNATURE_LENGTH {
+        if engine.check_capabilities(GlobalCapabilities::CapsTvmBugfixes2022 as u64) {
+            engine.cc.stack.push(boolean!(false));
+            return Ok(());
+        } else if hash {
+            engine.cc.stack.push(boolean!(false));
+            return Ok(());
+        } else {
+            return err!(ExceptionCode::FatalError, "cannot load signature");
         }
     };
     let data = preprocess_signed_data(engine, data.as_ref());
     #[cfg(feature = "signature_no_check")]
-    let result =
-        engine.modifiers.chksig_always_succeed || pub_key.verify(&data, &signature).is_ok();
+    let result = engine.modifiers.chksig_always_succeed
+        || pub_key.verify(&data, &signature[..ED25519_SIGNATURE_LENGTH].try_into()?);
     #[cfg(not(feature = "signature_no_check"))]
-    let result = pub_key.verify(&data, &signature).is_ok();
+    let result = pub_key.verify(&data, &signature[..ED25519_SIGNATURE_LENGTH].try_into()?);
     engine.cc.stack.push(boolean!(result));
     Ok(())
 }

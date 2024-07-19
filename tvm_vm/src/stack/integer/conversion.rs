@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -12,17 +12,15 @@
 use std::ops::RangeInclusive;
 
 use num_traits::Num;
-use tvm_types::error;
-use tvm_types::types::ExceptionCode;
-use tvm_types::Result;
+use tvm_block::types::ExceptionCode;
+use tvm_block::Error;
+use tvm_block::Result;
 
-use crate::error::TvmError;
 use crate::stack::integer::utils::check_overflow;
 use crate::stack::integer::utils::twos_complement;
 use crate::stack::integer::Int;
 use crate::stack::integer::IntegerData;
 use crate::stack::integer::IntegerValue;
-use crate::types::Exception;
 
 impl IntegerData {
     /// Constructs new IntegerData from u32 in a fastest way.
@@ -152,7 +150,7 @@ impl IntegerData {
 }
 
 impl std::str::FromStr for IntegerData {
-    type Err = tvm_types::Error;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
         Self::from_str_radix(s, 10)

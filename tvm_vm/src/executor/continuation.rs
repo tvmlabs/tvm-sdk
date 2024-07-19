@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -13,11 +13,9 @@ use std::mem;
 use std::ops::Range;
 use std::ops::RangeInclusive;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::ExceptionCode;
+use tvm_block::fail;
+use tvm_block::ExceptionCode;
 
-use crate::error::TvmError;
 use crate::executor::engine::data::convert;
 use crate::executor::engine::storage::apply_savelist;
 use crate::executor::engine::storage::apply_savelist_excluding_c0_c1;
@@ -45,7 +43,6 @@ use crate::stack::integer::behavior::Signaling;
 use crate::stack::integer::IntegerData;
 use crate::stack::savelist::SaveList;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
 
 const CALLX: u8 = 0x40; // CALLX to found value

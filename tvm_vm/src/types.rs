@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -11,8 +11,8 @@
 
 use std::fmt;
 
-use tvm_types::types::ExceptionCode;
-use tvm_types::Result;
+use tvm_block::types::ExceptionCode;
+use tvm_block::Result;
 
 use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
@@ -132,49 +132,49 @@ impl Exception {
 
 macro_rules! exception {
     ($code:expr) => {
-        error!(
-            TvmError::TvmExceptionFull(
-                Exception::from_code($code, file!(), line!()),
+        tvm_block::error!(
+            $crate::error::TvmError::TvmExceptionFull(
+                $crate::types::Exception::from_code($code, file!(), line!()),
                 String::new()
             )
         )
     };
     ($code:expr, $msg:literal, $($arg:tt)*) => {
-        error!(
-            TvmError::TvmExceptionFull(
-                Exception::from_code($code, file!(), line!()),
+        tvm_block::error!(
+            $crate::error::TvmError::TvmExceptionFull(
+                $crate::types::Exception::from_code($code, file!(), line!()),
                 format!($msg, $($arg)*)
             )
         )
     };
     ($code:expr, $value:expr, $msg:literal, $($arg:tt)*) => {
-        error!(
-            TvmError::TvmExceptionFull(
-                Exception::from_code_and_value($code, $value, file!(), line!()),
+        tvm_block::error!(
+            $crate::error::TvmError::TvmExceptionFull(
+                $crate::types::Exception::from_code_and_value($code, $value, file!(), line!()),
                 format!($msg, $($arg)*)
             )
         )
     };
     ($code:expr, $value:expr, $msg:literal) => {
-        error!(
-            TvmError::TvmExceptionFull(
-                Exception::from_code_and_value($code, $value, file!(), line!()),
+        tvm_block::error!(
+            $crate::error::TvmError::TvmExceptionFull(
+                $crate::types::Exception::from_code_and_value($code, $value, file!(), line!()),
                 $msg.to_string()
             )
         )
     };
     ($code:expr, $msg:literal) => {
-        error!(
-            TvmError::TvmExceptionFull(
-                Exception::from_code($code, file!(), line!()),
+        tvm_block::error!(
+            $crate::error::TvmError::TvmExceptionFull(
+                $crate::types::Exception::from_code($code, file!(), line!()),
                 $msg.to_string()
             )
         )
     };
     ($code:expr, $file:expr, $line:expr) => {
-        error!(
-            TvmError::TvmExceptionFull(
-               Exception::from_code($code, $file, $line),
+        tvm_block::error!(
+            $crate::error::TvmError::TvmExceptionFull(
+                $crate::types::Exception::from_code($code, $file, $line),
                String::new()
             )
         )
@@ -203,8 +203,8 @@ macro_rules! custom_err {
     ($code:expr, $msg:literal, $($arg:tt)*) => {
         return Err(
             error!(
-                TvmError::TvmExceptionFull(
-                    Exception::from_number_and_value($code, Default::default(), file!(), line!()),
+                $crate::error::TvmError::TvmExceptionFull(
+                    $crate::types::Exception::from_number_and_value($code, Default::default(), file!(), line!()),
                     format!($msg, $($arg)*)
                 )
             )

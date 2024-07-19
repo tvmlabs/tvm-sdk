@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -12,12 +12,11 @@
 use std::mem;
 use std::ops::Range;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::ExceptionCode;
-use tvm_types::Result;
+use tvm_block::error;
+use tvm_block::fail;
+use tvm_block::types::ExceptionCode;
+use tvm_block::Result;
 
-use crate::error::TvmError;
 use crate::executor::engine::Engine;
 use crate::executor::gas::gas_state::Gas;
 use crate::executor::microcode::CC;
@@ -30,7 +29,6 @@ use crate::executor::microcode::VAR_SAVELIST;
 use crate::stack::continuation::ContinuationData;
 use crate::stack::savelist::SaveList;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::ResultMut;
 use crate::types::ResultRef;
 use crate::types::Status;
@@ -55,7 +53,7 @@ macro_rules! continuation_mut_by_address {
             VAR => $engine.cmd.var_mut(storage_index!($address)).as_continuation_mut(),
             CTRL => match $engine.ctrls.get_mut(storage_index!($address)) {
                 Some(ctrl) => ctrl.as_continuation_mut(),
-                None => fail!(ExceptionCode::TypeCheckError),
+                None => tvm_block::fail!(ExceptionCode::TypeCheckError),
             },
             _ => fail!("continuation_mut_by_address: {:X}", address_tag!($address)),
         }
@@ -330,22 +328,37 @@ pub(in crate::executor) fn pop_all(engine: &mut Engine, dst: u16) -> Status {
     } else {
         nargs as usize
     };
-    if drop > 0 { pop_range(engine, 0..drop, dst) } else { Ok(()) }
+    if engine.check_capabilities(tvm_block::GlobalCapabilities::CapTvmV19 as u64) {
+        pop_range(engine, 0..drop, dst)
+    } else {
+        // This branch is incorrect because the gas may still be consumed when drop is
+        // zero. The bug was introduced in the hotspot optimizations pack of
+        // patches.
+        if drop > 0 { pop_range(engine, 0..drop, dst) } else { Ok(()) }
+    }
 }
 
 // dst.stack.push(CC.stack[range])
 // dst addressing is described in executor/microcode.rs
 pub(in crate::executor) fn pop_range(engine: &mut Engine, drop: Range<usize>, dst: u16) -> Status {
     let save = drop.len();
-    // pay for spliting stack
-    if engine.cc.stack.depth() > save {
+    let src_depth = engine.cc.stack.depth();
+    let dst_depth = continuation_by_address(engine, dst)?.stack.depth();
+    // pay for stack splitting
+    if src_depth > save {
         engine.try_use_gas(Gas::stack_price(save))?;
     }
-    // pay for concatination of stack
-    let depth = continuation_by_address(engine, dst)?.stack.depth();
-    if depth != 0 && save != 0 {
-        engine.try_use_gas(Gas::stack_price(save + depth))?;
+    // pay for stack concatenation
+    if engine.check_capabilities(tvm_block::GlobalCapabilities::CapTvmV19 as u64) {
+        if dst_depth != 0 {
+            engine.try_use_gas(Gas::stack_price(save + dst_depth))?;
+        }
+    } else {
+        // According to the original implementation, the gas must still be consumed when
+        // save is zero. The bug slipped in with PR #118.
+        if dst_depth != 0 && save != 0 {
+            engine.try_use_gas(Gas::stack_price(save + dst_depth))?;
+        }
     }
-    move_stack_from_cc(engine, dst, drop)?;
-    Ok(())
+    move_stack_from_cc(engine, dst, drop)
 }

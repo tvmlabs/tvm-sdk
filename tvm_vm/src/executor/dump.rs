@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -13,16 +13,13 @@ use std::cmp;
 use std::str;
 use std::sync::Arc;
 
-use tvm_types::error;
-use tvm_types::types::ExceptionCode;
+use tvm_block::ExceptionCode;
 
-use crate::error::TvmError;
 use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::executor::Mask;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
 
 const STR: u8 = 0x01;

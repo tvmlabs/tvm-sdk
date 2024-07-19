@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,18 +9,14 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::ExceptionCode;
-use tvm_types::GasConsumer;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::MAX_DATA_BITS;
-
-use crate::error::TvmError;
-use crate::types::Exception;
+use tvm_block::fail;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::ExceptionCode;
+use tvm_block::GasConsumer;
+use tvm_block::Result;
+use tvm_block::SliceData;
+use tvm_block::MAX_DATA_BITS;
 
 /// Pack data as a list of single-reference cells
 pub fn pack_data_to_cell(bytes: &[u8], engine: &mut dyn GasConsumer) -> Result<Cell> {

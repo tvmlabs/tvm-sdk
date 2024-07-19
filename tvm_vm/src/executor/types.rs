@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 use std::fmt;
 use std::ops::Range;
 
-use tvm_types::error;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::error;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
 use crate::executor::math::DivMode;
 use crate::stack::integer::IntegerData;

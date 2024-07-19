@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -11,9 +11,9 @@
 
 use std::collections::HashSet;
 
-use tvm_types::BuilderData;
-use tvm_types::IBitstring;
-use tvm_types::SliceData;
+use tvm_block::BuilderData;
+use tvm_block::IBitstring;
+use tvm_block::SliceData;
 
 use crate::executor::engine::Engine;
 use crate::executor::math::DivMode;

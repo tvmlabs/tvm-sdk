@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -11,15 +11,13 @@
 
 use std::collections::HashSet;
 
+use tvm_block::CellType;
+use tvm_block::ExceptionCode;
+use tvm_block::GasConsumer;
 use tvm_block::GlobalCapabilities;
-use tvm_types::error;
-use tvm_types::CellType;
-use tvm_types::ExceptionCode;
-use tvm_types::GasConsumer;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
-use crate::error::TvmError;
 use crate::executor::engine::data::convert;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
@@ -38,7 +36,6 @@ use crate::stack::integer::serialization::UnsignedIntegerLittleEndianEncoding;
 use crate::stack::integer::IntegerData;
 use crate::stack::serialization::Deserializer;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
 
 const QUIET: u8 = 0x01; // quiet variant
@@ -210,11 +207,13 @@ pub fn execute_xloadq(engine: &mut Engine) -> Status {
 pub fn execute_ends(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("ENDS"))?;
     fetch_stack(engine, 1)?;
-    if !engine.cmd.var(0).as_slice()?.is_empty() {
-        err!(ExceptionCode::CellUnderflow)
+    let slice = engine.cmd.var(0).as_slice()?;
+    let is_empty = if engine.check_capabilities(GlobalCapabilities::CapTvmV19 as u64) {
+        slice.remaining_bits() == 0 && slice.remaining_references() == 0
     } else {
-        Ok(())
-    }
+        slice.is_empty()
+    };
+    if !is_empty { err!(ExceptionCode::CellUnderflow) } else { Ok(()) }
 }
 
 // (slice - x slice)
@@ -860,9 +859,7 @@ fn datasize(engine: &mut Engine, name: &'static str, how: u8) -> Status {
             cell_stack.push(cell.clone());
         }
         loop {
-            let Some(cell) = cell_stack.pop() else {
-                break true;
-            };
+            let Some(cell) = cell_stack.pop() else { break true };
             if visited.insert(cell.repr_hash()) {
                 if max == cells {
                     break false;

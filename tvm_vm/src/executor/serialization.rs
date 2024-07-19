@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,16 +9,15 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::error;
-use tvm_types::BuilderData;
-use tvm_types::CellType;
-use tvm_types::ExceptionCode;
-use tvm_types::GasConsumer;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::MAX_LEVEL;
+use tvm_block::BuilderData;
+use tvm_block::CellType;
+use tvm_block::ExceptionCode;
+use tvm_block::GasConsumer;
+use tvm_block::GlobalCapabilities;
+use tvm_block::IBitstring;
+use tvm_block::Result;
+use tvm_block::MAX_LEVEL;
 
-use crate::error::TvmError;
 use crate::executor::engine::data::convert;
 use crate::executor::engine::storage::fetch_reference;
 use crate::executor::engine::storage::fetch_stack;
@@ -38,7 +37,6 @@ use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::stack::integer::serialization::UnsignedIntegerLittleEndianEncoding;
 use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
 
 const QUIET: u8 = 0x01; // quiet variant
@@ -128,10 +126,26 @@ pub fn execute_endxc(engine: &mut Engine) -> Status {
             engine.use_gas(Gas::finalize_price());
             return err!(ExceptionCode::CellOverflow, "Not enough data for a special cell");
         }
-        match CellType::try_from(b.data()[0]) {
-            Ok(cell_type) => b.set_type(cell_type),
-            Err(err) => return err!(ExceptionCode::CellOverflow, "{}", err),
+        let cell_type = CellType::try_from(b.data()[0])
+            .map_err(|err| exception!(ExceptionCode::CellOverflow, "{}", err))?;
+        if engine.check_capabilities(GlobalCapabilities::CapTvmV19 as u64) {
+            match cell_type {
+                // allow the following known types
+                CellType::PrunedBranch
+                | CellType::LibraryReference
+                | CellType::MerkleProof
+                | CellType::MerkleUpdate => (),
+                // deny all other types (incl. BigCell b/c it can't be created from builder anyway)
+                _ => {
+                    return err!(
+                        ExceptionCode::CellOverflow,
+                        "Incorrect type of exotic cell: {}",
+                        cell_type
+                    );
+                }
+            }
         }
+        b.set_type(cell_type)
     }
     let cell = engine.finalize_cell(b)?;
     engine.cc.stack.push(StackItem::Cell(cell));

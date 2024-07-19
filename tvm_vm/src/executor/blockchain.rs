@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -11,24 +11,22 @@
 
 use num::bigint::Sign;
 use num::BigInt;
+use tvm_block::types::ExceptionCode;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
 use tvm_block::Deserializable;
+use tvm_block::GasConsumer;
 use tvm_block::GlobalCapabilities;
+use tvm_block::IBitstring;
 use tvm_block::MsgAddressInt;
+use tvm_block::Result;
+use tvm_block::SliceData;
 use tvm_block::ACTION_CHANGE_LIB;
 use tvm_block::ACTION_COPYLEFT;
 use tvm_block::ACTION_RESERVE;
 use tvm_block::ACTION_SEND_MSG;
 use tvm_block::ACTION_SET_CODE;
-use tvm_types::error;
-use tvm_types::types::ExceptionCode;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::GasConsumer;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
 
-use crate::error::TvmError;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
 use crate::executor::serialize_currency_collection;
@@ -37,7 +35,6 @@ use crate::stack::integer::behavior::OperationBehavior;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
 
 fn get_bigint(slice: &SliceData) -> BigInt {

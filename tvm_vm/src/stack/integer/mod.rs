@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -16,18 +16,15 @@ use std::cmp::Ordering;
 use num_traits::One;
 use num_traits::Signed;
 use num_traits::Zero;
-use tvm_types::error;
-use tvm_types::BuilderData;
-use tvm_types::ExceptionCode;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::BuilderData;
+use tvm_block::ExceptionCode;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
-use crate::error::TvmError;
 use crate::stack::integer::behavior::OperationBehavior;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::stack::integer::serialization::Encoding;
-use crate::types::Exception;
 use crate::types::ResultOpt;
 
 #[macro_use]

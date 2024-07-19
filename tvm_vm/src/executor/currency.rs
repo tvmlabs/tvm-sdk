@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,19 +9,16 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_block::BuilderData;
+use tvm_block::ExceptionCode;
 use tvm_block::GlobalCapabilities;
-use tvm_types::error;
-use tvm_types::types::ExceptionCode;
-use tvm_types::BuilderData;
-use tvm_types::IBitstring;
+use tvm_block::IBitstring;
 
-use crate::error::TvmError;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
 use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
 
 // slice - uint slice'
@@ -60,7 +57,7 @@ fn store_var(engine: &mut Engine, name: &'static str, max_bits: usize, sign: boo
     fetch_stack(engine, 2)?;
     let x = engine.cmd.var(0).as_integer()?;
     if engine.check_capabilities(GlobalCapabilities::CapsTvmBugfixes2022 as u64) && x.is_nan() {
-        return err!(ExceptionCode::IntegerOverflow);
+        return err!(ExceptionCode::RangeCheckError);
     }
     let b = engine.cmd.var(1).as_builder()?;
     let (bits, vec) = match sign {
