@@ -1,20 +1,20 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use tvm_block::fail;
+use tvm_block::write_boc;
 use tvm_block::Account;
-use tvm_block::ChildCell;
+use tvm_block::AccountId;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::Deserializable;
+use tvm_block::ExceptionCode;
+use tvm_block::Result;
 use tvm_block::Serializable;
 use tvm_block::ShardAccounts;
+use tvm_block::SliceData;
 use tvm_block::Transaction;
-use tvm_types::fail;
-use tvm_types::write_boc;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::ExceptionCode;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
+use tvm_block::UInt256;
 
 use crate::block_parser::entry::get_sharding_depth;
 use crate::block_parser::get_partition;
@@ -45,6 +45,8 @@ pub(crate) struct ParserAccounts<'a, R: JsonReducer> {
 }
 
 fn read_accounts(cell: Cell) -> Result<ShardAccounts> {
+    // we cannot read full ShardStateUnsplit because some of its references can be
+    // pruned ShardStateUnsplit::construct_from_cell(cell)?.read_accounts()
     const SHARD_STATE_UNSPLIT_PFX: u32 = 0x9023afe2;
     const SHARD_STATE_UNSPLIT_PFX_2: u32 = 0x9023aeee;
     let mut cell = SliceData::load_cell(cell)?;
@@ -59,9 +61,7 @@ fn read_accounts(cell: Cell) -> Result<ShardAccounts> {
     // out_msg_queue_info
     cell.checked_drain_reference()?;
 
-    let mut accounts = ChildCell::<ShardAccounts>::default();
-    accounts.read_from_reference(cell)?;
-    accounts.read_struct()
+    ShardAccounts::construct_from_cell(cell.checked_drain_reference()?)
 }
 
 enum UpdateSide {
@@ -137,9 +137,8 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
             now.elapsed().as_millis(),
             self.parsing.id
         );
-
-        metrics::histogram!("accounts_parsing_time").record(now.elapsed());
-        metrics::histogram!("parsed_accounts_count").record(self.changed.len() as f64);
+        metrics::histogram!("accounts_parsing_time", now.elapsed());
+        metrics::histogram!("parsed_accounts_count", self.changed.len() as f64);
 
         Ok(())
     }
@@ -179,8 +178,10 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
     pub(crate) fn get_code_hash(&self, account_id: &AccountId) -> Result<Option<String>> {
         Ok(if let Some(hash) = self.get_code_hash_from(UpdateSide::Old, account_id)? {
             Some(hash.to_hex_string())
+        } else if let Some(hash) = self.get_code_hash_from(UpdateSide::New, account_id)? {
+            Some(hash.to_hex_string())
         } else {
-            self.get_code_hash_from(UpdateSide::New, account_id)?.map(|hash| hash.to_hex_string())
+            None
         })
     }
 
@@ -234,22 +235,28 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
                 account.write_original_format(&mut builder)?;
                 boc1 = Some(write_boc(&builder.into_cell()?)?);
             }
-            boc = write_boc(&account.serialize()?)?;
+            boc = write_boc(&account.serialize()?.into())?;
         }
 
         let account_id = match account.get_id() {
             Some(id) => id,
             None => fail!("Account without id in external db processor"),
         };
-        let set =
-            crate::AccountSerializationSet { account, prev_code_hash, proof: None, boc, boc1 };
+        let set = crate::AccountSerializationSet {
+            account,
+            prev_code_hash,
+            proof: None,
+            boc,
+            boc1,
+            ..Default::default()
+        };
 
         let partition = get_partition(accounts_sharding_depth, account_id.clone())?;
         let mut doc = crate::db_serialize_account("id", &set)?;
         if let Some(last_trans_chain_order) = last_trans_chain_order {
             doc.insert("last_trans_chain_order".to_owned(), last_trans_chain_order.into());
         }
-        ParsedEntry::reduced(doc, partition, accounts_config)
+        ParsedEntry::reduced(doc.into(), partition, accounts_config)
     }
 
     fn prepare_deleted_account_entry(
@@ -261,8 +268,12 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
         last_trans_lt: Option<u64>,
     ) -> Result<ParsedEntry> {
         let partition = get_partition(self.accounts_sharding_depth, account_id.clone())?;
-        let set =
-            crate::DeletedAccountSerializationSet { account_id, workchain_id, prev_code_hash };
+        let set = crate::DeletedAccountSerializationSet {
+            account_id,
+            workchain_id,
+            prev_code_hash,
+            ..Default::default()
+        };
 
         let mut doc = crate::db_serialize_deleted_account("id", &set)?;
         if let Some(last_trans_chain_order) = last_trans_chain_order {
@@ -271,6 +282,6 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
         if let Some(lt) = last_trans_lt {
             doc.insert("last_trans_lt".to_owned(), crate::u64_to_string(lt).into());
         }
-        ParsedEntry::reduced(doc, partition, self.accounts_config)
+        ParsedEntry::reduced(doc.into(), partition, &self.accounts_config)
     }
 }
