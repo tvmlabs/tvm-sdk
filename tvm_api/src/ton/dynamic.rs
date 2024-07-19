@@ -2077,9 +2077,25 @@ fn make_deserializers() -> ::std::vec::Vec<crate::DynamicDeserializer> {
             crate::ConstructorNumber(0xc327de3a),
             "rpc.tonNode.downloadKeyBlockProofs",
         ),
+        crate::DynamicDeserializer::from::<crate::ton::rpc::ton_node::DownloadLatestMeshKit>(
+            crate::ConstructorNumber(0x80c1fced),
+            "rpc.tonNode.downloadLatestMeshKit",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::rpc::ton_node::DownloadMeshKit>(
+            crate::ConstructorNumber(0xc71dff12),
+            "rpc.tonNode.downloadMeshKit",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::rpc::ton_node::DownloadMeshUpdate>(
+            crate::ConstructorNumber(0x8e105f5e),
+            "rpc.tonNode.downloadMeshUpdate",
+        ),
         crate::DynamicDeserializer::from::<crate::ton::rpc::ton_node::DownloadNextBlockFull>(
             crate::ConstructorNumber(0x6ea0374a),
             "rpc.tonNode.downloadNextBlockFull",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::rpc::ton_node::DownloadNextMeshUpdate>(
+            crate::ConstructorNumber(0x805380e7),
+            "rpc.tonNode.downloadNextMeshUpdate",
         ),
         crate::DynamicDeserializer::from::<
             crate::ton::rpc::ton_node::DownloadPersistentMsgQueueSlice,
@@ -2375,6 +2391,10 @@ fn make_deserializers() -> ::std::vec::Vec<crate::DynamicDeserializer> {
             "tonNode.ihrMessageBroadcast",
         ),
         crate::DynamicDeserializer::from::<crate::ton::ton_node::Broadcast>(
+            crate::ConstructorNumber(0x93852bfa),
+            "tonNode.meshUpdateBroadcast",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::Broadcast>(
             crate::ConstructorNumber(0x0af2fabc),
             "tonNode.newShardBlockBroadcast",
         ),
@@ -2414,9 +2434,53 @@ fn make_deserializers() -> ::std::vec::Vec<crate::DynamicDeserializer> {
             crate::ConstructorNumber(0x07664d59),
             "tonNode.keyBlocks",
         ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0x9cb4dad3),
+            "tonNode.messagePoolAck",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0x873d80c8),
+            "tonNode.messagePoolFetch",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0x3f4cc517),
+            "tonNode.messagePoolFetchPack",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0xface9e5f),
+            "tonNode.messagePoolFetchReply",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0x26af7a02),
+            "tonNode.messagePoolPack",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0xbb622a24),
+            "tonNode.messagePoolPackReply",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0x8148d92a),
+            "tonNode.messagePoolShare",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0x0e87a560),
+            "tonNode.messagePoolShareData",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0x717fd1d9),
+            "tonNode.messagePoolSharePack",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::MessagePoolMessage>(
+            crate::ConstructorNumber(0xa76b40aa),
+            "tonNode.messagePoolVote",
+        ),
         crate::DynamicDeserializer::from::<crate::ton::ton_node::NewShardBlock>(
             crate::ConstructorNumber(0xa49dc229),
             "tonNode.newShardBlock",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::PackInfo>(
+            crate::ConstructorNumber(0xcc90bd44),
+            "tonNode.packInfo",
         ),
         crate::DynamicDeserializer::from::<crate::ton::ton_node::Prepared>(
             crate::ConstructorNumber(0xe2c33da6),
@@ -2458,6 +2522,14 @@ fn make_deserializers() -> ::std::vec::Vec<crate::DynamicDeserializer> {
             crate::ConstructorNumber(0x384e3f84),
             "tonNode.rempCatchainMessageDigest",
         ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::RempCatchainRecordV2>(
+            crate::ConstructorNumber(0x99f6a754),
+            "tonNode.rempCatchainMessageDigestV2",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::RempCatchainRecordV2>(
+            crate::ConstructorNumber(0x8b8f9248),
+            "tonNode.rempCatchainMessageHeaderV2",
+        ),
         crate::DynamicDeserializer::from::<crate::ton::ton_node::RempCombinedReceipt>(
             crate::ConstructorNumber(0x98eb4db1),
             "tonNode.rempCombinedReceipt",
@@ -2465,6 +2537,10 @@ fn make_deserializers() -> ::std::vec::Vec<crate::DynamicDeserializer> {
         crate::DynamicDeserializer::from::<crate::ton::ton_node::RempMessage>(
             crate::ConstructorNumber(0xdd1f6db1),
             "tonNode.rempMessage",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::RempMessageBody>(
+            crate::ConstructorNumber(0x594d0088),
+            "tonNode.rempMessageBody",
         ),
         crate::DynamicDeserializer::from::<crate::ton::ton_node::RempMessageLevel>(
             crate::ConstructorNumber(0x44f07de7),
@@ -2485,6 +2561,10 @@ fn make_deserializers() -> ::std::vec::Vec<crate::DynamicDeserializer> {
         crate::DynamicDeserializer::from::<crate::ton::ton_node::RempMessageLevel>(
             crate::ConstructorNumber(0x237e2b37),
             "tonNode.rempShardchain",
+        ),
+        crate::DynamicDeserializer::from::<crate::ton::ton_node::RempMessageQuery>(
+            crate::ConstructorNumber(0x862a665a),
+            "tonNode.rempMessageQuery",
         ),
         crate::DynamicDeserializer::from::<crate::ton::ton_node::RempMessageStatus>(
             crate::ConstructorNumber(0x30225e0e),

@@ -6,8 +6,7 @@ pub struct BlockBroadcast {
     pub id: crate::ton::ton_node::blockidext::BlockIdExt,
     pub catchain_seqno: crate::ton::int,
     pub validator_set_hash: crate::ton::int,
-    pub signatures:
-        crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blocksignature::BlockSignature>,
+    pub signatures: crate::ton::vector<crate::ton::ton_node::blocksignature::BlockSignature>,
     pub proof: crate::ton::bytes,
     pub data: crate::ton::bytes,
 }
@@ -23,10 +22,9 @@ impl crate::BareSerialize for BlockBroadcast {
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
         _ser.write_bare::<crate::ton::int>(catchain_seqno)?;
         _ser.write_bare::<crate::ton::int>(validator_set_hash)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::ton_node::blocksignature::BlockSignature,
-        >>(signatures)?;
+        (signatures
+            as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blocksignature::BlockSignature>)
+            .serialize(_ser)?;
         _ser.write_bare::<crate::ton::bytes>(proof)?;
         _ser.write_bare::<crate::ton::bytes>(data)?;
         Ok(())
@@ -38,10 +36,7 @@ impl crate::BareDeserialize for BlockBroadcast {
             let id = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
             let catchain_seqno = _de.read_bare::<crate::ton::int>()?;
             let validator_set_hash = _de.read_bare::<crate::ton::int>()?;
-            let signatures = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blocksignature::BlockSignature,
-            >>()?;
+            let signatures = < Vec < crate :: ton :: ton_node :: blocksignature :: BlockSignature > as crate :: ton :: VectoredBare < crate :: ton :: ton_node :: blocksignature :: BlockSignature >> :: deserialize (_de) ? ;
             let proof = _de.read_bare::<crate::ton::bytes>()?;
             let data = _de.read_bare::<crate::ton::bytes>()?;
             Ok(Self { id, catchain_seqno, validator_set_hash, signatures, proof, data })
@@ -217,6 +212,47 @@ impl crate::IntoBoxed for IhrMessageBroadcast {
     }
 }
 #[derive(Debug, Default, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.meshUpdateBroadcast`\n\n```text\ntonNode.meshUpdateBroadcast src_nw:int32 id:tonNode.blockIdExt target_nw:int32 data:bytes = tonNode.Broadcast;\n```\n"]
+pub struct MeshUpdateBroadcast {
+    pub src_nw: crate::ton::int32,
+    pub id: crate::ton::ton_node::blockidext::BlockIdExt,
+    pub target_nw: crate::ton::int32,
+    pub data: crate::ton::bytes,
+}
+impl Eq for MeshUpdateBroadcast {}
+impl crate::BareSerialize for MeshUpdateBroadcast {
+    fn constructor(&self) -> crate::ConstructorNumber {
+        crate::ConstructorNumber(0x93852bfa)
+    }
+
+    fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
+        let MeshUpdateBroadcast { src_nw, id, target_nw, data } = self;
+        _ser.write_bare::<crate::ton::int32>(src_nw)?;
+        _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
+        _ser.write_bare::<crate::ton::int32>(target_nw)?;
+        _ser.write_bare::<crate::ton::bytes>(data)?;
+        Ok(())
+    }
+}
+impl crate::BareDeserialize for MeshUpdateBroadcast {
+    fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
+        {
+            let src_nw = _de.read_bare::<crate::ton::int32>()?;
+            let id = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
+            let target_nw = _de.read_bare::<crate::ton::int32>()?;
+            let data = _de.read_bare::<crate::ton::bytes>()?;
+            Ok(Self { src_nw, id, target_nw, data })
+        }
+    }
+}
+impl crate::IntoBoxed for MeshUpdateBroadcast {
+    type Boxed = crate::ton::ton_node::Broadcast;
+
+    fn into_boxed(self) -> crate::ton::ton_node::Broadcast {
+        crate::ton::ton_node::Broadcast::TonNode_MeshUpdateBroadcast(self)
+    }
+}
+#[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.newShardBlockBroadcast`\n\n```text\ntonNode.newShardBlockBroadcast block:tonNode.newShardBlock = tonNode.Broadcast;\n```\n"]
 pub struct NewShardBlockBroadcast {
     pub block: crate::ton::ton_node::newshardblock::NewShardBlock,
@@ -254,8 +290,7 @@ pub struct QueueUpdateBroadcast {
     pub id: crate::ton::ton_node::blockidext::BlockIdExt,
     pub catchain_seqno: crate::ton::int,
     pub validator_set_hash: crate::ton::int,
-    pub signatures:
-        crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blocksignature::BlockSignature>,
+    pub signatures: crate::ton::vector<crate::ton::ton_node::blocksignature::BlockSignature>,
     pub target_wc: crate::ton::int,
     pub data: crate::ton::bytes,
 }
@@ -277,10 +312,9 @@ impl crate::BareSerialize for QueueUpdateBroadcast {
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
         _ser.write_bare::<crate::ton::int>(catchain_seqno)?;
         _ser.write_bare::<crate::ton::int>(validator_set_hash)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::ton_node::blocksignature::BlockSignature,
-        >>(signatures)?;
+        (signatures
+            as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blocksignature::BlockSignature>)
+            .serialize(_ser)?;
         _ser.write_bare::<crate::ton::int>(target_wc)?;
         _ser.write_bare::<crate::ton::bytes>(data)?;
         Ok(())
@@ -292,10 +326,7 @@ impl crate::BareDeserialize for QueueUpdateBroadcast {
             let id = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
             let catchain_seqno = _de.read_bare::<crate::ton::int>()?;
             let validator_set_hash = _de.read_bare::<crate::ton::int>()?;
-            let signatures = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blocksignature::BlockSignature,
-            >>()?;
+            let signatures = < Vec < crate :: ton :: ton_node :: blocksignature :: BlockSignature > as crate :: ton :: VectoredBare < crate :: ton :: ton_node :: blocksignature :: BlockSignature >> :: deserialize (_de) ? ;
             let target_wc = _de.read_bare::<crate::ton::int>()?;
             let data = _de.read_bare::<crate::ton::bytes>()?;
             Ok(Self { id, catchain_seqno, validator_set_hash, signatures, target_wc, data })

@@ -5,8 +5,7 @@ use serde_derive::Serialize;
 pub struct Global {
     pub zero_state: crate::ton::ton_node::blockidext::BlockIdExt,
     pub init_block: crate::ton::ton_node::blockidext::BlockIdExt,
-    pub hardforks:
-        crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub hardforks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
 }
 impl Eq for Global {}
 impl crate::BareSerialize for Global {
@@ -18,7 +17,8 @@ impl crate::BareSerialize for Global {
         let Global { zero_state, init_block, hardforks } = self;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(zero_state)?;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(init_block)?;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (hardforks) ? ;
+        (hardforks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -27,10 +27,10 @@ impl crate::BareDeserialize for Global {
         {
             let zero_state = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
             let init_block = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
-            let hardforks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let hardforks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             Ok(Self { zero_state, init_block, hardforks })
         }
     }

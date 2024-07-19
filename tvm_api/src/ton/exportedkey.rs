@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `exportedKey`\n\n```text\nexportedKey word_list:vector<secureString> = ExportedKey;\n```\n"]
 pub struct ExportedKey {
-    pub word_list: crate::ton::vector<crate::ton::Bare, crate::ton::secureString>,
+    pub word_list: crate::ton::vector<crate::ton::secureString>,
 }
 impl Eq for ExportedKey {}
 impl crate::BareSerialize for ExportedKey {
@@ -13,17 +13,16 @@ impl crate::BareSerialize for ExportedKey {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ExportedKey { word_list } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::secureString>>(
-            word_list,
-        )?;
+        (word_list as &dyn crate::ton::VectoredBare<crate::ton::secureString>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for ExportedKey {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let word_list =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::secureString>>()?;
+            let word_list = <Vec<crate::ton::secureString> as crate::ton::VectoredBare<
+                crate::ton::secureString,
+            >>::deserialize(_de)?;
             Ok(Self { word_list })
         }
     }

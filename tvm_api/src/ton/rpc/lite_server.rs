@@ -296,7 +296,7 @@ impl crate::Function for GetConfigAll {
 pub struct GetConfigParams {
     pub mode: crate::ton::int,
     pub id: crate::ton::ton_node::blockidext::BlockIdExt,
-    pub param_list: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub param_list: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for GetConfigParams {}
 impl crate::BareSerialize for GetConfigParams {
@@ -308,7 +308,7 @@ impl crate::BareSerialize for GetConfigParams {
         let GetConfigParams { mode, id, param_list } = self;
         _ser.write_bare::<crate::ton::int>(mode)?;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(param_list)?;
+        (param_list as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -318,7 +318,9 @@ impl crate::BareDeserialize for GetConfigParams {
             let mode = _de.read_bare::<crate::ton::int>()?;
             let id = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
             let param_list =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
             Ok(Self { mode, id, param_list })
         }
     }

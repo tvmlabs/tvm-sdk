@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `actionDns`\n\n```text\nactionDns actions:vector<dns.Action> = Action;\n```\n"]
 pub struct ActionDns {
-    pub actions: crate::ton::vector<crate::ton::Boxed, crate::ton::dns::Action>,
+    pub actions: crate::ton::vector<crate::ton::dns::Action>,
 }
 impl Eq for ActionDns {}
 impl crate::BareSerialize for ActionDns {
@@ -13,15 +13,16 @@ impl crate::BareSerialize for ActionDns {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ActionDns { actions } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::dns::Action>>(actions)?;
+        (actions as &dyn crate::ton::VectoredBoxed<crate::ton::dns::Action>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for ActionDns {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let actions =
-                _de.read_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::dns::Action>>()?;
+            let actions = <Vec<crate::ton::dns::Action> as crate::ton::VectoredBoxed<
+                crate::ton::dns::Action,
+            >>::deserialize(_de)?;
             Ok(Self { actions })
         }
     }
@@ -36,7 +37,7 @@ impl crate::IntoBoxed for ActionDns {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `actionMsg`\n\n```text\nactionMsg messages:vector<msg.message> allow_send_to_uninited:Bool = Action;\n```\n"]
 pub struct ActionMsg {
-    pub messages: crate::ton::vector<crate::ton::Bare, crate::ton::msg::message::Message>,
+    pub messages: crate::ton::vector<crate::ton::msg::message::Message>,
     pub allow_send_to_uninited: crate::ton::Bool,
 }
 impl Eq for ActionMsg {}
@@ -47,9 +48,8 @@ impl crate::BareSerialize for ActionMsg {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let ActionMsg { messages, allow_send_to_uninited } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::msg::message::Message>>(
-            messages,
-        )?;
+        (messages as &dyn crate::ton::VectoredBare<crate::ton::msg::message::Message>)
+            .serialize(_ser)?;
         _ser.write_boxed::<crate::ton::Bool>(allow_send_to_uninited)?;
         Ok(())
     }
@@ -57,7 +57,9 @@ impl crate::BareSerialize for ActionMsg {
 impl crate::BareDeserialize for ActionMsg {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let messages = _de . read_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: msg :: message :: Message > > () ? ;
+            let messages = <Vec<crate::ton::msg::message::Message> as crate::ton::VectoredBare<
+                crate::ton::msg::message::Message,
+            >>::deserialize(_de)?;
             let allow_send_to_uninited = _de.read_boxed::<crate::ton::Bool>()?;
             Ok(Self { messages, allow_send_to_uninited })
         }

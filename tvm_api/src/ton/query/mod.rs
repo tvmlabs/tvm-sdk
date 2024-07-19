@@ -6,9 +6,7 @@ pub enum Fees {
     Query_Fees(crate::ton::query::fees::Fees),
 }
 impl Fees {
-    pub fn destination_fees(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::fees::Fees> {
+    pub fn destination_fees(&self) -> &crate::ton::vector<crate::ton::fees::Fees> {
         match self {
             Fees::Query_Fees(ref x) => &x.destination_fees,
         }

@@ -5,8 +5,7 @@ use serde_derive::Serialize;
 pub struct SignatureSet {
     pub validator_set_hash: crate::ton::int,
     pub catchain_seqno: crate::ton::int,
-    pub signatures:
-        crate::ton::vector<crate::ton::Bare, crate::ton::lite_server::signature::Signature>,
+    pub signatures: crate::ton::vector<crate::ton::lite_server::signature::Signature>,
 }
 impl Eq for SignatureSet {}
 impl crate::BareSerialize for SignatureSet {
@@ -18,7 +17,9 @@ impl crate::BareSerialize for SignatureSet {
         let SignatureSet { validator_set_hash, catchain_seqno, signatures } = self;
         _ser.write_bare::<crate::ton::int>(validator_set_hash)?;
         _ser.write_bare::<crate::ton::int>(catchain_seqno)?;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: lite_server :: signature :: Signature > > (signatures) ? ;
+        (signatures
+            as &dyn crate::ton::VectoredBare<crate::ton::lite_server::signature::Signature>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -27,10 +28,10 @@ impl crate::BareDeserialize for SignatureSet {
         {
             let validator_set_hash = _de.read_bare::<crate::ton::int>()?;
             let catchain_seqno = _de.read_bare::<crate::ton::int>()?;
-            let signatures = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::lite_server::signature::Signature,
-            >>()?;
+            let signatures =
+                <Vec<crate::ton::lite_server::signature::Signature> as crate::ton::VectoredBare<
+                    crate::ton::lite_server::signature::Signature,
+                >>::deserialize(_de)?;
             Ok(Self { validator_set_hash, catchain_seqno, signatures })
         }
     }

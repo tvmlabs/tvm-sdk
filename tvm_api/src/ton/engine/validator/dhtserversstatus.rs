@@ -3,10 +3,8 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.dhtServersStatus`\n\n```text\nengine.validator.dhtServersStatus servers:(vector engine.validator.dhtServerStatus) = engine.validator.DhtServersStatus;\n```\n"]
 pub struct DhtServersStatus {
-    pub servers: crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::dhtserverstatus::DhtServerStatus,
-    >,
+    pub servers:
+        crate::ton::vector<crate::ton::engine::validator::dhtserverstatus::DhtServerStatus>,
 }
 impl Eq for DhtServersStatus {}
 impl crate::BareSerialize for DhtServersStatus {
@@ -16,20 +14,18 @@ impl crate::BareSerialize for DhtServersStatus {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DhtServersStatus { servers } = self;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::engine::validator::dhtserverstatus::DhtServerStatus,
-        >>(servers)?;
+        (servers
+            as &dyn crate::ton::VectoredBare<
+                crate::ton::engine::validator::dhtserverstatus::DhtServerStatus,
+            >)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for DhtServersStatus {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let servers = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::validator::dhtserverstatus::DhtServerStatus,
-            >>()?;
+            let servers = < Vec < crate :: ton :: engine :: validator :: dhtserverstatus :: DhtServerStatus > as crate :: ton :: VectoredBare < crate :: ton :: engine :: validator :: dhtserverstatus :: DhtServerStatus >> :: deserialize (_de) ? ;
             Ok(Self { servers })
         }
     }

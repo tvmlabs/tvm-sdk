@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.dht.config`\n\n```text\nengine.dht.config dht:(vector engine.dht) gc:engine.gc = engine.dht.Config;\n```\n"]
 pub struct Config {
-    pub dht: crate::ton::vector<crate::ton::Bare, crate::ton::engine::dht::Dht>,
+    pub dht: crate::ton::vector<crate::ton::engine::dht::Dht>,
     pub gc: crate::ton::engine::gc::Gc,
 }
 impl Eq for Config {}
@@ -14,7 +14,7 @@ impl crate::BareSerialize for Config {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Config { dht, gc } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::engine::dht::Dht>>(dht)?;
+        (dht as &dyn crate::ton::VectoredBare<crate::ton::engine::dht::Dht>).serialize(_ser)?;
         _ser.write_bare::<crate::ton::engine::gc::Gc>(gc)?;
         Ok(())
     }
@@ -22,9 +22,9 @@ impl crate::BareSerialize for Config {
 impl crate::BareDeserialize for Config {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let dht = _de
-                .read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::engine::dht::Dht>>(
-                )?;
+            let dht = <Vec<crate::ton::engine::dht::Dht> as crate::ton::VectoredBare<
+                crate::ton::engine::dht::Dht,
+            >>::deserialize(_de)?;
             let gc = _de.read_bare::<crate::ton::engine::gc::Gc>()?;
             Ok(Self { dht, gc })
         }

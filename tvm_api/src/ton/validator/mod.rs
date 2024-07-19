@@ -33,10 +33,8 @@ impl Group {
 
     pub fn members(
         &self,
-    ) -> &crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::validator::groupmember::GroupMember,
-    > {
+    ) -> &crate::ton::vector<crate::ton::engine::validator::validator::groupmember::GroupMember>
+    {
         match self {
             Group::Validator_Group(ref x) => &x.members,
             Group::Validator_GroupEx(ref x) => &x.members,

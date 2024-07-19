@@ -146,9 +146,7 @@ pub enum Blocks {
     Catchain_Blocks(crate::ton::catchain::blocks::Blocks),
 }
 impl Blocks {
-    pub fn blocks(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::catchain::block::Block> {
+    pub fn blocks(&self) -> &crate::ton::vector<crate::ton::catchain::block::Block> {
         match self {
             Blocks::Catchain_Blocks(ref x) => &x.blocks,
         }
@@ -211,7 +209,7 @@ impl Difference {
         }
     }
 
-    pub fn sent_upto(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::int>> {
+    pub fn sent_upto(&self) -> Option<&crate::ton::vector<crate::ton::int>> {
         match self {
             Difference::Catchain_Difference(ref x) => Some(&x.sent_upto),
             _ => None,
@@ -258,7 +256,7 @@ pub enum FirstBlock {
     Catchain_Firstblock(crate::ton::catchain::firstblock::Firstblock),
 }
 impl FirstBlock {
-    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int256> {
+    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::int256> {
         match self {
             FirstBlock::Catchain_Firstblock(ref x) => &x.nodes,
         }

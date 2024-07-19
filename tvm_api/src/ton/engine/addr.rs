@@ -5,8 +5,8 @@ use serde_derive::Serialize;
 pub struct Addr {
     pub ip: crate::ton::int,
     pub port: crate::ton::int,
-    pub categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
-    pub priority_categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub categories: crate::ton::vector<crate::ton::int>,
+    pub priority_categories: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for Addr {}
 impl crate::BareSerialize for Addr {
@@ -18,10 +18,8 @@ impl crate::BareSerialize for Addr {
         let Addr { ip, port, categories, priority_categories } = self;
         _ser.write_bare::<crate::ton::int>(ip)?;
         _ser.write_bare::<crate::ton::int>(port)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(categories)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(
-            priority_categories,
-        )?;
+        (categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
+        (priority_categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -31,9 +29,12 @@ impl crate::BareDeserialize for Addr {
             let ip = _de.read_bare::<crate::ton::int>()?;
             let port = _de.read_bare::<crate::ton::int>()?;
             let categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
-            let priority_categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
+            let priority_categories = <Vec<crate::ton::int> as crate::ton::VectoredBare<
+                crate::ton::int,
+            >>::deserialize(_de)?;
             Ok(Self { ip, port, categories, priority_categories })
         }
     }
@@ -53,8 +54,8 @@ pub struct AddrProxy {
     pub out_ip: crate::ton::int,
     pub out_port: crate::ton::int,
     pub proxy_type: crate::ton::adnl::Proxy,
-    pub categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
-    pub priority_categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub categories: crate::ton::vector<crate::ton::int>,
+    pub priority_categories: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for AddrProxy {}
 impl crate::BareSerialize for AddrProxy {
@@ -77,10 +78,8 @@ impl crate::BareSerialize for AddrProxy {
         _ser.write_bare::<crate::ton::int>(out_ip)?;
         _ser.write_bare::<crate::ton::int>(out_port)?;
         _ser.write_boxed::<crate::ton::adnl::Proxy>(proxy_type)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(categories)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(
-            priority_categories,
-        )?;
+        (categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
+        (priority_categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -93,9 +92,12 @@ impl crate::BareDeserialize for AddrProxy {
             let out_port = _de.read_bare::<crate::ton::int>()?;
             let proxy_type = _de.read_boxed::<crate::ton::adnl::Proxy>()?;
             let categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
-            let priority_categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
+            let priority_categories = <Vec<crate::ton::int> as crate::ton::VectoredBare<
+                crate::ton::int,
+            >>::deserialize(_de)?;
             Ok(Self {
                 in_ip,
                 in_port,

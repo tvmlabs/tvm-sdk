@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteclient.config.global`\n\n```text\nliteclient.config.global liteservers:(vector liteserver.desc) validator:validator.config.global = liteclient.config.Global;\n```\n"]
 pub struct Global {
-    pub liteservers: crate::ton::vector<crate::ton::Bare, crate::ton::liteserver::desc::Desc>,
+    pub liteservers: crate::ton::vector<crate::ton::liteserver::desc::Desc>,
     pub validator: crate::ton::validator::config::global::Global,
 }
 impl Eq for Global {}
@@ -14,7 +14,8 @@ impl crate::BareSerialize for Global {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Global { liteservers, validator } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: liteserver :: desc :: Desc > > (liteservers) ? ;
+        (liteservers as &dyn crate::ton::VectoredBare<crate::ton::liteserver::desc::Desc>)
+            .serialize(_ser)?;
         _ser.write_bare::<crate::ton::validator::config::global::Global>(validator)?;
         Ok(())
     }
@@ -22,7 +23,10 @@ impl crate::BareSerialize for Global {
 impl crate::BareDeserialize for Global {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let liteservers = _de . read_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: liteserver :: desc :: Desc > > () ? ;
+            let liteservers =
+                <Vec<crate::ton::liteserver::desc::Desc> as crate::ton::VectoredBare<
+                    crate::ton::liteserver::desc::Desc,
+                >>::deserialize(_de)?;
             let validator = _de.read_bare::<crate::ton::validator::config::global::Global>()?;
             Ok(Self { liteservers, validator })
         }

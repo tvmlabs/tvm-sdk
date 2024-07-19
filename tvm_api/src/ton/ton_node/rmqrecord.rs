@@ -48,7 +48,7 @@ impl crate::IntoBoxed for RmqMessage {
 #[doc = "TL-derived from `tonNode.rmqMessageDigest`\n\n```text\ntonNode.rmqMessageDigest masterchain_seqno:int messages:(vector int256) = tonNode.rmqRecord;\n```\n"]
 pub struct RmqMessageDigest {
     pub masterchain_seqno: crate::ton::int,
-    pub messages: crate::ton::vector<crate::ton::Bare, crate::ton::int256>,
+    pub messages: crate::ton::vector<crate::ton::int256>,
 }
 impl Eq for RmqMessageDigest {}
 impl crate::BareSerialize for RmqMessageDigest {
@@ -59,7 +59,7 @@ impl crate::BareSerialize for RmqMessageDigest {
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RmqMessageDigest { masterchain_seqno, messages } = self;
         _ser.write_bare::<crate::ton::int>(masterchain_seqno)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>(messages)?;
+        (messages as &dyn crate::ton::VectoredBare<crate::ton::int256>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -67,8 +67,9 @@ impl crate::BareDeserialize for RmqMessageDigest {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let masterchain_seqno = _de.read_bare::<crate::ton::int>()?;
-            let messages =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>()?;
+            let messages = <Vec<crate::ton::int256> as crate::ton::VectoredBare<
+                crate::ton::int256,
+            >>::deserialize(_de)?;
             Ok(Self { masterchain_seqno, messages })
         }
     }

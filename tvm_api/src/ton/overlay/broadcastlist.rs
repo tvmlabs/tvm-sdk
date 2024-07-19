@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.broadcastList`\n\n```text\noverlay.broadcastList hashes:(vector int256) = overlay.BroadcastList;\n```\n"]
 pub struct BroadcastList {
-    pub hashes: crate::ton::vector<crate::ton::Bare, crate::ton::int256>,
+    pub hashes: crate::ton::vector<crate::ton::int256>,
 }
 impl Eq for BroadcastList {}
 impl crate::BareSerialize for BroadcastList {
@@ -13,15 +13,16 @@ impl crate::BareSerialize for BroadcastList {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BroadcastList { hashes } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>(hashes)?;
+        (hashes as &dyn crate::ton::VectoredBare<crate::ton::int256>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for BroadcastList {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let hashes =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>()?;
+            let hashes = <Vec<crate::ton::int256> as crate::ton::VectoredBare<
+                crate::ton::int256,
+            >>::deserialize(_de)?;
             Ok(Self { hashes })
         }
     }

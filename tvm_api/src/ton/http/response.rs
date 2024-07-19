@@ -6,7 +6,7 @@ pub struct Response {
     pub http_version: crate::ton::string,
     pub status_code: crate::ton::int,
     pub reason: crate::ton::string,
-    pub headers: crate::ton::vector<crate::ton::Bare, crate::ton::http::header::Header>,
+    pub headers: crate::ton::vector<crate::ton::http::header::Header>,
 }
 impl Eq for Response {}
 impl crate::BareSerialize for Response {
@@ -19,9 +19,8 @@ impl crate::BareSerialize for Response {
         _ser.write_bare::<crate::ton::string>(http_version)?;
         _ser.write_bare::<crate::ton::int>(status_code)?;
         _ser.write_bare::<crate::ton::string>(reason)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::http::header::Header>>(
-            headers,
-        )?;
+        (headers as &dyn crate::ton::VectoredBare<crate::ton::http::header::Header>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -31,7 +30,9 @@ impl crate::BareDeserialize for Response {
             let http_version = _de.read_bare::<crate::ton::string>()?;
             let status_code = _de.read_bare::<crate::ton::int>()?;
             let reason = _de.read_bare::<crate::ton::string>()?;
-            let headers = _de . read_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: http :: header :: Header > > () ? ;
+            let headers = <Vec<crate::ton::http::header::Header> as crate::ton::VectoredBare<
+                crate::ton::http::header::Header,
+            >>::deserialize(_de)?;
             Ok(Self { http_version, status_code, reason, headers })
         }
     }

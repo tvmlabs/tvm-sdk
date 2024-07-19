@@ -3,8 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.stats`\n\n```text\nengine.validator.stats stats:(vector engine.validator.oneStat) = engine.validator.Stats;\n```\n"]
 pub struct Stats {
-    pub stats:
-        crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::onestat::OneStat>,
+    pub stats: crate::ton::vector<crate::ton::engine::validator::onestat::OneStat>,
 }
 impl Eq for Stats {}
 impl crate::BareSerialize for Stats {
@@ -14,17 +13,15 @@ impl crate::BareSerialize for Stats {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Stats { stats } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: engine :: validator :: onestat :: OneStat > > (stats) ? ;
+        (stats as &dyn crate::ton::VectoredBare<crate::ton::engine::validator::onestat::OneStat>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for Stats {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let stats = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::validator::onestat::OneStat,
-            >>()?;
+            let stats = < Vec < crate :: ton :: engine :: validator :: onestat :: OneStat > as crate :: ton :: VectoredBare < crate :: ton :: engine :: validator :: onestat :: OneStat >> :: deserialize (_de) ? ;
             Ok(Self { stats })
         }
     }

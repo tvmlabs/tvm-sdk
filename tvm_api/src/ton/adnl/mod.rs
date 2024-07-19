@@ -78,7 +78,7 @@ pub enum AddressList {
     Adnl_AddressList(crate::ton::adnl::addresslist::AddressList),
 }
 impl AddressList {
-    pub fn addrs(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Address> {
+    pub fn addrs(&self) -> &crate::ton::vector<crate::ton::adnl::Address> {
         match self {
             AddressList::Adnl_AddressList(ref x) => &x.addrs,
         }
@@ -357,7 +357,7 @@ pub enum Nodes {
     Adnl_Nodes(crate::ton::adnl::nodes::Nodes),
 }
 impl Nodes {
-    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::adnl::node::Node> {
+    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::adnl::node::Node> {
         match self {
             Nodes::Adnl_Nodes(ref x) => &x.nodes,
         }
@@ -441,9 +441,7 @@ impl PacketContents {
         }
     }
 
-    pub fn messages(
-        &self,
-    ) -> Option<&crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Message>> {
+    pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::adnl::Message>> {
         match self {
             PacketContents::Adnl_PacketContents(ref x) => x.messages.as_ref(),
         }

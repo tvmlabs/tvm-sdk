@@ -6,7 +6,7 @@ pub struct PartialBlockProof {
     pub complete: crate::ton::Bool,
     pub from: crate::ton::ton_node::blockidext::BlockIdExt,
     pub to: crate::ton::ton_node::blockidext::BlockIdExt,
-    pub steps: crate::ton::vector<crate::ton::Boxed, crate::ton::lite_server::BlockLink>,
+    pub steps: crate::ton::vector<crate::ton::lite_server::BlockLink>,
 }
 impl Eq for PartialBlockProof {}
 impl crate::BareSerialize for PartialBlockProof {
@@ -19,7 +19,8 @@ impl crate::BareSerialize for PartialBlockProof {
         _ser.write_boxed::<crate::ton::Bool>(complete)?;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(from)?;
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(to)?;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Boxed , crate :: ton :: lite_server :: BlockLink > > (steps) ? ;
+        (steps as &dyn crate::ton::VectoredBoxed<crate::ton::lite_server::BlockLink>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -29,7 +30,9 @@ impl crate::BareDeserialize for PartialBlockProof {
             let complete = _de.read_boxed::<crate::ton::Bool>()?;
             let from = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
             let to = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
-            let steps = _de . read_bare :: < crate :: ton :: vector < crate :: ton :: Boxed , crate :: ton :: lite_server :: BlockLink > > () ? ;
+            let steps = <Vec<crate::ton::lite_server::BlockLink> as crate::ton::VectoredBoxed<
+                crate::ton::lite_server::BlockLink,
+            >>::deserialize(_de)?;
             Ok(Self { complete, from, to, steps })
         }
     }

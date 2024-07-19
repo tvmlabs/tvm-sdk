@@ -10,7 +10,7 @@ pub struct Transaction {
     pub storage_fee: crate::ton::int64,
     pub other_fee: crate::ton::int64,
     pub in_msg: crate::ton::raw::message::Message,
-    pub out_msgs: crate::ton::vector<crate::ton::Bare, crate::ton::raw::message::Message>,
+    pub out_msgs: crate::ton::vector<crate::ton::raw::message::Message>,
 }
 impl Eq for Transaction {}
 impl crate::BareSerialize for Transaction {
@@ -36,9 +36,8 @@ impl crate::BareSerialize for Transaction {
         _ser.write_bare::<crate::ton::int64>(storage_fee)?;
         _ser.write_bare::<crate::ton::int64>(other_fee)?;
         _ser.write_bare::<crate::ton::raw::message::Message>(in_msg)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::raw::message::Message>>(
-            out_msgs,
-        )?;
+        (out_msgs as &dyn crate::ton::VectoredBare<crate::ton::raw::message::Message>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -53,7 +52,9 @@ impl crate::BareDeserialize for Transaction {
             let storage_fee = _de.read_bare::<crate::ton::int64>()?;
             let other_fee = _de.read_bare::<crate::ton::int64>()?;
             let in_msg = _de.read_bare::<crate::ton::raw::message::Message>()?;
-            let out_msgs = _de . read_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: raw :: message :: Message > > () ? ;
+            let out_msgs = <Vec<crate::ton::raw::message::Message> as crate::ton::VectoredBare<
+                crate::ton::raw::message::Message,
+            >>::deserialize(_de)?;
             Ok(Self { utime, data, transaction_id, fee, storage_fee, other_fee, in_msg, out_msgs })
         }
     }

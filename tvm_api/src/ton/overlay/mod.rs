@@ -181,7 +181,7 @@ pub enum BroadcastList {
     Overlay_BroadcastList(crate::ton::overlay::broadcastlist::BroadcastList),
 }
 impl BroadcastList {
-    pub fn hashes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int256> {
+    pub fn hashes(&self) -> &crate::ton::vector<crate::ton::int256> {
         match self {
             BroadcastList::Overlay_BroadcastList(ref x) => &x.hashes,
         }
@@ -506,7 +506,7 @@ pub enum Nodes {
     Overlay_Nodes(crate::ton::overlay::nodes::Nodes),
 }
 impl Nodes {
-    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::overlay::node::Node> {
+    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::overlay::node::Node> {
         match self {
             Nodes::Overlay_Nodes(ref x) => &x.nodes,
         }

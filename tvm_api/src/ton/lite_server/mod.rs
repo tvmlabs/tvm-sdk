@@ -485,8 +485,7 @@ impl BlockTransactions {
 
     pub fn ids(
         &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::lite_server::transactionid::TransactionId>
-    {
+    ) -> &crate::ton::vector<crate::ton::lite_server::transactionid::TransactionId> {
         match self {
             BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.ids,
         }
@@ -956,9 +955,7 @@ impl PartialBlockProof {
         }
     }
 
-    pub fn steps(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::lite_server::BlockLink> {
+    pub fn steps(&self) -> &crate::ton::vector<crate::ton::lite_server::BlockLink> {
         match self {
             PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.steps,
         }
@@ -1303,9 +1300,7 @@ impl SignatureSet {
         }
     }
 
-    pub fn signatures(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::lite_server::signature::Signature> {
+    pub fn signatures(&self) -> &crate::ton::vector<crate::ton::lite_server::signature::Signature> {
         match self {
             SignatureSet::LiteServer_SignatureSet(ref x) => &x.signatures,
         }
@@ -1553,9 +1548,7 @@ pub enum TransactionList {
     LiteServer_TransactionList(crate::ton::lite_server::transactionlist::TransactionList),
 }
 impl TransactionList {
-    pub fn ids(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
+    pub fn ids(&self) -> &crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             TransactionList::LiteServer_TransactionList(ref x) => &x.ids,
         }

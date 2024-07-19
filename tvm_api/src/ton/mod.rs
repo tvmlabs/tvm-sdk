@@ -56,9 +56,7 @@ pub enum AccountList {
     AccountList(crate::ton::accountlist::AccountList),
 }
 impl AccountList {
-    pub fn accounts(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::fullaccountstate::FullAccountState> {
+    pub fn accounts(&self) -> &crate::ton::vector<crate::ton::fullaccountstate::FullAccountState> {
         match self {
             AccountList::AccountList(ref x) => &x.accounts,
         }
@@ -106,9 +104,7 @@ pub enum AccountRevisionList {
     AccountRevisionList(crate::ton::accountrevisionlist::AccountRevisionList),
 }
 impl AccountRevisionList {
-    pub fn revisions(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::fullaccountstate::FullAccountState> {
+    pub fn revisions(&self) -> &crate::ton::vector<crate::ton::fullaccountstate::FullAccountState> {
         match self {
             AccountRevisionList::AccountRevisionList(ref x) => &x.revisions,
         }
@@ -338,9 +334,7 @@ pub enum Action {
     ActionRwallet(crate::ton::action::ActionRwallet),
 }
 impl Action {
-    pub fn actions(
-        &self,
-    ) -> Option<&crate::ton::vector<crate::ton::Boxed, crate::ton::dns::Action>> {
+    pub fn actions(&self) -> Option<&crate::ton::vector<crate::ton::dns::Action>> {
         match self {
             Action::ActionDns(ref x) => Some(&x.actions),
             _ => None,
@@ -354,9 +348,7 @@ impl Action {
         }
     }
 
-    pub fn messages(
-        &self,
-    ) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::msg::message::Message>> {
+    pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::msg::message::Message>> {
         match self {
             Action::ActionMsg(ref x) => Some(&x.messages),
             _ => None,
@@ -467,7 +459,7 @@ pub enum Bip39Hints {
     Bip39Hints(crate::ton::bip39hints::Bip39Hints),
 }
 impl Bip39Hints {
-    pub fn words(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::string> {
+    pub fn words(&self) -> &crate::ton::vector<crate::ton::string> {
         match self {
             Bip39Hints::Bip39Hints(ref x) => &x.words,
         }
@@ -767,7 +759,7 @@ pub enum ExportedKey {
     ExportedKey(crate::ton::exportedkey::ExportedKey),
 }
 impl ExportedKey {
-    pub fn word_list(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::secureString> {
+    pub fn word_list(&self) -> &crate::ton::vector<crate::ton::secureString> {
         match self {
             ExportedKey::ExportedKey(ref x) => &x.word_list,
         }
@@ -1853,7 +1845,7 @@ pub enum LogTags {
     LogTags(crate::ton::logtags::LogTags),
 }
 impl LogTags {
-    pub fn tags(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::string> {
+    pub fn tags(&self) -> &crate::ton::vector<crate::ton::string> {
         match self {
             LogTags::LogTags(ref x) => &x.tags,
         }

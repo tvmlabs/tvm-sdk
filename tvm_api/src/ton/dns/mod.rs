@@ -234,7 +234,7 @@ pub enum Resolved {
     Dns_Resolved(crate::ton::dns::resolved::Resolved),
 }
 impl Resolved {
-    pub fn entries(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::dns::entry::Entry> {
+    pub fn entries(&self) -> &crate::ton::vector<crate::ton::dns::entry::Entry> {
         match self {
             Resolved::Dns_Resolved(ref x) => &x.entries,
         }

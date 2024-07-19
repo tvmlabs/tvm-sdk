@@ -118,7 +118,7 @@ pub enum DestroyedSessions {
     Db_State_DestroyedSessions(crate::ton::db::state::destroyedsessions::DestroyedSessions),
 }
 impl DestroyedSessions {
-    pub fn sessions(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int256> {
+    pub fn sessions(&self) -> &crate::ton::vector<crate::ton::int256> {
         match self {
             DestroyedSessions::Db_State_DestroyedSessions(ref x) => &x.sessions,
         }
@@ -220,9 +220,7 @@ pub enum Hardforks {
     Db_State_Hardforks(crate::ton::db::state::hardforks::Hardforks),
 }
 impl Hardforks {
-    pub fn blocks(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
+    pub fn blocks(&self) -> &crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             Hardforks::Db_State_Hardforks(ref x) => &x.blocks,
         }

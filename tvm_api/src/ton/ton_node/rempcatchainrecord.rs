@@ -54,10 +54,8 @@ impl crate::IntoBoxed for RempCatchainMessage {
 #[doc = "TL-derived from `tonNode.rempCatchainMessageDigest`\n\n```text\ntonNode.rempCatchainMessageDigest masterchain_seqno:int messages:(vector tonNode.rempCatchainMessageIds) = tonNode.rempCatchainRecord;\n```\n"]
 pub struct RempCatchainMessageDigest {
     pub masterchain_seqno: crate::ton::int,
-    pub messages: crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds,
-    >,
+    pub messages:
+        crate::ton::vector<crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds>,
 }
 impl Eq for RempCatchainMessageDigest {}
 impl crate::BareSerialize for RempCatchainMessageDigest {
@@ -68,10 +66,11 @@ impl crate::BareSerialize for RempCatchainMessageDigest {
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RempCatchainMessageDigest { masterchain_seqno, messages } = self;
         _ser.write_bare::<crate::ton::int>(masterchain_seqno)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds,
-        >>(messages)?;
+        (messages
+            as &dyn crate::ton::VectoredBare<
+                crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds,
+            >)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -79,10 +78,11 @@ impl crate::BareDeserialize for RempCatchainMessageDigest {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let masterchain_seqno = _de.read_bare::<crate::ton::int>()?;
-            let messages = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
+            let messages = <Vec<
                 crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds,
-            >>()?;
+            > as crate::ton::VectoredBare<
+                crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds,
+            >>::deserialize(_de)?;
             Ok(Self { masterchain_seqno, messages })
         }
     }

@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.transactionList`\n\n```text\nliteServer.transactionList ids:(vector tonNode.blockIdExt) transactions:bytes = liteServer.TransactionList;\n```\n"]
 pub struct TransactionList {
-    pub ids: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub ids: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
     pub transactions: crate::ton::bytes,
 }
 impl Eq for TransactionList {}
@@ -14,7 +14,8 @@ impl crate::BareSerialize for TransactionList {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let TransactionList { ids, transactions } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (ids) ? ;
+        (ids as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         _ser.write_bare::<crate::ton::bytes>(transactions)?;
         Ok(())
     }
@@ -22,10 +23,10 @@ impl crate::BareSerialize for TransactionList {
 impl crate::BareDeserialize for TransactionList {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let ids = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let ids =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             let transactions = _de.read_bare::<crate::ton::bytes>()?;
             Ok(Self { ids, transactions })
         }

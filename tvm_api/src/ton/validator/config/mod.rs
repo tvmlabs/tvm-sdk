@@ -6,9 +6,7 @@ pub enum Global {
     Validator_Config_Global(crate::ton::validator::config::global::Global),
 }
 impl Global {
-    pub fn hardforks(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
+    pub fn hardforks(&self) -> &crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             Global::Validator_Config_Global(ref x) => &x.hardforks,
         }

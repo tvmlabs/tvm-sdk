@@ -121,7 +121,7 @@ impl RunResult {
         }
     }
 
-    pub fn stack(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry> {
+    pub fn stack(&self) -> &crate::ton::vector<crate::ton::tvm::StackEntry> {
         match self {
             RunResult::Smc_RunResult(ref x) => &x.stack,
         }
@@ -212,7 +212,7 @@ impl RunTvmResult {
         }
     }
 
-    pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::bytes>> {
+    pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::bytes>> {
         match self {
             RunTvmResult::Smc_RunTvmResultOk(ref x) => x.messages.as_ref(),
             _ => None,
@@ -226,9 +226,7 @@ impl RunTvmResult {
         }
     }
 
-    pub fn stack(
-        &self,
-    ) -> Option<&crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>> {
+    pub fn stack(&self) -> Option<&crate::ton::vector<crate::ton::tvm::StackEntry>> {
         match self {
             RunTvmResult::Smc_RunTvmResultOk(ref x) => x.stack.as_ref(),
             _ => None,

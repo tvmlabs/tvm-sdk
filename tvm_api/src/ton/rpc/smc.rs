@@ -185,7 +185,7 @@ impl crate::Function for Load {
 pub struct RunGetMethod {
     pub id: crate::ton::int53,
     pub method: crate::ton::smc::MethodId,
-    pub stack: crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>,
+    pub stack: crate::ton::vector<crate::ton::tvm::StackEntry>,
 }
 impl Eq for RunGetMethod {}
 impl crate::BareSerialize for RunGetMethod {
@@ -197,9 +197,7 @@ impl crate::BareSerialize for RunGetMethod {
         let RunGetMethod { id, method, stack } = self;
         _ser.write_bare::<crate::ton::int53>(id)?;
         _ser.write_boxed::<crate::ton::smc::MethodId>(method)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-            stack,
-        )?;
+        (stack as &dyn crate::ton::VectoredBoxed<crate::ton::tvm::StackEntry>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -208,9 +206,9 @@ impl crate::BareDeserialize for RunGetMethod {
         {
             let id = _de.read_bare::<crate::ton::int53>()?;
             let method = _de.read_boxed::<crate::ton::smc::MethodId>()?;
-            let stack = _de
-                .read_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-                )?;
+            let stack = <Vec<crate::ton::tvm::StackEntry> as crate::ton::VectoredBoxed<
+                crate::ton::tvm::StackEntry,
+            >>::deserialize(_de)?;
             Ok(Self { id, method, stack })
         }
     }
@@ -240,7 +238,7 @@ impl crate::Function for RunGetMethod {
 pub struct RunTvm {
     pub mode: crate::ton::int,
     pub account_address: crate::ton::accountaddress::AccountAddress,
-    pub stack: crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>,
+    pub stack: crate::ton::vector<crate::ton::tvm::StackEntry>,
 }
 impl Eq for RunTvm {}
 impl crate::BareSerialize for RunTvm {
@@ -252,9 +250,7 @@ impl crate::BareSerialize for RunTvm {
         let RunTvm { mode, account_address, stack } = self;
         _ser.write_bare::<crate::ton::int>(mode)?;
         _ser.write_bare::<crate::ton::accountaddress::AccountAddress>(account_address)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-            stack,
-        )?;
+        (stack as &dyn crate::ton::VectoredBoxed<crate::ton::tvm::StackEntry>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -263,9 +259,9 @@ impl crate::BareDeserialize for RunTvm {
         {
             let mode = _de.read_bare::<crate::ton::int>()?;
             let account_address = _de.read_bare::<crate::ton::accountaddress::AccountAddress>()?;
-            let stack = _de
-                .read_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-                )?;
+            let stack = <Vec<crate::ton::tvm::StackEntry> as crate::ton::VectoredBoxed<
+                crate::ton::tvm::StackEntry,
+            >>::deserialize(_de)?;
             Ok(Self { mode, account_address, stack })
         }
     }
@@ -296,7 +292,7 @@ pub struct RunTvmByBlock {
     pub mode: crate::ton::int,
     pub account_id: crate::ton::int256,
     pub block_root_hash: crate::ton::int256,
-    pub stack: crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>,
+    pub stack: crate::ton::vector<crate::ton::tvm::StackEntry>,
 }
 impl Eq for RunTvmByBlock {}
 impl crate::BareSerialize for RunTvmByBlock {
@@ -309,9 +305,7 @@ impl crate::BareSerialize for RunTvmByBlock {
         _ser.write_bare::<crate::ton::int>(mode)?;
         _ser.write_bare::<crate::ton::int256>(account_id)?;
         _ser.write_bare::<crate::ton::int256>(block_root_hash)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-            stack,
-        )?;
+        (stack as &dyn crate::ton::VectoredBoxed<crate::ton::tvm::StackEntry>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -321,9 +315,9 @@ impl crate::BareDeserialize for RunTvmByBlock {
             let mode = _de.read_bare::<crate::ton::int>()?;
             let account_id = _de.read_bare::<crate::ton::int256>()?;
             let block_root_hash = _de.read_bare::<crate::ton::int256>()?;
-            let stack = _de
-                .read_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-                )?;
+            let stack = <Vec<crate::ton::tvm::StackEntry> as crate::ton::VectoredBoxed<
+                crate::ton::tvm::StackEntry,
+            >>::deserialize(_de)?;
             Ok(Self { mode, account_id, block_root_hash, stack })
         }
     }

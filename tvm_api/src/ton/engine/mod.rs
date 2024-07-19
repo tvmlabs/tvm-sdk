@@ -7,7 +7,7 @@ pub enum Addr {
     Engine_AddrProxy(crate::ton::engine::addr::AddrProxy),
 }
 impl Addr {
-    pub fn categories(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
+    pub fn categories(&self) -> &crate::ton::vector<crate::ton::int> {
         match self {
             Addr::Engine_Addr(ref x) => &x.categories,
             Addr::Engine_AddrProxy(ref x) => &x.categories,
@@ -56,7 +56,7 @@ impl Addr {
         }
     }
 
-    pub fn priority_categories(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
+    pub fn priority_categories(&self) -> &crate::ton::vector<crate::ton::int> {
         match self {
             Addr::Engine_Addr(ref x) => &x.priority_categories,
             Addr::Engine_AddrProxy(ref x) => &x.priority_categories,
@@ -166,8 +166,7 @@ pub enum ControlInterface {
 impl ControlInterface {
     pub fn allowed(
         &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::controlprocess::ControlProcess>
-    {
+    ) -> &crate::ton::vector<crate::ton::engine::controlprocess::ControlProcess> {
         match self {
             ControlInterface::Engine_ControlInterface(ref x) => &x.allowed,
         }
@@ -335,7 +334,7 @@ pub enum Gc {
     Engine_Gc(crate::ton::engine::gc::Gc),
 }
 impl Gc {
-    pub fn ids(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int256> {
+    pub fn ids(&self) -> &crate::ton::vector<crate::ton::int256> {
         match self {
             Gc::Engine_Gc(ref x) => &x.ids,
         }
@@ -443,10 +442,7 @@ impl OneSessionStat {
         }
     }
 
-    pub fn stats(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::onestat::OneStat>
-    {
+    pub fn stats(&self) -> &crate::ton::vector<crate::ton::engine::validator::onestat::OneStat> {
         match self {
             OneSessionStat::Engine_Validator_OneSessionStat(ref x) => &x.stats,
         }
@@ -503,10 +499,7 @@ pub enum Validator {
 impl Validator {
     pub fn adnl_addrs(
         &self,
-    ) -> &crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress,
-    > {
+    ) -> &crate::ton::vector<crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress> {
         match self {
             Validator::Engine_Validator(ref x) => &x.adnl_addrs,
         }
@@ -532,8 +525,7 @@ impl Validator {
 
     pub fn temp_keys(
         &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validatortempkey::ValidatorTempKey>
-    {
+    ) -> &crate::ton::vector<crate::ton::engine::validatortempkey::ValidatorTempKey> {
         match self {
             Validator::Engine_Validator(ref x) => &x.temp_keys,
         }

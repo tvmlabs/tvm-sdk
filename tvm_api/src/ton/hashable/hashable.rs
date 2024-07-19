@@ -635,7 +635,7 @@ impl crate::IntoBoxed for ValidatorSessionRoundAttempt {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `hashable.vector`\n\n```text\nhashable.vector value:(vector int) = Hashable;\n```\n"]
 pub struct Vector {
-    pub value: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub value: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for Vector {}
 impl crate::BareSerialize for Vector {
@@ -645,14 +645,17 @@ impl crate::BareSerialize for Vector {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Vector { value } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(value)?;
+        (value as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for Vector {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let value = _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+            let value =
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
             Ok(Self { value })
         }
     }

@@ -70,7 +70,7 @@ impl crate::IntoBoxed for Fork {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block.data.vector`\n\n```text\ncatchain.block.data.vector msgs:(vector bytes) = catchain.block.inner.Data;\n```\n"]
 pub struct Vector {
-    pub msgs: crate::ton::vector<crate::ton::Bare, crate::ton::bytes>,
+    pub msgs: crate::ton::vector<crate::ton::bytes>,
 }
 impl Eq for Vector {}
 impl crate::BareSerialize for Vector {
@@ -80,15 +80,14 @@ impl crate::BareSerialize for Vector {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Vector { msgs } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::bytes>>(msgs)?;
+        (msgs as &dyn crate::ton::VectoredBare<crate::ton::bytes>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for Vector {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let msgs =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::bytes>>()?;
+            let msgs = < Vec < crate :: ton :: bytes > as crate :: ton :: VectoredBare < crate :: ton :: bytes >> :: deserialize (_de) ? ;
             Ok(Self { msgs })
         }
     }

@@ -248,7 +248,7 @@ pub enum Nodes {
     Dht_Nodes(crate::ton::dht::nodes::Nodes),
 }
 impl Nodes {
-    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::dht::node::Node> {
+    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::dht::node::Node> {
         match self {
             Nodes::Dht_Nodes(ref x) => &x.nodes,
         }

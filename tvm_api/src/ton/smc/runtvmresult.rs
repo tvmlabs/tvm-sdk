@@ -44,9 +44,9 @@ pub struct RunTvmResultOk {
     pub mode: crate::ton::int,
     pub block_root_hash: crate::ton::int256,
     pub exit_code: crate::ton::int,
-    pub stack: Option<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>,
+    pub stack: Option<crate::ton::vector<crate::ton::tvm::StackEntry>>,
     pub init_c7: Option<crate::ton::tvm::StackEntry>,
-    pub messages: Option<crate::ton::vector<crate::ton::Bare, crate::ton::bytes>>,
+    pub messages: Option<crate::ton::vector<crate::ton::bytes>>,
     pub data: Option<crate::ton::bytes>,
     pub code: Option<crate::ton::bytes>,
 }
@@ -71,15 +71,14 @@ impl crate::BareSerialize for RunTvmResultOk {
         _ser.write_bare::<crate::ton::int256>(block_root_hash)?;
         _ser.write_bare::<crate::ton::int>(exit_code)?;
         if let Some(inner) = stack {
-            _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-                inner,
-            )?;
+            (inner as &dyn crate::ton::VectoredBoxed<crate::ton::tvm::StackEntry>)
+                .serialize(_ser)?;
         }
         if let Some(inner) = init_c7 {
             _ser.write_boxed::<crate::ton::tvm::StackEntry>(inner)?;
         }
         if let Some(inner) = messages {
-            _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::bytes>>(inner)?;
+            (inner as &dyn crate::ton::VectoredBare<crate::ton::bytes>).serialize(_ser)?;
         }
         if let Some(inner) = data {
             _ser.write_bare::<crate::ton::bytes>(inner)?;
@@ -97,7 +96,9 @@ impl crate::BareDeserialize for RunTvmResultOk {
             let block_root_hash = _de.read_bare::<crate::ton::int256>()?;
             let exit_code = _de.read_bare::<crate::ton::int>()?;
             let stack = if mode & (1 << 0u32) != 0 {
-                Some (_de . read_bare :: < crate :: ton :: vector < crate :: ton :: Boxed , crate :: ton :: tvm :: StackEntry > > () ?)
+                Some(<Vec<crate::ton::tvm::StackEntry> as crate::ton::VectoredBoxed<
+                    crate::ton::tvm::StackEntry,
+                >>::deserialize(_de)?)
             } else {
                 None
             };
@@ -107,7 +108,7 @@ impl crate::BareDeserialize for RunTvmResultOk {
                 None
             };
             let messages = if mode & (1 << 2u32) != 0 {
-                Some(_de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::bytes>>()?)
+                Some (< Vec < crate :: ton :: bytes > as crate :: ton :: VectoredBare < crate :: ton :: bytes >> :: deserialize (_de) ?)
             } else {
                 None
             };

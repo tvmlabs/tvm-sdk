@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.state.destroyedSessions`\n\n```text\ndb.state.destroyedSessions sessions:(vector int256) = db.state.DestroyedSessions;\n```\n"]
 pub struct DestroyedSessions {
-    pub sessions: crate::ton::vector<crate::ton::Bare, crate::ton::int256>,
+    pub sessions: crate::ton::vector<crate::ton::int256>,
 }
 impl Eq for DestroyedSessions {}
 impl crate::BareSerialize for DestroyedSessions {
@@ -13,15 +13,16 @@ impl crate::BareSerialize for DestroyedSessions {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DestroyedSessions { sessions } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>(sessions)?;
+        (sessions as &dyn crate::ton::VectoredBare<crate::ton::int256>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for DestroyedSessions {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let sessions =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>()?;
+            let sessions = <Vec<crate::ton::int256> as crate::ton::VectoredBare<
+                crate::ton::int256,
+            >>::deserialize(_de)?;
             Ok(Self { sessions })
         }
     }

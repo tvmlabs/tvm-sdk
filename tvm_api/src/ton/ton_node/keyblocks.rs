@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.keyBlocks`\n\n```text\ntonNode.keyBlocks blocks:(vector tonNode.blockIdExt) incomplete:Bool error:Bool = tonNode.KeyBlocks;\n```\n"]
 pub struct KeyBlocks {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
     pub incomplete: crate::ton::Bool,
     pub error: crate::ton::Bool,
 }
@@ -15,7 +15,8 @@ impl crate::BareSerialize for KeyBlocks {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let KeyBlocks { blocks, incomplete, error } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         _ser.write_boxed::<crate::ton::Bool>(incomplete)?;
         _ser.write_boxed::<crate::ton::Bool>(error)?;
         Ok(())
@@ -24,10 +25,10 @@ impl crate::BareSerialize for KeyBlocks {
 impl crate::BareDeserialize for KeyBlocks {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             let incomplete = _de.read_boxed::<crate::ton::Bool>()?;
             let error = _de.read_boxed::<crate::ton::Bool>()?;
             Ok(Self { blocks, incomplete, error })

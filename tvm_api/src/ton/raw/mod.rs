@@ -6,9 +6,7 @@ pub enum AppliedShardsInfo {
     Raw_AppliedShardsInfo(crate::ton::raw::appliedshardsinfo::AppliedShardsInfo),
 }
 impl AppliedShardsInfo {
-    pub fn shards(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
+    pub fn shards(&self) -> &crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             AppliedShardsInfo::Raw_AppliedShardsInfo(ref x) => &x.shards,
         }
@@ -406,9 +404,7 @@ impl Transaction {
         }
     }
 
-    pub fn out_msgs(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::raw::message::Message> {
+    pub fn out_msgs(&self) -> &crate::ton::vector<crate::ton::raw::message::Message> {
         match self {
             Transaction::Raw_Transaction(ref x) => &x.out_msgs,
         }
@@ -480,9 +476,7 @@ impl Transactions {
         }
     }
 
-    pub fn transactions(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::raw::transaction::Transaction> {
+    pub fn transactions(&self) -> &crate::ton::vector<crate::ton::raw::transaction::Transaction> {
         match self {
             Transactions::Raw_Transactions(ref x) => &x.transactions,
         }

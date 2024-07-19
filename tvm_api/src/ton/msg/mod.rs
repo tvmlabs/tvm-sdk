@@ -139,9 +139,7 @@ pub enum DataDecryptedArray {
     Msg_DataDecryptedArray(crate::ton::msg::datadecryptedarray::DataDecryptedArray),
 }
 impl DataDecryptedArray {
-    pub fn elements(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::msg::datadecrypted::DataDecrypted> {
+    pub fn elements(&self) -> &crate::ton::vector<crate::ton::msg::datadecrypted::DataDecrypted> {
         match self {
             DataDecryptedArray::Msg_DataDecryptedArray(ref x) => &x.elements,
         }
@@ -247,9 +245,7 @@ pub enum DataEncryptedArray {
     Msg_DataEncryptedArray(crate::ton::msg::dataencryptedarray::DataEncryptedArray),
 }
 impl DataEncryptedArray {
-    pub fn elements(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::msg::dataencrypted::DataEncrypted> {
+    pub fn elements(&self) -> &crate::ton::vector<crate::ton::msg::dataencrypted::DataEncrypted> {
         match self {
             DataEncryptedArray::Msg_DataEncryptedArray(ref x) => &x.elements,
         }

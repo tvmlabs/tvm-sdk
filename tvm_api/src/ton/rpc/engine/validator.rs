@@ -200,8 +200,8 @@ impl crate::Function for AddDhtId {
 pub struct AddListeningPort {
     pub ip: crate::ton::int,
     pub port: crate::ton::int,
-    pub categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
-    pub priority_categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub categories: crate::ton::vector<crate::ton::int>,
+    pub priority_categories: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for AddListeningPort {}
 impl crate::BareSerialize for AddListeningPort {
@@ -213,10 +213,8 @@ impl crate::BareSerialize for AddListeningPort {
         let AddListeningPort { ip, port, categories, priority_categories } = self;
         _ser.write_bare::<crate::ton::int>(ip)?;
         _ser.write_bare::<crate::ton::int>(port)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(categories)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(
-            priority_categories,
-        )?;
+        (categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
+        (priority_categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -226,9 +224,12 @@ impl crate::BareDeserialize for AddListeningPort {
             let ip = _de.read_bare::<crate::ton::int>()?;
             let port = _de.read_bare::<crate::ton::int>()?;
             let categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
-            let priority_categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
+            let priority_categories = <Vec<crate::ton::int> as crate::ton::VectoredBare<
+                crate::ton::int,
+            >>::deserialize(_de)?;
             Ok(Self { ip, port, categories, priority_categories })
         }
     }
@@ -309,8 +310,8 @@ pub struct AddProxy {
     pub out_ip: crate::ton::int,
     pub out_port: crate::ton::int,
     pub proxy: crate::ton::adnl::Proxy,
-    pub categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
-    pub priority_categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub categories: crate::ton::vector<crate::ton::int>,
+    pub priority_categories: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for AddProxy {}
 impl crate::BareSerialize for AddProxy {
@@ -326,10 +327,8 @@ impl crate::BareSerialize for AddProxy {
         _ser.write_bare::<crate::ton::int>(out_ip)?;
         _ser.write_bare::<crate::ton::int>(out_port)?;
         _ser.write_boxed::<crate::ton::adnl::Proxy>(proxy)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(categories)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(
-            priority_categories,
-        )?;
+        (categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
+        (priority_categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -342,9 +341,12 @@ impl crate::BareDeserialize for AddProxy {
             let out_port = _de.read_bare::<crate::ton::int>()?;
             let proxy = _de.read_boxed::<crate::ton::adnl::Proxy>()?;
             let categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
-            let priority_categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
+            let priority_categories = <Vec<crate::ton::int> as crate::ton::VectoredBare<
+                crate::ton::int,
+            >>::deserialize(_de)?;
             Ok(Self { in_ip, in_port, out_ip, out_port, proxy, categories, priority_categories })
         }
     }
@@ -947,8 +949,8 @@ impl crate::Function for DelDhtId {
 pub struct DelListeningPort {
     pub ip: crate::ton::int,
     pub port: crate::ton::int,
-    pub categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
-    pub priority_categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub categories: crate::ton::vector<crate::ton::int>,
+    pub priority_categories: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for DelListeningPort {}
 impl crate::BareSerialize for DelListeningPort {
@@ -960,10 +962,8 @@ impl crate::BareSerialize for DelListeningPort {
         let DelListeningPort { ip, port, categories, priority_categories } = self;
         _ser.write_bare::<crate::ton::int>(ip)?;
         _ser.write_bare::<crate::ton::int>(port)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(categories)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(
-            priority_categories,
-        )?;
+        (categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
+        (priority_categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -973,9 +973,12 @@ impl crate::BareDeserialize for DelListeningPort {
             let ip = _de.read_bare::<crate::ton::int>()?;
             let port = _de.read_bare::<crate::ton::int>()?;
             let categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
-            let priority_categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
+            let priority_categories = <Vec<crate::ton::int> as crate::ton::VectoredBare<
+                crate::ton::int,
+            >>::deserialize(_de)?;
             Ok(Self { ip, port, categories, priority_categories })
         }
     }
@@ -1005,8 +1008,8 @@ impl crate::Function for DelListeningPort {
 pub struct DelProxy {
     pub out_ip: crate::ton::int,
     pub out_port: crate::ton::int,
-    pub categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
-    pub priority_categories: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub categories: crate::ton::vector<crate::ton::int>,
+    pub priority_categories: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for DelProxy {}
 impl crate::BareSerialize for DelProxy {
@@ -1018,10 +1021,8 @@ impl crate::BareSerialize for DelProxy {
         let DelProxy { out_ip, out_port, categories, priority_categories } = self;
         _ser.write_bare::<crate::ton::int>(out_ip)?;
         _ser.write_bare::<crate::ton::int>(out_port)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(categories)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(
-            priority_categories,
-        )?;
+        (categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
+        (priority_categories as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -1031,9 +1032,12 @@ impl crate::BareDeserialize for DelProxy {
             let out_ip = _de.read_bare::<crate::ton::int>()?;
             let out_port = _de.read_bare::<crate::ton::int>()?;
             let categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
-            let priority_categories =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
+            let priority_categories = <Vec<crate::ton::int> as crate::ton::VectoredBare<
+                crate::ton::int,
+            >>::deserialize(_de)?;
             Ok(Self { out_ip, out_port, categories, priority_categories })
         }
     }
@@ -1451,8 +1455,7 @@ impl crate::Function for GetConfig {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.getFutureBundle`\n\n```text\nengine.validator.getFutureBundle prev_block_ids:(vector tonNode.blockIdExt) = engine.validator.Success;\n```\n"]
 pub struct GetFutureBundle {
-    pub prev_block_ids:
-        crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub prev_block_ids: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
 }
 impl Eq for GetFutureBundle {}
 impl crate::BareSerialize for GetFutureBundle {
@@ -1462,17 +1465,19 @@ impl crate::BareSerialize for GetFutureBundle {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetFutureBundle { prev_block_ids } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (prev_block_ids) ? ;
+        (prev_block_ids
+            as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for GetFutureBundle {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let prev_block_ids = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let prev_block_ids =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             Ok(Self { prev_block_ids })
         }
     }
