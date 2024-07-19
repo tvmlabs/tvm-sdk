@@ -10,15 +10,12 @@
 // limitations under the License.
 
 use failure::format_err;
-use similar::ChangeTag;
-use similar::TextDiff;
-use tvm_types::read_boc;
-use tvm_types::write_boc;
-use tvm_types::SliceData;
-use tvm_types::Status;
 
-use crate::disasm::disasm;
-use crate::disasm::fmt::print_tree_of_cells;
+use tvm_block::{read_boc, write_boc, SliceData, Status};
+
+use crate::disasm::{disasm, fmt::print_tree_of_cells};
+
+use similar::{ChangeTag, TextDiff};
 
 fn cut_asm_hashes(asm: String) -> String {
     let mut out = String::new();
@@ -111,7 +108,7 @@ fn fragments() -> Status {
 fn check_code(name: &str) -> Status {
     let inp = std::fs::read_to_string(format!("src/tests/disasm/{}.in", name))?;
     let out = std::fs::read_to_string(format!("src/tests/disasm/{}.out", name))?;
-    let mut code = crate::compile_code(&inp).map_err(|e| tvm_types::error!("{}", e))?;
+    let mut code = crate::compile_code(&inp).unwrap();
     let dis = disasm(&mut code)?;
     if dis == out {
         return Ok(());

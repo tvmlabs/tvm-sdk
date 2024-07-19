@@ -9,8 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::BuilderData;
-use tvm_types::SliceData;
+use tvm_block::BuilderData;
+use tvm_block::SliceData;
 
 use crate::debug::DbgNode;
 use crate::CompileResult;

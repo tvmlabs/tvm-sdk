@@ -150,10 +150,7 @@ pub(super) fn parse_register(
 }
 
 pub fn parse_slice(slice: &str, bits: usize) -> Result<Vec<u8>, ParameterError> {
-    if slice.len() <= 1 {
-        log::error!(target: "compile", "empty string");
-        Err(ParameterError::UnexpectedType)
-    } else if slice.chars().next().unwrap().to_ascii_uppercase() != 'X' {
+    if slice.chars().next().unwrap().to_ascii_uppercase() != 'X' {
         log::error!(target: "compile", "base not set");
         Err(ParameterError::UnexpectedType)
     } else {
@@ -167,6 +164,7 @@ pub fn parse_slice_base(
     base: u32,
 ) -> Result<Vec<u8>, ParameterError> {
     debug_assert!(bits < 8, "it is offset to get slice parsed");
+    let origin_bits = bits;
     let mut acc = 0u8;
     let mut data = vec![];
     let mut completion_tag = false;
@@ -180,7 +178,8 @@ pub fn parse_slice_base(
                     acc |= (x << (4 - bits)) as u8;
                     bits += 4;
                 } else {
-                    data.push(acc | (x as u8 >> (bits - 4)));
+                    acc |= x as u8 >> (bits - 4);
+                    data.push(acc);
                     acc = (x << (12 - bits)) as u8;
                     bits -= 4;
                 }
@@ -194,14 +193,30 @@ pub fn parse_slice_base(
             }
         }
     }
+
+    let mut removing_trailing_zeroes = || {
+        while data.last() == Some(&0) {
+            data.pop();
+        }
+        if data.is_empty() {
+            data.push(1 << (7 - origin_bits));
+        }
+    };
+
     if bits != 0 {
-        if !completion_tag {
+        if completion_tag {
+            if acc == 0 {
+                removing_trailing_zeroes();
+            }
+        } else {
             acc |= 1 << (7 - bits);
         }
         if acc != 0 || data.is_empty() {
             data.push(acc);
         }
-    } else if !completion_tag {
+    } else if completion_tag {
+        removing_trailing_zeroes();
+    } else {
         data.push(0x80);
     }
     Ok(data)

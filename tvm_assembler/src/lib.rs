@@ -13,9 +13,9 @@ use std::collections::HashMap;
 use std::ops::RangeInclusive;
 
 pub use debug::DbgInfo;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::SliceData;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::SliceData;
 
 mod errors;
 pub use errors::CompileError;

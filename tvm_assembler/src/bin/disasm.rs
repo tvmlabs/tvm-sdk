@@ -18,11 +18,12 @@ use clap::Subcommand;
 use tvm_assembler::disasm::disasm_ex;
 use tvm_assembler::disasm::fmt::print_tree_of_cells;
 use tvm_assembler::disasm::loader::Loader;
-use tvm_types::read_boc;
-use tvm_types::write_boc;
-use tvm_types::Cell;
-use tvm_types::SliceData;
-use tvm_types::Status;
+use tvm_block::error;
+use tvm_block::read_boc;
+use tvm_block::write_boc;
+use tvm_block::Cell;
+use tvm_block::SliceData;
+use tvm_block::Status;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -90,9 +91,8 @@ fn main_impl() -> Status {
 }
 
 fn subcommand_dump(filename: String) -> Status {
-    let tvc =
-        std::fs::read(filename).map_err(|e| tvm_types::error!("failed to read boc file: {}", e))?;
-    let roots = read_boc(tvc).map_err(|e| tvm_types::error!("{}", e))?.roots;
+    let tvc = std::fs::read(filename).map_err(|e| error!("failed to read boc file: {}", e))?;
+    let roots = read_boc(tvc).map_err(|e| error!("{}", e))?.roots;
     if roots.is_empty() {
         println!("empty");
     } else {
@@ -133,14 +133,11 @@ fn subcommand_extract(
     index: usize,
     root: Option<usize>,
 ) -> Status {
-    let boc = std::fs::read(filename)
-        .map_err(|e| tvm_types::error!("failed to read input file: {}", e))?;
-    let roots = read_boc(boc).map_err(|e| tvm_types::error!("{}", e))?.roots;
+    let boc = std::fs::read(filename).map_err(|e| error!("failed to read input file: {}", e))?;
+    let roots = read_boc(boc).map_err(|e| error!("{}", e))?.roots;
 
     let root_index = root.unwrap_or_default();
-    let root = roots
-        .get(root_index)
-        .ok_or_else(|| tvm_types::error!("failed to get root {}", root_index))?;
+    let root = roots.get(root_index).ok_or_else(|| error!("failed to get root {}", root_index))?;
 
     let cell = root.reference(index)?;
 
@@ -164,9 +161,8 @@ fn subcommand_fragment(fragment: String) -> Status {
 }
 
 fn subcommand_text(filename: String, stateinit: bool, full: bool) -> Status {
-    let boc = std::fs::read(filename)
-        .map_err(|e| tvm_types::error!("failed to read input file: {}", e))?;
-    let roots = read_boc(boc).map_err(|e| tvm_types::error!("{}", e))?.roots;
+    let boc = std::fs::read(filename).map_err(|e| error!("failed to read input file: {}", e))?;
+    let roots = read_boc(boc).map_err(|e| error!("{}", e))?.roots;
 
     let roots_count = roots.len();
     if roots_count == 0 {
@@ -176,7 +172,7 @@ fn subcommand_text(filename: String, stateinit: bool, full: bool) -> Status {
         println!("warning: boc contains {} roots, getting the first one", roots_count)
     }
 
-    let root0 = roots.first().ok_or_else(|| tvm_types::error!("failed to get root 0"))?;
+    let root0 = roots.get(0).ok_or_else(|| error!("failed to get root 0"))?;
     let cell = if stateinit { root0.reference(0)? } else { root0.clone() };
 
     print!("{}", disasm_ex(&mut SliceData::load_cell(cell)?, !full)?);
