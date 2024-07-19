@@ -1,33 +1,29 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
-
-use std::sync::Arc;
-
-use tvm_block::Message;
-use tvm_block::MsgAddressInt;
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
 use super::blocks_walking::find_last_shard_block;
 use crate::abi::Abi;
-use crate::boc::internal::deserialize_object_from_boc;
-use crate::boc::internal::DeserializedObject;
+use crate::boc::internal::{deserialize_object_from_boc, DeserializedObject};
 use crate::client::ClientContext;
-use crate::encoding::base64_decode;
-use crate::encoding::hex_decode;
-use crate::error::AddNetworkUrl;
-use crate::error::ClientResult;
+use crate::encoding::{base64_decode, hex_decode};
+use crate::error::{AddNetworkUrl, ClientResult};
 use crate::net::EndpointStat;
 use crate::processing::internal::get_message_expiration_time;
 use crate::processing::types::ProcessingEvent;
 use crate::processing::Error;
+use std::sync::Arc;
+use tvm_block::{Message, MsgAddressInt};
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug, Clone)]
 pub struct ParamsOfSendMessage {
@@ -38,8 +34,7 @@ pub struct ParamsOfSendMessage {
     ///
     /// If this parameter is specified and the message has the
     /// `expire` header then expiration time will be checked against
-    /// the current time to prevent unnecessary sending of already expired
-    /// message.
+    /// the current time to prevent unnecessary sending of already expired message.
     ///
     /// The `message already expired` error will be returned in this
     /// case.
@@ -57,8 +52,8 @@ pub struct ParamsOfSendMessage {
 
 #[derive(Serialize, Deserialize, ApiType, Default, PartialEq, Debug)]
 pub struct ResultOfSendMessage {
-    /// The last generated shard block of the message destination account before
-    /// the message was sent.
+    /// The last generated shard block of the message destination account before the
+    /// message was sent.
     ///
     /// This block id must be used as a parameter of the
     /// `wait_for_transaction`.
@@ -87,19 +82,29 @@ impl SendingMessage {
         abi: Option<&Abi>,
     ) -> ClientResult<Self> {
         // Check message
-        let deserialized = deserialize_object_from_boc::<Message>(context, serialized, "message")?;
+        let deserialized =
+            deserialize_object_from_boc::<Message>(&context, serialized, "message")?;
         let id = deserialized.cell.repr_hash().as_hex_string();
-        let dst = deserialized.object.dst().ok_or(Error::message_has_not_destination_address())?;
+        let dst = deserialized
+            .object
+            .dst()
+            .ok_or(Error::message_has_not_destination_address())?;
 
         let message_expiration_time =
-            get_message_expiration_time(context.clone(), abi, serialized)?;
+            get_message_expiration_time(context.clone(), abi, &serialized)?;
         if let Some(message_expiration_time) = message_expiration_time {
             if message_expiration_time <= context.env.now_ms() {
                 return Err(Error::message_already_expired());
             }
         }
         let body = base64_decode(serialized)?;
-        Ok(Self { serialized: serialized.to_string(), _deserialized: deserialized, id, body, dst })
+        Ok(Self {
+            serialized: serialized.to_string(),
+            _deserialized: deserialized,
+            id,
+            body,
+            dst,
+        })
     }
 
     async fn prepare_to_send<F: futures::Future<Output = ()> + Send>(
@@ -114,7 +119,7 @@ impl SendingMessage {
             })
             .await;
         }
-        let shard_block_id = match find_last_shard_block(context, &self.dst, None).await {
+        let shard_block_id = match find_last_shard_block(&context, &self.dst, None).await {
             Ok(block) => block.to_string(),
             Err(err) => {
                 if let Some(callback) = &callback {
@@ -148,7 +153,7 @@ impl SendingMessage {
             return net
                 .send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint))
                 .await
-                .add_endpoint_from_context(context, &endpoint)
+                .add_endpoint_from_context(&context, &endpoint)
                 .await
                 .map(|_| vec![address]);
         }
@@ -183,7 +188,7 @@ impl SendingMessage {
                 last_result = Some(result);
             }
         }
-        if !succeeded.is_empty() {
+        if succeeded.len() > 0 {
             return Ok(succeeded);
         }
         Err(if let Some(Err(err)) = last_result {
@@ -221,7 +226,11 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
 ) -> ClientResult<ResultOfSendMessage> {
     let message = SendingMessage::new(&context, &params.message, params.abi.as_ref())?;
 
-    let callback = if params.send_events { Some(callback) } else { None };
+    let callback = if params.send_events {
+        Some(callback)
+    } else {
+        None
+    };
 
     let shard_block_id = message.prepare_to_send(&context, &callback).await?;
     let result = message.send(&context).await;
@@ -243,5 +252,8 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
         })
         .await;
     }
-    result.map(|sending_endpoints| ResultOfSendMessage { shard_block_id, sending_endpoints })
+    result.map(|sending_endpoints| ResultOfSendMessage {
+        shard_block_id,
+        sending_endpoints,
+    })
 }

@@ -1,15 +1,10 @@
-use serde::de;
-use serde::Deserialize;
-use serde::Deserializer;
-use serde::Serializer;
-
-use super::context::from_abi_num;
-use super::context::from_hex_to_utf8_str;
 use crate::encoding::decode_abi_number;
+use super::context::{from_abi_num, from_hex_to_utf8_str};
+use serde::{de, Deserialize, Deserializer, Serializer};
+use std::convert::From;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub enum AcType {
-    #[default]
     Empty = 0,
     RunAction = 1,
     RunMethod = 2,
@@ -37,6 +32,10 @@ impl From<u8> for AcType {
     }
 }
 
+impl Default for AcType {
+    fn default() -> Self { AcType::Empty }
+}
+
 /// Describes a debot action in a Debot Context.
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
@@ -45,7 +44,7 @@ pub struct DAction {
     /// menu item.
     #[serde(deserialize_with = "from_hex_to_utf8_str")]
     pub desc: String,
-    /// Depends on action type. Can be a debot function name or a print string
+    /// Depends on action type. Can be a debot function name or a print string 
     /// (for Print Action).
     #[serde(deserialize_with = "from_hex_to_utf8_str")]
     pub name: String,
@@ -53,7 +52,7 @@ pub struct DAction {
     #[serde(deserialize_with = "str_to_actype")]
     #[serde(serialize_with = "actype_to_str")]
     pub action_type: AcType,
-    /// ID of debot context to switch after action execution.
+    /// ID of debot context to switch after action execution. 
     #[serde(deserialize_with = "from_abi_num")]
     pub to: u8,
     /// Action attributes. In the form of "param=value,flag".
@@ -76,7 +75,6 @@ impl DAction {
             misc: String::new(),
         }
     }
-
     #[allow(dead_code)]
     pub fn new(desc: String, name: String, action_type: u8, to: u8) -> Self {
         DAction {
@@ -104,7 +102,11 @@ impl DAction {
     }
 
     pub fn is_instant(&self) -> bool {
-        self.attrs.split(',').find(|val| *val == "instant").map(|_| true).unwrap_or(false)
+        self.attrs
+            .split(',')
+            .find(|val| val.to_owned() == "instant")
+            .map(|_| true)
+            .unwrap_or(false)
     }
 
     pub fn func_attr(&self) -> Option<String> {
@@ -116,7 +118,9 @@ impl DAction {
     }
 
     pub fn sign_by_user(&self) -> bool {
-        self.attr_value("sign").map(|s| s == "by_user").unwrap_or(false)
+        self.attr_value("sign")
+            .map(|s| s == "by_user")
+            .unwrap_or(false)
     }
 
     pub fn format_args(&self) -> Option<String> {
@@ -125,10 +129,13 @@ impl DAction {
 
     fn attr_value(&self, name: &str) -> Option<String> {
         let name = name.to_owned() + "=";
-        self.attrs.split(',').find(|val| val.starts_with(&name)).map(|val| {
-            let vec: Vec<&str> = val.split('=').collect();
-            vec[1].to_owned()
-        })
+        self.attrs
+            .split(',')
+            .find(|val| val.starts_with(&name))
+            .map(|val| {
+                let vec: Vec<&str> = val.split('=').collect();
+                vec[1].to_owned()
+            })
     }
 }
 
@@ -137,7 +144,9 @@ where
     D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(des)?;
-    decode_abi_number::<u8>(&s).map_err(de::Error::custom).map(|t| t.into())
+    decode_abi_number::<u8>(&s)
+        .map_err(de::Error::custom)
+        .map(|t| t.into())
 }
 
 fn actype_to_str<S>(a: &AcType, s: S) -> Result<S::Ok, S::Error>
@@ -155,6 +164,6 @@ where
         AcType::CallEngine => 10,
         AcType::Unknown => 255,
     };
-
+    
     s.serialize_str(&format!("{:x}", num))
 }

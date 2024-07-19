@@ -1,20 +1,13 @@
-use std::sync::Arc;
-
-use tvm_block::MsgAddressInt;
-use tvm_sdk::Block;
-use tvm_sdk::MessageId;
-
-use super::fetching::fetch_account;
 use super::ErrorCode;
-use crate::abi::Abi;
-use crate::abi::ParamsOfDecodeMessage;
+use super::fetching::fetch_account;
+use crate::abi::{Abi, ParamsOfDecodeMessage};
 use crate::client::ClientContext;
-use crate::error::ClientError;
-use crate::error::ClientResult;
+use crate::error::{ClientError, ClientResult};
 use crate::processing::Error;
-use crate::tvm::AccountForExecutor;
-use crate::tvm::ExecutionOptions;
-use crate::tvm::ParamsOfRunExecutor;
+use crate::tvm::{AccountForExecutor, ExecutionOptions, ParamsOfRunExecutor};
+use std::sync::Arc;
+use tvm_block::MsgAddressInt;
+use tvm_sdk::{Block, MessageId};
 
 const ACCOUNT_NONEXIST: u8 = 3;
 
@@ -74,7 +67,10 @@ pub(crate) fn get_message_expiration_time(
         .unwrap_or_default(),
         None => None,
     };
-    let time = header.as_ref().and_then(|x| x.expire).map(|x| x as u64 * 1000);
+    let time = header
+        .as_ref()
+        .map_or(None, |x| x.expire)
+        .map(|x| x as u64 * 1000);
     Ok(time)
 }
 
@@ -97,9 +93,8 @@ async fn get_local_error(
         return Err(crate::tvm::Error::account_missing(address));
     }
 
-    let account: Account = serde_json::from_value(account).map_err(|err| {
-        Error::invalid_data(format!("Can not parse account for error resolving: {}", err))
-    })?;
+    let account: Account = serde_json::from_value(account)
+        .map_err(|err| Error::invalid_data(format!("Can not parse account for error resolving: {}", err)))?;
 
     if let Some(last_paid) = account.last_paid {
         if last_paid > time {
@@ -111,7 +106,10 @@ async fn get_local_error(
         context,
         ParamsOfRunExecutor {
             abi: None,
-            account: AccountForExecutor::Account { boc: account.boc, unlimited_balance: None },
+            account: AccountForExecutor::Account {
+                boc: account.boc,
+                unlimited_balance: None,
+            },
             execution_options: Some(ExecutionOptions {
                 block_time: Some(time),
                 ..Default::default()
@@ -149,8 +147,8 @@ pub(crate) async fn resolve_error(
             }
 
             if without_transaction {
-                original_error.data["local_error"] = serde_json::to_value(&err)
-                    .map_err(crate::client::Error::cannot_serialize_result)?;
+                original_error.data["local_error"] =
+                    serde_json::to_value(&err).map_err(crate::client::Error::cannot_serialize_result)?;
             } else {
                 original_error.data[EXIT_ARG_FIELD] = err.data[EXIT_ARG_FIELD].clone();
                 original_error.data[CONTRACT_ERROR_FIELD] = err.data[CONTRACT_ERROR_FIELD].clone();
@@ -160,18 +158,16 @@ pub(crate) async fn resolve_error(
                 Some(insert_position) => {
                     original_error.message = format!(
                         "{}.\nPossible reason: {}.{}",
-                        &original_error.message[..insert_position].trim_end().trim_end_matches('.'),
-                        remove_exit_code(&exit_code, err.message.trim_end_matches('.')),
+                        &original_error.message[..insert_position].trim_end().trim_end_matches("."),
+                        remove_exit_code(&exit_code, err.message.trim_end_matches(".")),
                         &original_error.message[insert_position..],
                     )
-                }
-                None => {
-                    original_error.message = format!(
-                        "{}.\nPossible reason: {}",
-                        original_error.message.trim_end_matches('.'),
-                        remove_exit_code(&exit_code, &err.message),
-                    )
-                }
+                },
+                None => original_error.message = format!(
+                    "{}.\nPossible reason: {}",
+                    original_error.message.trim_end_matches("."),
+                    remove_exit_code(&exit_code, &err.message),
+                )
             }
 
             Err(original_error)
@@ -179,26 +175,25 @@ pub(crate) async fn resolve_error(
         Ok(message) => {
             original_error.message = format!(
                 "{}. {}. Possible reason: message has not been delivered",
-                original_error.message.trim_end_matches('.'),
+                original_error.message.trim_end_matches("."),
                 message,
             );
             if original_error.code == ErrorCode::MessageExpired as u32 {
-                original_error.message =
-                    format!("{}. Try to send it again", original_error.message,);
+                original_error.message = format!(
+                    "{}. Try to send it again",
+                    original_error.message,
+                );
             }
             Err(original_error)
         }
     }
 }
 
-/// Removes exit code from internal error only if it matches exit code of
-/// original error
+/// Removes exit code from internal error only if it matches exit code of original error
 fn remove_exit_code(exit_code: &Option<i64>, internal_error: &str) -> String {
     if let Some(exit_code) = exit_code {
-        regex::Regex::new(&format!(r#"(?i)([,\.]\s*)?exit\s+code(:\s*|\s+){}"#, exit_code))
-            .unwrap()
-            .replace(internal_error, "")
-            .to_string()
+        regex::Regex::new(&format!(r#"(?i)([,\.]\s*)?exit\s+code(:\s*|\s+){}"#, exit_code)).unwrap()
+            .replace(internal_error, "").to_string()
     } else {
         internal_error.to_string()
     }

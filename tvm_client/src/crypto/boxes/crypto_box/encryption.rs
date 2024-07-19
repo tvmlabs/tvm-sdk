@@ -1,20 +1,15 @@
-use std::sync::Arc;
-
-use chacha20::cipher::NewStreamCipher;
-use chacha20::cipher::SyncStreamCipher;
+use crate::ClientContext;
+use chacha20::cipher::{NewStreamCipher, SyncStreamCipher};
 use rand::RngCore;
-use sodalite::BOX_NONCE_LEN;
-use sodalite::BOX_PUBLIC_KEY_LEN;
-use sodalite::BOX_SECRET_KEY_LEN;
+use sodalite::{BOX_NONCE_LEN, BOX_PUBLIC_KEY_LEN, BOX_SECRET_KEY_LEN};
+use std::sync::Arc;
 use zeroize::Zeroize;
 
-use super::Error;
-use super::PasswordProvider;
-use crate::crypto::boxes::crypto_box::SecretInternal;
-use crate::crypto::internal::SecretBuf;
 use crate::crypto::nacl::nacl_box_open_internal;
+use crate::crypto::{boxes::crypto_box::SecretInternal, internal::SecretBuf};
 use crate::error::ClientResult;
-use crate::ClientContext;
+
+use super::{Error, PasswordProvider};
 
 const NONCE_LEN: usize = 12;
 
@@ -56,14 +51,15 @@ pub(crate) async fn encrypt_secret(
 ) -> ClientResult<SecretBuf> {
     let mut result = generate_nonce();
     let serialized = SecretBuf(
-        bincode::serialize(secret).map_err(Error::crypto_box_secret_serialization_error)?,
+        bincode::serialize(secret)
+            .map_err(|err| Error::crypto_box_secret_serialization_error(err))?,
     );
-    apply_chacha20(context, &serialized.0, password_provider, salt, &result.0).await.map(
-        |mut output| {
+    apply_chacha20(context, &serialized.0, password_provider, salt, &result.0)
+        .await
+        .map(|mut output| {
             result.0.append(&mut output.0);
             result
-        },
-    )
+        })
 }
 
 pub(crate) async fn decrypt_secret(
@@ -74,7 +70,7 @@ pub(crate) async fn decrypt_secret(
 ) -> ClientResult<SecretInternal> {
     let (nonce, encrypted_secret) = encrypted_secret.split_at(NONCE_LEN);
     let data = apply_chacha20(context, encrypted_secret, password_provider, salt, nonce).await?;
-    bincode::deserialize(&data.0).map_err(Error::crypto_box_secret_deserialization_error)
+    bincode::deserialize(&data.0).map_err(|err| Error::crypto_box_secret_deserialization_error(err))
 }
 
 async fn get_password(password_provider: &PasswordProvider) -> ClientResult<SecretBuf> {

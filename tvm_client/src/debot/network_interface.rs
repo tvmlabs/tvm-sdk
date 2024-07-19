@@ -1,15 +1,11 @@
-use std::collections::HashMap;
-
-use serde_json::Value;
-
-use super::dinterface::decode_answer_id;
-use super::dinterface::get_arg;
-use super::dinterface::get_array_strings;
-use super::dinterface::DebotInterface;
-use super::dinterface::InterfaceResult;
+use super::dinterface::{
+    decode_answer_id, get_array_strings, get_arg, DebotInterface, InterfaceResult,
+};
 use super::TonClient;
 use crate::abi::Abi;
 use crate::client::FetchMethod;
+use serde_json::Value;
+use std::collections::HashMap;
 
 const ABI: &str = r#"
 {
@@ -90,7 +86,10 @@ impl NetworkInterface {
             let key = iter.next();
             let value = iter.next();
             if key.is_some() && value.is_some() {
-                header_map.insert(key.unwrap().trim().to_owned(), value.unwrap().trim().to_owned());
+                header_map.insert(
+                    key.unwrap().trim().to_owned(),
+                    value.unwrap().trim().to_owned(),
+                );
             }
         }
         let response = self
@@ -98,8 +97,16 @@ impl NetworkInterface {
             .env
             .fetch(
                 &url,
-                if body.is_some() { FetchMethod::Post } else { FetchMethod::Get },
-                if !header_map.is_empty() { Some(header_map) } else { None },
+                if body.is_some() {
+                    FetchMethod::Post
+                } else {
+                    FetchMethod::Get
+                },
+                if header_map.len() > 0 {
+                    Some(header_map)
+                } else {
+                    None
+                },
                 body,
                 self.client.config.network.query_timeout,
             )

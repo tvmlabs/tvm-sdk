@@ -1,30 +1,26 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
-use std::sync::Arc;
-
-use chacha20::cipher::NewStreamCipher;
-use chacha20::cipher::SyncStreamCipher;
-use chacha20::Key;
-use chacha20::Nonce;
-use tvm_block::base64_encode;
-use zeroize::ZeroizeOnDrop;
-
-use super::internal::hex_decode_secret;
-use super::Error;
 use crate::client::ClientContext;
-use crate::encoding::base64_decode;
-use crate::encoding::hex_decode;
+use crate::encoding::{base64_decode, hex_decode};
 use crate::error::ClientResult;
+use super::Error;
+use super::internal::hex_decode_secret;
+use chacha20::cipher::{NewStreamCipher, SyncStreamCipher};
+use chacha20::{Key, Nonce};
+use std::sync::Arc;
+use zeroize::ZeroizeOnDrop;
 
 #[derive(Serialize, Deserialize, ApiType, Default, ZeroizeOnDrop)]
 pub struct ParamsOfChaCha20 {
@@ -61,5 +57,7 @@ pub fn chacha20(
     let mut cipher = chacha20::ChaCha20::new(Key::from_slice(&key), Nonce::from_slice(&nonce));
     let mut data = base64_decode(&params.data)?;
     cipher.apply_keystream(&mut data);
-    Ok(ResultOfChaCha20 { data: base64_encode(&data) })
+    Ok(ResultOfChaCha20 {
+        data: tvm_block::base64_encode(&data),
+    })
 }

@@ -1,10 +1,8 @@
-use tvm_block::InternalMessageHeader;
-use tvm_block::Message;
-use tvm_block::SliceData;
-
 use crate::boc::internal::serialize_object_to_base64;
 use crate::encoding::account_decode;
 use crate::error::ClientResult;
+use tvm_block::{InternalMessageHeader, Message};
+use tvm_block::SliceData;
 
 pub(super) fn build_internal_message(
     src: &String,

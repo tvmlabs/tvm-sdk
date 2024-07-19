@@ -1,23 +1,21 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-
-use std::collections::HashMap;
-use std::pin::Pin;
-
-use futures::Sink;
-use futures::Stream;
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
 use super::Error;
-use crate::error::ClientError;
-use crate::error::ClientResult;
+use crate::error::{ClientError, ClientResult};
+use futures::{Sink, Stream};
+use std::collections::HashMap;
+use std::pin::Pin;
 
 pub(crate) struct WebSocket {
     pub sender: Pin<Box<dyn Sink<String, Error = ClientError> + Send>>,
@@ -54,7 +52,11 @@ impl FetchResult {
         if self.is_success() {
             Ok(())
         } else {
-            log::debug!("Server responded with code {}. Body \n{}", self.status, self.body);
+            log::debug!(
+                "Server responded with code {}. Body \n{}",
+                self.status,
+                self.body
+            );
             if let Ok(json) = serde_json::from_str(&self.body) {
                 if let Some(err) = crate::net::Error::try_extract_graphql_error(&json) {
                     return Err(err);

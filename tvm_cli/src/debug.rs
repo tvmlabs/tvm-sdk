@@ -1045,6 +1045,7 @@ pub async fn decode_messages(
     let mut res = vec![];
     let mut output = vec![];
     for InRefValue(msg) in msgs {
+        let msg = msg.withdraw_std().unwrap();
         let mut ser_msg = serialize_msg(&msg, abi.clone(), config)
             .await
             .map_err(|e| format!("Failed to serialize message: {}", e))?;
@@ -1490,7 +1491,7 @@ async fn fetch_transactions(
 fn map_inbound_messages_onto_tr(txns: &Vec<TransactionExt>) -> HashMap<UInt256, Transaction> {
     let mut map = HashMap::default();
     for txn in txns {
-        let hash = txn.tr.in_msg.as_ref().unwrap().hash();
+        let hash = txn.tr.in_msg.hash();
         map.insert(hash, txn.tr.clone());
     }
     map
@@ -1509,7 +1510,7 @@ fn sort_outbound_messages(
     })
     .unwrap();
     messages.sort_by(|(lt1, _), (lt2, _)| lt2.partial_cmp(lt1).unwrap());
-    Ok(messages.iter().map(|(_, v)| v.clone()).collect())
+    Ok(messages.iter().map(|(_, v)| v.clone().withdraw_std().unwrap()).collect())
 }
 
 async fn make_sequence_diagram(
@@ -1561,10 +1562,10 @@ async fn make_sequence_diagram(
         let is_separate = last_tr_id.as_ref() != Some(&id);
         let tr_name = id.split_at(MESSAGE_WIDTH).0;
         let (own_index, _) = &name_map[&address];
-        let in_msg_cell = tr.in_msg.as_ref().unwrap();
+        let in_msg_cell = tr.in_msg.clone();
 
         if rendered.insert(in_msg_cell.hash()) || is_separate {
-            let in_msg = in_msg_cell.read_struct().unwrap();
+            let in_msg = in_msg_cell.read_struct().unwrap().withdraw_std().unwrap();
             let msg_id = in_msg_cell.hash().to_hex_string();
             let msg_name = msg_id.split_at(MESSAGE_WIDTH).0;
             if let Some(src) = in_msg.src_ref() {

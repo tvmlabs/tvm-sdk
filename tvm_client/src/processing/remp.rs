@@ -1,5 +1,6 @@
 use super::ProcessingEvent;
 
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RempStatusData {
@@ -18,7 +19,7 @@ where
     if "null" == string {
         Ok(serde_json::Value::Null)
     } else {
-        Ok(serde_json::from_str(&string).map_err(serde::de::Error::custom)?)
+        Ok(serde_json::from_str(&string).map_err(|err| serde::de::Error::custom(err))?)
     }
 }
 
@@ -36,43 +37,23 @@ pub enum RempStatus {
 impl RempStatus {
     pub fn into_event(self, message_dst: String) -> ProcessingEvent {
         match self {
-            RempStatus::SentToValidators(data) => ProcessingEvent::RempSentToValidators {
-                message_id: data.message_id,
-                message_dst,
-                timestamp: data.timestamp,
-                json: data.json,
+            RempStatus::SentToValidators(data) => {
+                ProcessingEvent::RempSentToValidators { message_id: data.message_id, message_dst, timestamp: data.timestamp, json: data.json }
             },
-            RempStatus::IncludedIntoBlock(data) => ProcessingEvent::RempIncludedIntoBlock {
-                message_id: data.message_id,
-                message_dst,
-                timestamp: data.timestamp,
-                json: data.json,
+            RempStatus::IncludedIntoBlock(data) => {
+                ProcessingEvent::RempIncludedIntoBlock { message_id: data.message_id, message_dst, timestamp: data.timestamp, json: data.json }
             },
             RempStatus::IncludedIntoAcceptedBlock(data) => {
-                ProcessingEvent::RempIncludedIntoAcceptedBlock {
-                    message_id: data.message_id,
-                    message_dst,
-                    timestamp: data.timestamp,
-                    json: data.json,
-                }
-            }
-            RempStatus::Other(data) => ProcessingEvent::RempOther {
-                message_id: data.message_id,
-                message_dst,
-                timestamp: data.timestamp,
-                json: data.json,
+                ProcessingEvent::RempIncludedIntoAcceptedBlock { message_id: data.message_id, message_dst, timestamp: data.timestamp, json: data.json }
             },
-            RempStatus::RejectedByFullnode(data) => ProcessingEvent::RempOther {
-                message_id: data.message_id,
-                message_dst,
-                timestamp: data.timestamp,
-                json: data.json,
+            RempStatus::Other(data) => {
+                ProcessingEvent::RempOther { message_id: data.message_id, message_dst, timestamp: data.timestamp, json: data.json }
             },
-            RempStatus::Finalized(data) => ProcessingEvent::RempOther {
-                message_id: data.message_id,
-                message_dst,
-                timestamp: data.timestamp,
-                json: data.json,
+            RempStatus::RejectedByFullnode(data) => {
+                ProcessingEvent::RempOther { message_id: data.message_id, message_dst, timestamp: data.timestamp, json: data.json }
+            },
+            RempStatus::Finalized(data) => {
+                ProcessingEvent::RempOther { message_id: data.message_id, message_dst, timestamp: data.timestamp, json: data.json }
             },
         }
     }

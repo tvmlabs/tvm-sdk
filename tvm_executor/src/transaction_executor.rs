@@ -17,7 +17,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use tvm_block::AccStatusChange;
+use tvm_block::{AccStatusChange, CommonMessage};
 use tvm_block::Account;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
@@ -1030,7 +1030,7 @@ pub trait TransactionExecutor {
         lt += 1;
         for mut msg in out_msgs {
             msg.set_at_and_lt(tr.now(), lt);
-            tr.add_out_message(&msg)?;
+            tr.add_out_message(&CommonMessage::Std(msg))?;
             lt += 1;
         }
         Ok(lt)

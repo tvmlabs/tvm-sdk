@@ -1,24 +1,22 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
-
-use std::sync::Arc;
-
-use serde_json::Value;
-use tvm_client_processing::MessageMonitoringParams;
-use tvm_client_processing::MonitoredMessage;
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
 use crate::client::ClientContext;
-use crate::error::AddNetworkUrl;
-use crate::error::ClientResult;
+use crate::error::{AddNetworkUrl, ClientResult};
+use serde_json::Value;
+use std::sync::Arc;
+use tvm_client_processing::{MessageMonitoringParams, MonitoredMessage};
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug, Clone)]
 pub struct MessageSendingParams {
@@ -30,8 +28,7 @@ pub struct MessageSendingParams {
     pub wait_until: u32,
 
     /// User defined data associated with this message.
-    /// Helps to identify this message when user received
-    /// `MessageMonitoringResult`.
+    /// Helps to identify this message when user received `MessageMonitoringResult`.
     pub user_data: Option<Value>,
 }
 
@@ -62,7 +59,12 @@ pub async fn send_messages(
     let messages = params
         .messages
         .iter()
-        .map(|x| context.bocs.resolve_boc_with_hash(&x.boc, "message").unwrap())
+        .map(|x| {
+            context
+                .bocs
+                .resolve_boc_with_hash(&x.boc, "message")
+                .unwrap()
+        })
         .collect();
     server_link
         .send_messages(messages, Some(&endpoint))
@@ -79,7 +81,9 @@ pub async fn send_messages(
         })
         .collect::<Vec<_>>();
     if let Some(queue) = params.monitor_queue {
-        context.message_monitor.monitor_messages(&queue, messages.clone())?;
+        context
+            .message_monitor
+            .monitor_messages(&queue, messages.clone())?;
     }
     Ok(ResultOfSendMessages { messages })
 }

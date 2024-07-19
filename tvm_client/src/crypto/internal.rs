@@ -1,12 +1,10 @@
-use ed25519_dalek::SigningKey;
-use ed25519_dalek::VerifyingKey;
+use crate::crypto;
+use crate::error::ClientResult;
+use ed25519_dalek::{SigningKey, VerifyingKey};
 use hmac::*;
 use sha2::Digest;
 use sha2::Sha512;
 use zeroize::Zeroize;
-
-use crate::crypto;
-use crate::error::ClientResult;
 
 const XMODEM: crc::Crc<u16> = crc::Crc::<u16>::new(&crc::CRC_16_XMODEM);
 
@@ -18,7 +16,6 @@ pub(crate) struct SecretBuf(pub Vec<u8>);
 
 impl std::ops::Deref for SecretBuf {
     type Target = [u8];
-
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -53,7 +50,6 @@ impl<const N: usize> Drop for SecretBufConst<N> {
 
 impl<const N: usize> std::ops::Deref for SecretBufConst<N> {
     type Target = [u8];
-
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -83,12 +79,10 @@ pub(crate) type Key264 = SecretBufConst<33>;
 pub(crate) type Key512 = SecretBufConst<64>;
 
 pub(crate) fn hex_decode_secret(hex: &str) -> ClientResult<SecretBuf> {
-    crate::encoding::hex_decode(hex).map(SecretBuf)
+    crate::encoding::hex_decode(hex).map(|data| SecretBuf(data))
 }
 
-pub(crate) fn hex_decode_secret_const<const N: usize>(
-    hex: &str,
-) -> ClientResult<SecretBufConst<N>> {
+pub(crate) fn hex_decode_secret_const<const N: usize>(hex: &str) -> ClientResult<SecretBufConst<N>> {
     key_from_slice(&hex_decode_secret(hex)?)
 }
 
@@ -98,15 +92,14 @@ pub(crate) fn sha256(bytes: &[u8]) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-pub(crate) fn tvm_crc16(data: &[u8]) -> u16 {
+pub(crate) fn ton_crc16(data: &[u8]) -> u16 {
     XMODEM.checksum(data)
 }
 
 pub(crate) fn decode_public_key(string: &String) -> ClientResult<VerifyingKey> {
     VerifyingKey::from_bytes(
         &hex_decode_secret_const(string)
-            .map_err(|err| crypto::Error::invalid_public_key(err, string))?
-            .0,
+            .map_err(|err| crypto::Error::invalid_public_key(err, string))?.0
     )
     .map_err(|err| crypto::Error::invalid_public_key(err, string))
 }
@@ -114,8 +107,7 @@ pub(crate) fn decode_public_key(string: &String) -> ClientResult<VerifyingKey> {
 pub(crate) fn decode_secret_key(string: &String) -> ClientResult<SigningKey> {
     Ok(SigningKey::from_bytes(
         &hex_decode_secret_const(string)
-            .map_err(|err| crypto::Error::invalid_secret_key(err, string))?
-            .0,
+            .map_err(|err| crypto::Error::invalid_secret_key(err, string))?.0
     ))
 }
 
@@ -142,7 +134,7 @@ pub(crate) fn key192(slice: &[u8]) -> ClientResult<Key192> {
 
 pub(crate) fn hmac_sha512(key: &[u8], data: &[u8]) -> [u8; 64] {
     let mut hmac = Hmac::<Sha512>::new_from_slice(key).unwrap();
-    hmac.update(data);
+    hmac.update(&data);
     let mut result = [0u8; 64];
     result.copy_from_slice(&hmac.finalize().into_bytes());
     result
@@ -169,10 +161,7 @@ pub(crate) fn sign_using_secret(
     Ok((signed, signature))
 }
 
-pub(crate) fn sign_using_keys(
-    unsigned: &[u8],
-    sign_key: &SigningKey,
-) -> ClientResult<(Vec<u8>, Vec<u8>)> {
+pub(crate) fn sign_using_keys(unsigned: &[u8], sign_key: &SigningKey) -> ClientResult<(Vec<u8>, Vec<u8>)> {
     let mut secret = SecretBuf(Vec::with_capacity(ed25519_dalek::KEYPAIR_LENGTH));
     secret.0.extend(&SecretBufConst(sign_key.to_bytes()).0);
     secret.0.extend(sign_key.verifying_key().as_bytes());

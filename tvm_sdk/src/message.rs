@@ -1,4 +1,4 @@
-// Copyright 2018-2021 TON Labs LTD.
+// Copyright 2018-2021 TON Labs Ltd.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,10 +9,10 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_block::Cell;
 use tvm_block::CommonMsgInfo;
 use tvm_block::GetRepresentationHash;
 use tvm_block::Message as TvmMessage;
-use tvm_block::Cell;
 use tvm_block::Result;
 use tvm_block::SliceData;
 
@@ -20,13 +20,18 @@ use crate::json_helper;
 use crate::types::grams_to_u64;
 use crate::types::StringId;
 
-#[derive(Deserialize, Debug, PartialEq, Clone, Default)]
+#[derive(Deserialize, Debug, PartialEq, Clone)]
 pub enum MessageType {
     Internal,
     ExternalInbound,
     ExternalOutbound,
-    #[default]
     Unknown,
+}
+
+impl Default for MessageType {
+    fn default() -> Self {
+        MessageType::Unknown
+    }
 }
 
 pub type MessageId = StringId;

@@ -4,35 +4,26 @@ use std::sync::Arc;
 use ed25519_dalek::SigningKey;
 use lockfree::map::ReadGuard;
 use tokio::sync::RwLock;
-use tvm_block::base64_encode;
 use zeroize::Zeroize;
 
-use crate::crypto::boxes::crypto_box::encryption::decrypt_secret;
-use crate::crypto::boxes::crypto_box::encryption::encrypt_secret;
+use crate::crypto::boxes::crypto_box::encryption::{decrypt_secret, encrypt_secret};
 use crate::crypto::boxes::encryption_box::chacha20::ChaCha20EncryptionBox;
 use crate::crypto::boxes::encryption_box::nacl_box::NaclEncryptionBox;
 use crate::crypto::boxes::encryption_box::nacl_secret_box::NaclSecretEncryptionBox;
 use crate::crypto::boxes::signing_box::KeysSigningBox;
-use crate::crypto::internal::SecretBuf;
-use crate::crypto::internal::SecretBufConst;
-use crate::crypto::internal::SecretString;
+use crate::crypto::internal::{SecretBuf, SecretString, SecretBufConst};
 use crate::crypto::mnemonic::mnemonics;
-use crate::crypto::register_encryption_box;
-use crate::crypto::register_signing_box;
-use crate::crypto::CryptoConfig;
-use crate::crypto::EncryptionBox;
-use crate::crypto::EncryptionBoxInfo;
-use crate::crypto::Error;
-use crate::crypto::MnemonicDictionary;
-use crate::crypto::RegisteredEncryptionBox;
-use crate::crypto::RegisteredSigningBox;
-use crate::crypto::SigningBox;
+use crate::crypto::{
+    register_encryption_box, register_signing_box,
+    CryptoConfig, EncryptionBox, EncryptionBoxInfo, Error, RegisteredEncryptionBox,
+    RegisteredSigningBox, SigningBox, MnemonicDictionary
+};
 use crate::encoding::base64_decode;
 use crate::error::ClientResult;
 use crate::ClientContext;
 
-mod derived_keys;
 mod encryption;
+mod derived_keys;
 
 pub(crate) use derived_keys::DerivedKeys;
 
@@ -55,8 +46,7 @@ pub struct ResultOfGetPassword {
     /// Crypto box uses this password to decrypt its secret (seed phrase).
     /// Password is encrypted with `encryption_public_key`.
     pub encrypted_password: Vec<u8>,
-    /// Public key of the key pair, used for password encryption in client
-    /// application.
+    /// Public key of the key pair, used for password encryption in client application.
     pub app_encryption_pubkey: sodalite::BoxPublicKey,
 }
 
@@ -70,7 +60,11 @@ pub trait AppPasswordProvider {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub(crate) enum SecretInternal {
-    SeedPhrase { phrase: SecretString, dictionary: MnemonicDictionary, wordcount: u8 },
+    SeedPhrase {
+        phrase: SecretString,
+        dictionary: MnemonicDictionary,
+        wordcount: u8,
+    },
 }
 
 impl Default for SecretInternal {
@@ -94,42 +88,40 @@ pub(crate) struct CryptoBox {
 #[serde(tag = "type")]
 pub enum CryptoBoxSecret {
     /// Creates Crypto Box from a random seed phrase.
-    /// This option can be used if a developer doesn't want the seed phrase to
-    /// leave the core library's memory, where it is stored encrypted.
+    /// This option can be used if a developer doesn't want the seed phrase to leave the core
+    /// library's memory, where it is stored encrypted.
     ///
-    /// This type should be used upon the first wallet initialization, all
-    /// further initializations should use `EncryptedSecret` type instead.
+    /// This type should be used upon the first wallet initialization, all further initializations
+    /// should use `EncryptedSecret` type instead.
     ///
-    /// Get `encrypted_secret` with `get_crypto_box_info` function and store it
-    /// on your side.
+    /// Get `encrypted_secret` with `get_crypto_box_info` function and store it on your side.
     RandomSeedPhrase { dictionary: MnemonicDictionary, wordcount: u8 },
 
     /// Restores crypto box instance from an existing seed phrase.
-    /// This type should be used when Crypto Box is initialized from a seed
-    /// phrase, entered by a user.
+    /// This type should be used when Crypto Box is initialized from a seed phrase, entered by a user.
     ///
-    /// This type should be used only upon the first wallet initialization, all
-    /// further initializations should use `EncryptedSecret` type instead.
+    /// This type should be used only upon the first wallet initialization, all further
+    /// initializations should use `EncryptedSecret` type instead.
     ///
-    /// Get `encrypted_secret` with `get_crypto_box_info` function and store it
-    /// on your side.
-    PredefinedSeedPhrase { phrase: String, dictionary: MnemonicDictionary, wordcount: u8 },
+    /// Get `encrypted_secret` with `get_crypto_box_info` function and store it on your side.
+    PredefinedSeedPhrase {
+        phrase: String,
+        dictionary: MnemonicDictionary,
+        wordcount: u8,
+    },
 
-    /// Use this type for wallet reinitializations, when you already have
-    /// `encrypted_secret` on hands. To get `encrypted_secret`, use
-    /// `get_crypto_box_info` function after you initialized your crypto box
-    /// for the first time.
+    /// Use this type for wallet reinitializations, when you already have `encrypted_secret` on hands.
+    /// To get `encrypted_secret`, use `get_crypto_box_info` function after you initialized your
+    /// crypto box for the first time.
     ///
     /// It is an object, containing seed phrase or private key, encrypted with
     /// `secret_encryption_salt` and password from `password_provider`.
     ///
-    /// Note that if you want to change salt or password provider, then you need
-    /// to reinitialize the wallet with `PredefinedSeedPhrase`, then get
-    /// `EncryptedSecret` via `get_crypto_box_info`, store it somewhere, and
-    /// only after that initialize the wallet with `EncryptedSecret` type.
+    /// Note that if you want to change salt or password provider, then you need to reinitialize
+    /// the wallet with `PredefinedSeedPhrase`, then get `EncryptedSecret` via `get_crypto_box_info`,
+    /// store it somewhere, and only after that initialize the wallet with `EncryptedSecret` type.
     EncryptedSecret {
-        /// It is an object, containing encrypted seed phrase or private key
-        /// (now we support only seed phrase).
+        /// It is an object, containing encrypted seed phrase or private key (now we support only seed phrase).
         encrypted_secret: String,
     },
 }
@@ -158,24 +150,25 @@ pub struct ParamsOfCreateCryptoBox {
 
 /// Creates Crypto Box.
 ///
-/// Crypto Box is a root crypto object, that encapsulates some secret (seed
-/// phrase usually) in encrypted form and acts as a factory for all crypto
-/// primitives used in SDK: keys for signing and encryption, derived from this
-/// secret.
+/// Crypto Box is a root crypto object, that encapsulates some secret (seed phrase usually)
+/// in encrypted form and acts as a factory for all crypto primitives used in SDK:
+/// keys for signing and encryption, derived from this secret.
 ///
-/// Crypto Box encrypts original Seed Phrase with salt and some secret that is
-/// retrieved in runtime via `password_provider` callback, implemented on
-/// Application side.
+/// Crypto Box encrypts original Seed Phrase with salt and some secret that is retrieved
+/// in runtime via `password_provider` callback, implemented on Application side.
 ///
-/// When used, decrypted secret is shown up in core library's memory for a very
-/// short period of time and then is immediately overwritten with zeroes.
+/// When used, decrypted secret is shown up in core library's memory for a very short period
+/// of time and then is immediately overwritten with zeroes.
 pub async fn create_crypto_box(
     context: Arc<ClientContext>,
     params: ParamsOfCreateCryptoBox,
     password_provider: PasswordProvider,
 ) -> ClientResult<RegisteredCryptoBox> {
     let encrypted_secret = match &params.secret {
-        CryptoBoxSecret::RandomSeedPhrase { dictionary, wordcount } => {
+        CryptoBoxSecret::RandomSeedPhrase {
+            dictionary,
+            wordcount,
+        } => {
             let config = CryptoConfig::default();
             let phrase = {
                 let mnemonics = mnemonics(&config, Some(*dictionary), Some(*wordcount))?;
@@ -194,7 +187,11 @@ pub async fn create_crypto_box(
             .await?
         }
 
-        CryptoBoxSecret::PredefinedSeedPhrase { phrase, dictionary, wordcount } => {
+        CryptoBoxSecret::PredefinedSeedPhrase {
+            phrase,
+            dictionary,
+            wordcount,
+        } => {
             encrypt_secret(
                 context.clone(),
                 &SecretInternal::SeedPhrase {
@@ -209,7 +206,7 @@ pub async fn create_crypto_box(
         }
 
         CryptoBoxSecret::EncryptedSecret { encrypted_secret } => {
-            SecretBuf(base64_decode(encrypted_secret)?)
+            SecretBuf(base64_decode(&encrypted_secret)?)
         }
     };
 
@@ -221,7 +218,9 @@ pub async fn create_crypto_box(
     let id = context.get_next_id();
     assert!(context.boxes.crypto_boxes.insert(id, crypto_box).is_none());
 
-    Ok(RegisteredCryptoBox { handle: CryptoBoxHandle(id) })
+    Ok(RegisteredCryptoBox {
+        handle: CryptoBoxHandle(id),
+    })
 }
 
 /// Removes Crypto Box.
@@ -246,14 +245,17 @@ pub struct ResultOfGetCryptoBoxSeedPhrase {
 
 /// Get Crypto Box Seed Phrase.
 ///
-/// Attention! Store this data in your application for a very short period of
-/// time and overwrite it with zeroes ASAP.
+/// Attention! Store this data in your application for a very short period of time and overwrite it with zeroes ASAP.
 #[api_function]
 pub async fn get_crypto_box_seed_phrase(
     context: Arc<ClientContext>,
     params: RegisteredCryptoBox,
 ) -> ClientResult<ResultOfGetCryptoBoxSeedPhrase> {
-    let SecretInternal::SeedPhrase { phrase, dictionary, wordcount } = {
+    let SecretInternal::SeedPhrase {
+        phrase,
+        dictionary,
+        wordcount,
+    } = {
         let guard = get_crypto_box(&context, &params.handle)?;
         let crypto_box = guard.val();
         decrypt_secret(
@@ -265,7 +267,11 @@ pub async fn get_crypto_box_seed_phrase(
         .await?
     };
 
-    Ok(ResultOfGetCryptoBoxSeedPhrase { phrase: phrase.0.clone(), dictionary, wordcount })
+    Ok(ResultOfGetCryptoBoxSeedPhrase {
+        phrase: phrase.0.clone(),
+        dictionary,
+        wordcount,
+    })
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default, PartialEq)]
@@ -283,8 +289,11 @@ pub async fn get_crypto_box_info(
     params: RegisteredCryptoBox,
 ) -> ClientResult<ResultOfGetCryptoBoxInfo> {
     Ok(ResultOfGetCryptoBoxInfo {
-        encrypted_secret: base64_encode(
-            &get_crypto_box(&context, &params.handle)?.val().encrypted_secret.0,
+        encrypted_secret: tvm_block::base64_encode(
+            &get_crypto_box(&context, &params.handle)?
+                .val()
+                .encrypted_secret
+                .0,
         ),
     })
 }
@@ -308,8 +317,7 @@ pub struct ParamsOfGetSigningBoxFromCryptoBox {
     pub hdpath: Option<String>,
     /// Store derived secret for this lifetime (in ms).
     /// The timer starts after each signing box operation.
-    /// Secrets will be deleted immediately after each signing box operation, if
-    /// this value is not set.
+    /// Secrets will be deleted immediately after each signing box operation, if this value is not set.
     pub secret_lifetime: Option<u32>,
 }
 
@@ -365,12 +373,17 @@ impl<T: Send + Sync + 'static> BoxFromCryptoBoxLifeCycleManager<T> {
 
         let seed_phrase = get_crypto_box_seed_phrase(
             Arc::clone(&context),
-            RegisteredCryptoBox { handle: CryptoBoxHandle(self.params.handle) },
+            RegisteredCryptoBox {
+                handle: CryptoBoxHandle(self.params.handle),
+            },
         )
         .await?;
 
-        let hdpath =
-            self.params.hdpath.as_ref().unwrap_or(&context.config.crypto.hdkey_derivation_path);
+        let hdpath = self
+            .params
+            .hdpath
+            .as_ref()
+            .unwrap_or(&context.config.crypto.hdkey_derivation_path);
 
         let keypair = {
             let mnemonic = mnemonics(
@@ -524,8 +537,7 @@ pub struct ParamsOfGetEncryptionBoxFromCryptoBox {
     pub algorithm: BoxEncryptionAlgorithm,
     /// Store derived secret for encryption algorithm for this lifetime (in ms).
     /// The timer starts after each encryption box operation.
-    /// Secrets will be deleted (overwritten with zeroes) after each encryption
-    /// operation, if this value is not set.
+    /// Secrets will be deleted (overwritten with zeroes) after each encryption operation, if this value is not set.
     pub secret_lifetime: Option<u32>,
 }
 
@@ -534,8 +546,8 @@ pub struct ParamsOfGetEncryptionBoxFromCryptoBox {
 /// Derives encryption keypair from cryptobox secret and hdpath and
 /// stores it in cache for `secret_lifetime`
 /// or until explicitly cleared by `clear_crypto_box_secret_cache` method.
-/// If `secret_lifetime` is not specified - overwrites encryption secret with
-/// zeroes immediately after encryption operation.
+/// If `secret_lifetime` is not specified - overwrites encryption secret with zeroes immediately after
+/// encryption operation.
 #[api_function]
 pub async fn get_encryption_box_from_crypto_box(
     context: Arc<ClientContext>,
@@ -552,7 +564,10 @@ pub async fn get_encryption_box_from_crypto_box(
         internal_box: Default::default(),
     };
 
-    let encryption_box = EncryptionBoxFromCryptoBox { manager, algorithm: params.algorithm };
+    let encryption_box = EncryptionBoxFromCryptoBox {
+        manager,
+        algorithm: params.algorithm,
+    };
 
     register_encryption_box(context, encryption_box).await
 }
@@ -634,8 +649,8 @@ impl EncryptionBox for EncryptionBoxFromCryptoBox {
     }
 }
 
-/// Removes cached secrets (overwrites with zeroes) from all signing and
-/// encryption boxes, derived from crypto box.
+/// Removes cached secrets (overwrites with zeroes) from all signing and encryption boxes,
+/// derived from crypto box.
 #[api_function]
 pub async fn clear_crypto_box_secret_cache(
     context: Arc<ClientContext>,

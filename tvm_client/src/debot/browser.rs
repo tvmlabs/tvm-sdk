@@ -1,5 +1,5 @@
-use super::action::DAction;
 use super::DebotActivity;
+use super::action::DAction;
 use crate::crypto::SigningBoxHandle;
 use crate::error::ClientResult;
 
@@ -10,8 +10,7 @@ pub trait BrowserCallbacks {
     async fn log(&self, msg: String);
     /// Notify that debot is switched to another context.
     async fn switch(&self, ctx_id: u8);
-    /// Notify that all actions are shown to user and switch to context is
-    /// completed.
+    /// Notify that all actions are shown to user and switch to context is completed.
     async fn switch_completed(&self);
     /// Show action to the user as menu item.
     /// Called after `switch` callback for every action in context.

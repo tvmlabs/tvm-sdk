@@ -1,20 +1,20 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
+use crate::error::{ClientError, format_time};
 use serde_json::Value;
 use tvm_block::MsgAddressInt;
-
-use crate::error::format_time;
-use crate::error::ClientError;
 
 #[derive(ApiType)]
 pub enum ErrorCode {
@@ -119,11 +119,17 @@ impl Error {
     }
 
     pub fn invalid_message_boc<E: std::fmt::Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidMessageBoc, format!("Invalid message BOC: {}", err))
+        error(
+            ErrorCode::InvalidMessageBoc,
+            format!("Invalid message BOC: {}", err),
+        )
     }
 
     pub fn can_not_build_message_cell<E: std::fmt::Display>(err: E) -> ClientError {
-        error(ErrorCode::CanNotBuildMessageCell, format!("Can't build message cell: {}", err))
+        error(
+            ErrorCode::CanNotBuildMessageCell,
+            format!("Can't build message cell: {}", err),
+        )
     }
 
     pub fn invalid_block_received<E: std::fmt::Display>(
@@ -197,7 +203,10 @@ impl Error {
     }
 
     pub fn can_not_check_block_shard<E: std::fmt::Display>(err: E) -> ClientError {
-        error(ErrorCode::CanNotCheckBlockShard, format!("Can't check block shard: {}", err))
+        error(
+            ErrorCode::CanNotCheckBlockShard,
+            format!("Can't check block shard: {}", err),
+        )
     }
 
     pub fn block_not_found(message: String) -> ClientError {
@@ -222,6 +231,6 @@ impl Error {
     }
 
     pub fn next_remp_status_timeout() -> ClientError {
-        error(ErrorCode::NextRempStatusTimeout, "Next REMP status awaiting timeout".to_string())
+        error(ErrorCode::NextRempStatusTimeout, format!("Next REMP status awaiting timeout"))
     }
 }

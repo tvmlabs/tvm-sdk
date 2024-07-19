@@ -1,61 +1,45 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
-
-use std::sync::atomic::AtomicU64;
-use std::sync::Arc;
-
-use serde_json::Value;
-use tvm_block::Account;
-use tvm_block::CurrencyCollection;
-use tvm_block::Message;
-use tvm_block::MsgAddressInt;
-use tvm_block::Serializable;
-use tvm_block::Transaction;
-use tvm_executor::ExecuteParams;
-use tvm_executor::ExecutorError;
-use tvm_executor::OrdinaryTransactionExecutor;
-use tvm_executor::TransactionExecutor;
-use tvm_sdk::TransactionFees;
-use tvm_block::Cell;
-use tvm_block::UInt256;
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
 use super::stack::serialize_item;
-use super::types::ExecutionOptions;
-use super::types::ResolvedExecutionOptions;
-use crate::abi::Abi;
-use crate::boc::internal::deserialize_cell_from_boc;
-use crate::boc::internal::deserialize_object_from_boc;
-use crate::boc::internal::deserialize_object_from_cell;
-use crate::boc::internal::serialize_cell_to_boc;
-use crate::boc::internal::serialize_object_to_base64;
-use crate::boc::internal::serialize_object_to_boc;
-use crate::boc::internal::serialize_object_to_cell;
-use crate::boc::BocCacheType;
+use super::types::{ExecutionOptions, ResolvedExecutionOptions};
+use crate::boc::internal::{
+    deserialize_cell_from_boc, deserialize_object_from_boc, deserialize_object_from_cell,
+    serialize_cell_to_boc, serialize_object_to_base64, serialize_object_to_boc,
+    serialize_object_to_cell,
+};
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::processing::parsing::decode_output;
-use crate::processing::DecodedOutput;
-use crate::tvm::check_transaction::calc_transaction_fees;
-use crate::tvm::Error;
+use crate::processing::{parsing::decode_output, DecodedOutput};
+use crate::tvm::{check_transaction::calc_transaction_fees, Error};
+use crate::{abi::Abi, boc::BocCacheType};
+use serde_json::Value;
+use std::convert::TryFrom;
+use std::sync::{atomic::AtomicU64, Arc};
+use tvm_block::{Account, CurrencyCollection, Message, MsgAddressInt, Serializable, Transaction};
+use tvm_executor::{
+    ExecuteParams, ExecutorError, OrdinaryTransactionExecutor, TransactionExecutor,
+};
+use tvm_sdk::TransactionFees;
+use tvm_block::{Cell, UInt256};
 
 #[derive(Serialize, Deserialize, ApiType, Debug, Clone)]
 #[serde(tag = "type")]
-#[derive(Default)]
 pub enum AccountForExecutor {
     /// Non-existing account to run a creation internal message.
-    /// Should be used with `skip_transaction_check = true` if the message has
-    /// no deploy data since transactions on the uninitialized account are
-    /// always aborted
-    #[default]
+    /// Should be used with `skip_transaction_check = true` if the message has no deploy data
+    /// since transactions on the uninitialized account are always aborted
     None,
     /// Emulate uninitialized account to run deploy message
     Uninit,
@@ -63,10 +47,16 @@ pub enum AccountForExecutor {
     Account {
         /// Account BOC. Encoded as base64.
         boc: String,
-        /// Flag for running account with the unlimited balance. Can be used to
-        /// calculate transaction fees without balance check
+        /// Flag for running account with the unlimited balance. Can be used to calculate
+        /// transaction fees without balance check
         unlimited_balance: Option<bool>,
     },
+}
+
+impl Default for AccountForExecutor {
+    fn default() -> Self {
+        AccountForExecutor::None
+    }
 }
 
 const UNLIMITED_BALANCE: u64 = u64::MAX;
@@ -88,10 +78,13 @@ impl AccountForExecutor {
                 let account = serialize_object_to_cell(&account, "account")?;
                 Ok((account, None))
             }
-            AccountForExecutor::Account { boc, unlimited_balance } => {
+            AccountForExecutor::Account {
+                boc,
+                unlimited_balance,
+            } => {
                 if unlimited_balance.unwrap_or_default() {
                     let mut account: Account =
-                        deserialize_object_from_boc(context, boc, "account")?.object;
+                        deserialize_object_from_boc(context, &boc, "account")?.object;
                     let original_balance = account
                         .balance()
                         .ok_or_else(|| {
@@ -106,7 +99,7 @@ impl AccountForExecutor {
                     let account = serialize_object_to_cell(&account, "account")?;
                     Ok((account, Some(original_balance)))
                 } else {
-                    let (_, account) = deserialize_cell_from_boc(context, boc, "account")?;
+                    let (_, account) = deserialize_cell_from_boc(context, &boc, "account")?;
                     Ok((account, None))
                 }
             }
@@ -139,11 +132,9 @@ pub struct ParamsOfRunExecutor {
     pub abi: Option<Abi>,
     /// Skip transaction check flag
     pub skip_transaction_check: Option<bool>,
-    /// Cache type to put the result. The BOC itself returned if no cache type
-    /// provided
+    /// Cache type to put the result. The BOC itself returned if no cache type provided
     pub boc_cache: Option<BocCacheType>,
-    /// Return updated account flag. Empty string is returned if the flag is
-    /// `false`
+    /// Return updated account flag. Empty string is returned if the flag is `false`
     pub return_updated_account: Option<bool>,
 }
 
@@ -157,11 +148,9 @@ pub struct ParamsOfRunTvm {
     pub execution_options: Option<ExecutionOptions>,
     /// Contract ABI for decoding output messages
     pub abi: Option<Abi>,
-    /// Cache type to put the result. The BOC itself returned if no cache type
-    /// provided
+    /// Cache type to put the result. The BOC itself returned if no cache type provided
     pub boc_cache: Option<BocCacheType>,
-    /// Return updated account flag. Empty string is returned if the flag is
-    /// `false`
+    /// Return updated account flag. Empty string is returned if the flag is `false`
     pub return_updated_account: Option<bool>,
 }
 
@@ -198,8 +187,7 @@ pub struct ResultOfRunTvm {
     pub decoded: Option<DecodedOutput>,
 
     /// Updated account state BOC. Encoded as `base64`.
-    /// Attention! Only `account_state.storage.state.data` part of the BOC is
-    /// updated.
+    /// Attention! Only `account_state.storage.state.data` part of the BOC is updated.
     pub account: String,
 }
 
@@ -209,7 +197,9 @@ fn parse_transaction(
 ) -> ClientResult<Value> {
     Ok(crate::boc::parse_transaction(
         context.clone(),
-        crate::boc::ParamsOfParse { boc: serialize_object_to_base64(transaction, "transaction")? },
+        crate::boc::ParamsOfParse {
+            boc: serialize_object_to_base64(transaction, "transaction")?,
+        },
     )?
     .parsed)
 }
@@ -219,40 +209,34 @@ fn parse_transaction(
 /// Performs all the phases of contract execution on Transaction Executor -
 /// the same component that is used on Validator Nodes.
 ///
-/// Can be used for contract debugging, to find out the reason why a message was
-/// not delivered successfully. Validators throw away the failed external
-/// inbound messages (if they failed before `ACCEPT`) in the real network.
+/// Can be used for contract debugging, to find out the reason why a message was not delivered successfully.
+/// Validators throw away the failed external inbound messages (if they failed before `ACCEPT`) in the real network.
 /// This is why these messages are impossible to debug in the real network.
-/// With the help of run_executor you can do that. In fact, `process_message`
-/// function performs local check with `run_executor` if there was no
-/// transaction as a result of processing and returns the error, if there is
-/// one.
+/// With the help of run_executor you can do that. In fact, `process_message` function
+/// performs local check with `run_executor` if there was no transaction as a result of processing
+/// and returns the error, if there is one.
 ///
-/// Another use case to use `run_executor` is to estimate fees for message
-/// execution. Set  `AccountForExecutor::Account.unlimited_balance`
+/// Another use case to use `run_executor` is to estimate fees for message execution.
+/// Set  `AccountForExecutor::Account.unlimited_balance`
 /// to `true` so that emulation will not depend on the actual balance.
-/// This may be needed to calculate deploy fees for an account that does not
-/// exist yet. JSON with fees is in `fees` field of the result.
+/// This may be needed to calculate deploy fees for an account that does not exist yet.
+/// JSON with fees is in `fees` field of the result.
 ///
 /// One more use case - you can produce the sequence of operations,
 /// thus emulating the sequential contract calls locally.
 /// And so on.
 ///
 /// Transaction executor requires account BOC (bag of cells) as a parameter.
-/// To get the account BOC - use `net.query` method to download it from GraphQL
-/// API (field `boc` of `account`) or generate it with `abi.encode_account`
-/// method.
+/// To get the account BOC - use `net.query` method to download it from GraphQL API
+/// (field `boc` of `account`) or generate it with `abi.encode_account` method.
 ///
-/// Also it requires message BOC. To get the message BOC - use
-/// `abi.encode_message` or `abi.encode_internal_message`.
+/// Also it requires message BOC. To get the message BOC - use `abi.encode_message` or `abi.encode_internal_message`.
 ///
-/// If you need this emulation to be as precise as possible (for instance -
-/// emulate transaction with particular lt in particular block or use particular
-/// blockchain config, downloaded from a particular key block - then specify
-/// `execution_options` parameter.
+/// If you need this emulation to be as precise as possible (for instance - emulate transaction
+/// with particular lt in particular block or use particular blockchain config,
+/// downloaded from a particular key block - then specify `execution_options` parameter.
 ///
-/// If you need to see the aborted transaction as a result, not as an error, set
-/// `skip_transaction_check` to `true`.
+/// If you need to see the aborted transaction as a result, not as an error, set `skip_transaction_check` to `true`.
 
 #[api_function]
 pub async fn run_executor(
@@ -269,7 +253,10 @@ pub async fn run_executor_internal(
 ) -> ClientResult<ResultOfRunExecutor> {
     let message =
         deserialize_object_from_boc::<Message>(&context, &params.message, "message")?.object;
-    let msg_address = message.dst_ref().ok_or_else(Error::invalid_message_type)?.clone();
+    let msg_address = message
+        .dst_ref()
+        .ok_or_else(|| Error::invalid_message_type())?
+        .clone();
     let (account, _) = params.account.get_account(&context, msg_address.clone())?;
     let options =
         ResolvedExecutionOptions::from_options(&context, params.execution_options).await?;
@@ -284,12 +271,17 @@ pub async fn run_executor_internal(
         }
     };
 
-    let (transaction, modified_account) =
-        call_executor(account.clone(), message, options, contract_info.clone(), show_tips_on_error)
-            .await?;
+    let (transaction, modified_account) = call_executor(
+        account.clone(),
+        message,
+        options,
+        contract_info.clone(),
+        show_tips_on_error,
+    )
+    .await?;
 
-    let sdk_transaction =
-        tvm_sdk::Transaction::try_from(&transaction).map_err(Error::can_not_read_transaction)?;
+    let sdk_transaction = tvm_sdk::Transaction::try_from(&transaction)
+        .map_err(|err| Error::can_not_read_transaction(err))?;
 
     let fees = calc_transaction_fees(
         &sdk_transaction,
@@ -304,7 +296,7 @@ pub async fn run_executor_internal(
     for i in 0..transaction.msg_count() {
         let message = transaction
             .get_out_msg(i)
-            .map_err(Error::can_not_read_transaction)?
+            .map_err(|err| Error::can_not_read_transaction(err))?
             .ok_or_else(|| Error::can_not_read_transaction("message missing"))?;
         out_messages.push(serialize_object_to_base64(&message, "message")?);
     }
@@ -336,15 +328,12 @@ pub async fn run_executor_internal(
 /// Performs only a part of compute phase of transaction execution
 /// that is used to run get-methods of ABI-compatible contracts.
 ///
-/// If you try to run get-methods with `run_executor` you will get an error,
-/// because it checks ACCEPT and exits if there is none, which is actually true
-/// for get-methods.
+/// If you try to run get-methods with `run_executor` you will get an error, because it checks ACCEPT and exits
+/// if there is none, which is actually true for get-methods.
 ///
-///  To get the account BOC (bag of cells) - use `net.query` method to download
-/// it from GraphQL API (field `boc` of `account`) or generate it with
-/// `abi.encode_account method`. To get the message BOC - use
-/// `abi.encode_message` or prepare it any other way, for instance, with FIFT
-/// script.
+///  To get the account BOC (bag of cells) - use `net.query` method to download it from GraphQL API
+/// (field `boc` of `account`) or generate it with `abi.encode_account method`.
+/// To get the message BOC - use `abi.encode_message` or prepare it any other way, for instance, with FIFT script.
 ///
 /// Attention! Updated account state is produces as well, but only
 /// `account_state.storage.state.data`  part of the BOC is updated.
@@ -387,7 +376,11 @@ pub async fn run_tvm(
         String::new()
     };
 
-    Ok(ResultOfRunTvm { out_messages, account, decoded })
+    Ok(ResultOfRunTvm {
+        out_messages,
+        account,
+        decoded,
+    })
 }
 
 async fn call_executor<F>(
@@ -420,7 +413,10 @@ where
                 let err = match contract_info().await {
                     Ok((address, balance)) => match &err.downcast_ref::<ExecutorError>() {
                         Some(ExecutorError::NoAcceptError(code, exit_arg)) => {
-                            let exit_arg = exit_arg.as_ref().map(serialize_item).transpose()?;
+                            let exit_arg = exit_arg
+                                .as_ref()
+                                .map(|item| serialize_item(item))
+                                .transpose()?;
                             Error::tvm_execution_failed(
                                 err_message,
                                 *code,

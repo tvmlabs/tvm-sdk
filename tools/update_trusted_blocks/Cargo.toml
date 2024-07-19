@@ -16,3 +16,4 @@ serde_json.workspace = true
 tokio = { workspace = true, features = ["sync", "fs"] }
 #
 tvm_client = { path = "../../tvm_client" }
+tvm_block.workspace = true

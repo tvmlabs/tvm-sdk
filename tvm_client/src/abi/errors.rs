@@ -1,6 +1,5 @@
-use std::fmt::Display;
-
 use crate::error::ClientError;
+use std::fmt::Display;
 
 #[derive(ApiType)]
 pub enum ErrorCode {
@@ -30,11 +29,14 @@ fn error(code: ErrorCode, message: String) -> ClientError {
 
 impl Error {
     pub fn invalid_abi<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidAbi, format!("Invalid ABI specified: {}", err))
+        error(
+            ErrorCode::InvalidAbi,
+            format!("Invalid ABI specified: {}", err),
+        )
     }
 
     pub fn invalid_signer(message: String) -> ClientError {
-        error(ErrorCode::InvalidSigner, message)
+        error(ErrorCode::InvalidSigner, message.into())
     }
 
     pub fn required_address_missing_for_encode_message() -> ClientError {
@@ -63,7 +65,10 @@ impl Error {
     }
 
     pub fn invalid_message_for_decode<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidMessage, format!("Message can't be decoded: {}", err))
+        error(
+            ErrorCode::InvalidMessage,
+            format!("Message can't be decoded: {}", err),
+        )
     }
 
     pub fn encode_deploy_message_failed<E: Display>(err: E) -> ClientError {
@@ -74,8 +79,11 @@ impl Error {
     }
 
     pub fn encode_run_message_failed<E: Display>(err: E, function: Option<&str>) -> ClientError {
-        error(ErrorCode::EncodeRunMessageFailed, format!("Create run message failed: {}", err))
-            .add_function(function)
+        error(
+            ErrorCode::EncodeRunMessageFailed,
+            format!("Create run message failed: {}", err),
+        )
+        .add_function(function)
     }
 
     pub fn attach_signature_failed<E: Display>(err: E) -> ClientError {
@@ -86,19 +94,31 @@ impl Error {
     }
 
     pub fn invalid_tvc_image<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidTvcImage, format!("Invalid TVC image: {}", err))
+        error(
+            ErrorCode::InvalidTvcImage,
+            format!("Invalid TVC image: {}", err),
+        )
     }
 
     pub fn invalid_function_id<E: Display>(func_id: &str, err: E) -> ClientError {
-        error(ErrorCode::InvalidFunctionId, format!("Invalid function {}: {}", func_id, err))
+        error(
+            ErrorCode::InvalidFunctionId,
+            format!("Invalid function {}: {}", func_id, err),
+        )
     }
 
     pub fn invalid_data_for_decode<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidData, format!("Data can't be decoded: {}", err))
+        error(
+            ErrorCode::InvalidData,
+            format!("Data can't be decoded: {}", err),
+        )
     }
 
     pub fn encode_init_data_failed<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::EncodeInitialDataFailed, format!("Encode initial data failed: {}", err))
+        error(
+            ErrorCode::EncodeInitialDataFailed,
+            format!("Encode initial data failed: {}", err),
+        )
     }
 
     pub fn invalid_function_name(func_name: &str) -> ClientError {
@@ -108,15 +128,13 @@ impl Error {
         )
     }
 
-    pub fn initial_pubkey_not_supported(
-        abi_version: &tvm_abi::contract::AbiVersion,
-    ) -> ClientError {
+    pub fn initial_pubkey_not_supported(abi_version: &tvm_abi::contract::AbiVersion) -> ClientError {
         error(
             ErrorCode::PubKeyNotSupported,
             format!(
                 "Your contract ABI version is {}. You must specify initial public key in 'initial_data' (see ABI specification).",
                 abi_version
-            ),
+            )
         )
     }
 }

@@ -1,19 +1,13 @@
-use std::sync::Arc;
-
 use crate::abi::ParamsOfEncodeMessage;
 use crate::client::ClientContext;
-use crate::error::AddNetworkUrl;
-use crate::error::ClientResult;
+use crate::error::{AddNetworkUrl, ClientResult};
 use crate::processing::internal::can_retry_expired_message;
-use crate::processing::send_message;
-use crate::processing::wait_for_transaction;
-use crate::processing::ErrorCode;
-use crate::processing::ParamsOfSendMessage;
-use crate::processing::ParamsOfWaitForTransaction;
-use crate::processing::ProcessingEvent;
-use crate::processing::ResultOfProcessMessage;
-use crate::processing::ResultOfSendMessage;
+use crate::processing::{
+    send_message, wait_for_transaction, ErrorCode, ParamsOfSendMessage, ParamsOfWaitForTransaction,
+    ProcessingEvent, ResultOfProcessMessage, ResultOfSendMessage,
+};
 use crate::tvm::StdContractError;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
 pub struct ParamsOfProcessMessage {
@@ -38,10 +32,14 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
         // Encode message
         let mut encode_params = params.message_encode_params.clone();
         encode_params.processing_try_index = Some(try_index);
-        let message = crate::abi::encode_message(context.clone(), encode_params).await?;
+        let message = crate::abi::encode_message(context.clone(), encode_params)
+            .await?;
 
         // Send
-        let ResultOfSendMessage { shard_block_id, sending_endpoints } = send_message(
+        let ResultOfSendMessage {
+            shard_block_id,
+            sending_endpoints,
+        } = send_message(
             context.clone(),
             ParamsOfSendMessage {
                 message: message.message.clone(),
@@ -90,9 +88,8 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
                         message_id: message.message_id,
                         message_dst: message.address,
                         message: message.message,
-                        error: err,
-                    })
-                    .await;
+                        error: err
+                    }).await;
                 }
                 // Waiting is failed but we can retry
             }

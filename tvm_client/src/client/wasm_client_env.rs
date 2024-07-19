@@ -1,45 +1,29 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
-use std::collections::HashMap;
-use std::future::IntoFuture;
-
-use futures::Future;
-use futures::FutureExt;
-use futures::SinkExt;
-use futures::StreamExt;
-use indexed_db_futures::request::IdbOpenDbRequestLike;
-use indexed_db_futures::IdbDatabase;
-use indexed_db_futures::IdbQuerySource;
-use indexed_db_futures::IdbVersionChangeEvent;
-use js_sys::JSON;
-use tvm_block::base64_decode;
-use tvm_block::base64_encode;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::JsFuture;
-use web_sys::Event;
-use web_sys::IdbTransactionMode;
-use web_sys::MessageEvent;
-use web_sys::Request;
-use web_sys::RequestInit;
-use web_sys::Response;
-use web_sys::Window;
-
-use super::Error;
-use super::FetchMethod;
-use super::FetchResult;
-use super::WebSocket;
-use crate::client::storage::KeyValueStorage;
+use super::{Error, FetchMethod, FetchResult, WebSocket};
 use crate::client::LOCAL_STORAGE_DEFAULT_DIR_NAME;
+use crate::client::storage::KeyValueStorage;
 use crate::error::ClientResult;
+use futures::{Future, FutureExt, SinkExt, StreamExt};
+use indexed_db_futures::{IdbDatabase, IdbQuerySource, IdbVersionChangeEvent};
+use indexed_db_futures::request::IdbOpenDbRequestLike;
+use std::collections::HashMap;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{Event, MessageEvent, Request, RequestInit, Response, Window, IdbTransactionMode};
+use js_sys::JSON;
 
 #[cfg(test)]
 #[path = "client_env_tests.rs"]
@@ -65,11 +49,10 @@ fn js_value_to_string(js_value: &JsValue) -> ClientResult<String> {
     }
 }
 
-// web-sys and wasm-bindgen types are not `Send` so we cannot use them directly
-// in async functions which are registered in dispatcher: registration requires
-// `Future` returned by the function to be `Send`, but using not `Send` types
-// inside prevents it. So we have to process functions in another task, which
-// encapsulates work with non-`Send` types
+// web-sys and wasm-bindgen types are not `Send` so we cannot use them directly in async
+// functions which are registered in dispatcher: registration requires `Future` returned
+// by the function to be `Send`, but using not `Send` types inside prevents it. So we have
+// to process functions in another task, which encapsulates work with non-`Send` types
 async fn execute_spawned<R, Fut, F>(func: F) -> ClientResult<R>
 where
     R: 'static,
@@ -82,10 +65,12 @@ where
         let _ = sender.send(func().await);
     });
 
-    receiver.await.map_err(|err| Error::can_not_receive_spawned_result(err))
+    receiver
+        .await
+        .map_err(|err| Error::can_not_receive_spawned_result(err))
 }
 
-struct Timer {
+struct Timer{
     window: Window,
     timer_id: Option<i32>,
     // keep closure to fix memory leak
@@ -93,7 +78,7 @@ struct Timer {
 }
 
 impl Timer {
-    pub fn new(timeout_ms: u64) -> ClientResult<(Self, impl Future<Output = ClientResult<()>>)> {
+    pub fn new(timeout_ms: u64) -> ClientResult<(Self, impl Future<Output=ClientResult<()>>)> {
         let window =
             web_sys::window().ok_or_else(|| Error::set_timer_error("Can not get `window`"))?;
 
@@ -110,9 +95,13 @@ impl Timer {
             .map_err(|_| Error::set_timer_error("Can not set timer"))?;
 
         Ok((
-            Self { window, timer_id: Some(timer_id), _on_timer: on_timer },
+            Self {
+                window,
+                timer_id: Some(timer_id),
+                _on_timer: on_timer,
+            },
             receiver
-                .map(|val| val.map_err(|_| Error::set_timer_error("Can not receive timer result"))),
+                .map(|val| val.map_err(|_| Error::set_timer_error("Can not receive timer result")))
         ))
     }
 
@@ -224,8 +213,7 @@ impl ClientEnv {
         ws.set_onerror(Some(onerror_callback.as_ref().unchecked_ref()));
         onerror_callback.forget();
 
-        // sending messages in another task to encapsulate non-`Send` `WebSocket`
-        // instance there
+        // sending messages in another task to encapsulate non-`Send` `WebSocket` instance there
         let (send_sink, mut send_stream) = futures::channel::mpsc::channel::<(
             String,
             tokio::sync::oneshot::Sender<ClientResult<()>>,
@@ -246,9 +234,8 @@ impl ClientEnv {
             log::trace!("End websocket sending loop");
         });
 
-        // to check result of sending message to websocket we send string via channel to
-        // spawned sending task and then wait for the result from oneshot
-        // channel
+        // to check result of sending message to websocket we send string via channel to spawned
+        // sending task and then wait for the result from oneshot channel
         let send_sink = futures::sink::drain()
             .sink_map_err(|err| Error::websocket_send_error(err))
             .with(move |string: String| {
@@ -272,7 +259,10 @@ impl ClientEnv {
                 }
             });
 
-        Ok(WebSocket { receiver: Box::pin(on_message_stream), sender: Box::pin(send_sink) })
+        Ok(WebSocket {
+            receiver: Box::pin(on_message_stream),
+            sender: Box::pin(send_sink),
+        })
     }
 
     /// Executes http request
@@ -305,20 +295,20 @@ impl ClientEnv {
         let window = web_sys::window()
             .ok_or_else(|| Error::http_request_create_error("Can not get `window`"))?;
 
-        let mut resp_future =
-            JsFuture::from(window.fetch_with_request(&request)).map(|result| match result {
+        let mut resp_future = JsFuture::from(window.fetch_with_request(&request))
+            .map(|result| match result {
                 Ok(result) => Ok(result),
                 Err(err) => Err(Error::http_request_send_error(js_error_to_string(err))),
             });
 
         let resp_result = futures::select!(
-            result = resp_future => result,
-            timer = Self::set_timer_internal(timeout_ms as u64).fuse() => {
-                Err(timer
-                    .err()
-                    .unwrap_or(Error::http_request_send_error("fetch operation timeout")))
-            }
-        );
+                result = resp_future => result,
+                timer = Self::set_timer_internal(timeout_ms as u64).fuse() => {
+                    Err(timer
+                        .err()
+                        .unwrap_or(Error::http_request_send_error("fetch operation timeout")))
+                }
+            );
 
         let response: Response = resp_result?.dyn_into().map_err(|_| {
             Error::http_request_parse_error("Can not cast response to `Response` struct")
@@ -401,29 +391,33 @@ impl LocalStorage {
         local_storage_path: Option<String>,
         storage_name: String,
     ) -> ClientResult<Self> {
-        Ok(Self { local_storage_path, storage_name })
+        Ok(Self {
+            local_storage_path,
+            storage_name,
+        })
     }
 
     async fn open_db(
         local_storage_path: &Option<String>,
         storage_name: &str,
     ) -> ClientResult<IdbDatabase> {
-        let db_name = local_storage_path.as_deref().unwrap_or(LOCAL_STORAGE_DEFAULT_DIR_NAME);
+        let db_name = local_storage_path
+            .as_deref()
+            .unwrap_or(LOCAL_STORAGE_DEFAULT_DIR_NAME);
 
-        let mut db_request =
-            IdbDatabase::open(db_name).map_err(|err| Error::local_storage_error(err.message()))?;
+        let mut db_request = IdbDatabase::open(db_name)
+            .map_err(|err| Error::local_storage_error(err.message()))?;
 
         let storage_name = storage_name.to_owned();
-        db_request.set_on_upgrade_needed(Some(
-            move |event: &IdbVersionChangeEvent| -> Result<(), JsValue> {
-                if event.db().object_store_names().find(|name| *name == storage_name).is_none() {
-                    event.db().create_object_store(&storage_name)?;
-                }
-                Ok(())
-            },
-        ));
+        db_request.set_on_upgrade_needed(Some(move |event: &IdbVersionChangeEvent| -> Result<(), JsValue> {
+            if event.db().object_store_names().find(|name| *name == storage_name).is_none() {
+                event.db().create_object_store(&storage_name)?;
+            }
+            Ok(())
+        }));
 
-        db_request.into_future().await.map_err(|err| Error::local_storage_error(err.message()))
+        db_request.into_future().await
+            .map_err(|err| Error::local_storage_error(err.message()))
     }
 
     async fn read_bin(
@@ -431,9 +425,8 @@ impl LocalStorage {
         storage_name: &str,
         key: &str,
     ) -> ClientResult<Option<Vec<u8>>> {
-        Ok(Self::read_str(local_storage_path, storage_name, key)
-            .await?
-            .map(|content_base64| base64_decode(&content_base64))
+        Ok(Self::read_str(local_storage_path, storage_name, key).await?
+            .map(|content_base64| tvm_block::base64_decode(&content_base64))
             .transpose()
             .map_err(|err| Error::local_storage_error(err))?)
     }
@@ -444,7 +437,7 @@ impl LocalStorage {
         key: &str,
         value: &[u8],
     ) -> ClientResult<()> {
-        Self::write_str(local_storage_path, storage_name, key, &base64_encode(value)).await
+        Self::write_str(local_storage_path, storage_name, key, &tvm_block::base64_encode(value)).await
     }
 
     async fn read_str(
@@ -454,16 +447,13 @@ impl LocalStorage {
     ) -> ClientResult<Option<String>> {
         let db = Self::open_db(local_storage_path, storage_name).await?;
 
-        let tx = db
-            .transaction_on_one_with_mode(storage_name, IdbTransactionMode::Readonly)
+        let tx = db.transaction_on_one_with_mode(storage_name, IdbTransactionMode::Readonly)
             .map_err(|err| Error::local_storage_error(err.message()))?;
 
-        let store = tx
-            .object_store(storage_name)
+        let store = tx.object_store(storage_name)
             .map_err(|err| Error::local_storage_error(err.message()))?;
 
-        store
-            .get(&JsValue::from_str(key))
+        store.get(&JsValue::from_str(key))
             .map_err(|err| Error::local_storage_error(err.message()))?
             .await
             .map_err(|err| Error::local_storage_error(err.message()))?
@@ -479,16 +469,33 @@ impl LocalStorage {
     ) -> ClientResult<()> {
         let db = Self::open_db(local_storage_path, storage_name).await?;
 
-        let tx = db
-            .transaction_on_one_with_mode(storage_name, IdbTransactionMode::Readwrite)
+        let tx = db.transaction_on_one_with_mode(storage_name, IdbTransactionMode::Readwrite)
             .map_err(|err| Error::local_storage_error(err.message()))?;
 
-        let store = tx
-            .object_store(storage_name)
+        let store = tx.object_store(storage_name)
             .map_err(|err| Error::local_storage_error(err.message()))?;
 
-        store
-            .put_key_val(&JsValue::from_str(key), &JsValue::from_str(value))
+        store.put_key_val(&JsValue::from_str(key), &JsValue::from_str(value))
+            .map_err(|err| Error::local_storage_error(err.message()))?
+            .into_future()
+            .await
+            .map_err(|err| Error::local_storage_error(err.message()))
+    }
+
+    async fn remove_internal(
+        local_storage_path: &Option<String>,
+        storage_name: &str,
+        key: &str,
+    ) -> ClientResult<()> {
+        let db = Self::open_db(local_storage_path, storage_name).await?;
+
+        let tx = db.transaction_on_one_with_mode(storage_name, IdbTransactionMode::Readwrite)
+            .map_err(|err| Error::local_storage_error(err.message()))?;
+
+        let store = tx.object_store(storage_name)
+            .map_err(|err| Error::local_storage_error(err.message()))?;
+
+        store.delete(&JsValue::from_str(key))
             .map_err(|err| Error::local_storage_error(err.message()))?
             .into_future()
             .await
@@ -502,10 +509,11 @@ impl KeyValueStorage for LocalStorage {
         let local_storage_path = self.local_storage_path.clone();
         let storage_name = self.storage_name.clone();
         let key = key.to_owned();
-        execute_spawned(move || async move {
-            Self::read_bin(&local_storage_path, &storage_name, &key).await
-        })
-        .await?
+        execute_spawned(
+            move || async move {
+                Self::read_bin(&local_storage_path, &storage_name, &key).await
+            }
+        ).await?
     }
 
     async fn put_bin(&self, key: &str, value: &[u8]) -> ClientResult<()> {
@@ -513,20 +521,22 @@ impl KeyValueStorage for LocalStorage {
         let storage_name = self.storage_name.clone();
         let key = key.to_owned();
         let value = value.to_owned();
-        execute_spawned(move || async move {
-            Self::write_bin(&local_storage_path, &storage_name, &key, &value).await
-        })
-        .await?
+        execute_spawned(
+            move || async move {
+                Self::write_bin(&local_storage_path, &storage_name, &key, &value).await
+            }
+        ).await?
     }
 
     async fn get_str(&self, key: &str) -> ClientResult<Option<String>> {
         let local_storage_path = self.local_storage_path.clone();
         let storage_name = self.storage_name.clone();
         let key = key.to_owned();
-        execute_spawned(move || async move {
-            Self::read_str(&local_storage_path, &storage_name, &key).await
-        })
-        .await?
+        execute_spawned(
+            move || async move {
+                Self::read_str(&local_storage_path, &storage_name, &key).await
+            }
+        ).await?
     }
 
     async fn put_str(&self, key: &str, value: &str) -> ClientResult<()> {
@@ -534,9 +544,22 @@ impl KeyValueStorage for LocalStorage {
         let storage_name = self.storage_name.clone();
         let key = key.to_owned();
         let value = value.to_owned();
-        execute_spawned(move || async move {
-            Self::write_str(&local_storage_path, &storage_name, &key, &value).await
-        })
-        .await?
+        execute_spawned(
+            move || async move {
+                Self::write_str(&local_storage_path, &storage_name, &key, &value).await
+            }
+        ).await?
+    }
+
+    async fn remove(&self, key: &str) -> ClientResult<()> {
+        let local_storage_path = self.local_storage_path.clone();
+        let storage_name = self.storage_name.clone();
+        let key = key.to_owned();
+        execute_spawned(
+            move || async move {
+                Self::remove_internal(&local_storage_path, &storage_name, &key).await
+            }
+        ).await?
     }
 }
+

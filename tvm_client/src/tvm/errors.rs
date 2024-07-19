@@ -1,26 +1,22 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-
-use std::fmt::Display;
-
-use serde_json::Value;
-use thiserror::Error;
-use tvm_block::AccStatusChange;
-use tvm_block::ComputeSkipReason;
-use tvm_block::MsgAddressInt;
-use tvm_block::Cell;
-use tvm_block::ExceptionCode;
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
 use crate::boc::internal::deserialize_cell_from_base64;
 use crate::error::ClientError;
+use serde_json::Value;
+use std::fmt::Display;
+use tvm_block::{AccStatusChange, ComputeSkipReason, MsgAddressInt};
+use tvm_block::{Cell, ExceptionCode};
 
 #[derive(ApiType)]
 pub enum ErrorCode {
@@ -53,13 +49,17 @@ impl Error {
             format!("Invalid JSON value for stack item ({}): {}", stack, err),
         )
     }
-
     pub fn invalid_account_boc<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidAccountBoc, format!("Invalid account BOC: {}", err))
+        error(
+            ErrorCode::InvalidAccountBoc,
+            format!("Invalid account BOC: {}", err),
+        )
     }
-
     pub fn can_not_read_transaction<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::CanNotReadTransaction, format!("Can not read transaction: {}", err))
+        error(
+            ErrorCode::CanNotReadTransaction,
+            format!("Can not read transaction: {}", err),
+        )
     }
 
     pub fn can_not_read_blockchain_config<E: Display>(err: E) -> ClientError {
@@ -69,36 +69,12 @@ impl Error {
         )
     }
 
-    pub fn can_not_read_blockchain_config_from_file<E: Display>(err: E) -> ClientError {
-        error(
-            ErrorCode::CanNotReadBlockchainConfig,
-            format!("Can not read blockchain config from file: {}", err),
-        )
-    }
-
-    pub fn json_deserialization_failed<E: Display>(err: E) -> ClientError {
-        error(
-            ErrorCode::CanNotReadBlockchainConfig,
-            format!("Deserialization blockchain config was failed: {}", err),
-        )
-    }
-
-    pub fn can_not_parse_config<E: Display>(err: E) -> ClientError {
-        error(
-            ErrorCode::CanNotReadBlockchainConfig,
-            format!("Can not parse blockchain config: {}", err),
-        )
-    }
-
-    pub fn can_not_convert_config<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::CanNotReadBlockchainConfig, format!("Can not convert config: {}", err))
-    }
-
     pub fn transaction_aborted() -> ClientError {
-        error(
+        let error = error(
             ErrorCode::TransactionAborted,
             "Transaction was aborted by unknown reason".to_string(),
-        )
+        );
+        error
     }
 
     pub fn tvm_execution_skipped(
@@ -140,25 +116,27 @@ impl Error {
         );
 
         if show_tips && !error.message.to_lowercase().contains("exit code") {
-            error.message.push_str(&format!(", exit code: {}", exit_code));
+            error
+                .message
+                .push_str(&format!(", exit code: {}", exit_code));
 
             let tip = match exit_code {
                 0 => Some(
                     "You either forgot to add tvm.accept() into the contract's method, or try to \
-                    run a get method on-chain (and it fails because it does not have tvm.accept()).",
+                    run a get method on-chain (and it fails because it does not have tvm.accept())."
                 ),
 
                 40 => Some(
                     "Check that:\n\
                     1. you specified 'Pragma AbiHeader pubkey' in the contract code;\n\
-                    2. your private key suits your public key.",
+                    2. your private key suits your public key."
                 ),
 
                 52 => Some(
                     "If this error occurs in 100% cases then you specified the wrong ABI. \
                     If it appears occasionally then the contract supports timestamp-based replay \
                     protection and does not allow to call it so often (call it with 5 seconds \
-                    timeout).",
+                    timeout)."
                 ),
 
                 _ => None,
@@ -197,7 +175,9 @@ impl Error {
             }
         } else if let Some(ref exit_arg) = exit_arg {
             if let Some(error_message) = Self::read_error_message(exit_arg) {
-                error.message.push_str(&format!(", contract error: \"{}\"", error_message));
+                error
+                    .message
+                    .push_str(&format!(", contract error: \"{}\"", error_message));
                 error.data["contract_error"] = error_message.into();
             }
         }
@@ -271,7 +251,10 @@ impl Error {
     }
 
     pub fn account_is_suspended(address: &MsgAddressInt) -> ClientError {
-        let mut error = error(ErrorCode::AccountIsSuspended, "Account is suspended.".to_owned());
+        let mut error = error(
+            ErrorCode::AccountIsSuspended,
+            "Account is suspended.".to_owned(),
+        );
 
         error.data = serde_json::json!({
             "account_address": address.to_string(),
@@ -329,7 +312,10 @@ impl Error {
     }
 
     pub fn internal_error<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InternalError, format!("TVM internal error: {}", err))
+        error(
+            ErrorCode::InternalError,
+            format!("TVM internal error: {}", err),
+        )
     }
 
     fn read_error_message(exit_arg: &Value) -> Option<String> {
@@ -362,7 +348,9 @@ impl Error {
             None => return None,
         };
 
-        deserialize_cell_from_base64(base64_value, "contract_error").map(|(_bytes, cell)| cell).ok()
+        deserialize_cell_from_base64(&base64_value, "contract_error")
+            .map(|(_bytes, cell)| cell)
+            .ok()
     }
 
     fn load_boc_data(cell: &Cell) -> Vec<u8> {
@@ -376,7 +364,7 @@ impl Error {
     }
 }
 
-#[derive(Clone, Copy, Debug, num_derive::FromPrimitive, PartialEq, Error)]
+#[derive(Clone, Copy, Debug, num_derive::FromPrimitive, PartialEq, thiserror::Error)]
 pub enum StdContractError {
     #[error("Invalid signature")]
     InvalidSignature = 40,
@@ -461,6 +449,10 @@ impl StdContractError {
             StdContractError::NoKeyInData => "Contract is probably deployed incorrectly",
             _ => "",
         };
-        if !tip.is_empty() { Some(tip) } else { None }
+        if tip.len() > 0 {
+            Some(tip)
+        } else {
+            None
+        }
     }
 }

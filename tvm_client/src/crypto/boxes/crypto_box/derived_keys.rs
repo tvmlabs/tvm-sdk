@@ -1,10 +1,8 @@
-use std::sync::Arc;
-use std::sync::RwLock;
-
 use crate::client::ClientEnv;
 use crate::crypto;
 use crate::crypto::internal::SecretBuf;
 use crate::error::ClientResult;
+use std::sync::{Arc, RwLock};
 
 struct SecretHash(u64);
 
@@ -34,7 +32,7 @@ impl DerivedKey {
         let scrypt_params = scrypt::Params::new(14, 8, 1).expect("Scrypt params setup failed");
         let mut key = SecretBuf(vec![0; 32]);
         scrypt::scrypt(password, salt.as_bytes(), &scrypt_params, &mut key.0)
-            .map_err(crypto::Error::scrypt_failed)?;
+            .map_err(|err| crypto::Error::scrypt_failed(err))?;
         Ok(key)
     }
 }
@@ -55,8 +53,7 @@ impl DerivedKeysCache {
         None
     }
 
-    // Ensure that key is present in cache and returns `true` if the clean timer
-    // must be started
+    // Ensure that key is present in cache and returns `true` if the clean timer must be started
     fn put_and_check_start_timer(
         &mut self,
         hash: &SecretHash,
@@ -97,7 +94,10 @@ impl DerivedKeys {
     pub(crate) fn new(env: Arc<ClientEnv>) -> Self {
         Self {
             env: env.clone(),
-            cache: Arc::new(RwLock::new(DerivedKeysCache { keys: Vec::new(), env })),
+            cache: Arc::new(RwLock::new(DerivedKeysCache {
+                keys: Vec::new(),
+                env,
+            })),
         }
     }
 
@@ -125,19 +125,14 @@ impl DerivedKeys {
     }
 
     fn touch(&self, hash: &SecretHash) -> Option<SecretBuf> {
-        self.cache.write().unwrap().touch(hash).cloned()
+        self.cache.write().unwrap().touch(&hash).map(|x| x.clone())
     }
 
     fn clean_and_check_stop_timer(&self) -> bool {
         self.cache.write().unwrap().clean_and_check_stop_timer()
     }
 
-    fn put_and_check_start_timer(
-        &self,
-        hash: &SecretHash,
-        key: &SecretBuf,
-        calculation_time: u64,
-    ) -> bool {
-        self.cache.write().unwrap().put_and_check_start_timer(hash, key, calculation_time)
+    fn put_and_check_start_timer(&self, hash: &SecretHash, key: &SecretBuf, calculation_time: u64) -> bool {
+        self.cache.write().unwrap().put_and_check_start_timer(&hash, &key, calculation_time)
     }
 }

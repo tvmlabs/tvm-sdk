@@ -1,33 +1,32 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
-use std::fmt::Display;
-use std::fmt::Formatter;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use std::time::Duration;
 
-use chrono::DateTime;
-use chrono::Utc;
-use serde_json::Map;
-use serde_json::Value;
-use tvm_block::Block;
-use tvm_block::Message;
-use tvm_block::Transaction;
-use tvm_block_json::BlockSerializationSet;
-use tvm_block_json::MessageSerializationSet;
-use tvm_block_json::TransactionSerializationSet;
-use tvm_block::Result;
-use tvm_block::UInt256;
+use chrono::{DateTime, Utc};
+use serde_json::{Map, Value};
+use tvm_block::{Block, Message, Transaction};
+use tvm_block_json::{BlockSerializationSet, MessageSerializationSet, TransactionSerializationSet};
+use tvm_block::{Result, UInt256};
 
 use crate::error::ClientResult;
 use crate::proofs::errors::Error;
 
 lazy_static! {
-    static ref BLOCK_IGNORE_FIELDS: HashSet<&'static str> =
-        IntoIterator::into_iter(["chain_order", "gen_software_capabilities",]).collect();
-    static ref TRANSACTION_IGNORE_FIELDS: HashSet<&'static str> =
-        IntoIterator::into_iter(["chain_order",]).collect();
-    static ref MESSAGE_IGNORE_FIELDS: HashSet<&'static str> =
-        IntoIterator::into_iter(["chain_order",]).collect();
+    static ref BLOCK_IGNORE_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
+        "chain_order",
+        "gen_software_capabilities",
+    ]).collect();
+
+    static ref TRANSACTION_IGNORE_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
+        "chain_order",
+    ]).collect();
+
+    static ref MESSAGE_IGNORE_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
+        "chain_order",
+    ]).collect();
+
     static ref BLOCK_NUMERIC_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
         "account_blocks.transactions.lt",
         "account_blocks.transactions.total_fees",
@@ -135,8 +134,8 @@ lazy_static! {
         "value_flow.minted_other.value",
         "value_flow.to_next_blk",
         "value_flow.to_next_blk_other.value",
-    ])
-    .collect();
+    ]).collect();
+
     static ref TRANSACTION_NUMERIC_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
         "action.total_action_fees",
         "action.total_fwd_fees",
@@ -158,8 +157,8 @@ lazy_static! {
         "storage.storage_fees_due",
         "total_fees",
         "total_fees_other.value",
-    ])
-    .collect();
+    ]).collect();
+
     static ref MESSAGE_NUMERIC_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
         "created_lt",
         "fwd_fee",
@@ -167,8 +166,8 @@ lazy_static! {
         "import_fee",
         "value",
         "value_other.value",
-    ])
-    .collect();
+    ]).collect();
+
     static ref BLOCKS_UNIX_TIME_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
         "gen_utime",
         "master.config.p18.utime_since",
@@ -187,12 +186,15 @@ lazy_static! {
         "master.max_shard_gen_utime",
         "master.min_shard_gen_utime",
         "master.shard_hashes.descr.gen_utime",
-    ])
-    .collect();
-    static ref TRANSACTIONS_UNIX_TIME_FIELDS: HashSet<&'static str> =
-        IntoIterator::into_iter(["now",]).collect();
-    static ref MESSAGES_UNIX_TIME_FIELDS: HashSet<&'static str> =
-        IntoIterator::into_iter(["created_at",]).collect();
+    ]).collect();
+
+    static ref TRANSACTIONS_UNIX_TIME_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
+        "now",
+    ]).collect();
+
+    static ref MESSAGES_UNIX_TIME_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([
+        "created_at",
+    ]).collect();
 }
 
 pub(crate) enum JsonPath<'a, 'b> {
@@ -217,14 +219,16 @@ impl<'a, 'b> JsonPath<'a, 'b> {
     fn gen_flat_str(&self) -> String {
         match self {
             JsonPath::InitialEntity(_) => String::new(),
-            JsonPath::Field { parent, field_name } => {
+            JsonPath::Field { parent, field_name} => {
                 if let JsonPath::InitialEntity(_) = parent {
                     field_name.to_string()
                 } else {
                     format!("{}.{}", parent.gen_flat_str(), field_name)
                 }
             }
-            JsonPath::Index { parent, .. } => parent.gen_flat_str(),
+            JsonPath::Index { parent, .. } => {
+                parent.gen_flat_str()
+            }
         }
     }
 
@@ -232,7 +236,7 @@ impl<'a, 'b> JsonPath<'a, 'b> {
         match self {
             JsonPath::InitialEntity(name) => name.to_string(),
             JsonPath::Field { parent, field_name } => format!("{}.{}", parent, field_name),
-            JsonPath::Index { parent, index } => format!("{}[{}]", parent, index),
+            JsonPath::Index { parent, index} => format!("{}[{}]", parent, index),
         }
     }
 }
@@ -254,15 +258,18 @@ pub(crate) fn compare_values(
         (Value::Null, Value::Null) => return Ok(()),
         (Value::Null, _) => return Ok(()),
 
-        (Value::Bool(_), Value::Bool(_)) | (Value::Number(_), Value::Number(_)) => {
+        (Value::Bool(_), Value::Bool(_))
+            | (Value::Number(_), Value::Number(_))
+        => {
             if actual == expected {
                 return Ok(());
             }
         }
 
         (Value::Number(_), Value::String(_))
-        | (Value::String(_), Value::Number(_))
-        | (Value::String(_), Value::String(_)) => {
+            | (Value::String(_), Value::Number(_))
+            | (Value::String(_), Value::String(_))
+        => {
             let is_numeric = numeric_fields.contains(path.gen_flat_str().as_str());
 
             if !is_numeric && actual.is_string() && expected.is_string() {
@@ -276,23 +283,23 @@ pub(crate) fn compare_values(
             }
         }
 
-        (Value::Array(vec_actual), Value::Array(vec_expected)) => {
-            return compare_vectors(vec_actual, vec_expected, path, ignore_fields, numeric_fields);
-        }
+        (Value::Array(vec_actual), Value::Array(vec_expected)) =>
+            return compare_vectors(vec_actual, vec_expected, path, ignore_fields, numeric_fields),
 
-        (Value::Object(map_actual), Value::Object(map_expected)) => {
-            return compare_maps(map_actual, map_expected, path, ignore_fields, numeric_fields);
-        }
+        (Value::Object(map_actual), Value::Object(map_expected)) =>
+            return compare_maps(map_actual, map_expected, path, ignore_fields, numeric_fields),
 
         _ => (),
     }
 
-    Err(Error::data_differs_from_proven(format!(
-        "field `{path}`: expected {expected:?}, actual {actual:?}",
-        path = path,
-        actual = actual,
-        expected = expected,
-    )))
+    Err(Error::data_differs_from_proven(
+        format!(
+            "field `{path}`: expected {expected:?}, actual {actual:?}",
+            path = path,
+            actual = actual,
+            expected = expected,
+        )
+    ))
 }
 
 fn compare_maps(
@@ -302,9 +309,10 @@ fn compare_maps(
     ignore_fields: &HashSet<&'static str>,
     numeric_fields: &HashSet<&'static str>,
 ) -> ClientResult<()> {
-    for key in map_actual
-        .keys()
-        .filter(|key| !ignore_fields.contains(path.join_field(key).gen_flat_str().as_str()))
+    for key in map_actual.keys()
+        .filter(
+            |key| !ignore_fields.contains(path.join_field(key).gen_flat_str().as_str())
+        )
     {
         compare_values(
             &map_actual[key],
@@ -326,12 +334,14 @@ fn compare_vectors(
     numeric_fields: &HashSet<&'static str>,
 ) -> ClientResult<()> {
     if vec_actual.len() != vec_expected.len() {
-        return Err(Error::data_differs_from_proven(format!(
-            "Field `{path}`: arrays has different lengths (expected {len_expected}, actual {len_actual})",
-            path = path,
-            len_actual = vec_actual.len(),
-            len_expected = vec_expected.len(),
-        )));
+        return Err(Error::data_differs_from_proven(
+            format!(
+                "Field `{path}`: arrays has different lengths (expected {len_expected}, actual {len_actual})",
+                path = path,
+                len_actual = vec_actual.len(),
+                len_expected = vec_expected.len(),
+            )
+        ));
     }
 
     for i in 0..vec_actual.len() {
@@ -367,11 +377,14 @@ fn get_string(value: &Value, is_numeric: bool) -> Cow<str> {
 
 fn unix_time_to_string(value: u64) -> String {
     DateTime::<Utc>::from(std::time::UNIX_EPOCH + Duration::from_secs(value))
-        .format("%Y-%m-%d %H:%M:%S%.3f")
-        .to_string()
+        .format("%Y-%m-%d %H:%M:%S%.3f").to_string()
 }
 
-fn add_time_strings(value: &mut Value, paths: &HashSet<&'static str>, path: JsonPath<'_, '_>) {
+fn add_time_strings(
+    value: &mut Value,
+    paths: &HashSet<&'static str>,
+    path: JsonPath<'_, '_>,
+) {
     match value {
         Value::Array(vec) => {
             for i in 0..vec.len() {
@@ -388,10 +401,10 @@ fn add_time_strings(value: &mut Value, paths: &HashSet<&'static str>, path: Json
                         if let Some(unix_time) = number.as_u64() {
                             unix_time
                         } else {
-                            continue;
+                            continue
                         }
                     }
-                    _ => continue,
+                    _ => continue
                 };
 
                 map.insert(format!("{}_string", key), unix_time_to_string(unix_time).into());
@@ -400,24 +413,31 @@ fn add_time_strings(value: &mut Value, paths: &HashSet<&'static str>, path: Json
                 add_time_strings(value, paths, path.join_field(key));
             }
         }
-        _ => (),
+        _ => return,
     }
 }
 
-pub(crate) fn serialize_block(id: UInt256, block: Block, boc: Vec<u8>) -> Result<Value> {
+pub(crate) fn serialize_block(
+    id: UInt256,
+    block: Block,
+    boc: Vec<u8>,
+) -> Result<Value> {
     let mut value = tvm_block_json::db_serialize_block_ex(
         "id",
         &BlockSerializationSet {
             block,
             id,
             status: tvm_block::BlockProcessingStatus::Finalized,
-            boc,
+            boc
         },
         tvm_block_json::SerializationMode::QServer,
-    )?
-    .into();
+    )?.into();
 
-    add_time_strings(&mut value, &BLOCKS_UNIX_TIME_FIELDS, JsonPath::new("blocks"));
+    add_time_strings(
+        &mut value,
+        &BLOCKS_UNIX_TIME_FIELDS,
+        JsonPath::new("blocks"),
+    );
 
     Ok(value)
 }
@@ -441,20 +461,20 @@ pub(crate) fn serialize_transaction(
             proof: None,
         },
         tvm_block_json::SerializationMode::QServer,
-    )?
-    .into();
+    )?.into();
 
-    add_time_strings(&mut value, &TRANSACTIONS_UNIX_TIME_FIELDS, JsonPath::new("transactions"));
+    add_time_strings(
+        &mut value,
+        &TRANSACTIONS_UNIX_TIME_FIELDS,
+        JsonPath::new("transactions"),
+    );
 
     // TODO: Remove when field is added to `ton-labs-block-json`:
     if let Some(map) = value["action"].as_object_mut() {
         if let Some(status_change) = map["status_change"].as_u64() {
             let statuses = ["Unchanged", "Frozen", "Deleted"];
             if status_change < statuses.len() as u64 {
-                map.insert(
-                    "status_change_name".to_string(),
-                    statuses[status_change as usize].into(),
-                );
+                map.insert("status_change_name".to_string(), statuses[status_change as usize].into());
             }
         }
     }
@@ -462,7 +482,11 @@ pub(crate) fn serialize_transaction(
     Ok(value)
 }
 
-pub(crate) fn serialize_message(id: UInt256, message: Message, boc: Vec<u8>) -> Result<Value> {
+pub(crate) fn serialize_message(
+    id: UInt256,
+    message: Message,
+    boc: Vec<u8>,
+) -> Result<Value> {
     let mut value = tvm_block_json::db_serialize_message_ex(
         "id",
         &MessageSerializationSet {
@@ -476,10 +500,13 @@ pub(crate) fn serialize_message(id: UInt256, message: Message, boc: Vec<u8>) -> 
             proof: None,
         },
         tvm_block_json::SerializationMode::QServer,
-    )?
-    .into();
+    )?.into();
 
-    add_time_strings(&mut value, &MESSAGES_UNIX_TIME_FIELDS, JsonPath::new("messages"));
+    add_time_strings(
+        &mut value,
+        &MESSAGES_UNIX_TIME_FIELDS,
+        JsonPath::new("messages"),
+    );
 
     Ok(value)
 }

@@ -1,29 +1,25 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
-use std::ffi::c_void;
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering;
-
+use crate::error::{ClientError, ClientResult};
+use crate::{
+    CResponseHandler, CResponseHandlerPtr, ResponseHandler, ResponseHandlerPtr, ResponseType,
+    StringData,
+};
 use serde::Serialize;
-
-use crate::error::ClientError;
-use crate::error::ClientResult;
-use crate::CResponseHandler;
-use crate::CResponseHandlerPtr;
-use crate::ResponseHandler;
-use crate::ResponseHandlerPtr;
-use crate::ResponseType;
-use crate::StringData;
+use std::ffi::c_void;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 enum ResponseHandlerImpl {
     Rust(u32, ResponseHandler),
@@ -115,7 +111,7 @@ impl Request {
         if finished {
             self.finished.store(finished, Ordering::Relaxed);
         }
-        false
+        return false;
     }
 
     fn call_response_handler(&self, params_json: String, response_type: u32, finished: bool) {

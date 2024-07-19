@@ -1,36 +1,33 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-
-use bip39::Language;
-use bip39::Mnemonic;
-use bip39::MnemonicType;
-use ed25519_dalek::SigningKey;
-use rand::RngCore;
-use serde_repr::Deserialize_repr;
-use serde_repr::Serialize_repr;
-use zeroize::Zeroize;
-use zeroize::ZeroizeOnDrop;
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
 use crate::client::ClientContext;
 use crate::crypto;
-use crate::crypto::default_hdkey_compliant;
 use crate::crypto::hdkey::HDPrivateKey;
-use crate::crypto::internal::hex_decode_secret;
-use crate::crypto::internal::hmac_sha512;
-use crate::crypto::internal::key256;
-use crate::crypto::internal::pbkdf2_hmac_sha512;
+use crate::crypto::internal::{hex_decode_secret, hmac_sha512, key256, pbkdf2_hmac_sha512};
 use crate::crypto::keys::KeyPair;
-use crate::crypto::CryptoConfig;
-use crate::error::ClientError;
-use crate::error::ClientResult;
+use crate::crypto::{default_hdkey_compliant, CryptoConfig};
+use crate::error::{ClientError, ClientResult};
+use bip39::{Language, Mnemonic, MnemonicType};
+use ed25519_dalek::SigningKey;
+use hmac::Hmac;
+use pbkdf2::pbkdf2;
+use rand::RngCore;
+use serde_repr::{Deserialize_repr, Serialize_repr};
+use sha2::Sha512;
+use std::convert::TryFrom;
+use zeroize::{Zeroize, ZeroizeOnDrop};
+
 
 #[derive(Copy, Clone, Debug, Deserialize_repr, Serialize_repr, Zeroize, PartialEq, ApiType)]
 #[repr(u8)]
@@ -190,15 +187,17 @@ pub struct ResultOfMnemonicVerify {
 
 /// Validates a mnemonic phrase
 ///
-/// The phrase supplied will be checked for word length and validated according
-/// to the checksum specified in BIP0039.
+/// The phrase supplied will be checked for word length and validated according to the checksum
+/// specified in BIP0039.
 #[api_function]
 pub fn mnemonic_verify(
     context: std::sync::Arc<ClientContext>,
     params: ParamsOfMnemonicVerify,
 ) -> ClientResult<ResultOfMnemonicVerify> {
     let mnemonic = mnemonics(&context.config.crypto, params.dictionary, params.word_count)?;
-    Ok(ResultOfMnemonicVerify { valid: mnemonic.is_phrase_valid(&params.phrase)? })
+    Ok(ResultOfMnemonicVerify {
+        valid: mnemonic.is_phrase_valid(&params.phrase)?,
+    })
 }
 
 //----------------------------------------------------------------------- mnemonic_derive_sign_keys
@@ -225,8 +224,10 @@ pub fn mnemonic_derive_sign_keys(
     params: ParamsOfMnemonicDeriveSignKeys,
 ) -> ClientResult<KeyPair> {
     let mnemonic = mnemonics(&context.config.crypto, params.dictionary, params.word_count)?;
-    let path = params.path.unwrap_or(context.config.crypto.hdkey_derivation_path.clone());
-    mnemonic.derive_ed25519_keys_from_phrase(&context.config.crypto, &params.phrase, &path)
+    let path = params
+        .path
+        .unwrap_or(context.config.crypto.hdkey_derivation_path.clone());
+    Ok(mnemonic.derive_ed25519_keys_from_phrase(&context.config.crypto, &params.phrase, &path)?)
 }
 
 // Internals
@@ -271,6 +272,8 @@ pub trait CryptoMnemonic {
     ) -> ClientResult<KeyPair>;
     fn phrase_from_entropy(&self, entropy: &[u8]) -> ClientResult<String>;
     fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool>;
+    fn seed_from_phrase_and_salt(&self, phrase: &String, salt: &String) -> ClientResult<String>;
+    fn entropy_from_phrase(&self, phrase: &String) -> ClientResult<String>;
 }
 
 pub(super) fn check_phrase(mnemonic: &dyn CryptoMnemonic, phrase: &String) -> ClientResult<()> {
@@ -288,15 +291,19 @@ pub(crate) struct Bip39Mnemonic {
 
 impl Bip39Mnemonic {
     pub(crate) fn new(mnemonic_type: MnemonicType, language: Language) -> Self {
-        Bip39Mnemonic { mnemonic_type, language }
+        Bip39Mnemonic {
+            mnemonic_type,
+            language,
+        }
     }
 }
 
-pub(crate) fn ed25519_keys_from_secret_bytes(
-    bytes: &ed25519_dalek::SecretKey,
-) -> ClientResult<KeyPair> {
+pub(crate) fn ed25519_keys_from_secret_bytes(bytes: &ed25519_dalek::SecretKey) -> ClientResult<KeyPair> {
     let secret = SigningKey::from_bytes(bytes);
-    Ok(KeyPair::new(hex::encode(secret.verifying_key().as_bytes()), hex::encode(bytes)))
+    Ok(KeyPair::new(
+        hex::encode(secret.verifying_key().as_bytes()),
+        hex::encode(bytes),
+    ))
 }
 
 impl CryptoMnemonic for Bip39Mnemonic {
@@ -330,13 +337,37 @@ impl CryptoMnemonic for Bip39Mnemonic {
     }
 
     fn phrase_from_entropy(&self, entropy: &[u8]) -> ClientResult<String> {
-        let mnemonic = Mnemonic::from_entropy(entropy, self.language)
-            .map_err(crypto::Error::bip39_invalid_entropy)?;
+        let mnemonic = Mnemonic::from_entropy(&entropy, self.language)
+            .map_err(|err| crypto::Error::bip39_invalid_entropy(err))?;
         Ok(mnemonic.phrase().into())
     }
 
     fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool> {
         Ok(Mnemonic::validate(phrase.as_str(), self.language).is_ok())
+    }
+
+    fn seed_from_phrase_and_salt(&self, phrase: &String, salt: &String) -> ClientResult<String> {
+        check_phrase(self, phrase)?;
+        let mnemonic = Mnemonic::from_phrase(phrase, self.language)
+            .map_err(|err| crypto::Error::bip39_invalid_phrase(err))?;
+
+        let salt = format!("mnemonic{}", salt);
+        let mut seed = vec![0u8; 64];
+        pbkdf2::<Hmac<Sha512>>(
+            mnemonic.phrase().as_bytes(),
+            salt.as_bytes(),
+            2048,
+            &mut seed,
+        );
+        Ok(hex::encode(seed))
+    }
+
+    #[allow(dead_code)]
+    fn entropy_from_phrase(&self, phrase: &String) -> ClientResult<String> {
+        check_phrase(self, phrase)?;
+        let mnemonic = Mnemonic::from_phrase(phrase, self.language)
+            .map_err(|err| crypto::Error::bip39_invalid_phrase(err))?;
+        Ok(hex::encode(mnemonic.entropy()))
     }
 }
 
@@ -359,7 +390,7 @@ impl TonMnemonic {
                     word_i |= 1 << j;
                 }
             }
-            words.push(TVM_WORDS[word_i]);
+            words.push(TON_WORDS[word_i]);
         }
         words
     }
@@ -369,19 +400,19 @@ impl TonMnemonic {
     }
 
     fn seed_from_string(string: &String, salt: &str, c: u32) -> [u8; 64] {
-        let entropy = Self::entropy_from_string(string);
+        let entropy = Self::entropy_from_string(&string);
         pbkdf2_hmac_sha512(&entropy, salt.as_bytes(), c)
     }
 
     fn is_basic_seed(string: &String) -> bool {
-        let seed = Self::seed_from_string(string, "TON seed version", 100_000 / 256);
+        let seed = Self::seed_from_string(&string, "TON seed version", 100_000 / 256);
         seed[0] == 0
     }
 
     fn internal_is_phrase_valid(&self, phrase: &String) -> bool {
         let mut count = 0u8;
-        for word in phrase.split(' ') {
-            if !TVM_WORDS.contains(&word) {
+        for word in phrase.split(" ") {
+            if !TON_WORDS.contains(&word) {
                 return false;
             }
             count += 1;
@@ -392,7 +423,7 @@ impl TonMnemonic {
 
 impl CryptoMnemonic for TonMnemonic {
     fn get_words(&self) -> ClientResult<String> {
-        Ok(TVM_WORDS.join(" ").to_string())
+        return Ok(TON_WORDS.join(" ").to_string());
     }
 
     fn generate_random_phrase(&self) -> ClientResult<String> {
@@ -409,7 +440,7 @@ impl CryptoMnemonic for TonMnemonic {
             }
             return Ok(phrase);
         }
-        Err(crypto::Error::mnemonic_generation_failed())
+        return Err(crypto::Error::mnemonic_generation_failed());
     }
 
     fn derive_ed25519_keys_from_phrase(
@@ -420,7 +451,7 @@ impl CryptoMnemonic for TonMnemonic {
     ) -> ClientResult<KeyPair> {
         check_phrase(self, phrase)?;
 
-        let seed = Self::seed_from_string(phrase, "TON default seed", 100_000);
+        let seed = Self::seed_from_string(&phrase, "TON default seed", 100_000);
         let master = HDPrivateKey::master(&key256(&seed[32..])?, &key256(&seed[..32])?);
         let derived = master.derive_path(path, default_hdkey_compliant())?;
         ed25519_keys_from_secret_bytes(&derived.secret().0)
@@ -428,22 +459,38 @@ impl CryptoMnemonic for TonMnemonic {
 
     fn phrase_from_entropy(&self, entropy: &[u8]) -> ClientResult<String> {
         if entropy.len() != 24 * 11 / 8 {
-            return Err(crypto::Error::mnemonic_from_entropy_failed("Invalid entropy size"));
+            return Err(crypto::Error::mnemonic_from_entropy_failed(
+                "Invalid entropy size",
+            ));
         }
         let phrase = self.words_from_bytes(entropy).join(" ");
         if Self::is_basic_seed(&phrase) {
             Ok(phrase)
         } else {
-            Err(crypto::Error::mnemonic_from_entropy_failed("Invalid entropy"))
+            Err(crypto::Error::mnemonic_from_entropy_failed(
+                "Invalid entropy",
+            ))
         }
     }
 
     fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool> {
         Ok(self.internal_is_phrase_valid(phrase))
     }
+
+    fn seed_from_phrase_and_salt(&self, phrase: &String, salt: &String) -> ClientResult<String> {
+        check_phrase(self, phrase)?;
+        Ok(hex::encode(
+            Self::seed_from_string(phrase, salt, 100_000).as_ref(),
+        ))
+    }
+
+    fn entropy_from_phrase(&self, phrase: &String) -> ClientResult<String> {
+        check_phrase(self, phrase)?;
+        Ok(hex::encode(Self::entropy_from_string(&phrase).as_ref()))
+    }
 }
 
-const TVM_WORDS: [&str; 2048] = [
+const TON_WORDS: [&str; 2048] = [
     "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd",
     "abuse", "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire",
     "across", "act", "action", "actor", "actress", "actual", "adapt", "add", "addict", "address",

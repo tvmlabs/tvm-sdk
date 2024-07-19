@@ -1,6 +1,6 @@
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes how much funds
-/// will be debited from the target  contract balance as a result of the
-/// transaction.
+
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes how much funds will be debited from the target
+///  contract balance as a result of the transaction.
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, PartialEq)]
 pub struct Spending {
     /// Amount of nanotokens that will be sent to `dst` address.
@@ -9,10 +9,9 @@ pub struct Spending {
     pub dst: String,
 }
 
-/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes the operation
-/// that the DeBot wants to perform.
+/// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes the operation that the DeBot wants to perform.
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType)]
-#[serde(tag = "type")]
+#[serde(tag="type")]
 pub enum DebotActivity {
     /// DeBot wants to create new transaction in blockchain.
     Transaction {
@@ -20,7 +19,7 @@ pub enum DebotActivity {
         msg: String,
         /// Target smart contract address.
         dst: String,
-        /// List of spendings as a result of transaction.
+        ///List of spendings as a result of transaction.
         out: Vec<Spending>,
         /// Transaction total fee.
         fee: u64,
@@ -30,5 +29,5 @@ pub enum DebotActivity {
         signkey: String,
         /// Signing box handle used to sign external message.
         signing_box_handle: u32,
-    },
+    }
 }

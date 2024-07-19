@@ -1,10 +1,7 @@
-use std::fmt::Display;
-
-use serde_json::Value;
-
 use crate::client::FetchResult;
-use crate::error::format_time;
-use crate::error::ClientError;
+use crate::error::{format_time, ClientError};
+use serde_json::Value;
+use std::fmt::Display;
 
 #[derive(ApiType)]
 pub enum ErrorCode {
@@ -59,7 +56,7 @@ impl Error {
             }
         }
 
-        None
+        return None;
     }
 
     pub fn queries_query_failed(mut err: ClientError) -> ClientError {
@@ -83,8 +80,8 @@ impl Error {
         filter: Option<Value>,
         timestamp: u32,
     ) -> ClientError {
-        if err.code != ErrorCode::Unauthorized as u32
-            && err.code != ErrorCode::WaitForTimeout as u32
+        if  err.code != ErrorCode::Unauthorized as u32 &&
+            err.code != ErrorCode::WaitForTimeout as u32
         {
             err.code = ErrorCode::WaitForFailed as u32;
         }
@@ -102,7 +99,10 @@ impl Error {
     }
 
     pub fn invalid_server_response<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidServerResponse, format!("Invalid server response: {}", err))
+        error(
+            ErrorCode::InvalidServerResponse,
+            format!("Invalid server response: {}", err),
+        )
     }
 
     pub fn wait_for_timeout() -> ClientError {
@@ -157,7 +157,10 @@ impl Error {
     }
 
     pub fn network_module_suspended() -> ClientError {
-        error(ErrorCode::NetworkModuleSuspended, "Network module is suspended".to_owned())
+        error(
+            ErrorCode::NetworkModuleSuspended,
+            "Network module is suspended".to_owned(),
+        )
     }
 
     pub fn not_supported(request: &str) -> ClientError {
@@ -168,7 +171,10 @@ impl Error {
     }
 
     pub fn no_endpoints_provided() -> ClientError {
-        error(ErrorCode::NoEndpointsProvided, "No endpoints provided".to_owned())
+        error(
+            ErrorCode::NoEndpointsProvided,
+            "No endpoints provided".to_owned(),
+        )
     }
 
     pub fn graphql_websocket_init_error(mut err: ClientError) -> ClientError {
@@ -178,7 +184,10 @@ impl Error {
     }
 
     pub fn network_module_resumed() -> ClientError {
-        error(ErrorCode::NetworkModuleResumed, "Network module has been resumed".to_owned())
+        error(
+            ErrorCode::NetworkModuleResumed,
+            "Network module has been resumed".to_owned(),
+        )
     }
 
     pub fn query_transaction_tree_timeout(timeout: u32) -> ClientError {

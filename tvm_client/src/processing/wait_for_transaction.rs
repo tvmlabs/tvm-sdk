@@ -1,27 +1,17 @@
-use std::sync::Arc;
-
-use futures::FutureExt;
-use futures::StreamExt;
-use tokio::sync::mpsc;
-use tvm_block::Message;
-use tvm_block::MsgAddressInt;
-
-use super::remp::RempStatus;
-use super::remp::RempStatusData;
+use super::remp::{RempStatus, RempStatusData};
 use crate::abi::Abi;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
-use crate::error::AddNetworkUrl;
-use crate::error::ClientResult;
-use crate::net::EndpointStat;
-use crate::net::ResultOfSubscription;
-use crate::processing::fetching;
-use crate::processing::internal;
-use crate::processing::internal::get_message_expiration_time;
-use crate::processing::internal::resolve_error;
-use crate::processing::Error;
-use crate::processing::ProcessingEvent;
-use crate::processing::ResultOfProcessMessage;
+use crate::error::{AddNetworkUrl, ClientResult};
+use crate::net::{EndpointStat, ResultOfSubscription};
+use crate::processing::internal::{get_message_expiration_time, resolve_error};
+use crate::processing::{fetching, internal, Error};
+use crate::processing::{ProcessingEvent, ResultOfProcessMessage};
+use futures::{FutureExt, StreamExt};
+use std::convert::TryInto;
+use std::sync::Arc;
+use tokio::sync::mpsc;
+use tvm_block::{Message, MsgAddressInt};
 
 //--------------------------------------------------------------------------- wait_for_transaction
 
@@ -38,8 +28,7 @@ pub struct ParamsOfWaitForTransaction {
     /// Message BOC. Encoded with `base64`.
     pub message: String,
 
-    /// The last generated block id of the destination account shard before the
-    /// message was sent.
+    /// The last generated block id of the destination account shard before the message was sent.
     ///
     /// You must provide the same value as the `send_message` has returned.
     pub shard_block_id: String,
@@ -53,8 +42,7 @@ pub struct ParamsOfWaitForTransaction {
     ///
     /// Use this field to get more informative errors.
     /// Provide the same value as the `send_message` has returned.
-    /// If the message was not delivered (expired), SDK will log the endpoint
-    /// URLs, used for its sending.
+    /// If the message was not delivered (expired), SDK will log the endpoint URLs, used for its sending.
     pub sending_endpoints: Option<Vec<String>>,
 }
 
@@ -91,7 +79,10 @@ async fn wait_by_remp<F: futures::Future<Output = ()> + Send>(
     // Prepare to wait
     let message = deserialize_object_from_boc::<Message>(&context, &params.message, "message")?;
     let message_id = message.cell.repr_hash().as_hex_string();
-    let message_dst = message.object.dst().ok_or(Error::message_has_not_destination_address())?;
+    let message_dst = message
+        .object
+        .dst()
+        .ok_or(Error::message_has_not_destination_address())?;
 
     let (sender, receiver) = mpsc::channel(10);
     let mut receiver = tokio_stream::wrappers::ReceiverStream::new(receiver).fuse();
@@ -99,7 +90,9 @@ async fn wait_by_remp<F: futures::Future<Output = ()> + Send>(
     let subscription_callback = move |event: ClientResult<ResultOfSubscription>| {
         let sender = sender.clone();
         async move {
-            let _ = sender.send(event.map(|mut result| result.result["rempReceipts"].take())).await;
+            let _ = sender
+                .send(event.map(|mut result| result.result["rempReceipts"].take()))
+                .await;
         }
     };
 
@@ -139,8 +132,7 @@ async fn wait_by_remp<F: futures::Future<Output = ()> + Send>(
     };
 
     // wait for REMP statuses and process them
-    // if no statuses received during timeout or any error occurred then activate
-    // fallback
+    // if no statuses received during timeout or any error occurred then activate fallback
     let mut timeout = context.config.network.first_remp_status_timeout;
     let mut fallback_activated = false;
     loop {
@@ -213,14 +205,14 @@ async fn process_remp_message<F: futures::Future<Output = ()> + Send>(
     })?;
 
     match status {
-        RempStatus::RejectedByFullnode(data) => {
-            Ok(Some(process_rejected_status(context.clone(), params, message_dst, data).await))
-        }
+        RempStatus::RejectedByFullnode(data) => Ok(Some(
+            process_rejected_status(context.clone(), params, &message_dst, data).await,
+        )),
         RempStatus::Finalized(data) => Ok(Some(Ok(process_finalized_status(
             context.clone(),
             params,
             message_id,
-            message_dst,
+            &message_dst,
             data,
         )
         .await?))),
@@ -293,7 +285,10 @@ async fn process_finalized_status(
     .await;
     if result.is_ok() {
         if let Some(endpoints) = &params.sending_endpoints {
-            context.get_server_link()?.update_stat(endpoints, EndpointStat::MessageDelivered).await;
+            context
+                .get_server_link()?
+                .update_stat(endpoints, EndpointStat::MessageDelivered)
+                .await;
         }
     };
     result
@@ -310,14 +305,20 @@ async fn wait_by_block_walking<F: futures::Future<Output = ()> + Send>(
     let message = deserialize_object_from_boc::<Message>(&context, &params.message, "message")?;
 
     let message_id = message.cell.repr_hash().as_hex_string();
-    let address =
-        message.object.dst_ref().cloned().ok_or(Error::message_has_not_destination_address())?;
+    let address = message
+        .object
+        .dst_ref()
+        .cloned()
+        .ok_or(Error::message_has_not_destination_address())?;
     let message_expiration_time =
         get_message_expiration_time(context.clone(), params.abi.as_ref(), &params.message)?;
     let processing_timeout = net.config().message_processing_timeout;
     let max_block_time =
         message_expiration_time.unwrap_or(context.env.now_ms() + processing_timeout as u64);
-    log::debug!("message_expiration_time {}", message_expiration_time.unwrap_or_default() / 1000);
+    log::debug!(
+        "message_expiration_time {}",
+        message_expiration_time.unwrap_or_default() / 1000
+    );
     let mut shard_block_id = params.shard_block_id.clone();
 
     // Block walking loop
@@ -329,7 +330,7 @@ async fn wait_by_block_walking<F: futures::Future<Output = ()> + Send>(
 
         let block = fetching::fetch_next_shard_block(
             &context,
-            params,
+            &params,
             &address,
             &shard_block_id,
             &message_id,

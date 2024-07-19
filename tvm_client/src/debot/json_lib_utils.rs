@@ -1,29 +1,26 @@
-use std::collections::HashMap;
-
+use crate::boc::internal::{deserialize_cell_from_base64, serialize_cell_to_base64};
 use serde_json::Value as JsonValue;
-use serde_repr::Deserialize_repr;
-use serde_repr::Serialize_repr;
 use sha2::Digest;
-use tvm_abi::contract::ABI_VERSION_2_0;
-use tvm_abi::token::Tokenizer;
-use tvm_abi::Param;
-use tvm_abi::ParamType;
-use tvm_abi::TokenValue;
+use std::collections::HashMap;
+use tvm_abi::{contract::ABI_VERSION_2_0, token::Tokenizer, Param, ParamType, TokenValue};
 
-use crate::boc::internal::deserialize_cell_from_base64;
-use crate::boc::internal::serialize_cell_to_base64;
+use serde_repr::{Deserialize_repr, Serialize_repr};
 #[derive(Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
-#[derive(Default)]
 pub enum ValKind {
     String = 0,
     Number = 1,
     Bool = 2,
     Array = 3,
     Object = 4,
-    #[default]
     Null = 5,
     Cell = 6,
+}
+
+impl Default for ValKind {
+    fn default() -> Self {
+        ValKind::Null
+    }
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -83,7 +80,8 @@ impl Value {
             let mut hasher = sha2::Sha256::new();
             hasher.update(k);
             let hash = hasher.finalize();
-            val.object.insert(format!("0x{}", hex::encode(&hash[..])), packed);
+            val.object
+                .insert(format!("0x{}", hex::encode(&hash[..])), packed);
         }
         Some(val)
     }
@@ -107,13 +105,7 @@ impl Value {
                 "object",
                 ParamType::Map(Box::new(ParamType::Uint(256)), Box::new(ParamType::Cell)),
             ),
-            Param::new(
-                "array",
-                ParamType::Array(Box::new(ParamType::Tuple(vec![Param::new(
-                    "cell",
-                    ParamType::Cell,
-                )]))),
-            ),
+            Param::new("array", ParamType::Array(Box::new(ParamType::Tuple(vec![Param::new("cell", ParamType::Cell)])))),
         ];
         if let Some(k) = key {
             params.push(Param::new("key", ParamType::Bytes));
@@ -151,7 +143,11 @@ pub fn pack(json_obj: JsonValue) -> Option<Value> {
     }
 }
 
-fn try_replace_hyphens(obj: &mut JsonValue, pointer: &str, name: &str) -> Result<(), String> {
+fn try_replace_hyphens(
+    obj: &mut JsonValue,
+    pointer: &str,
+    name: &str,
+) -> Result<(), String> {
     if name.contains('_') {
         match obj.pointer_mut(pointer) {
             Some(subobj) => {
@@ -169,9 +165,9 @@ fn try_replace_hyphens(obj: &mut JsonValue, pointer: &str, name: &str) -> Result
 fn string_to_hex(obj: &mut JsonValue, pointer: &str) -> Result<(), String> {
     let val_str = obj
         .pointer(pointer)
-        .ok_or_else(|| "argument not found".to_string())?
+        .ok_or_else(|| format!("argument not found"))?
         .as_str()
-        .ok_or_else(|| "argument not a string".to_string())?;
+        .ok_or_else(|| format!("argument not a string"))?;
     *obj.pointer_mut(pointer).unwrap() = json!(hex::encode(val_str));
     Ok(())
 }
@@ -183,14 +179,12 @@ pub(crate) fn bypass_json(
     string_or_bytes: ParamType,
 ) -> Result<(), String> {
     let pointer = format!("{}/{}", top_pointer, p.name);
-    if obj.pointer(&pointer).is_none() {
+    if let None = obj.pointer(&pointer) {
         try_replace_hyphens(obj, top_pointer, &p.name)?;
     }
     match p.kind {
-        ParamType::Bytes | ParamType::String => {
-            if p.kind == string_or_bytes {
-                string_to_hex(obj, &pointer).map_err(|e| format!("{}: \"{}\"", e, p.name))?;
-            }
+        ParamType::Bytes | ParamType::String => if p.kind == string_or_bytes {
+            string_to_hex(obj, &pointer).map_err(|e| format!("{}: \"{}\"", e, p.name))?;
         }
         ParamType::Tuple(params) => {
             for p in params {
@@ -220,7 +214,7 @@ pub(crate) fn bypass_json(
                 .as_object()
                 .ok_or_else(|| String::from("Failed to retrieve an object"))?
                 .keys()
-                .cloned()
+                .map(|k| k.clone())
                 .collect();
             for key in keys {
                 bypass_json(

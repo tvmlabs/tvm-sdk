@@ -1,20 +1,20 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-
-use std::sync::Arc;
-
-use futures::Future;
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;
+use futures::Future;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Clone, num_derive::FromPrimitive)]
 pub enum SubscriptionResponseType {
@@ -24,8 +24,7 @@ pub enum SubscriptionResponseType {
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ParamsOfSubscribeCollection {
-    /// Collection name (accounts, blocks, transactions, messages,
-    /// block_signatures)
+    /// Collection name (accounts, blocks, transactions, messages, block_signatures)
     pub collection: String,
     /// Collection filter
     pub filter: Option<serde_json::Value>,

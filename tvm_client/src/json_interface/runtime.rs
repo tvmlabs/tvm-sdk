@@ -1,30 +1,25 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
-
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::sync::MutexGuard;
-
-use api_info::Module;
-use api_info::API;
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
 use super::modules::register_modules;
 use super::request::Request;
-use crate::client::ClientConfig;
-use crate::client::ClientContext;
-use crate::client::Error;
+use crate::client::{ClientConfig, ClientContext, Error};
 use crate::error::ClientResult;
 use crate::ContextHandle;
+use api_info::{Module, API};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 pub(crate) trait SyncHandler {
     fn handle(&self, context: Arc<ClientContext>, params_json: &str) -> ClientResult<String>;
@@ -47,7 +42,10 @@ impl RuntimeHandlers {
         let mut handlers = Self {
             sync_handlers: HashMap::new(),
             async_handlers: HashMap::new(),
-            api: API { version: env!("CARGO_PKG_VERSION").to_owned(), modules: Vec::new() },
+            api: API {
+                version: env!("CARGO_PKG_VERSION").to_owned(),
+                modules: Vec::new(),
+            },
         };
         register_modules(&mut handlers);
         handlers
@@ -74,7 +72,10 @@ struct RuntimeContexts {
 
 impl RuntimeContexts {
     fn new() -> Self {
-        Self { next_context_handle: 1, contexts: HashMap::new() }
+        Self {
+            next_context_handle: 1,
+            contexts: HashMap::new(),
+        }
     }
 }
 
@@ -124,7 +125,11 @@ impl Runtime {
     }
 
     pub fn create_context(config_json: &str) -> ClientResult<ContextHandle> {
-        let config_json = if !config_json.is_empty() { config_json } else { "{}" };
+        let config_json = if !config_json.is_empty() {
+            config_json
+        } else {
+            "{}"
+        };
         let config = serde_json::from_str::<ClientConfig>(config_json)
             .map_err(|err| Error::invalid_params(config_json, err))?;
 
