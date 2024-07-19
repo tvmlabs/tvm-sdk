@@ -1,28 +1,28 @@
-// Copyright 2023 TON Labs.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+    Copyright 2023 EverX Labs.
 
-use tvm_block::Deserializable;
-use tvm_block::StateInit;
-use tvm_struct::scheme::TVC;
-use tvm_block::Cell;
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-use crate::boc::internal::deserialize_cell_from_boc;
-use crate::boc::internal::deserialize_object_from_boc;
-use crate::boc::internal::serialize_cell_to_base64;
-use crate::boc::internal::serialize_object_to_cell;
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
+use crate::boc::internal::{
+    deserialize_cell_from_boc, deserialize_object_from_boc, serialize_cell_to_base64,
+    serialize_object_to_cell,
+};
 use crate::error::ClientResult;
 use crate::ClientContext;
+use tvm_struct::scheme::TVC;
+use tvm_block::{StateInit, Deserializable};
+use tvm_block::Cell;
 
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfDecodeTvc {
@@ -49,7 +49,7 @@ pub struct TvcV1 {
 }
 
 /// Decodes tvc according to the tvc spec.
-/// Read more about tvc structure here https://github.com/tonlabs/ever-struct/blob/main/src/scheme/mod.rs#L30
+/// Read more about tvc structure here https://github.com/everx-labs/ever-struct/blob/main/src/scheme/mod.rs#L30
 
 #[api_function]
 pub fn decode_tvc(
@@ -58,7 +58,10 @@ pub fn decode_tvc(
 ) -> ClientResult<ResultOfDecodeTvc> {
     let tvc = deserialize_object_from_boc::<TVC>(&context, &params.tvc, "TVC")?.object;
     let tvc = Tvc::V1(TvcV1 {
-        code: tvc.code.map(|x| serialize_cell_to_base64(&x, "TVC code")).transpose()?,
+        code: tvc
+            .code
+            .map(|x| serialize_cell_to_base64(&x, "TVC code"))
+            .transpose()?,
         description: tvc.desc,
     });
     Ok(ResultOfDecodeTvc { tvc })

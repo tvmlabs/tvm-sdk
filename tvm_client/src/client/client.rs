@@ -1,54 +1,41 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-
-use std::collections::HashMap;
-use std::sync::atomic::AtomicU32;
-use std::sync::atomic::Ordering;
-use std::sync::Arc;
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
 use lockfree::map::Map as LockfreeMap;
-use serde::de::DeserializeOwned;
-use serde::Deserialize;
-use serde::Deserializer;
-use serde::Serialize;
-use tokio::sync::oneshot;
-use tokio::sync::Mutex;
-use tokio::sync::RwLock;
+use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Arc;
+use tokio::sync::{oneshot, Mutex, RwLock};
 use tvm_client_processing::MessageMonitor;
 
 #[cfg(not(feature = "wasm-base"))]
 use super::std_client_env::ClientEnv;
 #[cfg(feature = "wasm-base")]
 use super::wasm_client_env::ClientEnv;
-use super::AppRequestResult;
-use super::Error;
-use super::ParamsOfAppRequest;
+use super::{AppRequestResult, Error, ParamsOfAppRequest};
 use crate::abi::AbiConfig;
-use crate::boc::cache::Bocs;
-use crate::boc::BocConfig;
+use crate::boc::{cache::Bocs, BocConfig};
 use crate::client::storage::KeyValueStorage;
-use crate::client::update_binding_config;
-use crate::client::BindingConfig;
-use crate::crypto::boxes::crypto_box::CryptoBox;
-use crate::crypto::boxes::crypto_box::DerivedKeys;
-use crate::crypto::boxes::encryption_box::EncryptionBox;
-use crate::crypto::boxes::signing_box::SigningBox;
+use crate::client::{update_binding_config, BindingConfig};
+use crate::crypto::boxes::crypto_box::{CryptoBox, DerivedKeys};
+use crate::crypto::boxes::{encryption_box::EncryptionBox, signing_box::SigningBox};
 use crate::crypto::CryptoConfig;
 use crate::debot::DEngine;
 use crate::error::ClientResult;
 use crate::json_interface::interop::ResponseType;
 use crate::json_interface::request::Request;
-use crate::net::NetworkConfig;
-use crate::net::NetworkContext;
-use crate::net::ServerLink;
+use crate::net::{NetworkConfig, NetworkContext, ServerLink};
 use crate::processing::SdkServices;
 use crate::proofs::ProofsConfig;
 
@@ -134,8 +121,10 @@ impl ClientContext {
             iterators: Default::default(),
             network_uid: Default::default(),
         });
-        let message_monitor =
-            Arc::new(MessageMonitor::new(SdkServices::new(net.clone(), bocs.clone())));
+        let message_monitor = Arc::new(MessageMonitor::new(SdkServices::new(
+            net.clone(),
+            bocs.clone(),
+        )));
         Ok(Self {
             net,
             message_monitor,
@@ -168,21 +157,25 @@ impl ClientContext {
         let params = serde_json::to_value(params).map_err(Error::cannot_serialize_result)?;
 
         callback.response(
-            ParamsOfAppRequest { app_request_id: id, request_data: params },
+            ParamsOfAppRequest {
+                app_request_id: id,
+                request_data: params,
+            },
             ResponseType::AppRequest as u32,
         );
-        let result = receiver.await.map_err(Error::can_not_receive_request_result)?;
+        let result = receiver
+            .await
+            .map_err(|err| Error::can_not_receive_request_result(err))?;
 
         match result {
             AppRequestResult::Error { text } => Err(Error::app_request_error(&text)),
-            AppRequestResult::Ok { result } => {
-                serde_json::from_value(result).map_err(Error::can_not_parse_request_result)
-            }
+            AppRequestResult::Ok { result } => serde_json::from_value(result)
+                .map_err(|err| Error::can_not_parse_request_result(err)),
         }
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, ApiType, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, ApiType)]
 pub struct ClientConfig {
     #[serde(default, deserialize_with = "deserialize_binding_config")]
     pub binding: BindingConfig,
@@ -199,8 +192,8 @@ pub struct ClientConfig {
 
     /// For file based storage is a folder name where SDK will store its data.
     /// For browser based is a browser async storage key prefix.
-    /// Default (recommended) value is "~/.tonclient" for native environments
-    /// and ".tonclient" for web-browser.
+    /// Default (recommended) value is "~/.tonclient" for native environments and ".tonclient"
+    /// for web-browser.
     pub local_storage_path: Option<String>,
 }
 
@@ -240,6 +233,20 @@ fn deserialize_proofs_config<'de, D: Deserializer<'de>>(
     Ok(Option::deserialize(deserializer)?.unwrap_or(Default::default()))
 }
 
+impl Default for ClientConfig {
+    fn default() -> Self {
+        Self {
+            binding: Default::default(),
+            network: Default::default(),
+            crypto: Default::default(),
+            abi: Default::default(),
+            boc: Default::default(),
+            proofs: Default::default(),
+            local_storage_path: Default::default(),
+        }
+    }
+}
+
 pub(crate) struct AppObject<P: Serialize, R: DeserializeOwned> {
     context: Arc<ClientContext>,
     object_handler: Arc<Request>,
@@ -252,7 +259,11 @@ where
     R: DeserializeOwned,
 {
     pub fn new(context: Arc<ClientContext>, object_handler: Arc<Request>) -> AppObject<P, R> {
-        AppObject { context, object_handler, phantom: std::marker::PhantomData }
+        AppObject {
+            context,
+            object_handler,
+            phantom: std::marker::PhantomData,
+        }
     }
 
     pub async fn call(&self, params: P) -> ClientResult<R> {
@@ -260,6 +271,7 @@ where
     }
 
     pub fn notify(&self, params: P) {
-        self.object_handler.response(params, ResponseType::AppNotify as u32)
+        self.object_handler
+            .response(params, ResponseType::AppNotify as u32)
     }
 }

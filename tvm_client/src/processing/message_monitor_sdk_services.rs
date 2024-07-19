@@ -1,25 +1,17 @@
-use std::future::Future;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
-use std::sync::Arc;
-
+use crate::boc::cache::Bocs;
+use crate::error::{ClientError, ClientResult};
+use crate::net::{NetworkContext, ResultOfSubscription};
 use async_trait::async_trait;
 use serde_json::Value;
-use tvm_client_processing::MessageMonitorSdkServices;
-use tvm_client_processing::MessageMonitoringParams;
-use tvm_client_processing::MessageMonitoringResult;
-use tvm_client_processing::MessageMonitoringStatus;
-use tvm_client_processing::MessageMonitoringTransaction;
-use tvm_client_processing::MessageMonitoringTransactionCompute;
-use tvm_client_processing::MonitoredMessage;
-use tvm_client_processing::NetSubscription;
+use std::future::Future;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
+use tvm_client_processing::{
+    MessageMonitorSdkServices, MessageMonitoringParams, MessageMonitoringResult,
+    MessageMonitoringStatus, MessageMonitoringTransaction, MessageMonitoringTransactionCompute,
+    MonitoredMessage, NetSubscription,
+};
 use tvm_block::Cell;
-
-use crate::boc::cache::Bocs;
-use crate::error::ClientError;
-use crate::error::ClientResult;
-use crate::net::NetworkContext;
-use crate::net::ResultOfSubscription;
 
 pub(crate) struct SdkServices {
     net: Arc<NetworkContext>,
@@ -48,21 +40,31 @@ impl SdkServices {
             }
         }
         "#;
-        let messages =
-            messages.into_iter().map(|x| x.into()).collect::<Vec<GraphQLMessageMonitoringParams>>();
+        let messages = messages
+            .into_iter()
+            .map(|x| x.into())
+            .collect::<Vec<GraphQLMessageMonitoringParams>>();
         (query.to_string(), Some(json!({ "messages": messages })))
     }
 }
 
 impl From<ClientError> for tvm_client_processing::Error {
     fn from(value: ClientError) -> Self {
-        Self { code: value.code, message: value.message, data: value.data }
+        Self {
+            code: value.code,
+            message: value.message,
+            data: value.data,
+        }
     }
 }
 
 impl From<tvm_client_processing::Error> for ClientError {
     fn from(value: tvm_client_processing::Error) -> Self {
-        Self { code: value.code, message: value.message, data: value.data }
+        Self {
+            code: value.code,
+            message: value.message,
+            data: value.data,
+        }
     }
 }
 
@@ -77,7 +79,7 @@ fn deserialize_subscription_data(
         crate::net::Error::invalid_server_response("missing required `recentExtInMessageStatuses`")
     })?;
     let result = serde_json::from_value::<GraphQLMessageMonitoringResult>(statuses.clone())
-        .map_err(crate::net::Error::invalid_server_response)?
+        .map_err(|err| crate::net::Error::invalid_server_response(err))?
         .into();
     Ok(vec![result])
 }
@@ -88,9 +90,9 @@ impl MessageMonitorSdkServices for SdkServices {
         &self,
         messages: Vec<MessageMonitoringParams>,
         callback: impl Fn(tvm_client_processing::Result<Vec<MessageMonitoringResult>>) -> F
-        + Send
-        + Sync
-        + 'static,
+            + Send
+            + Sync
+            + 'static,
     ) -> tvm_client_processing::Result<NetSubscription> {
         // We have to wrap callback into Arc because it will move out of closure scope
         let callback = Arc::new(callback);
@@ -99,37 +101,42 @@ impl MessageMonitorSdkServices for SdkServices {
         let net_state = self.net.get_server_link()?.state();
         let subscription = self
             .net
-            .subscribe(query, vars, move |evt: ClientResult<ResultOfSubscription>| {
-                // We have to clone callback because it will move out of closure scope
-                let callback = callback.clone();
-                let net_state = net_state.clone();
-                let retry_start = retry_start.clone();
-                async move {
-                    match evt {
-                        Ok(evt) => {
-                            retry_start.store(0, Ordering::Relaxed);
-                            callback(deserialize_subscription_data(evt)).await;
-                        }
-                        Err(err) => {
-                            let mut start = retry_start.load(Ordering::Relaxed);
-                            if start == 0 {
-                                start = net_state.env().now_ms();
-                                retry_start.store(start, Ordering::Relaxed);
+            .subscribe(
+                query,
+                vars,
+                move |evt: ClientResult<ResultOfSubscription>| {
+                    // We have to clone callback because it will move out of closure scope
+                    let callback = callback.clone();
+                    let net_state = net_state.clone();
+                    let retry_start = retry_start.clone();
+                    async move {
+                        match evt {
+                            Ok(evt) => {
+                                retry_start.store(0, Ordering::Relaxed);
+                                callback(deserialize_subscription_data(evt)).await;
                             }
-                            if err.code == crate::net::ErrorCode::NetworkModuleSuspended as u32
-                                || err.code == crate::net::ErrorCode::NetworkModuleResumed as u32
-                            {
-                                return;
-                            }
-                            if !crate::client::Error::is_network_error(&err)
-                                || !net_state.can_retry_network_error(start)
-                            {
-                                callback(Err(err.into()));
+                            Err(err) => {
+                                let mut start = retry_start.load(Ordering::Relaxed);
+                                if start == 0 {
+                                    start = net_state.env().now_ms();
+                                    retry_start.store(start, Ordering::Relaxed);
+                                }
+                                if err.code == crate::net::ErrorCode::NetworkModuleSuspended as u32
+                                    || err.code
+                                        == crate::net::ErrorCode::NetworkModuleResumed as u32
+                                {
+                                    return;
+                                }
+                                if !crate::client::Error::is_network_error(&err)
+                                    || !net_state.can_retry_network_error(start)
+                                {
+                                    callback(Err(err.into()));
+                                }
                             }
                         }
                     }
-                }
-            })
+                },
+            )
             .await?;
         Ok(NetSubscription(subscription as usize))
     }
@@ -172,9 +179,12 @@ struct GraphQLMessageMonitoringParams {
 impl From<MessageMonitoringParams> for GraphQLMessageMonitoringParams {
     fn from(value: MessageMonitoringParams) -> Self {
         match value.message {
-            MonitoredMessage::Boc { boc } => {
-                Self { address: None, hash: None, boc: Some(boc), wait_until: value.wait_until }
-            }
+            MonitoredMessage::Boc { boc } => Self {
+                address: None,
+                hash: None,
+                boc: Some(boc),
+                wait_until: value.wait_until,
+            },
             MonitoredMessage::HashAddress { hash, address } => Self {
                 address: Some(address),
                 hash: Some(hash),
@@ -232,7 +242,11 @@ struct GraphQLMessageMonitoringTransaction {
 
 impl From<GraphQLMessageMonitoringTransaction> for MessageMonitoringTransaction {
     fn from(value: GraphQLMessageMonitoringTransaction) -> Self {
-        Self { hash: value.hash, aborted: value.aborted, compute: value.compute.map(|x| x.into()) }
+        Self {
+            hash: value.hash,
+            aborted: value.aborted,
+            compute: value.compute.map(|x| x.into()),
+        }
     }
 }
 
@@ -243,6 +257,8 @@ struct GraphQLMessageMonitoringTransactionCompute {
 
 impl From<GraphQLMessageMonitoringTransactionCompute> for MessageMonitoringTransactionCompute {
     fn from(value: GraphQLMessageMonitoringTransactionCompute) -> Self {
-        Self { exit_code: value.exit_code }
+        Self {
+            exit_code: value.exit_code,
+        }
     }
 }

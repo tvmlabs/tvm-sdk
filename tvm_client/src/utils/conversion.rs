@@ -1,40 +1,37 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-
-use std::str::FromStr;
-use std::sync::Arc;
-
-use tvm_block::MsgAddressInt;
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
 use crate::client;
 use crate::client::ClientContext;
-use crate::encoding::account_decode;
-use crate::encoding::account_encode_ex;
-use crate::encoding::decode_std_base64;
-use crate::encoding::AccountAddressType;
-use crate::encoding::Base64AddressParams;
+use crate::encoding::{account_decode, account_encode_ex, AccountAddressType, Base64AddressParams, decode_std_base64};
 use crate::error::ClientResult;
+use std::sync::Arc;
+use tvm_block::MsgAddressInt;
+
+use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, ApiType, Clone)]
 #[serde(tag = "type")]
-#[derive(Default)]
 pub enum AddressStringFormat {
     AccountId,
-    #[default]
     Hex,
-    Base64 {
-        url: bool,
-        test: bool,
-        bounce: bool,
-    },
+    Base64 { url: bool, test: bool, bounce: bool },
+}
+
+impl Default for AddressStringFormat {
+    fn default() -> Self {
+        AddressStringFormat::Hex
+    }
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
@@ -61,11 +58,14 @@ pub fn convert_address(
     let (addr_type, base64_params) = match params.output_format {
         AddressStringFormat::Hex => (AccountAddressType::Hex, None),
         AddressStringFormat::AccountId => (AccountAddressType::AccountId, None),
-        AddressStringFormat::Base64 { url, test, bounce } => {
-            (AccountAddressType::Base64, Some(Base64AddressParams { url, test, bounce }))
-        }
+        AddressStringFormat::Base64 { url, test, bounce } => (
+            AccountAddressType::Base64,
+            Some(Base64AddressParams { url, test, bounce }),
+        ),
     };
-    Ok(ResultOfConvertAddress { address: account_encode_ex(&address, addr_type, base64_params)? })
+    Ok(ResultOfConvertAddress {
+        address: account_encode_ex(&address, addr_type, base64_params)?,
+    })
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
@@ -85,16 +85,15 @@ lazy_static! {
 }
 
 /// Validates and returns the type of any TON address.
-///
+/// 
 /// Address types are the following
-///
-/// `0:919db8e740d50bf349df2eea03fa30c385d846b991ff5542e67098ee833fc7f7` -
-/// standard TON address most commonly used in all cases. Also called as hex
-/// address `919db8e740d50bf349df2eea03fa30c385d846b991ff5542e67098ee833fc7f7` -
-/// account ID. A part of full address. Identifies account inside particular
-/// workchain `EQCRnbjnQNUL80nfLuoD+jDDhdhGuZH/VULmcJjugz/H9wam` - base64
-/// address. Also called "user-friendly". Was used at the beginning of TON. Now
-/// it is supported for compatibility
+/// 
+/// `0:919db8e740d50bf349df2eea03fa30c385d846b991ff5542e67098ee833fc7f7` - standard TON address most
+/// commonly used in all cases. Also called as hex address
+/// `919db8e740d50bf349df2eea03fa30c385d846b991ff5542e67098ee833fc7f7` - account ID. A part of full 
+/// address. Identifies account inside particular workchain
+/// `EQCRnbjnQNUL80nfLuoD+jDDhdhGuZH/VULmcJjugz/H9wam` - base64 address. Also called "user-friendly". 
+/// Was used at the beginning of TON. Now it is supported for compatibility
 #[api_function]
 pub fn get_address_type(
     _context: Arc<ClientContext>,
@@ -106,15 +105,14 @@ pub fn get_address_type(
         } else {
             AccountAddressType::Hex
         }),
-        Err(_err) if params.address.len() == 48 => {
-            decode_std_base64(&params.address).map(|_addr| AccountAddressType::Base64)
-        }
+        Err(_err) if params.address.len() == 48 => decode_std_base64(&params.address)
+            .map(|_addr| AccountAddressType::Base64),
         Err(err) => Err(client::Error::invalid_address(err, &params.address)),
-    }
-    .map(|address_type| ResultOfGetAddressType { address_type })
+    }.map(|address_type| ResultOfGetAddressType { address_type })
 }
 
 #[cfg(test)]
 pub fn abi_uint(n: u128, size: usize) -> serde_json::Value {
-    serde_json::to_value(tvm_abi::TokenValue::Uint(tvm_abi::Uint::new(n, size))).unwrap_or_default()
+    serde_json::to_value(tvm_abi::TokenValue::Uint(tvm_abi::Uint::new(n, size)))
+        .unwrap_or(Default::default())
 }

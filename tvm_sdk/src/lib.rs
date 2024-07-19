@@ -1,4 +1,4 @@
-// Copyright 2018-2021 TON Labs LTD.
+// Copyright 2018-2021 TON Labs Ltd.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -11,6 +11,8 @@
 
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate anyhow;
 
 extern crate api_info;
 #[macro_use]

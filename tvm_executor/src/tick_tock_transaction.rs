@@ -21,7 +21,6 @@ use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionDescrTickTock;
 use tvm_block::TransactionTickTock;
-use tvm_block::error;
 use tvm_block::fail;
 use tvm_block::HashmapType;
 use tvm_block::Result;

@@ -1,40 +1,29 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
-
-use tvm_block::Account;
-use tvm_block::CommonMsgInfo;
-use tvm_block::ConfigParams;
-use tvm_block::CurrencyCollection;
-use tvm_block::Deserializable;
-use tvm_block::Message;
-use tvm_block::MsgAddressInt;
-use tvm_block::OutAction;
-use tvm_block::OutActions;
-use tvm_block::Serializable;
-use tvm_block::Cell;
-use tvm_block::HashmapType;
-use tvm_block::SliceData;
-use tvm_block::UInt256;
-use tvm_vm::executor::gas::gas_state::Gas;
-use tvm_vm::executor::Engine;
-use tvm_vm::stack::integer::IntegerData;
-use tvm_vm::stack::savelist::SaveList;
-use tvm_vm::stack::Stack;
-use tvm_vm::stack::StackItem;
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
 use super::types::ResolvedExecutionOptions;
-use crate::encoding::slice_from_cell;
-use crate::error::ClientResult;
+use crate::{error::ClientResult, encoding::slice_from_cell};
 use crate::tvm::Error;
+use tvm_block::{
+    Account, CommonMsgInfo, ConfigParams, CurrencyCollection, Deserializable,
+    Message, MsgAddressInt, OutAction, OutActions, Serializable,
+};
+use tvm_block::{Cell, HashmapType, SliceData, UInt256};
+use tvm_vm::{
+    executor::{gas::gas_state::Gas, Engine},
+    stack::{integer::IntegerData, savelist::SaveList, Stack, StackItem},
+};
 
 pub(crate) fn call_tvm(
     account: &mut Account,
@@ -42,12 +31,15 @@ pub(crate) fn call_tvm(
     stack: Stack,
 ) -> ClientResult<Engine> {
     let code = account.get_code().unwrap_or_default();
-    let data =
-        account.get_data().ok_or_else(|| Error::invalid_account_boc("Account has no code"))?;
-    let addr =
-        account.get_addr().ok_or_else(|| Error::invalid_account_boc("Account has no address"))?;
-    let balance =
-        account.balance().ok_or_else(|| Error::invalid_account_boc("Account has no balance"))?;
+    let data = account
+        .get_data()
+        .ok_or_else(|| Error::invalid_account_boc("Account has no code"))?;
+    let addr = account
+        .get_addr()
+        .ok_or_else(|| Error::invalid_account_boc("Account has no address"))?;
+    let balance = account
+        .balance()
+        .ok_or_else(|| Error::invalid_account_boc("Account has no balance"))?;
 
     let mut ctrls = SaveList::new();
     ctrls
@@ -72,7 +64,9 @@ pub(crate) fn call_tvm(
     let gas_limit = 1_000_000_000;
     let gas = Gas::new(gas_limit, 0, gas_limit, 10);
 
-    let mut engine = Engine::with_capabilities(options.blockchain_config.capabilites()).setup(
+    let mut engine = Engine::with_capabilities(
+        options.blockchain_config.capabilites()
+    ).setup(
         slice_from_cell(code)?,
         Some(ctrls),
         Some(stack),
@@ -84,13 +78,14 @@ pub(crate) fn call_tvm(
 
     match engine.execute() {
         Err(err) => {
-            let exception =
-                tvm_vm::error::tvm_exception(err).map_err(Error::unknown_execution_error)?;
+            let exception = tvm_vm::error::tvm_exception(err)
+                .map_err(|err| Error::unknown_execution_error(err))?;
             let code = if let Some(code) = exception.custom_code() {
                 code
             } else {
-                !(exception.exception_code().unwrap_or(tvm_block::ExceptionCode::UnknownError)
-                    as i32)
+                !(exception
+                    .exception_code()
+                    .unwrap_or(tvm_block::ExceptionCode::UnknownError) as i32)
             };
 
             let exit_arg = super::stack::serialize_item(&exception.value)?;
@@ -132,7 +127,7 @@ pub(crate) fn call_tvm_msg(
     stack
         .push(tvm_vm::int!(balance)) // token balance of contract
         .push(tvm_vm::int!(0)) // token balance of msg
-        .push(StackItem::Cell(msg_cell)) // message
+        .push(StackItem::Cell(msg_cell.into())) // message
         .push(StackItem::Slice(msg.body().unwrap_or_default())) // message body
         .push(function_selector); // function selector
 
@@ -171,9 +166,10 @@ fn build_contract_info(
     code: Cell,
     init_code_hash: Option<&UInt256>,
 ) -> tvm_vm::SmartContractInfo {
-    let mut info = tvm_vm::SmartContractInfo::with_myself(
-        address.serialize().and_then(SliceData::load_cell).unwrap_or_default(),
-    );
+    let mut info =
+        tvm_vm::SmartContractInfo::with_myself(
+            address.serialize().and_then(|cell| SliceData::load_cell(cell)).unwrap_or_default()
+        );
     info.block_lt = block_lt;
     info.trans_lt = tr_lt;
     info.unix_time = block_unixtime;

@@ -1,28 +1,22 @@
+use crate::client::ClientEnv;
+use crate::error::{AddNetworkUrl, ClientResult};
+use crate::net::queries::deserialize_result;
+use crate::net::subscriptions::SubscriptionAction;
+use crate::net::{
+    ChainIterator, ParamsOfQueryCollection, ResultOfQueryCollection, ResultOfSubscription,
+    ServerLink,
+};
+use crate::{client, net};
+use anyhow::bail;
+use futures::FutureExt;
+use futures::StreamExt;
+use rand::RngCore;
 use std::collections::HashMap;
 use std::future::Future;
 use std::str::FromStr;
 use std::sync::Arc;
-
-use futures::FutureExt;
-use futures::StreamExt;
-use rand::RngCore;
-use tokio::sync::mpsc;
-use tokio::sync::Mutex;
-use tokio::sync::RwLock;
+use tokio::sync::{mpsc, Mutex, RwLock};
 use tvm_block::UInt256;
-
-use crate::client;
-use crate::client::ClientEnv;
-use crate::error::AddNetworkUrl;
-use crate::error::ClientResult;
-use crate::net;
-use crate::net::queries::deserialize_result;
-use crate::net::subscriptions::SubscriptionAction;
-use crate::net::ChainIterator;
-use crate::net::ParamsOfQueryCollection;
-use crate::net::ResultOfQueryCollection;
-use crate::net::ResultOfSubscription;
-use crate::net::ServerLink;
 use crate::utils::json::JsonHelper;
 
 #[derive(Debug)]
@@ -41,7 +35,9 @@ pub struct NetworkContext {
 
 impl NetworkContext {
     pub(crate) fn get_server_link(&self) -> ClientResult<&ServerLink> {
-        self.server_link.as_ref().ok_or_else(client::Error::net_module_not_init)
+        self.server_link
+            .as_ref()
+            .ok_or_else(|| client::Error::net_module_not_init())
     }
 
     pub async fn query_collection(
@@ -50,9 +46,10 @@ impl NetworkContext {
     ) -> ClientResult<ResultOfQueryCollection> {
         let server_link = self.get_server_link()?;
         let result = server_link.query_collection(params, None).await;
-        Ok(ResultOfQueryCollection { result: deserialize_result(result, server_link).await? })
+        Ok(ResultOfQueryCollection {
+            result: deserialize_result(result, server_link).await?,
+        })
     }
-
     pub(crate) async fn add_subscription_handle(
         &self,
         handle: u32,
@@ -86,7 +83,7 @@ impl NetworkContext {
         let subscription = server_link
             .subscribe_collection(&collection, filter.as_ref().unwrap_or(&json!({})), &result)
             .await
-            .map_err(net::Error::queries_subscribe_failed)
+            .map_err(|err| net::Error::queries_subscribe_failed(err))
             .add_network_url(server_link)
             .await?;
         self.run_subscription(subscription, callback).await
@@ -102,7 +99,7 @@ impl NetworkContext {
         let subscription = server_link
             .subscribe(subscription, variables)
             .await
-            .map_err(net::Error::queries_subscribe_failed)
+            .map_err(|err| net::Error::queries_subscribe_failed(err))
             .add_network_url(server_link)
             .await?;
         self.run_subscription(subscription, callback).await
@@ -177,21 +174,20 @@ impl NetworkContext {
             .result;
 
         if blocks.is_empty() {
-            tvm_block::fail!(
-                "Unable to resolve zerostate's root hash: can't get masterchain block #1"
-            );
+            bail!("Unable to resolve zerostate's root hash: can't get masterchain block #1");
         }
 
         let prev_ref = &blocks[0]["prev_ref"];
         if prev_ref.is_null() {
-            tvm_block::fail!(
-                "Unable to resolve zerostate's root hash: prev_ref of the block #1 is not set"
-            );
+            bail!("Unable to resolve zerostate's root hash: prev_ref of the block #1 is not set");
         }
 
         let first_master_block_root_hash = UInt256::from_str(blocks[0].get_str("id")?)?;
         let zerostate_root_hash = UInt256::from_str(prev_ref.get_str("root_hash")?)?;
 
-        Ok(Arc::new(NetworkUID { zerostate_root_hash, first_master_block_root_hash }))
+        Ok(Arc::new(NetworkUID {
+            zerostate_root_hash,
+            first_master_block_root_hash,
+        }))
     }
 }

@@ -1,29 +1,28 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-
-use std::sync::Arc;
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
 use serde_json::Value;
-use tvm_vm::stack::integer::IntegerData;
-use tvm_vm::stack::Stack;
-use tvm_vm::stack::StackItem;
 
 use super::stack;
-use super::types::ExecutionOptions;
-use super::types::ResolvedExecutionOptions;
+use super::types::{ExecutionOptions, ResolvedExecutionOptions};
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
-use crate::crypto::internal::tvm_crc16;
+use crate::crypto::internal::ton_crc16;
 use crate::error::ClientResult;
 use crate::tvm::Error;
+use std::sync::Arc;
+use tvm_vm::stack::integer::IntegerData;
+use tvm_vm::stack::{Stack, StackItem};
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ParamsOfRunGet {
@@ -35,12 +34,11 @@ pub struct ParamsOfRunGet {
     pub input: Option<Value>,
     /// Execution options
     pub execution_options: Option<ExecutionOptions>,
-    /// Convert lists based on nested tuples in the **result** into plain
-    /// arrays. Default is `false`. Input parameters may use any of lists
-    /// representations If you receive this error on Web: "Runtime error.
-    /// Unreachable code should not be executed...", set this flag to true.
-    /// This may happen, for example, when elector contract contains too many
-    /// participants
+    /// Convert lists based on nested tuples in the **result** into plain arrays. Default is `false`.
+    /// Input parameters may use any of lists representations
+    /// If you receive this error on Web: "Runtime error. Unreachable code should not be executed...",
+    /// set this flag to true.
+    /// This may happen, for example, when elector contract contains too many participants
     pub tuple_list_as_array: Option<bool>,
 }
 
@@ -63,14 +61,13 @@ pub async fn run_get(
 ) -> ClientResult<ResultOfRunGet> {
     let mut account: tvm_block::Account =
         deserialize_object_from_boc(&context, &params.account, "account")?.object;
-    let options =
-        ResolvedExecutionOptions::from_options(&context, params.execution_options).await?;
+    let options = ResolvedExecutionOptions::from_options(&context, params.execution_options).await?;
 
     if account.is_none() {
-        return Err(Error::invalid_account_boc("Account is None"));
+        return Err(Error::invalid_account_boc("Account is None"))
     }
 
-    let crc = tvm_crc16(params.function_name.as_bytes());
+    let crc = ton_crc16(params.function_name.as_bytes());
     let function_id = ((crc as u32) & 0xffff) | 0x10000;
     let mut stack_in = Stack::new();
     if let Some(input) = params.input {
@@ -83,7 +80,9 @@ pub async fn run_get(
         }
     }
 
-    stack_in.push(StackItem::Integer(Arc::new(IntegerData::from_u32(function_id))));
+    stack_in.push(StackItem::Integer(Arc::new(IntegerData::from_u32(
+        function_id,
+    ))));
 
     let engine = super::call_tvm::call_tvm(&mut account, options, stack_in)?;
     Ok(ResultOfRunGet {

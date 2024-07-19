@@ -1,58 +1,41 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
-use std::sync::Arc;
-
+use super::*;
+use super::types::resolve_network_params;
+use crate::abi::{
+    encode_account::ParamsOfEncodeAccount,
+    Abi, CallSet, DeploySet, FunctionHeader, ParamsOfEncodeMessage, ResultOfEncodeMessage, Signer,
+};
+use crate::boc::ParamsOfEncodeStateInit;
+use crate::tests::GIVER_V2;
+use crate::boc::{
+    internal::{deserialize_object_from_base64, serialize_cell_to_base64},
+    BocCacheType,
+};
+use crate::error::ClientResult;
+use crate::json_interface::modules::{AbiModule, TvmModule, BocModule};
+use crate::net::{ParamsOfQueryCollection, ResultOfQueryCollection};
+use crate::net::network_params::offline_config;
+use crate::processing::{ParamsOfProcessMessage, ResultOfProcessMessage};
+use crate::tests::{TestClient, EXCEPTION, HELLO, SUBSCRIBE};
 use api_info::ApiModule;
 use serde_json::Value;
-use tvm_block::ConfigParam8;
-use tvm_block::ConfigParamEnum;
-use tvm_block::GlobalCapabilities;
-use tvm_block::Serializable;
-use tvm_block::base64_encode;
-use tvm_block::BuilderData;
-use tvm_block::Cell;
-use tvm_block::SliceData;
-use tvm_vm::stack::continuation::ContinuationData;
-use tvm_vm::stack::StackItem;
-
-use super::types::resolve_network_params;
-use super::*;
-use crate::abi::encode_account::ParamsOfEncodeAccount;
-use crate::abi::Abi;
-use crate::abi::CallSet;
-use crate::abi::DeploySet;
-use crate::abi::FunctionHeader;
-use crate::abi::ParamsOfEncodeMessage;
-use crate::abi::ResultOfEncodeMessage;
-use crate::abi::Signer;
-use crate::boc::internal::deserialize_object_from_base64;
-use crate::boc::internal::serialize_cell_to_base64;
-use crate::boc::BocCacheType;
-use crate::boc::ParamsOfEncodeStateInit;
-use crate::error::ClientResult;
-use crate::json_interface::modules::AbiModule;
-use crate::json_interface::modules::BocModule;
-use crate::json_interface::modules::TvmModule;
-use crate::net::network_params::offline_config;
-use crate::net::ParamsOfQueryCollection;
-use crate::net::ResultOfQueryCollection;
-use crate::processing::ParamsOfProcessMessage;
-use crate::processing::ResultOfProcessMessage;
-use crate::tests::TestClient;
-use crate::tests::EXCEPTION;
-use crate::tests::GIVER_V2;
-use crate::tests::HELLO;
-use crate::tests::SUBSCRIBE;
+use tvm_block::{GlobalCapabilities, ConfigParamEnum, Serializable, ConfigParam8};
+use std::sync::Arc;
+use tvm_block::{BuilderData, Cell, SliceData};
+use tvm_vm::stack::{continuation::ContinuationData, StackItem};
 
 const ELECTOR_ADDRESS: &str = "-1:3333333333333333333333333333333333333333333333333333333333333333";
 const ELECTOR_CODE: &str = "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";
@@ -62,7 +45,11 @@ const ELECTOR_DATA: &str = "te6cckICAdwAAQAAXWYAAANP5zNFdL1WHOmhM8muxAeRTL3uvNJv
 async fn test_execute_get() {
     TestClient::init_log();
     let client = TestClient::new();
-    let run_get = client.wrap_async(run_get, TvmModule::api(), crate::tvm::run_get::run_get_api());
+    let run_get = client.wrap_async(
+        run_get,
+        TvmModule::api(),
+        crate::tvm::run_get::run_get_api(),
+    );
     let encode_account = client.wrap(
         crate::abi::encode_account::encode_account,
         AbiModule::api(),
@@ -130,7 +117,10 @@ async fn test_execute_get() {
             function_name: "compute_returned_stake".into(),
             input: Some(Value::String(format!(
                 "0x{}",
-                ELECTOR_ADDRESS.split(':').map(|x| x.to_string()).collect::<Vec<String>>()[1]
+                ELECTOR_ADDRESS
+                    .split(':')
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()[1]
             ))),
             ..Default::default()
         })
@@ -158,15 +148,21 @@ async fn test_run_executor() {
                message: ResultOfEncodeMessage,
                abi: Abi,
                account: String| async move {
-        let run_executor =
-            client.wrap_async(run_executor, TvmModule::api(), run_message::run_executor_api());
+        let run_executor = client.wrap_async(
+            run_executor,
+            TvmModule::api(),
+            run_message::run_executor_api(),
+        );
 
         // check standard run
         let result = run_executor
             .call(ParamsOfRunExecutor {
                 message: message.message,
                 abi: Some(abi.clone()),
-                account: AccountForExecutor::Account { boc: account, unlimited_balance: None },
+                account: AccountForExecutor::Account {
+                    boc: account,
+                    unlimited_balance: None,
+                },
                 return_updated_account: Some(true),
                 ..Default::default()
             })
@@ -239,7 +235,10 @@ async fn test_run_message<F>(
         )
         .await;
 
-    let account: String = client.fetch_account(&address).await["boc"].as_str().unwrap().into();
+    let account: String = client.fetch_account(&address).await["boc"]
+        .as_str()
+        .unwrap()
+        .into();
 
     let subscribe_params = json!({
         "subscriptionId": "0x1111111111111111111111111111111111111111111111111111111111111111",
@@ -293,8 +292,11 @@ async fn test_run_message<F>(
         .await
         .unwrap();
     assert_eq!(
-        result.decoded.unwrap().output.unwrap()
-            [if TestClient::abi_version() == 1 { "subscription" } else { "value0" }]["pubkey"],
+        result.decoded.unwrap().output.unwrap()[if TestClient::abi_version() == 1 {
+            "subscription"
+        } else {
+            "value0"
+        }]["pubkey"],
         subscribe_params["pubkey"]
     );
 }
@@ -304,8 +306,11 @@ async fn test_run_account_none() {
     TestClient::init_log();
     let client = Arc::new(TestClient::new());
 
-    let run_executor =
-        client.wrap_async(run_executor, TvmModule::api(), run_message::run_executor_api());
+    let run_executor = client.wrap_async(
+        run_executor,
+        TvmModule::api(),
+        run_message::run_executor_api(),
+    );
 
     let message = "te6ccgEBAQEAXAAAs0gAV2lB0HI8/VEO/pBKDJJJeoOcIh+dL9JzpmRzM8PfdicAPGNEGwRWGaJsR6UYmnsFVC2llSo1ZZN5mgUnCiHf7ZaUBKgXyAAGFFhgAAAB69+UmQS/LjmiQA==";
 
@@ -321,7 +326,12 @@ async fn test_run_account_none() {
         .unwrap();
 
     let parsed: crate::boc::ResultOfParse = client
-        .request_async("boc.parse_account", crate::boc::ParamsOfParse { boc: result.account })
+        .request_async(
+            "boc.parse_account",
+            crate::boc::ParamsOfParse {
+                boc: result.account,
+            },
+        )
         .await
         .unwrap();
     assert_eq!(
@@ -336,8 +346,11 @@ async fn test_run_account_uninit() {
     TestClient::init_log();
     let client = Arc::new(TestClient::new());
 
-    let run_executor =
-        client.wrap_async(run_executor, TvmModule::api(), run_message::run_executor_api());
+    let run_executor = client.wrap_async(
+        run_executor,
+        TvmModule::api(),
+        run_message::run_executor_api(),
+    );
 
     let keys = client.generate_sign_keys();
     let (abi, tvc) = TestClient::package(HELLO, None);
@@ -349,7 +362,10 @@ async fn test_run_account_uninit() {
                 header: None,
                 input: None,
             }),
-            deploy_set: Some(DeploySet { tvc, ..Default::default() }),
+            deploy_set: Some(DeploySet {
+                tvc,
+                ..Default::default()
+            }),
             signer: Signer::Keys { keys: keys.clone() },
             ..Default::default()
         })
@@ -367,7 +383,12 @@ async fn test_run_account_uninit() {
         .unwrap();
 
     let parsed: crate::boc::ResultOfParse = client
-        .request_async("boc.parse_account", crate::boc::ParamsOfParse { boc: result.account })
+        .request_async(
+            "boc.parse_account",
+            crate::boc::ParamsOfParse {
+                boc: result.account,
+            },
+        )
         .await
         .unwrap();
     assert_eq!(parsed.parsed["id"], message.address);
@@ -409,11 +430,18 @@ async fn profile_tvm() {
 
     let start = chrono::prelude::Utc::now().timestamp_millis();
     let mut messages = vec![];
-    for id in result.decoded.unwrap().output.unwrap()["ids"].as_array().unwrap() {
+    for id in result.decoded.unwrap().output.unwrap()["ids"]
+        .as_array()
+        .unwrap()
+    {
         let mut contender_messages = vec![];
-        for func in
-            &["getInfoFor", "getStatsFor", "getVotesFor", "getTotalRatingFor", "getVotesPerJuror"]
-        {
+        for func in &[
+            "getInfoFor",
+            "getStatsFor",
+            "getVotesFor",
+            "getTotalRatingFor",
+            "getVotesPerJuror",
+        ] {
             let message = client
                 .encode_message(ParamsOfEncodeMessage {
                     abi: abi.clone(),
@@ -461,8 +489,14 @@ async fn profile_tvm() {
         break;
     }
 
-    println!("Tvm called in {}ms", chrono::prelude::Utc::now().timestamp_millis() - start);
-    println!("Whole test in {}ms", chrono::prelude::Utc::now().timestamp_millis() - very_start);
+    println!(
+        "Tvm called in {}ms",
+        chrono::prelude::Utc::now().timestamp_millis() - start
+    );
+    println!(
+        "Whole test in {}ms",
+        chrono::prelude::Utc::now().timestamp_millis() - very_start
+    );
 }
 
 #[test]
@@ -702,10 +736,9 @@ async fn test_tvm_error_message() {
     let account_boc = accounts.first().unwrap()["boc"].as_str().unwrap();
 
     test_method_error(&client, &address, &abi, account_boc, "fail").await;
-    // TODO: Uncomment after changing behavior of the executor (it should return
-    // `raw_exit_arg`       in other cases, not only on `NoAcceptError`):
-    // test_method_error(&client, &address, &abi, account_boc,
-    // "failAfterAccept").await;
+    // TODO: Uncomment after changing behavior of the executor (it should return `raw_exit_arg`
+    //       in other cases, not only on `NoAcceptError`):
+    // test_method_error(&client, &address, &abi, account_boc, "failAfterAccept").await;
 }
 
 async fn test_method_error(
@@ -792,16 +825,18 @@ async fn test_method_error(
     let fail_msg_params = get_run_method_msg_params(abi, address, method);
     let fail_message = encode_message(client, &fail_msg_params).await;
 
-    const EXPECTED_ERROR: Option<&str> = Some(
-        "This is long error message (just for testing \
-            purposes). If you see this error, you can be sure that this contract works as expected.",
-    );
+    const EXPECTED_ERROR: Option<&str> = Some("This is long error message (just for testing \
+            purposes). If you see this error, you can be sure that this contract works as expected.");
 
-    let error = run_tvm(client, account_boc, abi, &fail_message).await.unwrap_err();
+    let error = run_tvm(client, account_boc, abi, &fail_message)
+        .await
+        .unwrap_err();
 
     assert_eq!(error.data["contract_error"].as_str(), EXPECTED_ERROR);
 
-    let error = run_executor(client, account_boc, abi, &fail_message).await.unwrap_err();
+    let error = run_executor(client, account_boc, abi, &fail_message)
+        .await
+        .unwrap_err();
 
     assert_eq!(error.data["contract_error"].as_str(), EXPECTED_ERROR);
 
@@ -810,7 +845,10 @@ async fn test_method_error(
     if TestClient::node_se() {
         assert_eq!(error.data["contract_error"].as_str(), EXPECTED_ERROR);
     } else {
-        assert_eq!(error.data["local_error"]["data"]["contract_error"].as_str(), EXPECTED_ERROR);
+        assert_eq!(
+            error.data["local_error"]["data"]["contract_error"].as_str(),
+            EXPECTED_ERROR
+        );
     }
 }
 
@@ -822,7 +860,7 @@ async fn test_resolve_blockchain_config() {
 
     let local_context =
         Arc::new(crate::ClientContext::new(crate::ClientConfig::default()).unwrap());
-    let block_config = base64_encode(include_bytes!("../boc/test_data/block_config.boc"));
+    let block_config = tvm_block::base64_encode(&include_bytes!("../boc/test_data/block_config.boc"));
     let custom_config_params = deserialize_object_from_base64(&block_config, "config").unwrap();
 
     let config = resolve_network_params(&local_context, Some(block_config), None)
@@ -831,8 +869,10 @@ async fn test_resolve_blockchain_config() {
         .blockchain_config;
     assert_eq!(config.raw_config(), &custom_config_params.object);
 
-    let config =
-        resolve_network_params(&local_context, None, None).await.unwrap().blockchain_config;
+    let config = resolve_network_params(&local_context, None, None)
+        .await
+        .unwrap()
+        .blockchain_config;
     assert_eq!(config.raw_config(), offline_config().0.raw_config());
 
     let config = resolve_network_params(&net_context, None, None).await.unwrap().blockchain_config;
@@ -862,7 +902,10 @@ async fn test_my_code() {
                     input: Some(ctor_params),
                     ..Default::default()
                 }),
-                deploy_set: Some(DeploySet { tvc: tvc.clone(), ..Default::default() }),
+                deploy_set: Some(DeploySet {
+                    tvc: tvc.clone(),
+                    ..Default::default()
+                }),
                 signer: Signer::Keys { keys: keys.clone() },
                 ..Default::default()
             },
@@ -939,7 +982,10 @@ async fn test_run_executor_fees() {
                     function_name: "constructor".into(),
                     ..Default::default()
                 }),
-                deploy_set: Some(DeploySet { tvc: tvc.clone(), ..Default::default() }),
+                deploy_set: Some(DeploySet {
+                    tvc: tvc.clone(),
+                    ..Default::default()
+                }),
                 signer: signer.clone(),
                 ..Default::default()
             },
@@ -975,7 +1021,7 @@ async fn test_run_executor_fees() {
                         "dest": address.clone(),
                         "value": 100_000_000u64,
                         "bounce": false
-                    }),
+                    })
                 ),
                 signer,
                 ..Default::default()
@@ -1002,7 +1048,7 @@ async fn test_run_executor_fees() {
         .unwrap();
 
     assert_eq!(2237000, return_value.fees.ext_in_msg_fee);
-    assert_eq!(1292700, return_value.fees.account_fees / 10);
+    assert_eq!(1292700, return_value.fees.account_fees/10);
     assert_eq!(1000000, return_value.fees.total_fwd_fees);
 
     // use wrong signature
@@ -1014,7 +1060,10 @@ async fn test_run_executor_fees() {
                 address: Some(address.clone()),
                 call_set: Some(CallSet {
                     function_name: "sendTransaction".into(),
-                    header: Some(FunctionHeader { pubkey, ..Default::default() }),
+                    header: Some(FunctionHeader {
+                        pubkey,
+                        ..Default::default()
+                    }),
                     input: Some(json!({
                         "dest": address.clone(),
                         "value": 100_000_000u64,
@@ -1068,9 +1117,10 @@ async fn test_run_executor_fees() {
         .unwrap();
 
     assert_eq!(2237000, return_value.fees.ext_in_msg_fee);
-    assert_eq!(1292700, return_value.fees.account_fees / 10);
+    assert_eq!(1292700, return_value.fees.account_fees/10);
     assert_eq!(1000000, return_value.fees.total_fwd_fees);
 }
+
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_gosh() {
@@ -1146,7 +1196,7 @@ async fn test_gosh() {
                 "tvm.run_tvm",
                 ParamsOfRunTvm {
                     message: call_message.message,
-                    account: deployed.account.clone(),
+                    account:  deployed.account.clone(),
                     abi: Some(abi.clone()),
                     ..Default::default()
                 },
@@ -1169,8 +1219,8 @@ async fn test_signature_id() {
     let mut global_version = config.get_global_version().unwrap();
     global_version.capabilities |= GlobalCapabilities::CapSignatureWithId as u64;
     config.set_config(ConfigParamEnum::ConfigParam8(ConfigParam8 { global_version })).unwrap();
-    let config = base64_encode(config.write_to_bytes().unwrap());
-    let orig_config = base64_encode(orig_config.raw_config().write_to_bytes().unwrap());
+    let config = tvm_block::base64_encode(&config.write_to_bytes().unwrap());
+    let orig_config = tvm_block::base64_encode(&orig_config.raw_config().write_to_bytes().unwrap());
 
     let deploy_message: ResultOfEncodeMessage = client
         .request_async(
@@ -1223,8 +1273,5 @@ async fn test_signature_id() {
         )
         .await
         .unwrap_err();
-    assert_eq!(
-        result.data["exit_code"].as_i64().unwrap(),
-        StdContractError::InvalidSignature as i64
-    );
+    assert_eq!(result.data["exit_code"].as_i64().unwrap(), StdContractError::InvalidSignature as i64);
 }

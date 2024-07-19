@@ -1,40 +1,38 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
-use num_traits::cast::NumCast;
-use serde_json::Value;
-
 use super::base64_interface::Base64Interface;
 use super::hex_interface::HexInterface;
-use super::json_lib_utils::bypass_json;
+use super::sdk_interface::SdkInterface;
 use super::network_interface::NetworkInterface;
 use super::query_interface::QueryInterface;
-use super::sdk_interface::SdkInterface;
+use super::json_lib_utils::bypass_json;
 use super::JsonValue;
-use crate::abi::Abi;
-use crate::abi::Error;
-use crate::boc::parse_message;
-use crate::boc::ParamsOfParse;
+use crate::{abi::{Abi, Error}, error::ClientResult, encoding::slice_from_cell};
+use crate::boc::{parse_message, ParamsOfParse};
 use crate::debot::TonClient;
 use crate::encoding::decode_abi_number;
-use crate::encoding::slice_from_cell;
-use crate::error::ClientResult;
+use num_traits::cast::NumCast;
+use serde_json::Value;
+use std::collections::HashMap;
+use std::sync::Arc;
 pub type InterfaceResult = Result<(u32, Value), String>;
-use tvm_abi::token::Detokenizer;
-use tvm_abi::Contract;
-use tvm_abi::ParamType;
-use tvm_sdk::AbiContract;
+use tvm_abi::{Contract, ParamType};
 
 use crate::boc::internal::deserialize_cell_from_boc;
+use tvm_sdk::AbiContract;
+use tvm_abi::token::Detokenizer;
 
-fn decode_msg(client: TonClient, msg_body: String, abi: Abi) -> ClientResult<(String, Value)> {
+fn decode_msg(
+    client: TonClient,
+    msg_body: String,
+    abi: Abi,
+) -> ClientResult<(String, Value)> {
     let abi = abi.json_string()?;
-    let abi = AbiContract::load(abi.as_bytes()).map_err(Error::invalid_json)?;
+    let abi = AbiContract::load(abi.as_bytes()).map_err(|e| Error::invalid_json(e))?;
     let (_, body) = deserialize_cell_from_boc(&client, &msg_body, "message body")?;
     let body = slice_from_cell(body)?;
-    let input = abi.decode_input(body, true, false).map_err(Error::invalid_message_for_decode)?;
+    let input = abi.decode_input(body, true, false)
+        .map_err(|e| Error::invalid_message_for_decode(e))?;
     let value = Detokenizer::detokenize_to_json_value(&input.tokens)
-        .map_err(Error::invalid_message_for_decode)?;
+        .map_err(|e| Error::invalid_message_for_decode(e))?;
     Ok((input.function_name, value))
 }
 
@@ -70,18 +68,11 @@ pub trait DebotInterface {
 
 #[async_trait::async_trait]
 pub trait DebotInterfaceExecutor {
-    fn get_interfaces(&self) -> &HashMap<String, Arc<dyn DebotInterface + Send + Sync>>;
+    fn get_interfaces<'a>(&'a self) -> &'a HashMap<String, Arc<dyn DebotInterface + Send + Sync>>;
     fn get_client(&self) -> TonClient;
 
-    async fn try_execute(
-        &self,
-        msg: &String,
-        interface_id: &String,
-        abi_version: &str,
-    ) -> Option<InterfaceResult> {
-        let res =
-            Self::execute(self.get_client(), msg, interface_id, self.get_interfaces(), abi_version)
-                .await;
+    async fn try_execute(&self, msg: &String, interface_id: &String, abi_version: &str) -> Option<InterfaceResult> {
+        let res = Self::execute(self.get_client(), msg, interface_id, self.get_interfaces(), abi_version).await;
         match res.as_ref() {
             Err(_) => Some(res),
             Ok(val) => {
@@ -106,16 +97,15 @@ pub trait DebotInterfaceExecutor {
 
         let body = parsed.parsed["body"]
             .as_str()
-            .ok_or("parsed message has no body".to_string())?
+            .ok_or(format!("parsed message has no body"))?
             .to_owned();
         debug!("interface {} call", interface_id);
         match interfaces.get(interface_id) {
             Some(object) => {
                 let abi = object.get_target_abi(abi_version);
-                let (func, args) =
-                    decode_msg(client.clone(), body, abi.clone()).map_err(|e| e.to_string())?;
-                let (answer_id, mut ret_args) = object
-                    .call(&func, &args)
+                let (func, args) = decode_msg(client.clone(), body, abi.clone())
+                    .map_err(|e| e.to_string())?;
+                let (answer_id, mut ret_args) = object.call(&func, &args)
                     .await
                     .map_err(|e| format!("interface {}.{} failed: {}", interface_id, func, e))?;
                 if abi_version == "2.0" {
@@ -128,7 +118,7 @@ pub trait DebotInterfaceExecutor {
             None => {
                 debug!("interface {} not implemented", interface_id);
                 Ok((0, json!({})))
-            }
+            },
         }
     }
 }
@@ -138,7 +128,9 @@ fn convert_return_args(abi: &str, fname: &str, ret_args: &mut Value) -> Result<(
     let func = contract
         .function(fname)
         .map_err(|_| format!("function with name '{}' not found", fname))?;
-    let output = func.outputs.iter();
+    let output = func
+        .outputs
+        .iter();
     for val in output {
         let pointer = "";
         bypass_json(pointer, ret_args, val.clone(), ParamType::String)?;
@@ -153,10 +145,9 @@ pub struct BuiltinInterfaces {
 
 #[async_trait::async_trait]
 impl DebotInterfaceExecutor for BuiltinInterfaces {
-    fn get_interfaces(&self) -> &HashMap<String, Arc<dyn DebotInterface + Send + Sync>> {
+    fn get_interfaces<'a>(&'a self) -> &'a HashMap<String, Arc<dyn DebotInterface + Send + Sync>> {
         &self.interfaces
     }
-
     fn get_client(&self) -> TonClient {
         self.client.clone()
     }
@@ -172,12 +163,10 @@ impl BuiltinInterfaces {
         let iface: Arc<dyn DebotInterface + Send + Sync> = Arc::new(HexInterface::new());
         interfaces.insert(iface.get_id(), iface);
 
-        let iface: Arc<dyn DebotInterface + Send + Sync> =
-            Arc::new(NetworkInterface::new(client.clone()));
+        let iface: Arc<dyn DebotInterface + Send + Sync> = Arc::new(NetworkInterface::new(client.clone()));
         interfaces.insert(iface.get_id(), iface);
 
-        let iface: Arc<dyn DebotInterface + Send + Sync> =
-            Arc::new(QueryInterface::new(client.clone()));
+        let iface: Arc<dyn DebotInterface + Send + Sync> = Arc::new(QueryInterface::new(client.clone()));
         interfaces.insert(iface.get_id(), iface);
 
         let iface: Arc<dyn DebotInterface + Send + Sync> =
@@ -194,13 +183,18 @@ impl BuiltinInterfaces {
 
 pub fn decode_answer_id(args: &Value) -> Result<u32, String> {
     decode_abi_number::<u32>(
-        args["answerId"].as_str().ok_or("answer id not found in argument list".to_string())?,
+        args["answerId"]
+            .as_str()
+            .ok_or(format!("answer id not found in argument list"))?,
     )
     .map_err(|e| format!("{}", e))
 }
 
 pub fn get_arg(args: &Value, name: &str) -> Result<String, String> {
-    args[name].as_str().ok_or(format!("\"{}\" not found", name)).map(|v| v.to_string())
+    args[name]
+        .as_str()
+        .ok_or(format!("\"{}\" not found", name))
+        .map(|v| v.to_string())
 }
 
 pub fn get_num_arg<T>(args: &Value, name: &str) -> Result<T, String>
@@ -213,15 +207,18 @@ where
 }
 
 pub fn get_bool_arg(args: &Value, name: &str) -> Result<bool, String> {
-    args[name].as_bool().ok_or(format!("\"{}\" not found", name))
+    args[name]
+        .as_bool()
+        .ok_or(format!("\"{}\" not found", name))
 }
 
 pub fn get_array_strings(args: &Value, name: &str) -> Result<Vec<String>, String> {
-    let array = args[name].as_array().ok_or(format!("\"{}\" is invalid: must be array", name))?;
+    let array = args[name]
+        .as_array()
+        .ok_or(format!("\"{}\" is invalid: must be array", name))?;
     let mut strings = vec![];
     for elem in array {
-        let string =
-            elem.as_str().ok_or_else(|| "array element is invalid: must be string".to_string())?;
+        let string = elem.as_str().ok_or_else(|| format!("array element is invalid: must be string"))?;
         strings.push(string.to_owned());
     }
     Ok(strings)

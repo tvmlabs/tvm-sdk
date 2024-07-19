@@ -1,29 +1,22 @@
-use std::sync::Arc;
-
-use serde_json::Value;
-use tvm_block::MsgAddressInt;
-use tvm_sdk::Block;
-
 use crate::abi::Abi;
 use crate::boc::internal::deserialize_object_from_base64;
 use crate::client::ClientContext;
-use crate::error::AddNetworkUrl;
-use crate::error::ClientResult;
-use crate::net::wait_for_collection;
-use crate::net::ParamsOfWaitForCollection;
-use crate::net::MAX_TIMEOUT;
-use crate::net::TRANSACTIONS_COLLECTION;
+use crate::error::{ClientResult, AddNetworkUrl};
+use crate::net::{
+    wait_for_collection, ParamsOfWaitForCollection, MAX_TIMEOUT, TRANSACTIONS_COLLECTION,
+};
 use crate::processing::blocks_walking::wait_next_block;
-use crate::processing::internal::can_retry_network_error;
-use crate::processing::internal::resolve_error;
-use crate::processing::parsing::decode_output;
-use crate::processing::parsing::parse_transaction_boc;
-use crate::processing::Error;
-use crate::processing::ParamsOfWaitForTransaction;
-use crate::processing::ProcessingEvent;
-use crate::processing::ResultOfProcessMessage;
-use crate::tvm::check_transaction::calc_transaction_fees;
-use crate::tvm::check_transaction::extract_error;
+use crate::processing::internal::{can_retry_network_error, resolve_error};
+use crate::processing::parsing::{decode_output, parse_transaction_boc};
+use crate::processing::{
+    Error, ParamsOfWaitForTransaction, ProcessingEvent, ResultOfProcessMessage,
+};
+use crate::tvm::check_transaction::{calc_transaction_fees, extract_error};
+use serde_json::Value;
+use std::convert::TryFrom;
+use std::sync::Arc;
+use tvm_block::MsgAddressInt;
+use tvm_sdk::Block;
 
 pub async fn fetch_next_shard_block<F: futures::Future<Output = ()> + Send>(
     context: &Arc<ClientContext>,
@@ -50,12 +43,12 @@ pub async fn fetch_next_shard_block<F: futures::Future<Output = ()> + Send>(
         }
 
         // Fetch next block
-        match wait_next_block(context, block_id, address, Some(timeout)).await {
+        match wait_next_block(context, block_id.into(), &address, Some(timeout)).await {
             Ok(block) => return Ok(block),
             Err(err) => {
-                let is_retryable_error = crate::client::Error::is_network_error(&err)
-                    || err.code == crate::net::ErrorCode::WaitForTimeout as u32;
-                let error = Error::fetch_block_failed(err, message_id, &block_id.to_string());
+                let is_retryable_error = crate::client::Error::is_network_error(&err) ||
+                    err.code == crate::net::ErrorCode::WaitForTimeout as u32;
+                let error = Error::fetch_block_failed(err, &message_id, &block_id.to_string());
 
                 // Notify app about error
                 if params.send_events {
@@ -70,7 +63,8 @@ pub async fn fetch_next_shard_block<F: futures::Future<Output = ()> + Send>(
                 }
 
                 // If network retries timeout has reached, return error
-                if !is_retryable_error || !can_retry_network_error(context, start) {
+                if !is_retryable_error || !can_retry_network_error(context, start)
+                {
                     return Err(error);
                 }
             }
@@ -204,7 +198,7 @@ pub async fn fetch_transaction_result(
     let transaction_object = deserialize_object_from_base64(&transaction_boc.boc, "transaction")?;
 
     let transaction = tvm_sdk::Transaction::try_from(&transaction_object.object)
-        .map_err(crate::tvm::Error::can_not_read_transaction)?;
+        .map_err(|err| crate::tvm::Error::can_not_read_transaction(err))?;
 
     let local_result = if transaction.is_aborted() {
         let error = match extract_error(&transaction, get_contract_info.clone(), true).await {
@@ -212,23 +206,21 @@ pub async fn fetch_transaction_result(
             Ok(_) => crate::tvm::Error::transaction_aborted(),
         };
 
-        Some(
-            resolve_error(
-                Arc::clone(context),
-                &address,
-                message.to_string(),
-                error,
-                expiration_time - 1,
-                false,
-            )
+        Some(resolve_error(
+            Arc::clone(context),
+            &address,
+            message.to_string(),
+            error,
+            expiration_time - 1,
+            false,
+        )
             .await
-            .add_network_url_from_context(context)
+            .add_network_url_from_context(&context)
             .await
             .map_err(|mut error| {
                 error.data["transaction_id"] = transaction.id().to_string().into();
                 error
-            }),
-        )
+            }))
     } else {
         None
     };
@@ -242,13 +234,7 @@ pub async fn fetch_transaction_result(
                 && (exit_code == crate::tvm::StdContractError::ReplayProtection as i32
                     || exit_code == crate::tvm::StdContractError::ExtMessageExpired as i32)
             {
-                Error::message_expired(
-                    message_id,
-                    shard_block_id,
-                    expiration_time,
-                    block_time,
-                    &address,
-                )
+                Error::message_expired(&message_id, shard_block_id, expiration_time, block_time, &address)
             } else {
                 if let Some(Err(local_error)) = local_result {
                     if local_error.data[EXIT_CODE_FIELD] == *exit_code {
@@ -266,7 +252,12 @@ pub async fn fetch_transaction_result(
         None
     };
 
-    Ok(ResultOfProcessMessage { transaction, out_messages, decoded: abi_decoded, fees })
+    Ok(ResultOfProcessMessage {
+        transaction,
+        out_messages,
+        decoded: abi_decoded,
+        fees,
+    })
 }
 
 async fn fetch_transaction_boc(
@@ -286,12 +277,12 @@ async fn fetch_transaction_boc(
         };
         match fetch_result {
             Ok(value) => {
-                return TransactionBoc::from(value, message_id, shard_block_id);
+                return Ok(TransactionBoc::from(value, message_id, shard_block_id)?);
             }
             Err(error) => {
                 // If network retries timeout has reached, return error
-                if !crate::client::Error::is_network_error(&error)
-                    || !can_retry_network_error(context, start)
+                if !crate::client::Error::is_network_error(&error) ||
+                    !can_retry_network_error(context, start)
                 {
                     return Err(error);
                 }

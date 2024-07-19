@@ -1,4 +1,4 @@
-// Copyright 2018-2021 TON Labs LTD.
+// Copyright 2018-2021 TON Labs Ltd.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 use std::fmt;
 
 use num_traits::cast::ToPrimitive;
-use tvm_block::base64_encode;
 use tvm_block::Result;
 use tvm_block::UInt256;
 
@@ -31,25 +30,25 @@ impl From<UInt256> for StringId {
 
 impl From<String> for StringId {
     fn from(id: String) -> Self {
-        StringId(id)
+        StringId { 0: id }
     }
 }
 
 impl From<&str> for StringId {
     fn from(id: &str) -> Self {
-        StringId(id.to_owned())
+        StringId { 0: id.to_owned() }
     }
 }
 
 impl From<Vec<u8>> for StringId {
     fn from(id: Vec<u8>) -> Self {
-        StringId(hex::encode(id))
+        StringId { 0: hex::encode(id) }
     }
 }
 
 impl From<&[u8]> for StringId {
     fn from(id: &[u8]) -> Self {
-        StringId(hex::encode(id))
+        StringId { 0: hex::encode(id) }
     }
 }
 
@@ -62,7 +61,7 @@ impl fmt::Display for StringId {
 impl StringId {
     pub fn to_base64(&self) -> Result<String> {
         let bytes = self.to_bytes()?;
-        Ok(base64_encode(bytes))
+        Ok(tvm_block::base64_encode(&bytes))
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {

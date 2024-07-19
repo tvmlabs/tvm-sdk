@@ -1,18 +1,20 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
-//
+/*
+ * Copyright 2018-2021 EverX Labs Ltd.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific EVERX DEV software governing permissions and
+ * limitations under the License.
+ *
+ */
 
 use serde_json::Value;
 
-use crate::error::ClientResult;
+use crate::error::{ClientResult};
 use crate::net::Error;
 
 const GQL_CONNECTION_INIT: &str = "connection_init";
@@ -28,10 +30,19 @@ const GQL_STOP: &str = "stop";
 
 #[derive(Debug)]
 pub(crate) enum GraphQLMessageFromClient {
-    ConnectionInit { connection_params: Value },
+    ConnectionInit {
+        connection_params: Value,
+    },
     ConnectionTerminate,
-    Start { id: String, query: String, variables: Option<Value>, operation_name: Option<String> },
-    Stop { id: String },
+    Start {
+        id: String,
+        query: String,
+        variables: Option<Value>,
+        operation_name: Option<String>,
+    },
+    Stop {
+        id: String,
+    },
 }
 
 impl GraphQLMessageFromClient {
@@ -44,7 +55,12 @@ impl GraphQLMessageFromClient {
             GraphQLMessageFromClient::ConnectionTerminate => json!({
                 "type": GQL_CONNECTION_TERMINATE,
             }),
-            GraphQLMessageFromClient::Start { id, query, variables, operation_name } => {
+            GraphQLMessageFromClient::Start {
+                id,
+                query,
+                variables,
+                operation_name,
+            } => {
                 let mut payload = json!({
                     "query": query.clone(),
                 });
@@ -71,12 +87,23 @@ impl GraphQLMessageFromClient {
 
 #[derive(Debug)]
 pub(crate) enum GraphQLMessageFromServer {
-    ConnectionError { error: Value },
+    ConnectionError {
+        error: Value,
+    },
     ConnectionAck,
     ConnectionKeepAlive,
-    Data { id: String, data: Value, errors: Option<Vec<Value>> },
-    Error { id: String, error: Value },
-    Complete { id: String },
+    Data {
+        id: String,
+        data: Value,
+        errors: Option<Vec<Value>>,
+    },
+    Error {
+        id: String,
+        error: Value,
+    },
+    Complete {
+        id: String,
+    },
 }
 
 impl GraphQLMessageFromServer {
@@ -84,9 +111,9 @@ impl GraphQLMessageFromServer {
         let value = serde_json::from_str::<Value>(message)
             .map_err(|_| Error::invalid_server_response(message))?;
         Ok(match value["type"].as_str().unwrap_or("") {
-            GQL_CONNECTION_ERROR => {
-                GraphQLMessageFromServer::ConnectionError { error: value["payload"].clone() }
-            }
+            GQL_CONNECTION_ERROR => GraphQLMessageFromServer::ConnectionError {
+                error: value["payload"].clone(),
+            },
             GQL_CONNECTION_ACK => GraphQLMessageFromServer::ConnectionAck,
             GQL_CONNECTION_KEEP_ALIVE => GraphQLMessageFromServer::ConnectionKeepAlive,
             GQL_DATA => GraphQLMessageFromServer::Data {
@@ -105,3 +132,4 @@ impl GraphQLMessageFromServer {
         })
     }
 }
+

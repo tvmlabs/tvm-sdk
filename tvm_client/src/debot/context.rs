@@ -1,16 +1,12 @@
+use crate::encoding::decode_abi_number;
+use super::action::DAction;
+use serde::{de, Deserialize, Deserializer};
 use std::fmt::Display;
 use std::str::FromStr;
 
-use serde::de;
-use serde::Deserialize;
-use serde::Deserializer;
-
-use super::action::DAction;
-use crate::encoding::decode_abi_number;
-
 pub const STATE_ZERO: u8 = 0;
 pub const STATE_CURRENT: u8 = 253;
-pub const STATE_PREV: u8 = 254;
+pub const STATE_PREV: u8 = 254; 	
 pub const STATE_EXIT: u8 = 255;
 
 /// Debot Context. Consists of several actions.
@@ -28,17 +24,22 @@ pub struct DContext {
 impl DContext {
     #[allow(dead_code)]
     pub fn new(desc: String, actions: Vec<DAction>, id: u8) -> Self {
-        DContext { desc, actions, id }
+        DContext {
+            desc,
+            actions,
+            id,
+        }
     }
 
     pub fn new_quit() -> Self {
         DContext::new(String::new(), vec![], STATE_EXIT)
     }
+
 }
 
-pub(super) fn from_abi_num<'de, D>(des: D) -> Result<u8, D::Error>
-where
-    D: Deserializer<'de>,
+pub(super) fn from_abi_num<'de, D>(des: D) -> Result<u8, D::Error> 
+where 
+    D: Deserializer<'de>
 {
     let s: String = Deserialize::deserialize(des)?;
     decode_abi_number(&s).map_err(de::Error::custom)
@@ -48,14 +49,14 @@ pub(super) fn str_hex_to_utf8(s: &str) -> Option<String> {
     String::from_utf8(hex::decode(s).ok()?).ok()
 }
 
-pub(super) fn from_hex_to_utf8_str<'de, S, D>(des: D) -> Result<S, D::Error>
-where
+pub(super) fn from_hex_to_utf8_str<'de, S, D>(des: D) -> Result<S, D::Error> 
+where 
     S: FromStr,
     S::Err: Display,
-    D: Deserializer<'de>,
+    D: Deserializer<'de> 
 {
     let s: String = Deserialize::deserialize(des)?;
-    let s =
-        str_hex_to_utf8(&s).ok_or("failed to convert bytes to utf8 string".to_string()).unwrap();
+    let s = str_hex_to_utf8(&s)
+        .ok_or(format!("failed to convert bytes to utf8 string")).unwrap();
     S::from_str(&s).map_err(de::Error::custom)
 }

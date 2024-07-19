@@ -1,6 +1,10 @@
+
+use crate::tests::{TestClient};
+
 use super::*;
+use serde_json::Value;
+use std::collections::HashSet;
 use crate::net::ResultOfQueryCollection;
-use crate::tests::TestClient;
 
 async fn query_ids_in_range(
     client: &TestClient,
@@ -39,7 +43,13 @@ async fn query_block_ids_in_range(
     start_time: u32,
     end_time: u32,
 ) -> HashSet<String> {
-    query_ids_in_range(client, "blocks", "gen_utime", start_time, end_time).await
+    query_ids_in_range(
+        client,
+        "blocks",
+        "gen_utime",
+        start_time,
+        end_time,
+    ).await
 }
 
 async fn query_transaction_ids_in_range(
@@ -47,7 +57,13 @@ async fn query_transaction_ids_in_range(
     start_time: u32,
     end_time: u32,
 ) -> HashSet<String> {
-    query_ids_in_range(client, "transactions", "now", start_time, end_time).await
+    query_ids_in_range(
+        client,
+        "transactions",
+        "now",
+        start_time,
+        end_time,
+    ).await
 }
 
 async fn iterate(
@@ -72,7 +88,7 @@ async fn iterate(
             )
             .await
             .unwrap();
-        // println!(">>> {:?}", next.items);
+        //println!(">>> {:?}", next.items);
         iterated_items += next.items.len();
         for item in next.items {
             let id = item["id"].as_str().unwrap();
@@ -135,8 +151,14 @@ async fn block_iterator() {
         )
         .await
         .unwrap();
-    let resume_state =
-        iterate(&client, iterator.handle, &mut ids, &mut extra_ids, usize::MAX).await;
+    let resume_state = iterate(
+        &client,
+        iterator.handle,
+        &mut ids,
+        &mut extra_ids,
+        usize::MAX,
+    )
+    .await;
     remove_iterator(&client, iterator.handle).await;
     assert!(resume_state.is_none());
     assert_eq!(ids, HashSet::default(), "Not iterated");
@@ -181,28 +203,37 @@ async fn transaction_iterator() {
         )
         .await
         .unwrap();
-    let resume_state =
-        iterate(&client, iterator.handle, &mut ids, &mut extra_ids, usize::MAX).await;
+    let resume_state = iterate(
+        &client,
+        iterator.handle,
+        &mut ids,
+        &mut extra_ids,
+        usize::MAX,
+    )
+    .await;
     remove_iterator(&client, iterator.handle).await;
     assert!(resume_state.is_none());
     assert_eq!(ids, HashSet::default(), "Not iterated");
     assert_eq!(extra_ids, HashSet::default(), "Extra iterated");
 }
 
-// const iterator = await client.net.create_block_iterator({
-// start_time: start_time,
-// end_time: end_time,
-// result: "id",
-// });
-//
-// let has_more = true;
-// while (has_more) {
-// const next = await client.net.iterator_next{ iterator: iterator.handle });
-// for (const block of next.items) {
-// console.log(block.id);
-// }
-// has_more = next.has_more;
-// }
-//
-// await client.net.remove_iterator(iterator);
-//
+/*
+
+const iterator = await client.net.create_block_iterator({
+    start_time: start_time,
+    end_time: end_time,
+    result: "id",
+});
+
+let has_more = true;
+while (has_more) {
+    const next = await client.net.iterator_next{ iterator: iterator.handle });
+    for (const block of next.items) {
+        console.log(block.id);
+    }
+    has_more = next.has_more;
+}
+
+await client.net.remove_iterator(iterator);
+
+ */

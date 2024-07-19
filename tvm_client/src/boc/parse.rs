@@ -1,23 +1,24 @@
-// Copyright 2018-2021 TON Labs LTD.
-//
-// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
-// use this file except in compliance with the License.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
-// limitations under the License.
+/*
+* Copyright 2018-2021 EverX Labs Ltd.
+*
+* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+* this file except in compliance with the License.
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific EVERX DEV software governing permissions and
+* limitations under the License.
+*/
 
-use serde_json::Value;
-use tvm_block::Deserializable;
-
-use super::internal::deserialize_cell_from_boc;
-use super::internal::deserialize_object_from_cell;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::boc::Error;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
+use serde_json::Value;
+use tvm_block::Deserializable;
+
+use super::internal::{deserialize_cell_from_boc, deserialize_object_from_cell};
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]
 pub struct ParamsOfParse {
@@ -49,8 +50,7 @@ pub fn parse_message(
     context: std::sync::Arc<ClientContext>,
     params: ParamsOfParse,
 ) -> ClientResult<ResultOfParse> {
-    let object =
-        deserialize_object_from_boc::<tvm_block::Message>(&context, &params.boc, "message")?;
+    let object = deserialize_object_from_boc::<tvm_block::Message>(&context, &params.boc, "message")?;
 
     let set = tvm_block_json::MessageSerializationSet {
         block_id: None,
@@ -71,7 +71,9 @@ pub fn parse_message(
     )
     .map_err(|err| Error::serialization_error(err, "message"))?;
 
-    Ok(ResultOfParse { parsed: parsed.into() })
+    Ok(ResultOfParse {
+        parsed: parsed.into(),
+    })
 }
 
 /// Parses transaction boc into a JSON
@@ -82,11 +84,8 @@ pub fn parse_transaction(
     context: std::sync::Arc<ClientContext>,
     params: ParamsOfParse,
 ) -> ClientResult<ResultOfParse> {
-    let object = deserialize_object_from_boc::<tvm_block::Transaction>(
-        &context,
-        &params.boc,
-        "transaction",
-    )?;
+    let object =
+        deserialize_object_from_boc::<tvm_block::Transaction>(&context, &params.boc, "transaction")?;
 
     let set = tvm_block_json::TransactionSerializationSetEx {
         block_id: None,
@@ -95,7 +94,7 @@ pub fn parse_transaction(
         transaction: &object.object,
         proof: None,
         status: tvm_block::TransactionProcessingStatus::Finalized,
-        workchain_id: None,
+        workchain_id: None
     };
 
     let parsed = tvm_block_json::db_serialize_transaction_ex(
@@ -105,7 +104,9 @@ pub fn parse_transaction(
     )
     .map_err(|err| Error::serialization_error(err, "transaction"))?;
 
-    Ok(ResultOfParse { parsed: parsed.into() })
+    Ok(ResultOfParse {
+        parsed: parsed.into(),
+    })
 }
 
 /// Parses account boc into a JSON
@@ -119,18 +120,10 @@ pub fn parse_account(
     let (boc, cell) = deserialize_cell_from_boc(&context, &params.boc, "account")?;
 
     let account = if cell.cell_type() == tvm_block::CellType::MerkleProof {
-        let proof = tvm_block::MerkleProof::construct_from_cell(cell).map_err(|err| {
-            Error::invalid_boc(format!(
-                "Can not deserialize Merkle proof from pruned account BOC: {}",
-                err
-            ))
-        })?;
-        proof.virtualize().map_err(|err| {
-            Error::invalid_boc(format!(
-                "Can not virtualize pruned account from Merkle proof: {}",
-                err
-            ))
-        })?
+        let proof = tvm_block::MerkleProof::construct_from_cell(cell)
+            .map_err(|err| Error::invalid_boc(format!("Can not deserialize Merkle proof from pruned account BOC: {}", err)))?;
+        proof.virtualize()
+            .map_err(|err| Error::invalid_boc(format!("Can not virtualize pruned account from Merkle proof: {}", err)))?
     } else {
         deserialize_object_from_cell(cell, "account")?
     };
@@ -149,7 +142,9 @@ pub fn parse_account(
     )
     .map_err(|err| Error::serialization_error(err, "account"))?;
 
-    Ok(ResultOfParse { parsed: parsed.into() })
+    Ok(ResultOfParse {
+        parsed: parsed.into(),
+    })
 }
 
 /// Parses block boc into a JSON
@@ -177,7 +172,9 @@ pub fn parse_block(
     )
     .map_err(|err| Error::serialization_error(err, "block"))?;
 
-    Ok(ResultOfParse { parsed: parsed.into() })
+    Ok(ResultOfParse {
+        parsed: parsed.into(),
+    })
 }
 
 /// Parses shardstate boc into a JSON
@@ -188,11 +185,8 @@ pub fn parse_shardstate(
     context: std::sync::Arc<ClientContext>,
     params: ParamsOfParseShardstate,
 ) -> ClientResult<ResultOfParse> {
-    let object = deserialize_object_from_boc::<tvm_block::ShardStateUnsplit>(
-        &context,
-        &params.boc,
-        "shardstate",
-    )?;
+    let object =
+        deserialize_object_from_boc::<tvm_block::ShardStateUnsplit>(&context, &params.boc, "shardstate")?;
 
     let set = tvm_block_json::ShardStateSerializationSet {
         boc: object.boc.bytes("shardstate")?,
@@ -210,11 +204,16 @@ pub fn parse_shardstate(
     )
     .map_err(|err| Error::serialization_error(err, "shardstate"))?;
 
-    Ok(ResultOfParse { parsed: parsed.into() })
+    Ok(ResultOfParse {
+        parsed: parsed.into(),
+    })
 }
 
 pub fn source_boc(parsed: &Value) -> ClientResult<String> {
-    Ok(parsed["boc"].as_str().ok_or(Error::missing_source_boc())?.into())
+    Ok(parsed["boc"]
+        .as_str()
+        .ok_or(Error::missing_source_boc())?
+        .into())
 }
 
 pub fn required_boc(parsed: &Option<Value>) -> ClientResult<String> {

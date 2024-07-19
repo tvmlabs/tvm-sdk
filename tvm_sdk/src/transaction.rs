@@ -1,4 +1,4 @@
-// Copyright 2018-2021 TON Labs LTD.
+// Copyright 2018-2021 TON Labs Ltd.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,13 +9,15 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::convert::TryFrom;
+
 use tvm_block::AccStatusChange;
 use tvm_block::ComputeSkipReason;
 use tvm_block::GetRepresentationHash;
+use tvm_block::Result;
 use tvm_block::TrComputePhase;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionProcessingStatus;
-use tvm_block::Result;
 
 use crate::error::SdkError;
 use crate::json_helper;
@@ -81,7 +83,7 @@ pub struct Transaction {
 }
 
 impl TryFrom<&tvm_block::Transaction> for Transaction {
-    type Error = tvm_block::Error;
+    type Error = anyhow::Error;
 
     fn try_from(transaction: &tvm_block::Transaction) -> Result<Self> {
         let descr = if let TransactionDescr::Ordinary(descr) = transaction.read_description()? {
@@ -131,7 +133,8 @@ impl TryFrom<&tvm_block::Transaction> for Transaction {
             None
         };
 
-        let in_msg = transaction.in_msg.as_ref().map(|msg| msg.hash().into());
+        let in_msg =
+            if transaction.in_msg.empty() { None } else { Some(transaction.in_msg.hash().into()) };
         let mut out_msgs = vec![];
         transaction.out_msgs.iterate_slices(|slice| {
             if let Ok(cell) = slice.reference(0) {
@@ -141,7 +144,7 @@ impl TryFrom<&tvm_block::Transaction> for Transaction {
         })?;
         let mut out_messages = vec![];
         transaction.out_msgs.iterate(|msg| {
-            out_messages.push(Message::with_msg(&msg.0)?);
+            out_messages.push(Message::with_msg(msg.0.get_std()?)?);
             Ok(true)
         })?;
 

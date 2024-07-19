@@ -1,4 +1,4 @@
-// Copyright 2018-2021 TON Labs LTD.
+// Copyright 2018-2021 TON Labs Ltd.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::convert::Into;
+use std::convert::TryInto;
 use std::io::Read;
 use std::io::Seek;
 
@@ -16,24 +18,24 @@ use chrono::prelude::Utc;
 use serde_json::Value;
 use tvm_abi::json_abi::DecodedMessage;
 use tvm_abi::PublicKeyData;
+use tvm_block::error;
+use tvm_block::fail;
+use tvm_block::AccountId;
 use tvm_block::AccountIdPrefixFull;
+use tvm_block::BocReader;
 use tvm_block::CurrencyCollection;
 use tvm_block::Deserializable;
+use tvm_block::Ed25519PrivateKey;
 use tvm_block::ExternalInboundMessageHeader;
 use tvm_block::GetRepresentationHash;
 use tvm_block::InternalMessageHeader;
 use tvm_block::Message as TvmMessage;
 use tvm_block::MsgAddressInt;
+use tvm_block::Result;
 use tvm_block::Serializable;
 use tvm_block::ShardIdent;
-use tvm_block::StateInit;
-use tvm_block::error;
-use tvm_block::fail;
-use tvm_block::AccountId;
-use tvm_block::BocReader;
-use tvm_block::Ed25519PrivateKey;
-use tvm_block::Result;
 use tvm_block::SliceData;
+use tvm_block::StateInit;
 
 use crate::error::SdkError;
 use crate::json_helper;
@@ -153,18 +155,14 @@ impl ContractImage {
     pub fn get_serialized_code(&self) -> Result<Vec<u8>> {
         match &self.state_init.code {
             Some(cell) => tvm_block::boc::write_boc(cell),
-            None => {
-                fail!(SdkError::InvalidData { msg: "State init has no code".to_owned() })
-            }
+            None => bail!(SdkError::InvalidData { msg: "State init has no code".to_owned() }),
         }
     }
 
     pub fn get_serialized_data(&self) -> Result<Vec<u8>> {
         match &self.state_init.data {
             Some(cell) => tvm_block::boc::write_boc(cell),
-            None => {
-                fail!(SdkError::InvalidData { msg: "State init has no data".to_owned() })
-            }
+            None => bail!(SdkError::InvalidData { msg: "State init has no data".to_owned() }),
         }
     }
 
@@ -637,9 +635,7 @@ impl Contract {
         msg_header.ihr_disabled = ihr_disabled;
         msg_header.bounce = bounce;
         let mut msg = TvmMessage::with_int_header(msg_header);
-        if let Some(body) = msg_body {
-            msg.set_body(body)
-        }
+        msg_body.map(|body| msg.set_body(body));
 
         Ok(msg)
     }
@@ -656,9 +652,7 @@ impl Contract {
 
         let mut msg = TvmMessage::with_ext_in_header(msg_header);
         msg.set_state_init(image.state_init());
-        if let Some(body) = msg_body {
-            msg.set_body(body)
-        }
+        msg_body.map(|body| msg.set_body(body));
 
         Ok(msg)
     }
@@ -684,9 +678,7 @@ impl Contract {
 
         let mut msg = TvmMessage::with_int_header(msg_header);
         msg.set_state_init(image.state_init());
-        if let Some(body) = msg_body {
-            msg.set_body(body)
-        }
+        msg_body.map(|body| msg.set_body(body));
 
         Ok(msg)
     }
@@ -698,7 +690,7 @@ impl Contract {
 
     /// Deserializes tree of cells from byte array into `SliceData`
     pub fn deserialize_tree_to_slice(data: &[u8]) -> Result<SliceData> {
-        SliceData::load_cell(tvm_block::boc::read_single_root_boc(data)?)
+        SliceData::load_cell(tvm_block::boc::read_single_root_boc(&data)?)
     }
 
     pub fn get_dst_from_msg(msg: &[u8]) -> Result<MsgAddressInt> {

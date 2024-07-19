@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 TON Labs LTD.
+ * Copyright 2018-2021 EverX Labs Ltd.
  *
  * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
  * this file except in compliance with the License.
@@ -7,7 +7,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific TON DEV software governing permissions and
+ * See the License for the specific EVERX DEV software governing permissions and
  * limitations under the License.
  *
  */
@@ -26,7 +26,7 @@ function root_path(...items) {
     return path.resolve(root, ...(items.reduce((a, x) => a.concat(x), [])));
 }
 
-const ton_client_toml = fs.readFileSync(path.join(__dirname, '..', 'ton_client', 'Cargo.toml'))
+const ton_client_toml = fs.readFileSync(path.join(__dirname, '..', 'ever_client', 'Cargo.toml'))
     .toString();
 const tomlVersion = /^\s*version\s*=\s*['"]([0-9.]+)['"]\s*$/gm.exec(ton_client_toml)[1] || '';
 const version = tomlVersion.split('.').join('_');

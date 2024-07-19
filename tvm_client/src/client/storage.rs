@@ -19,6 +19,9 @@ pub trait KeyValueStorage: Send + Sync {
 
     /// Put string value by a given key into the storage
     async fn put_str(&self, key: &str, value: &str) -> ClientResult<()>;
+
+    /// Remove value by a given key
+    async fn remove(&self, key: &str) -> ClientResult<()>;
 }
 
 pub struct InMemoryKeyValueStorage {
@@ -27,7 +30,9 @@ pub struct InMemoryKeyValueStorage {
 
 impl InMemoryKeyValueStorage {
     pub fn new() -> Self {
-        Self { map: Default::default() }
+        Self {
+            map: Default::default(),
+        }
     }
 
     #[cfg(test)]
@@ -38,18 +43,15 @@ impl InMemoryKeyValueStorage {
     #[cfg(test)]
     pub fn dump(&self) {
         println!("\n### Storage dump ###");
-        let count = self
-            .map
-            .iter()
-            .map(|pair| {
+        let count = self.map.iter()
+            .map(|pair|
                 println!(
                     "Key: {}, value (len: {}): {:?}",
                     pair.key(),
                     pair.val().len(),
                     &pair.val()[..std::cmp::min(10, pair.val().len())],
                 )
-            })
-            .count();
+            ).count();
 
         println!("Total records: {}", count);
     }
@@ -63,7 +65,10 @@ impl KeyValueStorage for InMemoryKeyValueStorage {
     }
 
     async fn get_bin(&self, key: &str) -> ClientResult<Option<Vec<u8>>> {
-        Ok(self.map.get(key).map(|guard| guard.val().clone()))
+        Ok(
+            self.map.get(key)
+                .map(|guard| guard.val().clone())
+        )
     }
 
     async fn put_bin(&self, key: &str, value: &[u8]) -> ClientResult<()> {
@@ -72,14 +77,19 @@ impl KeyValueStorage for InMemoryKeyValueStorage {
     }
 
     async fn get_str(&self, key: &str) -> ClientResult<Option<String>> {
-        self.map
-            .get(key)
-            .map(|guard| String::from_utf8(guard.val().clone()).map_err(Error::internal_error))
+        self.map.get(key)
+            .map(|guard| String::from_utf8(guard.val().clone())
+                .map_err(|err| Error::internal_error(err)))
             .transpose()
     }
 
     async fn put_str(&self, key: &str, value: &str) -> ClientResult<()> {
         self.map.insert(key.to_string(), value.as_bytes().to_vec());
+        Ok(())
+    }
+
+    async fn remove(&self, key: &str) -> ClientResult<()> {
+        self.map.remove(key);
         Ok(())
     }
 }

@@ -1,7 +1,7 @@
 use tvm_block::Result;
 
-use crate::client::storage::KeyValueStorage;
 use crate::client::LocalStorage;
+use crate::client::storage::KeyValueStorage;
 
 #[cfg(not(feature = "wasm-base"))]
 mod env {
@@ -15,9 +15,12 @@ mod env {
         pub fn new() -> Self {
             let temp_dir = std::env::temp_dir();
             loop {
-                let path = temp_dir.join(format!("tonclient-{}", rand::random::<u32>()));
+                let path = temp_dir
+                    .join(format!("tonclient-{}", rand::random::<u32>()));
                 if !path.exists() {
-                    return Self { path: Some(path.to_string_lossy().to_string()) };
+                    return Self {
+                        path: Some(path.to_string_lossy().to_string())
+                    };
                 }
             }
         }
@@ -115,6 +118,12 @@ async fn test_local_storage() -> Result<()> {
     assert_eq!(storage.get_bin(KEY1_NAME).await?, Some(b"test1".to_vec()));
     assert_eq!(storage.get_str(KEY2_NAME).await?, Some("test2".to_string()));
     assert_eq!(storage.get_bin(KEY2_NAME).await?, Some(b"test2".to_vec()));
+
+    storage.remove(KEY1_NAME).await?;
+
+    assert!(storage.get_str(KEY1_NAME).await?.is_none());
+    assert!(storage.get_bin(KEY1_NAME).await?.is_none());
+    assert_eq!(storage.get_str(KEY2_NAME).await?, Some("test2".to_string()));
 
     Ok(())
 }

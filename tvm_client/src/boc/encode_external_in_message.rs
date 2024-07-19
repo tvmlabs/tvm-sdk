@@ -1,18 +1,12 @@
-use std::str::FromStr;
-
-use tvm_block::ExternalInboundMessageHeader;
-use tvm_block::GetRepresentationHash;
-use tvm_block::MsgAddressExt;
-use tvm_block::StateInit;
-
-use crate::boc::internal::deserialize_cell_from_boc;
-use crate::boc::internal::deserialize_object_from_boc;
-use crate::boc::internal::serialize_object_to_boc;
+use crate::boc::internal::{
+    deserialize_cell_from_boc, deserialize_object_from_boc, serialize_object_to_boc,
+};
 use crate::boc::BocCacheType;
 use crate::client::ClientContext;
-use crate::encoding::account_decode;
-use crate::encoding::slice_from_cell;
+use crate::encoding::{account_decode, slice_from_cell};
 use crate::error::ClientResult;
+use std::str::FromStr;
+use tvm_block::{ExternalInboundMessageHeader, GetRepresentationHash, MsgAddressExt, StateInit};
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default)]
 pub struct ParamsOfEncodeExternalInMessage {
@@ -28,8 +22,7 @@ pub struct ParamsOfEncodeExternalInMessage {
     /// Bag of cells with the message body encoded as base64.
     pub body: Option<String>,
 
-    /// Cache type to put the result. The BOC itself returned if no cache type
-    /// provided
+    /// Cache type to put the result. The BOC itself returned if no cache type provided
     pub boc_cache: Option<BocCacheType>,
 }
 
@@ -45,6 +38,7 @@ pub struct ResultOfEncodeExternalInMessage {
 /// Encodes a message
 ///
 /// Allows to encode any external inbound message.
+///
 #[api_function]
 pub fn encode_external_in_message(
     context: std::sync::Arc<ClientContext>,
@@ -59,7 +53,7 @@ pub fn encode_external_in_message(
             .unwrap_or_else(|| Ok(MsgAddressExt::AddrNone))
             .map_err(|err| {
                 crate::client::errors::Error::invalid_address(
-                    err.to_string(),
+                    &err.to_string(),
                     &src.unwrap_or_default(),
                 )
             })?,
@@ -77,7 +71,12 @@ pub fn encode_external_in_message(
         msg.set_body(slice_from_cell(cell)?);
     }
 
-    let hash = msg.hash().map_err(crate::client::errors::Error::internal_error)?;
+    let hash = msg
+        .hash()
+        .map_err(|err| crate::client::errors::Error::internal_error(err))?;
     let boc = serialize_object_to_boc(&context, &msg, "message", params.boc_cache)?;
-    Ok(ResultOfEncodeExternalInMessage { message: boc, message_id: hex::encode(hash) })
+    Ok(ResultOfEncodeExternalInMessage {
+        message: boc,
+        message_id: hex::encode(hash),
+    })
 }
