@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 EverX Rights Reserved.
+// Copyright (C) 2019-2023 TON Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
