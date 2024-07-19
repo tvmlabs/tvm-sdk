@@ -222,6 +222,11 @@ pub trait TransactionExecutor {
                         (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
                         data.value.grams.as_u64_quiet(),
                     ));
+//                    if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
+//                        if message.have_state_init() && is_previous_state_active {
+//                            balance = (0 as u64).into();
+//                       }
+//                    } 
                     let mut orig_balance = account.balance().unwrap().clone();
                     orig_balance.sub(&balance)?;
                     account.set_balance(orig_balance);

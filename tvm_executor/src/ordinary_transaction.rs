@@ -124,14 +124,16 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         if let Some(_) = in_msg.int_header() {
-            if let Some(AccountState::AccountUninit { }) = account.state() {
-                if params.src_dapp_id != account.get_dapp_id().cloned() {
-                    let gas_config = self.config().get_gas_config(false);
-                    msg_balance.grams = min(
-                        (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
-                        msg_balance.grams,
-                    );
-                }
+//            if in_msg.have_state_init() == false {
+                if let Some(AccountState::AccountUninit { }) = account.state() {
+                    if params.src_dapp_id != account.get_dapp_id().cloned() {
+                        let gas_config = self.config().get_gas_config(false);
+                        msg_balance.grams = min(
+                            (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
+                            msg_balance.grams,
+                        );
+                    }
+//                }
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
