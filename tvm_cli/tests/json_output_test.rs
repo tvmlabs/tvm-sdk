@@ -6,7 +6,7 @@ use serde_json::Value;
 mod common;
 use common::generate_key_and_address;
 use common::generate_phrase_and_key;
-use common::giver_v2;
+use common::giver_v3;
 use common::BIN_NAME;
 use common::GIVER_ABI;
 use common::GIVER_ADDR;
@@ -73,7 +73,7 @@ fn test_json_output_1() -> Result<(), Box<dyn std::error::Error>> {
 fn test_json_output_2() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "json_test.key";
     let depool_addr = generate_key_and_address(key_path, DEPOOL_TVC, DEPOOL_ABI)?;
-    giver_v2(&depool_addr);
+    giver_v3(&depool_addr);
 
     run_command_and_decode_json(
         r#"decode msg tests/samples/wallet.boc --abi tests/samples/wallet.abi.json"#,
@@ -96,7 +96,7 @@ fn test_json_output_2() -> Result<(), Box<dyn std::error::Error>> {
     ))?;
 
     let depool_addr = generate_key_and_address(key_path, DEPOOL_TVC, DEPOOL_ABI)?;
-    giver_v2(&depool_addr);
+    giver_v3(&depool_addr);
     run_command_and_decode_json(&format!(
         "deployx --abi {} --keys {} {}",
         DEPOOL_ABI, key_path, DEPOOL_TVC
