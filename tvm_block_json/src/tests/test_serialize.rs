@@ -1,25 +1,31 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.  You may obtain a copy
 // of the License at:
 //
-// https://www.ton.dev/licenses
+// https://www.ever.dev/licenses
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::fs::read;
 use std::path::Path;
 
+use tvm_block::generate_test_account_by_init_code_hash;
+use tvm_block::read_single_root_boc;
+use tvm_block::write_boc;
+use tvm_block::AccountId;
+use tvm_block::IBitstring;
+use tvm_block::ShardStateUnsplit;
+use tvm_block::Transaction;
+use tvm_block::TransactionProcessingStatus;
 use pretty_assertions::assert_eq;
 use tvm_api::ton::ton_node::rempmessagestatus;
 use tvm_api::IntoBoxed;
-use tvm_types::base64_decode;
-use tvm_types::IBitstring;
 
 use super::*;
 
@@ -29,6 +35,104 @@ fn assert_json_eq_file(json: &str, name: &str) {
     let expected =
         std::fs::read_to_string(format!("src/tests/data/{}-ethalon.json", name)).unwrap();
     assert_json_eq(json, &expected, name);
+}
+
+pub fn generate_big_msg() -> CommonMessage {
+    let mut msg = Message::with_int_header(InternalMessageHeader::default());
+    let mut stinit = StateInit::default();
+    stinit.set_split_depth(Number5::new(23).unwrap());
+    stinit.set_special(TickTock::with_values(false, true));
+    let mut code = SliceData::new(vec![0x3F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF4]);
+    stinit.set_code(code.clone().into_cell());
+    let mut code1 = SliceData::new(vec![
+        0xad, 0xc9, 0xba, 0xfc, 0x56, 0x94, 0x11, 0x56, 0x58, 0xfa, 0x2b, 0xdf, 0xe4, 0x65, 0x15,
+        0x1a, 0x32, 0x03, 0x69, 0x4a, 0xff, 0xcd, 0x00, 0x8f, 0x36, 0x8b, 0xd2, 0xcc, 0x8c, 0xc8,
+        0x10, 0xfb, 0x6b, 0x5b, 0x51,
+    ]);
+    let mut code2 = SliceData::new(vec![
+        0xad, 0xc9, 0xba, 0xfc, 0x56, 0x94, 0x11, 0x56, 0x58, 0xfa, 0x2b, 0xdf, 0xe4, 0x65, 0x15,
+        0x1a, 0x32, 0x03, 0x69, 0x4a, 0xff, 0xcd, 0x00, 0x8f, 0x36, 0x8b, 0xd2, 0xcc, 0x8c, 0xc8,
+        0x10, 0xfb, 0x6b, 0x5b, 0x51,
+    ]);
+    let code3 = SliceData::new(vec![
+        0xad, 0xc9, 0xba, 0xfc, 0x56, 0x94, 0x11, 0x57, 0x58, 0xfa, 0x2b, 0xdf, 0xe4, 0x65, 0x15,
+        0x1a, 0x32, 0x03, 0x69, 0x4a, 0xff, 0xcd, 0x00, 0x8f, 0x36, 0x8b, 0xd2, 0xcc, 0x8c, 0xc8,
+        0x10, 0xfb, 0x6b, 0x5b, 0x51,
+    ]);
+    code2.append_reference(code3);
+    code1.append_reference(code2);
+    code.append_reference(code1);
+
+    stinit.set_code(code.into_cell());
+
+    let data = SliceData::new(vec![0x3F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF4]);
+    stinit.set_data(data.into_cell());
+    let library = SliceData::new(vec![0x3F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF4]);
+    stinit.set_library_code(library.into_cell(), true).unwrap();
+
+    let mut body = SliceData::new(vec![
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x80,
+    ])
+    .into_builder();
+    let mut body1 = SliceData::new(vec![
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0x80,
+    ])
+    .into_builder();
+
+    let body2 = SliceData::new(vec![
+        0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
+        0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
+        0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
+        0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
+        0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
+        0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
+        0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
+        0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0x80,
+    ])
+    .into_builder();
+
+    body1.checked_append_reference(body2.into_cell().unwrap()).unwrap();
+    body.checked_append_reference(body1.into_cell().unwrap()).unwrap();
+
+    msg.set_state_init(stinit);
+    msg.set_body(SliceData::load_builder(body).unwrap());
+    CommonMessage::Std(msg)
+}
+
+pub fn generate_tranzaction(address: AccountId) -> Transaction {
+    let s_in_msg = generate_big_msg();
+    let s_out_msg1 = generate_big_msg();
+    let s_out_msg2 = CommonMessage::default();
+    let s_out_msg3 = CommonMessage::default();
+
+    let s_status_update = HashUpdate::default();
+    let s_tr_desc = TransactionDescr::default();
+
+    let mut tr = Transaction::with_address_and_status(address, AccountStatus::AccStateActive);
+    tr.set_logical_time(123423);
+    tr.set_end_status(AccountStatus::AccStateFrozen);
+    tr.set_total_fees(CurrencyCollection::with_grams(653));
+    tr.write_in_msg(Some(&s_in_msg)).unwrap();
+    tr.add_out_message(&s_out_msg1).unwrap();
+    tr.add_out_message(&s_out_msg2).unwrap();
+    tr.add_out_message(&s_out_msg3).unwrap();
+    tr.write_state_update(&s_status_update).unwrap();
+    tr.write_description(&s_tr_desc).unwrap();
+    tr
 }
 
 #[test]
@@ -760,7 +864,7 @@ fn test_transaction_wo_out_msgs_into_json() {
 fn test_transaction_into_json_0() {
     let transaction = generate_tranzaction(AccountId::from([55; 32]));
 
-    let message = transaction.get_out_msg(0).unwrap().unwrap();
+    let message = transaction.get_out_msg(0).unwrap().unwrap().get_std().unwrap().clone();
     let cell = message.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = message.hash().unwrap();
@@ -875,7 +979,7 @@ fn test_transaction_into_json_0() {
 fn test_transaction_into_json_q() {
     let transaction = generate_tranzaction(AccountId::from([55; 32]));
 
-    let mut message = transaction.get_out_msg(0).unwrap().unwrap();
+    let mut message = transaction.get_out_msg(0).unwrap().unwrap().get_std().unwrap().clone();
     if let CommonMsgInfo::IntMsgInfo(header) = message.header_mut() {
         header.set_src(MsgAddressInt::default());
     }
@@ -992,8 +1096,8 @@ fn test_transaction_into_json_q() {
 
 fn test_json_block(blockhash: &str, mode: SerializationMode) {
     let filename = format!("{}.boc", blockhash);
-    let in_path = Path::new("src/tests/data").join(filename);
-    let boc = read(in_path.clone()).unwrap_or_else(|_| panic!("Error reading file {:?}", in_path));
+    let in_path = Path::new("src/tests/data").join(&filename);
+    let boc = read(in_path.clone()).expect(&format!("Error reading file {:?}", in_path));
     let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
 
     let block = Block::construct_from_cell(cell).unwrap();
@@ -1012,15 +1116,15 @@ fn test_get_config() {
     let filename =
         "src/tests/data/9C9906A80D020952E0192DC60C0B2BF1F55FE9A9E065606E8FE25C08BD1AA6B2.boc";
     let in_path = Path::new(filename);
-    let boc = read(in_path).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
-    let cell = read_single_root_boc(boc).expect("Error deserializing single root BOC");
+    let boc = read(in_path).expect(&format!("Error reading file {:?}", filename));
+    let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
 
     let block = Block::construct_from_cell(cell).unwrap();
 
     let extra = block.read_extra().unwrap();
     let master = extra.read_custom().unwrap().unwrap();
     let config = master.config().unwrap();
-    let json = serialize_config_param(config, 12).unwrap();
+    let json = serialize_config_param(&config, 12).unwrap();
     let etalon = r#"{
   "p12": [
     {
@@ -1044,7 +1148,7 @@ fn test_get_config() {
 
     assert_eq!(etalon, json);
     // if json != etalon {
-    // std::fs::write("real_tvm_data/p12-config-param.json", &json).unwrap();
+    // std::fs::write("real_ever_data/p12-config-param.json", &json).unwrap();
     // panic!("json != etalon")
     // }
 }
@@ -1085,14 +1189,6 @@ fn test_block_into_json_q() {
 fn test_key_block_into_json() {
     test_json_block(
         "9C9906A80D020952E0192DC60C0B2BF1F55FE9A9E065606E8FE25C08BD1AA6B2",
-        SerializationMode::Standart,
-    )
-}
-
-#[test]
-fn test_block_with_copyleft_into_json() {
-    test_json_block(
-        "ea67954c1c58997c66b5d91b4a3369cfa795b96662c7f7ea7daad677266fb7a3",
         SerializationMode::Standart,
     )
 }
@@ -1146,7 +1242,7 @@ fn test_crafted_key_block_into_json() {
     let filename =
         "src/tests/data/48377CD82FF8091D6A45908727C8D4E5FC521603E5633AF3AC8C9E45F9579D5B.boc";
     let in_path = Path::new(filename);
-    let boc = read(in_path).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
+    let boc = read(in_path).expect(&format!("Error reading file {:?}", filename));
     let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
     // println!("slice = {}", root_cell);
     let key = base64_decode("7w3fX5jiuo8PyQoFaEL+K9pE/XvbKjH63i0JcraLlBM=").unwrap();
@@ -1194,13 +1290,13 @@ fn test_crafted_key_block_into_json() {
         let mut cp = ConfigParam39::new();
 
         let spk = SigPubKey::from_bytes(&key).unwrap();
-        let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
+        let cs = CryptoSignature::with_r_s(&[1; 32], &[2; 32]);
         let vtk = ValidatorTempKey::with_params(UInt256::from([3; 32]), spk, 100500, 1562663724);
         let vstk = ValidatorSignedTempKey::with_key_and_signature(vtk, cs);
         cp.insert(&UInt256::from([1; 32]), &vstk).unwrap();
 
         let spk = SigPubKey::from_bytes(&key).unwrap();
-        let cs = CryptoSignature::from_r_s(&[6; 32], &[7; 32]).unwrap();
+        let cs = CryptoSignature::with_r_s(&[6; 32], &[7; 32]);
         let vtk = ValidatorTempKey::with_params(UInt256::from([8; 32]), spk, 500100, 1562664724);
         let vstk = ValidatorSignedTempKey::with_key_and_signature(vtk, cs);
         cp.insert(&UInt256::from([2; 32]), &vstk).unwrap();
@@ -1217,7 +1313,7 @@ fn test_crafted_key_block_into_json() {
     let mut custom = extra.read_custom().unwrap().unwrap();
 
     // Need to add prev_block_signatures
-    let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
+    let cs = CryptoSignature::with_r_s(&[1; 32], &[2; 32]);
     let csp = CryptoSignaturePair::with_params(UInt256::from([12; 32]), cs.clone());
     custom.prev_blk_signatures_mut().set(&123_u16, &csp).unwrap();
     custom.prev_blk_signatures_mut().set(&345_u16, &csp).unwrap();
@@ -1231,7 +1327,7 @@ fn test_crafted_key_block_into_json() {
         FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
     );
     let mut wc0 = custom.hashes().get(&0_u32).unwrap().unwrap();
-    let mut key = tvm_types::BuilderData::new();
+    let mut key = tvm_block::BuilderData::new();
     key.append_bit_one().unwrap();
     key.append_bit_one().unwrap();
     let key = SliceData::load_builder(key).unwrap();
@@ -1275,11 +1371,11 @@ fn test_db_serialize_block_signatures() {
             &[
                 CryptoSignaturePair::with_params(
                     UInt256::from([2; 32]),
-                    CryptoSignature::from_r_s(&[3; 32], &[4; 32]).unwrap()
+                    CryptoSignature::with_r_s(&[3; 32], &[4; 32])
                 ),
                 CryptoSignaturePair::with_params(
                     UInt256::from([5; 32]),
-                    CryptoSignature::from_r_s(&[6; 32], &[7; 32]).unwrap()
+                    CryptoSignature::with_r_s(&[6; 32], &[7; 32])
                 )
             ]
         )
@@ -1352,8 +1448,8 @@ fn test_serialize_shard_descr() {
 
 #[test]
 fn test_db_serialize_block_proof() {
-    let boc = read("src/tests/data/block_proof").expect("Error reading proof file");
-    let cell = read_single_root_boc(boc).expect("Error deserializing single root BOC");
+    let boc = read("src/tests/data/block_proof").expect(&format!("Error reading proof file"));
+    let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
 
     let proof = BlockProof::construct_from_cell(cell).unwrap();
 
@@ -1367,7 +1463,7 @@ fn test_db_serialize_block_proof() {
 
 fn prepare_shard_state_json(name: &str, workchain_id: i32, mode: SerializationMode) -> String {
     let boc = read(format!("src/tests/data/states/{}", name))
-        .unwrap_or_else(|_| panic!("Error reading file {:?}", name));
+        .expect(&format!("Error reading file {:?}", name));
     let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
     let id = format!("state:{:x}", cell.repr_hash());
 
@@ -1395,7 +1491,7 @@ fn check_shard_state(name: &str, workchain_id: i32, mode: SerializationMode) {
 #[test]
 fn test_serialize_mc_zerostate_s() {
     check_shard_state(
-        "main_ton_dev_zerostate_-1_D270B87B2952B5BA7DAA70AAF0A8C361BEFCF4D8D2DB92F9640D5443070838E4",
+        "main_ever_dev_zerostate_-1_D270B87B2952B5BA7DAA70AAF0A8C361BEFCF4D8D2DB92F9640D5443070838E4",
         -1,
         SerializationMode::Standart,
     );
@@ -1404,7 +1500,7 @@ fn test_serialize_mc_zerostate_s() {
 #[test]
 fn test_serialize_mc_zerostate_q() {
     check_shard_state(
-        "main_ton_dev_zerostate_-1_D270B87B2952B5BA7DAA70AAF0A8C361BEFCF4D8D2DB92F9640D5443070838E4",
+        "main_ever_dev_zerostate_-1_D270B87B2952B5BA7DAA70AAF0A8C361BEFCF4D8D2DB92F9640D5443070838E4",
         -1,
         SerializationMode::QServer,
     );
@@ -1413,7 +1509,7 @@ fn test_serialize_mc_zerostate_q() {
 #[test]
 fn test_serialize_wc_zerostate_s() {
     check_shard_state(
-        "main_ton_dev_zerostate_0_97AF4602A57FC884F68BB4659BAB8875DC1F5E45A9FD4FBAFD0C9BC10AA5067C",
+        "main_ever_dev_zerostate_0_97AF4602A57FC884F68BB4659BAB8875DC1F5E45A9FD4FBAFD0C9BC10AA5067C",
         0,
         SerializationMode::Standart,
     );
@@ -1422,7 +1518,7 @@ fn test_serialize_wc_zerostate_s() {
 #[test]
 fn test_serialize_wc_zerostate_q() {
     check_shard_state(
-        "main_ton_dev_zerostate_0_97AF4602A57FC884F68BB4659BAB8875DC1F5E45A9FD4FBAFD0C9BC10AA5067C",
+        "main_ever_dev_zerostate_0_97AF4602A57FC884F68BB4659BAB8875DC1F5E45A9FD4FBAFD0C9BC10AA5067C",
         0,
         SerializationMode::QServer,
     );
@@ -1567,7 +1663,10 @@ fn se_deserialise_remp_status(status: RempMessageStatus) {
     .into_boxed();
     let signature = vec![1, 2, 3, 4];
 
-    let json = serde_json::json!(db_serialize_remp_status(&rr, &signature).unwrap()).to_string();
+    let json = format!(
+        "{}",
+        serde_json::json!(db_serialize_remp_status(&rr, &signature).unwrap()).to_string()
+    );
     println!("{}", json);
 
     let map = serde_json::from_str::<Map<String, Value>>(&json).unwrap();
@@ -1587,13 +1686,15 @@ fn test_se_deserialise_remp_accepted() {
                 1830539,
                 "18AFCDD25BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFCDD25BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            ),
+            )
+            .into(),
             master_id: BlockIdExt::with_params(
                 tvm_block::ShardIdent::with_tagged_prefix(-1, 0x8000_0000_0000_0000).unwrap(),
                 1830539,
                 "18AFCD115BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFC2225BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            ),
+            )
+            .into(),
         },
     ));
 }
@@ -1607,7 +1708,8 @@ fn test_se_deserialise_remp_duplicate() {
                 1830539,
                 "18AFCDD25BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFCDD25BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            ),
+            )
+            .into(),
         },
     ));
 }
@@ -1622,7 +1724,8 @@ fn test_se_deserialise_remp_ignored() {
                 1830539,
                 "18AFCDD25BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFCDD25BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            ),
+            )
+            .into(),
         },
     ));
 }
@@ -1642,7 +1745,8 @@ fn test_se_deserialise_remp_rejected() {
                 1830539,
                 "18AFCDD25BE0989CE516504263EB356618A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
                 "18AFCDD25BE0989CE516554263EB351818A0FF8F6AB3689501C8E3B767EF413C".parse().unwrap(),
-            ),
+            )
+            .into(),
             error: "eror 1 2 3".to_string(),
         },
     ));
@@ -1658,4 +1762,174 @@ fn test_se_deserialise_remp_sent() {
 #[test]
 fn test_se_deserialise_remp_timeout() {
     se_deserialise_remp_status(RempMessageStatus::TonNode_RempTimeout);
+}
+
+#[test]
+fn test_se_deserialise_mesh_config() {
+    let mut mesh_config = MeshConfig::default();
+    for i in 0..5 {
+        let mut hardforks = vec![];
+        for hf in 0..i {
+            hardforks.push(BlockIdExt {
+                shard_id: ShardIdent::masterchain(),
+                seq_no: hf * 1000000,
+                root_hash: UInt256::rand(),
+                file_hash: UInt256::rand(),
+            });
+        }
+        let nw_cfg = ConnectedNwConfig {
+            zerostate: BlockIdExt {
+                shard_id: ShardIdent::masterchain(),
+                seq_no: 0,
+                root_hash: UInt256::rand(),
+                file_hash: UInt256::rand(),
+            },
+            is_active: true,
+            currency_id: i * 10,
+            init_block: BlockIdExt {
+                shard_id: ShardIdent::masterchain(),
+                seq_no: 123456,
+                root_hash: UInt256::rand(),
+                file_hash: UInt256::rand(),
+            },
+            emergency_guard_addr: UInt256::rand(),
+            pull_addr: UInt256::rand(),
+            minter_addr: UInt256::rand(),
+            hardforks,
+        };
+        mesh_config.set(&i, &nw_cfg).unwrap();
+    }
+
+    let json = serde_json::to_string_pretty(&serde_json::json!({
+        "p58": serialize_mesh_config(&mesh_config).unwrap()
+    }))
+    .unwrap();
+    println!("{}", json);
+
+    let map = serde_json::from_str::<Map<String, Value>>(&json).unwrap();
+    let config_params = crate::deserialize::parse_config(&map).unwrap();
+
+    assert_eq!(mesh_config, config_params.mesh_config().unwrap().unwrap());
+}
+
+#[test]
+fn test_serialize_shard_descr_fast_finality() {
+    fn gen_collator(n: u32) -> CollatorRange {
+        let mut cr =
+            CollatorRange { collator: n as u16, start: n, finish: n + 100, ..Default::default() };
+        cr.mempool.push(1);
+        cr.mempool.push(2);
+        cr.mempool.push(4545);
+        cr
+    }
+
+    let mut descr_merge = ShardDescr::with_params(
+        42,
+        17,
+        25,
+        UInt256::from([70; 32]),
+        FutureSplitMerge::Merge { merge_utime: 0x12345678, interval: 0x87654321 },
+    );
+    let mut stat = ValidatorsStat::new(12);
+    stat.update(3, |_| 444).unwrap();
+    stat.update(2, |_| 2544).unwrap();
+    descr_merge.collators = Some(ShardCollators {
+        prev: gen_collator(1),
+        prev2: Some(gen_collator(20)),
+        current: gen_collator(30),
+        next: gen_collator(100),
+        next2: None,
+        updated_at: 123,
+        stat,
+    });
+
+    let doc = &serialize_shard_descr(&descr_merge, SerializationMode::Standart).unwrap();
+
+    assert_eq!(
+        format!("{:#}", serde_json::json!(doc)),
+        r#"{
+  "seq_no": 42,
+  "reg_mc_seqno": 0,
+  "start_lt_dec": "17",
+  "start_lt": "111",
+  "end_lt_dec": "25",
+  "end_lt": "119",
+  "root_hash": "4646464646464646464646464646464646464646464646464646464646464646",
+  "file_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "before_split": false,
+  "before_merge": false,
+  "want_split": false,
+  "want_merge": false,
+  "nx_cc_updated": false,
+  "gen_utime": 0,
+  "next_catchain_seqno": 0,
+  "next_validator_shard": "0000000000000000",
+  "min_ref_mc_seqno": 0,
+  "flags": 0,
+  "fees_collected_dec": "0",
+  "fees_collected": "000",
+  "funds_created_dec": "0",
+  "funds_created": "000",
+  "copyleft_rewards": [],
+  "merge_utime": 305419896,
+  "merge_interval": 2271560481,
+  "collators": {
+    "prev": {
+      "collator": 1,
+      "start": 1,
+      "finish": 101,
+      "mempool": [
+        1,
+        2,
+        4545
+      ]
+    },
+    "prev2": {
+      "collator": 20,
+      "start": 20,
+      "finish": 120,
+      "mempool": [
+        1,
+        2,
+        4545
+      ]
+    },
+    "current": {
+      "collator": 30,
+      "start": 30,
+      "finish": 130,
+      "mempool": [
+        1,
+        2,
+        4545
+      ]
+    },
+    "next": {
+      "collator": 100,
+      "start": 100,
+      "finish": 200,
+      "mempool": [
+        1,
+        2,
+        4545
+      ]
+    },
+    "updated_at": 123,
+    "validators_familiarity": {
+      "0": 0,
+      "1": 0,
+      "2": 2544,
+      "3": 444,
+      "4": 0,
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0,
+      "10": 0,
+      "11": 0
+    }
+  }
+}"#
+    )
 }

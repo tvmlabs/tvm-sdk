@@ -1,19 +1,21 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.  You may obtain a copy
 // of the License at:
 //
-// https://www.ton.dev/licenses
+// https://www.ever.dev/licenses
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
+use std::convert::TryInto;
 use std::str::FromStr;
 
+use tvm_block::*;
 use serde_json::Map;
 use serde_json::Value;
 use tvm_api::ton::ton_node::rempmessagestatus;
@@ -21,90 +23,9 @@ use tvm_api::ton::ton_node::RempMessageLevel;
 use tvm_api::ton::ton_node::RempMessageStatus;
 use tvm_api::ton::ton_node::RempReceipt;
 use tvm_api::IntoBoxed;
-use tvm_block::Account;
-use tvm_block::Augmentation;
-use tvm_block::BlockCreateFees;
-use tvm_block::BlockIdExt;
-use tvm_block::BlockLimits;
-use tvm_block::CatchainConfig;
-use tvm_block::ConfigParam0;
-use tvm_block::ConfigParam1;
-use tvm_block::ConfigParam10;
-use tvm_block::ConfigParam11;
-use tvm_block::ConfigParam12;
-use tvm_block::ConfigParam13;
-use tvm_block::ConfigParam14;
-use tvm_block::ConfigParam15;
-use tvm_block::ConfigParam16;
-use tvm_block::ConfigParam17;
-use tvm_block::ConfigParam18;
-use tvm_block::ConfigParam18Map;
-use tvm_block::ConfigParam2;
-use tvm_block::ConfigParam29;
-use tvm_block::ConfigParam3;
-use tvm_block::ConfigParam31;
-use tvm_block::ConfigParam32;
-use tvm_block::ConfigParam33;
-use tvm_block::ConfigParam34;
-use tvm_block::ConfigParam35;
-use tvm_block::ConfigParam36;
-use tvm_block::ConfigParam37;
-use tvm_block::ConfigParam39;
-use tvm_block::ConfigParam4;
-use tvm_block::ConfigParam40;
-use tvm_block::ConfigParam5;
-use tvm_block::ConfigParam6;
-use tvm_block::ConfigParam7;
-use tvm_block::ConfigParam8;
-use tvm_block::ConfigParam9;
-use tvm_block::ConfigParamEnum;
-use tvm_block::ConfigParams;
-use tvm_block::ConfigProposalSetup;
-use tvm_block::ConsensusConfig;
-use tvm_block::CryptoSignature;
-use tvm_block::CurrencyCollection;
-use tvm_block::DelectorParams;
-use tvm_block::Deserializable;
-use tvm_block::ExtraCurrencyCollection;
-use tvm_block::FundamentalSmcAddresses;
-use tvm_block::GasLimitsPrices;
-use tvm_block::GlobalVersion;
-use tvm_block::Grams;
-use tvm_block::HashmapAugType;
-use tvm_block::LibDescr;
-use tvm_block::MandatoryParams;
-use tvm_block::McStateExtra;
-use tvm_block::MsgAddressInt;
-use tvm_block::MsgForwardPrices;
-use tvm_block::ParamLimits;
-use tvm_block::Serializable;
-use tvm_block::ShardAccount;
-use tvm_block::ShardIdent;
-use tvm_block::ShardStateUnsplit;
-use tvm_block::SigPubKey;
-use tvm_block::SlashingConfig;
-use tvm_block::StoragePrices;
-use tvm_block::SuspendedAddresses;
-use tvm_block::ValidatorDescr;
-use tvm_block::ValidatorKeys;
-use tvm_block::ValidatorSet;
-use tvm_block::ValidatorSignedTempKey;
-use tvm_block::ValidatorTempKey;
-use tvm_block::WorkchainDescr;
-use tvm_block::WorkchainFormat;
-use tvm_block::WorkchainFormat0;
-use tvm_block::WorkchainFormat1;
-use tvm_block::Workchains;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_block::SHARD_FULL;
-use tvm_types::base64_decode;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::read_single_root_boc;
-use tvm_types::Result;
-use tvm_types::UInt256;
 
-pub trait ParseJson {
+#[allow(dead_code)]
+trait ParseJson {
     fn as_uint256(&self) -> Result<UInt256>;
     fn as_base64(&self) -> Result<Vec<u8>>;
     fn as_int(&self) -> Result<i32>;
@@ -119,7 +40,7 @@ impl ParseJson for Value {
     }
 
     fn as_base64(&self) -> Result<Vec<u8>> {
-        base64_decode(self.as_str().ok_or_else(|| error!("field is not str"))?)
+        Ok(base64_decode(self.as_str().ok_or_else(|| error!("field is not str"))?)?)
     }
 
     fn as_int(&self) -> Result<i32> {
@@ -306,10 +227,21 @@ impl<'m, 'a> PathMap<'m, 'a> {
         fail!("{}/{} must be the integer or a string with the integer", self.path.join("/"), name)
     }
 
-    #[allow(dead_code)]
     fn get_u32(&self, name: &'a str, value: &mut u32) {
         if let Ok(new_value) = self.get_num(name) {
             *value = new_value as u32;
+        }
+    }
+
+    fn get_u16(&self, name: &'a str, value: &mut u16) {
+        if let Ok(new_value) = self.get_num(name) {
+            *value = new_value as u16;
+        }
+    }
+
+    fn get_u8(&self, name: &'a str, value: &mut u8) {
+        if let Ok(new_value) = self.get_num(name) {
+            *value = new_value as u8;
         }
     }
 
@@ -524,6 +456,36 @@ impl StateParser {
                 Ok(())
             })?;
             Ok(ConfigParamEnum::ConfigParam18(ConfigParam18 { map }))
+        })
+    }
+
+    fn parse_mesh_config(&mut self, config: &PathMap) -> Result<()> {
+        self.parse_array(config, 58, |p58| {
+            let mut map = MeshConfig::default();
+            p58.iter().try_for_each::<_, Result<_>>(|value| {
+                let p = PathMap::cont(config, "p58", value)?;
+                let nw_id = p.get_num("network_id")? as i32;
+                let mut hardforks = vec![];
+                if let Ok(vector) = p.get_vec("hardforks") {
+                    for hf in vector {
+                        let p = PathMap::cont(&p, "hardforks", hf)?;
+                        hardforks.push(parse_separated_block_id_ext(&p)?);
+                    }
+                }
+                let nw_cfg = ConnectedNwConfig {
+                    zerostate: parse_separated_block_id_ext(&p.get_obj("zerostate")?)?,
+                    is_active: p.get_bool("is_active")?,
+                    currency_id: p.get_num("currency_id")? as u32,
+                    init_block: parse_separated_block_id_ext(&p.get_obj("init_block")?)?,
+                    emergency_guard_addr: p.get_uint256("emergency_guard_addr")?,
+                    pull_addr: p.get_uint256("pull_addr")?,
+                    minter_addr: p.get_uint256("minter_addr")?,
+                    hardforks,
+                };
+                map.set(&nw_id, &nw_cfg)?;
+                Ok(())
+            })?;
+            Ok(ConfigParamEnum::ConfigParam58(map))
         })
     }
 
@@ -804,7 +766,7 @@ impl StateParser {
             let mut list = vec![];
             p34.get_vec("list").and_then(|p| {
                 p.iter().try_for_each::<_, Result<()>>(|p| {
-                    let p = PathMap::cont(config, "p34", p)?;
+                    let p = PathMap::cont(&config, "p34", p)?;
                     let bls_public_key = if let Ok(bls_public_key) = p.get_str("bls_public_key") {
                         if bls_public_key.len() != 96 {
                             fail!("Invalid BLS public key length {}", bls_public_key.len());
@@ -860,8 +822,8 @@ impl StateParser {
                 let temp_public_key = hex::decode(p.get_str("temp_public_key")?)?;
                 let seqno = p.get_num("seqno")? as u32;
                 let valid_until = p.get_num("valid_until")? as u32;
-                let signature_r = hex::decode(p.get_str("signature_r")?)?;
-                let signature_s = hex::decode(p.get_str("signature_s")?)?;
+                let signature_r = p.get_str("signature_r")?;
+                let signature_s = p.get_str("signature_s")?;
 
                 let pk = ValidatorTempKey::with_params(
                     adnl_addr,
@@ -869,7 +831,7 @@ impl StateParser {
                     seqno,
                     valid_until,
                 );
-                let sk = CryptoSignature::from_r_s(&signature_r, &signature_s)?;
+                let sk = CryptoSignature::from_r_s_str(&signature_r, &signature_s)?;
                 validator_keys
                     .set(&key, &ValidatorSignedTempKey::with_key_and_signature(pk, sk))?;
                 Ok(())
@@ -932,6 +894,30 @@ impl StateParser {
 
             Ok(ConfigParamEnum::ConfigParam44(suspended))
         })?;
+
+        self.parse_mesh_config(config)?; // p58
+
+        if let Ok(p61) = config.get_obj("p61") {
+            let mut ff_config = FastFinalityConfig::default();
+            p61.get_u32("split_merge_interval", &mut ff_config.split_merge_interval);
+            p61.get_u32("collator_range_len", &mut ff_config.collator_range_len);
+            p61.get_u32("lost_collator_timeout", &mut ff_config.lost_collator_timeout);
+            p61.get_u16("unreliability_fine", &mut ff_config.unreliability_fine);
+            p61.get_u16("unreliability_weak_fading", &mut ff_config.unreliability_weak_fading);
+            p61.get_u16("unreliability_strong_fading", &mut ff_config.unreliability_strong_fading);
+            p61.get_u16("unreliability_max", &mut ff_config.unreliability_max);
+            p61.get_u16("unreliability_weight", &mut ff_config.unreliability_weight);
+            p61.get_u16("familiarity_collator_fine", &mut ff_config.familiarity_collator_fine);
+            p61.get_u16("familiarity_msgpool_fine", &mut ff_config.familiarity_msgpool_fine);
+            p61.get_u16("familiarity_fading", &mut ff_config.familiarity_fading);
+            p61.get_u16("familiarity_max", &mut ff_config.familiarity_max);
+            p61.get_u16("familiarity_weight", &mut ff_config.familiarity_weight);
+            p61.get_u16("busyness_collator_fine", &mut ff_config.busyness_collator_fine);
+            p61.get_u16("busyness_msgpool_fine", &mut ff_config.busyness_msgpool_fine);
+            p61.get_u16("busyness_weight", &mut ff_config.busyness_weight);
+            p61.get_u8("candidates_percentile", &mut ff_config.candidates_percentile);
+            self.extra.config.set_config(ConfigParamEnum::ConfigParam61(ff_config))?;
+        }
 
         Ok(())
     }
@@ -1109,6 +1095,18 @@ fn parse_block_id_ext(map_path: &PathMap, mc: bool) -> Result<BlockIdExt> {
     }
 }
 
+fn parse_separated_block_id_ext(map_path: &PathMap) -> Result<BlockIdExt> {
+    Ok(BlockIdExt::with_params(
+        ShardIdent::with_tagged_prefix(
+            map_path.get_num("wc")? as i32,
+            u64::from_str_radix(map_path.get_str("shard")?, 16)?,
+        )?,
+        map_path.get_num("seqno")? as u32,
+        map_path.get_uint256("root_hash")?,
+        map_path.get_uint256("file_hash")?,
+    ))
+}
+
 pub fn parse_remp_status(map: &Map<String, Value>) -> Result<(RempReceipt, Vec<u8>)> {
     let map_path = PathMap::new(map);
 
@@ -1211,7 +1209,7 @@ pub fn parse_block_proof(
 ) -> Result<tvm_block::BlockProof> {
     let map_path = PathMap::new(map);
 
-    let root = tvm_types::read_single_root_boc(base64_decode(map_path.get_str("proof")?)?)?;
+    let root = tvm_block::read_single_root_boc(base64_decode(map_path.get_str("proof")?)?)?;
 
     let merkle_proof = tvm_block::MerkleProof::construct_from_cell(root.clone())?;
     let block_virt_root = merkle_proof.proof.virtualize(1);
@@ -1235,9 +1233,9 @@ pub fn parse_block_proof(
             let signature = PathMap::cont(&map_path, "signatures", signature)?;
             pure_signatures.add_sigpair(tvm_block::CryptoSignaturePair {
                 node_id_short: signature.get_uint256("node_id")?,
-                sign: tvm_block::CryptoSignature::from_r_s(
-                    signature.get_uint256("r")?.as_slice(),
-                    signature.get_uint256("s")?.as_slice(),
+                sign: tvm_block::CryptoSignature::from_r_s_str(
+                    signature.get_str("r")?,
+                    signature.get_str("s")?,
                 )?,
             });
         }

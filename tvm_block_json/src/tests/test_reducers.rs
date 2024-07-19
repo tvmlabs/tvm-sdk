@@ -15,6 +15,7 @@
 use serde_json::json;
 
 use super::*;
+use crate::block_parser::reducers::JsonFieldsReducer;
 
 #[test]
 fn test_config_parser() {

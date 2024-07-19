@@ -1,8 +1,8 @@
 use tvm_block::Block;
 use tvm_block::BlockIdExt;
 use tvm_block::BlockProof;
+use tvm_block::Cell;
 use tvm_block::ShardStateUnsplit;
-use tvm_types::Cell;
 
 use crate::block_parser::entry::ParsedEntry;
 
@@ -12,12 +12,6 @@ pub struct ParsedBlock {
     pub accounts: Vec<ParsedEntry>,
     pub transactions: Vec<ParsedEntry>,
     pub messages: Vec<ParsedEntry>,
-}
-
-impl Default for ParsedBlock {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl ParsedBlock {

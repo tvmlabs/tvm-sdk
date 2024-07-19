@@ -1,23 +1,34 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.  You may obtain a copy
 // of the License at:
 //
-// https://www.ton.dev/licenses
+// https://www.ever.dev/licenses
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
+use tvm_block::BuilderData;
 use tvm_block::ConfigCopyleft;
+use tvm_block::ConfigParam3;
+use tvm_block::ConfigParam32;
+use tvm_block::ConfigParam33;
+use tvm_block::ConfigParam35;
+use tvm_block::ConfigParam36;
+use tvm_block::ConfigParam37;
+use tvm_block::ConfigParam39;
+use tvm_block::ConfigParam4;
+use tvm_block::ConfigParam6;
 use tvm_block::ConfigVotingSetup;
+use tvm_block::DelectorParams;
+use tvm_block::IBitstring;
 use tvm_block::Number16;
+use tvm_block::SigPubKey;
 use tvm_block::VarUInteger32;
-use tvm_types::BuilderData;
-use tvm_types::IBitstring;
 
 use super::*;
 use crate::serialize_config;
@@ -61,7 +72,7 @@ fn test_parse_errors() {
         "uint": "-100",
     });
 
-    let map = PathMap::new(json.as_object().unwrap());
+    let map = PathMap::new(&json.as_object().unwrap());
     check_err(map.get_obj("unknown"), "root must have the field `unknown`");
     check_err(map.get_vec("obj"), "root/obj must be the vector");
     let obj = map.get_obj("obj").unwrap();
@@ -213,7 +224,7 @@ fn get_config_param11() -> ConfigParam11 {
 fn get_config_param12() -> ConfigParam12 {
     let mut cp12 = ConfigParam12::new();
 
-    for i in 0..10_i32 {
+    for i in 0..10 as i32 {
         let wc = get_workchain_desc();
         cp12.insert(i, &wc).unwrap();
     }
@@ -258,7 +269,7 @@ fn get_config_param29() -> ConfigParam29 {
     ConfigParam29 {
         consensus_config: ConsensusConfig {
             new_catchain_ids: true,
-            round_candidates: 10_u32 | 1,
+            round_candidates: 10 as u32 | 1,
             next_candidate_delay_ms: 20,
             consensus_timeout_ms: 30,
             fast_attempts: 40,
@@ -289,7 +300,7 @@ fn get_config_param42() -> ConfigCopyleft {
     let mut cfg =
         ConfigCopyleft { copyleft_reward_threshold: 100.into(), license_rates: Default::default() };
     for i in 0..10 {
-        cfg.license_rates.set(&{ i }, &(i * 10_u8)).unwrap();
+        cfg.license_rates.set(&(i as u8), &(i * 10 as u8)).unwrap();
     }
     cfg
 }
@@ -325,14 +336,14 @@ fn get_validator_set() -> ValidatorSet {
     let mut list = vec![];
 
     let key = SigPubKey::from_bytes(
-        &base64_decode("39MLqLIVrzLqPCHCFpbn1/jILSbfNMtnr/7zOkKE1Ds=").unwrap(),
+        &*base64_decode("39MLqLIVrzLqPCHCFpbn1/jILSbfNMtnr/7zOkKE1Ds=").unwrap(),
     )
     .unwrap();
     let vd = ValidatorDescr::with_params(key, 4, None, None);
     list.push(vd);
 
     let key = SigPubKey::from_bytes(
-        &base64_decode("BIYYOFHTgVDIFzVLhuSZw2ne1J3zuv75zwYhAXb0+iY=").unwrap(),
+        &*base64_decode("BIYYOFHTgVDIFzVLhuSZw2ne1J3zuv75zwYhAXb0+iY=").unwrap(),
     )
     .unwrap();
     let vd = ValidatorDescr::with_params(key, 5, None, None);
@@ -484,6 +495,9 @@ fn prepare_config_params() -> ConfigParams {
     let c44 = get_config_param44();
     cp.set_config(ConfigParamEnum::ConfigParam44(c44)).unwrap();
 
+    let c61 = FastFinalityConfig::default();
+    cp.set_config(ConfigParamEnum::ConfigParam61(c61)).unwrap();
+
     cp
 }
 
@@ -506,12 +520,12 @@ fn test_config_params() {
 
     let mut json = serde_json::Map::<String, Value>::new();
     serialize_config(&mut json, &cp, SerializationMode::QServer).unwrap();
-    let parsed_config = parse_config(json.get("config").unwrap().as_object().unwrap()).unwrap();
+    let parsed_config = parse_config(&json.get("config").unwrap().as_object().unwrap()).unwrap();
     check_params(&cp, &parsed_config);
 
     let mut json = serde_json::Map::<String, Value>::new();
     serialize_config(&mut json, &cp, SerializationMode::Debug).unwrap();
-    let parsed_config = parse_config(json.get("config").unwrap().as_object().unwrap()).unwrap();
+    let parsed_config = parse_config(&json.get("config").unwrap().as_object().unwrap()).unwrap();
     check_params(&cp, &parsed_config);
 }
 

@@ -1,6 +1,6 @@
+use tvm_block::Result;
 use serde_json::Map;
 use serde_json::Value;
-use tvm_types::Result;
 
 use crate::block_parser::BlockParsingError;
 use crate::block_parser::JsonReducer;

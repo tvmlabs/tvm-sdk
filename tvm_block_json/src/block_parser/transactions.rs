@@ -1,20 +1,20 @@
 use std::collections::HashMap;
 use std::time::SystemTime;
 
-use serde_json::Map;
-use serde_json::Value;
+use tvm_block::write_boc;
+use tvm_block::Cell;
 use tvm_block::CommonMsgInfo;
 use tvm_block::Deserializable;
 use tvm_block::Message;
 use tvm_block::MessageProcessingStatus;
 use tvm_block::MsgAddressExt;
+use tvm_block::Result;
+use tvm_block::SliceData;
 use tvm_block::Transaction;
 use tvm_block::TransactionProcessingStatus;
-use tvm_types::write_boc;
-use tvm_types::Cell;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
+use tvm_block::UInt256;
+use serde_json::Map;
+use serde_json::Value;
 
 use crate::block_parser::entry::get_sharding_depth;
 use crate::block_parser::get_partition;
@@ -128,7 +128,7 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
 
                 let transaction_now = transaction.now();
                 self.prepare_message_entry(message_cell, message, Some(transaction_now))?
-            } else if message.src_ref().map(is_minter_address).unwrap_or(false) {
+            } else if message.src_ref().map(|x| is_minter_address(x)).unwrap_or(false) {
                 self.prepare_message_entry(message_cell, message, None)?
             } else {
                 let (src_partition, dst_partition) =
@@ -146,7 +146,7 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
                 0,
                 &transaction_id,
                 &transaction_order,
-                code_hash,
+                &code_hash,
             );
             prepared_messages.insert(message_id, prepared_message);
         };
@@ -189,7 +189,7 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
             let PreparedMessage { doc, src_partition, dst_partition } = prepared_message;
 
             messages.push(ParsedEntry::reduced(
-                doc,
+                doc.into(),
                 src_partition.or(dst_partition),
                 self.messages_config,
             )?);
@@ -210,7 +210,7 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
         // parse message
         let boc = write_boc(&message_cell)?;
         let proof = if self.with_proofs {
-            Some(write_boc(&message.prepare_proof(true, self.parsing.root)?)?)
+            Some(write_boc(&message.prepare_proof(true, &self.parsing.root)?)?)
         } else {
             None
         };
@@ -240,7 +240,7 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
     ) -> Result<ParsedEntry> {
         let boc = write_boc(&cell).unwrap();
         let proof = if self.with_proofs {
-            Some(write_boc(&transaction.prepare_proof(self.parsing.root)?)?)
+            Some(write_boc(&transaction.prepare_proof(&self.parsing.root)?)?)
         } else {
             None
         };
@@ -263,7 +263,7 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
             doc.insert("code_hash".to_owned(), code_hash.clone().into());
         }
 
-        ParsedEntry::reduced(doc, partition, self.transactions_config)
+        ParsedEntry::reduced(doc.into(), partition, self.transactions_config)
     }
 }
 
@@ -271,12 +271,14 @@ fn get_message_partitions(
     sharding_depth: u32,
     message: &Message,
 ) -> Result<(Option<u32>, Option<u32>)> {
-    let src_partition = msg_src_slice(message)?
+    let src_partition = msg_src_slice(&message)?
         .map(|src| get_partition(sharding_depth, src))
         .transpose()?
         .flatten();
-    let dst_partition =
-        msg_dst_slice(message).map(|dst| get_partition(sharding_depth, dst)).transpose()?.flatten();
+    let dst_partition = msg_dst_slice(&message)
+        .map(|dst| get_partition(sharding_depth, dst))
+        .transpose()?
+        .flatten();
     Ok((src_partition, dst_partition))
 }
 

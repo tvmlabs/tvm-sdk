@@ -11,22 +11,22 @@ use std::time::SystemTime;
 pub use block::ParsedBlock;
 pub use block::ParsingBlock;
 pub use entry::ParsedEntry;
+use tvm_block::error;
+use tvm_block::MsgAddrStd;
+use tvm_block::MsgAddressInt;
+use tvm_block::Result;
+use tvm_block::SliceData;
+use tvm_block::UInt256;
 pub use parser::BlockParser;
 pub use parser::BlockParserConfig;
 pub use parser::EntryConfig;
 pub use reducers::JsonFieldsReducer;
 use serde_json::Map;
 use serde_json::Value;
-use thiserror::Error;
-use tvm_block::MsgAddrStd;
-use tvm_block::MsgAddressInt;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum BlockParsingError {
-    #[error("Invalid data: {}", 0)]
+    #[error("Invalid data: {0}")]
     InvalidData(String),
 }
 
@@ -77,9 +77,9 @@ impl JsonReducer for NoReduce {
 }
 
 pub fn unix_time_to_system_time(utime: u64) -> Result<SystemTime> {
-    SystemTime::UNIX_EPOCH
+    Ok(SystemTime::UNIX_EPOCH
         .checked_add(Duration::from_secs(utime))
-        .ok_or_else(|| tvm_types::error!("Can't convert unix timestamp bytes to SystemTime"))
+        .ok_or_else(|| error!("Can't convert unix timestamp bytes to SystemTime"))?)
 }
 
 pub(crate) fn get_partition(
