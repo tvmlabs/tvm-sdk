@@ -12,7 +12,7 @@
 
 use std::sync::Arc;
 
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 
 use crate::client::AppObject;
 use crate::client::ClientContext;

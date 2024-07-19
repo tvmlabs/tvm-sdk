@@ -27,13 +27,13 @@ use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
 use tvm_block::ShardIdent;
 use tvm_block::StateInit;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::AccountId;
-use tvm_types::BocReader;
-use tvm_types::Ed25519PrivateKey;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::error;
+use tvm_block::fail;
+use tvm_block::AccountId;
+use tvm_block::BocReader;
+use tvm_block::Ed25519PrivateKey;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
 use crate::error::SdkError;
 use crate::json_helper;
@@ -122,7 +122,7 @@ impl ContractImage {
         Ok(result)
     }
 
-    pub fn from_cell(cell: tvm_types::Cell) -> Result<Self> {
+    pub fn from_cell(cell: tvm_block::Cell) -> Result<Self> {
         let id = cell.repr_hash().into();
         let state_init = StateInit::construct_from_cell(cell)?;
 
@@ -152,7 +152,7 @@ impl ContractImage {
 
     pub fn get_serialized_code(&self) -> Result<Vec<u8>> {
         match &self.state_init.code {
-            Some(cell) => tvm_types::boc::write_boc(cell),
+            Some(cell) => tvm_block::boc::write_boc(cell),
             None => {
                 fail!(SdkError::InvalidData { msg: "State init has no code".to_owned() })
             }
@@ -161,7 +161,7 @@ impl ContractImage {
 
     pub fn get_serialized_data(&self) -> Result<Vec<u8>> {
         match &self.state_init.data {
-            Some(cell) => tvm_types::boc::write_boc(cell),
+            Some(cell) => tvm_block::boc::write_boc(cell),
             None => {
                 fail!(SdkError::InvalidData { msg: "State init has no data".to_owned() })
             }
@@ -169,7 +169,7 @@ impl ContractImage {
     }
 
     pub fn serialize(&self) -> Result<Vec<u8>> {
-        tvm_types::boc::write_boc(&self.state_init.serialize()?)
+        tvm_block::boc::write_boc(&self.state_init.serialize()?)
     }
 
     // Returns future contract's state_init struct
@@ -693,12 +693,12 @@ impl Contract {
 
     pub fn serialize_message(msg: &TvmMessage) -> Result<(Vec<u8>, MessageId)> {
         let cells = msg.write_to_new_cell()?.into_cell()?;
-        Ok((tvm_types::boc::write_boc(&cells)?, (&cells.repr_hash().as_slice()[..]).into()))
+        Ok((tvm_block::boc::write_boc(&cells)?, (&cells.repr_hash().as_slice()[..]).into()))
     }
 
     /// Deserializes tree of cells from byte array into `SliceData`
     pub fn deserialize_tree_to_slice(data: &[u8]) -> Result<SliceData> {
-        SliceData::load_cell(tvm_types::boc::read_single_root_boc(data)?)
+        SliceData::load_cell(tvm_block::boc::read_single_root_boc(data)?)
     }
 
     pub fn get_dst_from_msg(msg: &[u8]) -> Result<MsgAddressInt> {

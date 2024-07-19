@@ -13,8 +13,8 @@ use tvm_block::Number5;
 use tvm_block::StateInit;
 use tvm_block::StateInitLib;
 use tvm_block::TickTock;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
 
 use super::BocCacheType;
 use crate::boc::internal::deserialize_cell_from_boc;

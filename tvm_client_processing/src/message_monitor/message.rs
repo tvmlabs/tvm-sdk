@@ -1,5 +1,5 @@
 use serde_json::Value;
-use tvm_types::Cell;
+use tvm_block::Cell;
 
 use crate::error;
 use crate::MessageMonitorSdkServices;

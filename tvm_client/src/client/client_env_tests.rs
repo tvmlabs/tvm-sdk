@@ -1,4 +1,4 @@
-use tvm_types::Result;
+use tvm_block::Result;
 
 use crate::client::storage::KeyValueStorage;
 use crate::client::LocalStorage;

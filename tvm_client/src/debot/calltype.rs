@@ -4,9 +4,9 @@ use std::sync::Arc;
 use tvm_block::Message;
 use tvm_block::MsgAddressExt;
 use tvm_block::Serializable;
-use tvm_types::BuilderData;
-use tvm_types::IBitstring;
-use tvm_types::SliceData;
+use tvm_block::BuilderData;
+use tvm_block::IBitstring;
+use tvm_block::SliceData;
 
 use super::errors::Error;
 use super::helpers::build_internal_message;

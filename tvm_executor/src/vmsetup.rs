@@ -13,10 +13,10 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use tvm_block::GlobalCapabilities;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::Cell;
+use tvm_block::HashmapE;
+use tvm_block::Result;
+use tvm_block::SliceData;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::Engine;
 use tvm_vm::smart_contract_info::SmartContractInfo;

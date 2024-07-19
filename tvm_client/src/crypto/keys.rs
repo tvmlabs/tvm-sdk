@@ -14,7 +14,7 @@ use std::fmt::Formatter;
 
 use base64::Engine;
 use ed25519_dalek::SigningKey;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 
 use super::internal::hex_decode_secret_const;
 use super::internal::SecretBufConst;

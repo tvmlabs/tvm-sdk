@@ -15,8 +15,8 @@ use tvm_block::Transaction;
 use tvm_block_json::BlockSerializationSet;
 use tvm_block_json::MessageSerializationSet;
 use tvm_block_json::TransactionSerializationSet;
-use tvm_types::Result;
-use tvm_types::UInt256;
+use tvm_block::Result;
+use tvm_block::UInt256;
 
 use crate::error::ClientResult;
 use crate::proofs::errors::Error;

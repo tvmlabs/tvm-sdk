@@ -20,10 +20,10 @@ use tvm_block::MsgAddressInt;
 use tvm_block::OutAction;
 use tvm_block::OutActions;
 use tvm_block::Serializable;
-use tvm_types::Cell;
-use tvm_types::HashmapType;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
+use tvm_block::Cell;
+use tvm_block::HashmapType;
+use tvm_block::SliceData;
+use tvm_block::UInt256;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::Engine;
 use tvm_vm::stack::integer::IntegerData;
@@ -89,7 +89,7 @@ pub(crate) fn call_tvm(
             let code = if let Some(code) = exception.custom_code() {
                 code
             } else {
-                !(exception.exception_code().unwrap_or(tvm_types::ExceptionCode::UnknownError)
+                !(exception.exception_code().unwrap_or(tvm_block::ExceptionCode::UnknownError)
                     as i32)
             };
 

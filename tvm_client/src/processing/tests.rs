@@ -2,7 +2,7 @@ use api_info::ApiModule;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_struct::scheme::TVC;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 
 use crate::abi::CallSet;
 use crate::abi::DecodedMessageBody;

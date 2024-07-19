@@ -31,12 +31,12 @@ use tvm_client::abi::FunctionHeader;
 use tvm_client::abi::ParamsOfEncodeInternalMessage;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer as AbiSigner;
-use tvm_types::base64_encode;
-use tvm_types::ed25519_sign_with_secret;
-use tvm_types::read_single_root_boc;
-use tvm_types::write_boc;
-use tvm_types::BuilderData;
-use tvm_types::SliceData;
+use tvm_block::base64_encode;
+use tvm_block::ed25519_sign_with_secret;
+use tvm_block::read_single_root_boc;
+use tvm_block::write_boc;
+use tvm_block::BuilderData;
+use tvm_block::SliceData;
 
 use crate::config::Config;
 use crate::crypto::load_keypair;

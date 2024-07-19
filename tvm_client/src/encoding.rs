@@ -16,8 +16,8 @@ use std::str::FromStr;
 use num_bigint::BigInt;
 use num_traits::cast::NumCast;
 use tvm_block::MsgAddressInt;
-use tvm_types::Cell;
-use tvm_types::SliceData;
+use tvm_block::Cell;
+use tvm_block::SliceData;
 
 use crate::client;
 use crate::crypto::internal::tvm_crc16;
@@ -104,7 +104,7 @@ fn encode_base64(
         let crc = tvm_crc16(&vec);
         vec.extend_from_slice(&crc.to_be_bytes());
 
-        let result = tvm_types::base64_encode(&vec);
+        let result = tvm_block::base64_encode(&vec);
 
         if as_url { Ok(result.replace('/', "_").replace('+', "-")) } else { Ok(result) }
     } else {
@@ -123,7 +123,7 @@ pub(crate) fn hex_decode(hex: &str) -> ClientResult<Vec<u8>> {
 }
 
 pub(crate) fn base64_decode(base64: &str) -> ClientResult<Vec<u8>> {
-    tvm_types::base64_decode(base64).map_err(|err| client::Error::invalid_base64(base64, err))
+    tvm_block::base64_decode(base64).map_err(|err| client::Error::invalid_base64(base64, err))
 }
 
 pub(crate) fn long_num_to_json_string(num: u64) -> String {

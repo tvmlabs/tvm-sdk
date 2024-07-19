@@ -18,8 +18,8 @@ use tvm_block::AccountStatus;
 use tvm_block::ComputeSkipReason;
 use tvm_block::MsgAddressInt;
 use tvm_block::TransactionProcessingStatus;
-use tvm_types::base64_decode;
-use tvm_types::Cell;
+use tvm_block::base64_decode;
+use tvm_block::Cell;
 
 use crate::MessageType;
 
@@ -90,7 +90,7 @@ impl<'de> serde::de::Visitor<'de> for U8Visitor {
 }
 
 pub mod opt_cell {
-    use tvm_types::base64_encode;
+    use tvm_block::base64_encode;
 
     use super::*;
 
@@ -112,7 +112,7 @@ pub mod opt_cell {
         S: serde::Serializer,
     {
         if let Some(cell) = value {
-            let str_value = base64_encode(tvm_types::boc::write_boc(cell).map_err(|err| {
+            let str_value = base64_encode(tvm_block::boc::write_boc(cell).map_err(|err| {
                 serde::ser::Error::custom(format!("Cannot serialize BOC: {}", err))
             })?);
             serializer.serialize_some(&str_value)
@@ -129,7 +129,7 @@ where
     let bytes = base64_decode(b64)
         .map_err(|err| D::Error::custom(format!("error decode base64: {}", err)))?;
 
-    tvm_types::boc::read_single_root_boc(bytes)
+    tvm_block::boc::read_single_root_boc(bytes)
         .map_err(|err| D::Error::custom(format!("BOC read error: {}", err)))
 }
 

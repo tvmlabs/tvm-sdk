@@ -26,13 +26,13 @@ use tvm_client::boc::get_blockchain_config;
 use tvm_client::boc::ParamsOfGetBlockchainConfig;
 use tvm_client::net::OrderBy;
 use tvm_client::net::SortDirection;
-use tvm_types::base64_decode;
-use tvm_types::ed25519_create_private_key;
-use tvm_types::ed25519_sign_with_secret;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::IBitstring;
-use tvm_types::SliceData;
+use tvm_block::base64_decode;
+use tvm_block::ed25519_create_private_key;
+use tvm_block::ed25519_sign_with_secret;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::IBitstring;
+use tvm_block::SliceData;
 
 use crate::config::Config;
 use crate::helpers::create_client_verbose;
@@ -358,7 +358,7 @@ pub async fn gen_update_config_message(
 ) -> Result<(), String> {
     let config_master_address = std::fs::read(&*(config_master_file.to_string() + ".addr"))
         .map_err(|e| format!(r#"failed to read "config_master": {}"#, e))?;
-    let config_account = tvm_types::AccountId::from_raw(config_master_address, 32 * 8);
+    let config_account = tvm_block::AccountId::from_raw(config_master_address, 32 * 8);
 
     let private_key_of_config_account =
         std::fs::read(&*(config_master_file.to_string() + ".pk"))

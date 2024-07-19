@@ -16,7 +16,6 @@ log.workspace = true
 thiserror.workspace = true
 #
 tvm_block.workspace = true
-tvm_types.workspace = true
 tvm_vm.workspace = true
 
 [features]

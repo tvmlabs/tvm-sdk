@@ -14,7 +14,6 @@ use std::io::Read;
 use std::time::Duration;
 use std::time::Instant;
 
-use tvm_block::error;
 use tvm_block::ExceptionCode;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Result;

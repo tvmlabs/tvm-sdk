@@ -11,7 +11,7 @@
 
 use thiserror::Error;
 use tvm_block::ComputeSkipReason;
-use tvm_types::types::ExceptionCode;
+use tvm_block::types::ExceptionCode;
 use tvm_vm::stack::StackItem;
 
 #[derive(Debug, Error, PartialEq)]

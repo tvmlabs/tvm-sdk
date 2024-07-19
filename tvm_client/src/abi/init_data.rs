@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use serde_json::Value;
-use tvm_types::Cell;
-use tvm_types::SliceData;
+use tvm_block::Cell;
+use tvm_block::SliceData;
 
 use crate::abi::types::Abi;
 use crate::abi::Error;
@@ -101,7 +101,7 @@ fn update_initial_data_internal(
 }
 
 fn default_init_data() -> ClientResult<Cell> {
-    tvm_abi::Contract::insert_pubkey(Default::default(), &[0; tvm_types::ED25519_PUBLIC_KEY_LENGTH])
+    tvm_abi::Contract::insert_pubkey(Default::default(), &[0; tvm_block::ED25519_PUBLIC_KEY_LENGTH])
         .map_err(Error::encode_init_data_failed)
         .map(SliceData::into_cell)
 }

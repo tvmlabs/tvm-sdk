@@ -18,8 +18,8 @@ use std::sync::Mutex;
 use std::sync::RwLock;
 
 use lru::LruCache;
-use tvm_types::Cell;
-use tvm_types::UInt256;
+use tvm_block::Cell;
+use tvm_block::UInt256;
 
 use super::Error;
 use crate::boc::internal::deserialize_cell_from_base64;

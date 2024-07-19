@@ -18,10 +18,10 @@ use tvm_block::ConfigParam8;
 use tvm_block::ConfigParamEnum;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Serializable;
-use tvm_types::base64_encode;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::SliceData;
+use tvm_block::base64_encode;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::SliceData;
 use tvm_vm::stack::continuation::ContinuationData;
 use tvm_vm::stack::StackItem;
 

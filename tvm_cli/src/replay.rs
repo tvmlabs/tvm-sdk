@@ -45,11 +45,11 @@ use tvm_executor::ExecuteParams;
 use tvm_executor::OrdinaryTransactionExecutor;
 use tvm_executor::TickTockTransactionExecutor;
 use tvm_executor::TransactionExecutor;
-use tvm_types::base64_encode;
-use tvm_types::write_boc;
-use tvm_types::BuilderData;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
+use tvm_block::base64_encode;
+use tvm_block::write_boc;
+use tvm_block::BuilderData;
+use tvm_block::SliceData;
+use tvm_block::UInt256;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::EngineTraceInfo;
 
@@ -73,10 +73,10 @@ pub fn construct_blockchain_config(config_account: &Account) -> Result<Blockchai
 
 fn construct_blockchain_config_err(
     config_account: &Account,
-) -> tvm_types::Result<BlockchainConfig> {
+) -> tvm_block::Result<BlockchainConfig> {
     let config_cell = config_account
         .get_data()
-        .ok_or(tvm_types::error!("Failed to get account's data"))?
+        .ok_or(tvm_block::error!("Failed to get account's data"))?
         .reference(0)
         .ok();
     let config_params =
@@ -541,7 +541,7 @@ pub async fn replay(
     Err("Specified transaction was not found.".to_string())
 }
 
-pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm_types::Status {
+pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm_block::Status {
     let context = create_client(config)
         .map_err(|e| failure::err_msg(format!("Failed to create ctx: {}", e)))?;
 
@@ -563,7 +563,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     .await?;
 
     if block.result.len() != 1 {
-        return Err(tvm_types::error!("Failed to fetch the block"));
+        return Err(tvm_block::error!("Failed to fetch the block"));
     }
 
     let mut accounts = vec![];
@@ -592,7 +592,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     })?;
 
     if accounts.is_empty() {
-        return Err(tvm_types::error!("The block is empty"));
+        return Err(tvm_block::error!("The block is empty"));
     }
 
     for (account, _) in &accounts {

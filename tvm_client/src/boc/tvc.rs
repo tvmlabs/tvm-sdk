@@ -15,7 +15,7 @@
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_struct::scheme::TVC;
-use tvm_types::Cell;
+use tvm_block::Cell;
 
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::boc::internal::deserialize_object_from_boc;

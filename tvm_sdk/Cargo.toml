@@ -11,7 +11,6 @@ license.workspace = true
 [dependencies]
 tvm_abi.workspace = true
 tvm_block.workspace = true
-tvm_types.workspace = true
 failure.workspace = true
 
 api_derive = { path = "../api/derive" }

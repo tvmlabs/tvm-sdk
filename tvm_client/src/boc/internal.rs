@@ -14,9 +14,9 @@ use std::str::FromStr;
 
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
-use tvm_types::UInt256;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
+use tvm_block::UInt256;
 
 use crate::boc::BocCacheType;
 use crate::boc::Error;
@@ -24,7 +24,7 @@ use crate::error::ClientResult;
 use crate::ClientContext;
 
 pub(crate) fn get_boc_hash(boc: &[u8]) -> ClientResult<String> {
-    let cells = tvm_types::boc::read_single_root_boc(boc).map_err(Error::invalid_boc)?;
+    let cells = tvm_block::boc::read_single_root_boc(boc).map_err(Error::invalid_boc)?;
     let id: Vec<u8> = cells.repr_hash().as_slice()[..].into();
     Ok(hex::encode(id))
 }
@@ -32,11 +32,11 @@ pub(crate) fn get_boc_hash(boc: &[u8]) -> ClientResult<String> {
 pub fn deserialize_cell_from_base64(
     b64: &str,
     name: &str,
-) -> ClientResult<(Vec<u8>, tvm_types::Cell)> {
+) -> ClientResult<(Vec<u8>, tvm_block::Cell)> {
     let bytes = base64_decode(b64)
         .map_err(|err| Error::invalid_boc(format!("error decode {} BOC base64: {}", name, err)))?;
 
-    let cell = tvm_types::boc::read_single_root_boc(&bytes).map_err(|err| {
+    let cell = tvm_block::boc::read_single_root_boc(&bytes).map_err(|err| {
         Error::invalid_boc(format!("{} BOC deserialization error: {}", name, err))
     })?;
 
@@ -44,7 +44,7 @@ pub fn deserialize_cell_from_base64(
 }
 
 pub fn deserialize_object_from_cell<S: Deserializable>(
-    cell: tvm_types::Cell,
+    cell: tvm_block::Cell,
     name: &str,
 ) -> ClientResult<S> {
     let tip = match name {
@@ -61,7 +61,7 @@ pub fn deserialize_object_from_cell<S: Deserializable>(
 
 #[derive(Clone)]
 pub enum DeserializedBoc {
-    Cell(tvm_types::Cell),
+    Cell(tvm_block::Cell),
     Bytes(Vec<u8>),
 }
 
@@ -77,7 +77,7 @@ impl DeserializedBoc {
 #[derive(Clone)]
 pub struct DeserializedObject<S: Deserializable> {
     pub boc: DeserializedBoc,
-    pub cell: tvm_types::Cell,
+    pub cell: tvm_block::Cell,
     pub object: S,
 }
 
@@ -94,15 +94,15 @@ pub fn deserialize_object_from_base64<S: Deserializable>(
 pub fn serialize_object_to_cell<S: Serializable>(
     object: &S,
     name: &str,
-) -> ClientResult<tvm_types::Cell> {
+) -> ClientResult<tvm_block::Cell> {
     object.serialize().map_err(|err| Error::serialization_error(err, name))
 }
 
-pub fn serialize_cell_to_bytes(cell: &tvm_types::Cell, name: &str) -> ClientResult<Vec<u8>> {
-    tvm_types::boc::write_boc(cell).map_err(|err| Error::serialization_error(err, name))
+pub fn serialize_cell_to_bytes(cell: &tvm_block::Cell, name: &str) -> ClientResult<Vec<u8>> {
+    tvm_block::boc::write_boc(cell).map_err(|err| Error::serialization_error(err, name))
 }
 
-pub fn serialize_cell_to_base64(cell: &tvm_types::Cell, name: &str) -> ClientResult<String> {
+pub fn serialize_cell_to_base64(cell: &tvm_block::Cell, name: &str) -> ClientResult<String> {
     Ok(base64_encode(serialize_cell_to_bytes(cell, name)?))
 }
 
@@ -115,7 +115,7 @@ pub fn deserialize_cell_from_boc(
     context: &ClientContext,
     boc: &str,
     name: &str,
-) -> ClientResult<(DeserializedBoc, tvm_types::Cell)> {
+) -> ClientResult<(DeserializedBoc, tvm_block::Cell)> {
     context.bocs.deserialize_cell(boc, name)
 }
 
@@ -134,7 +134,7 @@ pub fn deserialize_object_from_boc<S: Deserializable>(
 pub fn deserialize_object_from_boc_bin<S: Deserializable>(
     boc: &[u8],
 ) -> ClientResult<(S, UInt256)> {
-    let cell = tvm_types::boc::read_single_root_boc(boc).map_err(Error::invalid_boc)?;
+    let cell = tvm_block::boc::read_single_root_boc(boc).map_err(Error::invalid_boc)?;
     let root_hash = cell.repr_hash();
     let object = S::construct_from_cell(cell).map_err(Error::invalid_boc)?;
 
@@ -143,7 +143,7 @@ pub fn deserialize_object_from_boc_bin<S: Deserializable>(
 
 pub fn serialize_cell_to_boc(
     context: &ClientContext,
-    cell: tvm_types::Cell,
+    cell: tvm_block::Cell,
     name: &str,
     boc_cache: Option<BocCacheType>,
 ) -> ClientResult<String> {

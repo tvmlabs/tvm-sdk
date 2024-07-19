@@ -27,8 +27,8 @@ use serde_json::Value;
 use tokio::sync::watch;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
-use tvm_types::base64_encode;
-use tvm_types::UInt256;
+use tvm_block::base64_encode;
+use tvm_block::UInt256;
 
 use super::ErrorCode;
 use crate::client::ClientEnv;

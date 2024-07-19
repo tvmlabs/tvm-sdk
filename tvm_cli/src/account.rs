@@ -22,7 +22,7 @@ use tvm_client::net::ParamsOfSubscribeCollection;
 use tvm_client::net::ResultOfSubscription;
 use tvm_client::utils::calc_storage_fee;
 use tvm_client::utils::ParamsOfCalcStorageFee;
-use tvm_types::base64_decode;
+use tvm_block::base64_decode;
 
 use crate::config::Config;
 use crate::decode::print_account_data;

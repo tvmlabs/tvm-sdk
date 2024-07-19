@@ -25,8 +25,8 @@ use tvm_executor::ExecutorError;
 use tvm_executor::OrdinaryTransactionExecutor;
 use tvm_executor::TransactionExecutor;
 use tvm_sdk::TransactionFees;
-use tvm_types::Cell;
-use tvm_types::UInt256;
+use tvm_block::Cell;
+use tvm_block::UInt256;
 
 use super::stack::serialize_item;
 use super::types::ExecutionOptions;

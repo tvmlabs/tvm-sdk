@@ -1,4 +1,4 @@
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 
 // Copyright 2018-2021 TON DEV SOLUTIONS LTD.
 //

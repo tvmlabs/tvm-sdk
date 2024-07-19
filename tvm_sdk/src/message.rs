@@ -12,9 +12,9 @@
 use tvm_block::CommonMsgInfo;
 use tvm_block::GetRepresentationHash;
 use tvm_block::Message as TvmMessage;
-use tvm_types::Cell;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::Cell;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
 use crate::json_helper;
 use crate::types::grams_to_u64;

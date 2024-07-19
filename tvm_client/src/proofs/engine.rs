@@ -10,8 +10,8 @@ use tvm_block::Deserializable;
 use tvm_block::InRefValue;
 use tvm_block::ShardIdent;
 use tvm_block::ShardStateUnsplit;
-use tvm_types::Result;
-use tvm_types::UInt256;
+use tvm_block::Result;
+use tvm_block::UInt256;
 
 use crate::boc::internal::get_boc_hash;
 use crate::client::storage::InMemoryKeyValueStorage;
@@ -268,7 +268,7 @@ impl ProofHelperEngineImpl {
         .result;
 
         if zerostates.is_empty() {
-            tvm_types::fail!("Unable to download network's zerostate from DApp server");
+            tvm_block::fail!("Unable to download network's zerostate from DApp server");
         }
 
         let boc = zerostates[0].get_str("boc")?;
@@ -321,7 +321,7 @@ impl ProofHelperEngineImpl {
             .result;
 
             if blocks.is_empty() {
-                tvm_types::fail!(
+                tvm_block::fail!(
                     "Unable to download block with `root_hash`: {} from DApp server",
                     root_hash,
                 );
@@ -372,7 +372,7 @@ impl ProofHelperEngineImpl {
         )?;
 
         if blocks.is_empty() {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "Unable to download proof for masterchain block with seq_no: {} from DApp server",
                 mc_seq_no,
             );
@@ -393,7 +393,7 @@ impl ProofHelperEngineImpl {
         if let Some(proof_json) = self.read_mc_proof(mc_seq_no).await? {
             let id = UInt256::from_str(proof_json.get_str("id")?)?;
             if id != *root_hash {
-                tvm_types::fail!(
+                tvm_block::fail!(
                     "`id` ({}) of proven masterchain block with seq_no: {} mismatches `root_hash` \
                         ({}) of the block being checked",
                     id,
@@ -410,7 +410,7 @@ impl ProofHelperEngineImpl {
         let expected_root_hash = proof.id().root_hash();
 
         if root_hash != expected_root_hash {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "`root_hash` ({}) of downloaded proof for masterchain block with seq_no: {} \
                     mismatches `root_hash` ({}) of the block being checked",
                 expected_root_hash,
@@ -499,7 +499,7 @@ impl ProofHelperEngineImpl {
             )?;
 
             if proofs_sorted.len() < blocks.len() {
-                tvm_types::fail!(
+                tvm_block::fail!(
                     "DApp server returned more blocks ({}) than expected ({})",
                     blocks.len(),
                     proofs_sorted.len(),
@@ -512,7 +512,7 @@ impl ProofHelperEngineImpl {
 
                 let expected_seq_no = expected[i].0 + 1;
                 if seq_no != expected_seq_no {
-                    tvm_types::fail!(
+                    tvm_block::fail!(
                         "Block with seq_no: {} missed on DApp server (actual seq_no: {})",
                         expected_seq_no,
                         seq_no,
@@ -536,14 +536,14 @@ impl ProofHelperEngineImpl {
         let proof_json = self.query_mc_block_proof(trusted_seq_no).await?;
         let proof = BlockProof::from_value(&proof_json)?;
         if proof.id().seq_no() != trusted_seq_no {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "Proof for trusted key-block seq_no ({}) mismatches trusted key-block seq_no ({})",
                 proof.id().seq_no,
                 trusted_seq_no,
             );
         }
         if proof.id().root_hash() != trusted_root_hash {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "Proof for trusted key-block root_hash ({:?}) mismatches trusted key-block root_hash ({:?})",
                 proof.id().root_hash(),
                 trusted_root_hash,
@@ -572,7 +572,7 @@ impl ProofHelperEngineImpl {
         on_store_block: F,
     ) -> Result<BlockProof> {
         if mc_seq_no_range.is_empty() {
-            tvm_types::fail!("Empty masterchain seq_no range");
+            tvm_block::fail!("Empty masterchain seq_no range");
         }
 
         let mut proof_values = self.query_key_blocks_proofs(mc_seq_no_range).await?;
@@ -589,7 +589,7 @@ impl ProofHelperEngineImpl {
             last_proof = Some(proof);
         }
 
-        last_proof.ok_or_else(|| tvm_types::error!("Empty proof chain"))
+        last_proof.ok_or_else(|| tvm_block::error!("Empty proof chain"))
     }
 
     pub(crate) fn extract_top_shard_block(
@@ -598,7 +598,7 @@ impl ProofHelperEngineImpl {
     ) -> Result<(u32, UInt256)> {
         let extra = mc_block.read_extra()?;
         let mc_extra =
-            extra.read_custom()?.ok_or_else(|| tvm_types::error!("Unable to read McBlockExtra"))?;
+            extra.read_custom()?.ok_or_else(|| tvm_block::error!("Unable to read McBlockExtra"))?;
 
         let mut result = None;
         if let Some(InRefValue(bin_tree)) = mc_extra.shards().get(&shard.workchain_id())? {
@@ -707,7 +707,7 @@ impl ProofHelperEngineImpl {
         )?;
 
         if blocks.is_empty() {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "No shard blocks found on DApp server for specified range \
                     (shard: {}, seq_no_range: {:?})",
                 shard,
@@ -716,7 +716,7 @@ impl ProofHelperEngineImpl {
         }
 
         if blocks.len() != seq_no_range.len() {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "Unexpected number of blocks returned by DApp server for specified range \
                     (shard: {}, seq_no_range: {:?}, expected count: {}, actual count: {})",
                 shard,
@@ -732,7 +732,7 @@ impl ProofHelperEngineImpl {
 
             let expected_seq_no = seq_no_range.start + i as u32;
             if *seq_no != expected_seq_no {
-                tvm_types::fail!(
+                tvm_block::fail!(
                     "Unexpected seq_no of block returned by DApp server for specified range \
                         (shard: {}, seq_no_range: {:?}, expected seq_no: {}, actual seq_no: {})",
                     shard,
@@ -749,7 +749,7 @@ impl ProofHelperEngineImpl {
     }
 
     pub async fn check_shard_block(&self, boc: &[u8]) -> Result<()> {
-        let cell = tvm_types::boc::read_single_root_boc(boc)?;
+        let cell = tvm_block::boc::read_single_root_boc(boc)?;
         let root_hash = cell.repr_hash();
         let block = Block::construct_from_cell(cell)?;
 
@@ -757,7 +757,7 @@ impl ProofHelperEngineImpl {
 
         let master_ref = info
             .read_master_ref()?
-            .ok_or_else(|| tvm_types::error!("Unable to read master_ref of block"))?;
+            .ok_or_else(|| tvm_block::error!("Unable to read master_ref of block"))?;
 
         let mut first_mc_seq_no = master_ref.master.seq_no;
         loop {
@@ -775,10 +775,10 @@ impl ProofHelperEngineImpl {
 
                 let mc_boc =
                     self.download_block_boc(&mc_proof.id().root_hash().as_hex_string()).await?;
-                let mc_cell = tvm_types::boc::read_single_root_boc(&mc_boc)?;
+                let mc_cell = tvm_block::boc::read_single_root_boc(&mc_boc)?;
 
                 if mc_cell.repr_hash() != *mc_proof.id().root_hash() {
-                    tvm_types::fail!(
+                    tvm_block::fail!(
                         "Proof checking failed: `root_hash` of MC block's BOC downloaded from DApp \
                             server mismatches `root_hash` of proof for this MC block",
                     );
@@ -793,7 +793,7 @@ impl ProofHelperEngineImpl {
 
                 if top_seq_no == info.seq_no() {
                     if top_root_hash != root_hash {
-                        tvm_types::fail!(
+                        tvm_block::fail!(
                             "Proof checking failed: masterchain block references shard block \
                             with different `root_hash`: reference {}, but shard block has {}",
                             top_root_hash,
@@ -810,7 +810,7 @@ impl ProofHelperEngineImpl {
                 let check_with_last_prev_ref =
                     |seq_no, root_hash, last_prev_ref_seq_no, last_prev_ref_root_hash| {
                         if seq_no != last_prev_ref_seq_no {
-                            tvm_types::fail!(
+                            tvm_block::fail!(
                                 "Queried shard block's `seq_no` ({}) mismatches `prev_ref.seq_no` ({}) \
                                     of the next block or reference from the masterchain block",
                                 seq_no,
@@ -819,7 +819,7 @@ impl ProofHelperEngineImpl {
                         }
 
                         if root_hash != last_prev_ref_root_hash {
-                            tvm_types::fail!(
+                            tvm_block::fail!(
                                 "Shard block proof checking failed: \
                                     block's `root_hash` ({}) mismatches `prev_ref.root_hash` ({}) \
                                     of the next block or reference from the masterchain block",
@@ -834,7 +834,7 @@ impl ProofHelperEngineImpl {
                 let mut last_prev_ref_seq_no = top_seq_no;
                 let mut last_prev_ref_root_hash = top_root_hash;
                 for boc in shard_chain.iter().rev() {
-                    let cell = tvm_types::boc::read_single_root_boc(boc)?;
+                    let cell = tvm_block::boc::read_single_root_boc(boc)?;
                     let root_hash = cell.repr_hash();
                     let block = Block::construct_from_cell(cell)?;
                     let info = block.read_info()?;
@@ -885,7 +885,7 @@ impl ProofHelperEngineImpl {
         .result;
 
         if transactions.is_empty() {
-            tvm_types::fail!("Unable to download transaction data from DApp server");
+            tvm_block::fail!("Unable to download transaction data from DApp server");
         }
 
         Ok(transactions.remove(0))
@@ -910,7 +910,7 @@ impl ProofHelperEngineImpl {
         .result;
 
         if messages.is_empty() {
-            tvm_types::fail!("Unable to download message data from DApp server");
+            tvm_block::fail!("Unable to download message data from DApp server");
         }
 
         Ok(messages.remove(0))
@@ -954,7 +954,7 @@ impl ProofHelperEngine for ProofHelperEngineImpl {
         let actual_hash = UInt256::from_str(&get_boc_hash(&boc)?)?;
         let network_uid = self.context.net.get_current_network_uid().await?;
         if actual_hash != network_uid.zerostate_root_hash {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "Zerostate hashes mismatch (expected `{:x}`, but queried from DApp is `{:x}`)",
                 network_uid.zerostate_root_hash,
                 actual_hash,

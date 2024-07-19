@@ -1,7 +1,7 @@
 use chrono::Local;
 use chrono::TimeZone;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
 
 use super::TonClient;
 use crate::boc::parse_account;

@@ -11,7 +11,7 @@
 
 use serde::Deserialize;
 use serde::Deserializer;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 
 pub const MESSAGES_COLLECTION: &str = "messages";
 pub const ACCOUNTS_COLLECTION: &str = "accounts";

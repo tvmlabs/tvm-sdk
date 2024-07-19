@@ -2,8 +2,8 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
 
 use super::*;
 use crate::client::ParamsOfAppRequest;
@@ -1124,7 +1124,7 @@ fn password_provider(
 }
 
 #[tokio::test]
-async fn test_crypto_boxes() -> tvm_types::Result<()> {
+async fn test_crypto_boxes() -> tvm_block::Result<()> {
     let client = Arc::new(TestClient::new());
     let password_hash =
         Arc::new("1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF".to_string());
@@ -1208,7 +1208,7 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
 }
 
 #[tokio::test]
-async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
+async fn test_crypto_box_signing_boxes() -> tvm_block::Result<()> {
     let client = Arc::new(TestClient::new());
     let password_hash =
         Arc::new("1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF".to_string());
@@ -1316,7 +1316,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
 }
 
 #[tokio::test]
-async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
+async fn test_crypto_box_encryption_boxes() -> tvm_block::Result<()> {
     let client = Arc::new(TestClient::new());
     let password_hash =
         Arc::new("1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF".to_string());
@@ -1442,7 +1442,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
 }
 
 #[tokio::test]
-async fn test_crypto_box_derive_key_cache() -> tvm_types::Result<()> {
+async fn test_crypto_box_derive_key_cache() -> tvm_block::Result<()> {
     let client = Arc::new(TestClient::new());
     let password_hash =
         Arc::new("1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF".to_string());

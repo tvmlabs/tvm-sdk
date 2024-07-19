@@ -18,7 +18,7 @@ use tvm_client::abi::CallSet;
 use tvm_client::abi::FunctionHeader;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
-use tvm_types::base64_decode;
+use tvm_block::base64_decode;
 
 use crate::config::Config;
 use crate::crypto::load_keypair;
