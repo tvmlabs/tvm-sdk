@@ -7,7 +7,7 @@ pub struct PacketContents {
     pub from: Option<crate::ton::PublicKey>,
     pub from_short: Option<crate::ton::adnl::id::short::Short>,
     pub message: Option<crate::ton::adnl::Message>,
-    pub messages: Option<crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Message>>,
+    pub messages: Option<crate::ton::vector<crate::ton::adnl::Message>>,
     pub address: Option<crate::ton::adnl::addresslist::AddressList>,
     pub priority_address: Option<crate::ton::adnl::addresslist::AddressList>,
     pub seqno: Option<crate::ton::long>,
@@ -95,9 +95,7 @@ impl crate::BareSerialize for PacketContents {
             _ser.write_boxed::<crate::ton::adnl::Message>(inner)?;
         }
         if let Some(inner) = messages {
-            _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Message>>(
-                inner,
-            )?;
+            (inner as &dyn crate::ton::VectoredBoxed<crate::ton::adnl::Message>).serialize(_ser)?;
         }
         if let Some(inner) = address {
             _ser.write_bare::<crate::ton::adnl::addresslist::AddressList>(inner)?;
@@ -151,7 +149,9 @@ impl crate::BareDeserialize for PacketContents {
                 None
             };
             let messages = if flags & (1 << 3u32) != 0 {
-                Some (_de . read_bare :: < crate :: ton :: vector < crate :: ton :: Boxed , crate :: ton :: adnl :: Message > > () ?)
+                Some(<Vec<crate::ton::adnl::Message> as crate::ton::VectoredBoxed<
+                    crate::ton::adnl::Message,
+                >>::deserialize(_de)?)
             } else {
                 None
             };

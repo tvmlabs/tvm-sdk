@@ -27,7 +27,7 @@ impl Data {
         }
     }
 
-    pub fn msgs(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::bytes>> {
+    pub fn msgs(&self) -> Option<&crate::ton::vector<crate::ton::bytes>> {
         match self {
             Data::Catchain_Block_Data_Vector(ref x) => Some(&x.msgs),
             _ => None,

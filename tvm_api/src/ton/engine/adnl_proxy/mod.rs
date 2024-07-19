@@ -6,9 +6,7 @@ pub enum Config {
     Engine_AdnlProxy_Config(crate::ton::engine::adnl_proxy::config::Config),
 }
 impl Config {
-    pub fn ports(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::adnl_proxy::port::Port> {
+    pub fn ports(&self) -> &crate::ton::vector<crate::ton::engine::adnl_proxy::port::Port> {
         match self {
             Config::Engine_AdnlProxy_Config(ref x) => &x.ports,
         }

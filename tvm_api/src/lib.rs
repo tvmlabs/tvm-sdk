@@ -10,9 +10,9 @@
 // limitations under the License.
 
 #![allow(clippy::unreadable_literal)]
-#![deny(renamed_and_removed_lints)]
 
 use std::any::Any;
+use std::convert::TryFrom;
 use std::fmt;
 use std::hash::Hash;
 use std::io::Read;
@@ -20,14 +20,13 @@ use std::io::Write;
 use std::io::{self};
 use std::sync::Arc;
 
-use thiserror::Error;
+use tvm_block::fail;
 use tvm_block::BlockIdExt;
+use tvm_block::Ed25519KeyOption;
+use tvm_block::KeyOption;
+use tvm_block::Result;
 use tvm_block::ShardIdent;
-use tvm_types::fail;
-use tvm_types::Ed25519KeyOption;
-use tvm_types::KeyOption;
-use tvm_types::Result;
-use tvm_types::UInt256;
+use tvm_block::UInt256;
 
 use crate::ton::ton_node::RempMessageLevel;
 use crate::ton::ton_node::RempMessageStatus;
@@ -61,8 +60,8 @@ impl fmt::Debug for ConstructorNumber {
 }
 
 /// Struct for handling mismatched constructor number
-#[derive(Debug, Error)]
-#[error("expected a constructor in {:?}; got {:?}", expected, received)]
+#[derive(Debug, thiserror::Error)]
+#[error("expected a constructor in {:?}; got {:?}", .expected, .received)]
 pub struct InvalidConstructor {
     pub expected: Vec<ConstructorNumber>,
     pub received: ConstructorNumber,
@@ -117,10 +116,7 @@ impl<'r> Read for Deserializer<'r> {
 }
 
 /// Trait for bare type deserialization
-pub trait BareDeserialize
-where
-    Self: Sized,
-{
+pub trait BareDeserialize: Sized {
     /// Read bare-serialized value using `Deserializer`
     fn deserialize_bare(de: &mut Deserializer) -> Result<Self>;
 
@@ -131,10 +127,7 @@ where
 }
 
 /// Trait for boxed type deserialization
-pub trait BoxedDeserialize
-where
-    Self: Sized,
-{
+pub trait BoxedDeserialize: Sized {
     /// Returns all possible constructors of boxed type
     fn possible_constructors() -> Vec<ConstructorNumber>;
 
@@ -407,7 +400,7 @@ impl fmt::Display for RempMessageStatus {
 }
 
 impl TryFrom<u8> for RempMessageLevel {
-    type Error = tvm_types::Error;
+    type Error = tvm_block::Error;
 
     fn try_from(value: u8) -> Result<Self> {
         Ok(match value {
@@ -573,7 +566,7 @@ pub fn tag_from_data(data: &[u8]) -> u32 {
 }
 
 impl TryFrom<&Arc<dyn KeyOption>> for ton::PublicKey {
-    type Error = tvm_types::Error;
+    type Error = tvm_block::Error;
 
     fn try_from(value: &Arc<dyn KeyOption>) -> Result<Self> {
         let key = UInt256::with_array(value.pub_key()?.try_into()?);
@@ -583,7 +576,7 @@ impl TryFrom<&Arc<dyn KeyOption>> for ton::PublicKey {
 }
 
 impl TryFrom<&ton::PublicKey> for Arc<dyn KeyOption> {
-    type Error = tvm_types::Error;
+    type Error = tvm_block::Error;
 
     fn try_from(value: &ton::PublicKey) -> Result<Self> {
         match value {

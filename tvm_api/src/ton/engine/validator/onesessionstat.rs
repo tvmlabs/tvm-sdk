@@ -4,8 +4,7 @@ use serde_derive::Serialize;
 #[doc = "TL-derived from `engine.validator.oneSessionStat`\n\n```text\nengine.validator.oneSessionStat session_id:string stats:(vector engine.validator.oneStat) = engine.OneSessionStat;\n```\n"]
 pub struct OneSessionStat {
     pub session_id: crate::ton::string,
-    pub stats:
-        crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::onestat::OneStat>,
+    pub stats: crate::ton::vector<crate::ton::engine::validator::onestat::OneStat>,
 }
 impl Eq for OneSessionStat {}
 impl crate::BareSerialize for OneSessionStat {
@@ -16,7 +15,8 @@ impl crate::BareSerialize for OneSessionStat {
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let OneSessionStat { session_id, stats } = self;
         _ser.write_bare::<crate::ton::string>(session_id)?;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: engine :: validator :: onestat :: OneStat > > (stats) ? ;
+        (stats as &dyn crate::ton::VectoredBare<crate::ton::engine::validator::onestat::OneStat>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -24,10 +24,7 @@ impl crate::BareDeserialize for OneSessionStat {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let session_id = _de.read_bare::<crate::ton::string>()?;
-            let stats = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::validator::onestat::OneStat,
-            >>()?;
+            let stats = < Vec < crate :: ton :: engine :: validator :: onestat :: OneStat > as crate :: ton :: VectoredBare < crate :: ton :: engine :: validator :: onestat :: OneStat >> :: deserialize (_de) ? ;
             Ok(Self { session_id, stats })
         }
     }

@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `http.server.host`\n\n```text\nhttp.server.host domains:(vector string) ip:int port:int adnl_id:adnl.id.short = http.server.Host;\n```\n"]
 pub struct Host {
-    pub domains: crate::ton::vector<crate::ton::Bare, crate::ton::string>,
+    pub domains: crate::ton::vector<crate::ton::string>,
     pub ip: crate::ton::int,
     pub port: crate::ton::int,
     pub adnl_id: crate::ton::adnl::id::short::Short,
@@ -16,7 +16,7 @@ impl crate::BareSerialize for Host {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Host { domains, ip, port, adnl_id } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::string>>(domains)?;
+        (domains as &dyn crate::ton::VectoredBare<crate::ton::string>).serialize(_ser)?;
         _ser.write_bare::<crate::ton::int>(ip)?;
         _ser.write_bare::<crate::ton::int>(port)?;
         _ser.write_bare::<crate::ton::adnl::id::short::Short>(adnl_id)?;
@@ -26,8 +26,9 @@ impl crate::BareSerialize for Host {
 impl crate::BareDeserialize for Host {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let domains =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::string>>()?;
+            let domains = <Vec<crate::ton::string> as crate::ton::VectoredBare<
+                crate::ton::string,
+            >>::deserialize(_de)?;
             let ip = _de.read_bare::<crate::ton::int>()?;
             let port = _de.read_bare::<crate::ton::int>()?;
             let adnl_id = _de.read_bare::<crate::ton::adnl::id::short::Short>()?;

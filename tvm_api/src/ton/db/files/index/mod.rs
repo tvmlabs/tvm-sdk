@@ -6,19 +6,19 @@ pub enum Value {
     Db_Files_Index_Value(crate::ton::db::files::index::value::Value),
 }
 impl Value {
-    pub fn key_packages(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
+    pub fn key_packages(&self) -> &crate::ton::vector<crate::ton::int> {
         match self {
             Value::Db_Files_Index_Value(ref x) => &x.key_packages,
         }
     }
 
-    pub fn packages(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
+    pub fn packages(&self) -> &crate::ton::vector<crate::ton::int> {
         match self {
             Value::Db_Files_Index_Value(ref x) => &x.packages,
         }
     }
 
-    pub fn temp_packages(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
+    pub fn temp_packages(&self) -> &crate::ton::vector<crate::ton::int> {
         match self {
             Value::Db_Files_Index_Value(ref x) => &x.temp_packages,
         }

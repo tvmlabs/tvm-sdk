@@ -4,7 +4,7 @@ use serde_derive::Serialize;
 #[doc = "TL-derived from `rwallet.config`\n\n```text\nrwallet.config start_at:int53 limits:vector<rwallet.limit> = rwallet.Config;\n```\n"]
 pub struct Config {
     pub start_at: crate::ton::int53,
-    pub limits: crate::ton::vector<crate::ton::Bare, crate::ton::rwallet::limit::Limit>,
+    pub limits: crate::ton::vector<crate::ton::rwallet::limit::Limit>,
 }
 impl Eq for Config {}
 impl crate::BareSerialize for Config {
@@ -15,9 +15,8 @@ impl crate::BareSerialize for Config {
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Config { start_at, limits } = self;
         _ser.write_bare::<crate::ton::int53>(start_at)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::rwallet::limit::Limit>>(
-            limits,
-        )?;
+        (limits as &dyn crate::ton::VectoredBare<crate::ton::rwallet::limit::Limit>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -25,7 +24,9 @@ impl crate::BareDeserialize for Config {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let start_at = _de.read_bare::<crate::ton::int53>()?;
-            let limits = _de . read_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: rwallet :: limit :: Limit > > () ? ;
+            let limits = <Vec<crate::ton::rwallet::limit::Limit> as crate::ton::VectoredBare<
+                crate::ton::rwallet::limit::Limit,
+            >>::deserialize(_de)?;
             Ok(Self { start_at, limits })
         }
     }

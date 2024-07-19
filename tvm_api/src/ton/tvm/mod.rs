@@ -102,7 +102,7 @@ pub enum List {
     Tvm_List(crate::ton::tvm::list::List),
 }
 impl List {
-    pub fn elements(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry> {
+    pub fn elements(&self) -> &crate::ton::vector<crate::ton::tvm::StackEntry> {
         match self {
             List::Tvm_List(ref x) => &x.elements,
         }
@@ -364,7 +364,7 @@ pub enum Tuple {
     Tvm_Tuple(crate::ton::tvm::tuple::Tuple),
 }
 impl Tuple {
-    pub fn elements(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry> {
+    pub fn elements(&self) -> &crate::ton::vector<crate::ton::tvm::StackEntry> {
         match self {
             Tuple::Tvm_Tuple(ref x) => &x.elements,
         }

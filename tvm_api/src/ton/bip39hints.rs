@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `bip39Hints`\n\n```text\nbip39Hints words:vector<string> = Bip39Hints;\n```\n"]
 pub struct Bip39Hints {
-    pub words: crate::ton::vector<crate::ton::Bare, crate::ton::string>,
+    pub words: crate::ton::vector<crate::ton::string>,
 }
 impl Eq for Bip39Hints {}
 impl crate::BareSerialize for Bip39Hints {
@@ -13,15 +13,16 @@ impl crate::BareSerialize for Bip39Hints {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Bip39Hints { words } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::string>>(words)?;
+        (words as &dyn crate::ton::VectoredBare<crate::ton::string>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for Bip39Hints {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let words =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::string>>()?;
+            let words = <Vec<crate::ton::string> as crate::ton::VectoredBare<
+                crate::ton::string,
+            >>::deserialize(_de)?;
             Ok(Self { words })
         }
     }

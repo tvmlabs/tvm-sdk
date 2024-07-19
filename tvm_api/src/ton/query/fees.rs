@@ -4,7 +4,7 @@ use serde_derive::Serialize;
 #[doc = "TL-derived from `query.fees`\n\n```text\nquery.fees source_fees:fees destination_fees:vector<fees> = query.Fees;\n```\n"]
 pub struct Fees {
     pub source_fees: crate::ton::fees::Fees,
-    pub destination_fees: crate::ton::vector<crate::ton::Bare, crate::ton::fees::Fees>,
+    pub destination_fees: crate::ton::vector<crate::ton::fees::Fees>,
 }
 impl Eq for Fees {}
 impl crate::BareSerialize for Fees {
@@ -15,9 +15,8 @@ impl crate::BareSerialize for Fees {
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Fees { source_fees, destination_fees } = self;
         _ser.write_bare::<crate::ton::fees::Fees>(source_fees)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::fees::Fees>>(
-            destination_fees,
-        )?;
+        (destination_fees as &dyn crate::ton::VectoredBare<crate::ton::fees::Fees>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -25,8 +24,9 @@ impl crate::BareDeserialize for Fees {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let source_fees = _de.read_bare::<crate::ton::fees::Fees>()?;
-            let destination_fees =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::fees::Fees>>()?;
+            let destination_fees = <Vec<crate::ton::fees::Fees> as crate::ton::VectoredBare<
+                crate::ton::fees::Fees,
+            >>::deserialize(_de)?;
             Ok(Self { source_fees, destination_fees })
         }
     }

@@ -4,7 +4,7 @@ use serde_derive::Serialize;
 #[doc = "TL-derived from `smc.runResult`\n\n```text\nsmc.runResult gas_used:int53 stack:vector<tvm.StackEntry> exit_code:int32 = smc.RunResult;\n```\n"]
 pub struct RunResult {
     pub gas_used: crate::ton::int53,
-    pub stack: crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>,
+    pub stack: crate::ton::vector<crate::ton::tvm::StackEntry>,
     pub exit_code: crate::ton::int32,
 }
 impl Eq for RunResult {}
@@ -16,9 +16,7 @@ impl crate::BareSerialize for RunResult {
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let RunResult { gas_used, stack, exit_code } = self;
         _ser.write_bare::<crate::ton::int53>(gas_used)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-            stack,
-        )?;
+        (stack as &dyn crate::ton::VectoredBoxed<crate::ton::tvm::StackEntry>).serialize(_ser)?;
         _ser.write_bare::<crate::ton::int32>(exit_code)?;
         Ok(())
     }
@@ -27,9 +25,9 @@ impl crate::BareDeserialize for RunResult {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let gas_used = _de.read_bare::<crate::ton::int53>()?;
-            let stack = _de
-                .read_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-                )?;
+            let stack = <Vec<crate::ton::tvm::StackEntry> as crate::ton::VectoredBoxed<
+                crate::ton::tvm::StackEntry,
+            >>::deserialize(_de)?;
             let exit_code = _de.read_bare::<crate::ton::int32>()?;
             Ok(Self { gas_used, stack, exit_code })
         }

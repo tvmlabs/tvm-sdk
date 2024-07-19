@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.adnlProxy.config`\n\n```text\nengine.adnlProxy.config ports:(vector engine.adnlProxy.port) = engine.adnlProxy.Config;\n```\n"]
 pub struct Config {
-    pub ports: crate::ton::vector<crate::ton::Bare, crate::ton::engine::adnl_proxy::port::Port>,
+    pub ports: crate::ton::vector<crate::ton::engine::adnl_proxy::port::Port>,
 }
 impl Eq for Config {}
 impl crate::BareSerialize for Config {
@@ -13,7 +13,8 @@ impl crate::BareSerialize for Config {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Config { ports } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: engine :: adnl_proxy :: port :: Port > > (ports) ? ;
+        (ports as &dyn crate::ton::VectoredBare<crate::ton::engine::adnl_proxy::port::Port>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -21,10 +22,9 @@ impl crate::BareDeserialize for Config {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let ports =
-                _de.read_bare::<crate::ton::vector<
-                    crate::ton::Bare,
+                <Vec<crate::ton::engine::adnl_proxy::port::Port> as crate::ton::VectoredBare<
                     crate::ton::engine::adnl_proxy::port::Port,
-                >>()?;
+                >>::deserialize(_de)?;
             Ok(Self { ports })
         }
     }

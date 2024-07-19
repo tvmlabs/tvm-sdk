@@ -183,7 +183,7 @@ impl crate::Function for DownloadBlockProofLink {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.downloadBlockProofLinks`\n\n```text\ntonNode.downloadBlockProofLinks blocks:(vector tonNode.blockIdExt) = tonNode.DataList;\n```\n"]
 pub struct DownloadBlockProofLinks {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
 }
 impl Eq for DownloadBlockProofLinks {}
 impl crate::BareSerialize for DownloadBlockProofLinks {
@@ -193,17 +193,18 @@ impl crate::BareSerialize for DownloadBlockProofLinks {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlockProofLinks { blocks } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for DownloadBlockProofLinks {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             Ok(Self { blocks })
         }
     }
@@ -231,7 +232,7 @@ impl crate::Function for DownloadBlockProofLinks {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.downloadBlockProofs`\n\n```text\ntonNode.downloadBlockProofs blocks:(vector tonNode.blockIdExt) = tonNode.DataList;\n```\n"]
 pub struct DownloadBlockProofs {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
 }
 impl Eq for DownloadBlockProofs {}
 impl crate::BareSerialize for DownloadBlockProofs {
@@ -241,17 +242,18 @@ impl crate::BareSerialize for DownloadBlockProofs {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlockProofs { blocks } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for DownloadBlockProofs {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             Ok(Self { blocks })
         }
     }
@@ -279,7 +281,7 @@ impl crate::Function for DownloadBlockProofs {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.downloadBlocks`\n\n```text\ntonNode.downloadBlocks blocks:(vector tonNode.blockIdExt) = tonNode.DataList;\n```\n"]
 pub struct DownloadBlocks {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
 }
 impl Eq for DownloadBlocks {}
 impl crate::BareSerialize for DownloadBlocks {
@@ -289,17 +291,18 @@ impl crate::BareSerialize for DownloadBlocks {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadBlocks { blocks } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for DownloadBlocks {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             Ok(Self { blocks })
         }
     }
@@ -417,7 +420,7 @@ impl crate::Function for DownloadKeyBlockProofLink {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.downloadKeyBlockProofLinks`\n\n```text\ntonNode.downloadKeyBlockProofLinks blocks:(vector tonNode.blockIdExt) = tonNode.DataList;\n```\n"]
 pub struct DownloadKeyBlockProofLinks {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
 }
 impl Eq for DownloadKeyBlockProofLinks {}
 impl crate::BareSerialize for DownloadKeyBlockProofLinks {
@@ -427,17 +430,18 @@ impl crate::BareSerialize for DownloadKeyBlockProofLinks {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadKeyBlockProofLinks { blocks } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for DownloadKeyBlockProofLinks {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             Ok(Self { blocks })
         }
     }
@@ -465,7 +469,7 @@ impl crate::Function for DownloadKeyBlockProofLinks {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.downloadKeyBlockProofs`\n\n```text\ntonNode.downloadKeyBlockProofs blocks:(vector tonNode.blockIdExt) = tonNode.DataList;\n```\n"]
 pub struct DownloadKeyBlockProofs {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
 }
 impl Eq for DownloadKeyBlockProofs {}
 impl crate::BareSerialize for DownloadKeyBlockProofs {
@@ -475,17 +479,18 @@ impl crate::BareSerialize for DownloadKeyBlockProofs {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DownloadKeyBlockProofs { blocks } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for DownloadKeyBlockProofs {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             Ok(Self { blocks })
         }
     }
@@ -509,6 +514,147 @@ impl crate::BoxedSerialize for DownloadKeyBlockProofs {
 }
 impl crate::Function for DownloadKeyBlockProofs {
     type Reply = crate::ton::ton_node::DataList;
+}
+#[derive(Debug, Default, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.downloadLatestMeshKit`\n\n```text\ntonNode.downloadLatestMeshKit target_nw:int = tonNode.DataFull;\n```\n"]
+pub struct DownloadLatestMeshKit {
+    pub target_nw: crate::ton::int,
+}
+impl Eq for DownloadLatestMeshKit {}
+impl crate::BareSerialize for DownloadLatestMeshKit {
+    fn constructor(&self) -> crate::ConstructorNumber {
+        crate::ConstructorNumber(0x80c1fced)
+    }
+
+    fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
+        let DownloadLatestMeshKit { target_nw } = self;
+        _ser.write_bare::<crate::ton::int>(target_nw)?;
+        Ok(())
+    }
+}
+impl crate::BareDeserialize for DownloadLatestMeshKit {
+    fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
+        {
+            let target_nw = _de.read_bare::<crate::ton::int>()?;
+            Ok(Self { target_nw })
+        }
+    }
+}
+impl crate::BoxedDeserialize for DownloadLatestMeshKit {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![crate::ConstructorNumber(0x80c1fced)]
+    }
+
+    fn deserialize_boxed(
+        id: crate::ConstructorNumber,
+        de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        if id == crate::ConstructorNumber(0x80c1fced) { de.read_bare() } else { _invalid_id!(id) }
+    }
+}
+impl crate::BoxedSerialize for DownloadLatestMeshKit {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        (crate::ConstructorNumber(0x80c1fced), self)
+    }
+}
+impl crate::Function for DownloadLatestMeshKit {
+    type Reply = crate::ton::ton_node::DataFull;
+}
+#[derive(Debug, Default, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.downloadMeshKit`\n\n```text\ntonNode.downloadMeshKit target_nw:int block:tonNode.blockIdExt = tonNode.Data;\n```\n"]
+pub struct DownloadMeshKit {
+    pub target_nw: crate::ton::int,
+    pub block: crate::ton::ton_node::blockidext::BlockIdExt,
+}
+impl Eq for DownloadMeshKit {}
+impl crate::BareSerialize for DownloadMeshKit {
+    fn constructor(&self) -> crate::ConstructorNumber {
+        crate::ConstructorNumber(0xc71dff12)
+    }
+
+    fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
+        let DownloadMeshKit { target_nw, block } = self;
+        _ser.write_bare::<crate::ton::int>(target_nw)?;
+        _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
+        Ok(())
+    }
+}
+impl crate::BareDeserialize for DownloadMeshKit {
+    fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
+        {
+            let target_nw = _de.read_bare::<crate::ton::int>()?;
+            let block = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
+            Ok(Self { target_nw, block })
+        }
+    }
+}
+impl crate::BoxedDeserialize for DownloadMeshKit {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![crate::ConstructorNumber(0xc71dff12)]
+    }
+
+    fn deserialize_boxed(
+        id: crate::ConstructorNumber,
+        de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        if id == crate::ConstructorNumber(0xc71dff12) { de.read_bare() } else { _invalid_id!(id) }
+    }
+}
+impl crate::BoxedSerialize for DownloadMeshKit {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        (crate::ConstructorNumber(0xc71dff12), self)
+    }
+}
+impl crate::Function for DownloadMeshKit {
+    type Reply = crate::ton::ton_node::Data;
+}
+#[derive(Debug, Default, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.downloadMeshUpdate`\n\n```text\ntonNode.downloadMeshUpdate target_nw:int block:tonNode.blockIdExt = tonNode.Data;\n```\n"]
+pub struct DownloadMeshUpdate {
+    pub target_nw: crate::ton::int,
+    pub block: crate::ton::ton_node::blockidext::BlockIdExt,
+}
+impl Eq for DownloadMeshUpdate {}
+impl crate::BareSerialize for DownloadMeshUpdate {
+    fn constructor(&self) -> crate::ConstructorNumber {
+        crate::ConstructorNumber(0x8e105f5e)
+    }
+
+    fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
+        let DownloadMeshUpdate { target_nw, block } = self;
+        _ser.write_bare::<crate::ton::int>(target_nw)?;
+        _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(block)?;
+        Ok(())
+    }
+}
+impl crate::BareDeserialize for DownloadMeshUpdate {
+    fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
+        {
+            let target_nw = _de.read_bare::<crate::ton::int>()?;
+            let block = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
+            Ok(Self { target_nw, block })
+        }
+    }
+}
+impl crate::BoxedDeserialize for DownloadMeshUpdate {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![crate::ConstructorNumber(0x8e105f5e)]
+    }
+
+    fn deserialize_boxed(
+        id: crate::ConstructorNumber,
+        de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        if id == crate::ConstructorNumber(0x8e105f5e) { de.read_bare() } else { _invalid_id!(id) }
+    }
+}
+impl crate::BoxedSerialize for DownloadMeshUpdate {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        (crate::ConstructorNumber(0x8e105f5e), self)
+    }
+}
+impl crate::Function for DownloadMeshUpdate {
+    type Reply = crate::ton::ton_node::Data;
 }
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.downloadNextBlockFull`\n\n```text\ntonNode.downloadNextBlockFull prev_block:tonNode.blockIdExt = tonNode.DataFull;\n```\n"]
@@ -553,6 +699,54 @@ impl crate::BoxedSerialize for DownloadNextBlockFull {
     }
 }
 impl crate::Function for DownloadNextBlockFull {
+    type Reply = crate::ton::ton_node::DataFull;
+}
+#[derive(Debug, Default, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.downloadNextMeshUpdate`\n\n```text\ntonNode.downloadNextMeshUpdate target_nw:int prev_block:tonNode.blockIdExt = tonNode.DataFull;\n```\n"]
+pub struct DownloadNextMeshUpdate {
+    pub target_nw: crate::ton::int,
+    pub prev_block: crate::ton::ton_node::blockidext::BlockIdExt,
+}
+impl Eq for DownloadNextMeshUpdate {}
+impl crate::BareSerialize for DownloadNextMeshUpdate {
+    fn constructor(&self) -> crate::ConstructorNumber {
+        crate::ConstructorNumber(0x805380e7)
+    }
+
+    fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
+        let DownloadNextMeshUpdate { target_nw, prev_block } = self;
+        _ser.write_bare::<crate::ton::int>(target_nw)?;
+        _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(prev_block)?;
+        Ok(())
+    }
+}
+impl crate::BareDeserialize for DownloadNextMeshUpdate {
+    fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
+        {
+            let target_nw = _de.read_bare::<crate::ton::int>()?;
+            let prev_block = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
+            Ok(Self { target_nw, prev_block })
+        }
+    }
+}
+impl crate::BoxedDeserialize for DownloadNextMeshUpdate {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![crate::ConstructorNumber(0x805380e7)]
+    }
+
+    fn deserialize_boxed(
+        id: crate::ConstructorNumber,
+        de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        if id == crate::ConstructorNumber(0x805380e7) { de.read_bare() } else { _invalid_id!(id) }
+    }
+}
+impl crate::BoxedSerialize for DownloadNextMeshUpdate {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        (crate::ConstructorNumber(0x805380e7), self)
+    }
+}
+impl crate::Function for DownloadNextMeshUpdate {
     type Reply = crate::ton::ton_node::DataFull;
 }
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -1238,7 +1432,7 @@ impl crate::Function for PrepareBlockProof {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.prepareBlockProofs`\n\n```text\ntonNode.prepareBlockProofs blocks:(vector tonNode.blockIdExt) allow_partial:Bool = tonNode.PreparedProof;\n```\n"]
 pub struct PrepareBlockProofs {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
     pub allow_partial: crate::ton::Bool,
 }
 impl Eq for PrepareBlockProofs {}
@@ -1249,7 +1443,8 @@ impl crate::BareSerialize for PrepareBlockProofs {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareBlockProofs { blocks, allow_partial } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         _ser.write_boxed::<crate::ton::Bool>(allow_partial)?;
         Ok(())
     }
@@ -1257,10 +1452,10 @@ impl crate::BareSerialize for PrepareBlockProofs {
 impl crate::BareDeserialize for PrepareBlockProofs {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             let allow_partial = _de.read_boxed::<crate::ton::Bool>()?;
             Ok(Self { blocks, allow_partial })
         }
@@ -1289,7 +1484,7 @@ impl crate::Function for PrepareBlockProofs {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.prepareBlocks`\n\n```text\ntonNode.prepareBlocks blocks:(vector tonNode.blockIdExt) = tonNode.Prepared;\n```\n"]
 pub struct PrepareBlocks {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
 }
 impl Eq for PrepareBlocks {}
 impl crate::BareSerialize for PrepareBlocks {
@@ -1299,17 +1494,18 @@ impl crate::BareSerialize for PrepareBlocks {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareBlocks { blocks } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for PrepareBlocks {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             Ok(Self { blocks })
         }
     }
@@ -1385,7 +1581,7 @@ impl crate::Function for PrepareKeyBlockProof {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.prepareKeyBlockProofs`\n\n```text\ntonNode.prepareKeyBlockProofs blocks:(vector tonNode.blockIdExt) allow_partial:Bool = tonNode.PreparedProof;\n```\n"]
 pub struct PrepareKeyBlockProofs {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt>,
+    pub blocks: crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt>,
     pub allow_partial: crate::ton::Bool,
 }
 impl Eq for PrepareKeyBlockProofs {}
@@ -1396,7 +1592,8 @@ impl crate::BareSerialize for PrepareKeyBlockProofs {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let PrepareKeyBlockProofs { blocks, allow_partial } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: ton_node :: blockidext :: BlockIdExt > > (blocks) ? ;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::ton_node::blockidext::BlockIdExt>)
+            .serialize(_ser)?;
         _ser.write_boxed::<crate::ton::Bool>(allow_partial)?;
         Ok(())
     }
@@ -1404,10 +1601,10 @@ impl crate::BareSerialize for PrepareKeyBlockProofs {
 impl crate::BareDeserialize for PrepareKeyBlockProofs {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::ton_node::blockidext::BlockIdExt,
-            >>()?;
+            let blocks =
+                <Vec<crate::ton::ton_node::blockidext::BlockIdExt> as crate::ton::VectoredBare<
+                    crate::ton::ton_node::blockidext::BlockIdExt,
+                >>::deserialize(_de)?;
             let allow_partial = _de.read_boxed::<crate::ton::Bool>()?;
             Ok(Self { blocks, allow_partial })
         }

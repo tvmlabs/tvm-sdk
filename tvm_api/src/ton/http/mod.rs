@@ -72,9 +72,7 @@ impl PayloadPart {
         }
     }
 
-    pub fn trailer(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::header::Header> {
+    pub fn trailer(&self) -> &crate::ton::vector<crate::ton::http::header::Header> {
         match self {
             PayloadPart::Http_PayloadPart(ref x) => &x.trailer,
         }
@@ -122,9 +120,7 @@ pub enum Response {
     Http_Response(crate::ton::http::response::Response),
 }
 impl Response {
-    pub fn headers(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::header::Header> {
+    pub fn headers(&self) -> &crate::ton::vector<crate::ton::http::header::Header> {
         match self {
             Response::Http_Response(ref x) => &x.headers,
         }

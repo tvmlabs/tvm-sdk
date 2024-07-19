@@ -6,9 +6,7 @@ pub enum Global {
     Liteclient_Config_Global(crate::ton::liteclient::config::global::Global),
 }
 impl Global {
-    pub fn liteservers(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::liteserver::desc::Desc> {
+    pub fn liteservers(&self) -> &crate::ton::vector<crate::ton::liteserver::desc::Desc> {
         match self {
             Global::Liteclient_Config_Global(ref x) => &x.liteservers,
         }

@@ -88,8 +88,7 @@ impl Value {
 
     pub fn firstblocks(
         &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::db::files::package::firstblock::FirstBlock>
-    {
+    ) -> &crate::ton::vector<crate::ton::db::files::package::firstblock::FirstBlock> {
         match self {
             Value::Db_Files_Package_Value(ref x) => &x.firstblocks,
         }

@@ -7,10 +7,8 @@ pub struct Group {
     pub shard: crate::ton::long,
     pub catchain_seqno: crate::ton::int,
     pub config_hash: crate::ton::int256,
-    pub members: crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::validator::groupmember::GroupMember,
-    >,
+    pub members:
+        crate::ton::vector<crate::ton::engine::validator::validator::groupmember::GroupMember>,
 }
 impl Eq for Group {}
 impl crate::BareSerialize for Group {
@@ -24,10 +22,11 @@ impl crate::BareSerialize for Group {
         _ser.write_bare::<crate::ton::long>(shard)?;
         _ser.write_bare::<crate::ton::int>(catchain_seqno)?;
         _ser.write_bare::<crate::ton::int256>(config_hash)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::engine::validator::validator::groupmember::GroupMember,
-        >>(members)?;
+        (members
+            as &dyn crate::ton::VectoredBare<
+                crate::ton::engine::validator::validator::groupmember::GroupMember,
+            >)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -38,10 +37,7 @@ impl crate::BareDeserialize for Group {
             let shard = _de.read_bare::<crate::ton::long>()?;
             let catchain_seqno = _de.read_bare::<crate::ton::int>()?;
             let config_hash = _de.read_bare::<crate::ton::int256>()?;
-            let members = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::validator::validator::groupmember::GroupMember,
-            >>()?;
+            let members = < Vec < crate :: ton :: engine :: validator :: validator :: groupmember :: GroupMember > as crate :: ton :: VectoredBare < crate :: ton :: engine :: validator :: validator :: groupmember :: GroupMember >> :: deserialize (_de) ? ;
             Ok(Self { workchain, shard, catchain_seqno, config_hash, members })
         }
     }
@@ -61,10 +57,8 @@ pub struct GroupEx {
     pub vertical_seqno: crate::ton::int,
     pub catchain_seqno: crate::ton::int,
     pub config_hash: crate::ton::int256,
-    pub members: crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::validator::groupmember::GroupMember,
-    >,
+    pub members:
+        crate::ton::vector<crate::ton::engine::validator::validator::groupmember::GroupMember>,
 }
 impl Eq for GroupEx {}
 impl crate::BareSerialize for GroupEx {
@@ -80,10 +74,11 @@ impl crate::BareSerialize for GroupEx {
         _ser.write_bare::<crate::ton::int>(vertical_seqno)?;
         _ser.write_bare::<crate::ton::int>(catchain_seqno)?;
         _ser.write_bare::<crate::ton::int256>(config_hash)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::engine::validator::validator::groupmember::GroupMember,
-        >>(members)?;
+        (members
+            as &dyn crate::ton::VectoredBare<
+                crate::ton::engine::validator::validator::groupmember::GroupMember,
+            >)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -95,10 +90,7 @@ impl crate::BareDeserialize for GroupEx {
             let vertical_seqno = _de.read_bare::<crate::ton::int>()?;
             let catchain_seqno = _de.read_bare::<crate::ton::int>()?;
             let config_hash = _de.read_bare::<crate::ton::int256>()?;
-            let members = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::validator::validator::groupmember::GroupMember,
-            >>()?;
+            let members = < Vec < crate :: ton :: engine :: validator :: validator :: groupmember :: GroupMember > as crate :: ton :: VectoredBare < crate :: ton :: engine :: validator :: validator :: groupmember :: GroupMember >> :: deserialize (_de) ? ;
             Ok(Self { workchain, shard, vertical_seqno, catchain_seqno, config_hash, members })
         }
     }
@@ -119,10 +111,8 @@ pub struct GroupNew {
     pub last_key_block_seqno: crate::ton::int,
     pub catchain_seqno: crate::ton::int,
     pub config_hash: crate::ton::int256,
-    pub members: crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::validator::groupmember::GroupMember,
-    >,
+    pub members:
+        crate::ton::vector<crate::ton::engine::validator::validator::groupmember::GroupMember>,
 }
 impl Eq for GroupNew {}
 impl crate::BareSerialize for GroupNew {
@@ -146,10 +136,11 @@ impl crate::BareSerialize for GroupNew {
         _ser.write_bare::<crate::ton::int>(last_key_block_seqno)?;
         _ser.write_bare::<crate::ton::int>(catchain_seqno)?;
         _ser.write_bare::<crate::ton::int256>(config_hash)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::engine::validator::validator::groupmember::GroupMember,
-        >>(members)?;
+        (members
+            as &dyn crate::ton::VectoredBare<
+                crate::ton::engine::validator::validator::groupmember::GroupMember,
+            >)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -162,10 +153,7 @@ impl crate::BareDeserialize for GroupNew {
             let last_key_block_seqno = _de.read_bare::<crate::ton::int>()?;
             let catchain_seqno = _de.read_bare::<crate::ton::int>()?;
             let config_hash = _de.read_bare::<crate::ton::int256>()?;
-            let members = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::validator::validator::groupmember::GroupMember,
-            >>()?;
+            let members = < Vec < crate :: ton :: engine :: validator :: validator :: groupmember :: GroupMember > as crate :: ton :: VectoredBare < crate :: ton :: engine :: validator :: validator :: groupmember :: GroupMember >> :: deserialize (_de) ? ;
             Ok(Self {
                 workchain,
                 shard,

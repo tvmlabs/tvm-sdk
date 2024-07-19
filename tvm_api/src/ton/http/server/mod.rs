@@ -6,17 +6,13 @@ pub enum Config {
     Http_Server_Config(crate::ton::http::server::config::Config),
 }
 impl Config {
-    pub fn dhs(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::server::dnsentry::DnsEntry> {
+    pub fn dhs(&self) -> &crate::ton::vector<crate::ton::http::server::dnsentry::DnsEntry> {
         match self {
             Config::Http_Server_Config(ref x) => &x.dhs,
         }
     }
 
-    pub fn local_hosts(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::server::host::Host> {
+    pub fn local_hosts(&self) -> &crate::ton::vector<crate::ton::http::server::host::Host> {
         match self {
             Config::Http_Server_Config(ref x) => &x.local_hosts,
         }
@@ -124,7 +120,7 @@ impl Host {
         }
     }
 
-    pub fn domains(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::string> {
+    pub fn domains(&self) -> &crate::ton::vector<crate::ton::string> {
         match self {
             Host::Http_Server_Host(ref x) => &x.domains,
         }

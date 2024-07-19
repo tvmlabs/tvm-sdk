@@ -6,8 +6,7 @@ pub struct BlockTransactions {
     pub id: crate::ton::ton_node::blockidext::BlockIdExt,
     pub req_count: crate::ton::int,
     pub incomplete: crate::ton::Bool,
-    pub ids:
-        crate::ton::vector<crate::ton::Bare, crate::ton::lite_server::transactionid::TransactionId>,
+    pub ids: crate::ton::vector<crate::ton::lite_server::transactionid::TransactionId>,
     pub proof: crate::ton::bytes,
 }
 impl Eq for BlockTransactions {}
@@ -21,10 +20,9 @@ impl crate::BareSerialize for BlockTransactions {
         _ser.write_bare::<crate::ton::ton_node::blockidext::BlockIdExt>(id)?;
         _ser.write_bare::<crate::ton::int>(req_count)?;
         _ser.write_boxed::<crate::ton::Bool>(incomplete)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::lite_server::transactionid::TransactionId,
-        >>(ids)?;
+        (ids
+            as &dyn crate::ton::VectoredBare<crate::ton::lite_server::transactionid::TransactionId>)
+            .serialize(_ser)?;
         _ser.write_bare::<crate::ton::bytes>(proof)?;
         Ok(())
     }
@@ -35,10 +33,7 @@ impl crate::BareDeserialize for BlockTransactions {
             let id = _de.read_bare::<crate::ton::ton_node::blockidext::BlockIdExt>()?;
             let req_count = _de.read_bare::<crate::ton::int>()?;
             let incomplete = _de.read_boxed::<crate::ton::Bool>()?;
-            let ids = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::lite_server::transactionid::TransactionId,
-            >>()?;
+            let ids = < Vec < crate :: ton :: lite_server :: transactionid :: TransactionId > as crate :: ton :: VectoredBare < crate :: ton :: lite_server :: transactionid :: TransactionId >> :: deserialize (_de) ? ;
             let proof = _de.read_bare::<crate::ton::bytes>()?;
             Ok(Self { id, req_count, incomplete, ids, proof })
         }

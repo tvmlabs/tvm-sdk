@@ -6,9 +6,7 @@ pub enum BlockUpdate {
     ValidatorSession_BlockUpdate(crate::ton::validator_session::blockupdate::BlockUpdate),
 }
 impl BlockUpdate {
-    pub fn actions(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::validator_session::round::Message> {
+    pub fn actions(&self) -> &crate::ton::vector<crate::ton::validator_session::round::Message> {
         match self {
             BlockUpdate::ValidatorSession_BlockUpdate(ref x) => &x.actions,
         }

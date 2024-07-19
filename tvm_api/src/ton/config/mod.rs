@@ -107,39 +107,31 @@ pub enum Local {
     Config_Local(crate::ton::config::local::Local),
 }
 impl Local {
-    pub fn control(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::control::config::local::Local> {
+    pub fn control(&self) -> &crate::ton::vector<crate::ton::control::config::local::Local> {
         match self {
             Local::Config_Local(ref x) => &x.control,
         }
     }
 
-    pub fn dht(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::dht::config::Local> {
+    pub fn dht(&self) -> &crate::ton::vector<crate::ton::dht::config::Local> {
         match self {
             Local::Config_Local(ref x) => &x.dht,
         }
     }
 
-    pub fn liteservers(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::liteserver::config::Local> {
+    pub fn liteservers(&self) -> &crate::ton::vector<crate::ton::liteserver::config::Local> {
         match self {
             Local::Config_Local(ref x) => &x.liteservers,
         }
     }
 
-    pub fn local_ids(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::id::config::local::Local> {
+    pub fn local_ids(&self) -> &crate::ton::vector<crate::ton::id::config::local::Local> {
         match self {
             Local::Config_Local(ref x) => &x.local_ids,
         }
     }
 
-    pub fn validators(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::validator::config::Local> {
+    pub fn validators(&self) -> &crate::ton::vector<crate::ton::validator::config::Local> {
         match self {
             Local::Config_Local(ref x) => &x.validators,
         }

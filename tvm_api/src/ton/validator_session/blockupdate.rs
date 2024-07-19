@@ -4,8 +4,7 @@ use serde_derive::Serialize;
 #[doc = "TL-derived from `validatorSession.blockUpdate`\n\n```text\nvalidatorSession.blockUpdate ts:long actions:(vector validatorSession.round.Message) state:int = validatorSession.BlockUpdate;\n```\n"]
 pub struct BlockUpdate {
     pub ts: crate::ton::long,
-    pub actions:
-        crate::ton::vector<crate::ton::Boxed, crate::ton::validator_session::round::Message>,
+    pub actions: crate::ton::vector<crate::ton::validator_session::round::Message>,
     pub state: crate::ton::int,
 }
 impl Eq for BlockUpdate {}
@@ -17,7 +16,8 @@ impl crate::BareSerialize for BlockUpdate {
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let BlockUpdate { ts, actions, state } = self;
         _ser.write_bare::<crate::ton::long>(ts)?;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Boxed , crate :: ton :: validator_session :: round :: Message > > (actions) ? ;
+        (actions as &dyn crate::ton::VectoredBoxed<crate::ton::validator_session::round::Message>)
+            .serialize(_ser)?;
         _ser.write_bare::<crate::ton::int>(state)?;
         Ok(())
     }
@@ -26,10 +26,7 @@ impl crate::BareDeserialize for BlockUpdate {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let ts = _de.read_bare::<crate::ton::long>()?;
-            let actions = _de.read_bare::<crate::ton::vector<
-                crate::ton::Boxed,
-                crate::ton::validator_session::round::Message,
-            >>()?;
+            let actions = < Vec < crate :: ton :: validator_session :: round :: Message > as crate :: ton :: VectoredBoxed < crate :: ton :: validator_session :: round :: Message >> :: deserialize (_de) ? ;
             let state = _de.read_bare::<crate::ton::int>()?;
             Ok(Self { ts, actions, state })
         }

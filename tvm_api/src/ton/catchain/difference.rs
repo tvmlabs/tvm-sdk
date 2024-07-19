@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.difference`\n\n```text\ncatchain.difference sent_upto:(vector int) = catchain.Difference;\n```\n"]
 pub struct Difference {
-    pub sent_upto: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub sent_upto: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for Difference {}
 impl crate::BareSerialize for Difference {
@@ -13,7 +13,7 @@ impl crate::BareSerialize for Difference {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Difference { sent_upto } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(sent_upto)?;
+        (sent_upto as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -21,7 +21,9 @@ impl crate::BareDeserialize for Difference {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let sent_upto =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
             Ok(Self { sent_upto })
         }
     }

@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.nodes`\n\n```text\noverlay.nodes nodes:(vector overlay.node) = overlay.Nodes;\n```\n"]
 pub struct Nodes {
-    pub nodes: crate::ton::vector<crate::ton::Bare, crate::ton::overlay::node::Node>,
+    pub nodes: crate::ton::vector<crate::ton::overlay::node::Node>,
 }
 impl Eq for Nodes {}
 impl crate::BareSerialize for Nodes {
@@ -13,18 +13,17 @@ impl crate::BareSerialize for Nodes {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Nodes { nodes } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::overlay::node::Node>>(
-            nodes,
-        )?;
+        (nodes as &dyn crate::ton::VectoredBare<crate::ton::overlay::node::Node>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for Nodes {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let nodes = _de
-                .read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::overlay::node::Node>>(
-                )?;
+            let nodes = <Vec<crate::ton::overlay::node::Node> as crate::ton::VectoredBare<
+                crate::ton::overlay::node::Node,
+            >>::deserialize(_de)?;
             Ok(Self { nodes })
         }
     }

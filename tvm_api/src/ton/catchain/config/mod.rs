@@ -6,7 +6,7 @@ pub enum Global {
     Catchain_Config_Global(crate::ton::catchain::config::global::Global),
 }
 impl Global {
-    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::PublicKey> {
+    pub fn nodes(&self) -> &crate::ton::vector<crate::ton::PublicKey> {
         match self {
             Global::Catchain_Config_Global(ref x) => &x.nodes,
         }

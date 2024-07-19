@@ -3,8 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `accountList`\n\n```text\naccountList accounts:vector<fullAccountState> = AccountList;\n```\n"]
 pub struct AccountList {
-    pub accounts:
-        crate::ton::vector<crate::ton::Bare, crate::ton::fullaccountstate::FullAccountState>,
+    pub accounts: crate::ton::vector<crate::ton::fullaccountstate::FullAccountState>,
 }
 impl Eq for AccountList {}
 impl crate::BareSerialize for AccountList {
@@ -14,17 +13,15 @@ impl crate::BareSerialize for AccountList {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let AccountList { accounts } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: fullaccountstate :: FullAccountState > > (accounts) ? ;
+        (accounts as &dyn crate::ton::VectoredBare<crate::ton::fullaccountstate::FullAccountState>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for AccountList {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let accounts = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::fullaccountstate::FullAccountState,
-            >>()?;
+            let accounts = < Vec < crate :: ton :: fullaccountstate :: FullAccountState > as crate :: ton :: VectoredBare < crate :: ton :: fullaccountstate :: FullAccountState >> :: deserialize (_de) ? ;
             Ok(Self { accounts })
         }
     }

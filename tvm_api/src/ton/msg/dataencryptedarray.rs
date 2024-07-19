@@ -3,8 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `msg.dataEncryptedArray`\n\n```text\nmsg.dataEncryptedArray elements:vector<msg.dataEncrypted> = msg.DataEncryptedArray;\n```\n"]
 pub struct DataEncryptedArray {
-    pub elements:
-        crate::ton::vector<crate::ton::Bare, crate::ton::msg::dataencrypted::DataEncrypted>,
+    pub elements: crate::ton::vector<crate::ton::msg::dataencrypted::DataEncrypted>,
 }
 impl Eq for DataEncryptedArray {}
 impl crate::BareSerialize for DataEncryptedArray {
@@ -14,17 +13,18 @@ impl crate::BareSerialize for DataEncryptedArray {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let DataEncryptedArray { elements } = self;
-        _ser . write_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: msg :: dataencrypted :: DataEncrypted > > (elements) ? ;
+        (elements as &dyn crate::ton::VectoredBare<crate::ton::msg::dataencrypted::DataEncrypted>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for DataEncryptedArray {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let elements = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::msg::dataencrypted::DataEncrypted,
-            >>()?;
+            let elements =
+                <Vec<crate::ton::msg::dataencrypted::DataEncrypted> as crate::ton::VectoredBare<
+                    crate::ton::msg::dataencrypted::DataEncrypted,
+                >>::deserialize(_de)?;
             Ok(Self { elements })
         }
     }

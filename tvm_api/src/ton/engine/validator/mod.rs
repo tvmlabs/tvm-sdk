@@ -6,13 +6,13 @@ pub enum Config {
     Engine_Validator_Config(crate::ton::engine::validator::config::Config),
 }
 impl Config {
-    pub fn addrs(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::engine::Addr> {
+    pub fn addrs(&self) -> &crate::ton::vector<crate::ton::engine::Addr> {
         match self {
             Config::Engine_Validator_Config(ref x) => &x.addrs,
         }
     }
 
-    pub fn adnl(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::adnl::Adnl> {
+    pub fn adnl(&self) -> &crate::ton::vector<crate::ton::engine::adnl::Adnl> {
         match self {
             Config::Engine_Validator_Config(ref x) => &x.adnl,
         }
@@ -20,14 +20,13 @@ impl Config {
 
     pub fn control(
         &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::controlinterface::ControlInterface>
-    {
+    ) -> &crate::ton::vector<crate::ton::engine::controlinterface::ControlInterface> {
         match self {
             Config::Engine_Validator_Config(ref x) => &x.control,
         }
     }
 
-    pub fn dht(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::dht::Dht> {
+    pub fn dht(&self) -> &crate::ton::vector<crate::ton::engine::dht::Dht> {
         match self {
             Config::Engine_Validator_Config(ref x) => &x.dht,
         }
@@ -41,10 +40,7 @@ impl Config {
 
     pub fn fullnodemasters(
         &self,
-    ) -> &crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::fullnodemaster::FullNodeMaster,
-    > {
+    ) -> &crate::ton::vector<crate::ton::engine::validator::fullnodemaster::FullNodeMaster> {
         match self {
             Config::Engine_Validator_Config(ref x) => &x.fullnodemasters,
         }
@@ -52,10 +48,7 @@ impl Config {
 
     pub fn fullnodeslaves(
         &self,
-    ) -> &crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::fullnodeslave::FullNodeSlave,
-    > {
+    ) -> &crate::ton::vector<crate::ton::engine::validator::fullnodeslave::FullNodeSlave> {
         match self {
             Config::Engine_Validator_Config(ref x) => &x.fullnodeslaves,
         }
@@ -67,9 +60,7 @@ impl Config {
         }
     }
 
-    pub fn liteservers(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::liteserver::LiteServer> {
+    pub fn liteservers(&self) -> &crate::ton::vector<crate::ton::engine::liteserver::LiteServer> {
         match self {
             Config::Engine_Validator_Config(ref x) => &x.liteservers,
         }
@@ -81,9 +72,7 @@ impl Config {
         }
     }
 
-    pub fn validators(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::Validator> {
+    pub fn validators(&self) -> &crate::ton::vector<crate::ton::engine::validator::Validator> {
         match self {
             Config::Engine_Validator_Config(ref x) => &x.validators,
         }
@@ -245,10 +234,7 @@ pub enum DhtServersStatus {
 impl DhtServersStatus {
     pub fn servers(
         &self,
-    ) -> &crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::dhtserverstatus::DhtServerStatus,
-    > {
+    ) -> &crate::ton::vector<crate::ton::engine::validator::dhtserverstatus::DhtServerStatus> {
         match self {
             DhtServersStatus::Engine_Validator_DhtServersStatus(ref x) => &x.servers,
         }
@@ -763,10 +749,7 @@ pub enum SessionStats {
 impl SessionStats {
     pub fn stats(
         &self,
-    ) -> &crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::onesessionstat::OneSessionStat,
-    > {
+    ) -> &crate::ton::vector<crate::ton::engine::validator::onesessionstat::OneSessionStat> {
         match self {
             SessionStats::Engine_Validator_SessionStats(ref x) => &x.stats,
         }
@@ -870,10 +853,7 @@ pub enum Stats {
     Engine_Validator_Stats(crate::ton::engine::validator::stats::Stats),
 }
 impl Stats {
-    pub fn stats(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::onestat::OneStat>
-    {
+    pub fn stats(&self) -> &crate::ton::vector<crate::ton::engine::validator::onestat::OneStat> {
         match self {
             Stats::Engine_Validator_Stats(ref x) => &x.stats,
         }
@@ -996,14 +976,9 @@ impl crate::BoxedDeserialize for Time {
 #[doc = "TL-derived from `engine.validator`\n\n```text\nengine.validator id:int256 temp_keys:(vector engine.validatorTempKey) adnl_addrs:(vector engine.validatorAdnlAddress) election_date:int expire_at:int = engine.Validator;\n```\n"]
 pub struct Validator {
     pub id: crate::ton::int256,
-    pub temp_keys: crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validatortempkey::ValidatorTempKey,
-    >,
-    pub adnl_addrs: crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress,
-    >,
+    pub temp_keys: crate::ton::vector<crate::ton::engine::validatortempkey::ValidatorTempKey>,
+    pub adnl_addrs:
+        crate::ton::vector<crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress>,
     pub election_date: crate::ton::int,
     pub expire_at: crate::ton::int,
 }
@@ -1016,14 +991,12 @@ impl crate::BareSerialize for Validator {
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let Validator { id, temp_keys, adnl_addrs, election_date, expire_at } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::engine::validatortempkey::ValidatorTempKey,
-        >>(temp_keys)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress,
-        >>(adnl_addrs)?;
+        (temp_keys as & dyn crate :: ton :: VectoredBare < crate :: ton :: engine :: validatortempkey :: ValidatorTempKey >) . serialize (_ser) ? ;
+        (adnl_addrs
+            as &dyn crate::ton::VectoredBare<
+                crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress,
+            >)
+            .serialize(_ser)?;
         _ser.write_bare::<crate::ton::int>(election_date)?;
         _ser.write_bare::<crate::ton::int>(expire_at)?;
         Ok(())
@@ -1033,14 +1006,8 @@ impl crate::BareDeserialize for Validator {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
             let id = _de.read_bare::<crate::ton::int256>()?;
-            let temp_keys = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::validatortempkey::ValidatorTempKey,
-            >>()?;
-            let adnl_addrs = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress,
-            >>()?;
+            let temp_keys = < Vec < crate :: ton :: engine :: validatortempkey :: ValidatorTempKey > as crate :: ton :: VectoredBare < crate :: ton :: engine :: validatortempkey :: ValidatorTempKey >> :: deserialize (_de) ? ;
+            let adnl_addrs = < Vec < crate :: ton :: engine :: validatoradnladdress :: ValidatorAdnlAddress > as crate :: ton :: VectoredBare < crate :: ton :: engine :: validatoradnladdress :: ValidatorAdnlAddress >> :: deserialize (_de) ? ;
             let election_date = _de.read_bare::<crate::ton::int>()?;
             let expire_at = _de.read_bare::<crate::ton::int>()?;
             Ok(Self { id, temp_keys, adnl_addrs, election_date, expire_at })

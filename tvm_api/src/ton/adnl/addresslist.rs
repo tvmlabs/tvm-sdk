@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.addressList`\n\n```text\nadnl.addressList addrs:(vector adnl.Address) version:int reinit_date:int priority:int expire_at:int = adnl.AddressList;\n```\n"]
 pub struct AddressList {
-    pub addrs: crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Address>,
+    pub addrs: crate::ton::vector<crate::ton::adnl::Address>,
     pub version: crate::ton::int,
     pub reinit_date: crate::ton::int,
     pub priority: crate::ton::int,
@@ -17,7 +17,7 @@ impl crate::BareSerialize for AddressList {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let AddressList { addrs, version, reinit_date, priority, expire_at } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Address>>(addrs)?;
+        (addrs as &dyn crate::ton::VectoredBoxed<crate::ton::adnl::Address>).serialize(_ser)?;
         _ser.write_bare::<crate::ton::int>(version)?;
         _ser.write_bare::<crate::ton::int>(reinit_date)?;
         _ser.write_bare::<crate::ton::int>(priority)?;
@@ -28,8 +28,9 @@ impl crate::BareSerialize for AddressList {
 impl crate::BareDeserialize for AddressList {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let addrs = _de
-                .read_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Address>>()?;
+            let addrs = <Vec<crate::ton::adnl::Address> as crate::ton::VectoredBoxed<
+                crate::ton::adnl::Address,
+            >>::deserialize(_de)?;
             let version = _de.read_bare::<crate::ton::int>()?;
             let reinit_date = _de.read_bare::<crate::ton::int>()?;
             let priority = _de.read_bare::<crate::ton::int>()?;

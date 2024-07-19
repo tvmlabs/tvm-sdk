@@ -55,9 +55,7 @@ pub enum Data {
     Catchain_Block_Data(crate::ton::catchain::block::data::Data),
 }
 impl Data {
-    pub fn deps(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::catchain::block::dep::Dep> {
+    pub fn deps(&self) -> &crate::ton::vector<crate::ton::catchain::block::dep::Dep> {
         match self {
             Data::Catchain_Block_Data(ref x) => &x.deps,
         }

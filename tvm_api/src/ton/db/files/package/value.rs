@@ -6,10 +6,7 @@ pub struct Value {
     pub package_id: crate::ton::int,
     pub key: crate::ton::Bool,
     pub temp: crate::ton::Bool,
-    pub firstblocks: crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::db::files::package::firstblock::FirstBlock,
-    >,
+    pub firstblocks: crate::ton::vector<crate::ton::db::files::package::firstblock::FirstBlock>,
     pub deleted: crate::ton::Bool,
 }
 impl Eq for Value {}
@@ -23,10 +20,7 @@ impl crate::BareSerialize for Value {
         _ser.write_bare::<crate::ton::int>(package_id)?;
         _ser.write_boxed::<crate::ton::Bool>(key)?;
         _ser.write_boxed::<crate::ton::Bool>(temp)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::db::files::package::firstblock::FirstBlock,
-        >>(firstblocks)?;
+        (firstblocks as & dyn crate :: ton :: VectoredBare < crate :: ton :: db :: files :: package :: firstblock :: FirstBlock >) . serialize (_ser) ? ;
         _ser.write_boxed::<crate::ton::Bool>(deleted)?;
         Ok(())
     }
@@ -37,10 +31,7 @@ impl crate::BareDeserialize for Value {
             let package_id = _de.read_bare::<crate::ton::int>()?;
             let key = _de.read_boxed::<crate::ton::Bool>()?;
             let temp = _de.read_boxed::<crate::ton::Bool>()?;
-            let firstblocks = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::db::files::package::firstblock::FirstBlock,
-            >>()?;
+            let firstblocks = < Vec < crate :: ton :: db :: files :: package :: firstblock :: FirstBlock > as crate :: ton :: VectoredBare < crate :: ton :: db :: files :: package :: firstblock :: FirstBlock >> :: deserialize (_de) ? ;
             let deleted = _de.read_boxed::<crate::ton::Bool>()?;
             Ok(Self { package_id, key, temp, firstblocks, deleted })
         }

@@ -352,9 +352,7 @@ pub enum BlocksDescription {
     TonNode_BlocksDescription(crate::ton::ton_node::blocksdescription::BlocksDescription),
 }
 impl BlocksDescription {
-    pub fn ids(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
+    pub fn ids(&self) -> &crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             BlocksDescription::TonNode_BlocksDescription(ref x) => &x.ids,
         }
@@ -409,13 +407,14 @@ impl crate::BoxedDeserialize for BlocksDescription {
     }
 }
 #[derive(Debug, Clone, PartialEq)]
-#[doc = "TL-derived from `tonNode.Broadcast`\n\n```text\ntonNode.blockBroadcast id:tonNode.blockIdExt catchain_seqno:int validator_set_hash:int \n              signatures:(vector tonNode.blockSignature) \n              proof:bytes data:bytes = tonNode.Broadcast;\n\ntonNode.blockCandidateBroadcast id:tonNode.blockIdExt data:bytes collated_data:bytes collated_data_file_hash:int256 created_by:int256 created_timestamp:long = tonNode.Broadcast;\n\ntonNode.connectivityCheckBroadcast pub_key:int256 padding:bytes = tonNode.Broadcast;\n\ntonNode.externalMessageBroadcast message:tonNode.externalMessage = tonNode.Broadcast;\n\ntonNode.ihrMessageBroadcast message:tonNode.ihrMessage = tonNode.Broadcast;\n\ntonNode.newShardBlockBroadcast block:tonNode.newShardBlock = tonNode.Broadcast;\n\ntonNode.queueUpdateBroadcast id:tonNode.blockIdExt catchain_seqno:int validator_set_hash:int \n              signatures:(vector tonNode.blockSignature) target_wc:int\n              data:bytes = tonNode.Broadcast;\n```\n"]
+#[doc = "TL-derived from `tonNode.Broadcast`\n\n```text\ntonNode.blockBroadcast id:tonNode.blockIdExt catchain_seqno:int validator_set_hash:int \n              signatures:(vector tonNode.blockSignature) \n              proof:bytes data:bytes = tonNode.Broadcast;\n\ntonNode.blockCandidateBroadcast id:tonNode.blockIdExt data:bytes collated_data:bytes collated_data_file_hash:int256 created_by:int256 created_timestamp:long = tonNode.Broadcast;\n\ntonNode.connectivityCheckBroadcast pub_key:int256 padding:bytes = tonNode.Broadcast;\n\ntonNode.externalMessageBroadcast message:tonNode.externalMessage = tonNode.Broadcast;\n\ntonNode.ihrMessageBroadcast message:tonNode.ihrMessage = tonNode.Broadcast;\n\ntonNode.meshUpdateBroadcast src_nw:int32 id:tonNode.blockIdExt target_nw:int32 data:bytes = tonNode.Broadcast;\n\ntonNode.newShardBlockBroadcast block:tonNode.newShardBlock = tonNode.Broadcast;\n\ntonNode.queueUpdateBroadcast id:tonNode.blockIdExt catchain_seqno:int validator_set_hash:int \n              signatures:(vector tonNode.blockSignature) target_wc:int\n              data:bytes = tonNode.Broadcast;\n```\n"]
 pub enum Broadcast {
     TonNode_BlockBroadcast(crate::ton::ton_node::broadcast::BlockBroadcast),
     TonNode_BlockCandidateBroadcast(crate::ton::ton_node::broadcast::BlockCandidateBroadcast),
     TonNode_ConnectivityCheckBroadcast(crate::ton::ton_node::broadcast::ConnectivityCheckBroadcast),
     TonNode_ExternalMessageBroadcast(crate::ton::ton_node::broadcast::ExternalMessageBroadcast),
     TonNode_IhrMessageBroadcast(crate::ton::ton_node::broadcast::IhrMessageBroadcast),
+    TonNode_MeshUpdateBroadcast(crate::ton::ton_node::broadcast::MeshUpdateBroadcast),
     TonNode_NewShardBlockBroadcast(crate::ton::ton_node::broadcast::NewShardBlockBroadcast),
     TonNode_QueueUpdateBroadcast(crate::ton::ton_node::broadcast::QueueUpdateBroadcast),
 }
@@ -467,6 +466,7 @@ impl Broadcast {
         match self {
             Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.data),
             Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.data),
+            Broadcast::TonNode_MeshUpdateBroadcast(ref x) => Some(&x.data),
             Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.data),
             _ => None,
         }
@@ -476,6 +476,7 @@ impl Broadcast {
         match self {
             Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.id),
             Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.id),
+            Broadcast::TonNode_MeshUpdateBroadcast(ref x) => Some(&x.id),
             Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.id),
             _ => None,
         }
@@ -504,12 +505,24 @@ impl Broadcast {
 
     pub fn signatures(
         &self,
-    ) -> Option<
-        &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blocksignature::BlockSignature>,
-    > {
+    ) -> Option<&crate::ton::vector<crate::ton::ton_node::blocksignature::BlockSignature>> {
         match self {
             Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.signatures),
             Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.signatures),
+            _ => None,
+        }
+    }
+
+    pub fn src_nw(&self) -> Option<&crate::ton::int32> {
+        match self {
+            Broadcast::TonNode_MeshUpdateBroadcast(ref x) => Some(&x.src_nw),
+            _ => None,
+        }
+    }
+
+    pub fn target_nw(&self) -> Option<&crate::ton::int32> {
+        match self {
+            Broadcast::TonNode_MeshUpdateBroadcast(ref x) => Some(&x.target_nw),
             _ => None,
         }
     }
@@ -549,6 +562,7 @@ impl crate::BoxedSerialize for Broadcast {
                 (crate::ConstructorNumber(0x3d1b1867), x)
             }
             Broadcast::TonNode_IhrMessageBroadcast(x) => (crate::ConstructorNumber(0x525da4b3), x),
+            Broadcast::TonNode_MeshUpdateBroadcast(x) => (crate::ConstructorNumber(0x93852bfa), x),
             Broadcast::TonNode_NewShardBlockBroadcast(x) => {
                 (crate::ConstructorNumber(0x0af2fabc), x)
             }
@@ -564,6 +578,7 @@ impl crate::BoxedDeserialize for Broadcast {
             crate::ConstructorNumber(0x336c53d9),
             crate::ConstructorNumber(0x3d1b1867),
             crate::ConstructorNumber(0x525da4b3),
+            crate::ConstructorNumber(0x93852bfa),
             crate::ConstructorNumber(0x0af2fabc),
             crate::ConstructorNumber(0x9b00bad5),
         ]
@@ -592,6 +607,9 @@ impl crate::BoxedDeserialize for Broadcast {
             }
             crate::ConstructorNumber(0x525da4b3) => Ok(Broadcast::TonNode_IhrMessageBroadcast(
                 _de.read_bare::<crate::ton::ton_node::broadcast::IhrMessageBroadcast>()?,
+            )),
+            crate::ConstructorNumber(0x93852bfa) => Ok(Broadcast::TonNode_MeshUpdateBroadcast(
+                _de.read_bare::<crate::ton::ton_node::broadcast::MeshUpdateBroadcast>()?,
             )),
             crate::ConstructorNumber(0x0af2fabc) => Ok(Broadcast::TonNode_NewShardBlockBroadcast(
                 _de.read_bare::<crate::ton::ton_node::broadcast::NewShardBlockBroadcast>()?,
@@ -806,7 +824,7 @@ pub enum DataList {
     TonNode_DataList(crate::ton::ton_node::datalist::DataList),
 }
 impl DataList {
-    pub fn data(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::bytes> {
+    pub fn data(&self) -> &crate::ton::vector<crate::ton::bytes> {
         match self {
             DataList::TonNode_DataList(ref x) => &x.data,
         }
@@ -954,9 +972,7 @@ pub enum KeyBlocks {
     TonNode_KeyBlocks(crate::ton::ton_node::keyblocks::KeyBlocks),
 }
 impl KeyBlocks {
-    pub fn blocks(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
+    pub fn blocks(&self) -> &crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             KeyBlocks::TonNode_KeyBlocks(ref x) => &x.blocks,
         }
@@ -1008,6 +1024,120 @@ impl crate::BoxedDeserialize for KeyBlocks {
             )),
             id => _invalid_id!(id),
         }
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.MessagePoolMessage`\n\n```text\ntonNode.messagePoolAck transfer_tag:uint8 = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolFetch digests:(vector int256) = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolFetchPack digest:int256 = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolFetchReply data:(vector bytes) = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolPack digest:int256 = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolPackReply digest:int256 = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolShare digests:(vector int256) = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolShareData flags:# info:flags.0?tonNode.packInfo data:(vector bytes) = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolSharePack data:bytes = tonNode.MessagePoolMessage;\n\ntonNode.messagePoolVote digests:(vector int256) = tonNode.MessagePoolMessage;\n```\n"]
+pub enum MessagePoolMessage {
+    TonNode_MessagePoolAck(crate::ton::ton_node::messagepoolmessage::MessagePoolAck),
+    TonNode_MessagePoolFetch(crate::ton::ton_node::messagepoolmessage::MessagePoolFetch),
+    TonNode_MessagePoolFetchPack(crate::ton::ton_node::messagepoolmessage::MessagePoolFetchPack),
+    TonNode_MessagePoolFetchReply(crate::ton::ton_node::messagepoolmessage::MessagePoolFetchReply),
+    TonNode_MessagePoolPack(crate::ton::ton_node::messagepoolmessage::MessagePoolPack),
+    TonNode_MessagePoolPackReply(crate::ton::ton_node::messagepoolmessage::MessagePoolPackReply),
+    TonNode_MessagePoolShare(crate::ton::ton_node::messagepoolmessage::MessagePoolShare),
+    TonNode_MessagePoolShareData(crate::ton::ton_node::messagepoolmessage::MessagePoolShareData),
+    TonNode_MessagePoolSharePack(crate::ton::ton_node::messagepoolmessage::MessagePoolSharePack),
+    TonNode_MessagePoolVote(crate::ton::ton_node::messagepoolmessage::MessagePoolVote),
+}
+impl MessagePoolMessage {
+    pub fn digest(&self) -> Option<&crate::ton::int256> {
+        match self {
+            MessagePoolMessage::TonNode_MessagePoolFetchPack(ref x) => Some(&x.digest),
+            MessagePoolMessage::TonNode_MessagePoolPack(ref x) => Some(&x.digest),
+            MessagePoolMessage::TonNode_MessagePoolPackReply(ref x) => Some(&x.digest),
+            _ => None,
+        }
+    }
+
+    pub fn digests(&self) -> Option<&crate::ton::vector<crate::ton::int256>> {
+        match self {
+            MessagePoolMessage::TonNode_MessagePoolFetch(ref x) => Some(&x.digests),
+            MessagePoolMessage::TonNode_MessagePoolShare(ref x) => Some(&x.digests),
+            MessagePoolMessage::TonNode_MessagePoolVote(ref x) => Some(&x.digests),
+            _ => None,
+        }
+    }
+
+    pub fn info(&self) -> Option<&crate::ton::ton_node::packinfo::PackInfo> {
+        match self {
+            MessagePoolMessage::TonNode_MessagePoolShareData(ref x) => x.info.as_ref(),
+            _ => None,
+        }
+    }
+
+    pub fn transfer_tag(&self) -> Option<&crate::ton::uint8> {
+        match self {
+            MessagePoolMessage::TonNode_MessagePoolAck(ref x) => Some(&x.transfer_tag),
+            _ => None,
+        }
+    }
+}
+impl Eq for MessagePoolMessage {}
+impl Default for MessagePoolMessage {
+    fn default() -> Self {
+        MessagePoolMessage::TonNode_MessagePoolAck(
+            crate::ton::ton_node::messagepoolmessage::MessagePoolAck::default(),
+        )
+    }
+}
+impl crate::BoxedSerialize for MessagePoolMessage {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        match self {
+            MessagePoolMessage::TonNode_MessagePoolAck(x) => {
+                (crate::ConstructorNumber(0x9cb4dad3), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolFetch(x) => {
+                (crate::ConstructorNumber(0x873d80c8), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolFetchPack(x) => {
+                (crate::ConstructorNumber(0x3f4cc517), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolFetchReply(x) => {
+                (crate::ConstructorNumber(0xface9e5f), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolPack(x) => {
+                (crate::ConstructorNumber(0x26af7a02), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolPackReply(x) => {
+                (crate::ConstructorNumber(0xbb622a24), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolShare(x) => {
+                (crate::ConstructorNumber(0x8148d92a), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolShareData(x) => {
+                (crate::ConstructorNumber(0x0e87a560), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolSharePack(x) => {
+                (crate::ConstructorNumber(0x717fd1d9), x)
+            }
+            MessagePoolMessage::TonNode_MessagePoolVote(x) => {
+                (crate::ConstructorNumber(0xa76b40aa), x)
+            }
+        }
+    }
+}
+impl crate::BoxedDeserialize for MessagePoolMessage {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![
+            crate::ConstructorNumber(0x9cb4dad3),
+            crate::ConstructorNumber(0x873d80c8),
+            crate::ConstructorNumber(0x3f4cc517),
+            crate::ConstructorNumber(0xface9e5f),
+            crate::ConstructorNumber(0x26af7a02),
+            crate::ConstructorNumber(0xbb622a24),
+            crate::ConstructorNumber(0x8148d92a),
+            crate::ConstructorNumber(0x0e87a560),
+            crate::ConstructorNumber(0x717fd1d9),
+            crate::ConstructorNumber(0xa76b40aa),
+        ]
+    }
+
+    fn deserialize_boxed(
+        _id: crate::ConstructorNumber,
+        _de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        match _id { crate :: ConstructorNumber (0x9cb4dad3) => Ok (MessagePoolMessage :: TonNode_MessagePoolAck (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolAck > () ?)) , crate :: ConstructorNumber (0x873d80c8) => Ok (MessagePoolMessage :: TonNode_MessagePoolFetch (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolFetch > () ?)) , crate :: ConstructorNumber (0x3f4cc517) => Ok (MessagePoolMessage :: TonNode_MessagePoolFetchPack (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolFetchPack > () ?)) , crate :: ConstructorNumber (0xface9e5f) => Ok (MessagePoolMessage :: TonNode_MessagePoolFetchReply (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolFetchReply > () ?)) , crate :: ConstructorNumber (0x26af7a02) => Ok (MessagePoolMessage :: TonNode_MessagePoolPack (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolPack > () ?)) , crate :: ConstructorNumber (0xbb622a24) => Ok (MessagePoolMessage :: TonNode_MessagePoolPackReply (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolPackReply > () ?)) , crate :: ConstructorNumber (0x8148d92a) => Ok (MessagePoolMessage :: TonNode_MessagePoolShare (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolShare > () ?)) , crate :: ConstructorNumber (0x0e87a560) => Ok (MessagePoolMessage :: TonNode_MessagePoolShareData (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolShareData > () ?)) , crate :: ConstructorNumber (0x717fd1d9) => Ok (MessagePoolMessage :: TonNode_MessagePoolSharePack (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolSharePack > () ?)) , crate :: ConstructorNumber (0xa76b40aa) => Ok (MessagePoolMessage :: TonNode_MessagePoolVote (_de . read_bare :: < crate :: ton :: ton_node :: messagepoolmessage :: MessagePoolVote > () ?)) , id => _invalid_id ! (id) , }
     }
 }
 #[derive(Debug, Clone, PartialEq)]
@@ -1067,6 +1197,96 @@ impl crate::BoxedDeserialize for NewShardBlock {
         match _id {
             crate::ConstructorNumber(0xa49dc229) => Ok(NewShardBlock::TonNode_NewShardBlock(
                 _de.read_bare::<crate::ton::ton_node::newshardblock::NewShardBlock>()?,
+            )),
+            id => _invalid_id!(id),
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.PackInfo`\n\n```text\ntonNode.packInfo flags:# gen_utime_ms:uint64 mc_block:uint32 prev1:int256 prev2:flags.0?int256 round:uint64 seqno:uint64 workchain:int32 shard:uint64 = tonNode.PackInfo;\n```\n"]
+pub enum PackInfo {
+    TonNode_PackInfo(crate::ton::ton_node::packinfo::PackInfo),
+}
+impl PackInfo {
+    pub fn gen_utime_ms(&self) -> &crate::ton::uint64 {
+        match self {
+            PackInfo::TonNode_PackInfo(ref x) => &x.gen_utime_ms,
+        }
+    }
+
+    pub fn mc_block(&self) -> &crate::ton::uint32 {
+        match self {
+            PackInfo::TonNode_PackInfo(ref x) => &x.mc_block,
+        }
+    }
+
+    pub fn prev1(&self) -> &crate::ton::int256 {
+        match self {
+            PackInfo::TonNode_PackInfo(ref x) => &x.prev1,
+        }
+    }
+
+    pub fn prev2(&self) -> Option<&crate::ton::int256> {
+        match self {
+            PackInfo::TonNode_PackInfo(ref x) => x.prev2.as_ref(),
+        }
+    }
+
+    pub fn round(&self) -> &crate::ton::uint64 {
+        match self {
+            PackInfo::TonNode_PackInfo(ref x) => &x.round,
+        }
+    }
+
+    pub fn seqno(&self) -> &crate::ton::uint64 {
+        match self {
+            PackInfo::TonNode_PackInfo(ref x) => &x.seqno,
+        }
+    }
+
+    pub fn shard(&self) -> &crate::ton::uint64 {
+        match self {
+            PackInfo::TonNode_PackInfo(ref x) => &x.shard,
+        }
+    }
+
+    pub fn workchain(&self) -> &crate::ton::int32 {
+        match self {
+            PackInfo::TonNode_PackInfo(ref x) => &x.workchain,
+        }
+    }
+
+    pub fn only(self) -> crate::ton::ton_node::packinfo::PackInfo {
+        match self {
+            PackInfo::TonNode_PackInfo(x) => x,
+        }
+    }
+}
+impl Eq for PackInfo {}
+impl Default for PackInfo {
+    fn default() -> Self {
+        PackInfo::TonNode_PackInfo(crate::ton::ton_node::packinfo::PackInfo::default())
+    }
+}
+impl crate::BoxedSerialize for PackInfo {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        match self {
+            PackInfo::TonNode_PackInfo(x) => (crate::ConstructorNumber(0xcc90bd44), x),
+        }
+    }
+}
+impl crate::BoxedDeserialize for PackInfo {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![crate::ConstructorNumber(0xcc90bd44)]
+    }
+
+    fn deserialize_boxed(
+        _id: crate::ConstructorNumber,
+        _de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        match _id {
+            crate::ConstructorNumber(0xcc90bd44) => Ok(PackInfo::TonNode_PackInfo(
+                _de.read_bare::<crate::ton::ton_node::packinfo::PackInfo>()?,
             )),
             id => _invalid_id!(id),
         }
@@ -1265,10 +1485,7 @@ impl RempCatchainRecord {
     pub fn messages(
         &self,
     ) -> Option<
-        &crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds,
-        >,
+        &crate::ton::vector<crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds>,
     > {
         match self {
             RempCatchainRecord::TonNode_RempCatchainMessageDigest(ref x) => Some(&x.messages),
@@ -1323,22 +1540,115 @@ impl crate::BoxedDeserialize for RempCatchainRecord {
     }
 }
 #[derive(Debug, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.rempCatchainRecordV2`\n\n```text\ntonNode.rempCatchainMessageDigestV2 masterchain_seqno:int messages:(vector tonNode.rempCatchainMessageIds) = tonNode.rempCatchainRecordV2;\n\ntonNode.rempCatchainMessageHeaderV2 message_id:int256 message_uid:int256 source_key_id:int256 source_idx:int masterchain_seqno:int = tonNode.rempCatchainRecordV2;\n```\n"]
+pub enum RempCatchainRecordV2 {
+    TonNode_RempCatchainMessageDigestV2(
+        crate::ton::ton_node::rempcatchainrecordv2::RempCatchainMessageDigestV2,
+    ),
+    TonNode_RempCatchainMessageHeaderV2(
+        crate::ton::ton_node::rempcatchainrecordv2::RempCatchainMessageHeaderV2,
+    ),
+}
+impl RempCatchainRecordV2 {
+    pub fn masterchain_seqno(&self) -> &crate::ton::int {
+        match self {
+            RempCatchainRecordV2::TonNode_RempCatchainMessageDigestV2(ref x) => {
+                &x.masterchain_seqno
+            }
+            RempCatchainRecordV2::TonNode_RempCatchainMessageHeaderV2(ref x) => {
+                &x.masterchain_seqno
+            }
+        }
+    }
+
+    pub fn message_id(&self) -> Option<&crate::ton::int256> {
+        match self {
+            RempCatchainRecordV2::TonNode_RempCatchainMessageHeaderV2(ref x) => Some(&x.message_id),
+            _ => None,
+        }
+    }
+
+    pub fn message_uid(&self) -> Option<&crate::ton::int256> {
+        match self {
+            RempCatchainRecordV2::TonNode_RempCatchainMessageHeaderV2(ref x) => {
+                Some(&x.message_uid)
+            }
+            _ => None,
+        }
+    }
+
+    pub fn messages(
+        &self,
+    ) -> Option<
+        &crate::ton::vector<crate::ton::ton_node::rempcatchainmessageids::RempCatchainMessageIds>,
+    > {
+        match self {
+            RempCatchainRecordV2::TonNode_RempCatchainMessageDigestV2(ref x) => Some(&x.messages),
+            _ => None,
+        }
+    }
+
+    pub fn source_idx(&self) -> Option<&crate::ton::int> {
+        match self {
+            RempCatchainRecordV2::TonNode_RempCatchainMessageHeaderV2(ref x) => Some(&x.source_idx),
+            _ => None,
+        }
+    }
+
+    pub fn source_key_id(&self) -> Option<&crate::ton::int256> {
+        match self {
+            RempCatchainRecordV2::TonNode_RempCatchainMessageHeaderV2(ref x) => {
+                Some(&x.source_key_id)
+            }
+            _ => None,
+        }
+    }
+}
+impl Eq for RempCatchainRecordV2 {}
+impl Default for RempCatchainRecordV2 {
+    fn default() -> Self {
+        RempCatchainRecordV2::TonNode_RempCatchainMessageDigestV2(
+            crate::ton::ton_node::rempcatchainrecordv2::RempCatchainMessageDigestV2::default(),
+        )
+    }
+}
+impl crate::BoxedSerialize for RempCatchainRecordV2 {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        match self {
+            RempCatchainRecordV2::TonNode_RempCatchainMessageDigestV2(x) => {
+                (crate::ConstructorNumber(0x99f6a754), x)
+            }
+            RempCatchainRecordV2::TonNode_RempCatchainMessageHeaderV2(x) => {
+                (crate::ConstructorNumber(0x8b8f9248), x)
+            }
+        }
+    }
+}
+impl crate::BoxedDeserialize for RempCatchainRecordV2 {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![crate::ConstructorNumber(0x99f6a754), crate::ConstructorNumber(0x8b8f9248)]
+    }
+
+    fn deserialize_boxed(
+        _id: crate::ConstructorNumber,
+        _de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        match _id { crate :: ConstructorNumber (0x99f6a754) => Ok (RempCatchainRecordV2 :: TonNode_RempCatchainMessageDigestV2 (_de . read_bare :: < crate :: ton :: ton_node :: rempcatchainrecordv2 :: RempCatchainMessageDigestV2 > () ?)) , crate :: ConstructorNumber (0x8b8f9248) => Ok (RempCatchainRecordV2 :: TonNode_RempCatchainMessageHeaderV2 (_de . read_bare :: < crate :: ton :: ton_node :: rempcatchainrecordv2 :: RempCatchainMessageHeaderV2 > () ?)) , id => _invalid_id ! (id) , }
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.RempCombinedReceipt`\n\n```text\ntonNode.rempCombinedReceipt source_id:int256 ids:(vector tonNode.blockIdExt) \n        receipts:(vector tonNode.RempReceiptCompact) = tonNode.RempCombinedReceipt;\n```\n"]
 pub enum RempCombinedReceipt {
     TonNode_RempCombinedReceipt(crate::ton::ton_node::rempcombinedreceipt::RempCombinedReceipt),
 }
 impl RempCombinedReceipt {
-    pub fn ids(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
+    pub fn ids(&self) -> &crate::ton::vector<crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
             RempCombinedReceipt::TonNode_RempCombinedReceipt(ref x) => &x.ids,
         }
     }
 
-    pub fn receipts(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::ton_node::RempReceiptCompact> {
+    pub fn receipts(&self) -> &crate::ton::vector<crate::ton::ton_node::RempReceiptCompact> {
         match self {
             RempCombinedReceipt::TonNode_RempCombinedReceipt(ref x) => &x.receipts,
         }
@@ -1451,6 +1761,58 @@ impl crate::BoxedDeserialize for RempMessage {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.rempMessageBody`\n\n```text\ntonNode.rempMessageBody message:bytes = tonNode.rempMessageBody;\n```\n"]
+pub enum RempMessageBody {
+    TonNode_RempMessageBody(crate::ton::ton_node::rempmessagebody::RempMessageBody),
+}
+impl RempMessageBody {
+    pub fn message(&self) -> &crate::ton::bytes {
+        match self {
+            RempMessageBody::TonNode_RempMessageBody(ref x) => &x.message,
+        }
+    }
+
+    pub fn only(self) -> crate::ton::ton_node::rempmessagebody::RempMessageBody {
+        match self {
+            RempMessageBody::TonNode_RempMessageBody(x) => x,
+        }
+    }
+}
+impl Eq for RempMessageBody {}
+impl Default for RempMessageBody {
+    fn default() -> Self {
+        RempMessageBody::TonNode_RempMessageBody(
+            crate::ton::ton_node::rempmessagebody::RempMessageBody::default(),
+        )
+    }
+}
+impl crate::BoxedSerialize for RempMessageBody {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        match self {
+            RempMessageBody::TonNode_RempMessageBody(x) => {
+                (crate::ConstructorNumber(0x594d0088), x)
+            }
+        }
+    }
+}
+impl crate::BoxedDeserialize for RempMessageBody {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![crate::ConstructorNumber(0x594d0088)]
+    }
+
+    fn deserialize_boxed(
+        _id: crate::ConstructorNumber,
+        _de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        match _id {
+            crate::ConstructorNumber(0x594d0088) => Ok(RempMessageBody::TonNode_RempMessageBody(
+                _de.read_bare::<crate::ton::ton_node::rempmessagebody::RempMessageBody>()?,
+            )),
+            id => _invalid_id!(id),
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Default)]
 #[doc = "TL-derived from `tonNode.RempMessageLevel`\n\n```text\ntonNode.rempCollator = tonNode.RempMessageLevel;\n\ntonNode.rempFullnode = tonNode.RempMessageLevel;\n\ntonNode.rempMasterchain = tonNode.RempMessageLevel;\n\ntonNode.rempQueue = tonNode.RempMessageLevel;\n\ntonNode.rempShardchain = tonNode.RempMessageLevel;\n```\n"]
 pub enum RempMessageLevel {
@@ -1496,6 +1858,58 @@ impl crate::BoxedDeserialize for RempMessageLevel {
             crate::ConstructorNumber(0xbcc0eaa3) => Ok(RempMessageLevel::TonNode_RempMasterchain),
             crate::ConstructorNumber(0xebabf815) => Ok(RempMessageLevel::TonNode_RempQueue),
             crate::ConstructorNumber(0x237e2b37) => Ok(RempMessageLevel::TonNode_RempShardchain),
+            id => _invalid_id!(id),
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
+#[doc = "TL-derived from `tonNode.rempMessageQuery`\n\n```text\ntonNode.rempMessageQuery message_id:int256 = tonNode.rempMessageQuery;\n```\n"]
+pub enum RempMessageQuery {
+    TonNode_RempMessageQuery(crate::ton::ton_node::rempmessagequery::RempMessageQuery),
+}
+impl RempMessageQuery {
+    pub fn message_id(&self) -> &crate::ton::int256 {
+        match self {
+            RempMessageQuery::TonNode_RempMessageQuery(ref x) => &x.message_id,
+        }
+    }
+
+    pub fn only(self) -> crate::ton::ton_node::rempmessagequery::RempMessageQuery {
+        match self {
+            RempMessageQuery::TonNode_RempMessageQuery(x) => x,
+        }
+    }
+}
+impl Eq for RempMessageQuery {}
+impl Default for RempMessageQuery {
+    fn default() -> Self {
+        RempMessageQuery::TonNode_RempMessageQuery(
+            crate::ton::ton_node::rempmessagequery::RempMessageQuery::default(),
+        )
+    }
+}
+impl crate::BoxedSerialize for RempMessageQuery {
+    fn serialize_boxed(&self) -> (crate::ConstructorNumber, &dyn crate::BareSerialize) {
+        match self {
+            RempMessageQuery::TonNode_RempMessageQuery(x) => {
+                (crate::ConstructorNumber(0x862a665a), x)
+            }
+        }
+    }
+}
+impl crate::BoxedDeserialize for RempMessageQuery {
+    fn possible_constructors() -> Vec<crate::ConstructorNumber> {
+        vec![crate::ConstructorNumber(0x862a665a)]
+    }
+
+    fn deserialize_boxed(
+        _id: crate::ConstructorNumber,
+        _de: &mut crate::Deserializer,
+    ) -> crate::Result<Self> {
+        match _id {
+            crate::ConstructorNumber(0x862a665a) => Ok(RempMessageQuery::TonNode_RempMessageQuery(
+                _de.read_bare::<crate::ton::ton_node::rempmessagequery::RempMessageQuery>()?,
+            )),
             id => _invalid_id!(id),
         }
     }
@@ -1944,10 +2358,8 @@ impl RempSessionInfo {
 
     pub fn members(
         &self,
-    ) -> &crate::ton::vector<
-        crate::ton::Bare,
-        crate::ton::engine::validator::validator::groupmember::GroupMember,
-    > {
+    ) -> &crate::ton::vector<crate::ton::engine::validator::validator::groupmember::GroupMember>
+    {
         match self {
             RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.members,
         }
@@ -2166,7 +2578,7 @@ impl RmqRecord {
         }
     }
 
-    pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::int256>> {
+    pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::int256>> {
         match self {
             RmqRecord::TonNode_RmqMessageDigest(ref x) => Some(&x.messages),
             _ => None,
@@ -2452,15 +2864,20 @@ pub mod datalist;
 pub mod externalmessage;
 pub mod ihrmessage;
 pub mod keyblocks;
+pub mod messagepoolmessage;
 pub mod newshardblock;
+pub mod packinfo;
 pub mod prepared;
 pub mod preparedproof;
 pub mod preparedstate;
 pub mod rempcatchainmessageids;
 pub mod rempcatchainrecord;
+pub mod rempcatchainrecordv2;
 pub mod rempcombinedreceipt;
 pub mod rempmessage;
+pub mod rempmessagebody;
 pub mod rempmessagelevel;
+pub mod rempmessagequery;
 pub mod rempmessagestatus;
 pub mod rempmessagestatuscompact;
 pub mod rempreceipt;

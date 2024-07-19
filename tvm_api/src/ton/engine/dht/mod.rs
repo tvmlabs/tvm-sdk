@@ -6,7 +6,7 @@ pub enum Config {
     Engine_Dht_Config(crate::ton::engine::dht::config::Config),
 }
 impl Config {
-    pub fn dht(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::dht::Dht> {
+    pub fn dht(&self) -> &crate::ton::vector<crate::ton::engine::dht::Dht> {
         match self {
             Config::Engine_Dht_Config(ref x) => &x.dht,
         }

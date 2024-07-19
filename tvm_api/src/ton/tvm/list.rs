@@ -3,7 +3,7 @@ use serde_derive::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.list`\n\n```text\ntvm.list elements:vector<tvm.StackEntry> = tvm.List;\n```\n"]
 pub struct List {
-    pub elements: crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>,
+    pub elements: crate::ton::vector<crate::ton::tvm::StackEntry>,
 }
 impl Eq for List {}
 impl crate::BareSerialize for List {
@@ -13,18 +13,17 @@ impl crate::BareSerialize for List {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let List { elements } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-            elements,
-        )?;
+        (elements as &dyn crate::ton::VectoredBoxed<crate::ton::tvm::StackEntry>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for List {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let elements = _de
-                .read_bare::<crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>>(
-                )?;
+            let elements = <Vec<crate::ton::tvm::StackEntry> as crate::ton::VectoredBoxed<
+                crate::ton::tvm::StackEntry,
+            >>::deserialize(_de)?;
             Ok(Self { elements })
         }
     }

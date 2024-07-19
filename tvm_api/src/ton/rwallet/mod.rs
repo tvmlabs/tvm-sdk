@@ -54,9 +54,7 @@ pub enum Config {
     Rwallet_Config(crate::ton::rwallet::config::Config),
 }
 impl Config {
-    pub fn limits(
-        &self,
-    ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::rwallet::limit::Limit> {
+    pub fn limits(&self) -> &crate::ton::vector<crate::ton::rwallet::limit::Limit> {
         match self {
             Config::Rwallet_Config(ref x) => &x.limits,
         }

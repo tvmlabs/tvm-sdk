@@ -5,8 +5,7 @@ use serde_derive::Serialize;
 pub struct ControlInterface {
     pub id: crate::ton::int256,
     pub port: crate::ton::int,
-    pub allowed:
-        crate::ton::vector<crate::ton::Bare, crate::ton::engine::controlprocess::ControlProcess>,
+    pub allowed: crate::ton::vector<crate::ton::engine::controlprocess::ControlProcess>,
 }
 impl Eq for ControlInterface {}
 impl crate::BareSerialize for ControlInterface {
@@ -18,10 +17,9 @@ impl crate::BareSerialize for ControlInterface {
         let ControlInterface { id, port, allowed } = self;
         _ser.write_bare::<crate::ton::int256>(id)?;
         _ser.write_bare::<crate::ton::int>(port)?;
-        _ser.write_bare::<crate::ton::vector<
-            crate::ton::Bare,
-            crate::ton::engine::controlprocess::ControlProcess,
-        >>(allowed)?;
+        (allowed
+            as &dyn crate::ton::VectoredBare<crate::ton::engine::controlprocess::ControlProcess>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -30,10 +28,7 @@ impl crate::BareDeserialize for ControlInterface {
         {
             let id = _de.read_bare::<crate::ton::int256>()?;
             let port = _de.read_bare::<crate::ton::int>()?;
-            let allowed = _de.read_bare::<crate::ton::vector<
-                crate::ton::Bare,
-                crate::ton::engine::controlprocess::ControlProcess,
-            >>()?;
+            let allowed = < Vec < crate :: ton :: engine :: controlprocess :: ControlProcess > as crate :: ton :: VectoredBare < crate :: ton :: engine :: controlprocess :: ControlProcess >> :: deserialize (_de) ? ;
             Ok(Self { id, port, allowed })
         }
     }

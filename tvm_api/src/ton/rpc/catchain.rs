@@ -50,7 +50,7 @@ impl crate::Function for GetBlock {
 pub struct GetBlockHistory {
     pub block: crate::ton::int256,
     pub height: crate::ton::long,
-    pub stop_if: crate::ton::vector<crate::ton::Bare, crate::ton::int256>,
+    pub stop_if: crate::ton::vector<crate::ton::int256>,
 }
 impl Eq for GetBlockHistory {}
 impl crate::BareSerialize for GetBlockHistory {
@@ -62,7 +62,7 @@ impl crate::BareSerialize for GetBlockHistory {
         let GetBlockHistory { block, height, stop_if } = self;
         _ser.write_bare::<crate::ton::int256>(block)?;
         _ser.write_bare::<crate::ton::long>(height)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>(stop_if)?;
+        (stop_if as &dyn crate::ton::VectoredBare<crate::ton::int256>).serialize(_ser)?;
         Ok(())
     }
 }
@@ -71,8 +71,9 @@ impl crate::BareDeserialize for GetBlockHistory {
         {
             let block = _de.read_bare::<crate::ton::int256>()?;
             let height = _de.read_bare::<crate::ton::long>()?;
-            let stop_if =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>()?;
+            let stop_if = <Vec<crate::ton::int256> as crate::ton::VectoredBare<
+                crate::ton::int256,
+            >>::deserialize(_de)?;
             Ok(Self { block, height, stop_if })
         }
     }
@@ -100,7 +101,7 @@ impl crate::Function for GetBlockHistory {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.getBlocks`\n\n```text\ncatchain.getBlocks blocks:(vector int256) = catchain.Sent;\n```\n"]
 pub struct GetBlocks {
-    pub blocks: crate::ton::vector<crate::ton::Bare, crate::ton::int256>,
+    pub blocks: crate::ton::vector<crate::ton::int256>,
 }
 impl Eq for GetBlocks {}
 impl crate::BareSerialize for GetBlocks {
@@ -110,15 +111,16 @@ impl crate::BareSerialize for GetBlocks {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetBlocks { blocks } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>(blocks)?;
+        (blocks as &dyn crate::ton::VectoredBare<crate::ton::int256>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for GetBlocks {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let blocks =
-                _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int256>>()?;
+            let blocks = <Vec<crate::ton::int256> as crate::ton::VectoredBare<
+                crate::ton::int256,
+            >>::deserialize(_de)?;
             Ok(Self { blocks })
         }
     }
@@ -146,7 +148,7 @@ impl crate::Function for GetBlocks {
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.getDifference`\n\n```text\ncatchain.getDifference rt:(vector int) = catchain.Difference;\n```\n"]
 pub struct GetDifference {
-    pub rt: crate::ton::vector<crate::ton::Bare, crate::ton::int>,
+    pub rt: crate::ton::vector<crate::ton::int>,
 }
 impl Eq for GetDifference {}
 impl crate::BareSerialize for GetDifference {
@@ -156,14 +158,17 @@ impl crate::BareSerialize for GetDifference {
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
         let GetDifference { rt } = self;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>(rt)?;
+        (rt as &dyn crate::ton::VectoredBare<crate::ton::int>).serialize(_ser)?;
         Ok(())
     }
 }
 impl crate::BareDeserialize for GetDifference {
     fn deserialize_bare(_de: &mut crate::Deserializer) -> crate::Result<Self> {
         {
-            let rt = _de.read_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::int>>()?;
+            let rt =
+                <Vec<crate::ton::int> as crate::ton::VectoredBare<crate::ton::int>>::deserialize(
+                    _de,
+                )?;
             Ok(Self { rt })
         }
     }

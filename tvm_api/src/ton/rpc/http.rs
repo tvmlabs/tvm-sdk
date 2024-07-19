@@ -58,7 +58,7 @@ pub struct Request {
     pub method: crate::ton::string,
     pub url: crate::ton::string,
     pub http_version: crate::ton::string,
-    pub headers: crate::ton::vector<crate::ton::Bare, crate::ton::http::header::Header>,
+    pub headers: crate::ton::vector<crate::ton::http::header::Header>,
 }
 impl Eq for Request {}
 impl crate::BareSerialize for Request {
@@ -72,9 +72,8 @@ impl crate::BareSerialize for Request {
         _ser.write_bare::<crate::ton::string>(method)?;
         _ser.write_bare::<crate::ton::string>(url)?;
         _ser.write_bare::<crate::ton::string>(http_version)?;
-        _ser.write_bare::<crate::ton::vector<crate::ton::Bare, crate::ton::http::header::Header>>(
-            headers,
-        )?;
+        (headers as &dyn crate::ton::VectoredBare<crate::ton::http::header::Header>)
+            .serialize(_ser)?;
         Ok(())
     }
 }
@@ -85,7 +84,9 @@ impl crate::BareDeserialize for Request {
             let method = _de.read_bare::<crate::ton::string>()?;
             let url = _de.read_bare::<crate::ton::string>()?;
             let http_version = _de.read_bare::<crate::ton::string>()?;
-            let headers = _de . read_bare :: < crate :: ton :: vector < crate :: ton :: Bare , crate :: ton :: http :: header :: Header > > () ? ;
+            let headers = <Vec<crate::ton::http::header::Header> as crate::ton::VectoredBare<
+                crate::ton::http::header::Header,
+            >>::deserialize(_de)?;
             Ok(Self { id, method, url, http_version, headers })
         }
     }

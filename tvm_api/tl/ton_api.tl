@@ -376,11 +376,19 @@ tonNode.externalMessage data:bytes = tonNode.ExternalMessage;
 tonNode.rempMessage message:bytes id:int256 timestamp:long signature:bytes = tonNode.RempMessage;
 
 tonNode.rempCatchainMessageIds id:int256 uid:int256 = tonNode.rempCatchainMessageIds;
+
+// Legacy, to be removed in later version
 tonNode.rempCatchainMessage message:bytes message_id:int256 source_key_id:int256 source_idx:int masterchain_seqno:int = tonNode.rempCatchainRecord;
 tonNode.rempCatchainMessageDigest masterchain_seqno:int messages:(vector tonNode.rempCatchainMessageIds) = tonNode.rempCatchainRecord;
-
 tonNode.rmqMessage message:bytes message_id:int256 source_key_id:int256 source_idx:int masterchain_seqno:int = tonNode.rmqRecord;
 tonNode.rmqMessageDigest masterchain_seqno:int messages:(vector int256) = tonNode.rmqRecord;
+// 
+
+tonNode.rempCatchainMessageHeaderV2 message_id:int256 message_uid:int256 source_key_id:int256 source_idx:int masterchain_seqno:int = tonNode.rempCatchainRecordV2;
+tonNode.rempCatchainMessageDigestV2 masterchain_seqno:int messages:(vector tonNode.rempCatchainMessageIds) = tonNode.rempCatchainRecordV2;
+
+tonNode.rempMessageQuery message_id:int256 = tonNode.rempMessageQuery;
+tonNode.rempMessageBody message:bytes = tonNode.rempMessageBody;
 
 tonNode.rempFullnode = tonNode.RempMessageLevel;
 tonNode.rempQueue = tonNode.RempMessageLevel;
@@ -434,6 +442,7 @@ tonNode.externalMessageBroadcast message:tonNode.externalMessage = tonNode.Broad
 tonNode.newShardBlockBroadcast block:tonNode.newShardBlock = tonNode.Broadcast;
 tonNode.connectivityCheckBroadcast pub_key:int256 padding:bytes = tonNode.Broadcast;
 tonNode.blockCandidateBroadcast id:tonNode.blockIdExt data:bytes collated_data:bytes collated_data_file_hash:int256 created_by:int256 created_timestamp:long = tonNode.Broadcast;
+tonNode.meshUpdateBroadcast src_nw:int32 id:tonNode.blockIdExt target_nw:int32 data:bytes = tonNode.Broadcast;
 
 tonNode.shardPublicOverlayId workchain:int shard:long zero_state_file_hash:int256 = tonNode.ShardPublicOverlayId;
 
@@ -443,6 +452,18 @@ ton.blockId root_cell_hash:int256 file_hash:int256 = ton.BlockId;
 ton.blockIdApprove root_cell_hash:int256 file_hash:int256 = ton.BlockId;
 
 tonNode.dataList data:(vector bytes) = tonNode.DataList;
+
+tonNode.packInfo flags:# gen_utime_ms:uint64 mc_block:uint32 prev1:int256 prev2:flags.0?int256 round:uint64 seqno:uint64 workchain:int32 shard:uint64 = tonNode.PackInfo;
+tonNode.messagePoolAck transfer_tag:uint8 = tonNode.MessagePoolMessage;
+tonNode.messagePoolFetch digests:(vector int256) = tonNode.MessagePoolMessage;
+tonNode.messagePoolFetchPack digest:int256 = tonNode.MessagePoolMessage;
+tonNode.messagePoolFetchReply data:(vector bytes) = tonNode.MessagePoolMessage;
+tonNode.messagePoolPack digest:int256 = tonNode.MessagePoolMessage;
+tonNode.messagePoolPackReply digest:int256 = tonNode.MessagePoolMessage;
+tonNode.messagePoolShare digests:(vector int256) = tonNode.MessagePoolMessage;
+tonNode.messagePoolShareData flags:# info:flags.0?tonNode.packInfo data:(vector bytes) = tonNode.MessagePoolMessage;
+tonNode.messagePoolSharePack data:bytes = tonNode.MessagePoolMessage;
+tonNode.messagePoolVote digests:(vector int256) = tonNode.MessagePoolMessage;
 
 tonNode.dataFull id:tonNode.blockIdExt proof:bytes block:bytes is_link:Bool = tonNode.DataFull;
 tonNode.dataFullEmpty = tonNode.DataFull;
@@ -491,6 +512,10 @@ tonNode.downloadBlockProofLinks blocks:(vector tonNode.blockIdExt) = tonNode.Dat
 tonNode.downloadKeyBlockProofLinks blocks:(vector tonNode.blockIdExt) = tonNode.DataList;
 tonNode.getArchiveInfo masterchain_seqno:int = tonNode.ArchiveInfo;
 tonNode.getArchiveSlice archive_id:long offset:long max_size:int = tonNode.Data;
+tonNode.downloadLatestMeshKit target_nw:int = tonNode.DataFull;
+tonNode.downloadMeshKit target_nw:int block:tonNode.blockIdExt = tonNode.Data;
+tonNode.downloadMeshUpdate target_nw:int block:tonNode.blockIdExt = tonNode.Data;
+tonNode.downloadNextMeshUpdate target_nw:int prev_block:tonNode.blockIdExt = tonNode.DataFull;
 
 tonNode.getCapabilities = tonNode.Capabilities;
 
