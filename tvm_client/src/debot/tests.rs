@@ -1764,9 +1764,9 @@ fn build_info_abi2_2(abi: String, n: u32, interfaces: Vec<String>) -> DebotInfo 
     DebotInfo {
         name: Some(name.clone()),
         version: Some("0.1.0".to_owned()),
-        publisher: Some("EverX".to_owned()),
+        publisher: Some("TON".to_owned()),
         caption: Some(name.clone()),
-        author: Some("EverX".to_owned()),
+        author: Some("TON".to_owned()),
         support: Some(
             "0:0000000000000000000000000000000000000000000000000000000000000000".to_owned(),
         ),
