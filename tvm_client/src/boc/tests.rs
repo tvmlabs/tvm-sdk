@@ -17,11 +17,11 @@ use serde_json::Value;
 use tvm_block::MsgAddrStd;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::IBitstring;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
+use tvm_block::AccountId;
+use tvm_block::BuilderData;
+use tvm_block::IBitstring;
 
 use super::*;
 use crate::abi::CallSet;

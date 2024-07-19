@@ -9,8 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
 
 use crate::error::ClientResult;
 use crate::ClientContext;

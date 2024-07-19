@@ -10,8 +10,8 @@ use tvm_client::net::SortDirection;
 use tvm_client::proofs::proof_block_data;
 use tvm_client::proofs::ParamsOfProofBlockData;
 use tvm_client::ClientContext;
-use tvm_types::Result;
-use tvm_types::UInt256;
+use tvm_block::Result;
+use tvm_block::UInt256;
 
 fn with_project(endpoint: &str) -> String {
     let key = "EVERCLOUD_AUTH_PROJECT";

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use ed25519_dalek::SigningKey;
 use lockfree::map::ReadGuard;
 use tokio::sync::RwLock;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 use zeroize::Zeroize;
 
 use crate::crypto::boxes::crypto_box::encryption::decrypt_secret;

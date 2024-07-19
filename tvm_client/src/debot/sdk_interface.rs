@@ -1,6 +1,6 @@
 use serde_json::Value;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
 
 use super::dinterface::decode_answer_id;
 use super::dinterface::get_arg;

@@ -8,7 +8,7 @@ use std::time::Duration;
 use std::time::SystemTime;
 
 use base64::Engine;
-use tvm_types::Cell;
+use tvm_block::Cell;
 
 use crate::error;
 use crate::message_monitor::CellFromBoc;
@@ -96,7 +96,7 @@ impl State {
         let bytes = base64::engine::general_purpose::STANDARD.decode(boc).map_err(|err| {
             Error::invalid_boc(format!("error decode {} BOC base64: {}", name, err))
         })?;
-        tvm_types::boc::read_single_root_boc(bytes).map_err(|err| {
+        tvm_block::boc::read_single_root_boc(bytes).map_err(|err| {
             Error::invalid_boc(format!("{} BOC deserialization error: {}", name, err))
         })
     }

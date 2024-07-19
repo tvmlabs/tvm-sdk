@@ -7,9 +7,9 @@ use num_bigint::Sign;
 use num_traits::Num;
 use serde_json::Value;
 use tvm_block::Serializable;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::IBitstring;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::IBitstring;
 
 use super::internal::serialize_cell_to_boc;
 use super::Error;

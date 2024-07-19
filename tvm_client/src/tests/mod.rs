@@ -22,7 +22,7 @@ use serde_json::Value;
 use tokio::sync::oneshot::channel;
 use tokio::sync::oneshot::Sender;
 use tokio::sync::Mutex;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 
 use super::tc_destroy_string;
 use super::tc_read_string;

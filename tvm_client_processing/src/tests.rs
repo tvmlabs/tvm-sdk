@@ -4,8 +4,8 @@ use std::time::Duration;
 
 use tokio::time::sleep;
 use tvm_block::MsgAddrStd;
-use tvm_types::AccountId;
-use tvm_types::UInt256;
+use tvm_block::AccountId;
+use tvm_block::UInt256;
 
 use crate::message_monitor::MessageMonitor;
 use crate::message_monitor::MessageMonitoringParams;

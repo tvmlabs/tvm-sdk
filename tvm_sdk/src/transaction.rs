@@ -15,7 +15,7 @@ use tvm_block::GetRepresentationHash;
 use tvm_block::TrComputePhase;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionProcessingStatus;
-use tvm_types::Result;
+use tvm_block::Result;
 
 use crate::error::SdkError;
 use crate::json_helper;
@@ -81,7 +81,7 @@ pub struct Transaction {
 }
 
 impl TryFrom<&tvm_block::Transaction> for Transaction {
-    type Error = tvm_types::Error;
+    type Error = tvm_block::Error;
 
     fn try_from(transaction: &tvm_block::Transaction) -> Result<Self> {
         let descr = if let TransactionDescr::Ordinary(descr) = transaction.read_description()? {

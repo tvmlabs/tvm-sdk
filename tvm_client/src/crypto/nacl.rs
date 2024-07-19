@@ -10,7 +10,7 @@
 // limitations under the License.
 
 use ed25519_dalek::Verifier;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 use zeroize::Zeroize;
 use zeroize::ZeroizeOnDrop;
 

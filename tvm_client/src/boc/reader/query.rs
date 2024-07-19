@@ -15,7 +15,7 @@ use super::parser::{CellFieldReader, CellQuery, CellValueReader};
 use crate::error::{ClientError, ClientResult};
 use serde_json::Value;
 use tvm_block::types::Grams;
-use tvm_types::{Cell, HashmapE, HashmapType, SliceData};
+use tvm_block::{Cell, HashmapE, HashmapType, SliceData};
 
 fn read_value(slice: &mut SliceData, reader: &CellValueReader) -> ClientResult<Value> {
     Ok(match reader {

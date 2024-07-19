@@ -6,8 +6,8 @@ use tvm_abi::token::Detokenizer;
 use tvm_sdk::AbiContract;
 use tvm_sdk::AbiEvent;
 use tvm_sdk::AbiFunction;
-use tvm_types::base64_encode;
-use tvm_types::SliceData;
+use tvm_block::base64_encode;
+use tvm_block::SliceData;
 
 use super::types::extend_data_to_sign;
 use crate::abi::types::Abi;
@@ -76,7 +76,7 @@ impl DecodedMessageBody {
         body_type: MessageBodyType,
         decoded: DecodedMessage,
         header: Option<FunctionHeader>,
-    ) -> tvm_types::Result<Self> {
+    ) -> tvm_block::Result<Self> {
         let value = Detokenizer::detokenize_to_json_value(&decoded.tokens)?;
         Ok(Self { body_type, name: decoded.function_name, value: Some(value), header })
     }

@@ -7,8 +7,8 @@ use tvm_block::CurrencyCollection;
 use tvm_block::MsgAddressInt;
 use tvm_sdk::ContractImage;
 use tvm_sdk::FunctionCallSet;
-use tvm_types::base64_encode;
-use tvm_types::Cell;
+use tvm_block::base64_encode;
+use tvm_block::Cell;
 
 use super::types::extend_data_to_sign;
 use crate::abi::internal::add_sign_to_message;
@@ -830,7 +830,7 @@ pub async fn encode_message_body(
         }
         .map_err(|err| Error::encode_run_message_failed(err, Some(&func)))?,
     };
-    let body: Vec<u8> = tvm_types::boc::write_boc(
+    let body: Vec<u8> = tvm_block::boc::write_boc(
         &body
             .clone()
             .into_cell()

@@ -16,8 +16,8 @@ use thiserror::Error;
 use tvm_block::AccStatusChange;
 use tvm_block::ComputeSkipReason;
 use tvm_block::MsgAddressInt;
-use tvm_types::Cell;
-use tvm_types::ExceptionCode;
+use tvm_block::Cell;
+use tvm_block::ExceptionCode;
 
 use crate::boc::internal::deserialize_cell_from_base64;
 use crate::error::ClientError;

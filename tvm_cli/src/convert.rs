@@ -9,7 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::Sha256;
+use tvm_block::Sha256;
 
 pub fn convert_token(amount: &str) -> Result<String, String> {
     convert_amount(amount, 9)

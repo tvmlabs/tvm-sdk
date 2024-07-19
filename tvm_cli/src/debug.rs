@@ -52,10 +52,10 @@ use tvm_executor::ExecuteParams;
 use tvm_executor::OrdinaryTransactionExecutor;
 use tvm_executor::TickTockTransactionExecutor;
 use tvm_executor::TransactionExecutor;
-use tvm_types::base64_encode;
-use tvm_types::AccountId;
-use tvm_types::Cell;
-use tvm_types::UInt256;
+use tvm_block::base64_encode;
+use tvm_block::AccountId;
+use tvm_block::Cell;
+use tvm_block::UInt256;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::EngineTraceInfo;
 use tvm_vm::executor::EngineTraceInfoType;
@@ -1051,7 +1051,7 @@ pub async fn decode_messages(
         let msg_cell =
             msg.serialize().map_err(|e| format!("Failed to serialize out message: {}", e))?;
         ser_msg["id"] = msg_cell.repr_hash().as_hex_string().into();
-        let msg_bytes = tvm_types::write_boc(&msg_cell)
+        let msg_bytes = tvm_block::write_boc(&msg_cell)
             .map_err(|e| format!("failed to encode out message: {e}"))?;
         ser_msg["Message_base64"] = base64_encode(msg_bytes).into();
         let body = &ser_msg["BodyCall"];

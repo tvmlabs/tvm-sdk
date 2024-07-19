@@ -20,9 +20,9 @@ use tvm_block::MsgForwardPrices;
 use tvm_block::StorageInfo;
 use tvm_block::StoragePrices;
 use tvm_block::StorageUsedShort;
-use tvm_types::Cell;
-use tvm_types::Result;
-use tvm_types::UInt256;
+use tvm_block::Cell;
+use tvm_block::Result;
+use tvm_block::UInt256;
 
 pub const VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES: u32 = 8;
 pub const VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE: u32 = 30;

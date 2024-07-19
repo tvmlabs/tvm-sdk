@@ -14,7 +14,7 @@ use std::ops::Deref;
 use std::slice::Iter;
 
 use serde_json::Value;
-use tvm_types::BuilderData;
+use tvm_block::BuilderData;
 use tvm_vm::stack::continuation::ContinuationData;
 use tvm_vm::stack::integer::IntegerData;
 use tvm_vm::stack::StackItem;

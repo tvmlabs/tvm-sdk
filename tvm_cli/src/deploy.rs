@@ -16,7 +16,7 @@ use tvm_client::abi::FunctionHeader;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
 use tvm_client::crypto::KeyPair;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 
 use crate::call::emulate_locally;
 use crate::call::process_message;
@@ -164,7 +164,7 @@ pub async fn prepare_deploy_message_params(
         )
         .await?
     } else {
-        let tvc_cell = tvm_types::boc::read_single_root_boc(&tvc_bytes).unwrap();
+        let tvc_cell = tvm_block::boc::read_single_root_boc(&tvc_bytes).unwrap();
         let tvc_hash = tvc_cell.repr_hash();
         format!("{}:{}", wc, tvc_hash.as_hex_string())
     };

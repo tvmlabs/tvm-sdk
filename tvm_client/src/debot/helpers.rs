@@ -1,6 +1,6 @@
 use tvm_block::InternalMessageHeader;
 use tvm_block::Message;
-use tvm_types::SliceData;
+use tvm_block::SliceData;
 
 use crate::boc::internal::serialize_object_to_base64;
 use crate::encoding::account_decode;

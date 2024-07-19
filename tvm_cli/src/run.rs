@@ -21,7 +21,7 @@ use tvm_client::tvm::run_tvm;
 use tvm_client::tvm::ExecutionOptions;
 use tvm_client::tvm::ParamsOfRunGet;
 use tvm_client::tvm::ParamsOfRunTvm;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 
 use crate::call::print_json_result;
 use crate::config::Config;
@@ -213,7 +213,7 @@ fn prepare_execution_options(bc_config: Option<&str>) -> Result<Option<Execution
     if let Some(config) = bc_config {
         let mut bytes = std::fs::read(config)
             .map_err(|e| format!("Failed to read data from file {config}: {e}"))?;
-        let cell = tvm_types::read_single_root_boc(&bytes)
+        let cell = tvm_block::read_single_root_boc(&bytes)
             .map_err(|e| format!("Failed to deserialize {config}: {e}"))?;
         if let Ok(acc) = Account::construct_from_cell(cell.clone()) {
             let config = construct_blockchain_config(&acc)?;

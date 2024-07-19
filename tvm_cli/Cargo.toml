@@ -53,7 +53,6 @@ tvm_block_json.workspace = true
 tvm_client = { workspace = true, features = ["std", "rustls-tls-webpki-roots"] }
 tvm_executor.workspace = true
 tvm_sdk.workspace = true
-tvm_types.workspace = true
 tvm_vm.workspace = true
 
 [dev-dependencies]

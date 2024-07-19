@@ -21,7 +21,7 @@ use aes::NewBlockCipher;
 use base64::Engine;
 use block_modes::BlockMode;
 use block_modes::Cbc;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 use zeroize::ZeroizeOnDrop;
 
 use super::CipherMode;

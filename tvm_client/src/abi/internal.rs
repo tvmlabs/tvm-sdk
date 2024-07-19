@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serde_json::Value;
 use tvm_abi::PublicKeyData;
 use tvm_sdk::ContractImage;
-use tvm_types::Cell;
+use tvm_block::Cell;
 
 use crate::abi::DeploySet;
 use crate::abi::Error;
@@ -47,7 +47,7 @@ pub(crate) fn add_sign_to_message_body(
         unsigned,
     )
     .map_err(Error::attach_signature_failed)?;
-    tvm_types::boc::write_boc(&body.into_cell().map_err(Error::attach_signature_failed)?)
+    tvm_block::boc::write_boc(&body.into_cell().map_err(Error::attach_signature_failed)?)
         .map_err(Error::attach_signature_failed)
 }
 
@@ -91,7 +91,7 @@ pub(crate) fn create_tvc_image(
 
 /// Determines, if public key consists only zeroes, i.e. is empty.
 pub(crate) fn is_empty_pubkey(pubkey: &PublicKeyData) -> bool {
-    pubkey == &[0; tvm_types::ED25519_PUBLIC_KEY_LENGTH]
+    pubkey == &[0; tvm_block::ED25519_PUBLIC_KEY_LENGTH]
 }
 
 /// Resolves public key from deploy set, tvc or signer, using this priority:

@@ -25,7 +25,6 @@ thiserror.workspace = true
 zstd = { default-features = false, optional = true, version = "0.13.0" }
 #
 tvm_block.workspace = true
-tvm_types.workspace = true
 
 [dev-dependencies]
 criterion = "0.5.1"

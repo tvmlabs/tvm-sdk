@@ -13,7 +13,7 @@ use tvm_client_processing::MessageMonitoringTransaction;
 use tvm_client_processing::MessageMonitoringTransactionCompute;
 use tvm_client_processing::MonitoredMessage;
 use tvm_client_processing::NetSubscription;
-use tvm_types::Cell;
+use tvm_block::Cell;
 
 use crate::boc::cache::Bocs;
 use crate::error::ClientError;

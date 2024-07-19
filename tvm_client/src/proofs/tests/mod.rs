@@ -16,9 +16,9 @@ use tvm_block::ShardHashes;
 use tvm_block::ShardIdent;
 use tvm_block::ShardStateUnsplit;
 use tvm_block::MASTERCHAIN_ID;
-use tvm_types::base64_decode;
-use tvm_types::Result;
-use tvm_types::UInt256;
+use tvm_block::base64_decode;
+use tvm_block::Result;
+use tvm_block::UInt256;
 
 use crate::client::storage::InMemoryKeyValueStorage;
 use crate::net::query_collection;
@@ -732,7 +732,7 @@ fn gen_full_schema_query(object_type: &str) -> Result<String> {
         }
     }
 
-    tvm_types::fail!("Object type is not found in the schema: {}", object_type)
+    tvm_block::fail!("Object type is not found in the schema: {}", object_type)
 }
 
 #[tokio::test]

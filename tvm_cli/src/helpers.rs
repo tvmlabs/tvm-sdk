@@ -43,8 +43,8 @@ use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::ClientConfig;
 use tvm_client::ClientContext;
 use tvm_executor::BlockchainConfig;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
 use url::Url;
 
 use crate::call::parse_params;

@@ -33,7 +33,7 @@ fn round_trip_test(filename: &str, check_bin: bool) -> Status {
     let bin0 = &std::fs::read(filename)?;
     let toc0 = read_boc(bin0)?.withdraw_single_root()?;
     let mut asm0 = disasm(&mut SliceData::load_cell(toc0.clone())?)?;
-    let toc1 = crate::compile_code_to_cell(&asm0.clone()).map_err(|e| tvm_types::error!("{}", e))?;
+    let toc1 = crate::compile_code_to_cell(&asm0.clone()).map_err(|e| tvm_block::error!("{}", e))?;
     let mut asm1 = disasm(&mut SliceData::load_cell(toc1.clone())?)?;
 
     if !check_bin {
@@ -121,7 +121,7 @@ fn check_code(name: &str) -> Status {
             _ => (),
         }
     }
-    Err(tvm_types::error!("check failed"))
+    Err(tvm_block::error!("check failed"))
 }
 
 #[test]

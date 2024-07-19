@@ -1,6 +1,6 @@
 use api_info::ApiModule;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
 
 use super::*;
 use crate::error::ClientResult;

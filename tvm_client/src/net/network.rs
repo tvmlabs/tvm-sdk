@@ -9,7 +9,7 @@ use rand::RngCore;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
-use tvm_types::UInt256;
+use tvm_block::UInt256;
 
 use crate::client;
 use crate::client::ClientEnv;
@@ -140,7 +140,7 @@ impl NetworkContext {
         Ok(handle)
     }
 
-    pub(crate) async fn get_current_network_uid(&self) -> tvm_types::Result<Arc<NetworkUID>> {
+    pub(crate) async fn get_current_network_uid(&self) -> tvm_block::Result<Arc<NetworkUID>> {
         if let Some(ref uid) = *self.network_uid.read().await {
             return Ok(Arc::clone(uid));
         }
@@ -157,7 +157,7 @@ impl NetworkContext {
         Ok(queried_uid)
     }
 
-    pub(crate) async fn query_current_network_uid(&self) -> tvm_types::Result<Arc<NetworkUID>> {
+    pub(crate) async fn query_current_network_uid(&self) -> tvm_block::Result<Arc<NetworkUID>> {
         let blocks = self
             .query_collection(ParamsOfQueryCollection {
                 collection: "blocks".to_string(),
@@ -177,14 +177,14 @@ impl NetworkContext {
             .result;
 
         if blocks.is_empty() {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "Unable to resolve zerostate's root hash: can't get masterchain block #1"
             );
         }
 
         let prev_ref = &blocks[0]["prev_ref"];
         if prev_ref.is_null() {
-            tvm_types::fail!(
+            tvm_block::fail!(
                 "Unable to resolve zerostate's root hash: prev_ref of the block #1 is not set"
             );
         }

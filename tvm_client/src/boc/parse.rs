@@ -118,7 +118,7 @@ pub fn parse_account(
 ) -> ClientResult<ResultOfParse> {
     let (boc, cell) = deserialize_cell_from_boc(&context, &params.boc, "account")?;
 
-    let account = if cell.cell_type() == tvm_types::CellType::MerkleProof {
+    let account = if cell.cell_type() == tvm_block::CellType::MerkleProof {
         let proof = tvm_block::MerkleProof::construct_from_cell(cell).map_err(|err| {
             Error::invalid_boc(format!(
                 "Can not deserialize Merkle proof from pruned account BOC: {}",

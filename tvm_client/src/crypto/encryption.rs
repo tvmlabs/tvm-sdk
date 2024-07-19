@@ -16,7 +16,7 @@ use chacha20::cipher::NewStreamCipher;
 use chacha20::cipher::SyncStreamCipher;
 use chacha20::Key;
 use chacha20::Nonce;
-use tvm_types::base64_encode;
+use tvm_block::base64_encode;
 use zeroize::ZeroizeOnDrop;
 
 use super::internal::hex_decode_secret;

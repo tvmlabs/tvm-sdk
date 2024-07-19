@@ -22,11 +22,11 @@ use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_client::abi::decode_account_data;
 use tvm_client::abi::ParamsOfDecodeAccountData;
-use tvm_types::base64_decode;
-use tvm_types::read_single_root_boc;
-use tvm_types::write_boc;
-use tvm_types::Cell;
-use tvm_types::SliceData;
+use tvm_block::base64_decode;
+use tvm_block::read_single_root_boc;
+use tvm_block::write_boc;
+use tvm_block::Cell;
+use tvm_block::SliceData;
 
 use crate::config::Config;
 use crate::decode::msg_printer::tree_of_cells_into_base64;
@@ -493,9 +493,9 @@ pub mod msg_printer {
     use tvm_block::StateInit;
     use tvm_client::boc::get_compiler_version;
     use tvm_client::boc::ParamsOfGetCompilerVersion;
-    use tvm_types::base64_encode;
-    use tvm_types::write_boc;
-    use tvm_types::Cell;
+    use tvm_block::base64_encode;
+    use tvm_block::write_boc;
+    use tvm_block::Cell;
 
     use crate::helpers::create_client_local;
     use crate::helpers::decode_msg_body;

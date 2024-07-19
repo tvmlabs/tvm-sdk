@@ -27,7 +27,6 @@ tvm_block.workspace = true
 tvm_block_json.workspace = true
 tvm_executor = { workspace = true, features = ["signature_with_id"] }
 tvm_struct.workspace = true
-tvm_types.workspace = true
 tvm_vm = { workspace = true, features = ["signature_with_id", "signature_no_check"] }
 
 lockfree.workspace = true

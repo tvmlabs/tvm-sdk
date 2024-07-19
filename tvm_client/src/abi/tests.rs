@@ -12,11 +12,11 @@ use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_sdk::ContractImage;
 use tvm_struct::scheme::TVC;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
-use tvm_types::BuilderData;
-use tvm_types::IBitstring;
-use tvm_types::Result;
+use tvm_block::base64_decode;
+use tvm_block::base64_encode;
+use tvm_block::BuilderData;
+use tvm_block::IBitstring;
+use tvm_block::Result;
 
 use super::*;
 use crate::abi::internal::create_tvc_image;
@@ -600,7 +600,7 @@ async fn test_encode_message_pubkey_internal(
 }
 
 fn gen_pubkey() -> PublicKeyData {
-    tvm_types::ed25519_generate_private_key().unwrap().verifying_key()
+    tvm_block::ed25519_generate_private_key().unwrap().verifying_key()
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1222,7 +1222,7 @@ async fn test_deploy_code_variants() -> Result<()> {
     .await?;
 
     let mut state_init = StateInit::default();
-    state_init.set_code(tvm_types::Cell::default());
+    state_init.set_code(tvm_block::Cell::default());
     let tvc = serialize_object_to_base64(&state_init, "state init").unwrap();
     test_deploy_code_variants_with_contract(
         (Abi::Json(TINY_ABI_V24.to_owned()), tvc),
@@ -1428,11 +1428,11 @@ fn test_abi_v24_changes() {
     let client = TestClient::new();
 
     let mut state_init = StateInit::default();
-    state_init.set_code(tvm_types::Cell::default());
+    state_init.set_code(tvm_block::Cell::default());
     let tvc = serialize_object_to_base64(&state_init, "state init").unwrap();
     let abi = Abi::Json(TINY_ABI_V24.to_owned());
 
-    let empty_cell = serialize_cell_to_base64(&tvm_types::Cell::default(), "data cell").unwrap();
+    let empty_cell = serialize_cell_to_base64(&tvm_block::Cell::default(), "data cell").unwrap();
 
     let error = client
         .request::<_, ResultOfDecodeInitialData>(
