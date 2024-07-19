@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,30 +6,29 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::fs::File;
 
-use tvm_types::BocReader;
-
 use super::*;
 use crate::write_read_and_assert;
+use crate::BocReader;
 use crate::MsgAddressExt;
 
 #[test]
 fn test_serialize_storage_used() {
     let st_used = StorageUsed::with_values_checked(1, 2, 3).unwrap();
-    let mut s = BuilderData::new();
+    let mut s = BuilderData::default();
     st_used.write_to(&mut s).unwrap();
     let st_used1 = StorageUsed::with_values_checked(1, 256, 3).unwrap();
     st_used1.write_to(&mut s).unwrap();
 
     let mut s = SliceData::load_builder(s).unwrap();
 
-    let mut st_used2 = StorageUsed::new();
+    let mut st_used2 = StorageUsed::default();
     st_used2.read_from(&mut s).unwrap();
-    let mut st_used3 = StorageUsed::new();
+    let mut st_used3 = StorageUsed::default();
     st_used3.read_from(&mut s).unwrap();
 
     assert_eq!(st_used, st_used2);
@@ -39,7 +38,7 @@ fn test_serialize_storage_used() {
 #[test]
 fn test_storage_used_short() {
     let stu1 = StorageUsedShort::default();
-    let stu2 = StorageUsedShort::new();
+    let stu2 = StorageUsedShort::default();
 
     assert_eq!(stu1, stu2);
     write_read_and_assert(stu1);
@@ -622,7 +621,7 @@ fn test_account_status_serialization() {
     write_read_and_assert(as_orig);
 }
 
-fn get_real_tvm_state(filename: &str) -> (ShardStateUnsplit, Cell) {
+fn get_real_ton_state(filename: &str) -> (ShardStateUnsplit, Cell) {
     let root = BocReader::new()
         .read(&mut File::open(filename).expect("Error open boc file"))
         .expect("Error deserializing boc file")
@@ -642,7 +641,7 @@ fn test_real_account_serde() {
     for state_file in state_files {
         println!("state file: {}", state_file);
 
-        let (state, _) = get_real_tvm_state(state_file);
+        let (state, _) = get_real_ton_state(state_file);
 
         state
             .read_accounts()

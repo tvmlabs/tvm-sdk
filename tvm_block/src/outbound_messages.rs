@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,32 +6,23 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use std::collections::HashSet;
 use std::fmt;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::hm_label;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapSubtree;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-use tvm_types::UsageTree;
-
+use crate::common_message::CommonMessage;
 use crate::define_HashmapAugE;
+use crate::define_HashmapE;
+use crate::dictionary::hashmapaug::Augmentable;
+use crate::dictionary::hashmapaug::Augmentation;
+use crate::dictionary::hashmapaug::HashmapAugType;
 use crate::envelope_message::MsgEnvelope;
+use crate::error;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentable;
-use crate::hashmapaug::Augmentation;
-use crate::hashmapaug::HashmapAugType;
+use crate::fail;
+use crate::hm_label;
 use crate::inbound_messages::InMsg;
 use crate::messages::CommonMsgInfo;
 use crate::messages::Message;
@@ -43,12 +34,25 @@ use crate::transactions::Transaction;
 use crate::types::AddSub;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
+use crate::AccountId;
+use crate::BuilderData;
+use crate::Cell;
 use crate::Deserializable;
+use crate::HashmapSubtree;
+use crate::HashmapType;
+use crate::IBitstring;
+use crate::InRefValue;
 use crate::MerkleProof;
 use crate::MerkleUpdate;
 use crate::OutQueueUpdate;
+use crate::Result;
 use crate::Serializable;
 use crate::ShardStateUnsplit;
+use crate::SliceData;
+use crate::UInt256;
+use crate::UsageTree;
+use crate::SERDE_OPTS_COMMON_MESSAGE;
+use crate::SERDE_OPTS_EMPTY;
 
 #[cfg(test)]
 #[path = "tests/test_out_msgs.rs"]
@@ -69,6 +73,11 @@ const OUT_MSG_DEQ_IMM: u8 = 0b100;
 const OUT_MSG_DEQ: u8 = 0b1100; // is not used due CapShortDequeue
 const OUT_MSG_DEQ_SHORT: u8 = 0b1101;
 const OUT_MSG_TRDEQ: u8 = 0b111; // is not used due CapOffHypercube
+const COMMON_MSG_TAG: u8 = 0b1010_0000;
+
+fn tag2(tag: u8) -> u8 {
+    tag | COMMON_MSG_TAG
+}
 
 // _ enqueued_lt:uint64 out_msg:^MsgEnvelope = EnqueuedMsg;
 
@@ -82,12 +91,15 @@ pub struct EnqueuedMsg {
 impl EnqueuedMsg {
     /// New default instance EnqueuedMsg structure
     pub fn new() -> Self {
-        Default::default()
+        Self::default()
     }
 
     /// New instance EnqueuedMsg structure
     pub fn with_param(enqueued_lt: u64, env: &MsgEnvelope) -> Result<Self> {
-        Ok(EnqueuedMsg { enqueued_lt, out_msg: ChildCell::with_struct(env)? })
+        Ok(EnqueuedMsg {
+            enqueued_lt,
+            out_msg: ChildCell::with_struct_and_opts(env, env.serde_opts())?,
+        })
     }
 
     pub fn created_lt(&self) -> Result<u64> {
@@ -118,7 +130,7 @@ impl Augmentation<u64> for EnqueuedMsg {
 impl Serializable for EnqueuedMsg {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         self.enqueued_lt.write_to(cell)?;
-        cell.checked_append_reference(self.out_msg.cell())?;
+        self.out_msg.write_to(cell)?;
         Ok(())
     }
 }
@@ -126,10 +138,11 @@ impl Serializable for EnqueuedMsg {
 impl Deserializable for EnqueuedMsg {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         self.enqueued_lt.read_from(cell)?;
-        self.out_msg.read_from_reference(cell)?;
+        self.out_msg.read_from(cell)?;
         Ok(())
     }
 }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // Blockchain: 3.3.5
 // _ (HashmapAugE 256 OutMsg CurrencyCollection) = OutMsgDescr;
@@ -173,8 +186,12 @@ impl OutMsgDescr {
         msg_slice: &SliceData,
         exported: &CurrencyCollection,
     ) -> Result<Option<SliceData>> {
-        self.set_builder_serialized(key.clone(), &msg_slice.as_builder(), exported)
-            .map_err(|_| error!(BlockError::Other("Error insert serialized message".to_string())))
+        match self.set_builder_serialized(key.clone(), &msg_slice.as_builder(), exported) {
+            Ok((result, _)) => Ok(result),
+            Err(err) => {
+                fail!(BlockError::Other(format!("Error insert serialized message: {}", err)))
+            }
+        }
     }
 
     pub fn insert_serialized(
@@ -192,15 +209,13 @@ impl OutMsgDescr {
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 // Blockchain: 3.3.6
 // _ (HashmapAugE 352 EnqueuedMsg uint64) = OutMsgQueue;
 // 352 = 32 - dest workchain_id, 64 - first 64 bit of dest account address, 256
 // - message hash
 define_HashmapAugE!(OutMsgQueue, 352, OutMsgQueueKey, EnqueuedMsg, MsgTime);
 impl HashmapSubtree for OutMsgQueue {}
-// impl HashmapAugRemover<OutMsgQueueKey, EnqueuedMsg, MsgTime> for OutMsgQueue
-// {}
 
 pub type MsgTime = u64;
 
@@ -228,18 +243,8 @@ impl OutMsgQueue {
         self.set(&key, &enq, &msg_lt)
     }
 
-    pub fn queue_for_wc(&self, workchain_id: i32) -> Result<OutMsgQueue> {
-        let cell = workchain_id.serialize()?;
-        let mut subtree = self.clone();
-        subtree.into_subtree_without_prefix(&SliceData::load_cell(cell)?, &mut 0)?;
-        Ok(subtree)
-    }
-
     pub fn queue_for_wc_with_prefix(&self, workchain_id: i32) -> Result<OutMsgQueue> {
-        let cell = workchain_id.serialize()?;
-        let mut subtree = self.clone();
-        subtree.subtree_with_prefix(&SliceData::load_cell(cell)?, &mut 0)?;
-        Ok(subtree)
+        self.subtree_with_prefix(&workchain_id.write_to_bitstring()?, &mut 0)
     }
 }
 
@@ -294,6 +299,80 @@ impl fmt::LowerHex for OutMsgQueueKey {
             write!(f, "0x")?;
         }
         write!(f, "{}:{:016X}, hash: {:x}", self.workchain_id, self.prefix, self.hash)
+    }
+}
+
+define_HashmapE!(MeshMsgQueuesInfo, 32, InRefValue<OutMsgQueueInfo>);
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub(crate) struct OutMsgQueuesInfo {
+    pub local_queue: OutMsgQueueInfo,
+    pub mesh_queues: MeshMsgQueuesInfo,
+    pub serde_opts: u8,
+}
+
+impl OutMsgQueuesInfo {
+    pub fn with_local_queue(local_queue: OutMsgQueueInfo) -> Self {
+        Self {
+            local_queue,
+            mesh_queues: MeshMsgQueuesInfo::default(),
+            serde_opts: SERDE_OPTS_EMPTY,
+        }
+    }
+
+    pub fn with_params(local_queue: OutMsgQueueInfo, mesh_queues: MeshMsgQueuesInfo) -> Self {
+        Self { local_queue, mesh_queues, serde_opts: SERDE_OPTS_COMMON_MESSAGE }
+    }
+}
+
+const OUT_MSG_QUEUES_TAG: u8 = 0x01;
+
+impl Serializable for OutMsgQueuesInfo {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        if self.serde_opts == SERDE_OPTS_EMPTY {
+            self.local_queue.write_to(builder)?;
+        } else if self.serde_opts & SERDE_OPTS_COMMON_MESSAGE != 0 {
+            builder.append_u8(OUT_MSG_QUEUES_TAG)?;
+            self.local_queue.write_to(builder)?;
+            self.mesh_queues.write_to(builder)?;
+        } else {
+            fail!(BlockError::UnsupportedSerdeOptions(
+                std::any::type_name::<Self>().to_string(),
+                self.serde_opts as usize
+            ))
+        }
+        Ok(())
+    }
+}
+
+impl Deserializable for OutMsgQueuesInfo {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        self.local_queue.read_from(cell)?;
+        self.mesh_queues = MeshMsgQueuesInfo::default();
+        Ok(())
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        if opts == SERDE_OPTS_EMPTY {
+            self.read_from(slice)?;
+        } else if opts & SERDE_OPTS_COMMON_MESSAGE != 0 {
+            let tag = slice.get_next_byte()?;
+            if tag != OUT_MSG_QUEUES_TAG {
+                fail!(BlockError::InvalidConstructorTag {
+                    t: tag as u32,
+                    s: std::any::type_name::<Self>().to_string()
+                })
+            }
+            self.local_queue.read_from(slice)?;
+            self.mesh_queues.read_from(slice)?;
+        } else {
+            fail!(BlockError::UnsupportedSerdeOptions(
+                std::any::type_name::<Self>().to_string(),
+                opts as usize
+            ))
+        }
+        self.serde_opts = opts;
+        Ok(())
     }
 }
 
@@ -392,7 +471,8 @@ impl OutMsgQueueInfo {
         let usage_tree = UsageTree::with_root(old_proof.proof.proof.clone());
         let visit_state = |state: &ShardStateUnsplit| -> Result<()> {
             let out_msg_queue_info = state.read_out_msg_queue_info()?;
-            let _queue_for_wc = out_msg_queue_info.out_queue().queue_for_wc(workchain_id)?;
+            let _queue_for_wc =
+                out_msg_queue_info.out_queue().queue_for_wc_with_prefix(workchain_id)?;
             let _proc_info = out_msg_queue_info.proc_info().root();
             Ok(())
         };
@@ -441,7 +521,7 @@ impl OutMsgQueueInfo {
             let queue_info = state.read_out_msg_queue_info()?;
             let sub_queue_root_hash = queue_info
                 .out_queue()
-                .subtree_root_cell(&SliceData::load_bitstring(workchain_id.write_to_new_cell()?)?)?
+                .subtree_root_cell(&workchain_id.write_to_bitstring()?)?
                 .map(|c| c.repr_hash())
                 .unwrap_or_default();
             let proc_info_root_hash =
@@ -534,22 +614,30 @@ pub enum OutMsg {
 
 impl OutMsg {
     /// Create External
-    pub fn external(msg_cell: Cell, tr_cell: Cell) -> OutMsg {
+    pub fn external(msg_cell: ChildCell<CommonMessage>, tr_cell: ChildCell<Transaction>) -> OutMsg {
         OutMsg::External(OutMsgExternal::with_cells(msg_cell, tr_cell))
     }
 
     /// Create Ordinary internal message
-    pub fn new(env_cell: Cell, tr_cell: Cell) -> OutMsg {
+    pub fn new(env_cell: ChildCell<MsgEnvelope>, tr_cell: ChildCell<Transaction>) -> OutMsg {
         OutMsg::New(OutMsgNew::with_cells(env_cell, tr_cell))
     }
 
     /// Create Immediate internal message
-    pub fn immediate(env_cell: Cell, tr_cell: Cell, reimport_msg_cell: Cell) -> OutMsg {
+    pub fn immediate(
+        env_cell: ChildCell<MsgEnvelope>,
+        tr_cell: ChildCell<Transaction>,
+        reimport_msg_cell: ChildCell<InMsg>,
+    ) -> OutMsg {
         OutMsg::Immediate(OutMsgImmediate::with_cells(env_cell, tr_cell, reimport_msg_cell))
     }
 
     /// Create Transit internal message
-    pub fn transit(env_cell: Cell, imported_cell: Cell, requeue: bool) -> OutMsg {
+    pub fn transit(
+        env_cell: ChildCell<MsgEnvelope>,
+        imported_cell: ChildCell<InMsg>,
+        requeue: bool,
+    ) -> OutMsg {
         if requeue {
             OutMsg::TransitRequeued(OutMsgTransitRequeued::with_cells(env_cell, imported_cell))
         } else {
@@ -558,7 +646,7 @@ impl OutMsg {
     }
 
     /// Create Dequeue internal message
-    pub fn dequeue_long(env_cell: Cell, import_block_lt: u64) -> OutMsg {
+    pub fn dequeue_long(env_cell: ChildCell<MsgEnvelope>, import_block_lt: u64) -> OutMsg {
         OutMsg::Dequeue(OutMsgDequeue::with_cells(env_cell, import_block_lt))
     }
 
@@ -577,7 +665,10 @@ impl OutMsg {
     }
 
     /// Create Dequeue immediate message
-    pub fn dequeue_immediate(env_cell: Cell, reimport_msg_cell: Cell) -> OutMsg {
+    pub fn dequeue_immediate(
+        env_cell: ChildCell<MsgEnvelope>,
+        reimport_msg_cell: ChildCell<InMsg>,
+    ) -> OutMsg {
         OutMsg::DequeueImmediate(OutMsgDequeueImmediate::with_cells(env_cell, reimport_msg_cell))
     }
 
@@ -742,7 +833,7 @@ impl OutMsg {
 
 impl Augmentation<CurrencyCollection> for OutMsg {
     fn aug(&self) -> Result<CurrencyCollection> {
-        let mut exported = CurrencyCollection::new();
+        let mut exported = CurrencyCollection::default();
         match self {
             OutMsg::New(ref x) => {
                 let env = x.read_out_message()?;
@@ -786,18 +877,18 @@ impl Augmentation<CurrencyCollection> for OutMsg {
 }
 
 /// internal helper macros for reading InMsg variants
-macro_rules! read_out_msg_descr {
-    ($cell:expr, $msg_descr:tt, $variant:ident) => {{
+macro_rules! read_descr {
+    ($cell:expr, $msg_descr:tt, $variant:ident, $opts:expr) => {{
         let mut x = $msg_descr::default();
-        x.read_from($cell)?;
+        x.read_from_with_opts($cell, $opts)?;
         OutMsg::$variant(x)
     }};
 }
 
 /// internal helper macros for reading InMsg variants
-macro_rules! write_out_ctor_tag {
-    ($builder:expr, $tag:ident, $tag_len:expr) => {{
-        $builder.append_bits($tag as usize, $tag_len).unwrap();
+macro_rules! write_tag {
+    ($builder:expr, $tag:expr, $tag_len:expr) => {{
+        $builder.append_bits($tag as usize, $tag_len)?;
         $builder
     }};
 }
@@ -805,23 +896,53 @@ macro_rules! write_out_ctor_tag {
 impl Serializable for OutMsg {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
-            OutMsg::External(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_EXT, 3)),
-            OutMsg::Immediate(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_IMM, 3)),
-            OutMsg::New(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_NEW, 3)),
-            OutMsg::Transit(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_TR, 3)),
-            OutMsg::Dequeue(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_DEQ, 4)),
-            OutMsg::DequeueShort(ref x) => {
-                x.write_to(write_out_ctor_tag!(cell, OUT_MSG_DEQ_SHORT, 4))
-            }
-            OutMsg::DequeueImmediate(ref x) => {
-                x.write_to(write_out_ctor_tag!(cell, OUT_MSG_DEQ_IMM, 3))
-            }
-            OutMsg::TransitRequeued(ref x) => {
-                x.write_to(write_out_ctor_tag!(cell, OUT_MSG_TRDEQ, 3))
-            }
+            OutMsg::External(ref x) => x.write_to(write_tag!(cell, OUT_MSG_EXT, 3)),
+            OutMsg::Immediate(ref x) => x.write_to(write_tag!(cell, OUT_MSG_IMM, 3)),
+            OutMsg::New(ref x) => x.write_to(write_tag!(cell, OUT_MSG_NEW, 3)),
+            OutMsg::Transit(ref x) => x.write_to(write_tag!(cell, OUT_MSG_TR, 3)),
+            OutMsg::Dequeue(ref x) => x.write_to(write_tag!(cell, OUT_MSG_DEQ, 4)),
+            OutMsg::DequeueShort(ref x) => x.write_to(write_tag!(cell, OUT_MSG_DEQ_SHORT, 4)),
+            OutMsg::DequeueImmediate(ref x) => x.write_to(write_tag!(cell, OUT_MSG_DEQ_IMM, 3)),
+            OutMsg::TransitRequeued(ref x) => x.write_to(write_tag!(cell, OUT_MSG_TRDEQ, 3)),
             OutMsg::None => {
                 fail!(BlockError::InvalidOperation("OutMsg::None can't be serialized".to_string()))
             }
+        }
+    }
+
+    fn write_with_opts(&self, cell: &mut BuilderData, opts: u8) -> Result<()> {
+        if opts & SERDE_OPTS_COMMON_MESSAGE != 0 {
+            match self {
+                OutMsg::External(ref x) => {
+                    x.write_with_opts(write_tag!(cell, tag2(OUT_MSG_EXT), 8), opts)
+                }
+                OutMsg::Immediate(ref x) => {
+                    x.write_with_opts(write_tag!(cell, tag2(OUT_MSG_IMM), 8), opts)
+                }
+                OutMsg::New(ref x) => {
+                    x.write_with_opts(write_tag!(cell, tag2(OUT_MSG_NEW), 8), opts)
+                }
+                OutMsg::Transit(ref x) => {
+                    x.write_with_opts(write_tag!(cell, tag2(OUT_MSG_TR), 8), opts)
+                }
+                OutMsg::Dequeue(ref x) => {
+                    x.write_with_opts(write_tag!(cell, tag2(OUT_MSG_DEQ), 8), opts)
+                }
+                OutMsg::DequeueShort(ref x) => {
+                    x.write_with_opts(write_tag!(cell, tag2(OUT_MSG_DEQ_SHORT), 8), opts)
+                }
+                OutMsg::DequeueImmediate(ref x) => {
+                    x.write_with_opts(write_tag!(cell, tag2(OUT_MSG_DEQ_IMM), 8), opts)
+                }
+                OutMsg::TransitRequeued(ref x) => {
+                    x.write_with_opts(write_tag!(cell, tag2(OUT_MSG_TRDEQ), 8), opts)
+                }
+                OutMsg::None => fail!(BlockError::InvalidOperation(
+                    "OutMsg::None can't be serialized".to_string()
+                )),
+            }
+        } else {
+            self.write_to(cell)
         }
     }
 }
@@ -829,21 +950,20 @@ impl Serializable for OutMsg {
 impl Deserializable for OutMsg {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         let tag: u8 = (cell.get_next_bits(3)?[0] & 0xE0) >> 5;
+        let opts = SERDE_OPTS_EMPTY;
         *self = match tag {
-            OUT_MSG_EXT => read_out_msg_descr!(cell, OutMsgExternal, External),
-            OUT_MSG_IMM => read_out_msg_descr!(cell, OutMsgImmediate, Immediate),
-            OUT_MSG_NEW => read_out_msg_descr!(cell, OutMsgNew, New),
-            OUT_MSG_TR => read_out_msg_descr!(cell, OutMsgTransit, Transit),
-            OUT_MSG_DEQ_IMM => read_out_msg_descr!(cell, OutMsgDequeueImmediate, DequeueImmediate),
-            OUT_MSG_TRDEQ => read_out_msg_descr!(cell, OutMsgTransitRequeued, TransitRequeued),
+            OUT_MSG_EXT => read_descr!(cell, OutMsgExternal, External, opts),
+            OUT_MSG_IMM => read_descr!(cell, OutMsgImmediate, Immediate, opts),
+            OUT_MSG_NEW => read_descr!(cell, OutMsgNew, New, opts),
+            OUT_MSG_TR => read_descr!(cell, OutMsgTransit, Transit, opts),
+            OUT_MSG_DEQ_IMM => read_descr!(cell, OutMsgDequeueImmediate, DequeueImmediate, opts),
+            OUT_MSG_TRDEQ => read_descr!(cell, OutMsgTransitRequeued, TransitRequeued, opts),
             tag if cell.remaining_bits() != 0
                 && (tag == OUT_MSG_DEQ >> 1 || tag == OUT_MSG_DEQ_SHORT >> 1) =>
             {
                 match (tag << 1) | cell.get_next_bit_int().unwrap() as u8 {
-                    OUT_MSG_DEQ => read_out_msg_descr!(cell, OutMsgDequeue, Dequeue),
-                    OUT_MSG_DEQ_SHORT => {
-                        read_out_msg_descr!(cell, OutMsgDequeueShort, DequeueShort)
-                    }
+                    OUT_MSG_DEQ => read_descr!(cell, OutMsgDequeue, Dequeue, opts),
+                    OUT_MSG_DEQ_SHORT => read_descr!(cell, OutMsgDequeueShort, DequeueShort, opts),
                     _ => unreachable!(),
                 }
             }
@@ -853,25 +973,62 @@ impl Deserializable for OutMsg {
         };
         Ok(())
     }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        if opts == SERDE_OPTS_EMPTY {
+            return self.read_from(slice);
+        }
+        if opts & SERDE_OPTS_COMMON_MESSAGE != 0 {
+            let tag: u8 = slice.get_next_byte()?;
+            if tag & COMMON_MSG_TAG != 0 {
+                let tag = tag & !COMMON_MSG_TAG;
+                *self = match tag {
+                    OUT_MSG_EXT => read_descr!(slice, OutMsgExternal, External, opts),
+                    OUT_MSG_IMM => read_descr!(slice, OutMsgImmediate, Immediate, opts),
+                    OUT_MSG_NEW => read_descr!(slice, OutMsgNew, New, opts),
+                    OUT_MSG_TR => read_descr!(slice, OutMsgTransit, Transit, opts),
+                    OUT_MSG_DEQ_IMM => {
+                        read_descr!(slice, OutMsgDequeueImmediate, DequeueImmediate, opts)
+                    }
+                    OUT_MSG_TRDEQ => {
+                        read_descr!(slice, OutMsgTransitRequeued, TransitRequeued, opts)
+                    }
+                    OUT_MSG_DEQ => read_descr!(slice, OutMsgDequeue, Dequeue, opts),
+                    OUT_MSG_DEQ_SHORT => read_descr!(slice, OutMsgDequeueShort, DequeueShort, opts),
+                    tag => {
+                        fail!(BlockError::InvalidConstructorTag {
+                            t: tag as u32,
+                            s: "OutMsg".to_string()
+                        });
+                    }
+                };
+            }
+        }
+        Ok(())
+    }
 }
 
 /// msg_export_ext$000 msg:^Message transaction:^Transaction = OutMsg;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct OutMsgExternal {
-    msg: ChildCell<Message>,
+    msg: ChildCell<CommonMessage>,
     transaction: ChildCell<Transaction>,
 }
 
 impl OutMsgExternal {
-    pub fn with_cells(msg_cell: Cell, tr_cell: Cell) -> Self {
-        OutMsgExternal {
-            msg: ChildCell::with_cell(msg_cell),
-            transaction: ChildCell::with_cell(tr_cell),
-        }
+    pub fn with_cells(msg: ChildCell<CommonMessage>, transaction: ChildCell<Transaction>) -> Self {
+        OutMsgExternal { msg, transaction }
     }
 
     pub fn read_message(&self) -> Result<Message> {
-        self.msg.read_struct()
+        let msg = self.msg.read_struct()?;
+        match msg {
+            CommonMessage::Std(msg) => Ok(msg),
+            _ => fail!(BlockError::UnexpectedStructVariant(
+                "CommonMessage::Std".to_string(),
+                msg.get_type_name()
+            )),
+        }
     }
 
     pub fn message_cell(&self) -> Cell {
@@ -889,16 +1046,20 @@ impl OutMsgExternal {
 
 impl Serializable for OutMsgExternal {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.msg.cell())?;
-        cell.checked_append_reference(self.transaction.cell())?;
+        self.msg.write_to(cell)?;
+        self.transaction.write_to(cell)?;
         Ok(())
     }
 }
 
 impl Deserializable for OutMsgExternal {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.msg.read_from_reference(cell)?;
-        self.transaction.read_from_reference(cell)?;
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.read_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        self.msg.read_from_with_opts(slice, opts)?;
+        self.transaction.read_from_with_opts(slice, opts)?;
         Ok(())
     }
 }
@@ -914,12 +1075,12 @@ pub struct OutMsgImmediate {
 }
 
 impl OutMsgImmediate {
-    pub fn with_cells(env_cell: Cell, tr_cell: Cell, reimport_msg_cell: Cell) -> OutMsgImmediate {
-        OutMsgImmediate {
-            out_msg: ChildCell::with_cell(env_cell),
-            transaction: ChildCell::with_cell(tr_cell),
-            reimport: ChildCell::with_cell(reimport_msg_cell),
-        }
+    pub fn with_cells(
+        out_msg: ChildCell<MsgEnvelope>,
+        transaction: ChildCell<Transaction>,
+        reimport: ChildCell<InMsg>,
+    ) -> OutMsgImmediate {
+        OutMsgImmediate { out_msg, transaction, reimport }
     }
 
     pub fn read_out_message(&self) -> Result<MsgEnvelope> {
@@ -949,18 +1110,22 @@ impl OutMsgImmediate {
 
 impl Serializable for OutMsgImmediate {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.out_msg.cell())?;
-        cell.checked_append_reference(self.transaction.cell())?;
-        cell.checked_append_reference(self.reimport.cell())?;
+        self.out_msg.write_to(cell)?;
+        self.transaction.write_to(cell)?;
+        self.reimport.write_to(cell)?;
         Ok(())
     }
 }
 
 impl Deserializable for OutMsgImmediate {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.out_msg.read_from_reference(cell)?;
-        self.transaction.read_from_reference(cell)?;
-        self.reimport.read_from_reference(cell)?;
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.read_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        self.out_msg.read_from_with_opts(slice, opts)?;
+        self.transaction.read_from_with_opts(slice, opts)?;
+        self.reimport.read_from_with_opts(slice, opts)?;
         Ok(())
     }
 }
@@ -974,11 +1139,11 @@ pub struct OutMsgNew {
 }
 
 impl OutMsgNew {
-    pub fn with_cells(env_cell: Cell, tr_cell: Cell) -> Self {
-        OutMsgNew {
-            out_msg: ChildCell::with_cell(env_cell),
-            transaction: ChildCell::with_cell(tr_cell),
-        }
+    pub fn with_cells(
+        out_msg: ChildCell<MsgEnvelope>,
+        transaction: ChildCell<Transaction>,
+    ) -> Self {
+        OutMsgNew { out_msg, transaction }
     }
 
     pub fn read_out_message(&self) -> Result<MsgEnvelope> {
@@ -1000,16 +1165,20 @@ impl OutMsgNew {
 
 impl Serializable for OutMsgNew {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.out_msg.cell())?;
-        cell.checked_append_reference(self.transaction.cell())?;
+        self.out_msg.write_to(cell)?;
+        self.transaction.write_to(cell)?;
         Ok(())
     }
 }
 
 impl Deserializable for OutMsgNew {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.out_msg.read_from_reference(cell)?;
-        self.transaction.read_from_reference(cell)?;
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.read_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        self.out_msg.read_from_with_opts(slice, opts)?;
+        self.transaction.read_from_with_opts(slice, opts)?;
         Ok(())
     }
 }
@@ -1023,11 +1192,8 @@ pub struct OutMsgTransit {
 }
 
 impl OutMsgTransit {
-    pub fn with_cells(env_cell: Cell, imported_cell: Cell) -> Self {
-        OutMsgTransit {
-            out_msg: ChildCell::with_cell(env_cell),
-            imported: ChildCell::with_cell(imported_cell),
-        }
+    pub fn with_cells(out_msg: ChildCell<MsgEnvelope>, imported: ChildCell<InMsg>) -> Self {
+        OutMsgTransit { out_msg, imported }
     }
 
     pub fn read_out_message(&self) -> Result<MsgEnvelope> {
@@ -1049,16 +1215,20 @@ impl OutMsgTransit {
 
 impl Serializable for OutMsgTransit {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.out_msg.cell())?;
-        cell.checked_append_reference(self.imported.cell())?;
+        self.out_msg.write_to(cell)?;
+        self.imported.write_to(cell)?;
         Ok(())
     }
 }
 
 impl Deserializable for OutMsgTransit {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.out_msg.read_from_reference(cell)?;
-        self.imported.read_from_reference(cell)?;
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.read_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        self.out_msg.read_from_with_opts(slice, opts)?;
+        self.imported.read_from_with_opts(slice, opts)?;
         Ok(())
     }
 }
@@ -1072,11 +1242,8 @@ pub struct OutMsgDequeueImmediate {
 }
 
 impl OutMsgDequeueImmediate {
-    pub fn with_cells(env_cell: Cell, reimport_msg_cell: Cell) -> Self {
-        OutMsgDequeueImmediate {
-            out_msg: ChildCell::with_cell(env_cell),
-            reimport: ChildCell::with_cell(reimport_msg_cell),
-        }
+    pub fn with_cells(out_msg: ChildCell<MsgEnvelope>, reimport: ChildCell<InMsg>) -> Self {
+        OutMsgDequeueImmediate { out_msg, reimport }
     }
 
     pub fn read_out_message(&self) -> Result<MsgEnvelope> {
@@ -1098,16 +1265,20 @@ impl OutMsgDequeueImmediate {
 
 impl Serializable for OutMsgDequeueImmediate {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.out_msg.cell())?;
-        cell.checked_append_reference(self.reimport.cell())?;
+        self.out_msg.write_to(cell)?;
+        self.reimport.write_to(cell)?;
         Ok(())
     }
 }
 
 impl Deserializable for OutMsgDequeueImmediate {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.out_msg.read_from_reference(cell)?;
-        self.reimport.read_from_reference(cell)?;
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.read_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        self.out_msg.read_from_with_opts(slice, opts)?;
+        self.reimport.read_from_with_opts(slice, opts)?;
         Ok(())
     }
 }
@@ -1121,8 +1292,8 @@ pub struct OutMsgDequeue {
 }
 
 impl OutMsgDequeue {
-    pub fn with_cells(env_cell: Cell, lt: u64) -> Self {
-        OutMsgDequeue { out_msg: ChildCell::with_cell(env_cell), import_block_lt: lt }
+    pub fn with_cells(out_msg: ChildCell<MsgEnvelope>, lt: u64) -> Self {
+        OutMsgDequeue { out_msg, import_block_lt: lt }
     }
 
     pub fn read_out_message(&self) -> Result<MsgEnvelope> {
@@ -1150,16 +1321,20 @@ impl OutMsgDequeue {
 
 impl Serializable for OutMsgDequeue {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.out_msg.cell())?;
+        self.out_msg.write_to(cell)?;
         cell.append_bits(self.import_block_lt as usize, 63)?;
         Ok(())
     }
 }
 
 impl Deserializable for OutMsgDequeue {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.out_msg.read_from_reference(cell)?;
-        self.import_block_lt = cell.get_next_int(63)?;
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.read_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        self.out_msg.read_from_with_opts(slice, opts)?;
+        self.import_block_lt = slice.get_next_int(63)?;
         Ok(())
     }
 }
@@ -1204,11 +1379,8 @@ pub struct OutMsgTransitRequeued {
 }
 
 impl OutMsgTransitRequeued {
-    pub fn with_cells(env_cell: Cell, imported_cell: Cell) -> Self {
-        OutMsgTransitRequeued {
-            out_msg: ChildCell::with_cell(env_cell),
-            imported: ChildCell::with_cell(imported_cell),
-        }
+    pub fn with_cells(out_msg: ChildCell<MsgEnvelope>, imported: ChildCell<InMsg>) -> Self {
+        OutMsgTransitRequeued { out_msg, imported }
     }
 
     pub fn read_out_message(&self) -> Result<MsgEnvelope> {
@@ -1230,16 +1402,20 @@ impl OutMsgTransitRequeued {
 
 impl Serializable for OutMsgTransitRequeued {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.out_msg.cell())?;
-        cell.checked_append_reference(self.imported.cell())?;
+        self.out_msg.write_to(cell)?;
+        self.imported.write_to(cell)?;
         Ok(())
     }
 }
 
 impl Deserializable for OutMsgTransitRequeued {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.out_msg.read_from_reference(cell)?;
-        self.imported.read_from_reference(cell)?;
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.read_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        self.out_msg.read_from_with_opts(slice, opts)?;
+        self.imported.read_from_with_opts(slice, opts)?;
         Ok(())
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,19 +6,33 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
-
-#![cfg_attr(feature = "ci_run", deny(warnings))]
-
-pub mod error;
-pub use self::error::*;
 
 pub mod types;
 pub use self::types::*;
 
-pub mod hashmapaug;
-pub use self::hashmapaug::*;
+pub mod cell;
+pub use self::cell::*;
+
+pub mod crypto;
+pub use self::crypto::*;
+
+pub mod dictionary;
+pub use self::dictionary::*;
+
+pub mod boc;
+pub use boc::*;
+use smallvec::SmallVec;
+
+pub mod wrappers;
+pub use self::wrappers::*;
+
+pub mod bls;
+pub use bls::*;
+
+pub mod error;
+pub use self::error::*;
 
 pub mod blocks;
 pub use self::blocks::*;
@@ -31,6 +45,9 @@ pub use self::accounts::*;
 
 pub mod messages;
 pub use self::messages::*;
+
+pub mod common_message;
+pub use self::common_message::*;
 
 pub mod inbound_messages;
 pub use self::inbound_messages::*;
@@ -75,23 +92,91 @@ pub mod config_params;
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use base64::Engine;
-use tvm_types::base64_decode;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::read_single_root_boc;
-use tvm_types::write_boc;
-use tvm_types::AccountId;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-
 pub use self::config_params::*;
+
+pub trait Mask {
+    fn bit(&self, bits: Self) -> bool;
+    fn mask(&self, mask: Self) -> Self;
+    fn any(&self, bits: Self) -> bool;
+    fn non(&self, bits: Self) -> bool;
+}
+
+impl Mask for u8 {
+    fn bit(&self, bits: Self) -> bool {
+        (self & bits) == bits
+    }
+
+    fn mask(&self, mask: Self) -> u8 {
+        self & mask
+    }
+
+    fn any(&self, bits: Self) -> bool {
+        (self & bits) != 0
+    }
+
+    fn non(&self, bits: Self) -> bool {
+        (self & bits) == 0
+    }
+}
+
+pub trait GasConsumer {
+    fn finalize_cell(&mut self, builder: BuilderData) -> Result<Cell>;
+    fn load_cell(&mut self, cell: Cell) -> Result<SliceData>;
+    fn finalize_cell_and_load(&mut self, builder: BuilderData) -> Result<SliceData>;
+}
+
+impl GasConsumer for u64 {
+    fn finalize_cell(&mut self, builder: BuilderData) -> Result<Cell> {
+        builder.into_cell()
+    }
+
+    fn load_cell(&mut self, cell: Cell) -> Result<SliceData> {
+        SliceData::load_cell(cell)
+    }
+
+    fn finalize_cell_and_load(&mut self, builder: BuilderData) -> Result<SliceData> {
+        SliceData::load_builder(builder)
+    }
+}
+
+pub fn parse_slice_base(slice: &str, mut bits: usize, base: u32) -> Option<SmallVec<[u8; 128]>> {
+    debug_assert!(bits < 8, "it is offset to get slice parsed");
+    let mut acc = 0u8;
+    let mut data = SmallVec::new();
+    let mut completion_tag = false;
+    for ch in slice.chars() {
+        if completion_tag {
+            return None;
+        }
+        match ch.to_digit(base) {
+            Some(x) => {
+                if bits < 4 {
+                    acc |= (x << (4 - bits)) as u8;
+                    bits += 4;
+                } else {
+                    data.push(acc | (x as u8 >> (bits - 4)));
+                    acc = (x << (12 - bits)) as u8;
+                    bits -= 4;
+                }
+            }
+            None => match ch {
+                '_' => completion_tag = true,
+                _ => return None,
+            },
+        }
+    }
+    if bits != 0 {
+        if !completion_tag {
+            acc |= 1 << (7 - bits);
+        }
+        if acc != 0 || data.is_empty() {
+            data.push(acc);
+        }
+    } else if !completion_tag {
+        data.push(0x80);
+    }
+    Some(data)
+}
 
 impl<K, V> Serializable for HashMap<K, V>
 where
@@ -102,7 +187,7 @@ where
         let bit_len = K::default().write_to_new_cell()?.length_in_bits();
         let mut dictionary = HashmapE::with_bit_len(bit_len);
         for (key, value) in self.iter() {
-            let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
+            let key = key.write_to_bitstring()?;
             dictionary.set_builder(key, &value.write_to_new_cell()?)?;
         }
         dictionary.write_to(cell)
@@ -143,6 +228,10 @@ impl Deserializable for HashmapE {
     }
 }
 
+pub const SERDE_OPTS_EMPTY: u8 = 0b0000_0000;
+pub const SERDE_OPTS_COMMON_MESSAGE: u8 = 0b0000_0001;
+pub const SERDE_OPTS_MEMPOOL_NODES: u8 = 0b0000_0010;
+
 pub trait Serializable {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()>;
 
@@ -152,6 +241,17 @@ pub trait Serializable {
         Ok(cell)
     }
 
+    fn write_to_bitstring(&self) -> Result<SliceData> {
+        let mut cell = BuilderData::new();
+        self.write_to(&mut cell)?;
+        SliceData::load_bitstring(cell)
+    }
+
+    fn write_to_bitstring_with_opts(&self, opts: u8) -> Result<SliceData> {
+        let builder = self.write_to_new_cell_with_opts(opts)?;
+        SliceData::load_bitstring(builder)
+    }
+
     fn write_to_bytes(&self) -> Result<Vec<u8>> {
         let cell = self.serialize()?;
         write_boc(&cell)
@@ -159,12 +259,28 @@ pub trait Serializable {
 
     fn write_to_file(&self, file_name: impl AsRef<std::path::Path>) -> Result<()> {
         let bytes = self.write_to_bytes()?;
-        std::fs::write(file_name.as_ref(), bytes)?;
-        Ok(())
+        match std::fs::write(file_name.as_ref(), bytes) {
+            Ok(_) => Ok(()),
+            Err(err) => fail!("failed to write to file {}: {}", file_name.as_ref().display(), err),
+        }
     }
 
     fn serialize(&self) -> Result<Cell> {
         self.write_to_new_cell()?.into_cell()
+    }
+
+    fn write_with_opts(&self, cell: &mut BuilderData, _opts: u8) -> Result<()> {
+        Serializable::write_to(self, cell)
+    }
+
+    fn serialize_with_opts(&self, opts: u8) -> Result<Cell> {
+        self.write_to_new_cell_with_opts(opts)?.into_cell()
+    }
+
+    fn write_to_new_cell_with_opts(&self, opts: u8) -> Result<BuilderData> {
+        let mut cell = BuilderData::new();
+        self.write_with_opts(&mut cell, opts)?;
+        Ok(cell)
     }
 }
 
@@ -174,14 +290,33 @@ pub trait Deserializable: Default {
         x.read_from(slice)?;
         Ok(x)
     }
+    fn construct_from_with_opts(slice: &mut SliceData, opts: u8) -> Result<Self> {
+        let mut x = Self::default();
+        x.read_from_with_opts(slice, opts)?;
+        Ok(x)
+    }
     fn construct_maybe_from(slice: &mut SliceData) -> Result<Option<Self>> {
         match slice.get_next_bit()? {
             true => Ok(Some(Self::construct_from(slice)?)),
             false => Ok(None),
         }
     }
+    fn construct_from_full_cell(cell: Cell) -> Result<Self> {
+        let mut slice = SliceData::load_cell(cell)?;
+        let obj = Self::construct_from(&mut slice)?;
+        if slice.remaining_bits() != 0 || slice.remaining_references() != 0 {
+            fail!(
+                "cell is not empty after deserializing {}",
+                std::any::type_name::<Self>().to_string()
+            )
+        }
+        Ok(obj)
+    }
     fn construct_from_cell(cell: Cell) -> Result<Self> {
         Self::construct_from(&mut SliceData::load_cell(cell)?)
+    }
+    fn construct_from_cell_with_opts(cell: Cell, opts: u8) -> Result<Self> {
+        Self::construct_from_with_opts(&mut SliceData::load_cell(cell)?, opts)
     }
     fn construct_from_reference(slice: &mut SliceData) -> Result<Self> {
         Self::construct_from_cell(slice.checked_drain_reference()?)
@@ -192,13 +327,14 @@ pub trait Deserializable: Default {
     }
     /// adapter for tests
     fn construct_from_file(file_name: impl AsRef<std::path::Path>) -> Result<Self> {
-        let bytes = std::fs::read(file_name.as_ref())?;
-        Self::construct_from_bytes(&bytes)
+        match std::fs::read(file_name.as_ref()) {
+            Ok(bytes) => Self::construct_from_bytes(&bytes),
+            Err(err) => fail!("failed to read from file {}: {}", file_name.as_ref().display(), err),
+        }
     }
     /// adapter for tests
     fn construct_from_base64(string: &str) -> Result<Self> {
-        base64_decode(string)?;
-        let bytes = base64::engine::general_purpose::STANDARD.decode(string)?;
+        let bytes = base64_decode(string)?;
         Self::construct_from_bytes(&bytes)
     }
     // Override it to implement skipping
@@ -210,20 +346,19 @@ pub trait Deserializable: Default {
         *self = Self::construct_from(slice)?;
         Ok(())
     }
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, _opts: u8) -> Result<()> {
+        self.read_from(slice)
+    }
     fn read_from_cell(&mut self, cell: Cell) -> Result<()> {
         self.read_from(&mut SliceData::load_cell(cell)?)
     }
-    fn read_from_reference(&mut self, slice: &mut SliceData) -> Result<()> {
-        self.read_from_cell(slice.checked_drain_reference()?)
-    }
-    fn invalid_tag(t: u32) -> tvm_types::Error {
+    // fn read_from_reference(&mut self, slice: &mut SliceData) -> Result<()> {
+    //     self.read_from_cell(slice.checked_drain_reference()?)
+    // }
+    fn invalid_tag(t: u32) -> BlockError {
         let s = std::any::type_name::<Self>().to_string();
-        error!(BlockError::InvalidConstructorTag { t, s })
+        BlockError::InvalidConstructorTag { t, s }
     }
-}
-
-pub trait MaybeSerialize {
-    fn write_maybe_to(&self, cell: &mut BuilderData) -> Result<()>;
 }
 
 impl Deserializable for Cell {
@@ -249,31 +384,45 @@ impl Serializable for Cell {
 // Ok(())
 // }
 // }
-impl<T: Serializable> MaybeSerialize for Option<T> {
-    fn write_maybe_to(&self, cell: &mut BuilderData) -> Result<()> {
-        match self {
-            Some(x) => {
-                cell.append_bit_one()?;
-                x.write_to(cell)?;
-            }
-            None => {
-                cell.append_bit_zero()?;
-            }
+
+impl<T: Serializable> Serializable for Option<T> {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        self.write_with_opts(cell, SERDE_OPTS_EMPTY)
+    }
+
+    fn write_with_opts(&self, cell: &mut BuilderData, opts: u8) -> Result<()> {
+        if let Some(x) = self {
+            cell.append_bit_one()?;
+            x.write_with_opts(cell, opts)?;
+        } else {
+            cell.append_bit_zero()?;
         }
         Ok(())
     }
 }
 
-pub trait MaybeDeserialize {
-    fn read_maybe_from<T: Deserializable + Default>(slice: &mut SliceData) -> Result<Option<T>> {
+impl<T: Deserializable> Deserializable for Option<T> {
+    fn construct_from_with_opts(slice: &mut SliceData, opts: u8) -> Result<Self> {
         match slice.get_next_bit_int()? {
-            1 => Ok(Some(T::construct_from(slice)?)),
+            1 => Ok(Some(T::construct_from_with_opts(slice, opts)?)),
             _ => Ok(None),
         }
     }
-}
 
-impl<T: Deserializable> MaybeDeserialize for T {}
+    fn construct_from(slice: &mut SliceData) -> Result<Self> {
+        Self::construct_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        *self = Self::construct_from_with_opts(slice, opts)?;
+        Ok(())
+    }
+
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        *self = Self::construct_from_with_opts(slice, SERDE_OPTS_EMPTY)?;
+        Ok(())
+    }
+}
 
 pub trait GetRepresentationHash: Serializable + std::fmt::Debug {
     fn hash(&self) -> Result<UInt256> {
@@ -335,23 +484,30 @@ impl Serializable for () {
     }
 }
 
-pub fn id_from_key(key: &ed25519_dalek::SigningKey) -> u64 {
-    let bytes = key.to_bytes();
-    u64::from_be_bytes([
-        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
-    ])
-}
-
 #[cfg(test)]
 pub fn write_read_and_assert<T>(s: T) -> T
 where
     T: Serializable + Deserializable + Default + std::fmt::Debug + PartialEq,
 {
-    let cell = s.write_to_new_cell().unwrap();
-    let mut slice = SliceData::load_builder(cell).unwrap();
+    write_read_and_assert_with_opts(s, SERDE_OPTS_EMPTY).unwrap()
+}
+
+#[cfg(test)]
+pub fn write_read_and_assert_with_opts<T>(s: T, opts: u8) -> Result<T>
+where
+    T: Serializable + Deserializable + Default + std::fmt::Debug + PartialEq,
+{
+    let cell = s.serialize_with_opts(opts)?;
+    let mut slice = SliceData::load_cell_ref(&cell)?;
     println!("slice: {}", slice);
-    let s2 = T::construct_from(&mut slice).unwrap();
-    s2.serialize().unwrap();
+    let s2: T = T::construct_from_with_opts(&mut slice, opts)?;
+    let cell2 = s2.serialize_with_opts(opts)?;
     pretty_assertions::assert_eq!(s, s2);
-    s2
+    if cell != cell2 {
+        panic!(
+            "write_read_and_assert_with_opts: cells are not equal\nleft: {:#.5}\nright: {:#.5}",
+            cell, cell2
+        )
+    }
+    Ok(s2)
 }

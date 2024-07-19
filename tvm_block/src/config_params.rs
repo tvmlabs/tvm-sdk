@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 EverX. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,24 +6,14 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapIterator;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
-
 use crate::define_HashmapE;
+use crate::dictionary::hashmapaug::HashmapAugType;
+use crate::error;
 use crate::error::BlockError;
-use crate::hashmapaug::HashmapAugType;
+use crate::fail;
 use crate::shard::ShardIdent;
 use crate::shard_accounts::ShardAccounts;
 use crate::signature::CryptoSignature;
@@ -38,8 +28,18 @@ use crate::types::Number32;
 use crate::types::Number8;
 use crate::validators::ValidatorDescr;
 use crate::validators::ValidatorSet;
+use crate::BlockIdExt;
+use crate::BuilderData;
+use crate::Cell;
 use crate::Deserializable;
+use crate::HashmapE;
+use crate::HashmapIterator;
+use crate::HashmapType;
+use crate::IBitstring;
+use crate::Result;
 use crate::Serializable;
+use crate::SliceData;
+use crate::UInt256;
 
 #[cfg(test)]
 #[path = "tests/test_config_params.rs"]
@@ -56,16 +56,18 @@ pub struct ConfigParams {
 
 impl Default for ConfigParams {
     fn default() -> ConfigParams {
-        Self::new()
+        Self { config_addr: UInt256::default(), config_params: HashmapE::with_bit_len(32) }
     }
 }
 
 impl ConfigParams {
     /// create new instance ConfigParams
-    pub const fn new() -> Self {
-        Self { config_addr: UInt256::default(), config_params: HashmapE::with_bit_len(32) }
+    pub fn new() -> Self {
+        Self::default()
     }
+}
 
+impl ConfigParams {
     pub const fn with_root(data: Cell) -> Self {
         Self { config_addr: UInt256::ZERO, config_params: HashmapE::with_hashmap(32, Some(data)) }
     }
@@ -378,7 +380,30 @@ impl ConfigParams {
             _ => fail!("wrong config 44 (suspended addresses)"),
         }
     }
+
     // TODO 39 validator signed temp keys
+    // ConfigParam58(MeshConfig),
+    pub fn mesh_config(&self) -> Result<Option<MeshConfig>> {
+        match self.config(58)? {
+            Some(ConfigParamEnum::ConfigParam58(mc)) => Ok(Some(mc)),
+            None => Ok(None),
+            _ => fail!("wrong config 58 (mesh config)"),
+        }
+    }
+
+    pub fn mesh_config_for(&self, nw_id: i32) -> Result<ConnectedNwConfig> {
+        self.mesh_config()?
+            .ok_or_else(|| error!("no mesh config"))?
+            .get(&nw_id)?
+            .ok_or_else(|| error!("no mesh config for {}", nw_id))
+    }
+
+    pub fn fast_finality_config(&self) -> Result<FastFinalityConfig> {
+        match self.config(61)? {
+            Some(ConfigParamEnum::ConfigParam61(ff)) => Ok(ff),
+            _ => fail!("no fast finality config"),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -422,6 +447,13 @@ pub enum GlobalCapabilities {
     CapFastFinality = 0x0001_0000_0000,
     CapTvmV19 = 0x0002_0000_0000, // TVM v1.9.x improvemements
     CapSmft = 0x0004_0000_0000,
+    CapNoSplitOutQueue = 0x0008_0000_0000, // Don't split out queue on shard splitting
+    CapUndeletableAccounts = 0x0010_0000_0000, // Don't delete frozen accounts
+    CapTvmV20 = 0x0020_0000_0000,          // BLS instructions
+    CapDuePaymentFix = 0x0040_0000_0000,   /* No due payments on credit phase and add payed
+                                            * dues to storage fee in TVM */
+    CapCommonMessage = 0x0080_0000_0000,
+    CapPipeline = 0x0100_0000_0000,
 }
 
 impl ConfigParams {
@@ -519,7 +551,10 @@ impl ConfigParams {
         if !relax_par0 {
             match self.config(0) {
                 Ok(Some(ConfigParamEnum::ConfigParam0(param)))
-                    if param.config_addr == self.config_addr => {}
+                    if param.config_addr == self.config_addr =>
+                {
+                    ()
+                }
                 _ => return Ok(false),
             }
         }
@@ -635,6 +670,8 @@ pub enum ConfigParamEnum {
     ConfigParam40(ConfigParam40),
     ConfigParam42(ConfigCopyleft),
     ConfigParam44(SuspendedAddresses),
+    ConfigParam58(MeshConfig),
+    ConfigParam61(FastFinalityConfig),
     ConfigParamAny(u32, SliceData),
 }
 
@@ -772,6 +809,12 @@ impl ConfigParamEnum {
             }
             44 => {
                 read_config!(ConfigParam44, SuspendedAddresses, slice)
+            }
+            58 => {
+                read_config!(ConfigParam58, MeshConfig, slice)
+            }
+            61 => {
+                read_config!(ConfigParam61, FastFinalityConfig, slice)
             }
             index => Ok(ConfigParamEnum::ConfigParamAny(index, slice.clone())),
         }
@@ -935,6 +978,14 @@ impl ConfigParamEnum {
             ConfigParamEnum::ConfigParam44(ref c) => {
                 cell.checked_append_reference(c.serialize()?)?;
                 Ok(44)
+            }
+            ConfigParamEnum::ConfigParam58(ref c) => {
+                cell.checked_append_reference(c.serialize()?)?;
+                Ok(58)
+            }
+            ConfigParamEnum::ConfigParam61(ref c) => {
+                cell.checked_append_reference(c.serialize()?)?;
+                Ok(61)
             }
             ConfigParamEnum::ConfigParamAny(index, slice) => {
                 cell.checked_append_reference(slice.clone().into_cell())?;
@@ -1164,8 +1215,8 @@ pub struct GlobalVersion {
 }
 
 impl GlobalVersion {
-    pub const fn new() -> Self {
-        GlobalVersion { version: 0, capabilities: 0 }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn has_capability(&self, capability: GlobalCapabilities) -> bool {
@@ -1543,6 +1594,11 @@ impl ConfigParam18 {
     /// get value by index
     pub fn get(&self, index: u32) -> Result<StoragePrices> {
         self.map.get(&index)?.ok_or_else(|| error!(BlockError::InvalidIndex(index as usize)))
+    }
+
+    /// get all value as vector
+    pub fn prices(&self) -> Result<Vec<StoragePrices>> {
+        self.map.export_vector()
     }
 
     /// insert value
@@ -2027,16 +2083,6 @@ pub struct DelectorParams {
     pub staker_init_code_hash: UInt256,
 }
 
-impl DelectorParams {
-    pub const fn new() -> Self {
-        Self {
-            delections_step: 0,
-            validator_init_code_hash: UInt256::new(),
-            staker_init_code_hash: UInt256::new(),
-        }
-    }
-}
-
 impl Deserializable for DelectorParams {
     fn construct_from(slice: &mut SliceData) -> Result<Self> {
         let tag = slice.get_next_byte()?;
@@ -2070,8 +2116,8 @@ pub struct ConfigParam31 {
 }
 
 impl ConfigParam31 {
-    pub const fn new() -> Self {
-        Self { fundamental_smc_addr: FundamentalSmcAddresses::new() }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn add_address(&mut self, address: UInt256) {
@@ -2104,7 +2150,7 @@ macro_rules! define_configparams {
         impl $cpname {
             /// create new instance of $cpname
             pub fn new() -> Self {
-                $cpname::default()
+                Self::default()
             }
         }
 
@@ -2196,7 +2242,7 @@ pub struct WorkchainFormat1 {
 impl WorkchainFormat1 {
     /// Create empty intance of WorkchainFormat1
     pub fn new() -> Self {
-        WorkchainFormat1::default()
+        Self::default()
     }
 
     /// Create new instance of WorkchainFormat1
@@ -2240,19 +2286,19 @@ pub struct WorkchainFormat0 {
 
 impl Default for WorkchainFormat0 {
     fn default() -> Self {
-        WorkchainFormat0::new()
-    }
-}
-
-impl WorkchainFormat0 {
-    /// Create empty new instance of WorkchainFormat0
-    pub fn new() -> Self {
         Self {
             min_addr_len: Number12::from(64),
             max_addr_len: Number12::from(64),
             addr_len_step: Number12::from(0),
             workchain_type_id: Number32::from(1),
         }
+    }
+}
+
+impl WorkchainFormat0 {
+    /// Create empty new instance of WorkchainFormat0
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Create new instance of WorkchainFormat0
@@ -2432,7 +2478,7 @@ pub struct WorkchainDescr {
 impl WorkchainDescr {
     /// Create empty instance of WorkchainDescr
     pub fn new() -> Self {
-        WorkchainDescr::default()
+        Self::default()
     }
 
     /// Getter for min_split
@@ -2690,8 +2736,8 @@ impl Deserializable for ConfigVotingSetup {
                 s: std::any::type_name::<Self>().to_string()
             })
         }
-        self.normal_params.read_from_reference(slice)?;
-        self.critical_params.read_from_reference(slice)?;
+        self.normal_params.read_from(slice)?;
+        self.critical_params.read_from(slice)?;
 
         Ok(())
     }
@@ -2700,8 +2746,8 @@ impl Deserializable for ConfigVotingSetup {
 impl Serializable for ConfigVotingSetup {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         cell.append_u8(CONFIG_VOTING_SETUP_TAG)?;
-        cell.checked_append_reference(self.normal_params.cell())?;
-        cell.checked_append_reference(self.critical_params.cell())?;
+        self.normal_params.write_to(cell)?;
+        self.critical_params.write_to(cell)?;
         Ok(())
     }
 }
@@ -2909,7 +2955,7 @@ impl Deserializable for ValidatorSignedTempKey {
             })
         }
         self.signature.read_from(slice)?;
-        self.key.read_from_reference(slice)?;
+        self.key.read_from_cell(slice.checked_drain_reference()?)?;
         Ok(())
     }
 }
@@ -2934,7 +2980,7 @@ define_HashmapE!(ValidatorKeys, 256, ValidatorSignedTempKey);
 
 impl ConfigParam39 {
     pub fn new() -> Self {
-        Default::default()
+        Self::default()
     }
 
     /// get length
@@ -3016,6 +3062,12 @@ pub struct SlashingConfig {
 
 impl SlashingConfig {
     pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl Default for SlashingConfig {
+    fn default() -> SlashingConfig {
         Self {
             slashing_period_mc_blocks_count: 100,
             resend_mc_blocks_count: 4,
@@ -3026,12 +3078,6 @@ impl SlashingConfig {
             z_param_numerator: 2326, // 98% confidence
             z_param_denominator: 1000,
         }
-    }
-}
-
-impl Default for SlashingConfig {
-    fn default() -> SlashingConfig {
-        Self::new()
     }
 }
 
@@ -3356,6 +3402,101 @@ impl SuspendedAddresses {
     }
 }
 
+define_HashmapE! {MeshConfig, 32, ConnectedNwConfig}
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct ConnectedNwConfig {
+    // root cell
+    pub zerostate: BlockIdExt, // 1 + 4 + 8 + 4 + 32 + 32 = 81
+    pub is_active: bool,       //                            1
+    pub currency_id: u32,      //                            4
+    //                           86
+    // cell1
+    pub init_block: BlockIdExt,        //         81
+    pub emergency_guard_addr: UInt256, //  32
+    // 113
+
+    // cell2
+    pub pull_addr: UInt256, // The storage for native tokens of our network,
+    // which are wrapped in the connected network.
+    //  32
+    pub minter_addr: UInt256, // 32
+    // 64
+    // cell3
+    pub hardforks: Vec<BlockIdExt>, // 81 + chain
+}
+
+const MESH_INFO_TAG: u8 = 0x01;
+
+impl Deserializable for ConnectedNwConfig {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        let tag = slice.get_next_byte()?;
+        if tag != MESH_INFO_TAG {
+            fail!(BlockError::InvalidConstructorTag {
+                t: tag as u32,
+                s: std::any::type_name::<Self>().to_string()
+            })
+        }
+        self.zerostate.read_from(slice)?;
+        self.is_active.read_from(slice)?;
+        self.currency_id.read_from(slice)?;
+
+        let mut slice1 = SliceData::load_cell(slice.checked_drain_reference()?)?;
+        self.init_block.read_from(&mut slice1)?;
+        self.emergency_guard_addr.read_from(&mut slice1)?;
+
+        let mut slice2 = SliceData::load_cell(slice.checked_drain_reference()?)?;
+        self.pull_addr.read_from(&mut slice2)?;
+        self.minter_addr.read_from(&mut slice2)?;
+
+        if slice.get_next_bit()? {
+            let mut slice = slice.clone();
+            while let Ok(ref_cell) = slice.checked_drain_reference() {
+                let mut ref_slice = SliceData::load_cell(ref_cell)?;
+                self.hardforks.push(BlockIdExt::construct_from(&mut ref_slice)?);
+                slice = ref_slice;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Serializable for ConnectedNwConfig {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        builder.append_u8(MESH_INFO_TAG)?;
+        self.zerostate.write_to(builder)?;
+        self.is_active.write_to(builder)?;
+        self.currency_id.write_to(builder)?;
+
+        let mut builder1 = BuilderData::new();
+        self.init_block.write_to(&mut builder1)?;
+        self.emergency_guard_addr.write_to(&mut builder1)?;
+        builder.checked_append_reference(builder1.into_cell()?)?;
+
+        let mut builder2 = BuilderData::new();
+        self.pull_addr.write_to(&mut builder2)?;
+        self.minter_addr.write_to(&mut builder2)?;
+        builder.checked_append_reference(builder2.into_cell()?)?;
+
+        let mut prev_builder: Option<BuilderData> = None;
+        for hardfork in self.hardforks.iter().rev() {
+            let mut builder = BuilderData::new();
+            hardfork.write_to(&mut builder)?;
+            if let Some(prev_builder) = prev_builder {
+                builder.checked_append_reference(prev_builder.into_cell()?)?;
+            }
+            prev_builder = Some(builder);
+        }
+        if let Some(prev_builder) = prev_builder {
+            builder.append_bit_one()?;
+            builder.checked_append_reference(prev_builder.into_cell()?)?;
+        } else {
+            builder.append_bit_zero()?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 pub(crate) fn dump_config(params: &HashmapE) {
     params
@@ -3383,4 +3524,112 @@ pub(crate) fn dump_config(params: &HashmapE) {
             Ok(true)
         })
         .unwrap();
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FastFinalityConfig {
+    pub split_merge_interval: u32,
+    pub collator_range_len: u32,
+    pub lost_collator_timeout: u32,
+    pub mempool_validators_count: u32,
+    pub mempool_rotated_count: u32, // How many validators are changed beetween sessions.
+    // Must be <= mempool_validators_count.
+
+    pub unreliability_fine: u16,
+    pub unreliability_weak_fading: u16,
+    pub unreliability_strong_fading: u16,
+    pub unreliability_max: u16,
+    pub unreliability_weight: u16,
+
+    pub familiarity_collator_fine: u16,
+    pub familiarity_msgpool_fine: u16,
+    pub familiarity_fading: u16,
+    pub familiarity_max: u16,
+    pub familiarity_weight: u16,
+
+    pub busyness_collator_fine: u16,
+    pub busyness_msgpool_fine: u16,
+    pub busyness_weight: u16,
+
+    pub candidates_percentile: u8,
+}
+
+impl Default for FastFinalityConfig {
+    fn default() -> Self {
+        Self {
+            split_merge_interval: 128,
+            collator_range_len: 5000,
+            lost_collator_timeout: 60,
+            mempool_validators_count: 3,
+            mempool_rotated_count: 1,
+            unreliability_fine: 100,
+            unreliability_weak_fading: 1,
+            unreliability_strong_fading: 10,
+            unreliability_max: u16::MAX,
+            unreliability_weight: 1,
+            familiarity_collator_fine: 2,
+            familiarity_msgpool_fine: 1,
+            familiarity_fading: 1,
+            familiarity_max: u16::MAX,
+            familiarity_weight: 2,
+            busyness_collator_fine: 4,
+            busyness_msgpool_fine: 1,
+            busyness_weight: 1,
+            candidates_percentile: 5,
+        }
+    }
+}
+
+impl Serializable for FastFinalityConfig {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        self.split_merge_interval.write_to(cell)?;
+        self.collator_range_len.write_to(cell)?;
+        self.lost_collator_timeout.write_to(cell)?;
+        self.mempool_validators_count.write_to(cell)?;
+        self.mempool_rotated_count.write_to(cell)?;
+        self.unreliability_fine.write_to(cell)?;
+        self.unreliability_weak_fading.write_to(cell)?;
+        self.unreliability_strong_fading.write_to(cell)?;
+        self.unreliability_max.write_to(cell)?;
+        self.unreliability_weight.write_to(cell)?;
+        self.familiarity_collator_fine.write_to(cell)?;
+        self.familiarity_msgpool_fine.write_to(cell)?;
+        self.familiarity_fading.write_to(cell)?;
+        self.familiarity_max.write_to(cell)?;
+        self.familiarity_weight.write_to(cell)?;
+        self.busyness_collator_fine.write_to(cell)?;
+        self.busyness_msgpool_fine.write_to(cell)?;
+        self.busyness_weight.write_to(cell)?;
+        self.candidates_percentile.write_to(cell)?;
+        Ok(())
+    }
+}
+
+impl Deserializable for FastFinalityConfig {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.split_merge_interval.read_from(slice)?;
+        self.collator_range_len.read_from(slice)?;
+        self.lost_collator_timeout.read_from(slice)?;
+        self.mempool_validators_count.read_from(slice)?;
+        self.mempool_rotated_count.read_from(slice)?;
+        if self.mempool_rotated_count > self.mempool_validators_count {
+            fail!(BlockError::InvalidData(
+                "mempool_rotated_count must be less or equal to mempool_validators_count".to_string()))
+        }
+        self.unreliability_fine.read_from(slice)?;
+        self.unreliability_weak_fading.read_from(slice)?;
+        self.unreliability_strong_fading.read_from(slice)?;
+        self.unreliability_max.read_from(slice)?;
+        self.unreliability_weight.read_from(slice)?;
+        self.familiarity_collator_fine.read_from(slice)?;
+        self.familiarity_msgpool_fine.read_from(slice)?;
+        self.familiarity_fading.read_from(slice)?;
+        self.familiarity_max.read_from(slice)?;
+        self.familiarity_weight.read_from(slice)?;
+        self.busyness_collator_fine.read_from(slice)?;
+        self.busyness_msgpool_fine.read_from(slice)?;
+        self.busyness_weight.read_from(slice)?;
+        self.candidates_percentile.read_from(slice)?;
+        Ok(())
+    }
 }

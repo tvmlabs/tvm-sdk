@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 EverX Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,44 +6,508 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
+use std::cmp;
+use std::convert::TryInto;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::fmt::LowerHex;
+use std::fmt::UpperHex;
 use std::fmt::{self};
 use std::marker::PhantomData;
 use std::ops::Deref;
+use std::ops::DerefMut;
 use std::str::FromStr;
+use std::str::{self};
 use std::sync::Arc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use num::bigint::Sign;
 use num::BigInt;
+use num::FromPrimitive;
 use num::One;
 use num::Zero;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::CellType;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
+use smallvec::SmallVec;
 
+use crate::base64_decode_to_slice;
 use crate::define_HashmapE;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentable;
+use crate::sha256_digest;
+use crate::Augmentable;
+use crate::BuilderData;
+use crate::Cell;
+use crate::CellType;
 use crate::Deserializable;
+use crate::HashmapE;
+use crate::HashmapType;
+use crate::IBitstring;
 use crate::Serializable;
+use crate::SliceData;
+use crate::SERDE_OPTS_EMPTY;
 
-#[cfg(test)]
-#[path = "tests/test_types.rs"]
-mod tests;
+pub type Error = anyhow::Error;
+pub type Result<T> = std::result::Result<T, Error>;
+pub type Failure = Option<Error>;
+pub type Status = Result<()>;
+
+#[macro_export]
+macro_rules! error {
+    ($error:literal) => {
+        anyhow::format_err!("{} {}:{}", $error, file!(), line!())
+    };
+    ($error:expr) => {
+        anyhow::Error::from($error)
+    };
+    ($fmt:expr, $($arg:tt)+) => {
+        anyhow::format_err!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())
+    };
+}
+
+#[macro_export]
+macro_rules! fail {
+    ($error:literal) => {
+        return Err(anyhow::format_err!("{} {}:{}", $error, file!(), line!()))
+    };
+    // uncomment to explicit panic for any ExceptionCode
+    // (ExceptionCode::CellUnderflow) => {
+    //     panic!("{}", error!(ExceptionCode::CellUnderflow))
+    // };
+    ($error:expr) => {
+        return Err($crate::error!($error))
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        return Err(anyhow::format_err!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
+    };
+}
+
+#[derive(Clone, Default, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct UInt256([u8; 32]);
+
+impl PartialEq<SliceData> for UInt256 {
+    fn eq(&self, other: &SliceData) -> bool {
+        if other.remaining_bits() == 256 {
+            return self.0 == other.get_bytestring(0).as_slice();
+        }
+        false
+    }
+}
+
+impl PartialEq<SliceData> for &UInt256 {
+    fn eq(&self, other: &SliceData) -> bool {
+        if other.remaining_bits() == 256 {
+            return self.0 == other.get_bytestring(0).as_slice();
+        }
+        false
+    }
+}
+
+impl UInt256 {
+    // hash of default cell
+    // 0x96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7;
+    pub const DEFAULT_CELL_HASH: UInt256 = UInt256([
+        150, 162, 150, 210, 36, 242, 133, 198, 123, 238, 147, 195, 15, 138, 48, 145, 87, 240, 218,
+        163, 93, 197, 184, 126, 65, 11, 120, 99, 10, 9, 207, 199,
+    ]);
+    pub const MAX: UInt256 = UInt256([0xFF; 32]);
+    pub const MIN: UInt256 = UInt256([0; 32]);
+    pub const ZERO: UInt256 = UInt256([0; 32]);
+
+    pub const fn default() -> Self {
+        Self::new()
+    }
+
+    pub const fn new() -> Self {
+        Self::ZERO
+    }
+
+    pub const fn with_array(data: [u8; 32]) -> Self {
+        Self(data)
+    }
+
+    pub fn is_zero(&self) -> bool {
+        for b in &self.0 {
+            if b != &0 {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub const fn as_array(&self) -> &[u8; 32] {
+        &self.0
+    }
+
+    pub const fn as_slice(&self) -> &[u8; 32] {
+        &self.0
+    }
+
+    // Returns solid string like this:
+    // a80b23bfe4d301497f3ce11e753f23e8dec32368945ee279d044dbc1f91ace2a
+    pub fn as_hex_string(&self) -> String {
+        hex::encode(self.0)
+    }
+
+    // TODO: usage should be changed to as_hex_string
+    #[allow(clippy::wrong_self_convention)]
+    pub fn to_hex_string(&self) -> String {
+        self.as_hex_string()
+    }
+
+    pub fn calc_file_hash(bytes: &[u8]) -> Self {
+        Self::calc_sha256(bytes)
+    }
+
+    pub fn calc_sha256(bytes: &[u8]) -> Self {
+        Self(sha256_digest(bytes))
+    }
+
+    pub fn first_u64(&self) -> u64 {
+        u64::from_be_bytes(self.0[0..8].try_into().unwrap())
+    }
+
+    pub fn from_raw(data: Vec<u8>, length: usize) -> Self {
+        assert_eq!(length, 256);
+        let hash: [u8; 32] = data.try_into().unwrap();
+        Self(hash)
+    }
+
+    pub fn from_slice(value: &[u8]) -> Self {
+        match value.try_into() {
+            Ok(hash) => Self(hash),
+            Err(_) => Self::from_le_bytes(value),
+        }
+    }
+
+    pub fn from_be_bytes(value: &[u8]) -> Self {
+        let mut data = [0; 32];
+        let len = cmp::min(value.len(), 32);
+        let offset = 32 - len;
+        (0..len).for_each(|i| data[i + offset] = value[i]);
+        Self(data)
+    }
+
+    pub fn from_le_bytes(value: &[u8]) -> Self {
+        let mut data = [0; 32];
+        let len = cmp::min(value.len(), 32);
+        (0..len).for_each(|i| data[i] = value[i]);
+        Self(data)
+    }
+
+    pub const fn max() -> Self {
+        UInt256::MAX
+    }
+
+    pub fn rand() -> Self {
+        Self((0..32).map(|_| rand::random::<u8>()).collect::<Vec<u8>>().try_into().unwrap())
+    }
+
+    pub fn inner(self) -> [u8; 32] {
+        self.0
+    }
+
+    pub fn into_vec(self) -> Vec<u8> {
+        self.0.to_vec()
+    }
+}
+
+impl From<[u8; 32]> for UInt256 {
+    fn from(data: [u8; 32]) -> Self {
+        UInt256(data)
+    }
+}
+
+impl From<&[u8; 32]> for UInt256 {
+    fn from(data: &[u8; 32]) -> Self {
+        UInt256(*data)
+    }
+}
+
+impl From<&[u8]> for UInt256 {
+    fn from(value: &[u8]) -> Self {
+        Self::from_slice(value)
+    }
+}
+
+impl From<Vec<u8>> for UInt256 {
+    fn from(value: Vec<u8>) -> Self {
+        match value.try_into() {
+            Ok(hash) => Self(hash),
+            Err(value) => UInt256::from_le_bytes(value.as_slice()),
+        }
+    }
+}
+
+impl FromStr for UInt256 {
+    type Err = Error;
+
+    fn from_str(value: &str) -> Result<Self> {
+        let mut result = Self::default();
+        match value.len() {
+            64 => hex::decode_to_slice(value, &mut result.0)?,
+            66 => hex::decode_to_slice(&value[2..], &mut result.0)?,
+            44 => base64_decode_to_slice(value, &mut result.0)?,
+            _ => fail!("invalid account ID string (32 bytes expected), but got string {}", value),
+        }
+        Ok(result)
+    }
+}
+
+impl fmt::Debug for UInt256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        LowerHex::fmt(self, f)
+    }
+}
+
+impl fmt::Display for UInt256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "UInt256[{:X?}]", self.as_slice())
+    }
+}
+
+impl LowerHex for UInt256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if f.alternate() {
+            write!(f, "0x{}", hex::encode(self.0))
+        } else {
+            write!(f, "{}", hex::encode(self.0))
+            // write!(f, "{}...{}", hex::encode(&self.0[..2]),
+            // hex::encode(&self.0[30..32]))
+        }
+    }
+}
+
+impl UpperHex for UInt256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex::encode_upper(self.0))
+    }
+}
+
+impl AsRef<[u8; 32]> for UInt256 {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
+impl AsRef<[u8]> for UInt256 {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+pub type AccountId = SliceData;
+
+impl From<[u8; 32]> for AccountId {
+    fn from(data: [u8; 32]) -> AccountId {
+        SliceData::load_builder(BuilderData::with_raw(SmallVec::from_slice(&data), 256).unwrap())
+            .unwrap()
+    }
+}
+
+impl From<UInt256> for AccountId {
+    fn from(data: UInt256) -> AccountId {
+        SliceData::load_builder(BuilderData::with_raw(SmallVec::from_slice(&data.0), 256).unwrap())
+            .unwrap()
+    }
+}
+
+impl From<&UInt256> for AccountId {
+    fn from(data: &UInt256) -> AccountId {
+        SliceData::load_builder(BuilderData::with_raw(SmallVec::from_slice(&data.0), 256).unwrap())
+            .unwrap()
+    }
+}
+
+impl FromStr for AccountId {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let uint: UInt256 = FromStr::from_str(s)?;
+        Ok(AccountId::from(uint.0))
+    }
+}
+
+// Exceptions *****************************************************************
+
+#[derive(Clone, Copy, Debug, num_derive::FromPrimitive, PartialEq, Eq, thiserror::Error)]
+pub enum ExceptionCode {
+    #[error("normal termination")]
+    NormalTermination = 0,
+    #[error("alternative termination")]
+    AlternativeTermination = 1,
+    #[error("stack underflow")]
+    StackUnderflow = 2,
+    #[error("stack overflow")]
+    StackOverflow = 3,
+    #[error("integer overflow")]
+    IntegerOverflow = 4,
+    #[error("range check error")]
+    RangeCheckError = 5,
+    #[error("invalid opcode")]
+    InvalidOpcode = 6,
+    #[error("type check error")]
+    TypeCheckError = 7,
+    #[error("cell overflow")]
+    CellOverflow = 8,
+    #[error("cell underflow")]
+    CellUnderflow = 9,
+    #[error("dictionaty error")]
+    DictionaryError = 10,
+    #[error("unknown error")]
+    UnknownError = 11,
+    #[error("fatal error")]
+    FatalError = 12,
+    #[error("out of gas")]
+    OutOfGas = 13,
+    #[error("illegal instruction")]
+    IllegalInstruction = 14,
+    #[error("pruned cell")]
+    PrunedCellAccess = 15,
+    #[error("big cell")]
+    BigCellAccess = 16,
+}
+
+// impl fmt::Display for ExceptionCode {
+// fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+// write!(f, "{}", self.message())
+// }
+// }
+
+#[rustfmt::skip]
+impl ExceptionCode {
+/*
+    pub fn message(&self) -> &'static str {
+        match self {
+            ExceptionCode::NormalTermination        => "normal termination",
+            ExceptionCode::AlternativeTermination   => "alternative termination",
+            ExceptionCode::StackUnderflow           => "stack underflow",
+            ExceptionCode::StackOverflow            => "stack overflow",
+            ExceptionCode::IntegerOverflow          => "integer overflow",
+            ExceptionCode::RangeCheckError          => "range check error",
+            ExceptionCode::InvalidOpcode            => "invalid opcode",
+            ExceptionCode::TypeCheckError           => "type check error",
+            ExceptionCode::CellOverflow             => "cell overflow",
+            ExceptionCode::CellUnderflow            => "cell underflow",
+            ExceptionCode::DictionaryError          => "dictionary error",
+            ExceptionCode::UnknownError             => "unknown error",
+            ExceptionCode::FatalError               => "fatal error",
+            ExceptionCode::OutOfGas                 => "out of gas error"
+        }
+    }
+*/
+    pub fn from_usize(number: usize) -> Option<ExceptionCode> {
+        FromPrimitive::from_usize(number)
+    }
+}
+
+pub trait ByteOrderRead {
+    fn read_be_uint(&mut self, bytes: usize) -> std::io::Result<u64>;
+    fn read_le_uint(&mut self, bytes: usize) -> std::io::Result<u64>;
+    fn read_byte(&mut self) -> std::io::Result<u8>;
+    fn read_be_u16(&mut self) -> std::io::Result<u16>;
+    fn read_be_u32(&mut self) -> std::io::Result<u32>;
+    fn read_be_u64(&mut self) -> std::io::Result<u64>;
+    fn read_le_u16(&mut self) -> std::io::Result<u16>;
+    fn read_le_u32(&mut self) -> std::io::Result<u32>;
+    fn read_le_u64(&mut self) -> std::io::Result<u64>;
+    fn read_u256(&mut self) -> std::io::Result<[u8; 32]>;
+}
+
+impl<T: std::io::Read> ByteOrderRead for T {
+    fn read_be_uint(&mut self, bytes: usize) -> std::io::Result<u64> {
+        read_uint(self, bytes, false)
+    }
+
+    fn read_le_uint(&mut self, bytes: usize) -> std::io::Result<u64> {
+        read_uint(self, bytes, true)
+    }
+
+    fn read_byte(&mut self) -> std::io::Result<u8> {
+        self.read_be_uint(1).map(|value| value as u8)
+    }
+
+    fn read_be_u16(&mut self) -> std::io::Result<u16> {
+        self.read_be_uint(2).map(|value| value as u16)
+    }
+
+    fn read_be_u32(&mut self) -> std::io::Result<u32> {
+        self.read_be_uint(4).map(|value| value as u32)
+    }
+
+    fn read_be_u64(&mut self) -> std::io::Result<u64> {
+        self.read_be_uint(8)
+    }
+
+    fn read_le_u16(&mut self) -> std::io::Result<u16> {
+        let mut buf = [0; 2];
+        self.read_exact(&mut buf)?;
+        Ok(u16::from_le_bytes(buf))
+    }
+
+    fn read_le_u32(&mut self) -> std::io::Result<u32> {
+        let mut buf = [0; 4];
+        self.read_exact(&mut buf)?;
+        Ok(u32::from_le_bytes(buf))
+    }
+
+    fn read_le_u64(&mut self) -> std::io::Result<u64> {
+        let mut buf = [0; 8];
+        self.read_exact(&mut buf)?;
+        Ok(u64::from_le_bytes(buf))
+    }
+
+    fn read_u256(&mut self) -> std::io::Result<[u8; 32]> {
+        let mut buf = [0; 32];
+        self.read_exact(&mut buf)?;
+        Ok(buf)
+    }
+}
+
+fn read_uint<T: std::io::Read>(src: &mut T, bytes: usize, le: bool) -> std::io::Result<u64> {
+    match bytes {
+        1 => {
+            let mut buf = [0];
+            src.read_exact(&mut buf)?;
+            Ok(buf[0] as u64)
+        }
+        2 => {
+            let mut buf = [0; 2];
+            src.read_exact(&mut buf)?;
+            if le { Ok(u16::from_le_bytes(buf) as u64) } else { Ok(u16::from_be_bytes(buf) as u64) }
+        }
+        3..=4 => {
+            let mut buf = [0; 4];
+            if le {
+                src.read_exact(&mut buf[0..bytes])?;
+                Ok(u32::from_le_bytes(buf) as u64)
+            } else {
+                src.read_exact(&mut buf[4 - bytes..])?;
+                Ok(u32::from_be_bytes(buf) as u64)
+            }
+        }
+        5..=8 => {
+            let mut buf = [0; 8];
+            if le {
+                src.read_exact(&mut buf[0..bytes])?;
+                Ok(u64::from_le_bytes(buf))
+            } else {
+                src.read_exact(&mut buf[8 - bytes..])?;
+                Ok(u64::from_be_bytes(buf))
+            }
+        }
+        n => Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("too many bytes ({}) to read in u64", n),
+        )),
+    }
+}
+
+pub type Bitmask = u8;
 
 /// var_uint$_ {n:#} len:(#< n) value:(uint (len * 8)) = VarUInteger n;
 
@@ -141,7 +605,7 @@ macro_rules! define_VarIntegerN {
         }
 
         impl FromStr for $varname {
-            type Err = tvm_types::Error;
+            type Err = crate::Error;
 
             fn from_str(string: &str) -> Result<Self> {
                 let result = if let Some(stripped) = string.strip_prefix("0x") {
@@ -234,10 +698,6 @@ macro_rules! define_VarIntegerN {
         pub struct $varname($tt);
 
         impl $varname {
-            pub const fn default() -> Self {
-                $varname(0)
-            }
-
             pub fn new(value: $tt) -> Result<Self> {
                 Self::check_overflow(&value)?;
                 Ok(Self(value))
@@ -345,7 +805,7 @@ macro_rules! define_VarIntegerN {
 
         #[cfg(not(test))]
         impl std::convert::TryFrom<$tt> for $varname {
-            type Error = tvm_types::Error;
+            type Error = crate::Error;
 
             fn try_from(value: $tt) -> Result<Self> {
                 Self::check_overflow(&value)?;
@@ -594,7 +1054,7 @@ impl Grams {
 }
 
 impl FromStr for Grams {
-    type Err = tvm_types::Error;
+    type Err = crate::Error;
 
     fn from_str(string: &str) -> Result<Self> {
         if let Some(stripped) = string.strip_prefix("0x") {
@@ -615,10 +1075,6 @@ macro_rules! define_NumberN_up32bit {
 
         #[allow(dead_code)]
         impl $varname {
-            pub const fn default() -> Self {
-                Self(0)
-            }
-
             pub fn new_checked(value: u32, max_value: u32) -> Result<Self> {
                 if value > max_value {
                     fail!(BlockError::InvalidArg(format!(
@@ -704,7 +1160,7 @@ define_HashmapE! {ExtraCurrencyCollection, 32, VarUInteger32}
 
 impl From<HashmapE> for ExtraCurrencyCollection {
     fn from(other: HashmapE) -> Self {
-        Self(other)
+        Self::with_hashmap(other.data().cloned(), SERDE_OPTS_EMPTY)
     }
 }
 
@@ -745,49 +1201,49 @@ impl From<u32> for Number32 {
 }
 
 impl std::convert::TryFrom<u32> for Number5 {
-    type Error = tvm_types::Error;
+    type Error = crate::Error;
 
-    fn try_from(value: u32) -> tvm_types::Result<Self> {
+    fn try_from(value: u32) -> crate::Result<Self> {
         Self::new(value)
     }
 }
 
 impl std::convert::TryFrom<u32> for Number8 {
-    type Error = tvm_types::Error;
+    type Error = crate::Error;
 
-    fn try_from(value: u32) -> tvm_types::Result<Self> {
+    fn try_from(value: u32) -> crate::Result<Self> {
         Self::new(value)
     }
 }
 
 impl std::convert::TryFrom<u32> for Number9 {
-    type Error = tvm_types::Error;
+    type Error = crate::Error;
 
-    fn try_from(value: u32) -> tvm_types::Result<Self> {
+    fn try_from(value: u32) -> crate::Result<Self> {
         Self::new(value)
     }
 }
 
 impl std::convert::TryFrom<u32> for Number12 {
-    type Error = tvm_types::Error;
+    type Error = crate::Error;
 
-    fn try_from(value: u32) -> tvm_types::Result<Self> {
+    fn try_from(value: u32) -> crate::Result<Self> {
         Self::new(value)
     }
 }
 
 impl std::convert::TryFrom<u32> for Number13 {
-    type Error = tvm_types::Error;
+    type Error = crate::Error;
 
-    fn try_from(value: u32) -> tvm_types::Result<Self> {
+    fn try_from(value: u32) -> crate::Result<Self> {
         Self::new(value)
     }
 }
 
 impl std::convert::TryFrom<u32> for Number16 {
-    type Error = tvm_types::Error;
+    type Error = crate::Error;
 
-    fn try_from(value: u32) -> tvm_types::Result<Self> {
+    fn try_from(value: u32) -> crate::Result<Self> {
         Self::new(value)
     }
 }
@@ -813,14 +1269,6 @@ impl Augmentable for CurrencyCollection {
 }
 
 impl CurrencyCollection {
-    pub const fn default() -> Self {
-        Self::new()
-    }
-
-    pub const fn new() -> Self {
-        Self::from_grams(Grams::zero())
-    }
-
     pub fn get_other(&self, key: u32) -> Result<Option<VarUInteger32>> {
         self.other.get(&key)
     }
@@ -836,14 +1284,14 @@ impl CurrencyCollection {
     }
 
     pub fn other_as_hashmap(&self) -> HashmapE {
-        self.other.0.clone()
+        self.other.as_hashmap()
     }
 
     pub fn with_grams(grams: u64) -> Self {
         Self::from_grams(Grams::from(grams))
     }
 
-    pub const fn from_grams(grams: Grams) -> Self {
+    pub fn from_grams(grams: Grams) -> Self {
         CurrencyCollection { grams, other: ExtraCurrencyCollection::default() }
     }
 
@@ -1082,15 +1530,29 @@ impl<X: Deserializable + Serializable> Deref for InRefValue<X> {
     }
 }
 
+impl<X: Deserializable + Serializable> DerefMut for InRefValue<X> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl<X: Deserializable + Serializable> Deserializable for InRefValue<X> {
     fn construct_from(slice: &mut SliceData) -> Result<Self> {
         Ok(Self(X::construct_from_reference(slice)?))
+    }
+
+    fn construct_from_with_opts(slice: &mut SliceData, opts: u8) -> Result<Self> {
+        Ok(Self(X::construct_from_cell_with_opts(slice.checked_drain_reference()?, opts)?))
     }
 }
 
 impl<X: Deserializable + Serializable> Serializable for InRefValue<X> {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.0.serialize()?)?;
+        self.0.serialize()?.write_to(cell)
+    }
+
+    fn write_with_opts(&self, cell: &mut BuilderData, opts: u8) -> Result<()> {
+        cell.checked_append_reference(self.0.serialize_with_opts(opts)?)?;
         Ok(())
     }
 }
@@ -1107,264 +1569,10 @@ impl<X: Serializable> Serializable for Arc<X> {
     }
 }
 
-#[macro_export]
-macro_rules! define_HashmapE {
-    ($varname:ident, $bit_len:expr, $x_type:ty) => {
-        #[derive(PartialEq, Clone, Debug, Eq)]
-        pub struct $varname(HashmapE);
-
-        #[allow(dead_code)]
-        impl $varname {
-            /// default const constructor
-            pub const fn default() -> Self {
-                Self::new()
-            }
-
-            /// default const constructor
-            pub const fn new() -> Self {
-                Self(HashmapE::with_hashmap($bit_len, None))
-            }
-
-            /// constructor with HashmapE root
-            pub const fn with_hashmap(data: Option<Cell>) -> Self {
-                Self(HashmapE::with_hashmap($bit_len, data))
-            }
-
-            pub fn root(&self) -> Option<&Cell> {
-                self.0.data()
-            }
-
-            pub fn inner(self) -> HashmapE {
-                self.0
-            }
-
-            /// Used for not empty Hashmaps
-            pub fn read_hashmap_root(&mut self, slice: &mut SliceData) -> Result<()> {
-                self.0.read_hashmap_root(slice)
-            }
-
-            /// Used for not empty Hashmaps
-            pub fn write_hashmap_root(&self, cell: &mut BuilderData) -> Result<()> {
-                self.0.write_hashmap_root(cell)
-            }
-
-            /// Return true if no items
-            pub fn is_empty(&self) -> bool {
-                self.0.is_empty()
-            }
-
-            /// Calculates length
-            pub fn len(&self) -> Result<usize> {
-                self.0.len()
-            }
-
-            pub fn count(&self, max: usize) -> Result<usize> {
-                self.0.count(max)
-            }
-
-            pub fn count_cells(&self, max: usize) -> Result<usize> {
-                self.0.count_cells(max)
-            }
-
-            /// iterates items
-            pub fn iterate<F>(&self, mut p: F) -> Result<bool>
-            where
-                F: FnMut($x_type) -> Result<bool>,
-            {
-                self.0.iterate_slices(|_, ref mut slice| p(<$x_type>::construct_from(slice)?))
-            }
-
-            /// iterates items as raw slices
-            pub fn iterate_slices<F>(&self, mut p: F) -> Result<bool>
-            where
-                F: FnMut(SliceData) -> Result<bool>,
-            {
-                self.0.iterate_slices(|_, slice| p(slice))
-            }
-
-            /// iterates keys
-            pub fn iterate_keys<K, F>(&self, mut p: F) -> Result<bool>
-            where
-                K: Default + Deserializable,
-                F: FnMut(K) -> Result<bool>,
-            {
-                self.0.iterate_slices(|mut key, _| p(K::construct_from(&mut key)?))
-            }
-
-            /// iterates items with keys
-            pub fn iterate_with_keys<K, F>(&self, mut p: F) -> Result<bool>
-            where
-                K: Default + Deserializable,
-                F: FnMut(K, $x_type) -> Result<bool>,
-            {
-                self.0.iterate_slices(|ref mut key, ref mut slice| {
-                    p(K::construct_from(key)?, <$x_type>::construct_from(slice)?)
-                })
-            }
-
-            /// iterates items as slices with keys
-            pub fn iterate_slices_with_keys<F>(&self, mut p: F) -> Result<bool>
-            where
-                F: FnMut(SliceData, SliceData) -> Result<bool>,
-            {
-                self.0.iterate_slices(|key, slice| p(key, slice))
-            }
-
-            pub fn set<K: Serializable>(&mut self, key: &K, value: &$x_type) -> Result<()> {
-                let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
-                let value = value.write_to_new_cell()?;
-                self.0.set_builder(key, &value)?;
-                Ok(())
-            }
-
-            pub fn setref<K: Serializable>(&mut self, key: &K, value: &Cell) -> Result<()> {
-                let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
-                self.0.setref(key, value)?;
-                Ok(())
-            }
-
-            pub fn add_key<K: Serializable>(&mut self, key: &K) -> Result<()> {
-                let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
-                let value = BuilderData::default();
-                self.0.set_builder(key, &value)?;
-                Ok(())
-            }
-
-            pub fn get<K: Serializable>(&self, key: &K) -> Result<Option<$x_type>> {
-                self.get_as_slice(key)?
-                    .map(|ref mut slice| <$x_type>::construct_from(slice))
-                    .transpose()
-            }
-
-            pub fn get_as_slice<K: Serializable>(&self, key: &K) -> Result<Option<SliceData>> {
-                let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
-                self.get_raw(key)
-            }
-
-            pub fn get_raw(&self, key: SliceData) -> Result<Option<SliceData>> {
-                self.0.get(key)
-            }
-
-            pub fn remove<K: Serializable>(&mut self, key: &K) -> Result<bool> {
-                let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
-                let leaf = self.0.remove(key)?;
-                Ok(leaf.is_some())
-            }
-
-            pub fn check_key<K: Serializable>(&self, key: &K) -> Result<bool> {
-                let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
-                self.0.get(key).map(|value| value.is_some())
-            }
-
-            pub fn export_vector(&self) -> Result<Vec<$x_type>> {
-                let mut vec = Vec::new();
-                self.0.iterate_slices(|_, ref mut slice| {
-                    vec.push(<$x_type>::construct_from(slice)?);
-                    Ok(true)
-                })?;
-                Ok(vec)
-            }
-
-            pub fn merge(&mut self, other: &Self, split_key: &SliceData) -> Result<()> {
-                self.0.merge(&other.0, split_key)
-            }
-
-            pub fn split(&self, split_key: &SliceData) -> Result<(Self, Self)> {
-                self.0.split(split_key).map(|(left, right)| (Self(left), Self(right)))
-            }
-
-            pub fn combine_with(&mut self, other: &Self) -> Result<bool> {
-                self.0.combine_with(&other.0)
-            }
-
-            pub fn scan_diff<K, F>(&self, other: &Self, mut op: F) -> Result<bool>
-            where
-                K: Deserializable,
-                F: FnMut(K, Option<$x_type>, Option<$x_type>) -> Result<bool>,
-            {
-                self.0.scan_diff(&other.0, |mut key, value1, value2| {
-                    let key = K::construct_from(&mut key)?;
-                    let value1 =
-                        value1.map(|ref mut slice| <$x_type>::construct_from(slice)).transpose()?;
-                    let value2 =
-                        value2.map(|ref mut slice| <$x_type>::construct_from(slice)).transpose()?;
-                    op(key, value1, value2)
-                })
-            }
-
-            pub fn filter<K, F>(&mut self, mut op: F) -> Result<()>
-            where
-                K: Deserializable,
-                K: Serializable,
-                F: FnMut(&K, &$x_type) -> Result<bool>,
-            {
-                let mut other_tree = $varname(HashmapE::with_bit_len($bit_len));
-                self.iterate_with_keys(&mut |key: K, value| {
-                    if op(&key, &value)? {
-                        other_tree.set(&key, &value)?;
-                    };
-                    return Ok(true);
-                })?;
-                *self = other_tree;
-                Ok(())
-            }
-
-            pub fn export_keys<K: Deserializable>(&self) -> Result<Vec<K>> {
-                let mut keys = Vec::new();
-                self.iterate_keys(|key: K| {
-                    keys.push(key);
-                    Ok(true)
-                })?;
-                Ok(keys)
-            }
-
-            pub fn find_leaf<K: Deserializable + Serializable>(
-                &self,
-                key: &K,
-                next: bool,
-                eq: bool,
-                signed_int: bool,
-            ) -> Result<Option<(K, $x_type)>> {
-                let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
-                if let Some((k, mut v)) = self.0.find_leaf(key, next, eq, signed_int, &mut 0)? {
-                    // BuilderData, SliceData
-                    let key = K::construct_from_cell(k.into_cell()?)?;
-                    let value = <$x_type>::construct_from(&mut v)?;
-                    Ok(Some((key, value)))
-                } else {
-                    Ok(None)
-                }
-            }
-        }
-
-        impl Default for $varname {
-            fn default() -> Self {
-                $varname(HashmapE::with_bit_len($bit_len))
-            }
-        }
-
-        impl Serializable for $varname {
-            fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-                self.0.write_to(cell)
-            }
-        }
-
-        impl Deserializable for $varname {
-            fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
-                self.0.read_from(slice)
-            }
-        }
-    };
-}
-
 #[derive(PartialEq, Copy, Clone, Debug, Eq, Default, Hash)]
 pub struct UnixTime32(u32);
 
 impl UnixTime32 {
-    pub const fn default() -> Self {
-        Self(0)
-    }
-
     pub const fn new(value: u32) -> Self {
         Self(value)
     }
@@ -1409,35 +1617,35 @@ impl Display for UnixTime32 {
 }
 
 #[derive(Debug, Default, Clone, Eq)]
-pub struct ChildCell<T: Default + Serializable + Deserializable> {
+pub struct ChildCell<T: Serializable + Deserializable> {
     cell: Option<Cell>,
+    opts: u8,
     phantom: PhantomData<T>,
 }
 
-impl<T: Default + Serializable + Deserializable + Clone> ChildCell<T> {
+impl<T: Serializable + Deserializable> ChildCell<T> {
+    pub fn with_serde_opts(opts: u8) -> Self {
+        Self { opts, ..Default::default() }
+    }
+
     pub fn with_cell(cell: Cell) -> Self {
-        Self { cell: Some(cell), phantom: PhantomData }
+        Self::with_cell_and_opts(cell, crate::SERDE_OPTS_EMPTY)
+    }
+
+    pub fn with_cell_and_opts(cell: Cell, opts: u8) -> Self {
+        Self { cell: Some(cell), opts, phantom: PhantomData }
     }
 
     pub fn with_struct(s: &T) -> Result<Self> {
-        Ok(ChildCell { cell: Some(s.serialize()?), phantom: PhantomData })
+        Ok(Self::with_cell_and_opts(s.serialize()?, crate::SERDE_OPTS_EMPTY))
+    }
+
+    pub fn with_struct_and_opts(s: &T, opts: u8) -> Result<Self> {
+        Ok(Self::with_cell_and_opts(s.serialize_with_opts(opts)?, opts))
     }
 
     pub fn write_struct(&mut self, s: &T) -> Result<()> {
-        self.cell = Some(s.serialize()?);
-        Ok(())
-    }
-
-    pub fn write_maybe_to(cell: &mut BuilderData, s: Option<&Self>) -> Result<()> {
-        match s {
-            Some(s) => {
-                cell.append_bit_one()?;
-                cell.checked_append_reference(s.cell())?;
-            }
-            None => {
-                cell.append_bit_zero()?;
-            }
-        }
+        self.cell = Some(s.serialize_with_opts(self.opts)?);
         Ok(())
     }
 
@@ -1447,57 +1655,40 @@ impl<T: Default + Serializable + Deserializable + Clone> ChildCell<T> {
                 if cell.cell_type() == CellType::PrunedBranch {
                     fail!(BlockError::PrunedCellAccess(std::any::type_name::<T>().into()))
                 }
-                T::construct_from_cell(cell)
+                T::construct_from_cell_with_opts(cell, self.opts)
             }
             None => Ok(T::default()),
-        }
-    }
-
-    pub fn read_struct_from_option(opt: Option<&Self>) -> Result<Option<T>> {
-        if let Some(s) = opt {
-            if let Some(cell) = s.cell.as_ref() {
-                if cell.cell_type() == CellType::PrunedBranch {
-                    fail!(BlockError::PrunedCellAccess(std::any::type_name::<T>().into()))
-                }
-                return Ok(Some(T::construct_from_cell(cell.clone())?));
-            }
-        }
-        Ok(None)
-    }
-
-    pub fn read_from_reference(&mut self, slice: &mut SliceData) -> Result<()> {
-        self.cell = Some(slice.checked_drain_reference()?);
-        Ok(())
-    }
-
-    pub fn construct_from_reference(slice: &mut SliceData) -> Result<Self> {
-        let cell = slice.checked_drain_reference()?;
-        Ok(Self::with_cell(cell))
-    }
-
-    pub fn construct_maybe_from_reference(slice: &mut SliceData) -> Result<Option<Self>> {
-        match slice.get_next_bit()? {
-            true => Ok(Some(Self::with_cell(slice.checked_drain_reference()?))),
-            false => Ok(None),
         }
     }
 
     pub fn cell(&self) -> Cell {
         match self.cell.as_ref() {
             Some(cell) => cell.clone(),
-            None => T::default().serialize().unwrap_or_default(),
+            None => T::default().serialize_with_opts(self.opts).unwrap_or_default(),
         }
+    }
+
+    pub fn serde_opts(&self) -> u8 {
+        self.opts
     }
 
     pub fn set_cell(&mut self, cell: Cell) {
         self.cell = Some(cell);
     }
 
+    pub fn set_options(&mut self, opts: u8) {
+        self.opts = opts;
+    }
+
     pub fn hash(&self) -> UInt256 {
         match self.cell.as_ref() {
             Some(cell) => cell.repr_hash(),
-            None => T::default().serialize().unwrap_or_default().repr_hash(),
+            None => T::default().serialize_with_opts(self.opts).unwrap_or_default().repr_hash(),
         }
+    }
+
+    pub fn empty(&self) -> bool {
+        self.cell.is_none()
     }
 }
 
@@ -1509,9 +1700,44 @@ impl<T: Default + Serializable + Deserializable> PartialEq for ChildCell<T> {
         match (self.cell.as_ref(), other.cell.as_ref()) {
             (Some(cell), Some(other)) => cell.eq(other),
             (None, Some(cell)) | (Some(cell), None) => {
-                cell.eq(&T::default().serialize().unwrap_or_default())
+                cell.eq(&T::default().serialize_with_opts(self.opts).unwrap_or_default())
             }
             (None, None) => true,
         }
     }
 }
+
+impl<T: Serializable + Deserializable> Serializable for ChildCell<T> {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        if let Some(child_cell) = &self.cell {
+            child_cell.write_to(cell)?;
+        } else {
+            T::default().serialize_with_opts(self.opts)?.write_to(cell)?;
+        }
+        Ok(())
+    }
+}
+
+impl<T: Serializable + Deserializable> Deserializable for ChildCell<T> {
+    fn construct_from_with_opts(slice: &mut SliceData, opts: u8) -> Result<Self> {
+        Ok(Self::with_cell_and_opts(slice.checked_drain_reference()?, opts))
+    }
+
+    fn read_from_with_opts(&mut self, slice: &mut SliceData, opts: u8) -> Result<()> {
+        *self = Self::construct_from_with_opts(slice, opts)?;
+        Ok(())
+    }
+
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        *self = Self::construct_from_with_opts(slice, SERDE_OPTS_EMPTY)?;
+        Ok(())
+    }
+
+    fn construct_from(slice: &mut SliceData) -> Result<Self> {
+        Self::construct_from_with_opts(slice, SERDE_OPTS_EMPTY)
+    }
+}
+
+#[cfg(test)]
+#[path = "tests/test_types.rs"]
+mod tests;

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 EverX. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -6,11 +6,16 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific TON DEV software governing permissions and
+// See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
 
 use super::*;
+use crate::ed25519_generate_private_key;
+use crate::read_single_root_boc;
 use crate::write_read_and_assert;
+use crate::Ed25519KeyOption;
+use crate::SigPubKey;
+use crate::ED25519_SIGNATURE_LENGTH;
 
 #[test]
 fn test_serialize_many_times() {
@@ -296,7 +301,7 @@ fn test_check_message_output() {
         dst: c4_:5:3737373737373737373737373737373737373737373737373737373737373737}, \
         init: StateInit { split_depth: Some(Number5(23)), special: Some(TickTock { tick: false, tock: true }), \
         code: Some(7a0b957a15e93cca3ce96ccb4aecf275a3718a263c8aeca2ab14fe6e1e62172c), data: None, \
-        library: StateInitLib(HashmapE { bit_len: 256, data: Some(c39760fbba54774b6c7fa76bfd46d6fb89d1fe0b19570bef3c4d08decc8b4566) }) }, \
+        library: StateInitLib(HashmapE { bit_len: 256, data: Some(c39760fbba54774b6c7fa76bfd46d6fb89d1fe0b19570bef3c4d08decc8b4566) }, 0) }, \
         body: 5555}"
     );
 }
@@ -441,4 +446,105 @@ fn test_msg_address_int_invalid() {
     println!("{:x}", s);
     MsgAddressInt::construct_from(&mut s)
         .expect_err("MsgAddressInt should not be deserialized from None");
+}
+
+fn create_rnd_external_message() -> (UInt256, CommonMessage) {
+    let mut data: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect::<Vec<u8>>();
+    data.push(0x80);
+    let src = MsgAddressExt::with_extern(SliceData::new(data)).unwrap();
+    let dst = MsgAddressInt::with_standart(None, -1, AccountId::from(UInt256::rand())).unwrap();
+    let mut hdr = ExternalInboundMessageHeader::new(src, dst);
+    hdr.import_fee = 10.into();
+    let msg = Message::with_ext_in_header(hdr);
+    (msg.hash().unwrap(), CommonMessage::Std(msg))
+}
+
+#[test]
+fn test_msg_pack() -> Result<()> {
+    let mut msg_pack = MsgPack::default();
+    msg_pack.info.seqno = 123;
+    msg_pack.info.shard = ShardIdent::with_tagged_prefix(0, 0x4000_0000_0000_0000)?;
+    msg_pack.info.round = 182943412343;
+    msg_pack.info.gen_utime_ms = 1234567890;
+    msg_pack.info.prev = UInt256::rand();
+    msg_pack.info.prev_2 = Some(UInt256::rand());
+    msg_pack.info.mc_block = 1234;
+    for _ in 0..128 {
+        let (hash, msg) = create_rnd_external_message();
+        msg_pack.messages.set(&hash, &InRefValue::new(msg))?;
+    }
+    write_read_and_assert(msg_pack);
+
+    let mut msg_pack = MsgPack::default();
+    msg_pack.info.seqno = 123;
+    msg_pack.info.shard = ShardIdent::with_tagged_prefix(0, 0x4000_0000_0000_0000)?;
+    msg_pack.info.round = 18294345784573;
+    msg_pack.info.gen_utime_ms = 1234567890;
+    msg_pack.info.prev = UInt256::rand();
+    msg_pack.info.mc_block = 1234;
+    let msg_pack = write_read_and_assert(msg_pack);
+    let msg_pack_boc = msg_pack.write_to_bytes()?;
+
+    let mut signatures = MsgPackSignatures::default();
+    signatures.set(&1_u16, &CryptoSignature::from_bytes(&[1; ED25519_SIGNATURE_LENGTH])?)?;
+    signatures.set(&5_u16, &CryptoSignature::from_bytes(&[5; ED25519_SIGNATURE_LENGTH])?)?;
+    signatures.set(&25_u16, &CryptoSignature::from_bytes(&[25; ED25519_SIGNATURE_LENGTH])?)?;
+
+    let msg_pack_root = read_single_root_boc(msg_pack_boc)?;
+
+    let proof = MsgPackProof::new(&msg_pack_root, signatures)?;
+
+    let proof = write_read_and_assert(proof);
+
+    assert_eq!(proof.virtualize()?.info, msg_pack.info);
+
+    Ok(())
+}
+
+#[test]
+fn test_msg_pack_proof() -> Result<()> {
+    let mut msg_pack = MsgPack::default();
+    msg_pack.info.seqno = 123;
+    msg_pack.info.shard = ShardIdent::with_tagged_prefix(0, 0x4000_0000_0000_0000)?;
+    msg_pack.info.round = 182943412343;
+    msg_pack.info.gen_utime_ms = 1234567890;
+    msg_pack.info.prev = UInt256::rand();
+    msg_pack.info.prev_2 = Some(UInt256::rand());
+    msg_pack.info.mc_block = 1234;
+    for _ in 0..128 {
+        let (hash, msg) = create_rnd_external_message();
+        msg_pack.messages.set(&hash, &InRefValue::new(msg))?;
+    }
+
+    let mut validators = vec![];
+    let mut secret_keys = vec![];
+    for _ in 0..20 {
+        let secret_key = ed25519_generate_private_key()?;
+        let public_key = Ed25519KeyOption::from_private_key(secret_key.as_bytes()).unwrap();
+        secret_keys.push(secret_key);
+        let vd = ValidatorDescr {
+            public_key: SigPubKey::from_bytes(public_key.pub_key()?)?,
+            ..Default::default()
+        };
+        validators.push(vd);
+    }
+
+    let msg_pack_root = msg_pack.write_to_new_cell()?.into_cell()?;
+    let mut signatures = MsgPackSignatures::default();
+    for i in [1_u16, 5, 15] {
+        signatures.set(
+            &i,
+            &CryptoSignature::from_bytes(
+                &secret_keys[i as usize].sign(msg_pack_root.repr_hash().as_slice()),
+            )?,
+        )?;
+    }
+
+    let proof = MsgPackProof::new(&msg_pack_root, signatures)?;
+
+    let proof = write_read_and_assert(proof);
+
+    proof.check(123, &msg_pack_root.repr_hash(), &validators)?;
+
+    Ok(())
 }
