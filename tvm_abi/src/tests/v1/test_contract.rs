@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -208,7 +208,7 @@ fn print_function_singnatures() {
 
     let functions = contract.functions();
 
-    for function in functions.values() {
+    for (_, function) in functions {
         println!("{}", function.get_function_signature());
         let id = function.get_function_id();
         println!("{:X?}\n", id);
@@ -218,7 +218,7 @@ fn print_function_singnatures() {
 
     let events = contract.events();
 
-    for event in events.values() {
+    for (_, event) in events {
         println!("{}", event.get_function_signature());
         let id = event.get_function_id();
         println!("{:X?}\n", id);

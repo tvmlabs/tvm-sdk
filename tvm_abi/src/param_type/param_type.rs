@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 
 use std::fmt;
 
-use tvm_types::error;
-use tvm_types::Result;
+use tvm_block::error;
+use tvm_block::Result;
 
 use crate::contract::AbiVersion;
 use crate::contract::ABI_VERSION_1_0;
@@ -47,7 +47,7 @@ pub enum ParamType {
     Cell,
     /// hashmap - values dictionary
     Map(Box<ParamType>, Box<ParamType>),
-    /// TON message address
+    /// message address
     Address,
     /// byte array
     Bytes,

@@ -3987,16 +3987,18 @@ name = "tvm_abi"
 version = "2.0.1"
 dependencies = [
  "anyhow",
+ "byteorder",
  "chrono",
  "failure",
  "hex",
  "num-bigint",
  "num-traits",
+ "pretty_assertions",
  "serde",
+ "serde_derive",
  "serde_json",
  "thiserror",
  "tvm_block",
- "tvm_types",
 ]
 
 [[package]]
