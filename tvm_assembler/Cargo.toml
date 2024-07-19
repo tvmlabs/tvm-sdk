@@ -19,7 +19,7 @@ num-traits.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 #
-tvm_types.workspace = true
+tvm_block.workspace = true
 tvm_vm.workspace = true
 
 [features]

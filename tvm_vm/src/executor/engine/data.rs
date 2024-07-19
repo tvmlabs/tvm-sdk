@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,8 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::fail;
-use tvm_types::GasConsumer;
+use tvm_block::fail;
+use tvm_block::GasConsumer;
 
 use crate::executor::engine::Engine;
 use crate::executor::microcode::BUILDER;

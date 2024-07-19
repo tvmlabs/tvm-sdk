@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -81,8 +81,8 @@ mod test_bitsize {
 
 mod test_minus_2_pow_256 {
 
-    use tvm_types::types::ExceptionCode;
-    use tvm_types::Result;
+    use tvm_block::types::ExceptionCode;
+    use tvm_block::Result;
 
     use crate::stack::integer::behavior::Signaling;
     use crate::stack::integer::IntegerData;

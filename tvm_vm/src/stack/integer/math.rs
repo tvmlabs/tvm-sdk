@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 use std::ops::AddAssign;
 
 use num_traits::Zero;
-use tvm_types::Result;
-use tvm_types::Status;
+use tvm_block::Result;
+use tvm_block::Status;
 
 use crate::stack::integer::behavior::OperationBehavior;
 use crate::stack::integer::utils::binary_op;

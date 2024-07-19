@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -15,20 +15,21 @@ use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use tvm_block::error;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::CellType;
 use tvm_block::Deserializable;
+use tvm_block::Error;
+use tvm_block::ExceptionCode;
+use tvm_block::GasConsumer;
 use tvm_block::GlobalCapabilities;
+use tvm_block::HashmapE;
+use tvm_block::IBitstring;
+use tvm_block::Result;
 use tvm_block::ShardAccount;
-use tvm_types::error;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::CellType;
-use tvm_types::ExceptionCode;
-use tvm_types::GasConsumer;
-use tvm_types::HashmapE;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::UInt256;
+use tvm_block::SliceData;
+use tvm_block::UInt256;
 
 use crate::error::tvm_exception_full;
 use crate::error::update_error_description;
@@ -104,6 +105,7 @@ pub struct Engine {
     pub(in crate::executor) libraries: Vec<HashmapE>, // 256 bit dictionaries
     pub(in crate::executor) index_provider: Option<Arc<dyn IndexProvider>>,
     pub(in crate::executor) modifiers: BehaviorModifiers,
+    pub(in crate::executor) checked_signatures_count: usize,
     // SliceData::load_cell() is faster than trying to cache SliceData for each
     // visited cell with HashMap<UInt256, SliceData>
     visited_cells: HashSet<UInt256>,
@@ -265,6 +267,7 @@ impl Engine {
             modifiers: BehaviorModifiers,
             #[cfg(feature = "signature_no_check")]
             modifiers: BehaviorModifiers::default(),
+            checked_signatures_count: 0,
             visited_cells: HashSet::new(),
             visited_exotic_cells: HashMap::new(),
             cstate: CommittedState::new_empty(),
@@ -1512,7 +1515,7 @@ impl Engine {
 
     // raises the exception and tries to dispatch it via c(2).
     // If c(2) is not set, returns that exception, otherwise, returns None
-    fn raise_exception(&mut self, err: tvm_types::Error) -> Status {
+    fn raise_exception(&mut self, err: Error) -> Status {
         let exception = match tvm_exception_full(&err) {
             Some(exception) => exception,
             None => {
@@ -1555,7 +1558,7 @@ impl Engine {
 
     // raises the exception and tries to dispatch it via c(2).
     // If c(2) is not set, returns that exception, otherwise, returns None
-    fn raise_exception_bugfix0(&mut self, err: tvm_types::Error) -> Result<Option<i32>> {
+    fn raise_exception_bugfix0(&mut self, err: Error) -> Result<Option<i32>> {
         let exception = match tvm_exception_full(&err) {
             Some(exception) => exception,
             None => {

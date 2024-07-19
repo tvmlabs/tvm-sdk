@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -19,26 +19,23 @@ use std::sync::Arc;
 use integer::serialization::Encoding;
 use integer::serialization::SignedIntegerBigEndianEncoding;
 use serialization::Deserializer;
-use tvm_types::error;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::CellType;
-use tvm_types::ExceptionCode;
-use tvm_types::GasConsumer;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::MAX_DATA_BITS;
-use tvm_types::MAX_REFERENCES_COUNT;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::CellType;
+use tvm_block::ExceptionCode;
+use tvm_block::GasConsumer;
+use tvm_block::HashmapE;
+use tvm_block::HashmapType;
+use tvm_block::IBitstring;
+use tvm_block::Result;
+use tvm_block::SliceData;
+use tvm_block::MAX_DATA_BITS;
+use tvm_block::MAX_REFERENCES_COUNT;
 
 use self::continuation::ContinuationData;
 use self::integer::IntegerData;
 use self::savelist::SaveList;
-use crate::error::TvmError;
 use crate::executor::gas::gas_state::Gas;
-use crate::types::Exception;
 use crate::types::ResultMut;
 use crate::types::ResultOpt;
 use crate::types::ResultRef;
@@ -300,9 +297,7 @@ fn items_deserialize(
             let Some(item) = item else { break };
             items.push(item);
         }
-        let Some(list_item) = list.pop() else {
-            return Ok(items);
-        };
+        let Some(list_item) = list.pop() else { return Ok(items) };
         let item = match list_item {
             DeserializeItem::Items(next_length, next_slice) => {
                 items_stack.push((items, length, slice));

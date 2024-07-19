@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,11 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::error;
-use tvm_types::ExceptionCode;
-use tvm_types::Result;
+use tvm_block::ExceptionCode;
+use tvm_block::Result;
 
-use crate::error::TvmError;
 use crate::stack::integer::serialization::common::calc_excess_bits;
 use crate::stack::integer::serialization::common::extend_buffer_be;
 use crate::stack::integer::serialization::Encoding;
@@ -21,7 +19,6 @@ use crate::stack::integer::IntegerData;
 use crate::stack::serialization::Deserializer;
 use crate::stack::serialization::Serializer;
 use crate::stack::BuilderData;
-use crate::types::Exception;
 
 pub struct UnsignedIntegerBigEndianEncoding {
     length_in_bits: usize,

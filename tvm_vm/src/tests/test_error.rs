@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,7 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::fail;
+use tvm_block::error;
+use tvm_block::fail;
 
 use super::*;
 
@@ -35,12 +36,7 @@ fn test_update_error() {
     let err = update_error_description(err, |d| format!("additional: {}", d));
     println!("{:?}", err);
     assert_eq!(tvm_exception_code(&err).unwrap(), ExceptionCode::RangeCheckError);
-
-    let Ok(TvmError::TvmExceptionFull(_, ref description)) = err.downcast::<TvmError>() else {
-        unreachable!("wrong TvmError enum type");
-    };
-
-    assert!(description.contains("additional: "));
+    assert!(err.to_string().contains("additional: "));
 
     // TODO: make fail! more informative
     // let err = || -> Result<()> { fail!(ExceptionCode::RangeCheckError, "lost

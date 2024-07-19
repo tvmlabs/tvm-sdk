@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,14 +9,14 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_block::types::UInt256;
+use tvm_block::Cell;
 use tvm_block::CurrencyCollection;
 use tvm_block::GlobalCapabilities;
-use tvm_types::types::UInt256;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::Sha256;
-use tvm_types::SliceData;
+use tvm_block::HashmapE;
+use tvm_block::HashmapType;
+use tvm_block::Sha256;
+use tvm_block::SliceData;
 
 use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -11,10 +11,9 @@
 
 use std::ops::Range;
 
+use tvm_block::fail;
+use tvm_block::ExceptionCode;
 use tvm_block::GlobalCapabilities;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
 use crate::executor::continuation::callx;

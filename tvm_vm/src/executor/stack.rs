@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -11,12 +11,10 @@
 
 use std::cmp;
 
+use tvm_block::fail;
+use tvm_block::ExceptionCode;
 use tvm_block::GlobalCapabilities;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::ExceptionCode;
 
-use crate::error::TvmError;
 use crate::executor::engine::data::convert;
 use crate::executor::engine::storage::copy_to_var;
 use crate::executor::engine::storage::fetch_reference;
@@ -38,7 +36,6 @@ use crate::stack::integer::behavior::Signaling;
 use crate::stack::integer::IntegerData;
 use crate::stack::savelist::SaveList;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
 
 // Stack manipulation *********************************************************
@@ -275,7 +272,7 @@ pub(super) fn execute_pu2xc(engine: &mut Engine) -> Status {
     let ra = engine.cmd.sregs3().ra;
     let rb = engine.cmd.sregs3().rb;
     let rc = engine.cmd.sregs3().rc;
-    if engine.cc.stack.depth() + 1 < cmp::max(rc, cmp::max(ra + 2, rb + 1)) {
+    if engine.cc.stack.depth() + 1 < rc.max(cmp::max(ra + 2, rb + 1)) {
         return err!(ExceptionCode::StackUnderflow);
     }
     engine.cc.stack.push_copy(ra)?;

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2024 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -12,13 +12,11 @@
 use std::cmp::Ordering;
 use std::mem;
 
-use tvm_types::error;
-use tvm_types::types::Bitmask;
-use tvm_types::types::ExceptionCode;
-use tvm_types::Result;
+use tvm_block::Bitmask;
+use tvm_block::ExceptionCode;
+use tvm_block::Result;
 
 use crate::error::tvm_exception_code;
-use crate::error::TvmError;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
@@ -33,7 +31,6 @@ use crate::stack::integer::utils::process_double_result;
 use crate::stack::integer::utils::unary_op;
 use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
-use crate::types::Exception;
 use crate::types::Status;
 
 // Common definitions *********************************************************
