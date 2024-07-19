@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -12,13 +12,13 @@
 mod tokenize_tests {
     use std::collections::BTreeMap;
 
+    use tvm_block::AccountId;
+    use tvm_block::BuilderData;
+    use tvm_block::Cell;
     use tvm_block::Grams;
     use tvm_block::MsgAddress;
-    use tvm_types::AccountId;
-    use tvm_types::BuilderData;
-    use tvm_types::Cell;
-    use tvm_types::SliceData;
-    use tvm_types::ED25519_PUBLIC_KEY_LENGTH;
+    use tvm_block::SliceData;
+    use tvm_block::ED25519_PUBLIC_KEY_LENGTH;
 
     use crate::token::Detokenizer;
     use crate::token::Tokenizer;
@@ -876,8 +876,8 @@ mod tokenize_tests {
 mod types_check_tests {
     use std::collections::BTreeMap;
 
+    use tvm_block::Cell;
     use tvm_block::MsgAddress;
-    use tvm_types::Cell;
 
     use crate::Int;
     use crate::Param;

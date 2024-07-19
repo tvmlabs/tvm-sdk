@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -12,12 +12,12 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use serde_json::Value;
+use tvm_block::BuilderData;
+use tvm_block::Ed25519PrivateKey;
 use tvm_block::MsgAddressInt;
-use tvm_types::BuilderData;
-use tvm_types::Ed25519PrivateKey;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::Result;
+use tvm_block::SliceData;
+use serde_json::Value;
 
 use crate::contract::Contract;
 use crate::error::AbiError;

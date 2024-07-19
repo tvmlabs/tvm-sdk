@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -9,10 +9,13 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_block::dictionary::HashmapE;
+use tvm_block::ed25519_generate_private_key;
+use tvm_block::BuilderData;
+use tvm_block::Ed25519PublicKey;
+use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
-use tvm_types::dictionary::HashmapE;
-use tvm_types::ed25519_generate_private_key;
-use tvm_types::Ed25519PublicKey;
+use tvm_block::SliceData;
 
 use crate::json_abi::*;
 

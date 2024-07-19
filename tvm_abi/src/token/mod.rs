@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
+// Copyright (C) 2019-2023 TON. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
 // use this file except in compliance with the License.
@@ -14,13 +14,13 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use chrono::prelude::Utc;
-use num_bigint::BigInt;
-use num_bigint::BigUint;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
 use tvm_block::Grams;
 use tvm_block::MsgAddress;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::Result;
+use tvm_block::Result;
+use num_bigint::BigInt;
+use num_bigint::BigUint;
 
 use crate::contract::AbiVersion;
 use crate::contract::ABI_VERSION_2_4;
@@ -316,7 +316,7 @@ impl TokenValue {
         match param_type {
             ParamType::Int(size) | ParamType::Uint(size) => Ok(*size),
             ParamType::Address => Ok(crate::token::STD_ADDRESS_BIT_LENGTH),
-            _ => Err(tvm_types::error!(AbiError::InvalidData {
+            _ => Err(tvm_block::error!(AbiError::InvalidData {
                 msg: "Only integer and std address values can be map keys".to_owned()
             })),
         }
