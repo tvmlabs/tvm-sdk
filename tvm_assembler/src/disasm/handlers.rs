@@ -9,8 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
 use super::loader::*;
 use super::types::Instruction;
@@ -30,7 +30,7 @@ pub struct Handlers {
     subsets: Vec<Handlers>,
 }
 
-// adapted from ton-labs-vm/src/executor/engine/handlers.rs
+// adapted from ever-labs-vm/src/executor/engine/handlers.rs
 impl Handlers {
     pub fn new() -> Handlers {
         Handlers { directs: [Handler::Direct(Loader::unknown); 256], subsets: Vec::new() }

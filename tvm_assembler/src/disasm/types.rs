@@ -12,7 +12,7 @@
 use std::collections::HashMap;
 use std::slice::ChunksMut;
 
-use tvm_types::{fail, Cell, Result, /* Bitmask, */ SliceData};
+use tvm_block::{fail, Cell, Result, /* Bitmask, */ SliceData};
 
 #[derive(Debug, Default, Clone)]
 pub struct Code {

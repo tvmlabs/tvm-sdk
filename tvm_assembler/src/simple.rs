@@ -71,6 +71,7 @@ impl Engine {
         BREMBITS                             => 0xCF, 0x35
         BREMBITREFS                          => 0xCF, 0x37
         BREMREFS                             => 0xCF, 0x36
+        BURN                                 => 0xFB, 0x09
         BUYGAS                               => 0xF8, 0x02
         CADR                                 => 0x6F, 0xB4
         CADDR                                => 0x6F, 0xD4
@@ -843,6 +844,35 @@ impl Engine {
     simple_commands! {
         enumerate_groth_commands
         VERGRTH16                            => 0xF9, 0x12
+    }
+
+    simple_commands! {
+        enumerate_bls_commands
+        BLS_VERIFY                          => 0xF9, 0x30, 0x00
+        BLS_AGGREGATE                       => 0xF9, 0x30, 0x01
+        BLS_FASTAGGREGATEVERIFY             => 0xF9, 0x30, 0x02
+        BLS_AGGREGATEVERIFY                 => 0xF9, 0x30, 0x03
+        BLS_G1_ADD                          => 0xF9, 0x30, 0x10
+        BLS_G1_SUB                          => 0xF9, 0x30, 0x11
+        BLS_G1_NEG                          => 0xF9, 0x30, 0x12
+        BLS_G1_MUL                          => 0xF9, 0x30, 0x13
+        BLS_G1_MULTIEXP                     => 0xF9, 0x30, 0x14
+        BLS_G1_ZERO                         => 0xF9, 0x30, 0x15
+        BLS_MAP_TO_G1                       => 0xF9, 0x30, 0x16
+        BLS_G1_INGROUP                      => 0xF9, 0x30, 0x17
+        BLS_G1_ISZERO                       => 0xF9, 0x30, 0x18
+        BLS_G2_ADD                          => 0xF9, 0x30, 0x20
+        BLS_G2_SUB                          => 0xF9, 0x30, 0x21
+        BLS_G2_NEG                          => 0xF9, 0x30, 0x22
+        BLS_G2_MUL                          => 0xF9, 0x30, 0x23
+        BLS_G2_MULTIEXP                     => 0xF9, 0x30, 0x24
+        BLS_G2_ZERO                         => 0xF9, 0x30, 0x25
+        BLS_MAP_TO_G2                       => 0xF9, 0x30, 0x26
+        BLS_G2_INGROUP                      => 0xF9, 0x30, 0x27
+        BLS_G2_ISZERO                       => 0xF9, 0x30, 0x28
+        BLS_PAIRING                         => 0xF9, 0x30, 0x30
+        BLS_PUSHR                           => 0xF9, 0x30, 0x31
+
     }
 
     fn add_commands<'a>(

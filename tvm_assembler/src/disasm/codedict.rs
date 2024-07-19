@@ -11,12 +11,12 @@
 
 use std::collections::HashMap;
 
-use tvm_types::fail;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::fail;
+use tvm_block::Cell;
+use tvm_block::HashmapE;
+use tvm_block::HashmapType;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
 use super::loader::Loader;
 use super::types::Code;

@@ -17,7 +17,7 @@ use clap::Parser;
 use tvm_assembler::DbgInfo;
 use tvm_assembler::Engine;
 use tvm_assembler::Units;
-use tvm_types::Cell;
+use tvm_block::Cell;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -67,7 +67,7 @@ fn main_impl() -> Result<(), Box<dyn Error>> {
 }
 
 fn write_boc(cell: &Cell, output: &str) -> Result<(), Box<dyn Error>> {
-    let bytes = tvm_types::write_boc(cell)?;
+    let bytes = tvm_block::write_boc(cell)?;
     let mut file = std::fs::File::create(output)?;
     file.write_all(&bytes)?;
     Ok(())

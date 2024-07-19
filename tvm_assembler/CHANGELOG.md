@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version 1.6.3
+
+- fix `parse_slice`
+
+
+## Version 1.6.1
+
+- Use modern crates anyhow and thiserror instead of failure
+- 
+## Version 1.6.0
+
+- fix `parse_slice_base`
+
+## Version 1.5.0
+
+- crate was renamed from `ton_assembler` to `ever_assembler`
+
+## Version 1.4.55
+
+- Added BLS primitives
+
+## Version 1.4.42
+
+- Added BURN primitive
+
 ## Version 1.4.12
 
 - Added .library-cell directive

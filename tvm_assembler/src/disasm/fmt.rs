@@ -9,9 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::Cell;
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::Cell;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
 use super::codedict::DelimitedHashmapE;
 use super::types::Code;

@@ -17,12 +17,13 @@ use std::ops::Range;
 use num::BigInt;
 use num::Integer;
 use num::Num;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::HashmapE;
-use tvm_types::HashmapType;
-use tvm_types::SliceData;
-use tvm_types::Status;
+use tvm_block::error;
+use tvm_block::BuilderData;
+use tvm_block::Cell;
+use tvm_block::HashmapE;
+use tvm_block::HashmapType;
+use tvm_block::SliceData;
+use tvm_block::Status;
 
 use super::convert::to_big_endian_octet_string;
 use super::errors::OperationError;
@@ -829,11 +830,13 @@ fn compile_code_dict_cell(
 ) -> CompileResult {
     par.assert_len(2)?;
     let dict_key_bitlen =
-        par[0].parse::<usize>().map_err(|_| OperationError::CodeDictConstruction)?;
-    let tokens =
-        par[1].split(&[' ', '\t', '\n', ',', '=']).filter(|t| !t.is_empty()).collect::<Vec<_>>();
+        par[0].parse::<usize>().map_err(|e| OperationError::CodeDictConstruction(e.to_string()))?;
+    let tokens = par[1]
+        .split(&[' ', '\t', '\n', '\r', ',', '='])
+        .filter(|t| !t.is_empty())
+        .collect::<Vec<_>>();
     if tokens.len().is_odd() {
-        return Err(OperationError::CodeDictConstruction);
+        return Err(OperationError::CodeDictConstruction("Odd number of tokens".to_string()));
     }
 
     let mut map = HashMap::new();
@@ -843,12 +846,18 @@ fn compile_code_dict_cell(
         // parse the key
         let key = pair[0];
         if !key.to_ascii_lowercase().starts_with('x') {
-            return Err(OperationError::CodeDictConstruction);
+            return Err(OperationError::CodeDictConstruction(format!(
+                "key {} should start with 'x'",
+                key
+            )));
         }
         let key_slice = SliceData::from_string(&key[1..])
             .map_err(|_| ParameterError::UnexpectedType.parameter("key"))?;
         if key_slice.remaining_bits() != dict_key_bitlen {
-            return Err(OperationError::CodeDictConstruction);
+            return Err(OperationError::CodeDictConstruction(format!(
+                "key {} should have {} bits",
+                key, dict_key_bitlen
+            )));
         }
 
         // get an assembled fragment by the name
@@ -856,7 +865,10 @@ fn compile_code_dict_cell(
         let (value_slice, mut value_dbg) = engine
             .named_units
             .get(name)
-            .ok_or(OperationError::CodeDictConstruction)?
+            .ok_or(OperationError::CodeDictConstruction(format!(
+                "Fragment {} is not defined",
+                name
+            )))?
             .clone()
             .finalize();
 
@@ -867,18 +879,21 @@ fn compile_code_dict_cell(
             let value_cell = value_slice.clone().into_cell();
             info.append(&mut value_dbg);
             dict.setref(key_slice.clone(), &value_cell)
-                .map_err(|_| OperationError::CodeDictConstruction)?;
+                .map_err(|e| OperationError::CodeDictConstruction(e.to_string()))?;
         }
     }
 
     // update debug info
     for (key, (mut value_dbg, value_slice)) in map {
         let value_slice_after = dict
-            .get(key)
-            .map_err(|_| OperationError::CodeDictConstruction)?
-            .ok_or(OperationError::CodeDictConstruction)?;
+            .get(key.clone())
+            .map_err(|e| OperationError::CodeDictConstruction(e.to_string()))?
+            .ok_or(OperationError::CodeDictConstruction(format!(
+                "Value for key {} is not found",
+                key
+            )))?;
         adjust_debug_map(&mut value_dbg, value_slice, value_slice_after)
-            .map_err(|_| OperationError::CodeDictConstruction)?;
+            .map_err(|e| OperationError::CodeDictConstruction(e.to_string()))?;
         info.append(&mut value_dbg);
     }
 
@@ -895,9 +910,8 @@ fn compile_code_dict_cell(
 fn adjust_debug_map(map: &mut DbgInfo, before: SliceData, after: SliceData) -> Status {
     let hash_before = before.cell().repr_hash();
     let hash_after = after.cell().repr_hash();
-    let entry_before = map
-        .remove(&hash_before)
-        .ok_or_else(|| failure::err_msg(format!("Failed to remove old value.")))?;
+    let entry_before =
+        map.remove(&hash_before).ok_or_else(|| error!("Failed to remove old value."))?;
 
     let adjustment = after.pos();
     let mut entry_after = BTreeMap::new();
@@ -1050,7 +1064,7 @@ fn compile_library_cell(
 
     let mut b = BuilderData::with_raw(vec![0x02], 8)?;
     b.append_raw(hash.as_slice(), 256)?;
-    b.set_type(tvm_types::CellType::LibraryReference);
+    b.set_type(tvm_block::CellType::LibraryReference);
 
     let mut dbg = DbgNode::default();
     dbg.append_node(DbgNode::default());

@@ -9,8 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::Result;
-use tvm_types::SliceData;
+use tvm_block::Result;
+use tvm_block::SliceData;
 
 use self::loader::Loader;
 

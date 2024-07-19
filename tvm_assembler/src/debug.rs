@@ -17,8 +17,8 @@ use serde::de::Visitor;
 use serde::ser::SerializeMap;
 use serde::Deserialize;
 use serde::Serialize;
-use tvm_types::Cell;
-use tvm_types::UInt256;
+use tvm_block::Cell;
+use tvm_block::UInt256;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DbgPos {
