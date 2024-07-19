@@ -84,7 +84,13 @@ impl AccountForExecutor {
             }
             AccountForExecutor::Uninit => {
                 let last_paid = (context.env.now_ms() / 1000) as u32;
-                let account = Account::uninit(address, 0, last_paid, UNLIMITED_BALANCE.into());
+                let account = Account::uninit(
+                    address,
+                    UInt256::new(),
+                    0,
+                    last_paid,
+                    UNLIMITED_BALANCE.into(),
+                );
                 let account = serialize_object_to_cell(&account, "account")?;
                 Ok((account, None))
             }

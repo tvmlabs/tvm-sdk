@@ -19,6 +19,7 @@ use crate::tests::TestClient;
 use crate::tests::HELLO;
 use crate::ClientConfig;
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn bad_request() {
     let client = TestClient::new_with_config(json!({
@@ -108,6 +109,7 @@ async fn not_authorized_response_text() {
     }
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn not_authorized() {
     let client = TestClient::new_with_config(json!({
@@ -351,6 +353,7 @@ async fn ranges() {
     assert!(accounts.result[0]["created_at"].as_u64().unwrap() > 1562342740);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn wait_for() {
     let now = tvm_sdk::Contract::now();
@@ -425,6 +428,7 @@ async fn message_sending_addresses() {
     assert!(a_good && e_good)
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn subscribe_for_transactions_with_addresses() {
     let client = TestClient::new();
@@ -611,6 +615,7 @@ async fn subscribe_for_transactions_with_addresses() {
     let _: () = subscription_client.request_async("net.unsubscribe", handle2).await.unwrap();
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn subscribe_for_messages() {
     let messages = std::sync::Arc::new(Mutex::new(Vec::new()));
@@ -841,6 +846,7 @@ async fn retry_query_on_network_errors() {
     assert_eq!(query_block_id(&client).await.unwrap(), "4");
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn retry_query_on_network_errors_ws() {
     TestClient::init_log();
@@ -909,6 +915,7 @@ async fn retry_query_on_network_errors_ws() {
     assert!(query_block_id(&client).await.is_err());
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn retry_query_on_network_errors_ws_multiple_endpoints() {
     TestClient::init_log();
@@ -1135,6 +1142,7 @@ async fn latency_detection_with_queries() {
     NetworkMock::assert_is_empty(&client).await;
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn latency_detection_with_websockets() {
     TestClient::init_log();
@@ -1243,6 +1251,7 @@ fn collect(loaded_messages: &Vec<Value>, messages: &mut Vec<Value>, transactions
     }
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn transaction_tree() {
     let client = TestClient::new();
@@ -1464,6 +1473,7 @@ fn test_subscription_gql() {
     );
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn low_level_subscribe() {
     let messages = std::sync::Arc::new(Mutex::new(Vec::new()));

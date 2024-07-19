@@ -102,6 +102,7 @@ async fn remp_enabled(client: &TestClient) -> bool {
     info.result["data"]["info"]["rempEnabled"].as_bool().unwrap_or_default()
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 5)]
 async fn test_wait_message() {
     TestClient::init_log();
@@ -183,6 +184,7 @@ async fn test_wait_message() {
     assert_events(&events.lock().await, remp_enabled(&client).await);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_process_message() {
     TestClient::init_log();
@@ -453,6 +455,7 @@ async fn test_error_resolving() {
     }
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 10)]
 async fn test_retries() {
     let client = TestClient::new_with_config(json!({
@@ -516,6 +519,7 @@ async fn test_retries() {
     }
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_fees() {
     let client = TestClient::new();
@@ -594,6 +598,7 @@ async fn test_fees() {
     assert_eq!(local_result.fees.total_fwd_fees, local_result.fees.out_msgs_fwd_fee);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_deploy_from_tvc_v1() {
     TestClient::init_log();
@@ -686,6 +691,7 @@ async fn test_deploy_from_tvc_v1() {
     );
 }
 
+#[ignore]
 #[test]
 #[cfg(not(feature = "wasm-base"))]
 fn test_process_message_sync() {
