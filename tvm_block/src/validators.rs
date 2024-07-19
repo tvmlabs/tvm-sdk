@@ -845,7 +845,6 @@ pub enum FastFinalityRole {
     MessageProducer,
 }
 
-
 type MempoolSmallVec = smallvec::SmallVec<[u16; MEMPOOL_MAX_LEN]>;
 
 pub fn find_validators(
