@@ -1813,6 +1813,7 @@ impl UsageCell {
 
 impl CellImpl for UsageCell {
     fn data(&self) -> &[u8] {
+        log::trace!(target: "executor", "UsageCell data");
         if !self.visit_on_load {
             self.visit();
         }
@@ -1855,7 +1856,7 @@ impl CellImpl for UsageCell {
     }
 
     fn cell_type(&self) -> CellType {
-        log::trace!(target: "executor", "UsageCell");
+        log::trace!(target: "executor", "UsageCell cell_type");
         self.cell.cell_type()
     }
 
