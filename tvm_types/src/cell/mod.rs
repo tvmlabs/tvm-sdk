@@ -1855,6 +1855,7 @@ impl CellImpl for UsageCell {
     }
 
     fn cell_type(&self) -> CellType {
+        log::trace!(target: "executor", "UsageCell");
         self.cell.cell_type()
     }
 
