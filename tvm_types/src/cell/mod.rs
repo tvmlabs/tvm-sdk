@@ -1795,6 +1795,7 @@ impl UsageCell {
         visit_on_load: bool,
         visited: Weak<lockfree::map::Map<UInt256, Cell>>,
     ) -> Self {
+        log::trace!(target: "executor", "new UsageCell");
         let cell = Self { cell: inner, visit_on_load, visited };
         if visit_on_load {
             cell.visit();
@@ -1855,7 +1856,7 @@ impl CellImpl for UsageCell {
     }
 
     fn cell_type(&self) -> CellType {
-        log::trace!(target: "executor", "UsageCell");
+        log::trace!(target: "executor", "UsageCell cell_type");
         self.cell.cell_type()
     }
 
@@ -1962,6 +1963,7 @@ pub struct UsageTree {
 
 impl UsageTree {
     pub fn with_root(root: Cell) -> Self {
+        log::trace!(target: "executor", "UsageTree with_root");
         let visited = Arc::new(lockfree::map::Map::new());
         let usage_cell = UsageCell::new(root, false, Arc::downgrade(&visited));
         let root = Cell::with_cell_impl_arc(Arc::new(usage_cell));
@@ -1969,6 +1971,7 @@ impl UsageTree {
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
+        log::trace!(target: "executor", "UsageTree with_params");
         let visited = Arc::new(lockfree::map::Map::new());
         let root = Cell::with_cell_impl_arc(Arc::new(UsageCell::new(
             root,
