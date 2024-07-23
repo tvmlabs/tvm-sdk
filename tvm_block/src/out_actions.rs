@@ -32,6 +32,7 @@ pub const ACTION_SET_CODE: u32 = 0xad4de08e;
 pub const ACTION_RESERVE: u32 = 0x36e6b809;
 pub const ACTION_CHANGE_LIB: u32 = 0x26fa1dd4;
 pub const ACTION_COPYLEFT: u32 = 0x24486f7a;
+pub const ACTION_ECC_MINT: u32 = 0xc2bc6dd8;
 
 #[cfg(test)]
 #[path = "tests/test_out_actions.rs"]
@@ -99,6 +100,9 @@ pub enum OutAction {
     /// to spend more money than the remainder.
     ReserveCurrency { mode: u8, value: CurrencyCollection },
 
+    /// Action for mint some token into account
+    MintToken { value: CurrencyCollection },
+
     /// Action for change library.
     ChangeLibrary { mode: u8, code: Option<Cell>, hash: Option<UInt256> },
 
@@ -155,6 +159,11 @@ impl OutAction {
         OutAction::ReserveCurrency { mode, value }
     }
 
+    /// Create new instance OutAction::MintToken
+    pub fn new_mint(value: CurrencyCollection) -> Self {
+        OutAction::MintToken { value }
+    }
+
     /// Create new instance OutAction::ChangeLibrary
     pub fn new_change_library(mode: u8, code: Option<Cell>, hash: Option<UInt256>) -> Self {
         debug_assert!(match mode {
@@ -187,6 +196,10 @@ impl Serializable for OutAction {
             OutAction::ReserveCurrency { ref mode, ref value } => {
                 ACTION_RESERVE.write_to(cell)?; // tag
                 mode.write_to(cell)?;
+                value.write_to(cell)?;
+            }
+            OutAction::MintToken { ref value } => {
+                ACTION_ECC_MINT.write_to(cell)?; //tag
                 value.write_to(cell)?;
             }
             OutAction::ChangeLibrary { ref mode, ref code, ref hash } => {

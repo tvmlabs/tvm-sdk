@@ -784,6 +784,13 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::CopyLeft { .. } => 0,
+                OutAction::MintToken { value } => match acc_balance.add(&value) {
+                    Ok(_) => {
+                        phase.spec_actions += 1;
+                        0
+                    }
+                    Err(_) => RESULT_CODE_INVALID_BALANCE,
+                },
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };
             init_balance.sub(&acc_remaining_balance)?;
