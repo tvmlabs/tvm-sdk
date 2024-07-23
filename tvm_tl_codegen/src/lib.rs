@@ -494,28 +494,28 @@ fn reformat(filename: &Path) {
     const INSTALL_INSTRUCTIONS: &str = "It's not an issue, the building will proceed. \
         If you wish to develop using tvm_api, you can install rustfmt by running command: \
         `rustup component add rustfmt`";
-    let status = match Command::new("rustfmt").arg("--edition").arg("2018").arg(filename).status() {
-        Ok(status) => status,
-        Err(err) => {
-            if !WARNING_PRINTED.swap(true, Ordering::Relaxed) {
-                println!(
-                    "cargo:warning=rustfmt failed to start: {:?}. {}",
-                    err, INSTALL_INSTRUCTIONS
-                );
-            }
-            return;
-        }
-    };
-    #[allow(clippy::collapsible_if)]
-    if !status.success() {
-        if !WARNING_PRINTED.swap(true, Ordering::Relaxed) {
-            println!(
-                "cargo:warning=rustfmt command returned code: {}. {}",
-                status.code().unwrap(),
-                INSTALL_INSTRUCTIONS
-            );
-        }
-    }
+    // let status = match Command::new("rustfmt").arg("--edition").arg("2018").arg(filename).status() {
+    //     Ok(status) => status,
+    //     Err(err) => {
+    //         if !WARNING_PRINTED.swap(true, Ordering::Relaxed) {
+    //             println!(
+    //                 "cargo:warning=rustfmt failed to start: {:?}. {}",
+    //                 err, INSTALL_INSTRUCTIONS
+    //             );
+    //         }
+    //         return;
+    //     }
+    // };
+    // #[allow(clippy::collapsible_if)]
+    // if !status.success() {
+    //     if !WARNING_PRINTED.swap(true, Ordering::Relaxed) {
+    //         println!(
+    //             "cargo:warning=rustfmt command returned code: {}. {}",
+    //             status.code().unwrap(),
+    //             INSTALL_INSTRUCTIONS
+    //         );
+    //     }
+    // }
 }
 
 #[derive(Debug, Default)]
