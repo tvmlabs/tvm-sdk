@@ -258,6 +258,8 @@ pub trait CellImpl: Sync + Send {
     fn virtualization(&self) -> u8 {
         0
     }
+    
+    fn usage_level(&self) -> u64 { 0 }
 }
 
 pub struct Cell(Arc<dyn CellImpl>);
@@ -353,6 +355,10 @@ impl Cell {
 
     pub fn level(&self) -> u8 {
         self.0.level()
+    }
+
+    pub fn usage_level(&self) -> u64 {
+        self.0.usage_level()
     }
 
     pub fn hashes_count(&self) -> usize {
@@ -1787,6 +1793,7 @@ struct UsageCell {
     cell: Cell,
     visit_on_load: bool,
     visited: Weak<lockfree::map::Map<UInt256, Cell>>,
+    usage_level: u64,
 }
 
 impl UsageCell {
@@ -1795,8 +1802,9 @@ impl UsageCell {
         visit_on_load: bool,
         visited: Weak<lockfree::map::Map<UInt256, Cell>>,
     ) -> Self {
-        log::trace!("new UsageCell");
-        let cell = Self { cell: inner, visit_on_load, visited };
+        let usage_level = inner.usage_level() + 1;
+        log::trace!("new UsageCell {usage_level}");
+        let cell = Self { cell: inner, visit_on_load, visited, usage_level };
         if visit_on_load {
             cell.visit();
         }
@@ -1882,6 +1890,10 @@ impl CellImpl for UsageCell {
 
     fn tree_cell_count(&self) -> u64 {
         self.cell.tree_cell_count()
+    }
+
+    fn usage_level(&self) -> u64 {
+        self.usage_level
     }
 }
 
