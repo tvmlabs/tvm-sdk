@@ -244,6 +244,11 @@ impl Deserializable for OutAction {
                 value.read_from(cell)?;
                 *self = OutAction::new_reserve(mode, value);
             }
+            ACTION_ECC_MINT => {
+                let mut value = ExtraCurrencyCollection::default();
+                value.read_from(cell)?;
+                *self = OutAction::new_mint(value);
+            }
             ACTION_CHANGE_LIB => {
                 let mut mode = 0u8;
                 mode.read_from(cell)?;
