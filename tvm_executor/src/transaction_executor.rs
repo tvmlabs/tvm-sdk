@@ -787,6 +787,11 @@ pub trait TransactionExecutor {
                 OutAction::MintToken { value } => {
                     let mut valuecur = CurrencyCollection::new();
                     valuecur.other = value;
+                    log::debug!(
+                        target: "executor",
+                        "value from action: {:#?}",
+                        acc_balance
+                    );
                     match acc_remaining_balance.add(&valuecur) {
                         Ok(_) => {
                             phase.spec_actions += 1;

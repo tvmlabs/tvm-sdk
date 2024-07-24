@@ -230,11 +230,6 @@ impl Deserializable for OutAction {
             fail!(BlockError::InvalidArg("cell can't be shorter than 32 bits".to_string()))
         }
         let tag = cell.get_next_u32()?;
-        log::debug!(
-            target: "executor",
-            "parse action with tag: {}",
-            tag
-        );
         match tag {
             ACTION_SEND_MSG => {
                 let mode = cell.get_next_byte()?;
@@ -250,18 +245,8 @@ impl Deserializable for OutAction {
                 *self = OutAction::new_reserve(mode, value);
             }
             ACTION_ECC_MINT => {
-                log::debug!(
-                    target: "executor",
-                    "action in: {}",
-                    tag
-                );
                 let mut value = ExtraCurrencyCollection::default();
                 value.read_from(cell)?;
-                log::debug!(
-                    target: "executor",
-                    "value: {:#?}",
-                    value
-                );
                 *self = OutAction::new_mint(value);
             }
             ACTION_CHANGE_LIB => {
