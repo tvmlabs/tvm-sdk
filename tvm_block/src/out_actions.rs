@@ -250,8 +250,18 @@ impl Deserializable for OutAction {
                 *self = OutAction::new_reserve(mode, value);
             }
             ACTION_ECC_MINT => {
+                log::debug!(
+                    target: "executor",
+                    "action in: {}",
+                    tag
+                );
                 let mut value = ExtraCurrencyCollection::default();
                 value.read_from(cell)?;
+                log::debug!(
+                    target: "executor",
+                    "value: {:#?}",
+                    value
+                );
                 *self = OutAction::new_mint(value);
             }
             ACTION_CHANGE_LIB => {
