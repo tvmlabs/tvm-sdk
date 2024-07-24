@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::any::Any;
 use std::cmp::max;
 use std::cmp::min;
 use std::collections::HashSet;
@@ -601,10 +600,6 @@ impl Cell {
     fn tree_cell_count(&self) -> u64 {
         self.0.tree_cell_count()
     }
-
-    // fn mut_ref(&mut self) -> &mut &dyn CellImpl {
-    //     &mut self.0.deref()
-    // }
 }
 
 impl Deref for Cell {
@@ -1872,10 +1867,7 @@ impl CellImpl for UsageCell {
         if self.visit_on_load && self.visited.upgrade().is_some() || self.visit() {
             let mut cell = self.cell.reference(index)?;
             if cell.is_usage_cell() {
-                // let mut usage_cell = cell.0.downcast::<UsageCell>();
-                let mut usage_cell: UsageCell = Arc::into_inner(cell.0).unwrap();
-                usage_cell.set_visited(self.visit_on_load, self.visited.clone());
-                cell = Cell::with_cell_impl(usage_cell);
+                cell.set_visited(self.visit_on_load, self.visited.clone());
             } else {
                 let usage_cell = UsageCell::new(
                     cell,
