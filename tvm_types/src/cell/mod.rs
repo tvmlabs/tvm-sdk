@@ -25,6 +25,7 @@ use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Weak;
+use lockfree::map::Map;
 
 use num::FromPrimitive;
 use num::ToPrimitive;
@@ -259,7 +260,19 @@ pub trait CellImpl: Sync + Send {
         0
     }
     
-    fn usage_level(&self) -> u64 { 0 }
+    fn usage_level(&self) -> u64 {
+        0
+    }
+
+    fn is_usage_cell(&self) -> bool {
+        false
+    }
+
+    fn set_visited(
+        &mut self,
+        _visit_on_load: bool,
+        _visited: Weak<lockfree::map::Map<UInt256, Cell>>,
+    ) {}
 }
 
 pub struct Cell(Arc<dyn CellImpl>);
@@ -1852,12 +1865,18 @@ impl CellImpl for UsageCell {
 
     fn reference(&self, index: usize) -> Result<Cell> {
         if self.visit_on_load && self.visited.upgrade().is_some() || self.visit() {
-            let cell = UsageCell::new(
-                self.cell.reference(index)?,
-                self.visit_on_load,
-                self.visited.clone(),
-            );
-            Ok(Cell::with_cell_impl(cell))
+            let mut cell = self.cell.reference(index)?;
+            if cell.is_usage_cell() {
+                cell.set_visited(self.visit_on_load, self.visited.clone());
+            } else {
+                let usage_cell = UsageCell::new(
+                    cell,
+                    self.visit_on_load,
+                    self.visited.clone(),
+                );
+                cell = Cell::with_cell_impl(usage_cell);
+            }
+            Ok(cell)
         } else {
             self.cell.reference(index)
         }
@@ -1893,6 +1912,15 @@ impl CellImpl for UsageCell {
 
     fn usage_level(&self) -> u64 {
         self.usage_level
+    }
+
+    fn is_usage_cell(&self) -> bool {
+        true
+    }
+
+    fn set_visited(&mut self, visit_on_load: bool, visited: Weak<Map<UInt256, Cell>>) {
+        self.visit_on_load = visit_on_load;
+        self.visited = visited;
     }
 }
 
