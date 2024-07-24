@@ -25,8 +25,8 @@ use crate::error::BlockError;
 use crate::messages::Message;
 use crate::types::CurrencyCollection;
 use crate::Deserializable;
-use crate::Serializable;
 use crate::ExtraCurrencyCollection;
+use crate::Serializable;
 
 pub const ACTION_SEND_MSG: u32 = 0x0ec3c86d;
 pub const ACTION_SET_CODE: u32 = 0xad4de08e;
@@ -230,6 +230,11 @@ impl Deserializable for OutAction {
             fail!(BlockError::InvalidArg("cell can't be shorter than 32 bits".to_string()))
         }
         let tag = cell.get_next_u32()?;
+        log::debug!(
+            target: "executor",
+            "parse action with tag: {}",
+            tag
+        );
         match tag {
             ACTION_SEND_MSG => {
                 let mode = cell.get_next_byte()?;
