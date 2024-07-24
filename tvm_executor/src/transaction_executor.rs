@@ -403,7 +403,7 @@ pub trait TransactionExecutor {
             debug_assert!(!result_acc.is_none());
             false
         };
-        log::debug!(target: "executor", "acc balance: {}", acc_balance.grams);
+        log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
         log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
         let is_ordinary = self.ordinary_transaction();
         if acc_balance.grams.is_zero() {
@@ -787,9 +787,14 @@ pub trait TransactionExecutor {
                 OutAction::MintToken { value } => {
                     let mut valuecur = CurrencyCollection::new();
                     valuecur.other = value;
-                    match acc_balance.add(&valuecur) {
+                    match acc_remaining_balance.add(&valuecur) {
                         Ok(_) => {
                             phase.spec_actions += 1;
+                            log::debug!(
+                                target: "executor",
+                                "acc_balance: {:#?}",
+                                acc_balance
+                            );
                             0
                         }
                         Err(_) => RESULT_CODE_INVALID_BALANCE,
