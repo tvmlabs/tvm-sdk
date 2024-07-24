@@ -794,6 +794,18 @@ pub trait TransactionExecutor {
                         }
                         Err(_) => RESULT_CODE_INVALID_BALANCE,
                     }
+                },
+                OutAction::ExchangeShell { value } => {
+                    let mut valuecur = CurrencyCollection::new();
+                    valuecur.set_other(2, value as u128);
+                    match acc_remaining_balance.sub(&valuecur) {
+                        Ok(_) => {
+                            acc_remaining_balance.grams.add(&Grams::from(value))?;
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Err(_) => RESULT_CODE_INVALID_BALANCE,
+                    }
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };
