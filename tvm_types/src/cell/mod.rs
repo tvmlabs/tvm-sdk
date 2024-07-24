@@ -268,7 +268,7 @@ pub trait CellImpl: Sync + Send {
     }
 
     fn downcast_usage(&self) -> Cell {
-        Cell::default()
+        unreachable!("Function can be called only for UsageCell")
     }
 }
 
