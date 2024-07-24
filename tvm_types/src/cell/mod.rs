@@ -267,6 +267,10 @@ pub trait CellImpl: Sync + Send {
     fn is_usage_cell(&self) -> bool {
         false
     }
+
+    fn downcast_usage(&self) -> Cell {
+        Cell::default()
+    }
 }
 
 pub struct Cell(Arc<dyn CellImpl>);
@@ -1861,16 +1865,14 @@ impl CellImpl for UsageCell {
         if self.visit_on_load && self.visited.upgrade().is_some() || self.visit() {
             let mut cell = self.cell.reference(index)?;
             if cell.is_usage_cell() {
-                self.visit_on_load,
-            } else {
-                let usage_cell = UsageCell::new(
-                    cell,
-                    self.visit_on_load,
-                    self.visited.clone(),
-                );
-                cell = Cell::with_cell_impl(usage_cell);
+                cell = cell.downcast_usage();
             }
-            Ok(cell)
+            let usage_cell = UsageCell::new(
+                cell,
+                self.visit_on_load,
+                self.visited.clone(),
+            );
+            Ok(Cell::with_cell_impl(usage_cell))
         } else {
             self.cell.reference(index)
         }
@@ -1912,6 +1914,9 @@ impl CellImpl for UsageCell {
         true
     }
 
+    fn downcast_usage(&self) -> Cell {
+        self.cell.clone()
+    }
 }
 
 #[derive(Clone)]
