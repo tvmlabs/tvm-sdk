@@ -790,7 +790,7 @@ pub trait TransactionExecutor {
                     log::debug!(
                         target: "executor",
                         "value from action: {:#?}",
-                        acc_balance
+                        valuecur
                     );
                     match acc_remaining_balance.add(&valuecur) {
                         Ok(_) => {
@@ -808,8 +808,8 @@ pub trait TransactionExecutor {
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };
             init_balance.sub(&acc_remaining_balance)?;
-            log::debug!(target: "executor", "Final balance:   {}\nDelta:           {}",
-                balance_to_string(&acc_remaining_balance),
+            log::debug!(target: "executor", "Final balance:   {}, {:#?} \nDelta:           {}",
+                balance_to_string(&acc_remaining_balance), acc_remaining_balance,
                 balance_to_string(&init_balance)
             );
             if process_err_code(err_code, i, &mut phase)? {
@@ -837,7 +837,7 @@ pub trait TransactionExecutor {
                 &total_reserved_value,
                 &mut account_deleted,
             );
-            log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
+            log::debug!(target: "executor", "Final balance:   {}, {:#?}", balance_to_string(&acc_remaining_balance),  acc_remaining_balance,);
             let err_code = match result {
                 Ok(_) => {
                     phase.msgs_created += 1;
