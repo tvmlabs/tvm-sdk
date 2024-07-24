@@ -787,19 +787,9 @@ pub trait TransactionExecutor {
                 OutAction::MintToken { value } => {
                     let mut valuecur = CurrencyCollection::new();
                     valuecur.other = value;
-                    log::debug!(
-                        target: "executor",
-                        "value from action: {:#?}",
-                        valuecur
-                    );
                     match acc_remaining_balance.add(&valuecur) {
                         Ok(_) => {
                             phase.spec_actions += 1;
-                            log::debug!(
-                                target: "executor",
-                                "acc_balance: {:#?}",
-                                acc_remaining_balance
-                            );
                             0
                         }
                         Err(_) => RESULT_CODE_INVALID_BALANCE,
@@ -808,8 +798,8 @@ pub trait TransactionExecutor {
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };
             init_balance.sub(&acc_remaining_balance)?;
-            log::debug!(target: "executor", "Final balance:   {}, {:#?} \nDelta:           {}",
-                balance_to_string(&acc_remaining_balance), acc_remaining_balance,
+            log::debug!(target: "executor", "Final balance:   {}\nDelta:           {}",
+                balance_to_string(&acc_remaining_balance),
                 balance_to_string(&init_balance)
             );
             if process_err_code(err_code, i, &mut phase)? {
@@ -837,7 +827,7 @@ pub trait TransactionExecutor {
                 &total_reserved_value,
                 &mut account_deleted,
             );
-            log::debug!(target: "executor", "Final balance:   {}, {:#?}", balance_to_string(&acc_remaining_balance),  acc_remaining_balance,);
+            log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
             let err_code = match result {
                 Ok(_) => {
                     phase.msgs_created += 1;
