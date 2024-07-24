@@ -798,7 +798,7 @@ pub trait TransactionExecutor {
                             log::debug!(
                                 target: "executor",
                                 "acc_balance: {:#?}",
-                                acc_balance
+                                acc_remaining_balance
                             );
                             0
                         }
