@@ -1864,9 +1864,9 @@ impl CellImpl for UsageCell {
     fn reference(&self, index: usize) -> Result<Cell> {
         if self.visit_on_load && self.visited.upgrade().is_some() || self.visit() {
             let mut cell = self.cell.reference(index)?;
-            if cell.is_usage_cell() {
-                cell = cell.downcast_usage();
-            }
+            // if cell.is_usage_cell() {
+            //     cell = cell.downcast_usage();
+            // }
             let usage_cell = UsageCell::new(
                 cell,
                 self.visit_on_load,
