@@ -267,12 +267,6 @@ pub trait CellImpl: Sync + Send {
     fn is_usage_cell(&self) -> bool {
         false
     }
-
-    fn set_visited(
-        &mut self,
-        _visit_on_load: bool,
-        _visited: Weak<lockfree::map::Map<UInt256, Cell>>,
-    ) {}
 }
 
 pub struct Cell(Arc<dyn CellImpl>);
@@ -1867,7 +1861,7 @@ impl CellImpl for UsageCell {
         if self.visit_on_load && self.visited.upgrade().is_some() || self.visit() {
             let mut cell = self.cell.reference(index)?;
             if cell.is_usage_cell() {
-                cell.set_visited(self.visit_on_load, self.visited.clone());
+                self.visit_on_load,
             } else {
                 let usage_cell = UsageCell::new(
                     cell,
@@ -1918,10 +1912,6 @@ impl CellImpl for UsageCell {
         true
     }
 
-    fn set_visited(&mut self, visit_on_load: bool, visited: Weak<Map<UInt256, Cell>>) {
-        self.visit_on_load = visit_on_load;
-        self.visited = visited;
-    }
 }
 
 #[derive(Clone)]
