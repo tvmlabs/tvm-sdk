@@ -784,12 +784,16 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::CopyLeft { .. } => 0,
-                OutAction::MintToken { value } => match acc_balance.add(&value) {
-                    Ok(_) => {
-                        phase.spec_actions += 1;
-                        0
+                OutAction::MintToken { value } => {
+                    let mut valuecur = CurrencyCollection::new();
+                    valuecur.other = value;
+                    match acc_balance.add(&valuecur) {
+                        Ok(_) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Err(_) => RESULT_CODE_INVALID_BALANCE,
                     }
-                    Err(_) => RESULT_CODE_INVALID_BALANCE,
                 },
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };

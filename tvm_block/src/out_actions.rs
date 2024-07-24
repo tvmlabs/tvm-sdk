@@ -26,6 +26,7 @@ use crate::messages::Message;
 use crate::types::CurrencyCollection;
 use crate::Deserializable;
 use crate::Serializable;
+use crate::ExtraCurrencyCollection;
 
 pub const ACTION_SEND_MSG: u32 = 0x0ec3c86d;
 pub const ACTION_SET_CODE: u32 = 0xad4de08e;
@@ -101,7 +102,7 @@ pub enum OutAction {
     ReserveCurrency { mode: u8, value: CurrencyCollection },
 
     /// Action for mint some token into account
-    MintToken { value: CurrencyCollection },
+    MintToken { value: ExtraCurrencyCollection },
 
     /// Action for change library.
     ChangeLibrary { mode: u8, code: Option<Cell>, hash: Option<UInt256> },
@@ -160,7 +161,7 @@ impl OutAction {
     }
 
     /// Create new instance OutAction::MintToken
-    pub fn new_mint(value: CurrencyCollection) -> Self {
+    pub fn new_mint(value: ExtraCurrencyCollection) -> Self {
         OutAction::MintToken { value }
     }
 
