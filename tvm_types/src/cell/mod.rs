@@ -1809,7 +1809,7 @@ impl UsageCell {
         visited: Weak<lockfree::map::Map<UInt256, Cell>>,
     ) -> Self {
         let usage_level = inner.usage_level() + 1;
-        log::trace!(target: "executor", "new UsageCell {usage_level}");
+        assert!(usage_level <= 1, "Nested usage cells can cause stack overflow");
         let cell = Self { cell: inner, visit_on_load, visited, usage_level };
         if visit_on_load {
             cell.visit();
