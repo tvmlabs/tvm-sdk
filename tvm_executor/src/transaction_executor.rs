@@ -799,11 +799,12 @@ pub trait TransactionExecutor {
                     let mut valuecur = CurrencyCollection::new();
                     valuecur.set_other(2, value as u128)?;
                     match acc_remaining_balance.sub(&valuecur) {
-                        Ok(_) => {
+                        Ok(true) => {
                             acc_remaining_balance.grams.add(&Grams::from(value * 1_000_000_000))?;
                             phase.spec_actions += 1;
                             0
                         }
+                        Ok(false) => RESULT_CODE_INVALID_BALANCE,
                         Err(_) => RESULT_CODE_INVALID_BALANCE,
                     }
                 }
