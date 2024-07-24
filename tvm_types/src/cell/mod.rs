@@ -258,7 +258,7 @@ pub trait CellImpl: Sync + Send {
     fn virtualization(&self) -> u8 {
         0
     }
-    
+
     fn usage_level(&self) -> u64 {
         0
     }
@@ -1859,16 +1859,8 @@ impl CellImpl for UsageCell {
     fn reference(&self, index: usize) -> Result<Cell> {
         if self.visit_on_load && self.visited.upgrade().is_some() || self.visit() {
             let cell = self.cell.reference(index)?;
-            let cell = if cell.is_usage_cell() {
-                cell.downcast_usage()
-            } else {
-                cell
-            };
-            let usage_cell = UsageCell::new(
-                cell,
-                self.visit_on_load,
-                self.visited.clone(),
-            );
+            let cell = if cell.is_usage_cell() { cell.downcast_usage() } else { cell };
+            let usage_cell = UsageCell::new(cell, self.visit_on_load, self.visited.clone());
             Ok(Cell::with_cell_impl(usage_cell))
         } else {
             self.cell.reference(index)
