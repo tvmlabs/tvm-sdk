@@ -46,6 +46,7 @@ use tvm_block::TrComputePhaseVm;
 use tvm_block::TrCreditPhase;
 use tvm_block::TrStoragePhase;
 use tvm_block::Transaction;
+use tvm_block::VarUInteger32;
 use tvm_block::WorkchainFormat;
 use tvm_block::BASE_WORKCHAIN_ID;
 use tvm_block::MASTERCHAIN_ID;
@@ -794,18 +795,29 @@ pub trait TransactionExecutor {
                         }
                         Err(_) => RESULT_CODE_INVALID_BALANCE,
                     }
-                },
+                }
                 OutAction::ExchangeShell { value } => {
                     let mut valuecur = CurrencyCollection::new();
                     valuecur.set_other(2, value as u128)?;
+                    if let Some(a) = acc_remaining_balance.other.get(&2)? {
+                        if a <= VarUInteger32::from_two_u128(0, value as u128)? {
+                            valuecur.other.set(&2, &a)?;
+                        }
+                    }
                     match acc_remaining_balance.sub(&valuecur) {
                         Ok(true) => {
                             acc_remaining_balance.grams.add(&Grams::from(value * 1_000_000_000))?;
                             phase.spec_actions += 1;
                             0
                         }
-                        Ok(false) => RESULT_CODE_INVALID_BALANCE,
-                        Err(_) => RESULT_CODE_INVALID_BALANCE,
+                        Ok(false) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Err(_) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
                     }
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,

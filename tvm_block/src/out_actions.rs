@@ -33,8 +33,8 @@ pub const ACTION_SET_CODE: u32 = 0xad4de08e;
 pub const ACTION_RESERVE: u32 = 0x36e6b809;
 pub const ACTION_CHANGE_LIB: u32 = 0x26fa1dd4;
 pub const ACTION_COPYLEFT: u32 = 0x24486f7a;
-pub const ACTION_ECC_MINT: u32 = 0xc2bc6dd8; 
-pub const ACTION_EXCHANGE_SHELL_TOKEN: u32 = 0x90d8ae28;
+pub const ACTION_MINTECC: u32 = 0xc2bc6dd8;
+pub const ACTION_CNVRTSHELLQ: u32 = 0x90d8ae28;
 
 #[cfg(test)]
 #[path = "tests/test_out_actions.rs"]
@@ -209,11 +209,11 @@ impl Serializable for OutAction {
                 value.write_to(cell)?;
             }
             OutAction::MintToken { ref value } => {
-                ACTION_ECC_MINT.write_to(cell)?; //tag
+                ACTION_MINTECC.write_to(cell)?; //tag
                 value.write_to(cell)?;
             }
             OutAction::ExchangeShell { ref value } => {
-                ACTION_EXCHANGE_SHELL_TOKEN.write_to(cell)?;
+                ACTION_CNVRTSHELLQ.write_to(cell)?;
                 value.write_to(cell)?;
             }
             OutAction::ChangeLibrary { ref mode, ref code, ref hash } => {
@@ -257,12 +257,12 @@ impl Deserializable for OutAction {
                 value.read_from(cell)?;
                 *self = OutAction::new_reserve(mode, value);
             }
-            ACTION_ECC_MINT => {
+            ACTION_MINTECC => {
                 let mut value = ExtraCurrencyCollection::default();
                 value.read_from(cell)?;
                 *self = OutAction::new_mint(value);
             }
-            ACTION_EXCHANGE_SHELL_TOKEN => {
+            ACTION_CNVRTSHELLQ => {
                 let mut value = u64::default();
                 value.read_from(cell)?;
                 *self = OutAction::new_exchange_shell(value);
