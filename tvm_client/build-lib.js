@@ -26,9 +26,9 @@ function root_path(...items) {
     return path.resolve(root, ...(items.reduce((a, x) => a.concat(x), [])));
 }
 
-const ton_client_toml = fs.readFileSync(path.join(__dirname, '..', 'ton_client', 'Cargo.toml'))
+const tvm_client_toml = fs.readFileSync(path.join(__dirname, '..', 'tvm_client', 'Cargo.toml'))
     .toString();
-const tomlVersion = /^\s*version\s*=\s*['"]([0-9.]+)['"]\s*$/gm.exec(ton_client_toml)[1] || '';
+const tomlVersion = /^\s*version\s*=\s*['"]([0-9.]+)['"]\s*$/gm.exec(tvm_client_toml)[1] || '';
 const version = tomlVersion.split('.').join('_');
 
 
