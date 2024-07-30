@@ -189,7 +189,7 @@ pub trait TransactionExecutor {
         let old_hash = account_root.repr_hash();
         let mut account = Account::construct_from_cell(account_root.clone())?;
         let mut is_previous_state_active = true;
-        if let Some(AccountState::AccountUninit { }) = account.state() {
+        if let Some(AccountState::AccountUninit {}) = account.state() {
             is_previous_state_active = false;
         }
         let src_dapp_id = params.src_dapp_id.clone();
@@ -222,11 +222,12 @@ pub trait TransactionExecutor {
                         (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
                         data.value.grams.as_u64_quiet(),
                     ));
-//                    if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
-//                        if message.have_state_init() && is_previous_state_active {
-//                            balance = (0 as u64).into();
-//                       }
-//                    } 
+                    //                    if let Some(AccountState::AccountActive { state_init: _ })
+                    // = account.state() {                        if
+                    // message.have_state_init() && is_previous_state_active {
+                    //                            balance = (0 as u64).into();
+                    //                       }
+                    //                    }
                     let mut orig_balance = account.balance().unwrap().clone();
                     orig_balance.sub(&balance)?;
                     account.set_balance(orig_balance);
@@ -826,6 +827,11 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::CopyLeft { .. } => 0,
+                OutAction::MintShellToken { value } => {
+                    acc_remaining_balance.grams.add(&Grams::from(value))?;
+                    phase.spec_actions += 1;
+                    0
+                }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };
             init_balance.sub(&acc_remaining_balance)?;
