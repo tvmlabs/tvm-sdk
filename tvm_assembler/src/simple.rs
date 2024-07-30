@@ -837,6 +837,7 @@ impl Engine {
         DIFF_PATCH_BINARY_ZIP                => 0xC7, 0x23
         DIFF_PATCH_BINARYQ                   => 0xC7, 0x24
         DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
+        MINTSHELL                            => 0xC7, 0x28
     }
 
     #[cfg(feature = "groth")]
