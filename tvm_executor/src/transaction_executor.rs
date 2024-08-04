@@ -178,6 +178,7 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
+        available_credit: u128,
     ) -> Result<Transaction>;
 
     fn execute_with_libs_and_params(
@@ -185,6 +186,7 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account_root: &mut Cell,
         params: ExecuteParams,
+        available_credit: u128,
     ) -> Result<Transaction> {
         let old_hash = account_root.repr_hash();
         let mut account = Account::construct_from_cell(account_root.clone())?;
@@ -193,7 +195,8 @@ pub trait TransactionExecutor {
             is_previous_state_active = false;
         }
         let src_dapp_id = params.src_dapp_id.clone();
-        let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
+        let mut transaction =
+            self.execute_with_params(in_msg, &mut account, params, available_credit)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
         } else {
@@ -652,6 +655,7 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
+        available_credit: u128,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -664,6 +668,7 @@ pub trait TransactionExecutor {
             new_data,
             my_addr,
             is_special,
+            available_credit,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -680,6 +685,7 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
+        available_credit: u128,
     ) -> Result<ActionPhaseResult> {
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
@@ -827,7 +833,10 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::CopyLeft { .. } => 0,
-                OutAction::MintShellToken { value } => {
+                OutAction::MintShellToken { mut value } => {
+                    if value as u128 > available_credit {
+                        value = available_credit.clone().try_into()?;
+                    }
                     acc_remaining_balance.grams.add(&Grams::from(value))?;
                     phase.spec_actions += 1;
                     0

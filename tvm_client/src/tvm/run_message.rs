@@ -419,7 +419,7 @@ where
         ..ExecuteParams::default()
     };
     let transaction =
-        match executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params) {
+        match executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params, 0) {
             Ok(transaction) => transaction,
             Err(err) => {
                 let err_message = err.to_string();
