@@ -82,6 +82,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
+        available_credit: u128,
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
@@ -326,6 +327,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         new_data,
                         account_address,
                         is_special,
+                        available_credit,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             out_msgs = messages;

@@ -1264,7 +1264,7 @@ pub async fn execute_debug(
         ..ExecuteParams::default()
     };
 
-    executor.execute_with_libs_and_params(message, account_root, params).map_err(|e| {
+    executor.execute_with_libs_and_params(message, account_root, params, 0).map_err(|e| {
         let exit_code = match e.downcast_ref() {
             Some(tvm_executor::ExecutorError::NoAcceptError(exit_code, _)) => *exit_code,
             Some(tvm_executor::ExecutorError::TvmExceptionCode(exit_code)) => *exit_code as i32,
