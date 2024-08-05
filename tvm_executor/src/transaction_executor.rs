@@ -11,6 +11,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use std::cmp::min;
+use std::collections::HashMap;
 use std::collections::LinkedList;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
@@ -104,6 +105,8 @@ const MAX_ACTIONS: usize = 255;
 const MAX_MSG_BITS: usize = 1 << 21;
 const MAX_MSG_CELLS: usize = 1 << 13;
 
+pub type MintSet = HashMap<UInt256, u128>;
+
 #[derive(Eq, PartialEq, Debug)]
 pub enum IncorrectCheckRewrite {
     Anycast,
@@ -179,6 +182,7 @@ pub trait TransactionExecutor {
         account: &mut Account,
         params: ExecuteParams,
         available_credit: u128,
+        minted_shell: &mut u128,
     ) -> Result<Transaction>;
 
     fn execute_with_libs_and_params(
@@ -187,6 +191,7 @@ pub trait TransactionExecutor {
         account_root: &mut Cell,
         params: ExecuteParams,
         available_credit: u128,
+        minted_shell: &mut u128,
     ) -> Result<Transaction> {
         let old_hash = account_root.repr_hash();
         let mut account = Account::construct_from_cell(account_root.clone())?;
@@ -196,7 +201,7 @@ pub trait TransactionExecutor {
         }
         let src_dapp_id = params.src_dapp_id.clone();
         let mut transaction =
-            self.execute_with_params(in_msg, &mut account, params, available_credit)?;
+            self.execute_with_params(in_msg, &mut account, params, available_credit, minted_shell)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
         } else {
@@ -656,6 +661,7 @@ pub trait TransactionExecutor {
         my_addr: &MsgAddressInt,
         is_special: bool,
         available_credit: u128,
+        minted_shell: &mut u128,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -669,6 +675,7 @@ pub trait TransactionExecutor {
             my_addr,
             is_special,
             available_credit,
+            minted_shell,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -686,6 +693,7 @@ pub trait TransactionExecutor {
         my_addr: &MsgAddressInt,
         is_special: bool,
         available_credit: u128,
+        minted_shell: &mut u128,
     ) -> Result<ActionPhaseResult> {
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
@@ -838,6 +846,7 @@ pub trait TransactionExecutor {
                         value = available_credit.clone().try_into()?;
                     }
                     acc_remaining_balance.grams.add(&Grams::from(value))?;
+                    *minted_shell += value as u128;
                     phase.spec_actions += 1;
                     0
                 }

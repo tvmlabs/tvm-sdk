@@ -83,6 +83,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         account: &mut Account,
         params: ExecuteParams,
         available_credit: u128,
+        minted_shell: &mut u128,
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
@@ -328,6 +329,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         account_address,
                         is_special,
                         available_credit,
+                        minted_shell,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             out_msgs = messages;

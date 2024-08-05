@@ -58,6 +58,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
         account: &mut Account,
         params: ExecuteParams,
         available_credit: u128,
+        minted_shell: &mut u128,
     ) -> Result<Transaction> {
         if in_msg.is_some() {
             fail!("Tick Tock transaction must not have input message")
@@ -188,6 +189,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
                         &account_address,
                         is_special,
                         available_credit,
+                        minted_shell,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, .. }) => {
                             out_msgs = messages;
