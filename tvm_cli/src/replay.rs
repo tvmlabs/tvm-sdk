@@ -457,7 +457,13 @@ pub async fn replay(
                     ..ExecuteParams::default()
                 };
                 let tr = executor
-                    .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params, 0)
+                    .execute_with_libs_and_params(
+                        msg.as_ref(),
+                        &mut account_root,
+                        params,
+                        0,
+                        &mut 0,
+                    )
                     .map_err(|e| format!("Failed to execute txn: {}", e))?;
                 return Ok(tr);
             }
@@ -494,7 +500,7 @@ pub async fn replay(
             ..ExecuteParams::default()
         };
         let tr_local = executor
-            .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params, 0)
+            .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params, 0, &mut 0)
             .map_err(|e| format!("Failed to execute txn: {}", e))?;
         state.account = Account::construct_from_cell(account_root.clone())
             .map_err(|e| format!("Failed to construct account: {}", e))?;

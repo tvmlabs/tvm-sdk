@@ -418,37 +418,42 @@ where
         signature_id: options.signature_id,
         ..ExecuteParams::default()
     };
-    let transaction =
-        match executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params, 0) {
-            Ok(transaction) => transaction,
-            Err(err) => {
-                let err_message = err.to_string();
-                let err = match contract_info().await {
-                    Ok((address, balance)) => match &err.downcast_ref::<ExecutorError>() {
-                        Some(ExecutorError::NoAcceptError(code, exit_arg)) => {
-                            let exit_arg = exit_arg.as_ref().map(serialize_item).transpose()?;
-                            Error::tvm_execution_failed(
-                                err_message,
-                                *code,
-                                exit_arg,
-                                &address,
-                                None,
-                                show_tips_on_error,
-                            )
-                        }
-                        Some(ExecutorError::NoFundsToImportMsg) => {
-                            Error::low_balance(&address, balance)
-                        }
-                        Some(ExecutorError::ExtMsgComputeSkipped(reason)) => {
-                            Error::tvm_execution_skipped(reason, &address, balance)
-                        }
-                        _ => Error::unknown_execution_error(err),
-                    },
-                    Err(err) => err,
-                };
-                return Err(err);
-            }
-        };
+    let transaction = match executor.execute_with_libs_and_params(
+        Some(&msg),
+        &mut account_root,
+        params,
+        0,
+        &mut 0,
+    ) {
+        Ok(transaction) => transaction,
+        Err(err) => {
+            let err_message = err.to_string();
+            let err = match contract_info().await {
+                Ok((address, balance)) => match &err.downcast_ref::<ExecutorError>() {
+                    Some(ExecutorError::NoAcceptError(code, exit_arg)) => {
+                        let exit_arg = exit_arg.as_ref().map(serialize_item).transpose()?;
+                        Error::tvm_execution_failed(
+                            err_message,
+                            *code,
+                            exit_arg,
+                            &address,
+                            None,
+                            show_tips_on_error,
+                        )
+                    }
+                    Some(ExecutorError::NoFundsToImportMsg) => {
+                        Error::low_balance(&address, balance)
+                    }
+                    Some(ExecutorError::ExtMsgComputeSkipped(reason)) => {
+                        Error::tvm_execution_skipped(reason, &address, balance)
+                    }
+                    _ => Error::unknown_execution_error(err),
+                },
+                Err(err) => err,
+            };
+            return Err(err);
+        }
+    };
 
     Ok((transaction, account_root))
 }
