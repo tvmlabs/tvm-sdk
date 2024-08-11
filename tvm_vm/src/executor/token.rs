@@ -45,7 +45,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let arfc = engine.cmd.var(2).as_integer()?.into(0..=u64::MAX)? as f64;
     let minrc = engine.cmd.var(3).as_integer()?.into(0..=u64::MAX)? as f64;
     let maxrc = engine.cmd.var(4).as_integer()?.into(0..=u64::MAX)? as f64;
-    let sfc = engine.cmd.var(5).as_integer()?.into(0..=u64::MAX)? as f64;
+    let sfc = engine.cmd.var(5).as_integer()?.into(0..=u64::MAX)? as f64 / 10e9;
     let ttmt = engine.cmd.var(6).as_integer()?.into(0..=u64::MAX)? as f64;
     let totalsupply = engine.cmd.var(7).as_integer()?.into(0..=u64::MAX)? as f64;
     let valstake = engine.cmd.var(8).as_integer()?.into(0..=u64::MAX)? as f64;
