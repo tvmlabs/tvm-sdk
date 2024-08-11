@@ -807,8 +807,10 @@ pub trait TransactionExecutor {
                     match acc_remaining_balance.sub(&valuecur) {
                         Ok(true) => {
                             if is_special == true {
-                                acc_remaining_balance.grams.add(&Grams::from(value * 1_000_000_000))?;
-                            } 
+                                acc_remaining_balance
+                                    .grams
+                                    .add(&Grams::from(value * 1_000_000_000))?;
+                            }
                             phase.spec_actions += 1;
                             0
                         }

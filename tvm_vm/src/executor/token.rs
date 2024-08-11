@@ -1,3 +1,6 @@
+use std::u32;
+use std::u64;
+
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
@@ -9,14 +12,15 @@ use crate::executor::blockchain::add_action;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
+use crate::stack::StackItem;
 use crate::types::Status;
+use crate::utils::pack_data_to_cell;
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
     fetch_stack(engine, 2)?;
     let x: u32 = engine.cmd.var(0).as_integer()?.into(0..=255)?;
-    let y: VarUInteger32 =
-        VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=2147483647)?);
+    let y: VarUInteger32 = VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=u32::MAX)?);
     let mut data = ExtraCurrencyCollection::new();
     data.set(&x, &y)?;
     let mut cell = BuilderData::new();
@@ -27,8 +31,45 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
 pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CNVRTSHELLQ"))?;
     fetch_stack(engine, 1)?;
-    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=2147483647)?;
+    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
     let mut cell = BuilderData::new();
     x.write_to(&mut cell)?;
     add_action(engine, ACTION_CNVRTSHELLQ, None, cell)
+}
+
+pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
+    fetch_stack(engine, 14)?;
+    let vrt = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)? as f64;
+    let maxrt = engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)? as f64;
+    let arfc = engine.cmd.var(2).as_integer()?.into(0..=u64::MAX)? as f64;
+    let minrc = engine.cmd.var(3).as_integer()?.into(0..=u64::MAX)? as f64;
+    let maxrc = engine.cmd.var(4).as_integer()?.into(0..=u64::MAX)? as f64;
+    let sfc = engine.cmd.var(5).as_integer()?.into(0..=u64::MAX)? as f64;
+    let ttmt = engine.cmd.var(6).as_integer()?.into(0..=u64::MAX)? as f64;
+    let totalsupply = engine.cmd.var(7).as_integer()?.into(0..=u64::MAX)? as f64;
+    let valstake = engine.cmd.var(8).as_integer()?.into(0..=u64::MAX)? as f64;
+    let totalstake = engine.cmd.var(9).as_integer()?.into(0..=u64::MAX)? as f64;
+    let t = engine.cmd.var(10).as_integer()?.into(0..=u64::MAX)? as f64;
+    let rac = engine.cmd.var(12).as_integer()?.into(0..=u64::MAX)? as f64;
+    let vpd = engine.cmd.var(13).as_integer()?.into(0..=u64::MAX)? as f64;
+    let repcoef;
+    if vrt < maxrt {
+        repcoef = minrc
+            + ((maxrc - minrc) * (1.0_f64 - (-1.0_f64 * arfc.ln() * vrt / maxrt).exp())
+                / (1.0_f64 - 1.0_f64 / arfc));
+    } else {
+        repcoef = maxrc;
+    }
+    let u = -1.0_f64 * (sfc / (sfc + 1.0_f64)).ln() / ttmt;
+    let bkrps = totalsupply
+        * (1.0_f64 + sfc)
+        * ((-1.0_f64 * u * t).exp() - (-1.0_f64 * u * (t + 1.0_f64)).exp())
+        - rac;
+    let cbkrpv = ((valstake / totalstake) * repcoef * bkrps * vpd * (10e9 as f64)) as u64;
+    let mut data = BuilderData::new();
+    cbkrpv.write_to(&mut data)?;
+    let cell = pack_data_to_cell(data.data(), engine)?;
+    engine.cc.stack.push(StackItem::cell(cell));
+    Ok(())
 }
