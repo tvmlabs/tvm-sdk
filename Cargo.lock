@@ -4136,6 +4136,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "tvm_debugger"
+version = "2.0.2"
+dependencies = [
+ "anyhow",
+ "base64 0.21.7",
+ "clap 4.5.9",
+ "hex",
+ "lazy_static",
+ "serde_json",
+ "tvm_abi",
+ "tvm_block",
+ "tvm_client",
+ "tvm_types",
+ "tvm_vm",
+]
+
+[[package]]
 name = "tvm_executor"
 version = "2.0.2"
 dependencies = [
