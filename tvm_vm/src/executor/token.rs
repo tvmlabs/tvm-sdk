@@ -12,9 +12,9 @@ use crate::executor::blockchain::add_action;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
+use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
 use crate::types::Status;
-use crate::utils::pack_data_to_cell;
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
@@ -58,9 +58,6 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let u = 0.000000005756467732460114376710395313_f64;
     let bkrps = (-1.0_f64 * u * t + 4.0921398489254479849893923389_f64).exp() - rac;
     let cbkrpv = ((valstake / totalstake) * repcoef * bkrps * vpd * (10e9 as f64)) as u64;
-    let mut data = BuilderData::new();
-    cbkrpv.write_to(&mut data)?;
-    let cell = pack_data_to_cell(data.data(), engine)?;
-    engine.cc.stack.push(StackItem::cell(cell));
+    engine.cc.stack.push(int!(cbkrpv));
     Ok(())
 }
