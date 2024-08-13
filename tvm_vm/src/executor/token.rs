@@ -58,6 +58,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let u = 0.000000005756467732460114376710395313_f64;
     let bkrps = (-1.0_f64 * u * t + 4.0921398489254479849893923389_f64).exp() - rac;
     let cbkrpv = ((valstake / totalstake) * repcoef * bkrps * vpd * (10e9 as f64)) as u128;
+    log::debug!(target: "executor", "Calculate reward vrt: {}, maxrt: {}, valstake: {}, totalstake: {}, t: {}, rac: {}, vpd: {}", vrt, maxrt, valstake, totalstake, t, rac, vpd);
     log::debug!(target: "executor", "Calculate reward repcoef: {}, u: {}, bkrps: {}, cbkrpv: {}", repcoef, u, bkrps, cbkrpv);
     engine.cc.stack.push(int!(cbkrpv));
     Ok(())
