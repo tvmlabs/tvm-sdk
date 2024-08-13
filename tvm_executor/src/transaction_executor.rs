@@ -798,19 +798,17 @@ pub trait TransactionExecutor {
                 }
                 OutAction::ExchangeShell { value } => {
                     let mut valuecur = CurrencyCollection::new();
-                    valuecur.set_other(2, value as u128)?;
-                    if let Some(a) = acc_remaining_balance.other.get(&2)? {
-                        if a <= VarUInteger32::from_two_u128(0, value as u128)? {
-                            valuecur.other.set(&2, &a)?;
+                    if is_special == true {
+                        valuecur.set_other(2, value as u128)?;
+                        if let Some(a) = acc_remaining_balance.other.get(&2)? {
+                            if a <= VarUInteger32::from_two_u128(0, value as u128)? {
+                                valuecur.other.set(&2, &a)?;
+                            }
                         }
                     }
                     match acc_remaining_balance.sub(&valuecur) {
                         Ok(true) => {
-                            if is_special == true {
-                                acc_remaining_balance
-                                    .grams
-                                    .add(&Grams::from(value * 1_000_000_000))?;
-                            }
+                            acc_remaining_balance.grams.add(&Grams::from(value * 1_000_000_000))?;
                             phase.spec_actions += 1;
                             0
                         }
