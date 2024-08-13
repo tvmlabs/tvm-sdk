@@ -40,13 +40,22 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
     fetch_stack(engine, 7)?;
-    let vrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let maxrt = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let valstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let totalstake = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let t = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    let rac = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
-    let vpd = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64;
+    log::debug!(target: "executor", "reward!!!");
+    let vrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;    
+    log::debug!(target: "executor", "vrt: {}", vrt);
+    let maxrt = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;  
+    log::debug!(target: "executor", "maxrt: {}", maxrt);
+    let valstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;  
+    log::debug!(target: "executor", "valstake: {}", valstake);
+    let totalstake = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;  
+    log::debug!(target: "executor", "totalstake: {}", totalstake);
+    let t: f64 = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;  
+    log::debug!(target: "executor", "t: {}", t);
+    let rac = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;  
+    log::debug!(target: "executor", "rac: {}", rac);
+    let vpd = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64;  
+    log::debug!(target: "executor", "vpd: {}", vpd);
+    log::debug!(target: "executor", "Calculate reward vrt: {}, maxrt: {}, valstake: {}, totalstake: {}, t: {}, rac: {}, vpd: {}", vrt, maxrt, valstake, totalstake, t, rac, vpd);
     let repcoef;
     if vrt < maxrt {
         repcoef = 2999_f64 / 999_f64
@@ -58,7 +67,6 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let u = 0.000000005756467732460114376710395313_f64;
     let bkrps = (-1.0_f64 * u * t + 4.0921398489254479849893923389_f64).exp() - rac;
     let cbkrpv = ((valstake / totalstake) * repcoef * bkrps * vpd * (10e9 as f64)) as u128;
-    log::debug!(target: "executor", "Calculate reward vrt: {}, maxrt: {}, valstake: {}, totalstake: {}, t: {}, rac: {}, vpd: {}", vrt, maxrt, valstake, totalstake, t, rac, vpd);
     log::debug!(target: "executor", "Calculate reward repcoef: {}, u: {}, bkrps: {}, cbkrpv: {}", repcoef, u, bkrps, cbkrpv);
     engine.cc.stack.push(int!(cbkrpv));
     Ok(())
