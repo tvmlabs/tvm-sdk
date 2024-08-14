@@ -1,21 +1,37 @@
-use tvm_block::{StateInit, Deserializable, Serializable};
-use tvm_types::{HashmapE, SliceData};
-use tvm_vm::{int, SmartContractInfo};
+use tvm_block::Deserializable;
+use tvm_block::Serializable;
+use tvm_block::StateInit;
+use tvm_types::HashmapE;
+use tvm_types::SliceData;
 use tvm_vm::error::tvm_exception;
-use tvm_vm::executor::Engine;
 use tvm_vm::executor::gas::gas_state::Gas;
-use tvm_vm::stack::savelist::SaveList;
-use tvm_vm::stack::{Stack, StackItem};
+use tvm_vm::executor::Engine;
+use tvm_vm::int;
 use tvm_vm::stack::integer::IntegerData;
-use crate::Args;
+use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::stack::Stack;
+use tvm_vm::stack::StackItem;
+use tvm_vm::SmartContractInfo;
+
 use crate::decode::decode_actions;
-use crate::helper::{capabilities, config_params, contract_balance, get_dest_address, get_now, load_code_and_data_from_state_init, trace_callback};
+use crate::helper::capabilities;
+use crate::helper::config_params;
+use crate::helper::contract_balance;
+use crate::helper::get_dest_address;
+use crate::helper::get_now;
+use crate::helper::load_code_and_data_from_state_init;
+use crate::helper::trace_callback;
 use crate::message::generate_message;
+use crate::Args;
 
 pub(crate) fn execute(args: &Args) -> anyhow::Result<()> {
-    let mut contract_state_init = StateInit::construct_from_file(&args.input_file)
-        .map_err(|e| anyhow::format_err!("Failed to load state init from input file {:?}: {e}",
-            args.input_file))?;
+    let mut contract_state_init =
+        StateInit::construct_from_file(&args.input_file).map_err(|e| {
+            anyhow::format_err!(
+                "Failed to load state init from input file {:?}: {e}",
+                args.input_file
+            )
+        })?;
 
     let (code, data) = load_code_and_data_from_state_init(&contract_state_init);
 
@@ -24,13 +40,18 @@ pub(crate) fn execute(args: &Args) -> anyhow::Result<()> {
     let gas = Gas::test();
     let library_map = HashmapE::with_hashmap(256, contract_state_init.library.root().cloned());
 
-    let mut engine = Engine::with_capabilities(capabilities(args))
-        .setup_with_libraries(
-            code, Some(registers), Some(stack), Some(gas), vec![library_map]
-        );
+    let mut engine = Engine::with_capabilities(capabilities(args)).setup_with_libraries(
+        code,
+        Some(registers),
+        Some(stack),
+        Some(gas),
+        vec![library_map],
+    );
     engine.set_trace(0);
     if args.trace {
-        engine.set_trace_callback(move |engine, info| { trace_callback(engine, info, true); })
+        engine.set_trace_callback(move |engine, info| {
+            trace_callback(engine, info, true);
+        })
     }
 
     let exit_code = engine.execute().unwrap_or_else(|error| match tvm_exception(error) {
@@ -38,7 +59,7 @@ pub(crate) fn execute(args: &Args) -> anyhow::Result<()> {
             println!("Unhandled exception: {}", exception);
             exception.exception_or_custom_code()
         }
-        _ => -1
+        _ => -1,
     });
 
     let is_vm_success = engine.get_committed_state().is_committed();
@@ -49,7 +70,6 @@ pub(crate) fn execute(args: &Args) -> anyhow::Result<()> {
     println!("{}", engine.dump_stack("Post-execution stack state", false));
     println!("{}", engine.dump_ctrls(false));
 
-
     if is_vm_success {
         decode_actions(engine.get_actions(), &mut contract_state_init, args)?;
 
@@ -57,7 +77,8 @@ pub(crate) fn execute(args: &Args) -> anyhow::Result<()> {
             StackItem::Cell(root_cell) => Some(root_cell.clone()),
             _ => panic!("cannot get root data: c4 register is not a cell."),
         };
-        contract_state_init.write_to_file(&args.input_file)
+        contract_state_init
+            .write_to_file(&args.input_file)
             .map_err(|e| anyhow::format_err!("Failed to save state init after execution: {e}"))?;
 
         println!("Contract persistent data updated");
@@ -70,7 +91,12 @@ pub(crate) fn execute(args: &Args) -> anyhow::Result<()> {
 
 fn initialize_registers(args: &Args, code: SliceData, data: SliceData) -> anyhow::Result<SaveList> {
     let mut ctrls = SaveList::new();
-    let address = SliceData::load_cell(get_dest_address(args)?.serialize().map_err(|e| anyhow::format_err!("Failed to serialize address: {e}"))?).unwrap();
+    let address = SliceData::load_cell(
+        get_dest_address(args)?
+            .serialize()
+            .map_err(|e| anyhow::format_err!("Failed to serialize address: {e}"))?,
+    )
+    .unwrap();
     let info = SmartContractInfo {
         capabilities: capabilities(args),
         balance: contract_balance(args),
@@ -81,9 +107,11 @@ fn initialize_registers(args: &Args, code: SliceData, data: SliceData) -> anyhow
         ..Default::default()
     };
     // TODO info.set_init_code_hash()
-    ctrls.put(4, &mut StackItem::Cell(data.into_cell()))
+    ctrls
+        .put(4, &mut StackItem::Cell(data.into_cell()))
         .map_err(|e| anyhow::format_err!("Failed to init register: {e}"))?;
-    ctrls.put(7, &mut info.into_temp_data_item())
+    ctrls
+        .put(7, &mut info.into_temp_data_item())
         .map_err(|e| anyhow::format_err!("Failed to init register: {e}"))?;
     Ok(ctrls)
 }
@@ -97,7 +125,11 @@ fn prepare_stack(args: &Args) -> anyhow::Result<Stack> {
     stack
         .push(int!(contract_balance))
         .push(int!(msg_value))
-        .push(StackItem::Cell(message.serialize().map_err(|e| anyhow::format_err!("Failed to serialize message: {e}"))?))
+        .push(StackItem::Cell(
+            message
+                .serialize()
+                .map_err(|e| anyhow::format_err!("Failed to serialize message: {e}"))?,
+        ))
         .push(StackItem::Slice(body))
         .push(int!(if args.internal { 0 } else { -1 }));
     Ok(stack)
