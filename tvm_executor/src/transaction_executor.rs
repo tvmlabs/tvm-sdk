@@ -74,6 +74,7 @@ use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::gas::gas_state::Gas;
+use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::IndexProvider;
 use tvm_vm::smart_contract_info::SmartContractInfo;
@@ -797,16 +798,16 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::ExchangeShell { value } => {
-                    let mut valuecur = CurrencyCollection::new();
+                    let mut add_value = CurrencyCollection::new();
                     if is_special == true {
-                        valuecur.set_other(2, value as u128)?;
+                        add_value.set_other(ECC_SHELL_KEY, value as u128)?;
                         if let Some(a) = acc_remaining_balance.other.get(&2)? {
                             if a <= VarUInteger32::from_two_u128(0, value as u128)? {
-                                valuecur.other.set(&2, &a)?;
+                                add_value.other.set(&ECC_SHELL_KEY, &a)?;
                             }
                         }
                     }
-                    match acc_remaining_balance.sub(&valuecur) {
+                    match acc_remaining_balance.sub(&add_value) {
                         Ok(true) => {
                             acc_remaining_balance.grams.add(&Grams::from(value * 1_000_000_000))?;
                             phase.spec_actions += 1;

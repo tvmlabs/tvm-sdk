@@ -16,6 +16,9 @@ use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
 use crate::types::Status;
 
+pub const ECC_NACKL_KEY: u32 = 1;
+pub const ECC_SHELL_KEY: u32 = 2;
+
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
     fetch_stack(engine, 2)?;
