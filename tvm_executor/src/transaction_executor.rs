@@ -787,9 +787,9 @@ pub trait TransactionExecutor {
                 }
                 OutAction::CopyLeft { .. } => 0,
                 OutAction::MintToken { value } => {
-                    let mut valuecur = CurrencyCollection::new();
-                    valuecur.other = value;
-                    match acc_remaining_balance.add(&valuecur) {
+                    let mut add_value = CurrencyCollection::new();
+                    add_value.other = value;
+                    match acc_remaining_balance.add(&add_value) {
                         Ok(_) => {
                             phase.spec_actions += 1;
                             0
