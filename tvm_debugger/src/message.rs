@@ -1,16 +1,22 @@
 use std::str::FromStr;
 use tvm_abi::encode_function_call;
-use tvm_types::{ed25519_create_private_key, SliceData};
+use tvm_types::{BuilderData, ed25519_create_private_key, SliceData};
 use crate::Args;
 use crate::helper::{get_dest_address, get_now, load_abi_as_string, read_keys};
 
 #[cfg(test)]
 use std::str::FromStr;
+#[cfg(test)]
+use std::path::PathBuf;
+#[cfg(test)]
+use serde_json::json;
+
+use serde_json::Value;
 use tvm_block::{CurrencyCollection, ExternalInboundMessageHeader, ExtraCurrencyCollection, Grams, InternalMessageHeader, Message, MsgAddressExt, MsgAddressInt, VarUInteger32};
 
 
 pub(crate) fn generate_message(args: &Args) -> anyhow::Result<(Message, SliceData)> {
-    let body = generate_message_body(args)?;
+    let mut body = generate_message_body(args)?;
     let message = if args.internal {
         generate_internal_message(args, Some(body.clone()))
     } else {
@@ -25,7 +31,9 @@ pub(crate) fn generate_external_message(
 ) -> anyhow::Result<Message> {
     let dst = get_dest_address(args)?;
     let header = ExternalInboundMessageHeader {
-        src: MsgAddressExt::default(),
+        src: MsgAddressExt::with_extern(
+            SliceData::from_raw(vec![0x55; 8], 64)
+        ).unwrap(),
         dst,
         import_fee: 0x1234u64.into()  // Taken from TVM-linker
     };
@@ -52,7 +60,9 @@ pub(crate) fn generate_internal_message(
         .map_err(|e| anyhow::format_err!("Failed to setup message value: {e}"))?;
     let mut ecc = ExtraCurrencyCollection::new();
     if let Some(value) = args.message_ecc.as_ref() {
-        let ecc_map = value.as_object()
+        let map_value: Value = serde_json::from_str(value)
+            .map_err(|e| anyhow::format_err!("Failed to decode message ecc: {e}"))?;
+        let ecc_map = map_value.as_object()
             .ok_or(anyhow::format_err!("Failed to decode message ecc"))?;
         for (k, v) in ecc_map {
             let key = k.parse::<u32>()?;
@@ -87,11 +97,13 @@ pub(crate) fn generate_message_body(args: &Args) -> anyhow::Result<SliceData> {
     assert!(args.function_name.is_some());
     let abi = load_abi_as_string(args.abi_file.as_ref().unwrap())?;
     let function_name = args.function_name.as_ref().unwrap();
-    let header = args.abi_header.clone().map(|v| v.to_string());
-    let parameters = args.call_parameters.clone().map(|v| serde_json::to_string(&v).unwrap()).unwrap_or("{}".to_string());
+    let header = args.abi_header.clone().map(|v| serde_json::to_string(&v).unwrap_or("{}".to_string()).trim_matches(|c| c == '"').replace('\\', "").to_string());
+    let parameters = args.call_parameters.clone().map(|v| serde_json::to_string(&v).unwrap().trim_matches(|c| c == '"').replace('\\', "").to_string()).unwrap_or("{}".to_string());
     let key = args.sign.as_ref().map(|path| {
         let keypair = read_keys(&path).expect("Failed to read key pair file");
-        ed25519_create_private_key(keypair.secret.as_bytes())
+        let secret = hex::decode(&keypair.secret)
+            .expect("Failed to decode secret key");
+        ed25519_create_private_key(&secret)
             .expect("Failed to load secret key")
     });
     let body = encode_function_call(
@@ -104,8 +116,10 @@ pub(crate) fn generate_message_body(args: &Args) -> anyhow::Result<SliceData> {
         args.address.as_ref().map(|s| s.as_str())
     ).map_err(|e| anyhow::format_err!("Failed to encode function call: {e}"))?;
 
-    SliceData::load_builder(body)
-        .map_err(|e| anyhow::format_err!("Failed to convert call body to slice data: {e}"))
+    let body = SliceData::load_builder(body)
+        .map_err(|e| anyhow::format_err!("Failed to convert call body to slice data: {e}"))?;
+
+    Ok(body)
 }
 
 

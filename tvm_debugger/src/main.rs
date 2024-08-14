@@ -62,7 +62,7 @@ struct Args {
 
     /// Internal message extra currency collection,
     #[arg(long, requires("internal"))]
-    message_ecc: Option<serde_json::Value>,
+    message_ecc: Option<String>,
 
     /// Internal message source address
     #[clap(long, requires("internal"))]
@@ -70,7 +70,7 @@ struct Args {
 
     /// Decode out messages
     #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
-    decode_out_message: bool,
+    decode_out_messages: bool,
 
     /// Trace VM execution
     #[arg(long, action=ArgAction::SetTrue, default_value = "false")]

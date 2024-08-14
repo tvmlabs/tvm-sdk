@@ -70,7 +70,7 @@ pub(crate) fn execute(args: &Args) -> anyhow::Result<()> {
 
 fn initialize_registers(args: &Args, code: SliceData, data: SliceData) -> anyhow::Result<SaveList> {
     let mut ctrls = SaveList::new();
-    let address = get_dest_address(args)?.get_address();
+    let address = SliceData::load_cell(get_dest_address(args)?.serialize().map_err(|e| anyhow::format_err!("Failed to serialize address: {e}"))?).unwrap();
     let info = SmartContractInfo {
         capabilities: capabilities(args),
         balance: contract_balance(args),
