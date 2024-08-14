@@ -1,10 +1,18 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::SystemTime;
-use tvm_block::{CurrencyCollection, MsgAddressInt, StateInit, UnixTime32};
+
+use tvm_block::CurrencyCollection;
+use tvm_block::MsgAddressInt;
+use tvm_block::StateInit;
+use tvm_block::UnixTime32;
 use tvm_client::crypto::KeyPair;
-use tvm_types::{Cell, SliceData};
-use tvm_vm::executor::{Engine, EngineTraceInfo, EngineTraceInfoType};
+use tvm_types::Cell;
+use tvm_types::SliceData;
+use tvm_vm::executor::Engine;
+use tvm_vm::executor::EngineTraceInfo;
+use tvm_vm::executor::EngineTraceInfoType;
+
 use crate::Args;
 
 const DEFAULT_CAPABILITIES: u64 = 1525038;
@@ -18,8 +26,8 @@ pub(crate) fn load_abi_as_string(path: &PathBuf) -> anyhow::Result<String> {
 pub(crate) fn read_keys(filename: &PathBuf) -> anyhow::Result<KeyPair> {
     let keys_str = std::fs::read_to_string(filename)
         .map_err(|e| anyhow::format_err!("failed to read the keypair file {filename:?}: {}", e))?;
-    let keys: KeyPair =
-        serde_json::from_str(&keys_str).map_err(|e| anyhow::format_err!("failed to load keypair: {}", e))?;
+    let keys: KeyPair = serde_json::from_str(&keys_str)
+        .map_err(|e| anyhow::format_err!("failed to load keypair: {}", e))?;
     Ok(keys)
 }
 
@@ -31,12 +39,13 @@ pub(crate) fn get_dest_address(args: &Args) -> anyhow::Result<MsgAddressInt> {
     Ok(match args.address.as_ref() {
         Some(address) => MsgAddressInt::from_str(address)
             .map_err(|e| anyhow::format_err!("Failed to decode contract address: {e}"))?,
-        None => MsgAddressInt::default()
+        None => MsgAddressInt::default(),
     })
 }
 
 pub(crate) fn load_code_and_data_from_state_init(state_init: &StateInit) -> (SliceData, SliceData) {
-    let code: SliceData = SliceData::load_cell(state_init.code.clone().unwrap_or_default()).unwrap();
+    let code: SliceData =
+        SliceData::load_cell(state_init.code.clone().unwrap_or_default()).unwrap();
     let data = SliceData::load_cell(state_init.data.clone().unwrap_or_default()).unwrap();
     (code, data)
 }
@@ -53,25 +62,20 @@ pub(crate) fn config_params(_args: &Args) -> Option<Cell> {
     None
 }
 
-pub(crate) fn trace_callback(_engine: &Engine, info: &EngineTraceInfo, extended: bool /*, debug_info: &Option<DbgInfo>*/) {
+pub(crate) fn trace_callback(
+    _engine: &Engine,
+    info: &EngineTraceInfo,
+    extended: bool, // , debug_info: &Option<DbgInfo>
+) {
     if info.info_type == EngineTraceInfoType::Dump {
         println!("{}", info.cmd_str);
-        return
+        return;
     }
-    println!("{}: {}",
-             info.step,
-             info.cmd_str
-    );
+    println!("{}: {}", info.step, info.cmd_str);
     if extended {
-        println!("{} {}",
-                 info.cmd_code.remaining_bits(),
-                 info.cmd_code.to_hex_string()
-        );
+        println!("{} {}", info.cmd_code.remaining_bits(), info.cmd_code.to_hex_string());
     }
-    println!("\nGas: {} ({})",
-             info.gas_used,
-             info.gas_cmd
-    );
+    println!("\nGas: {} ({})", info.gas_used, info.gas_cmd);
     // let position = get_position(info, debug_info);
     // if position.is_some() {
     //     println!("Position: {}", position.unwrap());

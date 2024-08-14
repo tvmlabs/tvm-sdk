@@ -1,9 +1,10 @@
-mod message;
-mod helper;
-mod execute;
 mod decode;
+mod execute;
+mod helper;
+mod message;
 
 use std::path::PathBuf;
+
 use clap::ArgAction;
 use clap::Parser;
 
@@ -19,8 +20,8 @@ lazy_static::lazy_static!(
     );
 );
 
-/// Helper tool, that allows you to run Acki-Nacki virtual machine, get VM trace,
-/// output messages and update contract state offchain.
+/// Helper tool, that allows you to run Acki-Nacki virtual machine, get VM
+/// trace, output messages and update contract state offchain.
 #[derive(Parser, Debug, Default)]
 #[command(long_version = &**LONG_VERSION, about, long_about = None)]
 struct Args {
