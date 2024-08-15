@@ -1,7 +1,6 @@
 # Release Notes
 
 All notable changes to this project will be documented in this file.
-
 ## [2.1.0] – 2024-08-15
 
 ### New
@@ -10,6 +9,12 @@ All notable changes to this project will be documented in this file.
   MINTECC - mint ecc tokens for special contracts   
   CNVRTSHELLQ - convert ecc shell tokens into shell 1:1   
   CALCBKREWARD - calculate reward for validators after validator epoch    
+
+## [2.0.3] – 2024-07-25
+
+# New
+
+`tvm_debugger` crate added
 
 ## [2.0.2] – 2024-07-25
 
