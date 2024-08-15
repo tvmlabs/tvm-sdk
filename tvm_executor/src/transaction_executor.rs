@@ -788,7 +788,9 @@ pub trait TransactionExecutor {
                 OutAction::CopyLeft { .. } => 0,
                 OutAction::MintToken { value } => {
                     let mut add_value = CurrencyCollection::new();
-                    add_value.other = value;
+                    if is_special == true {
+                        add_value.other = value;
+                    }
                     match acc_remaining_balance.add(&add_value) {
                         Ok(_) => {
                             phase.spec_actions += 1;
@@ -799,14 +801,13 @@ pub trait TransactionExecutor {
                 }
                 OutAction::ExchangeShell { value } => {
                     let mut add_value = CurrencyCollection::new();
-                    if is_special == true {
-                        add_value.set_other(ECC_SHELL_KEY, value as u128)?;
-                        if let Some(a) = acc_remaining_balance.other.get(&2)? {
-                            if a <= VarUInteger32::from_two_u128(0, value as u128)? {
-                                add_value.other.set(&ECC_SHELL_KEY, &a)?;
-                            }
+                    add_value.set_other(ECC_SHELL_KEY, value as u128)?;
+                    if let Some(a) = acc_remaining_balance.other.get(&2)? {
+                        if a <= VarUInteger32::from_two_u128(0, value as u128)? {
+                            add_value.other.set(&ECC_SHELL_KEY, &a)?;
                         }
                     }
+
                     match acc_remaining_balance.sub(&add_value) {
                         Ok(true) => {
                             acc_remaining_balance.grams.add(&Grams::from(value * 1_000_000_000))?;
