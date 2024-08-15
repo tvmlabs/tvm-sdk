@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.3] – 2024-07-25
+
+# New
+
+`tvm_debugger` crate added
+
 ## [2.0.2] – 2024-07-25
 
 ### Fixed
