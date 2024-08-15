@@ -17,6 +17,7 @@ crc.workspace = true
 curve25519-dalek.workspace = true
 ed25519.workspace = true
 ed25519-dalek = { workspace = true, features = ["hazmat", "rand_core"] }
+failure.workspace = true
 hex.workspace = true
 lazy_static.workspace = true
 lockfree.workspace = true

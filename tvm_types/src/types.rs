@@ -13,15 +13,16 @@ use std::cmp;
 use std::fmt;
 use std::fmt::LowerHex;
 use std::fmt::UpperHex;
+use std::str;
 use std::str::FromStr;
-use std::str::{self};
 
-pub use anyhow::Result;
+pub type Error = failure::Error;
+pub type Result<T> = std::result::Result<T, Error>;
 use num::FromPrimitive;
 use smallvec::SmallVec;
 pub use thiserror::Error;
 
-use crate::base64_decode_to_slice;
+use crate::base64_decode_to_exact_slice;
 use crate::cell::BuilderData;
 use crate::cell::SliceData;
 use crate::sha256_digest;
@@ -31,20 +32,20 @@ pub type Status = Result<()>;
 #[macro_export]
 macro_rules! error {
     ($error:literal) => {
-        anyhow::anyhow!("{} {}:{}", $error, file!(), line!())
+        failure::err_msg(format!("{} {}:{}", $error, file!(), line!()))
     };
     ($error:expr) => {
-        anyhow::Error::from($error)
+        failure::Error::from($error)
     };
     ($fmt:expr, $($arg:tt)+) => {
-        anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())
+        failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
     };
 }
 
 #[macro_export]
 macro_rules! fail {
     ($error:literal) => {
-        return Err(anyhow::anyhow!("{} {}:{}", $error, file!(), line!()))
+        return Err(failure::err_msg(format!("{} {}:{}", $error, file!(), line!())))
     };
     // uncomment to explicit panic for any ExceptionCode
     // (ExceptionCode::CellUnderflow) => {
@@ -54,7 +55,7 @@ macro_rules! fail {
         return Err(error!($error))
     };
     ($fmt:expr, $($arg:tt)*) => {
-        return Err(anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
+        return Err(failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())))
     };
 }
 
@@ -216,14 +217,14 @@ impl From<Vec<u8>> for UInt256 {
 }
 
 impl FromStr for UInt256 {
-    type Err = anyhow::Error;
+    type Err = Error;
 
     fn from_str(value: &str) -> Result<Self> {
         let mut result = Self::default();
         match value.len() {
             64 => hex::decode_to_slice(value, &mut result.0)?,
             66 => hex::decode_to_slice(&value[2..], &mut result.0)?,
-            44 => base64_decode_to_slice(value, &mut result.0)?,
+            44 => base64_decode_to_exact_slice(value, &mut result.0)?,
             _ => fail!("invalid account ID string (32 bytes expected), but got string {}", value),
         }
         Ok(result)
@@ -299,7 +300,7 @@ impl From<&UInt256> for AccountId {
 }
 
 impl FromStr for AccountId {
-    type Err = anyhow::Error;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
         let uint: UInt256 = FromStr::from_str(s)?;
@@ -464,3 +465,26 @@ impl<T: std::io::Read> ByteOrderRead for T {
 }
 
 pub type Bitmask = u8;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::base64_encode;
+
+    #[test]
+    fn test_from_str_base64_for_uint256() {
+        for u256_str in [
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "0x9999999999999999999999999999999999999999999999999999999999999999",
+            "0000000000000000000000000000000000000000000000000000000000000001",
+            "9999999999999999999999999999999999999999999999999999999999999999",
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE=",
+        ] {
+            let u256 = UInt256::from_str(u256_str).unwrap();
+            let base64_str = base64_encode(&u256);
+            assert_eq!(u256, UInt256::from_str(base64_str.as_str()).unwrap());
+        }
+    }
+}

@@ -1,15 +1,14 @@
 # TVM SDK
 
-Client libraries for DApp development in TVM blockchains (Everscale, Gosh, TON, Venom Blockchain, etc).
+Client libraries for DApp development in TVM blockchains (TON, Acki Nacki, Venom Blockchain, Everscale).
 
 Core TVM-SDK client library is written in Rust, with bindings in 11 programming languages.
 
-![](docs/.gitbook/assets/vf-dev-program.png) ![](docs/.gitbook/assets/GoshLogo.png)\
-![](<docs/.gitbook/assets/Everscale Logo.png>)
+![image](https://github.com/tvmlabs/tvm-sdk/assets/39991771/1f0fff3e-4d33-4d26-81f0-959abaec2f7d)
 
 **Get quick help in our telegram channel:**
 
-[![Channel on Telegram](https://img.shields.io/badge/chat-on%20telegram-9cf.svg)](https://t.me/ever\_sdk)
+[![Channel on Telegram](https://img.shields.io/badge/chat-on%20telegram-9cf.svg)](https://t.me/+1tWNH2okaPthMWU0)
 
 * [Ever SDK](./#ever-sdk)
   * [Supported languages](./#supported-languages)

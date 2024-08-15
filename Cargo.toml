@@ -13,6 +13,7 @@ members = [
     "tvm_client",
     "tvm_client_processing",
     "tvm_common",
+    "tvm_debugger",
     "tvm_executor",
     "tvm_sdk",
     "tvm_struct",
@@ -21,7 +22,7 @@ members = [
     "tvm_vm",
 ]
 [workspace.package]
-version = "1.47.0"
+version = "2.0.2"
 rust-version = "1.76.0"
 
 authors = ["TVM Labs <hello@tvmlabs.io>"]
@@ -54,6 +55,10 @@ codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = "abort"   # Abort on panic
 strip = true      # Automatically strip symbols from the binary.
 
+[profile.test]
+# IMPORTANT! because with "abort" it will complain https://github.com/rust-lang/cargo/issues/6313
+panic = "unwind"
+
 [workspace.dependencies]
 aes-ctr = "0.6.0"
 anyhow = "1.0.79"
@@ -62,7 +67,7 @@ base64 = "0.21.7"
 blst = "0.3.11"
 byteorder = "1.5.0"
 chrono = "0.4"
-clap = "4.4"
+clap = { version = "4.4", features = ["derive"] }
 crc = "3.0.1"
 curve25519-dalek = "4.1.1"
 diffy = "0.3.0"
@@ -71,6 +76,7 @@ ed25519 = "2.2.3"
 ed25519-dalek = "2.1.0"
 external-ip = "4.2.0"
 extfmt = "0.1.1"
+failure = "0.1.8"
 futures = "0.3"
 hex = "0.4.3"
 hex-literal = "0.4.1"
@@ -89,7 +95,7 @@ proc-macro2 = "1.0.78"
 quote = "1.0.35"
 rand = "0.8.5"
 regex = "1.10.3"
-reqwest = "0.11.24"
+reqwest = { version = "0.11.24", default-features = false, features = ["rustls-tls-webpki-roots"] }
 secstr = "0.5.1"
 serde = "1.0.197"
 serde_derive = "1.0.197"
@@ -99,7 +105,7 @@ sha2 = "0.10.8"
 similar = "2.4.0"
 smallvec = "1.13.1"
 thiserror = "1.0.56"
-tokio = "1.36.0"
+tokio = { default-features = false, version = "1.36.0" }
 tokio-stream = "0.1.14"
 x25519-dalek = "2.0.0"
 zstd = "0.13.0"
@@ -110,9 +116,10 @@ tvm_assembler = { path = "./tvm_assembler" }
 tvm_block = { path = "./tvm_block" }
 tvm_block_json = { path = "./tvm_block_json" }
 tvm_cli = { path = "./tvm_cli" }
-tvm_client = { path = "./tvm_client" }
+tvm_client = { path = "./tvm_client", default-features = false }
 tvm_client_processing = { path = "./tvm_client_processing" }
 tvm_common = { path = "./tvm_common" }
+tvm_debugger = { path = "./tvm_debugger" }
 tvm_executor = { path = "./tvm_executor" }
 tvm_sdk = { path = "./tvm_sdk" }
 tvm_struct = { path = "./tvm_struct" }

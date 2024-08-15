@@ -732,7 +732,7 @@ fn gen_full_schema_query(object_type: &str) -> Result<String> {
         }
     }
 
-    anyhow::bail!("Object type is not found in the schema: {}", object_type)
+    tvm_types::fail!("Object type is not found in the schema: {}", object_type)
 }
 
 #[tokio::test]

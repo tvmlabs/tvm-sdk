@@ -20,6 +20,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --all-features -p tvm_client
-      - run: cargo test --all-features -p tvm_sdk
-      - run: cargo test --all-features -p tvm_cli
+      - run: cargo test --all-features
