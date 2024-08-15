@@ -13,6 +13,7 @@ members = [
     "tvm_client",
     "tvm_client_processing",
     "tvm_common",
+    "tvm_debugger",
     "tvm_executor",
     "tvm_sdk",
     "tvm_struct",
@@ -21,7 +22,7 @@ members = [
     "tvm_vm",
 ]
 [workspace.package]
-version = "2.0.2"
+version = "2.0.3"
 rust-version = "1.76.0"
 
 authors = ["TVM Labs <hello@tvmlabs.io>"]
@@ -66,7 +67,7 @@ base64 = "0.21.7"
 blst = "0.3.11"
 byteorder = "1.5.0"
 chrono = "0.4"
-clap = "4.4"
+clap = { version = "4.4", features = ["derive"] }
 crc = "3.0.1"
 curve25519-dalek = "4.1.1"
 diffy = "0.3.0"
@@ -118,6 +119,7 @@ tvm_cli = { path = "./tvm_cli" }
 tvm_client = { path = "./tvm_client", default-features = false }
 tvm_client_processing = { path = "./tvm_client_processing" }
 tvm_common = { path = "./tvm_common" }
+tvm_debugger = { path = "./tvm_debugger" }
 tvm_executor = { path = "./tvm_executor" }
 tvm_sdk = { path = "./tvm_sdk" }
 tvm_struct = { path = "./tvm_struct" }
