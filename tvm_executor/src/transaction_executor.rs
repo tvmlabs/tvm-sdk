@@ -802,13 +802,14 @@ pub trait TransactionExecutor {
                 }
                 OutAction::ExchangeShell { value } => {
                     let mut add_value = CurrencyCollection::new();
-                    let mut exchange_value = value;
+                    let mut exchange_value = 0;
                     if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
                         if a <= VarUInteger32::from(value as u128) {
                             add_value.other.set(&ECC_SHELL_KEY, &a)?;
                             exchange_value = a.value().to_u64_digits().1[0];
                         } else {
                             add_value.set_other(ECC_SHELL_KEY, value as u128)?;
+                            exchange_value = value;
                         }
                     }
                     log::debug!(target: "executor", "exchange shell token in action in account {} with value {} and final {}", acc_remaining_balance, exchange_value, add_value);
