@@ -46,6 +46,7 @@ use tvm_block::TrComputePhaseVm;
 use tvm_block::TrCreditPhase;
 use tvm_block::TrStoragePhase;
 use tvm_block::Transaction;
+use tvm_block::VarUInteger32;
 use tvm_block::WorkchainFormat;
 use tvm_block::BASE_WORKCHAIN_ID;
 use tvm_block::MASTERCHAIN_ID;
@@ -73,6 +74,7 @@ use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::gas::gas_state::Gas;
+use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::IndexProvider;
 use tvm_vm::smart_contract_info::SmartContractInfo;
@@ -403,7 +405,7 @@ pub trait TransactionExecutor {
             debug_assert!(!result_acc.is_none());
             false
         };
-        log::debug!(target: "executor", "acc balance: {}", acc_balance.grams);
+        log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
         log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
         let is_ordinary = self.ordinary_transaction();
         if acc_balance.grams.is_zero() {
@@ -784,6 +786,56 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::CopyLeft { .. } => 0,
+                OutAction::MintToken { value } => {
+                    let mut add_value = CurrencyCollection::new();
+                    if is_special == true {
+                        add_value.other = value;
+                    }
+                    log::debug!(target: "executor", "mint token action with status {} and value {}  in account {}", is_special, add_value, acc_remaining_balance);
+                    match acc_remaining_balance.add(&add_value) {
+                        Ok(_) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Err(_) => RESULT_CODE_INVALID_BALANCE,
+                    }
+                }
+                OutAction::ExchangeShell { value } => {
+                    let mut add_value = CurrencyCollection::new();
+                    let mut exchange_value = 0;
+                    if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
+                        if a <= VarUInteger32::from(value as u128) {
+                            add_value.other.set(&ECC_SHELL_KEY, &a)?;                    
+                            log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
+                            let digits = a.value().to_u64_digits();
+                            if digits.1.len() != 0 {
+                                exchange_value = a.value().to_u64_digits().1[0];
+                            }
+                        } else {
+                            log::debug!(target: "executor", "ord values a {:?}, value {}", a, value);
+                            add_value.set_other(ECC_SHELL_KEY, value as u128)?;
+                            exchange_value = value;
+                        }
+                    }
+                    log::debug!(target: "executor", "exchange shell token in action in account {} with value {} and final {}", acc_remaining_balance, exchange_value, add_value);
+                    match acc_remaining_balance.sub(&add_value) {
+                        Ok(true) => {
+                            acc_remaining_balance
+                                .grams
+                                .add(&Grams::from(exchange_value * 1_000_000_000))?;
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Ok(false) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Err(_) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                    }
+                }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };
             init_balance.sub(&acc_remaining_balance)?;

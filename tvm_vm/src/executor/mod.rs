@@ -33,6 +33,7 @@ mod rand;
 mod serialization;
 mod slice_comparison;
 mod stack;
+pub mod token;
 mod tuple;
 mod types;
 
