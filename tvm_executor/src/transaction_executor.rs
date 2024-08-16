@@ -809,6 +809,7 @@ pub trait TransactionExecutor {
                             log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
                             exchange_value = a.value().to_u64_digits().1[0];
                         } else {
+                            log::debug!(target: "executor", "ord values a {:?}, value {}", a, value);
                             add_value.set_other(ECC_SHELL_KEY, value as u128)?;
                             exchange_value = value;
                         }
