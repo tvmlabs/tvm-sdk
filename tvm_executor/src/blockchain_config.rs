@@ -328,15 +328,11 @@ impl BlockchainConfig {
 
     /// Check if account is special TON account
     pub fn is_special_account(&self, address: &MsgAddressInt) -> Result<bool> {
-        if address.is_masterchain() {
-            let account_id = address.get_address();
-            // special account adresses are stored in hashmap
-            // config account is special too
-            Ok(self.raw_config.config_addr == account_id
-                || self.special_contracts.get_raw(account_id)?.is_some())
-        } else {
-            Ok(false)
-        }
+        let account_id = address.get_address();
+        // special account adresses are stored in hashmap
+        // config account is special too
+        Ok(self.raw_config.config_addr == account_id
+            || self.special_contracts.get_raw(account_id)?.is_some())
     }
 
     pub fn global_version(&self) -> u32 {
