@@ -226,7 +226,7 @@ pub struct BlockchainConfig {
     fwd_prices_mc: MsgForwardPrices,
     fwd_prices_wc: MsgForwardPrices,
     storage_prices: AccStoragePrices,
-    special_contracts: FundamentalSmcAddresses,
+    pub special_contracts: FundamentalSmcAddresses,
     capabilities: u64,
     global_version: u32,
     raw_config: ConfigParams,
