@@ -40,6 +40,7 @@ use crate::executor::rand::*;
 use crate::executor::serialization::*;
 use crate::executor::slice_comparison::*;
 use crate::executor::stack::*;
+use crate::executor::token::*;
 use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
@@ -385,7 +386,10 @@ impl Handlers {
                 .set(0x22, execute_diff_patch_binary_not_quiet)
                 .set(0x23, execute_diff_patch_binary_zip_not_quiet)
                 .set(0x24, execute_diff_patch_binary_quiet)
-                .set(0x25, execute_diff_patch_binary_zip_quiet);
+                .set(0x25, execute_diff_patch_binary_zip_quiet)
+                .set(0x26, execute_ecc_mint)
+                .set(0x27, execute_exchange_shell)
+                .set(0x29, execute_calculate_validator_reward);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }

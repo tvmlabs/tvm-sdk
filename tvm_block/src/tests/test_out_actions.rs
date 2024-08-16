@@ -10,6 +10,7 @@
 // limitations under the License.
 
 use super::*;
+use crate::VarUInteger32;
 
 #[test]
 fn test_out_action_create() {
@@ -19,6 +20,16 @@ fn test_out_action_create() {
     let new_code = Cell::default();
     let action_set = OutAction::new_set(new_code.clone());
     assert_eq!(action_set, OutAction::SetCode { new_code });
+}
+
+#[test]
+fn test_out_action_create_mint() {
+    let mut value = ExtraCurrencyCollection::default();
+    let action_send = OutAction::new_mint(value.clone());
+    assert_eq!(action_send, OutAction::MintToken { value: value.clone() });
+    value.set(&1, &VarUInteger32::from(500 as u64));
+    let action_set = OutAction::new_mint(value.clone());
+    assert_eq!(action_set, OutAction::MintToken { value: value.clone() });
 }
 
 fn test_action_serde_equality(action: OutAction) {
