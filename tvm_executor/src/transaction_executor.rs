@@ -805,7 +805,8 @@ pub trait TransactionExecutor {
                     let mut exchange_value = 0;
                     if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
                         if a <= VarUInteger32::from(value as u128) {
-                            add_value.other.set(&ECC_SHELL_KEY, &a)?;
+                            add_value.other.set(&ECC_SHELL_KEY, &a)?;                    
+                            log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
                             exchange_value = a.value().to_u64_digits().1[0];
                         } else {
                             add_value.set_other(ECC_SHELL_KEY, value as u128)?;
