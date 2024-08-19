@@ -226,7 +226,7 @@ pub struct BlockchainConfig {
     fwd_prices_mc: MsgForwardPrices,
     fwd_prices_wc: MsgForwardPrices,
     storage_prices: AccStoragePrices,
-    special_contracts: FundamentalSmcAddresses,
+    pub special_contracts: FundamentalSmcAddresses,
     capabilities: u64,
     global_version: u32,
     raw_config: ConfigParams,
@@ -328,15 +328,12 @@ impl BlockchainConfig {
 
     /// Check if account is special TON account
     pub fn is_special_account(&self, address: &MsgAddressInt) -> Result<bool> {
-        if address.is_masterchain() {
-            let account_id = address.get_address();
-            // special account adresses are stored in hashmap
-            // config account is special too
-            Ok(self.raw_config.config_addr == account_id
-                || self.special_contracts.get_raw(account_id)?.is_some())
-        } else {
-            Ok(false)
-        }
+        log::debug!(target: "executor", "is_special_account address {}, config addr  {}, special_contracts {:#?}", address, self.raw_config.config_addr, self.special_contracts);
+        let account_id = address.get_address();
+        // special account adresses are stored in hashmap
+        // config account is special too
+        Ok(self.raw_config.config_addr == account_id
+            || self.special_contracts.get_raw(account_id)?.is_some())
     }
 
     pub fn global_version(&self) -> u32 {
