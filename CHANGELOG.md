@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1] – 2024-08-19
+
+### Improved
+Validator reward formula updated.
+
 ## [2.1.0] – 2024-08-15
 
 ### New
