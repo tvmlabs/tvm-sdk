@@ -2,7 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.0.3] – 2024-07-25
+## [2.1.1] – 2024-08-19
+
+### Improved
+Validator reward formula updated.
+
+## [2.1.0] – 2024-08-15
+
+### New
+
+- New VM instructions supported:    
+  MINTECC - mint ecc tokens for special contracts   
+  CNVRTSHELLQ - convert ecc shell tokens into shell 1:1   
+  CALCBKREWARD - calculate reward for validators after validator epoch    
+
+## [2.0.3] – 2024-08-15
 
 # New
 
