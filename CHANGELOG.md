@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.2] – 2024-08-19
+
+### New
+- New field in account - dapp_id. 
+
 ## [2.1.1] – 2024-08-19
 
 ### Improved
