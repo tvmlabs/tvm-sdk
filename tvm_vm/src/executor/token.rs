@@ -59,7 +59,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
         repcoef = 3_f64;
     }
     let u = 0.000000005756467732460114376710395313_f64;
-    let bkrps = (-1.0_f64 * u * t + 4.0921398489254479849893923389_f64).exp() - rac;
+    let bkrps = (-1.0_f64 * u * t + 3.6990972608158407563226723521_f64).exp() - rac;
     let cbkrpv = ((valstake / totalstake) * repcoef * bkrps * vpd * (1e9 as f64)) as u128;
     engine.cc.stack.push(int!(cbkrpv));
     Ok(())
