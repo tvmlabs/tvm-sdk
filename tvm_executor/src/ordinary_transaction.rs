@@ -120,7 +120,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 account_address.address()
             }
         };
-
+        let mut need_to_burn = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}", params.src_dapp_id, in_msg.int_header());
@@ -135,6 +135,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
                         msg_balance.grams,
                     );
+                    need_to_burn = msg_balance.grams;
                     log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
                 }
                 //                }
@@ -430,6 +431,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             *account = Account::default();
         }
         tr.set_end_status(account.status());
+        if acc_balance.grams < need_to_burn {
+            fail!(ExecutorError::TrExecutorError(format!(
+                "account balance is too small error_code=37"
+            )))
+        } else {
+            acc_balance.grams -= need_to_burn;
+        }
         log::debug!(target: "executor", "set balance {}", acc_balance.grams);
         account.set_balance(acc_balance);
         log::debug!(target: "executor", "add messages");
