@@ -216,26 +216,6 @@ pub trait TransactionExecutor {
                 }
             }
         }
-        if let Some(message) = in_msg {
-            if let Some(data) = message.int_header() {
-                if src_dapp_id != account.get_dapp_id().cloned() {
-                    let gas_config = self.config().get_gas_config(false);
-                    let balance = CurrencyCollection::with_grams(min(
-                        (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
-                        data.value.grams.as_u64_quiet(),
-                    ));
-                    //                    if let Some(AccountState::AccountActive { state_init: _ })
-                    // = account.state() {                        if
-                    // message.have_state_init() && is_previous_state_active {
-                    //                            balance = (0 as u64).into();
-                    //                       }
-                    //                    }
-                    let mut orig_balance = account.balance().unwrap().clone();
-                    orig_balance.sub(&balance)?;
-                    account.set_balance(orig_balance);
-                }
-            }
-        }
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
