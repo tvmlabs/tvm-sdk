@@ -441,7 +441,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {
             *account = Account::default();
         }
-        tr.set_end_status(account.status());
         if acc_balance.grams < need_to_burn {
             fail!(ExecutorError::TrExecutorError(format!(
                 "account balance is too small error_code=37"
@@ -449,6 +448,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         } else {
             acc_balance.grams -= need_to_burn;
         }
+        tr.set_end_status(account.status());
         log::debug!(target: "executor", "set balance {}", acc_balance.grams);
         account.set_balance(acc_balance);
         log::debug!(target: "executor", "add messages");
