@@ -123,15 +123,19 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
+        log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}", params.src_dapp_id, in_msg.int_header());
         if let Some(_) = in_msg.int_header() {
             //            if in_msg.have_state_init() == false {
             if let Some(AccountState::AccountUninit {}) = account.state() {
+                log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
                 if params.src_dapp_id != account.get_dapp_id().cloned() {
                     let gas_config = self.config().get_gas_config(false);
+                    log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_credit * gas_config.gas_price / 65536));
                     msg_balance.grams = min(
                         (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
                         msg_balance.grams,
                     );
+                    log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
                 }
                 //                }
             }
