@@ -123,13 +123,19 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut need_to_burn = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
+        let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}", params.src_dapp_id, in_msg.int_header());
         if let Some(_) = in_msg.int_header() {
             //            if in_msg.have_state_init() == false {
-            if in_msg.have_state_init() == false && (account.is_none() || account.state().map(|s| *s == AccountState::AccountUninit {}).unwrap_or(false)) {
+            if in_msg.have_state_init() == false
+                && (account.is_none()
+                    || account
+                        .state()
+                        .map(|s| *s == AccountState::AccountUninit {})
+                        .unwrap_or(false))
+            {
                 log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
                 if params.src_dapp_id != account.get_dapp_id().cloned() {
-                    let gas_config = self.config().get_gas_config(false);
                     log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_credit * gas_config.gas_price / 65536));
                     msg_balance.grams = min(
                         (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
@@ -178,6 +184,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if is_ext_msg && !is_special {
             // extranal message comes serialized
             let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
+            if in_msg.have_state_init() == true {
+                let credit: Grams = (gas_config.gas_credit * gas_config.gas_price / 65536).into();
+                need_to_burn += credit;
+                acc_balance.grams += credit;
+            }
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
                 fail!(ExecutorError::NoFundsToImportMsg)
