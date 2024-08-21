@@ -400,6 +400,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             };
         } else {
             description.aborted = true;
+            acc_balance.grams = Grams::zero();
         }
 
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
