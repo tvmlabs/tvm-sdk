@@ -126,25 +126,22 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}", params.src_dapp_id, in_msg.int_header());
         if let Some(_) = in_msg.int_header() {
-            //            if in_msg.have_state_init() == false {
-            if in_msg.have_state_init() == false
-                && (account.is_none()
-                    || account
-                        .state()
-                        .map(|s| *s == AccountState::AccountUninit {})
-                        .unwrap_or(false))
+            if params.src_dapp_id != account.get_dapp_id().cloned()
+                && !(in_msg.have_state_init() == true
+                    && (account.is_none()
+                        || account
+                            .state()
+                            .map(|s| *s == AccountState::AccountUninit {})
+                            .unwrap_or(false)))
             {
                 log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
-                if params.src_dapp_id != account.get_dapp_id().cloned() {
-                    log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_credit * gas_config.gas_price / 65536));
-                    msg_balance.grams = min(
-                        (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
-                        msg_balance.grams,
-                    );
-                    need_to_burn = msg_balance.grams;
-                    log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
-                }
-                //                }
+                log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_credit * gas_config.gas_price / 65536));
+                msg_balance.grams = min(
+                    (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
+                    msg_balance.grams,
+                );
+                need_to_burn = msg_balance.grams;
+                log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
