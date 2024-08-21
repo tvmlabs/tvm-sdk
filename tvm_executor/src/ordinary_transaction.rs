@@ -341,7 +341,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         actions.unwrap_or_default(),
                         new_data,
                         account_address,
-                        is_special
+                        is_special,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             out_msgs = messages;
