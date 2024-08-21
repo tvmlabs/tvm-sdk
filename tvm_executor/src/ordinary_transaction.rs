@@ -194,6 +194,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 fail!(ExecutorError::NoFundsToImportMsg)
             }
             tr.add_fee_grams(&in_fwd_fee)?;
+            tr.total_fees_mut().grams += need_to_burn;
         }
 
         if description.credit_first && !is_ext_msg {
@@ -341,8 +342,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         actions.unwrap_or_default(),
                         new_data,
                         account_address,
-                        is_special,
-                        need_to_burn,
+                        is_special
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             out_msgs = messages;
@@ -379,7 +379,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 
         description.aborted = match description.action.as_ref() {
             Some(phase) => {
-                let mut status = true;
                 log::debug!(
                     target: "executor",
                     "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
@@ -388,19 +387,17 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     *account = Account::default();
                     description.destroyed = true;
                 }
-                if phase.success && status {
+                if phase.success {
                     acc_balance = new_acc_balance;
                 }
-                if status == true {
-                    status = phase.success;
-                }
-                !status
+                !phase.success
             }
             None => {
                 log::debug!(target: "executor", "action_phase: none");
                 true
             }
         };
+
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
         if description.aborted && !is_ext_msg && bounce {
             if !action_phase_processed

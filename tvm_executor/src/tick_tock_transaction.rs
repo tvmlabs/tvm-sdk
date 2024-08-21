@@ -186,7 +186,6 @@ impl TransactionExecutor for TickTockTransactionExecutor {
                         new_data,
                         &account_address,
                         is_special,
-                        Grams::zero(),
                     ) {
                         Ok(ActionPhaseResult { phase, messages, .. }) => {
                             out_msgs = messages;
