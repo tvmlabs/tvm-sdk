@@ -634,6 +634,7 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
+        need_to_burn: Grams,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -646,6 +647,7 @@ pub trait TransactionExecutor {
             new_data,
             my_addr,
             is_special,
+            need_to_burn,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -662,6 +664,7 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
+        need_to_burn: Grams,
     ) -> Result<ActionPhaseResult> {
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
@@ -870,7 +873,13 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-
+        if acc_remaining_balance.grams < need_to_burn {
+            if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, 0, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+            }
+        } else {
+            acc_remaining_balance.grams -= need_to_burn;
+        }
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
