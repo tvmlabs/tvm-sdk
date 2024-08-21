@@ -342,6 +342,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         new_data,
                         account_address,
                         is_special,
+                        need_to_burn,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             out_msgs = messages;
@@ -379,11 +380,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         description.aborted = match description.action.as_ref() {
             Some(phase) => {
                 let mut status = true;
-                if acc_balance.grams < need_to_burn {
-                    status = false;
-                } else {
-                    acc_balance.grams -= need_to_burn;
-                }
                 log::debug!(
                     target: "executor",
                     "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
@@ -405,7 +401,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 true
             }
         };
-
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
         if description.aborted && !is_ext_msg && bounce {
             if !action_phase_processed
