@@ -376,6 +376,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             now = Instant::now();
         }
         if new_acc_balance.grams > need_to_burn {
+            new_acc_balance.grams -= need_to_burn;
             description.aborted = match description.action.as_ref() {
                 Some(phase) => {
                     log::debug!(
