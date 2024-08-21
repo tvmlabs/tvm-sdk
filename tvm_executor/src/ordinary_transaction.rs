@@ -378,6 +378,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 
         description.aborted = match description.action.as_ref() {
             Some(phase) => {
+                let mut status = true;
+                if acc_balance.grams < need_to_burn {
+                    status = false;
+                } else {
+                    acc_balance.grams -= need_to_burn;
+                }
                 log::debug!(
                     target: "executor",
                     "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
@@ -386,10 +392,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     *account = Account::default();
                     description.destroyed = true;
                 }
-                if phase.success {
+                if phase.success && status {
                     acc_balance = new_acc_balance;
                 }
-                !phase.success
+                if status == true {
+                    status = phase.success;
+                }
+                !status
             }
             None => {
                 log::debug!(target: "executor", "action_phase: none");
@@ -440,13 +449,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {
             *account = Account::default();
-        }
-        if acc_balance.grams < need_to_burn {
-            fail!(ExecutorError::TrExecutorError(format!(
-                "account balance is too small error_code=37"
-            )))
-        } else {
-            acc_balance.grams -= need_to_burn;
         }
         tr.set_end_status(account.status());
         log::debug!(target: "executor", "set balance {}", acc_balance.grams);
