@@ -375,7 +375,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             self.timings[1].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
             now = Instant::now();
         }
-        if new_acc_balance.grams > need_to_burn {
+        if new_acc_balance.grams >= need_to_burn {
             new_acc_balance.grams -= need_to_burn;
             acc_balance.grams -= need_to_burn;
             description.aborted = match description.action.as_ref() {
