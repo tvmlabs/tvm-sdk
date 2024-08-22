@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.2] – 2024-08-19
+
+### New
+- New field in account - dapp_id. 
+
+## [2.1.1] – 2024-08-19
+
+### Improved
+Validator reward formula updated.
+
+## [2.1.0] – 2024-08-15
+
+### New
+
+- New VM instructions supported:    
+  MINTECC - mint ecc tokens for special contracts   
+  CNVRTSHELLQ - convert ecc shell tokens into shell 1:1   
+  CALCBKREWARD - calculate reward for validators after validator epoch    
+
+## [2.0.3] – 2024-08-15
+
+# New
+
+`tvm_debugger` crate added
+
+## [2.0.2] – 2024-07-25
+
+### Fixed
+AccountActive Stack Overflow issue fixed 
+
+```
+account state: AccountActive    
+Stack Overflow:
+   0: backtrace_on_stack_overflow::handle_sigsegv
+   1: <unknown>
+   2: <tvm_types::cell::DataCell as tvm_types::cell::CellImpl>::reference...
+```
+
 ## [2.0.1] – 2024-07-16
 
 ### Fixed

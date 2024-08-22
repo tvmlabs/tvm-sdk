@@ -48,6 +48,7 @@ use tvm_block::TrComputePhaseVm;
 use tvm_block::TrCreditPhase;
 use tvm_block::TrStoragePhase;
 use tvm_block::Transaction;
+use tvm_block::VarUInteger32;
 use tvm_block::WorkchainFormat;
 use tvm_block::BASE_WORKCHAIN_ID;
 use tvm_block::MASTERCHAIN_ID;
@@ -75,6 +76,7 @@ use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::gas::gas_state::Gas;
+use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::IndexProvider;
 use tvm_vm::smart_contract_info::SmartContractInfo;
@@ -219,26 +221,6 @@ pub trait TransactionExecutor {
                             account.get_id().unwrap().get_bytestring(0).as_slice().into(),
                         );
                     }
-                }
-            }
-        }
-        if let Some(message) = in_msg {
-            if let Some(data) = message.int_header() {
-                if src_dapp_id != account.get_dapp_id().cloned() {
-                    let gas_config = self.config().get_gas_config(false);
-                    let balance = CurrencyCollection::with_grams(min(
-                        (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
-                        data.value.grams.as_u64_quiet(),
-                    ));
-                    //                    if let Some(AccountState::AccountActive { state_init: _ })
-                    // = account.state() {                        if
-                    // message.have_state_init() && is_previous_state_active {
-                    //                            balance = (0 as u64).into();
-                    //                       }
-                    //                    }
-                    let mut orig_balance = account.balance().unwrap().clone();
-                    orig_balance.sub(&balance)?;
-                    account.set_balance(orig_balance);
                 }
             }
         }
@@ -454,7 +436,7 @@ pub trait TransactionExecutor {
             debug_assert!(!result_acc.is_none());
             false
         };
-        log::debug!(target: "executor", "acc balance: {}", acc_balance.grams);
+        log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
         log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
         let is_ordinary = self.ordinary_transaction();
         if acc_balance.grams.is_zero() {
@@ -841,6 +823,56 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::CopyLeft { .. } => 0,
+                OutAction::MintToken { value } => {
+                    let mut add_value = CurrencyCollection::new();
+                    if is_special == true {
+                        add_value.other = value;
+                    }
+                    log::debug!(target: "executor", "mint token action with status {} and value {}  in account {}", is_special, add_value, acc_remaining_balance);
+                    match acc_remaining_balance.add(&add_value) {
+                        Ok(_) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Err(_) => RESULT_CODE_INVALID_BALANCE,
+                    }
+                }
+                OutAction::ExchangeShell { value } => {
+                    let mut add_value = CurrencyCollection::new();
+                    let mut exchange_value = 0;
+                    if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
+                        if a <= VarUInteger32::from(value as u128) {
+                            add_value.other.set(&ECC_SHELL_KEY, &a)?;
+                            log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
+                            let digits = a.value().to_u64_digits();
+                            if digits.1.len() != 0 {
+                                exchange_value = a.value().to_u64_digits().1[0];
+                            }
+                        } else {
+                            log::debug!(target: "executor", "ord values a {:?}, value {}", a, value);
+                            add_value.set_other(ECC_SHELL_KEY, value as u128)?;
+                            exchange_value = value;
+                        }
+                    }
+                    log::debug!(target: "executor", "exchange shell token in action in account {} with value {} and final {}", acc_remaining_balance, exchange_value, add_value);
+                    match acc_remaining_balance.sub(&add_value) {
+                        Ok(true) => {
+                            acc_remaining_balance
+                                .grams
+                                .add(&Grams::from(exchange_value * 1_000_000_000))?;
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Ok(false) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Err(_) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                    }
+                }
                 OutAction::MintShellToken { mut value } => {
                     if value as u128 > available_credit {
                         value = available_credit.clone().try_into()?;
@@ -861,7 +893,6 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
