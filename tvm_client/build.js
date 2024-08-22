@@ -30,7 +30,7 @@ main(async () => {
         },
     };
     for (const [src, dstSuffix] of platformNames[platform][arch] || []) {
-        const target = ['..', 'target', 'release', src.replace('{}', 'ton_client')];
+        const target = ['..', 'target', 'release', src.replace('{}', 'tvm_client')];
         await postBuild(target, platform);
         await gz(
             target,

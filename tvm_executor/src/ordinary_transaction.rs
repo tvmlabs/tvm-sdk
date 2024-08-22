@@ -122,20 +122,32 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 account_address.address()
             }
         };
-
+        let mut need_to_burn = Grams::zero();
+        let mut burned = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
-        if let Some(_) = in_msg.int_header() {
-            //            if in_msg.have_state_init() == false {
-            if let Some(AccountState::AccountUninit {}) = account.state() {
-                if params.src_dapp_id != account.get_dapp_id().cloned() {
-                    let gas_config = self.config().get_gas_config(false);
-                    msg_balance.grams = min(
-                        (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
-                        msg_balance.grams,
-                    );
-                }
-                //                }
+        let gas_config = self.config().get_gas_config(false);
+        log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}", params.src_dapp_id, in_msg.int_header());
+        if let Some(h) = in_msg.int_header() {
+            if params.src_dapp_id != account.get_dapp_id().cloned()
+                && !(in_msg.have_state_init() == true
+                    && (account.is_none()
+                        || account
+                            .state()
+                            .map(|s| *s == AccountState::AccountUninit {})
+                            .unwrap_or(false)))
+                && h.bounced == false
+            {
+                log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
+                log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_credit * gas_config.gas_price / 65536));
+                burned = msg_balance.grams;
+                msg_balance.grams = min(
+                    (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
+                    msg_balance.grams,
+                );
+                burned -= msg_balance.grams;
+                need_to_burn = msg_balance.grams;
+                log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
@@ -144,10 +156,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 msg_balance.grams += h.ihr_fee;
             }
         }
-        log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}",
-            acc_balance.grams, msg_balance.grams, !bounce);
 
         let is_special = self.config.is_special_account(account_address)?;
+        log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}, config: {:#?}",
+            acc_balance.grams, msg_balance.grams, !bounce, is_special, self.config().special_contracts);
         let lt = std::cmp::max(
             account.last_tr_time().unwrap_or(0),
             std::cmp::max(params.last_tr_lt.load(Ordering::Relaxed), in_msg.lt().unwrap_or(0) + 1),
@@ -175,6 +187,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if is_ext_msg && !is_special {
             // extranal message comes serialized
             let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
+            if in_msg.have_state_init() == true {
+                let credit: Grams = (gas_config.gas_credit * gas_config.gas_price / 65536).into();
+                need_to_burn += credit;
+                acc_balance.grams += credit;
+            }
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
                 fail!(ExecutorError::NoFundsToImportMsg)
@@ -363,27 +380,33 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             self.timings[1].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
             now = Instant::now();
         }
-
-        description.aborted = match description.action.as_ref() {
-            Some(phase) => {
-                log::debug!(
-                    target: "executor",
-                    "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
-                );
-                if AccStatusChange::Deleted == phase.status_change {
-                    *account = Account::default();
-                    description.destroyed = true;
+        if new_acc_balance.grams >= need_to_burn {
+            new_acc_balance.grams -= need_to_burn;
+            acc_balance.grams -= need_to_burn;
+            description.aborted = match description.action.as_ref() {
+                Some(phase) => {
+                    log::debug!(
+                        target: "executor",
+                        "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
+                    );
+                    if AccStatusChange::Deleted == phase.status_change {
+                        *account = Account::default();
+                        description.destroyed = true;
+                    }
+                    if phase.success {
+                        acc_balance = new_acc_balance;
+                    }
+                    !phase.success
                 }
-                if phase.success {
-                    acc_balance = new_acc_balance;
+                None => {
+                    log::debug!(target: "executor", "action_phase: none");
+                    true
                 }
-                !phase.success
-            }
-            None => {
-                log::debug!(target: "executor", "action_phase: none");
-                true
-            }
-        };
+            };
+        } else {
+            description.aborted = true;
+            acc_balance.grams = Grams::zero();
+        }
 
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
         if description.aborted && !is_ext_msg && bounce {
@@ -391,6 +414,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
                 log::debug!(target: "executor", "bounce_phase");
+                msg_balance.grams += burned;
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,
