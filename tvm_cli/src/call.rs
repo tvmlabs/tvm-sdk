@@ -275,7 +275,7 @@ pub async fn call_contract_with_result(
     keys: Option<String>,
     is_fee: bool,
 ) -> Result<Value, String> {
-    let ton = if config.debug_fail != "None".to_string() {
+    let ton = if config.debug_fail != *"None" {
         init_debug_logger(&format!("call_{}_{}.log", addr, method))?;
         create_client(config)?
     } else {
@@ -299,7 +299,7 @@ pub async fn call_contract_with_client(
     let msg_params = prepare_message_params(addr, abi.clone(), method, params, None, keys.clone())?;
 
     let needs_encoded_msg =
-        is_fee || config.async_call || config.local_run || config.debug_fail != "None".to_string();
+        is_fee || config.async_call || config.local_run || config.debug_fail != *"None";
 
     let message = if needs_encoded_msg {
         let msg = encode_message(ton.clone(), msg_params.clone())
@@ -335,7 +335,7 @@ pub async fn call_contract_with_client(
                 ..DebugParams::new(config, bc_config)
             };
             debug_error(&e, debug_params).await?;
-            return Err(format!("{:#}", e));
+            Err(format!("{:#}", e))
         }
     }
 }
@@ -374,7 +374,7 @@ pub async fn call_contract_with_msg(
     str_msg: String,
     abi_path: &str,
 ) -> Result<(), String> {
-    let ton = create_client_verbose(&config)?;
+    let ton = create_client_verbose(config)?;
     let abi = load_abi(abi_path, config).await?;
 
     let (msg, _) = unpack_message(&str_msg)?;

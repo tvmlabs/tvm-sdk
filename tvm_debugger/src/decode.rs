@@ -105,7 +105,7 @@ pub fn msg_printer(msg: &Message) -> anyhow::Result<String> {
             None => "None".to_string(),
         },
         msg.body()
-            .map(|b| hex::encode(&write_boc(&b.into_cell()).unwrap()))
+            .map(|b| hex::encode(write_boc(&b.into_cell()).unwrap()))
             .unwrap_or_else(|| "None".to_string()),
         tree_of_cells_into_base64(msg.body().map(|slice| slice.into_cell()).as_ref(),),
         base64_encode(bytes),

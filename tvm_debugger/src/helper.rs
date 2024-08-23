@@ -19,7 +19,7 @@ const DEFAULT_CAPABILITIES: u64 = 1525038;
 const DEFAULT_CONTRACT_BALANCE: u64 = 1_000_000_000_000_000;
 
 pub(crate) fn load_abi_as_string(path: &PathBuf) -> anyhow::Result<String> {
-    std::fs::read_to_string(&path)
+    std::fs::read_to_string(path)
         .map_err(|e| anyhow::format_err!("Failed to load abi from file {path:?}: {e}"))
 }
 
