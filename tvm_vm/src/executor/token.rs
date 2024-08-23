@@ -1,6 +1,3 @@
-use std::u32;
-use std::u64;
-
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
@@ -40,6 +37,7 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_CNVRTSHELLQ, None, cell)
 }
 
+#[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
     fetch_stack(engine, 7)?;
@@ -50,17 +48,16 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let t: f64 = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
     let rac = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
     let vpd = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64;
-    let repcoef;
-    if vrt < maxrt {
-        repcoef = 2999_f64 / 999_f64
+    let repcoef = if vrt < maxrt {
+        2999_f64 / 999_f64
             - (-1_f64 * 0.000000043784704975090621653621901520_f64 * vrt + 0.69414768089352884_f64)
-                .exp();
+                .exp()
     } else {
-        repcoef = 3_f64;
-    }
+        3_f64
+    };
     let u = 0.000000005756467732460114376710395313_f64;
     let bkrps = (-1.0_f64 * u * t + 4.0921398489254479849893923389_f64).exp() - rac;
-    let cbkrpv = ((valstake / totalstake) * repcoef * bkrps * vpd * (1e9 as f64) * 0.675) as u128;
+    let cbkrpv = ((valstake / totalstake) * repcoef * bkrps * vpd * (1e9_f64) * 0.675) as u128;
     engine.cc.stack.push(int!(cbkrpv));
     Ok(())
 }

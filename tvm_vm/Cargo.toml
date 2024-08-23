@@ -41,6 +41,7 @@ log_file = []
 signature_no_check = []
 signature_with_id = ["tvm_block/signature_with_id"]
 verbose = []
+ci_run = []
 
 [[bench]]
 harness = false

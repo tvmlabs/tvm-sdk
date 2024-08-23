@@ -128,13 +128,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}", params.src_dapp_id, in_msg.int_header());
         if let Some(h) = in_msg.int_header() {
             if params.src_dapp_id != account.get_dapp_id().cloned()
-                && !(in_msg.have_state_init() == true
+                && !(in_msg.have_state_init()
                     && (account.is_none()
                         || account
                             .state()
                             .map(|s| *s == AccountState::AccountUninit {})
                             .unwrap_or(false)))
-                && h.bounced == false
+                && !h.bounced
             {
                 log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
                 log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_credit * gas_config.gas_price / 65536));
@@ -185,7 +185,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if is_ext_msg && !is_special {
             // extranal message comes serialized
             let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
-            if in_msg.have_state_init() == true {
+            if in_msg.have_state_init() {
                 let credit: Grams = (gas_config.gas_credit * gas_config.gas_price / 65536).into();
                 need_to_burn += credit;
                 acc_balance.grams += credit;

@@ -27,4 +27,7 @@ tvm_types.workspace = true
 
 [build-dependencies]
 serde_json = "1.0.112"
-tvm_tl_codegen = { path = "../tvm_tl_codegen" }
+tvm_tl_codegen = { path = "../tvm_tl_codegen", default-features = false }
+
+[features]
+bytes_as_vec = []

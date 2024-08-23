@@ -217,9 +217,7 @@ impl Transaction {
     }
 
     pub fn calc_fees(&self) -> TransactionFees {
-        let mut fees = TransactionFees::default();
-
-        fees.gas_fee = self.compute.gas_fees;
+        let mut fees = TransactionFees { gas_fee: self.compute.gas_fees, ..Default::default() };
 
         if let Some(storage) = &self.storage {
             fees.storage_fee = storage.storage_fees_collected;
@@ -250,8 +248,7 @@ impl Transaction {
         fees.in_msg_fwd_fee = if in_msg_fwd_fee > 0 { in_msg_fwd_fee as u64 } else { 0 };
 
         let total_output = self.out_messages.iter().fold(0u128, |acc, msg| acc + msg.value as u128);
-        fees.total_output =
-            if total_output <= std::u64::MAX as u128 { total_output as u64 } else { 0 };
+        fees.total_output = if total_output <= u64::MAX as u128 { total_output as u64 } else { 0 };
 
         fees.ext_in_msg_fee = fees.in_msg_fwd_fee;
         fees.account_fees = fees.total_account_fees;

@@ -93,7 +93,7 @@ impl SignedCurrencyCollection {
             }
         }
         for (key, value) in other.other.iter() {
-            if self.other.get(key).is_none() {
+            if !self.other.contains_key(key) {
                 self.other.insert(*key, value.clone());
             }
         }
@@ -107,7 +107,7 @@ impl SignedCurrencyCollection {
             }
         }
         for (key, value) in other.other.iter() {
-            if self.other.get(key).is_none() {
+            if !self.other.contains_key(key) {
                 self.other.insert(*key, -value.clone());
             }
         }
@@ -1227,7 +1227,7 @@ fn serialize_shard_hashes(
     mode: SerializationMode,
 ) -> Result<()> {
     let mut shard_hashes = Vec::new();
-    let mut min_gen_utime = u32::max_value();
+    let mut min_gen_utime = u32::MAX;
     let mut max_gen_utime = 0;
     hashes.iterate_with_keys(
         &mut |key: i32, InRefValue(tree): InRefValue<BinTree<ShardDescr>>| {
