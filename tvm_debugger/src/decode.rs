@@ -12,6 +12,7 @@ use tvm_block::OutAction;
 use tvm_block::OutActions;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
+use tvm_types::base64_encode;
 use tvm_types::write_boc;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -107,7 +108,7 @@ pub fn msg_printer(msg: &Message) -> anyhow::Result<String> {
             .map(|b| hex::encode(&write_boc(&b.into_cell()).unwrap()))
             .unwrap_or_else(|| "None".to_string()),
         tree_of_cells_into_base64(msg.body().map(|slice| slice.into_cell()).as_ref(),),
-        base64::encode(bytes),
+        base64_encode(bytes),
     ))
 }
 
@@ -148,7 +149,7 @@ pub fn state_init_printer(state: &StateInit) -> String {
 pub fn tree_of_cells_into_base64(root_cell: Option<&Cell>) -> String {
     match root_cell {
         Some(cell) => match write_boc(cell) {
-            Ok(bytes) => base64::encode(bytes),
+            Ok(bytes) => base64_encode(bytes),
             Err(_) => "None".to_string(),
         },
         None => "None".to_string(),
