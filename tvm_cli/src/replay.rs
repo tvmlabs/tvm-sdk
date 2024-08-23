@@ -134,7 +134,7 @@ pub async fn fetch(
             .values
             .as_array()
             .ok_or("Failed to parse value".to_string())?
-            .get(0)
+            .first()
             .ok_or("Failed to parse value".to_string())?
             .as_str()
             .ok_or("Failed to parse value".to_string())?,
@@ -361,12 +361,10 @@ pub async fn replay(
         let state = choose(&mut account_state, &mut config_state);
         let tr = state.tr.as_ref().ok_or("failed to obtain state transaction")?;
 
-        if iterate_config {
-            if cur_block_lt == 0 || cur_block_lt != tr.block_lt {
-                assert!(tr.block_lt > cur_block_lt);
-                cur_block_lt = tr.block_lt;
-                config = construct_blockchain_config(&config_account)?;
-            }
+        if iterate_config && (cur_block_lt == 0 || cur_block_lt != tr.block_lt) {
+            assert!(tr.block_lt > cur_block_lt);
+            cur_block_lt = tr.block_lt;
+            config = construct_blockchain_config(&config_account)?;
         }
 
         let mut account_root =
@@ -568,11 +566,11 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
 
     let mut accounts = vec![];
 
-    let wid = block.result.get(0).unwrap()["workchain_id"].as_i64().unwrap();
-    let end_lt = block.result.get(0).unwrap()["end_lt"].as_str().unwrap().trim_start_matches("0x");
+    let wid = block.result.first().unwrap()["workchain_id"].as_i64().unwrap();
+    let end_lt = block.result.first().unwrap()["end_lt"].as_str().unwrap().trim_start_matches("0x");
     let end_lt = u64::from_str_radix(end_lt, 16).unwrap();
     let block =
-        Block::construct_from_base64(block.result.get(0).unwrap()["boc"].as_str().unwrap())?;
+        Block::construct_from_base64(block.result.first().unwrap()["boc"].as_str().unwrap())?;
     let extra = block.read_extra()?;
     let account_blocks = extra.read_account_blocks()?;
 
@@ -599,7 +597,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         println!("Fetching transactions of {}", account);
         fetch(config, account.as_str(), format!("{}.txns", account).as_str(), Some(end_lt), false)
             .await
-            .map_err(|err| failure::err_msg(err))?;
+            .map_err(failure::err_msg)?;
     }
 
     let config_txns_path = format!("{}.txns", CONFIG_ADDR);
@@ -607,7 +605,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         println!("Fetching transactions of {}", CONFIG_ADDR);
         fetch(config, CONFIG_ADDR, config_txns_path.as_str(), Some(end_lt), false)
             .await
-            .map_err(|err| failure::err_msg(err))?;
+            .map_err(failure::err_msg)?;
     }
 
     let acc = accounts[0].0.as_str();
@@ -627,7 +625,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
             None,
         )
         .await
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(failure::err_msg)?;
     } else {
         println!("Using pre-computed config {}", config_path);
     }
@@ -654,7 +652,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
                         None,
                     )
                     .await
-                    .map_err(|err| failure::err_msg(err))
+                    .map_err(failure::err_msg)
                     .unwrap();
                 }
             })
