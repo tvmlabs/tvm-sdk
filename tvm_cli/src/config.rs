@@ -220,7 +220,7 @@ impl Config {
 
 const MAIN_ENDPOINTS: &[&str] = &["https://mainnet.evercloud.dev"];
 const NET_ENDPOINTS: &[&str] = &["https://devnet.evercloud.dev"];
-const SE_ENDPOINTS: &[&str] = &["http://0.0.0.0", "http://127.0.0.1", "http://localhost"];
+const SE_ENDPOINTS: &[&str] = &["http://localhost"];
 
 pub fn resolve_net_name(url: &str) -> Option<String> {
     let url_regex = Regex::new(r"^\s*(?:https?://)?(?P<net>\w+\.evercloud\.dev)\s*")
@@ -281,9 +281,9 @@ impl FullConfig {
         }
         let full_config: serde_json::error::Result<FullConfig> = serde_json::from_str(&conf_str);
         let mut full_config = if full_config.is_err() {
-            let conf_str = std::fs::read_to_string(&global_config_path()).ok().unwrap_or_default();
+            let conf_str = std::fs::read_to_string(global_config_path()).ok().unwrap_or_default();
             let mut global_config =
-                serde_json::from_str::<FullConfig>(&conf_str).unwrap_or(FullConfig::default());
+                serde_json::from_str::<FullConfig>(&conf_str).unwrap_or_default();
             global_config.path = path.to_string();
             global_config
         } else {
@@ -337,9 +337,9 @@ impl FullConfig {
     pub fn add_endpoint(path: &str, url: &str, endpoints: &str) -> Result<(), String> {
         let mut fconf = FullConfig::from_file(path);
         let mut new_endpoints: Vec<String> =
-            endpoints.replace('[', "").replace(']', "").split(',').map(|s| s.to_string()).collect();
+            endpoints.replace(['[', ']'], "").split(',').map(|s| s.to_string()).collect();
 
-        let old_endpoints = fconf.endpoints_map.entry(url.to_string()).or_insert(vec![]);
+        let old_endpoints = fconf.endpoints_map.entry(url.to_string()).or_default();
         old_endpoints.append(&mut new_endpoints);
         old_endpoints.sort();
         old_endpoints.dedup();
@@ -587,7 +587,6 @@ pub fn set_config(
 #[cfg(test)]
 mod tests {
     use super::resolve_net_name;
-    use super::LOCALNET;
     use super::MAINNET;
     use super::TESTNET;
 
@@ -598,11 +597,11 @@ mod tests {
         assert_eq!(resolve_net_name("https://rustnet.ton.dev"), None);
         assert_eq!(resolve_net_name("rustnet.ton.com"), None);
         assert_eq!(resolve_net_name("https://example.com"), None);
-        assert_eq!(resolve_net_name("http://localhost"), Some(LOCALNET.to_owned()));
-        assert_eq!(resolve_net_name("https://localhost"), Some(LOCALNET.to_owned()));
-        assert_eq!(resolve_net_name("localhost"), Some(LOCALNET.to_owned()));
-        assert_eq!(resolve_net_name("http://127.0.0.1"), Some(LOCALNET.to_owned()));
-        assert_eq!(resolve_net_name("https://127.0.0.1"), Some(LOCALNET.to_owned()));
+        assert_eq!(resolve_net_name("http://localhost"), None);
+        assert_eq!(resolve_net_name("https://localhost"), None);
+        assert_eq!(resolve_net_name("localhost"), None);
+        assert_eq!(resolve_net_name("http://127.0.0.1"), None);
+        assert_eq!(resolve_net_name("https://127.0.0.1"), None);
         assert_eq!(resolve_net_name("https://127.0.0.2"), None);
         assert_eq!(resolve_net_name("https://127.1.0.1"), None);
         assert_eq!(resolve_net_name("https://0.0.0.1"), None);

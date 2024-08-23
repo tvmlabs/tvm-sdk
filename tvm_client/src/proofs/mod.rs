@@ -759,7 +759,7 @@ impl BlockProof {
             )
         }
 
-        if info.read_master_ref()?.is_some() != (!info.shard().is_masterchain()) {
+        if info.read_master_ref()?.is_some() == info.shard().is_masterchain() {
             tvm_types::fail!(
                 "proof for block {} contains a Merkle proof with invalid not_master flag \
                     in block info",

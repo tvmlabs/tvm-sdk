@@ -820,7 +820,7 @@ fn datasize(engine: &mut Engine, name: &'static str, how: u8) -> Status {
     }
     let x = engine.cmd.var(0).as_integer()?;
     x.check_neg()?;
-    let max = x.into(0..=std::i64::MAX).unwrap_or(std::i64::MAX) as usize;
+    let max = x.into(0..=i64::MAX).unwrap_or(i64::MAX) as usize;
     const CAPABILITIES: u64 = GlobalCapabilities::CapFastStorageStatBugfix as u64
         | GlobalCapabilities::CapFastStorageStat as u64;
     let mut cells = 0;

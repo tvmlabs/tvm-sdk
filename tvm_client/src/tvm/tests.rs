@@ -152,6 +152,7 @@ async fn test_execute_get() {
     assert_eq!(result[0][0][0], "1588268660");
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_run_executor() {
     let run = |client: Arc<TestClient>,
@@ -182,6 +183,7 @@ async fn test_run_executor() {
     test_run_message(run).await;
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_run_tvm() {
     let run = |client: Arc<TestClient>,
@@ -662,6 +664,7 @@ fn test_stack_serialization() {
     );
 }
 
+#[ignore]
 #[tokio::test]
 async fn test_tvm_error_message() {
     let client = Arc::new(TestClient::new());

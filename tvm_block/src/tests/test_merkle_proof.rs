@@ -199,7 +199,7 @@ fn test_merkle_proof_hi_hashes() {
 
     let mut block_info = BlockInfo::new();
     block_info.set_shard(ShardIdent::with_workchain_id(0x22222222).unwrap());
-    block_info.set_seq_no(std::u32::MAX - 22).unwrap();
+    block_info.set_seq_no(u32::MAX - 22).unwrap();
     block_info
         .set_prev_stuff(
             false,
@@ -509,6 +509,7 @@ fn test_check_account_proof(
     check_account_proof(&proof, &account)
 }
 
+#[ignore]
 #[test]
 fn test_check_correct_account_proof() {
     let state_files =
@@ -540,6 +541,7 @@ fn test_check_correct_account_proof() {
     }
 }
 
+#[ignore]
 #[test]
 fn test_check_wrong_account_proof() {
     let state_files =

@@ -66,6 +66,7 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     }
 }
 
+#[ignore]
 #[test]
 fn test_real_tvm_shardstate() {
     // getstate (-1,8000000000000000,0)

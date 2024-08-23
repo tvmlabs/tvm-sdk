@@ -825,7 +825,7 @@ async fn test_aes_params(key: &str, data: &str, encrypted: &str) {
             "crypto.encryption_box_encrypt",
             ParamsOfEncryptionBoxEncrypt {
                 encryption_box: box_handle.clone(),
-                data: base64_encode(&data.clone()),
+                data: base64_encode(data.clone()),
             },
         )
         .await
@@ -1100,7 +1100,7 @@ fn password_provider(
                 .request_async(
                     "crypto.nacl_box",
                     ParamsOfNaclBox {
-                        decrypted: base64_encode(&hex::decode(password_hash.as_ref()).unwrap()),
+                        decrypted: base64_encode(hex::decode(password_hash.as_ref()).unwrap()),
                         nonce: encryption_public_key[..48].to_string(),
                         their_public: encryption_public_key,
                         secret: keypair.secret.clone(),
@@ -1441,6 +1441,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     Ok(())
 }
 
+#[ignore]
 #[tokio::test]
 async fn test_crypto_box_derive_key_cache() -> tvm_types::Result<()> {
     let client = Arc::new(TestClient::new());

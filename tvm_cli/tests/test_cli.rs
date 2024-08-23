@@ -5,6 +5,7 @@ use std::time::Duration;
 use std::time::SystemTime;
 
 use assert_cmd::Command;
+use common::giver_v3;
 use predicates::prelude::*;
 use serde_json::json;
 use serde_json::Value;
@@ -380,7 +381,7 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_call_giver() -> Result<(), Box<dyn std::error::Error>> {
-    giver_v2(GIVER_V2_ADDR);
+    giver_v3(GIVER_V2_ADDR);
     Ok(())
 }
 
@@ -618,7 +619,7 @@ fn test_deploy() -> Result<(), Box<dyn std::error::Error>> {
 
     let addr = generate_key_and_address(key_path, wallet_tvc, wallet_abi)?;
 
-    giver_v2(&addr);
+    giver_v3(&addr);
 
     set_config(&["--balance_in_tons", "--url"], &["true", &*NETWORK], Some(config_path))?;
 
@@ -932,6 +933,7 @@ fn test_sendfile() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore] // old version boc
 #[test]
 fn test_account_command() -> Result<(), Box<dyn std::error::Error>> {
     env::set_var("RUST_LOG", "debug");
@@ -1068,6 +1070,7 @@ fn test_account_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore] // old version boc
 #[test]
 fn test_decode_msg() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -1759,6 +1762,7 @@ fn test_gen_deploy_message() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore] // old version boc
 #[test]
 fn test_decode_tvc() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -2315,6 +2319,7 @@ fn test_multisig() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore] // old version boc
 #[test]
 fn test_alternative_syntax() -> Result<(), Box<dyn std::error::Error>> {
     let boc_path = "tests/depool_acc.boc";

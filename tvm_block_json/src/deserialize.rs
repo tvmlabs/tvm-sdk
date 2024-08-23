@@ -939,7 +939,7 @@ impl StateParser {
     fn parse_state_unchecked(mut self, map: &Map<String, Value>) -> Result<ShardStateUnsplit> {
         let map_path = PathMap::new(map);
 
-        self.state.set_min_ref_mc_seqno(std::u32::MAX);
+        self.state.set_min_ref_mc_seqno(u32::MAX);
 
         match map_path.get_num("global_id") {
             Ok(global_id) => self.state.set_global_id(global_id as i32),

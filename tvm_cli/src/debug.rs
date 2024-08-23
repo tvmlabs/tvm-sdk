@@ -108,7 +108,7 @@ pub fn debug_level_from_env() -> log::LevelFilter {
         }
         return TEST_MAX_LEVEL;
     }
-    return MAX_LEVEL;
+    MAX_LEVEL
 }
 
 struct DebugLogger {
@@ -135,7 +135,6 @@ impl log::Log for DebugLogger {
         match record.target() {
             "tvm" | "executor" => {
                 match std::fs::OpenOptions::new()
-                    .write(true)
                     .append(true)
                     .create(true)
                     .open(&self.tvm_trace)
@@ -471,7 +470,7 @@ async fn debug_transaction_command(
         if !config.is_json {
             print_args!(tx_id, trace_path, config_path, contract_path);
         }
-        let address = query_address(tx_id.unwrap(), &config).await?;
+        let address = query_address(tx_id.unwrap(), config).await?;
         (tx_id.unwrap().to_string(), address)
     } else {
         let address = Some(
@@ -483,7 +482,7 @@ async fn debug_transaction_command(
             print_args!(address, trace_path, config_path, contract_path);
         }
         let address = address.unwrap();
-        let transactions = query_transactions(&address, &config).await?;
+        let transactions = query_transactions(&address, config).await?;
         let tr_id = choose_transaction(transactions)?;
         (tr_id, address)
     };
@@ -565,7 +564,7 @@ async fn replay_transaction_command(
         print_args!(input, tx_id, output, config_path);
     }
 
-    let ton_client = create_client(&config)?;
+    let ton_client = create_client(config)?;
     let trans = query_collection(
         ton_client.clone(),
         ParamsOfQueryCollection {
@@ -667,7 +666,7 @@ fn load_decode_abi(matches: &ArgMatches<'_>, config: &Config) -> Option<String> 
     let abi = matches
         .value_of("DECODE_ABI")
         .map(|s| s.to_owned())
-        .or(abi_from_matches_or_config(matches, &config).ok());
+        .or(abi_from_matches_or_config(matches, config).ok());
     match abi {
         Some(path) => match std::fs::read_to_string(path) {
             Ok(res) => Some(res),
@@ -862,13 +861,13 @@ async fn debug_message_command(matches: &ArgMatches<'_>, config: &Config) -> Res
         print_args!(input, message, output, debug_info);
     }
 
-    let ton_client = create_client(&config)?;
+    let ton_client = create_client(config)?;
     let input = input.unwrap();
     let account = if is_boc {
         Account::construct_from_file(input)
             .map_err(|e| format!(" failed to load account from the file {}: {}", input, e))?
     } else {
-        let address = load_ton_address(input, &config)?;
+        let address = load_ton_address(input, config)?;
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
         Account::construct_from_base64(&account)
             .map_err(|e| format!("Failed to construct account: {}", e))?
@@ -933,7 +932,7 @@ async fn debug_message_command(matches: &ArgMatches<'_>, config: &Config) -> Res
 async fn debug_deploy_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
     let tvc = matches.value_of("TVC");
     let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
-    let opt_abi = Some(abi_from_matches_or_config(matches, &config)?);
+    let opt_abi = Some(abi_from_matches_or_config(matches, config)?);
     let debug_info = matches
         .value_of("DBG_INFO")
         .map(|s| s.to_string())
@@ -975,7 +974,7 @@ async fn debug_deploy_command(matches: &ArgMatches<'_>, config: &Config) -> Resu
         let addr =
             MsgAddressInt::with_standart(None, wc as i8, address).map_err(|e| format!("{}", e))?;
         let balance = CurrencyCollection::with_grams(initial_balance);
-        Account::with_address_and_ballance(&addr, &balance)
+        Account::with_address_and_ballance(&addr, UInt256::new(), &balance)
     } else {
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
         Account::construct_from_base64(&account)
@@ -1318,7 +1317,7 @@ fn trace_callback_minimal(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) 
 }
 
 fn get_position(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) -> Result<String, String> {
-    let debug_info = debug_info.ok_or_else(|| String::new())?;
+    let debug_info = debug_info.ok_or_else(String::new)?;
     let cell_hash = info.cmd_code.cell().repr_hash();
     let offset = info.cmd_code.pos();
     match debug_info.get(&cell_hash) {
@@ -1362,7 +1361,7 @@ fn generate_callback(
         } else {
             Arc::new(move |_, info| trace_callback_minimal(info, debug_info.as_ref()))
         }
-    } else if config.debug_fail == "Full".to_string() {
+    } else if config.debug_fail == *"Full" {
         Arc::new(move |_, info| trace_callback(info, None))
     } else {
         Arc::new(move |_, info| trace_callback_minimal(info, None))

@@ -895,9 +895,8 @@ fn compile_code_dict_cell(
 fn adjust_debug_map(map: &mut DbgInfo, before: SliceData, after: SliceData) -> Status {
     let hash_before = before.cell().repr_hash();
     let hash_after = after.cell().repr_hash();
-    let entry_before = map
-        .remove(&hash_before)
-        .ok_or_else(|| failure::err_msg(format!("Failed to remove old value.")))?;
+    let entry_before =
+        map.remove(&hash_before).ok_or_else(|| failure::err_msg("Failed to remove old value."))?;
 
     let adjustment = after.pos();
     let mut entry_after = BTreeMap::new();

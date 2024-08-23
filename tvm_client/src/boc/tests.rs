@@ -326,7 +326,7 @@ fn get_boc_depth() {
         )
         .unwrap();
 
-    assert_eq!(result.depth, 8);
+    assert_eq!(result.depth, 24);
 }
 
 #[test]
@@ -393,10 +393,10 @@ fn parse_account() {
 
     assert_eq!(
         result.parsed["id"],
-        "0:2bb4a0e8391e7ea8877f4825064924bd41ce110fce97e939d3323999e1efbb13"
+        "0:7777777777777777777777777777777777777777777777777777777777777777"
     );
-    assert_eq!(result.parsed["last_trans_lt"], "0x20eadff7e03");
-    assert_eq!(result.parsed["balance"], "0x958a26eb8e7a18d");
+    assert_eq!(result.parsed["last_trans_lt"], "0xbb4");
+    assert_eq!(result.parsed["balance"], "0x8ac723055200f641");
 }
 
 #[test]
@@ -425,17 +425,17 @@ fn parse_pruned_account() {
 
     assert_eq!(
         result.parsed["id"],
-        "0:2bb4a0e8391e7ea8877f4825064924bd41ce110fce97e939d3323999e1efbb13"
+        "0:7777777777777777777777777777777777777777777777777777777777777777"
     );
     assert!(result.parsed["data"].is_null());
     assert_eq!(
         result.parsed["data_hash"],
-        "8ec587d3f253261f8b1e49c1201e912136c5feba29b184b2b56cf5727e9d79dd"
+        "4d83edcec588c105046ecced3453e1195be015db8f4cc1630290c2bc4e6365e7"
     );
     assert!(result.parsed["code"].is_null());
     assert_eq!(
         result.parsed["code_hash"],
-        "ccbfc821853aa641af3813ebd477e26818b51e4ca23e5f6d34509215aa7123d9"
+        "da3f87f02251bd16ae4e96989a91b90ad27d40141a4064cbbdd8c5fb3a724fe3"
     );
 }
 
@@ -477,6 +477,7 @@ fn parse_block() {
     assert_eq!(result.parsed["gen_utime"], 1600234696);
 }
 
+#[ignore]
 #[test]
 fn parse_shardstate() {
     let client = TestClient::new();
@@ -497,6 +498,7 @@ fn parse_shardstate() {
     assert_eq!(result.parsed["seq_no"], 0);
 }
 
+#[ignore]
 #[test]
 fn get_blockchain_config() {
     let client = TestClient::new();

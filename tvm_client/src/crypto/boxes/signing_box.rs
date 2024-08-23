@@ -86,7 +86,7 @@ pub struct RegisteredSigningBox {
 /// Registers an application implemented signing box.
 pub async fn register_signing_box(
     context: Arc<ClientContext>,
-    signing_box: impl SigningBox + Send + Sync + 'static,
+    signing_box: impl SigningBox + 'static,
 ) -> ClientResult<RegisteredSigningBox> {
     let id = context.get_next_id();
     context.boxes.signing_boxes.insert(id, Box::new(signing_box));
