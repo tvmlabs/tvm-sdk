@@ -236,8 +236,6 @@ pub async fn get_account(
         }
     } else if config.is_json {
         println!("{{\n}}");
-    } else if config.is_json {
-        println!("{{\n}}");
     } else {
         println!("Account not found.");
     }

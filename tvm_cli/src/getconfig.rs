@@ -411,12 +411,11 @@ pub fn serialize_config_param(config_str: &str) -> Result<(Cell, u32), String> {
     }
 
     let mut key_number = None;
-    for key in config_json.keys() {
+    if let Some(key) = config_json.keys().next() {
         if !key.starts_with("p") {
             Err(r#""new_param_file" is not a valid json"#.to_string())?;
         }
         key_number = Some(key.trim_start_matches("p").to_string());
-        break;
     }
 
     let key_number = key_number
