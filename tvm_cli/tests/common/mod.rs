@@ -13,6 +13,10 @@ pub const GIVER_V2_ADDR: &str =
     "0:ece57bcc6c530283becbbd8a3b24d3c5987cdddc3c8b7b33be6e4a6312490415";
 pub const GIVER_V2_ABI: &str = "tests/samples/giver_v2.abi.json";
 pub const GIVER_V2_KEY: &str = "tests/samples/giver_v2.key";
+pub const GIVER_V3_ADDR: &str =
+    "0:1111111111111111111111111111111111111111111111111111111111111111";
+pub const GIVER_V3_ABI: &str = "tests/samples/giver_v3.abi.json";
+pub const GIVER_V3_KEY: &str = "tests/samples/giver_v3.key";
 
 lazy_static! {
     pub static ref NETWORK: String =
@@ -70,6 +74,20 @@ pub fn giver_v2(addr: &str) {
         .arg(GIVER_V2_ADDR)
         .arg("--sign")
         .arg(GIVER_V2_KEY)
+        .arg("sendTransaction")
+        .arg(format!(r#"{{"dest":"{}","value":100000000000,"bounce":false}}"#, addr));
+    cmd.assert().success();
+}
+
+#[allow(dead_code)]
+pub fn giver_v3(addr: &str) {
+    let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
+    cmd.arg("call")
+        .arg("--abi")
+        .arg(GIVER_V3_ABI)
+        .arg(GIVER_V3_ADDR)
+        .arg("--sign")
+        .arg(GIVER_V3_KEY)
         .arg("sendTransaction")
         .arg(format!(r#"{{"dest":"{}","value":100000000000,"bounce":false}}"#, addr));
     cmd.assert().success();

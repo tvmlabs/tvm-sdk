@@ -133,17 +133,13 @@ fn main() {
         return;
     }
     if prev_word == "-m" || prev_word == "--method" {
-        let abi_path = match options_map.get(&"--abi") {
+        let abi_path = match options_map.get("--abi") {
             Some(path) => Some(path.to_string()),
             None => {
                 if (options_map.contains_key("--addr"))
-                    && aliases.contains_key(&options_map.get("--addr").unwrap().to_string())
+                    && aliases.contains_key(*options_map.get("--addr").unwrap())
                 {
-                    aliases
-                        .get(&options_map.get("--addr").unwrap().to_string())
-                        .unwrap()
-                        .clone()
-                        .abi_path
+                    aliases.get(*options_map.get("--addr").unwrap()).unwrap().clone().abi_path
                 } else {
                     None
                 }

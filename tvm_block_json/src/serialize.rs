@@ -93,7 +93,7 @@ impl SignedCurrencyCollection {
             }
         }
         for (key, value) in other.other.iter() {
-            if self.other.get(key).is_none() {
+            if !self.other.contains_key(key) {
                 self.other.insert(*key, value.clone());
             }
         }
@@ -107,7 +107,7 @@ impl SignedCurrencyCollection {
             }
         }
         for (key, value) in other.other.iter() {
-            if self.other.get(key).is_none() {
+            if !self.other.contains_key(key) {
                 self.other.insert(*key, -value.clone());
             }
         }
@@ -1227,7 +1227,7 @@ fn serialize_shard_hashes(
     mode: SerializationMode,
 ) -> Result<()> {
     let mut shard_hashes = Vec::new();
-    let mut min_gen_utime = u32::max_value();
+    let mut min_gen_utime = u32::MAX;
     let mut max_gen_utime = 0;
     hashes.iterate_with_keys(
         &mut |key: i32, InRefValue(tree): InRefValue<BinTree<ShardDescr>>| {
@@ -2078,6 +2078,9 @@ pub fn db_serialize_account_ex(
     if let Some(addr) = set.account.get_addr() {
         serialize_field(&mut map, id_str, addr.to_string());
         serialize_field(&mut map, "workchain_id", addr.get_workchain_id());
+    }
+    if let Some(dapp_id) = set.account.get_dapp_id() {
+        serialize_field(&mut map, "dapp_id", dapp_id.as_hex_string());
     }
     serialize_field(&mut map, "boc", base64_encode(&set.boc));
     if let Some(boc1) = set.boc1.as_ref() {

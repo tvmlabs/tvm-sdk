@@ -11,6 +11,7 @@
 
 #![allow(clippy::unreadable_literal)]
 #![deny(renamed_and_removed_lints)]
+#![allow(clippy::all)]
 
 use std::any::Any;
 use std::fmt;

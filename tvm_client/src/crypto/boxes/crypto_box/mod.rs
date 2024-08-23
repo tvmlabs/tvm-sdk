@@ -564,7 +564,7 @@ struct EncryptionBoxFromCryptoBox {
 
 impl EncryptionBoxFromCryptoBox {
     fn factory(&self, sign_key: SigningKey) -> ClientResult<Box<dyn EncryptionBox + 'static>> {
-        let secret = SecretString(hex::encode(&SecretBufConst(sign_key.to_bytes())));
+        let secret = SecretString(hex::encode(SecretBufConst(sign_key.to_bytes())));
         Ok(match &self.algorithm {
             BoxEncryptionAlgorithm::ChaCha20(params) => Box::new(ChaCha20EncryptionBox::new(
                 params.to_encryption_box_params(secret),

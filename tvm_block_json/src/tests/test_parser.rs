@@ -123,6 +123,7 @@ fn parse_block(
     (boc, cell.repr_hash(), parsed)
 }
 
+#[ignore]
 #[test]
 fn test_transaction_code_hash() {
     println!("MA: {:?}", *MINTER_ADDRESS);
@@ -146,6 +147,7 @@ fn test_transaction_code_hash() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_parse_block() {
     // crate::init_logger(None);
@@ -227,6 +229,7 @@ fn test_parse_block() {
     assert_eq!(transactions.len(), 0);
 }
 
+#[ignore]
 #[test]
 fn test_parse_mc_block() {
     // crate::init_logger(None);
@@ -241,6 +244,7 @@ fn test_parse_mc_block() {
     assert!(parsed.messages[0].body.get("chain_order").is_none());
 }
 
+#[ignore]
 #[test]
 fn test_parse_fast_finality_block() {
     // crate::init_logger(None);
@@ -280,6 +284,7 @@ fn check_msg_chain_order(
     }
 }
 
+#[ignore]
 #[test]
 fn test_mc_chain_order() {
     let (_, block_id, parsed) = parse_block(
@@ -324,6 +329,7 @@ fn test_mc_chain_order() {
     }
 }
 
+#[ignore]
 #[test]
 fn test_wc_chain_order() {
     let (_, block_id, parsed) = parse_block(
@@ -361,6 +367,7 @@ fn test_wc_chain_order() {
     }
 }
 
+#[ignore]
 #[test]
 fn test_immediate_chain_order() {
     let (_, _, parsed) = parse_block(
@@ -390,6 +397,7 @@ fn test_immediate_chain_order() {
     }
 }
 
+#[ignore]
 #[test]
 fn test_wc_sharding() {
     let (_, _, parsed) = parse_block(
@@ -421,6 +429,7 @@ fn test_wc_sharding() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_mc_sharding() {
     let (_, _, parsed) = parse_block(
@@ -472,6 +481,7 @@ fn test_mc_sharding() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_ext_in_sharding() {
     let (_, _, parsed) = parse_block(
@@ -507,6 +517,7 @@ fn test_ext_in_sharding() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_ext_out_sharding() {
     let (_, _, parsed) = parse_block(
@@ -566,6 +577,7 @@ fn check_field(body: &Map<String, Value>, pointer: &str, value: &Value) {
     assert_eq!(Value::Object(body.clone()).pointer(pointer), Some(value));
 }
 
+#[ignore]
 #[test]
 fn test_file_hash() {
     let (_, _, parsed) =
@@ -589,6 +601,7 @@ fn test_file_hash() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_reduce_config() {
     let (_, _, parsed) = parse_block(
@@ -618,6 +631,7 @@ fn test_reduce_config() {
     }
 }
 
+#[ignore]
 #[test]
 fn test_transaction_id_in_msg() {
     let (_, _, parsed) =

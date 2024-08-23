@@ -611,8 +611,9 @@ impl Contract {
     }
 
     fn create_ext_in_message(address: MsgAddressInt, msg_body: SliceData) -> Result<TvmMessage> {
-        let mut msg_header = ExternalInboundMessageHeader::default();
-        msg_header.dst = address;
+        let msg_header = ExternalInboundMessageHeader { dst: address, ..Default::default() };
+        // let mut msg_header = ExternalInboundMessageHeader::default();
+        // msg_header.dst = address;
 
         let mut msg = TvmMessage::with_ext_in_header(msg_header);
         msg.set_body(msg_body);

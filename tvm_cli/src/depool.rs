@@ -377,14 +377,9 @@ impl<'a> DepoolCmd<'a> {
 
     pub async fn execute(mut self) -> Result<(), String> {
         let body = std::mem::take(&mut self.body);
-        let call_args = CallArgs::submit_with_args(
-            self.m,
-            &self.depool,
-            &format!("{}", self.value),
-            true,
-            body,
-        )
-        .await?;
+        let call_args =
+            CallArgs::submit_with_args(self.m, self.depool, &format!("{}", self.value), true, body)
+                .await?;
         let msig_args = MultisigArgs::new(self.m, self.config, call_args)?;
 
         let since = now();
@@ -563,10 +558,10 @@ pub async fn depool_command(m: &ArgMatches<'_>, config: &mut Config) -> Result<(
         }
     }
     if let Some(m) = m.subcommand_matches("events") {
-        return events_command(m, &config, &depool).await;
+        return events_command(m, config, &depool).await;
     }
     if let Some(m) = m.subcommand_matches("answers") {
-        return answer_command(m, &config, &depool).await;
+        return answer_command(m, config, &depool).await;
     }
     if let Some(m) = m.subcommand_matches("replenish") {
         return DepoolCmd::replenish(m, config, &depool).await?.execute().await;
@@ -683,8 +678,8 @@ async fn print_event(ton: TonClient, event: &serde_json::Value) -> Result<(), St
 }
 
 async fn get_events(config: &Config, depool: &str, since: u32) -> Result<(), String> {
-    let ton = create_client_verbose(&config)?;
-    let _addr = load_ton_address(depool, &config)?;
+    let ton = create_client_verbose(config)?;
+    let _addr = load_ton_address(depool, config)?;
 
     let events = tvm_client::net::query_collection(
         ton.clone(),
@@ -710,8 +705,8 @@ async fn get_events(config: &Config, depool: &str, since: u32) -> Result<(), Str
 }
 
 async fn wait_for_event(config: &Config, depool: &str) -> Result<(), String> {
-    let ton = create_client_verbose(&config)?;
-    let _addr = load_ton_address(depool, &config)?;
+    let ton = create_client_verbose(config)?;
+    let _addr = load_ton_address(depool, config)?;
     println!("Waiting for a new event...");
     let event = tvm_client::net::wait_for_collection(
         ton.clone(),

@@ -18,6 +18,7 @@ pub enum ApproveKind {
     ApproveMessageLimit,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Clone, Default)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct PipeChain {

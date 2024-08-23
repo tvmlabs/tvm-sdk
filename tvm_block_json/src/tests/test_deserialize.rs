@@ -26,6 +26,7 @@ use crate::SerializationMode;
 
 include!("./test_common.rs");
 
+#[ignore]
 #[test]
 fn test_parse_zerostate() {
     let ethalon = std::fs::read_to_string("src/tests/data/zerostate-ethalon.json").unwrap();

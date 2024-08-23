@@ -19,6 +19,7 @@ use std::sync::Mutex;
 
 use tvm_block::AccStatusChange;
 use tvm_block::Account;
+use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
@@ -127,6 +128,7 @@ pub struct ExecuteParams {
     pub signature_id: i32,
     pub vm_execution_is_block_related: Arc<Mutex<bool>>,
     pub block_collation_was_finished: Arc<Mutex<bool>>,
+    pub src_dapp_id: Option<UInt256>,
 }
 
 pub struct ActionPhaseResult {
@@ -167,6 +169,7 @@ impl Default for ExecuteParams {
             signature_id: 0,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
+            src_dapp_id: None,
         }
     }
 }
@@ -187,11 +190,31 @@ pub trait TransactionExecutor {
     ) -> Result<Transaction> {
         let old_hash = account_root.repr_hash();
         let mut account = Account::construct_from_cell(account_root.clone())?;
+        let mut is_previous_state_active = true;
+        if let Some(AccountState::AccountUninit {}) = account.state() {
+            is_previous_state_active = false;
+        }
+        let src_dapp_id = params.src_dapp_id.clone();
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
         } else {
             account.update_storage_stat()?;
+        }
+        if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
+            if !is_previous_state_active {
+                if let Some(message) = in_msg {
+                    if message.int_header().is_some() {
+                        if let Some(dapp_id) = src_dapp_id.clone() {
+                            account.set_dapp_id(dapp_id.clone());
+                        }
+                    } else {
+                        account.set_dapp_id(
+                            account.get_id().unwrap().get_bytestring(0).as_slice().into(),
+                        );
+                    }
+                }
+            }
         }
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
@@ -524,7 +547,7 @@ pub trait TransactionExecutor {
                 vm_phase.exit_arg = match exception
                     .value
                     .as_integer()
-                    .and_then(|value| value.into(std::i32::MIN..=std::i32::MAX))
+                    .and_then(|value| value.into(i32::MIN..=i32::MAX))
                 {
                     Err(_) | Ok(0) => None,
                     Ok(exit_arg) => Some(exit_arg),
@@ -788,7 +811,7 @@ pub trait TransactionExecutor {
                 OutAction::CopyLeft { .. } => 0,
                 OutAction::MintToken { value } => {
                     let mut add_value = CurrencyCollection::new();
-                    if is_special == true {
+                    if is_special {
                         add_value.other = value;
                     }
                     log::debug!(target: "executor", "mint token action with status {} and value {}  in account {}", is_special, add_value, acc_remaining_balance);
@@ -808,7 +831,7 @@ pub trait TransactionExecutor {
                             add_value.other.set(&ECC_SHELL_KEY, &a)?;
                             log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
                             let digits = a.value().to_u64_digits();
-                            if digits.1.len() != 0 {
+                            if !digits.1.is_empty() {
                                 exchange_value = a.value().to_u64_digits().1[0];
                             }
                         } else {
@@ -847,7 +870,6 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
@@ -1748,6 +1770,7 @@ fn account_from_message(
                 if check_libraries(init, disable_set_lib, text, msg) {
                     return Account::active_by_init_code_hash(
                         hdr.dst.clone(),
+                        UInt256::new(),
                         msg_remaining_balance.clone(),
                         0,
                         init.clone(),
@@ -1773,7 +1796,7 @@ fn account_from_message(
         );
         None
     } else {
-        Some(Account::uninit(hdr.dst.clone(), 0, 0, msg_remaining_balance.clone()))
+        Some(Account::uninit(hdr.dst.clone(), UInt256::new(), 0, 0, msg_remaining_balance.clone()))
     }
 }
 
