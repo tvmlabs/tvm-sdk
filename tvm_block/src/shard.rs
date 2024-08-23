@@ -155,13 +155,13 @@ impl AccountIdPrefixFull {
         } else if dest_bits >= FULL_BITS {
             dest.clone()
         } else if dest_bits >= 32 {
-            let mask = u64::max_value() >> (dest_bits - 32);
+            let mask = u64::MAX >> (dest_bits - 32);
             Self {
                 workchain_id: dest.workchain_id,
                 prefix: (dest.prefix & !mask) | (self.prefix & mask),
             }
         } else {
-            let mask = u32::max_value() >> dest_bits;
+            let mask = u32::MAX >> dest_bits;
             Self {
                 workchain_id: (dest.workchain_id & (!mask as i32))
                     | (self.workchain_id & (mask as i32)),
@@ -233,7 +233,7 @@ impl AccountIdPrefixFull {
         let q = dest.prefix ^ t;
         // Top i bits match, next 4 bits differ:
         let mut i = q.leading_zeros() as u8 & 0xFC;
-        let mut m = u64::max_value() >> i;
+        let mut m = u64::MAX >> i;
         loop {
             m >>= 4;
             let h = t ^ (q & !m);
