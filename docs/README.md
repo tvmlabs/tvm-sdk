@@ -48,12 +48,11 @@ Repository: [JavaScript SDK](https://github.com/tvmlabs/tvm-sdk-js)
 
 You need to install core package and the package with binary for your platform. [See the documentation.](https://github.com/tvmlabs/tvm-sdk-js#library-distribution)
 
-| Platform                       | Package                                                                                                           |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| core package for all platforms | [@tvmsdk/core](https://github.com/tvmlabs/tvm-sdk-js#install-core-package)                                      |
-| Node.js                        | [@tvmsdk/lib-node](https://github.com/tvmlabs/tvm-sdk-js#nodejs)                                                |
-| Web                            | [@tvmsdk/lib-web](https://github.com/tvmlabs/tvm-sdk-js#web)                                                    |
-
+| Platform                       | Package                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| core package for all platforms | [@tvmsdk/core](https://github.com/tvmlabs/tvm-sdk-js#install-core-package) |
+| Node.js                        | [@tvmsdk/lib-node](https://github.com/tvmlabs/tvm-sdk-js#nodejs)           |
+| Web                            | [@tvmsdk/lib-web](https://github.com/tvmlabs/tvm-sdk-js#web)               |
 
 ### Community bindings
 
@@ -64,10 +63,10 @@ You need to install core package and the package with binary for your platform. 
 
 ### If you did not find the language you need
 
-* use library module `json_interface` which provides access to library functions through JSON-RPC interface. This interface exports several extern "C" functions. So you can build a dynamic or static link library and link it to your application as any other external libraries. The JSON Interface is fully "C" compliant. You can find description in section [JSON Interface](docs/for-binding-developers/json\_interface.md).
+* use library module `json_interface` which provides access to library functions through JSON-RPC interface. This interface exports several extern "C" functions. So you can build a dynamic or static link library and link it to your application as any other external libraries. The JSON Interface is fully "C" compliant. You can find description in section [JSON Interface](for-binding-developers/json\_interface.md).
 * write your own binding to chosen language and share it with community.
 
-If you choose using JSON Interface please read this document [JSON Interface](docs/for-binding-developers/json\_interface.md).\
+If you choose using JSON Interface please read this document [JSON Interface](for-binding-developers/json\_interface.md).\
 Here you can find directions how to use `json_interface` and write your own binding.
 
 ## Use-cases
@@ -93,15 +92,15 @@ Get your endpoing at [dashboard.evercloud.dev](https://dashboard.evercloud.dev/)
 
 See the list of available TVM networks: [https://docs.everplatform.dev/products/evercloud/networks-endpoints](https://docs.everplatform.dev/products/evercloud/networks-endpoints)
 
-[Quick Start (Javascript binding)](docs/quick\_start.md)
+[Quick Start (Javascript binding)](quick\_start.md)
 
-[Error descriptions](docs/reference/error\_codes.md)
+[Error descriptions](reference/error\_codes.md)
 
 [JavaScript SDK Types and Methods (API Reference)](https://tonlabs.github.io/ever-sdk-js/)
 
-[Core Types and Methods (API Reference)](docs/reference/types-and-methods/modules.md)
+[Core Types and Methods (API Reference)](reference/types-and-methods/modules.md)
 
-[Guides](docs/guides/installation/add\_sdk\_to\_your\_app.md)
+[Guides](guides/installation/add\_sdk\_to\_your\_app.md)
 
 ## How to avoid Soft Breaking Problems
 
