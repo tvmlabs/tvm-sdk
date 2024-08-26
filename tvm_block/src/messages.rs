@@ -647,11 +647,11 @@ impl InternalMessageHeader {
         &self.value
     }
 
-    pub fn setSrcDappId(&mut self, src_dapp_id: UInt256) {
-        self.src_dapp_id = Some(src_dapp_id)
+    pub fn set_src_dapp_id(&mut self, src_dapp_id: Option<UInt256>) {
+        self.src_dapp_id = src_dapp_id
     }
 
-    pub fn srcDappId(&self) -> &Option<UInt256> {
+    pub fn src_dapp_id(&self) -> &Option<UInt256> {
         &self.src_dapp_id
     }
 

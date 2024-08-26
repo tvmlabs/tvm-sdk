@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.1] – 2024-08-27
+
+### New
+- New field in internal message - `src_dapp_id`. 
+
 ## [2.2.0] – 2024-08-23
 
 ### New
