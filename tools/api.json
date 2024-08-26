@@ -3065,7 +3065,7 @@
                 "type": "String"
               },
               "summary": "HD key derivation path.",
-              "description": "By default, Everscale HD path is used."
+              "description": "By default, Acki Nacki HD path is used."
             },
             {
               "name": "secret_lifetime",
@@ -3116,7 +3116,7 @@
                 "type": "String"
               },
               "summary": "HD key derivation path.",
-              "description": "By default, Everscale HD path is used."
+              "description": "By default, Acki Nacki HD path is used."
             },
             {
               "name": "algorithm",
@@ -13680,7 +13680,7 @@
         {
           "name": "subscribe",
           "summary": "Creates a subscription",
-          "description": "The subscription is a persistent communication channel between\nclient and Everscale Network.\n\n### Important Notes on Subscriptions\n\nUnfortunately sometimes the connection with the network breaks down.\nIn this situation the library attempts to reconnect to the network.\nThis reconnection sequence can take significant time.\nAll of this time the client is disconnected from the network.\n\nBad news is that all changes that happened while\nthe client was disconnected are lost.\n\nGood news is that the client report errors to the callback when\nit loses and resumes connection.\n\nSo, if the lost changes are important to the application then\nthe application must handle these error reports.\n\nLibrary reports errors with `responseType` == 101\nand the error object passed via `params`.\n\nWhen the library has successfully reconnected\nthe application receives callback with\n`responseType` == 101 and `params.code` == 614 (NetworkModuleResumed).\n\nApplication can use several ways to handle this situation:\n- If application monitors changes for the single\nobject (for example specific account):  application\ncan perform a query for this object and handle actual data as a\nregular data from the subscription.\n- If application monitors sequence of some objects\n(for example transactions of the specific account): application must\nrefresh all cached (or visible to user) lists where this sequences presents.",
+          "description": "The subscription is a persistent communication channel between\nclient and Acki Nacki Network.\n\n### Important Notes on Subscriptions\n\nUnfortunately sometimes the connection with the network breaks down.\nIn this situation the library attempts to reconnect to the network.\nThis reconnection sequence can take significant time.\nAll of this time the client is disconnected from the network.\n\nBad news is that all changes that happened while\nthe client was disconnected are lost.\n\nGood news is that the client report errors to the callback when\nit loses and resumes connection.\n\nSo, if the lost changes are important to the application then\nthe application must handle these error reports.\n\nLibrary reports errors with `responseType` == 101\nand the error object passed via `params`.\n\nWhen the library has successfully reconnected\nthe application receives callback with\n`responseType` == 101 and `params.code` == 614 (NetworkModuleResumed).\n\nApplication can use several ways to handle this situation:\n- If application monitors changes for the single\nobject (for example specific account):  application\ncan perform a query for this object and handle actual data as a\nregular data from the subscription.\n- If application monitors sequence of some objects\n(for example transactions of the specific account): application must\nrefresh all cached (or visible to user) lists where this sequences presents.",
           "params": [
             {
               "name": "context",

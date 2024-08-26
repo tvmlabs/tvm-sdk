@@ -10,7 +10,7 @@ Core TVM-SDK client library is written in Rust, with bindings in 11 programming 
 
 [![Channel on Telegram](https://img.shields.io/badge/chat-on%20telegram-9cf.svg)](https://t.me/+1tWNH2okaPthMWU0)
 
-* [Ever SDK](./#ever-sdk)
+* [TVM SDK](./#tvm-sdk)
   * [Supported languages](./#supported-languages)
     * [Rust (core library)](./#rust-core-library)
     * [Official Javascript(Typescript) binding](./#official-javascripttypescript-binding)
@@ -50,27 +50,17 @@ You need to install core package and the package with binary for your platform. 
 
 | Platform                       | Package                                                                                                           |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| core package for all platforms | [@eversdk/core](https://github.com/tvmlabs/tvm-sdk-js#install-core-package)                                      |
-| Node.js                        | [@eversdk/lib-node](https://github.com/tvmlabs/tvm-sdk-js#nodejs)                                                |
-| Web                            | [@eversdk/lib-web](https://github.com/tvmlabs/tvm-sdk-js#web)                                                    |
-| React-Native                   | [@eversdk/lib-react-native](https://github.com/tvmlabs/tvm-sdk-js#react-native)                                  |
-| React-Native with JSI support  | [@eversdk/lib-react-native-jsi](https://github.com/tvmlabs/tvm-sdk-js/tree/master/packages/lib-react-native-jsi) |
+| core package for all platforms | [@tvmsdk/core](https://github.com/tvmlabs/tvm-sdk-js#install-core-package)                                      |
+| Node.js                        | [@tvmsdk/lib-node](https://github.com/tvmlabs/tvm-sdk-js#nodejs)                                                |
+| Web                            | [@tvmsdk/lib-web](https://github.com/tvmlabs/tvm-sdk-js#web)                                                    |
+
 
 ### Community bindings
 
 | Language | Repository                                                                                                                                                                               |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Clojure  | [serge-medvedev/tonos-client-clojure](https://github.com/serge-medvedev/tonos-client-clojure)                                                                                            |
-| Golang   | <p><a href="https://github.com/radianceteam/ton-client-go">radianceteam/ton-client-go</a><br><a href="https://github.com/markgenuine/ever-client-go">markgenuine/ever-client-go</a></p>  |
 | Java     | <p><a href="https://github.com/radianceteam/ton-client-java">radianceteam/ton-client-java</a><br><a href="https://github.com/deplant/java4ever-binding">laugan/java4ever-binding</a></p> |
-| Kotlin   | [mdorofeev/ton-client-kotlin](https://github.com/mdorofeev/ton-client-kotlin)                                                                                                            |
-| Lua      | [serge-medvedev/tonos-client-lua](https://github.com/serge-medvedev/tonos-client-lua)                                                                                                    |
 | .NET     | [everscale-actions/everscale-dotnet](https://github.com/everscale-actions/everscale-dotnet)                                                                                              |
-| PHP      | <p><a href="https://github.com/extraton/php-ton-client">extraton/php-ton-client</a><br><a href="https://github.com/radianceteam/ton-client-php">radianceteam/ton-client-php</a></p>      |
-| Python   | [move-ton/ton-client-py](https://github.com/move-ton/ton-client-py)                                                                                                                      |
-| Ruby     | [nerzh/ton-client-ruby](https://github.com/nerzh/ton-client-ruby)                                                                                                                        |
-| Scala    | [radianceteam/ton-client-scala](https://github.com/radianceteam/ton-client-scala)                                                                                                        |
-| Swift    | [nerzh/ton-client-swift](https://github.com/nerzh/ton-client-swift)                                                                                                                      |
 
 ### If you did not find the language you need
 

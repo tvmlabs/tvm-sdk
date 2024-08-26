@@ -2,13 +2,13 @@
 title: ABI Specification
 ---
 
-# Smart Contracts ABI v2.4 Specification
+# TVM Smart Contracts ABI v2.4 Specification
 
 ABI specifies message bodies layout for client to contract and contract to contract interaction.
 
 ## Introduction
 
-In Everscale client to contract and contract to contract interaction occurs through external and internal messages respectively.
+In Acki Nacki client to contract and contract to contract interaction occurs through external and internal messages respectively.
 
 ABI specification describes the structure of body of these messages. ABI stored as JSON serves as an interface for smart contracts and is used when calling contract methods externally or on-chain.
 
@@ -155,7 +155,7 @@ If a function has no input parameters or does not return any values, the corresp
 - [`map(K,V)`](#mapkeytypevaluetype) is a dictionary of `V` type values with `K` type key. Dictionary is encoded as  `HashmapE` type (one bit put into cell data as dictionary root and one reference with data is added if the dictionary is not empty).
 - [`cell`](#cell): a type for defining a raw tree of cells. Stored as a reference in the current cell. Must be decoded with `LDREF`  command and stored as-is.
     - Note: this type is useful to store payloads as a tree of cells analog to contract code and data in the form of `StateInit` structure of `message` structure.
-- [`address`](#address) is an account address in Everscale blockchain. Encoded as `MsgAddress` struct (see TL-B schema in blockchain [spec](https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb#L107)).
+- [`address`](#address) is an account address in Acki Nacki blockchain. Encoded as `MsgAddress` struct (see TL-B schema in blockchain [spec](https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb#L107)).
 - [`bytes`](#bytes): an array of `uint8` type elements. The array is put into a separate cell.
 - [`fixedbytes[N]`](#fixedbytesn) an array of N `uint8` type elements. The array is put into the cell data and limited to 127 bytes.
 - [`string`](#string) - a type containing UTF-8 string data, encoded like `bytes`.
@@ -721,7 +721,6 @@ See [https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb#L3
 
 ## Reference
 
-- [ABI changelog specifications](https://github.com/tvmlabs/tvm-abi/tree/master/docs)
-- [ABI implementation](https://github.com/tvmlabs/tvm-abi)
-- [ABI parser](https://github.com/broxus/everscale-web-tools/tree/master/abi-parser)
-- [ABI serializer](https://ever.bytie.moe/serializer)
+- [ABI changelog specifications](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_abi/CHANGELOG.md)
+- [ABI implementation](https://github.com/tvmlabs/tvm-sdk/tvm_abi)
+
