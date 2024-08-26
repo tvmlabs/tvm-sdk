@@ -1,4 +1,4 @@
-# TON Smart Contracts ABI 2.2 Specification
+# TVM Smart Contracts ABI 2.2 Specification
 
 > **NOTE**: This is an older specification version.
 > 

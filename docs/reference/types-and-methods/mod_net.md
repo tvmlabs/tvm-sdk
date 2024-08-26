@@ -425,7 +425,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 Creates a subscription
 
 The subscription is a persistent communication channel between
-client and Everscale Network.
+client and Acki Nacki Network.
 
 ### Important Notes on Subscriptions
 

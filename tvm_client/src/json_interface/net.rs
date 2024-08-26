@@ -79,10 +79,10 @@ pub(crate) async fn subscribe_collection(
     crate::net::subscribe_collection(context, params, callback).await
 }
 
-/// Creates a subscription
+/// Creates a subscription (Deprecated)
 ///
 /// The subscription is a persistent communication channel between
-/// client and Everscale Network.
+/// client and Acki Nacki Network.
 ///
 /// ### Important Notes on Subscriptions
 ///

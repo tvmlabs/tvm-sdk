@@ -1,6 +1,6 @@
 # TVM-CLI
 
-TVM-CLI is a multi-platform command line interface for TVM compatible networks (Everscale, Venom, Gosh, TON).
+TVM-CLI is a multi-platform command line interface for TVM compatible networks (Acki Nacki, Venom, TON, Acki Nacki).
 
 It allows user to work with keys and seed phrases, deploy contracts, call any of their methods, generate and broadcast
 messages. It supports specific commands for DeBot, DePool and Multisignature Wallet contracts, as well as a number of
