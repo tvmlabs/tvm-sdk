@@ -605,6 +605,7 @@ pub struct InternalMessageHeader {
     pub fwd_fee: Grams,
     pub created_lt: u64,
     pub created_at: UnixTime32,
+    pub src_dapp_id: Option<UInt256>,
 }
 
 impl InternalMessageHeader {
@@ -626,6 +627,7 @@ impl InternalMessageHeader {
             fwd_fee: Grams::default(),
             created_lt: 0, // Logical Time will be set on BlockBuilder
             created_at: UnixTime32::default(), // UNIX time too
+            src_dapp_id: None,
         }
     }
 
@@ -643,6 +645,14 @@ impl InternalMessageHeader {
     /// Get value tansfered message
     pub fn value(&self) -> &CurrencyCollection {
         &self.value
+    }
+
+    pub fn setSrcDappId(&mut self, src_dapp_id: UInt256) {
+        self.src_dapp_id = Some(src_dapp_id)
+    }
+
+    pub fn srcDappId(&self) -> &Option<UInt256> {
+        &self.src_dapp_id
     }
 
     /// Get IHR fee for message
@@ -1561,6 +1571,7 @@ impl InternalMessageHeader {
             fwd_fee: Grams::default(),
             created_lt: 0,
             created_at: UnixTime32::default(),
+            src_dapp_id: None,
         }
     }
 }
