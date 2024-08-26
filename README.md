@@ -1,6 +1,6 @@
 # TVM SDK
 
-Client libraries for DApp development in TVM blockchains (TON, Acki Nacki, Venom Blockchain, Everscale).
+Client libraries for DApp development in TVM blockchains (Acki Nacki, Venom Blockchain, TON, Everscale).
 
 Core TVM-SDK client library is written in Rust, with bindings in 11 programming languages.
 

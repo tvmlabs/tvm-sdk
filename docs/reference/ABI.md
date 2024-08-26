@@ -722,5 +722,5 @@ See [https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb#L3
 ## Reference
 
 - [ABI changelog specifications](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_abi/CHANGELOG.md)
-- [ABI implementation](https://github.com/tvmlabs/tvm-sdk/tvm_abi)
+- [ABI implementation](https://github.com/tvmlabs/tvm-sdk/tree/main/tvm_abi)
 
