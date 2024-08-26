@@ -116,18 +116,18 @@ pub(crate) fn generate_message_body(args: &Args) -> anyhow::Result<SliceData> {
         })
         .unwrap_or("{}".to_string());
     let key = args.sign.as_ref().map(|path| {
-        let keypair = read_keys(&path).expect("Failed to read key pair file");
+        let keypair = read_keys(path).expect("Failed to read key pair file");
         let secret = hex::decode(&keypair.secret).expect("Failed to decode secret key");
         ed25519_create_private_key(&secret).expect("Failed to load secret key")
     });
     let body = encode_function_call(
         &abi,
         function_name,
-        header.as_ref().map(|s| s.as_str()),
+        header.as_deref(),
         &parameters,
         args.internal,
         key.as_ref(),
-        args.address.as_ref().map(|s| s.as_str()),
+        args.address.as_deref(),
     )
     .map_err(|e| anyhow::format_err!("Failed to encode function call: {e}"))?;
 

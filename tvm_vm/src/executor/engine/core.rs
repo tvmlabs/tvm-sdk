@@ -428,10 +428,8 @@ impl Engine {
                 )
             } else if let Some(string) = log_string {
                 string
-            } else if let Some(string) = self.cmd.dump_with_params() {
-                string
             } else {
-                String::new()
+                self.cmd.dump_with_params().unwrap_or_default()
             };
             let info = EngineTraceInfo {
                 info_type,

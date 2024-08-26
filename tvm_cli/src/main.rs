@@ -1211,7 +1211,7 @@ fn getkeypair_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
 
 async fn send_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
     let message = matches.value_of("MESSAGE");
-    let abi = Some(abi_from_matches_or_config(matches, &config)?);
+    let abi = Some(abi_from_matches_or_config(matches, config)?);
 
     if !config.is_json {
         print_args!(message, abi);
@@ -1224,7 +1224,7 @@ async fn body_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), S
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
     let output = matches.value_of("OUTPUT");
-    let abi = Some(abi_from_matches_or_config(matches, &config)?);
+    let abi = Some(abi_from_matches_or_config(matches, config)?);
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
         print_args!(method, params, abi, output);
@@ -1271,7 +1271,7 @@ async fn call_command(
     let raw = matches.is_present("RAW");
     let output = matches.value_of("OUTPUT");
 
-    let abi = Some(abi_from_matches_or_config(matches, &config)?);
+    let abi = Some(abi_from_matches_or_config(matches, config)?);
 
     let keys = matches
         .value_of("KEYS")
@@ -1283,7 +1283,7 @@ async fn call_command(
     if !config.is_json {
         print_args!(address, method, params, abi, keys, lifetime, output);
     }
-    let address = load_ton_address(address.unwrap(), &config)?;
+    let address = load_ton_address(address.unwrap(), config)?;
 
     match call {
         CallType::Call | CallType::Fee => {
@@ -1348,13 +1348,13 @@ async fn callx_command(matches: &ArgMatches<'_>, full_config: &FullConfig) -> Re
         print_args!(address, method, params, abi, keys);
     }
 
-    let address = load_ton_address(address.unwrap().as_str(), &config)?;
+    let address = load_ton_address(address.unwrap().as_str(), config)?;
 
     call_contract(
         config,
         address.as_str(),
         &abi.unwrap(),
-        &method.unwrap(),
+        method.unwrap(),
         &params.unwrap(),
         keys,
         false,
@@ -1380,7 +1380,7 @@ async fn runget_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(),
     let address = if source_type != AccountSource::NETWORK {
         address.unwrap().to_string()
     } else {
-        load_ton_address(address.unwrap(), &config)?
+        load_ton_address(address.unwrap(), config)?
     };
     let bc_config = matches.value_of("BCCONFIG");
     run_get_method(config, &address, method.unwrap(), params, source_type, bc_config).await
@@ -1460,7 +1460,7 @@ async fn deployx_command(
     let config = &full_config.config;
     let tvc = matches.value_of("TVC");
     let wc = wc_from_matches_or_config(matches, config)?;
-    let abi = Some(abi_from_matches_or_config(matches, &config)?);
+    let abi = Some(abi_from_matches_or_config(matches, config)?);
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
@@ -1519,7 +1519,7 @@ fn config_command(
                 )?
             } else if let Some(alias_matches) = alias_matches.subcommand_matches("remove") {
                 full_config.remove_alias(alias_matches.value_of("ALIAS").unwrap())?
-            } else if let Some(_) = alias_matches.subcommand_matches("reset") {
+            } else if alias_matches.subcommand_matches("reset").is_some() {
                 full_config.aliases = BTreeMap::new();
                 full_config.to_file(&full_config.path)?;
             }
@@ -1550,7 +1550,7 @@ async fn genaddr_command(matches: &ArgMatches<'_>, config: &Config) -> Result<()
     let update_tvc = matches.is_present("SAVE");
     let abi = match abi_from_matches_or_config(matches, config) {
         Ok(abi) => Some(abi),
-        Err(err) => match load_abi_from_tvc(tvc.clone().unwrap()) {
+        Err(err) => match load_abi_from_tvc(tvc.unwrap()) {
             Some(abi) => Some(abi),
             None => return Err(err),
         },
@@ -1581,7 +1581,7 @@ async fn account_command(matches: &ArgMatches<'_>, config: &Config) -> Result<()
     let mut formatted_list = vec![];
     for address in addresses_list.iter() {
         if !is_boc {
-            let formatted = load_ton_address(address, &config)?;
+            let formatted = load_ton_address(address, config)?;
             formatted_list.push(formatted);
         } else {
             if !std::path::Path::new(address).exists() {
@@ -1596,14 +1596,14 @@ async fn account_command(matches: &ArgMatches<'_>, config: &Config) -> Result<()
     if !config.is_json {
         print_args!(addresses);
     }
-    get_account(&config, formatted_list, tvcname, bocname, is_boc).await
+    get_account(config, formatted_list, tvcname, bocname, is_boc).await
 }
 
 async fn dump_accounts_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
     let addresses_list = matches.values_of("ADDRESS").unwrap().collect::<Vec<_>>();
     let mut formatted_list = vec![];
     for address in addresses_list.iter() {
-        let formatted = load_ton_address(address, &config)?;
+        let formatted = load_ton_address(address, config)?;
         formatted_list.push(formatted);
     }
     let path = matches.value_of("PATH");
@@ -1616,7 +1616,7 @@ async fn dump_accounts_command(matches: &ArgMatches<'_>, config: &Config) -> Res
 
 async fn account_wait_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS").unwrap();
-    let address = load_ton_address(address, &config)?;
+    let address = load_ton_address(address, config)?;
     let timeout = matches
         .value_of("TIMEOUT")
         .unwrap_or("30")
@@ -1640,14 +1640,14 @@ async fn storage_command(matches: &ArgMatches<'_>, config: &Config) -> Result<()
     if !config.is_json {
         print_args!(address, period);
     }
-    let address = load_ton_address(address.unwrap(), &config)?;
+    let address = load_ton_address(address.unwrap(), config)?;
     let period = period
         .map(|val| {
             u32::from_str_radix(val, 10).map_err(|e| format!("failed to parse period: {}", e))
         })
         .transpose()?
         .unwrap_or(DEF_STORAGE_PERIOD);
-    calc_storage(&config, address.as_str(), period).await
+    calc_storage(config, address.as_str(), period).await
 }
 
 async fn proposal_create_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
@@ -1660,7 +1660,7 @@ async fn proposal_create_command(matches: &ArgMatches<'_>, config: &Config) -> R
     if !config.is_json {
         print_args!(address, comment, keys, lifetime);
     }
-    let address = load_ton_address(address.unwrap(), &config)?;
+    let address = load_ton_address(address.unwrap(), config)?;
     let lifetime = parse_lifetime(lifetime, config)?;
 
     create_proposal(
@@ -1684,7 +1684,7 @@ async fn proposal_vote_command(matches: &ArgMatches<'_>, config: &Config) -> Res
     if !config.is_json {
         print_args!(address, id, keys, lifetime);
     }
-    let address = load_ton_address(address.unwrap(), &config)?;
+    let address = load_ton_address(address.unwrap(), config)?;
     let lifetime = parse_lifetime(lifetime, config)?;
 
     vote(config, address.as_str(), keys, id.unwrap(), lifetime, offline).await?;
@@ -1698,7 +1698,7 @@ async fn proposal_decode_command(matches: &ArgMatches<'_>, config: &Config) -> R
     if !config.is_json {
         print_args!(address, id);
     }
-    let address = load_ton_address(address.unwrap(), &config)?;
+    let address = load_ton_address(address.unwrap(), config)?;
     decode_proposal(config, address.as_str(), id.unwrap()).await
 }
 

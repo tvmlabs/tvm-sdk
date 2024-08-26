@@ -156,7 +156,7 @@ async fn wait_by_remp<F: futures::Future<Output = ()> + Send>(
                             message_dst: message_dst.to_string(),
                         }).await;
                     }
-                    timeout = std::u32::MAX;
+                    timeout = u32::MAX;
                     notify.notify_one();
                     fallback_activated = true;
                 }

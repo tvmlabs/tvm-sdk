@@ -64,7 +64,7 @@ pub async fn deploy_contract(
     }
 
     if config.async_call {
-        let abi = load_abi(&abi, config).await?;
+        let abi = load_abi(abi, config).await?;
         send_message_and_wait(ton, Some(abi), enc_msg.message, config).await?;
     } else {
         process_message(ton.clone(), msg, config).await.map_err(|e| format!("{:#}", e))?;
@@ -151,7 +151,7 @@ pub async fn prepare_deploy_message_params(
     keys: Option<KeyPair>,
     wc: i32,
 ) -> Result<(ParamsOfEncodeMessage, String), String> {
-    let tvc = base64_encode(&tvc_bytes);
+    let tvc = base64_encode(tvc_bytes);
 
     let data_map_supported = abi.abi().unwrap().data_map_supported();
     let address = if data_map_supported {
@@ -164,7 +164,7 @@ pub async fn prepare_deploy_message_params(
         )
         .await?
     } else {
-        let tvc_cell = tvm_types::boc::read_single_root_boc(&tvc_bytes).unwrap();
+        let tvc_cell = tvm_types::boc::read_single_root_boc(tvc_bytes).unwrap();
         let tvc_hash = tvc_cell.repr_hash();
         format!("{}:{}", wc, tvc_hash.as_hex_string())
     };

@@ -151,7 +151,7 @@ fn test_block_info_with_seq_no() {
 fn test_blockinfo_some_some_none() {
     let mut info = BlockInfo::new();
     info.set_shard(ShardIdent::with_workchain_id(0x22222222).unwrap());
-    info.set_seq_no(std::u32::MAX - 22).unwrap();
+    info.set_seq_no(u32::MAX - 22).unwrap();
     info.set_prev_stuff(
         false,
         &BlkPrevInfo::Block {

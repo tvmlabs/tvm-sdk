@@ -58,7 +58,7 @@ pub async fn run_command(
     } else {
         (
             matches.value_of("ADDRESS").unwrap().to_string(),
-            abi_from_matches_or_config(matches, &config)?,
+            abi_from_matches_or_config(matches, config)?,
         )
     };
     let account_source = if matches.is_present("TVC") {
@@ -80,18 +80,18 @@ pub async fn run_command(
     let trace_path;
     let ton_client = if account_source == AccountSource::NETWORK {
         trace_path = format!("run_{}_{}.log", address, method);
-        create_client(&config)?
+        create_client(config)?
     } else {
         trace_path = "trace.log".to_string();
         create_client_local()?
     };
 
     let (account, account_boc) =
-        load_account(&account_source, &address, Some(ton_client.clone()), &config).await?;
+        load_account(&account_source, &address, Some(ton_client.clone()), config).await?;
     let address = match account_source {
         AccountSource::NETWORK => address,
         AccountSource::BOC => account.get_addr().unwrap().to_string(),
-        AccountSource::TVC => std::iter::repeat("0").take(64).collect(),
+        AccountSource::TVC => "0".repeat(64),
     };
     run(
         matches,
@@ -148,7 +148,7 @@ async fn run(
 
     let msg = prepare_message(
         ton_client.clone(),
-        &address,
+        address,
         abi.clone(),
         method,
         &params,
@@ -158,7 +158,7 @@ async fn run(
     )
     .await?;
 
-    let execution_options = prepare_execution_options(bc_config.clone())?;
+    let execution_options = prepare_execution_options(bc_config)?;
     let result = run_tvm(
         ton_client.clone(),
         ParamsOfRunTvm {
@@ -238,7 +238,7 @@ pub async fn run_get_method(
     bc_config: Option<&str>,
 ) -> Result<(), String> {
     let ton = if source_type == AccountSource::NETWORK {
-        create_client_verbose(&config)?
+        create_client_verbose(config)?
     } else {
         create_client_local()?
     };
@@ -265,7 +265,7 @@ pub async fn run_get_method(
         },
     )
     .await
-    .map_err(|e| format!("run failed: {}", e.to_string()))?
+    .map_err(|e| format!("run failed: {}", e))?
     .output;
 
     if !config.is_json {
@@ -278,7 +278,7 @@ pub async fn run_get_method(
                 let mut i = 0;
                 for val in array.iter() {
                     res.insert(format!("value{}", i), val.to_owned());
-                    i = 1 + i;
+                    i += 1;
                 }
             }
             _ => {
