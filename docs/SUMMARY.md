@@ -1,6 +1,6 @@
 # Table of contents
 
-* [TVM SDK](../README.md)
+* [TVM SDK](README.md)
 * [Quick start (JavaScript)](quick\_start.md)
 * [Add Acki Nacki to your backend](add\_to\_backend.md)
 
@@ -23,8 +23,9 @@
 * [JavaScript Reference](https://tonlabs.github.io/ever-sdk-js/)
 * [Rust Reference](https://github.com/tonlabs/ever-sdk/tree/master/docs/reference/rust-api)
 
-## ABI Specification 
-  * [2.4](reference/ABI.md)
+## ABI Specification
+
+* [2.4](reference/ABI.md)
 
 ## Samples
 

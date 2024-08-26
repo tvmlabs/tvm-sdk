@@ -1,16 +1,14 @@
 # Aggregate Collection
 
 {% hint style="warning" %}
-<mark style="color:red;">**Collections is an analytics API  (not real-time, though it may look like one).**</mark>&#x20;
+<mark style="color:red;">**Collections is an analytics API (not real-time, though it may look like one).**</mark>
 
 <mark style="color:red;">**Not all filters and sortings are working now. Data is provided only for the past 7 days.**</mark>
 {% endhint %}
 
+## When you may need aggregate of collections?
 
-
-## When you may need aggregate of collections?&#x20;
-
-If you want to apply some aggregators like COUNT, MAX, MIN, SUM, AVERAGE on some blockchain data.&#x20;
+If you want to apply some aggregators like COUNT, MAX, MIN, SUM, AVERAGE on some blockchain data.
 
 ## Usage
 
@@ -56,6 +54,6 @@ There are a few collections with blockchain data:
 * _blocks_: blockchain blocks.
 * _block\_signatures_ : validator block signatures
 
-[Reference](../../reference/types-and-methods/mod\_net.md#aggregate\_collection)
+[Reference](broken-reference)
 
 Sample: [https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/query](https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/query)
