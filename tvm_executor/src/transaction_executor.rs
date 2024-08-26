@@ -210,9 +210,9 @@ pub trait TransactionExecutor {
             account.update_storage_stat()?;
         }
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
-            if is_previous_state_active == false {
+            if !is_previous_state_active {
                 if let Some(message) = in_msg {
-                    if let Some(_) = message.int_header() {
+                    if message.int_header().is_some() {
                         if let Some(dapp_id) = src_dapp_id.clone() {
                             account.set_dapp_id(dapp_id.clone());
                         }
@@ -555,7 +555,7 @@ pub trait TransactionExecutor {
                 vm_phase.exit_arg = match exception
                     .value
                     .as_integer()
-                    .and_then(|value| value.into(std::i32::MIN..=std::i32::MAX))
+                    .and_then(|value| value.into(i32::MIN..=i32::MAX))
                 {
                     Err(_) | Ok(0) => None,
                     Ok(exit_arg) => Some(exit_arg),
@@ -825,7 +825,7 @@ pub trait TransactionExecutor {
                 OutAction::CopyLeft { .. } => 0,
                 OutAction::MintToken { value } => {
                     let mut add_value = CurrencyCollection::new();
-                    if is_special == true {
+                    if is_special {
                         add_value.other = value;
                     }
                     log::debug!(target: "executor", "mint token action with status {} and value {}  in account {}", is_special, add_value, acc_remaining_balance);
@@ -845,7 +845,7 @@ pub trait TransactionExecutor {
                             add_value.other.set(&ECC_SHELL_KEY, &a)?;
                             log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
                             let digits = a.value().to_u64_digits();
-                            if digits.1.len() != 0 {
+                            if !digits.1.is_empty() {
                                 exchange_value = a.value().to_u64_digits().1[0];
                             }
                         } else {

@@ -22,7 +22,7 @@ use crate::types::Status;
 fn execute_config_param(engine: &mut Engine, name: &'static str, opt: bool) -> Status {
     engine.load_instruction(Instruction::new(name))?;
     fetch_stack(engine, 1)?;
-    let index: i32 = engine.cmd.var(0).as_integer()?.into(std::i32::MIN..=std::i32::MAX)?;
+    let index: i32 = engine.cmd.var(0).as_integer()?.into(i32::MIN..=i32::MAX)?;
     if let Some(value) = engine.get_config_param(index)? {
         engine.cc.stack.push(StackItem::Cell(value));
         if !opt {

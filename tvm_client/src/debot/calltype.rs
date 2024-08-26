@@ -360,16 +360,14 @@ impl ContractCall {
             debug!("{:?}", event);
             let browser = browser.clone();
             async move {
-                match event {
-                    ProcessingEvent::WillSend {
-                        shard_block_id: _,
-                        message_id: _,
-                        message_dst: _,
-                        message: _,
-                    } => {
-                        browser.log("Sending message...".to_owned()).await;
-                    }
-                    _ => (),
+                if let ProcessingEvent::WillSend {
+                    shard_block_id: _,
+                    message_id: _,
+                    message_dst: _,
+                    message: _,
+                } = event
+                {
+                    browser.log("Sending message...".to_owned()).await;
                 };
             }
         };

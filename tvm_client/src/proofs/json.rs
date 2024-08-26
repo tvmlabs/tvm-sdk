@@ -319,8 +319,8 @@ fn compare_maps(
 }
 
 fn compare_vectors(
-    vec_actual: &Vec<Value>,
-    vec_expected: &Vec<Value>,
+    vec_actual: &[Value],
+    vec_expected: &[Value],
     path: JsonPath<'_, '_>,
     ignore_fields: &HashSet<&'static str>,
     numeric_fields: &HashSet<&'static str>,

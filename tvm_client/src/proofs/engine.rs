@@ -920,7 +920,7 @@ impl ProofHelperEngineImpl {
         &self,
         root_hash: &UInt256,
         block: &Block,
-        boc: &Vec<u8>,
+        boc: &[u8],
     ) -> ClientResult<()> {
         // TODO: Manage untrusted and trusted (already proven) blocks separately.
         //       For trusted blocks we don't need to do proof checking.

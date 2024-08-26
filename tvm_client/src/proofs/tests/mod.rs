@@ -129,7 +129,7 @@ fn test_validator_set() -> Result<()> {
             0.into(),
         )?;
         assert_eq!(subset.0.len(), 7);
-        subset.0.iter().enumerate().for_each(|(_i, descr)| {
+        subset.0.iter().for_each(|descr| {
             let real_id = calc_workchain_id(descr);
             // println!("{}: pub_key: {} real_id: {}", i,
             // hex::encode(descr.public_key.as_slice()), real_id);
@@ -207,7 +207,7 @@ fn check_any_keyblock_validator_set(file_name: &str) -> Result<()> {
                 Default::default(),
             )?;
             assert_eq!(subset.0.len(), 7);
-            subset.0.iter().enumerate().for_each(|(_i, descr)| {
+            subset.0.iter().for_each(|descr| {
                 let real_id = calc_workchain_id(descr);
                 // println!("{}: pub_key: {} real_id: {}", i,
                 // hex::encode(descr.public_key.as_slice()), real_id);

@@ -149,11 +149,8 @@ pub(crate) fn call_tvm_msg(
 
     let mut msgs = vec![];
     for (_, action) in actions.iter_mut().enumerate() {
-        match std::mem::replace(action, OutAction::None) {
-            OutAction::SendMsg { out_msg, .. } => {
-                msgs.push(out_msg);
-            }
-            _ => {}
+        if let OutAction::SendMsg { out_msg, .. } = std::mem::replace(action, OutAction::None) {
+            msgs.push(out_msg);
         }
     }
 
