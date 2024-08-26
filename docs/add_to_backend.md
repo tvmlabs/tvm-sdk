@@ -1,10 +1,10 @@
 ---
 description: >-
   This document describes the various ways to accomplish the most important
-  tasks of running a backend project that supports EVER.
+  tasks of running a backend project that supports Acki Nacki.
 ---
 
-# Add EVER to your backend
+# Add Acki Nacki to your backend
 
 ## Introduction
 
