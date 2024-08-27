@@ -1,8 +1,20 @@
-# TVM SDK
+---
+description: Overview of SDK components
+---
 
-Client libraries for DApp development in TVM blockchains (Acki Nacki, Venom Blockchain, TON, Everscale).
+# About Acki Nacki SDK
 
-Core TVM-SDK client library is written in Rust, with bindings in 11 programming languages.
+Acki Nacki SDK is a customised for Acki Nacki TVM SDK that consists of
+
+* Client Libraries
+* CLI&#x20;
+* Local Blockchain
+
+Core TVM-SDK client library is written in Rust, with bindings for other programming languages.
+
+JS/TS guides are present here as reference guides meaning bindings in other languages have the same api calls.
+
+TVM-SDK is also compatible with other TVM networks:
 
 ![image](https://github.com/tvmlabs/tvm-sdk/assets/39991771/1f0fff3e-4d33-4d26-81f0-959abaec2f7d)
 
@@ -18,6 +30,7 @@ Core TVM-SDK client library is written in Rust, with bindings in 11 programming 
     * [If you did not find the language you need](./#if-you-did-not-find-the-language-you-need)
   * [Use-cases](./#use-cases)
   * [Quick Start](./#quick-start)
+  * [Versioning](./#versioning)
   * [How to avoid Soft Breaking Problems](./#how-to-avoid-soft-breaking-problems)
   * [Build client library](./#build-client-library)
   * [Build artifacts](./#build-artifacts)
@@ -32,15 +45,15 @@ Repository: https://github.com/tvmlabs/tvm-sdk
 
 **What is Core Client Library?**
 
-Core Client Library is written in Rust that can be dynamically linked. It provides all heavy-computation components and functions, such as TON Virtual Machine, TON Transaction Executor, ABI-related functions, boc-related functions, crypto functions.
+Core Client Library is written in Rust that can be dynamically linked. It provides all heavy-computation components and functions, such as TVM Virtual Machine,  Transaction Executor, ABI-related functions, BOC manipulation functions, crypto functions.
 
 The decision to create the Rust library was made after a period of time using pure JavaScript to implement these use cases.
 
 We ended up with very slow work of pure JavaScript and decided to move all this to Rust library and link it to Javascript as a compiled binary including a wasm module for browser applications.
 
-Also this approach provided an opportunity to easily create bindings for any programming language and platform, thus, to make it possible to develop distributed applications (DApps) for any possible use-cases, such as: mobile DApps, web DApps, server-side DApps, enterprise DApp etc.
+Also this approach provided an opportunity to easily create bindings for any programming language and platform, thus, to make it possible to develop distributed applications (DApps) for any possible use-cases, such as: mobile DApps, web DApps, server-side DApps, enterprise DApp, desktop Dapps etc.
 
-Client Library exposes all the functionality through a few of exported functions. All interaction with library is performed using JSON-RPC like protocol.
+Client Library exposes all the functionality through a few of exported functions. All interaction with library is performed using JSON-RPC like protocol via C .h file.
 
 ### Official Javascript(Typescript) binding
 
@@ -48,11 +61,11 @@ Repository: [JavaScript SDK](https://github.com/tvmlabs/tvm-sdk-js)
 
 You need to install core package and the package with binary for your platform. [See the documentation.](https://github.com/tvmlabs/tvm-sdk-js#library-distribution)
 
-| Platform                       | Package                                                                    |
-| ------------------------------ | -------------------------------------------------------------------------- |
-| core package for all platforms | [@tvmsdk/core](https://github.com/tvmlabs/tvm-sdk-js#install-core-package) |
-| Node.js                        | [@tvmsdk/lib-node](https://github.com/tvmlabs/tvm-sdk-js#nodejs)           |
-| Web                            | [@tvmsdk/lib-web](https://github.com/tvmlabs/tvm-sdk-js#web)               |
+| Platform                       | Package                                                            |
+| ------------------------------ | ------------------------------------------------------------------ |
+| core package for all platforms | [@tvmsdk/core](https://www.npmjs.com/package/@tvmsdk/core)         |
+| Node.js                        | [@tvmsdk/lib-node](https://www.npmjs.com/package/@tvmsdk/lib-node) |
+| Web                            | [@tvmsdk/lib-web](https://www.npmjs.com/package/@tvmsdk/lib-web)   |
 
 ### Community bindings
 
@@ -71,26 +84,21 @@ Here you can find directions how to use `json_interface` and write your own bind
 
 ## Use-cases
 
-With Ever-SDK you can implement logic of any complexity on TVM compatible blockchains (Everscale, Gosh, TON, Venom, etc).
+With TVM SDK you can implement logic of any complexity on TVM compatible blockchains (Everscale, Gosh, TON, Venom, etc).
 
 * Create and send messages to blockchain
 * Process messages reliably (supports retries and message expiration mechanics)
-* Supports TON Solidity and ABI compatible contracts
+* Supports TVM Solidity and ABI compatible contracts
 * Emulate transactions locally
 * Run get methods
 * Get account state
 * Query blockchain data (blocks, transactions, messages)
-* Subscripe to events and any other blockchain updates (literally)
 * Sign data/check signature, calculate hashes (sha256, sha512), encrypt/decrypt data
 * Validate addresses
 * Work with blockchain native types (bag of cells or BOCs): encode, decode, calculate hash, etc
 * Works on top of GraphQL API and compatible with Evernode-SE/DS, Evercloud.
 
 ## Quick Start
-
-Get your endpoing at [dashboard.evercloud.dev](https://dashboard.evercloud.dev/) or run Evernode-SE (local node) or Dapp Server (self-hosted blockchain node).
-
-See the list of available TVM networks: [https://docs.everplatform.dev/products/evercloud/networks-endpoints](https://docs.everplatform.dev/products/evercloud/networks-endpoints)
 
 [Quick Start (Javascript binding)](quick\_start.md)
 
@@ -101,6 +109,10 @@ See the list of available TVM networks: [https://docs.everplatform.dev/products/
 [Core Types and Methods (API Reference)](reference/types-and-methods/modules.md)
 
 [Guides](guides/installation/add\_sdk\_to\_your\_app.md)
+
+## Versioning
+
+We aim to follow semver practises, although before the mainnet launch we may introduce breaking changes in any release: patch and minor. Check the CHANGELOG.md file for breaking changes.
 
 ## How to avoid Soft Breaking Problems
 
@@ -201,21 +213,20 @@ To run test suite use standard Rust test command
 cargo test
 ```
 
-SDK tests need [EVER OS API](https://docs.everplatform.dev/reference/graphql-api/networks) endpoint to run on. Such an API is exposed by a [DApp Server](https://github.com/tonlabs/evernode-ds) which runs in real networks and by local blockchain [Evernode SE](https://github.com/tonlabs/evernode-se).
+SDK tests need GraphQL endpoint to run on. Such an API is exposed by a Block Keeper which runs in real networks, Local Network or public testnets..
 
-Evernode SE is used by default with address `http://localhost` and port 80. If you launch it on another port you need to specify it explicitly like this: `http://localhost:port`. If you have Evernode SE running on another address or you need to run tests on a real Everscale network use the following environment variables to override the default parameters
+Local Network is used by default with address `http://localhost` and port 80. If you launch it on another port you need to specify it explicitly like this: `http://localhost:port`. If you need to run tests on a real  network use the following environment variables to override the default parameters
 
 ```
-TON_USE_SE: true/false - flag defining if tests run against Evernode SE or a real network (DApp Server)
-TON_NETWORK_ADDRESS - Dapp server or Evernode SE addresses separated by comma.
-TON_GIVER_SECRET - Giver secret key. If not defined, default Evernode SE giver keys are used
-TON_GIVER_ADDRESS - Address of the giver to use for prepaying accounts before deploying test contracts. If not defined, the address is calculated using `GiverV2.tvc` and configured public key
-EVERCLOUD_AUTH_PROJECT – Evercloud project id used to authorise tests that requires main net interaction 
+TON_USE_SE: true/false - flag defining if tests run against local network (true) or a real network (false)
+TON_NETWORK_ADDRESS - Block Keeper addresses separated by comma.
+TON_GIVER_SECRET - Sponsor Wallet secret key. If not defined, default Local Network giver keys are used
+TON_GIVER_ADDRESS - Address of the Sponsor Wallet to use for prepaying accounts before deploying test contracts. If not defined, the address is calculated using `GiverV2.tvc` and configured public key
 ```
 
-## Download precompiled binaries
+## Download precompiled binaries (temporarily not maintained)
 
-Instead of building library yourself, you can download the **latest** precompiled binaries from EverX SDK Binaries Store.
+Instead of building library yourself, you can download the **latest** precompiled binaries from TVM SDK Binaries Store.
 
 | Platform | Major | Download links                                                                                                                                           |
 | -------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |

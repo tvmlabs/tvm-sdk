@@ -1,6 +1,6 @@
 # Table of contents
 
-* [TVM SDK](README.md)
+* [About Acki Nacki SDK](README.md)
 * [Quick start (JavaScript)](quick\_start.md)
 * [Add Acki Nacki to your backend](add\_to\_backend.md)
 
@@ -20,7 +20,7 @@
   * [Module utils](reference/types-and-methods/mod\_utils.md)
 * [Error API](reference/error\_api.md)
 * [Error Codes](reference/error\_codes.md)
-* [CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_cli/README.md)
+* [CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm\_cli/README.md)
 * [JavaScript Reference](https://tvmlabs.github.io/tvm-sdk-js/)
 * [Rust Reference](https://github.com/tvmlabs/tvm-sdk/tree/master/docs/reference/rust-api)
 
@@ -33,6 +33,7 @@
 * [JavaScript Samples](https://github.com/tvmlabs/sdk-samples)
 
 ## Local Blockchain
+
 * [How to run a local blockchain](guides/WIP.md)
 
 ## JS(TS) guides
@@ -57,7 +58,6 @@
   * [Emulate Transaction](guides/work\_with\_contracts/emulate\_transaction.md)
   * [Estimate Fees](guides/work\_with\_contracts/estimate\_fees.md)
   * [Validate address, convert address](guides/work\_with\_contracts/validate\_address\_convert\_address.md)
-
 * [Crypto](guides/crypto/README.md)
   * [Mnemonics and Keys](guides/crypto/mnemonics\_and\_keys.md)
 * [Queries](guides/queries\_and\_subscriptions/README.md)
