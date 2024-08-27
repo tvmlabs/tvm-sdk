@@ -700,10 +700,10 @@ impl Serializable for InternalMessageHeader {
         self.ihr_fee.write_to(cell)?; //ihr_fee
         self.fwd_fee.write_to(cell)?; //fwd_fee
 
-        self.created_lt.write_to(cell)?; //created_lt
-        self.created_at.write_to(cell)?; //created_at
 
         let mut builder_stuff = BuilderData::new();
+        self.created_lt.write_to(&mut builder_stuff)?; //created_lt
+        self.created_at.write_to(&mut builder_stuff)?; //created_at
         self.src_dapp_id.write_maybe_to(&mut builder_stuff)?;
         cell.checked_append_reference(builder_stuff.into_cell().unwrap()).unwrap();
         Ok(())
@@ -725,10 +725,10 @@ impl Deserializable for InternalMessageHeader {
         self.ihr_fee.read_from(cell)?; //ihr_fee
         self.fwd_fee.read_from(cell)?; //fwd_fee
 
-        self.created_lt.read_from(cell)?; //created_lt
-        self.created_at.read_from(cell)?; //created_at
         let builder = cell.reference(0).unwrap();
         let mut slice_builder = SliceData::load_cell(builder).unwrap();
+        self.created_lt.read_from(&mut slice_builder)?; //created_lt
+        self.created_at.read_from(&mut slice_builder)?; //created_at
         if slice_builder.get_next_bit()? == true {
             self.src_dapp_id = Some(UInt256::construct_from(&mut slice_builder)?);
         }
