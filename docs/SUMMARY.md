@@ -32,7 +32,10 @@
 
 * [JavaScript Samples](https://github.com/tvmlabs/sdk-samples)
 
-## guides
+## Local Blockchain
+* [How to run a local blockchain](guides/WIP.md)
+
+## JS(TS) guides
 
 * [Installation](guides/installation/README.md)
   * [Add SDK to your App](guides/installation/add\_sdk\_to\_your\_app.md)
@@ -43,29 +46,26 @@
   * [Config Reference](guides/configuration/configure\_sdk.md)
 * [Work with contracts](guides/work\_with\_contracts/README.md)
   * [Add Contract to your App](guides/work\_with\_contracts/add\_contract\_to\_your\_app.md)
-  * [Use your own Giver](guides/work\_with\_contracts/custom\_giver.md)
+  * [Use your own Sponsor Wallet](guides/work\_with\_contracts/custom\_giver.md)
   * [Deploy](guides/work\_with\_contracts/deploy.md)
   * [Run on-chain](guides/work\_with\_contracts/run\_onchain.md)
   * [Run ABI Get Method](guides/work\_with\_contracts/run\_abi\_get\_method.md)
   * [Run Fift Get Method](guides/work\_with\_contracts/run\_fift\_get\_method.md)
-  * [Query/Subscribe for messages(events)](guides/work\_with\_contracts/work\_with\_events.md)
+  * [Query messages(events)](guides/work\_with\_contracts/work\_with\_events.md)
   * [Decode Messages(Event)](guides/work\_with\_contracts/decode\_message.md)
   * [External Signing](guides/work\_with\_contracts/external\_signing.md)
   * [Emulate Transaction](guides/work\_with\_contracts/emulate\_transaction.md)
   * [Estimate Fees](guides/work\_with\_contracts/estimate\_fees.md)
   * [Validate address, convert address](guides/work\_with\_contracts/validate\_address\_convert\_address.md)
-  * [Monitor Messages](guides/work\_with\_contracts/monitor-messages.md)
-  * [Trace message processing with REMP](guides/work\_with\_contracts/trace-message-processing-with-remp.md)
+
 * [Crypto](guides/crypto/README.md)
   * [Mnemonics and Keys](guides/crypto/mnemonics\_and\_keys.md)
-* [Queries and subscriptions](guides/queries\_and\_subscriptions/README.md)
+* [Queries](guides/queries\_and\_subscriptions/README.md)
   * [Use-cases](guides/queries\_and\_subscriptions/use-cases.md)
   * [How to work with net module](guides/queries\_and\_subscriptions/how-to-work-with-net-module.md)
   * [net.query syntax](guides/queries\_and\_subscriptions/raw\_query.md)
   * [Data pagination](guides/queries\_and\_subscriptions/data-pagination.md)
-  * [Subscribe to Updates](guides/queries\_and\_subscriptions/subscribe\_to\_updates.md)
   * [Query Collection](guides/queries\_and\_subscriptions/query\_collection.md)
-  * [Aggregate Collection](guides/queries\_and\_subscriptions/aggregate\_collection.md)
 
 ## For Binding Developers
 
@@ -74,5 +74,4 @@
 
 ## Links
 
-* [Ever SDK repository](https://github.com/tonlabs/ever-sdk)
-* [AppKit JS documentation](https://docs.everos.dev/appkit-js/)
+* [TVM SDK repository](https://github.com/tvmlabs/tvm-sdk)
