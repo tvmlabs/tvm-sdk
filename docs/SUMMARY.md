@@ -20,8 +20,9 @@
   * [Module utils](reference/types-and-methods/mod\_utils.md)
 * [Error API](reference/error\_api.md)
 * [Error Codes](reference/error\_codes.md)
-* [JavaScript Reference](https://tonlabs.github.io/ever-sdk-js/)
-* [Rust Reference](https://github.com/tonlabs/ever-sdk/tree/master/docs/reference/rust-api)
+* [CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_cli/README.md)
+* [JavaScript Reference](https://tvmlabs.github.io/tvm-sdk-js/)
+* [Rust Reference](https://github.com/tvmlabs/tvm-sdk/tree/master/docs/reference/rust-api)
 
 ## ABI Specification
 
@@ -29,7 +30,7 @@
 
 ## Samples
 
-* [JavaScript Samples](https://github.com/tonlabs/sdk-samples)
+* [JavaScript Samples](https://github.com/tvmlabs/sdk-samples)
 
 ## guides
 
