@@ -703,7 +703,9 @@ impl Serializable for InternalMessageHeader {
         self.created_lt.write_to(cell)?; //created_lt
         self.created_at.write_to(cell)?; //created_at
 
-        self.src_dapp_id.write_maybe_to(cell)?;
+        let mut builder_stuff = BuilderData::new();
+        self.src_dapp_id.write_maybe_to(&mut builder_stuff)?;
+        cell.checked_append_reference(builder_stuff.into_cell().unwrap()).unwrap();
         Ok(())
     }
 }
@@ -725,8 +727,10 @@ impl Deserializable for InternalMessageHeader {
 
         self.created_lt.read_from(cell)?; //created_lt
         self.created_at.read_from(cell)?; //created_at
-        if cell.get_next_bit()? == true {
-            self.src_dapp_id = Some(UInt256::construct_from(cell)?);
+        let builder = cell.reference(0).unwrap();
+        let mut slice_builder = SliceData::load_cell(builder).unwrap();
+        if slice_builder.get_next_bit()? == true {
+            self.src_dapp_id = Some(UInt256::construct_from(&mut slice_builder)?);
         }
         Ok(())
     }
