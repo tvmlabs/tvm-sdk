@@ -22,7 +22,7 @@ members = [
     "tvm_vm",
 ]
 [workspace.package]
-version = "2.2.0"
+version = "2.2.1"
 rust-version = "1.76.0"
 
 authors = ["TVM Labs <hello@tvmlabs.io>"]

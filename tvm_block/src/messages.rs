@@ -605,6 +605,7 @@ pub struct InternalMessageHeader {
     pub fwd_fee: Grams,
     pub created_lt: u64,
     pub created_at: UnixTime32,
+    pub src_dapp_id: Option<UInt256>,
 }
 
 impl InternalMessageHeader {
@@ -626,6 +627,7 @@ impl InternalMessageHeader {
             fwd_fee: Grams::default(),
             created_lt: 0, // Logical Time will be set on BlockBuilder
             created_at: UnixTime32::default(), // UNIX time too
+            src_dapp_id: None,
         }
     }
 
@@ -643,6 +645,14 @@ impl InternalMessageHeader {
     /// Get value tansfered message
     pub fn value(&self) -> &CurrencyCollection {
         &self.value
+    }
+
+    pub fn set_src_dapp_id(&mut self, src_dapp_id: Option<UInt256>) {
+        self.src_dapp_id = src_dapp_id
+    }
+
+    pub fn src_dapp_id(&self) -> &Option<UInt256> {
+        &self.src_dapp_id
     }
 
     /// Get IHR fee for message
@@ -692,7 +702,7 @@ impl Serializable for InternalMessageHeader {
 
         self.created_lt.write_to(cell)?; //created_lt
         self.created_at.write_to(cell)?; //created_at
-
+        self.src_dapp_id.write_maybe_to(cell)?;
         Ok(())
     }
 }
@@ -711,9 +721,11 @@ impl Deserializable for InternalMessageHeader {
 
         self.ihr_fee.read_from(cell)?; //ihr_fee
         self.fwd_fee.read_from(cell)?; //fwd_fee
-
         self.created_lt.read_from(cell)?; //created_lt
         self.created_at.read_from(cell)?; //created_at
+        if cell.get_next_bit()? == true {
+            self.src_dapp_id = Some(UInt256::construct_from(cell)?);
+        }
         Ok(())
     }
 }
@@ -1561,6 +1573,7 @@ impl InternalMessageHeader {
             fwd_fee: Grams::default(),
             created_lt: 0,
             created_at: UnixTime32::default(),
+            src_dapp_id: None,
         }
     }
 }

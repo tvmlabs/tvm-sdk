@@ -46,9 +46,10 @@ pub(crate) fn decode_actions(
         args.address.as_ref().map(|s| MsgAddressInt::from_str(s).unwrap()).unwrap_or_default();
     if let StackItem::Cell(ref cell) = actions {
         let actions: OutActions = OutActions::construct_from(
-            &mut SliceData::load_cell(cell.clone()).map_err(|e| anyhow::format_err!("{e}"))?,
+            &mut SliceData::load_cell(cell.clone())
+                .map_err(|e| anyhow::format_err!("SliceData::load_cell: {e}"))?,
         )
-        .map_err(|e| anyhow::format_err!("{e}"))?;
+        .map_err(|e| anyhow::format_err!("OutActions::construct_from: {e}"))?;
         println!("Output actions:\n----------------");
         let mut created_lt = 1;
         for act in actions {
