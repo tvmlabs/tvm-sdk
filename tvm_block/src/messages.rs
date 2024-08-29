@@ -700,7 +700,6 @@ impl Serializable for InternalMessageHeader {
         self.ihr_fee.write_to(cell)?; //ihr_fee
         self.fwd_fee.write_to(cell)?; //fwd_fee
 
-
         self.created_lt.write_to(cell)?; //created_lt
         self.created_at.write_to(cell)?; //created_at
         self.src_dapp_id.write_maybe_to(cell)?;
