@@ -14,10 +14,6 @@ Core TVM-SDK client library is written in Rust, with bindings for other programm
 
 JS/TS guides are present here as reference guides meaning bindings in other languages have the same api calls.
 
-TVM-SDK is also compatible with other TVM networks:
-
-![image](https://github.com/tvmlabs/tvm-sdk/assets/39991771/1f0fff3e-4d33-4d26-81f0-959abaec2f7d)
-
 **Get quick help in our telegram channel:**
 
 [![Channel on Telegram](https://img.shields.io/badge/chat-on%20telegram-9cf.svg)](https://t.me/+1tWNH2okaPthMWU0)
