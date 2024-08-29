@@ -93,6 +93,7 @@ fn test_save_external_serialization_order() {
 
     let body = SliceData::new(vec![0x55; 64]);
     msg.set_body(body);
+    msg.int_header_mut().expect("header").set_src_dapp_id(Some(UInt256::ZERO));
 
     msg.set_serialization_params(Some(true), Some(false));
     let b = msg.serialize().unwrap();

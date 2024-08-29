@@ -8,6 +8,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use serde_json::json;
@@ -189,6 +190,35 @@ pub async fn get_account(
                         Some(code_hash),
                         None,
                     );
+                }
+                let boc =
+                    acc["boc"].as_str().ok_or("failed to get boc of the account".to_owned())?;
+                let account = Account::construct_from_base64(boc)
+                    .map_err(|e| format!("failed to load account from the boc: {}", e))?;
+                let dapp_id = account
+                    .get_dapp_id()
+                    .map(|id| id.to_hex_string())
+                    .unwrap_or("None".to_string());
+                let ecc_balance = account
+                    .balance()
+                    .map(|balance| {
+                        let mut mapping = BTreeMap::new();
+                        balance
+                            .other
+                            .iterate_with_keys(|k: u32, v| {
+                                mapping.insert(k, v.value().to_string());
+                                Ok(true)
+                            })
+                            .unwrap();
+                        json!(mapping)
+                    })
+                    .unwrap_or(serde_json::Value::Null);
+                if config.is_json {
+                    json_res["dapp_id"] = json!(dapp_id);
+                    json_res["ecc_balance"] = ecc_balance;
+                } else {
+                    println!("dapp_id:       {}", dapp_id);
+                    println!("ecc:           {}", serde_json::to_string(&ecc_balance).unwrap());
                 }
             } else if config.is_json {
                 json_res = json_account(
