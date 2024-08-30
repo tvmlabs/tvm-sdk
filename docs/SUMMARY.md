@@ -3,7 +3,7 @@
 * [About Acki Nacki SDK](README.md)
 * [How to deploy a wallet](how-to-deploy-a-wallet.md)
 * [Quick start (JavaScript)](quick\_start.md)
-* [Quick Start (JS)](quick-start-js.md)
+* [Quick Start](quick-start.md)
 * [Add Acki Nacki to your backend](add\_to\_backend.md)
 
 ## SDK Reference
