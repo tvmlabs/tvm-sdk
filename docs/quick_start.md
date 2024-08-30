@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Quick start (JavaScript)
 
 Create your first DApp and run it on local blockchain
@@ -48,7 +52,7 @@ The script implements the following logic:
 1. Links the project with Node.js [Ever-SDK](https://github.com/tonlabs/ever-sdk) binary. If you plan to use JS SDK in Web, link it with Wasm binary. Read more [here](https://github.com/tonlabs/ever-sdk-js).
 2. `TONClient` instance is created and initialized with [Evernode SE](https://github.com/tonlabs/evernode-se) ("[http://localhost](http://localhost)", local blockchain) endpoint. See the list of other available [endpoints](https://docs.everplatform.dev/reference/graphql-api/networks).
 3. Future address is calculated from the code and data of the contract (data includes signing keys)
-4. &#x20;Flag `useGiver: true` allows to sponsor deploy with Evernode SE giver that is hard coded as the default Account giver. [You can re-assign it to your own giver](guides/work\_with\_contracts/deploy.md#transfer-funds-to-the-future-address).
+4. Flag `useGiver: true` allows to sponsor deploy with Evernode SE giver that is hard coded as the default Account giver. [You can re-assign it to your own giver](guides/work\_with\_contracts/deploy.md#transfer-funds-to-the-future-address).
 
 ## Sample code
 
@@ -328,72 +332,6 @@ async function sendValue(address, dest, amount, keys) {
     console.log('Success. Target account will recieve: %d tokens\n', response.fees.total_output);
     return response.transaction.lt;
 }
-```
-{% endtab %}
-
-{% tab title="AppKit API Implementation" %}
-```javascript
-async function main(client) {
-    // Generate an ed25519 key pair for new account
-    const keys = await TonClient.default.crypto.generate_random_sign_keys();
-
-    const helloAcc = new Account(HelloWallet, {
-        signer: signerKeys(keys),
-        client,
-    });
-
-    const address = await helloAcc.getAddress();
-    console.log(`Future address of the contract will be: ${address}`);
-
-    // Request contract deployment funds form a local Evernode SE giver
-    // not suitable for other networks.
-    // Deploy `hello` contract.
-    await helloAcc.deploy({ useGiver: true });
-    console.log(`Hello contract was deployed at address: ${address}`);
-
-    // Call `touch` function on-chain
-    // On-chain execution can be done with `run` function. 
-    let response = await helloAcc.run("touch", {});
-    console.log(`touch execution transaction is  ${response.transaction.id}`);
-
-    // Read local variable `timestamp` with a get method `getTimestamp`
-    // This can be done with `runLocal` function. The execution of runLocal is performed off-chain and does not 
-    // cost any gas.
-    response = await helloAcc.runLocal("getTimestamp", {});
-    console.log("getTimestamp value:", response.decoded.output)
-
-    // Send some money to the random address
-    const randomAddress = 
-        "0:" + 
-        Buffer.from((await client.crypto.generate_random_bytes({length: 32})).bytes, "base64").toString("hex");
-    response = await helloAcc.run("sendValue", {
-        dest: randomAddress,
-        amount: 100_000_000, // 0.1 token
-        bounce: true, // delivery will fail and money will be returned back because the random account does not exist.
-    });
-    console.log(`The tokens were sent, but soon they will come back because bounce = true and destination address does not exist`);
-}
-
-(async () => {
-    const client = new TonClient({
-        network: {
-            // Local Evernode-SE instance URL here
-            endpoints: ["http://localhost"]
-        }
-    });
-    try {
-        console.log("Hello localhost!");
-        await main(client);
-        process.exit(0);
-    } catch (error) {
-        if (error.code === 504) {
-            console.error(`Network is inaccessible. You have to start Evernode SE using \`everdev se start\`.\n If you run SE on another port or ip, replace http://localhost endpoint with http://localhost:port or http://ip:port in index.js file.`);
-        } else {
-            console.error(error);
-        }
-    }
-    client.close();
-})();
 ```
 {% endtab %}
 {% endtabs %}
