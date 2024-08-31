@@ -2,115 +2,37 @@
 description: >-
   This document describes the various ways to accomplish the most important
   tasks of running a backend project that supports Acki Nacki
+hidden: true
 ---
 
-# Add Acki Nacki to your backend
+# (Old) Add Acki Nacki to your backend
 
-## Introduction
+## How to connect
 
-This document describes the various ways to accomplish the most important tasks of running a backend application that supports EVER.
+* Blockchain access may be set up through &#x20;
+  * the public endpoint
+  * self-hosted Validator GQL endpoint
+  * self-hosted Block Manager GQL endpoint
 
-There are a few different ways to accomplish the necessary tasks:
+### Public endpoint
 
-* Blockchain access may be set up either through the [Evercloud](https://docs.everplatform.dev/products/evercloud/get-started) or through your own supernode - the [DApp server](https://docs.everplatform.dev/products/dapp-server-ds).
-* User account management can be accomplished either through the [everdev](https://docs.everos.dev/everdev/) command line tool or integrate into your backend with EVER-SDK client libraries. Both of these approaches are compatible with either of the blockchain access setups.
+The public endpoint: [https://ackinacki-testnet.tvmlabs.dev/graphql](https://ackinacki-testnet.tvmlabs.dev/graphql).
 
-## Setting up Blockchain Access
+### Setting up Self-Hosted Validator
 
-### Using Evercloud
+**System Requirements**
 
-Using [Evercloud](https://docs.everplatform.dev/products/evercloud/get-started) allows you to work with TVM blockchains without having to run your own node. Everdev and SDK can connect to it, as if it were a regular node. It has the same API as a node, and provides all neede capabilities.
+<table><thead><tr><th width="169">Configuration</th><th>CPU (cores)</th><th>RAM (GiB)</th><th>Storage (TB)</th><th>Network (Gbit/s)</th></tr></thead><tbody><tr><td>Minimum</td><td>16c/32t</td><td>128</td><td>4 (> 200000 IOPS, > 6900 MB/s)</td><td>2</td></tr><tr><td>Recommended</td><td>24c/48t</td><td>256</td><td>4  (> 200000 IOPS, > 6900 MB/s)</td><td>2</td></tr></tbody></table>
 
-This page lists the [cloud endpoints](https://docs.everplatform.dev/products/evercloud/networks-endpoints). To get access credentials go through this [guide](https://docs.everplatform.dev/products/evercloud/get-started).
+How to run: guide is coming soon
 
-Whenever you have to specify a network endpoint in the examples given below, use the endpoints and credentials you receive in the [Evercloud dashboard](https://dashboard.evercloud.dev/projects).
+After successfully provisioned validator the gql endpoint will be on `localhost:3000/graphql`
 
-{% hint style="info" %}
-Note: We recommend testing out the full setup on the developer network first.
-{% endhint %}
+### Setting up Self-Hosted Block Manager
 
-### Using DApp Server
+Requirements and how-to-run guide are coming soon.
 
-If you prefer to run your own node, you may set up your own [DApp server](https://docs.everplatform.dev/products/dapp-server-ds). It is a client supernode, that may be set up on your own servers and provide full access to TVM networks. To connect to it with Everdev or SDK, it needs to have a domain name and a DNS record. You can specify its URL whenever you have to set the network in the examples given below.
-
-Get the setup scripts in this repository: [https://github.com/tonlabs/evernode-ds](https://github.com/tonlabs/evernode-ds)
-
-#### 1. System Requirements
-
-<table><thead><tr><th width="169">Configuration</th><th>CPU (cores)</th><th>RAM (GiB)</th><th>Storage (GiB)</th><th>Network (Gbit/s)</th></tr></thead><tbody><tr><td>Recommended</td><td>24</td><td>128</td><td>2000</td><td>1</td></tr></tbody></table>
-
-NVMe SSD disks are recommended for storage.
-
-{% hint style="info" %}
-For simplicity, all services are deployed on one host and the system requirements for it are high, so it makes sense to distribute services across different servers.\
-After understanding this installation process, you can easily customize it for yourself.
-
-[itgoldio/everscale-dapp-server](https://github.com/itgoldio/everscale-dapp-server): Consider this project if you prefer deployment via Ansible.
-{% endhint %}
-
-#### 2.1 Prerequisites
-
-* Host OS: Linux (all scripts tested on Ubuntu 20.04).
-* DApp server is accessed via HTTPS, so your server must have a fully qualified domain name.\
-  A self-signed certificate will be received on start-up and will be renewed automatically.
-* Installed Git, Docker Engine, Docker CLI, Docker Compose v2 or later.
-
-#### 2.2 Configuration
-
-**2.2.1 Set variables**
-
-Check `configure.sh` and set at least these environment variables:
-
-* NETWORK\_TYPE
-* EVERNODE\_FQDN
-* LETSENCRYPT\_EMAIL
-
-**2.2.2 Generate credentials to access the ArangoDB web interface**
-
-Generate credentials (usernames and password) for basic authentication and update `.htpasswd` file.\
-You can generate it by running `htpasswd -nb <name> <password>`
-
-**2.2.3 Run configuration script**
-
-```
-$ ./configure.sh
-```
-
-This script creates `./deploy` directory
-
-#### 2.3 Deployment
-
-Run `./up.sh`.
-
-After the script completes normally (it takes 30 min approx.), the node starts synchronizing its state, which can take several hours.\
-Use the following command to check the progress:
-
-```
-    docker exec rnode /ton-node/tools/console -C /ton-node/configs/console.json --cmd getstats
-```
-
-Script output example:
-
-```
-tonlabs console 0.1.286
-COMMIT_ID: 5efe6bb8f2a974ba0e6b1ea3e58233632236e182
-BUILD_DATE: 2022-10-17 02:32:44 +0300
-COMMIT_DATE: 2022-08-12 00:22:07 +0300
-GIT_BRANCH: master
-{
-	"sync_status":	"synchronization_finished",
-	"masterchainblocktime":	1665988670,
-	"masterchainblocknumber":	9194424,
-	"node_version":	"0.51.1",
-	"public_overlay_key_id":	"S4TaVdGitzTApe7GFCj8DbuRIkVEbg+ODzBxhQGIUG0=",
-	"timediff":	6,
-	"shards_timediff":	6,
-     ----%<---------------------
-}
-```
-
-If the `timediff` parameter is less than 10 seconds, synchronization with masterchain is complete.\
-`"sync_status": "synchronization finished"` means synchronization with workchains is complete
+After successfully provisioned Block Manager the gql endpoint will be on `localhost:3000/graphql`
 
 ## Setting up Wallet Account
 
@@ -118,48 +40,29 @@ Currently we can recommend the [SetcodeMultisig](https://github.com/EverSurf/mul
 
 ### Using CLI tool
 
-[Everdev](https://docs.everos.dev/everdev/), the command line tool for development on the Everscale blockchain, allows to write scripts to deploy any smart contracts to the blockchain, call all contract methods, sign transactions, and generally manage an account.
-
-It works with both Evercloud and DApp server.
-
-#### 1. Install Everdev
-
-```sh
-$ npm install -g everdev
-```
-
-It requires [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) to be installed.
-
-If you experience any problems with installation, check out our [troubleshooting](https://docs.everos.dev/everdev/troubleshooting) section.
-
-#### 2. Configure network connection
-
-Everdev has a built-in [network](https://docs.everos.dev/everdev/command-line-interface/network-tool) tool to manage your networks and access credentials.
-
-**Using Evercloud endpoints**
-
-Add your Evercloud endpoint to everdev and make it default:
+#### **Build and install CLI tool**
 
 ```
-everdev network add networkName <your-evercloud-endpoint>
-everdev network default networkName
+cd ~
+git clone https://github.com/tvmlabs/tvm-sdk
+cd tvm-sdk
+cargo build --release
+cd target/release
+cp tvm-cli ~/.cargo/bin
+
 ```
 
-**Using DApp Server endpoint**
+Now path to tvm-cli is publicly accessible. You can also add it to your ENVs&#x20;
 
-* If you are setting up a connection via your own DApp server, user the following command to add it to the network list (it will be named `dappserver`).
+`export PATH=$PATH:~/tvm-sdk/target/release/tvm-cli`
 
-```shell
-everdev network add dappserver <your_dapp_server_endpoint>
+#### Configure network connection
+
+```
+tvm-cli config --url ackinacki-testnet.tvmlabs.dev/graphql
 ```
 
-To set your `dappserver` network as default, use the following command:
-
-```sh
-everdev network default dappserver
-```
-
-#### 3. Set a giver contract on your network
+**Set a Sponsor Wallet contract on your network**
 
 On Everscale, you need to sponsor a contract address in advance to be able to deploy the contract.
 

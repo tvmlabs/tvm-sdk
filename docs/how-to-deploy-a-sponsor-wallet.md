@@ -2,7 +2,7 @@
 description: Create a simple wallet to sponsor your operations with TVM CLI
 ---
 
-# How to deploy a wallet
+# How to deploy a Sponsor Wallet
 
 ## **Build and install CLI tool** <a href="#create-a-wallet" id="create-a-wallet"></a>
 
@@ -33,7 +33,7 @@ cd wallet
 Download source files for the wallet from [wallet repo](https://github.com/tvmlabs/sdk-examples/tree/main/contracts/simpleWallet) and place them into this folder.
 
 {% hint style="warning" %}
-This is a test wallet, not a production wallet that underwent Formal Verification. We are working on multisig wallet that will be published soon.  Deployment process, although will be the same.&#x20;
+This is a test wallet, not a production wallet that underwent Formal Verification. We are working on multisig wallet that [will be published soon](https://github.com/gosh-sh/ackinacki-wallet).  Deployment process, although will be the same.&#x20;
 {% endhint %}
 
 ## Configure CLI tool
@@ -43,7 +43,7 @@ We need to target it to the blockchain we will deploy to.
 Here we target at testnet.
 
 ```
-tvm-cli config --url ackinacki-testnet.tvmlabs.dev
+tvm-cli config --url ackinacki-testnet.tvmlabs.dev/graphql
 ```
 
 ## Generate seed phrase, keys and address

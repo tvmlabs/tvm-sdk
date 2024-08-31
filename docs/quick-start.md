@@ -8,7 +8,7 @@ description: >-
 
 ## **Prerequisites** <a href="#prerequisites" id="prerequisites"></a>
 
-* You should have a [Sponsor Wallet](how-to-deploy-a-wallet.md) deployed.&#x20;
+* You should have a [Sponsor Wallet](how-to-deploy-a-sponsor-wallet.md) deployed.&#x20;
 * Node.js v18
 
 {% hint style="success" %}
