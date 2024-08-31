@@ -1,10 +1,11 @@
 # Table of contents
 
 * [About Acki Nacki SDK](README.md)
-* [How to deploy a wallet](how-to-deploy-a-wallet.md)
+* [How to deploy a Sponsor Wallet](how-to-deploy-a-sponsor-wallet.md)
 * [Quick start (JavaScript)](quick\_start.md)
 * [Quick Start](quick-start.md)
-* [Add Acki Nacki to your backend](add\_to\_backend.md)
+* [(Old) Add Acki Nacki to your backend](add\_to\_backend.md)
+* [Add Acki Nacki to your backend](add\_to\_backend-1.md)
 
 ## SDK Reference
 
