@@ -61,3 +61,20 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     engine.cc.stack.push(int!(cbkrpv));
     Ok(())
 }
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCMINSTAKEREWARD"))?;
+    fetch_stack(engine, 3)?;
+    let tmta = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let need_val_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let val_num = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let base_min_val_stake = 0.75_f64 * tmta / 2_f64 / need_val_num;
+    let min_val_stake = if val_num > need_val_num {
+        base_min_val_stake as u128
+    } else {
+        base_min_val_stake as u128
+    };
+    engine.cc.stack.push(int!(min_val_stake));
+    Ok(())
+}

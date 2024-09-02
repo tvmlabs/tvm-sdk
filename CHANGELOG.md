@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.2] – 2024-08-27
+
+### New
+- New instruction - CALCMINSTAKEREWARD. 
+
 ## [2.2.1] – 2024-08-27
 
 ### New
