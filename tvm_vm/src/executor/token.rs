@@ -45,7 +45,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let maxrt = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let valstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     let totalstake = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let t: f64 = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
+    let t = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
     let rac = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
     let vpd = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64;
     let repcoef = if vrt < maxrt {
@@ -66,10 +66,14 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
 pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMINSTAKEREWARD"))?;
     fetch_stack(engine, 3)?;
-    let tmta = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let need_val_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let val_num = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let base_min_val_stake = 0.75_f64 * tmta / 2_f64 / need_val_num;
+    let need_val_num = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let val_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let t = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let u = -1_f64 / 2000000000_f64 * (0.00001_f64 / (0.00001_f64 + 1_f64)).ln();
+    let tmta = 10400000000_f64 * (1_f64 + 0.00001_f64) * (1_f64 - (-1_f64 * t * u).exp());
+    let free_flt_pr = (1_f64 + 0.01_f64) * (1_f64 - (-1_f64 * u * t).exp()) / 3_f64;
+    let base_min_val_stake =
+        (0.75_f64 * tmta * (1_f64 - free_flt_pr) / 2_f64 / need_val_num) * 1e9_f64;
     let min_val_stake = if val_num > need_val_num {
         base_min_val_stake as u128
     } else {
