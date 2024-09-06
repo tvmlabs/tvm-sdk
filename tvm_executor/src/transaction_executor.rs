@@ -183,7 +183,7 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
-        available_credit: u128,
+        available_credit: i128,
         minted_shell: &mut u128,
     ) -> Result<Transaction>;
 
@@ -192,7 +192,7 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account_root: &mut Cell,
         params: ExecuteParams,
-        available_credit: u128,
+        available_credit: i128,
         minted_shell: &mut u128,
     ) -> Result<Transaction> {
         let old_hash = account_root.repr_hash();
@@ -642,7 +642,7 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
-        available_credit: u128,
+        available_credit: i128,
         minted_shell: &mut u128,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
@@ -674,7 +674,7 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
-        available_credit: u128,
+        available_credit: i128,
         minted_shell: &mut u128,
     ) -> Result<ActionPhaseResult> {
         let mut out_msgs = vec![];
@@ -874,9 +874,11 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellToken { mut value } => {
-                    if value as u128 > available_credit {
-                        value = available_credit.clone().try_into()?;
-                    }
+                    if available_credit != -1 {
+                        if value as i128 > available_credit {
+                            value = available_credit.clone().try_into()?;
+                        }
+                    }   
                     acc_remaining_balance.grams.add(&Grams::from(value))?;
                     *minted_shell += value as u128;
                     phase.spec_actions += 1;

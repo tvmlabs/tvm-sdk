@@ -82,7 +82,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
-        available_credit: u128,
+        available_credit: i128,
         minted_shell: &mut u128,
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
