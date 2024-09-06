@@ -209,6 +209,23 @@ pub struct ResultOfSetCodeSalt {
     pub code: String,
 }
 
+
+/// Sets new salt to contract code. Returns the new contract code with salt.
+pub fn set_code_salt_cell(
+    code: Cell,
+    salt: Cell,
+) -> ClientResult<Cell> {
+    match code.data() {
+        OLD_CPP_SELECTOR_DATA => set_old_selector_salt(code, salt),
+        NEW_SELECTOR_DATA => set_new_selector_salt(code, salt),
+        MYCODE_SELECTOR_DATA => set_mycode_selector_salt(code, salt),
+        OLD_SOL_SELECTOR_DATA => {
+            Err(Error::invalid_boc("the contract doesn't support salt adding"))
+        }
+        _ => Err(Error::invalid_boc("unknown contract type")),
+    }
+}
+
 /// Sets new salt to contract code. Returns the new contract code with salt.
 #[api_function]
 pub fn set_code_salt(
