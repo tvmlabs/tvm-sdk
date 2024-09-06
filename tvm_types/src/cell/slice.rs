@@ -593,6 +593,15 @@ impl SliceData {
         Ok(value)
     }
 
+    pub fn get_next_i128(&mut self) -> Result<i128> {
+        let mut value: i128 = 0;
+        for i in 0..16 {
+            value |= (self.get_byte(8 * i)? as i128) << (8 * (15 - i));
+        }
+        self.move_by(128)?;
+        Ok(value)
+    }
+
     pub fn get_next_hash(&mut self) -> Result<UInt256> {
         let hash: [u8; 32] = self.get_next_bytes(32)?.try_into().unwrap();
         Ok(UInt256::from(hash))
