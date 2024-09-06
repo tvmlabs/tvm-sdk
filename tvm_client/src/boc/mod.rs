@@ -71,6 +71,7 @@ pub use state_init::get_code_salt;
 pub use state_init::get_compiler_version;
 pub use state_init::get_compiler_version_from_cell;
 pub use state_init::set_code_salt;
+pub use state_init::set_code_salt_cell;
 pub use state_init::ParamsOfDecodeStateInit;
 pub use state_init::ParamsOfEncodeStateInit;
 pub use state_init::ParamsOfGetCodeFromTvc;
