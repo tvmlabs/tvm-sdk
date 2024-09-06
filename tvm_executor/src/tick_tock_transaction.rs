@@ -57,7 +57,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
-        available_credit: u128,
+        available_credit: i128,
         minted_shell: &mut u128,
     ) -> Result<Transaction> {
         if in_msg.is_some() {
