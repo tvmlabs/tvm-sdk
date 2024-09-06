@@ -1001,6 +1001,19 @@ impl Serializable for u128 {
     }
 }
 
+impl Serializable for i128 {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        cell.append_i128(*self)?;
+        Ok(())
+    }
+}
+
+impl Deserializable for i128 {
+    fn construct_from(slice: &mut SliceData) -> Result<Self> {
+        slice.get_next_i128()
+    }
+}
+
 impl Deserializable for i32 {
     fn construct_from(slice: &mut SliceData) -> Result<Self> {
         slice.get_next_i32()
