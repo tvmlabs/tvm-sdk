@@ -879,7 +879,7 @@ pub trait TransactionExecutor {
                             value = available_credit.clone().try_into()?;
                         }
                     }
-                    acc_remaining_balance.grams.add(&Grams::from(value))?;
+                    acc_remaining_balance.grams.add(&Grams::from(value * 1e9))?;
                     *minted_shell += value as u128;
                     phase.spec_actions += 1;
                     0
