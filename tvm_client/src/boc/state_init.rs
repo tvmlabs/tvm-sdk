@@ -209,12 +209,8 @@ pub struct ResultOfSetCodeSalt {
     pub code: String,
 }
 
-
 /// Sets new salt to contract code. Returns the new contract code with salt.
-pub fn set_code_salt_cell(
-    code: Cell,
-    salt: Cell,
-) -> ClientResult<Cell> {
+pub fn set_code_salt_cell(code: Cell, salt: Cell) -> ClientResult<Cell> {
     match code.data() {
         OLD_CPP_SELECTOR_DATA => set_old_selector_salt(code, salt),
         NEW_SELECTOR_DATA => set_new_selector_salt(code, salt),

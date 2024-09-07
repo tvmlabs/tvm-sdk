@@ -878,7 +878,7 @@ pub trait TransactionExecutor {
                         if value as i128 > available_credit {
                             value = available_credit.clone().try_into()?;
                         }
-                    }   
+                    }
                     acc_remaining_balance.grams.add(&Grams::from(value))?;
                     *minted_shell += value as u128;
                     phase.spec_actions += 1;
