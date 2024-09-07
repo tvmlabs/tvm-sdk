@@ -784,13 +784,24 @@ pub struct ExternalInboundMessageHeader {
     pub src: MsgAddressExt,
     pub dst: MsgAddressInt,
     pub import_fee: Grams,
+    pub available_credit: i128
 }
 
 impl ExternalInboundMessageHeader {
     pub const fn new(src: MsgAddressExt, dst: MsgAddressInt) -> Self {
         let import_fee = Grams::zero();
-        Self { src, dst, import_fee }
+        let available_credit: i128 = 0;
+        Self { src, dst, import_fee, available_credit}
     }
+
+    pub fn set_available_credit(&mut self, value: i128) {
+        self.available_credit = value
+    }
+
+    pub fn available_credit(&self) -> &i128 {
+        &self.available_credit
+    }
+
 }
 
 impl Serializable for ExternalInboundMessageHeader {
@@ -800,6 +811,7 @@ impl Serializable for ExternalInboundMessageHeader {
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
         self.import_fee.write_to(cell)?; //ihr_fee
+        self.available_credit.write_to(cell)?;
 
         Ok(())
     }
@@ -811,6 +823,7 @@ impl Deserializable for ExternalInboundMessageHeader {
         self.src.read_from(cell)?; // addr src
         self.dst.read_from(cell)?; // addr dst
         self.import_fee.read_from(cell)?; //ihr_fee
+        self.available_credit.read_from(cell)?; 
         Ok(())
     }
 }
