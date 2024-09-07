@@ -21,7 +21,8 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
     fetch_stack(engine, 2)?;
     let x: u32 = engine.cmd.var(0).as_integer()?.into(0..=255)?;
-    let y: VarUInteger32 = VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?);
+    let y: VarUInteger32 =
+        VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?);
     let mut data = ExtraCurrencyCollection::new();
     data.set(&x, &y)?;
     let mut cell = BuilderData::new();
