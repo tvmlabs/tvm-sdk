@@ -108,8 +108,10 @@ fn test_save_external_serialization_order() {
 
 #[test]
 fn test_serialize_msg_with_state_init_code_and_small_body() {
-    let mut msg = Message::with_int_header(InternalMessageHeader::default());
-
+    let mut header = InternalMessageHeader::default();
+    header.set_src_dapp_id(Some(UInt256::ZERO));
+    let mut msg = Message::with_int_header(header);
+    
     let mut stinit = StateInit::default();
     let code = SliceData::new(vec![0x3F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF4]);
     stinit.set_code(code.into_cell());
