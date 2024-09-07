@@ -721,7 +721,7 @@ impl Serializable for InternalMessageHeader {
         } else {
             cell.append_bit_bool(false)?;
         }
-        if  self.available_credit == 0 {
+        if  self.available_credit != 0 {
             cell.append_bit_bool(true)?;
             is_need_cell = true;
             self.available_credit.write_to(&mut builder_stuff2)?;
