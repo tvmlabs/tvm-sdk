@@ -710,12 +710,27 @@ impl Serializable for InternalMessageHeader {
         self.ihr_fee.write_to(cell)?; //ihr_fee
         self.fwd_fee.write_to(cell)?; //fwd_fee
 
+        self.created_lt.write_to(cell)?; //created_lt
+        self.created_at.write_to(cell)?; //created_at
+        let mut is_need_cell = false;
         let mut builder_stuff2 = BuilderData::new();
-        self.created_lt.write_to(&mut builder_stuff2)?; //created_lt
-        self.created_at.write_to(&mut builder_stuff2)?; //created_at
-        self.src_dapp_id.write_maybe_to(&mut builder_stuff2)?;
-        self.available_credit.write_to(&mut builder_stuff2)?;
-        cell.checked_append_reference(builder_stuff2.into_cell().unwrap()).unwrap();
+        if let Some(dapp_id) = &self.src_dapp_id {
+            cell.append_bit_bool(true)?;
+            is_need_cell = true;
+            dapp_id.write_to(&mut builder_stuff2)?;
+        } else {
+            cell.append_bit_bool(false)?;
+        }
+        if  self.available_credit == 0 {
+            cell.append_bit_bool(true)?;
+            is_need_cell = true;
+            self.available_credit.write_to(&mut builder_stuff2)?;
+        } else {
+            cell.append_bit_bool(false)?;
+        }
+        if is_need_cell == true {
+            cell.checked_append_reference(builder_stuff2.into_cell().unwrap()).unwrap();
+        }
         Ok(())
     }
 }
@@ -734,14 +749,22 @@ impl Deserializable for InternalMessageHeader {
 
         self.ihr_fee.read_from(cell)?; //ihr_fee
         self.fwd_fee.read_from(cell)?; //fwd_fee
-        let builder2 = cell.reference(0).unwrap();
-        let mut slice_builder = SliceData::load_cell(builder2).unwrap();
-        self.created_lt.read_from(&mut slice_builder)?; //created_lt
-        self.created_at.read_from(&mut slice_builder)?; //created_at
-        if slice_builder.get_next_bit()? == true {
-            self.src_dapp_id = Some(UInt256::construct_from(&mut slice_builder)?);
+        self.created_lt.read_from(cell)?; //created_lt
+        self.created_at.read_from(cell)?; //created_at
+        let is_dapp_id = cell.get_next_bit()?;
+        let is_available_credit = cell.get_next_bit()?;
+        self.src_dapp_id = None;
+        self.available_credit = 0;
+        if is_dapp_id && is_available_credit == true {
+            let builder2 = cell.reference(0).unwrap();
+            let mut slice_builder = SliceData::load_cell(builder2).unwrap();
+            if is_dapp_id == true {
+                self.src_dapp_id = Some(UInt256::construct_from(&mut slice_builder)?);
+            }
+            if is_available_credit == true {
+                self.available_credit = i128::construct_from(&mut slice_builder)?;
+            }
         }
-        self.available_credit = i128::construct_from(&mut slice_builder)?;
         Ok(())
     }
 }
