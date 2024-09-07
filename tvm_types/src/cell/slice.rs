@@ -119,6 +119,10 @@ impl SliceData {
         Self { data: InternalData::None, data_window: 0..0, references_window: 0..0 }
     }
 
+    pub fn increase_start_reference(&mut self) {
+        self.references_window.start += 1;
+    }
+
     pub fn load_builder(builder: BuilderData) -> Result<SliceData> {
         SliceData::load_cell(builder.into_cell()?)
     }

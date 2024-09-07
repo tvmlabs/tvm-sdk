@@ -755,7 +755,7 @@ impl Deserializable for InternalMessageHeader {
         let is_available_credit = cell.get_next_bit()?;
         self.src_dapp_id = None;
         self.available_credit = 0;
-        if is_dapp_id && is_available_credit == true {
+        if is_dapp_id || is_available_credit == true {
             let builder2 = cell.reference(0).unwrap();
             let mut slice_builder = SliceData::load_cell(builder2).unwrap();
             if is_dapp_id == true {
@@ -1552,7 +1552,11 @@ impl Deserializable for Message {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // read header
         self.header.read_from(cell)?;
-
+        if let Some(header) = self.int_header_mut() {
+            if (*header.src_dapp_id() != None) || (header.available_credit != 0) {
+                cell.increase_start_reference();
+            }
+        }
         // read StateInit
         if cell.get_next_bit()? {
             // maybe of init
