@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### New
 - New instruction - CALCMINSTAKEREWARD. 
+- Change CNVRTSHELLQ instruction.
 
 ## [2.2.1] – 2024-08-27
 
