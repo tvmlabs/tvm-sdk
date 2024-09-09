@@ -606,7 +606,6 @@ pub struct InternalMessageHeader {
     pub created_lt: u64,
     pub created_at: UnixTime32,
     pub src_dapp_id: Option<UInt256>,
-    pub available_credit: i128,
 }
 
 impl InternalMessageHeader {
@@ -629,7 +628,6 @@ impl InternalMessageHeader {
             created_lt: 0, // Logical Time will be set on BlockBuilder
             created_at: UnixTime32::default(), // UNIX time too
             src_dapp_id: None,
-            available_credit: 0,
         }
     }
 
@@ -655,14 +653,6 @@ impl InternalMessageHeader {
 
     pub fn src_dapp_id(&self) -> &Option<UInt256> {
         &self.src_dapp_id
-    }
-
-    pub fn set_available_credit(&mut self, value: i128) {
-        self.available_credit = value
-    }
-
-    pub fn available_credit(&self) -> &i128 {
-        &self.available_credit
     }
 
     /// Get IHR fee for message
@@ -712,25 +702,7 @@ impl Serializable for InternalMessageHeader {
 
         self.created_lt.write_to(cell)?; //created_lt
         self.created_at.write_to(cell)?; //created_at
-        let mut is_need_cell = false;
-        let mut builder_stuff2 = BuilderData::new();
-        if let Some(dapp_id) = &self.src_dapp_id {
-            cell.append_bit_bool(true)?;
-            is_need_cell = true;
-            dapp_id.write_to(&mut builder_stuff2)?;
-        } else {
-            cell.append_bit_bool(false)?;
-        }
-        if self.available_credit != 0 {
-            cell.append_bit_bool(true)?;
-            is_need_cell = true;
-            self.available_credit.write_to(&mut builder_stuff2)?;
-        } else {
-            cell.append_bit_bool(false)?;
-        }
-        if is_need_cell == true {
-            cell.checked_append_reference(builder_stuff2.into_cell().unwrap()).unwrap();
-        }
+        self.src_dapp_id.write_maybe_to(cell)?;
         Ok(())
     }
 }
@@ -751,20 +723,8 @@ impl Deserializable for InternalMessageHeader {
         self.fwd_fee.read_from(cell)?; //fwd_fee
         self.created_lt.read_from(cell)?; //created_lt
         self.created_at.read_from(cell)?; //created_at
-        let is_dapp_id = cell.get_next_bit()?;
-        let is_available_credit = cell.get_next_bit()?;
-        self.src_dapp_id = None;
-        self.available_credit = 0;
-        if is_dapp_id || is_available_credit == true {
-            let builder2 = cell.reference(0).unwrap();
-            let mut slice_builder = SliceData::load_cell(builder2).unwrap();
-            if is_dapp_id == true {
-                self.src_dapp_id = Some(UInt256::construct_from(&mut slice_builder)?);
-            }
-            if is_available_credit == true {
-                self.available_credit = i128::construct_from(&mut slice_builder)?;
-            }
-        }
+        if cell.get_next_bit()? == true {
+            self.src_dapp_id = Some(UInt256::construct_from(cell)?);
         Ok(())
     }
 }
@@ -783,23 +743,13 @@ impl fmt::Display for ExternalInboundMessageHeader {
 pub struct ExternalInboundMessageHeader {
     pub src: MsgAddressExt,
     pub dst: MsgAddressInt,
-    pub import_fee: Grams,
-    pub available_credit: i128,
+    pub import_fee: Grams
 }
 
 impl ExternalInboundMessageHeader {
     pub const fn new(src: MsgAddressExt, dst: MsgAddressInt) -> Self {
         let import_fee = Grams::zero();
-        let available_credit: i128 = 0;
-        Self { src, dst, import_fee, available_credit }
-    }
-
-    pub fn set_available_credit(&mut self, value: i128) {
-        self.available_credit = value
-    }
-
-    pub fn available_credit(&self) -> &i128 {
-        &self.available_credit
+        Self { src, dst, import_fee }
     }
 }
 
@@ -810,7 +760,6 @@ impl Serializable for ExternalInboundMessageHeader {
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
         self.import_fee.write_to(cell)?; //ihr_fee
-        self.available_credit.write_to(cell)?;
 
         Ok(())
     }
@@ -822,7 +771,6 @@ impl Deserializable for ExternalInboundMessageHeader {
         self.src.read_from(cell)?; // addr src
         self.dst.read_from(cell)?; // addr dst
         self.import_fee.read_from(cell)?; //ihr_fee
-        self.available_credit.read_from(cell)?;
         Ok(())
     }
 }
@@ -1564,11 +1512,6 @@ impl Deserializable for Message {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // read header
         self.header.read_from(cell)?;
-        if let Some(header) = self.int_header_mut() {
-            if (*header.src_dapp_id() != None) || (header.available_credit != 0) {
-                cell.increase_start_reference();
-            }
-        }
         // read StateInit
         if cell.get_next_bit()? {
             // maybe of init
@@ -1629,7 +1572,6 @@ impl InternalMessageHeader {
             created_lt: 0,
             created_at: UnixTime32::default(),
             src_dapp_id: None,
-            available_credit: 0,
         }
     }
 }
