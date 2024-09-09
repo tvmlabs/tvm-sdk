@@ -69,9 +69,10 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let need_val_num = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let val_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let t = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let u = -1_f64 / 2000000000_f64 * (0.00001_f64 / (0.00001_f64 + 1_f64)).ln();
-    let tmta = 10400000000_f64 * (1_f64 + 0.00001_f64) * (1_f64 - (-1_f64 * t * u).exp());
-    let free_flt_pr = (1_f64 + 0.01_f64) * (1_f64 - (-1_f64 * u * t).exp()) / 3_f64;
+    let u_free_flt_pr = -1_f64 / 2000000000_f64 * (0.01_f64 / (0.01_f64 + 1_f64)).ln();
+    let u_tmta = -1_f64 / 2000000000_f64 * (0.00001_f64 / (0.00001_f64 + 1_f64)).ln();
+    let tmta = 10400000000_f64 * (1_f64 + 0.00001_f64) * (1_f64 - (-1_f64 * t * u_tmta).exp());
+    let free_flt_pr = (1_f64 + 0.01_f64) * (1_f64 - (-1_f64 * u_free_flt_pr * t).exp()) / 3_f64;
     let base_min_val_stake =
         (0.75_f64 * tmta * (1_f64 - free_flt_pr) / 2_f64 / need_val_num) * 1e9_f64;
     let min_val_stake = if val_num > need_val_num {
