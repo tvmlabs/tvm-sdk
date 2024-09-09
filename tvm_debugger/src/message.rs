@@ -43,7 +43,6 @@ pub(crate) fn generate_external_message(
         src: MsgAddressExt::with_extern(SliceData::from_raw(vec![0x55; 8], 64)).unwrap(),
         dst,
         import_fee: 0x1234u64.into(), // Taken from TVM-linker
-        available_credit: 0,
     };
     let mut msg = Message::with_ext_in_header(header);
     if let Some(body) = body {
