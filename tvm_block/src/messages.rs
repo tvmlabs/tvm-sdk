@@ -725,6 +725,7 @@ impl Deserializable for InternalMessageHeader {
         self.created_at.read_from(cell)?; //created_at
         if cell.get_next_bit()? == true {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
+        }    
         Ok(())
     }
 }
