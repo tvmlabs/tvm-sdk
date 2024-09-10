@@ -96,7 +96,3 @@
 ## Links
 
 * [TVM SDK repository](https://github.com/tvmlabs/tvm-sdk)
-
-## Wallet
-
-* [Page 1](wallet/page-1.md)
