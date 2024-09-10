@@ -11,8 +11,6 @@ query{
     messagesLatency
     transactionsLatency
     latency
-    chainOrderBoundary # data consistency timestamp
-    rempEnabled # true if REMP is enabled
   }
 }
 ```
