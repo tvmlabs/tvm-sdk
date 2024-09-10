@@ -845,7 +845,7 @@ pub trait TransactionExecutor {
                         Ok(true) => {
                             acc_remaining_balance
                                 .grams
-                                .add(&Grams::from(exchange_value * 1_000_000_000))?;
+                                .add(&Grams::from(exchange_value * 1_000_000))?;
                             phase.spec_actions += 1;
                             0
                         }
