@@ -3,13 +3,14 @@
 * [About Acki Nacki SDK](README.md)
 * [How to deploy a Sponsor Wallet](how-to-deploy-a-sponsor-wallet.md)
 * [Quick start (JavaScript)](quick\_start.md)
-* [Quick Start](quick-start.md)
+* [JS Quick Start](js-quick-start.md)
+* [GraphQL Quick Start](graphql-quick-start.md)
 * [(Old) Add Acki Nacki to your backend](add\_to\_backend.md)
 * [Add Acki Nacki to your backend](add\_to\_backend-1.md)
 
-## SDK Reference
+## Reference
 
-* [Types and Methods](reference/types-and-methods/README.md)
+* [Core Library Reference](reference/types-and-methods/README.md)
   * [Modules](reference/types-and-methods/modules.md)
   * [Module abi](reference/types-and-methods/mod\_abi.md)
   * [Module boc](reference/types-and-methods/mod\_boc.md)
@@ -21,19 +22,36 @@
   * [Module proofs](reference/types-and-methods/mod\_proofs.md)
   * [Module tvm](reference/types-and-methods/mod\_tvm.md)
   * [Module utils](reference/types-and-methods/mod\_utils.md)
-* [Error API](reference/error\_api.md)
+* [Core Library Error API](reference/error\_api.md)
 * [Error Codes](reference/error\_codes.md)
-* [CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm\_cli/README.md)
-* [JavaScript Reference](https://tvmlabs.github.io/tvm-sdk-js/)
-* [Rust Reference](https://github.com/tvmlabs/tvm-sdk/tree/master/docs/reference/rust-api)
+* [TVM-CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm\_cli/README.md)
 
-## ABI Specification
+## GraphQL
 
-* [2.4](reference/ABI.md)
+* [Field Descriptions](graphql/field-descriptions.md)
+* [Blockchain API](graphql/blockchain-api.md)
+* [Info API](graphql/info-api.md)
+* [Query Collections: Query Language](graphql/query-collections-query-language.md)
+* [GraphQL API](graphql/graphql-api.md)
+* [Web Playground](graphql/web-playground.md)
+* [Schema](graphql/schema.md)
+* [Samples](graphql/samples.md)
 
-## Samples
+## ABI
 
-* [JavaScript Samples](https://github.com/tvmlabs/sdk-samples)
+* [ABI Specification](abi/abi.md)
+
+## Examples
+
+* [Client Libraries JS Examples](https://github.com/tvmlabs/sdk-examples)
+* [GraphQL API Examples](examples/graphql-api-examples/README.md)
+  * [Connect to GraphQL API](examples/graphql-api-examples/connect-to-graphql-api.md)
+  * [Send message](examples/graphql-api-examples/send-message.md)
+  * [Accounts](examples/graphql-api-examples/accounts.md)
+  * [Blocks](examples/graphql-api-examples/blocks.md)
+  * [Messages](examples/graphql-api-examples/messages.md)
+  * [Block and Transaction Pagination: Best Practice](examples/graphql-api-examples/block-and-transaction-pagination-best-practice.md)
+  * [Transactions](examples/graphql-api-examples/transactions.md)
 
 ## Local Blockchain
 
