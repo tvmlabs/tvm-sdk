@@ -190,10 +190,11 @@ pub trait TransactionExecutor {
     ) -> Result<Transaction> {
         let old_hash = account_root.repr_hash();
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let mut is_previous_state_active = true;
-        if let Some(AccountState::AccountUninit {}) = account.state() {
-            is_previous_state_active = false;
-        }
+        let is_previous_state_active = match account.state() {
+            Some(AccountState::AccountUninit {}) => false,
+            None => false,
+            _ => true,
+        };
         let src_dapp_id = params.src_dapp_id.clone();
         log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}", src_dapp_id, is_previous_state_active, account, account.state());
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
