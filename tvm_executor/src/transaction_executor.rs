@@ -195,7 +195,7 @@ pub trait TransactionExecutor {
             is_previous_state_active = false;
         }
         let src_dapp_id = params.src_dapp_id.clone();
-        log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}", src_dapp_id, is_previous_state_active, account);
+        log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}", src_dapp_id, is_previous_state_active, account, account.state());
         let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
