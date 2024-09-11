@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.2] – 2024-09-11
+
+### New
+- Add tvm-client function `set_code_salt_cell` to set code salt with both objects passed by cells.
+
 ## [2.2.1] – 2024-08-27
 
 ### New
