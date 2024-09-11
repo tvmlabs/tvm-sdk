@@ -389,7 +389,8 @@ impl Handlers {
                 .set(0x25, execute_diff_patch_binary_zip_quiet)
                 .set(0x26, execute_ecc_mint)
                 .set(0x27, execute_exchange_shell)
-                .set(0x29, execute_calculate_validator_reward);
+                .set(0x29, execute_calculate_validator_reward)
+                .set(0x30, execute_calculate_min_stake);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
