@@ -272,7 +272,7 @@ function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)) }
 
 
 {% hint style="warning" %}
-Not all transactions that are successful are valid transfers and not all transactions that are aborted actually failed. Read [here](https://docs.everscale.network/arch/transactions#how-to-determine-a-successful-transaction) how to understand which transfers are successful transfers and which are not.
+Not all transactions that are successful are valid transfers and not all transactions that are aborted actually failed. [Read below how to understand which transfers are successful transfers and which are not](add\_to\_backend-1.md#how-to-determine-a-successful-transaction-1).
 {% endhint %}
 
 ### Pagination of account transactions
