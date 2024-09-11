@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.4] – 2024-09-11
+
+### Fixed
+- `dapp_id` was not set for the accounts which state changed from nonExist to Active
+
+## [2.2.3] – 2024-09-11
+
+### New
+- Add tvm-client function `set_code_salt_cell` to set code salt with both objects passed by cells (not shared in json-api).
+
+## [2.2.2] – 2024-09-10
+
+### New
+- New instruction - CALCMINSTAKEREWARD. 
+- Change CNVRTSHELLQ instruction.
+
 ## [2.2.1] – 2024-08-27
 
 ### New

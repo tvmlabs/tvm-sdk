@@ -841,6 +841,7 @@ impl Engine {
         CNVRTSHELLQ                          => 0xC7, 0x27
         MINTSHELL                            => 0xC7, 0x28
         CALCBKREWARD                         => 0xC7, 0x29
+        CALCMINSTAKE                         => 0xC7, 0x30
     }
 
     #[cfg(feature = "groth")]
