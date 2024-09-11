@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [2.2.4] – 2024-09-11
 
-### New
-- Fix set dapp_id into empty accounts
+### Fixed
+- `dapp_id` was not set for the accounts which state changed from nonExist to Active
 
 ## [2.2.3] – 2024-09-11
 
