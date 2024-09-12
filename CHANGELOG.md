@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.5] – 2024-09-12
+
+### Fixed
+- Set `dapp_id` in executor to have it the same for inbound and outbound messages.
+
 ## [2.2.4] – 2024-09-11
 
 ### Fixed
