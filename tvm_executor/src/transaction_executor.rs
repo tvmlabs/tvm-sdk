@@ -203,7 +203,7 @@ pub trait TransactionExecutor {
             _ => true,
         };
         let src_dapp_id = params.src_dapp_id.clone();
-        log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}", src_dapp_id, is_previous_state_active, account, account.state());
+        log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", src_dapp_id, is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
             self.execute_with_params(in_msg, &mut account, params, available_credit, minted_shell)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
@@ -211,7 +211,7 @@ pub trait TransactionExecutor {
         } else {
             account.update_storage_stat()?;
         }
-        log::trace!(target: "executor", "acc state {:?}, previous_state {:?}", account.state(), is_previous_state_active);
+        log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
             if !is_previous_state_active {
                 if let Some(message) = in_msg {
