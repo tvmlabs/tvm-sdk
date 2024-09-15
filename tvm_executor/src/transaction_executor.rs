@@ -830,35 +830,34 @@ pub trait TransactionExecutor {
                     let mut add_value = CurrencyCollection::new();
                     if is_special {
                         add_value.other = value;
-                    }
-                    log::debug!(target: "executor", "mint token action with status {} and value {}  in account {}", is_special, add_value, acc_remaining_balance);
-                    match acc_remaining_balance.add(&add_value) {
-                        Ok(_) => {
-                            phase.spec_actions += 1;
-                            0
+                        match acc_remaining_balance.add(&add_value) {
+                            Ok(_) => {
+                                phase.spec_actions += 1;
+                                0
+                            }
+                            Err(_) => RESULT_CODE_INVALID_BALANCE,
                         }
-                        Err(_) => RESULT_CODE_INVALID_BALANCE,
+                    } else {
+                        phase.spec_actions += 1;
+                        0
                     }
                 }
                 OutAction::ExchangeShell { value } => {
-                    let mut add_value = CurrencyCollection::new();
+                    let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
                     if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
                         if a <= VarUInteger32::from(value as u128) {
-                            add_value.other.set(&ECC_SHELL_KEY, &a)?;
-                            log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
+                            sub_value.other.set(&ECC_SHELL_KEY, &a)?;
                             let digits = a.value().to_u64_digits();
                             if !digits.1.is_empty() {
-                                exchange_value = a.value().to_u64_digits().1[0];
+                                exchange_value = digits.1[0];
                             }
                         } else {
-                            log::debug!(target: "executor", "ord values a {:?}, value {}", a, value);
-                            add_value.set_other(ECC_SHELL_KEY, value as u128)?;
+                            sub_value.set_other(ECC_SHELL_KEY, value as u128)?;
                             exchange_value = value;
                         }
                     }
-                    log::debug!(target: "executor", "exchange shell token in action in account {} with value {} and final {}", acc_remaining_balance, exchange_value, add_value);
-                    match acc_remaining_balance.sub(&add_value) {
+                    match acc_remaining_balance.sub(&sub_value) {
                         Ok(true) => {
                             acc_remaining_balance
                                 .grams
