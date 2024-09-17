@@ -725,7 +725,7 @@ impl Deserializable for InternalMessageHeader {
         self.created_at.read_from(cell)?; //created_at
         if cell.get_next_bit()? == true {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
-        }    
+        }
         Ok(())
     }
 }
@@ -744,7 +744,7 @@ impl fmt::Display for ExternalInboundMessageHeader {
 pub struct ExternalInboundMessageHeader {
     pub src: MsgAddressExt,
     pub dst: MsgAddressInt,
-    pub import_fee: Grams
+    pub import_fee: Grams,
 }
 
 impl ExternalInboundMessageHeader {

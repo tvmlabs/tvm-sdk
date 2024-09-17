@@ -881,7 +881,9 @@ pub trait TransactionExecutor {
                             value = available_credit.clone().try_into()?;
                         }
                     }
-                    acc_remaining_balance.grams.add(&(Grams::from(value) * Grams::from(1000000000)))?;
+                    acc_remaining_balance
+                        .grams
+                        .add(&(Grams::from(value) * Grams::from(1000000000)))?;
                     *minted_shell += value as u128;
                     log::trace!(target: "executor", "action minted_shell {:?}", minted_shell);
                     phase.spec_actions += 1;
