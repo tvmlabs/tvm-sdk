@@ -898,7 +898,11 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
+        let src_dapp_id = acc.get_dapp_id().cloned();
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
+            if let Some(header) = out_msg.int_header_mut() {
+                header.set_src_dapp_id(src_dapp_id.clone());
+            }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
                 continue;
