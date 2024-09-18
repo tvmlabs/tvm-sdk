@@ -11,7 +11,6 @@
 #![allow(clippy::too_many_arguments)]
 
 use std::cmp::min;
-use std::collections::HashMap;
 use std::collections::LinkedList;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
@@ -77,6 +76,7 @@ use tvm_types::UInt256;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
+use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::IndexProvider;
 use tvm_vm::smart_contract_info::SmartContractInfo;
@@ -107,8 +107,6 @@ const MAX_ACTIONS: usize = 255;
 const MAX_MSG_BITS: usize = 1 << 21;
 const MAX_MSG_CELLS: usize = 1 << 13;
 
-pub type MintSet = HashMap<UInt256, u128>;
-
 #[derive(Eq, PartialEq, Debug)]
 pub enum IncorrectCheckRewrite {
     Anycast,
@@ -132,6 +130,7 @@ pub struct ExecuteParams {
     pub vm_execution_is_block_related: Arc<Mutex<bool>>,
     pub block_collation_was_finished: Arc<Mutex<bool>>,
     pub src_dapp_id: Option<UInt256>,
+    pub available_credit: i128,
 }
 
 pub struct ActionPhaseResult {
@@ -173,6 +172,7 @@ impl Default for ExecuteParams {
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             src_dapp_id: None,
+            available_credit: 0,
         }
     }
 }
@@ -183,7 +183,6 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
-        available_credit: i128,
         minted_shell: &mut u128,
     ) -> Result<Transaction>;
 
@@ -192,10 +191,9 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account_root: &mut Cell,
         params: ExecuteParams,
-        available_credit: i128,
-        minted_shell: &mut u128,
-    ) -> Result<Transaction> {
+    ) -> Result<(Transaction, u128)> {
         let old_hash = account_root.repr_hash();
+        let minted_shell: &mut u128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
         let is_previous_state_active = match account.state() {
             Some(AccountState::AccountUninit {}) => false,
@@ -205,7 +203,7 @@ pub trait TransactionExecutor {
         let src_dapp_id = params.src_dapp_id.clone();
         log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", src_dapp_id, is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
-            self.execute_with_params(in_msg, &mut account, params, available_credit, minted_shell)?;
+            self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
         } else {
@@ -230,7 +228,7 @@ pub trait TransactionExecutor {
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
-        Ok(transaction)
+        Ok((transaction, *minted_shell))
     }
 
     #[deprecated]
@@ -875,7 +873,7 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellToken { mut value } => {
-                    if available_credit != -1 {
+                    if available_credit != INFINITY_CREDIT {
                         if value as i128 > available_credit {
                             value = available_credit.clone().try_into()?;
                         }
