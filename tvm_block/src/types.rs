@@ -112,7 +112,7 @@ macro_rules! define_VarIntegerN {
             // Interface to write value with type rule
             fn write_to_cell(value: &BigInt) -> Result<BuilderData> {
                 let len = Self::get_len(value);
-                if len >= $N {
+                if len > $N {
                     fail!("serialization of {} error {} >= {}", stringify!($varname), len, $N)
                 }
 
@@ -845,6 +845,11 @@ impl CurrencyCollection {
 
     pub fn with_grams(grams: u64) -> Self {
         Self::from_grams(Grams::from(grams))
+    }
+
+    pub fn set_grams(&mut self, grams: u64) -> Result<()> {
+        self.grams = Grams::from(grams);
+        Ok(())
     }
 
     pub const fn from_grams(grams: Grams) -> Self {
