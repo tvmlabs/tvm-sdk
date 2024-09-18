@@ -16,6 +16,7 @@ use crate::types::Status;
 
 pub const ECC_NACKL_KEY: u32 = 1;
 pub const ECC_SHELL_KEY: u32 = 2;
+pub const INFINITY_CREDIT: i128 = -1;
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
@@ -72,6 +73,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
 
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
     let need_val_num = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
@@ -97,9 +99,10 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
 }
 
 pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("MINTSHELL"))?;
     fetch_stack(engine, 1)?;
-    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=2147483647)?;
+    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
     let mut cell = BuilderData::new();
     x.write_to(&mut cell)?;
     add_action(engine, ACTION_MINT_SHELL_TOKEN, None, cell)

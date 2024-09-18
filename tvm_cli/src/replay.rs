@@ -454,14 +454,8 @@ pub async fn replay(
                     trace_callback,
                     ..ExecuteParams::default()
                 };
-                let tr = executor
-                    .execute_with_libs_and_params(
-                        msg.as_ref(),
-                        &mut account_root,
-                        params,
-                        0,
-                        &mut 0,
-                    )
+                let (tr, _) = executor
+                    .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params)
                     .map_err(|e| format!("Failed to execute txn: {}", e))?;
                 return Ok(tr);
             }
@@ -497,8 +491,8 @@ pub async fn replay(
             last_tr_lt: Arc::new(AtomicU64::new(tr.tr.logical_time())),
             ..ExecuteParams::default()
         };
-        let tr_local = executor
-            .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params, 0, &mut 0)
+        let (tr_local, _) = executor
+            .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params)
             .map_err(|e| format!("Failed to execute txn: {}", e))?;
         state.account = Account::construct_from_cell(account_root.clone())
             .map_err(|e| format!("Failed to construct account: {}", e))?;
