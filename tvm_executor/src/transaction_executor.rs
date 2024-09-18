@@ -857,11 +857,10 @@ pub trait TransactionExecutor {
                             exchange_value = value;
                         }
                     }
-                    match acc_remaining_balance.sub(&sub_value) {
+                    match acc_remaining_balance.grams.add(&Grams::from(exchange_value * 1_000_000))
+                    {
                         Ok(true) => {
-                            acc_remaining_balance
-                                .grams
-                                .add(&Grams::from(exchange_value * 1_000_000))?;
+                            acc_remaining_balance.sub(&sub_value)?;
                             phase.spec_actions += 1;
                             0
                         }
@@ -885,7 +884,6 @@ pub trait TransactionExecutor {
                         .grams
                         .add(&(Grams::from(value) * Grams::from(1000000000)))?;
                     *minted_shell += value as u128;
-                    log::trace!(target: "executor", "action minted_shell {:?}", minted_shell);
                     phase.spec_actions += 1;
                     0
                 }
