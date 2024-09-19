@@ -99,7 +99,7 @@ type ParamsOfAppRequest {
 Generator must define special dispatch helper for application object invocation:
 
 ```tsx
-async function dispatchFoo(obj: Foo, params: ParamsOfAppFoo, app_request_id: number | null, client: TonClient) {
+async function dispatchFoo(obj: Foo, params: ParamsOfAppFoo, app_request_id: number | null, client: TVMClient) {
     try {
         let result = undefined;
 		    switch (params.type) {

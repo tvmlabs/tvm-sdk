@@ -91,7 +91,7 @@
 ## For Binding Developers
 
 * [How to work with Application Objects in binding generators](for-binding-developers/app\_objects.md)
-* [JSON Interface to Ton Client](for-binding-developers/json\_interface.md)
+* [JSON Interface to TVM Client](for-binding-developers/json\_interface.md)
 
 ## Links
 
