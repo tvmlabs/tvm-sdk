@@ -876,21 +876,10 @@ pub trait TransactionExecutor {
                             value = available_credit.clone().try_into()?;
                         }
                     }
-                    match acc_remaining_balance.grams.add(&(Grams::from(value))) {
-                        Ok(true) => {
-                            *minted_shell += value as u128;
-                            phase.spec_actions += 1;
-                            0
-                        }
-                        Ok(false) => {
-                            phase.spec_actions += 1;
-                            0
-                        }
-                        Err(_) => {
-                            phase.spec_actions += 1;
-                            0
-                        }
-                    }
+                    acc_remaining_balance.grams.add(&(Grams::from(value)))?;
+                    *minted_shell += value as u128;
+                    phase.spec_actions += 1;
+                    0
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };
