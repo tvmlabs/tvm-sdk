@@ -1,7 +1,3 @@
----
-description: Overview of SDK components
----
-
 # About Acki Nacki SDK
 
 Acki Nacki SDK is a customised for Acki Nacki TVM SDK that consists of
