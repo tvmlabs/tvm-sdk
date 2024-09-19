@@ -855,8 +855,7 @@ pub trait TransactionExecutor {
                             exchange_value = value;
                         }
                     }
-                    match acc_remaining_balance.grams.add(&Grams::from(exchange_value))
-                    {
+                    match acc_remaining_balance.grams.add(&Grams::from(exchange_value)) {
                         Ok(true) => {
                             acc_remaining_balance.sub(&sub_value)?;
                             phase.spec_actions += 1;
@@ -878,9 +877,7 @@ pub trait TransactionExecutor {
                             value = available_credit.clone().try_into()?;
                         }
                     }
-                    acc_remaining_balance
-                        .grams
-                        .add(&(Grams::from(value)))?;
+                    acc_remaining_balance.grams.add(&(Grams::from(value)))?;
                     *minted_shell += value as u128;
                     phase.spec_actions += 1;
                     0
