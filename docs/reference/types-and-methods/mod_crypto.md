@@ -1672,7 +1672,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 ### Parameters
 - `handle`: _number_ – Crypto Box Handle.
 - `hdpath`?: _string_ – HD key derivation path.
-<br>By default, Everscale HD path is used.
+<br>By default, Acki Nacki HD path is used.
 - `secret_lifetime`?: _number_ – Store derived secret for this lifetime (in ms). The timer starts after each signing box operation. Secrets will be deleted immediately after each signing box operation, if this value is not set.
 
 
@@ -1715,7 +1715,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 ### Parameters
 - `handle`: _number_ – Crypto Box Handle.
 - `hdpath`?: _string_ – HD key derivation path.
-<br>By default, Everscale HD path is used.
+<br>By default, Acki Nacki HD path is used.
 - `algorithm`: _[BoxEncryptionAlgorithm](mod\_crypto.md#boxencryptionalgorithm)_ – Encryption algorithm.
 - `secret_lifetime`?: _number_ – Store derived secret for encryption algorithm for this lifetime (in ms). The timer starts after each encryption box operation. Secrets will be deleted (overwritten with zeroes) after each encryption operation, if this value is not set.
 
@@ -3296,7 +3296,7 @@ type ParamsOfGetSigningBoxFromCryptoBox = {
 ```
 - `handle`: _number_ – Crypto Box Handle.
 - `hdpath`?: _string_ – HD key derivation path.
-<br>By default, Everscale HD path is used.
+<br>By default, Acki Nacki HD path is used.
 - `secret_lifetime`?: _number_ – Store derived secret for this lifetime (in ms). The timer starts after each signing box operation. Secrets will be deleted immediately after each signing box operation, if this value is not set.
 
 
@@ -3320,7 +3320,7 @@ type ParamsOfGetEncryptionBoxFromCryptoBox = {
 ```
 - `handle`: _number_ – Crypto Box Handle.
 - `hdpath`?: _string_ – HD key derivation path.
-<br>By default, Everscale HD path is used.
+<br>By default, Acki Nacki HD path is used.
 - `algorithm`: _[BoxEncryptionAlgorithm](mod\_crypto.md#boxencryptionalgorithm)_ – Encryption algorithm.
 - `secret_lifetime`?: _number_ – Store derived secret for encryption algorithm for this lifetime (in ms). The timer starts after each encryption box operation. Secrets will be deleted (overwritten with zeroes) after each encryption operation, if this value is not set.
 

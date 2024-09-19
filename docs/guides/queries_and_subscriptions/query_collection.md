@@ -1,12 +1,12 @@
 # Query Collection
 
 {% hint style="warning" %}
-<mark style="color:red;">**Collections is an analytics API  (not real-time, though it may look like one).**</mark>&#x20;
+<mark style="color:red;">**Collections is an analytics API (not real-time, though it may look like one).**</mark>
 
 <mark style="color:red;">**Not all filters and sortings are working now. Data is provided only for the past 7 days.**</mark>
 {% endhint %}
 
-## When you may need collections?&#x20;
+## When you may need collections?
 
 If you want to apply some custom filters and sortings on the data.
 
@@ -20,7 +20,7 @@ There are a few collections with blockchain data:
 * _blocks_: blockchain blocks.
 * _block\_signatures_ : validator block signatures
 
-[Use `query_collection` method to query data that can be filtered and sorted](../../reference/types-and-methods/mod\_net.md#query\_collection).
+[Use `query_collection` method to query data that can be filtered and sorted](broken-reference).
 
 ## Usage
 

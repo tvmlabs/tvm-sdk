@@ -4,7 +4,7 @@ You can find error codes with descriptions on this page
 
 * [SDK Errors](error\_codes.md#sdk-errors)
 * [Solidity Runtime Errors](error\_codes.md#solidity-runtime-errors)
-* [TON Virtual Machine Runtime Errors](error\_codes.md#ton-virtual-machine-runtime-errors)
+* [TVM Virtual Machine Runtime Errors](error\_codes.md#tvm-virtual-machine-runtime-errors)
   * [Action phase errors](error\_codes.md#action-phase-errors)
 
 ## SDK Errors
@@ -29,7 +29,7 @@ You can find error codes with descriptions on this page
 
 [https://github.com/tonlabs/TON-Solidity-Compiler/blob/master/API.md#solidity-runtime-errors](https://github.com/tonlabs/TON-Solidity-Compiler/blob/master/API.md#solidity-runtime-errors)
 
-## TON Virtual Machine Runtime Errors
+## TVM Virtual Machine Runtime Errors
 
 `0` TVM terminated successfully
 

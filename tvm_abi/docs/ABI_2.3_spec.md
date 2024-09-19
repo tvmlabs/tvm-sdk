@@ -1,4 +1,4 @@
-# Everscale Smart Contracts ABI 2.3 Specification
+# TVM Smart Contracts ABI 2.3 Specification
 
 > **NOTE**: This is an older specification version.
 > 
@@ -7,7 +7,7 @@
 > All changes between versions are documented in the [Changelog](../CHANGELOG.md).
 
 ABI 2.3 introduces the new method to calculate external inbound message body signature. It is aimed to fix the below described problem in ABI v2.2.   
-Big thanks to Everscale community member https://github.com/mnill Ilia Kirichek who found these problems.
+
 
 ## Problem
 External messages may have a signature. Signatures are dependent only on message body (without signature flag and signature itself). Signatures aren’t dependent on `dest` address and it may cause a problem. Let's consider the following situation:  

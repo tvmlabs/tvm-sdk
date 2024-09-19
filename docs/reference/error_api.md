@@ -1,4 +1,4 @@
-# Error API
+# Core Library Error API
 
 SDK Error API
 
@@ -8,7 +8,7 @@ SDK Error API
   * [ErrorData](error\_api.md#errordata)
 * [Error example](error\_api.md#error-example)
 
-## TONClientError
+## TVMClientError
 
 ### Properties
 
@@ -30,7 +30,7 @@ Additional data provided with error. All the fields in `ErrorData` are optional 
 
 All the fields in `ErrorData` are optional and their presence depends on the error code.
 
-```text
+```
 {
     message_id?: string,
     shard_block_id?: string
@@ -87,11 +87,11 @@ Result of local transaction emulation performed after the message was not succes
 
 ## Error example
 
-Here you can see an error returned by process\_message function when message was not delivered to the blockchain and got expired \(code 507\).
+Here you can see an error returned by process\_message function when message was not delivered to the blockchain and got expired (code 507).
 
 In such cases SDK emulated the same transaction locally and here it got a local\_error with possible reason - wrong signature - exit code = 40.
 
-```text
+```
 {
   "code": 507,
   "message": "Message expired. Possible reason: Contract execution was terminated with error: Contract did not accept message, exit code: 40 (Invalid signature). Check sign keys. For more information about exit code check the contract source code or ask the contract developer",
@@ -116,4 +116,3 @@ In such cases SDK emulated the same transaction locally and here it got a local\
   }
 }
 ```
-

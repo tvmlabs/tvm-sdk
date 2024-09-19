@@ -10,7 +10,7 @@ This section explains how to generate mnemonics, derive keys and get a key pair
   * [Derived key](mnemonics\_and\_keys.md#derived-key)
   * [Generate keys for signature](mnemonics\_and\_keys.md#generate-keys-for-signature)
 
-> Check [crypto module](../../reference/types-and-methods/mod\_crypto.md) reference for more info:
+> Check [crypto module](broken-reference) reference for more info:
 
 ## Mnemonic generation
 

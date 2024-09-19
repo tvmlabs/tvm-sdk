@@ -304,7 +304,7 @@ fn get_crypto_box<'context>(
 pub struct ParamsOfGetSigningBoxFromCryptoBox {
     /// Crypto Box Handle.
     pub handle: u32,
-    /// HD key derivation path. By default, Everscale HD path is used.
+    /// HD key derivation path. By default, Acki Nacki HD path is used.
     pub hdpath: Option<String>,
     /// Store derived secret for this lifetime (in ms).
     /// The timer starts after each signing box operation.
@@ -518,7 +518,7 @@ impl Default for BoxEncryptionAlgorithm {
 pub struct ParamsOfGetEncryptionBoxFromCryptoBox {
     /// Crypto Box Handle.
     pub handle: u32,
-    /// HD key derivation path. By default, Everscale HD path is used.
+    /// HD key derivation path. By default, Acki Nacki HD path is used.
     pub hdpath: Option<String>,
     /// Encryption algorithm.
     pub algorithm: BoxEncryptionAlgorithm,
