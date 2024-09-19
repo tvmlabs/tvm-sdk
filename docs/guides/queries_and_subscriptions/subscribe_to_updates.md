@@ -6,7 +6,7 @@ description: Subscribe to any updates in blockchain database, including contract
 
 ## When you may need it?
 
-Whenever you need to improve UI responsiveness or want to receive updates on your backend as they appear - you may use websocket subscriptions.&#x20;
+Whenever you need to improve UI responsiveness or want to receive updates on your backend as they appear - you may use websocket subscriptions.
 
 ## Usage
 
@@ -61,6 +61,6 @@ const messageSubscription = await TonClient.default.net.subscribe_collection({
 });
 ```
 
-See this sample to understand how to use [subscribe\_collection](../../reference/types-and-methods/mod\_net.md#subscribe\_collection) function:
+See this sample to understand how to use [subscribe\_collection](broken-reference) function:
 
 [https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/listen-and-decode](https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/listen-and-decode)

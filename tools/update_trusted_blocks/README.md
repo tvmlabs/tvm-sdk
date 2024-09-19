@@ -1,11 +1,11 @@
-# Update Trusted Blocks utility
+# Update Trusted Blocks utility (temporarily not maintained)
 
-This small utility is used for downloading and storing of trusted key-blocks for Everscale MainNet and DevNet. Trusted 
+This small utility is used for downloading and storing of trusted key-blocks for Acki Nacki MainNet and Testnet. Trusted 
 key-blocks are hashes of known key-blocks of known networks. TON SDK uses these hashes for speeding up of proof-checking.  
 
 Each downloaded block is being proven by SDK using already known trusted key-blocks hashes.
 
-Utility saves downloaded block hashes into a [binary file](../../ton_client/src/proofs/trusted_key_blocks.bin). This 
+Utility saves downloaded block hashes into a [binary file](../../tvm_client/src/proofs/trusted_key_blocks.bin). This 
 file is being compiled into the final SDK binary.
 
 If file already exists, it will be appended with the new key-blocks.

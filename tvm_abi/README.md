@@ -9,5 +9,5 @@
 Use in your Rust projects by adding git dependency into `Cargo.toml`
 
 ```toml
-tvm_abi = { git = "https://github.com/tvmlabs/tvm-abi.git" }
+tvm_abi = { git = "https://github.com/tvmlabs/tvm-sdk.git" }
 ```
