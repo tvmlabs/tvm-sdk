@@ -836,8 +836,7 @@ pub trait TransactionExecutor {
                             Err(_) => RESULT_CODE_INVALID_BALANCE,
                         }
                     } else {
-                        phase.spec_actions += 1;
-                        0
+                        RESULT_CODE_INVALID_BALANCE
                     }
                 }
                 OutAction::ExchangeShell { value } => {
