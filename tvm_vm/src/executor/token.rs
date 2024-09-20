@@ -50,22 +50,29 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let t = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
     let bked = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
     let active_bk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64;
+    let arfc = 1000_f64;
+    let minrc = 1_f64;
+    let maxrc = 3_f64;
+    let ttmt = 2000000000_f64;
+    let tmtafc = 00001_f64;
+    let totalsupply = 10400000000_f64;
+    let token_decimals = 1e9_f64;
     let repcoef = if bkrt < maxrt {
-        1_f64
-            + (3_f64 - 1_f64) / (1_f64 - 1_f64 / 1000_f64)
-                * (1_f64 - (-1_f64 * 1000_f64.ln() * bkrt / maxrt).exp())
+        minrc
+            + (maxrc - minrc) / (1_f64 - 1_f64 / arfc)
+                * (1_f64 - (-1_f64 * arfc.ln() * bkrt / maxrt).exp())
     } else {
         3_f64
     };
-    let u = -1_f64 / 2000000000_f64 * (0.00001_f64 / (1_f64 + 0.00001_f64)).ln();
-    let grps = 10400000000_f64 * (1_f64 + 0.00001_f64) * (1_f64 - (-u * t).exp());
+    let u = -1_f64 / ttmt * (tmtafc / (1_f64 + tmtafc)).ln();
+    let grps = totalsupply * (1_f64 + tmtafc) * ((-u * t).exp() - (-u * (t + 1_f64)).exp());
     let tbbkrps = 0.675 * grps;
     let bkrpve;
     if totalbkstake != 0_f64 {
         let bkrps = tbbkrps * repcoef * bkstake / totalbkstake;
-        bkrpve = bkrps * bked * (1e9_f64);
+        bkrpve = bkrps * bked * token_decimals;
     } else {
-        bkrpve = tbbkrps * repcoef * bked * (1e9_f64) / active_bk;
+        bkrpve = tbbkrps * repcoef * bked * token_decimals / active_bk;
     }
     engine.cc.stack.push(int!(bkrpve as u128));
     Ok(())
