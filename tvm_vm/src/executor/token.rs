@@ -94,8 +94,8 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let mut base_min_val_stake = 0_f64;
     if t >= 3_f64 / 2_f64 * bkpd {
         let u_free_flt = -1_f64 / TTMT * (FFFC / (FFFC + 1_f64)).ln();
-        let u_tmta = -1_f64 / TTMT * (TMTAFC / (TMTAFC + 1_f64)).ln();
-        let tmta = TOTALSUPPLY * (1_f64 + TMTAFC) * (1_f64 - (-1_f64 * t * u_tmta).exp());
+        let u = -1_f64 / TTMT * (TMTAFC / (TMTAFC + 1_f64)).ln();
+        let tmta = TOTALSUPPLY * (1_f64 + TMTAFC) * (1_f64 - (-1_f64 * t * u).exp());
         let free_flt_frac =
             MAX_FREE_FLOAT_FRAC * (1_f64 + FFFC) * (1_f64 - (-1_f64 * u_free_flt * t).exp());
         let tsta = tmta * (1_f64 - free_flt_frac);
