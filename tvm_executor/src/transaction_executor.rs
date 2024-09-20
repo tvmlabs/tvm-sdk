@@ -76,6 +76,7 @@ use tvm_types::UInt256;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
+use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::IndexProvider;
 use tvm_vm::smart_contract_info::SmartContractInfo;
@@ -129,6 +130,7 @@ pub struct ExecuteParams {
     pub vm_execution_is_block_related: Arc<Mutex<bool>>,
     pub block_collation_was_finished: Arc<Mutex<bool>>,
     pub src_dapp_id: Option<UInt256>,
+    pub available_credit: i128,
 }
 
 pub struct ActionPhaseResult {
@@ -170,6 +172,7 @@ impl Default for ExecuteParams {
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             src_dapp_id: None,
+            available_credit: 0,
         }
     }
 }
@@ -180,6 +183,7 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
+        minted_shell: &mut u128,
     ) -> Result<Transaction>;
 
     fn execute_with_libs_and_params(
@@ -187,8 +191,9 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account_root: &mut Cell,
         params: ExecuteParams,
-    ) -> Result<Transaction> {
+    ) -> Result<(Transaction, u128)> {
         let old_hash = account_root.repr_hash();
+        let minted_shell: &mut u128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
         let is_previous_state_active = match account.state() {
             Some(AccountState::AccountUninit {}) => false,
@@ -196,14 +201,15 @@ pub trait TransactionExecutor {
             _ => true,
         };
         let src_dapp_id = params.src_dapp_id.clone();
-        log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}", src_dapp_id, is_previous_state_active, account, account.state());
-        let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
+        log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", src_dapp_id, is_previous_state_active, account, account.state(), minted_shell);
+        let mut transaction =
+            self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
         } else {
             account.update_storage_stat()?;
         }
-        log::trace!(target: "executor", "acc state {:?}, previous_state {:?}", account.state(), is_previous_state_active);
+        log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
         if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
             if !is_previous_state_active {
                 if let Some(message) = in_msg {
@@ -222,7 +228,7 @@ pub trait TransactionExecutor {
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
-        Ok(transaction)
+        Ok((transaction, *minted_shell))
     }
 
     #[deprecated]
@@ -637,6 +643,8 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
+        available_credit: i128,
+        minted_shell: &mut u128,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -649,6 +657,8 @@ pub trait TransactionExecutor {
             new_data,
             my_addr,
             is_special,
+            available_credit,
+            minted_shell,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -665,6 +675,8 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
+        available_credit: i128,
+        minted_shell: &mut u128,
     ) -> Result<ActionPhaseResult> {
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
@@ -816,39 +828,35 @@ pub trait TransactionExecutor {
                     let mut add_value = CurrencyCollection::new();
                     if is_special {
                         add_value.other = value;
-                    }
-                    log::debug!(target: "executor", "mint token action with status {} and value {}  in account {}", is_special, add_value, acc_remaining_balance);
-                    match acc_remaining_balance.add(&add_value) {
-                        Ok(_) => {
-                            phase.spec_actions += 1;
-                            0
+                        match acc_remaining_balance.add(&add_value) {
+                            Ok(_) => {
+                                phase.spec_actions += 1;
+                                0
+                            }
+                            Err(_) => RESULT_CODE_INVALID_BALANCE,
                         }
-                        Err(_) => RESULT_CODE_INVALID_BALANCE,
+                    } else {
+                        RESULT_CODE_INVALID_BALANCE
                     }
                 }
                 OutAction::ExchangeShell { value } => {
-                    let mut add_value = CurrencyCollection::new();
+                    let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
                     if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
                         if a <= VarUInteger32::from(value as u128) {
-                            add_value.other.set(&ECC_SHELL_KEY, &a)?;
-                            log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
+                            sub_value.other.set(&ECC_SHELL_KEY, &a)?;
                             let digits = a.value().to_u64_digits();
                             if !digits.1.is_empty() {
-                                exchange_value = a.value().to_u64_digits().1[0];
+                                exchange_value = digits.1[0];
                             }
                         } else {
-                            log::debug!(target: "executor", "ord values a {:?}, value {}", a, value);
-                            add_value.set_other(ECC_SHELL_KEY, value as u128)?;
+                            sub_value.set_other(ECC_SHELL_KEY, value as u128)?;
                             exchange_value = value;
                         }
                     }
-                    log::debug!(target: "executor", "exchange shell token in action in account {} with value {} and final {}", acc_remaining_balance, exchange_value, add_value);
-                    match acc_remaining_balance.sub(&add_value) {
+                    match acc_remaining_balance.grams.add(&Grams::from(exchange_value)) {
                         Ok(true) => {
-                            acc_remaining_balance
-                                .grams
-                                .add(&Grams::from(exchange_value * 1_000_000))?;
+                            acc_remaining_balance.sub(&sub_value)?;
                             phase.spec_actions += 1;
                             0
                         }
@@ -861,6 +869,17 @@ pub trait TransactionExecutor {
                             0
                         }
                     }
+                }
+                OutAction::MintShellToken { mut value } => {
+                    if available_credit != INFINITY_CREDIT {
+                        if value as i128 > available_credit {
+                            value = available_credit.clone().try_into()?;
+                        }
+                    }
+                    acc_remaining_balance.grams.add(&(Grams::from(value)))?;
+                    *minted_shell += value as u128;
+                    phase.spec_actions += 1;
+                    0
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };

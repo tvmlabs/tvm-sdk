@@ -418,7 +418,7 @@ where
         signature_id: options.signature_id,
         ..ExecuteParams::default()
     };
-    let transaction =
+    let (transaction, _) =
         match executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params) {
             Ok(transaction) => transaction,
             Err(err) => {

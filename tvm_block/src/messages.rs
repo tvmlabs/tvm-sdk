@@ -1513,7 +1513,6 @@ impl Deserializable for Message {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // read header
         self.header.read_from(cell)?;
-
         // read StateInit
         if cell.get_next_bit()? {
             // maybe of init
