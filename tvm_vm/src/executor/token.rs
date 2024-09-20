@@ -18,6 +18,18 @@ pub const ECC_NACKL_KEY: u32 = 1;
 pub const ECC_SHELL_KEY: u32 = 2;
 pub const INFINITY_CREDIT: i128 = -1;
 
+pub const ARFC: f64 = 1000_f64;
+pub const MINRC: f64 = 1_f64;
+pub const MAXRC: f64 = 3_f64;
+pub const TTMT: f64 = 2000000000_f64;
+pub const TMTAFC: f64 = 0.00001_f64;
+pub const TOTALSUPPLY: f64 = 10400000000_f64;
+pub const TOKEN_DECIMALS: f64 = 1e9_f64;
+pub const MAXRT: f64 = 157766400_f64;
+pub const FFFC: f64 = 0.01_f64;
+pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
+pub const BKSFC: f64 = 0.675_f64;
+
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
     fetch_stack(engine, 2)?;
@@ -42,37 +54,29 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
-    fetch_stack(engine, 7)?;
+    fetch_stack(engine, 6)?;
     let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let maxrt = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let bkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let totalbkstake = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let t = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    let bked = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
-    let active_bk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64;
-    let arfc = 1000_f64;
-    let minrc = 1_f64;
-    let maxrc = 3_f64;
-    let ttmt = 2000000000_f64;
-    let tmtafc = 00001_f64;
-    let totalsupply = 10400000000_f64;
-    let token_decimals = 1e9_f64;
-    let repcoef = if bkrt < maxrt {
-        minrc
-            + (maxrc - minrc) / (1_f64 - 1_f64 / arfc)
-                * (1_f64 - (-1_f64 * arfc.ln() * bkrt / maxrt).exp())
+    let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let bked = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
+    let active_bk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
+    let repcoef = if bkrt < MAXRT {
+        MINRC
+            + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
+                * (1_f64 - (-1_f64 * ARFC.ln() * bkrt / MAXRT).exp())
     } else {
         3_f64
     };
-    let u = -1_f64 / ttmt * (tmtafc / (1_f64 + tmtafc)).ln();
-    let grps = totalsupply * (1_f64 + tmtafc) * ((-u * t).exp() - (-u * (t + 1_f64)).exp());
-    let tbbkrps = 0.675 * grps;
+    let u = -1_f64 / TTMT * (TMTAFC / (1_f64 + TMTAFC)).ln();
+    let grps = TOTALSUPPLY * (1_f64 + TMTAFC) * ((-u * t).exp() - (-u * (t + 1_f64)).exp());
+    let tbbkrps = BKSFC * grps;
     let bkrpve;
     if totalbkstake != 0_f64 {
         let bkrps = tbbkrps * repcoef * bkstake / totalbkstake;
-        bkrpve = bkrps * bked * token_decimals;
+        bkrpve = bkrps * bked * TOKEN_DECIMALS;
     } else {
-        bkrpve = tbbkrps * repcoef * bked * token_decimals / active_bk;
+        bkrpve = tbbkrps * repcoef * bked * TOKEN_DECIMALS / active_bk;
     }
     engine.cc.stack.push(int!(bkrpve as u128));
     Ok(())
@@ -83,24 +87,22 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
-    let need_val_num = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let val_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let need_bk_num = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let bk_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let t = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let vpd = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let bkpd = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
     let mut base_min_val_stake = 0_f64;
-    if t >= 3_f64 / 2_f64 * vpd {
-        let u_free_flt_pr = -1_f64 / 2000000000_f64 * (0.01_f64 / (0.01_f64 + 1_f64)).ln();
-        let u_tmta = -1_f64 / 2000000000_f64 * (0.00001_f64 / (0.00001_f64 + 1_f64)).ln();
-        let tmta = 10400000000_f64 * (1_f64 + 0.00001_f64) * (1_f64 - (-1_f64 * t * u_tmta).exp());
-        let free_flt_pr = (1_f64 + 0.01_f64) * (1_f64 - (-1_f64 * u_free_flt_pr * t).exp()) / 3_f64;
-        base_min_val_stake =
-            (0.75_f64 * tmta * (1_f64 - free_flt_pr) / 2_f64 / need_val_num) * 1e9_f64;
+    if t >= 3_f64 / 2_f64 * bkpd {
+        let u_free_flt = -1_f64 / TTMT * (FFFC / (FFFC + 1_f64)).ln();
+        let u_tmta = -1_f64 / TTMT * (TMTAFC / (TMTAFC + 1_f64)).ln();
+        let tmta = TOTALSUPPLY * (1_f64 + TMTAFC) * (1_f64 - (-1_f64 * t * u_tmta).exp());
+        let free_flt_frac =
+            MAX_FREE_FLOAT_FRAC * (1_f64 + FFFC) * (1_f64 - (-1_f64 * u_free_flt * t).exp());
+        let tsta = tmta * (1_f64 - free_flt_frac);
+        base_min_val_stake = BKSFC * tsta / 2_f64 / need_bk_num * TOKEN_DECIMALS;
     }
-    let min_val_stake = if val_num > need_val_num {
-        base_min_val_stake as u128
-    } else {
-        base_min_val_stake as u128
-    };
+    let min_val_stake =
+        if bk_num > need_bk_num { base_min_val_stake as u128 } else { base_min_val_stake as u128 };
     engine.cc.stack.push(int!(min_val_stake));
     Ok(())
 }
