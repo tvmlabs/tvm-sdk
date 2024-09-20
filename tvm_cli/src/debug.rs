@@ -1263,7 +1263,7 @@ pub async fn execute_debug(
         ..ExecuteParams::default()
     };
 
-    executor.execute_with_libs_and_params(message, account_root, params).map_err(|e| {
+    let tr = executor.execute_with_libs_and_params(message, account_root, params).map_err(|e| {
         let exit_code = match e.downcast_ref() {
             Some(tvm_executor::ExecutorError::NoAcceptError(exit_code, _)) => *exit_code,
             Some(tvm_executor::ExecutorError::TvmExceptionCode(exit_code)) => *exit_code as i32,
@@ -1275,7 +1275,11 @@ pub async fn execute_debug(
             "message": e.to_string(),
         });
         format!("{:#}", result)
-    })
+    });
+    match tr {
+        Ok(data) => Ok(data.0),
+        Err(e) => Err(e),
+    }
 }
 
 fn trace_callback(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) {

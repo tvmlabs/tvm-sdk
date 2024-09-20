@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [2.2.6] – 2024-09-20
+
+### Fixed
+- Update MINTECC, EXCHANGE, CALCBKREWARD instruction.
+- Fix check_overflow in grams.
+
+### New
+- Add MINTSHELL intruction and credit program.
+
 ## [2.2.5] – 2024-09-12
 
 ### Fixed

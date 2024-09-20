@@ -35,6 +35,7 @@ pub const ACTION_CHANGE_LIB: u32 = 0x26fa1dd4;
 pub const ACTION_COPYLEFT: u32 = 0x24486f7a;
 pub const ACTION_MINTECC: u32 = 0xc2bc6dd8;
 pub const ACTION_CNVRTSHELLQ: u32 = 0x90d8ae28;
+pub const ACTION_MINT_SHELL_TOKEN: u32 = 0xcb9b9a2f;
 
 #[cfg(test)]
 #[path = "tests/test_out_actions.rs"]
@@ -111,6 +112,9 @@ pub enum OutAction {
     /// Action for change library.
     ChangeLibrary { mode: u8, code: Option<Cell>, hash: Option<UInt256> },
 
+    /// Action for mint some shell token into account
+    MintShellToken { value: u64 },
+
     /// Action for revert reward for code to code creater.
     CopyLeft { license: u8, address: AccountId },
 
@@ -185,6 +189,11 @@ impl OutAction {
         OutAction::ChangeLibrary { mode, code, hash }
     }
 
+    /// Create new instance OutAction::ExchangeShell
+    pub fn new_mint_shell(value: u64) -> Self {
+        OutAction::MintShellToken { value }
+    }
+
     /// Create new instance OutAction::Copyleft
     pub fn new_copyleft(license: u8, address: AccountId) -> Self {
         OutAction::CopyLeft { license, address }
@@ -225,6 +234,10 @@ impl Serializable for OutAction {
                 if let Some(value) = code {
                     cell.checked_append_reference(value.clone())?;
                 }
+            }
+            OutAction::MintShellToken { ref value } => {
+                ACTION_MINT_SHELL_TOKEN.write_to(cell)?;
+                value.write_to(cell)?;
             }
             OutAction::CopyLeft { ref license, ref address } => {
                 ACTION_COPYLEFT.write_to(cell)?; // tag
@@ -280,6 +293,11 @@ impl Deserializable for OutAction {
                         *self = OutAction::new_change_library(mode, Some(code), None);
                     }
                 }
+            }
+            ACTION_MINT_SHELL_TOKEN => {
+                let mut value = u64::default();
+                value.read_from(cell)?;
+                *self = OutAction::new_mint_shell(value);
             }
             ACTION_COPYLEFT => {
                 let license = cell.get_next_byte()?;
