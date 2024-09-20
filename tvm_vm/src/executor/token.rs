@@ -66,7 +66,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
             + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
                 * (1_f64 - (-1_f64 * ARFC.ln() * bkrt / MAXRT).exp())
     } else {
-        3_f64
+        MAXRC
     };
     let u = -1_f64 / TTMT * (TMTAFC / (1_f64 + TMTAFC)).ln();
     let grps = TOTALSUPPLY * (1_f64 + TMTAFC) * ((-u * t).exp() - (-u * (t + 1_f64)).exp());
