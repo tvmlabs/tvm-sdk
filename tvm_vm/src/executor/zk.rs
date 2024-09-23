@@ -653,7 +653,8 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     let modulus = unpack_data_from_cell(modulus_slice, engine)?;
     println!("from poseidon value modulus: {:?}",modulus);/**/
 
-    let max_epoch = 10; //todo: read from stack later
+    //let max_epoch = 10; //todo: read from stack later
+    let max_epoch = 142;
 
     let public_inputs = calculate_poseidon_hash(
         &*zkaddr,
