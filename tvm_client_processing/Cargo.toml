@@ -31,4 +31,11 @@ api_derive = { path = "../api/derive" }
 api_info = { path = "../api/info" }
 
 [dev-dependencies]
-tokio = { default-features = false, features = ["sync", "rt-multi-thread", "macros", "time", "net", "fs"], version = "1.4" }
+tokio = { default-features = false, features = [
+  "sync",
+  "rt-multi-thread",
+  "macros",
+  "time",
+  "net",
+  "fs",
+], version = "1.4" }

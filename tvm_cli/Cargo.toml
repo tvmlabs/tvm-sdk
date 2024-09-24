@@ -3,12 +3,12 @@ description = "command line tool for TVM compatible blockchains"
 documentation = "https://www.tvmlabs.io"
 homepage = "https://www.tvmlabs.io"
 keywords = [
-    #
-    "TVM",
-    "SDK",
-    "smart contract",
-    "tvmlabs",
-    "solidity",
+  #
+  "TVM",
+  "SDK",
+  "smart contract",
+  "tvmlabs",
+  "solidity",
 ]
 name = "tvm_cli"
 readme = "README.md"

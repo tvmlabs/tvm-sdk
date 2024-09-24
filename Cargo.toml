@@ -2,27 +2,27 @@
 resolver = "2"
 exclude = ["examples/rust"]
 members = [
-    "api/test",
-    "tools/update_trusted_blocks",
-    "tvm_abi",
-    "tvm_api",
-    "tvm_assembler",
-    "tvm_block",
-    "tvm_block_json",
-    "tvm_cli",
-    "tvm_client",
-    "tvm_client_processing",
-    "tvm_common",
-    "tvm_debugger",
-    "tvm_executor",
-    "tvm_sdk",
-    "tvm_struct",
-    "tvm_tl_codegen",
-    "tvm_types",
-    "tvm_vm",
+  "api/test",
+  "tools/update_trusted_blocks",
+  "tvm_abi",
+  "tvm_api",
+  "tvm_assembler",
+  "tvm_block",
+  "tvm_block_json",
+  "tvm_cli",
+  "tvm_client",
+  "tvm_client_processing",
+  "tvm_common",
+  "tvm_debugger",
+  "tvm_executor",
+  "tvm_sdk",
+  "tvm_struct",
+  "tvm_tl_codegen",
+  "tvm_types",
+  "tvm_vm",
 ]
 [workspace.package]
-version = "2.2.6"
+version = "2.2.7"
 rust-version = "1.76.0"
 
 authors = ["TVM Labs <hello@tvmlabs.io>"]
@@ -95,7 +95,9 @@ proc-macro2 = "1.0.78"
 quote = "1.0.35"
 rand = "0.8.5"
 regex = "1.10.3"
-reqwest = { version = "0.11.24", default-features = false, features = ["rustls-tls-webpki-roots"] }
+reqwest = { version = "0.11.24", default-features = false, features = [
+  "rustls-tls-webpki-roots",
+] }
 secstr = "0.5.1"
 serde = "1.0.197"
 serde_derive = "1.0.197"
