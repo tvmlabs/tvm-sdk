@@ -125,7 +125,7 @@ macro_rules! define_VarIntegerN {
 
             fn read_from_cell(cell: &mut SliceData) -> Result<BigInt> {
                 let len = cell.get_next_int(Self::get_len_len())? as usize;
-                if len >= $N {
+                if len > $N {
                     fail!("deserialization of {} error {} >= {}", stringify!($varname), len, $N)
                 }
                 Ok(BigInt::from_bytes_be(Sign::Plus, &cell.get_next_bytes(len)?))

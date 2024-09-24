@@ -28,7 +28,10 @@ tvm_block_json.workspace = true
 tvm_executor = { workspace = true, features = ["signature_with_id"] }
 tvm_struct.workspace = true
 tvm_types.workspace = true
-tvm_vm = { workspace = true, features = ["signature_with_id", "signature_no_check"] }
+tvm_vm = { workspace = true, features = [
+  "signature_with_id",
+  "signature_no_check",
+] }
 
 lockfree.workspace = true
 sodalite = { features = ["rand"], git = "https://github.com/tvmlabs/sodalite" }
@@ -91,16 +94,16 @@ version = "0.5.9"
 
 [dependencies.web-sys]
 features = [
-    "ErrorEvent",
-    "FileReader",
-    "Headers",
-    "MessageEvent",
-    "ProgressEvent",
-    "Request",
-    "RequestInit",
-    "Response",
-    "Window",
-    "WebSocket",
+  "ErrorEvent",
+  "FileReader",
+  "Headers",
+  "MessageEvent",
+  "ProgressEvent",
+  "Request",
+  "RequestInit",
+  "Response",
+  "Window",
+  "WebSocket",
 ]
 optional = true
 version = "0.3.67"
@@ -116,34 +119,34 @@ pretty_assertions = "1.4.0"
 default = ["std", "native-tls"]
 include-zstd = ["tvm_block/gosh", "tvm_vm/gosh"]
 std = [
-    "tokio/rt-multi-thread",
-    "tokio/macros",
-    "tokio/time",
-    "tokio/net",
-    "tokio/fs",
-    "home",
-    "include-zstd",
-    "zstd",
+  "tokio/rt-multi-thread",
+  "tokio/macros",
+  "tokio/time",
+  "tokio/net",
+  "tokio/fs",
+  "home",
+  "include-zstd",
+  "zstd",
 ]
 native-tls = ["reqwest/default", "tokio-tungstenite/native-tls"]
 native-tls-vendored = [
-    "reqwest/native-tls-vendored",
-    "tokio-tungstenite/native-tls-vendored",
+  "reqwest/native-tls-vendored",
+  "tokio-tungstenite/native-tls-vendored",
 ]
 rustls-tls-native-roots = [
-    "reqwest/rustls-tls-native-roots",
-    "tokio-tungstenite/rustls-tls-native-roots",
+  "reqwest/rustls-tls-native-roots",
+  "tokio-tungstenite/rustls-tls-native-roots",
 ]
 rustls-tls-webpki-roots = [
-    "reqwest/rustls-tls-webpki-roots",
-    "tokio-tungstenite/rustls-tls-webpki-roots",
+  "reqwest/rustls-tls-webpki-roots",
+  "tokio-tungstenite/rustls-tls-webpki-roots",
 ]
 wasm = ["wasm-base", "include-zstd", "zstd", "zstd/thin", "zstd/wasm"]
 wasm-base = [
-    "chrono/wasmbind",
-    "indexed_db_futures",
-    "js-sys",
-    "wasm-bindgen",
-    "wasm-bindgen-futures",
-    "web-sys",
+  "chrono/wasmbind",
+  "indexed_db_futures",
+  "js-sys",
+  "wasm-bindgen",
+  "wasm-bindgen-futures",
+  "web-sys",
 ]

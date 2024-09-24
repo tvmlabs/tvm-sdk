@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.7] – 2024-09-20
+
+### Fixed
+- Fix with read_from_cell in VarIntegerN.
 
 ## [2.2.6] – 2024-09-20
 

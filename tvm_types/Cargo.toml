@@ -35,7 +35,10 @@ x25519-dalek.workspace = true
 
 [dev-dependencies]
 criterion = "0.5.1"
-pprof = { version = "0.13.0", default-features = false, features = ["criterion", "flamegraph"] }
+pprof = { version = "0.13.0", default-features = false, features = [
+  "criterion",
+  "flamegraph",
+] }
 
 [features]
 export_key = []
