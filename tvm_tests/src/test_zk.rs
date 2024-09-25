@@ -11,15 +11,19 @@
 * limitations under the License.
 */
 
+use num_traits::Zero; // Для работы с большими числами
+use std::iter::repeat;
+
 use std::collections::HashMap;
 use std::slice;
+use std::str::FromStr;
 use std::time::Instant;
 use ark_std::rand::rngs::StdRng;
 use ark_std::rand::SeedableRng;
 use base64ct::Encoding as bEncoding;
 use fastcrypto::ed25519::Ed25519KeyPair;
 use base64::decode;
-
+use ark_ff::biginteger::BigInteger;
 use ed25519::signature::Signer;
 
 use fastcrypto::traits::{KeyPair, ToFromBytes};
@@ -27,6 +31,9 @@ use tvm_types::{
     types::ExceptionCode, AccountId, HashmapE, HashmapType, IBitstring, Result,
     Sha256
 };
+
+//use tvm_vm::executor::zk_stuff::zk_login::{hash_ascii_str_to_field, hash_to_field, MAX_HEADER_LEN, MAX_ISS_LEN_B64, PACK_WIDTH};
+
 
 #[cfg(feature = "signature_no_check")]
 use ton_vm::executor::BehaviorModifiers;
@@ -49,14 +56,15 @@ use tvm_vm::{
 use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
 use tvm_types::{BuilderData, Cell, SliceData};
 use fastcrypto_zkp::bn254::zk_login::{CanonicalSerialize, Claim, JWK, JwkId, OIDCProvider, ZkLoginInputs};
-use fastcrypto_zkp::bn254::utils::gen_address_seed;
-
+use fastcrypto_zkp::bn254::utils::{gen_address_seed, get_zk_login_address};
+use fastcrypto_zkp::zk_login_utils::Bn254FrElement;
+use num_bigint::BigUint;
 
 use serde::{Deserialize};
 use serde_derive::Serialize;
+use serde_json::Value;
 use tvm_vm::executor::zk::calculate_poseidon_hash;
 use crate::test_framework::{Expects, test_case, test_case_with_refs};
-
 
 pub const SUI_DATA_FROM_REACT_1: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6ImJ4bW5KVzMxcnV6S01HaXIwMVlQR1lMMHhEWSIsIm5iZiI6MTcxNTY4NzAzNiwiaWF0IjoxNzE1Njg3MzM2LCJleHAiOjE3MTU2OTA5MzYsImp0aSI6IjliNjAxZDI1ZjAwMzY0MGMyODg5YTJhMDQ3Nzg5MzgyY2IxY2ZlODcifQ.rTa9KA9HoYm04Agj71D0kDkvsCZ35SeeihBGbABYckBRxaUlCy6LQ-sEaVOTgvnL_DgVn7hx8g3sSmnhJ9kHzj5e6gtUoxoWAe8PuGyK2bmqhmPrQMeEps9f6m2EToQCIA_Id4fGCjSCktjJBi47QHT_Dhe6isHdKk1pgSshOyvCF1VjIvyyeGY5iWQ4cIRBMQNlNBT11o6T01SY6B9DtiiFN_0-ok5taIjQgtMNG6Cwr3tCnqXftuGGQrHlx15y8VgCPODYi-wOtvUbzI2yfx53PmRD_L8O50cMNCrCRE3yYR5MNOu1LlQ_EACy5UFsCJR35xRz84nv-6Iyrufx1g\",\"userPassToIntFormat\":\"981021191041055255531141165751\",\"ephemeralKeyPair\":{\"keypair\":{\"publicKey\":{\"0\":155,\"1\":147,\"2\":37,\"3\":82,\"4\":183,\"5\":109,\"6\":227,\"7\":144,\"8\":85,\"9\":248,\"10\":20,\"11\":45,\"12\":92,\"13\":103,\"14\":160,\"15\":221,\"16\":101,\"17\":44,\"18\":30,\"19\":86,\"20\":96,\"21\":85,\"22\":24,\"23\":224,\"24\":106,\"25\":63,\"26\":13,\"27\":130,\"28\":8,\"29\":119,\"30\":247,\"31\":67},\"secretKey\":{\"0\":192,\"1\":16,\"2\":35,\"3\":54,\"4\":100,\"5\":14,\"6\":88,\"7\":217,\"8\":164,\"9\":21,\"10\":154,\"11\":233,\"12\":248,\"13\":208,\"14\":188,\"15\":4,\"16\":52,\"17\":244,\"18\":125,\"19\":103,\"20\":99,\"21\":26,\"22\":225,\"23\":60,\"24\":140,\"25\":75,\"26\":228,\"27\":157,\"28\":137,\"29\":220,\"30\":1,\"31\":65,\"32\":155,\"33\":147,\"34\":37,\"35\":82,\"36\":183,\"37\":109,\"38\":227,\"39\":144,\"40\":85,\"41\":248,\"42\":20,\"43\":45,\"44\":92,\"45\":103,\"46\":160,\"47\":221,\"48\":101,\"49\":44,\"50\":30,\"51\":86,\"52\":96,\"53\":85,\"54\":24,\"55\":224,\"56\":106,\"57\":63,\"58\":13,\"59\":130,\"60\":8,\"61\":119,\"62\":247,\"63\":67}}},\"zkAddr\":\"0x290623ea2fe67e77502c931e015e910720b59cf99994bfe872da851245a6adb8\",\"zkProofs\":{\"proofPoints\":{\"a\":[\"4240296169193969312736577528388333411353554120022978085193148043577551744781\",\"5805161066003598301896048908428560240907086333477483881772048922050706263054\",\"1\"],\"b\":[[\"12834391737669124973917765536412427456985620342194191639017091262766903638891\",\"17565396762846717347409742387259908749145765976354144805005547481529916658455\"],[\"10704310067924910937030159163683742097178285875135929496314190235513445131794\",\"5158907077493606386023392148737817037260820737072162547798816810512684527243\"],[\"1\",\"0\"]],\"c\":[\"1422540522119231707130773229384414857146368773886805969586218853559909475064\",\"8843079196273712399340537238369227864378150337693574970239878271571912585171\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extendedEphemeralPublicKey\":\"AJuTJVK3beOQVfgULVxnoN1lLB5WYFUY4Go/DYIId/dD\"}";
 pub const SUI_DATA_FROM_REACT_2: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6IjJKd0VMbjJfUV9Rd0VsTC1rWTFPRnFqdXZCMCIsIm5iZiI6MTcxNTY4NzAyOSwiaWF0IjoxNzE1Njg3MzI5LCJleHAiOjE3MTU2OTA5MjksImp0aSI6ImU2YjM1ZjJmNmFkNjIzOWEwMDAxMTJiMWI5YWI2MWQ0MjRkMGM1OTIifQ.QcrEDE9qmPZKX83nU3Tx2BN8fsinb_mmXkO1Qf7Uv1QTd0NjirSeu7C4Vn9WDNWDaIR-BgCfhOlkwMQPljcahqC4AN43N_66tvbEsXjtEdFejslXrGG4D_BEKvtmD7_WkW388LyU2PxKgtdDfpYFgmuT6wTM2TO5dTbrGrDyn88q3pkPfefC5a8Wi1V6zECfFdSV-pKQlxtPaImi7s3CKAUMDu1n-jcT-Ho2aTgrWKAzhXE56tgEWOpXQO06eJsWCSOqoZSLYtatTrZr4d38U7QRQiNlH-ydHv4zXt1tixLLJ0wvPx-dQaCnCl1kW1orYkJGFfHgjx6A9z5Ol4afuw\",\"userPassToIntFormat\":\"101119106102103\",\"ephemeralKeyPair\":{\"keypair\":{\"publicKey\":{\"0\":194,\"1\":38,\"2\":203,\"3\":255,\"4\":219,\"5\":127,\"6\":105,\"7\":129,\"8\":234,\"9\":222,\"10\":71,\"11\":169,\"12\":108,\"13\":94,\"14\":28,\"15\":48,\"16\":111,\"17\":221,\"18\":113,\"19\":110,\"20\":5,\"21\":226,\"22\":19,\"23\":230,\"24\":232,\"25\":67,\"26\":255,\"27\":179,\"28\":6,\"29\":10,\"30\":209,\"31\":63},\"secretKey\":{\"0\":44,\"1\":32,\"2\":251,\"3\":184,\"4\":109,\"5\":252,\"6\":105,\"7\":67,\"8\":208,\"9\":111,\"10\":86,\"11\":214,\"12\":192,\"13\":135,\"14\":169,\"15\":48,\"16\":162,\"17\":36,\"18\":216,\"19\":145,\"20\":232,\"21\":64,\"22\":17,\"23\":14,\"24\":29,\"25\":56,\"26\":39,\"27\":118,\"28\":143,\"29\":250,\"30\":31,\"31\":66,\"32\":194,\"33\":38,\"34\":203,\"35\":255,\"36\":219,\"37\":127,\"38\":105,\"39\":129,\"40\":234,\"41\":222,\"42\":71,\"43\":169,\"44\":108,\"45\":94,\"46\":28,\"47\":48,\"48\":111,\"49\":221,\"50\":113,\"51\":110,\"52\":5,\"53\":226,\"54\":19,\"55\":230,\"56\":232,\"57\":67,\"58\":255,\"59\":179,\"60\":6,\"61\":10,\"62\":209,\"63\":63}}},\"zkAddr\":\"0x9d28c04a423b33d6901065b2e23440d80c963e2d8cf60619aed131cf302a3345\",\"zkProofs\":{\"proofPoints\":{\"a\":[\"10113442204684515220664612836724727112601024759319365467272456423129044788607\",\"1622056145268645528934658046911045406324940175278473377024147189407527440953\",\"1\"],\"b\":[[\"16638441944380099215425740101953753038808466958852552979180365845498468757656\",\"15160836857346434734063515954042830497610079883703780011464867547889770445695\"],[\"18562910453341688699790780964434211467815845944672185772065803860963710445937\",\"8200691834141582017549140597895023392490964486044036655696113278873832146838\"],[\"1\",\"0\"]],\"c\":[\"4229037146526046139176767312447148765936834700862335953317784850097077554287\",\"14155516063621997063825085002662503289554536312724791903045026922766401869119\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extendedEphemeralPublicKey\":\"AMImy//bf2mB6t5HqWxeHDBv3XFuBeIT5uhD/7MGCtE/\"}";
@@ -82,7 +90,7 @@ pub const SUI_DATA_FROM_REACT_21: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI
 
 pub const VALUE_PORTION_SIZE: usize = 126;
 
-
+pub const SUI_DATA_FROM_REACT_1_NEW: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBlMzQ1ZmQ3ZTRhOTcyNzFkZmZhOTkxZjVhODkzY2QxNmI4ZTA4MjciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6InZ0WGVzaFJyX2ZrVGR3SHpFQXY4a2wtbllHWSIsIm5iZiI6MTcyMTA2NzkzNiwiaWF0IjoxNzIxMDY4MjM2LCJleHAiOjE3MjEwNzE4MzYsImp0aSI6IjkzMjQ2YjIxNjg1NzM5YWE2MjI3MGY4NDllNTNmNDFhNTRiZGMxYWUifQ.HjDKI_m-uWUsgYzhc7Ovuy_bms0NEFdIoFUIjoG1axwxNKkZ1Hh-lXa1wyGDl0Zy1RM9fCblkMmyLY0Mm7-ACL1nqDA-EmWlIfytk6PPRu8YOFI_mMg-YmZmgGQTn1bJv0jUOo3yPaRa9hKceDfifFLS1tbWuOIyKZTCy2oH_TEcZo6O3UI2_ksOlf0tnfwtUmF-I2vhtlbH57AH6Uc0Kx4cSObrE4VV1Pj_rCwwEDGxxpAiSth8tCKM80mlzJ6Si3F11Epqj2vDLAX5IzZtn2gMj18MADlWsgmrxNbRh4-suVE_p7VIzlTuBfjmZps_5w6E62KPzovypo2ql3KISQ\",\"userPassToIntFormat\":\"9910010710611510499100106115107\",\"zkAddr\":\"0x3a934c047196bdfdd751778f758cc2642a9cfa574ddb5d57025b67d109225e20\",\"ephemeralKeyPair\":{\"keypair\":{\"publicKey\":{\"0\":141,\"1\":251,\"2\":140,\"3\":40,\"4\":213,\"5\":82,\"6\":20,\"7\":190,\"8\":208,\"9\":214,\"10\":244,\"11\":203,\"12\":156,\"13\":205,\"14\":36,\"15\":19,\"16\":24,\"17\":131,\"18\":176,\"19\":142,\"20\":74,\"21\":37,\"22\":199,\"23\":244,\"24\":70,\"25\":101,\"26\":194,\"27\":80,\"28\":211,\"29\":235,\"30\":171,\"31\":245},\"secretKey\":{\"0\":47,\"1\":220,\"2\":171,\"3\":167,\"4\":122,\"5\":143,\"6\":157,\"7\":242,\"8\":79,\"9\":81,\"10\":91,\"11\":236,\"12\":14,\"13\":127,\"14\":102,\"15\":140,\"16\":193,\"17\":217,\"18\":93,\"19\":88,\"20\":41,\"21\":18,\"22\":94,\"23\":40,\"24\":39,\"25\":63,\"26\":178,\"27\":120,\"28\":104,\"29\":214,\"30\":208,\"31\":207,\"32\":141,\"33\":251,\"34\":140,\"35\":40,\"36\":213,\"37\":82,\"38\":20,\"39\":190,\"40\":208,\"41\":214,\"42\":244,\"43\":203,\"44\":156,\"45\":205,\"46\":36,\"47\":19,\"48\":24,\"49\":131,\"50\":176,\"51\":142,\"52\":74,\"53\":37,\"54\":199,\"55\":244,\"56\":70,\"57\":101,\"58\":194,\"59\":80,\"60\":211,\"61\":235,\"62\":171,\"63\":245}}},\"maxEpoch\":142,\"extendedEphemeralPublicKey\":\"AI37jCjVUhS+0Nb0y5zNJBMYg7COSiXH9EZlwlDT66v1\",\"zkProofs\":{\"proofPoints\":{\"a\":[\"16813421039278654796395330442837655698730555183413337856642209109628683845443\",\"17226506757024740186126597704040151976665029813672291135146823263440625226230\",\"1\"],\"b\":[[\"19865189571716457271280707825159835672267817382424243521747870225851449993660\",\"8171164569532624421381183938498786515254461782830166752970857493983192858118\"],[\"19433278357078234147721454549239782691011759423461848201596076417708238357802\",\"20376887254972130170934329519774996610471771975828424380410011418190971129130\"],[\"1\",\"0\"]],\"c\":[\"12219856656033196506465767208555446381917939816812556286240154247316268622405\",\"17874973202272136490287260014626440020057757567816424198331948639084405340444\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBlMzQ1ZmQ3ZTRhOTcyNzFkZmZhOTkxZjVhODkzY2QxNmI4ZTA4MjciLCJ0eXAiOiJKV1QifQ\"}}";
 #[derive(Debug, Deserialize)]
 pub struct JwtData {
     jwt: String,
@@ -149,6 +157,154 @@ fn gen_keypair() -> ed25519_dalek::Keypair {
 }
 
 #[test]
+fn test_poseidon_plus_vrgrth16_based_on_real_data_super_new() { //real data taken from our react app for zklogin tests
+    // {"alg":"RS256","kid":"a3b762f871cdb3bae0044c649622fc1396eda3e3","typ":"JWT"}
+    // {"iss":"https://accounts.google.com","azp":"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com",
+    // "aud":"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com","sub":"112897468626716626103",
+    // "nonce":"sS2DydHu3Ihp8ZCWCA4nzD79e08","nbf":1715600156,"iat":1715600456,"exp":1715604056,"jti":"27d9a159279fc60df664c6ce8cb149a4244e5dd5"}
+    // Initial password was 567890
+    // in ascii 535455565748
+    let user_pass_salt = "535455565748"; // Alina's data (password in ascii ), should be different for iterations
+
+    // Generate an ephemeral key pair.
+    let secret_key = [222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166, 87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14];
+
+    // Generate an ephemeral key pair.
+    let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+    let mut eph_pubkey = Vec::new();
+    // replace by Alina's data (ephemeral public key place to byte array ), depends on iteration
+    eph_pubkey.extend(ephemeral_kp.public().as_ref());
+    println!("eph_pubkey: {:?}", eph_pubkey);
+    println!("len eph_pubkey: {:?}", eph_pubkey.len());
+
+    let eph_pubkey_hex_number = "0x".to_owned() + &hex::encode(eph_pubkey.clone());
+    println!("eph_pubkey_hex_number: {:?}", eph_pubkey_hex_number);
+
+    // Get the zklogin seed.
+    //This stuff is a kind of bound between  smart contract and email (some account)
+    //It will be stored in smart contract (must be added during contract deployment)
+    let zk_seed = gen_address_seed(
+        user_pass_salt,
+        "sub",
+        "112897468626716626103", // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
+        "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", // Alina's data (fixed by app id ) from jwt
+    ).unwrap();
+
+    println!("zk_seed = {:?}", zk_seed);
+
+    let proof_and_jwt =  "{\"proofPoints\":{\"a\":[\"2352077003566407045854435506409565889408960755152253285189640818725808263237\",\
+    \"9548308350778027075240385782578683112366097953461273569343148999989145049123\",\"1\"],\
+    \"b\":[[\"2172697685172701179756462481453772004245591587568555358926512547679273443868\",\
+    \"11300889616992175665271080883374830731684409375838395487979439153562369168807\"],\
+    [\"18769153619672444537277685186545610305405730219274884099876386487766026068190\",\
+    \"12892936063156115176399929981646174277274895601746717550262309650970826515227\"],[\"1\",\"0\"]],\
+    \"c\":[\"21276833037675249246843718004583052134371270695679878402069223253610209272159\",\
+    \"8637596258221986824049981569842218428861929142818091935707054543971817804456\",\"1\"]},\
+    \"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\
+    \"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
+    let len = proof_and_jwt.bytes().len();
+    println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
+
+    println!("proof_and_jwt: {}", proof_and_jwt);
+
+    let issAndHeaderBase64Details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
+
+
+    println!("issAndHeaderBase64Details: {}", issAndHeaderBase64Details);
+
+    let zk_login_inputs = ZkLoginInputs::from_json(
+        &*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+// summary from 132 to 146 : need to parse jwt, see jwt header to check that kid in this header is equal to one specified in line 143,... take kid from jwt if not equal
+    let content: JWK = JWK {
+        kty: "RSA".to_string(),
+        e: "AQAB".to_string(),
+        n: "uBHF-esPKiNlFaAvpdpejD4vpONW9FL0rgLDg1z8Q-x_CiHCvJCpiSehD41zmDOhzXP_fbMMSGpGL7R3duiz01nK5r_YmRw3RXeB0kcS7Z9H8MN6IJcde9MWbqkMabCDduFgdr6gvH0QbTipLB1qJK_oI_IBfRgjk6G0bGrKz3PniQw5TZ92r0u1LM-1XdBIb3aTYTGDW9KlOsrTTuKq0nj-anW5TXhecuxqSveFM4Hwlw7pw34ydBunFjFWDx4VVJqGNSqWCfcERxOulizIFruZIHJGkgunZnB4DF7mCZOttx2dwT9j7s3GfLJf0xoGumqpOMvecuipfTPeIdAzcQ".to_string(), // Alina's data
+        alg: "RS256".to_string(),
+    };
+
+    let mut all_jwk = HashMap::new();
+    all_jwk.insert(
+        JwkId::new(
+            OIDCProvider::Google.get_config().iss,
+            "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(), // Alina's data, fascrypto's was 6f7254101f56e41cf35c9926de84a2d552b4c6f1".to_string(),
+        ),
+        content,
+    );
+
+    let (iss, kid) = (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+    let jwk = all_jwk
+        .get(&JwkId::new(iss.clone(), kid.clone()))
+        .ok_or_else(|| {
+            ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+        }).unwrap();
+
+    let max_epoch = 142; // data from the react test
+
+    // Decode modulus to bytes.
+    let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n).map_err(|_| {
+        ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+    }).unwrap();
+
+    let public_inputs = &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+
+    let mut public_inputs_as_bytes = vec![];
+    public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+    println!("HERE public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+    println!("HERE public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
+
+    /** calcs poseidon **/
+
+    println!("====== Start Poseidon ========");
+
+    let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
+
+    let issAndHeaderBase64Details_cell = pack_string_to_cell(&issAndHeaderBase64Details.clone(), &mut 0).unwrap();
+
+    let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
+
+    let max_epoch_ = 142;
+
+    let mut code = format!("PUSHINT {max_epoch_} \n").to_string();
+    code = code + &*format!("PUSHINT {eph_pubkey_hex_number} \n").to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"POSEIDON_ZKLOGIN \n".to_string();
+
+    println!("code : {:?}", code);
+
+    test_case_with_refs(code.as_str(), vec![ modulus_cell.clone(), issAndHeaderBase64Details_cell, zk_seed_cell])
+        .expect_stack(Stack::new()
+            .push(StackItem::Cell(public_inputs_cell.clone()))
+        );
+        //.expect_success();
+
+    /** calcs vergrth16 **/
+
+    println!("====== Start VERGRTH16 ========");
+
+    let proof  = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+    let mut proof_as_bytes = vec![];
+    proof.serialize_compressed(&mut proof_as_bytes).unwrap();
+    println!("proof_as_bytes : {:?}", proof_as_bytes);
+    println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
+
+    let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
+
+    let verification_key_id: u32 = 0; //valid key id
+    //let verification_key_id: u32 = 1; //invalid key id
+
+    let mut code = "PUSHREF \n".to_string();
+    code = code + "PUSHREF \n";
+    code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
+    code = code + "VERGRTH16";
+
+    test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).expect_success();
+}
+
+#[test]
 fn test_poseidon_plus_vrgrth16() {
     /** Common data generation **/
 
@@ -156,12 +312,14 @@ fn test_poseidon_plus_vrgrth16() {
 
     // Generate an ephemeral key pair.
     let ephemeral_kp = Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-    let mut eph_pubkey = vec![0x00];
+    let mut eph_pubkey = Vec::new();
     eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
-    println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
-    let len = eph_pubkey.clone().len();
-    println!("len eph_pubkey: {:?}", len);
+    println!("eph_pubkey: {:?}", eph_pubkey);
+    println!("len eph_pubkey: {:?}", eph_pubkey.len());
+
+    let eph_pubkey_hex_number = "0x".to_owned() + &hex::encode(eph_pubkey.clone());
+    println!("eph_pubkey_hex_number: {:?}", eph_pubkey_hex_number);
 
     let zk_seed = gen_address_seed(
         user_pass_salt,
@@ -173,6 +331,8 @@ fn test_poseidon_plus_vrgrth16() {
     println!("zk_seed: {}", zk_seed);
 
     let proof_and_jwt =  "{\"proofPoints\":{\"a\":[\"8247215875293406890829839156897863742504615191361518281091302475904551111016\",\"6872980335748205979379321982220498484242209225765686471076081944034292159666\",\"1\"],\"b\":[[\"21419680064642047510915171723230639588631899775315750803416713283740137406807\",\"21566716915562037737681888858382287035712341650647439119820808127161946325890\"],[\"17867714710686394159919998503724240212517838710399045289784307078087926404555\",\"21812769875502013113255155836896615164559280911997219958031852239645061854221\"],[\"1\",\"0\"]],\"c\":[\"7530826803702928198368421787278524256623871560746240215547076095911132653214\",\"16244547936249959771862454850485726883972969173921727256151991751860694123976\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
+
+    println!("proof_and_jwt: {}", proof_and_jwt);
 
     let issAndHeaderBase64Details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
     println!("issAndHeaderBase64Details: {}", issAndHeaderBase64Details);
@@ -211,7 +371,12 @@ fn test_poseidon_plus_vrgrth16() {
 
     println!("modulus: {:?}", modulus);
 
+    println!("modulus hex: {:?}", hex::encode(&modulus));
+
+
     let max_epoch = 10;
+
+    //let max_epoch = 142;
 
     /** calcs poseidon **/
 
@@ -221,21 +386,254 @@ fn test_poseidon_plus_vrgrth16() {
 
     let issAndHeaderBase64Details_cell = pack_string_to_cell(&issAndHeaderBase64Details.clone(), &mut 0).unwrap();
 
-    let eph_pubkey_cell = pack_data_to_cell(&eph_pubkey.clone(), &mut 0).unwrap();
+    //let eph_pubkey_cell = pack_data_to_cell(&eph_pubkey.clone(), &mut 0).unwrap();
 
     let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
-    let mut code = "PUSHREF \n".to_string();
+    let max_epoch_ = 142;
+
+    let mut code = format!("PUSHINT {max_epoch_} \n").to_string();
+    code = code + &*format!("PUSHINT {eph_pubkey_hex_number} \n").to_string();
     code = code + &*"PUSHREF \n".to_string();
     code = code + &*"PUSHREF \n".to_string();
     code = code + &*"PUSHREF \n".to_string();
     code = code + &*"POSEIDON_ZKLOGIN \n".to_string();
-    test_case_with_refs(code.as_str(), vec![modulus_cell, issAndHeaderBase64Details_cell,  eph_pubkey_cell, zk_seed_cell]).expect_success();
 
+
+    test_case_with_refs(code.as_str(), vec![ modulus_cell, issAndHeaderBase64Details_cell, zk_seed_cell]).expect_success();
 
     /** calcs vergrth16 **/
 
     println!("====== Start Vergrth16 ========");
+
+    let pp = zk_login_inputs.get_proof();
+
+    let proof  = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+    let public_inputs = &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+
+    let mut proof_as_bytes = vec![];
+    proof.serialize_compressed(&mut proof_as_bytes).unwrap();
+    println!("proof_as_bytes : {:?}", proof_as_bytes);
+    println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
+    println!("proof_as_bytes hex: {:?}", hex::encode(&proof_as_bytes));
+
+    let y1 = proof.a.y.0.to_bits_le();
+    let y2 = proof.a.y.0.to_bits_be();
+    //let y_ = -y;
+
+    println!("proof.a: {:?}", proof.a);
+
+    println!("proof.a.y: {:?}", proof.a.y);
+
+    println!("proof.a.y.0: {:?}", proof.a.y.0);
+
+    println!("proof.a.y.0.to_string(): {:?}", proof.a.y.0.to_string());
+
+    println!("proof.a.x.0.to_string(): {:?}", proof.a.x.0.to_string());
+
+    println!("y1: {:?}", y1);
+    for i in 0..y1.len(){
+       print!("{}", y1[i] as i32);
+    }
+    println!("");
+    println!("y2: {:?}", y2);
+     for i in 0..y2.len(){
+       print!("{}", y2[i] as i32);
+    }
+    println!("");
+    //println!("y_: {:?}", y_);
+
+    let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
+
+    let mut public_inputs_as_bytes = vec![];
+    public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+    println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+    println!("public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+    println!("public_inputs_as_bytes hex: {:?}", hex::encode(&public_inputs_as_bytes));
+
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
+
+    let verification_key_id: u32 = 1;
+
+    let mut code = "PUSHREF \n".to_string();
+    code = code + "PUSHREF \n";
+    code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
+    code = code + "VERGRTH16";
+
+    test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).expect_success();
+
+}
+
+#[test]
+fn test_eval_time_vrgrth16_new() {
+    //todo: later n must be extracted from 3d part of jwt
+    let content: JWK = JWK {
+        kty: "RSA".to_string(),
+        e: "AQAB".to_string(),
+        n: "rv95jmy91hibD7cb_BCA25jv5HrX7WoqHv-fh8wrOR5aYcM8Kvsc3mbzs2w1vCUlMRv7NdEGVBEnOZ6tHvUzGLon4ythd5XsX-wTvAtIHPkyHdo5zGpTgATO9CEn78Y-f1E8By63ttv14kXe_RMjt5aKttK4yqqUyzWUexSs7pET2zWiigd0_bGhJGYYEJlEk_JsOBFvloIBaycMfDjK--kgqnlRA8SWUkP3pEJIAo9oHzmvX6uXZTEJK10a1YNj0JVR4wZY3k60NaUX-KCroreU85iYgnecyxSdL-trpKdkg0-2OYks-_2Isymu7jPX-uKVyi-zKyaok3N64mERRQ".to_string(),
+        alg: "RS256".to_string(),
+    };
+
+    /*
+    {
+  "e": "AQAB",
+  "kty": "RSA",
+  "n": "rv95jmy91hibD7cb_BCA25jv5HrX7WoqHv-fh8wrOR5aYcM8Kvsc3mbzs2w1vCUlMRv7NdEGVBEnOZ6tHvUzGLon4ythd5XsX-wTvAtIHPkyHdo5zGpTgATO9CEn78Y-f1E8By63ttv14kXe_RMjt5aKttK4yqqUyzWUexSs7pET2zWiigd0_bGhJGYYEJlEk_JsOBFvloIBaycMfDjK--kgqnlRA8SWUkP3pEJIAo9oHzmvX6uXZTEJK10a1YNj0JVR4wZY3k60NaUX-KCroreU85iYgnecyxSdL-trpKdkg0-2OYks-_2Isymu7jPX-uKVyi-zKyaok3N64mERRQ"
+}
+     */
+
+    let mut all_jwk = HashMap::new();
+    all_jwk.insert(
+        JwkId::new(
+            OIDCProvider::Google.get_config().iss,
+            "0e345fd7e4a97271dffa991f5a893cd16b8e0827".to_string(), // Alina's data, fascrypto's was 6f7254101f56e41cf35c9926de84a2d552b4c6f1".to_string(),
+        ),
+        content,
+    );
+
+    let sui_data = [SUI_DATA_FROM_REACT_1_NEW];
+
+    for i in 0..sui_data.len() {
+        println!("====================== Iter@ is {i} =========================");
+        // parse
+        let jwt_data: JwtData = serde_json::from_str(&sui_data[i]).unwrap();
+        //println!("{:?}", jwt_data);
+
+        let user_pass_salt = jwt_data.userPassToIntFormat.as_str();
+        println!("user_pass_salt is {user_pass_salt}");
+
+        let eph_secret_key = secretKeyFromIntegerMap(jwt_data.ephemeralKeyPair.keypair.secretKey);
+
+        let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
+        let mut eph_pubkey = Vec::new();//vec![0x00];
+        eph_pubkey.extend(ephemeral_kp.public().as_ref());
+
+        println!("ephemeral secret_key is {:?}", eph_secret_key);
+        println!("ephemeral public_key is {:?}", eph_pubkey);
+
+        let eph_pubkey_len = eph_pubkey.clone().len();
+        println!("len eph_pubkey: {:?}", eph_pubkey_len);
+
+        let jwt_data_vector: Vec<&str>  = jwt_data.jwt.split(".").collect();
+        let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
+
+        let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
+        println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"typ\":\"JWT\"}"
+
+        //JwtDataDecodedPart1
+        let jwt_data_decoded1: JwtDataDecodedPart1 = serde_json::from_str(&jwt_string_1).unwrap();
+        println!("kid: {:?}", jwt_data_decoded1.kid);
+
+        let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
+        let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
+        println!("jwt_string_2 is {:?}", jwt_string_2); // "{\"iss\":\"https://accounts.google.com\",\"azp\":\"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com\",\"aud\":\"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com\",\"sub\":\"112897468626716626103\",\"nonce\":\"bxmnJW31ruzKMGir01YPGYL0xDY\",\"nbf\":1715687036,\"iat\":1715687336,\"exp\":1715690936,\"jti\":\"9b601d25f003640c2889a2a047789382cb1cfe87\"}"
+
+        //JwtDataDecodedPart2
+        let jwt_data_decoded2: JwtDataDecodedPart2 = serde_json::from_str(&jwt_string_2).unwrap();
+        println!("aud: {:?}", jwt_data_decoded2.aud);
+        println!("sub: {:?}", jwt_data_decoded2.sub);
+
+        let zk_seed = gen_address_seed(
+            user_pass_salt,
+            "sub",
+            jwt_data_decoded2.sub.as_str(), // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
+            jwt_data_decoded2.aud.as_str(), // Alina's data (fixed by app id ) from jwt
+        ).unwrap();
+
+        println!("jwt_data.zkProofs = {:?}", jwt_data.zkProofs);
+        let proof_and_jwt = serde_json::to_string(&jwt_data.zkProofs).unwrap();
+
+        let zk_login_inputs = ZkLoginInputs::from_json(
+            &*proof_and_jwt.to_string(), &*zk_seed.to_string()).unwrap();
+
+        let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk);
+        println!("time_for_vergrth16 is {time_for_vergrth16}");
+
+        println!("==========================================");
+    }
+
+}
+
+#[test]
+fn test_vrgrth16_based_on_real_data_new() { //real data taken from our react app for zklogin tests
+    // {"alg":"RS256","kid":"a3b762f871cdb3bae0044c649622fc1396eda3e3","typ":"JWT"}
+    // {"iss":"https://accounts.google.com","azp":"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com",
+    // "aud":"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com","sub":"112897468626716626103",
+    // "nonce":"sS2DydHu3Ihp8ZCWCA4nzD79e08","nbf":1715600156,"iat":1715600456,"exp":1715604056,"jti":"27d9a159279fc60df664c6ce8cb149a4244e5dd5"}
+    // Initial password was 567890
+    // in ascii 535455565748
+    let user_pass_salt = "535455565748"; // Alina's data (password in ascii ), should be different for iterations
+
+    // Generate an ephemeral key pair.
+    let secret_key = [222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166, 87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14];
+
+    // Generate an ephemeral key pair.
+    let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+    let mut eph_pubkey = Vec::new(); //vec![0x00];
+    // replace by Alina's data (ephemeral public key place to byte array ), depends on iteration
+    eph_pubkey.extend(ephemeral_kp.public().as_ref());
+    println!("eph_pubkey: {:?}", eph_pubkey);
+    println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
+    let len = eph_pubkey.clone().len();
+    println!("len eph_pubkey: {:?}", len);
+
+    // Get the zklogin seed.
+    //This stuff is a kind of bound between  smart contract and email (some account)
+    //It will be stored in smart contract (must be added during contract deployment)
+    let zk_seed = gen_address_seed(
+        user_pass_salt,
+        "sub",
+        "112897468626716626103", // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
+        "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", // Alina's data (fixed by app id ) from jwt
+    ).unwrap();
+
+    println!("zk_seed = {:?}", zk_seed);
+
+    let proof_and_jwt =  "{\"proofPoints\":{\"a\":[\"2352077003566407045854435506409565889408960755152253285189640818725808263237\",\
+    \"9548308350778027075240385782578683112366097953461273569343148999989145049123\",\"1\"],\
+    \"b\":[[\"2172697685172701179756462481453772004245591587568555358926512547679273443868\",\
+    \"11300889616992175665271080883374830731684409375838395487979439153562369168807\"],\
+    [\"18769153619672444537277685186545610305405730219274884099876386487766026068190\",\
+    \"12892936063156115176399929981646174277274895601746717550262309650970826515227\"],[\"1\",\"0\"]],\
+    \"c\":[\"21276833037675249246843718004583052134371270695679878402069223253610209272159\",\
+    \"8637596258221986824049981569842218428861929142818091935707054543971817804456\",\"1\"]},\
+    \"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\
+    \"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
+    let len = proof_and_jwt.bytes().len();
+    println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
+
+    let zk_login_inputs = ZkLoginInputs::from_json(
+        &*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+// summary from 132 to 146 : need to parse jwt, see jwt header to check that kid in this header is equal to one specified in line 143,... take kid from jwt if not equal
+    let content: JWK = JWK {
+        kty: "RSA".to_string(),
+        e: "AQAB".to_string(),
+        n: "uBHF-esPKiNlFaAvpdpejD4vpONW9FL0rgLDg1z8Q-x_CiHCvJCpiSehD41zmDOhzXP_fbMMSGpGL7R3duiz01nK5r_YmRw3RXeB0kcS7Z9H8MN6IJcde9MWbqkMabCDduFgdr6gvH0QbTipLB1qJK_oI_IBfRgjk6G0bGrKz3PniQw5TZ92r0u1LM-1XdBIb3aTYTGDW9KlOsrTTuKq0nj-anW5TXhecuxqSveFM4Hwlw7pw34ydBunFjFWDx4VVJqGNSqWCfcERxOulizIFruZIHJGkgunZnB4DF7mCZOttx2dwT9j7s3GfLJf0xoGumqpOMvecuipfTPeIdAzcQ".to_string(), // Alina's data
+        alg: "RS256".to_string(),
+    };
+
+    let mut all_jwk = HashMap::new();
+    all_jwk.insert(
+        JwkId::new(
+            OIDCProvider::Google.get_config().iss,
+            "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(), // Alina's data, fascrypto's was 6f7254101f56e41cf35c9926de84a2d552b4c6f1".to_string(),
+        ),
+        content,
+    );
+
+    let (iss, kid) = (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+    let jwk = all_jwk
+        .get(&JwkId::new(iss.clone(), kid.clone()))
+        .ok_or_else(|| {
+            ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+        }).unwrap();
+
+    let max_epoch = 142; // data from the react test
+
+    // Decode modulus to bytes.
+    let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n).map_err(|_| {
+        ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+    }).unwrap();
 
     let proof  = &zk_login_inputs.get_proof().as_arkworks().unwrap();
     let public_inputs = &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
@@ -254,7 +652,8 @@ fn test_poseidon_plus_vrgrth16() {
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
 
-    let verification_key_id: u32 = 1;
+    let verification_key_id: u32 = 0; //valid key id
+    //let verification_key_id: u32 = 1; //invalid key id
 
     let mut code = "PUSHREF \n".to_string();
     code = code + "PUSHREF \n";
@@ -262,10 +661,232 @@ fn test_poseidon_plus_vrgrth16() {
     code = code + "VERGRTH16";
 
     test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).expect_success();
-
 }
 
+#[test]
+fn test_proof_serialization() {
 
+    let user_pass_salt = "206703048842351542647799591018316385612";
+
+    let zk_seed = gen_address_seed(
+        user_pass_salt,
+        "sub",
+        "106294049240999307923",
+        "25769832374-famecqrhe2gkebt5fvqms2263046lj96.apps.googleusercontent.com",
+    ).unwrap();
+
+
+    let proof_and_jwt =  "{\"proofPoints\":{\"a\":[\"8247215875293406890829839156897863742504615191361518281091302475904551111016\",\"6872980335748205979379321982220498484242209225765686471076081944034292159666\",\"1\"],\"b\":[[\"21419680064642047510915171723230639588631899775315750803416713283740137406807\",\"21566716915562037737681888858382287035712341650647439119820808127161946325890\"],[\"17867714710686394159919998503724240212517838710399045289784307078087926404555\",\"21812769875502013113255155836896615164559280911997219958031852239645061854221\"],[\"1\",\"0\"]],\"c\":[\"7530826803702928198368421787278524256623871560746240215547076095911132653214\",\"16244547936249959771862454850485726883972969173921727256151991751860694123976\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
+
+
+    println!("proof_and_jwt: {}", proof_and_jwt);
+
+    let zk_login_inputs = tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs::from_json(
+        &*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+
+    println!("zk_login_inputs: {:?}", zk_login_inputs);
+
+    let proof  = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+
+    println!("proof.a: {:?}", proof.a);
+
+    println!("proof.a.y.0.to_string(): {:?}", proof.a.y.0.to_string());
+}
+
+#[test]
+fn test_vrgrth16_fresh() {
+    // Initial password was 567890
+    let user_pass_salt = "535455565748";
+
+    let zk_seed = gen_address_seed(
+        user_pass_salt,
+        "sub",
+        "112897468626716626103", // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
+        "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", // Alina's data (fixed by app id ) from jwt
+    ).unwrap();
+
+    println!("zk_seed {zk_seed}");
+
+    let iss = "https://accounts.google.com";
+
+    let xxx = get_zk_login_address(&Bn254FrElement::from_str(&zk_seed).unwrap(), iss).unwrap();
+    let xx = hex::encode(&xxx);
+    println!("xxx {xx}");
+
+    let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"20032491544466004395942516676927853848812757556091814296260914209848471949133\",\"2383319895045368406863089991961299436327009667970727469594098906910899823518\",\"1\"],\"b\":[[\"17524079199473031626933714849790290610990375813469214348846178898325828270802\",\"14967860363718375858883445892553389848174133418448836833724123534259346456965\"],[\"8012103671455598651673212917030479015077366694912593401917441922282850889728\",\"9619406946838713340504188077859322423191842838375117333667670119492063405148\"],[\"1\",\"0\"]],\"c\":[\"1155327534990006564455106296492790109069125857506281397147103620914309288350\",\"11642927414888703901346255147864200862372140915112720472429308471936285279899\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyNjIwZDVlN2YxMzJiNTJhZmU4ODc1Y2RmMzc3NmMwNjQyNDlkMDQiLCJ0eXAiOiJKV1QifQ\"}";
+
+    println!("proof_and_jwt: {}", proof_and_jwt);
+
+    let issAndHeaderBase64Details = "\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyNjIwZDVlN2YxMzJiNTJhZmU4ODc1Y2RmMzc3NmMwNjQyNDlkMDQiLCJ0eXAiOiJKV1QifQ\"";
+    println!("issAndHeaderBase64Details: {}", issAndHeaderBase64Details);
+
+    let zk_login_inputs = ZkLoginInputs::from_json(
+        &*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+
+    let content: JWK = JWK {
+        kty: "RSA".to_string(),
+        e: "AQAB".to_string(),
+        n: "pi22xDdK2fz5gclIbDIGghLDYiRO56eW2GUcboeVlhbAuhuT5mlEYIevkxdPOg5n6qICePZiQSxkwcYMIZyLkZhSJ2d2M6Szx2gDtnAmee6o_tWdroKu0DjqwG8pZU693oLaIjLku3IK20lTs6-2TeH-pUYMjEqiFMhn-hb7wnvH_FuPTjgz9i0rEdw_Hf3Wk6CMypaUHi31y6twrMWq1jEbdQNl50EwH-RQmQ9bs3Wm9V9t-2-_Jzg3AT0Ny4zEDU7WXgN2DevM8_FVje4IgztNy29XUkeUctHsr-431_Iu23JIy6U4Kxn36X3RlVUKEkOMpkDD3kd81JPW4Ger_w".parse().unwrap(),
+        alg: "RS256".to_string(),
+    };
+
+    let mut all_jwk = HashMap::new();
+    all_jwk.insert(
+        JwkId::new(
+            OIDCProvider::Google.get_config().iss,
+            "b2620d5e7f132b52afe8875cdf3776c064249d04".to_string(),
+        ),
+        content,
+    );
+
+    let (iss, kid) = (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+
+    let jwk = all_jwk
+        .get(&JwkId::new(iss.clone(), kid.clone()))
+        .ok_or_else(|| {
+            ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+        }).unwrap();
+
+    // Decode modulus to bytes.
+    let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n).map_err(|_| {
+        ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+    }).unwrap();
+
+    println!("modulus: {:?}", modulus);
+
+    println!("modulus hex: {:?}", hex::encode(&modulus));
+
+
+    let max_epoch = 142;
+
+    //let max_epoch = 10;
+
+    let mut eph_pubkey = vec![131, 177, 23, 68, 46, 252, 168, 4, 146, 173, 66, 45, 69, 248, 80, 87, 25, 27, 251, 212, 143, 3, 173, 66, 156, 56, 155, 83, 21, 226, 161, 63];
+
+    println!("eph_pubkey : {:?}", eph_pubkey);
+    println!("eph_pubkey len : {:?}", eph_pubkey.len());
+
+    let pp = zk_login_inputs.get_proof();
+
+    let proof  = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+    let public_inputs = &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+
+    let mut proof_as_bytes = vec![];
+    proof.serialize_compressed(&mut proof_as_bytes).unwrap();
+    println!("proof_as_bytes : {:?}", proof_as_bytes);
+    println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
+    println!("proof_as_bytes hex: {:?}", hex::encode(&proof_as_bytes));
+
+    let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
+
+    let mut public_inputs_as_bytes = vec![];
+    public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+    println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+    println!("public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+    println!("public_inputs_as_bytes hex: {:?}", hex::encode(&public_inputs_as_bytes));
+
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
+
+    let verification_key_id: u32 = 0;
+
+    let mut code = "PUSHREF \n".to_string();
+    code = code + "PUSHREF \n";
+    code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
+    code = code + "VERGRTH16";
+
+    test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).expect_success();
+}
+
+#[test]
+fn test_poseidon_update() {
+    /** Common data generation **/
+    let user_pass_salt = "206703048842351542647799591018316385612";
+
+    // Generate an ephemeral key pair.
+    let ephemeral_kp = Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+    let mut eph_pubkey = Vec::new();
+    eph_pubkey.extend(ephemeral_kp.public().as_ref());
+    println!("eph_pubkey: {:?}", eph_pubkey);
+    println!("len eph_pubkey: {:?}", eph_pubkey.len());
+
+    let eph_pubkey_hex_number = "0x".to_owned() + &hex::encode(eph_pubkey.clone());
+    println!("eph_pubkey_hex_number: {:?}", eph_pubkey_hex_number);
+
+    let zk_seed = gen_address_seed(
+        user_pass_salt,
+        "sub",
+        "106294049240999307923",
+        "25769832374-famecqrhe2gkebt5fvqms2263046lj96.apps.googleusercontent.com",
+    ).unwrap();
+
+    println!("zk_seed: {}", zk_seed);
+
+    let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"8247215875293406890829839156897863742504615191361518281091302475904551111016\",\"6872980335748205979379321982220498484242209225765686471076081944034292159666\",\"1\"],\"b\":[[\"21419680064642047510915171723230639588631899775315750803416713283740137406807\",\"21566716915562037737681888858382287035712341650647439119820808127161946325890\"],[\"17867714710686394159919998503724240212517838710399045289784307078087926404555\",\"21812769875502013113255155836896615164559280911997219958031852239645061854221\"],[\"1\",\"0\"]],\"c\":[\"7530826803702928198368421787278524256623871560746240215547076095911132653214\",\"16244547936249959771862454850485726883972969173921727256151991751860694123976\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
+
+    println!("proof_and_jwt: {}", proof_and_jwt);
+
+    let issAndHeaderBase64Details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
+    println!("issAndHeaderBase64Details: {}", issAndHeaderBase64Details);
+
+    let zk_login_inputs = ZkLoginInputs::from_json(
+        &*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+
+    let content: JWK = JWK {
+        kty: "RSA".to_string(),
+        e: "AQAB".to_string(),
+        n: "oUriU8GqbRw-avcMn95DGW1cpZR1IoM6L7krfrWvLSSCcSX6Ig117o25Yk7QWBiJpaPV0FbP7Y5-DmThZ3SaF0AXW-3BsKPEXfFfeKVc6vBqk3t5mKlNEowjdvNTSzoOXO5UIHwsXaxiJlbMRalaFEUm-2CKgmXl1ss_yGh1OHkfnBiGsfQUndKoHiZuDzBMGw8Sf67am_Ok-4FShK0NuR3-q33aB_3Z7obC71dejSLWFOEcKUVCaw6DGVuLog3x506h1QQ1r0FXKOQxnmqrRgpoHqGSouuG35oZve1vgCU4vLZ6EAgBAbC0KL35I7_0wUDSMpiAvf7iZxzJVbspkQ".to_string(),
+        alg: "RS256".to_string(),
+    };
+
+    let mut all_jwk = HashMap::new();
+    all_jwk.insert(
+        JwkId::new(
+            OIDCProvider::Google.get_config().iss,
+            "6f7254101f56e41cf35c9926de84a2d552b4c6f1".to_string(),
+        ),
+        content,
+    );
+
+    let (iss, kid) = (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+
+    let jwk = all_jwk
+        .get(&JwkId::new(iss.clone(), kid.clone()))
+        .ok_or_else(|| {
+            ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+        }).unwrap();
+
+    // Decode modulus to bytes.
+    let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n).map_err(|_| {
+        ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+    }).unwrap();
+
+    println!("modulus: {:?}", modulus);
+
+    println!("modulus hex: {:?}", hex::encode(&modulus));
+
+    println!("====== Start Poseidon ========");
+
+    let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
+
+    let issAndHeaderBase64Details_cell = pack_string_to_cell(&issAndHeaderBase64Details.clone(), &mut 0).unwrap();
+
+    //let eph_pubkey_cell = pack_data_to_cell(&eph_pubkey.clone(), &mut 0).unwrap();
+
+    let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
+
+    let max_epoch = "142"; //"200142";
+
+    let mut code = format!("PUSHINT {max_epoch} \n").to_string();
+    code = code + &*format!("PUSHINT {eph_pubkey_hex_number} \n").to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"PUSHREF \n".to_string();
+    code = code + &*"POSEIDON_ZKLOGIN \n".to_string();
+
+    println!("code : {code}");
+
+    test_case_with_refs(code.as_str(), vec![ modulus_cell, issAndHeaderBase64Details_cell, zk_seed_cell]).expect_success();
+}
 
 
 #[test]
@@ -275,7 +896,7 @@ fn test_vrgrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
     let user_pass_salt = "206703048842351542647799591018316385612";
     // Generate an ephemeral key pair.
     let ephemeral_kp = Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-    let mut eph_pubkey = vec![0x00];
+    let mut eph_pubkey = Vec::new();//vec![0x00];
     eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
     println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
@@ -300,7 +921,6 @@ fn test_vrgrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
 
     let zk_login_inputs = ZkLoginInputs::from_json(
         &*proof_and_jwt, &*zk_seed.to_string()).unwrap();
-
 
 
     let content: JWK = JWK {
@@ -408,6 +1028,7 @@ fn test_vrgrth16_and_chcksigns_comparison_based_on_fascrypto_data() {
         .expect_stack(Stack::new().push(int!(-1)));
 }
 
+
 #[test]
 fn test_vrgrth16_based_on_real_data() { //real data taken from our react app for zklogin tests
     // {"alg":"RS256","kid":"a3b762f871cdb3bae0044c649622fc1396eda3e3","typ":"JWT"}
@@ -416,16 +1037,15 @@ fn test_vrgrth16_based_on_real_data() { //real data taken from our react app for
     // "nonce":"sS2DydHu3Ihp8ZCWCA4nzD79e08","nbf":1715600156,"iat":1715600456,"exp":1715604056,"jti":"27d9a159279fc60df664c6ce8cb149a4244e5dd5"}
     // Initial password was 567890
     // in ascii 535455565748
+
     let user_pass_salt = "535455565748"; // Alina's data (password in ascii ), should be different for iterations
 
     // Generate an ephemeral key pair.
-    //let eph_pubkey = vec![0, 118, 246, 91, 51, 200, 75, 135, 104, 225, 85, 247, 172, 168, 33, 177, 2, 109, 204, 240, 251, 199, 76, 144, 76, 33, 183, 135, 30, 14, 170, 111, 143];
-
     let secret_key = [222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166, 87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14];
 
     // Generate an ephemeral key pair.
     let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-    let mut eph_pubkey = vec![0x00]; // replace by Alina's data (ephemeral public key place to byte array ), depends on iteration
+    let mut eph_pubkey = Vec::new(); //vec![0x00]; // replace by Alina's data (ephemeral public key place to byte array ), depends on iteration
     eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
     println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
@@ -509,6 +1129,8 @@ fn test_vrgrth16_based_on_real_data() { //real data taken from our react app for
 
     let verification_key_id: u32 = 0;
 
+    //let verification_key_id: u32 = 1;
+
     let mut code = "PUSHREF \n".to_string();
     code = code + "PUSHREF \n";
     code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
@@ -516,6 +1138,8 @@ fn test_vrgrth16_based_on_real_data() { //real data taken from our react app for
 
     test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).expect_success();
 }
+
+
 
 fn secretKeyFromIntegerMap(keyData: HashMap<String,u8>)->Vec<u8>{
     let mut vec: Vec<u8> = Vec::new();
@@ -527,10 +1151,199 @@ fn secretKeyFromIntegerMap(keyData: HashMap<String,u8>)->Vec<u8>{
     return vec;
 }
 
+fn to_binary_string(value: &str) -> String {
+    let big_value = BigUint::parse_bytes(value.as_bytes(), 10).unwrap();
+    big_value.to_str_radix(2)
+}
+
+fn pad_string_to_256(input: &str) -> String {
+    let current_length = input.len();
+
+    if current_length >= 256 {
+        return input.to_string();
+    }
+
+    let zeros_to_add = 256 - current_length;
+    format!("{}{}", repeat('0').take(zeros_to_add).collect::<String>(), input)
+}
+
+fn bits_to_decimal_and_reverse(bits: &str) -> Vec<u8> {
+    let byte_chunks: Vec<&str> = bits.as_bytes().chunks(8).map(|chunk| {
+        std::str::from_utf8(chunk).unwrap()
+    }).collect();
+
+    let decimal_numbers: Vec<u8> = byte_chunks.iter()
+        .map(|byte| u8::from_str_radix(byte, 2).unwrap())
+        .collect();
+
+    decimal_numbers.into_iter().rev().collect()
+}
+
+fn prepare_hex_representation(init_x: &str, y: BigUint) -> String {
+    let mut binary_representation = pad_string_to_256(&to_binary_string(init_x));
+
+    let P: BigUint = BigUint::from_bytes_be(&[
+        48, 100, 78, 114, 225, 49, 160, 41, 184, 80, 69, 182, 129, 129, 88, 93, 151, 129,
+        106, 145, 104, 113, 202, 141, 60, 32, 140, 22, 216, 124, 253, 71]);
+
+    // Сравниваем y с p - y и меняем первый бит
+    if y > &P - &y {
+        binary_representation.replace_range(0..1, "1");
+    }
+
+    let reversed_byte_array = bits_to_decimal_and_reverse(&binary_representation);
+
+    // Преобразуем массив байтов в hex-строку
+    let hex_string = reversed_byte_array.iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect::<String>();
+
+    hex_string
+}
+
+#[test]
+fn test_proof_stuff() {
+    let sui_data = [SUI_DATA_FROM_REACT_1, SUI_DATA_FROM_REACT_2, SUI_DATA_FROM_REACT_3,
+    SUI_DATA_FROM_REACT_4, SUI_DATA_FROM_REACT_5, SUI_DATA_FROM_REACT_6, SUI_DATA_FROM_REACT_7,
+    SUI_DATA_FROM_REACT_8, SUI_DATA_FROM_REACT_9, SUI_DATA_FROM_REACT_10, SUI_DATA_FROM_REACT_11, SUI_DATA_FROM_REACT_12
+    , SUI_DATA_FROM_REACT_13, SUI_DATA_FROM_REACT_14, SUI_DATA_FROM_REACT_15, SUI_DATA_FROM_REACT_16
+        , SUI_DATA_FROM_REACT_17, SUI_DATA_FROM_REACT_18,  SUI_DATA_FROM_REACT_19, SUI_DATA_FROM_REACT_20, SUI_DATA_FROM_REACT_21];
+
+    for i in 0..sui_data.len() {
+        let jwt_data: JwtData = serde_json::from_str(&sui_data[i]).unwrap();
+        let json_string = serde_json::to_string(&jwt_data.zkProofs).unwrap();
+        print!("{:?}, \n", json_string);
+    }
+
+    for i in 0..sui_data.len() {
+        let jwt_data: JwtData = serde_json::from_str(&sui_data[i]).unwrap();
+
+        //////
+
+        let user_pass_salt = jwt_data.userPassToIntFormat.as_str();
+        println!("user_pass_salt is {user_pass_salt}");
+
+         let jwt_data_vector: Vec<&str>  = jwt_data.jwt.split(".").collect();
+        let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
+
+        let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
+        println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"typ\":\"JWT\"}"
+
+        //JwtDataDecodedPart1
+        let jwt_data_decoded1: JwtDataDecodedPart1 = serde_json::from_str(&jwt_string_1).unwrap();
+        println!("kid: {:?}", jwt_data_decoded1.kid);
+
+        let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
+        let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
+        println!("jwt_string_2 is {:?}", jwt_string_2); // "{\"iss\":\"https://accounts.google.com\",\"azp\":\"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com\",\"aud\":\"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com\",\"sub\":\"112897468626716626103\",\"nonce\":\"bxmnJW31ruzKMGir01YPGYL0xDY\",\"nbf\":1715687036,\"iat\":1715687336,\"exp\":1715690936,\"jti\":\"9b601d25f003640c2889a2a047789382cb1cfe87\"}"
+
+        //JwtDataDecodedPart2
+        let jwt_data_decoded2: JwtDataDecodedPart2 = serde_json::from_str(&jwt_string_2).unwrap();
+        println!("aud: {:?}", jwt_data_decoded2.aud);
+        println!("sub: {:?}", jwt_data_decoded2.sub);
+
+        let zk_seed = gen_address_seed(
+            user_pass_salt,
+            "sub",
+            jwt_data_decoded2.sub.as_str(), // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
+            jwt_data_decoded2.aud.as_str(), // Alina's data (fixed by app id ) from jwt
+        ).unwrap();
+
+        println!("jwt_data.zkProofs = {:?}", jwt_data.zkProofs);
+        let proof_and_jwt = serde_json::to_string(&jwt_data.zkProofs).unwrap();
+
+        let zk_login_inputs = ZkLoginInputs::from_json(
+            &*proof_and_jwt.to_string(), &*zk_seed.to_string()).unwrap();
+
+        let proof  = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+
+        let mut proof_as_bytes = vec![];
+        proof.serialize_compressed(&mut proof_as_bytes).unwrap();
+        println!("proof_as_bytes : {:?}", proof_as_bytes);
+        println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
+        println!("----------------------------------");
+
+
+        ///////////
+
+
+
+        let json_string = serde_json::to_string(&jwt_data.zkProofs).unwrap();
+        println!("json_string ={:?}", json_string);//jwt_data.zkProofs);
+
+
+
+        let data: Value = serde_json::from_str(&*json_string).unwrap();
+        println!("data = {:?}", data);
+
+        let a_x = data["proofPoints"]["a"][0].as_str().unwrap();
+        let a_y = BigUint::parse_bytes(data["proofPoints"]["a"][1].as_str().unwrap().as_bytes(), 10).unwrap();
+        println!("a_x = {:?}", a_x);
+        println!("a_y = {:?}", a_y);
+
+        let b0_x = data["proofPoints"]["b"][0][0].as_str().unwrap();
+	    let b1_x = data["proofPoints"]["b"][0][1].as_str().unwrap();
+        let b1_y = BigUint::parse_bytes(data["proofPoints"]["b"][1][1].as_str().unwrap().as_bytes(), 10).unwrap();
+        println!("b0_x = {:?}", b0_x);
+        println!("b1_x = {:?}", b1_x);
+        println!("b1_y = {:?}", b1_y);
+
+        let c_x = data["proofPoints"]["c"][0].as_str().unwrap();
+        let c_y = BigUint::parse_bytes(data["proofPoints"]["c"][1].as_str().unwrap().as_bytes(), 10).unwrap();
+        println!("c_x = {:?}", c_x);
+        println!("c_y = {:?}", c_y);
+
+        let hex_ax = prepare_hex_representation(a_x, a_y);
+        let hex_b0x = prepare_hex_representation(b0_x, BigUint::zero());
+        let hex_b1x = prepare_hex_representation(b1_x, b1_y);
+        let hex_cx = prepare_hex_representation(c_x, c_y);
+
+        let result = format!("{}{}{}{}", hex_ax, hex_b0x, hex_b1x, hex_cx);
+
+        println!("Serialized proof _ 0: {:?}", result);
+
+        println!("Serialized proof _ 1: {:?}", hex::encode(&proof_as_bytes));
+
+        assert_eq!(result, hex::encode(&proof_as_bytes));
+
+        println!("===================");
+    }
+
+
+  /*  println!("Serialized proof");
+    let json_string = r#"{"proofPoints":{"a":["8247215875293406890829839156897863742504615191361518281091302475904551111016","6872980335748205979379321982220498484242209225765686471076081944034292159666","1"],"b":[["21419680064642047510915171723230639588631899775315750803416713283740137406807","21566716915562037737681888858382287035712341650647439119820808127161946325890"],["17867714710686394159919998503724240212517838710399045289784307078087926404555","21812769875502013113255155836896615164559280911997219958031852239645061854221"],["1","0"]],"c":["7530826803702928198368421787278524256623871560746240215547076095911132653214","16244547936249959771862454850485726883972969173921727256151991751860694123976","1"]},"issBase64Details":{"value":"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC","indexMod4":1},"headerBase64":"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ"}"#;
+
+	 // Парсинг JSON-строки
+    let data: Value = serde_json::from_str(json_string).unwrap();
+
+    let a_x = data["proofPoints"]["a"][0].as_str().unwrap();
+    let a_y = BigUint::parse_bytes(data["proofPoints"]["a"][1].as_str().unwrap().as_bytes(), 10).unwrap();
+
+    let b0_x = data["proofPoints"]["b"][0][0].as_str().unwrap();
+	let b1_x = data["proofPoints"]["b"][0][1].as_str().unwrap();
+    let b1_y = BigUint::parse_bytes(data["proofPoints"]["b"][1][1].as_str().unwrap().as_bytes(), 10).unwrap();
+
+    let c_x = data["proofPoints"]["c"][0].as_str().unwrap();
+    let c_y = BigUint::parse_bytes(data["proofPoints"]["c"][1].as_str().unwrap().as_bytes(), 10).unwrap();
+
+	let hex_ax = prepare_hex_representation(a_x, a_y);
+    let hex_b0x = prepare_hex_representation(b0_x, BigUint::zero());
+    let hex_b1x = prepare_hex_representation(b1_x, b1_y);
+    let hex_cx = prepare_hex_representation(c_x, c_y);
+
+    let result = format!("{}{}{}{}", hex_ax, hex_b0x, hex_b1x, hex_cx);
+
+    // ????? ???????????
+    println!("Serialized proof: {}", result);
+    println!("Serialized proof: 68490e184c1c5279d09fafc5e5c0b77d2a61fe6262ced81ff315c1813ec23b1257c1538b36c9822e94933c0fdb49d39502b7d63c47cc75cae7264f6afa1b5b2f82c3d7dc537cc07c2969bb4454a3d423d0e998f5787d4735eed757554654aeaf9ee6f79a85b302bdf25d83a9aeb4e06361459f51c86b1dca23172500034ca690");
+    */
+}
+
 #[ignore]
 #[test]
 fn test_eval_time_vrgrth16() {
     //todo: later n must be extracted from 3d part of jwt
+
     let content: JWK = JWK {
         kty: "RSA".to_string(),
         e: "AQAB".to_string(),
@@ -568,7 +1381,7 @@ fn test_eval_time_vrgrth16() {
         let eph_secret_key = secretKeyFromIntegerMap(jwt_data.ephemeralKeyPair.keypair.secretKey);
 
         let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
-        let mut eph_pubkey = vec![0x00];
+        let mut eph_pubkey = Vec::new();//vec![0x00];
         eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
         println!("ephemeral secret_key is {:?}", eph_secret_key);
@@ -720,6 +1533,7 @@ fn prepare_proof_and_public_key_cells_for_stack(eph_pubkey: &Vec<u8>, zk_login_i
 fn single_vrgrth16(eph_pubkey: &Vec<u8>, zk_login_inputs: &ZkLoginInputs, all_jwk: &HashMap<JwkId, JWK>) -> u128 {
     let (proof_cell, public_inputs_cell) = prepare_proof_and_public_key_cells_for_stack(eph_pubkey, zk_login_inputs, all_jwk);
 
+    //let verification_key_id: u32 = 2;
     let verification_key_id: u32 = 0;
 
     let mut code = "PUSHREF \n".to_string();
