@@ -346,6 +346,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         is_special,
                         params.available_credit,
                         minted_shell,
+                        need_to_burn.as_u64_quiet(),
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             out_msgs = messages;

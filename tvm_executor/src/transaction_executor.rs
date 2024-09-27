@@ -100,6 +100,8 @@ const RESULT_CODE_INVALID_BALANCE: i32 = 40;
 const RESULT_CODE_BAD_ACCOUNT_STATE: i32 = 41;
 const RESULT_CODE_ANYCAST: i32 = 50;
 const RESULT_CODE_NOT_FOUND_LICENSE: i32 = 51;
+const RESULT_CODE_NOT_SPECIAL_CONTRACT: i32 = 52;
+const RESULT_CODE_OVERFLOW: i32 = 53;
 const RESULT_CODE_UNSUPPORTED: i32 = -1;
 
 const MAX_ACTIONS: usize = 255;
@@ -645,6 +647,7 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
+        need_to_burn: u64,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -659,6 +662,7 @@ pub trait TransactionExecutor {
             is_special,
             available_credit,
             minted_shell,
+            need_to_burn,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -677,12 +681,14 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
+        need_to_burn: u64,
     ) -> Result<ActionPhaseResult> {
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
         let mut phase = TrActionPhase::default();
         let mut total_reserved_value = CurrencyCollection::default();
+        total_reserved_value.set_grams(need_to_burn)?;
         phase.action_list_hash = actions_cell.repr_hash();
         let mut actions = match OutActions::construct_from_cell(actions_cell) {
             Err(err) => {
@@ -833,10 +839,10 @@ pub trait TransactionExecutor {
                                 phase.spec_actions += 1;
                                 0
                             }
-                            Err(_) => RESULT_CODE_INVALID_BALANCE,
+                            Err(_) => RESULT_CODE_OVERFLOW,
                         }
                     } else {
-                        RESULT_CODE_INVALID_BALANCE
+                        RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
                 }
                 OutAction::ExchangeShell { value } => {
