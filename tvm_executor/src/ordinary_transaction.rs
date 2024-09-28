@@ -76,7 +76,7 @@ impl OrdinaryTransactionExecutor {
 }
 
 impl TransactionExecutor for OrdinaryTransactionExecutor {
-    /// Create end execute transaction from message for account
+    /// Create and execute transaction from message for account
     fn execute_with_params(
         &self,
         in_msg: Option<&Message>,
