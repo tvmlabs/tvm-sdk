@@ -837,9 +837,11 @@ impl Engine {
         DIFF_PATCH_BINARY_ZIP                => 0xC7, 0x23
         DIFF_PATCH_BINARYQ                   => 0xC7, 0x24
         DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
-        VERGRTH16                            => 0xC7, 0x26
-        POSEIDON_ZKLOGIN                     => 0xC7, 0x27
-
+        MINTECC                              => 0xC7, 0x26
+        CNVRTSHELLQ                          => 0xC7, 0x27
+        MINTSHELL                            => 0xC7, 0x28
+        CALCBKREWARD                         => 0xC7, 0x29
+        CALCMINSTAKE                         => 0xC7, 0x30
     }
 
     fn add_commands<'a>(
