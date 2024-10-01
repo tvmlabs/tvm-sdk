@@ -844,12 +844,6 @@ impl Engine {
         CALCMINSTAKE                         => 0xC7, 0x30
     }
 
-    #[cfg(feature = "groth")]
-    simple_commands! {
-        enumerate_groth_commands
-        VERGRTH16                            => 0xF9, 0x12
-    }
-
     fn add_commands<'a>(
         &mut self,
         iter: impl IntoIterator<Item = &'a (&'static str, CompileHandler)>,
