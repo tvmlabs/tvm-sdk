@@ -688,7 +688,7 @@ pub trait TransactionExecutor {
         let mut acc_remaining_balance = acc_balance.clone();
         let mut phase = TrActionPhase::default();
         let mut total_reserved_value = CurrencyCollection::default();
-        total_reserved_value.set_grams(need_to_burn)?;
+        let mut is_reserve_burn = false;
         phase.action_list_hash = actions_cell.repr_hash();
         let mut actions = match OutActions::construct_from_cell(actions_cell) {
             Err(err) => {
@@ -791,7 +791,11 @@ pub trait TransactionExecutor {
                         Err(code) => code,
                     }
                 }
-                OutAction::ReserveCurrency { mode, value } => {
+                OutAction::ReserveCurrency { mode, mut value } => {
+                    if is_reserve_burn == false {
+                        value.grams.add(&Grams::from(need_to_burn))?;
+                        is_reserve_burn = true
+                    }
                     match reserve_action_handler(
                         mode,
                         &value,
@@ -941,7 +945,6 @@ pub trait TransactionExecutor {
             balance_to_string(&acc_remaining_balance),
             balance_to_string(&total_reserved_value)
         );
-        total_reserved_value.grams.sub(&Grams::from(need_to_burn))?;
         if let Err(err) = acc_remaining_balance.add(&total_reserved_value) {
             log::debug!(target: "executor", "failed to add account balance with reserved value {}", err);
             fail!("failed to add account balance with reserved value {}", err)
