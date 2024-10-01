@@ -941,6 +941,7 @@ pub trait TransactionExecutor {
             balance_to_string(&acc_remaining_balance),
             balance_to_string(&total_reserved_value)
         );
+        total_reserved_value.grams.sub(&Grams::from(need_to_burn))?;
         if let Err(err) = acc_remaining_balance.add(&total_reserved_value) {
             log::debug!(target: "executor", "failed to add account balance with reserved value {}", err);
             fail!("failed to add account balance with reserved value {}", err)
