@@ -20,6 +20,7 @@ members = [
   "tvm_tl_codegen",
   "tvm_types",
   "tvm_vm",
+  "tvm_tests"
 ]
 [workspace.package]
 version = "2.2.7"
