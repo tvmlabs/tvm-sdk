@@ -2,25 +2,28 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::executor::zk_stuff::bn254::verifier::PreparedVerifyingKey;
-use crate::executor::zk_stuff::bn254::{FieldElement, Proof, VerifyingKey};
+use crate::executor::zk_stuff::bn254::FieldElement;
+use crate::executor::zk_stuff::bn254::Proof;
+use crate::executor::zk_stuff::bn254::VerifyingKey;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 
 //#[cfg(test)]
 //#[path = "unit_tests/api_tests.rs"]
-//mod api_tests;
+// mod api_tests;
 
 /// Size of scalars in the BN254 construction.
 pub const SCALAR_SIZE: usize = 32;
 
-/// Deserialize bytes as an Arkwork representation of a verifying key, and return a vector of the
-/// four components of a prepared verified key (see more at [`PreparedVerifyingKey`]).
+/// Deserialize bytes as an Arkwork representation of a verifying key, and
+/// return a vector of the four components of a prepared verified key (see more
+/// at [`PreparedVerifyingKey`]).
 pub fn prepare_pvk_bytes(vk_bytes: &[u8]) -> Result<Vec<Vec<u8>>, ZkCryptoError> {
     PreparedVerifyingKey::from(&VerifyingKey::deserialize(vk_bytes)?).serialize()
 }
 
-/// Verify Groth16 proof using the serialized form of the prepared verifying key (see more at
-/// [`crate::bn254::verifier::PreparedVerifyingKey`]), serialized proof public input and serialized
-/// proof points.
+/// Verify Groth16 proof using the serialized form of the prepared verifying key
+/// (see more at [`crate::bn254::verifier::PreparedVerifyingKey`]), serialized
+/// proof public input and serialized proof points.
 pub fn verify_groth16_in_bytes(
     vk_gamma_abc_g1_bytes: &[u8],
     alpha_g1_beta_g2_bytes: &[u8],
@@ -43,8 +46,8 @@ pub fn verify_groth16_in_bytes(
     verify_groth16(&pvk, proof_public_inputs_as_bytes, proof_points_as_bytes)
 }
 
-/// Verify proof with a given verifying key in [struct PreparedVerifyingKey], serialized public inputs
-/// and serialized proof points.
+/// Verify proof with a given verifying key in [struct PreparedVerifyingKey],
+/// serialized public inputs and serialized proof points.
 pub fn verify_groth16(
     pvk: &PreparedVerifyingKey,
     proof_public_inputs_as_bytes: &[u8],

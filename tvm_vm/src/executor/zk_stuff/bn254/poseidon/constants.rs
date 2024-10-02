@@ -1,13 +1,27 @@
-
-
-use crate::executor::zk_stuff::Fr;
 use ff::PrimeField;
 use neptune::hash_type::HashType;
 use neptune::poseidon::PoseidonConstants;
 use neptune::Strength;
 use once_cell::sync::Lazy;
 use typenum::Unsigned;
-use typenum::{U1, U10, U11, U12, U13, U14, U15, U16, U2, U3, U4, U5, U6, U7, U8, U9};
+use typenum::U1;
+use typenum::U10;
+use typenum::U11;
+use typenum::U12;
+use typenum::U13;
+use typenum::U14;
+use typenum::U15;
+use typenum::U16;
+use typenum::U2;
+use typenum::U3;
+use typenum::U4;
+use typenum::U5;
+use typenum::U6;
+use typenum::U7;
+use typenum::U8;
+use typenum::U9;
+
+use crate::executor::zk_stuff::Fr;
 
 #[derive(Debug)]
 pub(crate) struct Constants {
@@ -23,22 +37,14 @@ pub(crate) fn load_constants() -> Constants {
 
     let constants = constants_strings
         .iter()
-        .map(|c| {
-            c.iter()
-                .map(|ci| Fr::from_str_vartime(ci).unwrap())
-                .collect()
-        })
+        .map(|c| c.iter().map(|ci| Fr::from_str_vartime(ci).unwrap()).collect())
         .collect();
 
     let matrices = matrices_strings
         .iter()
         .map(|m| {
             m.iter()
-                .map(|mi| {
-                    mi.iter()
-                        .map(|mij| Fr::from_str_vartime(mij).unwrap())
-                        .collect()
-                })
+                .map(|mi| mi.iter().map(|mij| Fr::from_str_vartime(mij).unwrap()).collect())
                 .collect()
         })
         .collect();
@@ -47,9 +53,7 @@ pub(crate) fn load_constants() -> Constants {
         constants,
         matrices,
         full_rounds: 8,
-        partial_rounds: vec![
-            56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68,
-        ],
+        partial_rounds: vec![56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68],
     }
 }
 
@@ -71,7 +75,8 @@ macro_rules! define_poseidon_constants {
     }};
 }
 
-// TODO: CONSTANTS are not needed after all constants are loaded because they are cloned into the POSEIDON_CONSTANTs.
+// TODO: CONSTANTS are not needed after all constants are loaded because they
+// are cloned into the POSEIDON_CONSTANTs.
 static CONSTANTS: Lazy<Constants> = Lazy::new(load_constants);
 pub(crate) static POSEIDON_CONSTANTS_U1: Lazy<PoseidonConstants<Fr, U1>> =
     Lazy::new(|| define_poseidon_constants!(CONSTANTS, U1));

@@ -57,11 +57,19 @@ impl RuntimeHandlers {
         self.api.modules.push(module);
     }
 
-    pub fn register_sync(&mut self, function_name: String, handler: Box<dyn SyncHandler + Sync + Send>) {
+    pub fn register_sync(
+        &mut self,
+        function_name: String,
+        handler: Box<dyn SyncHandler + Sync + Send>,
+    ) {
         self.sync_handlers.insert(function_name, handler);
     }
 
-    pub fn register_async(&mut self, function_name: String, handler: Box<dyn AsyncHandler + Sync + Send>) {
+    pub fn register_async(
+        &mut self,
+        function_name: String,
+        handler: Box<dyn AsyncHandler + Sync + Send>,
+    ) {
         self.async_handlers.insert(function_name, handler);
     }
 }

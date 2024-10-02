@@ -4,11 +4,14 @@
 #![deny(unused_must_use, missing_debug_implementations)]
 //! Groth16 verifier over the BN254 elliptic curve construction.
 
-use crate::executor::zk_stuff::bn254::api::SCALAR_SIZE;
-use ark_bn254::{Bn254, Fr};
+use ark_bn254::Bn254;
+use ark_bn254::Fr;
 use ark_serialize::CanonicalDeserialize;
 use derive_more::From;
-use crate::executor::zk_stuff::error::{ZkCryptoError, ZkCryptoResult};
+
+use crate::executor::zk_stuff::bn254::api::SCALAR_SIZE;
+use crate::executor::zk_stuff::error::ZkCryptoError;
+use crate::executor::zk_stuff::error::ZkCryptoResult;
 
 /// API that takes in serialized inputs
 pub mod api;
@@ -20,25 +23,26 @@ pub mod verifier;
 pub mod poseidon;
 
 /// Zk login structs and utilities
-//pub mod zk_login;
+// pub mod zk_login;
 
 /// Zk login entrypoints
-//pub mod zk_login_api;
+// pub mod zk_login_api;
 
 /// Zk login utils
-//pub mod utils;
+// pub mod utils;
 
-
-
-/// A field element in the BN254 construction. Thin wrapper around `api::Bn254Fr`.
+/// A field element in the BN254 construction. Thin wrapper around
+/// `api::Bn254Fr`.
 #[derive(Debug, From)]
 pub struct FieldElement(pub(crate) ark_bn254::Fr);
 
-/// A Groth16 proof in the BN254 construction. Thin wrapper around `ark_groth16::Proof::<ark_bn254::Bn254>`.
+/// A Groth16 proof in the BN254 construction. Thin wrapper around
+/// `ark_groth16::Proof::<ark_bn254::Bn254>`.
 #[derive(Debug, From)]
 pub struct Proof(pub(crate) ark_groth16::Proof<ark_bn254::Bn254>);
 
-/// A Groth16 verifying key in the BN254 construction. Thin wrapper around `ark_groth16::VerifyingKey::<ark_bn254::Bn254>`.
+/// A Groth16 verifying key in the BN254 construction. Thin wrapper around
+/// `ark_groth16::VerifyingKey::<ark_bn254::Bn254>`.
 #[derive(Debug, From)]
 pub struct VerifyingKey(pub(crate) ark_groth16::VerifyingKey<ark_bn254::Bn254>);
 
@@ -52,18 +56,18 @@ impl Proof {
 }
 
 impl FieldElement {
-    /// Deserialize 32 bytes into a BN254 field element using little-endian format.
+    /// Deserialize 32 bytes into a BN254 field element using little-endian
+    /// format.
     pub(crate) fn deserialize(bytes: &[u8]) -> ZkCryptoResult<FieldElement> {
         if bytes.len() != SCALAR_SIZE {
             return Err(ZkCryptoError::InputLengthWrong(bytes.len()));
         }
-        Fr::deserialize_compressed(bytes)
-            .map_err(|_| ZkCryptoError::InvalidInput)
-            .map(FieldElement)
+        Fr::deserialize_compressed(bytes).map_err(|_| ZkCryptoError::InvalidInput).map(FieldElement)
     }
 
-    /// Deserialize a vector of bytes into a vector of BN254 field elements, assuming that each element
-    /// is serialized as a chunk of 32 bytes. See also [`FieldElement::deserialize`].
+    /// Deserialize a vector of bytes into a vector of BN254 field elements,
+    /// assuming that each element is serialized as a chunk of 32 bytes. See
+    /// also [`FieldElement::deserialize`].
     pub(crate) fn deserialize_vector(
         field_element_bytes: &[u8],
     ) -> ZkCryptoResult<Vec<FieldElement>> {

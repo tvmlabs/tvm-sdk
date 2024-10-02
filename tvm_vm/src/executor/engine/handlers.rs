@@ -44,12 +44,11 @@ use crate::executor::token::*;
 use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+use crate::executor::zk::*;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
 use crate::types::Status;
-
-use crate::executor::zk::*;
 
 // ( - )
 fn execute_nop(engine: &mut Engine) -> Status {

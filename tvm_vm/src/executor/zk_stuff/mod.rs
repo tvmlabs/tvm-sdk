@@ -1,19 +1,14 @@
-use thiserror::Error;
-
-use ark_bn254::{Bn254}; // use ark_bn254::{Bn254, Fr};
-use ark_serialize::CanonicalDeserialize;
 use derive_more::From;
-
 use ff::PrimeField;
 
-//pub mod alphabet;
+// pub mod alphabet;
 pub mod curve_utils;
-//pub mod encodings;
-pub mod error;
-pub mod zk_login;
-pub mod utils;
+// pub mod encodings;
 pub mod bn254;
+pub mod error;
 pub mod jwt_utils;
+pub mod utils;
+pub mod zk_login;
 
 /// Definition of the BN254 prime field.
 #[derive(PrimeField)]

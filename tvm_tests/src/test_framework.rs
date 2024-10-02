@@ -1,35 +1,42 @@
-/*
-* Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
-*
-* Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-* this file except in compliance with the License.
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific TON DEV software governing permissions and
-* limitations under the License.
-*/
+// Copyright (C) 2019-2023 TON Labs. All Rights Reserved.
+//
+// Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
+// use this file except in compliance with the License.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific TON DEV software governing permissions and
+// limitations under the License.
 
 #![allow(dead_code)]
-use std::{convert::Into, ffi::CStr, os::raw::c_char, sync::Arc};
-use tvm_assembler::{CompileError, compile_code};
-//use failure::{Error};
-use anyhow::{Error};
-use tvm_vm::{
-    int,
-    error::{tvm_exception_code, tvm_exception_or_custom_code, TvmError},
-    executor::{Engine, gas::gas_state::Gas, IndexProvider, BehaviorModifiers}, smart_contract_info::SmartContractInfo,
-    stack::{Stack, StackItem, integer::IntegerData, savelist::SaveList},
-    types::Exception
-};
-//use failure::Error as Error;
-use tvm_types::{
-    BuilderData, Cell, Result, SliceData,
-    types::ExceptionCode, HashmapE, HashmapType, BocWriter
-};
+use std::convert::Into;
+use std::ffi::CStr;
+use std::os::raw::c_char;
+use std::sync::Arc;
 
+// use failure::{Error};
+use tvm_assembler::compile_code;
+use tvm_assembler::CompileError;
 use tvm_block::GlobalCapabilities;
+// use failure::Error as Error;
+use tvm_types::{
+    types::ExceptionCode, BocWriter, BuilderData, Cell, HashmapE, HashmapType, Result, SliceData,
+};
+use tvm_vm::error::tvm_exception_code;
+use tvm_vm::error::tvm_exception_or_custom_code;
+use tvm_vm::error::TvmError;
+use tvm_vm::executor::gas::gas_state::Gas;
+use tvm_vm::executor::BehaviorModifiers;
+use tvm_vm::executor::Engine;
+use tvm_vm::executor::IndexProvider;
+use tvm_vm::int;
+use tvm_vm::smart_contract_info::SmartContractInfo;
+use tvm_vm::stack::integer::IntegerData;
+use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::stack::Stack;
+use tvm_vm::stack::StackItem;
+use tvm_vm::types::Exception;
 
 pub type Bytecode = SliceData;
 
@@ -37,17 +44,17 @@ pub type Bytecode = SliceData;
 pub mod create {
     use super::*;
 
-    pub fn cell<T: AsRef<[u8]>>(data:T) -> StackItem {
+    pub fn cell<T: AsRef<[u8]>>(data: T) -> StackItem {
         let data = data.as_ref().to_vec();
         StackItem::Cell(BuilderData::with_bitstring(data).unwrap().into_cell().unwrap())
     }
 
-    pub fn builder<T: AsRef<[u8]>>(data:T) -> StackItem {
+    pub fn builder<T: AsRef<[u8]>>(data: T) -> StackItem {
         let builder = BuilderData::with_bitstring(data.as_ref().to_vec()).unwrap();
         StackItem::builder(builder)
     }
 
-    pub fn slice<T: AsRef<[u8]>>(data:T) -> StackItem {
+    pub fn slice<T: AsRef<[u8]>>(data: T) -> StackItem {
         let data = data.as_ref().to_vec();
         let slice = SliceData::new(data);
         StackItem::Slice(slice)
@@ -62,13 +69,10 @@ pub mod create {
 fn logger_init() {
     // do not init twice
     if log::log_enabled!(log::Level::Info) {
-        return
+        return;
     }
-    let log_level = if cfg!(feature = "verbose") {
-        log::LevelFilter::Trace
-    } else {
-        log::LevelFilter::Info
-    };
+    let log_level =
+        if cfg!(feature = "verbose") { log::LevelFilter::Trace } else { log::LevelFilter::Info };
     let encoder_boxed = Box::new(log4rs::encode::pattern::PatternEncoder::new("{m}"));
     let config = if cfg!(feature = "log_file") {
         let file = log4rs::append::file::FileAppender::builder()
@@ -80,9 +84,8 @@ fn logger_init() {
             .build(log4rs::config::Root::builder().appender("file").build(log_level))
             .unwrap()
     } else {
-        let console = log4rs::append::console::ConsoleAppender::builder()
-            .encoder(encoder_boxed)
-            .build();
+        let console =
+            log4rs::append::console::ConsoleAppender::builder().encoder(encoder_boxed).build();
         log4rs::config::Config::builder()
             .appender(log4rs::config::Appender::builder().build("console", Box::new(console)))
             .build(log4rs::config::Root::builder().appender("console").build(log_level))
@@ -106,13 +109,7 @@ pub struct TestCaseInputs {
 }
 
 impl TestCaseInputs {
-
-    pub fn new(
-        code: String, 
-        stack: Stack, 
-        refs: Vec<Cell>, 
-        capabilities: u64
-    ) -> TestCaseInputs {
+    pub fn new(code: String, stack: Stack, refs: Vec<Cell>, capabilities: u64) -> TestCaseInputs {
         logger_init();
         TestCaseInputs {
             code,
@@ -179,8 +176,7 @@ impl TestCaseInputs {
     }
 
     pub fn with_ctrl(mut self, ctrl: usize, mut item: StackItem) -> TestCaseInputs {
-        self.ctrls.put(ctrl, &mut item)
-            .expect("test arguments must be valid");
+        self.ctrls.put(ctrl, &mut item).expect("test arguments must be valid");
         self
     }
 
@@ -198,7 +194,10 @@ impl TestCaseInputs {
         self
     }
 
-    pub fn with_behavior_modifiers(mut self, behavior_modifiers: BehaviorModifiers) -> TestCaseInputs {
+    pub fn with_behavior_modifiers(
+        mut self,
+        behavior_modifiers: BehaviorModifiers,
+    ) -> TestCaseInputs {
         self.skip_fift_check = true;
         self.behavior_modifiers = Some(behavior_modifiers);
         self
@@ -208,7 +207,11 @@ impl TestCaseInputs {
         self.expect_bytecode_extended(bytecode, None)
     }
 
-    pub fn expect_bytecode_extended(self, bytecode: Vec<u8>, message: Option <&str>) -> TestCaseInputs {
+    pub fn expect_bytecode_extended(
+        self,
+        bytecode: Vec<u8>,
+        message: Option<&str>,
+    ) -> TestCaseInputs {
         let inputcode = SliceData::new(bytecode);
         let compilation_result = compile_code(&self.code);
         match compilation_result {
@@ -229,19 +232,19 @@ impl TestCaseInputs {
                     match message {
                         Some(msg) => panic!(
                             "{}Bytecode did not match:\n Expected: <{:x?}>\n But was: <{:x?}>",
-                            msg, inputcode, selfcode),
+                            msg, inputcode, selfcode
+                        ),
                         None => panic!(
                             "Bytecode did not match:\n Expected: <{:x?}>\n But was: <{:x?}>",
-                            inputcode, selfcode),
+                            inputcode, selfcode
+                        ),
                     }
                 };
-            },
-            Err(e) => {
-                match message {
-                    Some(msg) => panic!("{}{}", msg, e),
-                    None => panic!("{}", e),
-                }
             }
+            Err(e) => match message {
+                Some(msg) => panic!("{}{}", msg, e),
+                None => panic!("{}", e),
+            },
         }
         self
     }
@@ -250,7 +253,11 @@ impl TestCaseInputs {
         self.expect_compilation_failure_extended(error, None)
     }
 
-    pub fn expect_compilation_failure_extended(self, error: CompileError, message: Option <&str>) -> TestCaseInputs {
+    pub fn expect_compilation_failure_extended(
+        self,
+        error: CompileError,
+        message: Option<&str>,
+    ) -> TestCaseInputs {
         let compilation_result = compile_code(&self.code);
         match message {
             None => {
@@ -260,15 +267,16 @@ impl TestCaseInputs {
                     "Expected (left): <{}>, but was (right): <{}>.",
                     error, actual
                 )
-            },
+            }
             Some(msg) => {
-                let actual = compilation_result.expect_err(&format!("{}. Error expected {}", msg, error));
+                let actual =
+                    compilation_result.expect_err(&format!("{}. Error expected {}", msg, error));
                 assert_eq!(
                     error, actual,
                     "{}\nExpected (left): <{}>, but was (right): <{}>.",
                     msg, error, actual
                 )
-            },
+            }
         }
         self
     }
@@ -293,8 +301,14 @@ impl TestCase {
             None => {
                 let err = self.compilation_result.as_ref().unwrap_err();
                 match message {
-                    Some(msg) => panic!("{}No executor was created, because of bytecode compilation error {:?}", msg, err),
-                    None => panic!("No executor was created, because of bytecode compilation error {:?}", err)
+                    Some(msg) => panic!(
+                        "{}No executor was created, because of bytecode compilation error {:?}",
+                        msg, err
+                    ),
+                    None => panic!(
+                        "No executor was created, because of bytecode compilation error {:?}",
+                        err
+                    ),
                 }
             }
         }
@@ -307,7 +321,7 @@ fn compare_with_fift(
     code: String,
     executor: &Engine,
     execution_result: &Result<i32>,
-    gas_remaining: i32
+    gas_remaining: i32,
 ) {
     #[cfg(windows)]
     let lib_name = "vm_run_shared.dll";
@@ -329,11 +343,10 @@ fn compare_with_fift(
         let fift_result;
         unsafe {
             let run_boc: libloading::Symbol<
-                unsafe extern "C" fn(*const u8, i32, i32) -> *mut c_char
+                unsafe extern "C" fn(*const u8, i32, i32) -> *mut c_char,
             > = lib.get(b"run_vm_boc_with_gas_and_commit").unwrap();
-            let free_mem: libloading::Symbol<
-                unsafe extern "C" fn(*const c_char) -> *mut c_char
-            > = lib.get(b"free_mem").unwrap();
+            let free_mem: libloading::Symbol<unsafe extern "C" fn(*const c_char) -> *mut c_char> =
+                lib.get(b"free_mem").unwrap();
             let res = run_boc(data.as_ptr(), size as i32, gas_remaining);
             fift_result = CStr::from_ptr(res).to_string_lossy().into_owned().trim().to_string();
             free_mem(res);
@@ -342,17 +355,39 @@ fn compare_with_fift(
             Ok(ref result) => {
                 let stack = executor.get_stack_result_fift();
                 match stack.is_empty() {
-                    true => format!("{} {}{}", result, executor.gas_used(), executor.get_committed_state_fift()),
-                    false => format!("{} {} {}{}", stack, result, executor.gas_used(), executor.get_committed_state_fift())
+                    true => format!(
+                        "{} {}{}",
+                        result,
+                        executor.gas_used(),
+                        executor.get_committed_state_fift()
+                    ),
+                    false => format!(
+                        "{} {} {}{}",
+                        stack,
+                        result,
+                        executor.gas_used(),
+                        executor.get_committed_state_fift()
+                    ),
                 }
             }
             Err(ref err) => {
                 if let Some(ExceptionCode::OutOfGas) = tvm_exception_code(err) {
                     let gas = executor.gas_used();
-                    format!("{} {} {}{}", gas, !(ExceptionCode::OutOfGas as i32), gas, executor.get_committed_state_fift())
+                    format!(
+                        "{} {} {}{}",
+                        gas,
+                        !(ExceptionCode::OutOfGas as i32),
+                        gas,
+                        executor.get_committed_state_fift()
+                    )
                 } else {
                     let err = tvm_exception_or_custom_code(err);
-                    format!("0 {} {}{}", err, executor.gas_used(), executor.get_committed_state_fift())
+                    format!(
+                        "0 {} {}{}",
+                        err,
+                        executor.gas_used(),
+                        executor.get_committed_state_fift()
+                    )
                 }
             }
         };
@@ -372,7 +407,9 @@ impl TestCase {
             Ok(bytecode) => {
                 let code = if args.refs.is_empty() {
                     bytecode.clone()
-                } else if bytecode.remaining_references() + args.refs.len() <= BuilderData::references_capacity() {
+                } else if bytecode.remaining_references() + args.refs.len()
+                    <= BuilderData::references_capacity()
+                {
                     let mut builder = bytecode.as_builder();
                     args.refs.iter().rev().for_each(|reference| {
                         builder.checked_prepend_reference(reference.clone()).unwrap();
@@ -389,7 +426,7 @@ impl TestCase {
                         Some(args.ctrls.clone()),
                         Some(args.stack.clone()),
                         args.gas.clone(),
-                        vec![args.library.clone()]
+                        vec![args.library.clone()],
                     );
                 executor.set_block_version(args.block_version);
                 if let Some(modifiers) = args.behavior_modifiers {
@@ -399,9 +436,20 @@ impl TestCase {
                     executor.set_index_provider(index_provider)
                 }
                 let execution_result = executor.execute();
-                if cfg!(feature = "fift_check") && args.stack.is_empty() && args.ctrls.is_empty() && !args.skip_fift_check {
+                if cfg!(feature = "fift_check")
+                    && args.stack.is_empty()
+                    && args.ctrls.is_empty()
+                    && !args.skip_fift_check
+                {
                     let gas = args.gas.map(|gas| gas.get_gas_remaining() as i32).unwrap_or(1000000);
-                    compare_with_fift(code, args.library, args.code, &executor, &execution_result, gas)
+                    compare_with_fift(
+                        code,
+                        args.library,
+                        args.code,
+                        &executor,
+                        &execution_result,
+                        gas,
+                    )
                 }
                 TestCase {
                     executor: Some(executor),
@@ -409,53 +457,47 @@ impl TestCase {
                     execution_result,
                 }
             }
-            Err(e) => TestCase {
-                executor: None,
-                compilation_result: Err(e),
-                execution_result: Ok(-1),
+            Err(e) => {
+                TestCase { executor: None, compilation_result: Err(e), execution_result: Ok(-1) }
             }
         }
     }
 
     // TODO: call this from fn new
     pub fn with_bytecode(
-        code: Bytecode, 
-        ctrls: Option<SaveList>, 
-        stack: Option<Stack>, 
-        library: HashmapE
+        code: Bytecode,
+        ctrls: Option<SaveList>,
+        stack: Option<Stack>,
+        library: HashmapE,
     ) -> TestCase {
         logger_init();
 
         let mut executor = Engine::with_capabilities(0).setup_with_libraries(
-            code.clone(), 
+            code.clone(),
             ctrls.clone(),
             stack.clone(),
-            None, 
-            vec![library.clone()]
+            None,
+            vec![library.clone()],
         );
         let execution_result = executor.execute();
         if cfg!(feature = "fift_check") && stack.is_none() && ctrls.is_none() {
             compare_with_fift(
-                code.clone(), 
-                library, 
-                format!("{:x}", code), 
-                &executor, 
-                &execution_result,  
-                1000000
+                code.clone(),
+                library,
+                format!("{:x}", code),
+                &executor,
+                &execution_result,
+                1000000,
             )
         }
         log::trace!("bytecode: {}", code);
-        TestCase {
-            executor: Some(executor),
-            compilation_result: Ok(code),
-            execution_result,
-        }
+        TestCase { executor: Some(executor), compilation_result: Ok(code), execution_result }
     }
 
     pub fn get_root(&self) -> Option<Cell> {
         if let Some(ref eng) = self.executor {
             if let StackItem::Cell(c) = eng.get_committed_state().get_root() {
-                return Some(c.clone())
+                return Some(c.clone());
             }
         }
         None
@@ -464,7 +506,7 @@ impl TestCase {
     pub fn get_actions(&self) -> Option<Cell> {
         if let Some(ref eng) = self.executor {
             if let StackItem::Cell(c) = eng.get_committed_state().get_actions() {
-                return Some(c.clone())
+                return Some(c.clone());
             }
         }
         None
@@ -479,16 +521,32 @@ pub trait Expects {
     fn expect_item(self, stack_item: StackItem) -> TestCase;
     fn expect_item_extended(self, stack_item: StackItem, message: Option<&str>) -> TestCase;
     fn expect_success(self) -> TestCase;
-    fn expect_success_extended(self, message: Option <&str>) -> TestCase;
+    fn expect_success_extended(self, message: Option<&str>) -> TestCase;
     fn expect_ctrl(self, ctrl: usize, item: &StackItem) -> TestCase;
-    fn expect_ctrl_extended(self, ctrl: usize, item: &StackItem, message: Option<&str>) -> TestCase;
+    fn expect_ctrl_extended(self, ctrl: usize, item: &StackItem, message: Option<&str>)
+    -> TestCase;
     fn expect_failure(self, exception_code: ExceptionCode) -> TestCase;
     fn expect_custom_failure(self, custom_code: i32) -> TestCase;
-    fn expect_custom_failure_extended<F : Fn(&Exception) -> bool>(self, op: F, exc_name: &str, message: Option <&str>) -> TestCase;
-    fn expect_failure_extended(self, exception_code: ExceptionCode, message: Option <&str>) -> TestCase;
+    fn expect_custom_failure_extended<F: Fn(&Exception) -> bool>(
+        self,
+        op: F,
+        exc_name: &str,
+        message: Option<&str>,
+    ) -> TestCase;
+    fn expect_failure_extended(
+        self,
+        exception_code: ExceptionCode,
+        message: Option<&str>,
+    ) -> TestCase;
     fn expect_root_data(self, cell: Cell) -> TestCase;
     fn expect_same_results(self, other: Self);
-    fn expect_gas(self, max_gas_limit: i64, gas_limit: i64, gas_credit: i64, gas_remaining: i64) -> TestCase;
+    fn expect_gas(
+        self,
+        max_gas_limit: i64,
+        gas_limit: i64,
+        gas_credit: i64,
+        gas_remaining: i64,
+    ) -> TestCase;
     fn expect_steps(self, steps: u32) -> TestCase;
     fn stack(self) -> Stack;
 }
@@ -519,7 +577,7 @@ impl<T: Into<TestCase>> Expects for T {
             // TODO this is not quite right: execution may fail but still produce a stack
             Err(ref e) => {
                 log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
-                //print_failed_detail_extended(&test_case, e, message);
+                // print_failed_detail_extended(&test_case, e, message);
                 panic!("Execution error: {:?}", e)
             }
         }
@@ -548,21 +606,21 @@ impl<T: Into<TestCase>> Expects for T {
     }
 
     fn expect_success(self) -> TestCase {
-       self.expect_success_extended(None)
+        self.expect_success_extended(None)
     }
 
-    fn expect_success_extended(self, message: Option <&str>) -> TestCase {
+    fn expect_success_extended(self, message: Option<&str>) -> TestCase {
         let test_case: TestCase = self.into();
         let executor = test_case.executor(message);
         print_stack(&test_case, executor);
         if let Err(ref e) = test_case.execution_result {
             match message {
                 None => {
-                    //print_failed_detail_extended(&test_case, e, message);
+                    // print_failed_detail_extended(&test_case, e, message);
                     panic!("Execution error: {:?}", e);
                 }
                 Some(msg) => {
-                    //print_failed_detail_extended(&test_case, e, message);
+                    // print_failed_detail_extended(&test_case, e, message);
                     panic!("{}\nExecution error: {:?}", msg, e);
                 }
             }
@@ -574,13 +632,18 @@ impl<T: Into<TestCase>> Expects for T {
         self.expect_ctrl_extended(ctrl, item, None)
     }
 
-    fn expect_ctrl_extended(self, ctrl: usize, item: &StackItem, message: Option<&str>) -> TestCase {
+    fn expect_ctrl_extended(
+        self,
+        ctrl: usize,
+        item: &StackItem,
+        message: Option<&str>,
+    ) -> TestCase {
         let test_case: TestCase = self.into();
         let executor = test_case.executor(message);
         match test_case.execution_result {
             Ok(_) => executor.assert_ctrl(ctrl, item),
             Err(ref e) => {
-                //print_failed_detail_extended(&test_case, e, message);
+                // print_failed_detail_extended(&test_case, e, message);
                 panic!("Execution error: {}", e);
             }
         };
@@ -591,11 +654,11 @@ impl<T: Into<TestCase>> Expects for T {
         self.expect_failure_extended(exception_code, None)
     }
 
-    fn expect_custom_failure_extended<F : Fn(&Exception) -> bool>(
-        self, 
-        op: F, 
-        exc_name: &str, 
-        message: Option <&str>
+    fn expect_custom_failure_extended<F: Fn(&Exception) -> bool>(
+        self,
+        op: F,
+        exc_name: &str,
+        message: Option<&str>,
     ) -> TestCase {
         let test_case: TestCase = self.into();
         let executor = test_case.executor(message);
@@ -608,14 +671,11 @@ impl<T: Into<TestCase>> Expects for T {
                 );
                 print_stack(&test_case, executor);
                 match message {
-                    None => panic!(
-                        "Expected failure: {}, however execution succeeded.", 
-                        exc_name
-                    ),
+                    None => panic!("Expected failure: {}, however execution succeeded.", exc_name),
                     Some(msg) => panic!(
-                        "{}.\nExpected failure: {}, however execution succeeded.", 
+                        "{}.\nExpected failure: {}, however execution succeeded.",
                         msg, exc_name
-                    )
+                    ),
                 }
             }
             Err(ref e) => {
@@ -623,13 +683,13 @@ impl<T: Into<TestCase>> Expects for T {
                     if op(e) {
                         match message {
                             Some(msg) => panic!(
-                                "{} - {}\nNon expected exception: {}, expected: {}", 
+                                "{} - {}\nNon expected exception: {}, expected: {}",
                                 msg2, msg, e, exc_name
                             ),
                             None => panic!(
-                                "{}\nNon expected exception: {}, expected: {}", 
+                                "{}\nNon expected exception: {}, expected: {}",
                                 msg2, e, exc_name
-                            )
+                            ),
                         }
                     }
                 } else {
@@ -655,22 +715,22 @@ impl<T: Into<TestCase>> Expects for T {
 
     fn expect_custom_failure(self, custom_code: i32) -> TestCase {
         self.expect_custom_failure_extended(
-            |e| e.custom_code() != Some(custom_code), 
-            "custom exception", 
-            None
+            |e| e.custom_code() != Some(custom_code),
+            "custom exception",
+            None,
         )
     }
 
     fn expect_failure_extended(
-        self, 
-        exception_code: ExceptionCode, 
-        message: Option <&str>
+        self,
+        exception_code: ExceptionCode,
+        message: Option<&str>,
     ) -> TestCase {
-       self.expect_custom_failure_extended(
-           |e| e.exception_code() != Some(exception_code),
-           &format!("{}", exception_code),
-           message
-       )
+        self.expect_custom_failure_extended(
+            |e| e.exception_code() != Some(exception_code),
+            &format!("{}", exception_code),
+            message,
+        )
     }
 
     fn expect_root_data(self, cell: Cell) -> TestCase {
@@ -689,7 +749,7 @@ impl<T: Into<TestCase>> Expects for T {
         max_gas_limit: i64,
         gas_limit: i64,
         gas_credit: i64,
-        gas_remaining: i64
+        gas_remaining: i64,
     ) -> TestCase {
         let test_case: TestCase = self.into();
         let gas = test_case.executor(None).get_gas();
@@ -720,31 +780,31 @@ fn print_stack(test_case: &TestCase, executor: &Engine) {
     }
 }
 
-/*#[allow(dead_code)]
-fn print_failed_detail(case: &TestCase, exception: &Error) {
-    print_failed_detail_extended(case, exception, None)
-}
-
-fn print_failed_detail_extended(case: &TestCase, exception: &Error, message: Option <&str>) {
-    log::info!(target: "tvm", "exception: {:?}\n", exception);
-    let msg2 = if let Some(TvmError::TvmExceptionFull(_e, msg2)) = exception.downcast_ref() {
-        msg2.clone()
-    } else {
-        String::new()
-    };
-    match message {
-        Some(ref msg) => log::info!(
-            target: "tvm",
-            "{} failed with {} {}.\nBytecode: {:x?}\n",
-            msg, exception, msg2, case.compilation_result
-        ),
-        None => log::info!(
-            target: "tvm",
-            "failed with {} {}.\nBytecode: {:x?}\n",
-            exception, msg2, case.compilation_result
-        )
-    }
-}*/
+// #[allow(dead_code)]
+// fn print_failed_detail(case: &TestCase, exception: &Error) {
+// print_failed_detail_extended(case, exception, None)
+// }
+//
+// fn print_failed_detail_extended(case: &TestCase, exception: &Error, message:
+// Option <&str>) { log::info!(target: "tvm", "exception: {:?}\n", exception);
+// let msg2 = if let Some(TvmError::TvmExceptionFull(_e, msg2)) =
+// exception.downcast_ref() { msg2.clone()
+// } else {
+// String::new()
+// };
+// match message {
+// Some(ref msg) => log::info!(
+// target: "tvm",
+// "{} failed with {} {}.\nBytecode: {:x?}\n",
+// msg, exception, msg2, case.compilation_result
+// ),
+// None => log::info!(
+// target: "tvm",
+// "failed with {} {}.\nBytecode: {:x?}\n",
+// exception, msg2, case.compilation_result
+// )
+// }
+// }
 
 pub fn test_case_with_refs(code: &str, references: Vec<Cell>) -> TestCaseInputs {
     TestCaseInputs::new(code.to_string(), Stack::new(), references, 0)
@@ -765,8 +825,7 @@ pub fn test_case_with_bytecode(code: Bytecode) -> TestCase {
 #[allow(dead_code)]
 pub fn test_single_argument_fail(cmd: &str, argument: isize) {
     let code = format!("{} {}", cmd, argument);
-    test_case(code)
-    .expect_compilation_failure(CompileError::out_of_range(1, 1, cmd, "arg 0"));
+    test_case(code).expect_compilation_failure(CompileError::out_of_range(1, 1, cmd, "arg 0"));
 }
 
 #[allow(dead_code)]
@@ -779,12 +838,10 @@ pub fn expect_exception_with_capability(
     code: &str,
     exc_code: ExceptionCode,
     capability: GlobalCapabilities,
-    check_fift: bool
+    check_fift: bool,
 ) {
-    test_case(
-        code,
-    )
-    .with_capability(capability)
-    .skip_fift_check(!check_fift)
-    .expect_failure(exc_code);
+    test_case(code)
+        .with_capability(capability)
+        .skip_fift_check(!check_fift)
+        .expect_failure(exc_code);
 }

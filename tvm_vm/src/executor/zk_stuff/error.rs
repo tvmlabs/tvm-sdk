@@ -1,4 +1,3 @@
-
 use thiserror::Error;
 
 pub type ZkCryptoResult<T> = Result<T, ZkCryptoError>;
@@ -50,5 +49,3 @@ pub enum ZkCryptoError {
     #[error("General cryptographic error")]
     GeneralOpaqueError,
 }
-
-

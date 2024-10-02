@@ -1,42 +1,47 @@
+use std::cmp::Ordering::Equal;
+use std::cmp::Ordering::Greater;
+use std::cmp::Ordering::Less;
+use std::str::FromStr;
 
-use crate::executor::zk_stuff::{error::ZkCryptoResult, jwt_utils::JWTHeader};
-
+pub use ark_bn254::Bn254;
+pub use ark_bn254::Fr as Bn254Fr;
+pub use ark_ff::ToConstraintField;
+use ark_ff::Zero;
+use ark_groth16::Proof;
+pub use ark_serialize::CanonicalDeserialize;
+pub use ark_serialize::CanonicalSerialize;
+use itertools::Itertools;
+use num_bigint::BigUint;
+use schemars::JsonSchema;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 use super::utils::split_to_two_frs;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
-use crate::executor::zk_stuff::curve_utils::{
-    g1_affine_from_str_projective, g2_affine_from_str_projective, Bn254FrElement, CircomG1,
-    CircomG2,
-};
-pub use ark_bn254::{Bn254, Fr as Bn254Fr};
-pub use ark_ff::ToConstraintField;
-use ark_ff::Zero;
-use ark_groth16::Proof;
-pub use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use crate::executor::zk_stuff::curve_utils::g1_affine_from_str_projective;
+use crate::executor::zk_stuff::curve_utils::g2_affine_from_str_projective;
+use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
+use crate::executor::zk_stuff::curve_utils::CircomG1;
+use crate::executor::zk_stuff::curve_utils::CircomG2;
 use crate::executor::zk_stuff::error::ZkCryptoError;
-use itertools::Itertools;
-use num_bigint::BigUint;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use std::cmp::Ordering::{Equal, Greater, Less};
-use std::str::FromStr;
-use ark_ec::AffineRepr;
-
+use crate::executor::zk_stuff::error::ZkCryptoResult;
+use crate::executor::zk_stuff::jwt_utils::JWTHeader;
 
 //#[cfg(test)]
 //#[path = "unit_tests/zk_login_tests.rs"]
-//mod zk_login_tests;
+// mod zk_login_tests;
 
-#[cfg(feature = "e2e")]
-#[cfg(test)]
-#[path = "unit_tests/zk_login_e2e_tests.rs"]
-mod zk_login_e2e_tests;
+//#[cfg(feature = "e2e")]
+//#[cfg(test)]
+//#[path = "unit_tests/zk_login_e2e_tests.rs"]
+// mod zk_login_e2e_tests;
 
 pub const MAX_HEADER_LEN: u8 = 248;
 pub const PACK_WIDTH: u8 = 248;
 pub const ISS: &str = "iss";
-pub const BASE64_URL_CHARSET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+pub const BASE64_URL_CHARSET: &str =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 pub const MAX_EXT_ISS_LEN: u8 = 165;
 pub const MAX_ISS_LEN_B64: u8 = 4 * (1 + MAX_EXT_ISS_LEN / 3);
 
@@ -68,10 +73,7 @@ pub struct ProviderConfig {
 impl ProviderConfig {
     /// Create a new provider config.
     pub fn new(iss: &str, jwk_endpoint: &str) -> Self {
-        Self {
-            iss: iss.to_string(),
-            jwk_endpoint: jwk_endpoint.to_string(),
-        }
+        Self { iss: iss.to_string(), jwk_endpoint: jwk_endpoint.to_string() }
     }
 }
 
@@ -90,7 +92,8 @@ pub enum OIDCProvider {
     Apple,
     /// See https://slack.com/.well-known/openid-configuration
     Slack,
-    /// This is a test issuer maintained by Mysten that will return a JWT non-interactively.
+    /// This is a test issuer maintained by Mysten that will return a JWT
+    /// non-interactively.
     TestIssuer,
 }
 
@@ -208,47 +211,44 @@ impl JWK {
         if reader.alg != "RS256" || reader.kty != "RSA" || trimmed_e != "AQAB" {
             return Err(ZkCryptoError::InvalidInput);
         }
-        Ok(Self {
-            kty: reader.kty,
-            e: trimmed_e,
-            n: trim(reader.n),
-            alg: reader.alg,
-        })
+        Ok(Self { kty: reader.kty, e: trimmed_e, n: trim(reader.n), alg: reader.alg })
     }
 }
 
-/// Trim trailing '=' so that it is considered a valid base64 url encoding string by base64ct library.
+/// Trim trailing '=' so that it is considered a valid base64 url encoding
+/// string by base64ct library.
 fn trim(str: String) -> String {
     str.trim_end_matches('=').to_owned()
 }
 
-/*/// Fetch JWKs from the given provider and return a list of JwkId -> JWK.
-pub async fn fetch_jwks(
-    provider: &OIDCProvider,
-    client: &Client,
-) -> Result<Vec<(JwkId, JWK)>, ZkCryptoError> {
-    let response = client
-        .get(provider.get_config().jwk_endpoint)
-        .send()
-        .await
-        .map_err(|e| {
-            ZkCryptoError::GeneralError(format!(
-                "Failed to get JWK {:?} {:?}",
-                e.to_string(),
-                provider
-            ))
-        })?;
-    let bytes = response.bytes().await.map_err(|e| {
-        ZkCryptoError::GeneralError(format!(
-            "Failed to get bytes {:?} {:?}",
-            e.to_string(),
-            provider
-        ))
-    })?;
-    parse_jwks(&bytes, provider)
-}*/
+// /// Fetch JWKs from the given provider and return a list of JwkId -> JWK.
+// pub async fn fetch_jwks(
+// provider: &OIDCProvider,
+// client: &Client,
+// ) -> Result<Vec<(JwkId, JWK)>, ZkCryptoError> {
+// let response = client
+// .get(provider.get_config().jwk_endpoint)
+// .send()
+// .await
+// .map_err(|e| {
+// ZkCryptoError::GeneralError(format!(
+// "Failed to get JWK {:?} {:?}",
+// e.to_string(),
+// provider
+// ))
+// })?;
+// let bytes = response.bytes().await.map_err(|e| {
+// ZkCryptoError::GeneralError(format!(
+// "Failed to get bytes {:?} {:?}",
+// e.to_string(),
+// provider
+// ))
+// })?;
+// parse_jwks(&bytes, provider)
+// }
 
-/// Parse the JWK bytes received from the given provider and return a list of JwkId -> JWK.
+/// Parse the JWK bytes received from the given provider and return a list of
+/// JwkId -> JWK.
 pub fn parse_jwks(
     json_bytes: &[u8],
     provider: &OIDCProvider,
@@ -270,9 +270,7 @@ pub fn parse_jwks(
             return Ok(ret);
         }
     }
-    Err(ZkCryptoError::GeneralError(
-        "Invalid JWK response".to_string(),
-    ))
+    Err(ZkCryptoError::GeneralError("Invalid JWK response".to_string()))
 }
 
 /// A claim consists of value and index_mod_4.
@@ -292,7 +290,8 @@ pub struct JWTDetails {
 }
 
 impl JWTDetails {
-    /// Read in the Claim and header string. Parse and validate kid, header, iss as JWT details.
+    /// Read in the Claim and header string. Parse and validate kid, header, iss
+    /// as JWT details.
     pub fn new(header_base64: &str, claim: &Claim) -> Result<Self, ZkCryptoError> {
         let header = JWTHeader::new(header_base64)?;
         let ext_claim = decode_base64_url(&claim.value, &claim.index_mod_4)?;
@@ -304,7 +303,8 @@ impl JWTDetails {
     }
 }
 
-/// All inputs required for the zk login proof verification and other public inputs.
+/// All inputs required for the zk login proof verification and other public
+/// inputs.
 #[derive(Debug, Clone, JsonSchema, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ZkLoginInputs {
@@ -328,7 +328,8 @@ pub struct ZkLoginInputsReader {
 }
 
 impl ZkLoginInputs {
-    /// Parse the proving service response and pass in the address seed. Initialize the jwt details struct.
+    /// Parse the proving service response and pass in the address seed.
+    /// Initialize the jwt details struct.
     pub fn from_json(value: &str, address_seed: &str) -> Result<Self, ZkCryptoError> {
         let reader: ZkLoginInputsReader =
             serde_json::from_str(value).map_err(|_| ZkCryptoError::InvalidInput)?;
@@ -377,7 +378,8 @@ impl ZkLoginInputs {
         &self.address_seed
     }
 
-    /// Calculate the poseidon hash from selected fields from inputs, along with the ephemeral pubkey.
+    /// Calculate the poseidon hash from selected fields from inputs, along with
+    /// the ephemeral pubkey.
     pub fn calculate_all_inputs_hash(
         &self,
         eph_pk_bytes: &[u8],
@@ -435,7 +437,6 @@ impl ZkLoginProof {
 
         println!("");
 
-
         let bb = g2_affine_from_str_projective(&self.b)?;
         println!("&self.b bb {:?}", bb);
         println!("&self.b bb.x {:?}", bb.x);
@@ -445,7 +446,6 @@ impl ZkLoginProof {
         let bby_ = -bby;
 
         println!("-bb.y {:?}", bby_);
-
 
         // let aa = g1_affine_from_str_projective(&self.a)?;
         // println!("&self.a aa {:?}", aa);
@@ -469,16 +469,15 @@ impl ZkLoginProof {
     }
 }
 
-/// Parse the extended claim json value to its claim value, using the expected claim key.
+/// Parse the extended claim json value to its claim value, using the expected
+/// claim key.
 fn verify_extended_claim(
     extended_claim: &str,
     expected_key: &str,
 ) -> Result<String, ZkCryptoError> {
     // Last character of each extracted_claim must be '}' or ','
     if !(extended_claim.ends_with('}') || extended_claim.ends_with(',')) {
-        return Err(ZkCryptoError::GeneralError(
-            "Invalid extended claim".to_string(),
-        ));
+        return Err(ZkCryptoError::GeneralError("Invalid extended claim".to_string()));
     }
 
     let json_str = format!("{{{}}}", &extended_claim[..extended_claim.len() - 1]);
@@ -493,12 +492,11 @@ fn verify_extended_claim(
     Ok(value.to_string())
 }
 
-/// Parse the base64 string, add paddings based on offset, and convert to a bytearray.
+/// Parse the base64 string, add paddings based on offset, and convert to a
+/// bytearray.
 fn decode_base64_url(s: &str, i: &u8) -> Result<String, ZkCryptoError> {
     if s.len() < 2 {
-        return Err(ZkCryptoError::GeneralError(
-            "Base64 string smaller than 2".to_string(),
-        ));
+        return Err(ZkCryptoError::GeneralError("Base64 string smaller than 2".to_string()));
     }
     let mut bits = base64_to_bitarray(s)?;
     match i {
@@ -510,9 +508,7 @@ fn decode_base64_url(s: &str, i: &u8) -> Result<String, ZkCryptoError> {
             bits.drain(..4);
         }
         _ => {
-            return Err(ZkCryptoError::GeneralError(
-                "Invalid first_char_offset".to_string(),
-            ));
+            return Err(ZkCryptoError::GeneralError("Invalid first_char_offset".to_string()));
         }
     }
 
@@ -526,16 +522,12 @@ fn decode_base64_url(s: &str, i: &u8) -> Result<String, ZkCryptoError> {
             bits.drain(bits.len() - 4..);
         }
         _ => {
-            return Err(ZkCryptoError::GeneralError(
-                "Invalid last_char_offset".to_string(),
-            ));
+            return Err(ZkCryptoError::GeneralError("Invalid last_char_offset".to_string()));
         }
     }
 
     if bits.len() % 8 != 0 {
-        return Err(ZkCryptoError::GeneralError(
-            "Invalid bits length".to_string(),
-        ));
+        return Err(ZkCryptoError::GeneralError("Invalid bits length".to_string()));
     }
 
     Ok(std::str::from_utf8(&bitarray_to_bytearray(&bits)?)
@@ -543,8 +535,10 @@ fn decode_base64_url(s: &str, i: &u8) -> Result<String, ZkCryptoError> {
         .to_owned())
 }
 
-/// Map a base64 string to a bit array by taking each char's index and covert it to binary form with one bit per u8
-/// element in the output. Returns [ZkCryptoError::InvalidInput] if one of the characters is not in the base64 charset.
+/// Map a base64 string to a bit array by taking each char's index and covert it
+/// to binary form with one bit per u8 element in the output. Returns
+/// [ZkCryptoError::InvalidInput] if one of the characters is not in the base64
+/// charset.
 fn base64_to_bitarray(input: &str) -> ZkCryptoResult<Vec<u8>> {
     input
         .chars()
@@ -559,8 +553,8 @@ fn base64_to_bitarray(input: &str) -> ZkCryptoResult<Vec<u8>> {
         .collect()
 }
 
-/// Convert a bitarray (each bit is represented by a u8) to a byte array by taking each 8 bits as a
-/// byte in big-endian format.
+/// Convert a bitarray (each bit is represented by a u8) to a byte array by
+/// taking each 8 bits as a byte in big-endian format.
 fn bitarray_to_bytearray(bits: &[u8]) -> ZkCryptoResult<Vec<u8>> {
     if bits.len() % 8 != 0 {
         return Err(ZkCryptoError::InvalidInput);
@@ -584,10 +578,7 @@ pub fn hash_ascii_str_to_field(str: &str, max_size: u8) -> Result<Bn254Fr, ZkCry
 }
 
 fn str_to_padded_char_codes(str: &str, max_len: u8) -> Result<Vec<BigUint>, ZkCryptoError> {
-    let arr: Vec<BigUint> = str
-        .chars()
-        .map(|c| BigUint::from_slice(&([c as u32])))
-        .collect();
+    let arr: Vec<BigUint> = str.chars().map(|c| BigUint::from_slice(&([c as u32]))).collect();
     pad_with_zeroes(arr, max_len)
 }
 
@@ -600,10 +591,10 @@ fn pad_with_zeroes(in_arr: Vec<BigUint>, out_count: u8) -> Result<Vec<BigUint>, 
     Ok(padded)
 }
 
-/// Maps a stream of bigints to a single field element. First we convert the base from
-/// inWidth to packWidth. Then we compute the poseidon hash of the "packed" input.
-/// input is the input vector containing equal-width big ints. inWidth is the width of
-/// each input element.
+/// Maps a stream of bigints to a single field element. First we convert the
+/// base from inWidth to packWidth. Then we compute the poseidon hash of the
+/// "packed" input. input is the input vector containing equal-width big ints.
+/// inWidth is the width of each input element.
 pub fn hash_to_field(
     input: &[BigUint],
     in_width: u16,
@@ -654,4 +645,3 @@ fn big_int_array_to_bits(integers: &[BigUint], intended_size: usize) -> ZkCrypto
         .flatten_ok()
         .collect()
 }
-

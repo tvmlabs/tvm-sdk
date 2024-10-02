@@ -4,29 +4,41 @@
 use std::borrow::Borrow;
 use std::ops::Neg;
 
-use ark_bn254::{Bn254, Fq12, Fr, G1Affine, G2Affine};
+use ark_bn254::Bn254;
+use ark_bn254::Fq12;
+use ark_bn254::Fr;
+use ark_bn254::G1Affine;
+use ark_bn254::G2Affine;
 use ark_ec::bn::G2Prepared;
 use ark_ec::pairing::Pairing;
-use ark_groth16::{Groth16, PreparedVerifyingKey as ArkPreparedVerifyingKey};
+use ark_groth16::Groth16;
+use ark_groth16::PreparedVerifyingKey as ArkPreparedVerifyingKey;
+use ark_serialize::CanonicalDeserialize;
+use ark_serialize::CanonicalSerialize;
 use ark_snark::SNARK;
 
 use crate::executor::zk_stuff::bn254::api::SCALAR_SIZE;
-use crate::executor::zk_stuff::bn254::{FieldElement, Proof, VerifyingKey};
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use crate::executor::zk_stuff::error::{ZkCryptoError, ZkCryptoResult};
+use crate::executor::zk_stuff::bn254::FieldElement;
+use crate::executor::zk_stuff::bn254::Proof;
+use crate::executor::zk_stuff::bn254::VerifyingKey;
+use crate::executor::zk_stuff::error::ZkCryptoError;
+use crate::executor::zk_stuff::error::ZkCryptoResult;
 
 //#[cfg(test)]
 //#[path = "unit_tests/verifier_tests.rs"]
-//mod verifier_tests;
+// mod verifier_tests;
 
-/// This is a helper function to store a pre-processed version of the verifying key.
-/// This is roughly homologous to [`ark_groth16::data_structures::PreparedVerifyingKey`].
-/// Note that contrary to Arkworks, we don't store a "prepared" version of the gamma_g2_neg_pc,
-/// delta_g2_neg_pc fields because they are very large and unpractical to use in the binary api.
+/// This is a helper function to store a pre-processed version of the verifying
+/// key. This is roughly homologous to
+/// [`ark_groth16::data_structures::PreparedVerifyingKey`]. Note that contrary
+/// to Arkworks, we don't store a "prepared" version of the gamma_g2_neg_pc,
+/// delta_g2_neg_pc fields because they are very large and unpractical to use in
+/// the binary api.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PreparedVerifyingKey {
     /// The element vk.gamma_abc_g1,
-    /// aka the `[gamma^{-1} * (beta * a_i + alpha * b_i + c_i) * G]`, where i spans the public inputs
+    /// aka the `[gamma^{-1} * (beta * a_i + alpha * b_i + c_i) * G]`, where i
+    /// spans the public inputs
     pub vk_gamma_abc_g1: Vec<G1Affine>,
     /// The element `e(alpha * G, beta * H)` in `E::GT`.
     pub alpha_g1_beta_g2: Fq12,
@@ -57,8 +69,7 @@ impl PreparedVerifyingKey {
         let mut vk_gamma = Vec::new();
         for g1 in &self.vk_gamma_abc_g1 {
             let mut g1_bytes = Vec::new();
-            g1.serialize_compressed(&mut g1_bytes)
-                .map_err(|_| ZkCryptoError::InvalidInput)?;
+            g1.serialize_compressed(&mut g1_bytes).map_err(|_| ZkCryptoError::InvalidInput)?;
             vk_gamma.append(&mut g1_bytes);
         }
         res.push(vk_gamma);
@@ -83,8 +94,8 @@ impl PreparedVerifyingKey {
         Ok(res)
     }
 
-    /// Deserialize the prepared verifying key from the serialized fields of vk_gamma_abc_g1,
-    /// alpha_g1_beta_g2, gamma_g2_neg_pc, delta_g2_neg_pc
+    /// Deserialize the prepared verifying key from the serialized fields of
+    /// vk_gamma_abc_g1, alpha_g1_beta_g2, gamma_g2_neg_pc, delta_g2_neg_pc
     pub fn deserialize<V: Borrow<[u8]>>(bytes: &Vec<V>) -> Result<Self, ZkCryptoError> {
         if bytes.len() != 4 {
             return Err(ZkCryptoError::InputLengthWrong(bytes.len()));
@@ -121,11 +132,11 @@ impl PreparedVerifyingKey {
 }
 
 impl From<&PreparedVerifyingKey> for ArkPreparedVerifyingKey<Bn254> {
-    /// Returns a [`ark_groth16::data_structures::PreparedVerifyingKey`] corresponding to this for
-    /// usage in the arkworks api.
+    /// Returns a [`ark_groth16::data_structures::PreparedVerifyingKey`]
+    /// corresponding to this for usage in the arkworks api.
     fn from(pvk: &PreparedVerifyingKey) -> Self {
-        // Note that not all the members are set here, but we set enough to be able to run
-        // Groth16::<Bn254>::verify_with_processed_vk.
+        // Note that not all the members are set here, but we set enough to be able to
+        // run Groth16::<Bn254>::verify_with_processed_vk.
         let mut ark_pvk = ArkPreparedVerifyingKey::default();
         ark_pvk.vk.gamma_abc_g1 = pvk.vk_gamma_abc_g1.clone();
         ark_pvk.alpha_g1_beta_g2 = pvk.alpha_g1_beta_g2;
@@ -160,33 +171,31 @@ impl From<&ark_groth16::VerifyingKey<Bn254>> for PreparedVerifyingKey {
         }
     }
 }
-/*
-#[cfg(test)]
-mod tests {
-    use crate::executor::zk_stuff::bn254::verifier::PreparedVerifyingKey;
-    use crate::dummy_circuits::DummyCircuit;
-    use ark_bn254::{Bn254, Fr};
-    use ark_groth16::Groth16;
-    use ark_snark::SNARK;
-    use ark_std::rand::thread_rng;
-    use ark_std::UniformRand;
-
-    #[test]
-    fn test_serialization() {
-        const PUBLIC_SIZE: usize = 128;
-        let rng = &mut thread_rng();
-        let c = DummyCircuit::<Fr> {
-            a: Some(<Fr>::rand(rng)),
-            b: Some(<Fr>::rand(rng)),
-            num_variables: PUBLIC_SIZE,
-            num_constraints: 10,
-        };
-        let (_, vk) = Groth16::<Bn254>::circuit_specific_setup(c, rng).unwrap();
-        let pvk = PreparedVerifyingKey::from(&vk);
-
-        let serialized = pvk.serialize().unwrap();
-        let deserialized = PreparedVerifyingKey::deserialize(&serialized).unwrap();
-        assert_eq!(pvk, deserialized);
-    }
-}
-*/
+// #[cfg(test)]
+// mod tests {
+// use crate::executor::zk_stuff::bn254::verifier::PreparedVerifyingKey;
+// use crate::dummy_circuits::DummyCircuit;
+// use ark_bn254::{Bn254, Fr};
+// use ark_groth16::Groth16;
+// use ark_snark::SNARK;
+// use ark_std::rand::thread_rng;
+// use ark_std::UniformRand;
+//
+// #[test]
+// fn test_serialization() {
+// const PUBLIC_SIZE: usize = 128;
+// let rng = &mut thread_rng();
+// let c = DummyCircuit::<Fr> {
+// a: Some(<Fr>::rand(rng)),
+// b: Some(<Fr>::rand(rng)),
+// num_variables: PUBLIC_SIZE,
+// num_constraints: 10,
+// };
+// let (_, vk) = Groth16::<Bn254>::circuit_specific_setup(c, rng).unwrap();
+// let pvk = PreparedVerifyingKey::from(&vk);
+//
+// let serialized = pvk.serialize().unwrap();
+// let deserialized = PreparedVerifyingKey::deserialize(&serialized).unwrap();
+// assert_eq!(pvk, deserialized);
+// }
+// }

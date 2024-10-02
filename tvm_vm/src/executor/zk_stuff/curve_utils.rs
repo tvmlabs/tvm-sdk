@@ -1,23 +1,28 @@
-use ark_bn254::{Fq, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective};
+use ark_bn254::Fq;
+use ark_bn254::Fq2;
+use ark_bn254::Fr;
+use ark_bn254::G1Affine;
+use ark_bn254::G1Projective;
+use ark_bn254::G2Affine;
+use ark_bn254::G2Projective;
 use ark_ec::CurveGroup;
 use ark_ff::BigInteger;
 use ark_ff::PrimeField;
-//use hex::serde;
-//use fastcrypto::error::FastCryptoError;
+// use hex::serde;
+// use fastcrypto::error::FastCryptoError;
 use num_bigint::BigUint;
 use schemars::JsonSchema;
-
-use serde::Serialize;
 use serde::Deserialize;
+use serde::Serialize;
 
 use crate::executor::zk_stuff::error::ZkCryptoError;
-/// A G1 point in BN254 serialized as a vector of three strings which is the canonical decimal
-/// representation of the projective coordinates in Fq.
+/// A G1 point in BN254 serialized as a vector of three strings which is the
+/// canonical decimal representation of the projective coordinates in Fq.
 pub type CircomG1 = Vec<Bn254FqElement>;
 
-/// A G2 point in BN254 serialized as a vector of three vectors each being a vector of two strings
-/// which are the canonical decimal representation of the coefficients of the projective coordinates
-/// in Fq2.
+/// A G2 point in BN254 serialized as a vector of three vectors each being a
+/// vector of two strings which are the canonical decimal representation of the
+/// coefficients of the projective coordinates in Fq2.
 pub type CircomG2 = Vec<Vec<Bn254FqElement>>;
 
 /// A struct that stores a Bn254 Fq field element as 32 bytes.
@@ -30,10 +35,7 @@ impl std::str::FromStr for Bn254FqElement {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let big_int = Fq::from_str(s).map_err(|_| ZkCryptoError::InvalidInput)?;
         let be_bytes = big_int.into_bigint().to_bytes_be();
-        be_bytes
-            .try_into()
-            .map_err(|_| ZkCryptoError::InvalidInput)
-            .map(Bn254FqElement)
+        be_bytes.try_into().map_err(|_| ZkCryptoError::InvalidInput).map(Bn254FqElement)
     }
 }
 
@@ -48,8 +50,8 @@ impl std::fmt::Display for Bn254FqElement {
 // Bn254FqElement's serialized format is as a radix10 encoded string
 impl Serialize for Bn254FqElement {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer,
+    where
+        S: serde::Serializer,
     {
         self.to_string().serialize(serializer)
     }
@@ -57,8 +59,8 @@ impl Serialize for Bn254FqElement {
 
 impl<'de> Deserialize<'de> for Bn254FqElement {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de>,
+    where
+        D: serde::Deserializer<'de>,
     {
         let s = std::borrow::Cow::<'de, str>::deserialize(deserializer)?;
         std::str::FromStr::from_str(&s).map_err(serde::de::Error::custom)
@@ -70,7 +72,8 @@ impl<'de> Deserialize<'de> for Bn254FqElement {
 pub struct Bn254FrElement(#[schemars(with = "String")] [u8; 32]);
 
 impl Bn254FrElement {
-    /// Returns the unpadded version of the field element. This returns with leading zeros removed.
+    /// Returns the unpadded version of the field element. This returns with
+    /// leading zeros removed.
     pub fn unpadded(&self) -> &[u8] {
         let mut buf = self.0.as_slice();
 
@@ -79,14 +82,11 @@ impl Bn254FrElement {
         }
 
         // If the value is '0' then just return a slice of length 1 of the final byte
-        if buf.is_empty() {
-            &self.0[31..]
-        } else {
-            buf
-        }
+        if buf.is_empty() { &self.0[31..] } else { buf }
     }
 
-    /// Returns the padded version of the field element. This returns with leading zeros preserved to 32 bytes.
+    /// Returns the padded version of the field element. This returns with
+    /// leading zeros preserved to 32 bytes.
     pub fn padded(&self) -> &[u8] {
         &self.0
     }
@@ -97,10 +97,7 @@ impl std::str::FromStr for Bn254FrElement {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let big_int = Fr::from_str(s).map_err(|_| ZkCryptoError::InvalidInput)?;
         let be_bytes = big_int.into_bigint().to_bytes_be();
-        be_bytes
-            .try_into()
-            .map_err(|_| ZkCryptoError::InvalidInput)
-            .map(Bn254FrElement)
+        be_bytes.try_into().map_err(|_| ZkCryptoError::InvalidInput).map(Bn254FrElement)
     }
 }
 
@@ -115,8 +112,8 @@ impl std::fmt::Display for Bn254FrElement {
 // Bn254FrElement's serialized format is as a radix10 encoded string
 impl Serialize for Bn254FrElement {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer,
+    where
+        S: serde::Serializer,
     {
         self.to_string().serialize(serializer)
     }
@@ -124,8 +121,8 @@ impl Serialize for Bn254FrElement {
 
 impl<'de> Deserialize<'de> for Bn254FrElement {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de>,
+    where
+        D: serde::Deserializer<'de>,
     {
         let s = std::borrow::Cow::<'de, str>::deserialize(deserializer)?;
         std::str::FromStr::from_str(&s).map_err(serde::de::Error::custom)
@@ -146,9 +143,10 @@ impl From<&Bn254FrElement> for Fr {
     }
 }
 
-/// Deserialize a G1 projective point in BN254 serialized as a vector of three strings into an affine
-/// G1 point in arkworks format. Return an error if the input is not a vector of three strings or if
-/// any of the strings cannot be parsed as a field element.
+/// Deserialize a G1 projective point in BN254 serialized as a vector of three
+/// strings into an affine G1 point in arkworks format. Return an error if the
+/// input is not a vector of three strings or if any of the strings cannot be
+/// parsed as a field element.
 pub(crate) fn g1_affine_from_str_projective(s: &CircomG1) -> Result<G1Affine, ZkCryptoError> {
     if s.len() != 3 {
         return Err(ZkCryptoError::InvalidInput);
@@ -156,9 +154,9 @@ pub(crate) fn g1_affine_from_str_projective(s: &CircomG1) -> Result<G1Affine, Zk
 
     println!("a s CircomG1: {:?}", s);
 
-    let zz = G1Projective::new_unchecked((&s[0]).into(), (&s[1]).into(), (&s[2]).into()).into_affine();
+    let zz =
+        G1Projective::new_unchecked((&s[0]).into(), (&s[1]).into(), (&s[2]).into()).into_affine();
     println!("a zz CircomG1: {:?}", zz);
-
 
     let g1: G1Affine =
         G1Projective::new_unchecked((&s[0]).into(), (&s[1]).into(), (&s[2]).into()).into();
@@ -170,10 +168,11 @@ pub(crate) fn g1_affine_from_str_projective(s: &CircomG1) -> Result<G1Affine, Zk
     Ok(g1)
 }
 
-/// Deserialize a G2 projective point from the BN254 construction serialized as a vector of three
-/// vectors each being a vector of two strings into an affine G2 point in arkworks format. Return an
-/// error if the input is not a vector of the right format or if any of the strings cannot be parsed
-/// as a field element.
+/// Deserialize a G2 projective point from the BN254 construction serialized as
+/// a vector of three vectors each being a vector of two strings into an affine
+/// G2 point in arkworks format. Return an error if the input is not a vector of
+/// the right format or if any of the strings cannot be parsed as a field
+/// element.
 pub(crate) fn g2_affine_from_str_projective(s: &CircomG2) -> Result<G2Affine, ZkCryptoError> {
     if s.len() != 3 || s[0].len() != 2 || s[1].len() != 2 || s[2].len() != 2 {
         return Err(ZkCryptoError::InvalidInput);
@@ -184,7 +183,7 @@ pub(crate) fn g2_affine_from_str_projective(s: &CircomG2) -> Result<G2Affine, Zk
         Fq2::new((&s[1][0]).into(), (&s[1][1]).into()),
         Fq2::new((&s[2][0]).into(), (&s[2][1]).into()),
     )
-        .into();
+    .into();
 
     if !g2.is_on_curve() || !g2.is_in_correct_subgroup_assuming_on_curve() {
         return Err(ZkCryptoError::InvalidInput);
