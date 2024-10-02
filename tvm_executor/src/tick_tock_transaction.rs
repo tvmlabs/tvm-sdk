@@ -189,6 +189,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
                         is_special,
                         params.available_credit,
                         minted_shell,
+                        0,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, .. }) => {
                             out_msgs = messages;

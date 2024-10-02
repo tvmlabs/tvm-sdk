@@ -76,7 +76,7 @@ impl OrdinaryTransactionExecutor {
 }
 
 impl TransactionExecutor for OrdinaryTransactionExecutor {
-    /// Create end execute transaction from message for account
+    /// Create and execute transaction from message for account
     fn execute_with_params(
         &self,
         in_msg: Option<&Message>,
@@ -346,6 +346,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         is_special,
                         params.available_credit,
                         minted_shell,
+                        need_to_burn.as_u64_quiet(),
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             out_msgs = messages;
