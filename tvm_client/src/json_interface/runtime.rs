@@ -37,8 +37,8 @@ pub(crate) trait AsyncHandler {
 // Handlers
 
 pub(crate) struct RuntimeHandlers {
-    sync_handlers: HashMap<String, Box<dyn SyncHandler + Sync>>,
-    async_handlers: HashMap<String, Box<dyn AsyncHandler + Sync>>,
+    sync_handlers: HashMap<String, Box<dyn SyncHandler + Sync + Send>>,
+    async_handlers: HashMap<String, Box<dyn AsyncHandler + Sync + Send>>,
     api: API,
 }
 
@@ -57,11 +57,11 @@ impl RuntimeHandlers {
         self.api.modules.push(module);
     }
 
-    pub fn register_sync(&mut self, function_name: String, handler: Box<dyn SyncHandler + Sync>) {
+    pub fn register_sync(&mut self, function_name: String, handler: Box<dyn SyncHandler + Sync + Send>) {
         self.sync_handlers.insert(function_name, handler);
     }
 
-    pub fn register_async(&mut self, function_name: String, handler: Box<dyn AsyncHandler + Sync>) {
+    pub fn register_async(&mut self, function_name: String, handler: Box<dyn AsyncHandler + Sync + Send>) {
         self.async_handlers.insert(function_name, handler);
     }
 }
