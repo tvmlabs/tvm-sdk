@@ -845,7 +845,7 @@ fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
     PreparedVerifyingKey::from(vk)
 }
 
-pub(crate) fn execute_vergrth16_new(engine: &mut Engine) -> Status {
+/*pub(crate) fn execute_vergrth16_new(engine: &mut Engine) -> Status {
     let start = Instant::now();
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16_NEW"))?;
     fetch_stack(engine, 3)?;
@@ -892,7 +892,7 @@ pub(crate) fn execute_vergrth16_new(engine: &mut Engine) -> Status {
     engine.cc.stack.push(res);
 
     Ok(())
-}
+}*/
 
 pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     let start = Instant::now();

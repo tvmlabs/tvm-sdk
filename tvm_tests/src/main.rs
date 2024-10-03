@@ -1,5 +1,6 @@
 mod test_framework;
+
+#[cfg(test)]
 mod test_zk;
-mod test_zk_;
 
 fn main() {}

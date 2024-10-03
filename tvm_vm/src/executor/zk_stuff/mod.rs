@@ -1,4 +1,4 @@
-use derive_more::From;
+//use derive_more::From;
 use ff::PrimeField;
 
 // pub mod alphabet;
@@ -17,5 +17,6 @@ pub mod zk_login;
 #[PrimeFieldReprEndianness = "big"]
 pub struct Fr([u64; 4]);
 
-#[derive(Debug, From)]
+/*#[derive(Debug, From)]
 pub struct VerifyingKey(pub(crate) ark_groth16::VerifyingKey<ark_bn254::Bn254>);
+*/
