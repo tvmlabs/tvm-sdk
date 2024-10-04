@@ -1,5 +1,3 @@
-// extern crate serde_derive;
-
 use base64ct::Base64UrlUnpadded;
 use base64ct::Encoding;
 use schemars::JsonSchema;

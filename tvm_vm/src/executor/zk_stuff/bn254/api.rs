@@ -1,15 +1,8 @@
-// Copyright (c) 2022, Mysten Labs, Inc.
-// SPDX-License-Identifier: Apache-2.0
-
 use crate::executor::zk_stuff::bn254::verifier::PreparedVerifyingKey;
 use crate::executor::zk_stuff::bn254::FieldElement;
 use crate::executor::zk_stuff::bn254::Proof;
 use crate::executor::zk_stuff::bn254::VerifyingKey;
 use crate::executor::zk_stuff::error::ZkCryptoError;
-
-//#[cfg(test)]
-//#[path = "unit_tests/api_tests.rs"]
-// mod api_tests;
 
 /// Size of scalars in the BN254 construction.
 pub const SCALAR_SIZE: usize = 32;

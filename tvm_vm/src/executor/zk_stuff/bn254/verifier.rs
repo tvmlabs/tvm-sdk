@@ -1,6 +1,3 @@
-// Copyright (c) 2022, Mysten Labs, Inc.
-// SPDX-License-Identifier: Apache-2.0
-
 use std::borrow::Borrow;
 use std::ops::Neg;
 
@@ -23,10 +20,6 @@ use crate::executor::zk_stuff::bn254::Proof;
 use crate::executor::zk_stuff::bn254::VerifyingKey;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::error::ZkCryptoResult;
-
-//#[cfg(test)]
-//#[path = "unit_tests/verifier_tests.rs"]
-// mod verifier_tests;
 
 /// This is a helper function to store a pre-processed version of the verifying
 /// key. This is roughly homologous to
@@ -171,31 +164,3 @@ impl From<&ark_groth16::VerifyingKey<Bn254>> for PreparedVerifyingKey {
         }
     }
 }
-// #[cfg(test)]
-// mod tests {
-// use crate::executor::zk_stuff::bn254::verifier::PreparedVerifyingKey;
-// use crate::dummy_circuits::DummyCircuit;
-// use ark_bn254::{Bn254, Fr};
-// use ark_groth16::Groth16;
-// use ark_snark::SNARK;
-// use ark_std::rand::thread_rng;
-// use ark_std::UniformRand;
-//
-// #[test]
-// fn test_serialization() {
-// const PUBLIC_SIZE: usize = 128;
-// let rng = &mut thread_rng();
-// let c = DummyCircuit::<Fr> {
-// a: Some(<Fr>::rand(rng)),
-// b: Some(<Fr>::rand(rng)),
-// num_variables: PUBLIC_SIZE,
-// num_constraints: 10,
-// };
-// let (_, vk) = Groth16::<Bn254>::circuit_specific_setup(c, rng).unwrap();
-// let pvk = PreparedVerifyingKey::from(&vk);
-//
-// let serialized = pvk.serialize().unwrap();
-// let deserialized = PreparedVerifyingKey::deserialize(&serialized).unwrap();
-// assert_eq!(pvk, deserialized);
-// }
-// }

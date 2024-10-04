@@ -1,8 +1,5 @@
-// Copyright (c) 2022, Mysten Labs, Inc.
-// SPDX-License-Identifier: Apache-2.0
 #![warn(missing_docs, unreachable_pub)]
 #![deny(unused_must_use, missing_debug_implementations)]
-//! Groth16 verifier over the BN254 elliptic curve construction.
 
 use ark_bn254::Bn254;
 use ark_bn254::Fr;

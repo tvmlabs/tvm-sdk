@@ -8,8 +8,6 @@ use ark_bn254::G2Projective;
 use ark_ec::CurveGroup;
 use ark_ff::BigInteger;
 use ark_ff::PrimeField;
-// use hex::serde;
-// use fastcrypto::error::FastCryptoError;
 use num_bigint::BigUint;
 use schemars::JsonSchema;
 use serde::Deserialize;
