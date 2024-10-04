@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2.2.98] – 2024-10-04
 
 ### New
-- Add support of VERGRTH16 and POSEIDON instruction for zk-login.
+- Add support of VERGRTH16 and POSEIDON instructions for zk-login.
 
 ## [2.2.8] – 2024-08-19
 
