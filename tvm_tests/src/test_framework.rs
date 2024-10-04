@@ -72,25 +72,26 @@ fn logger_init() {
         return;
     }
     let log_level = log::LevelFilter::Info;
-        /*if cfg!(feature = "verbose") { log::LevelFilter::Trace } else { log::LevelFilter::Info };*/
+    // if cfg!(feature = "verbose") { log::LevelFilter::Trace } else {
+    // log::LevelFilter::Info };
     let encoder_boxed = Box::new(log4rs::encode::pattern::PatternEncoder::new("{m}"));
-    /*let config = if cfg!(feature = "log_file") {
-        let file = log4rs::append::file::FileAppender::builder()
-            .encoder(encoder_boxed)
-            .build("log/log.txt")
-            .unwrap();
-        log4rs::config::Config::builder()
-            .appender(log4rs::config::Appender::builder().build("file", Box::new(file)))
-            .build(log4rs::config::Root::builder().appender("file").build(log_level))
-            .unwrap()
-    } else {
-        let console =
-            log4rs::append::console::ConsoleAppender::builder().encoder(encoder_boxed).build();
-        log4rs::config::Config::builder()
-            .appender(log4rs::config::Appender::builder().build("console", Box::new(console)))
-            .build(log4rs::config::Root::builder().appender("console").build(log_level))
-            .unwrap()
-    };*/
+    // let config = if cfg!(feature = "log_file") {
+    // let file = log4rs::append::file::FileAppender::builder()
+    // .encoder(encoder_boxed)
+    // .build("log/log.txt")
+    // .unwrap();
+    // log4rs::config::Config::builder()
+    // .appender(log4rs::config::Appender::builder().build("file", Box::new(file)))
+    // .build(log4rs::config::Root::builder().appender("file").build(log_level))
+    // .unwrap()
+    // } else {
+    // let console =
+    // log4rs::append::console::ConsoleAppender::builder().encoder(encoder_boxed).
+    // build(); log4rs::config::Config::builder()
+    // .appender(log4rs::config::Appender::builder().build("console",
+    // Box::new(console))) .build(log4rs::config::Root::builder().appender("
+    // console").build(log_level)) .unwrap()
+    // };
     let config = {
         let console =
             log4rs::append::console::ConsoleAppender::builder().encoder(encoder_boxed).build();
@@ -444,21 +445,21 @@ impl TestCase {
                     executor.set_index_provider(index_provider)
                 }
                 let execution_result = executor.execute();
-                /*if cfg!(feature = "fift_check")
-                    && args.stack.is_empty()
-                    && args.ctrls.is_empty()
-                    && !args.skip_fift_check
-                {
-                    let gas = args.gas.map(|gas| gas.get_gas_remaining() as i32).unwrap_or(1000000);
-                    compare_with_fift(
-                        code,
-                        args.library,
-                        args.code,
-                        &executor,
-                        &execution_result,
-                        gas,
-                    )
-                }*/
+                // if cfg!(feature = "fift_check")
+                // && args.stack.is_empty()
+                // && args.ctrls.is_empty()
+                // && !args.skip_fift_check
+                // {
+                // let gas = args.gas.map(|gas| gas.get_gas_remaining() as
+                // i32).unwrap_or(1000000); compare_with_fift(
+                // code,
+                // args.library,
+                // args.code,
+                // &executor,
+                // &execution_result,
+                // gas,
+                // )
+                // }
 
                 TestCase {
                     executor: Some(executor),
@@ -489,7 +490,9 @@ impl TestCase {
             vec![library.clone()],
         );
         let execution_result = executor.execute();
-        if /*cfg!(feature = "fift_check") &&*/ stack.is_none() && ctrls.is_none() {
+        if
+        // cfg!(feature = "fift_check") &&
+        stack.is_none() && ctrls.is_none() {
             compare_with_fift(
                 code.clone(),
                 library,

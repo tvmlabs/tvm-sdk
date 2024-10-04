@@ -845,54 +845,57 @@ fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
     PreparedVerifyingKey::from(vk)
 }
 
-/*pub(crate) fn execute_vergrth16_new(engine: &mut Engine) -> Status {
-    let start = Instant::now();
-    engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16_NEW"))?;
-    fetch_stack(engine, 3)?;
-
-    let vk_index = engine.cmd.var(0).as_small_integer().unwrap() as u32;
-    println!("from vergrth16 vk_index: {:?}", vk_index);
-
-    let public_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
-    let public_inputs_as_bytes = unpack_data_from_cell(public_inputs_slice, engine)?;
-    println!("from vergrth16 value public_inputs_as_bytes: {:?}", public_inputs_as_bytes);
-
-    let proof_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
-    let proof_as_bytes = unpack_data_from_cell(proof_slice, engine)?;
-    println!("from vergrth16 value proof_as_bytes: {:?}", proof_as_bytes);
-
-    let proof = ProofWrapper::deserialize(&proof_as_bytes)?;
-    let public_inputs = FieldElementWrapper::deserialize_vector(&public_inputs_as_bytes)?;
-    let x: Vec<Fr> = public_inputs.iter().map(|x| x.0).collect();
-
-    let vk = if vk_index == 0 {
-        insecure_pvk()
-    } else if vk_index == 1 {
-        global_pvk()
-    } else {
-        my_test_pvk_1()
-    };
-
-    // ZKP_VERIFYING_KEYS.get(&vk_index).unwrap();//&GLOBAL_VERIFYING_KEY;
-    println!("vk data = {:?}", vk.alpha_g1_beta_g2.to_string());
-    // todo: add alternative for elliptic curve (may be we need bls curve also?),
-    // read from stack curve id
-    let res = Groth16::<Bn254>::verify_with_processed_vk(&vk, &x, &proof.0)
-        .map_err(|e| ZkCryptoError::GeneralError(e.to_string()));
-
-    let duration = start.elapsed();
-
-    println!("Time elapsed by vergrth16 is: {:?}", duration);
-
-    let succes = res.is_ok();
-    println!("res: {:?}", res);
-    let res = if succes { boolean!(res.unwrap()) } else { boolean!(false) };
-    println!("res: {:?}", res);
-
-    engine.cc.stack.push(res);
-
-    Ok(())
-}*/
+// pub(crate) fn execute_vergrth16_new(engine: &mut Engine) -> Status {
+// let start = Instant::now();
+// engine.load_instruction(crate::executor::types::Instruction::new("
+// VERGRTH16_NEW"))?; fetch_stack(engine, 3)?;
+//
+// let vk_index = engine.cmd.var(0).as_small_integer().unwrap() as u32;
+// println!("from vergrth16 vk_index: {:?}", vk_index);
+//
+// let public_inputs_slice =
+// SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+// let public_inputs_as_bytes = unpack_data_from_cell(public_inputs_slice,
+// engine)?; println!("from vergrth16 value public_inputs_as_bytes: {:?}",
+// public_inputs_as_bytes);
+//
+// let proof_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
+// let proof_as_bytes = unpack_data_from_cell(proof_slice, engine)?;
+// println!("from vergrth16 value proof_as_bytes: {:?}", proof_as_bytes);
+//
+// let proof = ProofWrapper::deserialize(&proof_as_bytes)?;
+// let public_inputs =
+// FieldElementWrapper::deserialize_vector(&public_inputs_as_bytes)?;
+// let x: Vec<Fr> = public_inputs.iter().map(|x| x.0).collect();
+//
+// let vk = if vk_index == 0 {
+// insecure_pvk()
+// } else if vk_index == 1 {
+// global_pvk()
+// } else {
+// my_test_pvk_1()
+// };
+//
+// ZKP_VERIFYING_KEYS.get(&vk_index).unwrap();//&GLOBAL_VERIFYING_KEY;
+// println!("vk data = {:?}", vk.alpha_g1_beta_g2.to_string());
+// todo: add alternative for elliptic curve (may be we need bls curve also?),
+// read from stack curve id
+// let res = Groth16::<Bn254>::verify_with_processed_vk(&vk, &x, &proof.0)
+// .map_err(|e| ZkCryptoError::GeneralError(e.to_string()));
+//
+// let duration = start.elapsed();
+//
+// println!("Time elapsed by vergrth16 is: {:?}", duration);
+//
+// let succes = res.is_ok();
+// println!("res: {:?}", res);
+// let res = if succes { boolean!(res.unwrap()) } else { boolean!(false) };
+// println!("res: {:?}", res);
+//
+// engine.cc.stack.push(res);
+//
+// Ok(())
+// }
 
 pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     let start = Instant::now();
