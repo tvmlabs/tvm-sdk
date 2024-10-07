@@ -770,8 +770,12 @@ pub trait TransactionExecutor {
                         continue;
                     }
                     let mut free_to_send = acc_remaining_balance.clone();
-                    if acc_remaining_balance.grams > Grams::from(need_to_burn) {
-                        free_to_send.grams.sub(&Grams::from(need_to_burn))?;
+                    if acc_remaining_balance.grams > Grams::from(need_to_burn)
+                        || is_reserve_burn == true
+                    {
+                        if is_reserve_burn == false {
+                            free_to_send.grams.sub(&Grams::from(need_to_burn))?;
+                        }
                         let result = outmsg_action_handler(
                             &mut phase,
                             mode,
@@ -785,7 +789,9 @@ pub trait TransactionExecutor {
                             &total_reserved_value,
                             &mut account_deleted,
                         );
-                        free_to_send.grams.add(&Grams::from(need_to_burn))?;
+                        if is_reserve_burn == false {
+                            free_to_send.grams.add(&Grams::from(need_to_burn))?;
+                        }
                         acc_remaining_balance = free_to_send.clone();
                         match result {
                             Ok(_) => {
@@ -920,8 +926,10 @@ pub trait TransactionExecutor {
                 continue;
             }
             let mut free_to_send = acc_remaining_balance.clone();
-            if acc_remaining_balance.grams > Grams::from(need_to_burn) {
-                free_to_send.grams.sub(&Grams::from(need_to_burn))?;
+            if acc_remaining_balance.grams > Grams::from(need_to_burn) || is_reserve_burn == true {
+                if is_reserve_burn == true {
+                    free_to_send.grams.sub(&Grams::from(need_to_burn))?;
+                }
                 log::debug!(target: "executor", "\nSend message with all balance:\nInitial balance: {}",
                     balance_to_string(&acc_remaining_balance));
                 let result = outmsg_action_handler(
@@ -937,7 +945,9 @@ pub trait TransactionExecutor {
                     &total_reserved_value,
                     &mut account_deleted,
                 );
-                free_to_send.grams.add(&Grams::from(need_to_burn))?;
+                if is_reserve_burn == true {
+                    free_to_send.grams.add(&Grams::from(need_to_burn))?;
+                }
                 acc_remaining_balance = free_to_send.clone();
                 log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
                 let err_code = match result {

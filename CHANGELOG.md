@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.9] – 2024-08-19
+
+### Fixed
+- Fix SEND_ALL_BALANCE_FLAG
+
 ## [2.2.8] – 2024-08-19
 
 ### Improved
