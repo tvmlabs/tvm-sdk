@@ -794,7 +794,7 @@ pub trait TransactionExecutor {
                 OutAction::ReserveCurrency { mode, mut value } => {
                     if is_reserve_burn == false {
                         value.grams.add(&Grams::from(need_to_burn))?;
-                        is_reserve_burn = true
+                        is_reserve_burn = true;
                     }
                     match reserve_action_handler(
                         mode,
@@ -911,32 +911,46 @@ pub trait TransactionExecutor {
                 out_msgs.push(out_msg);
                 continue;
             }
-            log::debug!(target: "executor", "\nSend message with all balance:\nInitial balance: {}",
-                balance_to_string(&acc_remaining_balance));
-            let result = outmsg_action_handler(
-                &mut phase,
-                mode,
-                &mut out_msg,
-                &mut acc_remaining_balance,
-                msg_remaining_balance,
-                compute_phase_fees,
-                self.config(),
-                is_special,
-                my_addr,
-                &total_reserved_value,
-                &mut account_deleted,
-            );
-            log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
-            let err_code = match result {
-                Ok(_) => {
-                    phase.msgs_created += 1;
-                    out_msgs.push(out_msg);
-                    0
+            let mut free_to_send = acc_remaining_balance.clone();
+            if acc_remaining_balance.grams > Grams::from(need_to_burn) || is_reserve_burn == true {
+                if is_reserve_burn == false {
+                    free_to_send.grams.sub(&Grams::from(need_to_burn))?;
                 }
-                Err(code) => code,
-            };
-            if process_err_code(err_code, i, &mut phase)? {
-                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                log::debug!(target: "executor", "\nSend message with all balance:\nInitial balance: {}",
+                    balance_to_string(&acc_remaining_balance));
+                let result = outmsg_action_handler(
+                    &mut phase,
+                    mode,
+                    &mut out_msg,
+                    &mut free_to_send,
+                    msg_remaining_balance,
+                    compute_phase_fees,
+                    self.config(),
+                    is_special,
+                    my_addr,
+                    &total_reserved_value,
+                    &mut account_deleted,
+                );
+                if is_reserve_burn == false {
+                    free_to_send.grams.add(&Grams::from(need_to_burn))?;
+                }
+                acc_remaining_balance = free_to_send.clone();
+                log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
+                let err_code = match result {
+                    Ok(_) => {
+                        phase.msgs_created += 1;
+                        out_msgs.push(out_msg);
+                        0
+                    }
+                    Err(code) => code,
+                };
+                if process_err_code(err_code, i, &mut phase)? {
+                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                }
+            } else {
+                if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
+                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                }
             }
         }
 
