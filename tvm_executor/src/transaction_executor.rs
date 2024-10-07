@@ -808,7 +808,7 @@ pub trait TransactionExecutor {
                 OutAction::ReserveCurrency { mode, mut value } => {
                     if is_reserve_burn == false {
                         value.grams.add(&Grams::from(need_to_burn))?;
-                        is_reserve_burn = true
+                        is_reserve_burn = true;
                     }
                     match reserve_action_handler(
                         mode,
