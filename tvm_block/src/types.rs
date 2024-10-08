@@ -910,7 +910,6 @@ impl AddSub for CurrencyCollection {
         if !self.grams.add(&other.grams)? {
             return Ok(false);
         }
-        self.grams.add(&other.grams)?;
         let mut result = self.other.clone();
         other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
             match self.other.get(&key)? {
