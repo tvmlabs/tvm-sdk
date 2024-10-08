@@ -2,17 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.2.10] – 2024-08-19
+## [2.2.10] – 2024-10-08
 
 ### Fixed
 - Work with CurrencyCollections
 
-## [2.2.9] – 2024-08-19
+## [2.2.9] – 2024-10-08
 
 ### Fixed
 - Fix SEND_ALL_BALANCE_FLAG
 
-## [2.2.8] – 2024-08-19
+## [2.2.8] – 2024-10-02
 
 ### Improved
 Improve RawReserve instruction
