@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2.2.10] – 2024-10-08
 
 ### Fixed
-- Work with CurrencyCollections
+- Work with CurrencyCollections. Fixed add and sub.
 
 ## [2.2.9] – 2024-10-08
 
