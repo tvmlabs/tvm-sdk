@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.10] – 2024-08-19
+
+### Fixed
+- Work with CurrencyCollections
+
 ## [2.2.9] – 2024-08-19
 
 ### Fixed

@@ -787,7 +787,8 @@ pub trait TransactionExecutor {
                             phase.msgs_created += 1;
                             out_msgs0.push((i, mode, out_msg));
                             0
-                        }                            Err(code) => code,
+                        }
+                        Err(code) => code,
                     }
                 }
                 OutAction::ReserveCurrency { mode, mut value } => {

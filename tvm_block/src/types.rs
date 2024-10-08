@@ -897,6 +897,10 @@ impl AddSub for CurrencyCollection {
                     self.other.set(&key, &a)?;
                     return Ok(true);
                 }
+            } else {
+                if b == VarUInteger32::zero() {
+                    return Ok(true);
+                }
             }
             Ok(false) // coin not found in mine or amount is smaller - cannot subtract
         })
@@ -908,7 +912,9 @@ impl AddSub for CurrencyCollection {
         other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
             match self.other.get(&key)? {
                 Some(mut a) => {
-                    a.add(&b)?;
+                    if !a.add(&b)? {
+                        return Ok(false);
+                    }
                     result.set(&key, &a)?;
                 }
                 None => {
