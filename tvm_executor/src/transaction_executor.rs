@@ -217,12 +217,12 @@ pub trait TransactionExecutor {
                 if let Some(message) = in_msg {
                     if message.int_header().is_some() {
                         if let Some(dapp_id) = src_dapp_id.clone() {
-                            account.set_dapp_id(dapp_id.clone());
+                            account.set_dapp_id(Some(dapp_id.clone()));
                         }
                     } else {
-                        account.set_dapp_id(
+                        account.set_dapp_id(Some(
                             account.get_id().unwrap().get_bytestring(0).as_slice().into(),
-                        );
+                        ));
                     }
                 }
             }
@@ -902,7 +902,10 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-        let src_dapp_id = acc.get_dapp_id().cloned();
+        let src_dapp_id = match acc.get_dapp_id().cloned() {
+            Some(dapp_id) => dapp_id,
+            None => None,
+        };
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
             if let Some(header) = out_msg.int_header_mut() {
                 header.set_src_dapp_id(src_dapp_id.clone());
@@ -1820,7 +1823,7 @@ fn account_from_message(
                 if check_libraries(init, disable_set_lib, text, msg) {
                     return Account::active_by_init_code_hash(
                         hdr.dst.clone(),
-                        UInt256::new(),
+                        None,
                         msg_remaining_balance.clone(),
                         0,
                         init.clone(),
@@ -1846,7 +1849,7 @@ fn account_from_message(
         );
         None
     } else {
-        Some(Account::uninit(hdr.dst.clone(), UInt256::new(), 0, 0, msg_remaining_balance.clone()))
+        Some(Account::uninit(hdr.dst.clone(), 0, 0, msg_remaining_balance.clone()))
     }
 }
 

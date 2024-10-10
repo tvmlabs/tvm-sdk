@@ -197,7 +197,10 @@ pub async fn get_account(
                     .map_err(|e| format!("failed to load account from the boc: {}", e))?;
                 let dapp_id = account
                     .get_dapp_id()
-                    .map(|id| id.to_hex_string())
+                    .map(|id| match id {
+                        Some(data) => data.to_hex_string(),
+                        None => "None".to_string(),
+                    })
                     .unwrap_or("None".to_string());
                 let ecc_balance = account
                     .balance()

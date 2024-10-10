@@ -2080,7 +2080,11 @@ pub fn db_serialize_account_ex(
         serialize_field(&mut map, "workchain_id", addr.get_workchain_id());
     }
     if let Some(dapp_id) = set.account.get_dapp_id() {
-        serialize_field(&mut map, "dapp_id", dapp_id.as_hex_string());
+        if let Some(dapp_id_in) = dapp_id {
+            serialize_field(&mut map, "dapp_id", dapp_id_in.as_hex_string());
+        } else {
+            serialize_field(&mut map, "dapp_id", "None".to_string());
+        }
     }
     serialize_field(&mut map, "boc", base64_encode(&set.boc));
     if let Some(boc1) = set.boc1.as_ref() {

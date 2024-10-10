@@ -974,7 +974,7 @@ async fn debug_deploy_command(matches: &ArgMatches<'_>, config: &Config) -> Resu
         let addr =
             MsgAddressInt::with_standart(None, wc as i8, address).map_err(|e| format!("{}", e))?;
         let balance = CurrencyCollection::with_grams(initial_balance);
-        Account::with_address_and_ballance(&addr, UInt256::new(), &balance)
+        Account::with_address_and_ballance(&addr, None, &balance)
     } else {
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
         Account::construct_from_base64(&account)
