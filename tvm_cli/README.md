@@ -358,10 +358,10 @@ List of available options:
 Example:
 
 ```bash
-$ tvm-cli config --url https://ackinacki-testnet.tvmlabs.dev/graphql --wc -1 --keys key.json --abi SafeMultisigWallet.abi.json --lifetime 3600 --local_run true --retries 3 --timeout 600
+$ tvm-cli config --url https://shellnet.ackinacki.org/graphql --wc -1 --keys key.json --abi SafeMultisigWallet.abi.json --lifetime 3600 --local_run true --retries 3 --timeout 600
 Succeeded.
 {
-  "url": "ackinacki-testnet.tvmlabs.dev/graphql",
+  "url": "https://shellnet.ackinacki.org/graphql",
   "wc": -1,
   "addr": null,
   "method": null,
@@ -385,7 +385,7 @@ Succeeded.
   "project_id": null,
   "access_key": null,
   "endpoints": [
-    "https://ackinacki-testnet.tvmlabs.dev/graphql"
+    "https://shellnet.ackinacki.org/graphql"
   ]
 }
 ```
@@ -394,7 +394,7 @@ Some frequently used networks:
 
 `http://127.0.0.1/graphql` - Local Blockchain.
 
-`https://ackinacki-testnet.tvmlabs.dev/graphql` - Acki Nacki testnet. TVM-CLI connects to it by default.
+`https://shellnet.ackinacki.org/graphql` - Acki Nacki testnet. TVM-CLI connects to it by default.
 
 
 TVM-CLI supports the use of multiple endpoints for networks: if several endpoints are
