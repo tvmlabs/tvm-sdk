@@ -108,8 +108,6 @@ fn preprocess_signed_data<'a>(_engine: &Engine, data: &'a [u8]) -> Cow<'a, [u8]>
 }
 
 fn check_signature(engine: &mut Engine, name: &'static str, hash: bool) -> Status {
-    let start = Instant::now();
-
     engine.load_instruction(Instruction::new(name))?;
     fetch_stack(engine, 3)?;
     let pub_key = engine
@@ -173,12 +171,7 @@ fn check_signature(engine: &mut Engine, name: &'static str, hash: bool) -> Statu
     #[cfg(not(feature = "signature_no_check"))]
     let result = pub_key.verify(&data, &signature).is_ok();
 
-    let duration = start.elapsed();
-
-    println!("Time elapsed by chcksign is: {:?}", duration);
-
     engine.cc.stack.push(boolean!(result));
-    println!("%%%result: {:?}", result);
     Ok(())
 }
 
