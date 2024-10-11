@@ -10,7 +10,6 @@
 // limitations under the License.
 
 use std::borrow::Cow;
-use std::time::Instant;
 
 use ed25519::Signature;
 use ed25519_dalek::Verifier;

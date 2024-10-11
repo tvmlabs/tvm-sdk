@@ -1,9 +1,7 @@
-// use derive_more::From;
+
 use ff::PrimeField;
 
-// pub mod alphabet;
 pub mod curve_utils;
-// pub mod encodings;
 pub mod bn254;
 pub mod error;
 pub mod jwt_utils;
@@ -17,6 +15,3 @@ pub mod zk_login;
 #[PrimeFieldReprEndianness = "big"]
 pub struct Fr([u64; 4]);
 
-// #[derive(Debug, From)]
-// pub struct VerifyingKey(pub(crate)
-// ark_groth16::VerifyingKey<ark_bn254::Bn254>);

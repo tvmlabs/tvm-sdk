@@ -1,5 +1,4 @@
 use std::str::FromStr;
-use std::time::Instant;
 
 pub use ark_bn254::Bn254;
 use ark_bn254::Fq;
@@ -15,7 +14,6 @@ use ark_ff::PrimeField;
 use ark_groth16::Groth16;
 use ark_groth16::PreparedVerifyingKey;
 use ark_groth16::VerifyingKey;
-// use once_cell::sync::Lazy;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_snark::SNARK;
 use derive_more::From;
@@ -689,7 +687,6 @@ fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
 
 
 pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
-    let start = Instant::now();
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16"))?;
     fetch_stack(engine, 3)?;
 

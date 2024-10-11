@@ -1,4 +1,4 @@
-#![warn(missing_docs, unreachable_pub)]
+#![warn(unreachable_pub)]
 #![deny(unused_must_use, missing_debug_implementations)]
 
 use ark_bn254::Bn254;
