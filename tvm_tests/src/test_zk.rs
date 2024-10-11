@@ -1387,52 +1387,6 @@ mod tests {
             println!("===================");
         }
 
-        //  println!("Serialized proof");
-        // let json_string =
-        // r#"{"proofPoints":{"a":["
-        // 8247215875293406890829839156897863742504615191361518281091302475904551111016"
-        // ,"6872980335748205979379321982220498484242209225765686471076081944034292159666"
-        // ,"1"],"b":[["
-        // 21419680064642047510915171723230639588631899775315750803416713283740137406807"
-        // ,"21566716915562037737681888858382287035712341650647439119820808127161946325890"
-        // ],["17867714710686394159919998503724240212517838710399045289784307078087926404555"
-        // ,"21812769875502013113255155836896615164559280911997219958031852239645061854221"
-        // ],["1","0"]],"c":["
-        // 7530826803702928198368421787278524256623871560746240215547076095911132653214"
-        // ,"16244547936249959771862454850485726883972969173921727256151991751860694123976"
-        // ,"1"]},"issBase64Details":{"value":"
-        // yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC","indexMod4":1},"
-        // headerBase64":"
-        // eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ"
-        // }"#;
-        //
-        // Парсинг JSON-строки
-        // let data: Value = serde_json::from_str(json_string).unwrap();
-        //
-        // let a_x = data["proofPoints"]["a"][0].as_str().unwrap();
-        // let a_y = BigUint::parse_bytes(data["proofPoints"]["a"][1].as_str().
-        // unwrap().as_bytes(), 10).unwrap();
-        //
-        // let b0_x = data["proofPoints"]["b"][0][0].as_str().unwrap();
-        // let b1_x = data["proofPoints"]["b"][0][1].as_str().unwrap();
-        // let b1_y =
-        // BigUint::parse_bytes(data["proofPoints"]["b"][1][1].as_str().
-        // unwrap().as_bytes(), 10).unwrap();
-        //
-        // let c_x = data["proofPoints"]["c"][0].as_str().unwrap();
-        // let c_y = BigUint::parse_bytes(data["proofPoints"]["c"][1].as_str().
-        // unwrap().as_bytes(), 10).unwrap();
-        //
-        // let hex_ax = prepare_hex_representation(a_x, a_y);
-        // let hex_b0x = prepare_hex_representation(b0_x, BigUint::zero());
-        // let hex_b1x = prepare_hex_representation(b1_x, b1_y);
-        // let hex_cx = prepare_hex_representation(c_x, c_y);
-        //
-        // let result = format!("{}{}{}{}", hex_ax, hex_b0x, hex_b1x, hex_cx);
-        //
-        // ????? ???????????
-        // println!("Serialized proof: {}", result);
-        // println!("Serialized proof: 68490e184c1c5279d09fafc5e5c0b77d2a61fe6262ced81ff315c1813ec23b1257c1538b36c9822e94933c0fdb49d39502b7d63c47cc75cae7264f6afa1b5b2f82c3d7dc537cc07c2969bb4454a3d423d0e998f5787d4735eed757554654aeaf9ee6f79a85b302bdf25d83a9aeb4e06361459f51c86b1dca23172500034ca690");
     }
 
     #[ignore]
@@ -1505,6 +1459,7 @@ mod tests {
 
             let eph_pubkey_len = eph_pubkey.clone().len();
             println!("len eph_pubkey: {:?}", eph_pubkey_len);
+
 
             let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
             let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
