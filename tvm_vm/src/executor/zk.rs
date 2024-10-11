@@ -51,6 +51,9 @@ pub type ZkCryptoResult<T> = Result<T, ZkCryptoError>;
 /// Size of scalars in the BN254 construction.
 pub const SCALAR_SIZE: usize = 32;
 
+const PUBLIC_KEY_BITS: usize = PUBLIC_KEY_BYTES * 8;
+const PUBLIC_KEY_BYTES: usize = ed25519_dalek::PUBLIC_KEY_LENGTH;
+
 #[derive(Debug, From)]
 pub struct FieldElementWrapper(pub(crate) ark_bn254::Fr);
 
@@ -265,28 +268,7 @@ impl ProofWrapper {
     }
 }
 
-/// Here there are third party zk login Groth16 verification keys taken  for now
-/// for tests todo: will be replaced by our keys later
-/// todo: move all key data to json config file (?), use hash as id
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-// static GLOBAL_VERIFYING_KEY: Lazy<PreparedVerifyingKey<Bn254>> = Lazy::new(global_pvk);
-
-/// Corresponding to proofs generated from prover-dev. Used in devnet/testnet.
-// static INSECURE_VERIFYING_KEY: Lazy<PreparedVerifyingKey<Bn254>> = Lazy::new(insecure_pvk);
-
-// static ZKP_VERIFYING_KEYS: Lazy<HashMap<u32, PreparedVerifyingKey<Bn254>>> = Lazy::new(keys);
-
-// todo: will contain our keys later, key ould be a hash of verification key
-// fn keys() -> HashMap<u32, PreparedVerifyingKey<Bn254>> {
-// let mut h = HashMap::new();
-// h.insert(0, insecure_pvk());
-// h.insert(1, global_pvk());
-// h
-// }
-
-/// Load a fixed verifying key from zkLogin.vkey output. This is based on a
-/// local setup and should not use in production.
 fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
     let vk_alpha_1 = g1_affine_from_str_projective(&vec![
@@ -425,8 +407,7 @@ fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
     PreparedVerifyingKey::from(vk)
 }
 
-/// Load a fixed verifying key from zkLogin.vkey output. This is based on a
-/// local setup and should not use in production.
+
 fn global_pvk() -> PreparedVerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
     let vk_alpha_1 = g1_affine_from_str_projective(&vec![
@@ -564,10 +545,7 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
     // Convert the verifying key into the prepared form.
     PreparedVerifyingKey::from(vk)
 }
-///////////////////////////////////
 
-/// Load a fixed verifying key from zkLogin.vkey output. This is based on a
-/// local setup and should not use in production.
 fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
     let vk_alpha_1 = g1_affine_from_str_projective(&vec![
@@ -735,8 +713,8 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
         my_test_pvk_1()
     };
 
-    // todo: add alternative for elliptic curve (may be we need bls curve also?),
-    // read from stack curve id
+    // todo: add alternative for elliptic curve (BLS), read from stack curve id
+
     let res = Groth16::<Bn254>::verify_with_processed_vk(&vk, &x, &proof.0)
         .map_err(|e| ZkCryptoError::GeneralError(e.to_string()));
 
@@ -760,28 +738,26 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     let zkaddr_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
     let zkaddr = unpack_string_from_cell(zkaddr_slice, engine)?;
 
-
     let header_and_iss_base64_slice =
         SliceData::load_cell_ref(engine.cmd.var(1 /* 2 */).as_cell()?)?;
     let header_and_iss_base64 = unpack_string_from_cell(header_and_iss_base64_slice, engine)?;
 
-    let modulus_slice = SliceData::load_cell_ref(engine.cmd.var(2 /* 3 */).as_cell()?)?;
+    let modulus_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
     let modulus = unpack_data_from_cell(modulus_slice, engine)?;
 
     let eph_pub_key = engine
         .cmd
         .var(3 )
         .as_integer()?
-        .as_builder::<UnsignedIntegerBigEndianEncoding>(/* PUBLIC_KEY_BITS */ 256)?;
+        .as_builder::<UnsignedIntegerBigEndianEncoding>(PUBLIC_KEY_BITS)?;
 
     let eph_pub_key_bytes = eph_pub_key.data();
-
 
     let max_epoch_ = engine
         .cmd
         .var(4 )
         .as_integer()?
-        .as_builder::<UnsignedIntegerBigEndianEncoding>(/* PUBLIC_KEY_BITS */ 64)?;
+        .as_builder::<UnsignedIntegerBigEndianEncoding>( 64)?;
 
     let max_epoch_bytes = pop(max_epoch_.data());
     let max_epoch = u64::from_be_bytes(*max_epoch_bytes);
@@ -789,7 +765,7 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     let public_inputs = calculate_poseidon_hash(
         &*zkaddr,
         &*header_and_iss_base64,
-        &eph_pub_key_bytes, // epk_as_bytes
+        &eph_pub_key_bytes, 
         &modulus,
         max_epoch,
     )
@@ -811,7 +787,7 @@ pub fn calculate_poseidon_hash(
     eph_pk_bytes: &[u8],
     modulus: &[u8],
     max_epoch: u64,
-) -> Result<Bn254Fr, ZkCryptoError> /**/ {
+) -> Result<Bn254Fr, ZkCryptoError> {
     
     let address_seed = Bn254FrElement::from_str(address_seed).unwrap();
     let addr_seed = (&address_seed).into();
