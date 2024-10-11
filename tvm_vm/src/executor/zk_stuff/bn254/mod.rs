@@ -19,14 +19,6 @@ pub mod verifier;
 /// Poseidon hash function over BN254
 pub mod poseidon;
 
-/// Zk login structs and utilities
-// pub mod zk_login;
-
-/// Zk login entrypoints
-// pub mod zk_login_api;
-
-/// Zk login utils
-// pub mod utils;
 
 /// A field element in the BN254 construction. Thin wrapper around
 /// `api::Bn254Fr`.
