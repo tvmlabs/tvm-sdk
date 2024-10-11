@@ -3,7 +3,6 @@ use std::sync::Arc;
 use tvm_block::Account;
 use tvm_block::CurrencyCollection;
 use tvm_block::MsgAddressInt;
-use tvm_types::UInt256;
 
 use crate::abi::Error;
 use crate::boc::internal::serialize_object_to_boc;
@@ -49,7 +48,7 @@ pub fn encode_account(
     )?;
     let id = state_init.cell.repr_hash();
     let address = MsgAddressInt::with_standart(None, 0, id.clone().into()).unwrap();
-    let mut account = Account::with_address(address, UInt256::new());
+    let mut account = Account::with_address(address, None);
     account.set_balance(CurrencyCollection::from(params.balance.unwrap_or(100000000000)));
     account
         .try_activate_by_init_code_hash(&state_init.object, false)

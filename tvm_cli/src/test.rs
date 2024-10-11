@@ -37,7 +37,6 @@ use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
 use tvm_types::BuilderData;
 use tvm_types::SliceData;
-use tvm_types::UInt256;
 
 use crate::config::Config;
 use crate::crypto::load_keypair;
@@ -283,7 +282,7 @@ async fn test_deploy(matches: &ArgMatches<'_>, config: &Config) -> Result<(), St
             balance.parse().map_err(|e| format!("Failed to parse initial balance: {e}"))?;
 
         let balance = CurrencyCollection::with_grams(balance);
-        account = Account::with_address_and_ballance(addr, UInt256::new(), &balance);
+        account = Account::with_address_and_ballance(addr, None, &balance);
     } else {
         let src_address = "-1:0000000000000000000000000000000000000000000000000000000000000000";
         let msg_params = ParamsOfEncodeInternalMessage {
