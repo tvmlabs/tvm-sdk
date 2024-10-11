@@ -45,7 +45,6 @@ use tvm_client::ClientContext;
 use tvm_executor::BlockchainConfig;
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
-use tvm_types::UInt256;
 use url::Url;
 
 use crate::call::parse_params;
@@ -587,7 +586,7 @@ pub fn construct_account_from_tvc(
                 .map_err(|e| format!("Failed to set address: {}", e))?,
             _ => MsgAddressInt::default(),
         },
-        UInt256::new(),
+        None,
         match balance {
             Some(balance) => CurrencyCollection::with_grams(balance),
             _ => CurrencyCollection::default(),

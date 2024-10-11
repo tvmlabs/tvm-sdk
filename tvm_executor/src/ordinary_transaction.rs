@@ -37,7 +37,6 @@ use tvm_types::fail;
 use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::UInt256;
 use tvm_vm::boolean;
 use tvm_vm::int;
 use tvm_vm::stack::integer::IntegerData;
@@ -128,7 +127,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}, available_credit {:?}", params.src_dapp_id, in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
-            if params.src_dapp_id != account.get_dapp_id().cloned()
+            if Some(params.src_dapp_id.clone()) != account.get_dapp_id().cloned()
                 && !(in_msg.have_state_init()
                     && (account.is_none()
                         || account
@@ -441,13 +440,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
             } else if account.is_none() && !acc_balance.is_zero()? {
-                *account = Account::uninit(
-                    account_address.clone(),
-                    UInt256::new(),
-                    0,
-                    last_paid,
-                    acc_balance.clone(),
-                );
+                *account =
+                    Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
             }
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {

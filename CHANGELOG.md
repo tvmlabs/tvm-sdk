@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.11] – 2024-10-08
+
+### Fixed
+- Update Dapp_id field in AccountStuff into Option.
+
 ## [2.2.10] – 2024-10-08
 
 ### Fixed
