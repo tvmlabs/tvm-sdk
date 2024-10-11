@@ -897,18 +897,26 @@ impl AddSub for CurrencyCollection {
                     self.other.set(&key, &a)?;
                     return Ok(true);
                 }
+            } else {
+                if b == VarUInteger32::zero() {
+                    return Ok(true);
+                }
             }
             Ok(false) // coin not found in mine or amount is smaller - cannot subtract
         })
     }
 
     fn add(&mut self, other: &Self) -> Result<bool> {
-        self.grams.add(&other.grams)?;
+        if !self.grams.add(&other.grams)? {
+            return Ok(false);
+        }
         let mut result = self.other.clone();
         other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
             match self.other.get(&key)? {
                 Some(mut a) => {
-                    a.add(&b)?;
+                    if !a.add(&b)? {
+                        return Ok(false);
+                    }
                     result.set(&key, &a)?;
                 }
                 None => {
