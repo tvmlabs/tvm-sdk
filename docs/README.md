@@ -209,7 +209,7 @@ To run test suite use standard Rust test command
 cargo test
 ```
 
-SDK tests need GraphQL endpoint to run on. Such an API is exposed by a Block Keeper which runs in real networks, Local Network or public testnets..
+SDK tests need GraphQL endpoint to run on. Such an API is exposed by a Block Keeper which runs in real networks, Local Network or public testnets.
 
 Local Network is used by default with address `http://localhost` and port 80. If you launch it on another port you need to specify it explicitly like this: `http://localhost:port`. If you need to run tests on a real  network use the following environment variables to override the default parameters
 
