@@ -320,9 +320,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
             }
         };
-        if let Some(data) = compute_ph.clone().get_vmphase_mut() {
-            log::trace!(target: "tvm", "compute_ph gas credit, gas limit: {:?}, {:?}", data.gas_credit, data.gas_limit);
-        }
         let mut out_msgs = vec![];
         let mut action_phase_processed = false;
         let mut compute_phase_gas_fees = Grams::zero();
