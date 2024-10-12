@@ -48,7 +48,8 @@ pub fn execute_accept(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("ACCEPT"))?;
 
     log::trace!(target: "tvm", "old gas, old gas limit, new gas: {:?}, {:?}, {:?}", engine.get_gas().get_gas_limit(), engine.get_gas().get_gas_limit_max(), i64::MAX);
-    engine.new_gas_limit(i64::MAX);
+    engine.new_gas_limit(i64::MAX);    
+    log::trace!(target: "tvm", "new gas, new gas limit, new gas: {:?}, {:?}", engine.get_gas().get_gas_limit(), engine.get_gas().get_gas_limit_max());
     Ok(())
 }
 // Application-specific primitives - A.11; Gas-related primitives - A.11.2
