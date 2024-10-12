@@ -186,9 +186,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             // extranal message comes serialized
             let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
             //            if in_msg.have_state_init() {
-            let credit: Grams = (gas_config.gas_credit * gas_config.gas_price / 65536).into();
-            need_to_burn += credit;
-            acc_balance.grams += credit;
+            if let Some(_) = in_msg.state_init() {
+                let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
+                need_to_burn += credit;
+                acc_balance.grams += credit;
+            }
             //            }
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
@@ -320,7 +322,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         };
         if let Some(data) = compute_ph.clone().get_vmphase_mut() {
             log::trace!(target: "tvm", "compute_ph gas credit, gas limit: {:?}, {:?}", data.gas_credit, data.gas_limit);
-        } 
+        }
         let mut out_msgs = vec![];
         let mut action_phase_processed = false;
         let mut compute_phase_gas_fees = Grams::zero();
