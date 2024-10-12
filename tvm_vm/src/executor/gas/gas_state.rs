@@ -240,8 +240,7 @@ impl Gas {
 
     /// Set input gas to gas limit
     pub fn new_gas_limit(&mut self, gas_limit: i64) {
-//        self.gas_limit = max(0, min(gas_limit, self.gas_limit_max));
-        self.gas_limit = max(0, gas_limit);
+        self.gas_limit = max(0, min(gas_limit, self.gas_limit_max));
         self.gas_credit = 0;
         self.gas_remaining += self.gas_limit - self.gas_base;
         self.gas_base = self.gas_limit;
