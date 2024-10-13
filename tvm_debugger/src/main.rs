@@ -2,6 +2,7 @@ mod decode;
 mod execute;
 mod helper;
 mod message;
+mod result;
 
 use std::path::PathBuf;
 
@@ -9,6 +10,7 @@ use clap::ArgAction;
 use clap::Parser;
 
 use crate::execute::execute;
+use crate::result::ExecutionResult;
 
 lazy_static::lazy_static!(
     static ref LONG_VERSION: String = format!("{}\nBUILD_GIT_BRANCH={}\nBUILD_GIT_COMMIT={}\nBUILD_GIT_DATE={}\nBUILD_TIME={}",
@@ -73,6 +75,10 @@ struct Args {
     #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
     decode_out_messages: bool,
 
+    /// Prints output in json format
+    #[arg(short, long, action=ArgAction::SetTrue, default_value = "false", conflicts_with = "trace")]
+    json: bool,
+
     /// Trace VM execution
     #[arg(long, action=ArgAction::SetTrue, default_value = "false")]
     trace: bool,
@@ -80,6 +86,8 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args: Args = Args::parse();
-    execute(&args)?;
+    let mut res: ExecutionResult = ExecutionResult::new(args.json);
+    execute(&args, &mut res)?;
+    res.print();
     Ok(())
 }
