@@ -20,18 +20,19 @@ use tvm_types::SliceData;
 use tvm_vm::stack::StackItem;
 
 use crate::helper::load_abi_as_string;
-use crate::Args;
+use crate::{Args, ExecutionResult};
 
 pub(crate) fn decode_body(
     abi_file: &PathBuf,
     function: &str,
     body: SliceData,
     internal: bool,
+    res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
-    let res =
+    let response =
         decode_function_response(&load_abi_as_string(abi_file)?, function, body, internal, false)
             .map_err(|e| anyhow::format_err!("Failed to decode function response: {e}"))?;
-    println!("{res}");
+    res.response(response);
     Ok(())
 }
 
@@ -39,6 +40,7 @@ pub(crate) fn decode_actions(
     actions: StackItem,
     state: &mut StateInit,
     args: &Args,
+    res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
     let abi_file = args.abi_file.as_ref();
     let function_name = args.function_name.as_ref();
@@ -50,7 +52,7 @@ pub(crate) fn decode_actions(
                 .map_err(|e| anyhow::format_err!("SliceData::load_cell: {e}"))?,
         )
         .map_err(|e| anyhow::format_err!("OutActions::construct_from: {e}"))?;
-        println!("Output actions:\n----------------");
+        res.log("Output actions:\n----------------".to_string());
         let mut created_lt = 1;
         for act in actions {
             match act {
@@ -60,7 +62,8 @@ pub(crate) fn decode_actions(
                         out_msg.set_at_and_lt(0, created_lt);
                         created_lt += 1;
                     }
-                    println!("Action(SendMsg):\n{}", msg_printer(&out_msg)?);
+                    res.add_out_message(out_msg.clone());
+                    res.log(format!("Action(SendMsg):\n{}", msg_printer(&out_msg)?));
                     if let Some(b) = out_msg.body() {
                         if abi_file.is_some() && function_name.is_some() {
                             decode_body(
@@ -68,21 +71,22 @@ pub(crate) fn decode_actions(
                                 function_name.unwrap(),
                                 b,
                                 out_msg.is_internal(),
+                                res,
                             )?;
                         }
                     }
                 }
                 OutAction::SetCode { new_code: code } => {
-                    println!("Action(SetCode)");
+                    res.log("Action(SetCode)".to_string());
                     state.code = Some(code);
                 }
                 OutAction::ReserveCurrency { .. } => {
-                    println!("Action(ReserveCurrency)");
+                    res.log("Action(ReserveCurrency)".to_string());
                 }
                 OutAction::ChangeLibrary { .. } => {
-                    println!("Action(ChangeLibrary)");
+                    res.log("Action(ChangeLibrary)".to_string());
                 }
-                _ => println!("Action(Unknown)"),
+                _ => res.log("Action(Unknown)".to_string()),
             };
         }
     }
