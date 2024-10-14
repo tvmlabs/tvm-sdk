@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.12] – 2024-10-08
+
+### Fixed
+- Increase message credit.
+
 ## [2.2.11] – 2024-10-08
 
 ### Fixed
