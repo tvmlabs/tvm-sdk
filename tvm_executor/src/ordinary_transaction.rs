@@ -137,10 +137,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 && !h.bounced
             {
                 log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
-                log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_credit * gas_config.gas_price / 65536));
+                log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_limit * gas_config.gas_price / 65536));
                 burned = msg_balance.grams;
                 msg_balance.grams = min(
-                    (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
+                    (gas_config.gas_limit * gas_config.gas_price / 65536).into(),
                     msg_balance.grams,
                 );
                 burned -= msg_balance.grams;
@@ -185,11 +185,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if is_ext_msg && !is_special {
             // extranal message comes serialized
             let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
-            //            if in_msg.have_state_init() {
-            let credit: Grams = (gas_config.gas_credit * gas_config.gas_price / 65536).into();
+
+            let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
             need_to_burn += credit;
             acc_balance.grams += credit;
-            //            }
+
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
                 fail!(ExecutorError::NoFundsToImportMsg)
