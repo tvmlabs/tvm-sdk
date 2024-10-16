@@ -2,10 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.2.11] – 2024-10-11
+## [2.2.13] – 2024-10-16
 
 ### New
 - Add support of VERGRTH16 and POSEIDON instructions for zk-login.
+- 
+## [2.2.12] – 2024-10-08
+
+### Fixed
+- Increase message credit.
+
+## [2.2.11] – 2024-10-08
+
+### Fixed
+- Update Dapp_id field in AccountStuff into Option.
 
 ## [2.2.10] – 2024-10-08
 
