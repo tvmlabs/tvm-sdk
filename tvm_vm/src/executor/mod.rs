@@ -36,6 +36,7 @@ mod stack;
 pub mod token;
 mod tuple;
 mod types;
+pub mod zk_stuff;
 
 pub use engine::*;
 use tvm_types::BuilderData;
@@ -46,6 +47,7 @@ use tvm_types::Result;
 #[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
+pub mod zk;
 
 pub trait Mask {
     fn bit(&self, bits: Self) -> bool;

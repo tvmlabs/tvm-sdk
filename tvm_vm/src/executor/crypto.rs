@@ -169,6 +169,7 @@ fn check_signature(engine: &mut Engine, name: &'static str, hash: bool) -> Statu
         engine.modifiers.chksig_always_succeed || pub_key.verify(&data, &signature).is_ok();
     #[cfg(not(feature = "signature_no_check"))]
     let result = pub_key.verify(&data, &signature).is_ok();
+
     engine.cc.stack.push(boolean!(result));
     Ok(())
 }
