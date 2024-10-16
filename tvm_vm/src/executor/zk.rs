@@ -21,6 +21,7 @@ use num_bigint::BigUint;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
+
 use tvm_types::SliceData;
 
 use crate::executor::engine::storage::fetch_stack;
@@ -689,7 +690,7 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16"))?;
     fetch_stack(engine, 3)?;
 
-    let vk_index = engine.cmd.var(0).as_small_integer().unwrap() as u32;
+    let vk_index = engine.cmd.var(0).as_small_integer()? as u32;
 
     let public_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let public_inputs_as_bytes = unpack_data_from_cell(public_inputs_slice, engine)?;
@@ -716,7 +717,7 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
 
     let succes = res.is_ok();
     
-    let res = if succes { boolean!(res.unwrap()) } else { boolean!(false) };
+    let res = if succes { boolean!(res?) } else { boolean!(false) };
 
     engine.cc.stack.push(res);
 
@@ -766,21 +767,18 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
 
     let public_inputs = calculate_poseidon_hash(
         &*zkaddr,
-        /*&*header_and_iss_base64,*/
         &header_base_64,
         &iss_base_64,
         &index_mod_4,
         &eph_pub_key_bytes, 
         &modulus,
         max_epoch,
-    )
-    .unwrap();
+    )?;
 
     let mut public_inputs_as_bytes = vec![];
-    public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+    public_inputs.serialize_compressed(&mut public_inputs_as_bytes)?;
 
-    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
-
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0)?;
     engine.cc.stack.push(Cell(public_inputs_cell));
 
     Ok(())
@@ -791,34 +789,22 @@ pub fn calculate_poseidon_hash(
     header_base_64: &str,
     iss_base_64: &str,
     index_mod_4: &str,
-    /*header_and_iss_base64: &str,*/
     eph_pk_bytes: &[u8],
     modulus: &[u8],
     max_epoch: u64,
 ) -> Result<Bn254Fr, ZkCryptoError> {
     
-    let address_seed = Bn254FrElement::from_str(address_seed).unwrap();
+    let address_seed = Bn254FrElement::from_str(address_seed)?;
     let addr_seed = (&address_seed).into();
 
-    let (first, second) = split_to_two_frs(eph_pk_bytes).unwrap();
+    let (first, second) = split_to_two_frs(eph_pk_bytes)?;
 
-    let max_epoch_f = (&Bn254FrElement::from_str(&max_epoch.to_string()).unwrap()).into();
+    let max_epoch_f = (&Bn254FrElement::from_str(&max_epoch.to_string())?).into();
 
-    /*let v: Value = serde_json::from_str(header_and_iss_base64).unwrap();
-
-    let header_base64 = v["headerBase64"].as_str().unwrap();
-
-    let iss_base64_details = v["issBase64Details"].as_object().unwrap();
-
-    let index_mod_4 = iss_base64_details["indexMod4"].as_i64().unwrap().to_string()
-
-    let iss_base64_details_value = iss_base64_details["value"].as_str().unwrap();;*/
-
-    let index_mod_4_f = (&Bn254FrElement::from_str(&index_mod_4).unwrap()).into();
-
-    let iss_base64_f = hash_ascii_str_to_field(/*&iss_base64_details_value*/&iss_base_64, MAX_ISS_LEN_B64).unwrap();
-    let header_f = hash_ascii_str_to_field(/*&header_base64*/ &header_base_64, MAX_HEADER_LEN).unwrap();
-    let modulus_f = hash_to_field(&[BigUint::from_bytes_be(modulus)], 2048, PACK_WIDTH).unwrap();
+    let index_mod_4_f = (&Bn254FrElement::from_str(&index_mod_4)?).into();
+    let iss_base64_f = hash_ascii_str_to_field(&iss_base_64, MAX_ISS_LEN_B64)?;
+    let header_f = hash_ascii_str_to_field( &header_base_64, MAX_HEADER_LEN)?;
+    let modulus_f = hash_to_field(&[BigUint::from_bytes_be(modulus)], 2048, PACK_WIDTH)?;
 
     poseidon_zk_login(vec![
         first,
