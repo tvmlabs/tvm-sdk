@@ -192,6 +192,10 @@ mod tests {
 
         println!("iss_and_header_base64details: {}", iss_and_header_base64details);
 
+        let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
+        let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
+        let index_mod_4  = "1";
+
         let zk_login_inputs =
             ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
         let content: JWK = JWK {
@@ -242,25 +246,26 @@ mod tests {
 
         let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
 
-        let iss_and_header_base64details_cell =
-            pack_string_to_cell(&iss_and_header_base64details, &mut 0).unwrap();
+        let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+
+        let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
 
         let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
-        let max_epoch_ = 142;
-
-        let mut code = format!("PUSHINT {max_epoch_} \n").to_string();
+        let mut code = format!("PUSHINT {index_mod_4} \n").to_string();
+        code = code + &*format!("PUSHINT {max_epoch} \n").to_string();
         code = code + &*format!("PUSHINT {eph_pubkey_hex_number} \n").to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON_ZKLOGIN \n".to_string();
+        code = code + &*"PUSHREF \n".to_string();
+        code = code + &*"POSEIDON \n".to_string();/**/
 
-        println!("code : {:?}", code);
+        println!("code : {code}");
 
         test_case_with_refs(
             code.as_str(),
-            vec![modulus_cell.clone(), iss_and_header_base64details_cell, zk_seed_cell],
+            vec![modulus_cell.clone(), iss_base_64_cell, header_base_64_cell, zk_seed_cell],
         )
         .expect_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_success();
@@ -319,6 +324,10 @@ mod tests {
         let iss_and_header_base64details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
         println!("iss_and_header_base64details: {}", iss_and_header_base64details);
 
+        let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ";
+        let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
+        let index_mod_4  = "1";
+
         let zk_login_inputs =
             ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
 
@@ -367,26 +376,26 @@ mod tests {
 
         let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
 
-        let iss_and_header_base64details_cell =
-            pack_string_to_cell(&iss_and_header_base64details, &mut 0).unwrap();
+        let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
 
-        // let eph_pubkey_cell = pack_data_to_cell(&eph_pubkey.clone(), &mut
-        // 0).unwrap();
+        let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
 
         let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
-        let max_epoch_ = 142;
-
-        let mut code = format!("PUSHINT {max_epoch_} \n").to_string();
+        let mut code = format!("PUSHINT {index_mod_4} \n").to_string();
+        code = code + &*format!("PUSHINT {max_epoch} \n").to_string();
         code = code + &*format!("PUSHINT {eph_pubkey_hex_number} \n").to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON_ZKLOGIN \n".to_string();
+        code = code + &*"PUSHREF \n".to_string();
+        code = code + &*"POSEIDON \n".to_string();/**/
+
+        println!("code : {code}");
 
         test_case_with_refs(
             code.as_str(),
-            vec![modulus_cell, iss_and_header_base64details_cell, zk_seed_cell],
+            vec![modulus_cell, iss_base_64_cell, header_base_64_cell, zk_seed_cell],
         )
         .expect_success();
 
@@ -847,6 +856,10 @@ mod tests {
         let iss_and_header_base64details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ\"}";
         println!("iss_and_header_base64details: {}", iss_and_header_base64details);
 
+        let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ";
+        let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
+        let index_mod_4  = "1";
+        
         let zk_login_inputs =
             ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
 
@@ -891,25 +904,36 @@ mod tests {
 
         let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
 
-        let iss_and_header_base64details_cell =
-            pack_string_to_cell(&iss_and_header_base64details, &mut 0).unwrap();
+        /*let iss_and_header_base64details_cell =
+            pack_string_to_cell(&iss_and_header_base64details, &mut 0).unwrap();*/
+
+        let header_base_64_cell =
+            pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+
+        let iss_base_64_cell =
+            pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
 
         let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
         let max_epoch = "142"; //"200142";
 
-        let mut code = format!("PUSHINT {max_epoch} \n").to_string();
+        let mut code = format!("PUSHINT {index_mod_4} \n").to_string();
+        code = code + &*format!("PUSHINT {max_epoch} \n").to_string();
         code = code + &*format!("PUSHINT {eph_pubkey_hex_number} \n").to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON_ZKLOGIN \n".to_string();
+        code = code + &*"PUSHREF \n".to_string();
+        //code = code + &*"PUSHREF \n".to_string();
+        code = code + &*"POSEIDON \n".to_string();/**/
+
+
 
         println!("code : {code}");
 
         test_case_with_refs(
             code.as_str(),
-            vec![modulus_cell, iss_and_header_base64details_cell, zk_seed_cell],
+            vec![modulus_cell, /*&iss_and_header_base64details_cell*/ iss_base_64_cell, header_base_64_cell, zk_seed_cell],
         )
         .expect_success();
     }

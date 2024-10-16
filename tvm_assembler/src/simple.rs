@@ -843,7 +843,7 @@ impl Engine {
         CALCBKREWARD                         => 0xC7, 0x29
         CALCMINSTAKE                         => 0xC7, 0x30
         VERGRTH16                            => 0xC7, 0x31
-        POSEIDON_ZKLOGIN                     => 0xC7, 0x32
+        POSEIDON                     => 0xC7, 0x32
     }
 
     #[cfg(feature = "groth")]
