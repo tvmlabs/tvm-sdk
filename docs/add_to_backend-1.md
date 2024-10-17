@@ -22,9 +22,9 @@ The public endpoint: [https://shellnet.ackinacki.org/graphql](https://shellnet.a
 
 **System Requirements**
 
-<table><thead><tr><th width="169">Configuration</th><th>CPU (cores)</th><th>RAM (GiB)</th><th>Storage</th><th>Network (Gbit/s)</th></tr></thead><tbody><tr><td>Minimum</td><td>8c/16t</td><td>64</td><td>2 TB NVMe</td><td>1</td></tr><tr><td>Recommended</td><td>12c/24t</td><td>128</td><td>2 TB NVMe</td><td>1</td></tr></tbody></table>
+<table><thead><tr><th width="155">Configuration</th><th width="187">Minimum</th><th width="189">Recommended</th></tr></thead><tbody><tr><td>CPU (cores)</td><td>8c/16t</td><td>12c/24t</td></tr><tr><td>RAM (GiB)</td><td>64 GB</td><td>128 GB</td></tr><tr><td>Storage</td><td>1 TB NVMe </td><td>2 TB NVMe</td></tr><tr><td>Network (Gbit/s)</td><td>1 Gbit synchronous unmetered Internet connection</td><td>1 Gbit synchronous unmetered Internet connection</td></tr></tbody></table>
 
-How to run: guide is coming soon
+How to run: follow the instructions in [Ackinacki repo.](https://github.com/ackinacki/ackinacki)
 
 After successfully provisioned Block Keeper the gql endpoint will be on `localhost:3000/graphql`
 
@@ -32,11 +32,17 @@ After successfully provisioned Block Keeper the gql endpoint will be on `localho
 
 Requirements and how-to-run guide are coming soon.
 
+**System Requirements**
+
+<table><thead><tr><th width="155">Configuration</th><th width="185">Minimum</th><th width="178">Recommended</th></tr></thead><tbody><tr><td>CPU</td><td>4c/8t</td><td>8c/16t</td></tr><tr><td>RAM</td><td>32 GB</td><td>64 GB</td></tr><tr><td>Storage</td><td>1 TB NVMe</td><td>2 TB NVMe</td></tr><tr><td>Network</td><td>1 Gbit synchronous unmetered Internet connection</td><td>1 Gbit synchronous unmetered Internet connection</td></tr></tbody></table>
+
+How to run: guide is coming soon
+
 After successfully provisioned Block Manager the gql endpoint will be on `localhost:3000/graphql`
 
 ## Setting up Wallet Account
 
-Soon the official multisig wallet files will be published here [https://github.com/gosh-sh/ackinacki-wallet](https://github.com/gosh-sh/ackinacki-wallet).
+Soon the official multisig wallet files will be published here:[https://github.com/ackinacki/ackinacki/tree/main/contracts/multisig](https://github.com/ackinacki/ackinacki/tree/main/contracts/multisig).
 
 This guide implies the latest wallet API and changes in the guide may be very small. So it is good to estimate the potential integration effort.&#x20;
 
@@ -66,7 +72,7 @@ tvm-cli config --url https://shellnet.ackinacki.org/graphql
 
 **Get wallet account contract files**
 
-Soon the wallet files will be published here [https://github.com/gosh-sh/ackinacki-wallet](https://github.com/gosh-sh/ackinacki-wallet)&#x20;
+Soon the wallet files will be published here:[https://github.com/ackinacki/ackinacki/tree/main/contracts/multisig](https://github.com/ackinacki/ackinacki/tree/main/contracts/multisig)&#x20;
 
 #### Generate wallet keys and get the address
 
