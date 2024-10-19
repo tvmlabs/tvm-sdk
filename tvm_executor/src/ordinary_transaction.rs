@@ -379,33 +379,26 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             self.timings[1].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
             now = Instant::now();
         }
-        if new_acc_balance.grams >= need_to_burn {
-            new_acc_balance.grams -= need_to_burn;
-            acc_balance.grams -= need_to_burn;
-            description.aborted = match description.action.as_ref() {
-                Some(phase) => {
-                    log::debug!(
-                        target: "executor",
-                        "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
-                    );
-                    if AccStatusChange::Deleted == phase.status_change {
-                        *account = Account::default();
-                        description.destroyed = true;
-                    }
-                    if phase.success {
-                        acc_balance = new_acc_balance;
-                    }
-                    !phase.success
+        
+        description.aborted = match description.action.as_ref() {
+            Some(phase) => {
+                log::debug!(
+                    target: "executor",
+                    "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
+                );
+                if AccStatusChange::Deleted == phase.status_change {                        *account = Account::default();
+                    description.destroyed = true;
                 }
-                None => {
-                    log::debug!(target: "executor", "action_phase: none");
-                    true
+                if phase.success {
+                    acc_balance = new_acc_balance;
                 }
-            };
-        } else {
-            description.aborted = true;
-            acc_balance.grams = Grams::zero();
-        }
+                !phase.success
+            }
+            None => {
+                log::debug!(target: "executor", "action_phase: none");
+                true                
+            }
+        };
 
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
         if description.aborted && !is_ext_msg && bounce {

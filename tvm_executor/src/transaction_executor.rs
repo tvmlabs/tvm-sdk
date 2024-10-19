@@ -967,6 +967,16 @@ pub trait TransactionExecutor {
             fail!("failed to add account balance with reserved value {}", err)
         }
 
+        let err_code = match acc_remaining_balance.grams.sub(&Grams::from(need_to_burn)) {
+            Ok(_) => {
+                0
+            }
+            Err(_) => RESULT_CODE_NOT_ENOUGH_GRAMS,
+        };
+        if process_err_code(err_code, 0, &mut phase)? {
+            return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+        }
+
         log::debug!(target: "executor", "Final:    {}", balance_to_string(&acc_remaining_balance));
 
         let fee = phase.total_action_fees();
