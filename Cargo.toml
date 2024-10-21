@@ -20,9 +20,11 @@ members = [
   "tvm_tl_codegen",
   "tvm_types",
   "tvm_vm",
+  "tvm_tests"
 ]
 [workspace.package]
-version = "2.2.12"
+version = "2.3.0"
+
 rust-version = "1.76.0"
 
 authors = ["TVM Labs <hello@tvmlabs.io>"]
