@@ -711,6 +711,9 @@ pub trait TransactionExecutor {
             return Ok(ActionPhaseResult::from_phase(phase));
         }
         phase.tot_actions = actions.len() as i16;
+        log::debug!(target: "executor", "\nActions {:#?}",
+                actions
+        );
 
         let process_err_code =
             |mut err_code: i32, i: usize, phase: &mut TrActionPhase| -> Result<bool> {
