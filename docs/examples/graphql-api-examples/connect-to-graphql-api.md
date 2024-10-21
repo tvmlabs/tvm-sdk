@@ -5,7 +5,7 @@
 {% tabs %}
 {% tab title="Curl" %}
 ```bash
-curl --location --request POST 'https://hard.ackinacki.org/graphql' \
+curl --location --request POST https://shellnet.ackinacki.org/graphql \
 --header 'Content-Type: application/json' \
 --data-raw '{"query":"query{\n  blockchain{\n    blocks(last:1){\n      edges{\n        node{\n          hash\n          seq_no\n        }\n      }\n    }\n  }\n}","variables":{}}'
 ```

@@ -2,6 +2,7 @@
 description: >-
   This document describes the various ways to accomplish the most important
   tasks of running a backend project that supports Acki Nacki
+hidden: true
 ---
 
 # Add Acki Nacki to your backend
@@ -10,32 +11,38 @@ description: >-
 
 * Blockchain access may be set up through &#x20;
   * the public endpoint
-  * self-hosted Validator GQL endpoint
+  * self-hosted Block Keeper GQL endpoint
   * self-hosted Block Manager GQL endpoint
 
 ### Public endpoint
 
-The public endpoint: [https://ackinacki-testnet.tvmlabs.dev/graphql](https://ackinacki-testnet.tvmlabs.dev/graphql).
+The public endpoint: [https://shellnet.ackinacki.org/graphql](https://shellnet.ackinacki.org/graphql)
 
-### Setting up Self-Hosted Validator
+### Setting up Self-Hosted Block Keeper
 
 **System Requirements**
 
-<table><thead><tr><th width="169">Configuration</th><th>CPU (cores)</th><th>RAM (GiB)</th><th>Storage (TB)</th><th>Network (Gbit/s)</th></tr></thead><tbody><tr><td>Minimum</td><td>16c/32t</td><td>128</td><td>4 (> 200000 IOPS, > 6900 MB/s)</td><td>2</td></tr><tr><td>Recommended</td><td>24c/48t</td><td>256</td><td>4  (> 200000 IOPS, > 6900 MB/s)</td><td>2</td></tr></tbody></table>
+<table><thead><tr><th width="155">Configuration</th><th width="187">Minimum</th><th width="189">Recommended</th></tr></thead><tbody><tr><td>CPU (cores)</td><td>8c/16t</td><td>12c/24t</td></tr><tr><td>RAM (GiB)</td><td>64 GB</td><td>128 GB</td></tr><tr><td>Storage</td><td>1 TB NVMe </td><td>2 TB NVMe</td></tr><tr><td>Network (Gbit/s)</td><td>1 Gbit synchronous unmetered Internet connection</td><td>1 Gbit synchronous unmetered Internet connection</td></tr></tbody></table>
 
-How to run: guide is coming soon
+How to run: follow the instructions in [Ackinacki repo.](https://github.com/ackinacki/ackinacki)
 
-After successfully provisioned validator the gql endpoint will be on `localhost:3000/graphql`
+After successfully provisioned Block Keeper the gql endpoint will be on `localhost:3000/graphql`
 
 ### Setting up Self-Hosted Block Manager
 
 Requirements and how-to-run guide are coming soon.
 
+**System Requirements**
+
+<table><thead><tr><th width="155">Configuration</th><th width="185">Minimum</th><th width="178">Recommended</th></tr></thead><tbody><tr><td>CPU</td><td>4c/8t</td><td>8c/16t</td></tr><tr><td>RAM</td><td>32 GB</td><td>64 GB</td></tr><tr><td>Storage</td><td>1 TB NVMe</td><td>2 TB NVMe</td></tr><tr><td>Network</td><td>1 Gbit synchronous unmetered Internet connection</td><td>1 Gbit synchronous unmetered Internet connection</td></tr></tbody></table>
+
+How to run: guide is coming soon
+
 After successfully provisioned Block Manager the gql endpoint will be on `localhost:3000/graphql`
 
 ## Setting up Wallet Account
 
-Soon the official multisig wallet files will be published here [https://github.com/gosh-sh/ackinacki-wallet](https://github.com/gosh-sh/ackinacki-wallet).&#x20;
+Soon the official multisig wallet files will be published here:[https://github.com/ackinacki/ackinacki/tree/main/contracts/multisig](https://github.com/ackinacki/ackinacki/tree/main/contracts/multisig).
 
 This guide implies the latest wallet API and changes in the guide may be very small. So it is good to estimate the potential integration effort.&#x20;
 
@@ -60,17 +67,17 @@ Now path to tvm-cli is publicly accessible. You can also add it to your ENVs&#x2
 #### Configure network connection
 
 ```
-tvm-cli config --url ackinacki-testnet.tvmlabs.dev/graphql
+tvm-cli config --url https://shellnet.ackinacki.org/graphql
 ```
 
 **Get wallet account contract files**
 
-Soon the wallet files will be published here [https://github.com/gosh-sh/ackinacki-wallet](https://github.com/gosh-sh/ackinacki-wallet)&#x20;
+Soon the wallet files will be published here:[https://github.com/ackinacki/ackinacki/tree/main/contracts/multisig](https://github.com/ackinacki/ackinacki/tree/main/contracts/multisig)&#x20;
 
 #### Generate wallet keys and get the address
 
 ```
-tvm-cli genaddr wallet.tvc --genkey wallet.keys.json
+tvm-cli genaddr multisig.tvc --save --genkey multisig.keys.json
 ```
 
 #### Top up the new address from your sponsor wallet
@@ -84,7 +91,7 @@ tvm-cli call <your-sponsor-wallet-address> sendTransaction '{"dest":"new-wallet-
 Use the following command for a simple one-owner account:
 
 ```shell
-tvm-cli deploy MultisigWallet.tvc "{\"owners\":[\"0xnew-wallet-pub-key\",\"reqConfirms\":1}" --abi wallet.abi.json --sign wallet.keys.json
+tvm-cli deploy --abi multisig.abi.json --sign multisig.keys.json multisig.tvc '{"owners":[<PubKeyList>], "reqConfirms":<ConfirmsNum>, "value":<Tokens>}
 ```
 
 ### Using SDK
@@ -115,7 +122,7 @@ Note, that similar to the CLI approach described above, you have to sponsor a us
     // We need to know the future address of the wallet account,
     // because its balance must be positive for the contract to be deployed
     // Future address can be calculated by encoding the deploy message.
-    // https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#encode_message
+    // https://dev.ackinacki.com/reference/types-and-methods/mod_abi#encode_message
 
     const messageParams: ParamsOfEncodeMessage = {
         abi: { type: 'Json', value: msigABI },
@@ -167,7 +174,7 @@ Note, that similar to the CLI approach described above, you have to sponsor a us
     console.log(`Deploying wallet contract to address: ${msigAddress} and waiting for transaction...`)
 
     // This function returns type `ResultOfProcessMessage`, see: 
-    // https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_processing#process_message
+    // https://dev.ackinacki.com/reference/types-and-methods/mod_processing#process_message
     let result: ResultOfProcessMessage = await client.processing.process_message({
         message_encode_params: {
             ...messageParams,  // use the same params as for `encode_message`,
