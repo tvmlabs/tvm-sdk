@@ -1525,8 +1525,11 @@ fn outmsg_action_handler(
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
             // send all remaining account balance
             result_value = acc_balance.clone();
-            if let Err(_) = result_value.grams.sub(&Grams::from(need_to_burn)) {
-                result_value.grams = Grams::zero();
+            if reserved_value.grams == Grams::zero() {
+                if let Err(_) = result_value.grams.sub(&Grams::from(need_to_burn)) {
+                    result_value.grams = Grams::zero();
+                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                }
             }
             int_header.value = result_value.clone();
 
@@ -1607,7 +1610,7 @@ fn outmsg_action_handler(
 
     if (mode & SENDMSG_DELETE_IF_EMPTY) != 0
         && (mode & SENDMSG_ALL_BALANCE) != 0
-        && acc_balance.grams.is_zero()
+        && acc_balance.grams == Grams::from(need_to_burn)
         && reserved_value.grams.is_zero()
     {
         *account_deleted = true;
