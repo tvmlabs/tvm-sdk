@@ -902,6 +902,12 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
+        if acc_remaining_balance.grams < Grams::from(need_to_burn) {
+            let err_code = RESULT_CODE_NOT_ENOUGH_GRAMS;
+            if process_err_code(err_code, 0, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+            }
+        } 
         let src_dapp_id = match acc.get_dapp_id().cloned() {
             Some(dapp_id) => dapp_id,
             None => None,

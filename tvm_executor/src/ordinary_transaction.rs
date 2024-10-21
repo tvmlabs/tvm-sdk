@@ -403,8 +403,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             acc_balance.grams -= need_to_burn;
         } else {
             description.aborted = true;
-            out_msgs = vec![];
-            copyleft = None;
             acc_balance.grams = Grams::zero();
         }
 
