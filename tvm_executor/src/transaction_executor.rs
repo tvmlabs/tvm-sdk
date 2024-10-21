@@ -759,10 +759,11 @@ pub trait TransactionExecutor {
             && !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
 
         for (i, action) in actions.iter_mut().enumerate() {
-            log::debug!(target: "executor", "\nAction #{}\nType: {}\nInitial balance: {}",
+            log::debug!(target: "executor", "\nAction #{}\nType: {}\nInitial balance: {}, need_to_burn {}",
                 i,
                 action_type(action),
-                balance_to_string(&acc_remaining_balance)
+                balance_to_string(&acc_remaining_balance),
+                need_to_burn
             );
             let mut init_balance = acc_remaining_balance.clone();
             let err_code = match std::mem::replace(action, OutAction::None) {
