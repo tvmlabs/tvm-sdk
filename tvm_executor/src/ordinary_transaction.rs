@@ -399,6 +399,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 true
             }
         };
+        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_balance, need_to_burn);
         if acc_balance.grams >= need_to_burn {
             acc_balance.grams -= need_to_burn;
         } else {
