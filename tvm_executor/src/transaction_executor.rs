@@ -711,6 +711,9 @@ pub trait TransactionExecutor {
             return Ok(ActionPhaseResult::from_phase(phase));
         }
         phase.tot_actions = actions.len() as i16;
+        log::debug!(target: "executor", "\nActions {:#?}",
+                actions
+        );
 
         let process_err_code =
             |mut err_code: i32, i: usize, phase: &mut TrActionPhase| -> Result<bool> {
@@ -781,6 +784,7 @@ pub trait TransactionExecutor {
                         my_addr,
                         &total_reserved_value,
                         &mut account_deleted,
+                        need_to_burn
                     );
                     match result {
                         Ok(_) => {
@@ -902,6 +906,12 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
+        if acc_remaining_balance.grams < Grams::from(need_to_burn) {
+            let err_code = RESULT_CODE_NOT_ENOUGH_GRAMS;
+            if process_err_code(err_code, 0, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+            }
+        } 
         let src_dapp_id = match acc.get_dapp_id().cloned() {
             Some(dapp_id) => dapp_id,
             None => None,
@@ -933,6 +943,7 @@ pub trait TransactionExecutor {
                     my_addr,
                     &total_reserved_value,
                     &mut account_deleted,
+                    need_to_burn
                 );
                 if is_reserve_burn == false {
                     free_to_send.grams.add(&Grams::from(need_to_burn))?;
@@ -1437,6 +1448,7 @@ fn outmsg_action_handler(
     my_addr: &MsgAddressInt,
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
+    need_to_burn: u64
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
     let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE;
@@ -1512,7 +1524,10 @@ fn outmsg_action_handler(
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
             // send all remaining account balance
             result_value = acc_balance.clone();
-            int_header.value = acc_balance.clone();
+            if let Err(_) = result_value.grams.sub(&Grams::from(need_to_burn)) {
+                result_value.grams = Grams::zero();
+            }
+            int_header.value = result_value.clone();
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
