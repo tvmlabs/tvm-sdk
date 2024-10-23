@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] – 2024-10-21
+
+### New
+- Add support of VERGRTH16 and POSEIDON instructions for zk-login.
+- 
 ## [2.2.12] – 2024-10-08
 
 ### Fixed

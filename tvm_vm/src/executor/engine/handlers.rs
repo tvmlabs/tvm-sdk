@@ -44,6 +44,7 @@ use crate::executor::token::*;
 use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+use crate::executor::zk::*;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
@@ -391,7 +392,9 @@ impl Handlers {
                 .set(0x26, execute_ecc_mint)
                 .set(0x27, execute_exchange_shell)
                 .set(0x29, execute_calculate_validator_reward)
-                .set(0x30, execute_calculate_min_stake);
+                .set(0x30, execute_calculate_min_stake)
+                .set(0x31, execute_vergrth16)
+                .set(0x32, execute_poseidon_zk_login);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }

@@ -842,6 +842,8 @@ impl Engine {
         MINTSHELL                            => 0xC7, 0x28
         CALCBKREWARD                         => 0xC7, 0x29
         CALCMINSTAKE                         => 0xC7, 0x30
+        VERGRTH16                            => 0xC7, 0x31
+        POSEIDON                     => 0xC7, 0x32
     }
 
     #[cfg(feature = "groth")]
