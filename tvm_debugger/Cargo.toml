@@ -25,3 +25,6 @@ tvm_block.workspace = true
 tvm_client.workspace = true
 tvm_types.workspace = true
 tvm_vm.workspace = true
+serde = { version = "1.0.210", features = [
+    "derive"
+] }
