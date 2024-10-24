@@ -5414,6 +5414,7 @@ dependencies = [
  "clap 4.5.19",
  "hex",
  "lazy_static",
+ "serde",
  "serde_json",
  "tvm_abi",
  "tvm_block",
