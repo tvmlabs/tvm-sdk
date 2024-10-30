@@ -334,7 +334,7 @@ List of available options:
 --access_key <ACCESS_KEY>                     Project secret or JWT in Evercloud (dashboard.evercloud.dev).
 --addr <ADDR>                                 Contract address.
 --async_call <ASYNC_CALL>                     Disables wait for transaction to appear in the network after call command.
---balance_in_vmshells <BALANCE_IN_VMSHELLS>           Print balance for account command in VMSHELLs. If false balance is printed in VMSHELL.
+--balance_in_vmshells <BALANCE_IN_VMSHELLS>   Print balance for account command in VMSHELLs. If false balance is printed in nanovmshells.
 --debug_fail <DEBUG_FAIL>                     When enabled tvm-cli executes debug command on fail of run or call command. Can be enabled with values 'full' or 'minimal' which set the trace level for debug run and disabled with value 'none'.
 --depool_fee <DEPOOL_FEE>                     Value added to the message sent to depool to cover its fees (change will be returned).
 --is_json <IS_JSON>                           Cli prints output in json format.
@@ -1823,7 +1823,7 @@ List of owners must be specified by their public keys in hex format, split by th
 
 `--confirms <confirms_cnt>` - option that sets required number of confirmations. If not specified, is set to 1.
 
-`--local <local_giver_value>` - value that should be transferred from the local giver if wallet is deployed onto the Node SE (in VMSHELLs).
+`--local <local_giver_value>` - value that should be transferred from the local giver if wallet is deployed onto the Node SE (in nanovmshells).
 
 `--keys <path_to_keys_or_seed_phrase>` - path to the wallet key file or the corresponding seed phrase in quotes.
 
@@ -2714,7 +2714,7 @@ This commands allow user to learn how much funds smart contract can consume.
 
 #### 9.8.1. Call fee command
 
-This command executes smart contract call locally, calculates fees and prints table of all fees in VMSHELLs.
+This command executes smart contract call locally, calculates fees and prints table of all fees in nanovmshells.
 Command has the same option as [tvm-cli call](#441-call-contract-on-the-blockchain) command:
 
 ```bash
@@ -2751,7 +2751,7 @@ Not set rand_seed_block
 
 #### 9.8.2. Deploy fee command
 
-This command executes smart contract deploy locally, calculates fees and prints table of all fees in VMSHELLs.
+This command executes smart contract deploy locally, calculates fees and prints table of all fees in nanovmshells.
 Command has the same option as [tvm-cli deploy](#42-deploy-contract) command:
 
 ```bash

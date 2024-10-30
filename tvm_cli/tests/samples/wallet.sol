@@ -25,7 +25,7 @@ contract Wallet {
 
     /// @dev Allows to transfer grams to destination account.
     /// @param dest Transfer target address.
-    /// @param value VMSHELLs value to transfer.
+    /// @param value Nanovmshells value to transfer.
     /// @param bounce Flag that enables bounce message in case of target contract error.
     function sendTransaction(address dest, uint128 value, bool bounce) public checkOwnerAndAccept virtual {
         tvm.transfer(dest, value, bounce, 3);
