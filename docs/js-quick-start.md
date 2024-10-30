@@ -2,9 +2,10 @@
 description: >-
   This is a reference quick start guide in JS, other languages have the same api
   and should implement the integration the same way
+hidden: true
 ---
 
-# Quick Start
+# JS Quick Start
 
 ## **Prerequisites** <a href="#prerequisites" id="prerequisites"></a>
 
