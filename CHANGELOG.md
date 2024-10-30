@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.1] – 2024-10-30
+
+### Fixed
+- Fix abort transaction system.
+
 ## [2.3.0] – 2024-10-21
 
 ### New

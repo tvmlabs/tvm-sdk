@@ -20,7 +20,8 @@ use tvm_types::SliceData;
 use tvm_vm::stack::StackItem;
 
 use crate::helper::load_abi_as_string;
-use crate::{Args, ExecutionResult};
+use crate::Args;
+use crate::ExecutionResult;
 
 pub(crate) fn decode_body(
     abi_file: &PathBuf,
