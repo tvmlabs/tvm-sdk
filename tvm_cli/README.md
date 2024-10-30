@@ -334,7 +334,7 @@ List of available options:
 --access_key <ACCESS_KEY>                     Project secret or JWT in Evercloud (dashboard.evercloud.dev).
 --addr <ADDR>                                 Contract address.
 --async_call <ASYNC_CALL>                     Disables wait for transaction to appear in the network after call command.
---balance_in_tons <BALANCE_IN_VMSHELLS>           Print balance for account command in VMSHELLs. If false balance is printed in VMSHELL.
+--balance_in_vmshells <BALANCE_IN_VMSHELLS>           Print balance for account command in VMSHELLs. If false balance is printed in VMSHELL.
 --debug_fail <DEBUG_FAIL>                     When enabled tvm-cli executes debug command on fail of run or call command. Can be enabled with values 'full' or 'minimal' which set the trace level for debug run and disabled with value 'none'.
 --depool_fee <DEPOOL_FEE>                     Value added to the message sent to depool to cover its fees (change will be returned).
 --is_json <IS_JSON>                           Cli prints output in json format.
@@ -378,7 +378,7 @@ Succeeded.
   "depool_fee": 0.5,
   "lifetime": 3600,
   "no_answer": true,
-  "balance_in_tons": false,
+  "balance_in_vmshells": false,
   "local_run": true,
   "async_call": false,
   "debug_fail": "None",
@@ -466,7 +466,7 @@ Succeeded.
   "depool_fee": 0.5,
   "lifetime": 60,
   "no_answer": true,
-  "balance_in_tons": false,
+  "balance_in_vmshells": false,
   "local_run": false,
   "async_call": false,
   "debug_fail": "None",
@@ -610,7 +610,7 @@ tvm-cli config --is_json true
   "depool_fee": 0.5,
   "lifetime": 60,
   "no_answer": true,
-  "balance_in_tons": false,
+  "balance_in_vmshells": false,
   "local_run": false,
   "async_call": false,
   "debug_fail": "None",

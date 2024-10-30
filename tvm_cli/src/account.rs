@@ -127,7 +127,7 @@ pub async fn get_account(
                 let bal = acc["balance"].as_str();
                 let balance = if bal.is_some() {
                     let bal = bal.unwrap();
-                    if config.balance_in_tons {
+                    if config.balance_in_vmshells {
                         let bal = u64::from_str_radix(bal, 10)
                             .map_err(|e| format!("failed to decode balance: {}", e))?;
                         let int_bal = bal as f64 / 1e9;

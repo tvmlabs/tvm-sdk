@@ -108,7 +108,7 @@ pub struct Config {
     #[serde(default = "default_true")]
     pub no_answer: bool,
     #[serde(default = "default_false")]
-    pub balance_in_tons: bool,
+    pub balance_in_vmshells: bool,
     #[serde(default = "default_false")]
     pub local_run: bool,
     #[serde(default = "default_false")]
@@ -162,7 +162,7 @@ impl Default for Config {
             depool_fee: default_depool_fee(),
             lifetime: default_lifetime(),
             no_answer: default_true(),
-            balance_in_tons: default_false(),
+            balance_in_vmshells: default_false(),
             local_run: default_false(),
             async_call: default_false(),
             endpoints: default_endpoints(),
@@ -206,7 +206,7 @@ impl Config {
             depool_fee: default_depool_fee(),
             lifetime: default_lifetime(),
             no_answer: default_true(),
-            balance_in_tons: default_false(),
+            balance_in_vmshells: default_false(),
             local_run: default_false(),
             async_call: default_false(),
             endpoints,
@@ -416,8 +416,8 @@ pub fn clear_config(
     if matches.is_present("NO_ANSWER") {
         config.no_answer = default_true();
     }
-    if matches.is_present("BALANCE_IN_TONS") {
-        config.balance_in_tons = default_false();
+    if matches.is_present("BALANCE_IN_VMSHELLS") {
+        config.balance_in_vmshells = default_false();
     }
     if matches.is_present("LOCAL_RUN") {
         config.local_run = default_false();
@@ -526,10 +526,10 @@ pub fn set_config(
             .parse::<bool>()
             .map_err(|e| format!(r#"failed to parse "no_answer": {}"#, e))?;
     }
-    if let Some(balance_in_tons) = matches.value_of("BALANCE_IN_TONS") {
-        config.balance_in_tons = balance_in_tons
+    if let Some(balance_in_vmshells) = matches.value_of("BALANCE_IN_VMSHELLS") {
+        config.balance_in_vmshells = balance_in_vmshells
             .parse::<bool>()
-            .map_err(|e| format!(r#"failed to parse "balance_in_tons": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "balance_in_vmshells": {}"#, e))?;
     }
     if let Some(local_run) = matches.value_of("LOCAL_RUN") {
         config.local_run = local_run

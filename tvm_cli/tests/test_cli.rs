@@ -621,7 +621,7 @@ fn test_deploy() -> Result<(), Box<dyn std::error::Error>> {
 
     giver_v3(&addr);
 
-    set_config(&["--balance_in_tons", "--url"], &["true", &*NETWORK], Some(config_path))?;
+    set_config(&["--balance_in_vmshells", "--url"], &["true", &*NETWORK], Some(config_path))?;
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config")
