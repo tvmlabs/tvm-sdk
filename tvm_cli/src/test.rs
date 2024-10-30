@@ -165,7 +165,7 @@ pub fn create_test_command<'a, 'b>() -> App<'a, 'b> {
                 .long("--initial_balance")
                 .takes_value(true)
                 .required(true)
-                .help("Initial balance in nanotokens."),
+                .help("Initial balance in nanovmshells."),
         );
 
     let ticktock_cmd = SubCommand::with_name("ticktock")

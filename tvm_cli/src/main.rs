@@ -499,7 +499,7 @@ async fn main_internal() -> Result<(), String> {
             .help("Flag whether to wait for depool answer when calling a depool function."))
         .arg(Arg::with_name("BALANCE_IN_TONS")
             .long("--balance_in_tons")
-            .help("Print balance for account command in tons. If false balance is printed in nanotons."))
+            .help("Print balance for account command in vmshells. If false balance is printed in nanovmshells."))
         .arg(Arg::with_name("LOCAL_RUN")
             .long("--local_run")
             .help("Enable preliminary local run before deploy and call commands."))
@@ -642,7 +642,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(Arg::with_name("BALANCE_IN_TONS")
             .long("--balance_in_tons")
             .takes_value(true)
-            .help("Print balance for account command in tons. If false balance is printed in nanotons."))
+            .help("Print balance for account command in vmshells. If false balance is printed in nanovmshells."))
         .arg(Arg::with_name("LOCAL_RUN")
             .long("--local_run")
             .takes_value(true)
@@ -752,7 +752,7 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(
             SubCommand::with_name("storage")
                 .setting(AppSettings::AllowLeadingHyphen)
-                .about("Gets account storage fee for specified period in nanotons.")
+                .about("Gets account storage fee for specified period in nanovmshells.")
                 .version(version_string)
                 .author(author)
                 .arg(address_arg.clone())
@@ -765,10 +765,10 @@ async fn main_internal() -> Result<(), String> {
                 ),
         )
         .subcommand(deploy_cmd.clone().about(
-            "Executes deploy locally, calculates fees and prints table of fees in nanotons.",
+            "Executes deploy locally, calculates fees and prints table of fees in nanovmshells.",
         ))
         .subcommand(call_cmd.clone().about(
-            "Executes call locally, calculates fees and prints table of all fees in nanotons.",
+            "Executes call locally, calculates fees and prints table of all fees in nanovmshells.",
         ));
 
     let proposal_cmd = SubCommand::with_name("proposal")

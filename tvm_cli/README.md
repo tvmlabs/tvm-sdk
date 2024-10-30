@@ -1,6 +1,6 @@
 # TVM-CLI
 
-TVM-CLI is a multi-platform command line interface for TVM compatible networks (Acki Nacki, Venom, TON, Acki Nacki).
+TVM-CLI is a multi-platform command line interface for TVM compatible networks (Acki Nacki, Venom, TON).
 
 It allows user to work with keys and seed phrases, deploy contracts, call any of their methods, generate and broadcast
 messages. It supports specific commands for DeBot, DePool and Multisignature Wallet contracts, as well as a number of
@@ -334,7 +334,7 @@ List of available options:
 --access_key <ACCESS_KEY>                     Project secret or JWT in Evercloud (dashboard.evercloud.dev).
 --addr <ADDR>                                 Contract address.
 --async_call <ASYNC_CALL>                     Disables wait for transaction to appear in the network after call command.
---balance_in_tons <BALANCE_IN_TONS>           Print balance for account command in tons. If false balance is printed in nanotons.
+--balance_in_tons <BALANCE_IN_VMSHELLS>           Print balance for account command in VMSHELLs. If false balance is printed in VMSHELL.
 --debug_fail <DEBUG_FAIL>                     When enabled tvm-cli executes debug command on fail of run or call command. Can be enabled with values 'full' or 'minimal' which set the trace level for debug run and disabled with value 'none'.
 --depool_fee <DEPOOL_FEE>                     Value added to the message sent to depool to cover its fees (change will be returned).
 --is_json <IS_JSON>                           Cli prints output in json format.
@@ -1073,7 +1073,7 @@ Processing...
 Succeeded.
 address:       0:2bb4a0e8391e7ea8877f4825064924bd41ce110fce97e939d3323999e1efbb13
 acc_type:      Active
-balance:       11466383488239689 nanoton
+balance:       11466383488239689 nanovmshell
 last_paid:     1640619135
 last_trans_lt: 0x530197a143
 data_boc:      b5ee9c720101060100b000014195c06aa743d1f9000dd64b75498f106af4b7e7444234d7de67ea26988f6181dfe001020120050202012004030052bf874da2f56d034e11773c58331900e0e1e91a137e1b4c2ca15607634c2d63e1af0000000061c9dca50052bfbddf9156dc04cca88cf25d9c766b1bd2f1ab7d0878c4d761862fc524758767f10000000061c9dc820053bfd627d55f960de2235b3f1537884d5968e5e486c58c581bc9ea4068c8da164ce18000000030e4ee49c0
@@ -1081,7 +1081,7 @@ code_hash:     ccbfc821853aa641af3813ebd477e26818b51e4ca23e5f6d34509215aa7123d9
 
 address:       0:14014af4a374bdd13dae2379063ea2597634c2c2fc8e99ca9eab431a7ab6f566
 acc_type:      Active
-balance:       2082745497066 nanoton
+balance:       2082745497066 nanovmshell
 last_paid:     1640619517
 last_trans_lt: 0x530a3c2782
 data_boc:      b5ee9c7201020c0100022e000373000000befe45557e0000000000000000000000000002faf04e577e5cf5b28c2a81afc5ae534a0f3f494cc4ee62ef675ca8e36af911a3c8767a400b0a010183801f13b28d6b697140de03b841b9dde6195ff089aa50b57d514435a6e6181e7baba318b50f6f18c9d307d500216c80d6ecd77d13e437bdfcaf0b4fa6b9204b7847500203a1c00b620939e214cadb7481682034e58a853a77874f473c69cc7d3b1ad9da7f0bafa0000000280000000c0000000bddcfa66622a7b9c955271c779b92448cff442b8efead77d43bd7f50b07a45f380030010706030203cca005040045b41bda168cd2322b5dcd28989176a9eae590288db4d548f2b6948d214de0c9bdb372700045b6554f714ca768f21ad18cff20c7af62091e9fc2d40c06d32d1ace7495f5dd1605781000bda90017d76e405363a8a494a3a8d8c38fcadd4f2c7fb550244fd6d2a77ac12eb029bce000000000000255400000000000000000000000000000034c3babc06000000000000000000000000000000000000000000000000000000000000000100201200908009bbfe85a3348c8ad7734a26245daa7ab9640a236d35523cada523485378326f6cdc9800000000000106f0000000000000000000000000002035ac0000000000000000000000000000000187c4b00e0007bbffdc5329da3c86b4633fc831ebd88247a7f0b50301b4cb46b39d257d7745815e0000000000000095500000000000000000000000002f8eb24987c490760000454310010546f6b656e202331
@@ -1090,7 +1090,7 @@ code_hash:     eee7d3331153dce4aa938e3bcdc922467fa215c77f56bbea1debfa8583d22f9c
 0:f89d946b5b4b8a06f01dc20dceef30caff844d5285abea8a21ad3730c0f3dd12 not found
 
 
-$ tvm-cli  account 0:2bb4a0e8391e7ea8877f4825064924bd41ce110fce97e939d3323999e1efbb13
+$ tvm-cli account 0:2bb4a0e8391e7ea8877f4825064924bd41ce110fce97e939d3323999e1efbb13
 Config: /home/user/tvmlabs/tvm-cli/tvm-cli.conf.json
 Input arguments:
 addresses: 0:2bb4a0e8391e7ea8877f4825064924bd41ce110fce97e939d3323999e1efbb13
@@ -1099,7 +1099,7 @@ Processing...
 Succeeded.
 address:       0:2bb4a0e8391e7ea8877f4825064924bd41ce110fce97e939d3323999e1efbb13
 acc_type:      Active
-balance:       11463682795615708 nanoton
+balance:       11463682795615708 nanovmshell
 last_paid:     1640624439
 last_trans_lt: 0x5379939282
 data_boc:      b5ee9c7201010401008100014195c06aa743d1f9000dd64b75498f106af4b7e7444234d7de67ea26988f6181dfe00102012003020053bfde8d98393e5db0ea2f609ed9266cf61a7487759d679ea9792adbdcfc137f6caf8000000030e4f89dc00053bfc8658b6b027767d9addd720a0bf8b157379a9b0e9208bab53ad4ee54358c6ce98000000030e4f89dc0
@@ -1823,7 +1823,7 @@ List of owners must be specified by their public keys in hex format, split by th
 
 `--confirms <confirms_cnt>` - option that sets required number of confirmations. If not specified, is set to 1.
 
-`--local <local_giver_value>` - value that should be transferred from the local giver if wallet is deployed onto the Node SE (in nanotons).
+`--local <local_giver_value>` - value that should be transferred from the local giver if wallet is deployed onto the Node SE (in VMSHELLs).
 
 `--keys <path_to_keys_or_seed_phrase>` - path to the wallet key file or the corresponding seed phrase in quotes.
 
@@ -1866,7 +1866,7 @@ tvm-cli config --addr <address> --wallet <address> --no-answer true | false --ke
 
 `<path_to_keys or seed_phrase>` - either the keyfile for the wallet making the stake, or the seed phrase in quotes
 
-`--depool_fee <depool_fee>` - value in tons, that is additionally attached to the message sent to the DePool to cover its fees. Change is returned to the sender. The default value, used if this option isn't configured, is 0.5 tons. It should be increased only if it proves insufficient and DePool begins to run out of gas on execution.
+`--depool_fee <depool_fee>` - value in VMSHELLs, that is additionally attached to the message sent to the DePool to cover its fees. Change is returned to the sender. The default value, used if this option isn't configured, is 0.5 VMSHELLs. It should be increased only if it proves insufficient and DePool begins to run out of gas on execution.
 
 Example:
 
@@ -1960,7 +1960,7 @@ tvm-cli depool [--addr <depool_address>] stake ordinary [--wallet <msig_address>
 
 `<msig_address>` - address of the wallet making a stake.
 
-all --value parameters must be defined in tons, like this: `--value 10.5`, which means the value is 10,5 tons.
+all --value parameters must be defined in VMSELLs, like this: `--value 10.5`, which means the value is 10,5 VMSHELLs.
 
 `<key_file or seed_phrase>` - either the keyfile for the wallet making the stake, or the seed phrase in quotes.
 
@@ -2029,7 +2029,7 @@ Where
 
 `<msig_address>` - address of the donor wallet making a stake.
 
-all `--value` parameters must be defined in tons, like this: `--value 10.5`, which means the value is 10,5 tons.
+all `--value` parameters must be defined in VMSHELLs, like this: `--value 10.5`, which means the value is 10,5 VMSHELLs.
 
 `total <days>` - total period, for which the stake is made.
 
@@ -2111,7 +2111,7 @@ Where
 
 `<msig_address>` - address of the donor wallet making a stake.
 
-all `--value` parameters must be defined in tons, like this: `--value 10.5`, which means the value is 10,5 tons.
+all `--value` parameters must be defined in VMSHELLs, like this: `--value 10.5`, which means the value is 10,5 VMSHELLs.
 
 `total <days>` - total period, for which the stake is made.
 
@@ -2149,7 +2149,7 @@ Where
 
 `<msig_address>` - address of the wallet that made the stake.
 
-all `--value` parameters must be defined in tons, like this: `--value 10.5`, which means the value is 10,5 tons.
+all `--value` parameters must be defined in VMSHELLs, like this: `--value 10.5`, which means the value is 10,5 VMSHELLs.
 
 `<key_file or seed_phrase>` - either the keyfile for the wallet making the stake, or the seed phrase in quotes.
 
@@ -2179,7 +2179,7 @@ Where
 
 `<msig_address>` - address of the wallet that made the stake.
 
-all `--value` parameters must be defined in tons, like this: `--value 10.5`, which means the value is 10,5 tons.
+all `--value` parameters must be defined in VMSHELLs, like this: `--value 10.5`, which means the value is 10,5 VMSHELLs.
 
 `dest <address>` - address of the new owner of the stake.
 
@@ -2243,7 +2243,7 @@ Where
 
 `<msig_address>` - address of the wallet that made the stake.
 
-all `--value` parameters must be defined in tons, like this: `--value 10.5`, which means the value is 10,5 tons.
+all `--value` parameters must be defined in VMSHELLs, like this: `--value 10.5`, which means the value is 10,5 VMSHELLs.
 
 `<key_file or seed_phrase>` - either the keyfile for the wallet that made the stake, or the seed phrase in quotes.
 
@@ -2381,7 +2381,7 @@ tvm-cli depool [--addr <depool_address>] replenish --value *number* [--wallet <m
 
 `<depool_address>` - address of the DePool contract.
 
-all `--value` parameters must be defined in tons, like this: `--value 150.5`, which means the value is 150,5 tons.
+all `--value` parameters must be defined in VMSHELLs, like this: `--value 150.5`, which means the value is 150,5 VMSHELLs.
 
 `<msig_address>` - address of the wallet that made the stake.
 
@@ -2714,7 +2714,7 @@ This commands allow user to learn how much funds smart contract can consume.
 
 #### 9.8.1. Call fee command
 
-This command executes smart contract call locally, calculates fees and prints table of all fees in nanotons.
+This command executes smart contract call locally, calculates fees and prints table of all fees in VMSHELLs.
 Command has the same option as [tvm-cli call](#441-call-contract-on-the-blockchain) command:
 
 ```bash
@@ -2751,7 +2751,7 @@ Not set rand_seed_block
 
 #### 9.8.2. Deploy fee command
 
-This command executes smart contract deploy locally, calculates fees and prints table of all fees in nanotons.
+This command executes smart contract deploy locally, calculates fees and prints table of all fees in VMSHELLs.
 Command has the same option as [tvm-cli deploy](#42-deploy-contract) command:
 
 ```bash
@@ -2848,7 +2848,7 @@ Note 2: to get StateInit (tvc) from Account state use `tvm-cli decode account bo
 - 2) Extract tvc from the generated Account state.
 
 1) Use contract deployer (address in mainnet: `0:51616debd4296a4598530d57c10a630db6dc677ecbe1500acaefcfdb9c596c64`) to
-deploy the extracted tvc to the frozen account. Send 1 ton to its address and then run its `deploy` method.
+deploy the extracted tvc to the frozen account. Send 1 VMSHELL to its address and then run its `deploy` method.
 
 Example:
 
