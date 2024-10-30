@@ -409,7 +409,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             acc_balance.grams = Grams::zero();
         }
 
-
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
         if description.aborted && is_ext_msg {
             log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);

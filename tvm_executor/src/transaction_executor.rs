@@ -785,7 +785,7 @@ pub trait TransactionExecutor {
                         my_addr,
                         &total_reserved_value,
                         &mut account_deleted,
-                        need_to_burn
+                        need_to_burn,
                     );
                     match result {
                         Ok(_) => {
@@ -912,7 +912,7 @@ pub trait TransactionExecutor {
             if process_err_code(err_code, 0, &mut phase)? {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
-        } 
+        }
         let src_dapp_id = match acc.get_dapp_id().cloned() {
             Some(dapp_id) => dapp_id,
             None => None,
@@ -944,7 +944,7 @@ pub trait TransactionExecutor {
                     my_addr,
                     &total_reserved_value,
                     &mut account_deleted,
-                    need_to_burn
+                    need_to_burn,
                 );
                 if is_reserve_burn == false {
                     free_to_send.grams.add(&Grams::from(need_to_burn))?;
@@ -1449,7 +1449,7 @@ fn outmsg_action_handler(
     my_addr: &MsgAddressInt,
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
-    need_to_burn: u64
+    need_to_burn: u64,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
     let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE;
@@ -1526,7 +1526,10 @@ fn outmsg_action_handler(
             // send all remaining account balance
             result_value = acc_balance.clone();
             if reserved_value.grams == Grams::zero() {
-                if let Err(_) = result_value.grams.sub(&Grams::from(need_to_burn)) {
+                if !result_value.grams.sub(&Grams::from(need_to_burn)).map_err(|err| {
+                    log::error!(target: "executor", "cannot sub grams : {}", err);
+                    RESULT_CODE_UNSUPPORTED
+                })? {
                     result_value.grams = Grams::zero();
                     return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
                 }
