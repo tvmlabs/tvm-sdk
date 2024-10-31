@@ -2,12 +2,12 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
+use super::TonClient;
+use super::dinterface::DebotInterface;
+use super::dinterface::InterfaceResult;
 use super::dinterface::decode_answer_id;
 use super::dinterface::get_arg;
 use super::dinterface::get_array_strings;
-use super::dinterface::DebotInterface;
-use super::dinterface::InterfaceResult;
-use super::TonClient;
 use crate::abi::Abi;
 use crate::client::FetchMethod;
 

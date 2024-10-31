@@ -9,9 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::ExceptionCode;
 use tvm_types::BuilderData;
 use tvm_types::GasConsumer;
 use tvm_types::HashmapE;
@@ -19,23 +16,26 @@ use tvm_types::HashmapSubtree;
 use tvm_types::PfxHashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
+use crate::executor::Mask;
 use crate::executor::continuation::callx;
 use crate::executor::continuation::switch;
-use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
+use crate::executor::engine::storage::fetch_stack;
 use crate::executor::microcode::VAR;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
-use crate::executor::Mask;
+use crate::stack::StackItem;
 use crate::stack::continuation::ContinuationData;
+use crate::stack::integer::IntegerData;
 use crate::stack::integer::serialization::Encoding;
 use crate::stack::integer::serialization::SignedIntegerBigEndianEncoding;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
-use crate::stack::integer::IntegerData;
 use crate::stack::serialization::Deserializer;
-use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 

@@ -9,19 +9,19 @@ use crate::boc::internal::deserialize_object_from_base64;
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientResult;
-use crate::net::wait_for_collection;
-use crate::net::ParamsOfWaitForCollection;
 use crate::net::MAX_TIMEOUT;
+use crate::net::ParamsOfWaitForCollection;
 use crate::net::TRANSACTIONS_COLLECTION;
+use crate::net::wait_for_collection;
+use crate::processing::Error;
+use crate::processing::ParamsOfWaitForTransaction;
+use crate::processing::ProcessingEvent;
+use crate::processing::ResultOfProcessMessage;
 use crate::processing::blocks_walking::wait_next_block;
 use crate::processing::internal::can_retry_network_error;
 use crate::processing::internal::resolve_error;
 use crate::processing::parsing::decode_output;
 use crate::processing::parsing::parse_transaction_boc;
-use crate::processing::Error;
-use crate::processing::ParamsOfWaitForTransaction;
-use crate::processing::ProcessingEvent;
-use crate::processing::ResultOfProcessMessage;
 use crate::tvm::check_transaction::calc_transaction_fees;
 use crate::tvm::check_transaction::extract_error;
 
@@ -94,17 +94,14 @@ impl TransactionBoc {
         context: &Arc<ClientContext>,
         transaction_id: &str,
     ) -> ClientResult<Value> {
-        Ok(wait_for_collection(
-            context.clone(),
-            ParamsOfWaitForCollection {
-                collection: TRANSACTIONS_COLLECTION.into(),
-                filter: Some(json!({
-                    "id": { "eq": transaction_id.to_string() }
-                })),
-                result: "boc out_messages { boc }".into(),
-                timeout: Some(MAX_TIMEOUT),
-            },
-        )
+        Ok(wait_for_collection(context.clone(), ParamsOfWaitForCollection {
+            collection: TRANSACTIONS_COLLECTION.into(),
+            filter: Some(json!({
+                "id": { "eq": transaction_id.to_string() }
+            })),
+            result: "boc out_messages { boc }".into(),
+            timeout: Some(MAX_TIMEOUT),
+        })
         .await?
         .result)
     }
@@ -114,18 +111,15 @@ impl TransactionBoc {
         message_id: &str,
         block_id: &str,
     ) -> ClientResult<Value> {
-        Ok(wait_for_collection(
-            context.clone(),
-            ParamsOfWaitForCollection {
-                collection: TRANSACTIONS_COLLECTION.into(),
-                filter: Some(json!({
-                    "in_msg": { "eq": message_id },
-                    "block_id": { "eq": block_id },
-                })),
-                result: "boc out_messages { boc }".into(),
-                timeout: Some(MAX_TIMEOUT),
-            },
-        )
+        Ok(wait_for_collection(context.clone(), ParamsOfWaitForCollection {
+            collection: TRANSACTIONS_COLLECTION.into(),
+            filter: Some(json!({
+                "in_msg": { "eq": message_id },
+                "block_id": { "eq": block_id },
+            })),
+            result: "boc out_messages { boc }".into(),
+            timeout: Some(MAX_TIMEOUT),
+        })
         .await?
         .result)
     }

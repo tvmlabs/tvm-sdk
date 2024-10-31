@@ -21,21 +21,21 @@ use std::io::Write;
 use std::ops::BitOr;
 use std::ops::BitOrAssign;
 use std::ops::Deref;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Weak;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
 use num::FromPrimitive;
 use num::ToPrimitive;
 
+use crate::Sha256;
 use crate::error;
 use crate::fail;
 use crate::types::ByteOrderRead;
 use crate::types::ExceptionCode;
 use crate::types::Result;
 use crate::types::UInt256;
-use crate::Sha256;
 
 pub const SHA256_SIZE: usize = 32;
 pub const DEPTH_SIZE: usize = 2;

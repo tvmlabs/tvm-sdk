@@ -11,9 +11,6 @@
 
 use std::fmt;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::hm_label;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -23,7 +20,13 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::hm_label;
 
+use crate::Augmentation;
+use crate::Deserializable;
+use crate::Serializable;
 use crate::accounts::Account;
 use crate::accounts::ShardAccount;
 use crate::define_HashmapAugE;
@@ -31,9 +34,6 @@ use crate::hashmapaug::Augmentable;
 use crate::hashmapaug::HashmapAugType;
 use crate::types::CurrencyCollection;
 use crate::types::Number5;
-use crate::Augmentation;
-use crate::Deserializable;
-use crate::Serializable;
 
 #[cfg(test)]
 #[path = "tests/test_shard_accounts.rs"]

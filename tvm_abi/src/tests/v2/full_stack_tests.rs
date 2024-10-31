@@ -12,11 +12,11 @@
 use serde_json::json;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
+use tvm_types::ED25519_SIGNATURE_LENGTH;
+use tvm_types::IBitstring;
 use tvm_types::dictionary::HashmapE;
 use tvm_types::ed25519_generate_private_key;
 use tvm_types::ed25519_verify;
-use tvm_types::IBitstring;
-use tvm_types::ED25519_SIGNATURE_LENGTH;
 
 use crate::json_abi::*;
 

@@ -24,6 +24,7 @@ use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
+use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::Serializable;
 use tvm_block::TrBouncePhase;
@@ -31,25 +32,24 @@ use tvm_block::TrComputePhase;
 use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionDescrOrdinary;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_vm::SmartContractInfo;
 use tvm_vm::boolean;
 use tvm_vm::int;
-use tvm_vm::stack::integer::IntegerData;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
-use tvm_vm::SmartContractInfo;
+use tvm_vm::stack::integer::IntegerData;
 
-use crate::blockchain_config::BlockchainConfig;
-use crate::error::ExecutorError;
 use crate::ActionPhaseResult;
 use crate::ExecuteParams;
 use crate::TransactionExecutor;
 use crate::VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
+use crate::blockchain_config::BlockchainConfig;
+use crate::error::ExecutorError;
 
 pub struct OrdinaryTransactionExecutor {
     config: BlockchainConfig,
@@ -293,7 +293,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         stack
             .push(int!(acc_balance.grams.as_u128()))
             .push(int!(msg_balance.grams.as_u128()))
-            .push(StackItem::Cell(in_msg_cell))
+            .push(StackItem::Cell(in_msg_cell.clone()))
             .push(StackItem::Slice(in_msg.body().unwrap_or_default()))
             .push(boolean!(is_ext_msg));
         log::debug!(target: "executor", "compute_phase");
@@ -379,35 +379,48 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             self.timings[1].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
             now = Instant::now();
         }
-        if new_acc_balance.grams >= need_to_burn {
-            new_acc_balance.grams -= need_to_burn;
+        description.aborted = match description.action.as_ref() {
+            Some(phase) => {
+                log::debug!(
+                    target: "executor",
+                    "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
+                );
+                if AccStatusChange::Deleted == phase.status_change {
+                    *account = Account::default();
+                    description.destroyed = true;
+                }
+                if phase.success {
+                    acc_balance = new_acc_balance;
+                }
+                !phase.success
+            }
+            None => {
+                log::debug!(target: "executor", "action_phase: none");
+                true
+            }
+        };
+        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_balance, need_to_burn);
+        if acc_balance.grams >= need_to_burn {
             acc_balance.grams -= need_to_burn;
-            description.aborted = match description.action.as_ref() {
-                Some(phase) => {
-                    log::debug!(
-                        target: "executor",
-                        "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
-                    );
-                    if AccStatusChange::Deleted == phase.status_change {
-                        *account = Account::default();
-                        description.destroyed = true;
-                    }
-                    if phase.success {
-                        acc_balance = new_acc_balance;
-                    }
-                    !phase.success
-                }
-                None => {
-                    log::debug!(target: "executor", "action_phase: none");
-                    true
-                }
-            };
         } else {
             description.aborted = true;
+            out_msgs = Vec::new();
+            copyleft = None;
             acc_balance.grams = Grams::zero();
         }
 
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
+        if description.aborted && is_ext_msg {
+            log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
+            acc_balance = original_acc_balance.clone();
+            if !is_special {
+                let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
+                log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
+                if !acc_balance.grams.sub(&in_fwd_fee)? {
+                    acc_balance.grams = Grams::zero();
+                }
+            }
+        }
         if description.aborted && !is_ext_msg && bounce {
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)

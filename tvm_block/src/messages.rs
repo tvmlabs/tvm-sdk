@@ -12,21 +12,26 @@
 use std::fmt;
 use std::str::FromStr;
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
+use tvm_types::MAX_DATA_BITS;
+use tvm_types::MAX_REFERENCES_COUNT;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::UsageTree;
-use tvm_types::MAX_DATA_BITS;
-use tvm_types::MAX_REFERENCES_COUNT;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::Deserializable;
+use crate::GetRepresentationHash;
+use crate::MaybeDeserialize;
+use crate::MaybeSerialize;
+use crate::Serializable;
 use crate::blocks::Block;
 use crate::define_HashmapE;
 use crate::error::BlockError;
@@ -39,11 +44,6 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
-use crate::Deserializable;
-use crate::GetRepresentationHash;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
-use crate::Serializable;
 
 #[cfg(test)]
 #[path = "tests/test_messages.rs"]
@@ -695,13 +695,13 @@ impl Serializable for InternalMessageHeader {
         self.src.write_to(cell)?;
         self.dst.write_to(cell)?;
 
-        self.value.write_to(cell)?; //value: CurrencyCollection
+        self.value.write_to(cell)?; // value: CurrencyCollection
 
-        self.ihr_fee.write_to(cell)?; //ihr_fee
-        self.fwd_fee.write_to(cell)?; //fwd_fee
+        self.ihr_fee.write_to(cell)?; // ihr_fee
+        self.fwd_fee.write_to(cell)?; // fwd_fee
 
-        self.created_lt.write_to(cell)?; //created_lt
-        self.created_at.write_to(cell)?; //created_at
+        self.created_lt.write_to(cell)?; // created_lt
+        self.created_at.write_to(cell)?; // created_at
         self.src_dapp_id.write_maybe_to(cell)?;
         Ok(())
     }
@@ -719,10 +719,10 @@ impl Deserializable for InternalMessageHeader {
 
         self.value.read_from(cell)?; // value - balance
 
-        self.ihr_fee.read_from(cell)?; //ihr_fee
-        self.fwd_fee.read_from(cell)?; //fwd_fee
-        self.created_lt.read_from(cell)?; //created_lt
-        self.created_at.read_from(cell)?; //created_at
+        self.ihr_fee.read_from(cell)?; // ihr_fee
+        self.fwd_fee.read_from(cell)?; // fwd_fee
+        self.created_lt.read_from(cell)?; // created_lt
+        self.created_at.read_from(cell)?; // created_at
         if cell.get_next_bit()? == true {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
         }
@@ -760,7 +760,7 @@ impl Serializable for ExternalInboundMessageHeader {
 
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
-        self.import_fee.write_to(cell)?; //ihr_fee
+        self.import_fee.write_to(cell)?; // ihr_fee
 
         Ok(())
     }
@@ -771,7 +771,7 @@ impl Deserializable for ExternalInboundMessageHeader {
         // constructor tag will be readed in Message
         self.src.read_from(cell)?; // addr src
         self.dst.read_from(cell)?; // addr dst
-        self.import_fee.read_from(cell)?; //ihr_fee
+        self.import_fee.read_from(cell)?; // ihr_fee
         Ok(())
     }
 }
@@ -822,8 +822,8 @@ impl Serializable for ExtOutMessageHeader {
 
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
-        self.created_lt.write_to(cell)?; //created_lt
-        self.created_at.write_to(cell)?; //created_at
+        self.created_lt.write_to(cell)?; // created_lt
+        self.created_at.write_to(cell)?; // created_at
 
         Ok(())
     }
@@ -834,8 +834,8 @@ impl Deserializable for ExtOutMessageHeader {
         // constructor tag will be readed in Message
         self.src.read_from(cell)?; // addr src
         self.dst.read_from(cell)?; // addr dst
-        self.created_lt.read_from(cell)?; //created_lt
-        self.created_at.read_from(cell)?; //created_at
+        self.created_lt.read_from(cell)?; // created_lt
+        self.created_at.read_from(cell)?; // created_at
         Ok(())
     }
 }
@@ -1456,13 +1456,13 @@ impl Message {
                 if !init_to_ref {
                     builder
                         .append_bit_one()? //mayby bit
-                        .append_bit_zero()?; //either bit
+                        .append_bit_zero()?; // either bit
                     builder.append_builder(&init_builder)?;
                 } else {
                     // if not enough space in current cell - append as reference
                     builder
                         .append_bit_one()? //mayby bit
-                        .append_bit_one()?; //either bit
+                        .append_bit_one()?; // either bit
                     builder.checked_append_reference(init_builder.into_cell()?)?;
                 }
             }
@@ -1476,11 +1476,11 @@ impl Message {
         match self.body.as_ref() {
             Some(body) => {
                 if !body_to_ref {
-                    builder.append_bit_zero()?; //either bit  x:X
+                    builder.append_bit_zero()?; // either bit  x:X
                     builder.checked_append_references_and_data(body)?;
                 } else {
                     // if not enough space in current cell - append as reference
-                    builder.append_bit_one()?; //either bit  x:^X
+                    builder.append_bit_one()?; // either bit  x:^X
                     builder.checked_append_reference(body.clone().into_cell())?;
                 };
             }

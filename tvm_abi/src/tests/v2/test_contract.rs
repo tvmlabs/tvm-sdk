@@ -11,13 +11,13 @@
 
 use std::collections::HashMap;
 
-use crate::contract::ABI_VERSION_2_4;
 use crate::Contract;
 use crate::DataItem;
 use crate::Event;
 use crate::Function;
 use crate::Param;
 use crate::ParamType;
+use crate::contract::ABI_VERSION_2_4;
 
 const TEST_ABI: &str = r#"
 {
@@ -91,123 +91,101 @@ fn test_abi_parse() {
     ];
     let abi_version = ABI_VERSION_2_4;
 
-    functions.insert(
-        "input_and_output".to_owned(),
-        Function {
-            abi_version,
-            name: "input_and_output".to_owned(),
-            header: header.clone(),
-            inputs: vec![
-                Param { name: "a".to_owned(), kind: ParamType::Uint(64) },
-                Param {
-                    name: "b".to_owned(),
-                    kind: ParamType::Array(Box::new(ParamType::Uint(8))),
-                },
-                Param { name: "c".to_owned(), kind: ParamType::Bytes },
-            ],
-            outputs: vec![
-                Param { name: "a".to_owned(), kind: ParamType::Int(16) },
-                Param { name: "b".to_owned(), kind: ParamType::Uint(8) },
-            ],
-            input_id: Function::calc_function_id(
-                "input_and_output(uint64,uint8[],bytes)(int16,uint8)v2",
-            ) & 0x7FFFFFFF,
-            output_id: Function::calc_function_id(
-                "input_and_output(uint64,uint8[],bytes)(int16,uint8)v2",
-            ) | 0x80000000,
-        },
-    );
+    functions.insert("input_and_output".to_owned(), Function {
+        abi_version,
+        name: "input_and_output".to_owned(),
+        header: header.clone(),
+        inputs: vec![
+            Param { name: "a".to_owned(), kind: ParamType::Uint(64) },
+            Param { name: "b".to_owned(), kind: ParamType::Array(Box::new(ParamType::Uint(8))) },
+            Param { name: "c".to_owned(), kind: ParamType::Bytes },
+        ],
+        outputs: vec![Param { name: "a".to_owned(), kind: ParamType::Int(16) }, Param {
+            name: "b".to_owned(),
+            kind: ParamType::Uint(8),
+        }],
+        input_id: Function::calc_function_id(
+            "input_and_output(uint64,uint8[],bytes)(int16,uint8)v2",
+        ) & 0x7FFFFFFF,
+        output_id: Function::calc_function_id(
+            "input_and_output(uint64,uint8[],bytes)(int16,uint8)v2",
+        ) | 0x80000000,
+    });
 
-    functions.insert(
-        "no_output".to_owned(),
-        Function {
-            abi_version,
-            name: "no_output".to_owned(),
-            header: header.clone(),
-            inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Uint(15) }],
-            outputs: vec![],
-            input_id: Function::calc_function_id("no_output(uint15)()v2") & 0x7FFFFFFF,
-            output_id: Function::calc_function_id("no_output(uint15)()v2") | 0x80000000,
-        },
-    );
+    functions.insert("no_output".to_owned(), Function {
+        abi_version,
+        name: "no_output".to_owned(),
+        header: header.clone(),
+        inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Uint(15) }],
+        outputs: vec![],
+        input_id: Function::calc_function_id("no_output(uint15)()v2") & 0x7FFFFFFF,
+        output_id: Function::calc_function_id("no_output(uint15)()v2") | 0x80000000,
+    });
 
-    functions.insert(
-        "no_input".to_owned(),
-        Function {
-            abi_version,
-            name: "no_input".to_owned(),
-            header: header.clone(),
-            inputs: vec![],
-            outputs: vec![Param { name: "a".to_owned(), kind: ParamType::Uint(8) }],
-            input_id: Function::calc_function_id("no_input()(uint8)v2") & 0x7FFFFFFF,
-            output_id: Function::calc_function_id("no_input()(uint8)v2") | 0x80000000,
-        },
-    );
+    functions.insert("no_input".to_owned(), Function {
+        abi_version,
+        name: "no_input".to_owned(),
+        header: header.clone(),
+        inputs: vec![],
+        outputs: vec![Param { name: "a".to_owned(), kind: ParamType::Uint(8) }],
+        input_id: Function::calc_function_id("no_input()(uint8)v2") & 0x7FFFFFFF,
+        output_id: Function::calc_function_id("no_input()(uint8)v2") | 0x80000000,
+    });
 
-    functions.insert(
-        "constructor".to_owned(),
-        Function {
-            abi_version,
-            name: "constructor".to_owned(),
-            header: header.clone(),
-            inputs: vec![],
-            outputs: vec![],
-            input_id: Function::calc_function_id("constructor()()v2") & 0x7FFFFFFF,
-            output_id: Function::calc_function_id("constructor()()v2") | 0x80000000,
-        },
-    );
+    functions.insert("constructor".to_owned(), Function {
+        abi_version,
+        name: "constructor".to_owned(),
+        header: header.clone(),
+        inputs: vec![],
+        outputs: vec![],
+        input_id: Function::calc_function_id("constructor()()v2") & 0x7FFFFFFF,
+        output_id: Function::calc_function_id("constructor()()v2") | 0x80000000,
+    });
 
-    functions.insert(
-        "has_id".to_owned(),
-        Function {
-            abi_version,
-            name: "has_id".to_owned(),
-            header: header.clone(),
-            inputs: vec![],
-            outputs: vec![],
-            input_id: 0x01234567,
-            output_id: 0x01234567,
-        },
-    );
+    functions.insert("has_id".to_owned(), Function {
+        abi_version,
+        name: "has_id".to_owned(),
+        header: header.clone(),
+        inputs: vec![],
+        outputs: vec![],
+        input_id: 0x01234567,
+        output_id: 0x01234567,
+    });
 
     let mut events = HashMap::new();
 
-    events.insert(
-        "input".to_owned(),
-        Event {
-            abi_version,
-            name: "input".to_owned(),
-            inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Uint(64) }],
-            id: Function::calc_function_id("input(uint64)v2") & 0x7FFFFFFF,
-        },
-    );
+    events.insert("input".to_owned(), Event {
+        abi_version,
+        name: "input".to_owned(),
+        inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Uint(64) }],
+        id: Function::calc_function_id("input(uint64)v2") & 0x7FFFFFFF,
+    });
 
-    events.insert(
-        "no_input".to_owned(),
-        Event {
-            abi_version,
-            name: "no_input".to_owned(),
-            inputs: vec![],
-            id: Function::calc_function_id("no_input()v2") & 0x7FFFFFFF,
-        },
-    );
+    events.insert("no_input".to_owned(), Event {
+        abi_version,
+        name: "no_input".to_owned(),
+        inputs: vec![],
+        id: Function::calc_function_id("no_input()v2") & 0x7FFFFFFF,
+    });
 
-    events.insert(
-        "has_id".to_owned(),
-        Event { abi_version, name: "has_id".to_owned(), inputs: vec![], id: 0x89abcdef },
-    );
+    events.insert("has_id".to_owned(), Event {
+        abi_version,
+        name: "has_id".to_owned(),
+        inputs: vec![],
+        id: 0x89abcdef,
+    });
 
     let mut data = HashMap::new();
 
-    data.insert(
-        "a".to_owned(),
-        DataItem { value: Param { name: "a".to_owned(), kind: ParamType::Uint(256) }, key: 100 },
-    );
+    data.insert("a".to_owned(), DataItem {
+        value: Param { name: "a".to_owned(), kind: ParamType::Uint(256) },
+        key: 100,
+    });
 
-    let fields = vec![
-        Param { name: "a".into(), kind: ParamType::Uint(32) },
-        Param { name: "b".into(), kind: ParamType::Int(128) },
-    ];
+    let fields = vec![Param { name: "a".into(), kind: ParamType::Uint(32) }, Param {
+        name: "b".into(),
+        kind: ParamType::Int(128),
+    }];
 
     let init_fields = vec!["b".to_owned()].into_iter().collect();
 
