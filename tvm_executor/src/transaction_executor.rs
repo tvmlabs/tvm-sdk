@@ -12,16 +12,17 @@
 
 use std::cmp::min;
 use std::collections::LinkedList;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
 use tvm_block::AccStatusChange;
 use tvm_block::Account;
 use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
+use tvm_block::BASE_WORKCHAIN_ID;
 use tvm_block::CommonMsgInfo;
 use tvm_block::ComputeSkipReason;
 use tvm_block::CopyleftReward;
@@ -33,10 +34,22 @@ use tvm_block::GetRepresentationHash;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
 use tvm_block::HashUpdate;
+use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 use tvm_block::OutAction;
 use tvm_block::OutActions;
+use tvm_block::RESERVE_ALL_BUT;
+use tvm_block::RESERVE_IGNORE_ERROR;
+use tvm_block::RESERVE_PLUS_ORIG;
+use tvm_block::RESERVE_REVERSE;
+use tvm_block::RESERVE_VALID_MODES;
+use tvm_block::SENDMSG_ALL_BALANCE;
+use tvm_block::SENDMSG_DELETE_IF_EMPTY;
+use tvm_block::SENDMSG_IGNORE_ERROR;
+use tvm_block::SENDMSG_PAY_FEE_SEPARATELY;
+use tvm_block::SENDMSG_REMAINING_MSG_BALANCE;
+use tvm_block::SENDMSG_VALID_FLAGS;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_block::StorageUsedShort;
@@ -49,21 +62,6 @@ use tvm_block::TrStoragePhase;
 use tvm_block::Transaction;
 use tvm_block::VarUInteger32;
 use tvm_block::WorkchainFormat;
-use tvm_block::BASE_WORKCHAIN_ID;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_block::RESERVE_ALL_BUT;
-use tvm_block::RESERVE_IGNORE_ERROR;
-use tvm_block::RESERVE_PLUS_ORIG;
-use tvm_block::RESERVE_REVERSE;
-use tvm_block::RESERVE_VALID_MODES;
-use tvm_block::SENDMSG_ALL_BALANCE;
-use tvm_block::SENDMSG_DELETE_IF_EMPTY;
-use tvm_block::SENDMSG_IGNORE_ERROR;
-use tvm_block::SENDMSG_PAY_FEE_SEPARATELY;
-use tvm_block::SENDMSG_REMAINING_MSG_BALANCE;
-use tvm_block::SENDMSG_VALID_FLAGS;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::AccountId;
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
@@ -73,21 +71,23 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 use tvm_vm::error::tvm_exception;
+use tvm_vm::executor::BehaviorModifiers;
+use tvm_vm::executor::IndexProvider;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::token::INFINITY_CREDIT;
-use tvm_vm::executor::BehaviorModifiers;
-use tvm_vm::executor::IndexProvider;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
 
+use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 use crate::blockchain_config::BlockchainConfig;
 use crate::blockchain_config::CalcMsgFwdFees;
 use crate::error::ExecutorError;
 use crate::vmsetup::VMSetup;
 use crate::vmsetup::VMSetupContext;
-use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 
 const RESULT_CODE_ACTIONLIST_INVALID: i32 = 32;
 const RESULT_CODE_TOO_MANY_ACTIONS: i32 = 33;
@@ -377,11 +377,7 @@ pub trait TransactionExecutor {
                 Some(due_payment_remaining)
             });
             tr.total_fees_mut().grams.add(&collected)?;
-            if collected.is_zero() {
-                None
-            } else {
-                Some(collected)
-            }
+            if collected.is_zero() { None } else { Some(collected) }
         } else {
             None
         };
@@ -512,15 +508,12 @@ pub trait TransactionExecutor {
         if let Some(init_code_hash) = result_acc.init_code_hash() {
             smc_info.set_init_code_hash(init_code_hash.clone());
         }
-        let mut vm = VMSetup::with_context(
-            SliceData::load_cell(code)?,
-            VMSetupContext {
-                capabilities: self.config().capabilites(),
-                block_version: params.block_version,
-                #[cfg(feature = "signature_with_id")]
-                signature_id: params.signature_id,
-            },
-        )
+        let mut vm = VMSetup::with_context(SliceData::load_cell(code)?, VMSetupContext {
+            capabilities: self.config().capabilites(),
+            block_version: params.block_version,
+            #[cfg(feature = "signature_with_id")]
+            signature_id: params.signature_id,
+        })
         .set_smart_contract_info(smc_info)?
         .set_stack(stack)
         .set_data(data)?

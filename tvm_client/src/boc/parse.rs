@@ -14,8 +14,8 @@ use tvm_block::Deserializable;
 
 use super::internal::deserialize_cell_from_boc;
 use super::internal::deserialize_object_from_cell;
-use crate::boc::internal::deserialize_object_from_boc;
 use crate::boc::Error;
+use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
 

@@ -55,8 +55,8 @@ pub use errors::ErrorCode;
 use info::DInfo;
 use tokio::sync::Mutex;
 
-use crate::error::ClientResult;
 use crate::ClientContext;
+use crate::error::ClientResult;
 
 pub const DEBOT_WC: i8 = -31; // 0xDB
 

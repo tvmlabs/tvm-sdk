@@ -10,33 +10,34 @@
 // limitations under the License.
 use std::str::FromStr;
 
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use tvm_abi::ParamType;
 use tvm_block::Account;
 use tvm_block::Serializable;
-use tvm_client::abi::decode_message;
-use tvm_client::abi::encode_message;
 use tvm_client::abi::Abi;
 use tvm_client::abi::ParamsOfDecodeMessage;
 use tvm_client::abi::ParamsOfEncodeMessage;
+use tvm_client::abi::decode_message;
+use tvm_client::abi::encode_message;
 use tvm_client::error::ClientError;
-use tvm_client::processing::send_message;
-use tvm_client::processing::wait_for_transaction;
 use tvm_client::processing::ParamsOfProcessMessage;
 use tvm_client::processing::ParamsOfSendMessage;
 use tvm_client::processing::ParamsOfWaitForTransaction;
 use tvm_client::processing::ProcessingEvent;
-use tvm_client::tvm::run_executor;
+use tvm_client::processing::send_message;
+use tvm_client::processing::wait_for_transaction;
 use tvm_client::tvm::AccountForExecutor;
 use tvm_client::tvm::ParamsOfRunExecutor;
+use tvm_client::tvm::run_executor;
 use tvm_types::base64_encode;
 
 use crate::config::Config;
 use crate::convert;
+use crate::debug::DebugParams;
 use crate::debug::debug_error;
 use crate::debug::init_debug_logger;
-use crate::debug::DebugParams;
+use crate::helpers::TonClient;
 use crate::helpers::create_client;
 use crate::helpers::create_client_verbose;
 use crate::helpers::get_blockchain_config;
@@ -44,21 +45,21 @@ use crate::helpers::load_abi;
 use crate::helpers::load_ton_abi;
 use crate::helpers::now_ms;
 use crate::helpers::query_account_field;
-use crate::helpers::TonClient;
+use crate::message::EncodedMessage;
 use crate::message::prepare_message_params;
 use crate::message::print_encoded_message;
 use crate::message::unpack_message;
-use crate::message::EncodedMessage;
 
 async fn decode_call_parameters(
     ton: TonClient,
     msg: &EncodedMessage,
     abi: Abi,
 ) -> Result<(String, String), String> {
-    let result = decode_message(
-        ton,
-        ParamsOfDecodeMessage { abi, message: msg.message.clone(), ..Default::default() },
-    )
+    let result = decode_message(ton, ParamsOfDecodeMessage {
+        abi,
+        message: msg.message.clone(),
+        ..Default::default()
+    })
     .map_err(|e| format!("couldn't decode message: {}", e))?;
 
     Ok((result.name, format!("{:#}", result.value.unwrap_or(json!({})))))
@@ -145,17 +146,14 @@ pub async fn emulate_locally(
     } else {
         state = state_boc.unwrap();
     }
-    let res = run_executor(
-        ton.clone(),
-        ParamsOfRunExecutor {
-            message: msg.clone(),
-            account: AccountForExecutor::Account {
-                boc: state,
-                unlimited_balance: if is_fee { Some(true) } else { None },
-            },
-            ..Default::default()
+    let res = run_executor(ton.clone(), ParamsOfRunExecutor {
+        message: msg.clone(),
+        account: AccountForExecutor::Account {
+            boc: state,
+            unlimited_balance: if is_fee { Some(true) } else { None },
         },
-    )
+        ..Default::default()
+    })
     .await;
 
     if res.is_err() {
@@ -173,7 +171,7 @@ pub async fn emulate_locally(
         println!("}}");
     } else {
         println!("Local run succeeded. Executing onchain."); // TODO: check
-                                                             // is_json
+        // is_json
     }
     Ok(())
 }

@@ -9,11 +9,11 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use crate::cell::find_tag;
 use crate::cell::BuilderData;
-use crate::cell::SliceData;
 use crate::cell::MAX_DATA_BITS;
 use crate::cell::MAX_REFERENCES_COUNT;
+use crate::cell::SliceData;
+use crate::cell::find_tag;
 use crate::error;
 use crate::fail;
 use crate::types::ExceptionCode;
@@ -134,11 +134,7 @@ impl IBitstring for BuilderData {
     }
 
     fn append_bit_bool(&mut self, bit: bool) -> Result<&mut Self> {
-        if bit {
-            self.append_raw(&[0xFF], 1)
-        } else {
-            self.append_raw(&[0x00], 1)
-        }
+        if bit { self.append_raw(&[0xFF], 1) } else { self.append_raw(&[0x00], 1) }
     }
 
     fn append_bits(&mut self, value: usize, bits: usize) -> Result<&mut Self> {

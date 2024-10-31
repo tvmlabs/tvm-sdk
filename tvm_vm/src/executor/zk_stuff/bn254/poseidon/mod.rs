@@ -5,15 +5,15 @@ use ark_ff::BigInteger;
 use ark_ff::PrimeField;
 use byte_slice_cast::AsByteSlice;
 use ff::PrimeField as OtherPrimeField;
-use neptune::poseidon::HashMode::OptimizedStatic;
 use neptune::Poseidon;
+use neptune::poseidon::HashMode::OptimizedStatic;
 
+use crate::executor::zk_stuff::FrRepr;
 use crate::executor::zk_stuff::bn254::poseidon::constants::*;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::error::ZkCryptoError::InputTooLong;
 use crate::executor::zk_stuff::error::ZkCryptoError::InvalidInput;
 use crate::executor::zk_stuff::error::ZkCryptoResult;
-use crate::executor::zk_stuff::FrRepr;
 
 /// The output of the Poseidon hash function is a field element in BN254 which
 /// is 254 bits long, so we need 32 bytes to represent it as an integer.

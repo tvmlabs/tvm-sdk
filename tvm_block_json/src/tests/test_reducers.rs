@@ -33,15 +33,12 @@ fn test_config_parser() {
 
     assert_eq!(ReduceConfig::parse_str("a").unwrap(), minimal.clone());
 
-    assert_eq!(
-        ReduceConfig::parse_str("{a b {c}}").unwrap(),
-        ReduceConfig {
-            fields: vec![
-                Field::Scalar("a".to_owned()),
-                Field::Object("b".to_owned(), vec![Field::Scalar("c".to_owned())])
-            ]
-        }
-    );
+    assert_eq!(ReduceConfig::parse_str("{a b {c}}").unwrap(), ReduceConfig {
+        fields: vec![
+            Field::Scalar("a".to_owned()),
+            Field::Object("b".to_owned(), vec![Field::Scalar("c".to_owned())])
+        ]
+    });
 
     assert_eq!(
         ReduceConfig::parse_str(
@@ -61,26 +58,20 @@ fn test_config_parser() {
             fields: vec![
                 Field::Scalar("a".to_owned()),
                 Field::Object("b".to_owned(), vec![Field::Scalar("c".to_owned())]),
-                Field::Object(
-                    "d".to_owned(),
-                    vec![
-                        Field::Object(
-                            "e".to_owned(),
-                            vec![Field::Scalar("f".to_owned()), Field::Scalar("g".to_owned()),]
-                        ),
-                        Field::Scalar("j".to_owned()),
-                        Field::Scalar("k".to_owned()),
-                        Field::Scalar("l".to_owned()),
-                        Field::Object(
-                            "m".to_owned(),
-                            vec![
-                                Field::Scalar("o".to_owned()),
-                                Field::Scalar("p".to_owned()),
-                                Field::Scalar("q".to_owned()),
-                            ]
-                        ),
-                    ]
-                ),
+                Field::Object("d".to_owned(), vec![
+                    Field::Object("e".to_owned(), vec![
+                        Field::Scalar("f".to_owned()),
+                        Field::Scalar("g".to_owned()),
+                    ]),
+                    Field::Scalar("j".to_owned()),
+                    Field::Scalar("k".to_owned()),
+                    Field::Scalar("l".to_owned()),
+                    Field::Object("m".to_owned(), vec![
+                        Field::Scalar("o".to_owned()),
+                        Field::Scalar("p".to_owned()),
+                        Field::Scalar("q".to_owned()),
+                    ]),
+                ]),
                 Field::Scalar("r".to_owned()),
             ]
         }

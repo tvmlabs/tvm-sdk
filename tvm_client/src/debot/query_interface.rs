@@ -1,22 +1,22 @@
 use serde_json::Value as JsonValue;
 
+use super::TonClient;
+use super::dinterface::DebotInterface;
+use super::dinterface::InterfaceResult;
 use super::dinterface::decode_answer_id;
 use super::dinterface::get_arg;
 use super::dinterface::get_num_arg;
-use super::dinterface::DebotInterface;
-use super::dinterface::InterfaceResult;
-use super::TonClient;
 use crate::abi::Abi;
-use crate::debot::json_lib_utils::pack;
 use crate::debot::json_lib_utils::Value;
-use crate::net::query;
-use crate::net::query_collection;
-use crate::net::wait_for_collection;
+use crate::debot::json_lib_utils::pack;
 use crate::net::OrderBy;
 use crate::net::ParamsOfQuery;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::ParamsOfWaitForCollection;
 use crate::net::SortDirection;
+use crate::net::query;
+use crate::net::query_collection;
+use crate::net::wait_for_collection;
 
 const ABI: &str = r#"
 {
@@ -145,16 +145,13 @@ impl QueryInterface {
     ) -> Result<Vec<JsonValue>, QueryStatus> {
         let filter: Option<JsonValue> =
             Some(serde_json::from_str(&filter).map_err(|_| QueryStatus::FilterError)?);
-        let result = query_collection(
-            self.ton.clone(),
-            ParamsOfQueryCollection {
-                collection,
-                filter,
-                result,
-                order: Some(vec![order_by]),
-                limit: Some(limit),
-            },
-        )
+        let result = query_collection(self.ton.clone(), ParamsOfQueryCollection {
+            collection,
+            filter,
+            result,
+            order: Some(vec![order_by]),
+            limit: Some(limit),
+        })
         .await
         .map_err(|_| QueryStatus::NetworkError)?;
         Ok(result.result)
@@ -177,10 +174,12 @@ impl QueryInterface {
     ) -> Result<JsonValue, QueryStatus> {
         let filter: Option<JsonValue> =
             Some(serde_json::from_str(&filter).map_err(|_| QueryStatus::FilterError)?);
-        let result = wait_for_collection(
-            self.ton.clone(),
-            ParamsOfWaitForCollection { collection, filter, result, timeout: Some(timeout) },
-        )
+        let result = wait_for_collection(self.ton.clone(), ParamsOfWaitForCollection {
+            collection,
+            filter,
+            result,
+            timeout: Some(timeout),
+        })
         .await
         .map_err(|_| QueryStatus::NetworkError)?;
         Ok(result.result)

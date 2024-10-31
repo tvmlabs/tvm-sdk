@@ -28,7 +28,6 @@ use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use tvm_types::error;
 
-use crate::ton::Bool;
 use crate::AnyBoxedSerialize;
 use crate::BareDeserialize;
 use crate::BareSerialize;
@@ -38,6 +37,7 @@ use crate::ConstructorNumber;
 use crate::Deserializer;
 use crate::Result;
 use crate::Serializer;
+use crate::ton::Bool;
 
 const MAX_BYTES_DEBUG_LEN: usize = 4;
 
@@ -296,11 +296,7 @@ impl BareSerialize for () {
 
 impl From<bool> for &'static Bool {
     fn from(b: bool) -> Self {
-        if b {
-            &Bool::BoolTrue
-        } else {
-            &Bool::BoolFalse
-        }
+        if b { &Bool::BoolTrue } else { &Bool::BoolFalse }
     }
 }
 

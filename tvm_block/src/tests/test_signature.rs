@@ -16,11 +16,11 @@ use ed25519_dalek::VerifyingKey;
 use tvm_types::read_boc;
 
 use super::*;
-use crate::config_params::ConfigParamEnum;
-use crate::write_read_and_assert;
 use crate::Block;
 use crate::ShardIdent;
 use crate::TopBlockDescr;
+use crate::config_params::ConfigParamEnum;
+use crate::write_read_and_assert;
 
 #[test]
 fn test_crypto_signature_new_default() {

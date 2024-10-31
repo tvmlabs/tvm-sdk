@@ -302,13 +302,15 @@ fn test_shard_ident_with_prefix_slice() {
 
 #[test]
 fn test_shard_ident_merge() {
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .merge()
-    .is_err());
+    assert!(
+        ShardIdent::with_tagged_prefix(
+            0,
+            0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .merge()
+        .is_err()
+    );
     assert_eq!(
         ShardIdent::with_tagged_prefix(
             0,
@@ -369,153 +371,177 @@ fn test_shard_ident_merge() {
 
 #[test]
 fn test_shard_ident_is_ancestor_for() {
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b0101_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_ancestor_for(
-        &ShardIdent::with_tagged_prefix(
+    assert!(
+        ShardIdent::with_tagged_prefix(
             0,
-            0b0101_1010_00000000_00000000_00000000_01000000_00000000_01100000_10000000
+            0b0101_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
         )
         .unwrap()
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        -1,
-        0b0101_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_ancestor_for(
-        &ShardIdent::with_tagged_prefix(
-            0,
-            0b0101_1010_00000000_00000000_00000000_01000000_00000000_01100000_10000000
+        .is_ancestor_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b0101_1010_00000000_00000000_00000000_01000000_00000000_01100000_10000000
+            )
+            .unwrap()
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
+            -1,
+            0b0101_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
         )
         .unwrap()
-    ));
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_ancestor_for(
-        &ShardIdent::with_tagged_prefix(
-            0,
-            0b0101_1001_00000000_00010000_00000000_00000000_00000000_00000000_00000000
+        .is_ancestor_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b0101_1010_00000000_00000000_00000000_01000000_00000000_01100000_10000000
+            )
+            .unwrap()
         )
-        .unwrap()
-    ));
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_ancestor_for(
-        &ShardIdent::with_tagged_prefix(
+    );
+    assert!(
+        ShardIdent::with_tagged_prefix(
             0,
             0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
         )
         .unwrap()
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        0,
-        0b1001_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_ancestor_for(
-        &ShardIdent::with_tagged_prefix(
-            0,
-            0b1000_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        .is_ancestor_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b0101_1001_00000000_00010000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
         )
-        .unwrap()
-    ));
-}
-
-#[test]
-fn test_shard_ident_is_parent_for() {
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b0101_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_parent_for(
-        &ShardIdent::with_tagged_prefix(
-            0,
-            0b0101_1100_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-        )
-        .unwrap()
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        -1,
-        0b0101_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_parent_for(
-        &ShardIdent::with_tagged_prefix(
-            0,
-            0b0101_1100_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-        )
-        .unwrap()
-    ));
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_parent_for(
-        &ShardIdent::with_tagged_prefix(
-            0,
-            0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-        )
-        .unwrap()
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        0,
-        0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_parent_for(
-        &ShardIdent::with_tagged_prefix(
+    );
+    assert!(
+        ShardIdent::with_tagged_prefix(
             0,
             0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
         )
         .unwrap()
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        0,
-        0b1001_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_parent_for(
-        &ShardIdent::with_tagged_prefix(
+        .is_ancestor_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
             0,
             0b1001_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
         )
         .unwrap()
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        0,
-        0b1100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .is_parent_for(
-        &ShardIdent::with_tagged_prefix(
+        .is_ancestor_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b1000_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
+        )
+    );
+}
+
+#[test]
+fn test_shard_ident_is_parent_for() {
+    assert!(
+        ShardIdent::with_tagged_prefix(
+            0,
+            0b0101_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .is_parent_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b0101_1100_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
+            -1,
+            0b0101_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .is_parent_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b0101_1100_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
+        )
+    );
+    assert!(
+        ShardIdent::with_tagged_prefix(
             0,
             0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
         )
         .unwrap()
-    ));
+        .is_parent_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
+            0,
+            0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .is_parent_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
+            0,
+            0b1001_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .is_parent_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b1001_1000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
+            0,
+            0b1100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .is_parent_for(
+            &ShardIdent::with_tagged_prefix(
+                0,
+                0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+            )
+            .unwrap()
+        )
+    );
 }
 
 #[test]
 fn test_shard_ident_split() {
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b0000_0000_00000000_00000000_00000000_00000000_00000000_00000000_0000_1000
-    )
-    .unwrap()
-    .split()
-    .is_err(),);
+    assert!(
+        ShardIdent::with_tagged_prefix(
+            0,
+            0b0000_0000_00000000_00000000_00000000_00000000_00000000_00000000_0000_1000
+        )
+        .unwrap()
+        .split()
+        .is_err(),
+    );
     assert_eq!(
         ShardIdent::with_tagged_prefix(
             0,
@@ -604,34 +630,50 @@ fn test_shard_ident_split() {
 
 #[test]
 fn test_shard_ident_contains_account() {
-    assert!(ShardIdent::with_prefix_slice(0, SliceData::from_string("7ff95eed4bc8_").unwrap())
-        .unwrap()
-        .contains_account(
-            AccountId::from_str("7ff95eed4bc3a5fe1e590d8111f471281d100d2eadc737fd3ee8b209c21a21be")
+    assert!(
+        ShardIdent::with_prefix_slice(0, SliceData::from_string("7ff95eed4bc8_").unwrap())
+            .unwrap()
+            .contains_account(
+                AccountId::from_str(
+                    "7ff95eed4bc3a5fe1e590d8111f471281d100d2eadc737fd3ee8b209c21a21be"
+                )
                 .unwrap()
-        )
-        .unwrap());
-    assert!(ShardIdent::with_tagged_prefix(0, 0x6000_0000_0000_0000)
-        .unwrap()
-        .contains_account(
-            AccountId::from_str("79b1756926764d88d0b9bc8f42806939f293fb7733fba0959bb024234447c900")
+            )
+            .unwrap()
+    );
+    assert!(
+        ShardIdent::with_tagged_prefix(0, 0x6000_0000_0000_0000)
+            .unwrap()
+            .contains_account(
+                AccountId::from_str(
+                    "79b1756926764d88d0b9bc8f42806939f293fb7733fba0959bb024234447c900"
+                )
                 .unwrap()
-        )
-        .unwrap());
-    assert!(ShardIdent::with_prefix_slice(0, SliceData::from_string("_").unwrap())
-        .unwrap()
-        .contains_account(
-            AccountId::from_str("7ff95eed4bc3a5fe1e590d8111f471281d100d2eadc737fd3ee8b209c21a21be")
+            )
+            .unwrap()
+    );
+    assert!(
+        ShardIdent::with_prefix_slice(0, SliceData::from_string("_").unwrap())
+            .unwrap()
+            .contains_account(
+                AccountId::from_str(
+                    "7ff95eed4bc3a5fe1e590d8111f471281d100d2eadc737fd3ee8b209c21a21be"
+                )
                 .unwrap()
-        )
-        .unwrap());
-    assert!(!ShardIdent::with_prefix_slice(0, SliceData::from_string("7ff950ed4bc8_").unwrap())
-        .unwrap()
-        .contains_account(
-            AccountId::from_str("7ff95eed4bc3a5fe1e590d8111f471281d100d2eadc737fd3ee8b209c21a21be")
+            )
+            .unwrap()
+    );
+    assert!(
+        !ShardIdent::with_prefix_slice(0, SliceData::from_string("7ff950ed4bc8_").unwrap())
+            .unwrap()
+            .contains_account(
+                AccountId::from_str(
+                    "7ff95eed4bc3a5fe1e590d8111f471281d100d2eadc737fd3ee8b209c21a21be"
+                )
                 .unwrap()
-        )
-        .unwrap());
+            )
+            .unwrap()
+    );
 }
 
 #[test]
@@ -662,60 +704,72 @@ fn test_shard_prefix_without_tag() {
 
 #[test]
 fn test_shard_ident_contains_prefix() {
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .contains_prefix(
-        0,
-        0b0110_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    ));
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .contains_prefix(
-        0,
-        0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    ));
-    assert!(ShardIdent::with_tagged_prefix(
-        0,
-        0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .contains_prefix(
-        0,
-        0b0000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        0,
-        0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .contains_prefix(
-        0,
-        0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        0,
-        0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .contains_prefix(
-        0,
-        0b1100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    ));
-    assert!(!ShardIdent::with_tagged_prefix(
-        0,
-        0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    )
-    .unwrap()
-    .contains_prefix(
-        0,
-        0b1010_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-    ));
+    assert!(
+        ShardIdent::with_tagged_prefix(
+            0,
+            0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .contains_prefix(
+            0,
+            0b0110_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+    );
+    assert!(
+        ShardIdent::with_tagged_prefix(
+            0,
+            0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .contains_prefix(
+            0,
+            0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+    );
+    assert!(
+        ShardIdent::with_tagged_prefix(
+            0,
+            0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .contains_prefix(
+            0,
+            0b0000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
+            0,
+            0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .contains_prefix(
+            0,
+            0b1000_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
+            0,
+            0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .contains_prefix(
+            0,
+            0b1100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+    );
+    assert!(
+        !ShardIdent::with_tagged_prefix(
+            0,
+            0b0100_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+        .unwrap()
+        .contains_prefix(
+            0,
+            0b1010_0000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+        )
+    );
 }
 
 #[test]
@@ -862,20 +916,20 @@ mod account_id_prefix_full {
 
         assert_eq!(prefix1.interpolate_addr(&prefix2, 0), prefix1);
 
-        assert_eq!(
-            prefix1.interpolate_addr(&prefix2, 1),
-            AccountIdPrefixFull { workchain_id: 0x8000_0001u64 as i32, prefix: prefix1.prefix }
-        );
+        assert_eq!(prefix1.interpolate_addr(&prefix2, 1), AccountIdPrefixFull {
+            workchain_id: 0x8000_0001u64 as i32,
+            prefix: prefix1.prefix
+        });
 
-        assert_eq!(
-            prefix1.interpolate_addr(&prefix2, 20),
-            AccountIdPrefixFull { workchain_id: 0xFFFF_F001u64 as i32, prefix: prefix1.prefix }
-        );
+        assert_eq!(prefix1.interpolate_addr(&prefix2, 20), AccountIdPrefixFull {
+            workchain_id: 0xFFFF_F001u64 as i32,
+            prefix: prefix1.prefix
+        });
 
-        assert_eq!(
-            prefix1.interpolate_addr(&prefix2, 32 + 20),
-            AccountIdPrefixFull { workchain_id: prefix2.workchain_id, prefix: 0x0FEDC6789ABCDEF0 }
-        );
+        assert_eq!(prefix1.interpolate_addr(&prefix2, 32 + 20), AccountIdPrefixFull {
+            workchain_id: prefix2.workchain_id,
+            prefix: 0x0FEDC6789ABCDEF0
+        });
 
         assert_eq!(prefix1.interpolate_addr(&prefix2, 32 + 64), prefix2);
     }

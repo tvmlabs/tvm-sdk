@@ -17,8 +17,8 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 
 use crate::json_helper;
-use crate::types::grams_to_u64;
 use crate::types::StringId;
+use crate::types::grams_to_u64;
 
 #[derive(Deserialize, Debug, PartialEq, Clone, Default)]
 pub enum MessageType {

@@ -15,16 +15,16 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 
-use api_info::Module;
 use api_info::API;
+use api_info::Module;
 
 use super::modules::register_modules;
 use super::request::Request;
+use crate::ContextHandle;
 use crate::client::ClientConfig;
 use crate::client::ClientContext;
 use crate::client::Error;
 use crate::error::ClientResult;
-use crate::ContextHandle;
 
 pub(crate) trait SyncHandler {
     fn handle(&self, context: Arc<ClientContext>, params_json: &str) -> ClientResult<String>;

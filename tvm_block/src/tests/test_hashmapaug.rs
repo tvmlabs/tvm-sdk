@@ -14,8 +14,8 @@
 #![allow(clippy::vec_init_then_push)]
 use std::fmt;
 
-use tvm_types::hm_label;
 use tvm_types::HashmapSubtree;
+use tvm_types::hm_label;
 
 use super::*;
 use crate::AddSub;

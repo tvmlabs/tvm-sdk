@@ -12,9 +12,6 @@
 use std::fmt;
 use std::sync::Arc;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::hm_label;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -25,7 +22,14 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::UsageTree;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::hm_label;
 
+use crate::Deserializable;
+use crate::MaybeDeserialize;
+use crate::MaybeSerialize;
+use crate::Serializable;
 use crate::accounts::Account;
 use crate::accounts::AccountStatus;
 use crate::accounts::StorageUsedShort;
@@ -37,8 +41,8 @@ use crate::hashmapaug::Augmentable;
 use crate::hashmapaug::Augmentation;
 use crate::hashmapaug::HashmapAugType;
 use crate::merkle_proof::MerkleProof;
-use crate::messages::generate_big_msg;
 use crate::messages::Message;
+use crate::messages::generate_big_msg;
 use crate::shard::ShardStateUnsplit;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
@@ -46,10 +50,6 @@ use crate::types::Grams;
 use crate::types::InRefValue;
 use crate::types::VarUInteger3;
 use crate::types::VarUInteger7;
-use crate::Deserializable;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
-use crate::Serializable;
 
 #[cfg(test)]
 #[path = "tests/test_transactions.rs"]
@@ -1600,7 +1600,7 @@ impl Serializable for Transaction {
         builder.append_bits(self.outmsg_cnt as usize, 15)?; // outmsg_cnt: u15
         self.orig_status.write_to(builder)?; // orig_status: AccountStatus,
         self.end_status.write_to(builder)?; // end_status: AccountStatus
-                                            // self.in_msg.write_maybe_to(builder)?;
+        // self.in_msg.write_maybe_to(builder)?;
         let mut builder1 = BuilderData::new();
         match &self.in_msg {
             Some(in_msg) => {

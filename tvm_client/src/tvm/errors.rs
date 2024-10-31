@@ -461,10 +461,6 @@ impl StdContractError {
             StdContractError::NoKeyInData => "Contract is probably deployed incorrectly",
             _ => "",
         };
-        if !tip.is_empty() {
-            Some(tip)
-        } else {
-            None
-        }
+        if !tip.is_empty() { Some(tip) } else { None }
     }
 }

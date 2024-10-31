@@ -4,17 +4,17 @@ use serde_json::Value;
 use tvm_abi::Contract;
 
 use super::calltype::ContractCall;
-use super::dinterface::get_arg;
 use super::dinterface::DebotInterface;
 use super::dinterface::InterfaceResult;
-use crate::abi::decode_message;
+use super::dinterface::get_arg;
 use crate::abi::Abi;
 use crate::abi::ParamsOfDecodeMessage;
 use crate::abi::Signer;
-use crate::boc::parse_message;
+use crate::abi::decode_message;
 use crate::boc::ParamsOfParse;
-use crate::crypto::get_signing_box;
+use crate::boc::parse_message;
 use crate::crypto::KeyPair;
+use crate::crypto::get_signing_box;
 use crate::debot::BrowserCallbacks;
 use crate::debot::DEngine;
 use crate::debot::TonClient;
@@ -100,14 +100,11 @@ impl MsgInterface {
         .map_err(|e| format!("{}", e))?;
         let answer_msg = callobj.execute(true).await.map_err(|e| format!("{}", e))?;
 
-        let result = decode_message(
-            self.ton.clone(),
-            ParamsOfDecodeMessage {
-                abi: self.debot_abi.clone(),
-                message: answer_msg,
-                ..Default::default()
-            },
-        )
+        let result = decode_message(self.ton.clone(), ParamsOfDecodeMessage {
+            abi: self.debot_abi.clone(),
+            message: answer_msg,
+            ..Default::default()
+        })
         .map_err(|e| format!("failed to decode message: {}", e))?;
         let abi_str = self.debot_abi.json_string().unwrap();
         let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{}", e))?;
@@ -138,14 +135,11 @@ impl MsgInterface {
         .map_err(|e| format!("{}", e))?;
         let answer_msg = callobj.execute(false).await.map_err(|e| format!("{}", e))?;
 
-        let result = decode_message(
-            self.ton.clone(),
-            ParamsOfDecodeMessage {
-                abi: self.debot_abi.clone(),
-                message: answer_msg,
-                ..Default::default()
-            },
-        )
+        let result = decode_message(self.ton.clone(), ParamsOfDecodeMessage {
+            abi: self.debot_abi.clone(),
+            message: answer_msg,
+            ..Default::default()
+        })
         .map_err(|e| format!("failed to decode message: {}", e))?;
         let abi_str = self.debot_abi.json_string().unwrap();
         let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{}", e))?;

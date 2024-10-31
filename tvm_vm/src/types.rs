@@ -11,11 +11,11 @@
 
 use std::fmt;
 
-use tvm_types::types::ExceptionCode;
 use tvm_types::Result;
+use tvm_types::types::ExceptionCode;
 
-use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
+use crate::stack::integer::IntegerData;
 
 #[derive(Clone, PartialEq)]
 enum ExceptionType {
@@ -36,19 +36,11 @@ impl ExceptionType {
     }
 
     fn exception_code(&self) -> Option<ExceptionCode> {
-        if let ExceptionType::System(code) = self {
-            Some(*code)
-        } else {
-            None
-        }
+        if let ExceptionType::System(code) = self { Some(*code) } else { None }
     }
 
     fn custom_code(&self) -> Option<i32> {
-        if let ExceptionType::Custom(code) = self {
-            Some(*code)
-        } else {
-            None
-        }
+        if let ExceptionType::Custom(code) = self { Some(*code) } else { None }
     }
 
     pub fn exception_or_custom_code(&self) -> i32 {

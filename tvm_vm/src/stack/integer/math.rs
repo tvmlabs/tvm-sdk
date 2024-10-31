@@ -15,6 +15,8 @@ use num_traits::Zero;
 use tvm_types::Result;
 use tvm_types::Status;
 
+use crate::stack::integer::IntegerData;
+use crate::stack::integer::IntegerValue;
 use crate::stack::integer::behavior::OperationBehavior;
 use crate::stack::integer::utils::binary_op;
 use crate::stack::integer::utils::construct_double_nan;
@@ -22,8 +24,6 @@ use crate::stack::integer::utils::construct_single_nan;
 use crate::stack::integer::utils::process_double_result;
 use crate::stack::integer::utils::process_single_result;
 use crate::stack::integer::utils::unary_op;
-use crate::stack::integer::IntegerData;
-use crate::stack::integer::IntegerValue;
 
 // [x / y] -> (q, r)  :  q*y + r = x  :  |r| < |y|
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -179,8 +179,8 @@ pub mod utils {
     use num_traits::Signed;
     use num_traits::Zero;
 
-    use crate::stack::integer::math::Round;
     use crate::stack::integer::Int;
+    use crate::stack::integer::math::Round;
 
     #[inline]
     pub fn divmod(dividend: &Int, divisor: &Int, rounding: Round) -> (Int, Int) {

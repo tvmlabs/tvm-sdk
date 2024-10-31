@@ -10,17 +10,17 @@
 // limitations under the License.
 
 use tvm_block::GlobalCapabilities;
-use tvm_types::types::ExceptionCode;
 use tvm_types::Cell;
 use tvm_types::SliceData;
+use tvm_types::types::ExceptionCode;
 
+use crate::executor::Engine;
 use crate::executor::engine::storage::swap;
 use crate::executor::microcode::CTRL;
 use crate::executor::microcode::SAVELIST;
 use crate::executor::microcode::VAR;
-use crate::executor::Engine;
-use crate::stack::continuation::ContinuationData;
 use crate::stack::StackItem;
+use crate::stack::continuation::ContinuationData;
 
 #[test]
 fn test_swap_with_any() {
