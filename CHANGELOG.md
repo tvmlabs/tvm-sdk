@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [2.3.1] – 2024-10-30
 
 ### Fixed
-- Fix abort transaction system.
+- Rawreserve didn't include credit money.
+- Transfer all balance sent credit money and transaction failed.
+- Abort ext_message didn't restore balances
 
 ## [2.3.0] – 2024-10-21
 
