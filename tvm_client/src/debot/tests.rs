@@ -1281,7 +1281,7 @@ async fn test_debot_getinfo() {
             dabi: Some(abi),
             icon: Some(icon),
             interfaces: vec![
-                "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
+                "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned()
             ],
             dabi_version: "2.0".to_string(),
         },

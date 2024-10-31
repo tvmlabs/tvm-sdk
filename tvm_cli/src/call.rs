@@ -172,7 +172,8 @@ pub async fn emulate_locally(
         println!("  \"total_output\": \"{}\"", fees.total_output);
         println!("}}");
     } else {
-        println!("Local run succeeded. Executing onchain."); // TODO: check is_json
+        println!("Local run succeeded. Executing onchain."); // TODO: check
+                                                             // is_json
     }
     Ok(())
 }

@@ -484,17 +484,16 @@ fn mnemonic() {
         .unwrap();
     assert_eq!(result.tvm_public_key, "PubDdJkMyss2qHywFuVP1vzww0TpsLxnRNnbifTCcu-XEgW0");
 
-    let result: KeyPair = client.request(
-        "crypto.mnemonic_derive_sign_keys",
-        ParamsOfMnemonicDeriveSignKeys {
+    let result: KeyPair = client
+        .request("crypto.mnemonic_derive_sign_keys", ParamsOfMnemonicDeriveSignKeys {
             phrase:
                 "abandon math mimic master filter design carbon crystal rookie group knife young"
                     .into(),
             path: None,
             dictionary: None,
             word_count: None,
-        },
-    ).unwrap();
+        })
+        .unwrap();
     let result: ResultOfConvertPublicKeyToTonSafeFormat = client
         .request(
             "crypto.convert_public_key_to_tvm_safe_format",

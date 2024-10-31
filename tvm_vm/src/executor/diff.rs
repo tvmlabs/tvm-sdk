@@ -249,7 +249,11 @@ fn execute_patch_with_options(name: &'static str, engine: &mut Engine, how: u8) 
         })()
     };
 
-    if how.bit(IGNORE_ERROR) { ignore_error(engine, result) } else { result }
+    if how.bit(IGNORE_ERROR) {
+        ignore_error(engine, result)
+    } else {
+        result
+    }
 }
 
 /// ZIP (s – c), zip string

@@ -331,7 +331,11 @@ impl InstructionExt {
             Some(InstructionOptions::ControlRegister) => format!(" c{}", self.creg_raw()?),
             Some(InstructionOptions::DivisionMode) => {
                 let mode = self.division_mode();
-                if mode.shift_parameter() { format!(" {}", self.length()) } else { String::new() }
+                if mode.shift_parameter() {
+                    format!(" {}", self.length())
+                } else {
+                    String::new()
+                }
             }
             Some(InstructionOptions::Integer(_)) => format!(" {}", self.integer_raw()?),
             Some(InstructionOptions::Length(_)) | Some(InstructionOptions::LengthMinusOne(_)) => {

@@ -152,7 +152,7 @@ pub fn aggregate_two_bls_signatures(
     let new_nodes_info = NodesInfo::merge(&bls_sig_1.nodes_info, &bls_sig_2.nodes_info)?;
     let sig1 = convert_signature_bytes_to_signature(&bls_sig_1.sig_bytes)?;
     let sig2 = convert_signature_bytes_to_signature(&bls_sig_2.sig_bytes)?;
-    let sig_validate_res = sig1.validate(false); //set true to exclude infinite point, i.e. zero sig
+    let sig_validate_res = sig1.validate(false); // set true to exclude infinite point, i.e. zero sig
     if sig_validate_res.is_err() {
         fail!("Signature is not in group.");
     }

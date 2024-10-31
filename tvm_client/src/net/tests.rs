@@ -1387,21 +1387,18 @@ async fn order_by_fallback() {
     )
     .unwrap();
     assert_eq!(params.order.unwrap()[0].path, "id");
-    assert!(
-        serde_json::from_str::<ParamsOfQueryCollection>(
-            r#"
+    assert!(serde_json::from_str::<ParamsOfQueryCollection>(
+        r#"
         {
             "collection": "messages",
             "result": "id",
             "orderBy": [{"path": "id", "direction": "ASC"}]
         }
         "#,
-        )
-        .is_err()
-    );
-    assert!(
-        serde_json::from_str::<ParamsOfQueryCollection>(
-            r#"
+    )
+    .is_err());
+    assert!(serde_json::from_str::<ParamsOfQueryCollection>(
+        r#"
         {
             "collection": "messages",
             "result": "id",
@@ -1413,9 +1410,8 @@ async fn order_by_fallback() {
             ]
         }
         "#,
-        )
-        .is_err()
-    );
+    )
+    .is_err());
     let client = TestClient::new();
 
     let result: ClientResult<ResultOfQueryCollection> = client

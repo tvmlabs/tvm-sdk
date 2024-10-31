@@ -55,6 +55,10 @@ impl MonitoringQueue {
                 self.buffered.is_empty() && self.resolving.is_empty() && !self.results.is_empty()
             }
         };
-        if is_ready { Some(mem::take(&mut self.results)) } else { None }
+        if is_ready {
+            Some(mem::take(&mut self.results))
+        } else {
+            None
+        }
     }
 }

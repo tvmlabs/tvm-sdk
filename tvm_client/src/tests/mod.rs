@@ -371,7 +371,11 @@ impl TestClient {
 
     pub fn queries_protocol() -> Option<String> {
         let protocol = env::queries_protocol().trim().to_string();
-        if protocol.is_empty() { None } else { Some(protocol) }
+        if protocol.is_empty() {
+            None
+        } else {
+            Some(protocol)
+        }
     }
 
     pub fn node_se() -> bool {

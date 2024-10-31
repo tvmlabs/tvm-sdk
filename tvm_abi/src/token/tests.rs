@@ -107,28 +107,23 @@ mod tokenize_tests {
         let input_not_fit = r#"{ "a" : -129 }"#;
         let params = vec![Param { name: "a".to_owned(), kind: ParamType::Int(8) }];
 
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_fit).unwrap())
-                .is_ok()
-        );
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_not_fit).unwrap())
-                .is_err()
-        );
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_fit).unwrap())
+            .is_ok());
+        assert!(Tokenizer::tokenize_all_params(
+            &params,
+            &serde_json::from_str(input_not_fit).unwrap()
+        )
+        .is_err());
 
         // negative values for uint
         let input_num = r#"{ "a" : -1 }"#;
         let input_str = r#"{ "a" : "-5" }"#;
         let params = vec![Param { name: "a".to_owned(), kind: ParamType::Uint(8) }];
 
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_num).unwrap())
-                .is_err()
-        );
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_str).unwrap())
-                .is_err()
-        );
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_num).unwrap())
+            .is_err());
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_str).unwrap())
+            .is_err());
 
         // varint max check
         let input = r#"{ "a" : "0xffffffffffffffffffffffffffffffff" }"#;
@@ -143,14 +138,10 @@ mod tokenize_tests {
         let input_str = r#"{ "a" : "-5" }"#;
         let params = vec![Param { name: "a".to_owned(), kind: ParamType::VarUint(8) }];
 
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_num).unwrap())
-                .is_err()
-        );
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_str).unwrap())
-                .is_err()
-        );
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_num).unwrap())
+            .is_err());
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_str).unwrap())
+            .is_err());
     }
 
     #[test]
@@ -673,14 +664,10 @@ mod tokenize_tests {
         let input_str = r#"{ "a" : "-5" }"#;
         let params = vec![Param { name: "a".to_owned(), kind: ParamType::Time }];
 
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_num).unwrap())
-                .is_err()
-        );
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_str).unwrap())
-                .is_err()
-        );
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_num).unwrap())
+            .is_err());
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_str).unwrap())
+            .is_err());
     }
 
     #[test]
@@ -736,14 +723,10 @@ mod tokenize_tests {
         let input_str = r#"{ "a" : "-5" }"#;
         let params = vec![Param { name: "a".to_owned(), kind: ParamType::Expire }];
 
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_num).unwrap())
-                .is_err()
-        );
-        assert!(
-            Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_str).unwrap())
-                .is_err()
-        );
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_num).unwrap())
+            .is_err());
+        assert!(Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input_str).unwrap())
+            .is_err());
     }
 
     #[test]
@@ -866,10 +849,11 @@ mod tokenize_tests {
 
         let params = vec![Param::new("a", ParamType::Time)];
 
-        assert!(
-            Tokenizer::tokenize_optional_params(&params, &serde_json::from_str(input).unwrap(),)
-                .is_err(),
-        );
+        assert!(Tokenizer::tokenize_optional_params(
+            &params,
+            &serde_json::from_str(input).unwrap(),
+        )
+        .is_err(),);
     }
 }
 

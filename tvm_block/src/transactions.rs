@@ -1600,7 +1600,7 @@ impl Serializable for Transaction {
         builder.append_bits(self.outmsg_cnt as usize, 15)?; // outmsg_cnt: u15
         self.orig_status.write_to(builder)?; // orig_status: AccountStatus,
         self.end_status.write_to(builder)?; // end_status: AccountStatus
-        // self.in_msg.write_maybe_to(builder)?;
+                                            // self.in_msg.write_maybe_to(builder)?;
         let mut builder1 = BuilderData::new();
         match &self.in_msg {
             Some(in_msg) => {

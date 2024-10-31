@@ -34,7 +34,11 @@ impl crate::BoxedDeserialize for GetBlock {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x093ddd78) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x093ddd78) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetBlock {
@@ -86,7 +90,11 @@ impl crate::BoxedDeserialize for GetBlockHistory {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xa8566df6) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xa8566df6) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetBlockHistory {
@@ -132,7 +140,11 @@ impl crate::BoxedDeserialize for GetBlocks {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x0329abc2) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x0329abc2) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetBlocks {
@@ -177,7 +189,11 @@ impl crate::BoxedDeserialize for GetDifference {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xd06cced8) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xd06cced8) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetDifference {

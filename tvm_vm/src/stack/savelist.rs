@@ -42,7 +42,11 @@ impl SaveList {
     pub const REGS: [usize; Self::NUMREGS] = [0, 1, 2, 3, 4, 5, 7];
 
     const fn adjust(index: usize) -> usize {
-        if index == 7 { 6 } else { index }
+        if index == 7 {
+            6
+        } else {
+            index
+        }
     }
 
     pub fn new() -> Self {

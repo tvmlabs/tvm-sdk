@@ -570,7 +570,11 @@ pub fn tag_from_boxed_type<T: Default + BoxedSerialize>() -> u32 {
 
 /// Get TL tag from data bytes
 pub fn tag_from_data(data: &[u8]) -> u32 {
-    if data.len() < 4 { 0 } else { u32::from_le_bytes([data[0], data[1], data[2], data[3]]) }
+    if data.len() < 4 {
+        0
+    } else {
+        u32::from_le_bytes([data[0], data[1], data[2], data[3]])
+    }
 }
 
 impl TryFrom<&Arc<dyn KeyOption>> for ton::PublicKey {

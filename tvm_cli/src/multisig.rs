@@ -248,7 +248,11 @@ impl CallArgs {
         let v2 = matches.is_present("V2");
 
         let target = if v2 {
-            if is_setcode { SETCODEMULTISIG_V2_LINK } else { SAFEMULTISIG_V2_LINK }
+            if is_setcode {
+                SETCODEMULTISIG_V2_LINK
+            } else {
+                SAFEMULTISIG_V2_LINK
+            }
         } else if is_setcode {
             SETCODEMULTISIG_LINK
         } else {

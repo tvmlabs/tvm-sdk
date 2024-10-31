@@ -23,7 +23,11 @@ pub fn calc_excess_bits(length_in_bits: usize) -> usize {
 
 #[inline]
 fn get_fill(is_negative: bool) -> u8 {
-    if is_negative { 0xFF } else { 0 }
+    if is_negative {
+        0xFF
+    } else {
+        0
+    }
 }
 
 /// Extends buffer, if needed (big-endian).

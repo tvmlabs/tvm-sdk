@@ -148,7 +148,7 @@ mod tests {
         ];
 
         // Generate an ephemeral key pair.
-        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
         let mut eph_pubkey = Vec::new();
         // replace by Alina's data (ephemeral public key place to byte array ), depends
         // on iteration
@@ -258,7 +258,7 @@ mod tests {
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON \n".to_string(); /**/
+        code = code + &*"POSEIDON \n".to_string(); //
 
         println!("code : {code}");
 
@@ -279,8 +279,8 @@ mod tests {
 
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
-        let verification_key_id: u32 = 0; //valid key id
-        // let verification_key_id: u32 = 1; //invalid key id
+        let verification_key_id: u32 = 0; // valid key id
+                                          // let verification_key_id: u32 = 1; //invalid key id
 
         let mut code = "PUSHREF \n".to_string();
         code = code + "PUSHREF \n";
@@ -388,7 +388,7 @@ mod tests {
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON \n".to_string(); /**/
+        code = code + &*"POSEIDON \n".to_string(); //
 
         println!("code : {code}");
 
@@ -497,7 +497,7 @@ mod tests {
                 secret_key_from_integer_map(jwt_data.ephemeral_key_pair.keypair.secret_key);
 
             let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
-            let mut eph_pubkey = Vec::new(); //vec![0x00];
+            let mut eph_pubkey = Vec::new(); // vec![0x00];
             eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
             println!("ephemeral secret_key is {:?}", eph_secret_key);
@@ -512,7 +512,9 @@ mod tests {
             let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
             let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
-            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"typ\":\"JWT\"}"
+            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
+                                                            // "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"
+                                                            // typ\":\"JWT\"}"
 
             // JwtDataDecodedPart1
             let jwt_data_decoded1: JwtDataDecodedPart1 =
@@ -578,10 +580,10 @@ mod tests {
         ];
 
         // Generate an ephemeral key pair.
-        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-        let mut eph_pubkey = Vec::new(); //vec![0x00];
-        // replace by Alina's data (ephemeral public key place to byte array ), depends
-        // on iteration
+        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let mut eph_pubkey = Vec::new(); // vec![0x00];
+                                         // replace by Alina's data (ephemeral public key place to byte array ), depends
+                                         // on iteration
         eph_pubkey.extend(ephemeral_kp.public().as_ref());
         println!("eph_pubkey: {:?}", eph_pubkey);
         println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
@@ -671,8 +673,8 @@ mod tests {
 
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
 
-        let verification_key_id: u32 = 0; //valid key id
-        // let verification_key_id: u32 = 1; //invalid key id
+        let verification_key_id: u32 = 0; // valid key id
+                                          // let verification_key_id: u32 = 1; //invalid key id
 
         let mut code = "PUSHREF \n".to_string();
         code = code + "PUSHREF \n";
@@ -922,7 +924,7 @@ mod tests {
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         // code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON \n".to_string(); /**/
+        code = code + &*"POSEIDON \n".to_string(); //
 
         println!("code : {code}");
 
@@ -948,7 +950,7 @@ mod tests {
         let user_pass_salt = "206703048842351542647799591018316385612";
         // Generate an ephemeral key pair.
         let ephemeral_kp = Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-        let mut eph_pubkey = Vec::new(); //vec![0x00];
+        let mut eph_pubkey = Vec::new(); // vec![0x00];
         eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
         println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
@@ -1107,8 +1109,9 @@ mod tests {
         ];
 
         // Generate an ephemeral key pair.
-        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-        let mut eph_pubkey = Vec::new(); //vec![0x00]; // replace by Alina's data (ephemeral public key place to byte array ), depends on iteration
+        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let mut eph_pubkey = Vec::new(); // vec![0x00]; // replace by Alina's data (ephemeral public key place to byte
+                                         // array ), depends on iteration
         eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
         println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
@@ -1315,7 +1318,9 @@ mod tests {
             let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
             let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
-            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"typ\":\"JWT\"}"
+            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
+                                                            // "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"
+                                                            // typ\":\"JWT\"}"
 
             // JwtDataDecodedPart1
             let jwt_data_decoded1: JwtDataDecodedPart1 =
@@ -1361,7 +1366,7 @@ mod tests {
             ///////////
 
             let json_string = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
-            println!("json_string ={:?}", json_string); //jwt_data.zk_proofs);
+            println!("json_string ={:?}", json_string); // jwt_data.zk_proofs);
 
             let data: Value = serde_json::from_str(&*json_string).unwrap();
             println!("data = {:?}", data);
@@ -1470,7 +1475,7 @@ mod tests {
                 secret_key_from_integer_map(jwt_data.ephemeral_key_pair.keypair.secret_key);
 
             let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
-            let mut eph_pubkey = Vec::new(); //vec![0x00];
+            let mut eph_pubkey = Vec::new(); // vec![0x00];
             eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
             println!("ephemeral secret_key is {:?}", eph_secret_key);
@@ -1483,7 +1488,9 @@ mod tests {
             let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
             let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
-            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"typ\":\"JWT\"}"
+            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
+                                                            // "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"
+                                                            // typ\":\"JWT\"}"
 
             // JwtDataDecodedPart1
             let jwt_data_decoded1: JwtDataDecodedPart1 =
@@ -1524,7 +1531,7 @@ mod tests {
             let current_ratio = time_for_vergrth16 / time_for_chcksgns;
             println!("current_ratio is {current_ratio}");
 
-            sum_ratio = sum_ratio + current_ratio; /**/
+            sum_ratio = sum_ratio + current_ratio; //
             println!("sum_ratio is {sum_ratio}");
             println!("==========================================");
         }

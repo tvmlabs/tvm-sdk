@@ -377,7 +377,11 @@ pub trait TransactionExecutor {
                 Some(due_payment_remaining)
             });
             tr.total_fees_mut().grams.add(&collected)?;
-            if collected.is_zero() { None } else { Some(collected) }
+            if collected.is_zero() {
+                None
+            } else {
+                Some(collected)
+            }
         } else {
             None
         };

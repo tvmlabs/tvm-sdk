@@ -471,21 +471,17 @@ async fn test_extract_top_shard_block() -> Result<()> {
         .await?;
     let block = Block::construct_from_bytes(&boc)?;
 
-    assert!(
-        ProofHelperEngineImpl::extract_top_shard_block(
-            &block,
-            &ShardIdent::with_tagged_prefix(0, 0x8000000000000000)?,
-        )
-        .is_err()
-    );
+    assert!(ProofHelperEngineImpl::extract_top_shard_block(
+        &block,
+        &ShardIdent::with_tagged_prefix(0, 0x8000000000000000)?,
+    )
+    .is_err());
 
-    assert!(
-        ProofHelperEngineImpl::extract_top_shard_block(
-            &block,
-            &ShardIdent::with_tagged_prefix(1, 0x2000000000000000)?,
-        )
-        .is_err()
-    );
+    assert!(ProofHelperEngineImpl::extract_top_shard_block(
+        &block,
+        &ShardIdent::with_tagged_prefix(1, 0x2000000000000000)?,
+    )
+    .is_err());
 
     assert_eq!(
         ProofHelperEngineImpl::extract_top_shard_block(
@@ -540,7 +536,8 @@ async fn test_query_closest_mc_block_for_shard_block() -> Result<()> {
     Ok(())
 }
 
-const SHARD_BLOCK_0_A000000000000000_99_BOC: &str = "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
+const SHARD_BLOCK_0_A000000000000000_99_BOC: &str =
+    "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
     mHAAAAAIQBAAAAYwAAAAACAAAAAIAAAAAAAAAAXrQHmgAAAAAG6gUAAAAAAAbqBQGyfCu9AAAAAgAAAFMAAAAAx\
     AAAAAMAAAAAAAAALgUGAhG45I37QO5rKAQHCAqKBGFR1tD1H1YJuvT+AeffTPjAYu+ZO8nWZmHsiOcBjgwT+aoe\
     0gsBG0P0h0luP4GaSgcCgYy5IjwTqZXSIYYyFU8AAgACCQoDiUoz9v0VXplWHvmULzKidbstN+VVAHO6e3HYwO8\
@@ -553,7 +550,8 @@ const SHARD_BLOCK_0_A000000000000000_99_BOC: &str = "te6ccuECEQEAArkAABwAxADeAXA
     kyULAB6NgIjmhTkRuAtJVIIbgsceAUzOrk7wzgAa7BQAAAAAAAAAAAAACmAAAAAA1Z+Af//////////////////\
     ////////////////////////wAADACAAAQL5eHt0";
 
-const SHARD_BLOCK_0_A000000000000000_101_BOC: &str = "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
+const SHARD_BLOCK_0_A000000000000000_101_BOC: &str =
+    "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
     mHAAAAAIQBAAAAZQAAAAACAAAAAIAAAAAAAAAAXrQHngAAAAAHCImAAAAAAAcIiYGyfCu9AAAAAgAAAFUAAAAAx\
     AAAAAMAAAAAAAAALgUGAhG45I37QO5rKAQHCAqKBO5sAcF2Ymt7CdQz/5dUOh0WyFdnKDN0tgG6P6udwTloEhUx\
     yRwpTzXcIqlKUPMO1c8qSnjjb5j9+2wRS/PnHCoAAgACCQoDiUoz9v17zLkiB8uYo0dn+vy/FUZwk6AL+dQyhFY\
@@ -616,30 +614,22 @@ async fn test_check_mc_proof() -> Result<()> {
         )
         .await?;
 
-    assert!(
-        engine
-            .check_mc_block_proof(
-                101,
-                &UInt256::from_str(
-                    "01872c85facaa85405518a759dfac2625bc94b9e85b965cf3875d2331db9ad95"
-                )?,
-            )
-            .await
-            .is_err(),
-    );
+    assert!(engine
+        .check_mc_block_proof(
+            101,
+            &UInt256::from_str("01872c85facaa85405518a759dfac2625bc94b9e85b965cf3875d2331db9ad95")?,
+        )
+        .await
+        .is_err(),);
 
     // From cache:
-    assert!(
-        engine
-            .check_mc_block_proof(
-                100,
-                &UInt256::from_str(
-                    "1111111111111111111111111111111111111111111111111111111111111111"
-                )?,
-            )
-            .await
-            .is_err(),
-    );
+    assert!(engine
+        .check_mc_block_proof(
+            100,
+            &UInt256::from_str("1111111111111111111111111111111111111111111111111111111111111111")?,
+        )
+        .await
+        .is_err(),);
 
     Ok(())
 }
@@ -779,29 +769,25 @@ async fn test_proof_block_data() -> Result<()> {
 
     block_json["boc"] = SHARD_BLOCK_0_A000000000000000_99_BOC.into();
 
-    assert!(
-        client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: block_json.clone() },
-            )
-            .await
-            .is_err()
-    );
+    assert!(client
+        .request_async::<_, ()>(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: block_json.clone() },
+        )
+        .await
+        .is_err());
 
     block_json["boc"] = Value::Null;
     block_json["prev_ref"]["root_hash"] =
         "0000000000000000000000000000000000000000000000000000000000000000".into();
 
-    assert!(
-        client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: block_json },
-            )
-            .await
-            .is_err()
-    );
+    assert!(client
+        .request_async::<_, ()>(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: block_json },
+        )
+        .await
+        .is_err());
 
     let proof_json = query_block_data(
         client.context(),
@@ -829,15 +815,13 @@ async fn test_proof_block_data() -> Result<()> {
     )
     .await?;
 
-    assert!(
-        client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: proof_json },
-            )
-            .await
-            .is_err()
-    );
+    assert!(client
+        .request_async::<_, ()>(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: proof_json },
+        )
+        .await
+        .is_err());
 
     let decimal_fields = r#"
         id

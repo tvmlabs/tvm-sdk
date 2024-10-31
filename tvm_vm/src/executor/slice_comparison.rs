@@ -90,7 +90,11 @@ pub(super) fn execute_sdlexcmp(engine: &mut Engine) -> Status {
         int!(if r_s0.is_none() && r_s1.is_none() {
             0
         } else if r_s0.is_some() && r_s1.is_some() {
-            if r_s1.unwrap().get_next_bit().unwrap() { 1 } else { -1 }
+            if r_s1.unwrap().get_next_bit().unwrap() {
+                1
+            } else {
+                -1
+            }
         } else if r_s1.is_some() {
             1
         } else {

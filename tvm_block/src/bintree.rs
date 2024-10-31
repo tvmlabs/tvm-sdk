@@ -42,7 +42,11 @@ pub trait BinTreeType<X: Default + Serializable + Deserializable> {
                 _ => return Ok(None),
             }
         }
-        if key.is_empty() { Ok(Some(X::construct_from(&mut cursor)?)) } else { Ok(None) }
+        if key.is_empty() {
+            Ok(Some(X::construct_from(&mut cursor)?))
+        } else {
+            Ok(None)
+        }
     }
 
     fn find(&self, mut key: SliceData) -> Result<Option<(SliceData, X)>> {

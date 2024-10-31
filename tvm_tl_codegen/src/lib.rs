@@ -1129,19 +1129,35 @@ impl TypeIR {
     }
 
     fn field_type(&self) -> Tokens {
-        if self.is_unit() { quote!(bool) } else { self.boxed() }
+        if self.is_unit() {
+            quote!(bool)
+        } else {
+            self.boxed()
+        }
     }
 
     fn ref_prefix(&self) -> Tokens {
-        if self.is_unit() { quote!() } else { quote!(ref) }
+        if self.is_unit() {
+            quote!()
+        } else {
+            quote!(ref)
+        }
     }
 
     fn reference_prefix(&self) -> Tokens {
-        if self.is_unit() { quote!() } else { quote!(&) }
+        if self.is_unit() {
+            quote!()
+        } else {
+            quote!(&)
+        }
     }
 
     fn local_reference_prefix(&self) -> Tokens {
-        if self.is_unit() { quote!(&) } else { quote!() }
+        if self.is_unit() {
+            quote!(&)
+        } else {
+            quote!()
+        }
     }
 
     fn field_reference_type(&self) -> Tokens {

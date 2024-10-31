@@ -178,7 +178,11 @@ pub unsafe extern "C" fn tc_destroy_string(string: *const String) {
 
 #[no_mangle]
 pub unsafe extern "C" fn tc_read_string(string: *const String) -> StringData {
-    if string.is_null() { StringData::default() } else { StringData::new(&*string) }
+    if string.is_null() {
+        StringData::default()
+    } else {
+        StringData::new(&*string)
+    }
 }
 
 #[repr(C)]

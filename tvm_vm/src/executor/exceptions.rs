@@ -126,7 +126,11 @@ fn execute_throwif_throwifnot(
             .set_opts(InstructionOptions::Integer(range)),
     )?;
     fetch_stack(engine, 1)?;
-    if reverse_condition ^ engine.cmd.var(0).as_bool()? { do_throw(engine, -1, -1) } else { Ok(()) }
+    if reverse_condition ^ engine.cmd.var(0).as_bool()? {
+        do_throw(engine, -1, -1)
+    } else {
+        Ok(())
+    }
 }
 
 pub(super) fn execute_throwif_short(engine: &mut Engine) -> Status {
@@ -153,7 +157,11 @@ fn execute_throwanyif_throwanyifnot(engine: &mut Engine, reverse_condition: bool
         "THROWANYIF"
     }))?;
     fetch_stack(engine, 2)?;
-    if reverse_condition ^ engine.cmd.var(0).as_bool()? { do_throw(engine, 1, -1) } else { Ok(()) }
+    if reverse_condition ^ engine.cmd.var(0).as_bool()? {
+        do_throw(engine, 1, -1)
+    } else {
+        Ok(())
+    }
 }
 
 // (n f, f!=0 => throw 0 n)
@@ -197,7 +205,11 @@ fn execute_throwarganyif_throwarganyifnot(engine: &mut Engine, reverse_condition
         "THROWARGANYIF"
     }))?;
     fetch_stack(engine, 3)?;
-    if reverse_condition ^ engine.cmd.var(0).as_bool()? { do_throw(engine, 1, 2) } else { Ok(()) }
+    if reverse_condition ^ engine.cmd.var(0).as_bool()? {
+        do_throw(engine, 1, 2)
+    } else {
+        Ok(())
+    }
 }
 
 // (x n f, f!=0 => throw x n)
@@ -217,7 +229,11 @@ fn execute_throwargif_throwargifnot(engine: &mut Engine, reverse_condition: bool
             .set_opts(InstructionOptions::Integer(0..2048)),
     )?;
     fetch_stack(engine, 2)?;
-    if reverse_condition ^ engine.cmd.var(0).as_bool()? { do_throw(engine, -1, 1) } else { Ok(()) }
+    if reverse_condition ^ engine.cmd.var(0).as_bool()? {
+        do_throw(engine, -1, 1)
+    } else {
+        Ok(())
+    }
 }
 
 // (x f, f!=0 => throw x n)

@@ -209,7 +209,7 @@ impl Serializable for OutAction {
                 cell.checked_append_reference(out_msg.serialize()?)?;
             }
             OutAction::SetCode { ref new_code } => {
-                ACTION_SET_CODE.write_to(cell)?; //tag
+                ACTION_SET_CODE.write_to(cell)?; // tag
                 cell.checked_append_reference(new_code.clone())?;
             }
             OutAction::ReserveCurrency { ref mode, ref value } => {
@@ -218,7 +218,7 @@ impl Serializable for OutAction {
                 value.write_to(cell)?;
             }
             OutAction::MintToken { ref value } => {
-                ACTION_MINTECC.write_to(cell)?; //tag
+                ACTION_MINTECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
             }
             OutAction::ExchangeShell { ref value } => {

@@ -589,11 +589,19 @@ impl Grams {
     }
 
     pub const fn as_u64(&self) -> Option<u64> {
-        if self.0 <= u64::MAX as u128 { Some(self.0 as u64) } else { None }
+        if self.0 <= u64::MAX as u128 {
+            Some(self.0 as u64)
+        } else {
+            None
+        }
     }
 
     pub const fn as_u64_quiet(&self) -> u64 {
-        if self.0 <= u64::MAX as u128 { self.0 as u64 } else { u64::MAX }
+        if self.0 <= u64::MAX as u128 {
+            self.0 as u64
+        } else {
+            u64::MAX
+        }
     }
 }
 
@@ -902,7 +910,8 @@ impl AddSub for CurrencyCollection {
                     return Ok(true);
                 }
             }
-            Ok(false) // coin not found in mine or amount is smaller - cannot subtract
+            Ok(false) // coin not found in mine or amount is smaller - cannot
+                      // subtract
         })
     }
 

@@ -70,7 +70,11 @@ macro_rules! int {
 #[macro_export]
 macro_rules! boolean {
     ($val:expr) => {
-        if $val { int!(-1) } else { int!(0) }
+        if $val {
+            int!(-1)
+        } else {
+            int!(0)
+        }
     };
 }
 
@@ -612,7 +616,11 @@ impl StackItem {
                 };
                 let d2 = |bits: u32| {
                     let res = ((bits / 8) * 2) as u8;
-                    if bits & 7 != 0 { res + 1 } else { res }
+                    if bits & 7 != 0 {
+                        res + 1
+                    } else {
+                        res
+                    }
                 };
                 let start = data.pos();
                 let end = start + data.remaining_bits();

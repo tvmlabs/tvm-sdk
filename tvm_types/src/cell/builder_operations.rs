@@ -134,7 +134,11 @@ impl IBitstring for BuilderData {
     }
 
     fn append_bit_bool(&mut self, bit: bool) -> Result<&mut Self> {
-        if bit { self.append_raw(&[0xFF], 1) } else { self.append_raw(&[0x00], 1) }
+        if bit {
+            self.append_raw(&[0xFF], 1)
+        } else {
+            self.append_raw(&[0x00], 1)
+        }
     }
 
     fn append_bits(&mut self, value: usize, bits: usize) -> Result<&mut Self> {

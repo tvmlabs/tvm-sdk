@@ -165,7 +165,11 @@ impl Gas {
 
     /// Compute exception cost
     pub const fn load_cell_price(first: bool) -> i64 {
-        if first { CELL_LOAD_GAS_PRICE } else { CELL_RELOAD_GAS_PRICE }
+        if first {
+            CELL_LOAD_GAS_PRICE
+        } else {
+            CELL_RELOAD_GAS_PRICE
+        }
     }
 
     pub fn consume_load_cell(&mut self, first: bool) -> i64 {
@@ -297,6 +301,10 @@ impl Gas {
     }
 
     pub const fn get_gas_used(&self) -> i64 {
-        if self.gas_remaining > 0 { self.gas_base - self.gas_remaining } else { self.gas_base }
+        if self.gas_remaining > 0 {
+            self.gas_base - self.gas_remaining
+        } else {
+            self.gas_base
+        }
     }
 }

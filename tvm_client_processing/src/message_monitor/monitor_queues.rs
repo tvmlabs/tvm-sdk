@@ -70,7 +70,11 @@ impl MonitorQueues {
                 }
             }
         }
-        if !buffered.messages.is_empty() { Some(buffered) } else { None }
+        if !buffered.messages.is_empty() {
+            Some(buffered)
+        } else {
+            None
+        }
     }
 
     pub fn start_resolving(&mut self, now_ms: u64, hashes: HashSet<String>) {

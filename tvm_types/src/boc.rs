@@ -443,7 +443,10 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
                 boc.roots_indexes_rev.push(rev_index as usize);
             } else {
                 boc.traverse(root_cell)?;
-                boc.roots_indexes_rev.push(boc.cells_count - 1); // root must be added into `sorted_rev` back
+                boc.roots_indexes_rev.push(boc.cells_count - 1); // root must be
+                                                                 // added into
+                                                                 // `sorted_rev`
+                                                                 // back
             }
         }
 
@@ -1150,8 +1153,8 @@ impl<'a> BocReader<'a> {
             MAX_DATA_BYTES +
             MAX_REFERENCES_COUNT * ref_size;
         let min_cell_size = 2; // descr bytes only
-        // every raw cell except roots must be referenced at least once, hence the
-        // formula
+                               // every raw cell except roots must be referenced at least once, hence the
+                               // formula
         let tot_cells_size_minimal =
             (cells_count - big_cells_count) * (min_cell_size + ref_size) - ref_size * roots_count;
         if tot_cells_size - big_cells_size < tot_cells_size_minimal {

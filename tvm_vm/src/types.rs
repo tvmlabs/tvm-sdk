@@ -36,11 +36,19 @@ impl ExceptionType {
     }
 
     fn exception_code(&self) -> Option<ExceptionCode> {
-        if let ExceptionType::System(code) = self { Some(*code) } else { None }
+        if let ExceptionType::System(code) = self {
+            Some(*code)
+        } else {
+            None
+        }
     }
 
     fn custom_code(&self) -> Option<i32> {
-        if let ExceptionType::Custom(code) = self { Some(*code) } else { None }
+        if let ExceptionType::Custom(code) = self {
+            Some(*code)
+        } else {
+            None
+        }
     }
 
     pub fn exception_or_custom_code(&self) -> i32 {

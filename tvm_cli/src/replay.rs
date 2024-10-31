@@ -320,7 +320,11 @@ impl State {
 fn choose<'a>(st1: &'a mut State, st2: &'a mut State) -> &'a mut State {
     let lt1 = st1.tr.as_ref().map_or(u64::MAX, |tr| tr.tr.logical_time());
     let lt2 = st2.tr.as_ref().map_or(u64::MAX, |tr| tr.tr.logical_time());
-    if lt1 <= lt2 { st1 } else { st2 }
+    if lt1 <= lt2 {
+        st1
+    } else {
+        st2
+    }
 }
 
 pub async fn replay(

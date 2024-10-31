@@ -117,7 +117,11 @@ impl LabelReader {
         while cursor.get_next_bit()? {
             len += 1;
         }
-        if len <= max { Ok(len) } else { fail!(ExceptionCode::CellUnderflow) }
+        if len <= max {
+            Ok(len)
+        } else {
+            fail!(ExceptionCode::CellUnderflow)
+        }
     }
 
     fn get_label_long(cursor: &mut SliceData, max: &mut usize) -> Result<SliceData> {
@@ -128,7 +132,11 @@ impl LabelReader {
 
     fn get_label_long_length(cursor: &mut SliceData, max: usize) -> Result<usize> {
         let len = cursor.get_next_size(max)? as usize;
-        if len <= max { Ok(len) } else { fail!(ExceptionCode::CellUnderflow) }
+        if len <= max {
+            Ok(len)
+        } else {
+            fail!(ExceptionCode::CellUnderflow)
+        }
     }
 
     fn get_label_same(
@@ -146,7 +154,11 @@ impl LabelReader {
     fn get_label_same_length(cursor: &mut SliceData, max: usize) -> Result<usize> {
         cursor.get_next_bit()?;
         let len = cursor.get_next_size(max)? as usize;
-        if len <= max { Ok(len) } else { fail!(ExceptionCode::CellUnderflow) }
+        if len <= max {
+            Ok(len)
+        } else {
+            fail!(ExceptionCode::CellUnderflow)
+        }
     }
 
     pub fn new(cursor: SliceData) -> Self {
@@ -567,7 +579,11 @@ pub trait HashmapType {
                 .ok_or(ExceptionCode::CellUnderflow)?;
             label = LabelReader::read_label(&mut cursor, bit_len)?;
         }
-        if key.is_empty() && Self::is_leaf(&mut cursor) { Ok(Some(cursor)) } else { Ok(None) }
+        if key.is_empty() && Self::is_leaf(&mut cursor) {
+            Ok(Some(cursor))
+        } else {
+            Ok(None)
+        }
     }
 
     fn hashmap_set_with_mode(
@@ -715,7 +731,8 @@ pub trait HashmapType {
     fn hashmap_merge(&mut self, other: &Self, key: &SliceData) -> Result<()> {
         let bit_len = self.bit_len();
         if bit_len != other.bit_len() || key.remaining_bits() > bit_len {
-            return Ok(()); // fail!("data in hashmaps do not correspond each other or key too long")
+            return Ok(()); // fail!("data in hashmaps do not correspond each
+                           // other or key too long")
         }
         let cell1 = match self.data() {
             Some(data) => data.clone(),
@@ -1870,7 +1887,11 @@ pub trait HashmapSubtree: HashmapType + Clone + Sized {
             let mut cursor = LabelReader::new(SliceData::load_cell_ref(root)?);
             let (_key, remainder_prefix) =
                 down_by_tree::<Self>(prefix, &mut cursor, self.bit_len(), &mut 0)?;
-            if remainder_prefix.is_none() { Ok(Some(cursor.remainder()?.cell())) } else { Ok(None) }
+            if remainder_prefix.is_none() {
+                Ok(Some(cursor.remainder()?.cell()))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }

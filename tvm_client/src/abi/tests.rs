@@ -952,7 +952,8 @@ fn test_init_data() {
         "s": "some string",
     });
 
-    const ENCODED_INITIAL_DATA: &str = "te6ccgEBBwEARwABAcABAgPPoAQCAQFIAwAWc29tZSBzdHJpbmcCASAGBQA\
+    const ENCODED_INITIAL_DATA: &str =
+        "te6ccgEBBwEARwABAcABAgPPoAQCAQFIAwAWc29tZSBzdHJpbmcCASAGBQA\
         DHuAAQQiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIoA==";
 
     let result: ResultOfEncodeInitialData = client

@@ -774,7 +774,11 @@ fn execute_ifbit_mask(engine: &mut Engine, name: &'static str, how: u8) -> Statu
         let test_bit_mask = IntegerData::from_u32(1 << nbit);
         x.and::<Signaling>(&test_bit_mask)?.is_zero()
     };
-    if is_zero ^ how.bit(INV) { Ok(()) } else { jmpx(engine, how.bit(REF)) }
+    if is_zero ^ how.bit(INV) {
+        Ok(())
+    } else {
+        jmpx(engine, how.bit(REF))
+    }
 }
 
 // (x continuation - x), switch if n's bit of x is set

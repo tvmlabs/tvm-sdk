@@ -92,7 +92,11 @@ impl Endpoint {
             };
             base_url = format!("{}{}", protocol, base_url);
         };
-        if base_url.ends_with("/graphql") { base_url } else { format!("{}/graphql", base_url) }
+        if base_url.ends_with("/graphql") {
+            base_url
+        } else {
+            format!("{}/graphql", base_url)
+        }
     }
 
     async fn fetch_info_with_url(

@@ -457,7 +457,11 @@ impl Cell {
     pub fn to_hex_string(&self, lower: bool) -> String {
         let bit_length = self.bit_length();
         if bit_length % 8 == 0 {
-            if lower { hex::encode(self.data()) } else { hex::encode_upper(self.data()) }
+            if lower {
+                hex::encode(self.data())
+            } else {
+                hex::encode_upper(self.data())
+            }
         } else {
             to_hex_string(self.data(), self.bit_length(), lower)
         }
@@ -726,8 +730,8 @@ pub(crate) const HASHES_D1_FLAG: u8 = 16;
 pub(crate) const EXOTIC_D1_FLAG: u8 = 8;
 pub(crate) const REFS_D1_MASK: u8 = 7;
 pub(crate) const BIG_CELL_D1: u8 = 13; // 0b0000_1101
-// next byte is desription byte 2 contains data size (in special encoding, see
-// cell_data_len)
+                                       // next byte is desription byte 2 contains data size (in special encoding, see
+                                       // cell_data_len)
 
 #[inline(always)]
 pub(crate) fn calc_d1(
@@ -831,7 +835,11 @@ pub(crate) fn bit_len(buf: &[u8]) -> usize {
         bytes * 8
     } else {
         debug_assert!(buf.len() >= 2);
-        if buf[1] & 1 == 0 { (buf[1] >> 1) as usize * 8 } else { find_tag(cell_data(buf)) }
+        if buf[1] & 1 == 0 {
+            (buf[1] >> 1) as usize * 8
+        } else {
+            find_tag(cell_data(buf))
+        }
     }
 }
 
@@ -985,7 +993,11 @@ fn build_cell_buf(
     let level_mask = LevelMask::with_mask(level_mask);
     let level = level_mask.level();
     let hashes_count = if store_hashes {
-        if cell_type == CellType::PrunedBranch { 1 } else { level as usize + 1 }
+        if cell_type == CellType::PrunedBranch {
+            1
+        } else {
+            level as usize + 1
+        }
     } else {
         0
     };

@@ -168,18 +168,18 @@ impl StorageUsed {
 
 impl Serializable for StorageUsed {
     fn write_to(&self, output: &mut BuilderData) -> Result<()> {
-        self.cells.write_to(output)?; //cells:(VarUInteger 7)
-        self.bits.write_to(output)?; //bits:(VarUInteger 7)
-        self.public_cells.write_to(output)?; //public_cells:(VarUInteger 7)
+        self.cells.write_to(output)?; // cells:(VarUInteger 7)
+        self.bits.write_to(output)?; // bits:(VarUInteger 7)
+        self.public_cells.write_to(output)?; // public_cells:(VarUInteger 7)
         Ok(())
     }
 }
 
 impl Deserializable for StorageUsed {
     fn read_from(&mut self, data: &mut SliceData) -> Result<()> {
-        self.cells.read_from(data)?; //cells:(VarUInteger 7)
-        self.bits.read_from(data)?; //bits:(VarUInteger 7)
-        self.public_cells.read_from(data)?; //public_cells:(VarUInteger 7)
+        self.cells.read_from(data)?; // cells:(VarUInteger 7)
+        self.bits.read_from(data)?; // bits:(VarUInteger 7)
+        self.public_cells.read_from(data)?; // public_cells:(VarUInteger 7)
         Ok(())
     }
 }
@@ -251,16 +251,16 @@ impl StorageUsedShort {
 
 impl Serializable for StorageUsedShort {
     fn write_to(&self, output: &mut BuilderData) -> Result<()> {
-        self.cells.write_to(output)?; //cells:(VarUInteger 7)
-        self.bits.write_to(output)?; //cells:(VarUInteger 7)
+        self.cells.write_to(output)?; // cells:(VarUInteger 7)
+        self.bits.write_to(output)?; // cells:(VarUInteger 7)
         Ok(())
     }
 }
 
 impl Deserializable for StorageUsedShort {
     fn read_from(&mut self, data: &mut SliceData) -> Result<()> {
-        self.cells.read_from(data)?; //cells:(VarUInteger 7)
-        self.bits.read_from(data)?; //cells:(VarUInteger 7)
+        self.cells.read_from(data)?; // cells:(VarUInteger 7)
+        self.bits.read_from(data)?; // cells:(VarUInteger 7)
         Ok(())
     }
 }
@@ -460,9 +460,9 @@ impl AccountStorage {
 
 impl Serializable for AccountStorage {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        self.last_trans_lt.write_to(cell)?; //last_trans_lt:uint64
-        self.balance.write_to(cell)?; //balance:CurrencyCollection
-        self.state.write_to(cell)?; //state:AccountState
+        self.last_trans_lt.write_to(cell)?; // last_trans_lt:uint64
+        self.balance.write_to(cell)?; // balance:CurrencyCollection
+        self.state.write_to(cell)?; // state:AccountState
         if self.init_code_hash.is_some() {
             self.init_code_hash.write_maybe_to(cell)?;
         }
@@ -1129,9 +1129,9 @@ impl Account {
             builder.checked_append_reference(builder_stuff.into_cell().unwrap()).unwrap();
             let mut builder_stuff2 = BuilderData::new();
             stuff.storage_stat.write_to(&mut builder_stuff2)?;
-            stuff.storage.last_trans_lt.write_to(&mut builder_stuff2)?; //last_trans_lt:uint64
-            stuff.storage.balance.write_to(&mut builder_stuff2)?; //balance:CurrencyCollection
-            stuff.storage.state.write_to(&mut builder_stuff2)?; //state:AccountState
+            stuff.storage.last_trans_lt.write_to(&mut builder_stuff2)?; // last_trans_lt:uint64
+            stuff.storage.balance.write_to(&mut builder_stuff2)?; // balance:CurrencyCollection
+            stuff.storage.state.write_to(&mut builder_stuff2)?; // state:AccountState
             builder.checked_append_reference(builder_stuff2.into_cell().unwrap()).unwrap();
         } else {
             builder.append_bit_zero()?;
@@ -1147,9 +1147,9 @@ impl Account {
         let builder2 = slice.reference(1).unwrap();
         slice_builder = SliceData::load_cell(builder2).unwrap();
         let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
-        let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; //last_trans_lt:uint64
-        let balance = Deserializable::construct_from(&mut slice_builder)?; //balance:CurrencyCollection
-        let state = Deserializable::construct_from(&mut slice_builder)?; //state:AccountState
+        let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; // last_trans_lt:uint64
+        let balance = Deserializable::construct_from(&mut slice_builder)?; // balance:CurrencyCollection
+        let state = Deserializable::construct_from(&mut slice_builder)?; // state:AccountState
         let storage = AccountStorage { last_trans_lt, balance, state, ..AccountStorage::default() };
         Ok(Account::with_stuff(AccountStuff { addr, dapp_id, storage_stat, storage }))
     }
@@ -1162,9 +1162,9 @@ impl Account {
         let builder2 = slice.reference(1).unwrap();
         slice_builder = SliceData::load_cell(builder2).unwrap();
         let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
-        let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; //last_trans_lt:uint64
-        let balance = CurrencyCollection::construct_from(&mut slice_builder)?; //balance:CurrencyCollection
-        let state = Deserializable::construct_from(&mut slice_builder)?; //state:AccountState
+        let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; // last_trans_lt:uint64
+        let balance = CurrencyCollection::construct_from(&mut slice_builder)?; // balance:CurrencyCollection
+        let state = Deserializable::construct_from(&mut slice_builder)?; // state:AccountState
         let init_code_hash = UInt256::read_maybe_from(&mut slice_builder)?;
         let storage = AccountStorage { last_trans_lt, balance, state, init_code_hash };
         let stuff = AccountStuff { addr, dapp_id, storage_stat, storage };

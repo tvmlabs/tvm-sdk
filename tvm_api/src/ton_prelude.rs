@@ -296,7 +296,11 @@ impl BareSerialize for () {
 
 impl From<bool> for &'static Bool {
     fn from(b: bool) -> Self {
-        if b { &Bool::BoolTrue } else { &Bool::BoolFalse }
+        if b {
+            &Bool::BoolTrue
+        } else {
+            &Bool::BoolFalse
+        }
     }
 }
 

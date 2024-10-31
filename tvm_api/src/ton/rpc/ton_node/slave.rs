@@ -35,7 +35,11 @@ impl crate::BoxedDeserialize for SendExtMessage {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x0376f2a9) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x0376f2a9) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for SendExtMessage {

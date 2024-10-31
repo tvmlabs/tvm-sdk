@@ -3112,9 +3112,17 @@ impl ParamLimits {
 
     pub fn classify(&self, value: u32) -> ParamLimitIndex {
         if value >= self.medium() {
-            if value >= self.hard_limit() { ParamLimitIndex::Hard } else { ParamLimitIndex::Medium }
+            if value >= self.hard_limit() {
+                ParamLimitIndex::Hard
+            } else {
+                ParamLimitIndex::Medium
+            }
         } else if value >= self.underload() {
-            if value >= self.soft_limit() { ParamLimitIndex::Soft } else { ParamLimitIndex::Normal }
+            if value >= self.soft_limit() {
+                ParamLimitIndex::Soft
+            } else {
+                ParamLimitIndex::Normal
+            }
         } else {
             ParamLimitIndex::Underload
         }

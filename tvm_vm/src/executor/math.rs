@@ -185,7 +185,11 @@ where
 
 macro_rules! boolint {
     ($val:expr) => {
-        if $val { IntegerData::minus_one() } else { IntegerData::zero() }
+        if $val {
+            IntegerData::minus_one()
+        } else {
+            IntegerData::zero()
+        }
     };
 }
 

@@ -330,7 +330,11 @@ pub(in crate::executor) fn pop_all(engine: &mut Engine, dst: u16) -> Status {
     } else {
         nargs as usize
     };
-    if drop > 0 { pop_range(engine, 0..drop, dst) } else { Ok(()) }
+    if drop > 0 {
+        pop_range(engine, 0..drop, dst)
+    } else {
+        Ok(())
+    }
 }
 
 // dst.stack.push(CC.stack[range])

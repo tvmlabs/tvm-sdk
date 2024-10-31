@@ -786,13 +786,16 @@ impl OldMcBlocksInfo {
             match y.cmp(&(2 * x)) {
                 std::cmp::Ordering::Less => {
                     // (x << d) > req_seqno <=> x > (req_seqno >> d) = (y >> 1) <=> 2 * x > y
-                    Ok(TraverseNextStep::Stop) // all nodes in subtree have block.seqno > req_seqno => skip
+                    Ok(TraverseNextStep::Stop) // all nodes in subtree have
+                                               // block.seqno > req_seqno =>
+                                               // skip
                 }
                 std::cmp::Ordering::Equal => {
                     Ok(TraverseNextStep::VisitZero) // visit only left ("0")
                 }
                 _ => {
-                    Ok(TraverseNextStep::VisitOneZero) // visit right, then left ("1" then "0")
+                    Ok(TraverseNextStep::VisitOneZero) // visit right, then left
+                                                       // ("1" then "0")
                 }
             }
         })?;
@@ -834,13 +837,16 @@ impl OldMcBlocksInfo {
                 std::cmp::Ordering::Greater => {
                     // ((x + 1) << d) <= req_seqno <=> (x+1) <= (req_seqno >> d) = (y >> 1) <=>
                     // 2*x+2 <= y <=> y > 2*x+1
-                    Ok(TraverseNextStep::Stop) // all nodes in subtree have block.seqno < req_seqno => skip
+                    Ok(TraverseNextStep::Stop) // all nodes in subtree have
+                                               // block.seqno < req_seqno =>
+                                               // skip
                 }
                 std::cmp::Ordering::Equal => {
                     Ok(TraverseNextStep::VisitOne) // visit only right ("1")
                 }
                 _ => {
-                    Ok(TraverseNextStep::VisitZeroOne) // visit left, then right ("0" then "1")
+                    Ok(TraverseNextStep::VisitZeroOne) // visit left, then right
+                                                       // ("0" then "1")
                 }
             }
         })?;
