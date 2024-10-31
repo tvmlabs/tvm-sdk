@@ -6,8 +6,6 @@ use tvm_block::ChildCell;
 use tvm_block::Serializable;
 use tvm_block::ShardAccounts;
 use tvm_block::Transaction;
-use tvm_types::fail;
-use tvm_types::write_boc;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -15,9 +13,9 @@ use tvm_types::ExceptionCode;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::fail;
+use tvm_types::write_boc;
 
-use crate::block_parser::entry::get_sharding_depth;
-use crate::block_parser::get_partition;
 use crate::BlockParserConfig;
 use crate::BlockParsingError;
 use crate::EntryConfig;
@@ -25,6 +23,8 @@ use crate::JsonReducer;
 use crate::ParsedBlock;
 use crate::ParsedEntry;
 use crate::ParsingBlock;
+use crate::block_parser::entry::get_sharding_depth;
+use crate::block_parser::get_partition;
 
 pub(crate) enum AccountTransition {
     None,

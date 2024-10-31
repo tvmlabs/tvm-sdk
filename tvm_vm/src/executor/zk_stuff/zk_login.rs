@@ -19,11 +19,11 @@ use serde_json::Value;
 
 use super::utils::split_to_two_frs;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
-use crate::executor::zk_stuff::curve_utils::g1_affine_from_str_projective;
-use crate::executor::zk_stuff::curve_utils::g2_affine_from_str_projective;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::curve_utils::CircomG1;
 use crate::executor::zk_stuff::curve_utils::CircomG2;
+use crate::executor::zk_stuff::curve_utils::g1_affine_from_str_projective;
+use crate::executor::zk_stuff::curve_utils::g2_affine_from_str_projective;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::error::ZkCryptoResult;
 use crate::executor::zk_stuff::jwt_utils::JWTHeader;

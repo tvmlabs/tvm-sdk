@@ -94,10 +94,12 @@ fn main() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use serde_json::json;
     use std::fs;
     use std::path::PathBuf;
+
+    use serde_json::json;
+
+    use super::*;
 
     fn create_temp_contract_file() -> PathBuf {
         let temp_path = PathBuf::from("tests/temp_contract.tvc");

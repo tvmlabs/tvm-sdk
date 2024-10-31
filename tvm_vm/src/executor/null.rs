@@ -9,12 +9,12 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use crate::executor::engine::storage::fetch_stack;
-use crate::executor::engine::Engine;
-use crate::executor::types::Instruction;
 use crate::executor::Mask;
-use crate::stack::integer::IntegerData;
+use crate::executor::engine::Engine;
+use crate::executor::engine::storage::fetch_stack;
+use crate::executor::types::Instruction;
 use crate::stack::StackItem;
+use crate::stack::integer::IntegerData;
 use crate::types::Status;
 
 pub(super) fn execute_null(engine: &mut Engine) -> Status {

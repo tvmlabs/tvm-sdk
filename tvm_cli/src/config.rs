@@ -586,9 +586,9 @@ pub fn set_config(
 
 #[cfg(test)]
 mod tests {
-    use super::resolve_net_name;
     use super::MAINNET;
     use super::TESTNET;
+    use super::resolve_net_name;
 
     #[test]
     fn test_endpoints_resolver() {

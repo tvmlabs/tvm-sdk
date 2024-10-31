@@ -22,10 +22,10 @@ use tvm_types::Cell;
 use tvm_types::UInt256;
 
 use super::Error;
+use crate::boc::internal::DeserializedBoc;
 use crate::boc::internal::deserialize_cell_from_base64;
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::boc::internal::serialize_cell_to_base64;
-use crate::boc::internal::DeserializedBoc;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
 
@@ -367,10 +367,10 @@ pub struct CachedBoc {
 
 impl CachedBoc {
     pub fn new(context: Arc<ClientContext>, boc: String, pin: String) -> ClientResult<Self> {
-        let boc_ref = cache_set(
-            context.clone(),
-            ParamsOfBocCacheSet { boc, cache_type: BocCacheType::Pinned { pin: pin.clone() } },
-        )?
+        let boc_ref = cache_set(context.clone(), ParamsOfBocCacheSet {
+            boc,
+            cache_type: BocCacheType::Pinned { pin: pin.clone() },
+        })?
         .boc_ref;
 
         Ok(Self { context, boc_ref, pin })
@@ -387,12 +387,9 @@ impl CachedBoc {
 
 impl Drop for CachedBoc {
     fn drop(&mut self) {
-        let _ = cache_unpin(
-            self.context.clone(),
-            ParamsOfBocCacheUnpin {
-                pin: std::mem::take(&mut self.pin),
-                boc_ref: Some(std::mem::take(&mut self.boc_ref)),
-            },
-        );
+        let _ = cache_unpin(self.context.clone(), ParamsOfBocCacheUnpin {
+            pin: std::mem::take(&mut self.pin),
+            boc_ref: Some(std::mem::take(&mut self.boc_ref)),
+        });
     }
 }

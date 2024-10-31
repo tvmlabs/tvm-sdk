@@ -3,16 +3,18 @@ use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_types::HashmapE;
 use tvm_types::SliceData;
+use tvm_vm::SmartContractInfo;
 use tvm_vm::error::tvm_exception;
-use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::Engine;
+use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::int;
-use tvm_vm::stack::integer::IntegerData;
-use tvm_vm::stack::savelist::SaveList;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
-use tvm_vm::SmartContractInfo;
+use tvm_vm::stack::integer::IntegerData;
+use tvm_vm::stack::savelist::SaveList;
 
+use crate::Args;
+use crate::ExecutionResult;
 use crate::decode::decode_actions;
 use crate::helper::capabilities;
 use crate::helper::config_params;
@@ -22,8 +24,6 @@ use crate::helper::get_now;
 use crate::helper::load_code_and_data_from_state_init;
 use crate::helper::trace_callback;
 use crate::message::generate_message;
-use crate::Args;
-use crate::ExecutionResult;
 
 pub(crate) fn execute(args: &Args, res: &mut ExecutionResult) -> anyhow::Result<()> {
     let mut contract_state_init =

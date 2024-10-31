@@ -19,10 +19,10 @@ use std::sync::atomic::Ordering;
 
 use serde_json::Value;
 
-use crate::client::binding_config;
-use crate::client::core_version;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
+use crate::client::binding_config;
+use crate::client::core_version;
 use crate::error::ClientResult;
 use crate::net::Error;
 use crate::net::NetworkConfig;

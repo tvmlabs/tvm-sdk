@@ -16,17 +16,17 @@ use crate::boc::tvc::resolve_state_init_cell;
 use crate::json_interface::modules::ProcessingModule;
 use crate::net::ParamsOfQuery;
 use crate::net::ResultOfQuery;
-use crate::processing::types::DecodedOutput;
 use crate::processing::ErrorCode;
 use crate::processing::ParamsOfProcessMessage;
 use crate::processing::ParamsOfSendMessage;
 use crate::processing::ParamsOfWaitForTransaction;
 use crate::processing::ProcessingEvent;
 use crate::processing::ProcessingResponseType;
-use crate::tests::TestClient;
+use crate::processing::types::DecodedOutput;
 use crate::tests::EVENTS_OLD;
 use crate::tests::GIVER_V2;
 use crate::tests::HELLO;
+use crate::tests::TestClient;
 use crate::tvm::AccountForExecutor;
 use crate::tvm::ErrorCode as TvmErrorCode;
 use crate::tvm::ParamsOfRunExecutor;
@@ -92,10 +92,10 @@ fn assert_events(events: &[ProcessingEvent], remp_enabled: bool) {
 
 async fn remp_enabled(client: &TestClient) -> bool {
     let info: ResultOfQuery = client
-        .request_async(
-            "net.query",
-            ParamsOfQuery { query: "query{info{rempEnabled}}".to_owned(), variables: None },
-        )
+        .request_async("net.query", ParamsOfQuery {
+            query: "query{info{rempEnabled}}".to_owned(),
+            variables: None,
+        })
         .await
         .unwrap_or_default();
 
@@ -559,14 +559,11 @@ async fn test_fees() {
     let message = client.encode_message(params.clone()).await.unwrap();
 
     let local_result: ResultOfRunExecutor = client
-        .request_async(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                account: AccountForExecutor::Account { boc: account, unlimited_balance: None },
-                message: message.message,
-                ..Default::default()
-            },
-        )
+        .request_async("tvm.run_executor", ParamsOfRunExecutor {
+            account: AccountForExecutor::Account { boc: account, unlimited_balance: None },
+            message: message.message,
+            ..Default::default()
+        })
         .await
         .unwrap();
 

@@ -1,11 +1,8 @@
+use criterion::Criterion;
 use criterion::criterion_group;
 use criterion::criterion_main;
-use criterion::Criterion;
 use pprof::criterion::Output;
 use pprof::criterion::PProfProfiler;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::read_single_root_boc;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::GasConsumer;
@@ -13,6 +10,9 @@ use tvm_types::HashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::Status;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::read_single_root_boc;
 
 // fn read_boc(filename: &str) -> Vec<u8> {
 //     let mut bytes = Vec::new();

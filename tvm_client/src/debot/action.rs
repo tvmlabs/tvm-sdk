@@ -1,7 +1,7 @@
-use serde::de;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serializer;
+use serde::de;
 
 use super::context::from_abi_num;
 use super::context::from_hex_to_utf8_str;

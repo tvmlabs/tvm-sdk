@@ -7,6 +7,15 @@ use tokio::sync::RwLock;
 use tvm_types::base64_encode;
 use zeroize::Zeroize;
 
+use crate::ClientContext;
+use crate::crypto::CryptoConfig;
+use crate::crypto::EncryptionBox;
+use crate::crypto::EncryptionBoxInfo;
+use crate::crypto::Error;
+use crate::crypto::MnemonicDictionary;
+use crate::crypto::RegisteredEncryptionBox;
+use crate::crypto::RegisteredSigningBox;
+use crate::crypto::SigningBox;
 use crate::crypto::boxes::crypto_box::encryption::decrypt_secret;
 use crate::crypto::boxes::crypto_box::encryption::encrypt_secret;
 use crate::crypto::boxes::encryption_box::chacha20::ChaCha20EncryptionBox;
@@ -19,17 +28,8 @@ use crate::crypto::internal::SecretString;
 use crate::crypto::mnemonic::mnemonics;
 use crate::crypto::register_encryption_box;
 use crate::crypto::register_signing_box;
-use crate::crypto::CryptoConfig;
-use crate::crypto::EncryptionBox;
-use crate::crypto::EncryptionBoxInfo;
-use crate::crypto::Error;
-use crate::crypto::MnemonicDictionary;
-use crate::crypto::RegisteredEncryptionBox;
-use crate::crypto::RegisteredSigningBox;
-use crate::crypto::SigningBox;
 use crate::encoding::base64_decode;
 use crate::error::ClientResult;
-use crate::ClientContext;
 
 mod derived_keys;
 mod encryption;
@@ -325,17 +325,14 @@ pub async fn get_signing_box_from_crypto_box(
     context: Arc<ClientContext>,
     params: ParamsOfGetSigningBoxFromCryptoBox,
 ) -> ClientResult<RegisteredSigningBox> {
-    register_signing_box(
-        context,
-        BoxFromCryptoBoxLifeCycleManager::<KeysSigningBox> {
-            params: InternalBoxParams {
-                handle: params.handle,
-                hdpath: params.hdpath,
-                secret_lifetime: params.secret_lifetime,
-            },
-            internal_box: Default::default(),
+    register_signing_box(context, BoxFromCryptoBoxLifeCycleManager::<KeysSigningBox> {
+        params: InternalBoxParams {
+            handle: params.handle,
+            hdpath: params.hdpath,
+            secret_lifetime: params.secret_lifetime,
         },
-    )
+        internal_box: Default::default(),
+    })
     .await
 }
 
@@ -363,10 +360,9 @@ impl<T: Send + Sync + 'static> BoxFromCryptoBoxLifeCycleManager<T> {
             return callback(Arc::clone(internal_box)).await;
         }
 
-        let seed_phrase = get_crypto_box_seed_phrase(
-            Arc::clone(&context),
-            RegisteredCryptoBox { handle: CryptoBoxHandle(self.params.handle) },
-        )
+        let seed_phrase = get_crypto_box_seed_phrase(Arc::clone(&context), RegisteredCryptoBox {
+            handle: CryptoBoxHandle(self.params.handle),
+        })
         .await?;
 
         let hdpath =

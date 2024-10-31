@@ -21,23 +21,23 @@ use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionDescrTickTock;
 use tvm_block::TransactionTickTock;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_vm::SmartContractInfo;
 use tvm_vm::boolean;
 use tvm_vm::int;
-use tvm_vm::stack::integer::IntegerData;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
-use tvm_vm::SmartContractInfo;
+use tvm_vm::stack::integer::IntegerData;
 
-use crate::blockchain_config::BlockchainConfig;
-use crate::error::ExecutorError;
 use crate::ActionPhaseResult;
 use crate::ExecuteParams;
 use crate::TransactionExecutor;
+use crate::blockchain_config::BlockchainConfig;
+use crate::error::ExecutorError;
 
 pub struct TickTockTransactionExecutor {
     pub config: BlockchainConfig,

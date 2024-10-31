@@ -12,9 +12,9 @@
 use std::cmp::max;
 use std::cmp::min;
 
+use tvm_types::Result;
 use tvm_types::error;
 use tvm_types::types::ExceptionCode;
-use tvm_types::Result;
 
 use crate::error::TvmError;
 use crate::types::Exception;

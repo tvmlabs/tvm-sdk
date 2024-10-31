@@ -15,8 +15,6 @@ use std::io::Write;
 use std::str::FromStr;
 
 use ed25519::signature::Verifier;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
@@ -25,14 +23,16 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::Deserializable;
+use crate::Serializable;
 use crate::blocks::BlockIdExt;
 use crate::define_HashmapE;
 use crate::error::BlockError;
 use crate::validators::ValidatorBaseInfo;
 use crate::validators::ValidatorDescr;
-use crate::Deserializable;
-use crate::Serializable;
 
 #[cfg(test)]
 #[path = "tests/test_signature.rs"]

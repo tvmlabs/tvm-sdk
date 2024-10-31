@@ -7,10 +7,10 @@ use predicates::prelude::*;
 // use std::io::Write;
 use serde_json::json;
 mod common;
-use common::giver_v3;
-use common::grep_address;
 use common::BIN_NAME;
 use common::NETWORK;
+use common::giver_v3;
+use common::grep_address;
 
 fn get_debot_paths(name: &str) -> (String, String, String) {
     (

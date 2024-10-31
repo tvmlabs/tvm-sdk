@@ -16,11 +16,11 @@ use tvm_block::MsgAddressInt;
 
 use crate::client;
 use crate::client::ClientContext;
+use crate::encoding::AccountAddressType;
+use crate::encoding::Base64AddressParams;
 use crate::encoding::account_decode;
 use crate::encoding::account_encode_ex;
 use crate::encoding::decode_std_base64;
-use crate::encoding::AccountAddressType;
-use crate::encoding::Base64AddressParams;
 use crate::error::ClientResult;
 
 #[derive(Serialize, Deserialize, Debug, ApiType, Clone)]

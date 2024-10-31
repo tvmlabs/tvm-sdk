@@ -24,11 +24,11 @@ use std::sync::Arc;
 use thiserror::Error;
 use tvm_block::BlockIdExt;
 use tvm_block::ShardIdent;
-use tvm_types::fail;
 use tvm_types::Ed25519KeyOption;
 use tvm_types::KeyOption;
 use tvm_types::Result;
 use tvm_types::UInt256;
+use tvm_types::fail;
 
 use crate::ton::ton_node::RempMessageLevel;
 use crate::ton::ton_node::RempMessageStatus;

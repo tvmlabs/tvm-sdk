@@ -1,7 +1,5 @@
 use std::io::{self};
 
-use tvm_client::crypto::register_encryption_box;
-use tvm_client::crypto::remove_encryption_box;
 use tvm_client::crypto::ChaCha20EncryptionBox;
 use tvm_client::crypto::ChaCha20ParamsEB;
 use tvm_client::crypto::EncryptionBoxHandle;
@@ -10,11 +8,13 @@ use tvm_client::crypto::NaclEncryptionBox;
 use tvm_client::crypto::NaclSecretBoxParamsEB;
 use tvm_client::crypto::NaclSecretEncryptionBox;
 use tvm_client::crypto::RegisteredEncryptionBox;
+use tvm_client::crypto::register_encryption_box;
+use tvm_client::crypto::remove_encryption_box;
 
 use super::term_browser::input;
 use crate::crypto::load_keypair;
-use crate::helpers::TonClient;
 use crate::helpers::HD_PATH;
+use crate::helpers::TonClient;
 
 #[derive(Clone, Copy)]
 pub(crate) enum EncryptionBoxType {
@@ -38,10 +38,9 @@ pub(super) struct TerminalEncryptionBox {
 impl Drop for TerminalEncryptionBox {
     fn drop(&mut self) {
         if self.handle.0 != 0 {
-            let _ = remove_encryption_box(
-                self.client.clone(),
-                RegisteredEncryptionBox { handle: self.handle() },
-            );
+            let _ = remove_encryption_box(self.client.clone(), RegisteredEncryptionBox {
+                handle: self.handle(),
+            });
         }
     }
 }

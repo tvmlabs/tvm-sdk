@@ -15,12 +15,12 @@ use clap::Arg;
 use clap::ArgMatches;
 use clap::SubCommand;
 use serde_json::json;
-use tvm_client::abi::encode_message_body;
 use tvm_client::abi::Abi;
 use tvm_client::abi::AbiContract;
 use tvm_client::abi::AbiParam;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::ParamsOfEncodeMessageBody;
+use tvm_client::abi::encode_message_body;
 
 use crate::call;
 use crate::config::Config;
@@ -467,21 +467,18 @@ async fn multisig_send_command(matches: &ArgMatches<'_>, config: &Config) -> Res
 }
 
 pub async fn encode_transfer_body(text: &str) -> Result<String, String> {
-    encode_message_body(
-        create_client_local()?,
-        ParamsOfEncodeMessageBody {
-            abi: Abi::Json(TRANSFER_WITH_COMMENT.to_owned()),
-            call_set: CallSet::some_with_function_and_input(
-                "transfer",
-                json!({
-                    "comment": hex::encode(text.as_bytes())
-                }),
-            )
-            .ok_or("failed to create CallSet with specified parameters")?,
-            is_internal: true,
-            ..Default::default()
-        },
-    )
+    encode_message_body(create_client_local()?, ParamsOfEncodeMessageBody {
+        abi: Abi::Json(TRANSFER_WITH_COMMENT.to_owned()),
+        call_set: CallSet::some_with_function_and_input(
+            "transfer",
+            json!({
+                "comment": hex::encode(text.as_bytes())
+            }),
+        )
+        .ok_or("failed to create CallSet with specified parameters")?,
+        is_internal: true,
+        ..Default::default()
+    })
     .await
     .map_err(|e| format!("failed to encode transfer body: {}", e))
     .map(|r| r.body)

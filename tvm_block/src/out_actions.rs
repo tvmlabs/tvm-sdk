@@ -11,8 +11,6 @@
 
 use std::collections::LinkedList;
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -20,13 +18,15 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 
-use crate::error::BlockError;
-use crate::messages::Message;
-use crate::types::CurrencyCollection;
 use crate::Deserializable;
 use crate::ExtraCurrencyCollection;
 use crate::Serializable;
+use crate::error::BlockError;
+use crate::messages::Message;
+use crate::types::CurrencyCollection;
 
 pub const ACTION_SEND_MSG: u32 = 0x0ec3c86d;
 pub const ACTION_SET_CODE: u32 = 0xad4de08e;
@@ -209,7 +209,7 @@ impl Serializable for OutAction {
                 cell.checked_append_reference(out_msg.serialize()?)?;
             }
             OutAction::SetCode { ref new_code } => {
-                ACTION_SET_CODE.write_to(cell)?; //tag
+                ACTION_SET_CODE.write_to(cell)?; // tag
                 cell.checked_append_reference(new_code.clone())?;
             }
             OutAction::ReserveCurrency { ref mode, ref value } => {
@@ -218,7 +218,7 @@ impl Serializable for OutAction {
                 value.write_to(cell)?;
             }
             OutAction::MintToken { ref value } => {
-                ACTION_MINTECC.write_to(cell)?; //tag
+                ACTION_MINTECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
             }
             OutAction::ExchangeShell { ref value } => {

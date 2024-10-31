@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use tokio::sync::RwLock;
 use tvm_client::abi::Abi;
 use tvm_client::debot::DebotInterface;
@@ -11,9 +11,9 @@ use tvm_client::encoding::decode_abi_bigint;
 use super::dinterface::decode_answer_id;
 use super::dinterface::decode_array;
 use super::dinterface::decode_prompt;
-use crate::debot::term_signing_box::TerminalSigningBox;
 use crate::debot::ChainProcessor;
 use crate::debot::ProcessorError;
+use crate::debot::term_signing_box::TerminalSigningBox;
 use crate::helpers::TonClient;
 
 pub const ID: &str = "c13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a";

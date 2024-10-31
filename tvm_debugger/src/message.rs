@@ -2,9 +2,9 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use serde_json::Value;
 #[cfg(test)]
 use serde_json::json;
-use serde_json::Value;
 use tvm_abi::encode_function_call;
 use tvm_block::CurrencyCollection;
 use tvm_block::ExternalInboundMessageHeader;
@@ -15,14 +15,14 @@ use tvm_block::Message;
 use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
 use tvm_block::VarUInteger32;
-use tvm_types::ed25519_create_private_key;
 use tvm_types::SliceData;
+use tvm_types::ed25519_create_private_key;
 
+use crate::Args;
 use crate::helper::get_dest_address;
 use crate::helper::get_now;
 use crate::helper::load_abi_as_string;
 use crate::helper::read_keys;
-use crate::Args;
 
 pub(crate) fn generate_message(args: &Args) -> anyhow::Result<(Message, SliceData)> {
     let body = generate_message_body(args)?;

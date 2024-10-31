@@ -14,8 +14,8 @@ use std::fs::File;
 use tvm_types::BocReader;
 
 use super::*;
-use crate::write_read_and_assert;
 use crate::MsgAddressExt;
+use crate::write_read_and_assert;
 
 #[test]
 fn test_serialize_storage_used() {

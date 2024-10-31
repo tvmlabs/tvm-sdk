@@ -14,31 +14,31 @@ use ark_ff::PrimeField;
 use ark_groth16::Groth16;
 use ark_groth16::PreparedVerifyingKey;
 use ark_groth16::VerifyingKey;
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_serialize::CanonicalDeserialize;
+use ark_serialize::CanonicalSerialize;
 use ark_snark::SNARK;
 use derive_more::From;
 use num_bigint::BigUint;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
-
 use tvm_types::SliceData;
 
+use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::utils::split_to_two_frs;
-use crate::executor::zk_stuff::zk_login::hash_ascii_str_to_field;
-use crate::executor::zk_stuff::zk_login::hash_to_field;
 use crate::executor::zk_stuff::zk_login::MAX_HEADER_LEN;
 use crate::executor::zk_stuff::zk_login::MAX_ISS_LEN_B64;
 use crate::executor::zk_stuff::zk_login::PACK_WIDTH;
-use crate::executor::Engine;
-use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
-use crate::stack::integer::IntegerData;
+use crate::executor::zk_stuff::zk_login::hash_ascii_str_to_field;
+use crate::executor::zk_stuff::zk_login::hash_to_field;
 use crate::stack::StackItem;
 use crate::stack::StackItem::Cell;
+use crate::stack::integer::IntegerData;
+use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
@@ -266,7 +266,6 @@ impl ProofWrapper {
     }
 }
 
-
 fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
     let vk_alpha_1 = g1_affine_from_str_projective(&vec![
@@ -404,7 +403,6 @@ fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
     // Convert the verifying key into the prepared form.
     PreparedVerifyingKey::from(vk)
 }
-
 
 fn global_pvk() -> PreparedVerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
@@ -685,7 +683,6 @@ fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
     PreparedVerifyingKey::from(vk)
 }
 
-
 pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16"))?;
     fetch_stack(engine, 3)?;
@@ -716,7 +713,7 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
         .map_err(|e| ZkCryptoError::GeneralError(e.to_string()));
 
     let succes = res.is_ok();
-    
+
     let res = if succes { boolean!(res?) } else { boolean!(false) };
 
     engine.cc.stack.push(res);
@@ -735,35 +732,30 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     let zkaddr_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
     let zkaddr = unpack_string_from_cell(zkaddr_slice, engine)?;
 
-    let header_base_64_slice =
-        SliceData::load_cell_ref(engine.cmd.var(1 ).as_cell()?)?;
+    let header_base_64_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let header_base_64 = unpack_string_from_cell(header_base_64_slice, engine)?;
 
-    let iss_base_64_slice =
-        SliceData::load_cell_ref(engine.cmd.var(2 ).as_cell()?)?;
+    let iss_base_64_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
     let iss_base_64 = unpack_string_from_cell(iss_base_64_slice, engine)?;
 
     let modulus_slice = SliceData::load_cell_ref(engine.cmd.var(3).as_cell()?)?;
     let modulus = unpack_data_from_cell(modulus_slice, engine)?;
-    
+
     let eph_pub_key = engine
         .cmd
-        .var(4 )
+        .var(4)
         .as_integer()?
         .as_builder::<UnsignedIntegerBigEndianEncoding>(PUBLIC_KEY_BITS)?;
 
     let eph_pub_key_bytes = eph_pub_key.data();
 
-    let max_epoch_ = engine
-        .cmd
-        .var(5 )
-        .as_integer()?
-        .as_builder::<UnsignedIntegerBigEndianEncoding>( 64)?;
+    let max_epoch_ =
+        engine.cmd.var(5).as_integer()?.as_builder::<UnsignedIntegerBigEndianEncoding>(64)?;
 
     let index_mod_4 = engine.cmd.var(6).as_integer()?.into(0..=255)?.to_string();
 
     let max_epoch_bytes = pop(max_epoch_.data());
-    
+
     let max_epoch = u64::from_be_bytes(*max_epoch_bytes);
 
     let public_inputs = calculate_poseidon_hash(
@@ -771,7 +763,7 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
         &header_base_64,
         &iss_base_64,
         &index_mod_4,
-        &eph_pub_key_bytes, 
+        &eph_pub_key_bytes,
         &modulus,
         max_epoch,
     )?;
@@ -800,7 +792,7 @@ pub fn calculate_poseidon_hash(
     let max_epoch_f = (&Bn254FrElement::from_str(&max_epoch.to_string())?).into();
     let index_mod_4_f = (&Bn254FrElement::from_str(&index_mod_4)?).into();
     let iss_base64_f = hash_ascii_str_to_field(&iss_base_64, MAX_ISS_LEN_B64)?;
-    let header_f = hash_ascii_str_to_field( &header_base_64, MAX_HEADER_LEN)?;
+    let header_f = hash_ascii_str_to_field(&header_base_64, MAX_HEADER_LEN)?;
     let modulus_f = hash_to_field(&[BigUint::from_bytes_be(modulus)], 2048, PACK_WIDTH)?;
     poseidon_zk_login(vec![
         first,
@@ -813,5 +805,3 @@ pub fn calculate_poseidon_hash(
         modulus_f,
     ])
 }
-
-

@@ -1,17 +1,17 @@
 use std::io::Read;
 
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use tvm_client::abi::Abi;
 use tvm_client::debot::DebotInterface;
 use tvm_client::debot::InterfaceResult;
 use tvm_client::encoding::decode_abi_bigint;
 
+use super::dinterface::Printer;
 use super::dinterface::decode_answer_id;
 use super::dinterface::decode_bool_arg;
 use super::dinterface::decode_prompt;
 use super::dinterface::decode_string_arg;
-use super::dinterface::Printer;
 use crate::convert::convert_token;
 use crate::debot::term_browser::terminal_input;
 

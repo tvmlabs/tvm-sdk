@@ -16,8 +16,8 @@ use rand::Rng;
 use tvm_types::read_single_root_boc;
 
 use super::*;
-use crate::write_read_and_assert;
 use crate::VarUInteger32;
+use crate::write_read_and_assert;
 
 fn get_config_param0() -> ConfigParam0 {
     let mut c = ConfigParam0::default();

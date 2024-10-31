@@ -7,6 +7,7 @@ use tvm_block::MsgAddrStd;
 use tvm_types::AccountId;
 use tvm_types::UInt256;
 
+use crate::MonitoredMessage;
 use crate::message_monitor::MessageMonitor;
 use crate::message_monitor::MessageMonitoringParams;
 use crate::message_monitor::MessageMonitoringResult;
@@ -14,7 +15,6 @@ use crate::message_monitor::MessageMonitoringStatus;
 use crate::message_monitor::MessageMonitoringTransaction;
 use crate::message_monitor::MonitorFetchWaitMode;
 use crate::sdk_services::MockSdkServices;
-use crate::MonitoredMessage;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_fetch() {
@@ -31,13 +31,10 @@ async fn test_fetch() {
         msg_res(2, MessageMonitoringStatus::Finalized),
     ]);
     let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::All).await.unwrap();
-    assert_eq!(
-        sorted(results, |x| &x.hash),
-        vec![
-            msg_res(1, MessageMonitoringStatus::Finalized),
-            msg_res(2, MessageMonitoringStatus::Finalized)
-        ]
-    );
+    assert_eq!(sorted(results, |x| &x.hash), vec![
+        msg_res(1, MessageMonitoringStatus::Finalized),
+        msg_res(2, MessageMonitoringStatus::Finalized)
+    ]);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -66,13 +63,10 @@ async fn test_fetch_at_least_one() {
         msg_res(2, MessageMonitoringStatus::Finalized),
     ]);
     let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::All).await.unwrap();
-    assert_eq!(
-        sorted(results, |x| &x.hash),
-        vec![
-            msg_res(1, MessageMonitoringStatus::Finalized),
-            msg_res(2, MessageMonitoringStatus::Finalized)
-        ]
-    );
+    assert_eq!(sorted(results, |x| &x.hash), vec![
+        msg_res(1, MessageMonitoringStatus::Finalized),
+        msg_res(2, MessageMonitoringStatus::Finalized)
+    ]);
     let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait).await.unwrap();
     assert_eq!(results.len(), 0);
 }
@@ -116,13 +110,10 @@ async fn test_fetch_wait_all() {
 
     // Check that spawned thread has received all monitoring messages
     let results = std::mem::take(&mut *fetched.write().unwrap());
-    assert_eq!(
-        sorted(results, |x| &x.hash),
-        vec![
-            msg_res(1, MessageMonitoringStatus::Finalized),
-            msg_res(2, MessageMonitoringStatus::Finalized)
-        ]
-    );
+    assert_eq!(sorted(results, |x| &x.hash), vec![
+        msg_res(1, MessageMonitoringStatus::Finalized),
+        msg_res(2, MessageMonitoringStatus::Finalized)
+    ]);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

@@ -13,17 +13,17 @@
 use std::fmt;
 use std::sync::Arc;
 
-use serde::de::Error;
 use serde::Serializer;
+use serde::de::Error;
 use serde_json::Value;
 use tvm_block::ShardIdent;
 
+use crate::ClientContext;
 use crate::error::ClientResult;
-use crate::net::query_collection;
 use crate::net::OrderBy;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::SortDirection;
-use crate::ClientContext;
+use crate::net::query_collection;
 
 pub const BLOCK_TRAVERSE_FIELDS: &str = r#"
     id
@@ -299,16 +299,13 @@ impl MasterBlock {
         limit: u32,
         fields: &str,
     ) -> ClientResult<Vec<Value>> {
-        query_collection(
-            context.clone(),
-            ParamsOfQueryCollection {
-                collection: "blocks".to_string(),
-                filter: Some(filter),
-                order: Some(vec![OrderBy { path: "gen_utime".to_string(), direction }]),
-                result: format!("{} {}", BLOCK_MASTER_FIELDS, fields),
-                limit: Some(limit),
-            },
-        )
+        query_collection(context.clone(), ParamsOfQueryCollection {
+            collection: "blocks".to_string(),
+            filter: Some(filter),
+            order: Some(vec![OrderBy { path: "gen_utime".to_string(), direction }]),
+            result: format!("{} {}", BLOCK_MASTER_FIELDS, fields),
+            limit: Some(limit),
+        })
         .await
         .map(|x| x.result)
     }

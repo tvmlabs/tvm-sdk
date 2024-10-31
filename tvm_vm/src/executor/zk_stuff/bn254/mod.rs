@@ -19,7 +19,6 @@ pub mod verifier;
 /// Poseidon hash function over BN254
 pub mod poseidon;
 
-
 /// A field element in the BN254 construction. Thin wrapper around
 /// `api::Bn254Fr`.
 #[derive(Debug, From)]

@@ -1,9 +1,9 @@
 use serde_json::Value;
 
-use super::dinterface::decode_answer_id;
-use super::dinterface::get_arg;
 use super::dinterface::DebotInterface;
 use super::dinterface::InterfaceResult;
+use super::dinterface::decode_answer_id;
+use super::dinterface::get_arg;
 use crate::abi::Abi;
 
 const ABI: &str = r#"

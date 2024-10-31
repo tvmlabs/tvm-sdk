@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
-use super::keys::strip_secret;
 use super::CipherMode;
+use super::keys::strip_secret;
 use crate::error::ClientError;
 
 #[derive(ApiType)]

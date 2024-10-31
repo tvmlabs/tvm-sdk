@@ -15,19 +15,20 @@ use num_bigint::BigInt;
 use num_bigint::BigUint;
 use num_bigint::Sign;
 use tvm_block::Serializable;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
 
-use crate::contract::AbiVersion;
+use crate::PublicKeyData;
 use crate::contract::ABI_VERSION_1_0;
 use crate::contract::ABI_VERSION_2_2;
 use crate::contract::ABI_VERSION_2_4;
+use crate::contract::AbiVersion;
 use crate::error::AbiError;
 use crate::int::Int;
 use crate::int::Uint;
@@ -35,7 +36,6 @@ use crate::param_type::ParamType;
 use crate::token::Token;
 use crate::token::TokenValue;
 use crate::token::Tokenizer;
-use crate::PublicKeyData;
 
 pub struct SerializedValue {
     pub data: BuilderData,
@@ -468,17 +468,13 @@ fn test_pack_cells() {
     ];
 
     let builder = BuilderData::with_raw(vec![0x55; 127], 127 * 8).unwrap();
-    let builder = BuilderData::with_raw_and_refs(
-        vec![0x55; 127],
-        127 * 8,
-        vec![builder.into_cell().unwrap()],
-    )
+    let builder = BuilderData::with_raw_and_refs(vec![0x55; 127], 127 * 8, vec![
+        builder.into_cell().unwrap(),
+    ])
     .unwrap();
-    let builder = BuilderData::with_raw_and_refs(
-        vec![0x55; 100],
-        100 * 8,
-        vec![builder.into_cell().unwrap()],
-    )
+    let builder = BuilderData::with_raw_and_refs(vec![0x55; 100], 100 * 8, vec![
+        builder.into_cell().unwrap(),
+    ])
     .unwrap();
     let tree = TokenValue::pack_cells_into_chain(cells, &ABI_VERSION_1_0).unwrap();
     assert_eq!(tree, builder);

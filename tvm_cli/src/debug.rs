@@ -14,15 +14,15 @@ use std::fmt;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::Write;
-use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::SubCommand;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use tvm_assembler::DbgInfo;
 use tvm_block::Account;
 use tvm_block::ConfigParamEnum;
@@ -36,30 +36,31 @@ use tvm_block::Serializable;
 use tvm_block::TrComputePhase;
 use tvm_block::Transaction;
 use tvm_block::TransactionTickTock;
-use tvm_client::abi::encode_message;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::FunctionHeader;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
+use tvm_client::abi::encode_message;
 use tvm_client::boc::internal::deserialize_cell_from_base64;
 use tvm_client::error::ClientError;
-use tvm_client::net::query_collection;
 use tvm_client::net::OrderBy;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::SortDirection;
+use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
 use tvm_executor::ExecuteParams;
 use tvm_executor::OrdinaryTransactionExecutor;
 use tvm_executor::TickTockTransactionExecutor;
 use tvm_executor::TransactionExecutor;
-use tvm_types::base64_encode;
 use tvm_types::AccountId;
 use tvm_types::Cell;
 use tvm_types::UInt256;
+use tvm_types::base64_encode;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::EngineTraceInfo;
 use tvm_vm::executor::EngineTraceInfoType;
 
+use crate::FullConfig;
 use crate::config::Config;
 use crate::contract_data_from_matches_or_config_alias;
 use crate::crypto::load_keypair;
@@ -81,14 +82,13 @@ use crate::helpers::query_with_limit;
 use crate::helpers::wc_from_matches_or_config;
 use crate::message::prepare_message;
 use crate::print_args;
-use crate::replay::fetch;
-use crate::replay::replay;
 use crate::replay::CONFIG_ADDR;
 use crate::replay::DUMP_ACCOUNT;
 use crate::replay::DUMP_CONFIG;
 use crate::replay::DUMP_NONE;
+use crate::replay::fetch;
+use crate::replay::replay;
 use crate::unpack_alternative_params;
-use crate::FullConfig;
 
 const SDK_EXECUTION_ERROR_CODE: u32 = 414;
 pub const DEFAULT_TRACE_PATH: &str = "./trace.log";
@@ -565,21 +565,18 @@ async fn replay_transaction_command(
     }
 
     let ton_client = create_client(config)?;
-    let trans = query_collection(
-        ton_client.clone(),
-        ParamsOfQueryCollection {
-            collection: "transactions".to_owned(),
-            filter: Some(json!({
-                "id": {
-                    "eq": tx_id.unwrap()
-                },
-            })),
-            result: "lt block { start_lt } boc".to_string(),
-            limit: Some(1),
-            order: None,
-            ..Default::default()
-        },
-    )
+    let trans = query_collection(ton_client.clone(), ParamsOfQueryCollection {
+        collection: "transactions".to_owned(),
+        filter: Some(json!({
+            "id": {
+                "eq": tx_id.unwrap()
+            },
+        })),
+        result: "lt block { start_lt } boc".to_string(),
+        limit: Some(1),
+        order: None,
+        ..Default::default()
+    })
     .await
     .map_err(|e| format!("Failed to query transaction: {}", e))?;
 
@@ -1438,26 +1435,23 @@ async fn fetch_transactions(
         let mut lt = String::from("0x0");
         loop {
             let action = || async {
-                query_collection(
-                    context.clone(),
-                    ParamsOfQueryCollection {
-                        collection: "transactions".to_owned(),
-                        filter: Some(json!({
-                            "account_addr": {
-                                "eq": address.clone()
-                            },
-                            "lt": {
-                                "gt": lt
-                            }
-                        })),
-                        result: "lt boc id workchain_id".to_owned(),
-                        order: Some(vec![OrderBy {
-                            path: "lt".to_owned(),
-                            direction: SortDirection::ASC,
-                        }]),
-                        limit: None,
-                    },
-                )
+                query_collection(context.clone(), ParamsOfQueryCollection {
+                    collection: "transactions".to_owned(),
+                    filter: Some(json!({
+                        "account_addr": {
+                            "eq": address.clone()
+                        },
+                        "lt": {
+                            "gt": lt
+                        }
+                    })),
+                    result: "lt boc id workchain_id".to_owned(),
+                    order: Some(vec![OrderBy {
+                        path: "lt".to_owned(),
+                        direction: SortDirection::ASC,
+                    }]),
+                    limit: None,
+                })
                 .await
             };
 

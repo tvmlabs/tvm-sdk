@@ -12,10 +12,10 @@
 use std::mem;
 use std::ops::Range;
 
+use tvm_types::Result;
 use tvm_types::error;
 use tvm_types::fail;
 use tvm_types::types::ExceptionCode;
-use tvm_types::Result;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
@@ -27,9 +27,9 @@ use crate::executor::microcode::CTRL_SAVELIST;
 use crate::executor::microcode::STACK;
 use crate::executor::microcode::VAR;
 use crate::executor::microcode::VAR_SAVELIST;
+use crate::stack::StackItem;
 use crate::stack::continuation::ContinuationData;
 use crate::stack::savelist::SaveList;
-use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::ResultMut;
 use crate::types::ResultRef;

@@ -20,9 +20,9 @@ use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 
 use super::*;
+use crate::SerializationMode;
 use crate::serialize_config;
 use crate::serialize_config_param;
-use crate::SerializationMode;
 
 include!("./test_common.rs");
 

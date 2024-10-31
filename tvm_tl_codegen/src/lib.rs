@@ -38,18 +38,18 @@ use proc_macro2::Spacing;
 use proc_macro2::Span;
 use proc_macro2::TokenStream as Tokens;
 use proc_macro2::TokenStream;
-use quote::quote;
 use quote::TokenStreamExt;
+use quote::quote;
 use serde_derive::Deserialize;
 
 pub mod parser {
     use std::cmp::Ordering;
 
+    use pom::Parser;
     use pom::char_class::alphanum;
     use pom::char_class::digit;
     use pom::char_class::hex_digit;
     use pom::parser::*;
-    use pom::Parser;
 
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
     pub enum Type {

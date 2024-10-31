@@ -15,9 +15,9 @@ use crate::config::Config;
 use crate::helpers::create_client_local;
 use crate::helpers::decode_msg_body;
 use crate::message;
-use crate::multisig::encode_transfer_body;
 use crate::multisig::MSIG_ABI;
 use crate::multisig::TRANSFER_WITH_COMMENT;
+use crate::multisig::encode_transfer_body;
 
 pub async fn create_proposal(
     config: &Config,

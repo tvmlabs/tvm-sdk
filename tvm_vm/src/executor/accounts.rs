@@ -9,8 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::cmp::min;
 use std::cmp::Ordering;
+use std::cmp::min;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -33,8 +33,6 @@ use tvm_block::ShardAccount;
 use tvm_block::SigPubKey;
 use tvm_block::ValidatorDescr;
 use tvm_block::ValidatorSet;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
@@ -44,9 +42,11 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 
-use super::engine::storage::fetch_stack;
 use super::engine::IndexProvider;
+use super::engine::storage::fetch_stack;
 use super::types::Instruction;
 use crate::error::TvmError;
 use crate::executor::engine::Engine;

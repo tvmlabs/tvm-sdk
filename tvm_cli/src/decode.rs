@@ -20,13 +20,13 @@ use tvm_block::AccountStatus;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
-use tvm_client::abi::decode_account_data;
 use tvm_client::abi::ParamsOfDecodeAccountData;
+use tvm_client::abi::decode_account_data;
+use tvm_types::Cell;
+use tvm_types::SliceData;
 use tvm_types::base64_decode;
 use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
-use tvm_types::Cell;
-use tvm_types::SliceData;
 
 use crate::config::Config;
 use crate::decode::msg_printer::tree_of_cells_into_base64;
@@ -316,10 +316,11 @@ async fn decode_tvc_fields(m: &ArgMatches<'_>, config: &Config) -> Result<(), St
         .map_err(|e| format!("failed to load StateInit from the tvc file: {}", e))?;
     let b64 = tree_of_cells_into_base64(state.data.as_ref())?;
     let ton = create_client_local()?;
-    let res = decode_account_data(
-        ton,
-        ParamsOfDecodeAccountData { abi, data: b64, ..Default::default() },
-    )
+    let res = decode_account_data(ton, ParamsOfDecodeAccountData {
+        abi,
+        data: b64,
+        ..Default::default()
+    })
     .map_err(|e| format!("failed to decode data: {}", e))?;
     if !config.is_json {
         println!("TVC fields:");
@@ -484,23 +485,23 @@ async fn decode_tvc_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), S
 }
 
 pub mod msg_printer {
-    use serde_json::json;
     use serde_json::Value;
+    use serde_json::json;
     use tvm_block::CommonMsgInfo;
     use tvm_block::CurrencyCollection;
     use tvm_block::Grams;
     use tvm_block::Message;
     use tvm_block::StateInit;
-    use tvm_client::boc::get_compiler_version;
     use tvm_client::boc::ParamsOfGetCompilerVersion;
+    use tvm_client::boc::get_compiler_version;
+    use tvm_types::Cell;
     use tvm_types::base64_encode;
     use tvm_types::write_boc;
-    use tvm_types::Cell;
 
+    use crate::Config;
+    use crate::helpers::TonClient;
     use crate::helpers::create_client_local;
     use crate::helpers::decode_msg_body;
-    use crate::helpers::TonClient;
-    use crate::Config;
 
     pub fn tree_of_cells_into_base64(root_cell: Option<&Cell>) -> Result<String, String> {
         match root_cell {

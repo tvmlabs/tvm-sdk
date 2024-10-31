@@ -13,10 +13,10 @@
 use super::request::Request;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::subscriptions::ParamsOfSubscribe;
 use crate::net::ParamsOfSubscribeCollection;
 use crate::net::ResultOfSubscribeCollection;
 use crate::net::ResultOfSubscription;
+use crate::net::subscriptions::ParamsOfSubscribe;
 
 /// Creates a collection subscription
 ///

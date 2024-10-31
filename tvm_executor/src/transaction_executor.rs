@@ -12,16 +12,17 @@
 
 use std::cmp::min;
 use std::collections::LinkedList;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
 use tvm_block::AccStatusChange;
 use tvm_block::Account;
 use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
+use tvm_block::BASE_WORKCHAIN_ID;
 use tvm_block::CommonMsgInfo;
 use tvm_block::ComputeSkipReason;
 use tvm_block::CopyleftReward;
@@ -33,10 +34,22 @@ use tvm_block::GetRepresentationHash;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
 use tvm_block::HashUpdate;
+use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 use tvm_block::OutAction;
 use tvm_block::OutActions;
+use tvm_block::RESERVE_ALL_BUT;
+use tvm_block::RESERVE_IGNORE_ERROR;
+use tvm_block::RESERVE_PLUS_ORIG;
+use tvm_block::RESERVE_REVERSE;
+use tvm_block::RESERVE_VALID_MODES;
+use tvm_block::SENDMSG_ALL_BALANCE;
+use tvm_block::SENDMSG_DELETE_IF_EMPTY;
+use tvm_block::SENDMSG_IGNORE_ERROR;
+use tvm_block::SENDMSG_PAY_FEE_SEPARATELY;
+use tvm_block::SENDMSG_REMAINING_MSG_BALANCE;
+use tvm_block::SENDMSG_VALID_FLAGS;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_block::StorageUsedShort;
@@ -49,21 +62,6 @@ use tvm_block::TrStoragePhase;
 use tvm_block::Transaction;
 use tvm_block::VarUInteger32;
 use tvm_block::WorkchainFormat;
-use tvm_block::BASE_WORKCHAIN_ID;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_block::RESERVE_ALL_BUT;
-use tvm_block::RESERVE_IGNORE_ERROR;
-use tvm_block::RESERVE_PLUS_ORIG;
-use tvm_block::RESERVE_REVERSE;
-use tvm_block::RESERVE_VALID_MODES;
-use tvm_block::SENDMSG_ALL_BALANCE;
-use tvm_block::SENDMSG_DELETE_IF_EMPTY;
-use tvm_block::SENDMSG_IGNORE_ERROR;
-use tvm_block::SENDMSG_PAY_FEE_SEPARATELY;
-use tvm_block::SENDMSG_REMAINING_MSG_BALANCE;
-use tvm_block::SENDMSG_VALID_FLAGS;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::AccountId;
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
@@ -73,21 +71,23 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 use tvm_vm::error::tvm_exception;
+use tvm_vm::executor::BehaviorModifiers;
+use tvm_vm::executor::IndexProvider;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::token::INFINITY_CREDIT;
-use tvm_vm::executor::BehaviorModifiers;
-use tvm_vm::executor::IndexProvider;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
 
+use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 use crate::blockchain_config::BlockchainConfig;
 use crate::blockchain_config::CalcMsgFwdFees;
 use crate::error::ExecutorError;
 use crate::vmsetup::VMSetup;
 use crate::vmsetup::VMSetupContext;
-use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 
 const RESULT_CODE_ACTIONLIST_INVALID: i32 = 32;
 const RESULT_CODE_TOO_MANY_ACTIONS: i32 = 33;
@@ -508,15 +508,12 @@ pub trait TransactionExecutor {
         if let Some(init_code_hash) = result_acc.init_code_hash() {
             smc_info.set_init_code_hash(init_code_hash.clone());
         }
-        let mut vm = VMSetup::with_context(
-            SliceData::load_cell(code)?,
-            VMSetupContext {
-                capabilities: self.config().capabilites(),
-                block_version: params.block_version,
-                #[cfg(feature = "signature_with_id")]
-                signature_id: params.signature_id,
-            },
-        )
+        let mut vm = VMSetup::with_context(SliceData::load_cell(code)?, VMSetupContext {
+            capabilities: self.config().capabilites(),
+            block_version: params.block_version,
+            #[cfg(feature = "signature_with_id")]
+            signature_id: params.signature_id,
+        })
         .set_smart_contract_info(smc_info)?
         .set_stack(stack)
         .set_data(data)?
@@ -711,6 +708,9 @@ pub trait TransactionExecutor {
             return Ok(ActionPhaseResult::from_phase(phase));
         }
         phase.tot_actions = actions.len() as i16;
+        log::debug!(target: "executor", "\nActions {:#?}",
+                actions
+        );
 
         let process_err_code =
             |mut err_code: i32, i: usize, phase: &mut TrActionPhase| -> Result<bool> {
@@ -756,10 +756,11 @@ pub trait TransactionExecutor {
             && !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
 
         for (i, action) in actions.iter_mut().enumerate() {
-            log::debug!(target: "executor", "\nAction #{}\nType: {}\nInitial balance: {}",
+            log::debug!(target: "executor", "\nAction #{}\nType: {}\nInitial balance: {}, need_to_burn {}",
                 i,
                 action_type(action),
-                balance_to_string(&acc_remaining_balance)
+                balance_to_string(&acc_remaining_balance),
+                need_to_burn
             );
             let mut init_balance = acc_remaining_balance.clone();
             let err_code = match std::mem::replace(action, OutAction::None) {
@@ -781,6 +782,7 @@ pub trait TransactionExecutor {
                         my_addr,
                         &total_reserved_value,
                         &mut account_deleted,
+                        need_to_burn,
                     );
                     match result {
                         Ok(_) => {
@@ -902,6 +904,12 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
+        if acc_remaining_balance.grams < Grams::from(need_to_burn) {
+            let err_code = RESULT_CODE_NOT_ENOUGH_GRAMS;
+            if process_err_code(err_code, 0, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+            }
+        }
         let src_dapp_id = match acc.get_dapp_id().cloned() {
             Some(dapp_id) => dapp_id,
             None => None,
@@ -933,6 +941,7 @@ pub trait TransactionExecutor {
                     my_addr,
                     &total_reserved_value,
                     &mut account_deleted,
+                    need_to_burn,
                 );
                 if is_reserve_burn == false {
                     free_to_send.grams.add(&Grams::from(need_to_burn))?;
@@ -1437,6 +1446,7 @@ fn outmsg_action_handler(
     my_addr: &MsgAddressInt,
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
+    need_to_burn: u64,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
     let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE;
@@ -1512,7 +1522,16 @@ fn outmsg_action_handler(
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
             // send all remaining account balance
             result_value = acc_balance.clone();
-            int_header.value = acc_balance.clone();
+            if reserved_value.grams == Grams::zero() {
+                if !result_value.grams.sub(&Grams::from(need_to_burn)).map_err(|err| {
+                    log::error!(target: "executor", "cannot sub grams : {}", err);
+                    RESULT_CODE_UNSUPPORTED
+                })? {
+                    result_value.grams = Grams::zero();
+                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                }
+            }
+            int_header.value = result_value.clone();
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
@@ -1591,7 +1610,7 @@ fn outmsg_action_handler(
 
     if (mode & SENDMSG_DELETE_IF_EMPTY) != 0
         && (mode & SENDMSG_ALL_BALANCE) != 0
-        && acc_balance.grams.is_zero()
+        && acc_balance.grams == Grams::from(need_to_burn)
         && reserved_value.grams.is_zero()
     {
         *account_deleted = true;

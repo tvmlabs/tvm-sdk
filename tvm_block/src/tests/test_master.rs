@@ -15,12 +15,12 @@ use rand::Rng;
 use tvm_types::read_single_root_boc;
 
 use super::*;
-use crate::transactions::tests::generate_test_shard_account_block;
-use crate::write_read_and_assert;
+use crate::BASE_WORKCHAIN_ID;
 use crate::BlockExtra;
 use crate::MsgAddressInt;
 use crate::ShardStateUnsplit;
-use crate::BASE_WORKCHAIN_ID;
+use crate::transactions::tests::generate_test_shard_account_block;
+use crate::write_read_and_assert;
 
 #[test]
 fn test_libraries() {
@@ -59,20 +59,16 @@ fn test_libraries() {
 fn test_shard_descr() {
     let descr_none =
         ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::None);
-    let descr_split = ShardDescr::with_params(
-        42,
-        17,
-        25,
-        UInt256::from([70; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
-    let descr_merge = ShardDescr::with_params(
-        42,
-        17,
-        25,
-        UInt256::from([70; 32]),
-        FutureSplitMerge::Merge { merge_utime: 0x12345678, interval: 0x87654321 },
-    );
+    let descr_split =
+        ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
+    let descr_merge =
+        ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::Merge {
+            merge_utime: 0x12345678,
+            interval: 0x87654321,
+        });
 
     write_read_and_assert(descr_none);
     write_read_and_assert(descr_split);
@@ -90,21 +86,17 @@ fn test_shard_descr_with_copyleft() {
     let mut descr_none =
         ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::None);
     descr_none.copyleft_rewards = copyleft_rewards.clone();
-    let mut descr_split = ShardDescr::with_params(
-        42,
-        17,
-        25,
-        UInt256::from([70; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
+    let mut descr_split =
+        ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
     descr_split.copyleft_rewards = copyleft_rewards.clone();
-    let mut descr_merge = ShardDescr::with_params(
-        42,
-        17,
-        25,
-        UInt256::from([70; 32]),
-        FutureSplitMerge::Merge { merge_utime: 0x12345678, interval: 0x87654321 },
-    );
+    let mut descr_merge =
+        ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::Merge {
+            merge_utime: 0x12345678,
+            interval: 0x87654321,
+        });
     descr_merge.copyleft_rewards = copyleft_rewards.clone();
 
     write_read_and_assert(descr_none);
@@ -127,13 +119,11 @@ fn test_shard_descr_fast_finality() {
         updated_at: 0x12345678,
     });
 
-    let mut descr_split = ShardDescr::with_params(
-        42,
-        17,
-        25,
-        UInt256::from([70; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
+    let mut descr_split =
+        ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
     descr_split.collators = Some(ShardCollators {
         prev: gen_collator(),
         prev2: None,
@@ -143,13 +133,11 @@ fn test_shard_descr_fast_finality() {
         updated_at: 0x12345678,
     });
 
-    let mut descr_merge = ShardDescr::with_params(
-        42,
-        17,
-        25,
-        UInt256::from([70; 32]),
-        FutureSplitMerge::Merge { merge_utime: 0x12345678, interval: 0x87654321 },
-    );
+    let mut descr_merge =
+        ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::Merge {
+            merge_utime: 0x12345678,
+            interval: 0x87654321,
+        });
     descr_merge.collators = Some(ShardCollators {
         prev: gen_collator(),
         prev2: Some(gen_collator()),
@@ -171,20 +159,16 @@ fn test_mc_state_extra() {
         ShardDescr::with_params(23, 77, 234, UInt256::from([131; 32]), FutureSplitMerge::None);
     let shard1_1 =
         ShardDescr::with_params(25, 177, 230, UInt256::from([131; 32]), FutureSplitMerge::None);
-    let shard2 = ShardDescr::with_params(
-        15,
-        78,
-        235,
-        UInt256::from([77; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
-    let shard2_2 = ShardDescr::with_params(
-        115,
-        8,
-        35,
-        UInt256::from([77; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
+    let shard2 =
+        ShardDescr::with_params(15, 78, 235, UInt256::from([77; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
+    let shard2_2 =
+        ShardDescr::with_params(115, 8, 35, UInt256::from([77; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
     let ident = extra.add_workchain(11, &shard1).unwrap();
     extra.shards.split_shard(&ident, |_| Ok((shard1, shard1_1))).unwrap();
     let ident = extra.add_workchain(22, &shard2).unwrap();
@@ -239,20 +223,16 @@ fn test_mc_block_extra() {
         ShardDescr::with_params(23, 77, 234, UInt256::from([131; 32]), FutureSplitMerge::None);
     let shard1_1 =
         ShardDescr::with_params(25, 177, 230, UInt256::from([131; 32]), FutureSplitMerge::None);
-    let shard2 = ShardDescr::with_params(
-        15,
-        78,
-        235,
-        UInt256::from([77; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
-    let shard2_2 = ShardDescr::with_params(
-        115,
-        8,
-        35,
-        UInt256::from([77; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
+    let shard2 =
+        ShardDescr::with_params(15, 78, 235, UInt256::from([77; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
+    let shard2_2 =
+        ShardDescr::with_params(115, 8, 35, UInt256::from([77; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
     let ident = ShardIdent::with_workchain_id(11).unwrap();
     extra.shards.add_workchain(11, 134, UInt256::default(), UInt256::default(), None).unwrap();
     extra
@@ -302,20 +282,16 @@ fn test_mc_block_extra_2() {
         ShardDescr::with_params(23, 77, 234, UInt256::from([131; 32]), FutureSplitMerge::None);
     let shard1_1 =
         ShardDescr::with_params(25, 177, 230, UInt256::from([131; 32]), FutureSplitMerge::None);
-    let shard2 = ShardDescr::with_params(
-        15,
-        78,
-        235,
-        UInt256::from([77; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
-    let shard2_2 = ShardDescr::with_params(
-        115,
-        8,
-        35,
-        UInt256::from([77; 32]),
-        FutureSplitMerge::Split { split_utime: 0x12345678, interval: 0x87654321 },
-    );
+    let shard2 =
+        ShardDescr::with_params(15, 78, 235, UInt256::from([77; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
+    let shard2_2 =
+        ShardDescr::with_params(115, 8, 35, UInt256::from([77; 32]), FutureSplitMerge::Split {
+            split_utime: 0x12345678,
+            interval: 0x87654321,
+        });
     let ident = ShardIdent::with_workchain_id(11).unwrap();
     extra.shards.add_workchain(11, 134, UInt256::default(), UInt256::default(), None).unwrap();
     extra

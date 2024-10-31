@@ -1,29 +1,30 @@
 #[cfg(test)]
 mod tests {
-    use ed25519_dalek::Signer;
     use std::collections::HashMap;
     use std::iter::repeat;
     use std::str::FromStr;
     use std::time::Instant;
+
     use ark_ff::biginteger::BigInteger;
-    use ark_std::rand::rngs::StdRng;
     use ark_std::rand::SeedableRng;
+    use ark_std::rand::rngs::StdRng;
     use base64::decode;
     use base64ct::Encoding as bEncoding;
-    use rand::rngs::OsRng;
+    use ed25519_dalek::Signer;
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
     use fastcrypto_zkp::bn254::utils::gen_address_seed;
     use fastcrypto_zkp::bn254::utils::get_zk_login_address;
     use fastcrypto_zkp::bn254::zk_login::CanonicalSerialize;
+    use fastcrypto_zkp::bn254::zk_login::JWK;
     use fastcrypto_zkp::bn254::zk_login::JwkId;
     use fastcrypto_zkp::bn254::zk_login::OIDCProvider;
     use fastcrypto_zkp::bn254::zk_login::ZkLoginInputs;
-    use fastcrypto_zkp::bn254::zk_login::JWK;
     use fastcrypto_zkp::zk_login_utils::Bn254FrElement;
     use num_bigint::BigUint;
     use num_traits::Zero;
+    use rand::rngs::OsRng;
     use serde::Deserialize;
     use serde_derive::Serialize;
     use serde_json::Value;
@@ -31,14 +32,15 @@ mod tests {
     use tvm_types::Cell;
     use tvm_types::SliceData;
     use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
-    use tvm_vm::{
-        int,
-        stack::{integer::IntegerData, Stack, StackItem},
-        utils::{pack_data_to_cell, pack_string_to_cell},
-    };
+    use tvm_vm::int;
+    use tvm_vm::stack::Stack;
+    use tvm_vm::stack::StackItem;
+    use tvm_vm::stack::integer::IntegerData;
+    use tvm_vm::utils::pack_data_to_cell;
+    use tvm_vm::utils::pack_string_to_cell;
 
-    use crate::test_framework::test_case_with_refs;
     use crate::test_framework::Expects;
+    use crate::test_framework::test_case_with_refs;
 
     pub const SUI_DATA_FROM_REACT_1: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6ImJ4bW5KVzMxcnV6S01HaXIwMVlQR1lMMHhEWSIsIm5iZiI6MTcxNTY4NzAzNiwiaWF0IjoxNzE1Njg3MzM2LCJleHAiOjE3MTU2OTA5MzYsImp0aSI6IjliNjAxZDI1ZjAwMzY0MGMyODg5YTJhMDQ3Nzg5MzgyY2IxY2ZlODcifQ.rTa9KA9HoYm04Agj71D0kDkvsCZ35SeeihBGbABYckBRxaUlCy6LQ-sEaVOTgvnL_DgVn7hx8g3sSmnhJ9kHzj5e6gtUoxoWAe8PuGyK2bmqhmPrQMeEps9f6m2EToQCIA_Id4fGCjSCktjJBi47QHT_Dhe6isHdKk1pgSshOyvCF1VjIvyyeGY5iWQ4cIRBMQNlNBT11o6T01SY6B9DtiiFN_0-ok5taIjQgtMNG6Cwr3tCnqXftuGGQrHlx15y8VgCPODYi-wOtvUbzI2yfx53PmRD_L8O50cMNCrCRE3yYR5MNOu1LlQ_EACy5UFsCJR35xRz84nv-6Iyrufx1g\",\"user_pass_to_int_format\":\"981021191041055255531141165751\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":155,\"1\":147,\"2\":37,\"3\":82,\"4\":183,\"5\":109,\"6\":227,\"7\":144,\"8\":85,\"9\":248,\"10\":20,\"11\":45,\"12\":92,\"13\":103,\"14\":160,\"15\":221,\"16\":101,\"17\":44,\"18\":30,\"19\":86,\"20\":96,\"21\":85,\"22\":24,\"23\":224,\"24\":106,\"25\":63,\"26\":13,\"27\":130,\"28\":8,\"29\":119,\"30\":247,\"31\":67},\"secret_key\":{\"0\":192,\"1\":16,\"2\":35,\"3\":54,\"4\":100,\"5\":14,\"6\":88,\"7\":217,\"8\":164,\"9\":21,\"10\":154,\"11\":233,\"12\":248,\"13\":208,\"14\":188,\"15\":4,\"16\":52,\"17\":244,\"18\":125,\"19\":103,\"20\":99,\"21\":26,\"22\":225,\"23\":60,\"24\":140,\"25\":75,\"26\":228,\"27\":157,\"28\":137,\"29\":220,\"30\":1,\"31\":65,\"32\":155,\"33\":147,\"34\":37,\"35\":82,\"36\":183,\"37\":109,\"38\":227,\"39\":144,\"40\":85,\"41\":248,\"42\":20,\"43\":45,\"44\":92,\"45\":103,\"46\":160,\"47\":221,\"48\":101,\"49\":44,\"50\":30,\"51\":86,\"52\":96,\"53\":85,\"54\":24,\"55\":224,\"56\":106,\"57\":63,\"58\":13,\"59\":130,\"60\":8,\"61\":119,\"62\":247,\"63\":67}}},\"zk_addr\":\"0x290623ea2fe67e77502c931e015e910720b59cf99994bfe872da851245a6adb8\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"4240296169193969312736577528388333411353554120022978085193148043577551744781\",\"5805161066003598301896048908428560240907086333477483881772048922050706263054\",\"1\"],\"b\":[[\"12834391737669124973917765536412427456985620342194191639017091262766903638891\",\"17565396762846717347409742387259908749145765976354144805005547481529916658455\"],[\"10704310067924910937030159163683742097178285875135929496314190235513445131794\",\"5158907077493606386023392148737817037260820737072162547798816810512684527243\"],[\"1\",\"0\"]],\"c\":[\"1422540522119231707130773229384414857146368773886805969586218853559909475064\",\"8843079196273712399340537238369227864378150337693574970239878271571912585171\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extended_ephemeral_public_key\":\"AJuTJVK3beOQVfgULVxnoN1lLB5WYFUY4Go/DYIId/dD\"}";
     pub const SUI_DATA_FROM_REACT_2: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6IjJKd0VMbjJfUV9Rd0VsTC1rWTFPRnFqdXZCMCIsIm5iZiI6MTcxNTY4NzAyOSwiaWF0IjoxNzE1Njg3MzI5LCJleHAiOjE3MTU2OTA5MjksImp0aSI6ImU2YjM1ZjJmNmFkNjIzOWEwMDAxMTJiMWI5YWI2MWQ0MjRkMGM1OTIifQ.QcrEDE9qmPZKX83nU3Tx2BN8fsinb_mmXkO1Qf7Uv1QTd0NjirSeu7C4Vn9WDNWDaIR-BgCfhOlkwMQPljcahqC4AN43N_66tvbEsXjtEdFejslXrGG4D_BEKvtmD7_WkW388LyU2PxKgtdDfpYFgmuT6wTM2TO5dTbrGrDyn88q3pkPfefC5a8Wi1V6zECfFdSV-pKQlxtPaImi7s3CKAUMDu1n-jcT-Ho2aTgrWKAzhXE56tgEWOpXQO06eJsWCSOqoZSLYtatTrZr4d38U7QRQiNlH-ydHv4zXt1tixLLJ0wvPx-dQaCnCl1kW1orYkJGFfHgjx6A9z5Ol4afuw\",\"user_pass_to_int_format\":\"101119106102103\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":194,\"1\":38,\"2\":203,\"3\":255,\"4\":219,\"5\":127,\"6\":105,\"7\":129,\"8\":234,\"9\":222,\"10\":71,\"11\":169,\"12\":108,\"13\":94,\"14\":28,\"15\":48,\"16\":111,\"17\":221,\"18\":113,\"19\":110,\"20\":5,\"21\":226,\"22\":19,\"23\":230,\"24\":232,\"25\":67,\"26\":255,\"27\":179,\"28\":6,\"29\":10,\"30\":209,\"31\":63},\"secret_key\":{\"0\":44,\"1\":32,\"2\":251,\"3\":184,\"4\":109,\"5\":252,\"6\":105,\"7\":67,\"8\":208,\"9\":111,\"10\":86,\"11\":214,\"12\":192,\"13\":135,\"14\":169,\"15\":48,\"16\":162,\"17\":36,\"18\":216,\"19\":145,\"20\":232,\"21\":64,\"22\":17,\"23\":14,\"24\":29,\"25\":56,\"26\":39,\"27\":118,\"28\":143,\"29\":250,\"30\":31,\"31\":66,\"32\":194,\"33\":38,\"34\":203,\"35\":255,\"36\":219,\"37\":127,\"38\":105,\"39\":129,\"40\":234,\"41\":222,\"42\":71,\"43\":169,\"44\":108,\"45\":94,\"46\":28,\"47\":48,\"48\":111,\"49\":221,\"50\":113,\"51\":110,\"52\":5,\"53\":226,\"54\":19,\"55\":230,\"56\":232,\"57\":67,\"58\":255,\"59\":179,\"60\":6,\"61\":10,\"62\":209,\"63\":63}}},\"zk_addr\":\"0x9d28c04a423b33d6901065b2e23440d80c963e2d8cf60619aed131cf302a3345\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"10113442204684515220664612836724727112601024759319365467272456423129044788607\",\"1622056145268645528934658046911045406324940175278473377024147189407527440953\",\"1\"],\"b\":[[\"16638441944380099215425740101953753038808466958852552979180365845498468757656\",\"15160836857346434734063515954042830497610079883703780011464867547889770445695\"],[\"18562910453341688699790780964434211467815845944672185772065803860963710445937\",\"8200691834141582017549140597895023392490964486044036655696113278873832146838\"],[\"1\",\"0\"]],\"c\":[\"4229037146526046139176767312447148765936834700862335953317784850097077554287\",\"14155516063621997063825085002662503289554536312724791903045026922766401869119\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extended_ephemeral_public_key\":\"AMImy//bf2mB6t5HqWxeHDBv3XFuBeIT5uhD/7MGCtE/\"}";
@@ -63,9 +65,6 @@ mod tests {
     pub const SUI_DATA_FROM_REACT_21: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6Im12NUNKY1dsMXE1ek03Y0lyR1ZUdHF6SnFTNCIsIm5iZiI6MTcxNTY4NjgxOSwiaWF0IjoxNzE1Njg3MTE5LCJleHAiOjE3MTU2OTA3MTksImp0aSI6IjYxMDM2YmQwZWE3YjI5MDY4MjgwODYxMzMyODZhODZlNmY0ZmMwNGEifQ.VE2a8s2ZuyTVklFwSvh05y_mGrDMJXww-5Pu3-UUIQi3sBQnMzpnvWo3MIb32rXxwU6Obtx9izsR-Csk-U0QH4WuseGHnhHA90lACdeXNXHUWNktsY62_z2lkseTlJQV_ccNVctNgqornxmtV6gRvihLKkYCJt08umhAcRe8-Fh9iNmlCf5sMngaA-k0bvIbdnxkoP0KI9em7sgpTDB0FJFCgVAVYkzQTuJJlfuKjeF0lgpLnkjTOtgMyCpuZrrxf9GH6wY2VSme3Zk6xVJfl5cC6YugQFs-t56CEhPDrm-LIlLTD9JuNAKctlRRaTmkTembZAzweu6Wqh322MDx1g\",\"user_pass_to_int_format\":\"100102100102100115106107\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":227,\"1\":142,\"2\":234,\"3\":83,\"4\":36,\"5\":125,\"6\":219,\"7\":233,\"8\":159,\"9\":30,\"10\":60,\"11\":195,\"12\":110,\"13\":130,\"14\":105,\"15\":107,\"16\":44,\"17\":46,\"18\":151,\"19\":154,\"20\":116,\"21\":131,\"22\":237,\"23\":231,\"24\":159,\"25\":119,\"26\":35,\"27\":130,\"28\":56,\"29\":90,\"30\":121,\"31\":26},\"secret_key\":{\"0\":34,\"1\":107,\"2\":197,\"3\":227,\"4\":209,\"5\":156,\"6\":36,\"7\":233,\"8\":231,\"9\":171,\"10\":100,\"11\":210,\"12\":113,\"13\":247,\"14\":59,\"15\":222,\"16\":214,\"17\":129,\"18\":238,\"19\":254,\"20\":13,\"21\":13,\"22\":3,\"23\":151,\"24\":9,\"25\":173,\"26\":77,\"27\":113,\"28\":126,\"29\":7,\"30\":203,\"31\":52,\"32\":227,\"33\":142,\"34\":234,\"35\":83,\"36\":36,\"37\":125,\"38\":219,\"39\":233,\"40\":159,\"41\":30,\"42\":60,\"43\":195,\"44\":110,\"45\":130,\"46\":105,\"47\":107,\"48\":44,\"49\":46,\"50\":151,\"51\":154,\"52\":116,\"53\":131,\"54\":237,\"55\":231,\"56\":159,\"57\":119,\"58\":35,\"59\":130,\"60\":56,\"61\":90,\"62\":121,\"63\":26}}},\"zk_addr\":\"0xb092062dc38ee15b239fedd8955547cae553068e350add6a186a900308ca1704\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"19083893384522082364200015848081882762611466511855277173108395395690822433582\",\"15765871630522826744343212165387977339454134778029147662517994756792436892191\",\"1\"],\"b\":[[\"3347275249816013439391836622904014049361323482158752310150932588414843416768\",\"9261935324040115069949005166058871304117632278716385673922763868694265924905\"],[\"10774327302040930015542399179222458502634829694095804484749135988841930351850\",\"409015645239595129631982791901837203813000443262394810220799589635024410401\"],[\"1\",\"0\"]],\"c\":[\"805618312212200473153836203801534856685701602304097276485035246177305246575\",\"12984127923817330198936709848850019846193356630613954592225359007088568774616\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extended_ephemeral_public_key\":\"AOOO6lMkfdvpnx48w26CaWssLpeadIPt5593I4I4Wnka\"}";
 
     pub const SUI_DATA_FROM_REACT_1_NEW: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBlMzQ1ZmQ3ZTRhOTcyNzFkZmZhOTkxZjVhODkzY2QxNmI4ZTA4MjciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6InZ0WGVzaFJyX2ZrVGR3SHpFQXY4a2wtbllHWSIsIm5iZiI6MTcyMTA2NzkzNiwiaWF0IjoxNzIxMDY4MjM2LCJleHAiOjE3MjEwNzE4MzYsImp0aSI6IjkzMjQ2YjIxNjg1NzM5YWE2MjI3MGY4NDllNTNmNDFhNTRiZGMxYWUifQ.HjDKI_m-uWUsgYzhc7Ovuy_bms0NEFdIoFUIjoG1axwxNKkZ1Hh-lXa1wyGDl0Zy1RM9fCblkMmyLY0Mm7-ACL1nqDA-EmWlIfytk6PPRu8YOFI_mMg-YmZmgGQTn1bJv0jUOo3yPaRa9hKceDfifFLS1tbWuOIyKZTCy2oH_TEcZo6O3UI2_ksOlf0tnfwtUmF-I2vhtlbH57AH6Uc0Kx4cSObrE4VV1Pj_rCwwEDGxxpAiSth8tCKM80mlzJ6Si3F11Epqj2vDLAX5IzZtn2gMj18MADlWsgmrxNbRh4-suVE_p7VIzlTuBfjmZps_5w6E62KPzovypo2ql3KISQ\",\"user_pass_to_int_format\":\"9910010710611510499100106115107\",\"zk_addr\":\"0x3a934c047196bdfdd751778f758cc2642a9cfa574ddb5d57025b67d109225e20\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":141,\"1\":251,\"2\":140,\"3\":40,\"4\":213,\"5\":82,\"6\":20,\"7\":190,\"8\":208,\"9\":214,\"10\":244,\"11\":203,\"12\":156,\"13\":205,\"14\":36,\"15\":19,\"16\":24,\"17\":131,\"18\":176,\"19\":142,\"20\":74,\"21\":37,\"22\":199,\"23\":244,\"24\":70,\"25\":101,\"26\":194,\"27\":80,\"28\":211,\"29\":235,\"30\":171,\"31\":245},\"secret_key\":{\"0\":47,\"1\":220,\"2\":171,\"3\":167,\"4\":122,\"5\":143,\"6\":157,\"7\":242,\"8\":79,\"9\":81,\"10\":91,\"11\":236,\"12\":14,\"13\":127,\"14\":102,\"15\":140,\"16\":193,\"17\":217,\"18\":93,\"19\":88,\"20\":41,\"21\":18,\"22\":94,\"23\":40,\"24\":39,\"25\":63,\"26\":178,\"27\":120,\"28\":104,\"29\":214,\"30\":208,\"31\":207,\"32\":141,\"33\":251,\"34\":140,\"35\":40,\"36\":213,\"37\":82,\"38\":20,\"39\":190,\"40\":208,\"41\":214,\"42\":244,\"43\":203,\"44\":156,\"45\":205,\"46\":36,\"47\":19,\"48\":24,\"49\":131,\"50\":176,\"51\":142,\"52\":74,\"53\":37,\"54\":199,\"55\":244,\"56\":70,\"57\":101,\"58\":194,\"59\":80,\"60\":211,\"61\":235,\"62\":171,\"63\":245}}},\"maxEpoch\":142,\"extended_ephemeral_public_key\":\"AI37jCjVUhS+0Nb0y5zNJBMYg7COSiXH9EZlwlDT66v1\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"16813421039278654796395330442837655698730555183413337856642209109628683845443\",\"17226506757024740186126597704040151976665029813672291135146823263440625226230\",\"1\"],\"b\":[[\"19865189571716457271280707825159835672267817382424243521747870225851449993660\",\"8171164569532624421381183938498786515254461782830166752970857493983192858118\"],[\"19433278357078234147721454549239782691011759423461848201596076417708238357802\",\"20376887254972130170934329519774996610471771975828424380410011418190971129130\"],[\"1\",\"0\"]],\"c\":[\"12219856656033196506465767208555446381917939816812556286240154247316268622405\",\"17874973202272136490287260014626440020057757567816424198331948639084405340444\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBlMzQ1ZmQ3ZTRhOTcyNzFkZmZhOTkxZjVhODkzY2QxNmI4ZTA4MjciLCJ0eXAiOiJKV1QifQ\"}}";
-
-    
-   
 
     #[derive(Debug, Deserialize)]
     pub struct JwtData {
@@ -149,7 +148,7 @@ mod tests {
         ];
 
         // Generate an ephemeral key pair.
-        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
         let mut eph_pubkey = Vec::new();
         // replace by Alina's data (ephemeral public key place to byte array ), depends
         // on iteration
@@ -194,7 +193,7 @@ mod tests {
 
         let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
         let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
-        let index_mod_4  = "1";
+        let index_mod_4 = "1";
 
         let zk_login_inputs =
             ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
@@ -259,14 +258,16 @@ mod tests {
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON \n".to_string();/**/
+        code = code + &*"POSEIDON \n".to_string(); //
 
         println!("code : {code}");
 
-        test_case_with_refs(
-            code.as_str(),
-            vec![modulus_cell.clone(), iss_base_64_cell, header_base_64_cell, zk_seed_cell],
-        )
+        test_case_with_refs(code.as_str(), vec![
+            modulus_cell.clone(),
+            iss_base_64_cell,
+            header_base_64_cell,
+            zk_seed_cell,
+        ])
         .expect_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_success();
 
@@ -280,7 +281,7 @@ mod tests {
 
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
-        let verification_key_id: u32 = 0; //valid key id
+        let verification_key_id: u32 = 0; // valid key id
         // let verification_key_id: u32 = 1; //invalid key id
 
         let mut code = "PUSHREF \n".to_string();
@@ -326,7 +327,7 @@ mod tests {
 
         let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ";
         let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
-        let index_mod_4  = "1";
+        let index_mod_4 = "1";
 
         let zk_login_inputs =
             ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
@@ -389,14 +390,16 @@ mod tests {
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON \n".to_string();/**/
+        code = code + &*"POSEIDON \n".to_string(); //
 
         println!("code : {code}");
 
-        test_case_with_refs(
-            code.as_str(),
-            vec![modulus_cell, iss_base_64_cell, header_base_64_cell, zk_seed_cell],
-        )
+        test_case_with_refs(code.as_str(), vec![
+            modulus_cell,
+            iss_base_64_cell,
+            header_base_64_cell,
+            zk_seed_cell,
+        ])
         .expect_success();
 
         println!("====== Start Vergrth16 ========");
@@ -498,7 +501,7 @@ mod tests {
                 secret_key_from_integer_map(jwt_data.ephemeral_key_pair.keypair.secret_key);
 
             let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
-            let mut eph_pubkey = Vec::new(); //vec![0x00];
+            let mut eph_pubkey = Vec::new(); // vec![0x00];
             eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
             println!("ephemeral secret_key is {:?}", eph_secret_key);
@@ -513,7 +516,9 @@ mod tests {
             let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
             let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
-            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"typ\":\"JWT\"}"
+            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
+            // "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"
+            // typ\":\"JWT\"}"
 
             // JwtDataDecodedPart1
             let jwt_data_decoded1: JwtDataDecodedPart1 =
@@ -579,8 +584,8 @@ mod tests {
         ];
 
         // Generate an ephemeral key pair.
-        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-        let mut eph_pubkey = Vec::new(); //vec![0x00];
+        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let mut eph_pubkey = Vec::new(); // vec![0x00];
         // replace by Alina's data (ephemeral public key place to byte array ), depends
         // on iteration
         eph_pubkey.extend(ephemeral_kp.public().as_ref());
@@ -672,7 +677,7 @@ mod tests {
 
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
 
-        let verification_key_id: u32 = 0; //valid key id
+        let verification_key_id: u32 = 0; // valid key id
         // let verification_key_id: u32 = 1; //invalid key id
 
         let mut code = "PUSHREF \n".to_string();
@@ -858,8 +863,8 @@ mod tests {
 
         let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmNzI1NDEwMWY1NmU0MWNmMzVjOTkyNmRlODRhMmQ1NTJiNGM2ZjEiLCJ0eXAiOiJKV1QifQ";
         let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
-        let index_mod_4  = "1";
-        
+        let index_mod_4 = "1";
+
         let zk_login_inputs =
             ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
 
@@ -904,14 +909,12 @@ mod tests {
 
         let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
 
-        /*let iss_and_header_base64details_cell =
-            pack_string_to_cell(&iss_and_header_base64details, &mut 0).unwrap();*/
+        // let iss_and_header_base64details_cell =
+        // pack_string_to_cell(&iss_and_header_base64details, &mut 0).unwrap();
 
-        let header_base_64_cell =
-            pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+        let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
 
-        let iss_base_64_cell =
-            pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+        let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
 
         let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
@@ -924,17 +927,18 @@ mod tests {
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
         code = code + &*"PUSHREF \n".to_string();
-        //code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON \n".to_string();/**/
-
-
+        // code = code + &*"PUSHREF \n".to_string();
+        code = code + &*"POSEIDON \n".to_string(); //
 
         println!("code : {code}");
 
-        test_case_with_refs(
-            code.as_str(),
-            vec![modulus_cell, /*&iss_and_header_base64details_cell*/ iss_base_64_cell, header_base_64_cell, zk_seed_cell],
-        )
+        test_case_with_refs(code.as_str(), vec![
+            modulus_cell,
+            // &iss_and_header_base64details_cell
+            iss_base_64_cell,
+            header_base_64_cell,
+            zk_seed_cell,
+        ])
         .expect_success();
     }
 
@@ -947,7 +951,7 @@ mod tests {
         let user_pass_salt = "206703048842351542647799591018316385612";
         // Generate an ephemeral key pair.
         let ephemeral_kp = Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-        let mut eph_pubkey = Vec::new(); //vec![0x00];
+        let mut eph_pubkey = Vec::new(); // vec![0x00];
         eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
         println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
@@ -1043,7 +1047,8 @@ mod tests {
         );
 
         let mut csprng = OsRng;
-        let signing_key: ed25519_dalek::SigningKey = ed25519_dalek::SigningKey::generate(&mut csprng);
+        let signing_key: ed25519_dalek::SigningKey =
+            ed25519_dalek::SigningKey::generate(&mut csprng);
 
         let binding = proof_cell.clone();
         let first = binding.data();
@@ -1058,7 +1063,7 @@ mod tests {
 
         // test cell with data and one not empty reference
         let test_cell = pack_data_to_cell(&concatenated, &mut 0).unwrap();
-        
+
         let signature = signing_key.sign(test_cell.data()).to_bytes().to_vec();
 
         // put signature to separate slice
@@ -1071,7 +1076,6 @@ mod tests {
             ed25519_dalek::PUBLIC_KEY_LENGTH * 8,
         )
         .unwrap();
-
 
         test_case_with_refs(
             "
@@ -1106,8 +1110,9 @@ mod tests {
         ];
 
         // Generate an ephemeral key pair.
-        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
-        let mut eph_pubkey = Vec::new(); //vec![0x00]; // replace by Alina's data (ephemeral public key place to byte array ), depends on iteration
+        let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let mut eph_pubkey = Vec::new(); // vec![0x00]; // replace by Alina's data (ephemeral public key place to byte
+        // array ), depends on iteration
         eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
         println!("eph_pubkey: {:?}", hex::encode(eph_pubkey.clone()));
@@ -1314,7 +1319,9 @@ mod tests {
             let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
             let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
-            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"typ\":\"JWT\"}"
+            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
+            // "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"
+            // typ\":\"JWT\"}"
 
             // JwtDataDecodedPart1
             let jwt_data_decoded1: JwtDataDecodedPart1 =
@@ -1360,7 +1367,7 @@ mod tests {
             ///////////
 
             let json_string = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
-            println!("json_string ={:?}", json_string); //jwt_data.zk_proofs);
+            println!("json_string ={:?}", json_string); // jwt_data.zk_proofs);
 
             let data: Value = serde_json::from_str(&*json_string).unwrap();
             println!("data = {:?}", data);
@@ -1405,7 +1412,6 @@ mod tests {
 
             println!("===================");
         }
-
     }
 
     #[ignore]
@@ -1470,7 +1476,7 @@ mod tests {
                 secret_key_from_integer_map(jwt_data.ephemeral_key_pair.keypair.secret_key);
 
             let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
-            let mut eph_pubkey = Vec::new(); //vec![0x00];
+            let mut eph_pubkey = Vec::new(); // vec![0x00];
             eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
             println!("ephemeral secret_key is {:?}", eph_secret_key);
@@ -1479,12 +1485,13 @@ mod tests {
             let eph_pubkey_len = eph_pubkey.clone().len();
             println!("len eph_pubkey: {:?}", eph_pubkey_len);
 
-
             let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
             let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
             let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
-            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"typ\":\"JWT\"}"
+            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
+            // "{\"alg\":\"RS256\",\"kid\":\"323b214ae6975a0f034ea77354dc0c25d03642dc\",\"
+            // typ\":\"JWT\"}"
 
             // JwtDataDecodedPart1
             let jwt_data_decoded1: JwtDataDecodedPart1 =
@@ -1525,7 +1532,7 @@ mod tests {
             let current_ratio = time_for_vergrth16 / time_for_chcksgns;
             println!("current_ratio is {current_ratio}");
 
-            sum_ratio = sum_ratio + current_ratio; /**/
+            sum_ratio = sum_ratio + current_ratio; //
             println!("sum_ratio is {sum_ratio}");
             println!("==========================================");
         }
@@ -1612,7 +1619,8 @@ mod tests {
             prepare_proof_and_public_key_cells_for_stack(eph_pubkey, zk_login_inputs, all_jwk);
 
         let mut csprng = OsRng;
-        let signing_key: ed25519_dalek::SigningKey = ed25519_dalek::SigningKey::generate(&mut csprng);
+        let signing_key: ed25519_dalek::SigningKey =
+            ed25519_dalek::SigningKey::generate(&mut csprng);
 
         let binding = proof_cell.clone();
         let first = binding.data();

@@ -1,19 +1,20 @@
 #![allow(dead_code)]
 use std::convert::Into;
-
 use std::sync::Arc;
 
-use tvm_assembler::compile_code;
 use tvm_assembler::CompileError;
-
-use tvm_types::{Cell, BuilderData, HashmapE,  Result, SliceData};
-
-use tvm_vm::executor::gas::gas_state::Gas;
+use tvm_assembler::compile_code;
+use tvm_types::BuilderData;
+use tvm_types::Cell;
+use tvm_types::HashmapE;
+use tvm_types::Result;
+use tvm_types::SliceData;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::IndexProvider;
-use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::stack::Stack;
+use tvm_vm::stack::savelist::SaveList;
 
 pub type Bytecode = SliceData;
 
@@ -149,7 +150,6 @@ impl TestCase {
             }
         }
     }
-
 }
 
 pub trait Expects {
@@ -214,7 +214,6 @@ impl<T: Into<TestCase>> Expects for T {
         }
         test_case
     }
-
 }
 
 fn print_stack(test_case: &TestCase, executor: &Engine) {
@@ -232,4 +231,3 @@ pub fn test_case_with_refs(code: &str, references: Vec<Cell>) -> TestCaseInputs 
 pub fn test_case(code: impl ToString) -> TestCaseInputs {
     TestCaseInputs::new(code.to_string(), Stack::new(), vec![], 0)
 }
-
