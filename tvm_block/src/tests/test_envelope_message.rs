@@ -10,13 +10,13 @@
 // limitations under the License.
 
 use super::*;
-use crate::types::Number5;
-use crate::write_read_and_assert;
 use crate::CurrencyCollection;
 use crate::InternalMessageHeader;
 use crate::MsgAddressInt;
 use crate::StateInit;
 use crate::TickTock;
+use crate::types::Number5;
+use crate::write_read_and_assert;
 
 fn check_serialization_intermediate_addr_regular(addr_orig: IntermediateAddressRegular) {
     let mut b = BuilderData::new();

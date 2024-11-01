@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use crate::message_monitor::queue::BufferedMessage;
-use crate::message_monitor::queue::MonitoringQueue;
 use crate::MessageMonitoringParams;
 use crate::MonitoringQueueInfo;
+use crate::message_monitor::queue::BufferedMessage;
+use crate::message_monitor::queue::MonitoringQueue;
 
 pub(crate) const ADDING_TIMEOUT_MS: u64 = 1000;
 const FETCHING_TIMEOUT_MS: u64 = 5000;

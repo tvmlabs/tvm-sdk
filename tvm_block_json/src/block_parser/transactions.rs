@@ -10,15 +10,12 @@ use tvm_block::MessageProcessingStatus;
 use tvm_block::MsgAddressExt;
 use tvm_block::Transaction;
 use tvm_block::TransactionProcessingStatus;
-use tvm_types::write_boc;
 use tvm_types::Cell;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::write_boc;
 
-use crate::block_parser::entry::get_sharding_depth;
-use crate::block_parser::get_partition;
-use crate::block_parser::is_minter_address;
 use crate::BlockParserConfig;
 use crate::BlockParsingError;
 use crate::EntryConfig;
@@ -27,6 +24,9 @@ use crate::ParsedEntry;
 use crate::ParserTraceEvent;
 use crate::ParserTracer;
 use crate::ParsingBlock;
+use crate::block_parser::entry::get_sharding_depth;
+use crate::block_parser::get_partition;
+use crate::block_parser::is_minter_address;
 
 pub struct PreparedMessage {
     doc: Map<String, Value>,

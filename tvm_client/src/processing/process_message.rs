@@ -4,15 +4,15 @@ use crate::abi::ParamsOfEncodeMessage;
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientResult;
-use crate::processing::internal::can_retry_expired_message;
-use crate::processing::send_message;
-use crate::processing::wait_for_transaction;
 use crate::processing::ErrorCode;
 use crate::processing::ParamsOfSendMessage;
 use crate::processing::ParamsOfWaitForTransaction;
 use crate::processing::ProcessingEvent;
 use crate::processing::ResultOfProcessMessage;
 use crate::processing::ResultOfSendMessage;
+use crate::processing::internal::can_retry_expired_message;
+use crate::processing::send_message;
+use crate::processing::wait_for_transaction;
 use crate::tvm::StdContractError;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]

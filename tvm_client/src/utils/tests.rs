@@ -70,13 +70,10 @@ async fn test_calc_storage_fee() {
     let client = TestClient::new();
 
     let result: ResultOfCalcStorageFee = client
-        .request_async(
-            "utils.calc_storage_fee",
-            ParamsOfCalcStorageFee {
-                account: base64_encode(include_bytes!("../boc/test_data/account.boc")),
-                period: 1000,
-            },
-        )
+        .request_async("utils.calc_storage_fee", ParamsOfCalcStorageFee {
+            account: base64_encode(include_bytes!("../boc/test_data/account.boc")),
+            period: 1000,
+        })
         .await
         .unwrap();
 
@@ -95,19 +92,18 @@ fn test_compression() {
         anim id est laborum.";
 
     let compressed: ResultOfCompressZstd = client
-        .request(
-            "utils.compress_zstd",
-            ParamsOfCompressZstd { uncompressed: base64_encode(uncompressed), level: Some(21) },
-        )
+        .request("utils.compress_zstd", ParamsOfCompressZstd {
+            uncompressed: base64_encode(uncompressed),
+            level: Some(21),
+        })
         .unwrap();
 
     assert_ne!(base64_decode(&compressed.compressed).unwrap(), uncompressed);
 
     let decompressed: ResultOfDecompressZstd = client
-        .request(
-            "utils.decompress_zstd",
-            ParamsOfDecompressZstd { compressed: compressed.compressed },
-        )
+        .request("utils.decompress_zstd", ParamsOfDecompressZstd {
+            compressed: compressed.compressed,
+        })
         .unwrap();
 
     let decompressed = base64_decode(decompressed.decompressed).unwrap();
@@ -133,10 +129,9 @@ fn test_decompression() {
         anim id est laborum.";
 
     let decompressed: ResultOfDecompressZstd = client
-        .request(
-            "utils.decompress_zstd",
-            ParamsOfDecompressZstd { compressed: compressed.to_string() },
-        )
+        .request("utils.decompress_zstd", ParamsOfDecompressZstd {
+            compressed: compressed.to_string(),
+        })
         .unwrap();
 
     let decompressed = base64_decode(decompressed.decompressed).unwrap();
@@ -215,9 +210,8 @@ fn get_address_type(
     address: &'static str,
 ) -> ClientResult<AccountAddressType> {
     client
-        .request::<_, ResultOfGetAddressType>(
-            "utils.get_address_type",
-            ParamsOfGetAddressType { address: address.to_string() },
-        )
+        .request::<_, ResultOfGetAddressType>("utils.get_address_type", ParamsOfGetAddressType {
+            address: address.to_string(),
+        })
         .map(|result| result.address_type)
 }

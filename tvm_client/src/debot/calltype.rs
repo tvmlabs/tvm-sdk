@@ -8,35 +8,35 @@ use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
 
-use super::errors::Error;
-use super::helpers::build_internal_message;
 use super::BrowserCallbacks;
 use super::DebotActivity;
 use super::Spending;
 use super::TonClient;
+use super::errors::Error;
+use super::helpers::build_internal_message;
 use crate::abi::Signer;
+use crate::boc::ParamsOfGetBocHash;
+use crate::boc::ParamsOfParse;
 use crate::boc::get_boc_hash;
 use crate::boc::internal::deserialize_object_from_base64;
 use crate::boc::internal::serialize_object_to_base64;
 use crate::boc::parse_message;
-use crate::boc::ParamsOfGetBocHash;
-use crate::boc::ParamsOfParse;
 use crate::crypto::SigningBoxHandle;
 use crate::encoding::decode_abi_number;
 use crate::error::ClientError;
 use crate::error::ClientResult;
-use crate::net::query_transaction_tree;
 use crate::net::ParamsOfQueryTransactionTree;
-use crate::processing::send_message;
-use crate::processing::wait_for_transaction;
+use crate::net::query_transaction_tree;
 use crate::processing::ParamsOfSendMessage;
 use crate::processing::ParamsOfWaitForTransaction;
 use crate::processing::ProcessingEvent;
-use crate::tvm::run_executor;
-use crate::tvm::run_tvm;
+use crate::processing::send_message;
+use crate::processing::wait_for_transaction;
 use crate::tvm::AccountForExecutor;
 use crate::tvm::ParamsOfRunExecutor;
 use crate::tvm::ParamsOfRunTvm;
+use crate::tvm::run_executor;
+use crate::tvm::run_tvm;
 
 const SUPPORTED_ABI_VERSION: u8 = 2;
 const ABI_2_3: u8 = 0x32;
@@ -302,17 +302,14 @@ impl ContractCall {
     }
 
     async fn run_get_method(&self, func_id: u32, fixed_msg: String) -> ClientResult<String> {
-        let result = run_tvm(
-            self.ton.clone(),
-            ParamsOfRunTvm {
-                account: self.target_state.clone(),
-                message: fixed_msg,
-                abi: None,
-                execution_options: None,
-                boc_cache: None,
-                return_updated_account: Some(true),
-            },
-        )
+        let result = run_tvm(self.ton.clone(), ParamsOfRunTvm {
+            account: self.target_state.clone(),
+            message: fixed_msg,
+            abi: None,
+            execution_options: None,
+            boc_cache: None,
+            return_updated_account: Some(true),
+        })
         .await
         .map_err(Error::get_method_failed);
 
@@ -399,11 +396,12 @@ impl ContractCall {
             .await;
             match result {
                 Ok(res) => {
-                    let result = query_transaction_tree(
-                        self.ton.clone(),
-                        ParamsOfQueryTransactionTree { in_msg: msg_id, ..Default::default() },
-                    )
-                    .await;
+                    let result =
+                        query_transaction_tree(self.ton.clone(), ParamsOfQueryTransactionTree {
+                            in_msg: msg_id,
+                            ..Default::default()
+                        })
+                        .await;
                     if let Err(e) = result {
                         return self.build_error_answer_msg(e);
                     }
@@ -540,14 +538,11 @@ async fn emulate_transaction(
     target_state: String,
     signer: Signer,
 ) -> ClientResult<DebotActivity> {
-    let result = run_executor(
-        client.clone(),
-        ParamsOfRunExecutor {
-            message: msg.clone(),
-            account: AccountForExecutor::Account { boc: target_state, unlimited_balance: None },
-            ..Default::default()
-        },
-    )
+    let result = run_executor(client.clone(), ParamsOfRunExecutor {
+        message: msg.clone(),
+        account: AccountForExecutor::Account { boc: target_state, unlimited_balance: None },
+        ..Default::default()
+    })
     .await?;
 
     let exit_code =

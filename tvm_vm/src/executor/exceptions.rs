@@ -18,20 +18,20 @@ use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
 use crate::executor::continuation::callx;
+use crate::executor::engine::Engine;
 use crate::executor::engine::storage::copy_to_var;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::storage::swap;
-use crate::executor::engine::Engine;
 use crate::executor::microcode::CC;
 use crate::executor::microcode::CTRL;
 use crate::executor::microcode::SAVELIST;
 use crate::executor::microcode::VAR;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+use crate::stack::StackItem;
 use crate::stack::continuation::ContinuationData;
 use crate::stack::continuation::ContinuationType;
 use crate::stack::integer::IntegerData;
-use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 

@@ -81,11 +81,11 @@ mod test_bitsize {
 
 mod test_minus_2_pow_256 {
 
-    use tvm_types::types::ExceptionCode;
     use tvm_types::Result;
+    use tvm_types::types::ExceptionCode;
 
-    use crate::stack::integer::behavior::Signaling;
     use crate::stack::integer::IntegerData;
+    use crate::stack::integer::behavior::Signaling;
 
     #[test]
     fn test_2_pow_256_overflows() {
@@ -146,9 +146,9 @@ mod test_minus_2_pow_256 {
 
 mod test_behavior {
 
+    use crate::stack::integer::IntegerData;
     use crate::stack::integer::behavior::Quiet;
     use crate::stack::integer::behavior::Signaling;
-    use crate::stack::integer::IntegerData;
 
     #[test]
     fn add_quiet_vs_signaling() {
@@ -166,8 +166,8 @@ mod test_behavior {
 
 mod test_bitlogics {
 
-    use crate::stack::integer::behavior::Signaling;
     use crate::stack::integer::IntegerData;
+    use crate::stack::integer::behavior::Signaling;
 
     fn test_and(x: i64, y: i64) {
         let xdst = IntegerData::from_i64(x);

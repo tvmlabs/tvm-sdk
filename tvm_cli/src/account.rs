@@ -11,18 +11,18 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use tvm_block::Account;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
 use tvm_client::error::ClientError;
-use tvm_client::net::query_collection;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::ParamsOfSubscribeCollection;
 use tvm_client::net::ResultOfSubscription;
-use tvm_client::utils::calc_storage_fee;
+use tvm_client::net::query_collection;
 use tvm_client::utils::ParamsOfCalcStorageFee;
+use tvm_client::utils::calc_storage_fee;
 use tvm_types::base64_decode;
 
 use crate::config::Config;
@@ -72,16 +72,13 @@ async fn query_accounts(
             });
         }
         it += cnt;
-        let mut query_result = query_collection(
-            client.clone(),
-            ParamsOfQueryCollection {
-                collection: "accounts".to_owned(),
-                filter: Some(filter),
-                result: fields.to_string(),
-                limit: Some(cnt as u32),
-                ..Default::default()
-            },
-        )
+        let mut query_result = query_collection(client.clone(), ParamsOfQueryCollection {
+            collection: "accounts".to_owned(),
+            filter: Some(filter),
+            result: fields.to_string(),
+            limit: Some(cnt as u32),
+            ..Default::default()
+        })
         .await
         .map_err(|e| format!("failed to query account info: {}", e))?;
         res.append(query_result.result.as_mut());
@@ -311,10 +308,11 @@ pub async fn calc_storage(config: &Config, addr: &str, period: u32) -> Result<()
 
     let boc = query_account_field(client.clone(), addr, "boc").await?;
 
-    let res = calc_storage_fee(
-        client.clone(),
-        ParamsOfCalcStorageFee { account: boc, period, ..Default::default() },
-    )
+    let res = calc_storage_fee(client.clone(), ParamsOfCalcStorageFee {
+        account: boc,
+        period,
+        ..Default::default()
+    })
     .await
     .map_err(|e| format!("failed to calculate storage fee: {}", e))?;
 
@@ -386,21 +384,18 @@ pub async fn wait_for_change(
 ) -> Result<(), String> {
     let context = create_client_verbose(config)?;
 
-    let query = tvm_client::net::query_collection(
-        context.clone(),
-        ParamsOfQueryCollection {
-            collection: "accounts".to_owned(),
-            filter: Some(serde_json::json!({
-                "id": {
-                    "eq": account_address
-                }
-            })),
-            limit: None,
-            order: None,
-            result: "last_trans_lt".to_owned(),
-            ..Default::default()
-        },
-    )
+    let query = tvm_client::net::query_collection(context.clone(), ParamsOfQueryCollection {
+        collection: "accounts".to_owned(),
+        filter: Some(serde_json::json!({
+            "id": {
+                "eq": account_address
+            }
+        })),
+        limit: None,
+        order: None,
+        result: "last_trans_lt".to_owned(),
+        ..Default::default()
+    })
     .await
     .map_err(|e| format!("Failed to query the account: {}", e))?;
 

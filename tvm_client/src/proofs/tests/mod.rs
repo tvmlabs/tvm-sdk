@@ -12,17 +12,23 @@ use tvm_block::Block;
 use tvm_block::BlockIdExt;
 use tvm_block::Deserializable;
 use tvm_block::InRefValue;
+use tvm_block::MASTERCHAIN_ID;
 use tvm_block::ShardHashes;
 use tvm_block::ShardIdent;
 use tvm_block::ShardStateUnsplit;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_types::base64_decode;
 use tvm_types::Result;
 use tvm_types::UInt256;
+use tvm_types::base64_decode;
 
+use crate::ClientContext;
 use crate::client::storage::InMemoryKeyValueStorage;
-use crate::net::query_collection;
 use crate::net::ParamsOfQueryCollection;
+use crate::net::query_collection;
+use crate::proofs::BlockProof;
+use crate::proofs::INITIAL_TRUSTED_KEY_BLOCKS;
+use crate::proofs::ParamsOfProofBlockData;
+use crate::proofs::ParamsOfProofMessageData;
+use crate::proofs::ParamsOfProofTransactionData;
 use crate::proofs::engine::ProofHelperEngineImpl;
 use crate::proofs::is_transaction_refers_to_message;
 use crate::proofs::message_get_required_data;
@@ -33,13 +39,7 @@ use crate::proofs::transaction_get_required_data;
 use crate::proofs::validators::calc_subset_for_workchain;
 use crate::proofs::validators::calc_workchain_id;
 use crate::proofs::validators::calc_workchain_id_by_adnl_id;
-use crate::proofs::BlockProof;
-use crate::proofs::ParamsOfProofBlockData;
-use crate::proofs::ParamsOfProofMessageData;
-use crate::proofs::ParamsOfProofTransactionData;
-use crate::proofs::INITIAL_TRUSTED_KEY_BLOCKS;
 use crate::tests::TestClient;
-use crate::ClientContext;
 
 const GQL_SCHEMA: &str = include_str!("data/schema.graphql");
 
@@ -650,20 +650,17 @@ async fn query_data(
     id: &str,
     result: &str,
 ) -> Result<Value> {
-    Ok(query_collection(
-        context,
-        ParamsOfQueryCollection {
-            collection: collection.to_string(),
-            result: result.to_string(),
-            filter: Some(json!({
-                "id": {
-                    "eq": id,
-                },
-            })),
-            limit: Some(1),
-            ..Default::default()
-        },
-    )
+    Ok(query_collection(context, ParamsOfQueryCollection {
+        collection: collection.to_string(),
+        result: result.to_string(),
+        filter: Some(json!({
+            "id": {
+                "eq": id,
+            },
+        })),
+        limit: Some(1),
+        ..Default::default()
+    })
     .await?
     .result
     .remove(0))
@@ -762,29 +759,26 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json.clone() },
-        )
+        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
+            block: block_json.clone(),
+        })
         .await?;
 
     block_json["boc"] = Value::Null;
 
     client
-        .request_async(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json.clone() },
-        )
+        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
+            block: block_json.clone(),
+        })
         .await?;
 
     block_json["boc"] = SHARD_BLOCK_0_A000000000000000_99_BOC.into();
 
     assert!(
         client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: block_json.clone() },
-            )
+            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
+                block: block_json.clone()
+            },)
             .await
             .is_err()
     );
@@ -795,10 +789,9 @@ async fn test_proof_block_data() -> Result<()> {
 
     assert!(
         client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: block_json },
-            )
+            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
+                block: block_json
+            },)
             .await
             .is_err()
     );
@@ -831,10 +824,9 @@ async fn test_proof_block_data() -> Result<()> {
 
     assert!(
         client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: proof_json },
-            )
+            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
+                block: proof_json
+            },)
             .await
             .is_err()
     );
@@ -971,10 +963,9 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json.clone() },
-        )
+        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
+            block: block_json.clone(),
+        })
         .await?;
 
     // Shardchain block
@@ -986,10 +977,9 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json.clone() },
-        )
+        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
+            block: block_json.clone(),
+        })
         .await?;
 
     Ok(())
@@ -1051,10 +1041,9 @@ async fn test_proof_transaction_data() -> Result<()> {
     )
     .await?;
 
-    proof_transaction_data(
-        client.context(),
-        ParamsOfProofTransactionData { transaction: transaction_json },
-    )
+    proof_transaction_data(client.context(), ParamsOfProofTransactionData {
+        transaction: transaction_json,
+    })
     .await?;
 
     let transaction_json = query_transaction_data(
@@ -1078,10 +1067,9 @@ async fn test_proof_transaction_data() -> Result<()> {
         "#,
     ).await?;
 
-    proof_transaction_data(
-        client.context(),
-        ParamsOfProofTransactionData { transaction: transaction_json },
-    )
+    proof_transaction_data(client.context(), ParamsOfProofTransactionData {
+        transaction: transaction_json,
+    })
     .await?;
 
     Ok(())

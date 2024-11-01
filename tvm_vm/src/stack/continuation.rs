@@ -12,7 +12,6 @@
 use std::fmt;
 use std::mem;
 
-use tvm_types::error;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
@@ -21,19 +20,20 @@ use tvm_types::HashmapE;
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
 use tvm_types::Result;
+use tvm_types::error;
 
+use super::DeserializeItem;
 use super::items_deserialize;
 use super::items_serialize;
 use super::prepare_cont_serialize_vars;
 use super::slice_deserialize;
 use super::slice_serialize;
-use super::DeserializeItem;
 use crate::error::TvmError;
 use crate::executor::gas::gas_state::Gas;
-use crate::stack::savelist::SaveList;
 use crate::stack::SliceData;
 use crate::stack::Stack;
 use crate::stack::StackItem;
+use crate::stack::savelist::SaveList;
 use crate::types::Exception;
 use crate::types::ResultOpt;
 

@@ -18,12 +18,12 @@ use futures::Future;
 use futures::SinkExt;
 use futures::StreamExt;
 use lazy_static::lazy_static;
-use reqwest::header::HeaderMap;
-use reqwest::header::HeaderName;
-use reqwest::header::HeaderValue;
 use reqwest::Client as HttpClient;
 use reqwest::ClientBuilder;
 use reqwest::Method;
+use reqwest::header::HeaderMap;
+use reqwest::header::HeaderName;
+use reqwest::header::HeaderValue;
 use tokio::runtime::Runtime;
 #[cfg(test)]
 use tokio::sync::RwLock;
@@ -33,10 +33,10 @@ use super::Error;
 use super::FetchMethod;
 use super::FetchResult;
 use super::WebSocket;
+use crate::client::LOCAL_STORAGE_DEFAULT_DIR_NAME;
 #[cfg(test)]
 use crate::client::network_mock::NetworkMock;
 use crate::client::storage::KeyValueStorage;
-use crate::client::LOCAL_STORAGE_DEFAULT_DIR_NAME;
 use crate::error::ClientResult;
 
 #[cfg(test)]

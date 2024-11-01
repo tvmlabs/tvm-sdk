@@ -9,10 +9,10 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use crate::contract::ShardDescr;
-use crate::types::BlockId;
 use crate::MessageId;
 use crate::TransactionId;
+use crate::contract::ShardDescr;
+use crate::types::BlockId;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct MsgDescr {

@@ -16,19 +16,21 @@ use tvm_block::Account;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
 use tvm_client::abi::FunctionHeader;
-use tvm_client::tvm::run_get;
-use tvm_client::tvm::run_tvm;
 use tvm_client::tvm::ExecutionOptions;
 use tvm_client::tvm::ParamsOfRunGet;
 use tvm_client::tvm::ParamsOfRunTvm;
+use tvm_client::tvm::run_get;
+use tvm_client::tvm::run_tvm;
 use tvm_types::base64_encode;
 
 use crate::call::print_json_result;
 use crate::config::Config;
 use crate::config::FullConfig;
+use crate::debug::DebugParams;
 use crate::debug::debug_error;
 use crate::debug::init_debug_logger;
-use crate::debug::DebugParams;
+use crate::helpers::AccountSource;
+use crate::helpers::TonClient;
 use crate::helpers::abi_from_matches_or_config;
 use crate::helpers::contract_data_from_matches_or_config_alias;
 use crate::helpers::create_client;
@@ -41,8 +43,6 @@ use crate::helpers::load_params;
 use crate::helpers::now;
 use crate::helpers::now_ms;
 use crate::helpers::unpack_alternative_params;
-use crate::helpers::AccountSource;
-use crate::helpers::TonClient;
 use crate::message::prepare_message;
 use crate::replay::construct_blockchain_config;
 
@@ -159,17 +159,14 @@ async fn run(
     .await?;
 
     let execution_options = prepare_execution_options(bc_config)?;
-    let result = run_tvm(
-        ton_client.clone(),
-        ParamsOfRunTvm {
-            message: msg.message.clone(),
-            account: account_boc.clone(),
-            abi: Some(abi.clone()),
-            return_updated_account: Some(true),
-            execution_options,
-            ..Default::default()
-        },
-    )
+    let result = run_tvm(ton_client.clone(), ParamsOfRunTvm {
+        message: msg.message.clone(),
+        account: account_boc.clone(),
+        abi: Some(abi.clone()),
+        return_updated_account: Some(true),
+        execution_options,
+        ..Default::default()
+    })
     .await;
 
     let result = match result {
@@ -254,16 +251,13 @@ pub async fn run_get_method(
         println!("Running get-method...");
     }
     let execution_options = prepare_execution_options(bc_config)?;
-    let result = run_get(
-        ton,
-        ParamsOfRunGet {
-            account: acc_boc,
-            function_name: method.to_owned(),
-            input: params,
-            execution_options,
-            ..Default::default()
-        },
-    )
+    let result = run_get(ton, ParamsOfRunGet {
+        account: acc_boc,
+        function_name: method.to_owned(),
+        input: params,
+        execution_options,
+        ..Default::default()
+    })
     .await
     .map_err(|e| format!("run failed: {}", e))?
     .output;
