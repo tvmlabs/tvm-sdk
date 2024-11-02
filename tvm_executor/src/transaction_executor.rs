@@ -1532,7 +1532,10 @@ fn outmsg_action_handler(
                 }
             }
             int_header.value = result_value.clone();
-
+            result_value.grams.add(&Grams::from(need_to_burn)).map_err(|err| {
+                log::error!(target: "executor", "cannot add grams : {}", err);
+                RESULT_CODE_UNSUPPORTED
+            })?;
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
         if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
