@@ -234,7 +234,7 @@ struct DepoolCmd<'a> {
     m: &'a ArgMatches<'a>,
     /// Reference to depool address
     depool: &'a str,
-    /// Amount of nanoevers to send from wallet to depool
+    /// Amount of nanovmshells to send from wallet to depool
     value: u64,
     /// Payload for message from wallet to depool.
     /// Encodes one of depool API functions.
