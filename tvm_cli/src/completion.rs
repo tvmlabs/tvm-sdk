@@ -52,7 +52,7 @@ pub struct Config {
     pub depool_fee: f32,
     pub lifetime: u32,
     pub no_answer: bool,
-    pub balance_in_tons: bool,
+    pub balance_in_vmshells: bool,
     pub local_run: bool,
     pub async_call: bool,
     pub debug_fail: String,

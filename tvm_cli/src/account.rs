@@ -51,7 +51,7 @@ async fn query_accounts(
     addresses: Vec<String>,
     fields: &str,
 ) -> Result<Vec<Value>, String> {
-    let ton = create_client_verbose(config)?;
+    let client = create_client_verbose(config)?;
 
     if !config.is_json {
         println!("Processing...");
@@ -72,7 +72,7 @@ async fn query_accounts(
             });
         }
         it += cnt;
-        let mut query_result = query_collection(ton.clone(), ParamsOfQueryCollection {
+        let mut query_result = query_collection(client.clone(), ParamsOfQueryCollection {
             collection: "accounts".to_owned(),
             filter: Some(filter),
             result: fields.to_string(),
@@ -124,7 +124,7 @@ pub async fn get_account(
                 let bal = acc["balance"].as_str();
                 let balance = if bal.is_some() {
                     let bal = bal.unwrap();
-                    if config.balance_in_tons {
+                    if config.balance_in_vmshells {
                         let bal = u64::from_str_radix(bal, 10)
                             .map_err(|e| format!("failed to decode balance: {}", e))?;
                         let int_bal = bal as f64 / 1e9;
@@ -141,10 +141,10 @@ pub async fn get_account(
                                 .collect::<Vec<String>>()
                                 .join(" "),
                             frac_balance,
-                            if config.is_json { "" } else { " ton" }
+                            if config.is_json { "" } else { " vmshell" }
                         )
                     } else {
-                        format!("{}{}", bal, if config.is_json { "" } else { " nanoton" })
+                        format!("{}{}", bal, if config.is_json { "" } else { " nanovmshell" })
                     }
                 } else {
                     "Undefined".to_owned()
@@ -300,15 +300,15 @@ pub async fn get_account(
 }
 
 pub async fn calc_storage(config: &Config, addr: &str, period: u32) -> Result<(), String> {
-    let ton = create_client_verbose(config)?;
+    let client = create_client_verbose(config)?;
 
     if !config.is_json {
         println!("Processing...");
     }
 
-    let boc = query_account_field(ton.clone(), addr, "boc").await?;
+    let boc = query_account_field(client.clone(), addr, "boc").await?;
 
-    let res = calc_storage_fee(ton.clone(), ParamsOfCalcStorageFee {
+    let res = calc_storage_fee(client.clone(), ParamsOfCalcStorageFee {
         account: boc,
         period,
         ..Default::default()
@@ -317,7 +317,7 @@ pub async fn calc_storage(config: &Config, addr: &str, period: u32) -> Result<()
     .map_err(|e| format!("failed to calculate storage fee: {}", e))?;
 
     if !config.is_json {
-        println!("Storage fee per {} seconds: {} nanotons", period, res.fee);
+        println!("Storage fee per {} seconds: {} nanovmshells", period, res.fee);
     } else {
         println!("{{");
         println!("  \"storage_fee\": \"{}\",", res.fee);

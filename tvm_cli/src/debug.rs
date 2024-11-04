@@ -347,7 +347,7 @@ pub fn create_debug_command<'a, 'b>() -> App<'a, 'b> {
             Arg::with_name("INITIAL_BALANCE")
                 .long("--initial_balance")
                 .takes_value(true)
-                .help("Initial balance in nanotokens."),
+                .help("Initial balance in nanovmshells."),
         )
         .arg(Arg::with_name("INIT_BALANCE").long("--init_balance").help(
             "Do not fetch account from the network, but create dummy account with big balance.",
