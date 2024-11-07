@@ -2,12 +2,8 @@
 
 * [About Acki Nacki SDK](README.md)
 * [How to deploy a Sponsor Wallet](how-to-deploy-a-sponsor-wallet.md)
-* [Copy of How to deploy a Sponsor Wallet](copy-of-how-to-deploy-a-sponsor-wallet.md)
-* [Quick start (JavaScript)](quick\_start.md)
-* [JS Quick Start](js-quick-start.md)
 * [GraphQL Quick Start](graphql-quick-start.md)
-* [(Old) Add Acki Nacki to your backend](add\_to\_backend.md)
-* [Add Acki Nacki to your backend](add\_to\_backend-1.md)
+* [Add Acki Nacki to your backend](add\_to\_backend.md)
 
 ## Reference
 

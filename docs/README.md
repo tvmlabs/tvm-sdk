@@ -96,7 +96,7 @@ With TVM SDK you can implement logic of any complexity on TVM compatible blockch
 
 ## Quick Start
 
-[Quick Start (Javascript binding)](quick\_start.md)
+[Quick Start (Javascript binding)](broken-reference)
 
 [Error descriptions](reference/error\_codes.md)
 
