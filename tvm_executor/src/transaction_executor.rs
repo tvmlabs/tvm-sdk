@@ -1527,7 +1527,8 @@ fn outmsg_action_handler(
                     log::error!(target: "executor", "cannot sub grams : {}", err);
                     RESULT_CODE_UNSUPPORTED
                 })? {
-                    log::trace!(target: "executor", "result sub grams reserved: {} {}",  result_value.grams, reserved_value.grams);
+                    result_value.grams = Grams::zero();
+                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());                
                 }
             }
             int_header.value = result_value.clone();
