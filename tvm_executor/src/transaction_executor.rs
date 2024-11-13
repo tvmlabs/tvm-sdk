@@ -1539,6 +1539,11 @@ fn outmsg_action_handler(
             // send all remainig balance of inbound message
             result_value.add(msg_balance).ok();
             if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                log::trace!(
+                    target: "executor",
+                    "msg balance {} is too small, cannot pay phase fees: {}",
+                    result_value.grams, compute_phase_fees
+                );
                 if &result_value.grams < compute_phase_fees {
                     return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
                 }
@@ -1554,7 +1559,7 @@ fn outmsg_action_handler(
             result_value.grams += total_fwd_fees;
         } else if int_header.value.grams < total_fwd_fees {
             // msg value is too small, reciever cannot pay the fees
-            log::warn!(
+            log::trace!(
                 target: "executor",
                 "msg balance {} is too small, cannot pay fwd+ihr fees: {}",
                 int_header.value.grams, total_fwd_fees
@@ -1576,7 +1581,7 @@ fn outmsg_action_handler(
     }
 
     if acc_balance.grams < result_value.grams {
-        log::warn!(
+        log::trace!(
             target: "executor",
             "account balance {} is too small, cannot send {}", acc_balance.grams, result_value.grams
         );
@@ -1584,7 +1589,7 @@ fn outmsg_action_handler(
     }
     match acc_balance.sub(&result_value) {
         Ok(false) | Err(_) => {
-            log::warn!(
+            log::trace!(
                 target: "executor",
                 "account balance {} is too small, cannot send {}", acc_balance, result_value
             );
@@ -1601,7 +1606,7 @@ fn outmsg_action_handler(
     };
     match acc_balance.other.iterate_with_keys(predicate) {
         Ok(false) | Err(_) => {
-            log::warn!(target: "executor", "Cannot reduce account extra balance");
+            log::trace!(target: "executor", "Cannot reduce account extra balance");
             return Err(skip.map(|_| RESULT_CODE_INVALID_BALANCE).unwrap_or_default());
         }
         _ => (),
