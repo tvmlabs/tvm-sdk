@@ -904,7 +904,7 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-        if acc_remaining_balance.grams < Grams::from(need_to_burn) {
+        if (acc_remaining_balance.grams < Grams::from(need_to_burn)) && (is_reserve_burn == false) {
             let err_code = RESULT_CODE_NOT_ENOUGH_GRAMS;
             if process_err_code(err_code, 0, &mut phase)? {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
@@ -1528,11 +1528,6 @@ fn outmsg_action_handler(
                     RESULT_CODE_UNSUPPORTED
                 })? {
                     log::trace!(target: "executor", "result sub grams reserved: {} {}",  result_value.grams, reserved_value.grams);
-                    match result_value.grams.sub(&reserved_value.grams) {
-                        Ok(false) => return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default()),
-                        Ok(true) => {},
-                        Err(_) => return Err(skip.map(|_| RESULT_CODE_UNSUPPORTED).unwrap_or_default())
-                    };
                 }
             }
             int_header.value = result_value.clone();
