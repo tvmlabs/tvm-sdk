@@ -23,19 +23,19 @@ Here is the structure of fees object.
 
 * `storage_fee`: _bigint_ – Fee for account storage
 * `gas_fee`: _bigint_ – Fee for processing
-* `in_msg_fwd_fee`: _bigint_ – Deprecated. Left for backward compatibility.&#x20;
+* `in_msg_fwd_fee`: _bigint_ – Deprecated. Left for backward compatibility.
 * `ext_in_msg_fee`: _bigint_ – Fee for inbound external message import.
 * `total_fwd_fees`: _bigint_ – Total fees the account pays for message forwarding
-* **`account_fees`: **_**bigint**_** – Total account fees for the transaction execution. Compounds of storage\_fee + gas\_fee + ext\_in\_msg\_fee + total\_fwd\_fees**
+* **`account_fees`:  bigint** – Total account fees for the transaction execution. Compounds of storage\_fee + gas\_fee + ext\_in\_msg\_fee + total\_fwd\_fees
 
 #### Deprecated fields. Left for backward compatibility.
 
 * `out_msgs_fwd_fee`: _bigint_ – Deprecated. Left for backward compatibility.
-* `total_account_fees`: _bigint_ – Deprecated.  Left for backward compatibility.\
+* `total_account_fees`: _bigint_ – Deprecated. Left for backward compatibility.\
   This is the field that is named as `total_fees` in GraphQL API Transaction type. `total_account_fees` name is misleading, because it does not mean account fees, instead it means validators total fees received for the transaction execution. It does not include some forward fees that account actually pays now, but validators will receive later during value delivery to another account (not even in the receiving transaction but along the way of a chain of transactions processing).\
   Because of all of this, this field is not interesting for those who want to understand\
   the real account fees, this is why it is deprecated and left for backward compatibility.
-* `total_output`: _bigint_ – Deprecated. Left for backward compatibility.&#x20;
+* `total_output`: _bigint_ – Deprecated. Left for backward compatibility.
 
 ```graphql
 type TransactionFees = {
