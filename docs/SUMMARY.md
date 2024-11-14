@@ -1,7 +1,8 @@
 # Table of contents
 
 * [About Acki Nacki SDK](README.md)
-* [How to deploy a Sponsor Wallet](how-to-deploy-a-sponsor-wallet.md)
+* [How to deploy a Multisig Wallet](how-to-deploy-a-multisig-wallet.md)
+* [Dapp ID Full Guide: creation, fees, centralized replenishment](dapp-id-full-guide-creation-fees-centralized-replenishment.md)
 * [GraphQL Quick Start](graphql-quick-start.md)
 * [Add Acki Nacki to your backend](add\_to\_backend.md)
 
@@ -22,6 +23,7 @@
 * [Core Library Error API](reference/error\_api.md)
 * [Error Codes](reference/error\_codes.md)
 * [TVM-CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm\_cli/README.md)
+* [VM Instructions specifications](reference/vm-instructions-specifications.md)
 
 ## GraphQL
 
