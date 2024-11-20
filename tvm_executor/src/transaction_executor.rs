@@ -845,7 +845,7 @@ pub trait TransactionExecutor {
                                 phase.spec_actions += 1;
                                 0
                             }
-                            Err(_) => RESULT_CODE_OVERFLOW,
+                            Err(_) => RESULT_CODE_UNSUPPORTED,
                         }
                     } else {
                         RESULT_CODE_NOT_SPECIAL_CONTRACT
@@ -888,10 +888,19 @@ pub trait TransactionExecutor {
                             value = available_credit.clone().try_into()?;
                         }
                     }
-                    acc_remaining_balance.grams.add(&(Grams::from(value)))?;
-                    *minted_shell += value as u128;
-                    phase.spec_actions += 1;
-                    0
+                    match acc_remaining_balance.grams.add(&(Grams::from(value))) {
+                        Ok(true) => {
+                            *minted_shell += value as u128;                            
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Ok(false) => {
+                            RESULT_CODE_OVERFLOW
+                        }
+                        Err(_) => {
+                            RESULT_CODE_UNSUPPORTED
+                        }
+                    }
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
             };
