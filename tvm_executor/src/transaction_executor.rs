@@ -676,7 +676,7 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
-        available_credit: i128,
+        mut available_credit: i128,
         minted_shell: &mut u128,
         need_to_burn: u64,
     ) -> Result<ActionPhaseResult> {
@@ -890,7 +890,8 @@ pub trait TransactionExecutor {
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
-                            *minted_shell += value as u128;                            
+                            *minted_shell += value as u128;   
+                            available_credit -= value as i128;                         
                             phase.spec_actions += 1;
                             0
                         }
