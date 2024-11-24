@@ -3,12 +3,10 @@
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use tvm_vm::stack::integer::IntegerData;
     use base64ct::Encoding as bEncoding;
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
-    use tvm_vm::int;
     use fastcrypto_zkp::bn254::utils::gen_address_seed;
     use fastcrypto_zkp::bn254::zk_login::CanonicalSerialize;
     use fastcrypto_zkp::bn254::zk_login::JWK;
@@ -245,7 +243,7 @@ mod tests {
 
         println!("Spoiled modulus...");
 
-        let mut modulus_spoiled = vec![0; 2];
+        let modulus_spoiled = vec![0; 2];
 
         let modulus_cell = pack_data_to_cell(&modulus_spoiled, &mut 0).unwrap();
 
@@ -326,7 +324,6 @@ mod tests {
         println!("proof_and_jwt: {}", proof_and_jwt);
 
         let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
-                let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
 
         let index_mod_4 = "1";
 
@@ -414,7 +411,6 @@ mod tests {
         //.expect_failure(tvm_types::ExceptionCode::FatalError);
         //.expect_success();
 
-        /// 
         println!("Test empty iss_base_64...");
         
         let iss_base_64_spoiled = "";
@@ -600,9 +596,6 @@ mod tests {
             zk_seed_cell.clone(),
         ])
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
-
-        /////
-        /// 
         
         println!("Empty header...");
 
@@ -619,9 +612,6 @@ mod tests {
             zk_seed_cell.clone(),
         ])
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
-
-             /////
-        /// 
         
         println!("Too long wrong header...");
 
@@ -638,10 +628,6 @@ mod tests {
             zk_seed_cell.clone(),
         ])
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
-
-
-        /////
-        /// 
         
         println!("Too long wrong header...");
 
