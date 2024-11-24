@@ -4,6 +4,6 @@ mod test_framework;
 mod test_zk;
 
 #[cfg(test)]
-mod test_zk_negative_cases;
+mod test_zk_bad_proof;
 
 fn main() {}
