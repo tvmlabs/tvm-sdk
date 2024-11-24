@@ -156,7 +156,9 @@ impl TestCase {
 
 pub trait Expects {
     fn expect_stack(self, stack: &Stack) -> TestCase;
+    fn expect_not_stack(self, stack: &Stack) -> TestCase;
     fn expect_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase;
+    fn expect_not_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase;
     fn expect_success(self) -> TestCase;
     fn expect_success_extended(self, message: Option<&str>) -> TestCase;
     fn expect_failure(self, exception_code: ExceptionCode) -> TestCase;
@@ -167,6 +169,38 @@ pub trait Expects {
 impl<T: Into<TestCase>> Expects for T {
     fn expect_stack(self, stack: &Stack) -> TestCase {
         self.expect_stack_extended(stack, None)
+    }
+
+    fn expect_not_stack(self, stack: &Stack) -> TestCase {
+        self.expect_not_stack_extended(stack, None)
+    }
+
+    fn expect_not_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase {
+        let test_case: TestCase = self.into();
+        let executor = test_case.executor(message);
+        match test_case.execution_result {
+            Ok(_) => {
+                if executor.eq_stack(stack) {
+                    if let Some(msg) = message {
+                        log::info!("{}", msg)
+                    }
+                    log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
+                    log::info!(
+                        target: "tvm",
+                        "\n{}\n",
+                        executor.dump_stack("Actual Stack:", false)
+                    );
+                    panic!("Stack is not expected")
+                }
+            }
+            // TODO this is not quite right: execution may fail but still produce a stack
+            Err(ref e) => {
+                log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
+                // print_failed_detail_extended(&test_case, e, message);
+                panic!("Execution error: {:?}", e)
+            }
+        }
+        test_case
     }
 
     fn expect_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase {
