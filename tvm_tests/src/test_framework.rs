@@ -6,6 +6,7 @@ use tvm_assembler::CompileError;
 use tvm_assembler::compile_code;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
+use tvm_types::ExceptionCode;
 use tvm_types::HashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;
@@ -15,6 +16,8 @@ use tvm_vm::executor::IndexProvider;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::types::Exception;
+use tvm_vm::error::TvmError;
 
 pub type Bytecode = SliceData;
 
@@ -156,6 +159,9 @@ pub trait Expects {
     fn expect_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase;
     fn expect_success(self) -> TestCase;
     fn expect_success_extended(self, message: Option<&str>) -> TestCase;
+    fn expect_failure(self, exception_code: ExceptionCode) -> TestCase;
+    fn expect_custom_failure_extended<F : Fn(&Exception) -> bool>(self, op: F, exc_name: &str, message: Option <&str>) -> TestCase;
+    fn expect_failure_extended(self, exception_code: ExceptionCode, message: Option <&str>) -> TestCase; 
 }
 
 impl<T: Into<TestCase>> Expects for T {
@@ -208,6 +214,84 @@ impl<T: Into<TestCase>> Expects for T {
                 Some(msg) => {
                     // print_failed_detail_extended(&test_case, e, message);
                     panic!("{}\nExecution error: {:?}", msg, e);
+                }
+            }
+        }
+        test_case
+    }
+
+    fn expect_failure(self, exception_code: ExceptionCode) -> TestCase {
+        self.expect_failure_extended(exception_code, None)
+    }
+
+    fn expect_failure_extended(
+        self, 
+        exception_code: ExceptionCode, 
+        message: Option <&str>
+    ) -> TestCase {
+       self.expect_custom_failure_extended(
+           |e| e.exception_code() != Some(exception_code),
+           &format!("{}", exception_code),
+           message
+       )
+    }
+
+    fn expect_custom_failure_extended<F : Fn(&Exception) -> bool>(
+        self, 
+        op: F, 
+        exc_name: &str, 
+        message: Option <&str>
+    ) -> TestCase {
+        let test_case: TestCase = self.into();
+        let executor = test_case.executor(message);
+        match test_case.execution_result {
+            Ok(_) => {
+                log::info!(
+                    target: "tvm",
+                    "Expected failure: {}, however execution succeeded.",
+                    exc_name
+                );
+                print_stack(&test_case, executor);
+                match message {
+                    None => panic!(
+                        "Expected failure: {}, however execution succeeded.", 
+                        exc_name
+                    ),
+                    Some(msg) => panic!(
+                        "{}.\nExpected failure: {}, however execution succeeded.", 
+                        msg, exc_name
+                    )
+                }
+            }
+            Err(ref e) => {
+                if let Some(TvmError::TvmExceptionFull(e, msg2)) = e.downcast_ref() {
+                    if op(e) {
+                        match message {
+                            Some(msg) => panic!(
+                                "{} - {}\nNon expected exception: {}, expected: {}", 
+                                msg2, msg, e, exc_name
+                            ),
+                            None => panic!(
+                                "{}\nNon expected exception: {}, expected: {}", 
+                                msg2, e, exc_name
+                            )
+                        }
+                    }
+                } else {
+                    let code = e.downcast_ref::<ExceptionCode>();
+                    match code {
+                        Some(code) => {
+                            let e = Exception::from(*code);
+                            if op(&e) {
+                                panic!("Non expected exception: {}, expected: {}", e, exc_name)
+                            }
+                        }
+                        None => {
+                            if op(&Exception::from(ExceptionCode::FatalError)) {
+                                panic!("Non expected exception: {}, expected: {}", e, exc_name)
+                            }
+                        }
+                    }
                 }
             }
         }
