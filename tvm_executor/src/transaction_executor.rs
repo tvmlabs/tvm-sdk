@@ -644,7 +644,7 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
-        need_to_reserve: u64,
+        need_to_burn: u64,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -659,7 +659,7 @@ pub trait TransactionExecutor {
             is_special,
             available_credit,
             minted_shell,
-            need_to_reserve,
+            need_to_burn,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -783,6 +783,7 @@ pub trait TransactionExecutor {
                         &total_reserved_value,
                         &mut account_deleted,
                         need_to_reserve,
+                        need_to_burn,
                     );
                     match result {
                         Ok(_) => {
@@ -907,7 +908,7 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-        if (acc_remaining_balance.grams < Grams::from(need_to_reserve)) && (need_to_reserve != 0) {
+        if acc_remaining_balance.grams < Grams::from(need_to_reserve) {
             let err_code = RESULT_CODE_NOT_ENOUGH_GRAMS;
             if process_err_code(err_code, 0, &mut phase)? {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
@@ -945,6 +946,7 @@ pub trait TransactionExecutor {
                     &total_reserved_value,
                     &mut account_deleted,
                     need_to_reserve,
+                    need_to_burn,
                 );
                 if need_to_reserve != 0 {
                     free_to_send.grams.add(&Grams::from(need_to_reserve))?;
@@ -1450,6 +1452,7 @@ fn outmsg_action_handler(
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
     need_to_reserve: u64,
+    need_to_burn: u64,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
     let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE;
@@ -1525,7 +1528,7 @@ fn outmsg_action_handler(
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
             // send all remaining account balance
             result_value = acc_balance.clone();
-            if reserved_value.grams == Grams::zero() {
+            if need_to_reserve != 0 {
                 if !result_value.grams.sub(&Grams::from(need_to_reserve)).map_err(|err| {
                     log::error!(target: "executor", "cannot sub grams : {}", err);
                     RESULT_CODE_UNSUPPORTED
@@ -1613,7 +1616,7 @@ fn outmsg_action_handler(
 
     if (mode & SENDMSG_DELETE_IF_EMPTY) != 0
         && (mode & SENDMSG_ALL_BALANCE) != 0
-        && acc_balance.grams == Grams::from(need_to_reserve)
+        && acc_balance.grams == Grams::from(need_to_burn)
         && reserved_value.grams.is_zero()
     {
         *account_deleted = true;
@@ -1674,6 +1677,9 @@ fn reserve_action_handler(
             *need_to_reserve = 0;
         }
     } else {
+        if acc_remaining_balance.grams - val.grams < Grams::from(*need_to_reserve) {
+            return Err(RESULT_CODE_INVALID_BALANCE);
+        }
         if *need_to_reserve != 0 {
             *need_to_reserve = 0;
         }
