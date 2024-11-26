@@ -1529,12 +1529,13 @@ fn outmsg_action_handler(
             // send all remaining account balance
             result_value = acc_balance.clone();
             if need_to_reserve != 0 {
-                if !result_value.grams.sub(&Grams::from(need_to_reserve)).map_err(|err| {
-                    log::error!(target: "executor", "cannot sub grams : {}", err);
-                    RESULT_CODE_UNSUPPORTED
-                })? {
-                    result_value.grams = Grams::zero();
-                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                match result_value.grams.sub(&Grams::from(need_to_burn)) {
+                    Ok(true) => (),
+                    Ok(false) => {
+                        result_value.grams = Grams::zero();
+                        return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                    }
+                    Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
                 }
             }
             int_header.value = result_value.clone();
