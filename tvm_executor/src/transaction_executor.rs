@@ -644,7 +644,7 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
-        need_to_burn: u64,
+        need_to_reserve: u64,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -659,7 +659,7 @@ pub trait TransactionExecutor {
             is_special,
             available_credit,
             minted_shell,
-            need_to_burn,
+            need_to_reserve,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -680,12 +680,12 @@ pub trait TransactionExecutor {
         minted_shell: &mut u128,
         need_to_burn: u64,
     ) -> Result<ActionPhaseResult> {
+        let mut need_to_reserve = need_to_burn.clone();
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
         let mut phase = TrActionPhase::default();
         let mut total_reserved_value = CurrencyCollection::default();
-        let mut is_reserve_burn = false;
         phase.action_list_hash = actions_cell.repr_hash();
         let mut actions = match OutActions::construct_from_cell(actions_cell) {
             Err(err) => {
@@ -782,7 +782,7 @@ pub trait TransactionExecutor {
                         my_addr,
                         &total_reserved_value,
                         &mut account_deleted,
-                        need_to_burn,
+                        need_to_reserve,
                     );
                     match result {
                         Ok(_) => {
@@ -794,15 +794,12 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::ReserveCurrency { mode, mut value } => {
-                    if is_reserve_burn == false {
-                        value.grams.add(&Grams::from(need_to_burn))?;
-                        is_reserve_burn = true;
-                    }
                     match reserve_action_handler(
                         mode,
-                        &value,
+                        &mut value,
                         original_acc_balance,
                         &mut acc_remaining_balance,
+                        &mut need_to_reserve,
                     ) {
                         Ok(reserved_value) => {
                             phase.spec_actions += 1;
@@ -890,17 +887,13 @@ pub trait TransactionExecutor {
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
-                            *minted_shell += value as u128;   
-                            available_credit -= value as i128;                         
+                            *minted_shell += value as u128;
+                            available_credit -= value as i128;
                             phase.spec_actions += 1;
                             0
                         }
-                        Ok(false) => {
-                            RESULT_CODE_OVERFLOW
-                        }
-                        Err(_) => {
-                            RESULT_CODE_UNSUPPORTED
-                        }
+                        Ok(false) => RESULT_CODE_OVERFLOW,
+                        Err(_) => RESULT_CODE_UNSUPPORTED,
                     }
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
@@ -914,7 +907,7 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-        if (acc_remaining_balance.grams < Grams::from(need_to_burn)) && (is_reserve_burn == false) {
+        if (acc_remaining_balance.grams < Grams::from(need_to_reserve)) && (need_to_reserve != 0) {
             let err_code = RESULT_CODE_NOT_ENOUGH_GRAMS;
             if process_err_code(err_code, 0, &mut phase)? {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
@@ -933,9 +926,9 @@ pub trait TransactionExecutor {
                 continue;
             }
             let mut free_to_send = acc_remaining_balance.clone();
-            if acc_remaining_balance.grams > Grams::from(need_to_burn) || is_reserve_burn == true {
-                if is_reserve_burn == false {
-                    free_to_send.grams.sub(&Grams::from(need_to_burn))?;
+            if acc_remaining_balance.grams > Grams::from(need_to_reserve) {
+                if need_to_reserve != 0 {
+                    free_to_send.grams.sub(&Grams::from(need_to_reserve))?;
                 }
                 log::debug!(target: "executor", "\nSend message with all balance:\nInitial balance: {}",
                     balance_to_string(&acc_remaining_balance));
@@ -951,10 +944,10 @@ pub trait TransactionExecutor {
                     my_addr,
                     &total_reserved_value,
                     &mut account_deleted,
-                    need_to_burn,
+                    need_to_reserve,
                 );
-                if is_reserve_burn == false {
-                    free_to_send.grams.add(&Grams::from(need_to_burn))?;
+                if need_to_reserve != 0 {
+                    free_to_send.grams.add(&Grams::from(need_to_reserve))?;
                 }
                 acc_remaining_balance = free_to_send.clone();
                 log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
@@ -1456,7 +1449,7 @@ fn outmsg_action_handler(
     my_addr: &MsgAddressInt,
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
-    need_to_burn: u64,
+    need_to_reserve: u64,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
     let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE;
@@ -1533,12 +1526,12 @@ fn outmsg_action_handler(
             // send all remaining account balance
             result_value = acc_balance.clone();
             if reserved_value.grams == Grams::zero() {
-                if !result_value.grams.sub(&Grams::from(need_to_burn)).map_err(|err| {
+                if !result_value.grams.sub(&Grams::from(need_to_reserve)).map_err(|err| {
                     log::error!(target: "executor", "cannot sub grams : {}", err);
                     RESULT_CODE_UNSUPPORTED
                 })? {
                     result_value.grams = Grams::zero();
-                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());                
+                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
                 }
             }
             int_header.value = result_value.clone();
@@ -1620,7 +1613,7 @@ fn outmsg_action_handler(
 
     if (mode & SENDMSG_DELETE_IF_EMPTY) != 0
         && (mode & SENDMSG_ALL_BALANCE) != 0
-        && acc_balance.grams == Grams::from(need_to_burn)
+        && acc_balance.grams == Grams::from(need_to_reserve)
         && reserved_value.grams.is_zero()
     {
         *account_deleted = true;
@@ -1666,10 +1659,35 @@ fn outmsg_action_handler(
 /// Reduces balance by the amount of the reserved value.
 fn reserve_action_handler(
     mode: u8,
-    val: &CurrencyCollection,
+    val: &mut CurrencyCollection,
     original_acc_balance: &CurrencyCollection,
     acc_remaining_balance: &mut CurrencyCollection,
+    need_to_reserve: &mut u64,
 ) -> std::result::Result<CurrencyCollection, i32> {
+    if mode & RESERVE_ALL_BUT == 0 {
+        if *need_to_reserve != 0 {
+            match val.grams.add(&Grams::from(*need_to_reserve)) {
+                Ok(true) => (),
+                Ok(false) => return Err(RESULT_CODE_UNSUPPORTED),
+                Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
+            }
+            *need_to_reserve = 0;
+        }
+    } else {
+        if *need_to_reserve != 0 {
+            if val.grams < Grams::from(*need_to_reserve) {
+                val.set_grams(0).unwrap();
+                *need_to_reserve = *need_to_reserve - val.grams.as_u64_quiet();
+            } else {
+                match val.grams.sub(&Grams::from(*need_to_reserve)) {
+                    Ok(true) => (),
+                    Ok(false) => return Err(RESULT_CODE_UNSUPPORTED),
+                    Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
+                }
+                *need_to_reserve = 0;
+            }
+        }
+    }
     if mode & !RESERVE_VALID_MODES != 0 {
         return Err(RESULT_CODE_UNKNOWN_OR_INVALID_ACTION);
     }
