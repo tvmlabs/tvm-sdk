@@ -1675,17 +1675,7 @@ fn reserve_action_handler(
         }
     } else {
         if *need_to_reserve != 0 {
-            if val.grams < Grams::from(*need_to_reserve) {
-                val.set_grams(0).unwrap();
-                *need_to_reserve = *need_to_reserve - val.grams.as_u64_quiet();
-            } else {
-                match val.grams.sub(&Grams::from(*need_to_reserve)) {
-                    Ok(true) => (),
-                    Ok(false) => return Err(RESULT_CODE_UNSUPPORTED),
-                    Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
-                }
-                *need_to_reserve = 0;
-            }
+            *need_to_reserve = 0;
         }
     }
     if mode & !RESERVE_VALID_MODES != 0 {
