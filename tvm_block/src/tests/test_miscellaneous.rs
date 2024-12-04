@@ -14,7 +14,6 @@ use std::str::FromStr;
 use tvm_types::AccountId;
 
 use super::*;
-use crate::write_read_and_assert;
 use crate::Block;
 use crate::CurrencyCollection;
 use crate::IntermediateAddress;
@@ -23,6 +22,7 @@ use crate::Message;
 use crate::MsgAddressInt;
 use crate::MsgEnvelope;
 use crate::ShardIdent;
+use crate::write_read_and_assert;
 
 #[test]
 fn test_process_info_key() {

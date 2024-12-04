@@ -11,8 +11,6 @@
 
 use std::cmp::Ordering;
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
@@ -23,10 +21,12 @@ use tvm_types::IBitstring;
 use tvm_types::Leaf;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
 
-use crate::error::BlockError;
 use crate::Deserializable;
 use crate::Serializable;
+use crate::error::BlockError;
 
 /// trait for types used as Augment to calc aug on forks
 pub trait Augmentable: Clone + Default + Serializable + Deserializable {

@@ -16,10 +16,10 @@ use std::fs::read;
 use std::path::Path;
 
 use pretty_assertions::assert_eq;
-use tvm_api::ton::ton_node::rempmessagestatus;
 use tvm_api::IntoBoxed;
-use tvm_types::base64_decode;
+use tvm_api::ton::ton_node::rempmessagestatus;
 use tvm_types::IBitstring;
+use tvm_types::base64_decode;
 
 use super::*;
 
@@ -1280,10 +1280,8 @@ fn test_crafted_key_block_into_json() {
 
 #[test]
 fn test_db_serialize_block_signatures() {
-    let doc = serde_json::to_string_pretty(&serde_json::json!(db_serialize_block_signatures(
-        "_id",
-        &UInt256::from([1; 32]),
-        &[
+    let doc = serde_json::to_string_pretty(&serde_json::json!(
+        db_serialize_block_signatures("_id", &UInt256::from([1; 32]), &[
             CryptoSignaturePair::with_params(
                 UInt256::from([2; 32]),
                 CryptoSignature::from_r_s(&[3; 32], &[4; 32]).unwrap()
@@ -1292,9 +1290,9 @@ fn test_db_serialize_block_signatures() {
                 UInt256::from([5; 32]),
                 CryptoSignature::from_r_s(&[6; 32], &[7; 32]).unwrap()
             )
-        ]
-    )
-    .unwrap()))
+        ])
+        .unwrap()
+    ))
     .unwrap();
 
     println!("{}", doc);
@@ -1367,10 +1365,9 @@ fn test_db_serialize_block_proof() {
 
     let proof = BlockProof::construct_from_cell(cell).unwrap();
 
-    let json = serde_json::to_string_pretty(&serde_json::json!(db_serialize_block_proof(
-        "_id", &proof
-    )
-    .unwrap()))
+    let json = serde_json::to_string_pretty(&serde_json::json!(
+        db_serialize_block_proof("_id", &proof).unwrap()
+    ))
     .unwrap();
 
     assert_json_eq_file(&json, "proof");

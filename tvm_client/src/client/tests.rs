@@ -3,17 +3,17 @@ use std::time::Duration;
 use api_info::ApiModule;
 use serde_json::Value;
 
+use crate::ClientConfig;
 use crate::client::ResultOfGetApiReference;
 use crate::create_context;
 use crate::crypto::default_mnemonic_word_count;
 use crate::destroy_context;
 use crate::json_interface::modules::ClientModule;
 use crate::json_interface::runtime::Runtime;
+use crate::net::ParamsOfSubscribeCollection;
 use crate::net::subscribe_collection;
 use crate::net::unsubscribe;
-use crate::net::ParamsOfSubscribeCollection;
 use crate::tests::TestClient;
-use crate::ClientConfig;
 
 #[test]
 fn test_config_fields() {

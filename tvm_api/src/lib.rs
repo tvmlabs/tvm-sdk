@@ -24,11 +24,11 @@ use std::sync::Arc;
 use thiserror::Error;
 use tvm_block::BlockIdExt;
 use tvm_block::ShardIdent;
-use tvm_types::fail;
 use tvm_types::Ed25519KeyOption;
 use tvm_types::KeyOption;
 use tvm_types::Result;
 use tvm_types::UInt256;
+use tvm_types::fail;
 
 use crate::ton::ton_node::RempMessageLevel;
 use crate::ton::ton_node::RempMessageStatus;
@@ -570,11 +570,7 @@ pub fn tag_from_boxed_type<T: Default + BoxedSerialize>() -> u32 {
 
 /// Get TL tag from data bytes
 pub fn tag_from_data(data: &[u8]) -> u32 {
-    if data.len() < 4 {
-        0
-    } else {
-        u32::from_le_bytes([data[0], data[1], data[2], data[3]])
-    }
+    if data.len() < 4 { 0 } else { u32::from_le_bytes([data[0], data[1], data[2], data[3]]) }
 }
 
 impl TryFrom<&Arc<dyn KeyOption>> for ton::PublicKey {

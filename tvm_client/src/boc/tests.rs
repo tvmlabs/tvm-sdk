@@ -17,11 +17,11 @@ use serde_json::Value;
 use tvm_block::MsgAddrStd;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 
 use super::*;
 use crate::abi::CallSet;
@@ -36,8 +36,8 @@ use crate::boc::tvc::ParamsOfDecodeTvc;
 use crate::boc::tvc::ResultOfDecodeTvc;
 use crate::crypto::KeyPair;
 use crate::json_interface::modules::BocModule;
-use crate::tests::TestClient;
 use crate::tests::EVENTS_OLD;
+use crate::tests::TestClient;
 
 #[test]
 fn test_encode_boc() {
@@ -320,10 +320,9 @@ fn get_boc_depth() {
     let client = TestClient::new();
 
     let result: ResultOfGetBocDepth = client
-        .request(
-            "boc.get_boc_depth",
-            ParamsOfGetBocDepth { boc: base64_encode(include_bytes!("test_data/account.boc")) },
-        )
+        .request("boc.get_boc_depth", ParamsOfGetBocDepth {
+            boc: base64_encode(include_bytes!("test_data/account.boc")),
+        })
         .unwrap();
 
     assert_eq!(result.depth, 24);
@@ -385,10 +384,9 @@ fn parse_account() {
     let client = TestClient::new();
 
     let result: ResultOfParse = client
-        .request(
-            "boc.parse_account",
-            ParamsOfParse { boc: base64_encode(include_bytes!("test_data/account.boc")) },
-        )
+        .request("boc.parse_account", ParamsOfParse {
+            boc: base64_encode(include_bytes!("test_data/account.boc")),
+        })
         .unwrap();
 
     assert_eq!(
@@ -483,14 +481,11 @@ fn parse_shardstate() {
     let client = TestClient::new();
 
     let result: ResultOfParse = client
-        .request(
-            "boc.parse_shardstate",
-            ParamsOfParseShardstate {
-                id: String::from("zerostate:-1"),
-                workchain_id: -1,
-                boc: base64_encode(include_bytes!("test_data/zerostate.boc")),
-            },
-        )
+        .request("boc.parse_shardstate", ParamsOfParseShardstate {
+            id: String::from("zerostate:-1"),
+            workchain_id: -1,
+            boc: base64_encode(include_bytes!("test_data/zerostate.boc")),
+        })
         .unwrap();
 
     assert_eq!(result.parsed["id"], "zerostate:-1");
@@ -504,23 +499,17 @@ fn get_blockchain_config() {
     let client = TestClient::new();
 
     let result: ResultOfGetBlockchainConfig = client
-        .request(
-            "boc.get_blockchain_config",
-            ParamsOfGetBlockchainConfig {
-                block_boc: base64_encode(include_bytes!("test_data/block.boc")),
-            },
-        )
+        .request("boc.get_blockchain_config", ParamsOfGetBlockchainConfig {
+            block_boc: base64_encode(include_bytes!("test_data/block.boc")),
+        })
         .unwrap();
 
     assert_eq!(result.config_boc, base64_encode(include_bytes!("test_data/block_config.boc")));
 
     let result: ResultOfGetBlockchainConfig = client
-        .request(
-            "boc.get_blockchain_config",
-            ParamsOfGetBlockchainConfig {
-                block_boc: base64_encode(include_bytes!("test_data/zerostate.boc")),
-            },
-        )
+        .request("boc.get_blockchain_config", ParamsOfGetBlockchainConfig {
+            block_boc: base64_encode(include_bytes!("test_data/zerostate.boc")),
+        })
         .unwrap();
 
     assert_eq!(result.config_boc, base64_encode(include_bytes!("test_data/zerostate_config.boc")));
@@ -539,22 +528,19 @@ fn check_salt(
 ) {
     let code = read_salted_boc(name);
     let result: ResultOfGetCodeSalt = client
-        .request(
-            "boc.get_code_salt",
-            ParamsOfGetCodeSalt { code: code.clone(), ..Default::default() },
-        )
+        .request("boc.get_code_salt", ParamsOfGetCodeSalt {
+            code: code.clone(),
+            ..Default::default()
+        })
         .unwrap();
     assert_eq!(result.salt.as_ref().map(AsRef::as_ref), read_salt);
 
     let result: ResultOfSetCodeSalt = client
-        .request(
-            "boc.set_code_salt",
-            ParamsOfSetCodeSalt {
-                code,
-                salt: set_salt.to_owned(),
-                boc_cache: Some(BocCacheType::Unpinned),
-            },
-        )
+        .request("boc.set_code_salt", ParamsOfSetCodeSalt {
+            code,
+            salt: set_salt.to_owned(),
+            boc_cache: Some(BocCacheType::Unpinned),
+        })
         .unwrap();
 
     if let Some(name_with_salt) = name_with_salt {
@@ -565,10 +551,10 @@ fn check_salt(
     }
 
     let result: ResultOfGetCodeSalt = client
-        .request(
-            "boc.get_code_salt",
-            ParamsOfGetCodeSalt { code: result.code, ..Default::default() },
-        )
+        .request("boc.get_code_salt", ParamsOfGetCodeSalt {
+            code: result.code,
+            ..Default::default()
+        })
         .unwrap();
     assert_eq!(result.salt.unwrap(), set_salt);
 }
@@ -650,36 +636,33 @@ fn test_code_salt() {
 
     let code = read_salted_boc("old_sol_sel.boc");
     let result: ResultOfGetCodeSalt = client
-        .request(
-            "boc.get_code_salt",
-            ParamsOfGetCodeSalt { code: code.clone(), ..Default::default() },
-        )
+        .request("boc.get_code_salt", ParamsOfGetCodeSalt {
+            code: code.clone(),
+            ..Default::default()
+        })
         .unwrap();
     assert_eq!(result.salt, None);
 }
 
 fn check_encode_state_init(client: &TestClient, tvc: String, decoded: ResultOfDecodeStateInit) {
     let result: ResultOfDecodeStateInit = client
-        .request(
-            "boc.decode_state_init",
-            ParamsOfDecodeStateInit { state_init: tvc.clone(), boc_cache: None },
-        )
+        .request("boc.decode_state_init", ParamsOfDecodeStateInit {
+            state_init: tvc.clone(),
+            boc_cache: None,
+        })
         .unwrap();
     assert_eq!(result, decoded);
 
     let result: ResultOfEncodeStateInit = client
-        .request(
-            "boc.encode_state_init",
-            ParamsOfEncodeStateInit {
-                code: result.code,
-                data: result.data,
-                library: result.library,
-                split_depth: result.split_depth,
-                tick: result.tick,
-                tock: result.tock,
-                boc_cache: None,
-            },
-        )
+        .request("boc.encode_state_init", ParamsOfEncodeStateInit {
+            code: result.code,
+            data: result.data,
+            library: result.library,
+            split_depth: result.split_depth,
+            tick: result.tick,
+            tock: result.tock,
+            boc_cache: None,
+        })
         .unwrap();
     assert_eq!(result.state_init, tvc);
 }
@@ -748,10 +731,10 @@ fn test_get_compiler_version() {
     let state_init = TestClient::tvc("t24_initdata", Some(2)).unwrap();
 
     let code = client
-        .request::<_, ResultOfDecodeStateInit>(
-            "boc.decode_state_init",
-            ParamsOfDecodeStateInit { state_init, boc_cache: None },
-        )
+        .request::<_, ResultOfDecodeStateInit>("boc.decode_state_init", ParamsOfDecodeStateInit {
+            state_init,
+            boc_cache: None,
+        })
         .unwrap()
         .code
         .unwrap();
@@ -800,10 +783,9 @@ fn encode_external_in_message() {
     );
 
     let abi_parsed = client
-        .request::<ParamsOfParse, ResultOfParse>(
-            "boc.parse_message",
-            ParamsOfParse { boc: abi_encoded.message.clone() },
-        )
+        .request::<ParamsOfParse, ResultOfParse>("boc.parse_message", ParamsOfParse {
+            boc: abi_encoded.message.clone(),
+        })
         .unwrap()
         .parsed;
     let init = client
@@ -819,15 +801,12 @@ fn encode_external_in_message() {
         .unwrap()
         .state_init;
     let boc_encoded: ResultOfEncodeExternalInMessage = client
-        .request(
-            "boc.encode_external_in_message",
-            ParamsOfEncodeExternalInMessage {
-                dst: abi_encoded.address.clone(),
-                body: abi_parsed["body"].as_str().map(|x| x.to_string()),
-                init: Some(init),
-                ..Default::default()
-            },
-        )
+        .request("boc.encode_external_in_message", ParamsOfEncodeExternalInMessage {
+            dst: abi_encoded.address.clone(),
+            body: abi_parsed["body"].as_str().map(|x| x.to_string()),
+            init: Some(init),
+            ..Default::default()
+        })
         .unwrap();
 
     assert_eq!(boc_encoded.message, abi_encoded.message);

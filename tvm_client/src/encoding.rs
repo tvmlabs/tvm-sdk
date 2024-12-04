@@ -106,11 +106,7 @@ fn encode_base64(
 
         let result = tvm_types::base64_encode(&vec);
 
-        if as_url {
-            Ok(result.replace('/', "_").replace('+', "-"))
-        } else {
-            Ok(result)
-        }
+        if as_url { Ok(result.replace('/', "_").replace('+', "-")) } else { Ok(result) }
     } else {
         Err(client::Error::invalid_address("Non-std address", &address.to_string()))
     }

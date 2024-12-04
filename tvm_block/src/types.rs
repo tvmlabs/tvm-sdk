@@ -19,12 +19,10 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use num::bigint::Sign;
 use num::BigInt;
 use num::One;
 use num::Zero;
-use tvm_types::error;
-use tvm_types::fail;
+use num::bigint::Sign;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -34,12 +32,14 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::Deserializable;
+use crate::Serializable;
 use crate::define_HashmapE;
 use crate::error::BlockError;
 use crate::hashmapaug::Augmentable;
-use crate::Deserializable;
-use crate::Serializable;
 
 #[cfg(test)]
 #[path = "tests/test_types.rs"]
@@ -589,19 +589,11 @@ impl Grams {
     }
 
     pub const fn as_u64(&self) -> Option<u64> {
-        if self.0 <= u64::MAX as u128 {
-            Some(self.0 as u64)
-        } else {
-            None
-        }
+        if self.0 <= u64::MAX as u128 { Some(self.0 as u64) } else { None }
     }
 
     pub const fn as_u64_quiet(&self) -> u64 {
-        if self.0 <= u64::MAX as u128 {
-            self.0 as u64
-        } else {
-            u64::MAX
-        }
+        if self.0 <= u64::MAX as u128 { self.0 as u64 } else { u64::MAX }
     }
 }
 
@@ -911,7 +903,7 @@ impl AddSub for CurrencyCollection {
                 }
             }
             Ok(false) // coin not found in mine or amount is smaller - cannot
-                      // subtract
+            // subtract
         })
     }
 

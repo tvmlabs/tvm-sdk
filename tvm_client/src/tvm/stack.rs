@@ -15,9 +15,9 @@ use std::slice::Iter;
 
 use serde_json::Value;
 use tvm_types::BuilderData;
+use tvm_vm::stack::StackItem;
 use tvm_vm::stack::continuation::ContinuationData;
 use tvm_vm::stack::integer::IntegerData;
-use tvm_vm::stack::StackItem;
 
 use crate::boc::internal::deserialize_cell_from_base64;
 use crate::boc::internal::serialize_cell_to_base64;

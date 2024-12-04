@@ -16,8 +16,8 @@ use std::io::Read;
 use std::io::Write;
 use std::io::{self};
 use std::process::exit;
-use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 
 use clap::ArgMatches;
 use serde::Deserialize;
@@ -32,24 +32,24 @@ use tvm_block::Message;
 use tvm_block::Serializable;
 use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
-use tvm_client::net::aggregate_collection;
-use tvm_client::net::query_collection;
 use tvm_client::net::AggregationFn;
 use tvm_client::net::FieldAggregation;
 use tvm_client::net::OrderBy;
 use tvm_client::net::ParamsOfAggregateCollection;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::SortDirection;
+use tvm_client::net::aggregate_collection;
+use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
 use tvm_executor::ExecuteParams;
 use tvm_executor::OrdinaryTransactionExecutor;
 use tvm_executor::TickTockTransactionExecutor;
 use tvm_executor::TransactionExecutor;
-use tvm_types::base64_encode;
-use tvm_types::write_boc;
 use tvm_types::BuilderData;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::base64_encode;
+use tvm_types::write_boc;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::EngineTraceInfo;
 
@@ -115,18 +115,15 @@ pub async fn fetch(
         })
     };
 
-    let tr_count = aggregate_collection(
-        context.clone(),
-        ParamsOfAggregateCollection {
-            collection: "transactions".to_owned(),
-            filter: Some(filter),
-            fields: Some(vec![FieldAggregation {
-                field: "fn".to_owned(),
-                aggregation_fn: AggregationFn::COUNT,
-            }]),
-            ..Default::default()
-        },
-    )
+    let tr_count = aggregate_collection(context.clone(), ParamsOfAggregateCollection {
+        collection: "transactions".to_owned(),
+        filter: Some(filter),
+        fields: Some(vec![FieldAggregation {
+            field: "fn".to_owned(),
+            aggregation_fn: AggregationFn::COUNT,
+        }]),
+        ..Default::default()
+    })
     .await
     .map_err(|e| format!("Failed to fetch txns count: {}", e))?;
     let tr_count = u64::from_str_radix(
@@ -145,17 +142,14 @@ pub async fn fetch(
     let file = File::create(filename).map_err(|e| format!("Failed to create file: {}", e))?;
     let mut writer = std::io::LineWriter::new(file);
 
-    let zerostates = query_collection(
-        context.clone(),
-        ParamsOfQueryCollection {
-            collection: "zerostates".to_owned(),
-            filter: None,
-            result: "accounts { id boc }".to_owned(),
-            limit: Some(1),
-            order: None,
-            ..Default::default()
-        },
-    )
+    let zerostates = query_collection(context.clone(), ParamsOfQueryCollection {
+        collection: "zerostates".to_owned(),
+        filter: None,
+        result: "accounts { id boc }".to_owned(),
+        limit: Some(1),
+        order: None,
+        ..Default::default()
+    })
     .await;
 
     let mut zerostate_found = false;
@@ -216,20 +210,14 @@ pub async fn fetch(
                     "lt": { "gt": lt },
                 })
             };
-            let query = query_collection(
-                context.clone(),
-                ParamsOfQueryCollection {
-                    collection: "transactions".to_owned(),
-                    filter: Some(filter),
-                    result: "id lt block { start_lt } boc".to_owned(),
-                    limit: None,
-                    order: Some(vec![OrderBy {
-                        path: "lt".to_owned(),
-                        direction: SortDirection::ASC,
-                    }]),
-                    ..Default::default()
-                },
-            );
+            let query = query_collection(context.clone(), ParamsOfQueryCollection {
+                collection: "transactions".to_owned(),
+                filter: Some(filter),
+                result: "id lt block { start_lt } boc".to_owned(),
+                limit: None,
+                order: Some(vec![OrderBy { path: "lt".to_owned(), direction: SortDirection::ASC }]),
+                ..Default::default()
+            });
             query.await
         };
 
@@ -320,11 +308,7 @@ impl State {
 fn choose<'a>(st1: &'a mut State, st2: &'a mut State) -> &'a mut State {
     let lt1 = st1.tr.as_ref().map_or(u64::MAX, |tr| tr.tr.logical_time());
     let lt2 = st2.tr.as_ref().map_or(u64::MAX, |tr| tr.tr.logical_time());
-    if lt1 <= lt2 {
-        st1
-    } else {
-        st2
-    }
+    if lt1 <= lt2 { st1 } else { st2 }
 }
 
 pub async fn replay(
@@ -547,21 +531,18 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     let context = create_client(config)
         .map_err(|e| failure::err_msg(format!("Failed to create ctx: {}", e)))?;
 
-    let block = query_collection(
-        context.clone(),
-        ParamsOfQueryCollection {
-            collection: "blocks".to_owned(),
-            filter: Some(serde_json::json!({
-                "id": {
-                    "eq": block_id
-                },
-            })),
-            result: "workchain_id end_lt boc".to_owned(),
-            limit: None,
-            order: None,
-            ..Default::default()
-        },
-    )
+    let block = query_collection(context.clone(), ParamsOfQueryCollection {
+        collection: "blocks".to_owned(),
+        filter: Some(serde_json::json!({
+            "id": {
+                "eq": block_id
+            },
+        })),
+        result: "workchain_id end_lt boc".to_owned(),
+        limit: None,
+        order: None,
+        ..Default::default()
+    })
     .await?;
 
     if block.result.len() != 1 {

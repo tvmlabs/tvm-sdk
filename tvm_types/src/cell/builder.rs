@@ -14,15 +14,15 @@ use std::fmt;
 use smallvec::SmallVec;
 pub(super) type SmallData = SmallVec<[u8; 128]>;
 
-use crate::cell::append_tag;
-use crate::cell::find_tag;
 use crate::cell::Cell;
 use crate::cell::CellType;
 use crate::cell::DataCell;
 use crate::cell::LevelMask;
-use crate::cell::SliceData;
 use crate::cell::MAX_DATA_BITS;
 use crate::cell::MAX_SAFE_DEPTH;
+use crate::cell::SliceData;
+use crate::cell::append_tag;
+use crate::cell::find_tag;
 use crate::error;
 use crate::fail;
 use crate::types::ExceptionCode;

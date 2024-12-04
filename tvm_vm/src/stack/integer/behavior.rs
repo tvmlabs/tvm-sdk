@@ -29,23 +29,17 @@ pub struct Quiet {}
 
 #[macro_export]
 macro_rules! on_integer_overflow {
-    ($T:ident) => {{
-        $T::on_integer_overflow(file!(), line!())
-    }};
+    ($T:ident) => {{ $T::on_integer_overflow(file!(), line!()) }};
 }
 
 #[macro_export]
 macro_rules! on_nan_parameter {
-    ($T:ident) => {{
-        $T::on_nan_parameter(file!(), line!())
-    }};
+    ($T:ident) => {{ $T::on_nan_parameter(file!(), line!()) }};
 }
 
 #[macro_export]
 macro_rules! on_range_check_error {
-    ($T:ident) => {{
-        $T::on_range_check_error(file!(), line!())
-    }};
+    ($T:ident) => {{ $T::on_range_check_error(file!(), line!()) }};
 }
 
 impl OperationBehavior for Signaling {

@@ -17,8 +17,8 @@ use blst::*;
 use rand::Rng;
 use rand::RngCore;
 
-use crate::fail;
 use crate::Result;
+use crate::fail;
 
 // Constants
 

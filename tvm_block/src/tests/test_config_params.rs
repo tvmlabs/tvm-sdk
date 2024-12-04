@@ -16,8 +16,8 @@ use rand::Rng;
 use tvm_types::read_single_root_boc;
 
 use super::*;
-use crate::write_read_and_assert;
 use crate::VarUInteger32;
+use crate::write_read_and_assert;
 
 fn get_config_param0() -> ConfigParam0 {
     let mut c = ConfigParam0::default();
@@ -487,11 +487,12 @@ fn test_config_params() {
 
     write_read_and_assert(cp.clone());
 
-    assert!(cp
-        .prev_validator_set()
-        .expect("it should not fail, but gives empty list")
-        .list()
-        .is_empty());
+    assert!(
+        cp.prev_validator_set()
+            .expect("it should not fail, but gives empty list")
+            .list()
+            .is_empty()
+    );
     assert!(!cp.prev_validator_set_present().unwrap());
 
     let mut cp32 = ConfigParam32::default();
@@ -513,11 +514,12 @@ fn test_config_params() {
 
     write_read_and_assert(cp.clone());
 
-    assert!(cp
-        .next_validator_set()
-        .expect("it should not fail, but gives empty list")
-        .list()
-        .is_empty());
+    assert!(
+        cp.next_validator_set()
+            .expect("it should not fail, but gives empty list")
+            .list()
+            .is_empty()
+    );
     assert!(!cp.next_validator_set_present().unwrap());
 
     let mut cp36 = ConfigParam36::default();

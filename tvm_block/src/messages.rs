@@ -12,21 +12,26 @@
 use std::fmt;
 use std::str::FromStr;
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
+use tvm_types::MAX_DATA_BITS;
+use tvm_types::MAX_REFERENCES_COUNT;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::UsageTree;
-use tvm_types::MAX_DATA_BITS;
-use tvm_types::MAX_REFERENCES_COUNT;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::Deserializable;
+use crate::GetRepresentationHash;
+use crate::MaybeDeserialize;
+use crate::MaybeSerialize;
+use crate::Serializable;
 use crate::blocks::Block;
 use crate::define_HashmapE;
 use crate::error::BlockError;
@@ -39,11 +44,6 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
-use crate::Deserializable;
-use crate::GetRepresentationHash;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
-use crate::Serializable;
 
 #[cfg(test)]
 #[path = "tests/test_messages.rs"]

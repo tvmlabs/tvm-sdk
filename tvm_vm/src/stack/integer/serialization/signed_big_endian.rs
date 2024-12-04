@@ -11,16 +11,16 @@
 
 use num::bigint::ToBigInt;
 use num_traits::Signed;
-use tvm_types::error;
 use tvm_types::BuilderData;
 use tvm_types::ExceptionCode;
 use tvm_types::Result;
+use tvm_types::error;
 
 use crate::error::TvmError;
+use crate::stack::integer::IntegerData;
+use crate::stack::integer::serialization::Encoding;
 use crate::stack::integer::serialization::common::calc_excess_bits;
 use crate::stack::integer::serialization::common::extend_buffer_be;
-use crate::stack::integer::serialization::Encoding;
-use crate::stack::integer::IntegerData;
 use crate::stack::serialization::Deserializer;
 use crate::stack::serialization::Serializer;
 use crate::types::Exception;

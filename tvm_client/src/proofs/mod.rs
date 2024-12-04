@@ -25,6 +25,7 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 
+use crate::ClientContext;
 use crate::boc::internal::deserialize_object_from_base64;
 use crate::boc::internal::deserialize_object_from_boc_bin;
 use crate::encoding::base64_decode;
@@ -34,7 +35,6 @@ use crate::proofs::errors::Error;
 use crate::proofs::validators::calc_subset_for_workchain;
 use crate::proofs::validators::check_crypto_signatures;
 use crate::utils::json::JsonHelper;
-use crate::ClientContext;
 
 mod engine;
 pub mod errors;

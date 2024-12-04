@@ -23,15 +23,15 @@ use zeroize::ZeroizeOnDrop;
 
 use crate::client::ClientContext;
 use crate::crypto;
+use crate::crypto::MnemonicDictionary;
 use crate::crypto::default_hdkey_compliant;
+use crate::crypto::internal::Key256;
+use crate::crypto::internal::Key264;
 use crate::crypto::internal::key256;
 use crate::crypto::internal::key512;
 use crate::crypto::internal::sha256;
-use crate::crypto::internal::Key256;
-use crate::crypto::internal::Key264;
 use crate::crypto::mnemonic::check_phrase;
 use crate::crypto::mnemonic::mnemonics;
-use crate::crypto::MnemonicDictionary;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 

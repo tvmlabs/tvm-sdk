@@ -7,21 +7,21 @@ use std::time::SystemTime;
 use assert_cmd::Command;
 use common::giver_v3;
 use predicates::prelude::*;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 
 mod common;
-use common::generate_key_and_address;
-use common::generate_phrase_and_key;
-use common::giver_v2;
-use common::grep_address;
-use common::set_config;
 use common::BIN_NAME;
 use common::GIVER_ABI;
 use common::GIVER_V2_ABI;
 use common::GIVER_V2_ADDR;
 use common::GIVER_V2_KEY;
 use common::NETWORK;
+use common::generate_key_and_address;
+use common::generate_phrase_and_key;
+use common::giver_v2;
+use common::grep_address;
+use common::set_config;
 
 use crate::common::grep_message_id;
 

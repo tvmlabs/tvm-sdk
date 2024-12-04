@@ -8,16 +8,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-use tvm_client::abi::encode_message;
 use tvm_client::abi::Abi;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::DeploySet;
 use tvm_client::abi::FunctionHeader;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
+use tvm_client::abi::encode_message;
 use tvm_client::crypto::KeyPair;
 use tvm_types::base64_encode;
 
+use crate::Config;
 use crate::call::emulate_locally;
 use crate::call::process_message;
 use crate::call::send_message_and_wait;
@@ -27,9 +28,8 @@ use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::load_abi;
 use crate::helpers::now_ms;
-use crate::message::display_generated_message;
 use crate::message::EncodedMessage;
-use crate::Config;
+use crate::message::display_generated_message;
 
 pub async fn deploy_contract(
     full_config: &mut FullConfig,
