@@ -15,18 +15,18 @@ use std::time::Duration;
 use std::time::Instant;
 
 use tvm_block::GlobalCapabilities;
+use tvm_types::error;
 use tvm_types::ExceptionCode;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::error;
 
-use crate::error::TvmError;
 use crate::error::tvm_exception_code;
-use crate::executor::Mask;
-use crate::executor::engine::Engine;
+use crate::error::TvmError;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::gas::gas_state::Gas;
 use crate::executor::types::Instruction;
+use crate::executor::Mask;
 use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
@@ -249,7 +249,11 @@ fn execute_patch_with_options(name: &'static str, engine: &mut Engine, how: u8) 
         })()
     };
 
-    if how.bit(IGNORE_ERROR) { ignore_error(engine, result) } else { result }
+    if how.bit(IGNORE_ERROR) {
+        ignore_error(engine, result)
+    } else {
+        result
+    }
 }
 
 /// ZIP (s – c), zip string

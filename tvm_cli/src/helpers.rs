@@ -16,16 +16,14 @@ use std::time::Duration;
 use std::time::SystemTime;
 
 use clap::ArgMatches;
-use serde_json::Value;
 use serde_json::json;
+use serde_json::Value;
 use tvm_block::Account;
 use tvm_block::CurrencyCollection;
 use tvm_block::Deserializable;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
-use tvm_client::ClientConfig;
-use tvm_client::ClientContext;
 use tvm_client::abi::Abi;
 use tvm_client::abi::AbiConfig;
 use tvm_client::abi::AbiContract;
@@ -38,23 +36,25 @@ use tvm_client::crypto::CryptoConfig;
 use tvm_client::crypto::KeyPair;
 use tvm_client::crypto::MnemonicDictionary;
 use tvm_client::error::ClientError;
+use tvm_client::net::query_collection;
 use tvm_client::net::NetworkConfig;
 use tvm_client::net::OrderBy;
 use tvm_client::net::ParamsOfQueryCollection;
-use tvm_client::net::query_collection;
+use tvm_client::ClientConfig;
+use tvm_client::ClientContext;
 use tvm_executor::BlockchainConfig;
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
 use url::Url;
 
-use crate::FullConfig;
 use crate::call::parse_params;
 use crate::config::Config;
 use crate::config::LOCALNET;
 use crate::debug::debug_level_from_env;
-use crate::replay::CONFIG_ADDR;
 use crate::replay::construct_blockchain_config;
+use crate::replay::CONFIG_ADDR;
 use crate::resolve_net_name;
+use crate::FullConfig;
 
 pub const HD_PATH: &str = "m/44'/396'/0'/0/0";
 pub const WORD_COUNT: u8 = 12;
@@ -224,14 +224,17 @@ pub async fn query_raw(
         .transpose()
         .map_err(|e| format!("Failed to parse order field: {}", e))?;
 
-    let query = tvm_client::net::query_collection(context.clone(), ParamsOfQueryCollection {
-        collection: collection.to_owned(),
-        filter,
-        limit,
-        order,
-        result: result.to_owned(),
-        ..Default::default()
-    })
+    let query = tvm_client::net::query_collection(
+        context.clone(),
+        ParamsOfQueryCollection {
+            collection: collection.to_owned(),
+            filter,
+            limit,
+            order,
+            result: result.to_owned(),
+            ..Default::default()
+        },
+    )
     .await
     .map_err(|e| format!("Failed to execute query: {}", e))?;
 
@@ -247,14 +250,17 @@ pub async fn query_with_limit(
     order: Option<Vec<OrderBy>>,
     limit: Option<u32>,
 ) -> Result<Vec<Value>, ClientError> {
-    query_collection(ton, ParamsOfQueryCollection {
-        collection: collection.to_owned(),
-        filter: Some(filter),
-        result: result.to_owned(),
-        order,
-        limit,
-        ..Default::default()
-    })
+    query_collection(
+        ton,
+        ParamsOfQueryCollection {
+            collection: collection.to_owned(),
+            filter: Some(filter),
+            result: result.to_owned(),
+            order,
+            limit,
+            ..Default::default()
+        },
+    )
     .await
     .map(|r| r.result)
 }
@@ -313,12 +319,10 @@ pub async fn decode_msg_body(
     config: &Config,
 ) -> Result<DecodedMessageBody, String> {
     let abi = load_abi(abi_path, config).await?;
-    tvm_client::abi::decode_message_body(ton, ParamsOfDecodeMessageBody {
-        abi,
-        body: body.to_owned(),
-        is_internal,
-        ..Default::default()
-    })
+    tvm_client::abi::decode_message_body(
+        ton,
+        ParamsOfDecodeMessageBody { abi, body: body.to_owned(), is_internal, ..Default::default() },
+    )
     .map_err(|e| format!("failed to decode body: {}", e))
 }
 
@@ -396,16 +400,19 @@ pub async fn calc_acc_address(
             ..Default::default()
         }
     };
-    let result = tvm_client::abi::encode_message(ton.clone(), ParamsOfEncodeMessage {
-        abi,
-        deploy_set: Some(dset),
-        signer: if pubkey.is_some() {
-            Signer::External { public_key: pubkey.unwrap() }
-        } else {
-            Signer::None
+    let result = tvm_client::abi::encode_message(
+        ton.clone(),
+        ParamsOfEncodeMessage {
+            abi,
+            deploy_set: Some(dset),
+            signer: if pubkey.is_some() {
+                Signer::External { public_key: pubkey.unwrap() }
+            } else {
+                Signer::None
+            },
+            ..Default::default()
         },
-        ..Default::default()
-    })
+    )
     .await
     .map_err(|e| format!("cannot generate address: {}", e))?;
     Ok(result.address)
@@ -449,12 +456,15 @@ pub async fn print_message(
     if body.is_some() {
         let body = body.unwrap();
         let def_config = Config::default();
-        let result = tvm_client::abi::decode_message_body(ton.clone(), ParamsOfDecodeMessageBody {
-            abi: load_abi(abi, &def_config).await?,
-            body: body.to_owned(),
-            is_internal,
-            ..Default::default()
-        });
+        let result = tvm_client::abi::decode_message_body(
+            ton.clone(),
+            ParamsOfDecodeMessageBody {
+                abi: load_abi(abi, &def_config).await?,
+                body: body.to_owned(),
+                is_internal,
+                ..Default::default()
+            },
+        );
         let (name, args) = if result.is_err() {
             ("unknown".to_owned(), "{}".to_owned())
         } else {

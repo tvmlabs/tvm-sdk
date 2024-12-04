@@ -18,17 +18,17 @@ use serde_json::Value;
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::ChainIterator;
-use crate::net::ParamsOfCreateBlockIterator;
-use crate::net::RegisteredIterator;
-use crate::net::iterators::ResultOfIteratorNext;
-use crate::net::iterators::block::BLOCK_TRANSACTIONS_FIELDS;
 use crate::net::iterators::block::BlockFields;
+use crate::net::iterators::block::BLOCK_TRANSACTIONS_FIELDS;
 use crate::net::iterators::block_iterator::BlockIterator;
 use crate::net::iterators::query_by_ids;
 use crate::net::iterators::register_iterator;
-use crate::net::iterators::transaction::TRANSACTION_FIELDS;
 use crate::net::iterators::transaction::TransactionFields;
+use crate::net::iterators::transaction::TRANSACTION_FIELDS;
+use crate::net::iterators::ResultOfIteratorNext;
+use crate::net::ChainIterator;
+use crate::net::ParamsOfCreateBlockIterator;
+use crate::net::RegisteredIterator;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct ResumeState {
@@ -53,12 +53,15 @@ impl TransactionIterator {
         context: &Arc<ClientContext>,
         params: ParamsOfCreateTransactionIterator,
     ) -> ClientResult<Self> {
-        let blocks = BlockIterator::new(context, ParamsOfCreateBlockIterator {
-            start_time: params.start_time,
-            end_time: params.end_time,
-            result: Some(BLOCK_TRANSACTIONS_FIELDS.to_string()),
-            shard_filter: params.shard_filter,
-        })
+        let blocks = BlockIterator::new(
+            context,
+            ParamsOfCreateBlockIterator {
+                start_time: params.start_time,
+                end_time: params.end_time,
+                result: Some(BLOCK_TRANSACTIONS_FIELDS.to_string()),
+                shard_filter: params.shard_filter,
+            },
+        )
         .await?;
         Ok(Self {
             blocks,

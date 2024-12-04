@@ -9,34 +9,34 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use num::BigInt;
 use num::bigint::Sign;
+use num::BigInt;
+use tvm_block::Deserializable;
+use tvm_block::GlobalCapabilities;
+use tvm_block::MsgAddressInt;
 use tvm_block::ACTION_CHANGE_LIB;
 use tvm_block::ACTION_COPYLEFT;
 use tvm_block::ACTION_RESERVE;
 use tvm_block::ACTION_SEND_MSG;
 use tvm_block::ACTION_SET_CODE;
-use tvm_block::Deserializable;
-use tvm_block::GlobalCapabilities;
-use tvm_block::MsgAddressInt;
+use tvm_types::error;
+use tvm_types::types::ExceptionCode;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::GasConsumer;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::error;
-use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
-use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::serialize_currency_collection;
 use crate::executor::types::Instruction;
-use crate::stack::StackItem;
-use crate::stack::integer::IntegerData;
 use crate::stack::integer::behavior::OperationBehavior;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
+use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 

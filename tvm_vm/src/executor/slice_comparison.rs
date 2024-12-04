@@ -11,11 +11,11 @@
 
 use tvm_types::SliceData;
 
-use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
-use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 use crate::types::Status;
 
 fn unary<F>(engine: &mut Engine, name: &'static str, operation: F) -> Status
@@ -90,7 +90,11 @@ pub(super) fn execute_sdlexcmp(engine: &mut Engine) -> Status {
         int!(if r_s0.is_none() && r_s1.is_none() {
             0
         } else if r_s0.is_some() && r_s1.is_some() {
-            if r_s1.unwrap().get_next_bit().unwrap() { 1 } else { -1 }
+            if r_s1.unwrap().get_next_bit().unwrap() {
+                1
+            } else {
+                -1
+            }
         } else if r_s1.is_some() {
             1
         } else {

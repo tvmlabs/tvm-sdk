@@ -17,8 +17,8 @@ use api_info::ApiType;
 use api_info::Field;
 use api_info::Type;
 use futures::Future;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::Value;
 
 use super::request::Request;

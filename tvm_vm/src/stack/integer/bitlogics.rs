@@ -11,12 +11,12 @@
 
 use tvm_types::Result;
 
-use crate::stack::integer::IntegerData;
 use crate::stack::integer::behavior::OperationBehavior;
 use crate::stack::integer::utils::binary_op;
 use crate::stack::integer::utils::construct_single_nan;
 use crate::stack::integer::utils::process_single_result;
 use crate::stack::integer::utils::unary_op;
+use crate::stack::integer::IntegerData;
 
 impl IntegerData {
     pub fn and<T>(&self, other: &IntegerData) -> Result<IntegerData>

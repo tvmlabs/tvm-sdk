@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use crate::MessageMonitoringParams;
-use crate::MonitoringQueueInfo;
 use crate::message_monitor::queue::BufferedMessage;
 use crate::message_monitor::queue::MonitoringQueue;
+use crate::MessageMonitoringParams;
+use crate::MonitoringQueueInfo;
 
 pub(crate) const ADDING_TIMEOUT_MS: u64 = 1000;
 const FETCHING_TIMEOUT_MS: u64 = 5000;
@@ -70,7 +70,11 @@ impl MonitorQueues {
                 }
             }
         }
-        if !buffered.messages.is_empty() { Some(buffered) } else { None }
+        if !buffered.messages.is_empty() {
+            Some(buffered)
+        } else {
+            None
+        }
     }
 
     pub fn start_resolving(&mut self, now_ms: u64, hashes: HashSet<String>) {

@@ -10,9 +10,9 @@
 // limitations under the License.
 
 use tvm_block::Serializable;
-use tvm_types::Ed25519PublicKey;
 use tvm_types::dictionary::HashmapE;
 use tvm_types::ed25519_generate_private_key;
+use tvm_types::Ed25519PublicKey;
 
 use crate::json_abi::*;
 
@@ -216,11 +216,9 @@ fn test_signed_call() {
 
     let hash = test_tree.into_cell().repr_hash();
     assert_eq!(hash.clone().into_vec(), test_hash);
-    assert!(
-        Ed25519PublicKey::from_bytes(&key.verifying_key())
-            .unwrap()
-            .verify(hash.as_slice(), &sign.try_into().unwrap())
-    );
+    assert!(Ed25519PublicKey::from_bytes(&key.verifying_key())
+        .unwrap()
+        .verify(hash.as_slice(), &sign.try_into().unwrap()));
 
     let expected_response = r#"{"value0":"0"}"#;
 

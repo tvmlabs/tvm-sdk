@@ -146,8 +146,8 @@ pub async fn wait_for_collection(
 
 use serde::de::DeserializeOwned;
 
-use crate::net::ParamsOfAggregateCollection;
 use crate::net::tvm_gql::GraphQLQuery;
+use crate::net::ParamsOfAggregateCollection;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ResultOfAggregateCollection {

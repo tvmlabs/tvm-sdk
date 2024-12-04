@@ -23,20 +23,20 @@ use tvm_block::ShardIdent;
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::ChainIterator;
-use crate::net::ParamsOfQueryCollection;
-use crate::net::RegisteredIterator;
-use crate::net::iterators::ResultOfIteratorNext;
-use crate::net::iterators::block::BLOCK_TRAVERSE_FIELDS;
+use crate::net::iterators::block::shard_ident_parse;
+use crate::net::iterators::block::shard_ident_to_string;
 use crate::net::iterators::block::BlockFields;
 use crate::net::iterators::block::MasterBlock;
 use crate::net::iterators::block::RefFields;
-use crate::net::iterators::block::shard_ident_parse;
-use crate::net::iterators::block::shard_ident_to_string;
+use crate::net::iterators::block::BLOCK_TRAVERSE_FIELDS;
 use crate::net::iterators::block_iterator::state::StateBuilder;
 use crate::net::iterators::query_by_ids;
 use crate::net::iterators::register_iterator;
+use crate::net::iterators::ResultOfIteratorNext;
 use crate::net::query_collection;
+use crate::net::ChainIterator;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::RegisteredIterator;
 
 mod branch;
 mod filter;
@@ -211,15 +211,18 @@ impl BlockIterator {
             let by_prev_ids = prev_ids_by(NextLink::ByPrev);
             let by_prev_alt_ids = prev_ids_by(NextLink::ByPrevAlt);
 
-            let mut blocks = query_collection(context.clone(), ParamsOfQueryCollection {
-                collection: "blocks".to_string(),
-                filter: Some(json!({
-                    "prev_ref": { "root_hash": { "in": by_prev_ids } },
-                    "OR": { "prev_alt_ref": { "root_hash": { "in": by_prev_alt_ids } } },
-                })),
-                result: format!("{} {}", BLOCK_TRAVERSE_FIELDS, self.filter.result_fields),
-                ..Default::default()
-            })
+            let mut blocks = query_collection(
+                context.clone(),
+                ParamsOfQueryCollection {
+                    collection: "blocks".to_string(),
+                    filter: Some(json!({
+                        "prev_ref": { "root_hash": { "in": by_prev_ids } },
+                        "OR": { "prev_alt_ref": { "root_hash": { "in": by_prev_alt_ids } } },
+                    })),
+                    result: format!("{} {}", BLOCK_TRAVERSE_FIELDS, self.filter.result_fields),
+                    ..Default::default()
+                },
+            )
             .await?
             .result;
 

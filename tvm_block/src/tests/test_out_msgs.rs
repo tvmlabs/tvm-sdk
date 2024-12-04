@@ -13,6 +13,9 @@
 use std::str::FromStr;
 
 use super::*;
+use crate::types::Grams;
+use crate::types::Number5;
+use crate::write_read_and_assert;
 use crate::AccountStatus;
 use crate::HashUpdate;
 use crate::InMsgExternal;
@@ -21,9 +24,6 @@ use crate::MsgAddressInt;
 use crate::StateInit;
 use crate::TickTock;
 use crate::TransactionDescr;
-use crate::types::Grams;
-use crate::types::Number5;
-use crate::write_read_and_assert;
 
 fn get_message_with_addrs(src: AccountId, dst: AccountId) -> Message {
     let mut msg = Message::with_int_header(InternalMessageHeader::with_addresses(

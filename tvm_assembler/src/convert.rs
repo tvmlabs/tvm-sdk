@@ -9,8 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use num::BigInt;
 use num::bigint::Sign;
+use num::BigInt;
 
 #[inline]
 fn bits_to_bytes(length_in_bits: usize) -> usize {

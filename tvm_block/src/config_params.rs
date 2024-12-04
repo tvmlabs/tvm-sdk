@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_types::error;
+use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
@@ -18,11 +20,7 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-use tvm_types::error;
-use tvm_types::fail;
 
-use crate::Deserializable;
-use crate::Serializable;
 use crate::define_HashmapE;
 use crate::error::BlockError;
 use crate::hashmapaug::HashmapAugType;
@@ -33,13 +31,15 @@ use crate::signature::SigPubKey;
 use crate::types::ChildCell;
 use crate::types::ExtraCurrencyCollection;
 use crate::types::Grams;
-use crate::types::Number8;
 use crate::types::Number12;
 use crate::types::Number13;
 use crate::types::Number16;
 use crate::types::Number32;
+use crate::types::Number8;
 use crate::validators::ValidatorDescr;
 use crate::validators::ValidatorSet;
+use crate::Deserializable;
+use crate::Serializable;
 
 #[cfg(test)]
 #[path = "tests/test_config_params.rs"]
@@ -3112,9 +3112,17 @@ impl ParamLimits {
 
     pub fn classify(&self, value: u32) -> ParamLimitIndex {
         if value >= self.medium() {
-            if value >= self.hard_limit() { ParamLimitIndex::Hard } else { ParamLimitIndex::Medium }
+            if value >= self.hard_limit() {
+                ParamLimitIndex::Hard
+            } else {
+                ParamLimitIndex::Medium
+            }
         } else if value >= self.underload() {
-            if value >= self.soft_limit() { ParamLimitIndex::Soft } else { ParamLimitIndex::Normal }
+            if value >= self.soft_limit() {
+                ParamLimitIndex::Soft
+            } else {
+                ParamLimitIndex::Normal
+            }
         } else {
             ParamLimitIndex::Underload
         }

@@ -12,23 +12,17 @@ use tvm_block::Block;
 use tvm_block::BlockIdExt;
 use tvm_block::Deserializable;
 use tvm_block::InRefValue;
-use tvm_block::MASTERCHAIN_ID;
 use tvm_block::ShardHashes;
 use tvm_block::ShardIdent;
 use tvm_block::ShardStateUnsplit;
+use tvm_block::MASTERCHAIN_ID;
+use tvm_types::base64_decode;
 use tvm_types::Result;
 use tvm_types::UInt256;
-use tvm_types::base64_decode;
 
-use crate::ClientContext;
 use crate::client::storage::InMemoryKeyValueStorage;
-use crate::net::ParamsOfQueryCollection;
 use crate::net::query_collection;
-use crate::proofs::BlockProof;
-use crate::proofs::INITIAL_TRUSTED_KEY_BLOCKS;
-use crate::proofs::ParamsOfProofBlockData;
-use crate::proofs::ParamsOfProofMessageData;
-use crate::proofs::ParamsOfProofTransactionData;
+use crate::net::ParamsOfQueryCollection;
 use crate::proofs::engine::ProofHelperEngineImpl;
 use crate::proofs::is_transaction_refers_to_message;
 use crate::proofs::message_get_required_data;
@@ -39,7 +33,13 @@ use crate::proofs::transaction_get_required_data;
 use crate::proofs::validators::calc_subset_for_workchain;
 use crate::proofs::validators::calc_workchain_id;
 use crate::proofs::validators::calc_workchain_id_by_adnl_id;
+use crate::proofs::BlockProof;
+use crate::proofs::ParamsOfProofBlockData;
+use crate::proofs::ParamsOfProofMessageData;
+use crate::proofs::ParamsOfProofTransactionData;
+use crate::proofs::INITIAL_TRUSTED_KEY_BLOCKS;
 use crate::tests::TestClient;
+use crate::ClientContext;
 
 const GQL_SCHEMA: &str = include_str!("data/schema.graphql");
 
@@ -471,21 +471,17 @@ async fn test_extract_top_shard_block() -> Result<()> {
         .await?;
     let block = Block::construct_from_bytes(&boc)?;
 
-    assert!(
-        ProofHelperEngineImpl::extract_top_shard_block(
-            &block,
-            &ShardIdent::with_tagged_prefix(0, 0x8000000000000000)?,
-        )
-        .is_err()
-    );
+    assert!(ProofHelperEngineImpl::extract_top_shard_block(
+        &block,
+        &ShardIdent::with_tagged_prefix(0, 0x8000000000000000)?,
+    )
+    .is_err());
 
-    assert!(
-        ProofHelperEngineImpl::extract_top_shard_block(
-            &block,
-            &ShardIdent::with_tagged_prefix(1, 0x2000000000000000)?,
-        )
-        .is_err()
-    );
+    assert!(ProofHelperEngineImpl::extract_top_shard_block(
+        &block,
+        &ShardIdent::with_tagged_prefix(1, 0x2000000000000000)?,
+    )
+    .is_err());
 
     assert_eq!(
         ProofHelperEngineImpl::extract_top_shard_block(
@@ -540,7 +536,8 @@ async fn test_query_closest_mc_block_for_shard_block() -> Result<()> {
     Ok(())
 }
 
-const SHARD_BLOCK_0_A000000000000000_99_BOC: &str = "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
+const SHARD_BLOCK_0_A000000000000000_99_BOC: &str =
+    "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
     mHAAAAAIQBAAAAYwAAAAACAAAAAIAAAAAAAAAAXrQHmgAAAAAG6gUAAAAAAAbqBQGyfCu9AAAAAgAAAFMAAAAAx\
     AAAAAMAAAAAAAAALgUGAhG45I37QO5rKAQHCAqKBGFR1tD1H1YJuvT+AeffTPjAYu+ZO8nWZmHsiOcBjgwT+aoe\
     0gsBG0P0h0luP4GaSgcCgYy5IjwTqZXSIYYyFU8AAgACCQoDiUoz9v0VXplWHvmULzKidbstN+VVAHO6e3HYwO8\
@@ -553,7 +550,8 @@ const SHARD_BLOCK_0_A000000000000000_99_BOC: &str = "te6ccuECEQEAArkAABwAxADeAXA
     kyULAB6NgIjmhTkRuAtJVIIbgsceAUzOrk7wzgAa7BQAAAAAAAAAAAAACmAAAAAA1Z+Af//////////////////\
     ////////////////////////wAADACAAAQL5eHt0";
 
-const SHARD_BLOCK_0_A000000000000000_101_BOC: &str = "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
+const SHARD_BLOCK_0_A000000000000000_101_BOC: &str =
+    "te6ccuECEQEAArkAABwAxADeAXACBAKgAzwDRgNYA6QECgQiBCoE9AVkBWwFcwQQEe9VqgAAACoBAgMEAqCbx6\
     mHAAAAAIQBAAAAZQAAAAACAAAAAIAAAAAAAAAAXrQHngAAAAAHCImAAAAAAAcIiYGyfCu9AAAAAgAAAFUAAAAAx\
     AAAAAMAAAAAAAAALgUGAhG45I37QO5rKAQHCAqKBO5sAcF2Ymt7CdQz/5dUOh0WyFdnKDN0tgG6P6udwTloEhUx\
     yRwpTzXcIqlKUPMO1c8qSnjjb5j9+2wRS/PnHCoAAgACCQoDiUoz9v17zLkiB8uYo0dn+vy/FUZwk6AL+dQyhFY\
@@ -616,30 +614,22 @@ async fn test_check_mc_proof() -> Result<()> {
         )
         .await?;
 
-    assert!(
-        engine
-            .check_mc_block_proof(
-                101,
-                &UInt256::from_str(
-                    "01872c85facaa85405518a759dfac2625bc94b9e85b965cf3875d2331db9ad95"
-                )?,
-            )
-            .await
-            .is_err(),
-    );
+    assert!(engine
+        .check_mc_block_proof(
+            101,
+            &UInt256::from_str("01872c85facaa85405518a759dfac2625bc94b9e85b965cf3875d2331db9ad95")?,
+        )
+        .await
+        .is_err(),);
 
     // From cache:
-    assert!(
-        engine
-            .check_mc_block_proof(
-                100,
-                &UInt256::from_str(
-                    "1111111111111111111111111111111111111111111111111111111111111111"
-                )?,
-            )
-            .await
-            .is_err(),
-    );
+    assert!(engine
+        .check_mc_block_proof(
+            100,
+            &UInt256::from_str("1111111111111111111111111111111111111111111111111111111111111111")?,
+        )
+        .await
+        .is_err(),);
 
     Ok(())
 }
@@ -650,17 +640,20 @@ async fn query_data(
     id: &str,
     result: &str,
 ) -> Result<Value> {
-    Ok(query_collection(context, ParamsOfQueryCollection {
-        collection: collection.to_string(),
-        result: result.to_string(),
-        filter: Some(json!({
-            "id": {
-                "eq": id,
-            },
-        })),
-        limit: Some(1),
-        ..Default::default()
-    })
+    Ok(query_collection(
+        context,
+        ParamsOfQueryCollection {
+            collection: collection.to_string(),
+            result: result.to_string(),
+            filter: Some(json!({
+                "id": {
+                    "eq": id,
+                },
+            })),
+            limit: Some(1),
+            ..Default::default()
+        },
+    )
     .await?
     .result
     .remove(0))
@@ -759,42 +752,42 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
-            block: block_json.clone(),
-        })
+        .request_async(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: block_json.clone() },
+        )
         .await?;
 
     block_json["boc"] = Value::Null;
 
     client
-        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
-            block: block_json.clone(),
-        })
+        .request_async(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: block_json.clone() },
+        )
         .await?;
 
     block_json["boc"] = SHARD_BLOCK_0_A000000000000000_99_BOC.into();
 
-    assert!(
-        client
-            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
-                block: block_json.clone()
-            },)
-            .await
-            .is_err()
-    );
+    assert!(client
+        .request_async::<_, ()>(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: block_json.clone() },
+        )
+        .await
+        .is_err());
 
     block_json["boc"] = Value::Null;
     block_json["prev_ref"]["root_hash"] =
         "0000000000000000000000000000000000000000000000000000000000000000".into();
 
-    assert!(
-        client
-            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
-                block: block_json
-            },)
-            .await
-            .is_err()
-    );
+    assert!(client
+        .request_async::<_, ()>(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: block_json },
+        )
+        .await
+        .is_err());
 
     let proof_json = query_block_data(
         client.context(),
@@ -822,14 +815,13 @@ async fn test_proof_block_data() -> Result<()> {
     )
     .await?;
 
-    assert!(
-        client
-            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
-                block: proof_json
-            },)
-            .await
-            .is_err()
-    );
+    assert!(client
+        .request_async::<_, ()>(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: proof_json },
+        )
+        .await
+        .is_err());
 
     let decimal_fields = r#"
         id
@@ -963,9 +955,10 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
-            block: block_json.clone(),
-        })
+        .request_async(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: block_json.clone() },
+        )
         .await?;
 
     // Shardchain block
@@ -977,9 +970,10 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
-            block: block_json.clone(),
-        })
+        .request_async(
+            "proofs.proof_block_data",
+            ParamsOfProofBlockData { block: block_json.clone() },
+        )
         .await?;
 
     Ok(())
@@ -1041,9 +1035,10 @@ async fn test_proof_transaction_data() -> Result<()> {
     )
     .await?;
 
-    proof_transaction_data(client.context(), ParamsOfProofTransactionData {
-        transaction: transaction_json,
-    })
+    proof_transaction_data(
+        client.context(),
+        ParamsOfProofTransactionData { transaction: transaction_json },
+    )
     .await?;
 
     let transaction_json = query_transaction_data(
@@ -1067,9 +1062,10 @@ async fn test_proof_transaction_data() -> Result<()> {
         "#,
     ).await?;
 
-    proof_transaction_data(client.context(), ParamsOfProofTransactionData {
-        transaction: transaction_json,
-    })
+    proof_transaction_data(
+        client.context(),
+        ParamsOfProofTransactionData { transaction: transaction_json },
+    )
     .await?;
 
     Ok(())

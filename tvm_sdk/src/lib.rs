@@ -16,10 +16,10 @@ extern crate api_info;
 #[macro_use]
 extern crate api_derive;
 
+pub use tvm_abi::json_abi;
 pub use tvm_abi::Contract as AbiContract;
 pub use tvm_abi::Event as AbiEvent;
 pub use tvm_abi::Function as AbiFunction;
-pub use tvm_abi::json_abi;
 
 mod error;
 pub use error::SdkError;

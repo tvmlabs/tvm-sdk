@@ -34,7 +34,11 @@ impl crate::BoxedDeserialize for Ping {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x1faaa1bf) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x1faaa1bf) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Ping {

@@ -20,12 +20,12 @@ use tvm_client::debot::DebotActivity;
 use tvm_client::debot::STATE_EXIT;
 use tvm_client::error::ClientResult;
 
-use super::ChainProcessor;
-use super::ProcessorError;
 use super::action_input;
 use super::input;
 use super::term_signing_box::TerminalSigningBox;
 use super::terminal_input;
+use super::ChainProcessor;
+use super::ProcessorError;
 use crate::config::Config;
 use crate::convert::convert_u64_to_tokens;
 use crate::helpers::TonClient;

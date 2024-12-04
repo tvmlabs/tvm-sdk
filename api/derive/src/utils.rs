@@ -374,7 +374,11 @@ pub(crate) fn doc_from(attrs: &[Attribute]) -> (Option<String>, Option<String>) 
         }
     }
     fn non_empty(s: String) -> Option<String> {
-        if s.is_empty() { None } else { Some(s) }
+        if s.is_empty() {
+            None
+        } else {
+            Some(s)
+        }
     }
     let (summary, description) = get_doc(summary, description);
     (non_empty(summary), non_empty(description))
@@ -473,7 +477,11 @@ fn unqualified_type_name(qualified_name: String) -> String {
 }
 
 pub(crate) fn path_is(path: &Path, expected: &str) -> bool {
-    if let Some(ident) = path.get_ident() { *ident == expected } else { false }
+    if let Some(ident) = path.get_ident() {
+        *ident == expected
+    } else {
+        false
+    }
 }
 
 pub fn fields_from(fields: &Fields) -> Vec<api_info::Field> {

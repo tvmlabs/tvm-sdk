@@ -17,9 +17,6 @@ use std::sync::Arc;
 
 use super::bls::BLS_PUBLIC_KEY_LEN;
 use super::bls::BLS_SECRET_KEY_LEN;
-use crate::Ed25519ExpandedPrivateKey;
-use crate::Ed25519PrivateKey;
-use crate::Result;
 use crate::base64_decode;
 use crate::base64_encode;
 use crate::ed25519_create_expanded_private_key;
@@ -32,6 +29,9 @@ use crate::ed25519_verify;
 use crate::fail;
 use crate::sha256_digest_slices;
 use crate::x25519_shared_secret;
+use crate::Ed25519ExpandedPrivateKey;
+use crate::Ed25519PrivateKey;
+use crate::Result;
 
 pub trait KeyOption: Sync + Send + Debug {
     fn id(&self) -> &Arc<KeyId>;

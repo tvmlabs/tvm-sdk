@@ -4,8 +4,8 @@ use tvm_block::MsgAddressInt;
 use tvm_sdk::Block;
 use tvm_sdk::MessageId;
 
-use super::ErrorCode;
 use super::fetching::fetch_account;
+use super::ErrorCode;
 use crate::abi::Abi;
 use crate::abi::ParamsOfDecodeMessage;
 use crate::client::ClientContext;
@@ -62,11 +62,14 @@ pub(crate) fn get_message_expiration_time(
     message: &str,
 ) -> ClientResult<Option<u64>> {
     let header = match abi {
-        Some(abi) => crate::abi::decode_message(context.clone(), ParamsOfDecodeMessage {
-            abi: abi.clone(),
-            message: message.to_string(),
-            ..Default::default()
-        })
+        Some(abi) => crate::abi::decode_message(
+            context.clone(),
+            ParamsOfDecodeMessage {
+                abi: abi.clone(),
+                message: message.to_string(),
+                ..Default::default()
+            },
+        )
         .map(|x| x.header)
         .unwrap_or_default(),
         None => None,

@@ -4,16 +4,16 @@ use std::io::Read;
 use std::io::Write;
 use std::io::{self};
 
+use tvm_client::crypto::get_signing_box;
+use tvm_client::crypto::remove_signing_box;
 use tvm_client::crypto::KeyPair;
 use tvm_client::crypto::RegisteredSigningBox;
 use tvm_client::crypto::SigningBoxHandle;
-use tvm_client::crypto::get_signing_box;
-use tvm_client::crypto::remove_signing_box;
 
 use super::term_browser::input;
 use crate::crypto::load_keypair;
-use crate::helpers::TonClient;
 use crate::helpers::read_keys;
+use crate::helpers::TonClient;
 
 pub(super) struct TerminalSigningBox {
     handle: SigningBoxHandle,
@@ -69,9 +69,10 @@ impl TerminalSigningBox {
 impl Drop for TerminalSigningBox {
     fn drop(&mut self) {
         if self.handle.0 != 0 {
-            let _ = remove_signing_box(self.client.clone(), RegisteredSigningBox {
-                handle: self.handle.clone(),
-            });
+            let _ = remove_signing_box(
+                self.client.clone(),
+                RegisteredSigningBox { handle: self.handle.clone() },
+            );
         }
     }
 }

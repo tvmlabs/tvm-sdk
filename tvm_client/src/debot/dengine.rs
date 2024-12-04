@@ -3,21 +3,17 @@ use std::sync::Arc;
 
 use tvm_abi::Contract;
 
-use super::DEBOT_WC;
-use super::DInfo;
-use super::JsonValue;
-use super::TonClient;
 use super::action::AcType;
 use super::action::DAction;
 use super::browser::BrowserCallbacks;
 use super::calltype::ContractCall;
 use super::calltype::DebotCallType;
+use super::context::str_hex_to_utf8;
 use super::context::DContext;
 use super::context::STATE_CURRENT;
 use super::context::STATE_EXIT;
 use super::context::STATE_PREV;
 use super::context::STATE_ZERO;
-use super::context::str_hex_to_utf8;
 use super::debot_abi::DEBOT_ABI;
 use super::dinterface::BuiltinInterfaces;
 use super::dinterface::DebotInterfaceExecutor;
@@ -29,8 +25,13 @@ use super::json_interface::JsonInterface;
 use super::msg_interface::MsgInterface;
 use super::routines;
 use super::run_output::RunOutput;
-use crate::ClientConfig;
-use crate::ClientContext;
+use super::DInfo;
+use super::JsonValue;
+use super::TonClient;
+use super::DEBOT_WC;
+use crate::abi::decode_message_body;
+use crate::abi::encode_message;
+use crate::abi::encode_message_body;
 use crate::abi::Abi;
 use crate::abi::CallSet;
 use crate::abi::DeploySet;
@@ -39,25 +40,24 @@ use crate::abi::ParamsOfDecodeMessageBody;
 use crate::abi::ParamsOfEncodeMessage;
 use crate::abi::ParamsOfEncodeMessageBody;
 use crate::abi::Signer;
-use crate::abi::decode_message_body;
-use crate::abi::encode_message;
-use crate::abi::encode_message_body;
 use crate::boc::internal::deserialize_cell_from_base64;
+use crate::crypto::remove_signing_box;
 use crate::crypto::RegisteredSigningBox;
 use crate::crypto::SigningBoxHandle;
-use crate::crypto::remove_signing_box;
 use crate::encoding::decode_abi_number;
 use crate::encoding::slice_from_cell;
 use crate::error::ClientError;
 use crate::error::ClientResult;
+use crate::net::query_collection;
 use crate::net::NetworkConfig;
 use crate::net::ParamsOfQueryCollection;
-use crate::net::query_collection;
+use crate::processing::process_message;
 use crate::processing::ParamsOfProcessMessage;
 use crate::processing::ProcessingEvent;
-use crate::processing::process_message;
-use crate::tvm::ParamsOfRunTvm;
 use crate::tvm::run_tvm;
+use crate::tvm::ParamsOfRunTvm;
+use crate::ClientConfig;
+use crate::ClientContext;
 
 const EMPTY_CELL: &str = "te6ccgEBAQEAAgAAAA==";
 
@@ -302,13 +302,16 @@ impl DEngine {
     }
 
     async fn send_to_debot(&mut self, msg: String) -> ClientResult<RunOutput> {
-        let run_result = run_tvm(self.ton.clone(), ParamsOfRunTvm {
-            account: self.state.clone(),
-            message: msg,
-            abi: Some(self.abi.clone()),
-            return_updated_account: Some(true),
-            ..Default::default()
-        })
+        let run_result = run_tvm(
+            self.ton.clone(),
+            ParamsOfRunTvm {
+                account: self.state.clone(),
+                message: msg,
+                abi: Some(self.abi.clone()),
+                return_updated_account: Some(true),
+                ..Default::default()
+            },
+        )
         .await?;
         let mut run_output = RunOutput::new(
             run_result.account,
@@ -354,9 +357,10 @@ impl DEngine {
                     if a.misc != EMPTY_CELL { Some(json!({ "misc": a.misc })) } else { None };
                 let result = self.run_sendmsg(&a.name, args, signer.clone()).await?;
                 if let Some(signing_box) = signer {
-                    let _ = remove_signing_box(self.ton.clone(), RegisteredSigningBox {
-                        handle: signing_box,
-                    });
+                    let _ = remove_signing_box(
+                        self.ton.clone(),
+                        RegisteredSigningBox { handle: signing_box },
+                    );
                 }
                 self.browser.log("Transaction succeeded.".to_string()).await;
                 result.map(|r| self.browser.log(format!("Result: {}", r)));
@@ -413,9 +417,10 @@ impl DEngine {
                 };
                 let args = self.call_routine(&a.name, &args, signer.clone()).await?;
                 if let Some(signing_box) = signer {
-                    let _ = remove_signing_box(self.ton.clone(), RegisteredSigningBox {
-                        handle: signing_box,
-                    });
+                    let _ = remove_signing_box(
+                        self.ton.clone(),
+                        RegisteredSigningBox { handle: signing_box },
+                    );
                 }
                 let setter = a.func_attr().ok_or("routine callback is not specified".to_owned())?;
                 self.run_debot_external(&setter, Some(args)).await?;
@@ -561,12 +566,15 @@ impl DEngine {
             load_abi(self.target_abi.as_ref().ok_or("target abi is undefined".to_string())?)?
         };
 
-        let res = decode_message_body(self.ton.clone(), ParamsOfDecodeMessageBody {
-            abi: abi.clone(),
-            body: body.to_string(),
-            is_internal: true,
-            ..Default::default()
-        })
+        let res = decode_message_body(
+            self.ton.clone(),
+            ParamsOfDecodeMessageBody {
+                abi: abi.clone(),
+                body: body.to_string(),
+                is_internal: true,
+                ..Default::default()
+            },
+        )
         .map_err(|e| format!("failed to decode msg body: {}", e))?;
 
         debug!("calling {} at address {}", res.name, dest);
@@ -596,15 +604,18 @@ impl DEngine {
     }
 
     pub(crate) async fn load_state(ton: TonClient, addr: String) -> Result<String, String> {
-        let account_request = query_collection(ton, ParamsOfQueryCollection {
-            collection: "accounts".to_owned(),
-            filter: Some(serde_json::json!({
-                "id": { "eq": addr }
-            })),
-            result: "boc".to_owned(),
-            limit: Some(1),
-            order: None,
-        })
+        let account_request = query_collection(
+            ton,
+            ParamsOfQueryCollection {
+                collection: "accounts".to_owned(),
+                filter: Some(serde_json::json!({
+                    "id": { "eq": addr }
+                })),
+                result: "boc".to_owned(),
+                limit: Some(1),
+                order: None,
+            },
+        )
         .await;
         let acc = account_request.map_err(|e| format!("failed to query account: {}", e))?;
         if acc.result.is_empty() {
@@ -693,13 +704,16 @@ impl DEngine {
 
         let result = encode_message(ton.clone(), msg_params).await?;
 
-        let result = run_tvm(ton.clone(), ParamsOfRunTvm {
-            account: state,
-            message: result.message,
-            abi: Some(abi),
-            return_updated_account: Some(true),
-            ..Default::default()
-        })
+        let result = run_tvm(
+            ton.clone(),
+            ParamsOfRunTvm {
+                account: state,
+                message: result.message,
+                abi: Some(abi),
+                return_updated_account: Some(true),
+                ..Default::default()
+            },
+        )
         .await;
 
         match result {

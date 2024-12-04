@@ -2,10 +2,10 @@ use serde_json::Value;
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
 
-use super::dinterface::DebotInterface;
-use super::dinterface::InterfaceResult;
 use super::dinterface::decode_answer_id;
 use super::dinterface::get_arg;
+use super::dinterface::DebotInterface;
+use super::dinterface::InterfaceResult;
 use crate::abi::Abi;
 
 const ABI: &str = r#"

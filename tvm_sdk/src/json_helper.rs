@@ -18,8 +18,8 @@ use tvm_block::AccountStatus;
 use tvm_block::ComputeSkipReason;
 use tvm_block::MsgAddressInt;
 use tvm_block::TransactionProcessingStatus;
-use tvm_types::Cell;
 use tvm_types::base64_decode;
+use tvm_types::Cell;
 
 use crate::MessageType;
 

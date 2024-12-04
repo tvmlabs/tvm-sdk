@@ -11,15 +11,15 @@
 
 use tvm_block::CurrencyCollection;
 use tvm_block::GlobalCapabilities;
+use tvm_types::types::UInt256;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
 use tvm_types::HashmapType;
 use tvm_types::Sha256;
 use tvm_types::SliceData;
-use tvm_types::types::UInt256;
 
-use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 
 // The smart-contract information
 // structure SmartContractInfo, passed in the first reference of the cell

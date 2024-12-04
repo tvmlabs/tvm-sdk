@@ -19,10 +19,10 @@ use std::sync::atomic::Ordering;
 
 use serde_json::Value;
 
-use crate::client::ClientEnv;
-use crate::client::FetchMethod;
 use crate::client::binding_config;
 use crate::client::core_version;
+use crate::client::ClientEnv;
+use crate::client::FetchMethod;
 use crate::error::ClientResult;
 use crate::net::Error;
 use crate::net::NetworkConfig;
@@ -92,7 +92,11 @@ impl Endpoint {
             };
             base_url = format!("{}{}", protocol, base_url);
         };
-        if base_url.ends_with("/graphql") { base_url } else { format!("{}/graphql", base_url) }
+        if base_url.ends_with("/graphql") {
+            base_url
+        } else {
+            format!("{}/graphql", base_url)
+        }
     }
 
     async fn fetch_info_with_url(

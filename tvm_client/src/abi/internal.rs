@@ -5,13 +5,13 @@ use tvm_abi::PublicKeyData;
 use tvm_sdk::ContractImage;
 use tvm_types::Cell;
 
-use crate::ClientContext;
 use crate::abi::DeploySet;
 use crate::abi::Error;
 use crate::abi::Signer;
 use crate::crypto::internal::decode_public_key;
 use crate::encoding::hex_decode;
 use crate::error::ClientResult;
+use crate::ClientContext;
 
 /// Combines `hex` encoded `signature` with `base64` encoded `unsigned_message`.
 /// Returns signed message encoded with `base64`.

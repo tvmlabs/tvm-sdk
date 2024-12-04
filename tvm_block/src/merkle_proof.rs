@@ -13,6 +13,9 @@ use std::cmp::max;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::types::UInt256;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -20,13 +23,7 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UsageTree;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::UInt256;
 
-use crate::Deserializable;
-use crate::GetRepresentationHash;
-use crate::Serializable;
 use crate::accounts::Account;
 use crate::blocks::Block;
 use crate::blocks::BlockInfo;
@@ -37,6 +34,9 @@ use crate::merkle_update::MerkleUpdate;
 use crate::messages::Message;
 use crate::shard::ShardStateUnsplit;
 use crate::transactions::Transaction;
+use crate::Deserializable;
+use crate::GetRepresentationHash;
+use crate::Serializable;
 
 #[cfg(test)]
 #[path = "tests/test_merkle_proof.rs"]

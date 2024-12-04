@@ -24,21 +24,21 @@ use serde::Deserialize;
 use serde::Serialize;
 use tvm_types::SliceData;
 
-use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::utils::split_to_two_frs;
+use crate::executor::zk_stuff::zk_login::hash_ascii_str_to_field;
+use crate::executor::zk_stuff::zk_login::hash_to_field;
 use crate::executor::zk_stuff::zk_login::MAX_HEADER_LEN;
 use crate::executor::zk_stuff::zk_login::MAX_ISS_LEN_B64;
 use crate::executor::zk_stuff::zk_login::PACK_WIDTH;
-use crate::executor::zk_stuff::zk_login::hash_ascii_str_to_field;
-use crate::executor::zk_stuff::zk_login::hash_to_field;
+use crate::executor::Engine;
+use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
+use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
 use crate::stack::StackItem::Cell;
-use crate::stack::integer::IntegerData;
-use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
@@ -148,7 +148,11 @@ impl Bn254FrElementWrapper {
         }
 
         // If the value is '0' then just return a slice of length 1 of the final byte
-        if buf.is_empty() { &self.0[31..] } else { buf }
+        if buf.is_empty() {
+            &self.0[31..]
+        } else {
+            buf
+        }
     }
 
     /// Returns the padded version of the field element. This returns with

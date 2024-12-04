@@ -10,8 +10,8 @@
 // limitations under the License.
 
 use num_bigint::BigUint;
-use serde_json::Value;
 use serde_json::json;
+use serde_json::Value;
 use tvm_abi::Contract;
 use tvm_abi::Token;
 use tvm_abi::TokenValue;
@@ -22,24 +22,24 @@ use tvm_block::Message;
 use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
-use tvm_client::boc::ParamsOfGetBlockchainConfig;
 use tvm_client::boc::get_blockchain_config;
+use tvm_client::boc::ParamsOfGetBlockchainConfig;
 use tvm_client::net::OrderBy;
 use tvm_client::net::SortDirection;
+use tvm_types::base64_decode;
+use tvm_types::ed25519_create_private_key;
+use tvm_types::ed25519_sign_with_secret;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
-use tvm_types::base64_decode;
-use tvm_types::ed25519_create_private_key;
-use tvm_types::ed25519_sign_with_secret;
 
 use crate::config::Config;
-use crate::helpers::TonClient;
 use crate::helpers::create_client_verbose;
 use crate::helpers::now;
 use crate::helpers::now_ms;
 use crate::helpers::query_with_limit;
+use crate::helpers::TonClient;
 
 const PREFIX_UPDATE_CONFIG_MESSAGE_DATA: &str = "43665021";
 
@@ -547,10 +547,10 @@ pub async fn dump_blockchain_config(config: &Config, path: &str) -> Result<(), S
         .ok_or("Failed to query last block BOC.")?
         .to_owned();
 
-    let bc_config = get_blockchain_config(ton.clone(), ParamsOfGetBlockchainConfig {
-        block_boc: block,
-        ..Default::default()
-    })
+    let bc_config = get_blockchain_config(
+        ton.clone(),
+        ParamsOfGetBlockchainConfig { block_boc: block, ..Default::default() },
+    )
     .map_err(|e| format!("Failed to get blockchain config: {}", e))?;
 
     let bc_config =

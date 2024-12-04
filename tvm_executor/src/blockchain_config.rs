@@ -284,7 +284,11 @@ impl BlockchainConfig {
 
     /// Get `MsgForwardPrices` for message forward fee calculation
     pub fn get_fwd_prices(&self, is_masterchain: bool) -> &MsgForwardPrices {
-        if is_masterchain { &self.fwd_prices_mc } else { &self.fwd_prices_wc }
+        if is_masterchain {
+            &self.fwd_prices_mc
+        } else {
+            &self.fwd_prices_wc
+        }
     }
 
     /// Calculate gas fee for account
@@ -294,7 +298,11 @@ impl BlockchainConfig {
 
     /// Get `GasLimitsPrices` for account gas fee calculation
     pub fn get_gas_config(&self, is_masterchain: bool) -> &GasLimitsPrices {
-        if is_masterchain { &self.gas_prices_mc } else { &self.gas_prices_wc }
+        if is_masterchain {
+            &self.gas_prices_mc
+        } else {
+            &self.gas_prices_wc
+        }
     }
 
     /// Calculate forward fee

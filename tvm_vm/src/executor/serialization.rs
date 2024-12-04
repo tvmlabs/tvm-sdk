@@ -9,21 +9,20 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_types::error;
 use tvm_types::BuilderData;
 use tvm_types::CellType;
 use tvm_types::ExceptionCode;
 use tvm_types::GasConsumer;
 use tvm_types::IBitstring;
-use tvm_types::MAX_LEVEL;
 use tvm_types::Result;
-use tvm_types::error;
+use tvm_types::MAX_LEVEL;
 
 use crate::error::TvmError;
-use crate::executor::Mask;
-use crate::executor::engine::Engine;
 use crate::executor::engine::data::convert;
 use crate::executor::engine::storage::fetch_reference;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::gas::gas_state::Gas;
 use crate::executor::microcode::BUILDER;
 use crate::executor::microcode::CC;
@@ -31,13 +30,14 @@ use crate::executor::microcode::CELL;
 use crate::executor::microcode::VAR;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
-use crate::stack::StackItem;
-use crate::stack::integer::IntegerData;
+use crate::executor::Mask;
 use crate::stack::integer::serialization::Encoding;
 use crate::stack::integer::serialization::SignedIntegerBigEndianEncoding;
 use crate::stack::integer::serialization::SignedIntegerLittleEndianEncoding;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::stack::integer::serialization::UnsignedIntegerLittleEndianEncoding;
+use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 

@@ -17,10 +17,10 @@ use tvm_types::error;
 use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
-use crate::executor::Mask;
 use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+use crate::executor::Mask;
 use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;

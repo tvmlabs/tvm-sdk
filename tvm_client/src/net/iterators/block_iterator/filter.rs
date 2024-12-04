@@ -14,8 +14,8 @@ use serde_json::Value;
 use tvm_block::ShardIdent;
 
 use crate::error::ClientResult;
-use crate::net::iterators::block::BlockFields;
 use crate::net::iterators::block::shard_ident_parse;
+use crate::net::iterators::block::BlockFields;
 use crate::net::iterators::block_iterator::ParamsOfCreateBlockIterator;
 
 #[derive(Clone)]

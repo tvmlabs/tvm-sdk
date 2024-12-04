@@ -13,14 +13,17 @@ use std::fs::read;
 use std::path::Path;
 use std::time::Instant;
 
+use tvm_types::read_single_root_boc;
+use tvm_types::write_boc;
 use tvm_types::AccountId;
 use tvm_types::BocWriter;
 use tvm_types::ExceptionCode;
 use tvm_types::UsageTree;
-use tvm_types::read_single_root_boc;
-use tvm_types::write_boc;
 
 use super::*;
+use crate::define_HashmapE;
+use crate::generate_test_account_by_init_code_hash;
+use crate::hashmapaug::HashmapAugType;
 use crate::Block;
 use crate::CurrencyCollection;
 use crate::Grams;
@@ -43,9 +46,6 @@ use crate::ShardStateSplit;
 use crate::ShardStateUnsplit;
 use crate::StateInit;
 use crate::TickTock;
-use crate::define_HashmapE;
-use crate::generate_test_account_by_init_code_hash;
-use crate::hashmapaug::HashmapAugType;
 
 #[test]
 fn test_merkle_update() {

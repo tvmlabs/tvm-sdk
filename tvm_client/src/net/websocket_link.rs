@@ -14,15 +14,15 @@ use std::collections::HashMap;
 use std::pin::Pin;
 use std::sync::Arc;
 
+use futures::stream::Fuse;
+use futures::stream::FusedStream;
 use futures::Sink;
 use futures::SinkExt;
 use futures::StreamExt;
-use futures::stream::Fuse;
-use futures::stream::FusedStream;
 use serde_json::Value;
+use tokio::sync::mpsc::channel;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::mpsc::Sender;
-use tokio::sync::mpsc::channel;
 use tokio_stream::wrappers::ReceiverStream;
 
 use crate::client::ClientEnv;
@@ -30,14 +30,14 @@ use crate::client::WebSocket;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientError;
 use crate::error::ClientResult;
-use crate::net::Error;
-use crate::net::NetworkConfig;
 use crate::net::endpoint::Endpoint;
 use crate::net::gql::GraphQLMessageFromClient;
 use crate::net::gql::GraphQLMessageFromServer;
 use crate::net::server_link::NetworkState;
 use crate::net::tvm_gql::GraphQLQuery;
 use crate::net::tvm_gql::GraphQLQueryEvent;
+use crate::net::Error;
+use crate::net::NetworkConfig;
 
 type WSSender = Pin<Box<dyn Sink<String, Error = ClientError> + Send>>;
 

@@ -1,7 +1,7 @@
+use crate::executor::zk_stuff::bn254::verifier::PreparedVerifyingKey;
 use crate::executor::zk_stuff::bn254::FieldElement;
 use crate::executor::zk_stuff::bn254::Proof;
 use crate::executor::zk_stuff::bn254::VerifyingKey;
-use crate::executor::zk_stuff::bn254::verifier::PreparedVerifyingKey;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 
 /// Size of scalars in the BN254 construction.

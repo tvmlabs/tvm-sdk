@@ -15,13 +15,13 @@ use crate::error::AddNetworkUrl;
 use crate::error::ClientResult;
 use crate::net::EndpointStat;
 use crate::net::ResultOfSubscription;
-use crate::processing::Error;
-use crate::processing::ProcessingEvent;
-use crate::processing::ResultOfProcessMessage;
 use crate::processing::fetching;
 use crate::processing::internal;
 use crate::processing::internal::get_message_expiration_time;
 use crate::processing::internal::resolve_error;
+use crate::processing::Error;
+use crate::processing::ProcessingEvent;
+use crate::processing::ResultOfProcessMessage;
 
 //--------------------------------------------------------------------------- wait_for_transaction
 

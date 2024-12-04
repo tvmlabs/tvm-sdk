@@ -12,13 +12,13 @@
 use tvm_types::Result;
 use tvm_types::SliceData;
 
+use crate::contract::AbiVersion;
+use crate::contract::SerdeEvent;
+use crate::error::AbiError;
 use crate::Function;
 use crate::Param;
 use crate::Token;
 use crate::TokenValue;
-use crate::contract::AbiVersion;
-use crate::contract::SerdeEvent;
-use crate::error::AbiError;
 
 /// Contract event specification.
 #[derive(Debug, Clone, PartialEq)]

@@ -13,21 +13,21 @@ use tvm_block::ShardStateUnsplit;
 use tvm_types::Result;
 use tvm_types::UInt256;
 
-use crate::ClientContext;
 use crate::boc::internal::get_boc_hash;
 use crate::client::storage::InMemoryKeyValueStorage;
 use crate::client::storage::KeyValueStorage;
 use crate::encoding::base64_decode;
 use crate::error::ClientResult;
+use crate::net::query_collection;
 use crate::net::OrderBy;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::SortDirection;
-use crate::net::query_collection;
+use crate::proofs::resolve_initial_trusted_key_block;
 use crate::proofs::BlockProof;
 use crate::proofs::Error;
 use crate::proofs::ProofHelperEngine;
-use crate::proofs::resolve_initial_trusted_key_block;
 use crate::utils::json::JsonHelper;
+use crate::ClientContext;
 
 const ZEROSTATE_KEY: &str = "zerostate";
 const ZEROSTATE_RIGHT_BOUND_KEY: &str = "zs_right_boundary_seq_no";
@@ -255,12 +255,15 @@ impl ProofHelperEngineImpl {
     }
 
     pub(crate) async fn query_zerostate_boc(&self) -> Result<Vec<u8>> {
-        let zerostates = query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-            collection: "zerostates".to_string(),
-            result: "boc".to_string(),
-            limit: Some(1),
-            ..Default::default()
-        })
+        let zerostates = query_collection(
+            Arc::clone(&self.context),
+            ParamsOfQueryCollection {
+                collection: "zerostates".to_string(),
+                result: "boc".to_string(),
+                limit: Some(1),
+                ..Default::default()
+            },
+        )
         .await?
         .result;
 
@@ -279,13 +282,16 @@ impl ProofHelperEngineImpl {
     ) -> Result<Option<String>> {
         mc_seq_no += 1;
         let blocks = Self::preprocess_query_result(
-            query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-                collection: "blocks".to_string(),
-                result: "seq_no gen_utime prev_ref{file_hash}".to_string(),
-                filter: Some(Self::filter_for_mc_block(mc_seq_no)),
-                order: Some(Self::sorting_by_seq_no()),
-                ..Default::default()
-            })
+            query_collection(
+                Arc::clone(&self.context),
+                ParamsOfQueryCollection {
+                    collection: "blocks".to_string(),
+                    result: "seq_no gen_utime prev_ref{file_hash}".to_string(),
+                    filter: Some(Self::filter_for_mc_block(mc_seq_no)),
+                    order: Some(Self::sorting_by_seq_no()),
+                    ..Default::default()
+                },
+            )
             .await?
             .result,
         )?;
@@ -301,13 +307,16 @@ impl ProofHelperEngineImpl {
         if let Some(boc) = self.read_block(root_hash).await? {
             Ok(boc)
         } else {
-            let blocks = query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-                collection: "blocks".to_string(),
-                result: "seq_no gen_utime boc".to_string(),
-                filter: Some(Self::filter_for_block(root_hash)),
-                limit: Some(1),
-                ..Default::default()
-            })
+            let blocks = query_collection(
+                Arc::clone(&self.context),
+                ParamsOfQueryCollection {
+                    collection: "blocks".to_string(),
+                    result: "seq_no gen_utime boc".to_string(),
+                    filter: Some(Self::filter_for_block(root_hash)),
+                    limit: Some(1),
+                    ..Default::default()
+                },
+            )
             .await?
             .result;
 
@@ -348,13 +357,16 @@ impl ProofHelperEngineImpl {
 
     pub(crate) async fn query_mc_block_proof(&self, mc_seq_no: u32) -> Result<Value> {
         let mut blocks = Self::preprocess_query_result(
-            query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-                collection: "blocks".to_string(),
-                result: PROOF_QUERY_RESULT.to_string(),
-                filter: Some(Self::filter_for_mc_block(mc_seq_no)),
-                order: Some(Self::sorting_by_seq_no()),
-                ..Default::default()
-            })
+            query_collection(
+                Arc::clone(&self.context),
+                ParamsOfQueryCollection {
+                    collection: "blocks".to_string(),
+                    result: PROOF_QUERY_RESULT.to_string(),
+                    filter: Some(Self::filter_for_mc_block(mc_seq_no)),
+                    order: Some(Self::sorting_by_seq_no()),
+                    ..Default::default()
+                },
+            )
             .await?
             .result,
         )?;
@@ -424,24 +436,27 @@ impl ProofHelperEngineImpl {
                 return Ok(result);
             }
 
-            let key_blocks = query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-                collection: "blocks".to_string(),
-                result: PROOF_QUERY_RESULT.to_string(),
-                filter: Some(json!({
-                    "workchain_id": {
-                        "eq": -1,
-                    },
-                    "key_block": {
-                        "eq": true,
-                    },
-                    "seq_no": {
-                        "ge": mc_seq_no_range.start,
-                        "lt": mc_seq_no_range.end,
-                    }
-                })),
-                order: Some(Self::sorting_by_seq_no()),
-                ..Default::default()
-            })
+            let key_blocks = query_collection(
+                Arc::clone(&self.context),
+                ParamsOfQueryCollection {
+                    collection: "blocks".to_string(),
+                    result: PROOF_QUERY_RESULT.to_string(),
+                    filter: Some(json!({
+                        "workchain_id": {
+                            "eq": -1,
+                        },
+                        "key_block": {
+                            "eq": true,
+                        },
+                        "seq_no": {
+                            "ge": mc_seq_no_range.start,
+                            "lt": mc_seq_no_range.end,
+                        }
+                    })),
+                    order: Some(Self::sorting_by_seq_no()),
+                    ..Default::default()
+                },
+            )
             .await?
             .result;
 
@@ -460,22 +475,25 @@ impl ProofHelperEngineImpl {
     ) -> Result<()> {
         while !proofs_sorted.is_empty() {
             let mut blocks = Self::preprocess_query_result(
-                query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-                    collection: "blocks".to_string(),
-                    result: "seq_no gen_utime prev_ref{file_hash}".to_string(),
-                    filter: Some(json!({
-                        "workchain_id": {
-                            "eq": -1,
-                        },
-                        "seq_no": {
-                            "in": proofs_sorted.iter()
-                                    .map(|(seq_no, _value)| *seq_no + 1)
-                                    .collect::<Vec<u32>>(),
-                        }
-                    })),
-                    order: Some(Self::sorting_by_seq_no()),
-                    ..Default::default()
-                })
+                query_collection(
+                    Arc::clone(&self.context),
+                    ParamsOfQueryCollection {
+                        collection: "blocks".to_string(),
+                        result: "seq_no gen_utime prev_ref{file_hash}".to_string(),
+                        filter: Some(json!({
+                            "workchain_id": {
+                                "eq": -1,
+                            },
+                            "seq_no": {
+                                "in": proofs_sorted.iter()
+                                        .map(|(seq_no, _value)| *seq_no + 1)
+                                        .collect::<Vec<u32>>(),
+                            }
+                        })),
+                        order: Some(Self::sorting_by_seq_no()),
+                        ..Default::default()
+                    },
+                )
                 .await?
                 .result,
             )?;
@@ -607,9 +625,11 @@ impl ProofHelperEngineImpl {
     ) -> Result<Option<u32>> {
         loop {
             let blocks = Self::preprocess_query_result(
-                query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-                    collection: "blocks".to_string(),
-                    result: "\
+                query_collection(
+                    Arc::clone(&self.context),
+                    ParamsOfQueryCollection {
+                        collection: "blocks".to_string(),
+                        result: "\
                         seq_no \
                         gen_utime \
                         master { \
@@ -622,15 +642,16 @@ impl ProofHelperEngineImpl {
                                 }\
                             }\
                         }"
-                    .to_string(),
-                    filter: Some(json!({
-                        "workchain_id": { "eq": -1 },
-                        "seq_no": { "ge": *first_mc_seq_no },
-                    })),
-                    order: Some(Self::sorting_by_seq_no()),
-                    limit: Some(10),
-                    ..Default::default()
-                })
+                        .to_string(),
+                        filter: Some(json!({
+                            "workchain_id": { "eq": -1 },
+                            "seq_no": { "ge": *first_mc_seq_no },
+                        })),
+                        order: Some(Self::sorting_by_seq_no()),
+                        limit: Some(10),
+                        ..Default::default()
+                    },
+                )
                 .await?
                 .result,
             )?;
@@ -661,23 +682,26 @@ impl ProofHelperEngineImpl {
         seq_no_range: Range<u32>,
     ) -> Result<Vec<Vec<u8>>> {
         let blocks = Self::preprocess_query_result(
-            query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-                collection: "blocks".to_string(),
-                result: "\
+            query_collection(
+                Arc::clone(&self.context),
+                ParamsOfQueryCollection {
+                    collection: "blocks".to_string(),
+                    result: "\
                     seq_no \
                     gen_utime \
                     id \
                     boc \
                 "
-                .to_string(),
-                filter: Some(json!({
-                    "workchain_id": { "eq": shard.workchain_id() },
-                    "shard": { "eq": shard.shard_prefix_as_str_with_tag() },
-                    "seq_no": { "in": seq_no_range.clone().collect::<Vec<u32>>() },
-                })),
-                order: Some(Self::sorting_by_seq_no()),
-                ..Default::default()
-            })
+                    .to_string(),
+                    filter: Some(json!({
+                        "workchain_id": { "eq": shard.workchain_id() },
+                        "shard": { "eq": shard.shard_prefix_as_str_with_tag() },
+                        "seq_no": { "in": seq_no_range.clone().collect::<Vec<u32>>() },
+                    })),
+                    order: Some(Self::sorting_by_seq_no()),
+                    ..Default::default()
+                },
+            )
             .await?
             .result,
         )?;
@@ -843,8 +867,9 @@ impl ProofHelperEngineImpl {
     }
 
     pub(crate) async fn query_transaction_data(&self, id: &str, fields: &str) -> Result<Value> {
-        let mut transactions =
-            query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
+        let mut transactions = query_collection(
+            Arc::clone(&self.context),
+            ParamsOfQueryCollection {
                 collection: "transactions".to_string(),
                 result: fields.to_string(),
                 filter: Some(json!({
@@ -854,9 +879,10 @@ impl ProofHelperEngineImpl {
                 })),
                 limit: Some(1),
                 ..Default::default()
-            })
-            .await?
-            .result;
+            },
+        )
+        .await?
+        .result;
 
         if transactions.is_empty() {
             tvm_types::fail!("Unable to download transaction data from DApp server");
@@ -866,17 +892,20 @@ impl ProofHelperEngineImpl {
     }
 
     pub(crate) async fn query_message_data(&self, id: &str, fields: &str) -> Result<Value> {
-        let mut messages = query_collection(Arc::clone(&self.context), ParamsOfQueryCollection {
-            collection: "messages".to_string(),
-            result: fields.to_string(),
-            filter: Some(json!({
-                "id": {
-                    "eq": id,
-                },
-            })),
-            limit: Some(1),
-            ..Default::default()
-        })
+        let mut messages = query_collection(
+            Arc::clone(&self.context),
+            ParamsOfQueryCollection {
+                collection: "messages".to_string(),
+                result: fields.to_string(),
+                filter: Some(json!({
+                    "id": {
+                        "eq": id,
+                    },
+                })),
+                limit: Some(1),
+                ..Default::default()
+            },
+        )
         .await?
         .result;
 

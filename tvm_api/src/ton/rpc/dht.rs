@@ -37,7 +37,11 @@ impl crate::BoxedDeserialize for FindNode {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x6ce2ce6b) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x6ce2ce6b) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for FindNode {
@@ -85,7 +89,11 @@ impl crate::BoxedDeserialize for FindValue {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xae4b6011) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xae4b6011) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for FindValue {
@@ -123,7 +131,11 @@ impl crate::BoxedDeserialize for GetSignedAddressList {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xa97948ed) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xa97948ed) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetSignedAddressList {
@@ -168,7 +180,11 @@ impl crate::BoxedDeserialize for Ping {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xcbeb3f18) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xcbeb3f18) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Ping {
@@ -213,7 +229,11 @@ impl crate::BoxedDeserialize for Query {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x7d530769) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x7d530769) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Query {
@@ -258,7 +278,11 @@ impl crate::BoxedDeserialize for Store {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x34934212) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x34934212) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Store {

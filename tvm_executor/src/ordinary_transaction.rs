@@ -24,7 +24,6 @@ use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
-use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::Serializable;
 use tvm_block::TrBouncePhase;
@@ -32,24 +31,25 @@ use tvm_block::TrComputePhase;
 use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionDescrOrdinary;
+use tvm_block::MASTERCHAIN_ID;
+use tvm_types::error;
+use tvm_types::fail;
 use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_vm::SmartContractInfo;
 use tvm_vm::boolean;
 use tvm_vm::int;
+use tvm_vm::stack::integer::IntegerData;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
-use tvm_vm::stack::integer::IntegerData;
+use tvm_vm::SmartContractInfo;
 
+use crate::blockchain_config::BlockchainConfig;
+use crate::error::ExecutorError;
 use crate::ActionPhaseResult;
 use crate::ExecuteParams;
 use crate::TransactionExecutor;
 use crate::VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
-use crate::blockchain_config::BlockchainConfig;
-use crate::error::ExecutorError;
 
 pub struct OrdinaryTransactionExecutor {
     config: BlockchainConfig,

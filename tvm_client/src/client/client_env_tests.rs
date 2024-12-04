@@ -1,7 +1,7 @@
 use tvm_types::Result;
 
-use crate::client::LocalStorage;
 use crate::client::storage::KeyValueStorage;
+use crate::client::LocalStorage;
 
 #[cfg(not(feature = "wasm-base"))]
 mod env {

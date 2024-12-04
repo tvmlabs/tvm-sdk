@@ -10,16 +10,20 @@
 // limitations under the License.
 
 use std::borrow::Cow;
-use std::cmp::Ordering;
 use std::cmp::min;
+use std::cmp::Ordering;
 use std::io::Cursor;
 use std::io::Write;
 
-use crc::CRC_32_ISCSI;
 use crc::Crc;
+use crc::CRC_32_ISCSI;
 use sha2::Digest;
 use sha2::Sha256;
 use sha2::Sha512;
+use tvm_types::bls::BLS_PUBLIC_KEY_LEN;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::types::ByteOrderRead;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
@@ -28,13 +32,7 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-use tvm_types::bls::BLS_PUBLIC_KEY_LEN;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::ByteOrderRead;
 
-use crate::Deserializable;
-use crate::Serializable;
 use crate::config_params::CatchainConfig;
 use crate::define_HashmapE;
 use crate::error::BlockError;
@@ -44,6 +42,8 @@ use crate::signature::CryptoSignature;
 use crate::signature::SigPubKey;
 use crate::types::Number16;
 use crate::types::UnixTime32;
+use crate::Deserializable;
+use crate::Serializable;
 
 pub const CASTAGNOLI: Crc<u32> = Crc::<u32>::new(&CRC_32_ISCSI);
 

@@ -22,14 +22,14 @@ use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::Result;
 
-use crate::PublicKeyData;
-use crate::contract::ABI_VERSION_2_4;
 use crate::contract::AbiVersion;
+use crate::contract::ABI_VERSION_2_4;
 use crate::error::AbiError;
 use crate::int::Int;
 use crate::int::Uint;
 use crate::param::Param;
 use crate::param_type::ParamType;
+use crate::PublicKeyData;
 
 mod deserialize;
 mod detokenizer;

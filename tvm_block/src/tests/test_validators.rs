@@ -12,13 +12,13 @@ use ed25519_dalek::VerifyingKey;
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 use super::*;
-use crate::BASE_WORKCHAIN_ID;
-use crate::ShardIdent;
 use crate::blocks::Block;
 use crate::config_params::ConfigParamEnum;
 use crate::merkle_proof::MerkleProof;
 use crate::signature::BlockProof;
 use crate::write_read_and_assert;
+use crate::ShardIdent;
+use crate::BASE_WORKCHAIN_ID;
 
 #[test]
 fn test_validator_info_new_default() {

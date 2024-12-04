@@ -12,16 +12,16 @@
 use std::ops::RangeInclusive;
 
 use num_traits::Num;
-use tvm_types::Result;
 use tvm_types::error;
 use tvm_types::types::ExceptionCode;
+use tvm_types::Result;
 
 use crate::error::TvmError;
+use crate::stack::integer::utils::check_overflow;
+use crate::stack::integer::utils::twos_complement;
 use crate::stack::integer::Int;
 use crate::stack::integer::IntegerData;
 use crate::stack::integer::IntegerValue;
-use crate::stack::integer::utils::check_overflow;
-use crate::stack::integer::utils::twos_complement;
 use crate::types::Exception;
 
 impl IntegerData {

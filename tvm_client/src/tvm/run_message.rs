@@ -10,8 +10,8 @@
 // limitations under the License.
 //
 
-use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
 
 use serde_json::Value;
 use tvm_block::Account;
@@ -32,7 +32,6 @@ use super::stack::serialize_item;
 use super::types::ExecutionOptions;
 use super::types::ResolvedExecutionOptions;
 use crate::abi::Abi;
-use crate::boc::BocCacheType;
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::boc::internal::deserialize_object_from_cell;
@@ -40,12 +39,13 @@ use crate::boc::internal::serialize_cell_to_boc;
 use crate::boc::internal::serialize_object_to_base64;
 use crate::boc::internal::serialize_object_to_boc;
 use crate::boc::internal::serialize_object_to_cell;
+use crate::boc::BocCacheType;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::processing::DecodedOutput;
 use crate::processing::parsing::decode_output;
-use crate::tvm::Error;
+use crate::processing::DecodedOutput;
 use crate::tvm::check_transaction::calc_transaction_fees;
+use crate::tvm::Error;
 
 #[derive(Serialize, Deserialize, ApiType, Debug, Clone)]
 #[serde(tag = "type")]
@@ -207,9 +207,10 @@ fn parse_transaction(
     context: &Arc<ClientContext>,
     transaction: &Transaction,
 ) -> ClientResult<Value> {
-    Ok(crate::boc::parse_transaction(context.clone(), crate::boc::ParamsOfParse {
-        boc: serialize_object_to_base64(transaction, "transaction")?,
-    })?
+    Ok(crate::boc::parse_transaction(
+        context.clone(),
+        crate::boc::ParamsOfParse { boc: serialize_object_to_base64(transaction, "transaction")? },
+    )?
     .parsed)
 }
 

@@ -4,15 +4,15 @@ use assert_cmd::Command;
 use serde_json::Value;
 
 mod common;
+use common::generate_key_and_address;
+use common::generate_phrase_and_key;
+use common::giver_v3;
 use common::BIN_NAME;
 use common::GIVER_ABI;
 use common::GIVER_ADDR;
 use common::GIVER_V2_ADDR;
 use common::GIVER_V2_KEY;
 use common::NETWORK;
-use common::generate_key_and_address;
-use common::generate_phrase_and_key;
-use common::giver_v3;
 
 const DEPOOL_ABI: &str = "tests/samples/fakeDepool.abi.json";
 const DEPOOL_TVC: &str = "tests/samples/fakeDepool.tvc";

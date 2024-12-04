@@ -3,8 +3,8 @@ use std::fmt::Display;
 use serde_json::Value;
 
 use crate::client::FetchResult;
-use crate::error::ClientError;
 use crate::error::format_time;
+use crate::error::ClientError;
 
 #[derive(ApiType)]
 pub enum ErrorCode {

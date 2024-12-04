@@ -24,12 +24,12 @@ use tvm_types::Cell;
 use tvm_types::HashmapType;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-use tvm_vm::executor::Engine;
 use tvm_vm::executor::gas::gas_state::Gas;
-use tvm_vm::stack::Stack;
-use tvm_vm::stack::StackItem;
+use tvm_vm::executor::Engine;
 use tvm_vm::stack::integer::IntegerData;
 use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::stack::Stack;
+use tvm_vm::stack::StackItem;
 
 use super::types::ResolvedExecutionOptions;
 use crate::encoding::slice_from_cell;

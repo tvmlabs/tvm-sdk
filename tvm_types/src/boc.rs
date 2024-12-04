@@ -8,9 +8,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+use std::collections::hash_map;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::collections::hash_map;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Cursor;
@@ -25,18 +25,9 @@ use std::sync::Arc;
 
 use smallvec::SmallVec;
 
-use crate::ByteOrderRead;
-use crate::CellImpl;
-use crate::CellType;
-use crate::Crc32;
-use crate::MAX_BIG_DATA_BYTES;
-use crate::MAX_REFERENCES_COUNT;
-use crate::Result;
-use crate::Status;
-use crate::UInt256;
 use crate::cell::Cell;
-use crate::cell::DEPTH_SIZE;
 use crate::cell::DataCell;
+use crate::cell::DEPTH_SIZE;
 use crate::cell::MAX_DATA_BYTES;
 use crate::cell::MAX_SAFE_DEPTH;
 use crate::cell::SHA256_SIZE;
@@ -45,6 +36,15 @@ use crate::crc32_digest;
 use crate::error;
 use crate::fail;
 use crate::full_len;
+use crate::ByteOrderRead;
+use crate::CellImpl;
+use crate::CellType;
+use crate::Crc32;
+use crate::Result;
+use crate::Status;
+use crate::UInt256;
+use crate::MAX_BIG_DATA_BYTES;
+use crate::MAX_REFERENCES_COUNT;
 
 const BOC_INDEXED_TAG: u32 = 0x68ff65f3; // deprecated, is used only for read
 const BOC_INDEXED_CRC32_TAG: u32 = 0xacc3a728; // deprecated, is used only for read
@@ -444,9 +444,9 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             } else {
                 boc.traverse(root_cell)?;
                 boc.roots_indexes_rev.push(boc.cells_count - 1); // root must be
-                // added into
-                // `sorted_rev`
-                // back
+                                                                 // added into
+                                                                 // `sorted_rev`
+                                                                 // back
             }
         }
 
@@ -1153,8 +1153,8 @@ impl<'a> BocReader<'a> {
             MAX_DATA_BYTES +
             MAX_REFERENCES_COUNT * ref_size;
         let min_cell_size = 2; // descr bytes only
-        // every raw cell except roots must be referenced at least once, hence the
-        // formula
+                               // every raw cell except roots must be referenced at least once, hence the
+                               // formula
         let tot_cells_size_minimal =
             (cells_count - big_cells_count) * (min_cell_size + ref_size) - ref_size * roots_count;
         if tot_cells_size - big_cells_size < tot_cells_size_minimal {

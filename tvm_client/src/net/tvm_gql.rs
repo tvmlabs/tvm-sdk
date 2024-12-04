@@ -10,15 +10,15 @@
 // limitations under the License.
 //
 
+use serde::de::Error;
 use serde::Deserialize;
 use serde::Deserializer;
-use serde::de::Error;
 use serde_json::Value;
 
 use crate::error::ClientError;
 use crate::error::ClientResult;
-use crate::net::ParamsOfWaitForCollection;
 use crate::net::gql::GraphQLMessageFromClient;
+use crate::net::ParamsOfWaitForCollection;
 
 const COUNTERPARTIES_COLLECTION: &str = "counterparties";
 const FETCH_ADDITIONAL_TIMEOUT: u32 = 5000;

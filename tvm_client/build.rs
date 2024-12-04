@@ -48,14 +48,17 @@ fn root() -> PathBuf {
 impl BuildInfo {
     fn load() -> Result<Self, String> {
         let manifest_path = root().join("Cargo.toml");
-        let meta_out = exec("cargo", &[
-            "metadata",
-            "--locked",
-            "--format-version",
-            "1",
-            "--manifest-path",
-            manifest_path.to_str().unwrap(),
-        ])?;
+        let meta_out = exec(
+            "cargo",
+            &[
+                "metadata",
+                "--locked",
+                "--format-version",
+                "1",
+                "--manifest-path",
+                manifest_path.to_str().unwrap(),
+            ],
+        )?;
         let meta = serde_json::from_str::<Value>(&meta_out).unwrap();
         let git_commit = exec("git", &["rev-parse", "HEAD"])?.trim().to_string();
         let mut build_number = std::env::var("tvm_BUILD_NUMBER").unwrap_or("".into());

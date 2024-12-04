@@ -11,12 +11,12 @@
 
 use std::collections::BTreeMap;
 
-use serde::Deserialize;
-use serde::Serialize;
 use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::Visitor;
 use serde::ser::SerializeMap;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::Cell;
 use tvm_types::UInt256;
 

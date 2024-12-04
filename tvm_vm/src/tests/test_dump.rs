@@ -12,9 +12,6 @@
 use tvm_types::BuilderData;
 use tvm_types::SliceData;
 
-use crate::executor::dump::BIN;
-use crate::executor::dump::HEX;
-use crate::executor::dump::STR;
 use crate::executor::dump::dump_var;
 use crate::executor::dump::execute_dump_bin;
 use crate::executor::dump::execute_dump_hex;
@@ -25,10 +22,13 @@ use crate::executor::dump::execute_dump_string;
 use crate::executor::dump::execute_print_bin;
 use crate::executor::dump::execute_print_hex;
 use crate::executor::dump::execute_print_str;
+use crate::executor::dump::BIN;
+use crate::executor::dump::HEX;
+use crate::executor::dump::STR;
 use crate::executor::engine::Engine;
+use crate::stack::integer::IntegerData;
 use crate::stack::Stack;
 use crate::stack::StackItem;
-use crate::stack::integer::IntegerData;
 
 #[test]
 fn test_dump_var() {

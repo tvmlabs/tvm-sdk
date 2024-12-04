@@ -9,13 +9,13 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use crate::stack::SliceData;
-use crate::stack::integer::IntegerData;
 use crate::stack::integer::serialization::Encoding;
 use crate::stack::integer::serialization::SignedIntegerBigEndianEncoding;
 use crate::stack::integer::serialization::SignedIntegerLittleEndianEncoding;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::stack::integer::serialization::UnsignedIntegerLittleEndianEncoding;
+use crate::stack::integer::IntegerData;
+use crate::stack::SliceData;
 
 #[test]
 fn test_signed_big_endian_ser_deser() {

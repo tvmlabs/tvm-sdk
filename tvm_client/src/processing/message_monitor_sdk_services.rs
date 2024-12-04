@@ -1,7 +1,7 @@
 use std::future::Future;
-use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde_json::Value;
@@ -88,9 +88,9 @@ impl MessageMonitorSdkServices for SdkServices {
         &self,
         messages: Vec<MessageMonitoringParams>,
         callback: impl Fn(tvm_client_processing::Result<Vec<MessageMonitoringResult>>) -> F
-        + Send
-        + Sync
-        + 'static,
+            + Send
+            + Sync
+            + 'static,
     ) -> tvm_client_processing::Result<NetSubscription> {
         // We have to wrap callback into Arc because it will move out of closure scope
         let callback = Arc::new(callback);

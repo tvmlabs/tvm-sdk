@@ -42,9 +42,9 @@ use crate::json_interface::debot::*;
 use crate::json_interface::interop::ResponseType;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::ResultOfQueryCollection;
+use crate::tests::TestClient;
 use crate::tests::TEST_DEBOT;
 use crate::tests::TEST_DEBOT_TARGET;
-use crate::tests::TestClient;
 use crate::tvm::ParamsOfRunTvm;
 use crate::tvm::ResultOfRunTvm;
 
@@ -172,9 +172,10 @@ impl TestBrowser {
 
         if call_start {
             let _: () = client
-                .request_async("debot.start", ParamsOfStart {
-                    debot_handle: handle.debot_handle.clone(),
-                })
+                .request_async(
+                    "debot.start",
+                    ParamsOfStart { debot_handle: handle.debot_handle.clone() },
+                )
                 .await
                 .unwrap();
         }
@@ -194,10 +195,10 @@ impl TestBrowser {
             };
             log::info!("Executing action: {:#?}", action);
             let _: () = client
-                .request_async("debot.execute", ParamsOfExecute {
-                    debot_handle: handle.debot_handle.clone(),
-                    action,
-                })
+                .request_async(
+                    "debot.execute",
+                    ParamsOfExecute { debot_handle: handle.debot_handle.clone(), action },
+                )
                 .await
                 .unwrap();
 
@@ -421,12 +422,15 @@ impl TestBrowser {
                     panic!("unsupported interface");
                 };
                 let decoded: DecodedMessageBody = client
-                    .request_async("abi.decode_message_body", ParamsOfDecodeMessageBody {
-                        abi,
-                        body,
-                        is_internal: true,
-                        ..Default::default()
-                    })
+                    .request_async(
+                        "abi.decode_message_body",
+                        ParamsOfDecodeMessageBody {
+                            abi,
+                            body,
+                            is_internal: true,
+                            ..Default::default()
+                        },
+                    )
                     .await
                     .unwrap();
                 let (func, args) = (decoded.name, decoded.value.unwrap());
@@ -482,16 +486,19 @@ async fn encode_internal_message(
     call_set: Option<CallSet>,
 ) -> String {
     let r: ResultOfEncodeInternalMessage = client
-        .request_async("abi.encode_internal_message", ParamsOfEncodeInternalMessage {
-            abi: Some(Abi::Contract(serde_json::from_str(abi).unwrap())),
-            address: Some(addr),
-            src_address: None,
-            deploy_set: None,
-            call_set,
-            value: "1000000000000000".to_owned(),
-            bounce: None,
-            enable_ihr: None,
-        })
+        .request_async(
+            "abi.encode_internal_message",
+            ParamsOfEncodeInternalMessage {
+                abi: Some(Abi::Contract(serde_json::from_str(abi).unwrap())),
+                address: Some(addr),
+                src_address: None,
+                deploy_set: None,
+                call_set,
+                value: "1000000000000000".to_owned(),
+                bounce: None,
+                enable_ihr: None,
+            },
+        )
         .await
         .unwrap();
     r.message
@@ -825,15 +832,18 @@ async fn init_hello_debot(client: Arc<TestClient>) -> DebotData {
 
 async fn count_accounts_by_codehash(client: Arc<TestClient>, code_hash: String) -> u32 {
     let res: ResultOfQueryCollection = client
-        .request_async("net.query_collection", ParamsOfQueryCollection {
-            collection: "accounts".to_owned(),
-            filter: Some(json!({
-                "code_hash": { "eq": code_hash}
-            })),
-            result: "id".to_owned(),
-            limit: None,
-            order: None,
-        })
+        .request_async(
+            "net.query_collection",
+            ParamsOfQueryCollection {
+                collection: "accounts".to_owned(),
+                filter: Some(json!({
+                    "code_hash": { "eq": code_hash}
+                })),
+                result: "id".to_owned(),
+                limit: None,
+                order: None,
+            },
+        )
         .await
         .unwrap();
 
@@ -843,9 +853,10 @@ async fn count_accounts_by_codehash(client: Arc<TestClient>, code_hash: String) 
 async fn get_code_hash_from_tvc(client: Arc<TestClient>, name: &str) -> String {
     let debot_tvc = TestClient::tvc(name, Some(2));
     let result: ResultOfGetCodeFromTvc = client
-        .request_async("boc.get_code_from_tvc", ParamsOfGetCodeFromTvc {
-            tvc: debot_tvc.unwrap_or_default(),
-        })
+        .request_async(
+            "boc.get_code_from_tvc",
+            ParamsOfGetCodeFromTvc { tvc: debot_tvc.unwrap_or_default() },
+        )
         .await
         .unwrap();
 
@@ -1066,9 +1077,11 @@ async fn test_debot_inner_interfaces() {
     let DebotData { debot_addr, target_addr: _, keys, abi } = init_debot3(client.clone()).await;
 
     let steps = serde_json::from_value(json!([])).unwrap();
-    let mut info = build_info(abi, 0, vec![format!(
-        "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"
-    )]);
+    let mut info = build_info(
+        abi,
+        0,
+        vec![format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3")],
+    );
     info.name = Some("TestSdk".to_string());
     info.version = Some("0.4.0".to_string());
     info.caption = Some("Test for SDK interface".to_string());
@@ -1268,7 +1281,7 @@ async fn test_debot_getinfo() {
             dabi: Some(abi),
             icon: Some(icon),
             interfaces: vec![
-                "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
+                "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned()
             ],
             dabi_version: "2.0".to_string(),
         },
@@ -1283,10 +1296,14 @@ async fn test_debot_approve() {
     let client = Arc::new(TestClient::new());
     let DebotData { debot_addr, target_addr: _, keys, abi } =
         init_simple_debot(client.clone(), "testDebot6").await;
-    let mut info = build_info(abi, 6, vec![
-        "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
-        "0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a".to_owned(),
-    ]);
+    let mut info = build_info(
+        abi,
+        6,
+        vec![
+            "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
+            "0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a".to_owned(),
+        ],
+    );
     info.caption = Some("Test for approve callback and signing handle".to_string());
     info.name = Some("testDebot6".to_string());
     info.hello = Some("testDebot6".to_string());
@@ -1315,10 +1332,10 @@ async fn test_debot_approve() {
             },
             ExpectedTransaction {
                 dst: debot_addr.clone(),
-                out: vec![Spending { amount: 2200000000, dst: debot_addr.clone() }, Spending {
-                    amount: 3500000000,
-                    dst: format!("0:{:064}", 0),
-                }],
+                out: vec![
+                    Spending { amount: 2200000000, dst: debot_addr.clone() },
+                    Spending { amount: 3500000000, dst: format!("0:{:064}", 0) },
+                ],
                 setcode: false,
                 signkey: keys.public.clone(),
                 approved: true,
@@ -1378,11 +1395,15 @@ async fn test_debot_network_interface() {
         keys,
         steps,
         vec![],
-        build_info(abi, 8, vec![
-            "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
-            "0xe38aed5884dc3e4426a87c083faaf4fa08109189fbc0c79281112f52e062d8ee".to_owned(),
-            "0x442288826041d564ccedc579674f17c1b0a3452df799656a9167a41ab270ec19".to_owned(),
-        ]),
+        build_info(
+            abi,
+            8,
+            vec![
+                "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
+                "0xe38aed5884dc3e4426a87c083faaf4fa08109189fbc0c79281112f52e062d8ee".to_owned(),
+                "0x442288826041d564ccedc579674f17c1b0a3452df799656a9167a41ab270ec19".to_owned(),
+            ],
+        ),
         vec![],
     )
     .await;
@@ -1401,9 +1422,11 @@ async fn test_debot_transaction_chain() {
         keys,
         steps,
         vec![format!("Test passed")],
-        build_info(abi, 9, vec![
-            "0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned(),
-        ]),
+        build_info(
+            abi,
+            9,
+            vec!["0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3".to_owned()],
+        ),
         vec![],
     )
     .await;
@@ -1422,10 +1445,14 @@ async fn test_debot_encryption_box() {
         keys,
         steps,
         vec![format!("Encryption Box Handle: 3"), format!("Test passed")],
-        build_info(abi, 10, vec![
-            format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
-            format!("0x5b5f76b54d976d72f1ada3063d1af2e5352edaf1ba86b3b311170d4d81056d61"),
-        ]),
+        build_info(
+            abi,
+            10,
+            vec![
+                format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
+                format!("0x5b5f76b54d976d72f1ada3063d1af2e5352edaf1ba86b3b311170d4d81056d61"),
+            ],
+        ),
         vec![],
     )
     .await;
@@ -1444,10 +1471,14 @@ async fn test_debot_encryption_box_get_info() {
         keys,
         steps,
         vec![],
-        build_info(abi, 11, vec![
-            format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
-            format!("0x5b5f76b54d976d72f1ada3063d1af2e5352edaf1ba86b3b311170d4d81056d61"),
-        ]),
+        build_info(
+            abi,
+            11,
+            vec![
+                format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
+                format!("0x5b5f76b54d976d72f1ada3063d1af2e5352edaf1ba86b3b311170d4d81056d61"),
+            ],
+        ),
         vec![],
     )
     .await;
@@ -1466,10 +1497,14 @@ async fn test_debot_signing_box_get_info() {
         keys,
         steps,
         vec![],
-        build_info(abi, 12, vec![
-            format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
-            format!("0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a"),
-        ]),
+        build_info(
+            abi,
+            12,
+            vec![
+                format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
+                format!("0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a"),
+            ],
+        ),
         vec![],
     )
     .await;
@@ -1487,10 +1522,14 @@ async fn test_debot_query() {
         keys,
         vec![],
         vec![],
-        build_info(abi, 14, vec![
-            format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
-            format!("0x5c6fd81616cdfb963632109c42144a3a885c8d0f2e8deb5d8e15872fb92f2811"),
-        ]),
+        build_info(
+            abi,
+            14,
+            vec![
+                format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
+                format!("0x5c6fd81616cdfb963632109c42144a3a885c8d0f2e8deb5d8e15872fb92f2811"),
+            ],
+        ),
         vec![],
     )
     .await;
@@ -1502,10 +1541,14 @@ async fn test_debot_json_parse() {
     let client = Arc::new(TestClient::new());
     let DebotData { debot_addr, target_addr: _, keys, abi } =
         init_simple_debot(client.clone(), "testDebot15").await;
-    let mut info = build_info(abi, 15, vec![
-        format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
-        format!("0x442288826041d564ccedc579674f17c1b0a3452df799656a9167a41ab270ec19"),
-    ]);
+    let mut info = build_info(
+        abi,
+        15,
+        vec![
+            format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
+            format!("0x442288826041d564ccedc579674f17c1b0a3452df799656a9167a41ab270ec19"),
+        ],
+    );
     info.dabi_version = "2.2".to_string();
     TestBrowser::execute_with_details(
         client.clone(),
@@ -1543,10 +1586,14 @@ async fn test_debot_custom_header() {
     // deploy debot
     let DebotData { debot_addr, target_addr: _, keys, abi } =
         init_simple_debot(client.clone(), "testDebot20").await;
-    let info = build_info_abi2_2(abi, 20, vec![
-        format!("0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a"),
-        format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
-    ]);
+    let info = build_info_abi2_2(
+        abi,
+        20,
+        vec![
+            format!("0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a"),
+            format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
+        ],
+    );
     // set address of CustomReplayProtection to DeBot
     let debot_abi = TestClient::abi("testDebot20", Some(2));
     let _ = client
@@ -1605,10 +1652,14 @@ async fn test_debot_msg_sendasync_and_waitforcollection() {
         keys,
         steps,
         vec![],
-        build_info(abi, 17, vec![
-            "0x475a5d1729acee4601c2a8cb67240e4da5316cc90a116e1b181d905e79401c51".to_owned(),
-            "0x5c6fd81616cdfb963632109c42144a3a885c8d0f2e8deb5d8e15872fb92f2811".to_owned(),
-        ]),
+        build_info(
+            abi,
+            17,
+            vec![
+                "0x475a5d1729acee4601c2a8cb67240e4da5316cc90a116e1b181d905e79401c51".to_owned(),
+                "0x5c6fd81616cdfb963632109c42144a3a885c8d0f2e8deb5d8e15872fb92f2811".to_owned(),
+            ],
+        ),
         vec![],
     )
     .await;
@@ -1627,9 +1678,11 @@ async fn test_debot_query_query() {
         keys,
         steps,
         vec![],
-        build_info(abi, 18, vec![
-            "0x5c6fd81616cdfb963632109c42144a3a885c8d0f2e8deb5d8e15872fb92f2811".to_owned(),
-        ]),
+        build_info(
+            abi,
+            18,
+            vec!["0x5c6fd81616cdfb963632109c42144a3a885c8d0f2e8deb5d8e15872fb92f2811".to_owned()],
+        ),
         vec![],
     )
     .await;
@@ -1647,10 +1700,14 @@ async fn test_debot_transaction_result() {
         keys,
         vec![],
         vec![],
-        build_info(abi, 19, vec![
-            format!("0x475a5d1729acee4601c2a8cb67240e4da5316cc90a116e1b181d905e79401c51"),
-            format!("0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a"),
-        ]),
+        build_info(
+            abi,
+            19,
+            vec![
+                format!("0x475a5d1729acee4601c2a8cb67240e4da5316cc90a116e1b181d905e79401c51"),
+                format!("0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a"),
+            ],
+        ),
         vec![],
     )
     .await;
@@ -1669,10 +1726,14 @@ async fn test_debot_sign_hash() {
         keys,
         steps,
         vec![],
-        build_info_abi2_2(abi, 21, vec![
-            format!("0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a"),
-            format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
-        ]),
+        build_info_abi2_2(
+            abi,
+            21,
+            vec![
+                format!("0xc13024e101c95e71afb1f5fa6d72f633d51e721de0320d73dfd6121a54e4d40a"),
+                format!("0x8796536366ee21852db56dccb60bc564598b618c865fc50c8b1ab740bba128e3"),
+            ],
+        ),
         vec![],
     )
     .await;
@@ -1721,15 +1782,18 @@ fn build_info_abi2_2(abi: String, n: u32, interfaces: Vec<String>) -> DebotInfo 
 async fn download_account(client: &Arc<TestClient>, addr: &str) -> Option<String> {
     let client = client.clone();
     let accounts: ResultOfQueryCollection = client
-        .request_async("net.query_collection", ParamsOfQueryCollection {
-            collection: "accounts".to_string(),
-            filter: Some(json!({
-                "id": { "eq": addr }
-            })),
-            result: "boc".to_string(),
-            limit: Some(1),
-            order: None,
-        })
+        .request_async(
+            "net.query_collection",
+            ParamsOfQueryCollection {
+                collection: "accounts".to_string(),
+                filter: Some(json!({
+                    "id": { "eq": addr }
+                })),
+                result: "boc".to_string(),
+                limit: Some(1),
+                order: None,
+            },
+        )
         .await
         .unwrap();
 
@@ -1760,14 +1824,17 @@ async fn assert_get_method(
     let message = client.encode_message(call_params).await.unwrap().message;
 
     let result: ResultOfRunTvm = client
-        .request_async("tvm.run_tvm", ParamsOfRunTvm {
-            account: acc_boc,
-            message,
-            abi: Some(abi.clone()),
-            execution_options: None,
-            boc_cache: None,
-            return_updated_account: Some(true),
-        })
+        .request_async(
+            "tvm.run_tvm",
+            ParamsOfRunTvm {
+                account: acc_boc,
+                message,
+                abi: Some(abi.clone()),
+                execution_options: None,
+                boc_cache: None,
+                return_updated_account: Some(true),
+            },
+        )
         .await
         .unwrap();
 

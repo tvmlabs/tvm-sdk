@@ -12,27 +12,27 @@
 use std::cmp::Ordering;
 use std::mem;
 
-use tvm_types::Result;
 use tvm_types::error;
 use tvm_types::types::Bitmask;
 use tvm_types::types::ExceptionCode;
+use tvm_types::Result;
 
-use crate::error::TvmError;
 use crate::error::tvm_exception_code;
-use crate::executor::engine::Engine;
+use crate::error::TvmError;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
-use crate::stack::StackItem;
-use crate::stack::integer::IntegerData;
 use crate::stack::integer::behavior::OperationBehavior;
-use crate::stack::integer::math::Round;
 use crate::stack::integer::math::utils::div_by_shift;
 use crate::stack::integer::math::utils::divmod;
+use crate::stack::integer::math::Round;
 use crate::stack::integer::utils::binary_op;
 use crate::stack::integer::utils::construct_double_nan;
 use crate::stack::integer::utils::process_double_result;
 use crate::stack::integer::utils::unary_op;
+use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 
@@ -185,7 +185,11 @@ where
 
 macro_rules! boolint {
     ($val:expr) => {
-        if $val { IntegerData::minus_one() } else { IntegerData::zero() }
+        if $val {
+            IntegerData::minus_one()
+        } else {
+            IntegerData::zero()
+        }
     };
 }
 

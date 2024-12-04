@@ -10,11 +10,11 @@ use zeroize::Zeroize;
 
 use super::Error;
 use super::PasswordProvider;
-use crate::ClientContext;
 use crate::crypto::boxes::crypto_box::SecretInternal;
 use crate::crypto::internal::SecretBuf;
 use crate::crypto::nacl::nacl_box_open_internal;
 use crate::error::ClientResult;
+use crate::ClientContext;
 
 const NONCE_LEN: usize = 12;
 

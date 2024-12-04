@@ -12,8 +12,8 @@
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
 
-use crate::ClientContext;
 use crate::error::ClientResult;
+use crate::ClientContext;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
 pub struct ParamsOfCompressZstd {

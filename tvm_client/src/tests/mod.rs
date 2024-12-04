@@ -16,33 +16,32 @@ use std::sync::Arc;
 use api_info::ApiModule;
 use futures::Future;
 use num_traits::FromPrimitive;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::Value;
-use tokio::sync::Mutex;
-use tokio::sync::oneshot::Sender;
 use tokio::sync::oneshot::channel;
+use tokio::sync::oneshot::Sender;
+use tokio::sync::Mutex;
 use tvm_types::base64_encode;
 
 use super::tc_destroy_string;
 use super::tc_read_string;
 use super::tc_request;
 use super::tc_request_sync;
-use crate::ContextHandle;
+use crate::abi::encode_message;
 use crate::abi::Abi;
 use crate::abi::CallSet;
 use crate::abi::DeploySet;
 use crate::abi::ParamsOfEncodeMessage;
 use crate::abi::ResultOfEncodeMessage;
 use crate::abi::Signer;
-use crate::abi::encode_message;
 use crate::client::*;
+use crate::crypto::internal::hex_decode_secret_const;
+use crate::crypto::mnemonic::ed25519_keys_from_secret_bytes;
 use crate::crypto::KeyPair;
 use crate::crypto::ParamsOfNaclSignDetached;
 use crate::crypto::ParamsOfNaclSignKeyPairFromSecret;
 use crate::crypto::ResultOfNaclSignDetached;
-use crate::crypto::internal::hex_decode_secret_const;
-use crate::crypto::mnemonic::ed25519_keys_from_secret_bytes;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 use crate::json_interface::interop::ResponseType;
@@ -58,6 +57,7 @@ use crate::processing::ParamsOfProcessMessage;
 use crate::processing::ResultOfProcessMessage;
 use crate::tc_create_context;
 use crate::tc_destroy_context;
+use crate::ContextHandle;
 
 mod common;
 
@@ -371,7 +371,11 @@ impl TestClient {
 
     pub fn queries_protocol() -> Option<String> {
         let protocol = env::queries_protocol().trim().to_string();
-        if protocol.is_empty() { None } else { Some(protocol) }
+        if protocol.is_empty() {
+            None
+        } else {
+            Some(protocol)
+        }
     }
 
     pub fn node_se() -> bool {
@@ -544,12 +548,15 @@ impl TestClient {
             let mut runtime = TEST_RUNTIME.lock().await;
             let id = runtime.gen_request_id();
             let (sender, receiver) = channel();
-            runtime.requests.insert(id, RequestData {
-                sender: Some(sender),
-                callback: Box::new(callback), /* as Box<dyn Fn(String, u32) -> Pin<Box<dyn
-                                               * Future<Output = ()> + Send + Sync>> + Send +
-                                               * Sync> */
-            });
+            runtime.requests.insert(
+                id,
+                RequestData {
+                    sender: Some(sender),
+                    callback: Box::new(callback), /* as Box<dyn Fn(String, u32) -> Pin<Box<dyn
+                                                   * Future<Output = ()> + Send + Sync>> + Send +
+                                                   * Sync> */
+                },
+            );
             (id, receiver)
         };
         unsafe {
@@ -695,8 +702,10 @@ impl TestClient {
         value: Option<u64>,
     ) -> ResultOfProcessMessage {
         let giver_exists: ResultOfQuery = self
-            .request_async("net.query", ParamsOfQuery {
-                query: r#"query($addr: String!) {
+            .request_async(
+                "net.query",
+                ParamsOfQuery {
+                    query: r#"query($addr: String!) {
                         blockchain {
                             account(address: $addr) {
                                 info {
@@ -705,9 +714,10 @@ impl TestClient {
                             }
                         }
                     }"#
-                .to_string(),
-                variables: Some(json!({"addr": self.giver_address().await})),
-            })
+                    .to_string(),
+                    variables: Some(json!({"addr": self.giver_address().await})),
+                },
+            )
             .await
             .unwrap_or_default();
 
@@ -754,10 +764,13 @@ impl TestClient {
 
         // wait for tokens reception
         let _: ResultOfQueryTransactionTree = self
-            .request_async("net.query_transaction_tree", ParamsOfQueryTransactionTree {
-                in_msg: run_result.transaction["in_msg"].as_str().unwrap().to_string(),
-                ..Default::default()
-            })
+            .request_async(
+                "net.query_transaction_tree",
+                ParamsOfQueryTransactionTree {
+                    in_msg: run_result.transaction["in_msg"].as_str().unwrap().to_string(),
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
 
@@ -805,19 +818,25 @@ impl TestClient {
             )
             .unwrap();
         let result: ResultOfNaclSignDetached = self
-            .request("crypto.nacl_sign_detached", ParamsOfNaclSignDetached {
-                unsigned: data.into(),
-                secret: sign_keys.secret.clone(),
-            })
+            .request(
+                "crypto.nacl_sign_detached",
+                ParamsOfNaclSignDetached {
+                    unsigned: data.into(),
+                    secret: sign_keys.secret.clone(),
+                },
+            )
             .unwrap();
         result.signature
     }
 
     pub async fn resolve_app_request(&self, app_request_id: u32, result: impl Serialize) {
-        self.request_async::<_, ()>("client.resolve_app_request", ParamsOfResolveAppRequest {
-            app_request_id,
-            result: AppRequestResult::Ok { result: json!(result) },
-        })
+        self.request_async::<_, ()>(
+            "client.resolve_app_request",
+            ParamsOfResolveAppRequest {
+                app_request_id,
+                result: AppRequestResult::Ok { result: json!(result) },
+            },
+        )
         .await
         .unwrap();
     }

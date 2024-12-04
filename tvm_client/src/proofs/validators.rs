@@ -10,8 +10,8 @@ use tvm_block::ValidatorDescr;
 use tvm_block::ValidatorSet;
 use tvm_block::WorkchainDescr;
 use tvm_block::Workchains;
-use tvm_types::Result;
 use tvm_types::base64_encode;
+use tvm_types::Result;
 
 use crate::proofs::Signatures;
 

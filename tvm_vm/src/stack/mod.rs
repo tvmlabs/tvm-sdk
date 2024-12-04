@@ -19,6 +19,7 @@ use std::sync::Arc;
 use integer::serialization::Encoding;
 use integer::serialization::SignedIntegerBigEndianEncoding;
 use serialization::Deserializer;
+use tvm_types::error;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -27,11 +28,10 @@ use tvm_types::GasConsumer;
 use tvm_types::HashmapE;
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
-use tvm_types::MAX_DATA_BITS;
-use tvm_types::MAX_REFERENCES_COUNT;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::error;
+use tvm_types::MAX_DATA_BITS;
+use tvm_types::MAX_REFERENCES_COUNT;
 
 use self::continuation::ContinuationData;
 use self::integer::IntegerData;
@@ -70,7 +70,11 @@ macro_rules! int {
 #[macro_export]
 macro_rules! boolean {
     ($val:expr) => {
-        if $val { int!(-1) } else { int!(0) }
+        if $val {
+            int!(-1)
+        } else {
+            int!(0)
+        }
     };
 }
 
@@ -612,7 +616,11 @@ impl StackItem {
                 };
                 let d2 = |bits: u32| {
                     let res = ((bits / 8) * 2) as u8;
-                    if bits & 7 != 0 { res + 1 } else { res }
+                    if bits & 7 != 0 {
+                        res + 1
+                    } else {
+                        res
+                    }
                 };
                 let start = data.pos();
                 let end = start + data.remaining_bits();

@@ -10,6 +10,8 @@ use tvm_client::debot::DebotInterfaceExecutor;
 use tvm_client::encoding::decode_abi_bigint;
 use tvm_client::encoding::decode_abi_number;
 
+use super::echo::Echo;
+use super::stdout::Stdout;
 use super::AddressInput;
 use super::AmountInput;
 use super::ConfirmInput;
@@ -20,8 +22,6 @@ use super::NumberInput;
 use super::SigningBoxInput;
 use super::Terminal;
 use super::UserInfo;
-use super::echo::Echo;
-use super::stdout::Stdout;
 use crate::config::Config;
 use crate::debot::ChainProcessor;
 use crate::helpers::TonClient;

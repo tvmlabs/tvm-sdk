@@ -49,9 +49,9 @@ use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::SubCommand;
-use config::Config;
 use config::clear_config;
 use config::set_config;
+use config::Config;
 use crypto::extract_pubkey;
 use crypto::generate_keypair;
 use crypto::generate_mnemonic;
@@ -78,8 +78,8 @@ use multisig::multisig_command;
 use replay::fetch_block_command;
 use replay::fetch_command;
 use replay::replay_command;
-use serde_json::Value;
 use serde_json::json;
+use serde_json::Value;
 use test::create_test_command;
 use test::create_test_sign_command;
 use test::test_command;
@@ -91,10 +91,9 @@ use voting::decode_proposal;
 use voting::vote;
 
 use crate::account::dump_accounts;
-use crate::config::FullConfig;
 use crate::config::resolve_net_name;
+use crate::config::FullConfig;
 use crate::getconfig::gen_update_config_message;
-use crate::helpers::AccountSource;
 use crate::helpers::abi_from_matches_or_config;
 use crate::helpers::default_config_name;
 use crate::helpers::global_config_path;
@@ -103,6 +102,7 @@ use crate::helpers::load_params;
 use crate::helpers::parse_lifetime;
 use crate::helpers::unpack_alternative_params;
 use crate::helpers::wc_from_matches_or_config;
+use crate::helpers::AccountSource;
 use crate::message::generate_message;
 use crate::run::run_command;
 use crate::run::run_get_method;
@@ -1234,13 +1234,16 @@ async fn body_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), S
         .map_err(|e| format!("arguments are not in json format: {}", e))?;
 
     let client = create_client_local()?;
-    let body = tvm_client::abi::encode_message_body(client.clone(), ParamsOfEncodeMessageBody {
-        abi: load_abi(abi.as_ref().unwrap(), config).await?,
-        call_set: CallSet::some_with_function_and_input(method.unwrap(), params)
-            .ok_or("failed to create CallSet with specified parameters.")?,
-        is_internal: true,
-        ..Default::default()
-    })
+    let body = tvm_client::abi::encode_message_body(
+        client.clone(),
+        ParamsOfEncodeMessageBody {
+            abi: load_abi(abi.as_ref().unwrap(), config).await?,
+            call_set: CallSet::some_with_function_and_input(method.unwrap(), params)
+                .ok_or("failed to create CallSet with specified parameters.")?,
+            is_internal: true,
+            ..Default::default()
+        },
+    )
     .await
     .map_err(|e| format!("failed to encode body: {}", e))
     .map(|r| r.body)?;

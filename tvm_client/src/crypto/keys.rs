@@ -16,8 +16,8 @@ use base64::Engine;
 use ed25519_dalek::SigningKey;
 use tvm_types::base64_encode;
 
-use super::internal::SecretBufConst;
 use super::internal::hex_decode_secret_const;
+use super::internal::SecretBufConst;
 use crate::client::ClientContext;
 use crate::crypto;
 use crate::crypto::internal::decode_public_key;

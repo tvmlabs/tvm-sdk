@@ -34,7 +34,11 @@ impl crate::BoxedDeserialize for GetBroadcast {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x2d35f2a0) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x2d35f2a0) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetBroadcast {
@@ -79,7 +83,11 @@ impl crate::BoxedDeserialize for GetBroadcastList {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x421c283a) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x421c283a) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetBroadcastList {
@@ -124,7 +132,11 @@ impl crate::BoxedDeserialize for GetRandomPeers {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x48ee64ab) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x48ee64ab) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for GetRandomPeers {
@@ -169,7 +181,11 @@ impl crate::BoxedDeserialize for Query {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0xccfd8443) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0xccfd8443) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Query {

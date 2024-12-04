@@ -20,20 +20,20 @@ pub(crate) mod conversion;
 mod errors;
 pub(crate) mod json;
 
+pub use calc_storage_fee::calc_storage_fee;
 pub use calc_storage_fee::ParamsOfCalcStorageFee;
 pub use calc_storage_fee::ResultOfCalcStorageFee;
-pub use calc_storage_fee::calc_storage_fee;
 #[cfg(feature = "include-zstd")]
 pub use compression::compress_zstd;
 #[cfg(feature = "include-zstd")]
 pub use compression::decompress_zstd;
+pub use conversion::convert_address;
+pub use conversion::get_address_type;
 pub use conversion::AddressStringFormat;
 pub use conversion::ParamsOfConvertAddress;
 pub use conversion::ParamsOfGetAddressType;
 pub use conversion::ResultOfConvertAddress;
 pub use conversion::ResultOfGetAddressType;
-pub use conversion::convert_address;
-pub use conversion::get_address_type;
 pub use errors::Error;
 pub use errors::ErrorCode;
 

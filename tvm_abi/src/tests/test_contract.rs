@@ -11,9 +11,9 @@
 
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
+use tvm_types::read_single_root_boc;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::read_single_root_boc;
 
 use crate::Contract;
 use crate::PublicKeyData;

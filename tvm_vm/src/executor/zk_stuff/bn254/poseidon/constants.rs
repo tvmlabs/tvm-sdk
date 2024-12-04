@@ -1,9 +1,17 @@
 use ff::PrimeField;
-use neptune::Strength;
 use neptune::hash_type::HashType;
 use neptune::poseidon::PoseidonConstants;
+use neptune::Strength;
 use once_cell::sync::Lazy;
+use typenum::Unsigned;
 use typenum::U1;
+use typenum::U10;
+use typenum::U11;
+use typenum::U12;
+use typenum::U13;
+use typenum::U14;
+use typenum::U15;
+use typenum::U16;
 use typenum::U2;
 use typenum::U3;
 use typenum::U4;
@@ -12,14 +20,6 @@ use typenum::U6;
 use typenum::U7;
 use typenum::U8;
 use typenum::U9;
-use typenum::U10;
-use typenum::U11;
-use typenum::U12;
-use typenum::U13;
-use typenum::U14;
-use typenum::U15;
-use typenum::U16;
-use typenum::Unsigned;
 
 use crate::executor::zk_stuff::Fr;
 

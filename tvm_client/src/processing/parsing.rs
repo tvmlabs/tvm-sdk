@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use serde_json::Value;
 
+use crate::abi::decode_message;
 use crate::abi::Abi;
 use crate::abi::MessageBodyType;
 use crate::abi::ParamsOfDecodeMessage;
-use crate::abi::decode_message;
-use crate::boc::ParamsOfParse;
 use crate::boc::parse_transaction;
+use crate::boc::ParamsOfParse;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
 use crate::processing::fetching::TransactionBoc;
@@ -32,11 +32,10 @@ pub(crate) fn decode_output(
     let mut out_messages = Vec::new();
     let mut output = None;
     for message in messages {
-        let decode_result = decode_message(context.clone(), ParamsOfDecodeMessage {
-            message,
-            abi: abi.clone(),
-            ..Default::default()
-        });
+        let decode_result = decode_message(
+            context.clone(),
+            ParamsOfDecodeMessage { message, abi: abi.clone(), ..Default::default() },
+        );
         let decoded = match decode_result {
             Ok(decoded) => {
                 if decoded.body_type == MessageBodyType::Output {

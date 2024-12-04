@@ -12,13 +12,13 @@
 use std::fmt;
 use std::ops::Range;
 
+use tvm_types::error;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::error;
 
 use crate::executor::math::DivMode;
-use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 
 macro_rules! param {
     ($self:ident, $id:ident) => {{
@@ -331,7 +331,11 @@ impl InstructionExt {
             Some(InstructionOptions::ControlRegister) => format!(" c{}", self.creg_raw()?),
             Some(InstructionOptions::DivisionMode) => {
                 let mode = self.division_mode();
-                if mode.shift_parameter() { format!(" {}", self.length()) } else { String::new() }
+                if mode.shift_parameter() {
+                    format!(" {}", self.length())
+                } else {
+                    String::new()
+                }
             }
             Some(InstructionOptions::Integer(_)) => format!(" {}", self.integer_raw()?),
             Some(InstructionOptions::Length(_)) | Some(InstructionOptions::LengthMinusOne(_)) => {

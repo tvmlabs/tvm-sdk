@@ -13,24 +13,24 @@ use core::ops::Range;
 
 use aes_ctr::cipher::stream::NewStreamCipher;
 use aes_ctr::cipher::stream::SyncStreamCipher;
-use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use base64::engine::general_purpose::URL_SAFE;
-use crc::CRC_32_ISCSI;
+use base64::Engine;
 use crc::Crc;
-pub use ed25519_dalek::PUBLIC_KEY_LENGTH as ED25519_PUBLIC_KEY_LENGTH;
-pub use ed25519_dalek::SECRET_KEY_LENGTH as ED25519_SECRET_KEY_LENGTH;
-pub use ed25519_dalek::SIGNATURE_LENGTH as ED25519_SIGNATURE_LENGTH;
+use crc::CRC_32_ISCSI;
 use ed25519_dalek::SecretKey;
 use ed25519_dalek::Signer;
 use ed25519_dalek::SigningKey;
 use ed25519_dalek::Verifier;
 use ed25519_dalek::VerifyingKey;
+pub use ed25519_dalek::PUBLIC_KEY_LENGTH as ED25519_PUBLIC_KEY_LENGTH;
+pub use ed25519_dalek::SECRET_KEY_LENGTH as ED25519_SECRET_KEY_LENGTH;
+pub use ed25519_dalek::SIGNATURE_LENGTH as ED25519_SIGNATURE_LENGTH;
 use sha2::Digest;
 
-use crate::Result;
 use crate::error;
 use crate::fail;
+use crate::Result;
 
 // AES-CTR --------------------------------------------------------------
 

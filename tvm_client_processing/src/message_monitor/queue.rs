@@ -3,10 +3,10 @@ use std::mem;
 
 use serde_json::Value;
 
+use crate::message_monitor::MessageMonitoringResult;
 use crate::MessageMonitoringParams;
 use crate::MonitorFetchWaitMode;
 use crate::MonitoringQueueInfo;
-use crate::message_monitor::MessageMonitoringResult;
 
 #[derive(Clone)]
 pub(crate) struct BufferedMessage {
@@ -55,6 +55,10 @@ impl MonitoringQueue {
                 self.buffered.is_empty() && self.resolving.is_empty() && !self.results.is_empty()
             }
         };
-        if is_ready { Some(mem::take(&mut self.results)) } else { None }
+        if is_ready {
+            Some(mem::take(&mut self.results))
+        } else {
+            None
+        }
     }
 }

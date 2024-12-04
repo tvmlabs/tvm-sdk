@@ -11,20 +11,20 @@
 
 use std::time::Duration;
 
-use criterion::Criterion;
-use criterion::SamplingMode;
 use criterion::criterion_group;
 use criterion::criterion_main;
+use criterion::Criterion;
+use criterion::SamplingMode;
 use pprof::criterion::Output;
 use pprof::criterion::PProfProfiler;
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_types::SliceData;
 use tvm_vm::executor::Engine;
-use tvm_vm::stack::Stack;
-use tvm_vm::stack::StackItem;
 use tvm_vm::stack::continuation::ContinuationData;
 use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::stack::Stack;
+use tvm_vm::stack::StackItem;
 
 static DEFAULT_CAPABILITIES: u64 = 0x572e;
 

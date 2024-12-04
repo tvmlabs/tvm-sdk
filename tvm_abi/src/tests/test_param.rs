@@ -12,6 +12,8 @@
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 
+use crate::contract::ABI_VERSION_2_0;
+use crate::token::Detokenizer;
 use crate::Function;
 use crate::Int;
 use crate::Param;
@@ -19,8 +21,6 @@ use crate::ParamType;
 use crate::Token;
 use crate::TokenValue;
 use crate::Uint;
-use crate::contract::ABI_VERSION_2_0;
-use crate::token::Detokenizer;
 
 #[test]
 fn int_json_representation() {
@@ -124,13 +124,16 @@ fn test_tuple_param_deserialization() {
 
     let deserialized: Param = serde_json::from_str(s).unwrap();
 
-    assert_eq!(deserialized, Param {
-        name: "a".to_owned(),
-        kind: ParamType::Tuple(vec![
-            Param { name: "a".to_owned(), kind: ParamType::Int(8) },
-            Param { name: "b".to_owned(), kind: ParamType::Int(8) },
-        ]),
-    });
+    assert_eq!(
+        deserialized,
+        Param {
+            name: "a".to_owned(),
+            kind: ParamType::Tuple(vec![
+                Param { name: "a".to_owned(), kind: ParamType::Int(8) },
+                Param { name: "b".to_owned(), kind: ParamType::Int(8) },
+            ]),
+        }
+    );
 }
 
 #[test]
@@ -162,22 +165,25 @@ fn test_tuples_array_deserialization() {
 
     let deserialized: Param = serde_json::from_str(s).unwrap();
 
-    assert_eq!(deserialized, Param {
-        name: "a".to_owned(),
-        kind: ParamType::Array(Box::new(ParamType::Tuple(vec![
-            Param { name: "a".to_owned(), kind: ParamType::Bool },
-            Param {
-                name: "b".to_owned(),
-                kind: ParamType::FixedArray(
-                    Box::new(ParamType::Tuple(vec![
-                        Param { name: "a".to_owned(), kind: ParamType::Uint(8) },
-                        Param { name: "b".to_owned(), kind: ParamType::Int(15) },
-                    ])),
-                    5
-                )
-            },
-        ]))),
-    });
+    assert_eq!(
+        deserialized,
+        Param {
+            name: "a".to_owned(),
+            kind: ParamType::Array(Box::new(ParamType::Tuple(vec![
+                Param { name: "a".to_owned(), kind: ParamType::Bool },
+                Param {
+                    name: "b".to_owned(),
+                    kind: ParamType::FixedArray(
+                        Box::new(ParamType::Tuple(vec![
+                            Param { name: "a".to_owned(), kind: ParamType::Uint(8) },
+                            Param { name: "b".to_owned(), kind: ParamType::Int(15) },
+                        ])),
+                        5
+                    )
+                },
+            ]))),
+        }
+    );
 }
 
 #[test]
@@ -199,22 +205,25 @@ fn test_tuples_array_map_map() {
 
     let deserialized: Param = serde_json::from_str(s).unwrap();
 
-    assert_eq!(deserialized, Param {
-        name: "d".to_owned(),
-        kind: ParamType::Map(
-            Box::new(ParamType::Uint(32)),
-            Box::new(ParamType::Map(
+    assert_eq!(
+        deserialized,
+        Param {
+            name: "d".to_owned(),
+            kind: ParamType::Map(
                 Box::new(ParamType::Uint(32)),
-                Box::new(ParamType::FixedArray(
-                    Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
-                        Param { name: "a".to_owned(), kind: ParamType::Uint(256) },
-                        Param { name: "b".to_owned(), kind: ParamType::Uint(256) },
-                    ])))),
-                    5
-                )),
-            ))
-        ),
-    });
+                Box::new(ParamType::Map(
+                    Box::new(ParamType::Uint(32)),
+                    Box::new(ParamType::FixedArray(
+                        Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
+                            Param { name: "a".to_owned(), kind: ParamType::Uint(256) },
+                            Param { name: "b".to_owned(), kind: ParamType::Uint(256) },
+                        ])))),
+                        5
+                    )),
+                ))
+            ),
+        }
+    );
 }
 
 #[test]
@@ -245,11 +254,14 @@ fn test_optional_tuple_param_deserialization() {
 
     let deserialized: Param = serde_json::from_str(s).unwrap();
 
-    assert_eq!(deserialized, Param {
-        name: "a".to_owned(),
-        kind: ParamType::Optional(Box::new(ParamType::Tuple(vec![
-            Param { name: "a".to_owned(), kind: ParamType::Int(8) },
-            Param { name: "b".to_owned(), kind: ParamType::Int(8) },
-        ]))),
-    });
+    assert_eq!(
+        deserialized,
+        Param {
+            name: "a".to_owned(),
+            kind: ParamType::Optional(Box::new(ParamType::Tuple(vec![
+                Param { name: "a".to_owned(), kind: ParamType::Int(8) },
+                Param { name: "b".to_owned(), kind: ParamType::Int(8) },
+            ]))),
+        }
+    );
 }

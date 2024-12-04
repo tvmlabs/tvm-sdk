@@ -11,19 +11,19 @@
 
 use std::fmt;
 
-use super::ADD;
+use super::hm_label;
 use super::BuilderData;
 use super::Cell;
 use super::HashmapRemover;
 use super::HashmapType;
 use super::IBitstring;
 use super::Leaf;
-use super::REPLACE;
 use super::SliceData;
-use super::hm_label;
+use super::ADD;
+use super::REPLACE;
+use crate::types::Result;
 use crate::GasConsumer;
 use crate::LabelReader;
-use crate::types::Result;
 
 #[derive(Clone, Debug)]
 pub struct PfxHashmapE {

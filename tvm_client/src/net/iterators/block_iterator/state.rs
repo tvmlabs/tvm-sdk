@@ -16,9 +16,9 @@ use serde_json::Value;
 
 use crate::error::ClientResult;
 use crate::net::iterators::block::BlockFields;
-use crate::net::iterators::block_iterator::NextLink;
 use crate::net::iterators::block_iterator::branch::Branch;
 use crate::net::iterators::block_iterator::filter::Filter;
+use crate::net::iterators::block_iterator::NextLink;
 
 #[derive(Clone)]
 pub(crate) struct State {

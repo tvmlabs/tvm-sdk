@@ -21,7 +21,6 @@ use zeroize::ZeroizeOnDrop;
 
 use crate::client::ClientContext;
 use crate::crypto;
-use crate::crypto::CryptoConfig;
 use crate::crypto::default_hdkey_compliant;
 use crate::crypto::hdkey::HDPrivateKey;
 use crate::crypto::internal::hex_decode_secret;
@@ -29,6 +28,7 @@ use crate::crypto::internal::hmac_sha512;
 use crate::crypto::internal::key256;
 use crate::crypto::internal::pbkdf2_hmac_sha512;
 use crate::crypto::keys::KeyPair;
+use crate::crypto::CryptoConfig;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 

@@ -18,8 +18,6 @@ use tvm_types::fail;
 use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
-use crate::executor::Mask;
-use crate::executor::engine::Engine;
 use crate::executor::engine::data::convert;
 use crate::executor::engine::storage::apply_savelist;
 use crate::executor::engine::storage::apply_savelist_excluding_c0_c1;
@@ -29,6 +27,7 @@ use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::storage::pop_all;
 use crate::executor::engine::storage::pop_range;
 use crate::executor::engine::storage::swap;
+use crate::executor::engine::Engine;
 use crate::executor::microcode::CC;
 use crate::executor::microcode::CELL;
 use crate::executor::microcode::CONTINUATION;
@@ -39,12 +38,13 @@ use crate::executor::microcode::VAR;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::executor::types::InstructionParameter;
-use crate::stack::StackItem;
+use crate::executor::Mask;
 use crate::stack::continuation::ContinuationData;
 use crate::stack::continuation::ContinuationType;
-use crate::stack::integer::IntegerData;
 use crate::stack::integer::behavior::Signaling;
+use crate::stack::integer::IntegerData;
 use crate::stack::savelist::SaveList;
+use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 
@@ -774,7 +774,11 @@ fn execute_ifbit_mask(engine: &mut Engine, name: &'static str, how: u8) -> Statu
         let test_bit_mask = IntegerData::from_u32(1 << nbit);
         x.and::<Signaling>(&test_bit_mask)?.is_zero()
     };
-    if is_zero ^ how.bit(INV) { Ok(()) } else { jmpx(engine, how.bit(REF)) }
+    if is_zero ^ how.bit(INV) {
+        Ok(())
+    } else {
+        jmpx(engine, how.bit(REF))
+    }
 }
 
 // (x continuation - x), switch if n's bit of x is set

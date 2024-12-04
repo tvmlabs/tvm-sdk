@@ -12,20 +12,20 @@ use std::sync::Arc;
 
 use serde_json::Value;
 
-use crate::ClientContext;
 use crate::client::ParamsOfAppRequest;
+use crate::crypto::boxes::encryption_box::EncryptionBox;
 use crate::crypto::EncryptionBoxHandle;
 use crate::crypto::EncryptionBoxInfo;
 use crate::crypto::KeyPair;
 use crate::crypto::RegisteredEncryptionBox;
 use crate::crypto::RegisteredSigningBox;
 use crate::crypto::SigningBoxHandle;
-use crate::crypto::boxes::encryption_box::EncryptionBox;
 use crate::encoding::decode_abi_number;
 use crate::error::ClientResult;
 use crate::json_interface::crypto::*;
 use crate::json_interface::interop::ResponseType;
 use crate::tests::TestClient;
+use crate::ClientContext;
 // use super::*;
 
 pub const SUPPORTED_INTERFACES: &[&str] = &[

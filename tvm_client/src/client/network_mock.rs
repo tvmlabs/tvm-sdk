@@ -15,10 +15,10 @@ use std::collections::HashMap;
 use futures::SinkExt;
 use serde_json::Value;
 
-use crate::ClientContext;
 use crate::client::FetchResult;
 use crate::client::WebSocket;
 use crate::error::ClientResult;
+use crate::ClientContext;
 
 #[derive(Debug, Clone)]
 pub(crate) struct FetchMock {

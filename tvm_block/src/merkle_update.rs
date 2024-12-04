@@ -13,6 +13,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::time::Duration;
 
+use tvm_types::error;
+use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -21,13 +23,11 @@ use tvm_types::LevelMask;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-use tvm_types::error;
-use tvm_types::fail;
 
+use crate::error::BlockError;
 use crate::Deserializable;
 use crate::MerkleProof;
 use crate::Serializable;
-use crate::error::BlockError;
 
 #[cfg(test)]
 #[path = "tests/test_merkle_update.rs"]

@@ -11,18 +11,18 @@
 
 use std::sync::Arc;
 
-use tvm_block::MASTERCHAIN_ID;
 use tvm_block::MsgAddressInt;
+use tvm_block::MASTERCHAIN_ID;
 
 use super::Error;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::BLOCKS_COLLECTION;
 use crate::net::Endpoint;
 use crate::net::OrderBy;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::ParamsOfWaitForCollection;
 use crate::net::SortDirection;
+use crate::net::BLOCKS_COLLECTION;
 
 pub const BLOCK_FIELDS: &str = r#"
     id

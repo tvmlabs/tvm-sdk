@@ -38,7 +38,11 @@ impl crate::BoxedDeserialize for Decrypt {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x0d53cf09) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x0d53cf09) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for Decrypt {
@@ -86,7 +90,11 @@ impl crate::BoxedDeserialize for DecryptWithProof {
         id: crate::ConstructorNumber,
         de: &mut crate::Deserializer,
     ) -> crate::Result<Self> {
-        if id == crate::ConstructorNumber(0x8222c881) { de.read_bare() } else { _invalid_id!(id) }
+        if id == crate::ConstructorNumber(0x8222c881) {
+            de.read_bare()
+        } else {
+            _invalid_id!(id)
+        }
     }
 }
 impl crate::BoxedSerialize for DecryptWithProof {

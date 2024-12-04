@@ -12,6 +12,9 @@
 use std::collections::HashMap;
 use std::fmt;
 
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::hm_label;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -21,17 +24,7 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::hm_label;
 
-use crate::Augmentation;
-use crate::CopyleftRewards;
-use crate::Deserializable;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
-use crate::Serializable;
-use crate::U15;
 use crate::bintree::BinTree;
 use crate::bintree::BinTreeType;
 use crate::blocks::Block;
@@ -47,13 +40,20 @@ use crate::hashmapaug::HashmapAugType;
 use crate::hashmapaug::TraverseNextStep;
 use crate::inbound_messages::InMsg;
 use crate::shard::AccountIdPrefixFull;
-use crate::shard::SHARD_FULL;
 use crate::shard::ShardIdent;
+use crate::shard::SHARD_FULL;
 use crate::signature::CryptoSignaturePair;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
 use crate::types::InRefValue;
 use crate::validators::ValidatorInfo;
+use crate::Augmentation;
+use crate::CopyleftRewards;
+use crate::Deserializable;
+use crate::MaybeDeserialize;
+use crate::MaybeSerialize;
+use crate::Serializable;
+use crate::U15;
 
 #[cfg(test)]
 #[path = "tests/test_master.rs"]
@@ -787,15 +787,15 @@ impl OldMcBlocksInfo {
                 std::cmp::Ordering::Less => {
                     // (x << d) > req_seqno <=> x > (req_seqno >> d) = (y >> 1) <=> 2 * x > y
                     Ok(TraverseNextStep::Stop) // all nodes in subtree have
-                    // block.seqno > req_seqno =>
-                    // skip
+                                               // block.seqno > req_seqno =>
+                                               // skip
                 }
                 std::cmp::Ordering::Equal => {
                     Ok(TraverseNextStep::VisitZero) // visit only left ("0")
                 }
                 _ => {
                     Ok(TraverseNextStep::VisitOneZero) // visit right, then left
-                    // ("1" then "0")
+                                                       // ("1" then "0")
                 }
             }
         })?;
@@ -838,15 +838,15 @@ impl OldMcBlocksInfo {
                     // ((x + 1) << d) <= req_seqno <=> (x+1) <= (req_seqno >> d) = (y >> 1) <=>
                     // 2*x+2 <= y <=> y > 2*x+1
                     Ok(TraverseNextStep::Stop) // all nodes in subtree have
-                    // block.seqno < req_seqno =>
-                    // skip
+                                               // block.seqno < req_seqno =>
+                                               // skip
                 }
                 std::cmp::Ordering::Equal => {
                     Ok(TraverseNextStep::VisitOne) // visit only right ("1")
                 }
                 _ => {
                     Ok(TraverseNextStep::VisitZeroOne) // visit left, then right
-                    // ("0" then "1")
+                                                       // ("0" then "1")
                 }
             }
         })?;

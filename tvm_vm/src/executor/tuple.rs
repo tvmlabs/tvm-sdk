@@ -10,20 +10,20 @@
 // limitations under the License.
 
 use tvm_block::GlobalCapabilities;
-use tvm_types::ExceptionCode;
 use tvm_types::error;
 use tvm_types::fail;
+use tvm_types::ExceptionCode;
 
 use crate::error::TvmError;
-use crate::executor::Mask;
-use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::gas::gas_state::Gas;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::executor::types::WhereToGetParams;
-use crate::stack::StackItem;
+use crate::executor::Mask;
 use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 

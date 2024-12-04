@@ -11,12 +11,12 @@
 
 use tvm_block::GlobalCapabilities;
 
-use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
-use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 use crate::types::Status;
 
 fn execute_config_param(engine: &mut Engine, name: &'static str, opt: bool) -> Status {

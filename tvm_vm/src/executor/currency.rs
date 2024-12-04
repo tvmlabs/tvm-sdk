@@ -10,17 +10,17 @@
 // limitations under the License.
 
 use tvm_block::GlobalCapabilities;
-use tvm_types::BuilderData;
-use tvm_types::IBitstring;
 use tvm_types::error;
 use tvm_types::types::ExceptionCode;
+use tvm_types::BuilderData;
+use tvm_types::IBitstring;
 
 use crate::error::TvmError;
-use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
-use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 

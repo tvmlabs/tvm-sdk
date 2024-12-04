@@ -9,12 +9,12 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use crate::executor::Mask;
-use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::gas::gas_state::Gas;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+use crate::executor::Mask;
 use crate::stack::StackItem;
 use crate::types::Status;
 

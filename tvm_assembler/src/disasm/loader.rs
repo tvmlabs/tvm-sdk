@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use std::ops::Not;
 
 use num_traits::Zero;
+use tvm_types::fail;
 use tvm_types::Cell;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-use tvm_types::fail;
 
 use super::handlers::Handlers;
 use super::types::Code;

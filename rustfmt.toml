@@ -19,7 +19,7 @@ group_imports = "StdExternalCrate"
 normalize_comments = true
 reorder_impl_items = true
 reorder_modules = true
-wrap_comments = true
+wrap_comments = false
 
 format_code_in_doc_comments = true
 format_macro_bodies = true

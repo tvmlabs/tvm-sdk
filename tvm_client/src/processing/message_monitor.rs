@@ -5,8 +5,8 @@ use tvm_client_processing::MessageMonitoringResult;
 use tvm_client_processing::MonitorFetchWaitMode;
 use tvm_client_processing::MonitoringQueueInfo;
 
-use crate::ClientContext;
 use crate::error::ClientResult;
+use crate::ClientContext;
 
 #[derive(Deserialize, Default, ApiType)]
 pub struct ParamsOfMonitorMessages {

@@ -38,18 +38,18 @@ use proc_macro2::Spacing;
 use proc_macro2::Span;
 use proc_macro2::TokenStream as Tokens;
 use proc_macro2::TokenStream;
-use quote::TokenStreamExt;
 use quote::quote;
+use quote::TokenStreamExt;
 use serde_derive::Deserialize;
 
 pub mod parser {
     use std::cmp::Ordering;
 
-    use pom::Parser;
     use pom::char_class::alphanum;
     use pom::char_class::digit;
     use pom::char_class::hex_digit;
     use pom::parser::*;
+    use pom::Parser;
 
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
     pub enum Type {
@@ -1129,19 +1129,35 @@ impl TypeIR {
     }
 
     fn field_type(&self) -> Tokens {
-        if self.is_unit() { quote!(bool) } else { self.boxed() }
+        if self.is_unit() {
+            quote!(bool)
+        } else {
+            self.boxed()
+        }
     }
 
     fn ref_prefix(&self) -> Tokens {
-        if self.is_unit() { quote!() } else { quote!(ref) }
+        if self.is_unit() {
+            quote!()
+        } else {
+            quote!(ref)
+        }
     }
 
     fn reference_prefix(&self) -> Tokens {
-        if self.is_unit() { quote!() } else { quote!(&) }
+        if self.is_unit() {
+            quote!()
+        } else {
+            quote!(&)
+        }
     }
 
     fn local_reference_prefix(&self) -> Tokens {
-        if self.is_unit() { quote!(&) } else { quote!() }
+        if self.is_unit() {
+            quote!(&)
+        } else {
+            quote!()
+        }
     }
 
     fn field_reference_type(&self) -> Tokens {

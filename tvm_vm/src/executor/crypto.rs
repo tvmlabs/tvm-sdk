@@ -15,19 +15,19 @@ use ed25519::Signature;
 use ed25519_dalek::Verifier;
 use ed25519_dalek::VerifyingKey;
 use tvm_block::GlobalCapabilities;
+use tvm_types::error;
 use tvm_types::BuilderData;
 use tvm_types::ExceptionCode;
 use tvm_types::GasConsumer;
 use tvm_types::UInt256;
-use tvm_types::error;
 
 use crate::error::TvmError;
-use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::engine::Engine;
 use crate::executor::types::Instruction;
-use crate::stack::StackItem;
-use crate::stack::integer::IntegerData;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
+use crate::stack::integer::IntegerData;
+use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::Status;
 

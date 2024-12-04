@@ -16,8 +16,8 @@ use std::sync::Arc;
 use api_info::ApiModule;
 use api_info::ApiType;
 use api_info::Module;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 use super::handlers::CallHandler;
 use super::handlers::CallNoArgsHandler;

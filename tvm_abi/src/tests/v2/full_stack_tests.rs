@@ -12,11 +12,11 @@
 use serde_json::json;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
-use tvm_types::ED25519_SIGNATURE_LENGTH;
-use tvm_types::IBitstring;
 use tvm_types::dictionary::HashmapE;
 use tvm_types::ed25519_generate_private_key;
 use tvm_types::ed25519_verify;
+use tvm_types::IBitstring;
+use tvm_types::ED25519_SIGNATURE_LENGTH;
 
 use crate::json_abi::*;
 
@@ -703,31 +703,27 @@ fn test_encode_storage_fields() {
 
     assert_eq!(test_tree, expected_tree);
 
-    assert!(
-        dbg!(encode_storage_fields(
-            ABI_WITH_FIELDS_V24,
-            Some(
-                r#"{
+    assert!(dbg!(encode_storage_fields(
+        ABI_WITH_FIELDS_V24,
+        Some(
+            r#"{
             "ok": true
         }"#
-            ),
-        ))
-        .is_err()
-    );
+        ),
+    ))
+    .is_err());
 
-    assert!(
-        dbg!(encode_storage_fields(
-            ABI_WITH_FIELDS_V24,
-            Some(
-                r#"{
+    assert!(dbg!(encode_storage_fields(
+        ABI_WITH_FIELDS_V24,
+        Some(
+            r#"{
             "__pubkey": "0x11c0a428b6768562df09db05326595337dbb5f8dde0e128224d4df48df760f17",
             "__timestamp": 123,
             "ok": true
         }"#
-            ),
-        ))
-        .is_err()
-    );
+        ),
+    ))
+    .is_err());
 }
 
 const ABI_WRONG_STORAGE_LAYOUT: &str = r#"{
@@ -758,12 +754,10 @@ fn test_wrong_storage_layout() {
     let image = include_bytes!("FairNFTCollection.tvc");
     let image = tvm_block::StateInit::construct_from_bytes(image).unwrap();
 
-    assert!(
-        decode_storage_fields(
-            ABI_WRONG_STORAGE_LAYOUT,
-            SliceData::load_cell(image.data.unwrap()).unwrap(),
-            false
-        )
-        .is_ok()
-    );
+    assert!(decode_storage_fields(
+        ABI_WRONG_STORAGE_LAYOUT,
+        SliceData::load_cell(image.data.unwrap()).unwrap(),
+        false
+    )
+    .is_ok());
 }

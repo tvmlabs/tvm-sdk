@@ -24,9 +24,9 @@ use tvm_block::OutMsg;
 use tvm_types::read_single_root_boc;
 
 use super::*;
-use crate::NoTrace;
-use crate::block_parser::MINTER_ADDRESS;
 use crate::block_parser::reducers::JsonFieldsReducer;
+use crate::block_parser::MINTER_ADDRESS;
+use crate::NoTrace;
 
 #[derive(Default)]
 pub struct ParseOptions {

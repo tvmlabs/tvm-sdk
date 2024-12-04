@@ -16,10 +16,10 @@ use futures::Future;
 use futures::FutureExt;
 use futures::SinkExt;
 use futures::StreamExt;
+use indexed_db_futures::request::IdbOpenDbRequestLike;
 use indexed_db_futures::IdbDatabase;
 use indexed_db_futures::IdbQuerySource;
 use indexed_db_futures::IdbVersionChangeEvent;
-use indexed_db_futures::request::IdbOpenDbRequestLike;
 use js_sys::JSON;
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
@@ -37,8 +37,8 @@ use super::Error;
 use super::FetchMethod;
 use super::FetchResult;
 use super::WebSocket;
-use crate::client::LOCAL_STORAGE_DEFAULT_DIR_NAME;
 use crate::client::storage::KeyValueStorage;
+use crate::client::LOCAL_STORAGE_DEFAULT_DIR_NAME;
 use crate::error::ClientResult;
 
 #[cfg(test)]

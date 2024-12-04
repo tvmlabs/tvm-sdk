@@ -221,7 +221,11 @@ pub(super) fn parse_stack_register_u4_minus_two(par: &str) -> Result<u8, Paramet
 
 pub(super) fn parse_plduz_parameter(par: &str) -> Result<u8, ParameterError> {
     (parse_range(32u16..=256))(par).and_then(|c| {
-        if c % 32 == 0 { Ok(((c / 32) - 1) as u8) } else { Err(ParameterError::OutOfRange) }
+        if c % 32 == 0 {
+            Ok(((c / 32) - 1) as u8)
+        } else {
+            Err(ParameterError::OutOfRange)
+        }
     })
 }
 

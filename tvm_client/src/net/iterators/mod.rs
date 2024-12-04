@@ -27,8 +27,8 @@ use tokio::sync::Mutex;
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::ParamsOfQueryCollection;
 use crate::net::query_collection;
+use crate::net::ParamsOfQueryCollection;
 
 #[async_trait::async_trait]
 pub trait ChainIterator {
@@ -173,12 +173,15 @@ pub(crate) async fn query_by_ids(
         let mut query_queue: HashSet<String> = head_ids.iter().cloned().collect();
         while !query_queue.is_empty() {
             let portion_ids: Vec<String> = query_queue.iter().cloned().collect();
-            let portion = query_collection(client.clone(), ParamsOfQueryCollection {
-                collection: collection.to_string(),
-                filter: Some(json!({ "id": { "in": portion_ids } })),
-                result: result_fields.to_string(),
-                ..Default::default()
-            })
+            let portion = query_collection(
+                client.clone(),
+                ParamsOfQueryCollection {
+                    collection: collection.to_string(),
+                    filter: Some(json!({ "id": { "in": portion_ids } })),
+                    result: result_fields.to_string(),
+                    ..Default::default()
+                },
+            )
             .await?
             .result;
             for item in portion {

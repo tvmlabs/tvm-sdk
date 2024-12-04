@@ -14,10 +14,10 @@ use ark_serialize::CanonicalDeserialize;
 use ark_serialize::CanonicalSerialize;
 use ark_snark::SNARK;
 
+use crate::executor::zk_stuff::bn254::api::SCALAR_SIZE;
 use crate::executor::zk_stuff::bn254::FieldElement;
 use crate::executor::zk_stuff::bn254::Proof;
 use crate::executor::zk_stuff::bn254::VerifyingKey;
-use crate::executor::zk_stuff::bn254::api::SCALAR_SIZE;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::error::ZkCryptoResult;
 

@@ -20,12 +20,12 @@ use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
-use crate::stack::Stack;
-use crate::stack::StackItem;
-use crate::stack::integer::IntegerData;
 use crate::stack::integer::behavior::OperationBehavior;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
+use crate::stack::integer::IntegerData;
+use crate::stack::Stack;
+use crate::stack::StackItem;
 use crate::types::Status;
 
 #[test]

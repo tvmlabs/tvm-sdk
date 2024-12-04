@@ -12,9 +12,9 @@
 use std::fmt;
 
 use num_traits::cast::ToPrimitive;
+use tvm_types::base64_encode;
 use tvm_types::Result;
 use tvm_types::UInt256;
-use tvm_types::base64_encode;
 
 use crate::error::SdkError;
 
