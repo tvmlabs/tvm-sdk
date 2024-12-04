@@ -13,9 +13,9 @@ fn default_mandatory() -> bool {
 
 #[derive(Deserialize, Clone, PartialEq)]
 pub enum ApproveKind {
-    OnChainCall,
-    Network,
-    MessageLimit,
+    ApproveOnChainCall,
+    ApproveNetwork,
+    ApproveMessageLimit,
 }
 
 #[allow(dead_code)]

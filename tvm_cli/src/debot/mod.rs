@@ -90,8 +90,8 @@ pub async fn debot_command(m: &ArgMatches<'_>, config: Config) -> Result<(), Str
 
     let mut loggers: Vec<Box<dyn SharedLogger>> = vec![];
     let file = std::fs::File::create("debot_err.log");
-    if let Ok(file) = file {
-        loggers.push(WriteLogger::new(LevelFilter::Error, log_conf.clone(), file));
+    if file.is_ok() {
+        loggers.push(WriteLogger::new(LevelFilter::Error, log_conf.clone(), file.unwrap()));
     }
 
     if debug {

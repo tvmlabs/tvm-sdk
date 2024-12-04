@@ -1368,13 +1368,13 @@ async fn runget_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(),
         print_args!(address, method, params);
     }
     let source_type = if matches.is_present("TVC") {
-        AccountSource::Tvc
+        AccountSource::TVC
     } else if matches.is_present("BOC") {
-        AccountSource::Boc
+        AccountSource::BOC
     } else {
-        AccountSource::Network
+        AccountSource::NETWORK
     };
-    let address = if source_type != AccountSource::Network {
+    let address = if source_type != AccountSource::NETWORK {
         address.unwrap().to_string()
     } else {
         load_ton_address(address.unwrap(), config)?

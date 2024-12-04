@@ -574,6 +574,7 @@ async fn replay_transaction_command(
         })),
         result: "lt block { start_lt } boc".to_string(),
         limit: Some(1),
+        order: None,
         ..Default::default()
     })
     .await
@@ -760,7 +761,11 @@ async fn debug_call_command(
             abi,
             address: account.get_addr().map(|addr| addr.to_string()),
             call_set: Some(call_set),
-            signer: if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None },
+            signer: if keys.is_some() {
+                Signer::Keys { keys: keys.unwrap() }
+            } else {
+                Signer::None
+            },
             ..Default::default()
         };
         encode_message(ton_client, msg_params)
@@ -1103,8 +1108,8 @@ async fn query_address(tr_id: &str, config: &Config) -> Result<String, String> {
         0 => Err("Transaction was not found".to_string()),
         _ => Ok(query_result[0]["account_addr"]
             .to_string()
-            .trim_start_matches('"')
-            .trim_end_matches('"')
+            .trim_start_matches(|c| c == '"')
+            .trim_end_matches(|c| c == '"')
             .to_string()),
     }
 }
@@ -1173,8 +1178,8 @@ fn choose_transaction(transactions: Vec<TrDetails>) -> Result<String, String> {
     }
     Ok(transactions[chosen - 1]
         .transaction_id
-        .trim_start_matches('"')
-        .trim_end_matches('"')
+        .trim_start_matches(|c| c == '"')
+        .trim_end_matches(|c| c == '"')
         .to_string())
 }
 
@@ -1334,7 +1339,7 @@ fn generate_callback(
         let debug_info = matches
             .value_of("DBG_INFO")
             .map(|s| s.to_string())
-            .or(if let Ok(opt_abi) = &opt_abi { load_debug_info(opt_abi.as_ref()) } else { None });
+            .or(if opt_abi.is_ok() { load_debug_info(opt_abi.as_ref().unwrap()) } else { None });
         let debug_info = if let Some(dbg_path) = debug_info {
             match File::open(&dbg_path) {
                 Ok(file) => match serde_json::from_reader(file) {
@@ -1376,9 +1381,11 @@ pub async fn sequence_diagram_command(
 
     let mut addresses = vec![];
     let lines = std::io::BufReader::new(file).lines();
-    for line in lines.map_while(Result::ok) {
-        if !line.is_empty() && !line.starts_with('#') {
-            addresses.push(load_ton_address(&line, config)?);
+    for line in lines {
+        if let Ok(line) = line {
+            if !line.is_empty() && !line.starts_with('#') {
+                addresses.push(load_ton_address(&line, config)?);
+            }
         }
     }
     if addresses.iter().collect::<HashSet<_>>().len() < addresses.len() {
@@ -1391,7 +1398,7 @@ pub async fn sequence_diagram_command(
     })
 }
 
-fn infer_address_width(input: &[String], min_width: usize) -> Result<usize, String> {
+fn infer_address_width(input: &Vec<String>, min_width: usize) -> Result<usize, String> {
     let max_width = input.iter().fold(0, |acc, item| std::cmp::max(acc, item.len()));
     let addresses =
         input.iter().map(|address| format!("{:>max_width$}", address)).collect::<Vec<_>>();

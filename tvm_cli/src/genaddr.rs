@@ -142,6 +142,7 @@ fn calc_userfriendly_address(address: &str, bounce: bool, test: bool) -> Result<
     convert_address(create_client_local()?, ParamsOfConvertAddress {
         address: address.to_owned(),
         output_format: AddressStringFormat::Base64 { url: true, bounce, test },
+        ..Default::default()
     })
     .map(|r| r.address)
     .map_err(|e| format!("failed to convert address to base64 form: {}", e))

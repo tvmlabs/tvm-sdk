@@ -25,6 +25,7 @@ use tvm_client::processing::ParamsOfProcessMessage;
 use tvm_client::processing::ParamsOfSendMessage;
 use tvm_client::processing::ParamsOfWaitForTransaction;
 use tvm_client::processing::ProcessingEvent;
+use tvm_client::processing::send_message;
 use tvm_client::processing::wait_for_transaction;
 use tvm_client::tvm::AccountForExecutor;
 use tvm_client::tvm::ParamsOfRunExecutor;
@@ -33,13 +34,16 @@ use tvm_types::base64_encode;
 
 use crate::config::Config;
 use crate::convert;
+use crate::debug::DebugParams;
+use crate::debug::debug_error;
 use crate::debug::init_debug_logger;
 use crate::helpers::TonClient;
-use crate::helpers::TvmClient;
 use crate::helpers::create_client;
 use crate::helpers::create_client_verbose;
+use crate::helpers::get_blockchain_config;
 use crate::helpers::load_abi;
 use crate::helpers::load_ton_abi;
+use crate::helpers::now_ms;
 use crate::helpers::query_account_field;
 use crate::message::EncodedMessage;
 use crate::message::prepare_message_params;
@@ -101,7 +105,7 @@ async fn build_json_from_params(
             }
             ParamType::Array(ref _x) => {
                 let mut result_vec: Vec<String> = vec![];
-                for i in value.split([',', '[', ']']) {
+                for i in value.split(|c| c == ',' || c == '[' || c == ']') {
                     if !i.is_empty() {
                         result_vec.push(parse_integer_param(i)?)
                     }
@@ -182,9 +186,14 @@ pub async fn send_message_and_wait(
         println!("Processing... ");
     }
     let callback = |_| async move {};
-    let result = tvm_client::processing::send_message(
+    let result = send_message(
         ton.clone(),
-        ParamsOfSendMessage { message: msg.clone(), abi: abi.clone(), ..Default::default() },
+        ParamsOfSendMessage {
+            message: msg.clone(),
+            abi: abi.clone(),
+            send_events: false,
+            ..Default::default()
+        },
         callback,
     )
     .await
@@ -210,27 +219,6 @@ pub async fn send_message_and_wait(
     }
 }
 
-pub async fn send_message(
-    context: TvmClient,
-    msg: String,
-    config: &Config,
-) -> Result<Value, String> {
-    if !config.is_json {
-        println!("Processing... ");
-    }
-
-    let callback = |_| async move {};
-    let _ = tvm_client::processing::send_message(
-        context.clone(),
-        ParamsOfSendMessage { message: msg.clone(), ..Default::default() },
-        callback,
-    )
-    .await
-    .map_err(|e| format!("{:#}", e))?;
-
-    Ok(json!({}))
-}
-
 pub async fn process_message(
     ton: TonClient,
     msg: ParamsOfEncodeMessage,
@@ -250,14 +238,22 @@ pub async fn process_message(
     let res = if !config.is_json {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage { message_encode_params: msg.clone(), send_events: true },
+            ParamsOfProcessMessage {
+                message_encode_params: msg.clone(),
+                send_events: true,
+                ..Default::default()
+            },
             callback,
         )
         .await
     } else {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage { message_encode_params: msg.clone(), send_events: true },
+            ParamsOfProcessMessage {
+                message_encode_params: msg.clone(),
+                send_events: true,
+                ..Default::default()
+            },
             |_| async move {},
         )
         .await
@@ -298,23 +294,46 @@ pub async fn call_contract_with_client(
 
     let msg_params = prepare_message_params(addr, abi.clone(), method, params, None, keys.clone())?;
 
-    let encoded_message = encode_message(ton.clone(), msg_params.clone())
-        .await
-        .map_err(|e| format!("failed to create inbound message: {}", e))?;
+    let needs_encoded_msg =
+        is_fee || config.async_call || config.local_run || config.debug_fail != *"None";
 
-    println!("MessageId: {}", encoded_message.message_id);
-    let msg = encoded_message.message;
-    if config.local_run || is_fee {
-        emulate_locally(ton.clone(), addr, msg.clone(), is_fee).await?;
-        if is_fee {
-            return Ok(Value::Null);
+    let message = if needs_encoded_msg {
+        let msg = encode_message(ton.clone(), msg_params.clone())
+            .await
+            .map_err(|e| format!("failed to create inbound message: {}", e))?;
+
+        if config.local_run || is_fee {
+            emulate_locally(ton.clone(), addr, msg.message.clone(), is_fee).await?;
+            if is_fee {
+                return Ok(Value::Null);
+            }
+        }
+        if config.async_call {
+            return send_message_and_wait(ton, Some(abi), msg.message.clone(), config).await;
+        }
+        Some(msg.message)
+    } else {
+        None
+    };
+
+    match process_message(ton.clone(), msg_params, config).await {
+        Ok(result) => Ok(result),
+        Err(e) => {
+            let acc_boc = query_account_field(ton.clone(), addr, "boc").await?;
+            let now = now_ms();
+            let bc_config = get_blockchain_config(config, None).await?;
+            let debug_params = DebugParams {
+                account: &acc_boc,
+                message: message.as_deref(),
+                time_in_ms: now,
+                block_lt: now,
+                last_tr_lt: now,
+                ..DebugParams::new(config, bc_config)
+            };
+            debug_error(&e, debug_params).await?;
+            Err(format!("{:#}", e))
         }
     }
-    if config.async_call {
-        return send_message_and_wait(ton, Some(abi), msg.clone(), config).await;
-    }
-
-    send_message(ton.clone(), msg, config).await
 }
 
 pub fn print_json_result(result: Value, config: &Config) -> Result<(), String> {

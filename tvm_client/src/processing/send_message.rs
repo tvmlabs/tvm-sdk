@@ -15,6 +15,7 @@ use std::sync::Arc;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 
+use super::blocks_walking::find_last_shard_block;
 use crate::abi::Abi;
 use crate::boc::internal::DeserializedObject;
 use crate::boc::internal::deserialize_object_from_boc;
@@ -101,7 +102,7 @@ impl SendingMessage {
         Ok(Self { serialized: serialized.to_string(), _deserialized: deserialized, id, body, dst })
     }
 
-    /* async fn prepare_to_send<F: futures::Future<Output = ()> + Send>(
+    async fn prepare_to_send<F: futures::Future<Output = ()> + Send>(
         &self,
         context: &Arc<ClientContext>,
         callback: &Option<impl Fn(ProcessingEvent) -> F + Send + Sync>,
@@ -137,7 +138,7 @@ impl SendingMessage {
             .await;
         }
         Ok(shard_block_id)
-    } */
+    }
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Vec<String>> {
         let net = context.get_server_link()?;
@@ -222,7 +223,7 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
 
     let callback = if params.send_events { Some(callback) } else { None };
 
-    let shard_block_id = "".to_owned();
+    let shard_block_id = message.prepare_to_send(&context, &callback).await?;
     let result = message.send(&context).await;
     if let Some(callback) = &callback {
         callback(match &result {

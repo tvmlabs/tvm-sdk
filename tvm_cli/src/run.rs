@@ -62,11 +62,11 @@ pub async fn run_command(
         )
     };
     let account_source = if matches.is_present("TVC") {
-        AccountSource::Tvc
+        AccountSource::TVC
     } else if matches.is_present("BOC") {
-        AccountSource::Boc
+        AccountSource::BOC
     } else {
-        AccountSource::Network
+        AccountSource::NETWORK
     };
 
     let method = if is_alternative {
@@ -78,7 +78,7 @@ pub async fn run_command(
         matches.value_of("METHOD").unwrap()
     };
     let trace_path;
-    let ton_client = if account_source == AccountSource::Network {
+    let ton_client = if account_source == AccountSource::NETWORK {
         trace_path = format!("run_{}_{}.log", address, method);
         create_client(config)?
     } else {
@@ -89,9 +89,9 @@ pub async fn run_command(
     let (account, account_boc) =
         load_account(&account_source, &address, Some(ton_client.clone()), config).await?;
     let address = match account_source {
-        AccountSource::Network => address,
-        AccountSource::Boc => account.get_addr().unwrap().to_string(),
-        AccountSource::Tvc => "0".repeat(64),
+        AccountSource::NETWORK => address,
+        AccountSource::BOC => account.get_addr().unwrap().to_string(),
+        AccountSource::TVC => "0".repeat(64),
     };
     run(
         matches,
@@ -234,7 +234,7 @@ pub async fn run_get_method(
     source_type: AccountSource,
     bc_config: Option<&str>,
 ) -> Result<(), String> {
-    let ton = if source_type == AccountSource::Network {
+    let ton = if source_type == AccountSource::NETWORK {
         create_client_verbose(config)?
     } else {
         create_client_local()?
@@ -269,8 +269,10 @@ pub async fn run_get_method(
         let mut res = Map::new();
         match result {
             Value::Array(array) => {
-                for (i, val) in array.iter().enumerate() {
+                let mut i = 0;
+                for val in array.iter() {
                     res.insert(format!("value{}", i), val.to_owned());
+                    i += 1;
                 }
             }
             _ => {

@@ -515,7 +515,8 @@ pub mod msg_printer {
     }
 
     async fn get_code_version(ton: TonClient, code: String) -> String {
-        let result = get_compiler_version(ton, ParamsOfGetCompilerVersion { code });
+        let result =
+            get_compiler_version(ton, ParamsOfGetCompilerVersion { code, ..Default::default() });
 
         if let Ok(result) = result {
             if let Some(version) = result.version {
