@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.2] – 2024-10-30
+
+### Improvements
+- +nightly formatting applied
+
 ## [2.3.1] – 2024-10-30
 
 ### Fixed
