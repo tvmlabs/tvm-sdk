@@ -127,6 +127,7 @@ pub fn now_ms() -> u64 {
 }
 
 pub type TonClient = Arc<ClientContext>;
+pub type TvmClient = Arc<ClientContext>;
 
 pub fn create_client_local() -> Result<TonClient, String> {
     let cli = ClientContext::new(ClientConfig::default())
@@ -230,7 +231,6 @@ pub async fn query_raw(
         limit,
         order,
         result: result.to_owned(),
-        ..Default::default()
     })
     .await
     .map_err(|e| format!("Failed to execute query: {}", e))?;
@@ -253,7 +253,6 @@ pub async fn query_with_limit(
         result: result.to_owned(),
         order,
         limit,
-        ..Default::default()
     })
     .await
     .map(|r| r.result)
@@ -599,9 +598,9 @@ pub fn check_dir(path: &str) -> Result<(), String> {
 
 #[derive(PartialEq)]
 pub enum AccountSource {
-    NETWORK,
-    BOC,
-    TVC,
+    Network,
+    Boc,
+    Tvc,
 }
 
 pub async fn load_account(
@@ -611,7 +610,7 @@ pub async fn load_account(
     config: &Config,
 ) -> Result<(Account, String), String> {
     match source_type {
-        AccountSource::NETWORK => {
+        AccountSource::Network => {
             let ton_client = match ton_client {
                 Some(ton_client) => ton_client,
                 None => create_client(config)?,
@@ -624,7 +623,7 @@ pub async fn load_account(
             ))
         }
         _ => {
-            let account = if source_type == &AccountSource::BOC {
+            let account = if source_type == &AccountSource::Boc {
                 Account::construct_from_file(source).map_err(|e| {
                     format!(" failed to load account from the file {}: {}", source, e)
                 })?

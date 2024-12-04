@@ -174,8 +174,7 @@ pub async fn prepare_deploy_message_params(
         Some(DeploySet { tvc: Some(tvc), workchain_id: Some(wc), ..Default::default() });
     let params = serde_json::from_str(params)
         .map_err(|e| format!("function arguments is not a json: {}", e))?;
-    let call_set =
-        Some(CallSet { function_name, input: Some(params), header, ..Default::default() });
+    let call_set = Some(CallSet { function_name, input: Some(params), header });
     let signer = if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None };
     Ok((
         ParamsOfEncodeMessage {
