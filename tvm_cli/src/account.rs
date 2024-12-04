@@ -311,7 +311,6 @@ pub async fn calc_storage(config: &Config, addr: &str, period: u32) -> Result<()
     let res = calc_storage_fee(client.clone(), ParamsOfCalcStorageFee {
         account: boc,
         period,
-        ..Default::default()
     })
     .await
     .map_err(|e| format!("failed to calculate storage fee: {}", e))?;
@@ -394,7 +393,6 @@ pub async fn wait_for_change(
         limit: None,
         order: None,
         result: "last_trans_lt".to_owned(),
-        ..Default::default()
     })
     .await
     .map_err(|e| format!("Failed to query the account: {}", e))?;
@@ -436,7 +434,6 @@ pub async fn wait_for_change(
                 },
             })),
             result: "last_trans_lt".to_owned(),
-            ..Default::default()
         },
         callback,
     )
