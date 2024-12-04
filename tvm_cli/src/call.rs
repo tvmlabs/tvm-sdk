@@ -25,7 +25,6 @@ use tvm_client::processing::ParamsOfProcessMessage;
 use tvm_client::processing::ParamsOfSendMessage;
 use tvm_client::processing::ParamsOfWaitForTransaction;
 use tvm_client::processing::ProcessingEvent;
-use tvm_client::processing::send_message;
 use tvm_client::processing::wait_for_transaction;
 use tvm_client::tvm::AccountForExecutor;
 use tvm_client::tvm::ParamsOfRunExecutor;
@@ -183,7 +182,7 @@ pub async fn send_message_and_wait(
         println!("Processing... ");
     }
     let callback = |_| async move {};
-    let result = send_message(
+    let result = tvm_client::processing::send_message(
         ton.clone(),
         ParamsOfSendMessage { message: msg.clone(), abi: abi.clone(), ..Default::default() },
         callback,
@@ -211,7 +210,7 @@ pub async fn send_message_and_wait(
     }
 }
 
-pub async fn send_message_and_forget(
+pub async fn send_message(
     context: TvmClient,
     msg: String,
     config: &Config,
@@ -221,7 +220,7 @@ pub async fn send_message_and_forget(
     }
 
     let callback = |_| async move {};
-    let _ = send_message(
+    let _ = tvm_client::processing::send_message(
         context.clone(),
         ParamsOfSendMessage { message: msg.clone(), ..Default::default() },
         callback,
@@ -315,7 +314,7 @@ pub async fn call_contract_with_client(
         return send_message_and_wait(ton, Some(abi), msg.clone(), config).await;
     }
 
-    send_message_and_forget(ton.clone(), msg, config).await
+    send_message(ton.clone(), msg, config).await
 }
 
 pub fn print_json_result(result: Value, config: &Config) -> Result<(), String> {
