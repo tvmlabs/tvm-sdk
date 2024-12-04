@@ -760,11 +760,7 @@ async fn debug_call_command(
             abi,
             address: account.get_addr().map(|addr| addr.to_string()),
             call_set: Some(call_set),
-            signer: if let Some(keys) = keys {
-                Signer::Keys { keys }
-            } else {
-                Signer::None
-            },
+            signer: if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None },
             ..Default::default()
         };
         encode_message(ton_client, msg_params)

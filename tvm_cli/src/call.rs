@@ -36,12 +36,12 @@ use crate::config::Config;
 use crate::convert;
 use crate::debug::init_debug_logger;
 use crate::helpers::TonClient;
+use crate::helpers::TvmClient;
 use crate::helpers::create_client;
 use crate::helpers::create_client_verbose;
 use crate::helpers::load_abi;
 use crate::helpers::load_ton_abi;
 use crate::helpers::query_account_field;
-use crate::helpers::TvmClient;
 use crate::message::EncodedMessage;
 use crate::message::prepare_message_params;
 use crate::message::print_encoded_message;
@@ -185,11 +185,7 @@ pub async fn send_message_and_wait(
     let callback = |_| async move {};
     let result = send_message(
         ton.clone(),
-        ParamsOfSendMessage {
-            message: msg.clone(),
-            abi: abi.clone(),
-            ..Default::default()
-        },
+        ParamsOfSendMessage { message: msg.clone(), abi: abi.clone(), ..Default::default() },
         callback,
     )
     .await
@@ -227,10 +223,7 @@ pub async fn send_message_and_forget(
     let callback = |_| async move {};
     let _ = send_message(
         context.clone(),
-        ParamsOfSendMessage {
-            message: msg.clone(),
-            ..Default::default()
-        },
+        ParamsOfSendMessage { message: msg.clone(), ..Default::default() },
         callback,
     )
     .await
@@ -258,20 +251,14 @@ pub async fn process_message(
     let res = if !config.is_json {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage {
-                message_encode_params: msg.clone(),
-                send_events: true,
-            },
+            ParamsOfProcessMessage { message_encode_params: msg.clone(), send_events: true },
             callback,
         )
         .await
     } else {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage {
-                message_encode_params: msg.clone(),
-                send_events: true,
-            },
+            ParamsOfProcessMessage { message_encode_params: msg.clone(), send_events: true },
             |_| async move {},
         )
         .await
