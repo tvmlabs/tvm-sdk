@@ -31,9 +31,7 @@ mod tests {
     use crate::test_framework::Expects;
     use crate::test_framework::test_case_with_refs;
 
-
-    pub const FACEBOOK_DATA: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzNjQwYjliODY2YTdlM2EzNjc2MThjYWY0OWJlMjBjODVjMDA2NDcifQ.eyJpc3MiOiJodHRwczpcL1wvd3d3LmZhY2Vib29rLmNvbSIsImF1ZCI6IjQ2NTcyNDU5NjEyMjAyOSIsInN1YiI6IjM5NDQwNDYyNjU4MzY4MzciLCJpYXQiOjE3MzI4MDkyODQsImV4cCI6MTczMjgxMjg4NCwianRpIjoiTjd0QS5iZGFhMWFhYjQxN2QyZjcxNmU0YWFjOGFjNjIxOTFhNDhlZDVmZjkzODI3YzA3MWVlMTVlODk2ZTYzNWM0NzRjIiwibm9uY2UiOiJweG9zSF9vSFoweTM2OUM4c3k0d3lJME55X2ciLCJnaXZlbl9uYW1lIjoiXHUwNDEwXHUwNDNiXHUwNDM4XHUwNDNkXHUwNDMwIiwiZmFtaWx5X25hbWUiOiJcdTA0MTBcdTA0M2JcdTA0MzhcdTA0M2RcdTA0M2VcdTA0MzJcdTA0M2RcdTA0MzAiLCJuYW1lIjoiXHUwNDEwXHUwNDNiXHUwNDM4XHUwNDNkXHUwNDMwIFx1MDQxMFx1MDQzYlx1MDQzOFx1MDQzZFx1MDQzZVx1MDQzMlx1MDQzZFx1MDQzMCIsInBpY3R1cmUiOiJodHRwczpcL1wvcGxhdGZvcm0tbG9va2FzaWRlLmZic2J4LmNvbVwvcGxhdGZvcm1cL3Byb2ZpbGVwaWNcLz9hc2lkPTM5NDQwNDYyNjU4MzY4MzcmaGVpZ2h0PTEwMCZ3aWR0aD0xMDAmZXh0PTE3MzU0MDEyODUmaGFzaD1BYllHREI3TXFxY1Zqb3RmTUdsbzBCdDgifQ.kBJ5Xc4b39z_Sbn5Ysua5sMPvVKroj5fDdVB59yHDetYe0QjMPwiJt9PPkx8Dqzva0ZcYAuxz-pVHo6PH2kPkpxChvS5X0gv3RTXPFAN--agBFOK-9zGdHsYarAlB7wiZ2mG6hdWwulLFGyhVTLTQGXW71qD-Qo41nWxPZpkOmL97YuTyQWwzpGL9yNROMbm9FzFRFco21GfjO4bFkUKqU2Cudj6Go79uBmyfC6GXxOVKQBUTjc53bgiRxsnCB_XJVWdaCLqDZgVVw-0j-vtV1Fiw6_Kw4PhW4OOLe-ObYImUG39Yn-iY9u5PgnkwOemmvqwTWLzoGPbE1npdeMzzw\",\"user_pass_to_int_format\":\"49505152\",\"zk_addr\":\"0x007b9ad7b4c4301c6fcff30dff0a60d2bc047a84f9f884a53294a60646d75052\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":185,\"1\":22,\"2\":229,\"3\":110,\"4\":165,\"5\":51,\"6\":175,\"7\":131,\"8\":216,\"9\":53,\"10\":31,\"11\":136,\"12\":53,\"13\":52,\"14\":38,\"15\":121,\"16\":138,\"17\":185,\"18\":235,\"19\":94,\"20\":226,\"21\":190,\"22\":36,\"23\":73,\"24\":202,\"25\":251,\"26\":213,\"27\":73,\"28\":131,\"29\":238,\"30\":110,\"31\":18},\"secret_key\":{\"0\":177,\"1\":88,\"2\":130,\"3\":121,\"4\":56,\"5\":71,\"6\":208,\"7\":157,\"8\":236,\"9\":16,\"10\":70,\"11\":56,\"12\":164,\"13\":92,\"14\":157,\"15\":65,\"16\":111,\"17\":114,\"18\":123,\"19\":25,\"20\":239,\"21\":238,\"22\":151,\"23\":60,\"24\":65,\"25\":59,\"26\":70,\"27\":25,\"28\":63,\"29\":110,\"30\":113,\"31\":216,\"32\":185,\"33\":22,\"34\":229,\"35\":110,\"36\":165,\"37\":51,\"38\":175,\"39\":131,\"40\":216,\"41\":53,\"42\":31,\"43\":136,\"44\":53,\"45\":52,\"46\":38,\"47\":121,\"48\":138,\"49\":185,\"50\":235,\"51\":94,\"52\":226,\"53\":190,\"54\":36,\"55\":73,\"56\":202,\"57\":251,\"58\":213,\"59\":73,\"60\":131,\"61\":238,\"62\":110,\"63\":18}}},\"maxEpoch\":142,\"extended_ephemeral_public_key\":\"ALkW5W6lM6+D2DUfiDU0JnmKuete4r4kScr71UmD7m4S\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"7269633675479506664200010144613270138485890407861566483377692676852557562218\",\"13587998474892985687301676263522084547365602899882348938501733685489981566914\",\"1\"],\"b\":[[\"642240896264072090180719588055219671717749387061086854151891869266642845510\",\"12175247506924153356664510876830077939237267768131586808029992829056946471625\"],[\"15218532967355660749775646424437448577155434269216505254311069415565134887309\",\"2372202838541023723807866940956654762916701825047820674030555190958854060965\"],[\"1\",\"0\"]],\"c\":[\"2898608196136591814205076818985925390711890021831207435260124321751664465794\",\"13971063586547807697292502962370796575248643312588599300730318814751096354553\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczpcL1wvd3d3LmZhY2Vib29rLmNvbSIs\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzNjQwYjliODY2YTdlM2EzNjc2MThjYWY0OWJlMjBjODVjMDA2NDcifQ\"}}";
-    //proof in above test data was created by external mysten proover with their test key
+    pub const MICROSOFT_DATA: &str = "{\"jwt\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Inp4ZWcyV09OcFRrd041R21lWWN1VGR0QzZKMCJ9.eyJhdWQiOiI3MTNjYzk3MS1kMTBiLTQyZjAtYThlZS03ZWJjYWY3M2I3NTQiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vMTliYTQzNWQtZTQ2Yy00MzZhLTg0ZjItMWIwMWU2OTNlNDgwL3YyLjAiLCJpYXQiOjE3MzM0MDMzMzQsIm5iZiI6MTczMzQwMzMzNCwiZXhwIjoxNzMzNDA3MjM0LCJhaW8iOiJBVFFBeS84WUFBQUF6cTBQWXZ3YXVhR2NYSGtzcEIxdjdUL1o1akNBdlBKb280a1NUWXNlaHNjNW56WE1OUWZzby91eHNtOG5zVllYIiwibm9uY2UiOiJldHpSWXNtTXRTMnVHMDhwNEhjZWtiVXNiTk0iLCJyaCI6IjEuQVZ3QVhVTzZHV3prYWtPRThoc0I1cFBrZ0hISlBIRUwwZkJDcU81LXZLOXp0MVJjQUFwY0FBLiIsInN1YiI6IklKNnNxdDNRTm9NNjFhUV9vV2dIQXRjTUJzUXh2eXlPOS00ck1iTExrT2ciLCJ0aWQiOiIxOWJhNDM1ZC1lNDZjLTQzNmEtODRmMi0xYjAxZTY5M2U0ODAiLCJ1dGkiOiI0ZzdhUnFlRUFVYVVkZk9mTGNVM0FBIiwidmVyIjoiMi4wIn0.lKBzgKNETElu5So53v-7CNw6CVWciw2a5Zog3MLis0dP4fRQvIz-44FyEhMdDdirGxHVLLAQerOOS5lYx0vCihz0EspxpP5CrtW5uOM_KnMYJk6Hkulrq48-yuKXfKB3l1JK7579kSpZc4UzZz4ZKCtGsIgFzBiRHg1eFI6i2YiQwqpLqrbh2ME-tulXtYkuPB5hkOxx66_52yinZtm2br_GoXjyBvlmKFQyELmbd9cs8683qy7hwipSse7KDqySB04pBqYUGyp2ALWVPdb8CrMsPjozU4fwHnTvcJPXVOmX0u7T9H4-NAPp5g83ROpCS55I8ybqd6Ve-0Uil2ovug&session_state=e91dee2b-9c5f-40f4-8af6-719c87466def\", \"user_pass_to_int_format\":\"49505152\", \"zk_addr\":\"0x64f157d6fb92d4389db431f0828516651d3805ce3268ee2d56abd188f202b169\", \"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":39,\"1\":48,\"2\":197,\"3\":39,\"4\":92,\"5\":45,\"6\":123,\"7\":135,\"8\":43,\"9\":76,\"10\":191,\"11\":233,\"12\":207,\"13\":156,\"14\":128,\"15\":14,\"16\":204,\"17\":16,\"18\":68,\"19\":248,\"20\":229,\"21\":215,\"22\":203,\"23\":189,\"24\":162,\"25\":76,\"26\":154,\"27\":178,\"28\":122,\"29\":44,\"30\":8,\"31\":179}, \"secret_key\":{\"0\":159,\"1\":214,\"2\":18,\"3\":254,\"4\":191,\"5\":115,\"6\":156,\"7\":226,\"8\":229,\"9\":146,\"10\":211,\"11\":51,\"12\":81,\"13\":111,\"14\":101,\"15\":33,\"16\":160,\"17\":179,\"18\":53,\"19\":95,\"20\":164,\"21\":134,\"22\":167,\"23\":65,\"24\":71,\"25\":190,\"26\":169,\"27\":219,\"28\":136,\"29\":78,\"30\":14,\"31\":136,\"32\":39,\"33\":48,\"34\":197,\"35\":39,\"36\":92,\"37\":45,\"38\":123,\"39\":135,\"40\":43,\"41\":76,\"42\":191,\"43\":233,\"44\":207,\"45\":156,\"46\":128,\"47\":14,\"48\":204,\"49\":16,\"50\":68,\"51\":248,\"52\":229,\"53\":215,\"54\":203,\"55\":189,\"56\":162,\"57\":76,\"58\":154,\"59\":178,\"60\":122,\"61\":44,\"62\":8,\"63\":179}}},\"maxEpoch\":142, \"extended_ephemeral_public_key\":\"ACcwxSdcLXuHK0y/6c+cgA7MEET45dfLvaJMmrJ6LAiz\", \"zk_proofs\":{\"proofPoints\":{\"a\":[\"17137990231957793317975225132965381963730913983728324875139538151641767739907\",\"15220444311807827196475559074300170686944326391368342123537808259707001188246\",\"1\"],\"b\":[[\"3759089320316495642126774422368579915055767796485787191870421544522615881403\",\"3084706229311317057422402941985513602639281686518596184473515255610713104923\"],[\"8493915494628037526451233519569362746582715621568744471888007467628912451304\",\"792173932412042019876114170987950593509307280947942955952893142973028901309\"],[\"1\",\"0\"]],\"c\":[\"8744954679061282555124535766628336249898222760451969135599179136137078963670\",\"2186498562620143679547775617437575369206327134194558292650559386954874303549\",\"1\"]}, \"issBase64Details\":{\"value\":\"CJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vMTliYTQzNWQtZTQ2Yy00MzZhLTg0ZjItMWIwMWU2OTNlNDgwL3YyLjAiLC\",\"indexMod4\":1},\"headerBase64\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Inp4ZWcyV09OcFRrd041R21lWWN1VGR0QzZKMCJ9\"}}";
     
     #[derive(Debug, Deserialize)]
     pub struct JwtData {
@@ -92,27 +90,30 @@ mod tests {
         pub sub: String,
         pub nonce: String,
         pub iat: u32,
+        pub nbf: u32,
         pub exp: u32,
-        pub jti: String,
-        pub given_name: String,
-        pub family_name: String,
-        pub name: String,
-        pub picture: String,
+        pub aio: String,
+        pub rh: String,
+        pub tid: String,
+        pub uti: String,
+        pub ver: String,
     }
 
     /*
     {
-  "iss": "https://www.facebook.com",
-  "aud": "465724596122029",
-  "sub": "3944046265836837",
-  "iat": 1732809284,
-  "exp": 1732812884,
-  "jti": "N7tA.bdaa1aab417d2f716e4aac8ac62191a48ed5ff93827c071ee15e896e635c474c",
-  "nonce": "pxosH_oHZ0y369C8sy4wyI0Ny_g",
-  "given_name": "Алина",
-  "family_name": "Алиновна",
-  "name": "Алина Алиновна",
-  "picture": "https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=3944046265836837&height=100&width=100&ext=1735401285&hash=AbYGDB7MqqcVjotfMGlo0Bt8"
+  {
+  "aud": "713cc971-d10b-42f0-a8ee-7ebcaf73b754",
+  "iss": "https://login.microsoftonline.com/19ba435d-e46c-436a-84f2-1b01e693e480/v2.0",
+  "iat": 1733403334,
+  "nbf": 1733403334,
+  "exp": 1733407234,
+  "aio": "ATQAy/8YAAAAzq0PYvwauaGcXHkspB1v7T/Z5jCAvPJoo4kSTYsehsc5nzXMNQfso/uxsm8nsVYX",
+  "nonce": "etzRYsmMtS2uG08p4HcekbUsbNM",
+  "rh": "1.AVwAXUO6GWzkakOE8hsB5pPkgHHJPHEL0fBCqO5-vK9zt1RcAApcAA.",
+  "sub": "IJ6sqt3QNoM61aQ_oWgHAtcMBsQxvyyO9-4rMbLLkOg",
+  "tid": "19ba435d-e46c-436a-84f2-1b01e693e480",
+  "uti": "4g7aRqeEAUaUdfOfLcU3AA",
+  "ver": "2.0"
 }
     */
 
@@ -134,33 +135,24 @@ mod tests {
         let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
-            n: "orUzBcoyhkBP6cS3XLTBz1OvYdCwA-1YPQbNSH5MB1j4TkfuT7goo8MLaVtdI02f2I1T7kfCjliHGuAXryRCTGNJF6bZf9b4jUBxeo7rK0uZLj7R0KtjydCOAxJETslfQP-xm7M2cEbijeB_2CA6PCZjKx2OMXVSKNNHKEZABrEFK-LxpTj_B8Z--VqCB7tZ69GHjb22BspD3COpK3hUkqOu_JPxew_kaYLbtcRAe4omEnNyJGd3XjD5mkxMADygI_OPxSB8EcmdPHhwmgUf1CKcji_bML-dEzMCDrJO-ph_Qh8UJsjUCeinXKoU44X_5KY-Wo9WC3gHKEt7gJ3Qdw".to_string(), // Alina's data
+            n: "vqEEyvePAnDTT2fd-E_MZm5i6AfwrkHwmWicYmHhsdLXnxVPNSuPjxmTe3UedZBU2Q6OUU5Dv5I4vjryhChnHIxamu4iZsumig8LL2_BqYQVqR6E1mmzpQubanJepJWvKW4aEgLelcK0EXnZSf-_uEPbR2MLgmXo7MW6a3qSqnxLYyQClxbtQML06E7ALXspTaQt7RA6qgtgK8sIuArhcdSghFnfWsQ9Ksr_CI96H50snLTQk9PBHAfwpPK80ha67tQ2uU08zZS_lADdpm0D3r_PgAyhTgaSOvSTGC02-Qv4vht3mG8B1oHprb0XB23B82jUEr6VQL6wbVkEwHU6Tw".to_string(),
             alg: "RS256".to_string(),
         };
 
-        /*
-        {
-         "kid": "b3640b9b866a7e3a367618caf49be20c85c00647",
-         "kty": "RSA",
-         "alg": "RS256",
-         "use": "sig",
-         "n": "orUzBcoyhkBP6cS3XLTBz1OvYdCwA-1YPQbNSH5MB1j4TkfuT7goo8MLaVtdI02f2I1T7kfCjliHGuAXryRCTGNJF6bZf9b4jUBxeo7rK0uZLj7R0KtjydCOAxJETslfQP-xm7M2cEbijeB_2CA6PCZjKx2OMXVSKNNHKEZABrEFK-LxpTj_B8Z--VqCB7tZ69GHjb22BspD3COpK3hUkqOu_JPxew_kaYLbtcRAe4omEnNyJGd3XjD5mkxMADygI_OPxSB8EcmdPHhwmgUf1CKcji_bML-dEzMCDrJO-ph_Qh8UJsjUCeinXKoU44X_5KY-Wo9WC3gHKEt7gJ3Qdw",
-         "e": "AQAB"
-        }
-        */
+
 
         let mut all_jwk = HashMap::new();
         all_jwk.insert(
             JwkId::new(
-                OIDCProvider::Facebook.get_config().iss,
-                "b3640b9b866a7e3a367618caf49be20c85c00647".to_string(), 
+                OIDCProvider::Microsoft.get_config().iss,
+                "zxeg2WONpTkwN5GmeYcuTdtC6J0".to_string(), 
             ),
             content,
         );
 
         // let sui_data = [SUI_DATA_FROM_REACT_1];
         let sui_data = [
-            FACEBOOK_DATA
+            MICROSOFT_DATA
         ];
 
         let mut sum_ratio: u128 = 0;
