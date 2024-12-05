@@ -21,6 +21,8 @@ mod test_zk_for_twitch;
 #[cfg(test)]
 mod test_zk_for_kakao;
 
+#[cfg(test)]
+mod test_zk_for_microsoft;
 
 fn main() {}
 
