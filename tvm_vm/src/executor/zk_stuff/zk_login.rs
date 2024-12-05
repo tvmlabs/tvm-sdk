@@ -48,6 +48,13 @@ pub struct JwkId {
 impl JwkId {
     /// Create a new JwkId.
     pub fn new(iss: String, kid: String) -> Self {
+        // if a Microsoft iss is found, remove the tenant id from it
+        if match_micrsoft_iss_substring(&iss) {
+            return Self {
+                iss: "https://login.microsoftonline.com/v2.0".to_string(),
+                kid,
+            };
+        }
         Self { iss, kid }
     }
 }
@@ -83,8 +90,13 @@ pub enum OIDCProvider {
     Apple,
     /// See https://slack.com/.well-known/openid-configuration
     Slack,
+    /// This is a test issuer maintained by Mysten that will return a JWT non-interactively.
+    /// See https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration
+    Microsoft,
+
     /// This is a test issuer maintained by Mysten that will return a JWT
     /// non-interactively.
+    
     TestIssuer,
 }
 
@@ -99,6 +111,7 @@ impl FromStr for OIDCProvider {
             "Kakao" => Ok(Self::Kakao),
             "Apple" => Ok(Self::Apple),
             "Slack" => Ok(Self::Slack),
+            "Microsoft" => Ok(Self::Microsoft),
             "TestIssuer" => Ok(Self::TestIssuer),
             _ => Err(ZkCryptoError::InvalidInput),
         }
@@ -114,6 +127,7 @@ impl ToString for OIDCProvider {
             Self::Kakao => "Kakao".to_string(),
             Self::Apple => "Apple".to_string(),
             Self::Slack => "Slack".to_string(),
+            Self::Microsoft => "Microsoft".to_string(),
             Self::TestIssuer => "TestIssuer".to_string(),
         }
     }
@@ -145,7 +159,11 @@ impl OIDCProvider {
             ),
             OIDCProvider::Slack => {
                 ProviderConfig::new("https://slack.com", "https://slack.com/openid/connect/keys")
-            }
+            },
+            OIDCProvider::Microsoft => ProviderConfig::new(
+                "https://login.microsoftonline.com/v2.0",
+                "https://login.microsoftonline.com/common/discovery/v2.0/keys",
+            ),
             OIDCProvider::TestIssuer => ProviderConfig::new(
                 "https://oauth.sui.io",
                 "https://jwt-tester.mystenlabs.com/.well-known/jwks.json",
@@ -163,9 +181,15 @@ impl OIDCProvider {
             "https://appleid.apple.com" => Ok(Self::Apple),
             "https://slack.com" => Ok(Self::Slack),
             "https://oauth.sui.io" => Ok(Self::TestIssuer),
-            _ => Err(ZkCryptoError::InvalidInput),
+            iss if match_micrsoft_iss_substring(iss) => Ok(Self::Microsoft),
+            _ => Err(ZkCryptoError::InvalidInput)
         }
     }
+}
+
+/// Check if the iss string is formatted as Microsoft's pattern.
+fn match_micrsoft_iss_substring(iss: &str) -> bool {
+    iss.starts_with("https://login.microsoftonline.com/") && iss.ends_with("/v2.0")
 }
 
 /// Struct that contains info for a JWK. A list of them for different kids can
@@ -184,6 +208,7 @@ pub struct JWK {
 }
 
 /// Reader struct to parse all fields in a JWK from JSON.
+/// Reader struct to parse all fields in a JWK from JSON.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JWKReader {
     e: String,
@@ -192,17 +217,33 @@ pub struct JWKReader {
     my_use: Option<String>,
     kid: String,
     kty: String,
-    alg: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    alg: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    x5c: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    x5t: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    issuer: Option<String>,
 }
 
 impl JWK {
     /// Parse JWK from the reader struct.
     pub fn from_reader(reader: JWKReader) -> ZkCryptoResult<Self> {
         let trimmed_e = trim(reader.e);
-        if reader.alg != "RS256" || reader.kty != "RSA" || trimmed_e != "AQAB" {
+        // Microsoft does not contain alg field in JWK, so here we only check if it equals to RS256 only if alg field is present.
+        if (reader.alg.is_some() && reader.alg != Some("RS256".to_string()))
+            || reader.kty != "RSA"
+            || trimmed_e != "AQAB"
+        {
             return Err(ZkCryptoError::InvalidInput);
         }
-        Ok(Self { kty: reader.kty, e: trimmed_e, n: trim(reader.n), alg: reader.alg })
+        Ok(Self {
+            kty: reader.kty,
+            e: trimmed_e,
+            n: trim(reader.n),
+            alg: "RS256".to_string(),
+        })
     }
 }
 
