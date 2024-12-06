@@ -408,7 +408,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             copyleft = None;
             acc_balance.grams = Grams::zero();
         }
-
+/*
         log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
         if description.aborted && is_ext_msg {
             log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
@@ -421,6 +421,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
             }
         }
+*/
         if description.aborted && !is_ext_msg && bounce {
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
