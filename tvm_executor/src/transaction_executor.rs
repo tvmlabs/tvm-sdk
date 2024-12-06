@@ -795,7 +795,7 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::ReserveCurrency { mode, mut value } => {
-                    log::debug!(target: "executor", "RESERVE: mode {:?}, value {:?}, acc_remaining {:?}, need_to_reserve {:?}", mode, value, acc_remaining_balance, need_to_reserve);
+                    log::debug!(target: "executor", "RESERVE: mode {:?}, value {:?}, acc_remaining {:?}, original_acc_balance {:?}, need_to_reserve {:?}", mode, value, acc_remaining_balance, original_acc_balance, need_to_reserve);
                     match reserve_action_handler(
                         mode,
                         &mut value,
