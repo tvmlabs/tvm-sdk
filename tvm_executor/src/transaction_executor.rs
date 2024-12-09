@@ -1529,7 +1529,7 @@ fn outmsg_action_handler(
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
             // send all remaining account balance
             result_value = acc_balance.clone();
-            if need_to_reserve != 0 {
+        /*    if need_to_reserve != 0 {
                 match result_value.grams.sub(&Grams::from(need_to_burn)) {
                     Ok(true) => (),
                     Ok(false) => {
@@ -1538,7 +1538,7 @@ fn outmsg_action_handler(
                     }
                     Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
                 }
-            }
+            }*/
             int_header.value = result_value.clone();
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
