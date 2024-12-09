@@ -30,6 +30,8 @@ serde_json.workspace = true
 num-bigint.workspace = true
 serde.workspace = true
 
+regex.workspace = true
+
 bls12_381 = "0.8"
 
 

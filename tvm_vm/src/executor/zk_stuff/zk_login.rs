@@ -17,6 +17,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
 
+use regex::Regex;
+
 use super::utils::split_to_two_frs;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
@@ -27,6 +29,8 @@ use crate::executor::zk_stuff::curve_utils::g2_affine_from_str_projective;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::error::ZkCryptoResult;
 use crate::executor::zk_stuff::jwt_utils::JWTHeader;
+
+
 
 pub const MAX_HEADER_LEN: u8 = 248;
 pub const PACK_WIDTH: u8 = 248;
@@ -90,14 +94,14 @@ pub enum OIDCProvider {
     Apple,
     /// See https://slack.com/.well-known/openid-configuration
     Slack,
-    /// This is a test issuer maintained by Mysten that will return a JWT non-interactively.
     /// See https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration
     Microsoft,
-
-    /// This is a test issuer maintained by Mysten that will return a JWT
-    /// non-interactively.
-    
-    TestIssuer,
+    /// Example: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_LPSLCkC3A/.well-known/jwks.json
+    AwsTenant((String, String)),
+    /// https://accounts.karrier.one/.well-known/openid-configuration
+    KarrierOne,
+    /// https://accounts.credenza3.com/openid-configuration
+    Credenza3,
 }
 
 impl FromStr for OIDCProvider {
@@ -112,8 +116,21 @@ impl FromStr for OIDCProvider {
             "Apple" => Ok(Self::Apple),
             "Slack" => Ok(Self::Slack),
             "Microsoft" => Ok(Self::Microsoft),
-            "TestIssuer" => Ok(Self::TestIssuer),
-            _ => Err(ZkCryptoError::InvalidInput),
+            "KarrierOne" => Ok(Self::KarrierOne),
+            "Credenza3" => Ok(Self::Credenza3),
+            _ => {
+                let re = Regex::new(
+                    r"AwsTenant-region:(?P<region>[^.]+)-tenant_id:(?P<tenant_id>[^/]+)",
+                )
+                .unwrap();
+                if let Some(captures) = re.captures(s) {
+                    let region = captures.name("region").unwrap().as_str();
+                    let tenant_id = captures.name("tenant_id").unwrap().as_str();
+                    Ok(Self::AwsTenant((region.to_owned(), tenant_id.to_owned())))
+                } else {
+                    Err(ZkCryptoError::InvalidInput)
+                }
+            }
         }
     }
 }
@@ -128,7 +145,11 @@ impl ToString for OIDCProvider {
             Self::Apple => "Apple".to_string(),
             Self::Slack => "Slack".to_string(),
             Self::Microsoft => "Microsoft".to_string(),
-            Self::TestIssuer => "TestIssuer".to_string(),
+            Self::KarrierOne => "KarrierOne".to_string(),
+            Self::Credenza3 => "Credenza3".to_string(),
+            Self::AwsTenant((region, tenant_id)) => {
+                format!("AwsTenant-region:{}-tenant_id:{}", region, tenant_id)
+            }
         }
     }
 }
@@ -164,10 +185,21 @@ impl OIDCProvider {
                 "https://login.microsoftonline.com/v2.0",
                 "https://login.microsoftonline.com/common/discovery/v2.0/keys",
             ),
-            OIDCProvider::TestIssuer => ProviderConfig::new(
-                "https://oauth.sui.io",
-                "https://jwt-tester.mystenlabs.com/.well-known/jwks.json",
+            OIDCProvider::AwsTenant((region, tenant_id)) => ProviderConfig::new(
+                &format!("https://cognito-idp.{}.amazonaws.com/{}", region, tenant_id),
+                &format!(
+                    "https://cognito-idp.{}.amazonaws.com/{}/.well-known/jwks.json",
+                    region, tenant_id
+                ),
             ),
+            OIDCProvider::KarrierOne => ProviderConfig::new(
+                "https://accounts.karrier.one/",
+                "https://accounts.karrier.one/.well-known/jwks",
+            ),
+            OIDCProvider::Credenza3 => ProviderConfig::new(
+                "https://accounts.credenza3.com",
+                "https://accounts.credenza3.com/jwks",
+            )
         }
     }
 
@@ -180,9 +212,15 @@ impl OIDCProvider {
             "https://kauth.kakao.com" => Ok(Self::Kakao),
             "https://appleid.apple.com" => Ok(Self::Apple),
             "https://slack.com" => Ok(Self::Slack),
-            "https://oauth.sui.io" => Ok(Self::TestIssuer),
+            "https://accounts.karrier.one/" => Ok(Self::KarrierOne),
+            "https://accounts.credenza3.com" => Ok(Self::Credenza3),
             iss if match_micrsoft_iss_substring(iss) => Ok(Self::Microsoft),
-            _ => Err(ZkCryptoError::InvalidInput)
+            _ => match parse_aws_iss_substring(iss) {
+                Ok((region, tenant_id)) => {
+                    Ok(Self::AwsTenant((region.to_string(), tenant_id.to_string())))
+                }
+                Err(_) => Err(ZkCryptoError::InvalidInput),
+            },
         }
     }
 }
@@ -190,6 +228,23 @@ impl OIDCProvider {
 /// Check if the iss string is formatted as Microsoft's pattern.
 fn match_micrsoft_iss_substring(iss: &str) -> bool {
     iss.starts_with("https://login.microsoftonline.com/") && iss.ends_with("/v2.0")
+}
+
+/// Parse the region and tenant_id from the iss string for AWS.
+fn parse_aws_iss_substring(url: &str) -> Result<(&str, &str), ZkCryptoError> {
+    let re =
+        Regex::new(r"https://cognito-idp\.(?P<region>[^.]+)\.amazonaws\.com/(?P<tenant_id>[^/]+)")
+            .unwrap();
+
+    if let Some(captures) = re.captures(url) {
+        // Extract the region and tenant_id from the captures
+        let region = captures.name("region").unwrap().as_str();
+        let tenant_id = captures.name("tenant_id").unwrap().as_str();
+
+        Ok((region, tenant_id))
+    } else {
+        Err(ZkCryptoError::InvalidInput)
+    }
 }
 
 /// Struct that contains info for a JWK. A list of them for different kids can
