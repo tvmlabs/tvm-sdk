@@ -15,6 +15,7 @@ mod tests {
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
+    
     use fastcrypto_zkp::bn254::utils::gen_address_seed;
     use fastcrypto_zkp::bn254::utils::get_zk_login_address;
     use fastcrypto_zkp::bn254::zk_login::CanonicalSerialize;
@@ -23,6 +24,8 @@ mod tests {
     use fastcrypto_zkp::bn254::zk_login::OIDCProvider;
     use fastcrypto_zkp::bn254::zk_login::ZkLoginInputs;
     use fastcrypto_zkp::zk_login_utils::Bn254FrElement;
+
+    
     use num_bigint::BigUint;
     use num_traits::Zero;
     use rand::rngs::OsRng;

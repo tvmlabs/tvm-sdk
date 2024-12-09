@@ -11,12 +11,15 @@ mod tests {
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
-    use fastcrypto_zkp::bn254::utils::gen_address_seed;
-    use fastcrypto_zkp::bn254::zk_login::CanonicalSerialize;
-    use fastcrypto_zkp::bn254::zk_login::JWK;
-    use fastcrypto_zkp::bn254::zk_login::JwkId;
-    use fastcrypto_zkp::bn254::zk_login::OIDCProvider;
-    use fastcrypto_zkp::bn254::zk_login::ZkLoginInputs;
+
+    use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
+    use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
+    use tvm_vm::executor::zk_stuff::zk_login::JWK;
+    use tvm_vm::executor::zk_stuff::zk_login::JwkId;
+    use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
+    use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
+
+    
 
     use serde::Deserialize;
     use serde_derive::Serialize;

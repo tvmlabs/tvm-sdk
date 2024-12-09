@@ -5764,6 +5764,7 @@ dependencies = [
  "pprof 0.13.0",
  "pretty_assertions",
  "rand 0.8.5",
+ "regex",
  "schemars",
  "serde",
  "serde_json",
