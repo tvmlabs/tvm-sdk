@@ -16,14 +16,14 @@ mod tests {
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
     
-    use fastcrypto_zkp::bn254::utils::gen_address_seed;
-    use fastcrypto_zkp::bn254::utils::get_zk_login_address;
-    use fastcrypto_zkp::bn254::zk_login::CanonicalSerialize;
-    use fastcrypto_zkp::bn254::zk_login::JWK;
-    use fastcrypto_zkp::bn254::zk_login::JwkId;
-    use fastcrypto_zkp::bn254::zk_login::OIDCProvider;
-    use fastcrypto_zkp::bn254::zk_login::ZkLoginInputs;
-    use fastcrypto_zkp::zk_login_utils::Bn254FrElement;
+    use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
+    use tvm_vm::executor::zk_stuff::utils::get_zk_login_address;
+    use tvm_vm::executor::zk_stuff::curve_utils::Bn254FrElement;
+    use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
+    use tvm_vm::executor::zk_stuff::zk_login::JWK;
+    use tvm_vm::executor::zk_stuff::zk_login::JwkId;
+    use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
+    use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
 
     
     use num_bigint::BigUint;
