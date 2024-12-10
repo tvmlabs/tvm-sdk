@@ -24,6 +24,9 @@ mod test_zk_for_kakao;
 #[cfg(test)]
 mod test_zk_for_microsoft;
 
+#[cfg(test)]
+mod test_zk_for_apple;
+
 fn main() {}
 
 //https://github.com/MystenLabs/fastcrypto/blob/3bbbcac27b84707491277ad89cd8f7177a2beddb/fastcrypto-zkp/src/bn254/zk_login.rs
