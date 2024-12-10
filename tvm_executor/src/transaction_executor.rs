@@ -1618,7 +1618,7 @@ fn outmsg_action_handler(
 
     if (mode & SENDMSG_DELETE_IF_EMPTY) != 0
         && (mode & SENDMSG_ALL_BALANCE) != 0
-        && acc_balance.grams == Grams::from(need_to_burn)
+        && acc_balance.grams == Grams::from(0)
         && reserved_value.grams.is_zero()
     {
         *account_deleted = true;
