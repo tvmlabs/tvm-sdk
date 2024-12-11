@@ -27,9 +27,15 @@ mod test_zk_for_microsoft;
 #[cfg(test)]
 mod test_zk_for_apple;
 
-
 #[cfg(test)]
 mod test_zk_for_slack;
+
+#[cfg(test)]
+mod test_zk_for_karrier_one;
+
+#[cfg(test)]
+mod test_zk_for_credenza3;
+
 
 fn main() {}
 
