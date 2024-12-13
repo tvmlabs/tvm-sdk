@@ -3,78 +3,21 @@
 mod tests {
     use std::collections::HashMap;
   
-    use std::time::Instant;
-
     use ark_std::rand::{rngs::StdRng, SeedableRng};
     use num_bigint::BigUint;
 
     use base64::decode;
-    use base64ct::Encoding as bEncoding;
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
-    use fastcrypto::traits::ToFromBytes;
     
     use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
-    use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
     use tvm_vm::executor::zk_stuff::zk_login::JWK;
     use tvm_vm::executor::zk_stuff::zk_login::JwkId;
     use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
     use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
 
     use serde::Deserialize;
-    use serde_derive::Serialize;
-    
-    use tvm_types::Cell;
-
-    use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
-
-    use tvm_vm::utils::pack_data_to_cell;
-
-    use crate::test_framework::Expects;
-    use crate::test_framework::test_case_with_refs;
-
-    #[derive(Debug, Deserialize)]
-    pub struct JwtData {
-        pub jwt: String,
-        pub user_pass_to_int_format: String,
-        pub ephemeral_key_pair: EphemeralKeyPair,
-        pub zk_addr: String,
-        pub zk_proofs: ZkProofs,
-        pub extended_ephemeral_public_key: String,
-    }
-
-    #[derive(Debug, Deserialize)]
-    pub struct EphemeralKeyPair {
-        pub keypair: Keypair,
-    }
-
-    #[derive(Debug, Deserialize)]
-    pub struct Keypair {
-        pub public_key: HashMap<String, u8>,
-        pub secret_key: HashMap<String, u8>,
-    }
-
-    #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct ZkProofs {
-        pub proof_points: ProofPoints,
-        pub iss_base64_details: IssBase64Details,
-        pub header_base64: String,
-    }
-
-    #[derive(Debug, Deserialize, Serialize)]
-    pub struct ProofPoints {
-        pub a: Vec<String>,
-        pub b: Vec<Vec<String>>,
-        pub c: Vec<String>,
-    }
-
-    #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct IssBase64Details {
-        pub value: String,
-        pub index_mod4: i32,
-    }
+    use crate::test_helper::test_helper::{single_vrgrth16};
 
     #[derive(Debug, Deserialize)]
     pub struct JwtDataDecodedPart1 {
@@ -96,29 +39,6 @@ mod tests {
         pub token_use: String,
         pub login_type: String,
         pub email: String,
-    }
-    /*
-    "iat": 1715725277,
-  "exp": 1715725877,
-  "aud": "65954ec5d03dba0198ac343a",
-  "iss": "https://accounts.credenza3.com",
-  "sub": "6643e3dcda0419be855c1358",
-  "scope": "openid profile email phone blockchain.evm blockchain.evm.write",
-  "token_type": "Bearer",
-  "token_use": "id",
-  "nonce": "hTPpgF7XAKbW37rEUS6pEVZqmoI",
-  "login_type": "credentials",
-  "email": "joy@mystenlabs.com"
-    */
-
-    fn secret_key_from_integer_map(key_data: HashMap<String, u8>) -> Vec<u8> {
-        let mut vec: Vec<u8> = Vec::new();
-        for i in 0..=31 {
-            if let Some(value) = key_data.get(&i.to_string()) {
-                vec.push(value.clone());
-            }
-        }
-        return vec;
     }
 
     #[ignore]
@@ -144,7 +64,7 @@ mod tests {
         println!("all_jwk = {:?}", all_jwk);
 
         let max_epoch = 10;
-        let jwt_randomness = "100681567828351849884072155819400689117";
+        //let jwt_randomness = "100681567828351849884072155819400689117";
         // A dummy salt
         let user_pass_salt = "129390038577185583942388216820280642146";
 
@@ -182,8 +102,6 @@ mod tests {
         println!("aud: {:?}", jwt_data_decoded2.aud);
         println!("sub: {:?}", jwt_data_decoded2.sub);
 
-        
-
 
         let zk_seed = gen_address_seed(
             user_pass_salt,
@@ -198,15 +116,16 @@ mod tests {
                 ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string())
                     .unwrap();
 
+        let verification_key_id: u32 = 0;
 
-        let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk);
-                    println!("time_for_vergrth16 is {time_for_vergrth16}");
+        let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk, verification_key_id, max_epoch);
+        println!("time_for_vergrth16 is {time_for_vergrth16}");
         
         
     }
 
 
-    fn prepare_proof_and_public_key_cells_for_stack(
+    /*fn prepare_proof_and_public_key_cells_for_stack(
         eph_pubkey: &Vec<u8>,
         zk_login_inputs: &ZkLoginInputs,
         all_jwk: &HashMap<JwkId, JWK>,
@@ -272,7 +191,7 @@ mod tests {
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_success();
         start.elapsed().as_micros()
-    }
+    }*/
 
  
 }

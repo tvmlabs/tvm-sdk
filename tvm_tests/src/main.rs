@@ -36,6 +36,7 @@ mod test_zk_for_karrier_one;
 #[cfg(test)]
 mod test_zk_for_credenza3;
 
+mod test_helper;
 
 fn main() {}
 
