@@ -3,78 +3,22 @@
 mod tests {
     use std::collections::HashMap;
   
-    use std::time::Instant;
-
-
     use base64::decode;
-    use base64ct::Encoding as bEncoding;
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
     use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
-    use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
     use tvm_vm::executor::zk_stuff::zk_login::JWK;
     use tvm_vm::executor::zk_stuff::zk_login::JwkId;
     use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
     use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
 
     use serde::Deserialize;
-    use serde_derive::Serialize;
-    
-    use tvm_types::Cell;
 
-    use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
-
-    use tvm_vm::utils::pack_data_to_cell;
-
-
-    use crate::test_framework::Expects;
-    use crate::test_framework::test_case_with_refs;
+    use crate::test_helper::test_helper::{JwtData, single_vrgrth16, secret_key_from_integer_map};
 
     pub const MICROSOFT_DATA: &str = "{\"jwt\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Inp4ZWcyV09OcFRrd041R21lWWN1VGR0QzZKMCJ9.eyJhdWQiOiI3MTNjYzk3MS1kMTBiLTQyZjAtYThlZS03ZWJjYWY3M2I3NTQiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vMTliYTQzNWQtZTQ2Yy00MzZhLTg0ZjItMWIwMWU2OTNlNDgwL3YyLjAiLCJpYXQiOjE3MzM0MDMzMzQsIm5iZiI6MTczMzQwMzMzNCwiZXhwIjoxNzMzNDA3MjM0LCJhaW8iOiJBVFFBeS84WUFBQUF6cTBQWXZ3YXVhR2NYSGtzcEIxdjdUL1o1akNBdlBKb280a1NUWXNlaHNjNW56WE1OUWZzby91eHNtOG5zVllYIiwibm9uY2UiOiJldHpSWXNtTXRTMnVHMDhwNEhjZWtiVXNiTk0iLCJyaCI6IjEuQVZ3QVhVTzZHV3prYWtPRThoc0I1cFBrZ0hISlBIRUwwZkJDcU81LXZLOXp0MVJjQUFwY0FBLiIsInN1YiI6IklKNnNxdDNRTm9NNjFhUV9vV2dIQXRjTUJzUXh2eXlPOS00ck1iTExrT2ciLCJ0aWQiOiIxOWJhNDM1ZC1lNDZjLTQzNmEtODRmMi0xYjAxZTY5M2U0ODAiLCJ1dGkiOiI0ZzdhUnFlRUFVYVVkZk9mTGNVM0FBIiwidmVyIjoiMi4wIn0.lKBzgKNETElu5So53v-7CNw6CVWciw2a5Zog3MLis0dP4fRQvIz-44FyEhMdDdirGxHVLLAQerOOS5lYx0vCihz0EspxpP5CrtW5uOM_KnMYJk6Hkulrq48-yuKXfKB3l1JK7579kSpZc4UzZz4ZKCtGsIgFzBiRHg1eFI6i2YiQwqpLqrbh2ME-tulXtYkuPB5hkOxx66_52yinZtm2br_GoXjyBvlmKFQyELmbd9cs8683qy7hwipSse7KDqySB04pBqYUGyp2ALWVPdb8CrMsPjozU4fwHnTvcJPXVOmX0u7T9H4-NAPp5g83ROpCS55I8ybqd6Ve-0Uil2ovug&session_state=e91dee2b-9c5f-40f4-8af6-719c87466def\", \"user_pass_to_int_format\":\"49505152\", \"zk_addr\":\"0x64f157d6fb92d4389db431f0828516651d3805ce3268ee2d56abd188f202b169\", \"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":39,\"1\":48,\"2\":197,\"3\":39,\"4\":92,\"5\":45,\"6\":123,\"7\":135,\"8\":43,\"9\":76,\"10\":191,\"11\":233,\"12\":207,\"13\":156,\"14\":128,\"15\":14,\"16\":204,\"17\":16,\"18\":68,\"19\":248,\"20\":229,\"21\":215,\"22\":203,\"23\":189,\"24\":162,\"25\":76,\"26\":154,\"27\":178,\"28\":122,\"29\":44,\"30\":8,\"31\":179}, \"secret_key\":{\"0\":159,\"1\":214,\"2\":18,\"3\":254,\"4\":191,\"5\":115,\"6\":156,\"7\":226,\"8\":229,\"9\":146,\"10\":211,\"11\":51,\"12\":81,\"13\":111,\"14\":101,\"15\":33,\"16\":160,\"17\":179,\"18\":53,\"19\":95,\"20\":164,\"21\":134,\"22\":167,\"23\":65,\"24\":71,\"25\":190,\"26\":169,\"27\":219,\"28\":136,\"29\":78,\"30\":14,\"31\":136,\"32\":39,\"33\":48,\"34\":197,\"35\":39,\"36\":92,\"37\":45,\"38\":123,\"39\":135,\"40\":43,\"41\":76,\"42\":191,\"43\":233,\"44\":207,\"45\":156,\"46\":128,\"47\":14,\"48\":204,\"49\":16,\"50\":68,\"51\":248,\"52\":229,\"53\":215,\"54\":203,\"55\":189,\"56\":162,\"57\":76,\"58\":154,\"59\":178,\"60\":122,\"61\":44,\"62\":8,\"63\":179}}},\"maxEpoch\":142, \"extended_ephemeral_public_key\":\"ACcwxSdcLXuHK0y/6c+cgA7MEET45dfLvaJMmrJ6LAiz\", \"zk_proofs\":{\"proofPoints\":{\"a\":[\"17137990231957793317975225132965381963730913983728324875139538151641767739907\",\"15220444311807827196475559074300170686944326391368342123537808259707001188246\",\"1\"],\"b\":[[\"3759089320316495642126774422368579915055767796485787191870421544522615881403\",\"3084706229311317057422402941985513602639281686518596184473515255610713104923\"],[\"8493915494628037526451233519569362746582715621568744471888007467628912451304\",\"792173932412042019876114170987950593509307280947942955952893142973028901309\"],[\"1\",\"0\"]],\"c\":[\"8744954679061282555124535766628336249898222760451969135599179136137078963670\",\"2186498562620143679547775617437575369206327134194558292650559386954874303549\",\"1\"]}, \"issBase64Details\":{\"value\":\"CJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vMTliYTQzNWQtZTQ2Yy00MzZhLTg0ZjItMWIwMWU2OTNlNDgwL3YyLjAiLC\",\"indexMod4\":1},\"headerBase64\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Inp4ZWcyV09OcFRrd041R21lWWN1VGR0QzZKMCJ9\"}}";
     
-    #[derive(Debug, Deserialize)]
-    pub struct JwtData {
-        pub jwt: String,
-        pub user_pass_to_int_format: String,
-        pub ephemeral_key_pair: EphemeralKeyPair,
-        pub zk_addr: String,
-        pub zk_proofs: ZkProofs,
-        pub extended_ephemeral_public_key: String,
-    }
-
-    #[derive(Debug, Deserialize)]
-    pub struct EphemeralKeyPair {
-        pub keypair: Keypair,
-    }
-
-    #[derive(Debug, Deserialize)]
-    pub struct Keypair {
-        pub public_key: HashMap<String, u8>,
-        pub secret_key: HashMap<String, u8>,
-    }
-
-    #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct ZkProofs {
-        pub proof_points: ProofPoints,
-        pub iss_base64_details: IssBase64Details,
-        pub header_base64: String,
-    }
-
-    #[derive(Debug, Deserialize, Serialize)]
-    pub struct ProofPoints {
-        pub a: Vec<String>,
-        pub b: Vec<Vec<String>>,
-        pub c: Vec<String>,
-    }
-
-    #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct IssBase64Details {
-        pub value: String,
-        pub index_mod4: i32,
-    }
 
     #[derive(Debug, Deserialize)]
     pub struct JwtDataDecodedPart1 {
@@ -99,30 +43,15 @@ mod tests {
         pub ver: String,
     }
 
-
-    fn secret_key_from_integer_map(key_data: HashMap<String, u8>) -> Vec<u8> {
-        let mut vec: Vec<u8> = Vec::new();
-        for i in 0..=31 {
-            if let Some(value) = key_data.get(&i.to_string()) {
-                vec.push(value.clone());
-            }
-        }
-        return vec;
-    }
-
     #[ignore]
     #[test]
     fn test_vrgrth16() {
-        // todo: later n must be extracted from 3d part of jwt
-
         let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
             n: "vqEEyvePAnDTT2fd-E_MZm5i6AfwrkHwmWicYmHhsdLXnxVPNSuPjxmTe3UedZBU2Q6OUU5Dv5I4vjryhChnHIxamu4iZsumig8LL2_BqYQVqR6E1mmzpQubanJepJWvKW4aEgLelcK0EXnZSf-_uEPbR2MLgmXo7MW6a3qSqnxLYyQClxbtQML06E7ALXspTaQt7RA6qgtgK8sIuArhcdSghFnfWsQ9Ksr_CI96H50snLTQk9PBHAfwpPK80ha67tQ2uU08zZS_lADdpm0D3r_PgAyhTgaSOvSTGC02-Qv4vht3mG8B1oHprb0XB23B82jUEr6VQL6wbVkEwHU6Tw".to_string(),
             alg: "RS256".to_string(),
         };
-
-
 
         let mut all_jwk = HashMap::new();
         all_jwk.insert(
@@ -133,17 +62,17 @@ mod tests {
             content,
         );
 
-        // let sui_data = [SUI_DATA_FROM_REACT_1];
-        let sui_data = [
+        let data = [
             MICROSOFT_DATA
         ];
 
-        let mut sum_ratio: u128 = 0;
+        let max_epoch = 142; 
+        let verification_key_id: u32 = 0;
 
-        for i in 0..sui_data.len() {
+        for i in 0..data.len() {
             println!("====================== Iter@ is {i} =========================");
             // parse
-            let jwt_data: JwtData = serde_json::from_str(&sui_data[i]).unwrap();
+            let jwt_data: JwtData = serde_json::from_str(&data[i]).unwrap();
             // println!("{:?}", jwt_data);
 
             let user_pass_salt = jwt_data.user_pass_to_int_format.as_str();
@@ -200,80 +129,13 @@ mod tests {
                 ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string())
                     .unwrap();
 
-            let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk);
+            let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk, verification_key_id, max_epoch);
             println!("time_for_vergrth16 is {time_for_vergrth16}");
 
             println!("==========================================");
         }
     }
 
-    fn prepare_proof_and_public_key_cells_for_stack(
-        eph_pubkey: &Vec<u8>,
-        zk_login_inputs: &ZkLoginInputs,
-        all_jwk: &HashMap<JwkId, JWK>,
-    ) -> (Cell, Cell) {
-        let (iss, kid) =
-            (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
-        println!("kid = {}", kid);
-        println!("all_jwk = {:?}", all_jwk);
-
-        let jwk = all_jwk
-            .get(&JwkId::new(iss.clone(), kid.clone()))
-            .ok_or_else(|| {
-                ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
-            })
-            .unwrap();
-
-        let max_epoch = 142; // data from the react test
-
-        // Decode modulus to bytes.
-        let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n)
-            .map_err(|_| {
-                ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
-            })
-            .unwrap();
-
-        let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
-        let public_inputs =
-            &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
-
-        let mut proof_as_bytes = vec![];
-        proof.serialize_compressed(&mut proof_as_bytes).unwrap();
-        println!("proof_as_bytes : {:?}", proof_as_bytes);
-        println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
-
-        let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
-
-        let mut public_inputs_as_bytes = vec![];
-        public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
-        println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
-        println!("public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
-
-        let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
-
-        (proof_cell, public_inputs_cell)
-    }
-
-    fn single_vrgrth16(
-        eph_pubkey: &Vec<u8>,
-        zk_login_inputs: &ZkLoginInputs,
-        all_jwk: &HashMap<JwkId, JWK>,
-    ) -> u128 {
-        let (proof_cell, public_inputs_cell) =
-            prepare_proof_and_public_key_cells_for_stack(eph_pubkey, zk_login_inputs, all_jwk);
-
-        let verification_key_id: u32 = 0;
-
-        let mut code = "PUSHREF \n".to_string();
-        code = code + "PUSHREF \n";
-        code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
-        code = code + "VERGRTH16";
-
-        let start: Instant = Instant::now();
-        test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
-            .expect_success();
-        start.elapsed().as_micros()
-    }
 
     
 }
