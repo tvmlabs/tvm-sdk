@@ -118,8 +118,6 @@ pub fn poseidon_merkle_tree(inputs: Vec<Fr>) -> Result<Fr, ZkCryptoError> {
 /// greater than the field size or is longer than 32 bytes, an error is
 /// returned.
 ///
-/// This function is used as an interface to the poseidon hash function in the
-/// sui-framework.
 pub fn poseidon_bytes(
     inputs: &Vec<Vec<u8>>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
