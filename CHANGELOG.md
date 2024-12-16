@@ -2,14 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.3.2] – 2024-12-16
 
-### Fixed
-- Rawreserve didn't include credit money.
-- Transfer all balance sent credit money and transaction failed.
-- Abort ext_message didn't restore balances
-
-## [2.3.1] – 2024-10-30
+## [2.3.1] – 2024-12-16
 
 ### Fixed
 - Rawreserve didn't include credit money.
