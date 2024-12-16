@@ -2,10 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.3.2] – 2024-12-08
-### Fixed
-- Rawreserve with reverse flags
-- Transfer with different flags
+## [2.3.2] – 2024-12-16
 
 ### Fixed
 - Rawreserve didn't include credit money.
