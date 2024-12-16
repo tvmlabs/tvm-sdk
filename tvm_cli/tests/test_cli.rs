@@ -643,7 +643,11 @@ fn test_deploy() -> Result<(), Box<dyn std::error::Error>> {
         .stdout(predicate::str::contains("\"balance\": \""));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("account").arg(&addr).assert().success().stdout(predicate::str::contains(" nanovmshell"));
+    cmd.arg("account")
+        .arg(&addr)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(" nanovmshell"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("-j")

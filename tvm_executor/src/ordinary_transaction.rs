@@ -408,19 +408,18 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             copyleft = None;
             acc_balance.grams = Grams::zero();
         }
-
-        log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
-        if description.aborted && is_ext_msg {
-            log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
-            acc_balance = original_acc_balance.clone();
-            if !is_special {
-                let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
-                log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
-                if !acc_balance.grams.sub(&in_fwd_fee)? {
-                    acc_balance.grams = Grams::zero();
-                }
-            }
-        }
+        // log::debug!(target: "executor", "Desciption.aborted {}",
+        // description.aborted); if description.aborted && is_ext_msg {
+        // log::debug!(target: "executor", "restore balance {} => {}",
+        // acc_balance.grams, original_acc_balance.grams); acc_balance =
+        // original_acc_balance.clone(); if !is_special {
+        // let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
+        // log::debug!(target: "executor", "import message fee: {}, acc_balance: {}",
+        // in_fwd_fee, acc_balance.grams); if !acc_balance.grams.sub(&
+        // in_fwd_fee)? { acc_balance.grams = Grams::zero();
+        // }
+        // }
+        // }
         if description.aborted && !is_ext_msg && bounce {
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
