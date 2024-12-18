@@ -660,6 +660,7 @@ pub trait TransactionExecutor {
             available_credit,
             minted_shell,
             need_to_burn,
+            None,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -679,6 +680,7 @@ pub trait TransactionExecutor {
         mut available_credit: i128,
         minted_shell: &mut u128,
         need_to_burn: u64,
+        message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
         let mut need_to_reserve = need_to_burn.clone();
         let mut out_msgs = vec![];
@@ -915,13 +917,9 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-        let src_dapp_id = match acc.get_dapp_id().cloned() {
-            Some(dapp_id) => dapp_id,
-            None => None,
-        };
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
             if let Some(header) = out_msg.int_header_mut() {
-                header.set_src_dapp_id(src_dapp_id.clone());
+                header.set_src_dapp_id(message_src_dapp_id.clone());
             }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
