@@ -199,7 +199,7 @@ checksum = "4c95c10ba0b00a02636238b814946408b1322d5ac4760326e6fb8ec956d85775"
 
 [[package]]
 name = "api_derive"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "api_info",
  "proc-macro2",
@@ -210,7 +210,7 @@ dependencies = [
 
 [[package]]
 name = "api_info"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "serde",
  "serde_derive",
@@ -219,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "api_test"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "api_derive",
  "api_info",
@@ -5327,7 +5327,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_abi"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5344,7 +5344,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_api"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -5365,7 +5365,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_assembler"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "clap 4.5.21",
@@ -5382,7 +5382,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -5403,7 +5403,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block_json"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "failure",
@@ -5425,7 +5425,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_cli"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -5467,7 +5467,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "aes",
  "anyhow",
@@ -5536,7 +5536,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client_processing"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "api_derive",
  "api_info",
@@ -5556,7 +5556,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_common"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "external-ip",
  "failure",
@@ -5569,7 +5569,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_debugger"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -5587,7 +5587,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_executor"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "failure",
@@ -5601,7 +5601,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_sdk"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "api_derive",
@@ -5626,7 +5626,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_struct"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "failure",
  "hex-literal",
@@ -5637,7 +5637,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tests"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -5675,7 +5675,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tl_codegen"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "crc 1.8.1",
  "failure",
@@ -5689,7 +5689,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_types"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "aes-ctr",
  "anyhow",
@@ -5720,7 +5720,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_vm"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -5863,7 +5863,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "update_trusted_blocks"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "bincode",
  "serde",
