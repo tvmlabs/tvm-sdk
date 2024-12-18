@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.2] – 2024-12-18
+
+### Fixed
+- Fix src dapp id for out messages 
 
 ## [2.3.1] – 2024-12-16
 
