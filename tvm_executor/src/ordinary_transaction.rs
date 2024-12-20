@@ -86,6 +86,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
 
+        let is_previous_state_active = match account.state() {
+            Some(AccountState::AccountUninit {}) => false,
+            None => false,
+            _ => true,
+        };
+
         let revert_anycast =
             self.config.global_version() >= VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
 
@@ -332,6 +338,22 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     log::debug!(target: "executor", "compute_phase: success");
                     log::debug!(target: "executor", "action_phase: lt={}", lt);
                     action_phase_processed = true;
+
+                    let message_src_dapp_id = if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
+                        if !is_previous_state_active {
+                            if in_msg.int_header().is_some() {
+                                params.src_dapp_id.clone()
+                            } else {
+                                Some(
+                                    account.get_id().unwrap().get_bytestring(0).as_slice().into(),
+                                )
+                            }
+                        } else {
+                            account.get_dapp_id().cloned().unwrap()
+                        }
+                    } else {
+                        None
+                    };
                     match self.action_phase_with_copyleft(
                         &mut tr,
                         account,
@@ -346,6 +368,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         params.available_credit,
                         minted_shell,
                         need_to_burn.as_u64_quiet(),
+                        message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             out_msgs = messages;
@@ -408,19 +431,18 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             copyleft = None;
             acc_balance.grams = Grams::zero();
         }
-
-        log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
-        if description.aborted && is_ext_msg {
-            log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
-            acc_balance = original_acc_balance.clone();
-            if !is_special {
-                let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
-                log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
-                if !acc_balance.grams.sub(&in_fwd_fee)? {
-                    acc_balance.grams = Grams::zero();
-                }
-            }
-        }
+        // log::debug!(target: "executor", "Desciption.aborted {}",
+        // description.aborted); if description.aborted && is_ext_msg {
+        // log::debug!(target: "executor", "restore balance {} => {}",
+        // acc_balance.grams, original_acc_balance.grams); acc_balance =
+        // original_acc_balance.clone(); if !is_special {
+        // let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
+        // log::debug!(target: "executor", "import message fee: {}, acc_balance: {}",
+        // in_fwd_fee, acc_balance.grams); if !acc_balance.grams.sub(&
+        // in_fwd_fee)? { acc_balance.grams = Grams::zero();
+        // }
+        // }
+        // }
         if description.aborted && !is_ext_msg && bounce {
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
