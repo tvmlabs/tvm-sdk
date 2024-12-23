@@ -23,7 +23,7 @@ members = [
   "tvm_tests"
 ]
 [workspace.package]
-version = "2.3.2"
+version = "2.3.3"
 
 rust-version = "1.76.0"
 

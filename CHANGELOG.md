@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.3] – 2024-12-18
+
+### New
+- Delete some flags from RawReserve instruction
+
 ## [2.3.2] – 2024-12-18
 
 ### Fixed
