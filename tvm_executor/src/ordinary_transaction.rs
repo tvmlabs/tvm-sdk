@@ -339,14 +339,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     log::debug!(target: "executor", "action_phase: lt={}", lt);
                     action_phase_processed = true;
 
-                    let message_src_dapp_id = if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
+                    let message_src_dapp_id = if let Some(AccountState::AccountActive {
+                        state_init: _,
+                    }) = account.state()
+                    {
                         if !is_previous_state_active {
                             if in_msg.int_header().is_some() {
                                 params.src_dapp_id.clone()
                             } else {
-                                Some(
-                                    account.get_id().unwrap().get_bytestring(0).as_slice().into(),
-                                )
+                                Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
                         } else {
                             account.get_dapp_id().cloned().unwrap()

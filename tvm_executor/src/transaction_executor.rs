@@ -40,10 +40,6 @@ use tvm_block::MsgAddressInt;
 use tvm_block::OutAction;
 use tvm_block::OutActions;
 use tvm_block::RESERVE_ALL_BUT;
-use tvm_block::RESERVE_IGNORE_ERROR;
-use tvm_block::RESERVE_PLUS_ORIG;
-use tvm_block::RESERVE_REVERSE;
-use tvm_block::RESERVE_VALID_MODES;
 use tvm_block::SENDMSG_ALL_BALANCE;
 use tvm_block::SENDMSG_DELETE_IF_EMPTY;
 use tvm_block::SENDMSG_IGNORE_ERROR;
@@ -784,8 +780,6 @@ pub trait TransactionExecutor {
                         my_addr,
                         &total_reserved_value,
                         &mut account_deleted,
-                        need_to_reserve,
-                        need_to_burn,
                     );
                     match result {
                         Ok(_) => {
@@ -801,7 +795,6 @@ pub trait TransactionExecutor {
                     match reserve_action_handler(
                         mode,
                         &mut value,
-                        original_acc_balance,
                         &mut acc_remaining_balance,
                         &mut need_to_reserve,
                     ) {
@@ -944,8 +937,6 @@ pub trait TransactionExecutor {
                     my_addr,
                     &total_reserved_value,
                     &mut account_deleted,
-                    need_to_reserve,
-                    need_to_burn,
                 );
                 if need_to_reserve != 0 {
                     free_to_send.grams.add(&Grams::from(need_to_reserve))?;
@@ -1450,8 +1441,6 @@ fn outmsg_action_handler(
     my_addr: &MsgAddressInt,
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
-    need_to_reserve: u64,
-    need_to_burn: u64,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
     let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE;
@@ -1527,16 +1516,16 @@ fn outmsg_action_handler(
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
             // send all remaining account balance
             result_value = acc_balance.clone();
-        /*    if need_to_reserve != 0 {
-                match result_value.grams.sub(&Grams::from(need_to_burn)) {
-                    Ok(true) => (),
-                    Ok(false) => {
-                        result_value.grams = Grams::zero();
-                        return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
-                    }
-                    Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
-                }
-            }*/
+            //    if need_to_reserve != 0 {
+            // match result_value.grams.sub(&Grams::from(need_to_burn)) {
+            // Ok(true) => (),
+            // Ok(false) => {
+            // result_value.grams = Grams::zero();
+            // return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+            // }
+            // Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
+            // }
+            // }
             int_header.value = result_value.clone();
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
@@ -1663,10 +1652,12 @@ fn outmsg_action_handler(
 fn reserve_action_handler(
     mode: u8,
     val: &mut CurrencyCollection,
-    original_acc_balance: &CurrencyCollection,
     acc_remaining_balance: &mut CurrencyCollection,
     need_to_reserve: &mut u64,
 ) -> std::result::Result<CurrencyCollection, i32> {
+    if mode > RESERVE_ALL_BUT {
+        return Err(RESULT_CODE_UNKNOWN_OR_INVALID_ACTION);
+    }
     if mode & RESERVE_ALL_BUT == 0 {
         if *need_to_reserve != 0 {
             match val.grams.add(&Grams::from(*need_to_reserve)) {
@@ -1684,38 +1675,9 @@ fn reserve_action_handler(
             *need_to_reserve = 0;
         }
     }
-    if mode & !RESERVE_VALID_MODES != 0 {
-        return Err(RESULT_CODE_UNKNOWN_OR_INVALID_ACTION);
-    }
     log::debug!(target: "executor", "Reserve with mode = {} value = {}", mode, balance_to_string(val));
 
-    let mut reserved;
-    if mode & RESERVE_PLUS_ORIG != 0 {
-        // Append all currencies
-        if mode & RESERVE_REVERSE != 0 {
-            reserved = original_acc_balance.clone();
-            let result = reserved.sub(val);
-            match result {
-                Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
-                Ok(false) => return Err(RESULT_CODE_UNSUPPORTED),
-                Ok(true) => (),
-            }
-        } else {
-            reserved = val.clone();
-            reserved.add(original_acc_balance).or(Err(RESULT_CODE_INVALID_BALANCE))?;
-        }
-    } else {
-        if mode & RESERVE_REVERSE != 0 {
-            // flag 8 without flag 4 unacceptable
-            return Err(RESULT_CODE_UNKNOWN_OR_INVALID_ACTION);
-        }
-        reserved = val.clone();
-    }
-    if mode & RESERVE_IGNORE_ERROR != 0 {
-        // Only grams
-        reserved.grams = min(reserved.grams, acc_remaining_balance.grams);
-    }
-
+    let mut reserved = val.clone();
     let mut remaining = acc_remaining_balance.clone();
     if remaining.grams.as_u128() < reserved.grams.as_u128() {
         return Err(RESULT_CODE_NOT_ENOUGH_GRAMS);
