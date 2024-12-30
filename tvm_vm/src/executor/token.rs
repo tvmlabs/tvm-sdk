@@ -22,14 +22,11 @@ pub const ARFC: f64 = 1000_f64;
 pub const MINRC: f64 = 1_f64;
 pub const MAXRC: f64 = 3_f64;
 pub const TTMT: f64 = 2000000000_f64;
-pub const TMTAFC: f64 = 0.00001_f64;
 pub const TOTALSUPPLY: f64 = 10400000000_f64;
-pub const TOKEN_DECIMALS: f64 = 1e9_f64;
 pub const MAXRT: f64 = 157766400_f64;
 pub const KF: f64 = 0.01_f64;
 pub const KS: f64 = 0.001_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
-pub const BKSFC: f64 = 0.675_f64;
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
@@ -55,13 +52,14 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
-    fetch_stack(engine, 6)?;
+    fetch_stack(engine, 7)?;
     let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
     let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    let active_bk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
+    let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
+    let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64;
     let repcoef = if bkrt < MAXRT {
         MINRC
             + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
@@ -71,10 +69,10 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     };
     let reward;
     if mbk == 0_f64 {
-        reward = 1_f64;
+        reward = rbk * t * repcoef / nbk;
     } else
     if mbk < TOTALSUPPLY {
-        reward = 1_f64;
+        reward = rbk * t * repcoef * bkstake / totalbkstake;
     } else {
         reward = 0_f64;
     } 
