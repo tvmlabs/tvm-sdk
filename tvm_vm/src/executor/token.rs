@@ -26,7 +26,8 @@ pub const TMTAFC: f64 = 0.00001_f64;
 pub const TOTALSUPPLY: f64 = 10400000000_f64;
 pub const TOKEN_DECIMALS: f64 = 1e9_f64;
 pub const MAXRT: f64 = 157766400_f64;
-pub const FFFC: f64 = 0.01_f64;
+pub const KF: f64 = 0.01_f64;
+pub const KS: f64 = 0.001_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 pub const BKSFC: f64 = 0.675_f64;
 
@@ -87,23 +88,32 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
-    let need_bk_num = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let bk_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let t = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let bkpd = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mut base_min_val_stake = 0_f64;
-    if t >= 3_f64 / 2_f64 * bkpd {
-        let u_free_flt = -1_f64 / TTMT * (FFFC / (FFFC + 1_f64)).ln();
-        let u = -1_f64 / TTMT * (TMTAFC / (TMTAFC + 1_f64)).ln();
-        let tmta = TOTALSUPPLY * (1_f64 + TMTAFC) * (1_f64 - (-1_f64 * t * u).exp());
-        let free_flt_frac =
-            MAX_FREE_FLOAT_FRAC * (1_f64 + FFFC) * (1_f64 - (-1_f64 * u_free_flt * t).exp());
-        let tsta = tmta * (1_f64 - free_flt_frac);
-        base_min_val_stake = BKSFC * tsta / 2_f64 / need_bk_num * TOKEN_DECIMALS;
+    let nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let sbkbase;
+    if mbkav != 0_f64 {
+        let fstk;
+        if tstk > TTMT {
+            fstk = MAX_FREE_FLOAT_FRAC;
+        } else {
+            let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
+            fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
+        }
+        sbkbase = TOKEN_DECIMALS * (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq; 
+    } else {
+        sbkbase = 0_f64;
     }
-    let min_val_stake =
-        if bk_num > need_bk_num { base_min_val_stake as u128 } else { base_min_val_stake as u128 };
-    engine.cc.stack.push(int!(min_val_stake));
+    let sbkmin;        
+    let us = -1_f64 * (KS / (KS + 1_f64)).ln() / nbkreq;
+    if (nbk >= 0_f64) && (nbk <= nbkreq) {
+        sbkmin = sbkbase * (1_f64 + KS) * (1_f64 - (-1_f64 * us * nbk).exp());
+    } else {
+        let unbk = 2_f64 * nbkreq - nbk;
+        sbkmin = sbkbase * (2_f64 - (1_f64 + KS) * (1_f64 - (-1_f64 * us * unbk).exp()));
+    }
+    engine.cc.stack.push(int!(sbkmin as u128));
     Ok(())
 }
 
