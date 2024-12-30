@@ -60,7 +60,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let bked = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
     let active_bk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
     let repcoef = if bkrt < MAXRT {
         MINRC
@@ -69,17 +69,16 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     } else {
         MAXRC
     };
-    let u = -1_f64 / TTMT * (TMTAFC / (1_f64 + TMTAFC)).ln();
-    let grps = TOTALSUPPLY * (1_f64 + TMTAFC) * ((-u * t).exp() - (-u * (t + 1_f64)).exp());
-    let tbbkrps = BKSFC * grps;
-    let bkrpve;
-    if totalbkstake != 0_f64 {
-        let bkrps = tbbkrps * repcoef * bkstake / totalbkstake;
-        bkrpve = bkrps * bked * TOKEN_DECIMALS;
+    let reward;
+    if mbk == 0_f64 {
+        reward = 1_f64;
+    } else
+    if mbk < TOTALSUPPLY {
+        reward = 1_f64;
     } else {
-        bkrpve = tbbkrps * repcoef * bked * TOKEN_DECIMALS / active_bk;
-    }
-    engine.cc.stack.push(int!(bkrpve as u128));
+        reward = 0_f64;
+    } 
+    engine.cc.stack.push(int!(reward as u128));
     Ok(())
 }
 
@@ -101,7 +100,7 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
             let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
             fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
         }
-        sbkbase = TOKEN_DECIMALS * (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq; 
+        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq; 
     } else {
         sbkbase = 0_f64;
     }
