@@ -26,6 +26,8 @@ pub const TOTALSUPPLY: f64 = 10400000000_f64;
 pub const MAXRT: f64 = 157766400_f64;
 pub const KF: f64 = 0.01_f64;
 pub const KS: f64 = 0.001_f64;
+pub const KM: f64 = 0.00001_f64;
+pub const KRBK: f64 = 0.675_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
@@ -50,8 +52,36 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 }
 
 #[allow(clippy::excessive_precision)]
-pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
+pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
+    fetch_stack(engine, 1)?;
+    let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let rbkprev = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let rbkmin = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let drbkavg = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let repavg = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let rbk = (((calc_mbk(t + drbkavg) - calc_mbk(t)) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
+    engine.cc.stack.push(int!(rbk as u128));
+    Ok(())
+}
+
+#[allow(clippy::excessive_precision)]
+fn calc_mbk(t: f64) -> f64 {
+    let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
+    let mt;
+    if t > TTMT {
+        mt = TOTALSUPPLY;
+    } else {
+        mt = TOTALSUPPLY * (1_f64 + KM) * (1_f64 - (-1_f64 * um * t).exp());
+    }
+    let mbk = KRBK * mt;
+    return mbk;
+}
+
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
     fetch_stack(engine, 7)?;
     let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
