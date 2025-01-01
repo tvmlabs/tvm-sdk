@@ -53,7 +53,7 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
+    engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
     fetch_stack(engine, 5)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
@@ -94,7 +94,7 @@ fn calc_mbk(t: f64) -> f64 {
 
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
+    engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
     fetch_stack(engine, 7)?;
     let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
