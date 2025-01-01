@@ -54,19 +54,19 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
-    fetch_stack(engine, 5)?;
+    fetch_stack(engine, 4)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     let repavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let rbkmin;
-    if (t <= TTMT - 1) {
+    if t <= TTMT - 1_f64 {
         rbkmin = TOTALSUPPLY
             * (1_f64 + KM)
             * ((-1_f64 * um * t).exp() - (-1_f64 * um * (t + 1_f64)).exp());
     } else {
-        rbkmin = 0;
+        rbkmin = 0_f64;
     }
     let rbk = (((calc_mbk(t + drbkavg) - calc_mbk(t)) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
