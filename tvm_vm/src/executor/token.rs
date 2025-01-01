@@ -54,12 +54,12 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
-    fetch_stack(engine, 1)?;
+    fetch_stack(engine, 5)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let rbkprev = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let rbkmin = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let drbkavg = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let repavg = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let rbkmin = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let drbkavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let repavg = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
     let rbk = (((calc_mbk(t + drbkavg) - calc_mbk(t)) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
