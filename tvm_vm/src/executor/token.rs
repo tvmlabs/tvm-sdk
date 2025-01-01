@@ -57,9 +57,17 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     fetch_stack(engine, 5)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let rbkmin = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let drbkavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let repavg = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
+    let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let repavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
+    let rbkmin;
+    if (t <= TTMT - 1) {
+        rbkmin = TOTALSUPPLY
+            * (1_f64 + KM)
+            * ((-1_f64 * um * t).exp() - (-1_f64 * um * (t + 1_f64)).exp());
+    } else {
+        rbkmin = 0;
+    }
     let rbk = (((calc_mbk(t + drbkavg) - calc_mbk(t)) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
@@ -77,7 +85,6 @@ fn calc_mbk(t: f64) -> f64 {
     let mbk = KRBK * mt;
     return mbk;
 }
-
 
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
@@ -100,12 +107,11 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let reward;
     if mbk == 0_f64 {
         reward = rbk * t * repcoef / nbk;
-    } else
-    if mbk < TOTALSUPPLY {
+    } else if mbk < TOTALSUPPLY {
         reward = rbk * t * repcoef * bkstake / totalbkstake;
     } else {
         reward = 0_f64;
-    } 
+    }
     engine.cc.stack.push(int!(reward as u128));
     Ok(())
 }
@@ -128,11 +134,11 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
             let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
             fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
         }
-        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq; 
+        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq;
     } else {
         sbkbase = 0_f64;
     }
-    let sbkmin;        
+    let sbkmin;
     let us = -1_f64 * (KS / (KS + 1_f64)).ln() / nbkreq;
     if (nbk >= 0_f64) && (nbk <= nbkreq) {
         sbkmin = sbkbase * (1_f64 + KS) * (1_f64 - (-1_f64 * us * nbk).exp());
