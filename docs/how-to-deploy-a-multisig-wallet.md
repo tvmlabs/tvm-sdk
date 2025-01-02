@@ -1,5 +1,5 @@
 ---
-description: Create a multisig wallet  with TVM CLI
+description: Create a Multisig wallet  with TVM CLI
 ---
 
 # How to deploy a Multisig Wallet
@@ -77,11 +77,11 @@ Once you receive the SHELL tokens, check the state of the pre-deployed contract.
 tvm-cli account <YourAddress>
 ```
 
-<figure><img src=".gitbook/assets/uninit.jpg" alt=""><figcaption></figcaption></figure>
-
 {% hint style="success" %}
 The received SHELL tokens will be displayed in the `ecc` field.
 {% endhint %}
+
+<figure><img src=".gitbook/assets/uninit.jpg" alt=""><figcaption></figcaption></figure>
 
 Now you are ready to deploy your Multisig wallet using the following command:
 
@@ -89,18 +89,44 @@ Now you are ready to deploy your Multisig wallet using the following command:
 tvm-cli deploy --abi multisig.abi.json --sign multisig.keys.json multisig.tvc '{"owners":[<PubKeyList>], "reqConfirms":<ConfirmsNum>, "value":<Tokens>}'
 ```
 
-The arguments of the constructor must be specified in curly brackets:\
-`{<constructor arguments>}:`&#x20;
+The arguments for the constructor must be enclosed in curly brackets:\
+`{<constructor arguments>}`
 
-* `owners` – an array of custodian public keys. Each key is specified with the `0x` prefix.;
-* `reqConfirms` – the default number of confirmations required to execute a transaction;
-* `value` – the number of SHELL tokens to be exchanged for [VMSHELL tokens](https://docs.ackinacki.com/glossary#vmshell) during deployment.
+* `owners`: An array of custodian public keys. Each key must include the `0x` prefix.
+* `reqConfirms`: The default number of confirmations required to execute a transaction.
+* `value`: The amount (_in_ [_nanotokens_](https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#tvm-units)) of SHELL tokens to be exchanged for [VMSHELL tokens ](https://docs.ackinacki.com/glossary#vmshell)during deployment.
+
+{% hint style="danger" %}
+The `value` parameter must not be zero, as `VMSHELL` tokens are used to pay contract execution fees after the exchange.
+{% endhint %}
+
+{% hint style="info" %}
+In our example, we specify the amount of `10,000,000,000 nanoSHELL`, which will be converted into `10,000,000,000 nanoVMSHELL`. \
+From this amount, the deployment fee for the contract will be deducted, and the remaining balance will be credited to the Multisig wallet.
+{% endhint %}
 
 <figure><img src=".gitbook/assets/deploy.jpg" alt=""><figcaption></figcaption></figure>
 
 Check the contract state again. This time, it should be `Active`.
 
 <figure><img src=".gitbook/assets/active (1).jpg" alt=""><figcaption></figcaption></figure>
+
+If you need VMSHELL tokens later, simply call the `exchangeToken(uint64 value)` method in the Multisig and exchange the required amount.\
+\
+For example, let's convert 10 SHELL tokens into 10 VMSHELL tokens:
+
+```
+tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 exchangeToken '{"value":10000000000}' --abi multisig.abi.json --sign multisig.keys.json
+
+```
+
+{% hint style="success" %}
+`VMSHELL` tokens can be transferred to the balances of other contracts within the same Dapp ID.
+
+However, when transferring to contracts in other Dapp IDs, only `SHELL` tokens can be used.
+
+Therefore, you can create a single Multisig contract to replenish the balances of all your contracts with `SHELL` tokens, regardless of which Dapp ID they belong to.
+{% endhint %}
 
 ## How to send tokens from Multisig Wallet
 
