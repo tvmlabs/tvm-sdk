@@ -55,12 +55,16 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
     fetch_stack(engine, 5)?;
-    let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let repavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    let is_min = engine.cmd.var(5).as_bool()?;
+    let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
+    let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
+    let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; 
+    //_delta_reward = (_delta_reward * _calc_reward_num + (block.timestamp - _reward_last_time)) / (_calc_reward_num + 1); 
+    //_delta_reward - average time between reward adj calculate
+    //_calc_reward_num - number of calculate
+    //_reward_last_time - time of last calculate
+    let repavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //Average ReputationTime in active stakes (average of (average from licenses rep time in one stake))
+    let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
+    let is_min = engine.cmd.var(5).as_bool()?; //is it min for exception (2 years)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let rbkmin;
     if t <= TTMT - 1_f64 {
@@ -97,13 +101,13 @@ fn calc_mbk(t: f64) -> f64 {
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
     fetch_stack(engine, 7)?;
-    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64;
-    let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64;
+    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //average reputation time of licenses in one stake
+    let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //value of stake
+    let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //sum of stakes at start of epoch
+    let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //duration of epoch
+    let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
+    let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepers
+    let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64; //last calculated reward_adjustment
     let repcoef = if bkrt < MAXRT {
         MINRC
             + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
@@ -128,10 +132,10 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
-    let nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; // needNumberOfActiveBlockKeepers = 10000
+    let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepersAtBlockStart
+    let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //uint128(_waitStep * 3) where waitStep - number of block duration of preEpoch
+    let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token without slash tokens
     let sbkbase;
     if mbkav != 0_f64 {
         let fstk;
