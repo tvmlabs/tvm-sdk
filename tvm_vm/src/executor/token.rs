@@ -59,7 +59,8 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     let repavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let is_min = engine.cmd.var(4).as_bool()?;
+    let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
+    let is_min = engine.cmd.var(5).as_bool()?;
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let rbkmin;
     if t <= TTMT - 1_f64 {
@@ -70,7 +71,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     } else {
         rbkmin = 0_f64;
     }
-    let rbk = (((calc_mbk(t + drbkavg) - calc_mbk(t)) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
+    let rbk = (((calc_mbk(t + drbkavg) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
     if is_min {
         engine.cc.stack.push(int!(rbkmin as u128));
     } else {
