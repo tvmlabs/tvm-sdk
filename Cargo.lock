@@ -199,7 +199,7 @@ checksum = "4c95c10ba0b00a02636238b814946408b1322d5ac4760326e6fb8ec956d85775"
 
 [[package]]
 name = "api_derive"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "api_info",
  "proc-macro2",
@@ -210,7 +210,7 @@ dependencies = [
 
 [[package]]
 name = "api_info"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "serde",
  "serde_derive",
@@ -219,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "api_test"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "api_derive",
  "api_info",
@@ -574,6 +574,12 @@ name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
+
+[[package]]
+name = "base64"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "base64ct"
@@ -1870,7 +1876,7 @@ dependencies = [
  "secp256k1",
  "serde",
  "serde_json",
- "serde_with",
+ "serde_with 2.3.3",
  "sha2 0.10.8",
  "sha3",
  "signature",
@@ -2719,6 +2725,7 @@ checksum = "707907fe3c25f5424cce2cb7e1cbcafee6bdbe735ca90ef77c29e84591e5b9da"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.2",
+ "serde",
 ]
 
 [[package]]
@@ -4510,7 +4517,25 @@ dependencies = [
  "indexmap 1.9.3",
  "serde",
  "serde_json",
- "serde_with_macros",
+ "serde_with_macros 2.3.3",
+ "time",
+]
+
+[[package]]
+name = "serde_with"
+version = "3.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6b6f7f2fcb69f747921f79f3926bd1e203fce4fef62c268dd3abfb6d86029aa"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "hex",
+ "indexmap 1.9.3",
+ "indexmap 2.6.0",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_with_macros 3.12.0",
  "time",
 ]
 
@@ -4519,6 +4544,18 @@ name = "serde_with_macros"
 version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "881b6f881b17d13214e5d494c939ebab463d01264ce1811e9d4ac3a882e7695f"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.89",
+]
+
+[[package]]
+name = "serde_with_macros"
+version = "3.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d00caa5193a3c8362ac2b73be6b9e768aa5a4b2f721d8f4b339600c3cb51f8e"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -5327,7 +5364,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_abi"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5344,7 +5381,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_api"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -5365,7 +5402,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_assembler"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "clap 4.5.21",
@@ -5382,7 +5419,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -5403,7 +5440,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block_json"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "failure",
@@ -5425,7 +5462,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_cli"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -5467,7 +5504,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "aes",
  "anyhow",
@@ -5511,6 +5548,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_repr",
+ "serde_with 3.12.0",
  "sha2 0.9.9",
  "sodalite",
  "thiserror",
@@ -5536,7 +5574,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client_processing"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "api_derive",
  "api_info",
@@ -5556,7 +5594,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_common"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "external-ip",
  "failure",
@@ -5569,7 +5607,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_debugger"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -5587,7 +5625,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_executor"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "failure",
@@ -5601,7 +5639,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_sdk"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "api_derive",
@@ -5626,7 +5664,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_struct"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "failure",
  "hex-literal",
@@ -5637,7 +5675,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tests"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -5675,7 +5713,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tl_codegen"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "crc 1.8.1",
  "failure",
@@ -5689,7 +5727,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_types"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "aes-ctr",
  "anyhow",
@@ -5720,7 +5758,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_vm"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -5863,7 +5901,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "update_trusted_blocks"
-version = "2.3.3"
+version = "2.4.0"
 dependencies = [
  "bincode",
  "serde",

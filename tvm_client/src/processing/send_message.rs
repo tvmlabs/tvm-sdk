@@ -102,7 +102,7 @@ impl SendingMessage {
         Ok(Self { serialized: serialized.to_string(), _deserialized: deserialized, id, body, dst })
     }
 
-    async fn prepare_to_send<F: futures::Future<Output = ()> + Send>(
+    async fn _prepare_to_send<F: futures::Future<Output = ()> + Send>(
         &self,
         context: &Arc<ClientContext>,
         callback: &Option<impl Fn(ProcessingEvent) -> F + Send + Sync>,
@@ -223,7 +223,8 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
 
     let callback = if params.send_events { Some(callback) } else { None };
 
-    let shard_block_id = message.prepare_to_send(&context, &callback).await?;
+    // let shard_block_id = message.prepare_to_send(&context, &callback).await?;
+    let shard_block_id = "".to_string();
     let result = message.send(&context).await;
     if let Some(callback) = &callback {
         callback(match &result {

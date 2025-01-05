@@ -30,6 +30,7 @@ use tokio::sync::watch;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
 
+use super::tvm_gql::ExtMessage;
 use super::ErrorCode;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
@@ -49,6 +50,7 @@ use crate::net::endpoint::Endpoint;
 use crate::net::tvm_gql::GraphQLQuery;
 use crate::net::types::NetworkQueriesProtocol;
 use crate::net::websocket_link::WebsocketLink;
+use crate::processing::ThreadIdentifier;
 
 pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
@@ -737,10 +739,14 @@ impl ServerLink {
         value: &[u8],
         endpoint: Option<&Endpoint>,
     ) -> ClientResult<Option<ClientError>> {
-        let request = PostRequest { id: base64_encode(key), body: base64_encode(value) };
+        let message = ExtMessage {
+            id: base64_encode(key),
+            body: base64_encode(value),
+            expireAt: None,
+            threadId: Some(ThreadIdentifier::default().to_string()),
+        };
 
-        let result = self.query(&GraphQLQuery::with_post_requests(&[request]), endpoint).await;
-
+        let result = self.query(&&GraphQLQuery::with_send_message(&message), endpoint).await;
         // send message is always successful in order to process case when server
         // received message but client didn't receive response
         if let Err(err) = &result {
