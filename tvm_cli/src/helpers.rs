@@ -576,7 +576,6 @@ pub fn construct_account_from_tvc(
                 .map_err(|e| format!("Failed to set address: {}", e))?,
             _ => MsgAddressInt::default(),
         },
-        None,
         match balance {
             Some(balance) => CurrencyCollection::with_grams(balance),
             _ => CurrencyCollection::default(),

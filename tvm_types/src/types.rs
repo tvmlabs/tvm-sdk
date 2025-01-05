@@ -59,7 +59,7 @@ macro_rules! fail {
     };
 }
 
-#[derive(Clone, Default, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Default, PartialEq, Eq, Hash, Ord, PartialOrd, Copy)]
 pub struct UInt256([u8; 32]);
 
 impl PartialEq<SliceData> for UInt256 {

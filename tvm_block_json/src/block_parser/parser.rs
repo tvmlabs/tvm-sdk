@@ -255,6 +255,7 @@ impl<T: ParserTracer, R: JsonReducer> BlockParser<T, R> {
         account: Account,
         prev_code_hash: Option<UInt256>,
         last_trans_chain_order: Option<String>,
+        dapp_id: Option<UInt256>,
     ) -> Result<ParsedEntry> {
         ParserAccounts::prepare_account_entry(
             account,
@@ -263,6 +264,7 @@ impl<T: ParserTracer, R: JsonReducer> BlockParser<T, R> {
             self.config.max_account_bytes_size,
             get_sharding_depth(&self.config.accounts),
             &self.config.accounts,
+            dapp_id,
         )
     }
 }

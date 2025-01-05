@@ -282,7 +282,7 @@ async fn test_deploy(matches: &ArgMatches<'_>, config: &Config) -> Result<(), St
             balance.parse().map_err(|e| format!("Failed to parse initial balance: {e}"))?;
 
         let balance = CurrencyCollection::with_grams(balance);
-        account = Account::with_address_and_ballance(addr, None, &balance);
+        account = Account::with_address_and_ballance(addr, &balance);
     } else {
         let src_address = "-1:0000000000000000000000000000000000000000000000000000000000000000";
         let msg_params = ParamsOfEncodeInternalMessage {
