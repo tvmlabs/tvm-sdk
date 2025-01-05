@@ -131,9 +131,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let gas_config = self.config().get_gas_config(false);
-        log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}, available_credit {:?}", params.src_dapp_id, in_msg.int_header(), params.available_credit);
+        log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
-            if params.src_dapp_id != params.dapp_id
+            if h.src_dapp_id() != &params.dapp_id
                 && !(in_msg.have_state_init()
                     && (account.is_none()
                         || account
@@ -344,8 +344,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     }) = account.state()
                     {
                         if !is_previous_state_active {
-                            if in_msg.int_header().is_some() {
-                                params.src_dapp_id.clone()
+                            if let Some(header) = in_msg.int_header() {
+                                *header.src_dapp_id()
                             } else {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }

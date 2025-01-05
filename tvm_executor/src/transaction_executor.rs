@@ -127,7 +127,6 @@ pub struct ExecuteParams {
     pub signature_id: i32,
     pub vm_execution_is_block_related: Arc<Mutex<bool>>,
     pub block_collation_was_finished: Arc<Mutex<bool>>,
-    pub src_dapp_id: Option<UInt256>,
     pub dapp_id: Option<UInt256>,
     pub available_credit: i128,
 }
@@ -170,7 +169,6 @@ impl Default for ExecuteParams {
             signature_id: 0,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
-            src_dapp_id: None,
             dapp_id: None,
             available_credit: 0,
         }
@@ -200,8 +198,7 @@ pub trait TransactionExecutor {
             None => false,
             _ => true,
         };
-        let src_dapp_id = params.src_dapp_id.clone();
-        log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", src_dapp_id, is_previous_state_active, account, account.state(), minted_shell);
+        log::trace!(target: "executor", "previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
             self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
