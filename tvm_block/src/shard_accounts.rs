@@ -54,13 +54,14 @@ impl ShardAccounts {
         account: &Account,
         last_trans_hash: UInt256,
         last_trans_lt: u64,
+        dapp_id: Option<UInt256>,
     ) -> Result<Option<AccountId>> {
         match account.get_id() {
             Some(acc_id) => {
                 let depth_balance_info =
                     DepthBalanceInfo::new(split_depth, account.get_balance().unwrap())?;
                 let sh_account =
-                    ShardAccount::with_params(account, last_trans_hash, last_trans_lt)?;
+                    ShardAccount::with_params(account, last_trans_hash, last_trans_lt, dapp_id)?;
                 self.set_builder_serialized(
                     acc_id.clone(),
                     &sh_account.write_to_new_cell()?,

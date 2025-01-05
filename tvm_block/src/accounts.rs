@@ -543,7 +543,6 @@ impl fmt::Display for AccountState {
 #[derive(Debug, Clone, Default)]
 pub struct AccountStuff {
     addr: MsgAddressInt,
-    dapp_id: Option<UInt256>,
     storage_stat: StorageInfo,
     storage: AccountStorage,
 }
@@ -578,7 +577,6 @@ impl Serializable for AccountStuff {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
         let mut builder_stuff = BuilderData::new();
         self.addr.write_to(&mut builder_stuff)?;
-        self.dapp_id.write_maybe_to(&mut builder_stuff)?;
         let mut builder_stuff2 = BuilderData::new();
         self.storage_stat.write_to(&mut builder_stuff2)?;
         self.storage.write_to(&mut builder_stuff2)?;
@@ -626,7 +624,6 @@ impl Account {
 
     pub fn active_by_init_code_hash(
         addr: MsgAddressInt,
-        dapp_id: Option<UInt256>,
         balance: CurrencyCollection,
         last_paid: u32,
         state_init: StateInit,
@@ -634,7 +631,6 @@ impl Account {
     ) -> Result<Self> {
         let mut account = Account::with_stuff(AccountStuff {
             addr,
-            dapp_id,
             storage_stat: StorageInfo::with_values(last_paid, None),
             storage: AccountStorage::active_by_init_code_hash(
                 0,
@@ -650,22 +646,19 @@ impl Account {
     /// create unintialized account, only with address and balance
     pub fn with_address_and_ballance(
         addr: &MsgAddressInt,
-        dapp_id: Option<UInt256>,
         balance: &CurrencyCollection,
     ) -> Self {
         Account::with_stuff(AccountStuff {
             addr: addr.clone(),
-            dapp_id,
             storage_stat: StorageInfo::default(),
             storage: AccountStorage::with_balance(balance.clone()),
         })
     }
 
     /// Create unintialize account with zero balance
-    pub const fn with_address(addr: MsgAddressInt, dapp_id: Option<UInt256>) -> Self {
+    pub const fn with_address(addr: MsgAddressInt) -> Self {
         Account::with_stuff(AccountStuff {
             addr,
-            dapp_id,
             storage_stat: StorageInfo::default(),
             storage: AccountStorage::default(),
         })
@@ -675,7 +668,6 @@ impl Account {
     pub fn from_message_by_init_code_hash(
         msg: &Message,
         init_code_hash: bool,
-        dapp_id: Option<UInt256>,
     ) -> Option<Self> {
         let hdr = msg.int_header()?;
         if hdr.value().grams.is_zero() {
@@ -695,7 +687,6 @@ impl Account {
         }
         let mut account = Account::with_stuff(AccountStuff {
             addr: hdr.dst.clone(),
-            dapp_id,
             storage_stat: StorageInfo::default(),
             storage,
         });
@@ -730,7 +721,6 @@ impl Account {
     /// create frozen account - for test purposes
     pub fn frozen(
         addr: MsgAddressInt,
-        dapp_id: Option<UInt256>,
         last_trans_lt: u64,
         last_paid: u32,
         state_hash: UInt256,
@@ -740,7 +730,7 @@ impl Account {
         let storage = AccountStorage::frozen(last_trans_lt, balance, state_hash);
         let used = StorageUsed::calculate_for_struct(&storage).unwrap();
         let storage_stat = StorageInfo { used, last_paid, due_payment };
-        let stuff = AccountStuff { addr, dapp_id, storage_stat, storage };
+        let stuff = AccountStuff { addr, storage_stat, storage };
         Account::with_stuff(stuff)
     }
 
@@ -763,21 +753,18 @@ impl Account {
             last_paid,
             due_payment: None,
         };
-        let dapp_id = None;
-        let stuff = AccountStuff { addr, dapp_id, storage_stat, storage };
+        let stuff = AccountStuff { addr, storage_stat, storage };
         Account::with_stuff(stuff)
     }
 
     // constructor only same tests
     pub fn with_storage(
         addr: &MsgAddressInt,
-        dapp_id: Option<UInt256>,
         storage_stat: &StorageInfo,
         storage: &AccountStorage,
     ) -> Self {
         Account::with_stuff(AccountStuff {
             addr: addr.clone(),
-            dapp_id,
             storage_stat: storage_stat.clone(),
             storage: storage.clone(),
         })
@@ -845,10 +832,6 @@ impl Account {
 
     pub fn get_addr(&self) -> Option<&MsgAddressInt> {
         self.stuff().map(|s| &s.addr)
-    }
-
-    pub fn get_dapp_id(&self) -> Option<&Option<UInt256>> {
-        self.stuff().map(|s| &s.dapp_id)
     }
 
     /// Get ref to account's AccountState.
@@ -1125,7 +1108,6 @@ impl Account {
             let mut builder_stuff = BuilderData::new();
             builder.append_bit_one()?;
             stuff.addr.write_to(&mut builder_stuff)?;
-            stuff.dapp_id.write_maybe_to(&mut builder_stuff)?;
             builder.checked_append_reference(builder_stuff.into_cell().unwrap()).unwrap();
             let mut builder_stuff2 = BuilderData::new();
             stuff.storage_stat.write_to(&mut builder_stuff2)?;
@@ -1143,7 +1125,6 @@ impl Account {
         let builder = slice.reference(0).unwrap();
         let mut slice_builder = SliceData::load_cell(builder).unwrap();
         let addr = Deserializable::construct_from(&mut slice_builder)?;
-        let dapp_id = UInt256::read_maybe_from(&mut slice_builder)?;
         let builder2 = slice.reference(1).unwrap();
         slice_builder = SliceData::load_cell(builder2).unwrap();
         let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
@@ -1151,14 +1132,13 @@ impl Account {
         let balance = Deserializable::construct_from(&mut slice_builder)?; // balance:CurrencyCollection
         let state = Deserializable::construct_from(&mut slice_builder)?; // state:AccountState
         let storage = AccountStorage { last_trans_lt, balance, state, ..AccountStorage::default() };
-        Ok(Account::with_stuff(AccountStuff { addr, dapp_id, storage_stat, storage }))
+        Ok(Account::with_stuff(AccountStuff { addr, storage_stat, storage }))
     }
 
     pub fn read_version(slice: &mut SliceData, _version: u32) -> Result<Self> {
         let builder = slice.reference(0).unwrap();
         let mut slice_builder = SliceData::load_cell(builder).unwrap();
         let addr = Deserializable::construct_from(&mut slice_builder)?;
-        let dapp_id = UInt256::read_maybe_from(&mut slice_builder)?;
         let builder2 = slice.reference(1).unwrap();
         slice_builder = SliceData::load_cell(builder2).unwrap();
         let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
@@ -1167,7 +1147,7 @@ impl Account {
         let state = Deserializable::construct_from(&mut slice_builder)?; // state:AccountState
         let init_code_hash = UInt256::read_maybe_from(&mut slice_builder)?;
         let storage = AccountStorage { last_trans_lt, balance, state, init_code_hash };
-        let stuff = AccountStuff { addr, dapp_id, storage_stat, storage };
+        let stuff = AccountStuff { addr, storage_stat, storage };
         Ok(Account::with_stuff(stuff))
     }
 }
@@ -1177,12 +1157,6 @@ impl Account {
     pub fn set_addr(&mut self, addr: MsgAddressInt) {
         if let Some(s) = self.stuff_mut() {
             s.addr = addr;
-        }
-    }
-
-    pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {
-        if let Some(s) = self.stuff_mut() {
-            s.dapp_id = dapp_id;
         }
     }
 
@@ -1274,6 +1248,7 @@ pub struct ShardAccount {
     account: ChildCell<Account>,
     last_trans_hash: UInt256,
     last_trans_lt: u64,
+    dapp_id: Option<UInt256>,
 }
 
 impl ShardAccount {
@@ -1281,19 +1256,22 @@ impl ShardAccount {
         account_root: Cell,
         last_trans_hash: UInt256,
         last_trans_lt: u64,
+        dapp_id: Option<UInt256>,
     ) -> Self {
-        ShardAccount { account: ChildCell::with_cell(account_root), last_trans_hash, last_trans_lt }
+        ShardAccount { account: ChildCell::with_cell(account_root), last_trans_hash, last_trans_lt, dapp_id }
     }
 
     pub fn with_params(
         account: &Account,
         last_trans_hash: UInt256,
         last_trans_lt: u64,
+        dapp_id: Option<UInt256>,
     ) -> Result<Self> {
         Ok(ShardAccount {
             account: ChildCell::with_struct(account)?,
             last_trans_hash,
             last_trans_lt,
+            dapp_id,
         })
     }
 
@@ -1336,6 +1314,14 @@ impl ShardAccount {
     pub fn set_account_cell(&mut self, cell: Cell) {
         self.account.set_cell(cell);
     }
+
+    pub fn get_dapp_id(&self) -> Option<UInt256> {
+        self.dapp_id
+    }
+
+    pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {
+        self.dapp_id = dapp_id;
+    }
 }
 
 impl Serializable for ShardAccount {
@@ -1343,6 +1329,7 @@ impl Serializable for ShardAccount {
         cell.checked_append_reference(self.account.cell())?;
         self.last_trans_hash.write_to(cell)?;
         self.last_trans_lt.write_to(cell)?;
+        self.dapp_id.write_maybe_to(cell)?;
         Ok(())
     }
 }
@@ -1352,6 +1339,7 @@ impl Deserializable for ShardAccount {
         self.account.read_from_reference(cell)?;
         self.last_trans_hash.read_from(cell)?;
         self.last_trans_lt.read_from(cell)?;
+        self.dapp_id = UInt256::read_maybe_from(cell)?;
         Ok(())
     }
 }
@@ -1422,7 +1410,7 @@ pub fn generate_test_account_by_init_code_hash(init_code_hash: bool) -> Account 
 
     let acc_st = AccountStorage::active_by_init_code_hash(0, balance, stinit, init_code_hash);
     let addr = MsgAddressInt::with_standart(Some(anc), 0, acc_id).unwrap();
-    let mut account = Account::with_storage(&addr, None, &st_info, &acc_st);
+    let mut account = Account::with_storage(&addr, &st_info, &acc_st);
     account.update_storage_stat().unwrap();
     account
 }

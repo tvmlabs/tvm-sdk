@@ -133,7 +133,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}, available_credit {:?}", params.src_dapp_id, in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
-            if Some(params.src_dapp_id.clone()) != account.get_dapp_id().cloned()
+            if params.src_dapp_id != params.dapp_id
                 && !(in_msg.have_state_init()
                     && (account.is_none()
                         || account
@@ -142,7 +142,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             .unwrap_or(false)))
                 && !h.bounced
             {
-                log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
+                log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id);
                 log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_limit * gas_config.gas_price / 65536));
                 burned = msg_balance.grams;
                 msg_balance.grams = min(
@@ -350,7 +350,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
                         } else {
-                            account.get_dapp_id().cloned().unwrap()
+                            params.dapp_id
                         }
                     } else {
                         None

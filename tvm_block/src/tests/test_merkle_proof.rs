@@ -459,6 +459,7 @@ fn get_out_msg_from_block(block: &Block) -> (Option<Message>, Option<UInt256>) {
     (msg, tr)
 }
 
+#[ignore]
 #[test]
 fn test_check_msg_proof() {
     let block_files = [

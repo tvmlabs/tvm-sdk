@@ -128,6 +128,7 @@ pub struct ExecuteParams {
     pub vm_execution_is_block_related: Arc<Mutex<bool>>,
     pub block_collation_was_finished: Arc<Mutex<bool>>,
     pub src_dapp_id: Option<UInt256>,
+    pub dapp_id: Option<UInt256>,
     pub available_credit: i128,
 }
 
@@ -170,6 +171,7 @@ impl Default for ExecuteParams {
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             src_dapp_id: None,
+            dapp_id: None,
             available_credit: 0,
         }
     }
@@ -208,21 +210,6 @@ pub trait TransactionExecutor {
             account.update_storage_stat()?;
         }
         log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
-        if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
-            if !is_previous_state_active {
-                if let Some(message) = in_msg {
-                    if message.int_header().is_some() {
-                        if let Some(dapp_id) = src_dapp_id.clone() {
-                            account.set_dapp_id(Some(dapp_id.clone()));
-                        }
-                    } else {
-                        account.set_dapp_id(Some(
-                            account.get_id().unwrap().get_bytestring(0).as_slice().into(),
-                        ));
-                    }
-                }
-            }
-        }
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
@@ -1828,7 +1815,6 @@ fn account_from_message(
                 if check_libraries(init, disable_set_lib, text, msg) {
                     return Account::active_by_init_code_hash(
                         hdr.dst.clone(),
-                        None,
                         msg_remaining_balance.clone(),
                         0,
                         init.clone(),

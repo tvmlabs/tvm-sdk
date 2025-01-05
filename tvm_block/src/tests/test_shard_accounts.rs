@@ -19,7 +19,7 @@ fn test_serialization_shard_account() {
 
     for n in 5..6 {
         let acc = generate_test_account_by_init_code_hash(false);
-        shard_acc.insert(n, &acc, UInt256::default(), 0).unwrap();
+        shard_acc.insert(n, &acc, UInt256::default(), 0, Some(Default::default())).unwrap();
     }
     write_read_and_assert(shard_acc);
 }

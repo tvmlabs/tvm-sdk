@@ -42,6 +42,7 @@ const ACCOUNT_FIELDS: &str = r#"
     data
     boc
     code_hash
+    dapp_id
 "#;
 
 const DEFAULT_PATH: &str = ".";
@@ -192,13 +193,7 @@ pub async fn get_account(
                     acc["boc"].as_str().ok_or("failed to get boc of the account".to_owned())?;
                 let account = Account::construct_from_base64(boc)
                     .map_err(|e| format!("failed to load account from the boc: {}", e))?;
-                let dapp_id = account
-                    .get_dapp_id()
-                    .map(|id| match id {
-                        Some(data) => data.to_hex_string(),
-                        None => "None".to_string(),
-                    })
-                    .unwrap_or("None".to_string());
+                let dapp_id = acc["dapp_id"].as_str().unwrap_or("None").to_owned();
                 let ecc_balance = account
                     .balance()
                     .map(|balance| {
