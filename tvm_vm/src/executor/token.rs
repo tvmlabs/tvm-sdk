@@ -54,7 +54,7 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
-    fetch_stack(engine, 6)?;
+    fetch_stack(engine, 5)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
     let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; 
@@ -62,10 +62,16 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     //_delta_reward - average time between reward adj calculate
     //_calc_reward_num - number of calculate
     //_reward_last_time - time of last calculate
-    let repavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //Average ReputationTime in active stakes (average of (average from licenses rep time in one stake))
+    let repavgtime = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //Average ReputationTime in active stakes (average of (average from licenses rep time in one stake))
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
-    let is_min = engine.cmd.var(5).as_bool()?; //is it min for exception (2 years)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
+    let repavg = if repavgtime < MAXRT {
+        MINRC
+            + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
+                * (1_f64 - (-1_f64 * ARFC.ln() * repavgtime / MAXRT).exp())
+    } else {
+        MAXRC
+    };
     let rbkmin;
     if t <= TTMT - 1_f64 {
         rbkmin = TOTALSUPPLY
@@ -76,11 +82,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
         rbkmin = 0_f64;
     }
     let rbk = (((calc_mbk(t + drbkavg) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
-    if is_min {
-        engine.cc.stack.push(int!(rbkmin as u128));
-    } else {
-        engine.cc.stack.push(int!(rbk as u128));
-    }
+    engine.cc.stack.push(int!(rbk as u128));
     Ok(())
 }
 
@@ -134,7 +136,7 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     fetch_stack(engine, 4)?;
     let nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; // needNumberOfActiveBlockKeepers = 10000
     let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepersAtBlockStart
-    let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //uint128(_waitStep * 3) where waitStep - number of block duration of preEpoch
+    let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token without slash tokens
     let sbkbase;
     if mbkav != 0_f64 {
