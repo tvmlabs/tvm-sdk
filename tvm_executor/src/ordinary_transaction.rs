@@ -133,13 +133,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
-            if h.src_dapp_id() != &params.dapp_id
+            if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
-                    && (account.is_none()
-                        || account
-                            .state()
-                            .map(|s| *s == AccountState::AccountUninit {})
-                            .unwrap_or(false)))
+                    && account
+                        .state()
+                        .map(|s| *s == AccountState::AccountUninit {})
+                        .unwrap_or(true))
                 && !h.bounced
             {
                 log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id);
