@@ -117,7 +117,7 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
                 self.max_account_bytes_size,
                 self.accounts_sharding_depth,
                 self.accounts_config,
-                shard_acc.get_dapp_id()
+                shard_acc.get_dapp_id(),
             )?);
         }
 
@@ -243,8 +243,14 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
             Some(id) => id,
             None => fail!("Account without id in external db processor"),
         };
-        let set =
-            crate::AccountSerializationSet { account, prev_code_hash, proof: None, boc, boc1, dapp_id };
+        let set = crate::AccountSerializationSet {
+            account,
+            prev_code_hash,
+            proof: None,
+            boc,
+            boc1,
+            dapp_id,
+        };
 
         let partition = get_partition(accounts_sharding_depth, account_id.clone())?;
         let mut doc = crate::db_serialize_account("id", &set)?;

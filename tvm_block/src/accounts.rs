@@ -644,10 +644,7 @@ impl Account {
     }
 
     /// create unintialized account, only with address and balance
-    pub fn with_address_and_ballance(
-        addr: &MsgAddressInt,
-        balance: &CurrencyCollection,
-    ) -> Self {
+    pub fn with_address_and_ballance(addr: &MsgAddressInt, balance: &CurrencyCollection) -> Self {
         Account::with_stuff(AccountStuff {
             addr: addr.clone(),
             storage_stat: StorageInfo::default(),
@@ -665,10 +662,7 @@ impl Account {
     }
 
     /// Create initialized account from "constructor internal message"
-    pub fn from_message_by_init_code_hash(
-        msg: &Message,
-        init_code_hash: bool,
-    ) -> Option<Self> {
+    pub fn from_message_by_init_code_hash(msg: &Message, init_code_hash: bool) -> Option<Self> {
         let hdr = msg.int_header()?;
         if hdr.value().grams.is_zero() {
             return None;
@@ -1258,7 +1252,12 @@ impl ShardAccount {
         last_trans_lt: u64,
         dapp_id: Option<UInt256>,
     ) -> Self {
-        ShardAccount { account: ChildCell::with_cell(account_root), last_trans_hash, last_trans_lt, dapp_id }
+        ShardAccount {
+            account: ChildCell::with_cell(account_root),
+            last_trans_hash,
+            last_trans_lt,
+            dapp_id,
+        }
     }
 
     pub fn with_params(
