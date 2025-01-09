@@ -1314,8 +1314,8 @@ impl ShardAccount {
         self.account.set_cell(cell);
     }
 
-    pub fn get_dapp_id(&self) -> Option<UInt256> {
-        self.dapp_id
+    pub fn get_dapp_id(&self) -> Option<&UInt256> {
+        self.dapp_id.as_ref()
     }
 
     pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {

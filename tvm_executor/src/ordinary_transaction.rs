@@ -344,7 +344,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     {
                         if !is_previous_state_active {
                             if let Some(header) = in_msg.int_header() {
-                                *header.src_dapp_id()
+                                header.src_dapp_id().clone()
                             } else {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }

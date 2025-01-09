@@ -1333,7 +1333,7 @@ fn serialize_shard_accounts(
             boc: write_boc(&value.account_cell())?,
             boc1,
             proof: None,
-            dapp_id: value.get_dapp_id(),
+            dapp_id: value.get_dapp_id().cloned(),
         };
         let mut account = db_serialize_account_ex("id", &account_set, mode)?;
         account.remove("json_version");
