@@ -117,7 +117,7 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
                 self.max_account_bytes_size,
                 self.accounts_sharding_depth,
                 self.accounts_config,
-                shard_acc.get_dapp_id(),
+                shard_acc.get_dapp_id().cloned(),
             )?);
         }
 
