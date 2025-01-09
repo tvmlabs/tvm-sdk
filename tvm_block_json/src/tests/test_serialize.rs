@@ -35,8 +35,14 @@ fn assert_json_eq_file(json: &str, name: &str) {
 fn test_account_into_json_without_hash_0() {
     let account = generate_test_account_by_init_code_hash(false);
     let boc = account.write_to_bytes().unwrap();
-    let sender =
-        AccountSerializationSet { account, prev_code_hash: None, boc, boc1: None, proof: None, dapp_id: Some(Default::default()) };
+    let sender = AccountSerializationSet {
+        account,
+        prev_code_hash: None,
+        boc,
+        boc1: None,
+        proof: None,
+        dapp_id: Some(Default::default()),
+    };
     let json = db_serialize_account("id", &sender).unwrap();
     println!("\n\n{:#}", serde_json::json!(json));
     assert_eq!(
@@ -118,7 +124,14 @@ fn test_account_into_json_with_hash_0() {
     let mut builder = BuilderData::new();
     account.write_original_format(&mut builder).unwrap();
     let boc1 = Some(write_boc(&builder.into_cell().unwrap()).unwrap());
-    let sender = AccountSerializationSet { account, prev_code_hash: None, boc, boc1, proof: None, dapp_id: Some(Default::default()) };
+    let sender = AccountSerializationSet {
+        account,
+        prev_code_hash: None,
+        boc,
+        boc1,
+        proof: None,
+        dapp_id: Some(Default::default()),
+    };
     let json = db_serialize_account("id", &sender).unwrap();
     println!("\n\n{:#}", serde_json::json!(json));
     assert_eq!(
@@ -199,8 +212,14 @@ fn test_account_into_json_with_hash_0() {
 fn test_account_into_json_q() {
     let account = generate_test_account_by_init_code_hash(false);
     let boc = account.write_to_bytes().unwrap();
-    let sender =
-        AccountSerializationSet { account, prev_code_hash: None, boc, boc1: None, proof: None, dapp_id: Some(Default::default()) };
+    let sender = AccountSerializationSet {
+        account,
+        prev_code_hash: None,
+        boc,
+        boc1: None,
+        proof: None,
+        dapp_id: Some(Default::default()),
+    };
     let json = db_serialize_account_ex("id", &sender, SerializationMode::QServer).unwrap();
     println!("\n\n{:#}", serde_json::json!(json));
     assert_eq!(
@@ -517,8 +536,14 @@ fn test_pruned_account_into_json_0() {
     .unwrap();
     let account = proof.virtualize().unwrap();
     let boc = proof.write_to_bytes().unwrap();
-    let sender =
-        AccountSerializationSet { account, prev_code_hash: None, boc, boc1: None, proof: None, dapp_id: Some(Default::default()) };
+    let sender = AccountSerializationSet {
+        account,
+        prev_code_hash: None,
+        boc,
+        boc1: None,
+        proof: None,
+        dapp_id: Some(Default::default()),
+    };
     let json = db_serialize_account("id", &sender).unwrap();
     println!("\n\n{:#}", serde_json::json!(json));
     assert_eq!(
