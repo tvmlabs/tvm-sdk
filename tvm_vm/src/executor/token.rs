@@ -52,26 +52,38 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 }
 
 #[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCREPCOEF"))?;
+    fetch_stack(engine, 1)?;
+    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mut repcoef = if bkrt < MAXRT {
+        MINRC
+            + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
+                * (1_f64 - (-1_f64 * ARFC.ln() * bkrt / MAXRT).exp())
+    } else {
+        MAXRC
+    };
+    repcoef *= 1e9_f64;
+    engine.cc.stack.push(int!(repcoef as u128));
+    Ok(())
+}
+
+#[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
     fetch_stack(engine, 5)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
-    let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; 
-    //_delta_reward = (_delta_reward * _calc_reward_num + (block.timestamp - _reward_last_time)) / (_calc_reward_num + 1); 
+    let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    //_delta_reward = (_delta_reward * _calc_reward_num + (block.timestamp -
+    //_delta_reward _reward_last_time)) / (_calc_reward_num + 1);
     //_delta_reward - average time between reward adj calculate
     //_calc_reward_num - number of calculate
     //_reward_last_time - time of last calculate
-    let repavgtime = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //Average ReputationTime in active stakes (average of (average from licenses rep time in one stake))
+    let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //Average ReputationTime in active stakes (average of (average from licenses rep time in one stake))
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
-    let repavg = if repavgtime < MAXRT {
-        MINRC
-            + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
-                * (1_f64 - (-1_f64 * ARFC.ln() * repavgtime / MAXRT).exp())
-    } else {
-        MAXRC
-    };
+    let repavg = repavgbig / 1e9_f64;
     let rbkmin;
     if t <= TTMT - 1_f64 {
         rbkmin = TOTALSUPPLY
