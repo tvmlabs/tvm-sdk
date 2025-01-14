@@ -18,9 +18,9 @@ use tvm_client::abi::encode_message;
 use tvm_client::crypto::KeyPair;
 use tvm_types::base64_encode;
 
-use crate::call::print_json_result;
 use crate::Config;
 use crate::call::emulate_locally;
+use crate::call::print_json_result;
 use crate::call::process_message;
 use crate::call::send_message_and_wait;
 use crate::config::FullConfig;

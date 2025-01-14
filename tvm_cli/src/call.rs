@@ -204,13 +204,9 @@ pub async fn send_message(
         println!("Processing... ");
     }
 
-    let thread_id = thread_id
-        .map_or(ThreadIdentifier::default(), |s| {
-            s.to_string()
-                .try_into()
-                .ok()
-                .unwrap_or(ThreadIdentifier::default())
-        });
+    let thread_id = thread_id.map_or(ThreadIdentifier::default(), |s| {
+        s.to_string().try_into().ok().unwrap_or(ThreadIdentifier::default())
+    });
     let callback = |_| async move {};
     let result = tvm_client::processing::send_message(
         context.clone(),
@@ -274,7 +270,10 @@ pub async fn call_contract_with_result(
     } else {
         create_client_verbose(config)?
     };
-    call_contract_with_client(tvm_client, config, addr, abi_path, method, params, keys, is_fee, thread_id).await
+    call_contract_with_client(
+        tvm_client, config, addr, abi_path, method, params, keys, is_fee, thread_id,
+    )
+    .await
 }
 
 pub async fn call_contract_with_client(
@@ -330,7 +329,8 @@ pub async fn call_contract(
     thread_id: Option<&str>,
 ) -> Result<(), String> {
     let result =
-        call_contract_with_result(config, addr, abi_path, method, params, keys, is_fee, thread_id).await?;
+        call_contract_with_result(config, addr, abi_path, method, params, keys, is_fee, thread_id)
+            .await?;
     if !config.is_json {
         println!("Succeeded.");
     }

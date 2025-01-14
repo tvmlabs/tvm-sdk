@@ -56,7 +56,8 @@ pub async fn create_proposal(
         )
         .await
     } else {
-        call::call_contract(config, addr, MSIG_ABI, "submitTransaction", &params, keys, false, None).await
+        call::call_contract(config, addr, MSIG_ABI, "submitTransaction", &params, keys, false, None)
+            .await
     }
 }
 
@@ -90,8 +91,17 @@ pub async fn vote(
         )
         .await
     } else {
-        call::call_contract(config, addr, MSIG_ABI, "confirmTransaction", &params, keys, false, None)
-            .await
+        call::call_contract(
+            config,
+            addr,
+            MSIG_ABI,
+            "confirmTransaction",
+            &params,
+            keys,
+            false,
+            None,
+        )
+        .await
     }
 }
 
