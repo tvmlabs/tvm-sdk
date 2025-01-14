@@ -22,7 +22,7 @@ pub const ARFC: f64 = 1000_f64;
 pub const MINRC: f64 = 1_f64;
 pub const MAXRC: f64 = 3_f64;
 pub const TTMT: f64 = 2000000000_f64;
-pub const TOTALSUPPLY: f64 = 10400000000_f64;
+pub const TOTALSUPPLY: f64 = 10400000000000000000_f64;
 pub const MAXRT: f64 = 157766400_f64;
 pub const KF: f64 = 0.01_f64;
 pub const KS: f64 = 0.001_f64;
@@ -80,7 +80,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     //_delta_reward - average time between reward adj calculate
     //_calc_reward_num - number of calculate
     //_reward_last_time - time of last calculate
-    let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //Average ReputationTime in active stakes (average of (average from licenses rep time in one stake))
+    let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //Average ReputationCoef
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let repavg = repavgbig / 1e9_f64;
