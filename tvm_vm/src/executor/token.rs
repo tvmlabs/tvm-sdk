@@ -86,7 +86,8 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let repavg = repavgbig / 1e9_f64;
     let rbkmin;
     if t <= TTMT - 1_f64 {
-        rbkmin = TOTALSUPPLY
+        rbkmin = TOTALSUPPLY 
+            * 0.675_f64
             * (1_f64 + KM)
             * ((-1_f64 * um * t).exp() - (-1_f64 * um * (t + 1_f64)).exp())
             / 3.5_f64;
