@@ -155,6 +155,11 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Seed phrase or path to the file with keypair used to sign the message. Can be specified in the config.");
 
+    let thread_arg = Arg::with_name("THREAD")
+        .long("--thread")
+        .takes_value(true)
+        .help("The identifier of the thread in which the message should be processed.");
+
     let method_opt_arg = Arg::with_name("METHOD")
         .takes_value(true)
         .long("--method")
@@ -183,7 +188,8 @@ async fn main_internal() -> Result<(), String> {
         .arg(abi_arg.clone())
         .arg(keys_arg.clone())
         .arg(method_opt_arg.clone())
-        .arg(multi_params_arg.clone());
+        .arg(multi_params_arg.clone())
+        .arg(thread_arg.clone());
 
     let tvc_arg = Arg::with_name("TVC")
         .takes_value(true)
@@ -386,7 +392,8 @@ async fn main_internal() -> Result<(), String> {
         .arg(params_arg.clone())
         .arg(abi_arg.clone())
         .arg(keys_arg.clone())
-        .arg(sign_arg.clone());
+        .arg(sign_arg.clone())
+        .arg(thread_arg.clone());
 
     let send_cmd = SubCommand::with_name("send")
         .about("Sends a prepared message to the contract.")
@@ -1276,6 +1283,8 @@ async fn call_command(
         .map(|s| s.to_string())
         .or(config.keys_path.clone());
 
+    let thread_id = matches.value_of("THREAD");
+
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
         print_args!(address, method, params, abi, keys, lifetime, output);
@@ -1293,6 +1302,7 @@ async fn call_command(
                 &params.unwrap(),
                 keys,
                 is_fee,
+                thread_id,
             )
             .await
         }
@@ -1340,6 +1350,7 @@ async fn callx_command(matches: &ArgMatches<'_>, full_config: &FullConfig) -> Re
     let params =
         unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?;
     let params = Some(load_params(&params)?);
+    let thread_id = matches.value_of("THREAD");
 
     if !config.is_json {
         print_args!(address, method, params, abi, keys);
@@ -1355,6 +1366,7 @@ async fn callx_command(matches: &ArgMatches<'_>, full_config: &FullConfig) -> Re
         &params.unwrap(),
         keys,
         false,
+        thread_id,
     )
     .await
 }

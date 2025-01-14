@@ -23,9 +23,8 @@ use tvm_client::abi::encode_message;
 use tvm_client::error::ClientError;
 use tvm_client::processing::ParamsOfProcessMessage;
 use tvm_client::processing::ParamsOfSendMessage;
-use tvm_client::processing::ParamsOfWaitForTransaction;
 use tvm_client::processing::ProcessingEvent;
-use tvm_client::processing::wait_for_transaction;
+use tvm_client::processing::ThreadIdentifier;
 use tvm_client::tvm::AccountForExecutor;
 use tvm_client::tvm::ParamsOfRunExecutor;
 use tvm_client::tvm::run_executor;
@@ -35,12 +34,12 @@ use crate::config::Config;
 use crate::convert;
 use crate::debug::init_debug_logger;
 use crate::helpers::TonClient;
+use crate::helpers::TvmClient;
 use crate::helpers::create_client;
 use crate::helpers::create_client_verbose;
 use crate::helpers::load_abi;
 use crate::helpers::load_ton_abi;
 use crate::helpers::query_account_field;
-use crate::helpers::TvmClient;
 use crate::message::EncodedMessage;
 use crate::message::prepare_message_params;
 use crate::message::print_encoded_message;
@@ -173,7 +172,7 @@ pub async fn emulate_locally(
 }
 
 pub async fn send_message_and_wait(
-    ton: TonClient,
+    tvm_client: TvmClient,
     abi: Option<Abi>,
     msg: String,
     config: &Config,
@@ -181,54 +180,47 @@ pub async fn send_message_and_wait(
     if !config.is_json {
         println!("Processing... ");
     }
+
     let callback = |_| async move {};
     let result = tvm_client::processing::send_message(
-        ton.clone(),
+        tvm_client.clone(),
         ParamsOfSendMessage { message: msg.clone(), abi: abi.clone(), ..Default::default() },
         callback,
     )
     .await
     .map_err(|e| format!("{:#}", e))?;
 
-    if !config.async_call {
-        let result = wait_for_transaction(
-            ton.clone(),
-            ParamsOfWaitForTransaction {
-                abi,
-                message: msg.clone(),
-                shard_block_id: result.shard_block_id,
-                send_events: true,
-                ..Default::default()
-            },
-            callback,
-        )
-        .await
-        .map_err(|e| format!("{:#}", e))?;
-        Ok(result.decoded.and_then(|d| d.output).unwrap_or(json!({})))
-    } else {
-        Ok(json!({}))
-    }
+    let value = serde_json::to_value(result).map_err(|e| format!("{e:#}"))?;
+    Ok(value)
 }
 
 pub async fn send_message(
     context: TvmClient,
     msg: String,
     config: &Config,
+    thread_id: Option<&str>,
 ) -> Result<Value, String> {
     if !config.is_json {
         println!("Processing... ");
     }
 
+    let thread_id = thread_id
+        .map_or(ThreadIdentifier::default(), |s| {
+            s.to_string()
+                .try_into()
+                .ok()
+                .unwrap_or(ThreadIdentifier::default())
+        });
     let callback = |_| async move {};
-    let _ = tvm_client::processing::send_message(
+    let result = tvm_client::processing::send_message(
         context.clone(),
-        ParamsOfSendMessage { message: msg.clone(), ..Default::default() },
+        ParamsOfSendMessage { message: msg.clone(), thread_id, ..Default::default() },
         callback,
     )
     .await
     .map_err(|e| format!("{:#}", e))?;
 
-    Ok(json!({}))
+    serde_json::to_value(result).map_err(|e| format!("{e:#}"))
 }
 
 pub async fn process_message(
@@ -274,6 +266,7 @@ pub async fn call_contract_with_result(
     params: &str,
     keys: Option<String>,
     is_fee: bool,
+    thread_id: Option<&str>,
 ) -> Result<Value, String> {
     let tvm_client = if config.debug_fail != *"None" {
         init_debug_logger(&format!("call_{}_{}.log", addr, method))?;
@@ -281,7 +274,7 @@ pub async fn call_contract_with_result(
     } else {
         create_client_verbose(config)?
     };
-    call_contract_with_client(tvm_client, config, addr, abi_path, method, params, keys, is_fee).await
+    call_contract_with_client(tvm_client, config, addr, abi_path, method, params, keys, is_fee, thread_id).await
 }
 
 pub async fn call_contract_with_client(
@@ -293,6 +286,7 @@ pub async fn call_contract_with_client(
     params: &str,
     keys: Option<String>,
     is_fee: bool,
+    thread_id: Option<&str>,
 ) -> Result<Value, String> {
     let abi = load_abi(abi_path, config).await?;
 
@@ -310,11 +304,8 @@ pub async fn call_contract_with_client(
             return Ok(Value::Null);
         }
     }
-    if config.async_call {
-        return send_message_and_wait(tvm_client, Some(abi), msg.clone(), config).await;
-    }
 
-    send_message(tvm_client.clone(), msg, config).await
+    send_message(tvm_client.clone(), msg, config, thread_id).await
 }
 
 pub fn print_json_result(result: Value, config: &Config) -> Result<(), String> {
@@ -336,9 +327,10 @@ pub async fn call_contract(
     params: &str,
     keys: Option<String>,
     is_fee: bool,
+    thread_id: Option<&str>,
 ) -> Result<(), String> {
     let result =
-        call_contract_with_result(config, addr, abi_path, method, params, keys, is_fee).await?;
+        call_contract_with_result(config, addr, abi_path, method, params, keys, is_fee, thread_id).await?;
     if !config.is_json {
         println!("Succeeded.");
     }

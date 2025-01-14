@@ -30,8 +30,8 @@ use tokio::sync::watch;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
 
-use super::tvm_gql::ExtMessage;
 use super::ErrorCode;
+use super::tvm_gql::ExtMessage;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
 use crate::error::AddNetworkUrl;
@@ -564,7 +564,6 @@ impl ServerLink {
                     query.timeout.unwrap_or(self.config.query_timeout),
                 )
                 .await;
-
             let result = match result {
                 Err(err) => Err(err),
                 Ok(response) => {
@@ -738,12 +737,13 @@ impl ServerLink {
         key: &[u8],
         value: &[u8],
         endpoint: Option<&Endpoint>,
-    ) -> ClientResult<Option<ClientError>> {
+        thread_id: ThreadIdentifier,
+    ) -> ClientResult<Value> {
         let message = ExtMessage {
             id: base64_encode(key),
             body: base64_encode(value),
             expireAt: None,
-            threadId: Some(ThreadIdentifier::default().to_string()),
+            threadId: Some(thread_id.to_string()),
         };
 
         let result = self.query(&&GraphQLQuery::with_send_message(&message), endpoint).await;
@@ -753,7 +753,7 @@ impl ServerLink {
             log::warn!("Post message error: {}", err.message);
         }
 
-        Ok(result.err())
+        result
     }
 
     pub async fn send_messages(

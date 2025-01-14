@@ -18,6 +18,7 @@ use tvm_client::abi::encode_message;
 use tvm_client::crypto::KeyPair;
 use tvm_types::base64_encode;
 
+use crate::call::print_json_result;
 use crate::Config;
 use crate::call::emulate_locally;
 use crate::call::process_message;
@@ -42,7 +43,7 @@ pub async fn deploy_contract(
     alias: Option<&str>,
 ) -> Result<(), String> {
     let config = &full_config.config;
-    let ton = create_client_verbose(config)?;
+    let tvm_client = create_client_verbose(config)?;
 
     if !is_fee && !config.is_json {
         println!("Deploying...");
@@ -52,23 +53,23 @@ pub async fn deploy_contract(
         prepare_deploy_message(tvc, abi, params, keys_file.clone(), wc, &full_config.config)
             .await?;
 
-    let enc_msg = encode_message(ton.clone(), msg.clone())
+    let enc_msg = encode_message(tvm_client.clone(), msg.clone())
         .await
         .map_err(|e| format!("failed to create inbound message: {}", e))?;
 
     if config.local_run || is_fee {
-        emulate_locally(ton.clone(), addr.as_str(), enc_msg.message.clone(), is_fee).await?;
+        emulate_locally(tvm_client.clone(), addr.as_str(), enc_msg.message.clone(), is_fee).await?;
         if is_fee {
             return Ok(());
         }
     }
 
-    if config.async_call {
+    let result = if config.async_call {
         let abi = load_abi(abi, config).await?;
-        send_message_and_wait(ton, Some(abi), enc_msg.message, config).await?;
+        send_message_and_wait(tvm_client, Some(abi), enc_msg.message, config).await?
     } else {
-        process_message(ton.clone(), msg, config).await.map_err(|e| format!("{:#}", e))?;
-    }
+        process_message(tvm_client.clone(), msg, config).await.map_err(|e| format!("{:#}", e))?
+    };
 
     if !config.is_json {
         if !config.async_call {
@@ -76,7 +77,7 @@ pub async fn deploy_contract(
         }
         println!("Contract deployed at address: {}", addr);
     } else {
-        println!("{{}}");
+        print_json_result(result, config)?;
     }
     if let Some(alias) = alias {
         full_config.add_alias(alias, Some(addr), Some(abi.to_string()), keys_file)?;
