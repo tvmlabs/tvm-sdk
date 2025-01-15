@@ -204,9 +204,8 @@ pub async fn send_message(
         println!("Processing... ");
     }
 
-    let thread_id = thread_id.map_or(ThreadIdentifier::default(), |s| {
-        s.to_string().try_into().ok().unwrap_or(ThreadIdentifier::default())
-    });
+    let thread_id = thread_id
+        .map_or(ThreadIdentifier::default(), |s| s.to_string().try_into().ok().unwrap_or_default());
     let callback = |_| async move {};
     let result = tvm_client::processing::send_message(
         context.clone(),
@@ -295,7 +294,10 @@ pub async fn call_contract_with_client(
         .await
         .map_err(|e| format!("failed to create inbound message: {}", e))?;
 
-    println!("MessageId: {}", encoded_message.message_id);
+    if !config.is_json {
+        println!("MessageId: {}", encoded_message.message_id);
+    }
+
     let msg = encoded_message.message;
     if config.local_run || is_fee {
         emulate_locally(tvm_client.clone(), addr, msg.clone(), is_fee).await?;

@@ -746,14 +746,7 @@ impl ServerLink {
             threadId: Some(thread_id.to_string()),
         };
 
-        let result = self.query(&&GraphQLQuery::with_send_message(&message), endpoint).await;
-        // send message is always successful in order to process case when server
-        // received message but client didn't receive response
-        if let Err(err) = &result {
-            log::warn!("Post message error: {}", err.message);
-        }
-
-        result
+        self.query(&&GraphQLQuery::with_send_message(&message), endpoint).await
     }
 
     pub async fn send_messages(

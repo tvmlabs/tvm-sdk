@@ -245,7 +245,7 @@ impl SendingMessage {
         };
 
         // Send
-        link.send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), thread_id.unwrap_or(ThreadIdentifier::default()))
+        link.send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), thread_id.unwrap_or_default())
             .await
             .add_endpoint_from_context(&context, &endpoint)
             .await

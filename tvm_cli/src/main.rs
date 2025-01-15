@@ -1293,7 +1293,7 @@ async fn call_command(
 
     match call {
         CallType::Call | CallType::Fee => {
-            let is_fee = if let CallType::Fee = call { true } else { false };
+            let is_fee = matches!(call, CallType::Fee);
             call_contract(
                 config,
                 address.as_str(),
