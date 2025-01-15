@@ -184,7 +184,6 @@ impl SendingMessage {
         // let address = endpoint.query_url.clone();
         let result = net
             .send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), self.thread_id).await;
-        println!("\n###### processing::send_message::send(): {:?}", result);
         result
             // .add_endpoint_from_context(context, &endpoint)
             // .await
@@ -203,7 +202,6 @@ impl SendingMessage {
                 let message = self.clone();
                 futures.push(Box::pin(async move {
                     let result = message.send_to_address(context.clone(), address).await;
-                    println!("\n###### send(): result: {result:?}\n");
                     if result.is_err() {
                         context
                             .get_server_link()?
