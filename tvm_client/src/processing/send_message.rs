@@ -16,7 +16,6 @@ use serde_json::Value;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 
-use super::blocks_walking::find_last_shard_block;
 use super::ThreadIdentifier;
 use crate::abi::Abi;
 use crate::boc::internal::DeserializedObject;
@@ -24,7 +23,6 @@ use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
 use crate::encoding::base64_decode;
 use crate::encoding::hex_decode;
-use crate::error::AddNetworkUrl;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 use crate::processing::Error;
@@ -139,117 +137,10 @@ impl SendingMessage {
         })
     }
 
-    async fn _prepare_to_send<F: futures::Future<Output = ()> + Send>(
-        &self,
-        context: &Arc<ClientContext>,
-        callback: &Option<impl Fn(ProcessingEvent) -> F + Send + Sync>,
-    ) -> ClientResult<String> {
-        if let Some(callback) = callback {
-            callback(ProcessingEvent::WillFetchFirstBlock {
-                message_id: self.id.to_string(),
-                message_dst: self.dst.to_string(),
-            })
-            .await;
-        }
-        let shard_block_id = match find_last_shard_block(context, &self.dst, None).await {
-            Ok(block) => block.to_string(),
-            Err(err) => {
-                if let Some(callback) = &callback {
-                    callback(ProcessingEvent::FetchFirstBlockFailed {
-                        message_id: self.id.to_string(),
-                        message_dst: self.dst.to_string(),
-                        error: err.clone(),
-                    })
-                    .await;
-                }
-                return Err(Error::fetch_first_block_failed(err, &self.id));
-            }
-        };
-        if let Some(callback) = &callback {
-            callback(ProcessingEvent::WillSend {
-                shard_block_id: shard_block_id.clone(),
-                message_id: self.id.to_string(),
-                message_dst: self.dst.to_string(),
-                message: self.serialized.clone(),
-            })
-            .await;
-        }
-        Ok(shard_block_id)
-    }
-
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
         let net = context.get_server_link()?;
         let endpoint = net.state().get_query_endpoint().await?;
-        // if endpoint.remp_enabled() {
-        // let address = endpoint.query_url.clone();
-        let result = net
-            .send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), self.thread_id).await;
-        result
-            // .add_endpoint_from_context(context, &endpoint)
-            // .await
-            // .map(|_| vec![address]);
-        // }
-
-        /* #[allow(unreachable_code)]
-        let addresses = context.get_server_link()?.get_addresses_for_sending().await;
-        let mut last_result = None::<ClientResult<String>>;
-        let succeeded_limit = context.config.network.sending_endpoint_count as usize;
-        let mut succeeded = Vec::new();
-        'sending: for selected_addresses in addresses.chunks(succeeded_limit) {
-            let mut futures = vec![];
-            for address in selected_addresses {
-                let context = context.clone();
-                let message = self.clone();
-                futures.push(Box::pin(async move {
-                    let result = message.send_to_address(context.clone(), address).await;
-                    if result.is_err() {
-                        context
-                            .get_server_link()?
-                            .update_stat(&[address.to_owned()], EndpointStat::MessageUndelivered)
-                            .await;
-                    }
-                    result
-                }));
-            }
-            for result in futures::future::join_all(futures).await {
-                if let Ok(address) = &result {
-                    succeeded.push(address.clone());
-                    if succeeded.len() >= succeeded_limit {
-                        break 'sending;
-                    }
-                }
-                last_result = Some(result);
-            }
-        }
-        if !succeeded.is_empty() {
-            return Ok(succeeded);
-        }
-        Err(if let Some(Err(err)) = last_result {
-            err
-        } else {
-            Error::block_not_found("no endpoints".to_string())
-        }) */
-    }
-
-    async fn _send_to_address(
-        &self,
-        context: Arc<ClientContext>,
-        address: &str,
-        thread_id: Option<ThreadIdentifier>,
-    ) -> ClientResult<String> {
-        let link = context.get_server_link()?;
-        let endpoint = if let Some(endpoint) = link.state().get_resolved_endpoint(address).await {
-            endpoint
-        } else {
-            link.state().resolve_endpoint(address).await?
-        };
-
-        // Send
-        link.send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), thread_id.unwrap_or_default())
-            .await
-            .add_endpoint_from_context(&context, &endpoint)
-            .await
-            .map(|_| address.to_string())
+        net.send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), self.thread_id).await
     }
 }
 
@@ -278,23 +169,4 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
         },
         Err(err) => Err(err)
     }
-    /* if let Some(callback) = &callback {
-        callback(match &result {
-            Ok(_) => ProcessingEvent::DidSend {
-                shard_block_id: shard_block_id.to_string(),
-                message_id: message.id.to_string(),
-                message_dst: message.dst.to_string(),
-                message: message.serialized.clone(),
-            },
-            Err(err) => ProcessingEvent::SendFailed {
-                shard_block_id: shard_block_id.to_string(),
-                message_id: message.id.to_string(),
-                message_dst: message.dst.to_string(),
-                message: message.serialized.clone(),
-                error: Error::send_message_failed(err, &message.id, &shard_block_id),
-            },
-        })
-        .await;
-    }
-    result.map(|sending_endpoints| ResultOfSendMessage { shard_block_id, sending_endpoints, ..Default::default() }) */
 }

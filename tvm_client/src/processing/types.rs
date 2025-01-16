@@ -4,8 +4,6 @@ use tvm_sdk::TransactionFees;
 use crate::abi::DecodedMessageBody;
 use crate::error::ClientError;
 
-use super::ResultOfSendMessage;
-
 #[derive(Serialize, Deserialize, ApiType, Default, Debug, PartialEq, Clone)]
 pub struct DecodedOutput {
     /// Decoded bodies of the out messages.
@@ -36,17 +34,6 @@ pub struct ResultOfProcessMessage {
 
     /// Transaction fees
     pub fees: TransactionFees,
-}
-
-impl ResultOfProcessMessage {
-    pub fn from_send_message_result(result: ResultOfSendMessage) -> Self {
-        result.tx_hash.map_or(
-            Self { ..Default::default() },
-            |tx| Self {
-            transaction: serde_json::from_str(&tx).expect("Failed to convert tx hash"),
-            ..Default::default()
-        })
-    }
 }
 
 #[derive(Clone, num_derive::FromPrimitive, PartialEq, Debug)]

@@ -171,10 +171,9 @@ async fn test_wait_message() {
         .call_with_callback(
             ParamsOfWaitForTransaction {
                 message: encoded.message.clone(),
-                shard_block_id: "".to_string()/* result.shard_block_id */,
                 send_events: true,
                 abi: Some(abi.clone()),
-                sending_endpoints: Some(vec!["".to_string()]/* result.sending_endpoints */),
+                ..Default::default()
             },
             callback.clone(),
         )
