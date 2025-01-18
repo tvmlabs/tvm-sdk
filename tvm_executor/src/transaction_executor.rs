@@ -885,7 +885,9 @@ pub trait TransactionExecutor {
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
                             *minted_shell += value as u128;
-                            available_credit -= value as i128;
+                            if available_credit != INFINITY_CREDIT {
+                                available_credit -= value as i128;
+                            }
                             phase.spec_actions += 1;
                             0
                         }
