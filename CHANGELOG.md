@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.4] – 2025-01-20
+
+### New
+- Add instructions CALCBKREWARDADJ, CALCREPCOEF functions
+
+### Fixed
+- Fix CNVRTSHELLQ, CALCBKREWARD, CALCMINSTAKE instructions.
+
 ## [2.3.3] – 2024-12-18
 
 ### New
