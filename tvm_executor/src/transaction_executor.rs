@@ -271,6 +271,8 @@ pub trait TransactionExecutor {
         tr: &mut Transaction,
         is_masterchain: bool,
         is_special: bool,
+        available_credit: i128,
+        minted_shell: &mut u128
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
         if tr.now() < acc.last_paid() {
@@ -297,6 +299,30 @@ pub trait TransactionExecutor {
         if let Some(due_payment) = acc.due_payment() {
             fee.add(due_payment)?;
             acc.set_due_payment(None);
+        }
+
+        if acc_balance.grams < fee {
+            let mut diff = fee.clone();
+            diff.sub(&acc_balance.grams)?;
+            if available_credit == INFINITY_CREDIT {
+                acc_balance.grams.add(&diff)?;
+                diff = Grams::zero();
+            } else {
+                if Grams::from(available_credit as u64) > diff {
+                    acc_balance.grams.add(&diff)?;
+                    diff = Grams::zero();
+                }
+                else {
+                    acc_balance.grams.add(&Grams::from(available_credit as u64))?;
+                    diff.sub(&Grams::from(available_credit as u64))?;
+                }
+            }
+/*          let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
+                Ok(Some(data)) => data,
+                Ok(None) => VarUInteger32::default(),
+                Err(_) => VarUInteger32::default()
+            }
+*/
         }
 
         if acc_balance.grams >= fee {
