@@ -225,6 +225,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             &mut tr,
             is_masterchain,
             is_special,
+            params.available_credit,
+            minted_shell
         ) {
             Ok(storage_ph) => {
                 storage_fee = storage_ph.storage_fees_collected.as_u128();
@@ -241,7 +243,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 e
             ))),
         };
-
         if description.credit_first && msg_balance.grams > acc_balance.grams {
             msg_balance.grams = acc_balance.grams;
         }
