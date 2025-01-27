@@ -19,7 +19,7 @@ git clone https://github.com/tvmlabs/tvm-sdk
 
 The path to the `tvm-cli` is now publicly accessible. You can also add it to your environment variables (ENVs).
 
-`export PATH=$PATH:~/tvm-sdk/target/release/tvm-cli`
+`export PATH=$PATH:~/tvm-sdk/target/release`
 
 ## **Prepare wallet binary and ABI** <a href="#create-a-wallet" id="create-a-wallet"></a>
 
