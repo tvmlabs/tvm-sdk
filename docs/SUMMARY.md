@@ -5,7 +5,7 @@
 * [Dapp ID Full Guide: creation, fees, centralized replenishment](dapp-id-full-guide-creation-fees-centralized-replenishment.md)
 * [Quick Starts](quick-starts/README.md)
   * [Quick Start TVM SDK JavaScript](quick-starts/quick-start-tvm-sdk-javascript.md)
-  * [GraphQL Quick Start](quick-starts/graphql-quick-start.md)
+  * [GraphQL Quick Start](graphql-quick-start.md)
 * [Add Acki Nacki to your backend](add_to_backend.md)
 
 ## Reference

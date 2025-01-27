@@ -51,6 +51,12 @@ You can generate everything with one command:
 tvm-cli genaddr multisig.tvc --save --genkey multisig.keys.json
 ```
 
+{% hint style="danger" %}
+**Write down your `seed phrase` and store it in a secure location. Never share it with anyone. Avoid storing it in plain text, screenshots, or any other insecure method. If you lose it, you lose access to your assets. Anyone who obtains it will have full access to your assets.**&#x20;
+
+**Additionally, ensure the file containing the `key pair` is saved in a safe place.**
+{% endhint %}
+
 {% hint style="info" %}
 After this step, the `.tvc` file will be overwritten with the specified keys.
 {% endhint %}
@@ -81,7 +87,7 @@ tvm-cli account <YourAddress>
 The received SHELL tokens will be displayed in the `ecc` field.
 {% endhint %}
 
-<figure><img src=".gitbook/assets/uninit.jpg" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/uninit (2).jpg" alt=""><figcaption></figcaption></figure>
 
 Now you are ready to deploy your Multisig wallet using the following command:
 

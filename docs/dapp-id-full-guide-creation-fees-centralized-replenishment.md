@@ -23,7 +23,7 @@ tvm-cli config -g --url shellnet.ackinacki.org/graphql
 
 ## Create your first Dapp ID
 
-You create a new Dapp ID when you deploy a contract using an external message. The address of this contract becomes the Dapp ID of your system..
+You create a new Dapp ID when you deploy a contract using an external message. The address of this contract becomes the Dapp ID of your system.
 
 If your Dapp consists of multiple contracts, you need to implement your system so that all the contracts are deployed either from the root contract or its children.
 
