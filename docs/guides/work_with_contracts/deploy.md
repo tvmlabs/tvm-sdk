@@ -11,8 +11,8 @@ Find out how to deploy a contract to Acki Nacki Blockchain with SDK
 * [Calculate the future contract address](deploy.md#calculate-the-future-contract-address)
 * [Transfer funds to the future address](deploy.md#transfer-funds-to-the-future-address)
 * [Deploy](deploy.md#deploy-1)
-  * [Pattern 1. Deploy in 1 step: `process_message` method](deploy.md#pattern-1-deploy-in-1-step-process\_message-method)
-  * [Pattern 2. Deploy in 3 steps: `encode_message` -> `send_message` -> `wait_for_transaction`](deploy.md#pattern-2-deploy-in-3-steps-encode\_message----send\_message---wait\_for\_transaction)
+  * [Pattern 1. Deploy in 1 step: `process_message` method](deploy.md#pattern-1-deploy-in-1-step-process_message-method)
+  * [Pattern 2. Deploy in 3 steps: `encode_message` -> `send_message` -> `wait_for_transaction`](deploy.md#pattern-2-deploy-in-3-steps-encode_message----send_message---wait_for_transaction)
 * [Deploy a contract from another contract](deploy.md#deploy-a-contract-from-another-contract)
 * [Sample Source Code](deploy.md#sample-source-code)
 
@@ -22,7 +22,7 @@ Core api is more flexible than [AppKit](https://github.com/tonlabs/ever-appkit-j
 
 You need to define the contract in your node.js application before deploy.
 
-See the "[Add Contract to your App](add\_contract\_to\_your\_app.md)" guide to find out how to do it.
+See the "[Add Contract to your App](add_contract_to_your_app.md)" guide to find out how to do it.
 
 ## About deploy
 
@@ -49,7 +49,7 @@ Let's take a look at every step.
 
 Here is the structure, that is used to prepare initial contract state for deploy. It will define the future contract address.
 
-`tvc` - As we discussed at the [previous step](add\_contract\_to\_your\_app.md), contract compilation artifact, converted into base64.
+`tvc` - As we discussed at the [previous step](add_contract_to_your_app.md), contract compilation artifact, converted into base64.
 
 `workchain_is` - Target workchain where the contract will be deployed. By default is 0.
 
@@ -70,7 +70,7 @@ type DeploySet = {
 
 To deploy you will need a pair of keys to sign the deployment message. The keys are used during address generation, so the future contract address depends partially on the key as well.
 
-In fact, keys are optional for deploy, but, if you want to be the contract owner then specify Signer object for that. [Read more about Signer object in Reference](../../reference/types-and-methods/mod\_abi.md#Signer).
+In fact, keys are optional for deploy, but, if you want to be the contract owner then specify Signer object for that. [Read more about Signer object in Reference](../../reference/types-and-methods/mod_abi.md#Signer).
 
 If you want to make another person owner of the contract then specify their pubkey via `DeploySet.initial_pubkey`.
 
@@ -98,7 +98,7 @@ To be used as `initParams` variables must be declared as `static` in the contrac
 
 Constructor - is any contract function that will be called upon deploy. It will not influence contract address.
 
-It, together with its parameters, is specified in the [CallSet](../../reference/types-and-methods/mod\_abi.md#callset) structure:
+It, together with its parameters, is specified in the [CallSet](../../reference/types-and-methods/mod_abi.md#callset) structure:
 
 ```javascript
 type CallSet = {
@@ -110,7 +110,7 @@ type CallSet = {
 
 `function_name` - function name that will be called upon deploy. Usually, it is called `constructor`.
 
-`header` - optional, can be specified for some complex use cases. [Read more here](../configuration/message\_expiration.md).
+`header` - optional, can be specified for some complex use cases. [Read more here](../configuration/message_expiration.md).
 
 `input` - object with function parameters.
 
@@ -131,8 +131,7 @@ const abi = {
 const helloKeys = await client.crypto.generate_random_sign_keys();
 
 // Prepare parameters for deploy message encoding
-// See more info about `encode_message` method parameters here https://github.com/tonlabs/ever-sdk/blob/master/docs/mod_abi.md#encode_message
-const deployOptions = {
+// See more info about `encode_message` method parameters here https://dev.ackinacki.com/reference/types-and-methods/mod_abi#encode_message
     abi,
     deploy_set: {
         tvc: contractPackage.tvcInBase64,
@@ -164,7 +163,7 @@ console.log(`Future address of the contract will be: ${address}`);
 
 Now that you know the address, you need to transfer the initial funds to it from your wallet or the Giver.
 
-> **Note**: Evernode SE offers a pre-deployed giver. When in real networks, you need to use your wallet for this or deploy your own giver. We have separated guides of [deployment](https://docs.everos.dev/everdev/guides/work-with-devnet) and [usage](custom\_giver.md) of your own giver.
+> **Note**: ~~Evernode SE~~ offers a pre-deployed giver. When in real networks, you need to use your wallet for this or deploy your own giver. We have separated guides of [deployment](https://docs.everos.dev/everdev/guides/work-with-devnet) and [usage](custom_giver.md) of your own giver.
 
 ```javascript
 // Request contract deployment funds form a local Evernode SE giver
@@ -185,12 +184,12 @@ At this point, you're all set for deployment.
 
 This is an easy to implement pattern to deploy for server-side development and tests, but we do not recommend to use it in web and mobile applications because of network inconsistency and application crash probability. For more reliable approach - use the Pattern 2.
 
-Method \`process\_message performs all the deploy steps sequentially in one method: create message, send it, wait for transaction and decode external outbound message generated by contract RETURN operator. The time limit can be set up in Client configuration. The default time setting is 40 seconds. You can learn more [here](../configuration/message\_expiration.md).
+Method \`process\_message performs all the deploy steps sequentially in one method: create message, send it, wait for transaction and decode external outbound message generated by contract RETURN operator. The time limit can be set up in Client configuration. The default time setting is 40 seconds. You can learn more [here](../configuration/message_expiration.md).
 
 ```javascript
 // Deploy `hello` contract
 // See more info about `process_message` here  
-// https://github.com/tonlabs/ever-sdk/blob/master/docs/mod_processing.md#process_message
+// https://dev.ackinacki.com/reference/types-and-methods/mod_processing#process_message
 await client.processing.process_message({
     send_events: false,
     message_encode_params: deployOptions
@@ -201,9 +200,9 @@ console.log(`Hello contract was deployed at address: ${address}`);
 
 See the full example in sdk samples repository:
 
-[https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/hello-wallet/index.js](https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/hello-wallet/index.js)
+[https://github.com/tvmlabs/sdk-examples](https://github.com/tvmlabs/sdk-examples)
 
-Check out how to run contract's methods in the next [section](run\_onchain.md).
+Check out how to run contract's methods in the next [section](run_onchain.md).
 
 ### Pattern 2. Deploy in 3 steps: `encode_message` -> `send_message` -> `wait_for_transaction`
 
@@ -213,7 +212,6 @@ To deploy a contract, first you need to create a deploy message that will includ
 
 ```javascript
 // Prepare parameters for deploy message encoding
-// See more info about `encode_message` method parameters here https://github.com/tonlabs/ever-sdk/blob/master/docs/mod_abi.md#encode_message
 const deployOptions = {
     abi: {
         type: 'Contract',
@@ -245,8 +243,6 @@ Now the message should be sent. `send_message` method returns the the last block
 
 ```javascript
 // Send deploy message to the network
-// See more info about `send_message` here  
-// https://github.com/tonlabs/ever-sdk/blob/master/docs/mod_processing.md#send_message
 var shard_block_id;
 shard_block_id = (await client.processing.send_message({
     message: encode_deploy_result.message,
@@ -260,8 +256,6 @@ After the message was sent we need to wait for the transaction:
 
 ```javascript
 // Monitor message delivery. 
-// See more info about `wait_for_transaction` here  
-// https://github.com/tonlabs/ever-sdk/blob/master/docs/mod_processing.md#wait_for_transaction
 const deploy_processing_result = await client.processing.wait_for_transaction({
   abi: {
         type: 'Contract',
@@ -281,9 +275,9 @@ If `wait_for_transaction` fails with 507 error - you can perform a retry. In all
 
 See the full example in sdk samples repository:
 
-[https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/hello-wallet/index\_pattern2.js](https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/hello-wallet/index\_pattern2.js)
+[https://github.com/tvmlabs/sdk-examples/blob/main/js/nodejs/helloWorld/index.js](https://github.com/tvmlabs/sdk-examples/blob/main/js/nodejs/helloWorld/index.js)
 
-Check out how to run contract's methods in the next [section](run\_onchain.md).
+Check out how to run contract's methods in the next [section](run_onchain.md).
 
 ## Deploy a contract from another contract
 
@@ -295,11 +289,13 @@ This is not a correct way.
 
 You can get it several ways:
 
-* You can use SDK function [get\_code\_from\_tvc](../../reference/types-and-methods/mod\_boc.md#get\_code\_from\_tvc) of `boc` module and retrieve the code's boc from tvc file.
+* You can use SDK function [get\_code\_from\_tvc](../../reference/types-and-methods/mod_boc.md#get_code_from_tvc) of `boc` module and retrieve the code's boc from tvc file.
 * You can download another account with the same `code_hash`'s `boc` from graphql, using [blockchain API](https://docs.everplatform.dev/samples/graphql-samples/accounts#get-account-info) and retrieve the 'code' from the result `boc` field.
 
 ## Sample Source Code
 
-Full sample: [https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/hello-wallet/](https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/hello-wallet/)
+Full sample:&#x20;
+
+[https://github.com/tvmlabs/sdk-examples/blob/main/js/nodejs/helloWorld](https://github.com/tvmlabs/sdk-examples/blob/main/js/nodejs/helloWorld/index.js)
 
 Check out [AppKit documentation](https://docs.everos.dev/appkit-js/guides/deploy) for this use case.

@@ -4,11 +4,10 @@ description: Overview of SDK components
 
 # About Acki Nacki SDK
 
-Acki Nacki SDK is a customised for Acki Nacki TVM SDK that consists of
+Acki Nacki SDK consists of
 
 * Client Libraries
-* CLI&#x20;
-* Local Blockchain
+* CLI
 
 Core TVM-SDK client library is written in Rust, with bindings for other programming languages.
 
@@ -72,15 +71,15 @@ You need to install core package and the package with binary for your platform. 
 
 ### If you did not find the language you need
 
-* use library module `json_interface` which provides access to library functions through JSON-RPC interface. This interface exports several extern "C" functions. So you can build a dynamic or static link library and link it to your application as any other external libraries. The JSON Interface is fully "C" compliant. You can find description in section [JSON Interface](for-binding-developers/json\_interface.md).
+* use library module `json_interface` which provides access to library functions through JSON-RPC interface. This interface exports several extern "C" functions. So you can build a dynamic or static link library and link it to your application as any other external libraries. The JSON Interface is fully "C" compliant. You can find description in section [JSON Interface](for-binding-developers/json_interface.md).
 * write your own binding to chosen language and share it with community.
 
-If you choose using JSON Interface please read this document [JSON Interface](for-binding-developers/json\_interface.md).\
+If you choose using JSON Interface please read this document [JSON Interface](for-binding-developers/json_interface.md).\
 Here you can find directions how to use `json_interface` and write your own binding.
 
 ## Use-cases
 
-With TVM SDK you can implement logic of any complexity on TVM compatible blockchains (Everscale, Gosh, TON, Venom, etc).
+With TVM SDK you can implement logic of any complexity on TVM compatible blockchains (Acki Nacki, Everscale, TON, Venom, etc).
 
 * Create and send messages to blockchain
 * Process messages reliably (supports retries and message expiration mechanics)
@@ -92,19 +91,19 @@ With TVM SDK you can implement logic of any complexity on TVM compatible blockch
 * Sign data/check signature, calculate hashes (sha256, sha512), encrypt/decrypt data
 * Validate addresses
 * Work with blockchain native types (bag of cells or BOCs): encode, decode, calculate hash, etc
-* Works on top of GraphQL API and compatible with Evernode-SE/DS, Evercloud.
+* Works on top of GraphQL API and compatible with Acki Nacki [Block Keeper node](https://docs.ackinacki.com/glossary#block-keeper-node-bk) or [Block Manager](https://docs.ackinacki.com/glossary#block-manager) node
 
 ## Quick Start
 
-[Quick Start (Javascript binding)](broken-reference)
+Quick Start (Javascript binding)
 
-[Error descriptions](reference/error\_codes.md)
+[Error descriptions](reference/error_codes.md)
 
-[JavaScript SDK Types and Methods (API Reference)](https://tonlabs.github.io/ever-sdk-js/)
+[JavaScript SDK Types and Methods (API Reference)](https://github.com/tvmlabs/tvm-sdk-js)
 
 [Core Types and Methods (API Reference)](reference/types-and-methods/modules.md)
 
-[Guides](guides/installation/add\_sdk\_to\_your\_app.md)
+Guides
 
 ## Versioning
 
@@ -158,7 +157,7 @@ foo(ParamsOfFoo {
 });
 ```
 
-For all Ton Client API structures `Default` trait is implemented.
+For all TVM Client API structures `Default` trait is implemented.
 
 ## Build client library
 
@@ -179,7 +178,7 @@ Note that the build script generates binaries compatible with the platform used 
 Rebuild `api.json`:
 
 ```shell
-cd toncli
+cd tvmcli
 cargo run api -o ../tools
 ```
 
@@ -209,9 +208,7 @@ To run test suite use standard Rust test command
 cargo test
 ```
 
-SDK tests need GraphQL endpoint to run on. Such an API is exposed by a Block Keeper which runs in real networks, Local Network or public testnets.
-
-Local Network is used by default with address `http://localhost` and port 80. If you launch it on another port you need to specify it explicitly like this: `http://localhost:port`. If you need to run tests on a real  network use the following environment variables to override the default parameters
+SDK tests need GraphQL endpoint to run on. Such an API is exposed by a Block Manager or Keeper node.
 
 ```
 TON_USE_SE: true/false - flag defining if tests run against local network (true) or a real network (false)
@@ -219,21 +216,3 @@ TON_NETWORK_ADDRESS - Block Keeper addresses separated by comma.
 TON_GIVER_SECRET - Sponsor Wallet secret key. If not defined, default Local Network giver keys are used
 TON_GIVER_ADDRESS - Address of the Sponsor Wallet to use for prepaying accounts before deploying test contracts. If not defined, the address is calculated using `GiverV2.tvc` and configured public key
 ```
-
-## Download precompiled binaries (temporarily not maintained)
-
-Instead of building library yourself, you can download the **latest** precompiled binaries from TVM SDK Binaries Store.
-
-| Platform | Major | Download links                                                                                                                                           |
-| -------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Win32    | 0     | [`ton_client.lib`](https://binaries.tonlabs.io/tonclient\_0\_win32\_lib.gz), [`ton_client.dll`](https://binaries.tonlabs.io/tonclient\_0\_win32\_dll.gz) |
-|          | 1     | [`ton_client.lib`](https://binaries.tonlabs.io/tonclient\_1\_win32\_lib.gz), [`ton_client.dll`](https://binaries.tonlabs.io/tonclient\_1\_win32\_dll.gz) |
-| macOS    | 0     | [`libton_client.dylib`](https://binaries.tonlabs.io/tonclient\_0\_darwin.gz)                                                                             |
-|          | 1     | (x86\_64)[`libton_client.dylib`](https://binaries.tonlabs.io/tonclient\_1\_darwin.gz)                                                                    |
-|          | 1     | (aarch64)[`libton_client.dylib`](https://binaries.tonlabs.io/tonclient\_1\_darwin\_arm64.gz)                                                             |
-| Linux    | 0     | [`libton_client.so`](https://binaries.tonlabs.io/tonclient\_0\_linux.gz)                                                                                 |
-|          | 1     | [`libton_client.so`](https://binaries.tonlabs.io/tonclient\_1\_linux.gz)                                                                                 |
-
-If you want an older version of library (e.g. `0.25.0` for macOS), you need to choose a link to your platform from the list above and replace `0` with a version: [https://binaries.tonlabs.io/tonclient\_**0\_25\_0**\_darwin.gz](https://binaries.tonlabs.io/tonclient\_0\_25\_0\_darwin.gz)
-
-_Downloaded archive is gzipped file_

@@ -1,4 +1,3 @@
 # Config Reference
 
-## [TONClient.config reference](../../reference/types-and-methods/mod\_client.md#clientconfig)
-
+## [TVMClient.config reference](../../reference/types-and-methods/mod_client.md#clientconfig)

@@ -2,13 +2,13 @@
 
 This section explains how to generate mnemonics, derive keys and get a key pair
 
-* [Mnemonic generation](mnemonics\_and\_keys.md#mnemonic-generation)
-* [Key pair generation from mnemonic](mnemonics\_and\_keys.md#key-pair-generation-from-mnemonic)
-* [Key pair generation without mnemonic](mnemonics\_and\_keys.md#key-pair-generation-without-mnemonic)
-* [Keys derivation](mnemonics\_and\_keys.md#keys-derivation)
-  * [Master (root) key](mnemonics\_and\_keys.md#master-root-key)
-  * [Derived key](mnemonics\_and\_keys.md#derived-key)
-  * [Generate keys for signature](mnemonics\_and\_keys.md#generate-keys-for-signature)
+* [Mnemonic generation](mnemonics_and_keys.md#mnemonic-generation)
+* [Key pair generation from mnemonic](mnemonics_and_keys.md#key-pair-generation-from-mnemonic)
+* [Key pair generation without mnemonic](mnemonics_and_keys.md#key-pair-generation-without-mnemonic)
+* [Keys derivation](mnemonics_and_keys.md#keys-derivation)
+  * [Master (root) key](mnemonics_and_keys.md#master-root-key)
+  * [Derived key](mnemonics_and_keys.md#derived-key)
+  * [Generate keys for signature](mnemonics_and_keys.md#generate-keys-for-signature)
 
 > Check [crypto module](broken-reference) reference for more info:
 
@@ -35,7 +35,7 @@ Generated seed phrase: "garden wedding range mixed during left powder grid modif
 
 ## Key pair generation from mnemonic
 
-Here is the fast way to generate a key pair for a signature from a specified mnemonic and path with `mnemonic_derive_sign_keys` method. The specified path, dictionary and word count is compatible with Surf and Everdev CLI:
+Here is the fast way to generate a key pair for a signature from a specified mnemonic and path with `mnemonic_derive_sign_keys` method.
 
 ```javascript
 const HD_PATH = "m/44'/396'/0'/0/0";
@@ -60,7 +60,7 @@ Generated key pair:
 }
 ```
 
-See the [Keys derivation](mnemonics\_and\_keys.md#keys-derivation) section for more information about the algorithm that is used in `mnemonic_derive_sign_keys`.
+See the [Keys derivation](mnemonics_and_keys.md#keys-derivation) section for more information about the algorithm that is used in `mnemonic_derive_sign_keys`.
 
 ## Key pair generation without mnemonic
 
@@ -149,13 +149,13 @@ e90866b307ea6a72c216a34786762e648e9b382779fdfb88cf7b1e900a6bf0e2
 After we've got the derived private key we can generate a ed25519 key pair for signature:
 
 ```javascript
-let tonosKeyPair2 = await сlient.crypto.nacl_sign_keypair_from_secret_key({ secret })
+let keyPair2 = await сlient.crypto.nacl_sign_keypair_from_secret_key({ secret })
 
-if (tonosKeyPair2.secret.length > tonosKeyPair2.public.length) {
-tonosKeyPair2.secret = tonosKeyPair2.secret.substring(0, tonosKeyPair2.public.length);
+if (keyPair2.secret.length > keyPair2.public.length) {
+keyPair2.secret = keyPair2.secret.substring(0, keyPair2.public.length);
 }
 console.log(`Key pair for signature:`);
-console.log(tonosKeyPair2);
+console.log(keyPair2);
 ```
 
 Result:

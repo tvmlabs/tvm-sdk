@@ -1,12 +1,8 @@
----
-description: Validate and convert address to different formats
----
-
-# Validate address, convert address
+# Validate address
 
 ## When you may need it?
 
-If you want to validate an address and/or convert address to bounceable/non-bounceable base64/base64url formats and back. These types of address are sometimes used in some clients so may be useful for integration.&#x20;
+If you want to validate an address.
 
 ## Get address type
 
@@ -17,7 +13,7 @@ console.log(`Address type is ${JSON.stringify(initialAddressType)}`);
 ```
 {% endcode %}
 
-## Convert
+## Validate
 
 Use `utils.convert_address` function for that.
 
@@ -31,10 +27,4 @@ let convertedAddress = (await client.utils.convert_address({
 console.log(`Address in raw format: ${convertedAddress}`);
 ```
 
-### Validate
-
 If address is incorrect the function `utils.convert_address` will fail with an error.
-
-## Sample source code
-
-[https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/utils.convert\_address/index.js](https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/utils.convert\_address/index.js)

@@ -6,55 +6,55 @@ Provides information about library.
 
 ### Functions
 
-[get\_api\_reference](mod\_client.md#get\_api\_reference) – Returns Core Library API reference
+[get\_api\_reference](mod_client.md#get_api_reference) – Returns Core Library API reference
 
-[version](mod\_client.md#version) – Returns Core Library version
+[version](mod_client.md#version) – Returns Core Library version
 
-[config](mod\_client.md#config) – Returns Core Library API reference
+[config](mod_client.md#config) – Returns Core Library API reference
 
-[build\_info](mod\_client.md#build\_info) – Returns detailed information about this build.
+[build\_info](mod_client.md#build_info) – Returns detailed information about this build.
 
-[resolve\_app\_request](mod\_client.md#resolve\_app\_request) – Resolves application request processing result
+[resolve\_app\_request](mod_client.md#resolve_app_request) – Resolves application request processing result
 
 ### Types
 
-[ClientErrorCode](mod\_client.md#clienterrorcode)
+[ClientErrorCode](mod_client.md#clienterrorcode)
 
-[ClientError](mod\_client.md#clienterror)
+[ClientError](mod_client.md#clienterror)
 
-[ClientConfig](mod\_client.md#clientconfig)
+[ClientConfig](mod_client.md#clientconfig)
 
-[NetworkConfig](mod\_client.md#networkconfig)
+[NetworkConfig](mod_client.md#networkconfig)
 
-[BindingConfig](mod\_client.md#bindingconfig)
+[BindingConfig](mod_client.md#bindingconfig)
 
-[NetworkQueriesProtocol](mod\_client.md#networkqueriesprotocol) – Network protocol used to perform GraphQL queries.
+[NetworkQueriesProtocol](mod_client.md#networkqueriesprotocol) – Network protocol used to perform GraphQL queries.
 
-[CryptoConfig](mod\_client.md#cryptoconfig) – Crypto config.
+[CryptoConfig](mod_client.md#cryptoconfig) – Crypto config.
 
-[AbiConfig](mod\_client.md#abiconfig)
+[AbiConfig](mod_client.md#abiconfig)
 
-[BocConfig](mod\_client.md#bocconfig)
+[BocConfig](mod_client.md#bocconfig)
 
-[ProofsConfig](mod\_client.md#proofsconfig)
+[ProofsConfig](mod_client.md#proofsconfig)
 
-[BuildInfoDependency](mod\_client.md#buildinfodependency)
+[BuildInfoDependency](mod_client.md#buildinfodependency)
 
-[ParamsOfAppRequest](mod\_client.md#paramsofapprequest)
+[ParamsOfAppRequest](mod_client.md#paramsofapprequest)
 
-[AppRequestResultErrorVariant](mod\_client.md#apprequestresulterrorvariant) – Error occurred during request processing
+[AppRequestResultErrorVariant](mod_client.md#apprequestresulterrorvariant) – Error occurred during request processing
 
-[AppRequestResultOkVariant](mod\_client.md#apprequestresultokvariant) – Request processed successfully
+[AppRequestResultOkVariant](mod_client.md#apprequestresultokvariant) – Request processed successfully
 
-[AppRequestResult](mod\_client.md#apprequestresult)
+[AppRequestResult](mod_client.md#apprequestresult)
 
-[ResultOfGetApiReference](mod\_client.md#resultofgetapireference)
+[ResultOfGetApiReference](mod_client.md#resultofgetapireference)
 
-[ResultOfVersion](mod\_client.md#resultofversion)
+[ResultOfVersion](mod_client.md#resultofversion)
 
-[ResultOfBuildInfo](mod\_client.md#resultofbuildinfo)
+[ResultOfBuildInfo](mod_client.md#resultofbuildinfo)
 
-[ParamsOfResolveAppRequest](mod\_client.md#paramsofresolveapprequest)
+[ParamsOfResolveAppRequest](mod_client.md#paramsofresolveapprequest)
 
 ## Functions
 
@@ -122,13 +122,13 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Result
 
-* `binding`?: [_BindingConfig_](mod\_client.md#bindingconfig)
-* `network`?: [_NetworkConfig_](mod\_client.md#networkconfig)
-* `crypto`?: [_CryptoConfig_](mod\_client.md#cryptoconfig)
-* `abi`?: [_AbiConfig_](mod\_client.md#abiconfig)
-* `boc`?: [_BocConfig_](mod\_client.md#bocconfig)
-* `proofs`?: [_ProofsConfig_](mod\_client.md#proofsconfig)
-* `local_storage_path`?: _string_ – For file based storage is a folder name where SDK will store its data. For browser based is a browser async storage key prefix. Default (recommended) value is "\~/.tonclient" for native environments and ".tonclient" for web-browser.
+* `binding`?: [_BindingConfig_](mod_client.md#bindingconfig)
+* `network`?: [_NetworkConfig_](mod_client.md#networkconfig)
+* `crypto`?: [_CryptoConfig_](mod_client.md#cryptoconfig)
+* `abi`?: [_AbiConfig_](mod_client.md#abiconfig)
+* `boc`?: [_BocConfig_](mod_client.md#bocconfig)
+* `proofs`?: [_ProofsConfig_](mod_client.md#proofsconfig)
+* `local_storage_path`?: _string_ – For file based storage is a folder name where SDK will store its data. For browser based is a browser async storage key prefix. Default (recommended) value is "\~/.tvmclient" for native environments and ".tvmclient" for web-browser.
 
 ### build\_info
 
@@ -150,7 +150,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 #### Result
 
 * `build_number`: _number_ – Build number assigned to this build by the CI.
-* `dependencies`: [_BuildInfoDependency_](mod\_client.md#buildinfodependency)_\[]_ – Fingerprint of the most important dependencies.
+* `dependencies`: [_BuildInfoDependency_](mod_client.md#buildinfodependency)_\[]_ – Fingerprint of the most important dependencies.
 
 ### resolve\_app\_request
 
@@ -176,7 +176,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 #### Parameters
 
 * `app_request_id`: _number_ – Request ID received from SDK
-* `result`: [_AppRequestResult_](mod\_client.md#apprequestresult) – Result of request processing
+* `result`: [_AppRequestResult_](mod_client.md#apprequestresult) – Result of request processing
 
 ## Types
 
@@ -290,13 +290,13 @@ type ClientConfig = {
 }
 ```
 
-* `binding`?: [_BindingConfig_](mod\_client.md#bindingconfig)
-* `network`?: [_NetworkConfig_](mod\_client.md#networkconfig)
-* `crypto`?: [_CryptoConfig_](mod\_client.md#cryptoconfig)
-* `abi`?: [_AbiConfig_](mod\_client.md#abiconfig)
-* `boc`?: [_BocConfig_](mod\_client.md#bocconfig)
-* `proofs`?: [_ProofsConfig_](mod\_client.md#proofsconfig)
-* `local_storage_path`?: _string_ – For file based storage is a folder name where SDK will store its data. For browser based is a browser async storage key prefix. Default (recommended) value is "\~/.tonclient" for native environments and ".tonclient" for web-browser.
+* `binding`?: [_BindingConfig_](mod_client.md#bindingconfig)
+* `network`?: [_NetworkConfig_](mod_client.md#networkconfig)
+* `crypto`?: [_CryptoConfig_](mod_client.md#cryptoconfig)
+* `abi`?: [_AbiConfig_](mod_client.md#abiconfig)
+* `boc`?: [_BocConfig_](mod_client.md#bocconfig)
+* `proofs`?: [_ProofsConfig_](mod_client.md#proofsconfig)
+* `local_storage_path`?: _string_ – For file based storage is a folder name where SDK will store its data. For browser based is a browser async storage key prefix. Default (recommended) value is "\~/.tvmclient" for native environments and ".tvmclient" for web-browser.
 
 ### NetworkConfig
 
@@ -323,8 +323,8 @@ type NetworkConfig = {
 }
 ```
 
-* `server_address`?: _string_ – **This field is deprecated, but left for backward-compatibility.** Evernode endpoint.
-* `endpoints`?: _string\[]_ – List of Evernode endpoints.\
+* `server_address`?: _string_ – **This field is deprecated, but left for backward-compatibility.** Acki Nacki endpoint.
+* `endpoints`?: _string\[]_ – List of Acki NAcki endpoints.\
   Any correct URL format can be specified, including IP addresses. This parameter is prevailing over `server_address`.\
   Check the full list of [supported network endpoints](https://docs.evercloud.dev/products/evercloud/networks-endpoints).
 * `network_retries_count`?: _number_ – Deprecated.\
@@ -354,7 +354,7 @@ type NetworkConfig = {
   error.\
   \
   Must be specified in milliseconds. Default is 60000 (1 min).
-* `queries_protocol`?: [_NetworkQueriesProtocol_](mod\_client.md#networkqueriesprotocol) – Queries protocol.\
+* `queries_protocol`?: [_NetworkQueriesProtocol_](mod_client.md#networkqueriesprotocol) – Queries protocol.\
   `HTTP` or `WS`.\
   Default is `HTTP`.
 * `first_remp_status_timeout`?: _number_ – UNSTABLE.\
@@ -569,7 +569,7 @@ type ResultOfBuildInfo = {
 ```
 
 * `build_number`: _number_ – Build number assigned to this build by the CI.
-* `dependencies`: [_BuildInfoDependency_](mod\_client.md#buildinfodependency)_\[]_ – Fingerprint of the most important dependencies.
+* `dependencies`: [_BuildInfoDependency_](mod_client.md#buildinfodependency)_\[]_ – Fingerprint of the most important dependencies.
 
 ### ParamsOfResolveAppRequest
 
@@ -581,4 +581,4 @@ type ParamsOfResolveAppRequest = {
 ```
 
 * `app_request_id`: _number_ – Request ID received from SDK
-* `result`: [_AppRequestResult_](mod\_client.md#apprequestresult) – Result of request processing
+* `result`: [_AppRequestResult_](mod_client.md#apprequestresult) – Result of request processing
