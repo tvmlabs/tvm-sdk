@@ -8,10 +8,12 @@ use std::path::PathBuf;
 
 use clap::ArgAction;
 use clap::Parser;
-use tvm_block::StateInit;
-use tvm_types::{base64_decode, read_single_root_boc};
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
+use tvm_block::StateInit;
+use tvm_types::base64_decode;
+use tvm_types::read_single_root_boc;
+
 use crate::execute::execute;
 use crate::result::ExecutionResult;
 
@@ -93,7 +95,7 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args: Args = Args::parse();
-    if let Some(   new_code) = args.replace_code {
+    if let Some(new_code) = args.replace_code {
         replace_code(args.input_file, new_code)?;
         return Ok(());
     }
@@ -104,17 +106,14 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn replace_code(input_file: PathBuf, code: String) -> anyhow::Result<()> {
-    let mut contract_state_init =
-        StateInit::construct_from_file(&input_file).map_err(|e| {
-            anyhow::format_err!(
-                "Failed to load state init from input file {:?}: {e}",
-                input_file
-            )
-        })?;
-    let bytes = base64_decode(&code).map_err(|e| anyhow::format_err!("Failed to decode code as base64: {e}"))?;
-    let code_cell = read_single_root_boc(bytes).map_err(|e| anyhow::format_err!(
-                "Failed to construct code cell from base64 decoded code cell: {e}",
-            ))?;
+    let mut contract_state_init = StateInit::construct_from_file(&input_file).map_err(|e| {
+        anyhow::format_err!("Failed to load state init from input file {:?}: {e}", input_file)
+    })?;
+    let bytes = base64_decode(&code)
+        .map_err(|e| anyhow::format_err!("Failed to decode code as base64: {e}"))?;
+    let code_cell = read_single_root_boc(bytes).map_err(|e| {
+        anyhow::format_err!("Failed to construct code cell from base64 decoded code cell: {e}",)
+    })?;
     contract_state_init.set_code(code_cell);
     contract_state_init
         .write_to_file(&input_file)
