@@ -306,25 +306,32 @@ pub trait TransactionExecutor {
             diff.sub(&acc_balance.grams)?;
             if available_credit == INFINITY_CREDIT {
                 acc_balance.grams.add(&diff)?;
+                *minted_shell += diff.as_u128();
                 diff = Grams::zero();
             } else {
                 if Grams::from(available_credit as u64) > diff {
                     acc_balance.grams.add(&diff)?;
+                    *minted_shell += diff.as_u128();
                     diff = Grams::zero();
                 }
                 else {
                     acc_balance.grams.add(&Grams::from(available_credit as u64))?;
+                    *minted_shell += available_credit as u128;
                     diff.sub(&Grams::from(available_credit as u64))?;
                 }
             }
-/*          let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
+            let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
                 Ok(Some(data)) => data,
                 Ok(None) => VarUInteger32::default(),
                 Err(_) => VarUInteger32::default()
+            };
+            if ecc_balance > VarUInteger32::from(diff.as_u128()) {
+                let mut sub_value = CurrencyCollection::new();
+                sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
+                acc_balance.grams.add(&Grams::from(diff.as_u64_quiet()))?;
+                acc_balance.sub(&sub_value)?;
             }
-*/
         }
-
         if acc_balance.grams >= fee {
             log::debug!(target: "executor", "acc_balance: {}, storage fee: {}", acc_balance.grams, fee);
             acc_balance.grams.sub(&fee)?;
