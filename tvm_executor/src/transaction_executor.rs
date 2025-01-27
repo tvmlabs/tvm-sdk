@@ -1471,7 +1471,7 @@ fn outmsg_action_handler(
     account_deleted: &mut bool,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
-    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE;
+    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE | SENDMSG_IGNORE_ERROR;
     if (mode & !SENDMSG_VALID_FLAGS) != 0
         || (mode & invalid_flags) == invalid_flags
         || ((mode & SENDMSG_DELETE_IF_EMPTY) != 0 && (mode & SENDMSG_ALL_BALANCE) == 0)
@@ -1479,7 +1479,7 @@ fn outmsg_action_handler(
         log::error!(target: "executor", "outmsg mode has unsupported flags");
         return Err(RESULT_CODE_UNSUPPORTED);
     }
-    let skip = if (mode & SENDMSG_IGNORE_ERROR) != 0 { None } else { Some(()) };
+    let skip = Some(());
     let (fwd_mine_fee, total_fwd_fees);
     let mut result_value; // to sub from acc_balance
 
