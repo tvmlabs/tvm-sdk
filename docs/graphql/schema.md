@@ -5,17 +5,17 @@ A schema defines a type system of GraphQL API. It describes the complete set of 
 * Root types
 * Non-root types
 * Query types
-* Subscription types
+* Subscription types (coming soon)
 * Mutation types
 * Syntax
 
 ## Root types
 
-TON Labs GraphQL schema has three root types:
+GraphQL schema has three root types:
 
 * query
 * mutation
-* subscription
+* subscription  (coming soon)
 
 The [query type](https://graphql.github.io/graphql-spec/June2018/#sec-Type-System) defines GraphQL operations that retrieve data from the server.
 
@@ -23,7 +23,7 @@ The [mutation type](https://graphql.github.io/graphql-spec/June2018/#sec-Type-Sy
 
 The **subscription** root type – a long‐lived request that fetches data in response to source events.
 
-Check out [EVER-SDK net module](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_net) - the official EverX wrapper over GraphQL API for root queries and subscriptions.
+Check out [TVM-SDK net module](../reference/types-and-methods/mod_net.md) - the wrapper over GraphQL API for root queries and subscriptions.
 
 ## Non-root types
 
@@ -33,25 +33,14 @@ See non-root type descriptions in Field descriptions section.
 
 **Root resolvers**
 
-| name               | description                                                                                                                                                                                                                                                                                                                              |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| info               | Info query is used to get GraphQL API version, as well as health parameters of the API, such as latency of blocks, messages and transactions                                                                                                                                                                                             |
-| blockchain         | API that includes a set of functions for pagination of blocks, key blocks, transactions and account’s transactions and messages.                                                                                                                                                                                                         |
-| blocks             | Blocks analytics                                                                                                                                                                                                                                                                                                                         |
-| accounts           | Accounts analytics                                                                                                                                                                                                                                                                                                                       |
-| messages           | Messages analytics                                                                                                                                                                                                                                                                                                                       |
-| transaction        | Transactions analytics                                                                                                                                                                                                                                                                                                                   |
-| blocks\_signatures | Block signatures analytics                                                                                                                                                                                                                                                                                                               |
-| counterparties     | <p>Returns a list of addresses the specified account interacted with, sorted by the latest interaction time (the latest message time between 2 accounts) DESC. Feature may be useful for wallet applications or for chat-based DApps to show the list of counterparties in descending order.<br><br>Available only in Evercloud API.</p> |
-
-**Aggregation queries (available only on dedicated nodes):**
-
-| name                  | description                                                                                              |
-| --------------------- | -------------------------------------------------------------------------------------------------------- |
-| aggregateBlocks       | Get aggregation info about blocks: COUNT, SUM, MAX, MIN, AVERAGE functions over blocks data.             |
-| aggregateTransactions | Get aggregation info about transactions: COUNT, SUM, MAX, MIN, AVERAGE functions over transactions data. |
-| aggregateMessages     | Get aggregation info about messages: COUNT, SUM, MAX, MIN, AVERAGE functions over messages data.         |
-| aggregateAccounts     | Get aggregation info about accounts: COUNT, SUM, MAX, MIN, AVERAGE functions over accounts data.         |
+| name        | description                                                                                                                                  |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| info        | Info query is used to get GraphQL API version, as well as health parameters of the API, such as latency of blocks, messages and transactions |
+| blockchain  | API that includes a set of functions for pagination of blocks, key blocks, transactions and account’s transactions and messages.             |
+| blocks      | Blocks collection                                                                                                                            |
+| accounts    | Accounts collection                                                                                                                          |
+| messages    | Messages collection                                                                                                                          |
+| transaction | Transactions collection                                                                                                                      |
 
 ## Subscription types (Soon)
 
@@ -59,7 +48,6 @@ See non-root type descriptions in Field descriptions section.
 * accounts
 * messages
 * transaction
-* blocks\_signatures
 
 ## Mutation types
 

@@ -1,145 +1,148 @@
 # Module boc
 
+## Module boc
+
 BOC manipulation module.
 
+### Functions
+
+[decode\_tvc](mod_boc.md#decode_tvc) – Decodes tvc according to the tvc spec. Read more about tvc structure [here](https://github.com/tvmlabs/tvm-sdk/blob/00fd198e4f8f404d5f495c6a65d84b54fe76881b/tvm_struct/src/scheme/mod.rs#L31)
+
+[parse\_message](mod_boc.md#parse_message) – Parses message boc into a JSON
+
+[parse\_transaction](mod_boc.md#parse_transaction) – Parses transaction boc into a JSON
+
+[parse\_account](mod_boc.md#parse_account) – Parses account boc into a JSON
+
+[parse\_block](mod_boc.md#parse_block) – Parses block boc into a JSON
+
+[parse\_shardstate](mod_boc.md#parse_shardstate) – Parses shardstate boc into a JSON
+
+[get\_blockchain\_config](mod_boc.md#get_blockchain_config) – Extract blockchain configuration from key block and also from zerostate.
+
+[get\_boc\_hash](mod_boc.md#get_boc_hash) – Calculates BOC root hash
+
+[get\_boc\_depth](mod_boc.md#get_boc_depth) – Calculates BOC depth
+
+[get\_code\_from\_tvc](mod_boc.md#get_code_from_tvc) – Extracts code from TVC contract image
+
+[cache\_get](mod_boc.md#cache_get) – Get BOC from cache
+
+[cache\_set](mod_boc.md#cache_set) – Save BOC into cache or increase pin counter for existing pinned BOC
+
+[cache\_unpin](mod_boc.md#cache_unpin) – Unpin BOCs with specified pin defined in the `cache_set`. Decrease pin reference counter for BOCs with specified pin defined in the `cache_set`. BOCs which have only 1 pin and its reference counter become 0 will be removed from cache
+
+[encode\_boc](mod_boc.md#encode_boc) – Encodes bag of cells (BOC) with builder operations. This method provides the same functionality as Solidity TvmBuilder. Resulting BOC of this method can be passed into Solidity and C++ contracts as TvmCell type.
+
+[get\_code\_salt](mod_boc.md#get_code_salt) – Returns the contract code's salt if it is present.
+
+[set\_code\_salt](mod_boc.md#set_code_salt) – Sets new salt to contract code.
+
+[decode\_state\_init](mod_boc.md#decode_state_init) – Decodes contract's initial state into code, data, libraries and special options.
+
+[encode\_state\_init](mod_boc.md#encode_state_init) – Encodes initial contract state from code, data, libraries ans special options (see input params)
+
+[encode\_external\_in\_message](mod_boc.md#encode_external_in_message) – Encodes a message
+
+[get\_compiler\_version](mod_boc.md#get_compiler_version) – Returns the compiler version used to compile the code.
+
+### Types
+
+[BocCacheTypePinnedVariant](mod_boc.md#boccachetypepinnedvariant) – Pin the BOC with `pin` name.
+
+[BocCacheTypeUnpinnedVariant](mod_boc.md#boccachetypeunpinnedvariant) – BOC is placed into a common BOC pool with limited size regulated by LRU (least recently used) cache lifecycle.
+
+[BocCacheType](mod_boc.md#boccachetype)
+
+[BuilderOpIntegerVariant](mod_boc.md#builderopintegervariant) – Append integer to cell data.
+
+[BuilderOpBitStringVariant](mod_boc.md#builderopbitstringvariant) – Append bit string to cell data.
+
+[BuilderOpCellVariant](mod_boc.md#builderopcellvariant) – Append ref to nested cells.
+
+[BuilderOpCellBocVariant](mod_boc.md#builderopcellbocvariant) – Append ref to nested cell.
+
+[BuilderOpAddressVariant](mod_boc.md#builderopaddressvariant) – Address.
+
+[BuilderOp](mod_boc.md#builderop) – Cell builder operation.
+
+[TvcV1Variant](mod_boc.md#tvcv1variant)
+
+[Tvc](mod_boc.md#tvc)
+
+[TvcV1](mod_boc.md#tvcv1)
+
+[BocErrorCode](mod_boc.md#bocerrorcode)
+
+[ParamsOfDecodeTvc](mod_boc.md#paramsofdecodetvc)
+
+[ResultOfDecodeTvc](mod_boc.md#resultofdecodetvc)
+
+[ParamsOfParse](mod_boc.md#paramsofparse)
+
+[ResultOfParse](mod_boc.md#resultofparse)
+
+[ParamsOfParseShardstate](mod_boc.md#paramsofparseshardstate)
+
+[ParamsOfGetBlockchainConfig](mod_boc.md#paramsofgetblockchainconfig)
+
+[ResultOfGetBlockchainConfig](mod_boc.md#resultofgetblockchainconfig)
+
+[ParamsOfGetBocHash](mod_boc.md#paramsofgetbochash)
+
+[ResultOfGetBocHash](mod_boc.md#resultofgetbochash)
+
+[ParamsOfGetBocDepth](mod_boc.md#paramsofgetbocdepth)
+
+[ResultOfGetBocDepth](mod_boc.md#resultofgetbocdepth)
+
+[ParamsOfGetCodeFromTvc](mod_boc.md#paramsofgetcodefromtvc)
+
+[ResultOfGetCodeFromTvc](mod_boc.md#resultofgetcodefromtvc)
+
+[ParamsOfBocCacheGet](mod_boc.md#paramsofboccacheget)
+
+[ResultOfBocCacheGet](mod_boc.md#resultofboccacheget)
+
+[ParamsOfBocCacheSet](mod_boc.md#paramsofboccacheget)
+
+ResultOfBocCacheSet
+
+ParamsOfBocCacheUnpin
+
+ParamsOfEncodeBoc
+
+ResultOfEncodeBoc
+
+ParamsOfGetCodeSalt
+
+ResultOfGetCodeSalt
+
+ParamsOfSetCodeSalt
+
+ResultOfSetCodeSalt
+
+ParamsOfDecodeStateInit
+
+ResultOfDecodeStateInit
+
+ParamsOfEncodeStateInit
+
+ResultOfEncodeStateInit
+
+ParamsOfEncodeExternalInMessage
+
+ResultOfEncodeExternalInMessage
+
+ParamsOfGetCompilerVersion
+
+ResultOfGetCompilerVersion
 
 ## Functions
-[decode_tvc](mod\_boc.md#decode_tvc) – Decodes tvc according to the tvc spec. Read more about tvc structure here https://github.com/tonlabs/ever-struct/blob/main/src/scheme/mod.rs#L30
 
-[parse_message](mod\_boc.md#parse_message) – Parses message boc into a JSON
+### decode\_tvc
 
-[parse_transaction](mod\_boc.md#parse_transaction) – Parses transaction boc into a JSON
-
-[parse_account](mod\_boc.md#parse_account) – Parses account boc into a JSON
-
-[parse_block](mod\_boc.md#parse_block) – Parses block boc into a JSON
-
-[parse_shardstate](mod\_boc.md#parse_shardstate) – Parses shardstate boc into a JSON
-
-[get_blockchain_config](mod\_boc.md#get_blockchain_config) – Extract blockchain configuration from key block and also from zerostate.
-
-[get_boc_hash](mod\_boc.md#get_boc_hash) – Calculates BOC root hash
-
-[get_boc_depth](mod\_boc.md#get_boc_depth) – Calculates BOC depth
-
-[get_code_from_tvc](mod\_boc.md#get_code_from_tvc) – Extracts code from TVC contract image
-
-[cache_get](mod\_boc.md#cache_get) – Get BOC from cache
-
-[cache_set](mod\_boc.md#cache_set) – Save BOC into cache or increase pin counter for existing pinned BOC
-
-[cache_unpin](mod\_boc.md#cache_unpin) – Unpin BOCs with specified pin defined in the `cache_set`. Decrease pin reference counter for BOCs with specified pin defined in the `cache_set`. BOCs which have only 1 pin and its reference counter become 0 will be removed from cache
-
-[encode_boc](mod\_boc.md#encode_boc) – Encodes bag of cells (BOC) with builder operations. This method provides the same functionality as Solidity TvmBuilder. Resulting BOC of this method can be passed into Solidity and C++ contracts as TvmCell type.
-
-[get_code_salt](mod\_boc.md#get_code_salt) – Returns the contract code's salt if it is present.
-
-[set_code_salt](mod\_boc.md#set_code_salt) – Sets new salt to contract code.
-
-[decode_state_init](mod\_boc.md#decode_state_init) – Decodes contract's initial state into code, data, libraries and special options.
-
-[encode_state_init](mod\_boc.md#encode_state_init) – Encodes initial contract state from code, data, libraries ans special options (see input params)
-
-[encode_external_in_message](mod\_boc.md#encode_external_in_message) – Encodes a message
-
-[get_compiler_version](mod\_boc.md#get_compiler_version) – Returns the compiler version used to compile the code.
-
-## Types
-[BocCacheTypePinnedVariant](mod\_boc.md#boccachetypepinnedvariant) – Pin the BOC with `pin` name.
-
-[BocCacheTypeUnpinnedVariant](mod\_boc.md#boccachetypeunpinnedvariant) – BOC is placed into a common BOC pool with limited size regulated by LRU (least recently used) cache lifecycle.
-
-[BocCacheType](mod\_boc.md#boccachetype)
-
-[BuilderOpIntegerVariant](mod\_boc.md#builderopintegervariant) – Append integer to cell data.
-
-[BuilderOpBitStringVariant](mod\_boc.md#builderopbitstringvariant) – Append bit string to cell data.
-
-[BuilderOpCellVariant](mod\_boc.md#builderopcellvariant) – Append ref to nested cells.
-
-[BuilderOpCellBocVariant](mod\_boc.md#builderopcellbocvariant) – Append ref to nested cell.
-
-[BuilderOpAddressVariant](mod\_boc.md#builderopaddressvariant) – Address.
-
-[BuilderOp](mod\_boc.md#builderop) – Cell builder operation.
-
-[TvcV1Variant](mod\_boc.md#tvcv1variant)
-
-[Tvc](mod\_boc.md#tvc)
-
-[TvcV1](mod\_boc.md#tvcv1)
-
-[BocErrorCode](mod\_boc.md#bocerrorcode)
-
-[ParamsOfDecodeTvc](mod\_boc.md#paramsofdecodetvc)
-
-[ResultOfDecodeTvc](mod\_boc.md#resultofdecodetvc)
-
-[ParamsOfParse](mod\_boc.md#paramsofparse)
-
-[ResultOfParse](mod\_boc.md#resultofparse)
-
-[ParamsOfParseShardstate](mod\_boc.md#paramsofparseshardstate)
-
-[ParamsOfGetBlockchainConfig](mod\_boc.md#paramsofgetblockchainconfig)
-
-[ResultOfGetBlockchainConfig](mod\_boc.md#resultofgetblockchainconfig)
-
-[ParamsOfGetBocHash](mod\_boc.md#paramsofgetbochash)
-
-[ResultOfGetBocHash](mod\_boc.md#resultofgetbochash)
-
-[ParamsOfGetBocDepth](mod\_boc.md#paramsofgetbocdepth)
-
-[ResultOfGetBocDepth](mod\_boc.md#resultofgetbocdepth)
-
-[ParamsOfGetCodeFromTvc](mod\_boc.md#paramsofgetcodefromtvc)
-
-[ResultOfGetCodeFromTvc](mod\_boc.md#resultofgetcodefromtvc)
-
-[ParamsOfBocCacheGet](mod\_boc.md#paramsofboccacheget)
-
-[ResultOfBocCacheGet](mod\_boc.md#resultofboccacheget)
-
-[ParamsOfBocCacheSet](mod\_boc.md#paramsofboccacheset)
-
-[ResultOfBocCacheSet](mod\_boc.md#resultofboccacheset)
-
-[ParamsOfBocCacheUnpin](mod\_boc.md#paramsofboccacheunpin)
-
-[ParamsOfEncodeBoc](mod\_boc.md#paramsofencodeboc)
-
-[ResultOfEncodeBoc](mod\_boc.md#resultofencodeboc)
-
-[ParamsOfGetCodeSalt](mod\_boc.md#paramsofgetcodesalt)
-
-[ResultOfGetCodeSalt](mod\_boc.md#resultofgetcodesalt)
-
-[ParamsOfSetCodeSalt](mod\_boc.md#paramsofsetcodesalt)
-
-[ResultOfSetCodeSalt](mod\_boc.md#resultofsetcodesalt)
-
-[ParamsOfDecodeStateInit](mod\_boc.md#paramsofdecodestateinit)
-
-[ResultOfDecodeStateInit](mod\_boc.md#resultofdecodestateinit)
-
-[ParamsOfEncodeStateInit](mod\_boc.md#paramsofencodestateinit)
-
-[ResultOfEncodeStateInit](mod\_boc.md#resultofencodestateinit)
-
-[ParamsOfEncodeExternalInMessage](mod\_boc.md#paramsofencodeexternalinmessage)
-
-[ResultOfEncodeExternalInMessage](mod\_boc.md#resultofencodeexternalinmessage)
-
-[ParamsOfGetCompilerVersion](mod\_boc.md#paramsofgetcompilerversion)
-
-[ResultOfGetCompilerVersion](mod\_boc.md#resultofgetcompilerversion)
-
-
-# Functions
-## decode_tvc
-
-Decodes tvc according to the tvc spec. Read more about tvc structure here https://github.com/tonlabs/ever-struct/blob/main/src/scheme/mod.rs#L30
+Decodes tvc according to the tvc spec. Read more about tvc structure [here](https://github.com/tvmlabs/tvm-sdk/blob/00fd198e4f8f404d5f495c6a65d84b54fe76881b/tvm_struct/src/scheme/mod.rs#L31)
 
 ```ts
 type ParamsOfDecodeTvc = {
@@ -158,17 +161,18 @@ function decode_tvc_sync(
     params: ParamsOfDecodeTvc,
 ): ResultOfDecodeTvc;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `tvc`: _string_ – Contract TVC BOC encoded as base64 or BOC handle
 
+#### Parameters
 
-### Result
+* `tvc`: _string_ – Contract TVC BOC encoded as base64 or BOC handle
 
-- `tvc`: _[Tvc](mod\_boc.md#tvc)_ – Decoded TVC
+#### Result
 
+* `tvc`: [_Tvc_](mod_boc.md#tvc) – Decoded TVC
 
-## parse_message
+### parse\_message
 
 Parses message boc into a JSON
 
@@ -191,17 +195,18 @@ function parse_message_sync(
     params: ParamsOfParse,
 ): ResultOfParse;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc`: _string_ – BOC encoded as base64
 
+#### Parameters
 
-### Result
+* `boc`: _string_ – BOC encoded as base64
 
-- `parsed`: _any_ – JSON containing parsed BOC
+#### Result
 
+* `parsed`: _any_ – JSON containing parsed BOC
 
-## parse_transaction
+### parse\_transaction
 
 Parses transaction boc into a JSON
 
@@ -224,17 +229,18 @@ function parse_transaction_sync(
     params: ParamsOfParse,
 ): ResultOfParse;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc`: _string_ – BOC encoded as base64
 
+#### Parameters
 
-### Result
+* `boc`: _string_ – BOC encoded as base64
 
-- `parsed`: _any_ – JSON containing parsed BOC
+#### Result
 
+* `parsed`: _any_ – JSON containing parsed BOC
 
-## parse_account
+### parse\_account
 
 Parses account boc into a JSON
 
@@ -257,17 +263,18 @@ function parse_account_sync(
     params: ParamsOfParse,
 ): ResultOfParse;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc`: _string_ – BOC encoded as base64
 
+#### Parameters
 
-### Result
+* `boc`: _string_ – BOC encoded as base64
 
-- `parsed`: _any_ – JSON containing parsed BOC
+#### Result
 
+* `parsed`: _any_ – JSON containing parsed BOC
 
-## parse_block
+### parse\_block
 
 Parses block boc into a JSON
 
@@ -290,17 +297,18 @@ function parse_block_sync(
     params: ParamsOfParse,
 ): ResultOfParse;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc`: _string_ – BOC encoded as base64
 
+#### Parameters
 
-### Result
+* `boc`: _string_ – BOC encoded as base64
 
-- `parsed`: _any_ – JSON containing parsed BOC
+#### Result
 
+* `parsed`: _any_ – JSON containing parsed BOC
 
-## parse_shardstate
+### parse\_shardstate
 
 Parses shardstate boc into a JSON
 
@@ -325,19 +333,20 @@ function parse_shardstate_sync(
     params: ParamsOfParseShardstate,
 ): ResultOfParse;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc`: _string_ – BOC encoded as base64
-- `id`: _string_ – Shardstate identifier
-- `workchain_id`: _number_ – Workchain shardstate belongs to
 
+#### Parameters
 
-### Result
+* `boc`: _string_ – BOC encoded as base64
+* `id`: _string_ – Shardstate identifier
+* `workchain_id`: _number_ – Workchain shardstate belongs to
 
-- `parsed`: _any_ – JSON containing parsed BOC
+#### Result
 
+* `parsed`: _any_ – JSON containing parsed BOC
 
-## get_blockchain_config
+### get\_blockchain\_config
 
 Extract blockchain configuration from key block and also from zerostate.
 
@@ -358,17 +367,18 @@ function get_blockchain_config_sync(
     params: ParamsOfGetBlockchainConfig,
 ): ResultOfGetBlockchainConfig;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `block_boc`: _string_ – Key block BOC or zerostate BOC encoded as base64
 
+#### Parameters
 
-### Result
+* `block_boc`: _string_ – Key block BOC or zerostate BOC encoded as base64
 
-- `config_boc`: _string_ – Blockchain config BOC encoded as base64
+#### Result
 
+* `config_boc`: _string_ – Blockchain config BOC encoded as base64
 
-## get_boc_hash
+### get\_boc\_hash
 
 Calculates BOC root hash
 
@@ -389,17 +399,18 @@ function get_boc_hash_sync(
     params: ParamsOfGetBocHash,
 ): ResultOfGetBocHash;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc`: _string_ – BOC encoded as base64 or BOC handle
 
+#### Parameters
 
-### Result
+* `boc`: _string_ – BOC encoded as base64 or BOC handle
 
-- `hash`: _string_ – BOC root hash encoded with hex
+#### Result
 
+* `hash`: _string_ – BOC root hash encoded with hex
 
-## get_boc_depth
+### get\_boc\_depth
 
 Calculates BOC depth
 
@@ -420,17 +431,18 @@ function get_boc_depth_sync(
     params: ParamsOfGetBocDepth,
 ): ResultOfGetBocDepth;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc`: _string_ – BOC encoded as base64 or BOC handle
 
+#### Parameters
 
-### Result
+* `boc`: _string_ – BOC encoded as base64 or BOC handle
 
-- `depth`: _number_ – BOC root cell depth
+#### Result
 
+* `depth`: _number_ – BOC root cell depth
 
-## get_code_from_tvc
+### get\_code\_from\_tvc
 
 Extracts code from TVC contract image
 
@@ -451,17 +463,18 @@ function get_code_from_tvc_sync(
     params: ParamsOfGetCodeFromTvc,
 ): ResultOfGetCodeFromTvc;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `tvc`: _string_ – Contract TVC image or image BOC handle
 
+#### Parameters
 
-### Result
+* `tvc`: _string_ – Contract TVC image or image BOC handle
 
-- `code`: _string_ – Contract code encoded as base64
+#### Result
 
+* `code`: _string_ – Contract code encoded as base64
 
-## cache_get
+### cache\_get
 
 Get BOC from cache
 
@@ -482,17 +495,18 @@ function cache_get_sync(
     params: ParamsOfBocCacheGet,
 ): ResultOfBocCacheGet;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc_ref`: _string_ – Reference to the cached BOC
 
+#### Parameters
 
-### Result
+* `boc_ref`: _string_ – Reference to the cached BOC
 
-- `boc`?: _string_ – BOC encoded as base64.
+#### Result
 
+* `boc`?: _string_ – BOC encoded as base64.
 
-## cache_set
+### cache\_set
 
 Save BOC into cache or increase pin counter for existing pinned BOC
 
@@ -514,18 +528,19 @@ function cache_set_sync(
     params: ParamsOfBocCacheSet,
 ): ResultOfBocCacheSet;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `boc`: _string_ – BOC encoded as base64 or BOC reference
-- `cache_type`: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type
 
+#### Parameters
 
-### Result
+* `boc`: _string_ – BOC encoded as base64 or BOC reference
+* `cache_type`: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type
 
-- `boc_ref`: _string_ – Reference to the cached BOC
+#### Result
 
+* `boc_ref`: _string_ – Reference to the cached BOC
 
-## cache_unpin
+### cache\_unpin
 
 Unpin BOCs with specified pin defined in the `cache_set`. Decrease pin reference counter for BOCs with specified pin defined in the `cache_set`. BOCs which have only 1 pin and its reference counter become 0 will be removed from cache
 
@@ -543,14 +558,16 @@ function cache_unpin_sync(
     params: ParamsOfBocCacheUnpin,
 ): void;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `pin`: _string_ – Pinned name
-- `boc_ref`?: _string_ – Reference to the cached BOC.
-<br>If it is provided then only referenced BOC is unpinned
 
+#### Parameters
 
-## encode_boc
+* `pin`: _string_ – Pinned name
+* `boc_ref`?: _string_ – Reference to the cached BOC.\
+  If it is provided then only referenced BOC is unpinned
+
+### encode\_boc
 
 Encodes bag of cells (BOC) with builder operations. This method provides the same functionality as Solidity TvmBuilder. Resulting BOC of this method can be passed into Solidity and C++ contracts as TvmCell type.
 
@@ -572,18 +589,19 @@ function encode_boc_sync(
     params: ParamsOfEncodeBoc,
 ): ResultOfEncodeBoc;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `builder`: _[BuilderOp](mod\_boc.md#builderop)[]_ – Cell builder operations.
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+#### Parameters
 
-### Result
+* `builder`: [_BuilderOp_](mod_boc.md#builderop)_\[]_ – Cell builder operations.
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-- `boc`: _string_ – Encoded cell BOC or BOC cache key.
+#### Result
 
+* `boc`: _string_ – Encoded cell BOC or BOC cache key.
 
-## get_code_salt
+### get\_code\_salt
 
 Returns the contract code's salt if it is present.
 
@@ -605,19 +623,20 @@ function get_code_salt_sync(
     params: ParamsOfGetCodeSalt,
 ): ResultOfGetCodeSalt;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+#### Parameters
 
-### Result
+* `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-- `salt`?: _string_ – Contract code salt if present.
-<br>BOC encoded as base64 or BOC handle
+#### Result
 
+* `salt`?: _string_ – Contract code salt if present.\
+  BOC encoded as base64 or BOC handle
 
-## set_code_salt
+### set\_code\_salt
 
 Sets new salt to contract code.
 
@@ -642,21 +661,22 @@ function set_code_salt_sync(
     params: ParamsOfSetCodeSalt,
 ): ResultOfSetCodeSalt;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
-- `salt`: _string_ – Code salt to set.
-<br>BOC encoded as base64 or BOC handle
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+#### Parameters
 
-### Result
+* `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
+* `salt`: _string_ – Code salt to set.\
+  BOC encoded as base64 or BOC handle
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-- `code`: _string_ – Contract code with salt set.
-<br>BOC encoded as base64 or BOC handle
+#### Result
 
+* `code`: _string_ – Contract code with salt set.\
+  BOC encoded as base64 or BOC handle
 
-## decode_state_init
+### decode\_state\_init
 
 Decodes contract's initial state into code, data, libraries and special options.
 
@@ -688,30 +708,31 @@ function decode_state_init_sync(
     params: ParamsOfDecodeStateInit,
 ): ResultOfDecodeStateInit;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `state_init`: _string_ – Contract StateInit image BOC encoded as base64 or BOC handle
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+#### Parameters
 
-### Result
+* `state_init`: _string_ – Contract StateInit image BOC encoded as base64 or BOC handle
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-- `code`?: _string_ – Contract code BOC encoded as base64 or BOC handle
-- `code_hash`?: _string_ – Contract code hash
-- `code_depth`?: _number_ – Contract code depth
-- `data`?: _string_ – Contract data BOC encoded as base64 or BOC handle
-- `data_hash`?: _string_ – Contract data hash
-- `data_depth`?: _number_ – Contract data depth
-- `library`?: _string_ – Contract library BOC encoded as base64 or BOC handle
-- `tick`?: _boolean_ – `special.tick` field.
-<br>Specifies the contract ability to handle tick transactions
-- `tock`?: _boolean_ – `special.tock` field.
-<br>Specifies the contract ability to handle tock transactions
-- `split_depth`?: _number_ – Is present and non-zero only in instances of large smart contracts
-- `compiler_version`?: _string_ – Compiler version, for example 'sol 0.49.0'
+#### Result
 
+* `code`?: _string_ – Contract code BOC encoded as base64 or BOC handle
+* `code_hash`?: _string_ – Contract code hash
+* `code_depth`?: _number_ – Contract code depth
+* `data`?: _string_ – Contract data BOC encoded as base64 or BOC handle
+* `data_hash`?: _string_ – Contract data hash
+* `data_depth`?: _number_ – Contract data depth
+* `library`?: _string_ – Contract library BOC encoded as base64 or BOC handle
+* `tick`?: _boolean_ – `special.tick` field.\
+  Specifies the contract ability to handle tick transactions
+* `tock`?: _boolean_ – `special.tock` field.\
+  Specifies the contract ability to handle tock transactions
+* `split_depth`?: _number_ – Is present and non-zero only in instances of large smart contracts
+* `compiler_version`?: _string_ – Compiler version, for example 'sol 0.49.0'
 
-## encode_state_init
+### encode\_state\_init
 
 Encodes initial contract state from code, data, libraries ans special options (see input params)
 
@@ -738,25 +759,26 @@ function encode_state_init_sync(
     params: ParamsOfEncodeStateInit,
 ): ResultOfEncodeStateInit;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `code`?: _string_ – Contract code BOC encoded as base64 or BOC handle
-- `data`?: _string_ – Contract data BOC encoded as base64 or BOC handle
-- `library`?: _string_ – Contract library BOC encoded as base64 or BOC handle
-- `tick`?: _boolean_ – `special.tick` field.
-<br>Specifies the contract ability to handle tick transactions
-- `tock`?: _boolean_ – `special.tock` field.
-<br>Specifies the contract ability to handle tock transactions
-- `split_depth`?: _number_ – Is present and non-zero only in instances of large smart contracts
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+#### Parameters
 
-### Result
+* `code`?: _string_ – Contract code BOC encoded as base64 or BOC handle
+* `data`?: _string_ – Contract data BOC encoded as base64 or BOC handle
+* `library`?: _string_ – Contract library BOC encoded as base64 or BOC handle
+* `tick`?: _boolean_ – `special.tick` field.\
+  Specifies the contract ability to handle tick transactions
+* `tock`?: _boolean_ – `special.tock` field.\
+  Specifies the contract ability to handle tock transactions
+* `split_depth`?: _number_ – Is present and non-zero only in instances of large smart contracts
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-- `state_init`: _string_ – Contract StateInit image BOC encoded as base64 or BOC handle of boc_cache parameter was specified
+#### Result
 
+* `state_init`: _string_ – Contract StateInit image BOC encoded as base64 or BOC handle of boc\_cache parameter was specified
 
-## encode_external_in_message
+### encode\_external\_in\_message
 
 Encodes a message
 
@@ -784,23 +806,24 @@ function encode_external_in_message_sync(
     params: ParamsOfEncodeExternalInMessage,
 ): ResultOfEncodeExternalInMessage;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `src`?: _string_ – Source address.
-- `dst`: _string_ – Destination address.
-- `init`?: _string_ – Bag of cells with state init (used in deploy messages).
-- `body`?: _string_ – Bag of cells with the message body encoded as base64.
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result.
-<br>The BOC itself returned if no cache type provided
 
+#### Parameters
 
-### Result
+* `src`?: _string_ – Source address.
+* `dst`: _string_ – Destination address.
+* `init`?: _string_ – Bag of cells with state init (used in deploy messages).
+* `body`?: _string_ – Bag of cells with the message body encoded as base64.
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result.\
+  The BOC itself returned if no cache type provided
 
-- `message`: _string_ – Message BOC encoded with `base64`.
-- `message_id`: _string_ – Message id.
+#### Result
 
+* `message`: _string_ – Message BOC encoded with `base64`.
+* `message_id`: _string_ – Message id.
 
-## get_compiler_version
+### get\_compiler\_version
 
 Returns the compiler version used to compile the code.
 
@@ -821,33 +844,35 @@ function get_compiler_version_sync(
     params: ParamsOfGetCompilerVersion,
 ): ResultOfGetCompilerVersion;
 ```
+
 NOTE: Sync version is available only for `lib-node` binding.
-### Parameters
-- `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
 
+#### Parameters
 
-### Result
+* `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
 
-- `version`?: _string_ – Compiler version, for example 'sol 0.49.0'
+#### Result
 
+* `version`?: _string_ – Compiler version, for example 'sol 0.49.0'
 
-# Types
-## BocCacheTypePinnedVariant
+## Types
+
+### BocCacheTypePinnedVariant
+
 Pin the BOC with `pin` name.
 
-Such BOC will not be removed from cache until it is unpinned BOCs can have several pins and each of the pins has reference counter indicating how many
-times the BOC was pinned with the pin. BOC is removed from cache after all references for all
-pins are unpinned with `cache_unpin` function calls.
+Such BOC will not be removed from cache until it is unpinned BOCs can have several pins and each of the pins has reference counter indicating how many times the BOC was pinned with the pin. BOC is removed from cache after all references for all pins are unpinned with `cache_unpin` function calls.
 
 ```ts
 type BocCacheTypePinnedVariant = {
     pin: string
 }
 ```
-- `pin`: _string_
 
+* `pin`: _string_
 
-## BocCacheTypeUnpinnedVariant
+### BocCacheTypeUnpinnedVariant
+
 BOC is placed into a common BOC pool with limited size regulated by LRU (least recently used) cache lifecycle.
 
 BOC resides there until it is replaced with other BOCs if it is not used
@@ -858,8 +883,8 @@ type BocCacheTypeUnpinnedVariant = {
 }
 ```
 
+### BocCacheType
 
-## BocCacheType
 ```ts
 type BocCacheType = ({
     type: 'Pinned'
@@ -867,25 +892,22 @@ type BocCacheType = ({
     type: 'Unpinned'
 } & BocCacheTypeUnpinnedVariant)
 ```
-Depends on value of the  `type` field.
+
+Depends on value of the `type` field.
 
 When _type_ is _'Pinned'_
 
 Pin the BOC with `pin` name.
 
-Such BOC will not be removed from cache until it is unpinned BOCs can have several pins and each of the pins has reference counter indicating how many
-times the BOC was pinned with the pin. BOC is removed from cache after all references for all
-pins are unpinned with `cache_unpin` function calls.
+Such BOC will not be removed from cache until it is unpinned BOCs can have several pins and each of the pins has reference counter indicating how many times the BOC was pinned with the pin. BOC is removed from cache after all references for all pins are unpinned with `cache_unpin` function calls.
 
-- `pin`: _string_
+* `pin`: _string_
 
 When _type_ is _'Unpinned'_
 
 BOC is placed into a common BOC pool with limited size regulated by LRU (least recently used) cache lifecycle.
 
 BOC resides there until it is replaced with other BOCs if it is not used
-
-
 
 Variant constructors:
 
@@ -894,7 +916,8 @@ function bocCacheTypePinned(pin: string): BocCacheType;
 function bocCacheTypeUnpinned(): BocCacheType;
 ```
 
-## BuilderOpIntegerVariant
+### BuilderOpIntegerVariant
+
 Append integer to cell data.
 
 ```ts
@@ -903,12 +926,15 @@ type BuilderOpIntegerVariant = {
     value: any
 }
 ```
-- `size`: _number_ – Bit size of the value.
-- `value`: _any_ – Value: - `Number` containing integer number.
-<br>e.g. `123`, `-123`. - Decimal string. e.g. `"123"`, `"-123"`.<br>- `0x` prefixed hexadecimal string.<br>  e.g `0x123`, `0X123`, `-0x123`.
 
+* `size`: _number_ – Bit size of the value.
+* `value`: _any_ – Value: - `Number` containing integer number.\
+  e.g. `123`, `-123`. - Decimal string. e.g. `"123"`, `"-123"`.\
+  \- `0x` prefixed hexadecimal string.\
+  e.g `0x123`, `0X123`, `-0x123`.
 
-## BuilderOpBitStringVariant
+### BuilderOpBitStringVariant
+
 Append bit string to cell data.
 
 ```ts
@@ -916,11 +942,23 @@ type BuilderOpBitStringVariant = {
     value: string
 }
 ```
-- `value`: _string_ – Bit string content using bitstring notation. See `TON VM specification` 1.0.
-<br>Contains hexadecimal string representation:<br>- Can end with `_` tag.<br>- Can be prefixed with `x` or `X`.<br>- Can be prefixed with `x{` or `X{` and ended with `}`.<br><br>Contains binary string represented as a sequence<br>of `0` and `1` prefixed with `n` or `N`.<br><br>Examples:<br>`1AB`, `x1ab`, `X1AB`, `x{1abc}`, `X{1ABC}`<br>`2D9_`, `x2D9_`, `X2D9_`, `x{2D9_}`, `X{2D9_}`<br>`n00101101100`, `N00101101100`
 
+* `value`: _string_ – Bit string content using bitstring notation. See `TON specification` 1.0.\
+  Contains hexadecimal string representation:\
+  \- Can end with `_` tag.\
+  \- Can be prefixed with `x` or `X`.\
+  \- Can be prefixed with `x{` or `X{` and ended with `}`.\
+  \
+  Contains binary string represented as a sequence\
+  of `0` and `1` prefixed with `n` or `N`.\
+  \
+  Examples:\
+  `1AB`, `x1ab`, `X1AB`, `x{1abc}`, `X{1ABC}`\
+  `2D9_`, `x2D9_`, `X2D9_`, `x{2D9_}`, `X{2D9_}`\
+  `n00101101100`, `N00101101100`
 
-## BuilderOpCellVariant
+### BuilderOpCellVariant
+
 Append ref to nested cells.
 
 ```ts
@@ -928,10 +966,11 @@ type BuilderOpCellVariant = {
     builder: BuilderOp[]
 }
 ```
-- `builder`: _[BuilderOp](mod\_boc.md#builderop)[]_ – Nested cell builder.
 
+* `builder`: [_BuilderOp_](mod_boc.md#builderop)_\[]_ – Nested cell builder.
 
-## BuilderOpCellBocVariant
+### BuilderOpCellBocVariant
+
 Append ref to nested cell.
 
 ```ts
@@ -939,10 +978,11 @@ type BuilderOpCellBocVariant = {
     boc: string
 }
 ```
-- `boc`: _string_ – Nested cell BOC encoded with `base64` or BOC cache key.
 
+* `boc`: _string_ – Nested cell BOC encoded with `base64` or BOC cache key.
 
-## BuilderOpAddressVariant
+### BuilderOpAddressVariant
+
 Address.
 
 ```ts
@@ -950,10 +990,11 @@ type BuilderOpAddressVariant = {
     address: string
 }
 ```
-- `address`: _string_ – Address in a common `workchain:account` or base64 format.
 
+* `address`: _string_ – Address in a common `workchain:account` or base64 format.
 
-## BuilderOp
+### BuilderOp
+
 Cell builder operation.
 
 ```ts
@@ -969,41 +1010,54 @@ type BuilderOp = ({
     type: 'Address'
 } & BuilderOpAddressVariant)
 ```
-Depends on value of the  `type` field.
+
+Depends on value of the `type` field.
 
 When _type_ is _'Integer'_
 
 Append integer to cell data.
 
-- `size`: _number_ – Bit size of the value.
-- `value`: _any_ – Value: - `Number` containing integer number.
-<br>e.g. `123`, `-123`. - Decimal string. e.g. `"123"`, `"-123"`.<br>- `0x` prefixed hexadecimal string.<br>  e.g `0x123`, `0X123`, `-0x123`.
+* `size`: _number_ – Bit size of the value.
+* `value`: _any_ – Value: - `Number` containing integer number.\
+  e.g. `123`, `-123`. - Decimal string. e.g. `"123"`, `"-123"`.\
+  \- `0x` prefixed hexadecimal string.\
+  e.g `0x123`, `0X123`, `-0x123`.
 
 When _type_ is _'BitString'_
 
 Append bit string to cell data.
 
-- `value`: _string_ – Bit string content using bitstring notation. See `TON VM specification` 1.0.
-<br>Contains hexadecimal string representation:<br>- Can end with `_` tag.<br>- Can be prefixed with `x` or `X`.<br>- Can be prefixed with `x{` or `X{` and ended with `}`.<br><br>Contains binary string represented as a sequence<br>of `0` and `1` prefixed with `n` or `N`.<br><br>Examples:<br>`1AB`, `x1ab`, `X1AB`, `x{1abc}`, `X{1ABC}`<br>`2D9_`, `x2D9_`, `X2D9_`, `x{2D9_}`, `X{2D9_}`<br>`n00101101100`, `N00101101100`
+* `value`: _string_ – Bit string content using bitstring notation. See `TVM specification` 1.0.\
+  Contains hexadecimal string representation:\
+  \- Can end with `_` tag.\
+  \- Can be prefixed with `x` or `X`.\
+  \- Can be prefixed with `x{` or `X{` and ended with `}`.\
+  \
+  Contains binary string represented as a sequence\
+  of `0` and `1` prefixed with `n` or `N`.\
+  \
+  Examples:\
+  `1AB`, `x1ab`, `X1AB`, `x{1abc}`, `X{1ABC}`\
+  `2D9_`, `x2D9_`, `X2D9_`, `x{2D9_}`, `X{2D9_}`\
+  `n00101101100`, `N00101101100`
 
 When _type_ is _'Cell'_
 
 Append ref to nested cells.
 
-- `builder`: _[BuilderOp](mod\_boc.md#builderop)[]_ – Nested cell builder.
+* `builder`: [_BuilderOp_](mod_boc.md#builderop)_\[]_ – Nested cell builder.
 
 When _type_ is _'CellBoc'_
 
 Append ref to nested cell.
 
-- `boc`: _string_ – Nested cell BOC encoded with `base64` or BOC cache key.
+* `boc`: _string_ – Nested cell BOC encoded with `base64` or BOC cache key.
 
 When _type_ is _'Address'_
 
 Address.
 
-- `address`: _string_ – Address in a common `workchain:account` or base64 format.
-
+* `address`: _string_ – Address in a common `workchain:account` or base64 format.
 
 Variant constructors:
 
@@ -1015,27 +1069,29 @@ function builderOpCellBoc(boc: string): BuilderOp;
 function builderOpAddress(address: string): BuilderOp;
 ```
 
-## TvcV1Variant
+### TvcV1Variant
+
 ```ts
 type TvcV1Variant = {
     value: TvcV1
 }
 ```
-- `value`: _[TvcV1](mod\_boc.md#tvcv1)_
 
+* `value`: [_TvcV1_](mod_boc.md#tvcv1)
 
-## Tvc
+### Tvc
+
 ```ts
 type Tvc = ({
     type: 'V1'
 } & TvcV1Variant)
 ```
-Depends on value of the  `type` field.
+
+Depends on value of the `type` field.
 
 When _type_ is _'V1'_
 
-- `value`: _[TvcV1](mod\_boc.md#tvcv1)_
-
+* `value`: [_TvcV1_](mod_boc.md#tvcv1)
 
 Variant constructors:
 
@@ -1043,18 +1099,20 @@ Variant constructors:
 function tvcV1(value: TvcV1): Tvc;
 ```
 
-## TvcV1
+### TvcV1
+
 ```ts
 type TvcV1 = {
     code?: string,
     description?: string
 }
 ```
-- `code`?: _string_
-- `description`?: _string_
 
+* `code`?: _string_
+* `description`?: _string_
 
-## BocErrorCode
+### BocErrorCode
+
 ```ts
 enum BocErrorCode {
     InvalidBoc = 201,
@@ -1066,54 +1124,59 @@ enum BocErrorCode {
     InvalidBocRef = 207
 }
 ```
+
 One of the following value:
 
-- `InvalidBoc = 201`
-- `SerializationError = 202`
-- `InappropriateBlock = 203`
-- `MissingSourceBoc = 204`
-- `InsufficientCacheSize = 205`
-- `BocRefNotFound = 206`
-- `InvalidBocRef = 207`
+* `InvalidBoc = 201`
+* `SerializationError = 202`
+* `InappropriateBlock = 203`
+* `MissingSourceBoc = 204`
+* `InsufficientCacheSize = 205`
+* `BocRefNotFound = 206`
+* `InvalidBocRef = 207`
 
+### ParamsOfDecodeTvc
 
-## ParamsOfDecodeTvc
 ```ts
 type ParamsOfDecodeTvc = {
     tvc: string
 }
 ```
-- `tvc`: _string_ – Contract TVC BOC encoded as base64 or BOC handle
 
+* `tvc`: _string_ – Contract TVC BOC encoded as base64 or BOC handle
 
-## ResultOfDecodeTvc
+### ResultOfDecodeTvc
+
 ```ts
 type ResultOfDecodeTvc = {
     tvc: Tvc
 }
 ```
-- `tvc`: _[Tvc](mod\_boc.md#tvc)_ – Decoded TVC
 
+* `tvc`: [_Tvc_](mod_boc.md#tvc) – Decoded TVC
 
-## ParamsOfParse
+### ParamsOfParse
+
 ```ts
 type ParamsOfParse = {
     boc: string
 }
 ```
-- `boc`: _string_ – BOC encoded as base64
 
+* `boc`: _string_ – BOC encoded as base64
 
-## ResultOfParse
+### ResultOfParse
+
 ```ts
 type ResultOfParse = {
     parsed: any
 }
 ```
-- `parsed`: _any_ – JSON containing parsed BOC
 
+* `parsed`: _any_ – JSON containing parsed BOC
 
-## ParamsOfParseShardstate
+### ParamsOfParseShardstate
+
 ```ts
 type ParamsOfParseShardstate = {
     boc: string,
@@ -1121,175 +1184,193 @@ type ParamsOfParseShardstate = {
     workchain_id: number
 }
 ```
-- `boc`: _string_ – BOC encoded as base64
-- `id`: _string_ – Shardstate identifier
-- `workchain_id`: _number_ – Workchain shardstate belongs to
 
+* `boc`: _string_ – BOC encoded as base64
+* `id`: _string_ – Shardstate identifier
+* `workchain_id`: _number_ – Workchain shardstate belongs to
 
-## ParamsOfGetBlockchainConfig
+### ParamsOfGetBlockchainConfig
+
 ```ts
 type ParamsOfGetBlockchainConfig = {
     block_boc: string
 }
 ```
-- `block_boc`: _string_ – Key block BOC or zerostate BOC encoded as base64
 
+* `block_boc`: _string_ – Key block BOC or zerostate BOC encoded as base64
 
-## ResultOfGetBlockchainConfig
+### ResultOfGetBlockchainConfig
+
 ```ts
 type ResultOfGetBlockchainConfig = {
     config_boc: string
 }
 ```
-- `config_boc`: _string_ – Blockchain config BOC encoded as base64
 
+* `config_boc`: _string_ – Blockchain config BOC encoded as base64
 
-## ParamsOfGetBocHash
+### ParamsOfGetBocHash
+
 ```ts
 type ParamsOfGetBocHash = {
     boc: string
 }
 ```
-- `boc`: _string_ – BOC encoded as base64 or BOC handle
 
+* `boc`: _string_ – BOC encoded as base64 or BOC handle
 
-## ResultOfGetBocHash
+### ResultOfGetBocHash
+
 ```ts
 type ResultOfGetBocHash = {
     hash: string
 }
 ```
-- `hash`: _string_ – BOC root hash encoded with hex
 
+* `hash`: _string_ – BOC root hash encoded with hex
 
-## ParamsOfGetBocDepth
+### ParamsOfGetBocDepth
+
 ```ts
 type ParamsOfGetBocDepth = {
     boc: string
 }
 ```
-- `boc`: _string_ – BOC encoded as base64 or BOC handle
 
+* `boc`: _string_ – BOC encoded as base64 or BOC handle
 
-## ResultOfGetBocDepth
+### ResultOfGetBocDepth
+
 ```ts
 type ResultOfGetBocDepth = {
     depth: number
 }
 ```
-- `depth`: _number_ – BOC root cell depth
 
+* `depth`: _number_ – BOC root cell depth
 
-## ParamsOfGetCodeFromTvc
+### ParamsOfGetCodeFromTvc
+
 ```ts
 type ParamsOfGetCodeFromTvc = {
     tvc: string
 }
 ```
-- `tvc`: _string_ – Contract TVC image or image BOC handle
 
+* `tvc`: _string_ – Contract TVC image or image BOC handle
 
-## ResultOfGetCodeFromTvc
+### ResultOfGetCodeFromTvc
+
 ```ts
 type ResultOfGetCodeFromTvc = {
     code: string
 }
 ```
-- `code`: _string_ – Contract code encoded as base64
 
+* `code`: _string_ – Contract code encoded as base64
 
-## ParamsOfBocCacheGet
+### ParamsOfBocCacheGet
+
 ```ts
 type ParamsOfBocCacheGet = {
     boc_ref: string
 }
 ```
-- `boc_ref`: _string_ – Reference to the cached BOC
 
+* `boc_ref`: _string_ – Reference to the cached BOC
 
-## ResultOfBocCacheGet
+### ResultOfBocCacheGet
+
 ```ts
 type ResultOfBocCacheGet = {
     boc?: string
 }
 ```
-- `boc`?: _string_ – BOC encoded as base64.
 
+* `boc`?: _string_ – BOC encoded as base64.
 
-## ParamsOfBocCacheSet
+### ParamsOfBocCacheSet
+
 ```ts
 type ParamsOfBocCacheSet = {
     boc: string,
     cache_type: BocCacheType
 }
 ```
-- `boc`: _string_ – BOC encoded as base64 or BOC reference
-- `cache_type`: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type
 
+* `boc`: _string_ – BOC encoded as base64 or BOC reference
+* `cache_type`: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type
 
-## ResultOfBocCacheSet
+### ResultOfBocCacheSet
+
 ```ts
 type ResultOfBocCacheSet = {
     boc_ref: string
 }
 ```
-- `boc_ref`: _string_ – Reference to the cached BOC
 
+* `boc_ref`: _string_ – Reference to the cached BOC
 
-## ParamsOfBocCacheUnpin
+### ParamsOfBocCacheUnpin
+
 ```ts
 type ParamsOfBocCacheUnpin = {
     pin: string,
     boc_ref?: string
 }
 ```
-- `pin`: _string_ – Pinned name
-- `boc_ref`?: _string_ – Reference to the cached BOC.
-<br>If it is provided then only referenced BOC is unpinned
 
+* `pin`: _string_ – Pinned name
+* `boc_ref`?: _string_ – Reference to the cached BOC.\
+  If it is provided then only referenced BOC is unpinned
 
-## ParamsOfEncodeBoc
+### ParamsOfEncodeBoc
+
 ```ts
 type ParamsOfEncodeBoc = {
     builder: BuilderOp[],
     boc_cache?: BocCacheType
 }
 ```
-- `builder`: _[BuilderOp](mod\_boc.md#builderop)[]_ – Cell builder operations.
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+* `builder`: [_BuilderOp_](mod_boc.md#builderop)_\[]_ – Cell builder operations.
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-## ResultOfEncodeBoc
+### ResultOfEncodeBoc
+
 ```ts
 type ResultOfEncodeBoc = {
     boc: string
 }
 ```
-- `boc`: _string_ – Encoded cell BOC or BOC cache key.
 
+* `boc`: _string_ – Encoded cell BOC or BOC cache key.
 
-## ParamsOfGetCodeSalt
+### ParamsOfGetCodeSalt
+
 ```ts
 type ParamsOfGetCodeSalt = {
     code: string,
     boc_cache?: BocCacheType
 }
 ```
-- `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+* `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-## ResultOfGetCodeSalt
+### ResultOfGetCodeSalt
+
 ```ts
 type ResultOfGetCodeSalt = {
     salt?: string
 }
 ```
-- `salt`?: _string_ – Contract code salt if present.
-<br>BOC encoded as base64 or BOC handle
 
+* `salt`?: _string_ – Contract code salt if present.\
+  BOC encoded as base64 or BOC handle
 
-## ParamsOfSetCodeSalt
+### ParamsOfSetCodeSalt
+
 ```ts
 type ParamsOfSetCodeSalt = {
     code: string,
@@ -1297,34 +1378,37 @@ type ParamsOfSetCodeSalt = {
     boc_cache?: BocCacheType
 }
 ```
-- `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
-- `salt`: _string_ – Code salt to set.
-<br>BOC encoded as base64 or BOC handle
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+* `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
+* `salt`: _string_ – Code salt to set.\
+  BOC encoded as base64 or BOC handle
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-## ResultOfSetCodeSalt
+### ResultOfSetCodeSalt
+
 ```ts
 type ResultOfSetCodeSalt = {
     code: string
 }
 ```
-- `code`: _string_ – Contract code with salt set.
-<br>BOC encoded as base64 or BOC handle
 
+* `code`: _string_ – Contract code with salt set.\
+  BOC encoded as base64 or BOC handle
 
-## ParamsOfDecodeStateInit
+### ParamsOfDecodeStateInit
+
 ```ts
 type ParamsOfDecodeStateInit = {
     state_init: string,
     boc_cache?: BocCacheType
 }
 ```
-- `state_init`: _string_ – Contract StateInit image BOC encoded as base64 or BOC handle
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+* `state_init`: _string_ – Contract StateInit image BOC encoded as base64 or BOC handle
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-## ResultOfDecodeStateInit
+### ResultOfDecodeStateInit
+
 ```ts
 type ResultOfDecodeStateInit = {
     code?: string,
@@ -1340,22 +1424,23 @@ type ResultOfDecodeStateInit = {
     compiler_version?: string
 }
 ```
-- `code`?: _string_ – Contract code BOC encoded as base64 or BOC handle
-- `code_hash`?: _string_ – Contract code hash
-- `code_depth`?: _number_ – Contract code depth
-- `data`?: _string_ – Contract data BOC encoded as base64 or BOC handle
-- `data_hash`?: _string_ – Contract data hash
-- `data_depth`?: _number_ – Contract data depth
-- `library`?: _string_ – Contract library BOC encoded as base64 or BOC handle
-- `tick`?: _boolean_ – `special.tick` field.
-<br>Specifies the contract ability to handle tick transactions
-- `tock`?: _boolean_ – `special.tock` field.
-<br>Specifies the contract ability to handle tock transactions
-- `split_depth`?: _number_ – Is present and non-zero only in instances of large smart contracts
-- `compiler_version`?: _string_ – Compiler version, for example 'sol 0.49.0'
 
+* `code`?: _string_ – Contract code BOC encoded as base64 or BOC handle
+* `code_hash`?: _string_ – Contract code hash
+* `code_depth`?: _number_ – Contract code depth
+* `data`?: _string_ – Contract data BOC encoded as base64 or BOC handle
+* `data_hash`?: _string_ – Contract data hash
+* `data_depth`?: _number_ – Contract data depth
+* `library`?: _string_ – Contract library BOC encoded as base64 or BOC handle
+* `tick`?: _boolean_ – `special.tick` field.\
+  Specifies the contract ability to handle tick transactions
+* `tock`?: _boolean_ – `special.tock` field.\
+  Specifies the contract ability to handle tock transactions
+* `split_depth`?: _number_ – Is present and non-zero only in instances of large smart contracts
+* `compiler_version`?: _string_ – Compiler version, for example 'sol 0.49.0'
 
-## ParamsOfEncodeStateInit
+### ParamsOfEncodeStateInit
+
 ```ts
 type ParamsOfEncodeStateInit = {
     code?: string,
@@ -1367,27 +1452,29 @@ type ParamsOfEncodeStateInit = {
     boc_cache?: BocCacheType
 }
 ```
-- `code`?: _string_ – Contract code BOC encoded as base64 or BOC handle
-- `data`?: _string_ – Contract data BOC encoded as base64 or BOC handle
-- `library`?: _string_ – Contract library BOC encoded as base64 or BOC handle
-- `tick`?: _boolean_ – `special.tick` field.
-<br>Specifies the contract ability to handle tick transactions
-- `tock`?: _boolean_ – `special.tock` field.
-<br>Specifies the contract ability to handle tock transactions
-- `split_depth`?: _number_ – Is present and non-zero only in instances of large smart contracts
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
+* `code`?: _string_ – Contract code BOC encoded as base64 or BOC handle
+* `data`?: _string_ – Contract data BOC encoded as base64 or BOC handle
+* `library`?: _string_ – Contract library BOC encoded as base64 or BOC handle
+* `tick`?: _boolean_ – `special.tick` field.\
+  Specifies the contract ability to handle tick transactions
+* `tock`?: _boolean_ – `special.tock` field.\
+  Specifies the contract ability to handle tock transactions
+* `split_depth`?: _number_ – Is present and non-zero only in instances of large smart contracts
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-## ResultOfEncodeStateInit
+### ResultOfEncodeStateInit
+
 ```ts
 type ResultOfEncodeStateInit = {
     state_init: string
 }
 ```
-- `state_init`: _string_ – Contract StateInit image BOC encoded as base64 or BOC handle of boc_cache parameter was specified
 
+* `state_init`: _string_ – Contract StateInit image BOC encoded as base64 or BOC handle of boc\_cache parameter was specified
 
-## ParamsOfEncodeExternalInMessage
+### ParamsOfEncodeExternalInMessage
+
 ```ts
 type ParamsOfEncodeExternalInMessage = {
     src?: string,
@@ -1397,40 +1484,42 @@ type ParamsOfEncodeExternalInMessage = {
     boc_cache?: BocCacheType
 }
 ```
-- `src`?: _string_ – Source address.
-- `dst`: _string_ – Destination address.
-- `init`?: _string_ – Bag of cells with state init (used in deploy messages).
-- `body`?: _string_ – Bag of cells with the message body encoded as base64.
-- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result.
-<br>The BOC itself returned if no cache type provided
 
+* `src`?: _string_ – Source address.
+* `dst`: _string_ – Destination address.
+* `init`?: _string_ – Bag of cells with state init (used in deploy messages).
+* `body`?: _string_ – Bag of cells with the message body encoded as base64.
+* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result.\
+  The BOC itself returned if no cache type provided
 
-## ResultOfEncodeExternalInMessage
+### ResultOfEncodeExternalInMessage
+
 ```ts
 type ResultOfEncodeExternalInMessage = {
     message: string,
     message_id: string
 }
 ```
-- `message`: _string_ – Message BOC encoded with `base64`.
-- `message_id`: _string_ – Message id.
 
+* `message`: _string_ – Message BOC encoded with `base64`.
+* `message_id`: _string_ – Message id.
 
-## ParamsOfGetCompilerVersion
+### ParamsOfGetCompilerVersion
+
 ```ts
 type ParamsOfGetCompilerVersion = {
     code: string
 }
 ```
-- `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
 
+* `code`: _string_ – Contract code BOC encoded as base64 or code BOC handle
 
-## ResultOfGetCompilerVersion
+### ResultOfGetCompilerVersion
+
 ```ts
 type ResultOfGetCompilerVersion = {
     version?: string
 }
 ```
-- `version`?: _string_ – Compiler version, for example 'sol 0.49.0'
 
-
+* `version`?: _string_ – Compiler version, for example 'sol 0.49.0'

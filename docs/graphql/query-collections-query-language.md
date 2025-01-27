@@ -1,5 +1,22 @@
 # Query Collections: Query Language
 
+## Content table
+
+* [What is a collection](query-collections-query-language.md#what-is-a-collection)
+* [Query a collection](query-collections-query-language.md#query-a-collection)
+* [Subscription (soon)](query-collections-query-language.md#subscription-soon)
+* [Filtration](query-collections-query-language.md#filtration)
+  * [Scalar filters](query-collections-query-language.md#scalar-filters)
+  * [Array filters](query-collections-query-language.md#array-filters)
+  * [Structure filters](query-collections-query-language.md#structure-filters)
+* [OR operator](query-collections-query-language.md#or-operator)
+* [Nested field](query-collections-query-language.md#nested-fields)
+* [Sorting and limiting](query-collections-query-language.md#sorting-and-limiting)
+* [Working with u64 and u128 numbers](query-collections-query-language.md#working-with-u64-and-u128-numbers)
+  * [U64String](query-collections-query-language.md#u64string)
+  * [U1024String](query-collections-query-language.md#u1024string)
+  * [GraphQL interaction](query-collections-query-language.md#graphql-interaction)
+
 ## What is a collection
 
 Collection is a data set of one document type.
@@ -10,9 +27,8 @@ There are 4 types of documents:
 * accounts
 * transactions
 * messages
-* block signatures
 
-All Evernode Platform products provide query, analytics and subscription functionality for the last 7 days of blocks, transactions, messages. And full collection of accounts.
+All TVM Platform products provide query, analytics and subscription functionality for blocks, transactions, messages. And full collection of accounts.
 
 ```graphql
 query{
@@ -21,45 +37,21 @@ query{
     blocks
     transactions
     messages
-    block_signatures
-    # Calculate analytics (COUNT, MIN, MAX, SUM, AVERAGE)
-    aggregate_accounts
-    aggregate_blocks
-    aggregate_transactions
-    aggregate_messages
-    aggregate_block_signatures
 }
 
+# soon
 subscription{
     # Subscribe to data updates
     accounts
     blocks
     transactions
     messages
-    block_signatures
 }
 ```
 
 ## Support in Client Libraries
 
-**`ever-sdk`** provides wrappers for convenient work with collections from applications: `net.query_collection`, `net.aggregate_collection`, `net.subscribe_collection.`
-
-## Content table
-
-* Query a collection
-* Aggregate a collection
-* Subscription
-* Filtration
-  * Scalar filters
-  * Array filters
-  * Structure filters
-* OR operator
-* Joins
-* Sorting and limiting
-* Working with u64 and u128 numbers
-  * U64String
-  * U1024String
-  * GraphQL interaction
+**`tvm-sdk`** provides wrappers for convenient work with collections from applications: `net.query_collection`, `net.subscribe_collection (soon).`
 
 ## Query a collection
 
@@ -69,7 +61,7 @@ Account collection query sample that returns the specified account's balance
 query {
   accounts(
     filter: {
-      id: {eq: "-1:6666666666666666666666666666666666666666666666666666666666666666"}
+      id: {eq: "0:1111111111111111111111111111111111111111111111111111111111111111"}
     }
   ) {
     id
@@ -84,7 +76,7 @@ To perform a query over a collection, choose a collection and result projection.
 query {
   transactions(
     filter: {
-      now: {gt: 1567601735}
+      orig_status: {ge: 0}
     }
     orderBy: {path:"now",direction:DESC}
     limit :5
@@ -98,141 +90,14 @@ query {
 
 The example above demonstrates a query to the `transactions` collection with the following parameters:
 
-* `filter`: a JSON object matching the internal collection structure. It supports additional conditions for particular fields. In the example above, the `now` field of a transaction must be greater than 1567601735.
+* `filter`: a JSON object matching the internal collection structure. It supports additional conditions for particular fields. In the example above, the `orig_status` field of a transaction must be equal 0 (uninit).
 * `orderby`: sort by "now" field in DESC order
 * `limit`: show only top 5 objects
 * `result`: is a result projection that determines structural subset used for returning items. In the example above the request is limited to two fields: `id` and `now`. Note that results have to follow GraphQL rules.
 
 Read more about filtration, sorting and limiting below in this section.
 
-## Aggregate a collection
-
-You can collect aggregated data with aggregation root queries:
-
-* aggregateBlocks
-* aggregateTransactions
-* aggregateMessages
-* aggregateAccounts
-* aggregateBlockSignatures
-
-Data is aggregated by `filter` and `fields`.
-
-`filter` - read more about it below in this section
-
-`fields` is an array of tuples `{field, fn}` - field names and aggregation functions. Aggregation function is a predefined string constant and determines the value that should be collected for a corresponding field.
-
-**Example 1**
-
-Get COUNT of the transactions of a specified account (note that in case of `COUNT` you can omit `field` in `fields` ):
-
-```graphql
-query{
-  aggregateTransactions(
-    filter:{
-     account_addr : { 
-        eq: "0:a52f6a7ea6bc7279728cbff01ad1e8b1dfc386098cfac1f381ae3959bf2ae9db" }
-    },
-    fields:[
-      {
-        fn:COUNT
-      }
-    ]
-  )
-}
-```
-
-Result:
-
-```graphql
-{
-  "data": {
-    "aggregateTransactions": [
-      "1444"
-    ]
-  }
-}
-```
-
-**Example 2**
-
-Determine min, max and sum values of transferred coins and number of transfers between two accounts:
-
-```graphql
-query{
-  aggregateMessages(
-    filter:{
-        src:{eq:"0:797f32a15bbe5213a07cafe4c80e5e28f2662e865e95b23694f4bd36f2b42ff8"}
-        dst:{eq:"0:7d667fed88b9edb82eb6a116b48052b6a7765577ad341b35acb118451c7aa625"}
-
-          OR:{
-            src:{eq:"0:7d667fed88b9edb82eb6a116b48052b6a7765577ad341b35acb118451c7aa625"}
-            dst:{eq:"0:797f32a15bbe5213a07cafe4c80e5e28f2662e865e95b23694f4bd36f2b42ff8"}
-        }
-    }
-    fields:[
-        { field: "value", fn: MIN},
-        { field: "value", fn: MAX },
-        { field: "value", fn: SUM },
-          { fn: COUNT}
-    ]
-  )
-}
-```
-
-Result:
-
-```graphql
-{
-  "data": {
-    "aggregateMessages": [
-      "10000000",
-      "10000000",
-      "30000000",
-      "3"
-    ]
-  }
-}
-```
-
-**Example 3**
-
-Determine `min`, `max` and `sum` value for the gas\_used of a transactions compute phase (you can use a dot separated path as a field name to use fields resided deep in a JSON structure of a transaction record):
-
-```graphql
-query{
-  aggregateTransactions(
-    filter:{
-     account_addr : 
-            {eq: "0:a52f6a7ea6bc7279728cbff01ad1e8b1dfc386098cfac1f381ae3959bf2ae9db" }
-    },
-    fields:[
-      { field: "compute.gas_used", fn:MIN },
-      { field: "compute.gas_used", fn:MAX },
-      { field: "compute.gas_used", fn:SUM },
-    ]
-  )
-}
-```
-
-Result:
-
-```graphql
-{
-  "data": {
-    "aggregateTransactions": [
-      "1434",
-      "45221",
-      "32578614"
-    ]
-  }
-}
-```
-
-Video tutorial - GraphQL: Joined Blocks, OR Operator, Aggregations
-
-{% embed url="https://www.youtube.com/watch?v=8dNAv5vsYRI" %}
-
-## Subscription
+## Subscription (Soon)
 
 In this example, we start a subscription and get a result whenever a new block is generated.
 
@@ -257,68 +122,6 @@ Filters applied to query functions are data structures matching collection item 
 These filter types will be described in more details below in this section.
 
 > Filtration applies only to collection query types
-
-### Indexes
-
-{% hint style="danger" %}
-Not all filter combinations are available in Evercloud. We investigated most important use-cases and configured a set of indexes for them.
-
-If there is no index for your query, you will get the error message: **"Query was detected as a slow. Available indexes can't be used for filter fields. See error data for details."**
-
-**You can find the list of available indexes in the error data section.**
-{% endhint %}
-
-Error log sample for a not optimized blocks collection query
-
-```graphql
-{
-  "errors": [
-    {
-      "message": "Slow queries are disabled. Query was detected as a slow. Available indexes can't be used for filter fields. See error data for details.",
-      "path": [
-        "blocks"
-      ],
-      "extensions": {
-        "code": "INTERNAL_SERVER_ERROR",
-        "exception": {
-          "data": {
-            "slowReason": {
-              "summary": "Available indexes can't be used for filter fields",
-              "fields": [
-                "min_ref_mc_seqno ==",
-                "rand_seed >"
-              ],
-              "availableIndexes": [
-                "seq_no, gen_utime",
-                "gen_utime",
-                "workchain_id, shard, seq_no",
-                "workchain_id, shard, gen_utime",
-                "workchain_id, seq_no",
-                "workchain_id, key_block, seq_no",
-                "workchain_id, gen_utime",
-                "workchain_id, tr_count, gen_utime",
-                "master.min_shard_gen_utime",
-                "prev_ref.root_hash, _key",
-                "prev_alt_ref.root_hash, _key",
-                "tr_count, gen_utime",
-                "chain_order",
-                "key_block, chain_order",
-                "workchain_id, chain_order",
-                "workchain_id, shard, chain_order",
-                "_key"
-              ],
-              "selectedIndexes": []
-            }
-          }
-        }
-      }
-    }
-  ],
-  "data": {
-    "blocks": null
-  }
-}
-```
 
 ### Scalar filters
 
@@ -421,11 +224,9 @@ query {
 }
 ```
 
-## Joins
+## Nested fields
 
-A NoSQL database contains additional fields that work as cross-references for related collections. For example, the _transactions_ collection has the `in_message` field that stores the relevant message item. The message item exists in _messages_ collection and has the `id` value equal to the `in_msg` value in _transactions_. Block join is present in Messages and Transactions collections.
-
-Joined items are represented as nested structures in a filter and in the result projection.
+For example, the _transactions_ collection has the `in_message` field that stores the relevant message item. The message item exists in _messages_ collection and has the `id` value equal to the `in_msg` value in _transactions_. Block join is present in Messages and Transactions collections.
 
 ## Sorting and limiting
 

@@ -16,9 +16,9 @@ You can use both full message boc for decoding and only message body for decodin
 
 ## Let's decode!
 
-Core SDK provides&#x20;
+Core SDK provides
 
-* `decode_message` method for full boc of message decoding&#x20;
+* `decode_message` method for full boc of message decoding
 * `decode_message_body` method for only message body decoding.
 
 ## Usage
@@ -40,13 +40,3 @@ case MessageBodyType.Event:
     break;
 }
 ```
-
-## Sample source code
-
-**Core**
-
-[https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/subscribe-and-decode/index.js](https://github.com/tonlabs/sdk-samples/blob/master/core-examples/node-js/subscribe-and-decode/index.js)
-
-**AppKit**
-
-[https://github.com/tonlabs/sdk-samples/tree/master/appkit-examples/listen-and-decode](https://github.com/tonlabs/sdk-samples/tree/master/appkit-examples/listen-and-decode)

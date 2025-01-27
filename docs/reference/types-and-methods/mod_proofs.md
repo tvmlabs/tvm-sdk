@@ -2,31 +2,31 @@
 
 ## Module proofs
 
-[UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Module for proving data, retrieved from TONOS API.
+[UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Module for proving data, retrieved from TVM API.
 
 ### Functions
 
-[proof\_block\_data](mod\_proofs.md#proof\_block\_data) – Proves that a given block's data, which is queried from TONOS API, can be trusted.
+[proof\_block\_data](mod_proofs.md#proof_block_data) – Proves that a given block's data, which is queried from TVM API, can be trusted.
 
-[proof\_transaction\_data](mod\_proofs.md#proof\_transaction\_data) – Proves that a given transaction's data, which is queried from TONOS API, can be trusted.
+[proof\_transaction\_data](mod_proofs.md#proof_transaction_data) – Proves that a given transaction's data, which is queried from TVM API, can be trusted.
 
-[proof\_message\_data](mod\_proofs.md#proof\_message\_data) – Proves that a given message's data, which is queried from TONOS API, can be trusted.
+[proof\_message\_data](mod_proofs.md#proof_message_data) – Proves that a given message's data, which is queried from TVM API, can be trusted.
 
 ### Types
 
-[ProofsErrorCode](mod\_proofs.md#proofserrorcode)
+[ProofsErrorCode](mod_proofs.md#proofserrorcode)
 
-[ParamsOfProofBlockData](mod\_proofs.md#paramsofproofblockdata)
+[ParamsOfProofBlockData](mod_proofs.md#paramsofproofblockdata)
 
-[ParamsOfProofTransactionData](mod\_proofs.md#paramsofprooftransactiondata)
+[ParamsOfProofTransactionData](mod_proofs.md#paramsofprooftransactiondata)
 
-[ParamsOfProofMessageData](mod\_proofs.md#paramsofproofmessagedata)
+[ParamsOfProofMessageData](mod_proofs.md#paramsofproofmessagedata)
 
 ## Functions
 
 ### proof\_block\_data
 
-Proves that a given block's data, which is queried from TONOS API, can be trusted.
+Proves that a given block's data, which is queried from TVM API, can be trusted.
 
 This function checks block proofs and compares given data with the proven. If the given data differs from the proven, the exception will be thrown. The input param is a single block's JSON object, which was queried from DApp server using functions such as `net.query`, `net.query_collection` or `net.wait_for_collection`. If block's BOC is not provided in the JSON, it will be queried from DApp server (in this case it is required to provide at least `id` of block).
 
@@ -46,11 +46,11 @@ The very first validator set's public keys are included in the zero-state. Whe k
 
 In each new validator cycle the validator set is changed. The new one is stored in a key-block, which is signed by the validator set, which we already trust, the next validator set will be stored to the new key-block and signed by the current validator set, and so on.
 
-In order to prove any block in the master-chain we need to check, that it has been signed by a trusted validator set. So we need to check all key-blocks' proofs, started from the zero-state and until the block, which we want to prove. But it can take a lot of time and traffic to download and prove all key-blocks on a client. For solving this, special trusted blocks are used in Ever-SDK.
+In order to prove any block in the master-chain we need to check, that it has been signed by a trusted validator set. So we need to check all key-blocks' proofs, started from the zero-state and until the block, which we want to prove. But it can take a lot of time and traffic to download and prove all key-blocks on a client. For solving this, special trusted blocks are used in TVM-SDK.
 
-The trusted block is the authority root, as well, as the zero-state. Each trusted block is the `id` (e.g. `root_hash`) of the already proven key-block. There can be plenty of trusted blocks, so there can be a lot of authority roots. The hashes of trusted blocks for MainNet and DevNet are hardcoded in SDK in a separated binary file (trusted\_key\_blocks.bin) and is being updated for each release by using `update_trusted_blocks` utility.
+The trusted block is the authority root, as well, as the zero-state. Each trusted block is the `id` (e.g. `root_hash`) of the already proven key-block. There can be plenty of trusted blocks, so there can be a lot of authority roots. The hashes of trusted blocks for MainNet and TestNet are hardcoded in SDK in a separated binary file (trusted\_key\_blocks.bin) and is being updated for each release by using `update_trusted_blocks` utility.
 
-See [update\_trusted\_blocks](https://github.com/tvmlabs/tvm-sdk/blob/main/tools/update\_trusted\_blocks/README.md) directory for more info.
+See [update\_trusted\_blocks](https://github.com/tvmlabs/tvm-sdk/blob/main/tools/update_trusted_blocks/README.md) directory for more info.
 
 In future SDK releases, one will also be able to provide their hashes of trusted blocks for other networks, besides for MainNet and DevNet. By using trusted key-blocks, in order to prove any block, we can prove chain of key-blocks to the closest previous trusted key-block, not only to the zero-state.
 
@@ -74,15 +74,15 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `block`: _any_ – Single block's data, retrieved from TONOS API, that needs proof. Required fields are `id` and/or top-level `boc` (for block identification), others are optional.
+* `block`: _any_ – Single block's data, retrieved from TVM API, that needs proof. Required fields are `id` and/or top-level `boc` (for block identification), others are optional.
 
 ### proof\_transaction\_data
 
-Proves that a given transaction's data, which is queried from TONOS API, can be trusted.
+Proves that a given transaction's data, which is queried from TVM API, can be trusted.
 
-This function requests the corresponding block, checks block proofs, ensures that given transaction exists in the proven block and compares given data with the proven. If the given data differs from the proven, the exception will be thrown. The input parameter is a single transaction's JSON object (see params description), which was queried from TONOS API using functions such as `net.query`, `net.query_collection` or `net.wait_for_collection`.
+This function requests the corresponding block, checks block proofs, ensures that given transaction exists in the proven block and compares given data with the proven. If the given data differs from the proven, the exception will be thrown. The input parameter is a single transaction's JSON object (see params description), which was queried from TVM API using functions such as `net.query`, `net.query_collection` or `net.wait_for_collection`.
 
-If transaction's BOC and/or `block_id` are not provided in the JSON, they will be queried from TONOS API.
+If transaction's BOC and/or `block_id` are not provided in the JSON, they will be queried from TVM API.
 
 Please note, that joins (like `account`, `in_message`, `out_messages`, etc. in `Transaction` entity) are separated entities and not supported, so function will throw an exception in a case if JSON being checked has such entities in it.
 

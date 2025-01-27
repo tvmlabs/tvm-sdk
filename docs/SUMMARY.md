@@ -25,18 +25,18 @@
 * [Core Library Error API](reference/error_api.md)
 * [Error Codes](reference/error_codes.md)
 * [TVM-CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_cli/README.md)
-* [VM Instructions specifications](reference/vm-instructions-specifications.md)
+* [Gosh VM Instructions](reference/gosh-vm-instructions.md)
 
 ## GraphQL
 
-* [Field Descriptions](graphql/field-descriptions.md)
-* [Blockchain API](graphql/blockchain-api.md)
-* [Info API](graphql/info-api.md)
-* [Query Collections: Query Language](graphql/query-collections-query-language.md)
 * [GraphQL API](graphql/graphql-api.md)
-* [Web Playground](graphql/web-playground.md)
 * [Schema](graphql/schema.md)
-* [Samples](graphql/samples.md)
+* [Blockchain API](graphql/blockchain-api.md)
+* [Query Collections: Query Language](graphql/query-collections-query-language.md)
+* [Field Descriptions](graphql/field-descriptions.md)
+* [Info API](graphql/info-api.md)
+* [Web Playground](graphql/web-playground.md)
+* [Examples](graphql/examples.md)
 
 ## ABI
 
@@ -79,7 +79,7 @@
   * [External Signing](guides/work_with_contracts/external_signing.md)
   * [Emulate Transaction](guides/work_with_contracts/emulate_transaction.md)
   * [Estimate Fees](guides/work_with_contracts/estimate_fees.md)
-  * [Validate address, convert address](guides/work_with_contracts/validate_address_convert_address.md)
+  * [Validate address](guides/work_with_contracts/validate_address_convert_address.md)
 * [Crypto](guides/crypto/README.md)
   * [Mnemonics and Keys](guides/crypto/mnemonics_and_keys.md)
 * [Queries](guides/queries_and_subscriptions/README.md)

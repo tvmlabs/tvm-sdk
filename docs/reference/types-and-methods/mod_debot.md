@@ -6,81 +6,81 @@
 
 ### Functions
 
-[init](mod\_debot.md#init) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Creates and instance of DeBot.
+[init](mod_debot.md#init) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Creates and instance of DeBot.
 
-[start](mod\_debot.md#start) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Starts the DeBot.
+[start](mod_debot.md#start) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Starts the DeBot.
 
-[fetch](mod\_debot.md#fetch) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Fetches DeBot metadata from blockchain.
+[fetch](mod_debot.md#fetch) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Fetches DeBot metadata from blockchain.
 
-[execute](mod\_debot.md#execute) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Executes debot action.
+[execute](mod_debot.md#execute) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Executes debot action.
 
-[send](mod\_debot.md#send) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Sends message to Debot.
+[send](mod_debot.md#send) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Sends message to Debot.
 
-[remove](mod\_debot.md#remove) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Destroys debot handle.
+[remove](mod_debot.md#remove) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Destroys debot handle.
 
 ### Types
 
-[DebotErrorCode](mod\_debot.md#deboterrorcode)
+[DebotErrorCode](mod_debot.md#deboterrorcode)
 
-[DebotHandle](mod\_debot.md#debothandle) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Handle of registered in SDK debot
+[DebotHandle](mod_debot.md#debothandle) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Handle of registered in SDK debot
 
-[DebotAction](mod\_debot.md#debotaction) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Describes a debot action in a Debot Context.
+[DebotAction](mod_debot.md#debotaction) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Describes a debot action in a Debot Context.
 
-[DebotInfo](mod\_debot.md#debotinfo) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Describes DeBot metadata.
+[DebotInfo](mod_debot.md#debotinfo) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Describes DeBot metadata.
 
-[DebotActivityTransactionVariant](mod\_debot.md#debotactivitytransactionvariant) – DeBot wants to create new transaction in blockchain.
+[DebotActivityTransactionVariant](mod_debot.md#debotactivitytransactionvariant) – DeBot wants to create new transaction in blockchain.
 
-[DebotActivity](mod\_debot.md#debotactivity) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Describes the operation that the DeBot wants to perform.
+[DebotActivity](mod_debot.md#debotactivity) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Describes the operation that the DeBot wants to perform.
 
-[Spending](mod\_debot.md#spending) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Describes how much funds will be debited from the target contract balance as a result of the transaction.
+[Spending](mod_debot.md#spending) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Describes how much funds will be debited from the target contract balance as a result of the transaction.
 
-[ParamsOfInit](mod\_debot.md#paramsofinit) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters to init DeBot.
+[ParamsOfInit](mod_debot.md#paramsofinit) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters to init DeBot.
 
-[RegisteredDebot](mod\_debot.md#registereddebot) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Structure for storing debot handle returned from `init` function.
+[RegisteredDebot](mod_debot.md#registereddebot) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Structure for storing debot handle returned from `init` function.
 
-[ParamsOfAppDebotBrowserLogVariant](mod\_debot.md#paramsofappdebotbrowserlogvariant) – Print message to user.
+[ParamsOfAppDebotBrowserLogVariant](mod_debot.md#paramsofappdebotbrowserlogvariant) – Print message to user.
 
-[ParamsOfAppDebotBrowserSwitchVariant](mod\_debot.md#paramsofappdebotbrowserswitchvariant) – Switch debot to another context (menu).
+[ParamsOfAppDebotBrowserSwitchVariant](mod_debot.md#paramsofappdebotbrowserswitchvariant) – Switch debot to another context (menu).
 
-[ParamsOfAppDebotBrowserSwitchCompletedVariant](mod\_debot.md#paramsofappdebotbrowserswitchcompletedvariant) – Notify browser that all context actions are shown.
+[ParamsOfAppDebotBrowserSwitchCompletedVariant](mod_debot.md#paramsofappdebotbrowserswitchcompletedvariant) – Notify browser that all context actions are shown.
 
-[ParamsOfAppDebotBrowserShowActionVariant](mod\_debot.md#paramsofappdebotbrowsershowactionvariant) – Show action to the user. Called after `switch` for each action in context.
+[ParamsOfAppDebotBrowserShowActionVariant](mod_debot.md#paramsofappdebotbrowsershowactionvariant) – Show action to the user. Called after `switch` for each action in context.
 
-[ParamsOfAppDebotBrowserInputVariant](mod\_debot.md#paramsofappdebotbrowserinputvariant) – Request user input.
+[ParamsOfAppDebotBrowserInputVariant](mod_debot.md#paramsofappdebotbrowserinputvariant) – Request user input.
 
-[ParamsOfAppDebotBrowserGetSigningBoxVariant](mod\_debot.md#paramsofappdebotbrowsergetsigningboxvariant) – Get signing box to sign data.
+[ParamsOfAppDebotBrowserGetSigningBoxVariant](mod_debot.md#paramsofappdebotbrowsergetsigningboxvariant) – Get signing box to sign data.
 
-[ParamsOfAppDebotBrowserInvokeDebotVariant](mod\_debot.md#paramsofappdebotbrowserinvokedebotvariant) – Execute action of another debot.
+[ParamsOfAppDebotBrowserInvokeDebotVariant](mod_debot.md#paramsofappdebotbrowserinvokedebotvariant) – Execute action of another debot.
 
-[ParamsOfAppDebotBrowserSendVariant](mod\_debot.md#paramsofappdebotbrowsersendvariant) – Used by Debot to call DInterface implemented by Debot Browser.
+[ParamsOfAppDebotBrowserSendVariant](mod_debot.md#paramsofappdebotbrowsersendvariant) – Used by Debot to call DInterface implemented by Debot Browser.
 
-[ParamsOfAppDebotBrowserApproveVariant](mod\_debot.md#paramsofappdebotbrowserapprovevariant) – Requests permission from DeBot Browser to execute DeBot operation.
+[ParamsOfAppDebotBrowserApproveVariant](mod_debot.md#paramsofappdebotbrowserapprovevariant) – Requests permission from DeBot Browser to execute DeBot operation.
 
-[ParamsOfAppDebotBrowser](mod\_debot.md#paramsofappdebotbrowser) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Debot Browser callbacks
+[ParamsOfAppDebotBrowser](mod_debot.md#paramsofappdebotbrowser) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Debot Browser callbacks
 
-[ResultOfAppDebotBrowserInputVariant](mod\_debot.md#resultofappdebotbrowserinputvariant) – Result of user input.
+[ResultOfAppDebotBrowserInputVariant](mod_debot.md#resultofappdebotbrowserinputvariant) – Result of user input.
 
-[ResultOfAppDebotBrowserGetSigningBoxVariant](mod\_debot.md#resultofappdebotbrowsergetsigningboxvariant) – Result of getting signing box.
+[ResultOfAppDebotBrowserGetSigningBoxVariant](mod_debot.md#resultofappdebotbrowsergetsigningboxvariant) – Result of getting signing box.
 
-[ResultOfAppDebotBrowserInvokeDebotVariant](mod\_debot.md#resultofappdebotbrowserinvokedebotvariant) – Result of debot invoking.
+[ResultOfAppDebotBrowserInvokeDebotVariant](mod_debot.md#resultofappdebotbrowserinvokedebotvariant) – Result of debot invoking.
 
-[ResultOfAppDebotBrowserApproveVariant](mod\_debot.md#resultofappdebotbrowserapprovevariant) – Result of `approve` callback.
+[ResultOfAppDebotBrowserApproveVariant](mod_debot.md#resultofappdebotbrowserapprovevariant) – Result of `approve` callback.
 
-[ResultOfAppDebotBrowser](mod\_debot.md#resultofappdebotbrowser) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Returning values from Debot Browser callbacks.
+[ResultOfAppDebotBrowser](mod_debot.md#resultofappdebotbrowser) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Returning values from Debot Browser callbacks.
 
-[ParamsOfStart](mod\_debot.md#paramsofstart) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters to start DeBot. DeBot must be already initialized with init() function.
+[ParamsOfStart](mod_debot.md#paramsofstart) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters to start DeBot. DeBot must be already initialized with init() function.
 
-[ParamsOfFetch](mod\_debot.md#paramsoffetch) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters to fetch DeBot metadata.
+[ParamsOfFetch](mod_debot.md#paramsoffetch) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters to fetch DeBot metadata.
 
-[ResultOfFetch](mod\_debot.md#resultoffetch) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md)
+[ResultOfFetch](mod_debot.md#resultoffetch) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md)
 
-[ParamsOfExecute](mod\_debot.md#paramsofexecute) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters for executing debot action.
+[ParamsOfExecute](mod_debot.md#paramsofexecute) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters for executing debot action.
 
-[ParamsOfSend](mod\_debot.md#paramsofsend) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters of `send` function.
+[ParamsOfSend](mod_debot.md#paramsofsend) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Parameters of `send` function.
 
-[ParamsOfRemove](mod\_debot.md#paramsofremove) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md)
+[ParamsOfRemove](mod_debot.md#paramsofremove) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md)
 
-[AppDebotBrowser](mod\_debot.md#appdebotbrowser) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Debot Browser callbacks
+[AppDebotBrowser](mod_debot.md#appdebotbrowser) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Debot Browser callbacks
 
 ## Functions
 
@@ -120,13 +120,13 @@ NOTE: Sync version is available only for `lib-node` binding.
 #### Parameters
 
 * `address`: _string_ – Debot smart contract address
-* `obj`: [AppDebotBrowser](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/mod\_AppDebotBrowser.md#appdebotbrowser) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Debot Browser callbacks
+* `obj`: [AppDebotBrowser](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/mod_AppDebotBrowser.md#appdebotbrowser) – [UNSTABLE](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/UNSTABLE.md) [DEPRECATED](https://github.com/tvmlabs/tvm-sdk/blob/main/docs/reference/types-and-methods/DEPRECATED.md) Debot Browser callbacks
 
 #### Result
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
 * `debot_abi`: _string_ – Debot abi as json string.
-* `info`: [_DebotInfo_](mod\_debot.md#debotinfo) – Debot metadata.
+* `info`: [_DebotInfo_](mod_debot.md#debotinfo) – Debot metadata.
 
 ### start
 
@@ -156,7 +156,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
 
 ### fetch
 
@@ -190,7 +190,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Result
 
-* `info`: [_DebotInfo_](mod\_debot.md#debotinfo) – Debot metadata.
+* `info`: [_DebotInfo_](mod_debot.md#debotinfo) – Debot metadata.
 
 ### execute
 
@@ -221,8 +221,8 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
-* `action`: [_DebotAction_](mod\_debot.md#debotaction) – Debot Action that must be executed.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `action`: [_DebotAction_](mod_debot.md#debotaction) – Debot Action that must be executed.
 
 ### send
 
@@ -249,7 +249,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
 * `message`: _string_ – BOC of internal message to debot encoded in base64 format.
 
 ### remove
@@ -276,7 +276,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
 
 ## Types
 
@@ -376,7 +376,7 @@ type DebotInfo = {
 * `publisher`?: _string_ – The name of DeBot deployer.
 * `caption`?: _string_ – Short info about DeBot.
 * `author`?: _string_ – The name of DeBot developer.
-* `support`?: _string_ – TON address of author for questions and donations.
+* `support`?: _string_ – Acki Nacki address of author for questions and donations.
 * `hello`?: _string_ – String with the first messsage from DeBot.
 * `language`?: _string_ – String with DeBot interface language (ISO-639).
 * `dabi`?: _string_ – String with DeBot ABI.
@@ -402,7 +402,7 @@ type DebotActivityTransactionVariant = {
 
 * `msg`: _string_ – External inbound message BOC.
 * `dst`: _string_ – Target smart contract address.
-* `out`: [_Spending_](mod\_debot.md#spending)_\[]_ – List of spendings as a result of transaction.
+* `out`: [_Spending_](mod_debot.md#spending)_\[]_ – List of spendings as a result of transaction.
 * `fee`: _bigint_ – Transaction total fee.
 * `setcode`: _boolean_ – Indicates if target smart contract updates its code.
 * `signkey`: _string_ – Public key from keypair that was used to sign external message.
@@ -426,7 +426,7 @@ DeBot wants to create new transaction in blockchain.
 
 * `msg`: _string_ – External inbound message BOC.
 * `dst`: _string_ – Target smart contract address.
-* `out`: [_Spending_](mod\_debot.md#spending)_\[]_ – List of spendings as a result of transaction.
+* `out`: [_Spending_](mod_debot.md#spending)_\[]_ – List of spendings as a result of transaction.
 * `fee`: _bigint_ – Transaction total fee.
 * `setcode`: _boolean_ – Indicates if target smart contract updates its code.
 * `signkey`: _string_ – Public key from keypair that was used to sign external message.
@@ -476,9 +476,9 @@ type RegisteredDebot = {
 }
 ```
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
 * `debot_abi`: _string_ – Debot abi as json string.
-* `info`: [_DebotInfo_](mod\_debot.md#debotinfo) – Debot metadata.
+* `info`: [_DebotInfo_](mod_debot.md#debotinfo) – Debot metadata.
 
 ### ParamsOfAppDebotBrowserLogVariant
 
@@ -524,7 +524,7 @@ type ParamsOfAppDebotBrowserShowActionVariant = {
 }
 ```
 
-* `action`: [_DebotAction_](mod\_debot.md#debotaction) – Debot action that must be shown to user as menu item. At least `description` property must be shown from \[DebotAction] structure.
+* `action`: [_DebotAction_](mod_debot.md#debotaction) – Debot action that must be shown to user as menu item. At least `description` property must be shown from \[DebotAction] structure.
 
 ### ParamsOfAppDebotBrowserInputVariant
 
@@ -562,7 +562,7 @@ type ParamsOfAppDebotBrowserInvokeDebotVariant = {
 ```
 
 * `debot_addr`: _string_ – Address of debot in blockchain.
-* `action`: [_DebotAction_](mod\_debot.md#debotaction) – Debot action to execute.
+* `action`: [_DebotAction_](mod_debot.md#debotaction) – Debot action to execute.
 
 ### ParamsOfAppDebotBrowserSendVariant
 
@@ -587,7 +587,7 @@ type ParamsOfAppDebotBrowserApproveVariant = {
 }
 ```
 
-* `activity`: [_DebotActivity_](mod\_debot.md#debotactivity) – DeBot activity details.
+* `activity`: [_DebotActivity_](mod_debot.md#debotactivity) – DeBot activity details.
 
 ### ParamsOfAppDebotBrowser
 
@@ -639,7 +639,7 @@ When _type_ is _'ShowAction'_
 
 Show action to the user. Called after `switch` for each action in context.
 
-* `action`: [_DebotAction_](mod\_debot.md#debotaction) – Debot action that must be shown to user as menu item. At least `description` property must be shown from \[DebotAction] structure.
+* `action`: [_DebotAction_](mod_debot.md#debotaction) – Debot action that must be shown to user as menu item. At least `description` property must be shown from \[DebotAction] structure.
 
 When _type_ is _'Input'_
 
@@ -658,7 +658,7 @@ When _type_ is _'InvokeDebot'_
 Execute action of another debot.
 
 * `debot_addr`: _string_ – Address of debot in blockchain.
-* `action`: [_DebotAction_](mod\_debot.md#debotaction) – Debot action to execute.
+* `action`: [_DebotAction_](mod_debot.md#debotaction) – Debot action to execute.
 
 When _type_ is _'Send'_
 
@@ -671,7 +671,7 @@ When _type_ is _'Approve'_
 
 Requests permission from DeBot Browser to execute DeBot operation.
 
-* `activity`: [_DebotActivity_](mod\_debot.md#debotactivity) – DeBot activity details.
+* `activity`: [_DebotActivity_](mod_debot.md#debotactivity) – DeBot activity details.
 
 Variant constructors:
 
@@ -794,7 +794,7 @@ type ParamsOfStart = {
 }
 ```
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
 
 ### ParamsOfFetch
 
@@ -818,7 +818,7 @@ type ResultOfFetch = {
 }
 ```
 
-* `info`: [_DebotInfo_](mod\_debot.md#debotinfo) – Debot metadata.
+* `info`: [_DebotInfo_](mod_debot.md#debotinfo) – Debot metadata.
 
 ### ParamsOfExecute
 
@@ -831,8 +831,8 @@ type ParamsOfExecute = {
 }
 ```
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
-* `action`: [_DebotAction_](mod\_debot.md#debotaction) – Debot Action that must be executed.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `action`: [_DebotAction_](mod_debot.md#debotaction) – Debot Action that must be executed.
 
 ### ParamsOfSend
 
@@ -845,7 +845,7 @@ type ParamsOfSend = {
 }
 ```
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
 * `message`: _string_ – BOC of internal message to debot encoded in base64 format.
 
 ### ParamsOfRemove
@@ -858,7 +858,7 @@ type ParamsOfRemove = {
 }
 ```
 
-* `debot_handle`: [_DebotHandle_](mod\_debot.md#debothandle) – Debot handle which references an instance of debot engine.
+* `debot_handle`: [_DebotHandle_](mod_debot.md#debothandle) – Debot handle which references an instance of debot engine.
 
 ### AppDebotBrowser
 
@@ -957,7 +957,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `action`: [_DebotAction_](mod\_debot.md#debotaction) – Debot action that must be shown to user as menu item. At least `description` property must be shown from \[DebotAction] structure.
+* `action`: [_DebotAction_](mod_debot.md#debotaction) – Debot action that must be shown to user as menu item. At least `description` property must be shown from \[DebotAction] structure.
 
 ### input
 
@@ -1029,7 +1029,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 #### Parameters
 
 * `debot_addr`: _string_ – Address of debot in blockchain.
-* `action`: [_DebotAction_](mod\_debot.md#debotaction) – Debot action to execute.
+* `action`: [_DebotAction_](mod_debot.md#debotaction) – Debot action to execute.
 
 ### send
 
@@ -1076,7 +1076,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `activity`: [_DebotActivity_](mod\_debot.md#debotactivity) – DeBot activity details.
+* `activity`: [_DebotActivity_](mod_debot.md#debotactivity) – DeBot activity details.
 
 #### Result
 

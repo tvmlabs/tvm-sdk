@@ -2,32 +2,32 @@
 
 You can find error codes with descriptions on this page
 
-* [SDK Errors](error\_codes.md#sdk-errors)
-* [Solidity Runtime Errors](error\_codes.md#solidity-runtime-errors)
-* [TVM Virtual Machine Runtime Errors](error\_codes.md#tvm-virtual-machine-runtime-errors)
-  * [Action phase errors](error\_codes.md#action-phase-errors)
+* [SDK Errors](error_codes.md#sdk-errors)
+* [Solidity Runtime Errors](error_codes.md#solidity-runtime-errors)
+* [TVM Virtual Machine Runtime Errors](error_codes.md#tvm-virtual-machine-runtime-errors)
+  * [Action phase errors](error_codes.md#action-phase-errors)
 
 ## SDK Errors
 
-[Client Error codes (1-99)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_client#clienterrorcode)
+[Client Error codes (1-99)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_client#clienterrorcode)
 
-[Crypto Error codes (100-199)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_crypto#cryptoerrorcode)
+[Crypto Error codes (100-199)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_crypto#cryptoerrorcode)
 
-[Boc error codes(200-299)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_boc#bocerrorcode)
+[Boc error codes(200-299)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_boc#bocerrorcode)
 
-[Abi Error codes (300-399)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_abi#abierrorcode)
+[Abi Error codes (300-399)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#abierrorcode)
 
-[TVM Error codes (400-499)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_tvm#tvmerrorcode)
+[TVM Error codes (400-499)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_tvm#tvmerrorcode)
 
-[Processing Error codes (500-599)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_processing#processingerrorcode)
+[Processing Error codes (500-599)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_processing#processingerrorcode)
 
-[Net Error Codes (600-699)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_net#neterrorcode)
+[Net Error Codes (600-699)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_net#neterrorcode)
 
-[DeBot Error Codes (800-899)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_debot#deboterrorcode)
+[DeBot Error Codes (800-899)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_debot#deboterrorcode)
 
 ## Solidity Runtime Errors
 
-[https://github.com/tonlabs/TON-Solidity-Compiler/blob/master/API.md#solidity-runtime-errors](https://github.com/tonlabs/TON-Solidity-Compiler/blob/master/API.md#solidity-runtime-errors)
+[https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#solidity-runtime-errors](https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#solidity-runtime-errors)
 
 ## TVM Virtual Machine Runtime Errors
 

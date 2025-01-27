@@ -12,9 +12,9 @@ Find out how to estimate fees before executing contracts on-chain
 
 The steps you need to complete to estimate fees of deploy and run:
 
-1. Encode a message you will locally execute with [encode\_message](../../reference/types-and-methods/mod\_abi.md#encode\_message)
-2. Download account boc the same way you did in [Run ABI Get method](run\_abi\_get\_method.md)
-3. Run the message on the downloaded state with [run\_executor](../../reference/types-and-methods/mod\_tvm.md#run\_executor) function
+1. Encode a message you will locally execute with [encode\_message](../../reference/types-and-methods/mod_abi.md#encode_message)
+2. Download account boc the same way you did in [Run ABI Get method](run_abi_get_method.md)
+3. Run the message on the downloaded state with [run\_executor](../../reference/types-and-methods/mod_tvm.md#run_executor) function
 4. Retrieve `result.fees` object. You need **`result.fees.account_fees`** for total account fees value.
 
 ## Fees object detailed explanation
@@ -53,14 +53,10 @@ type TransactionFees = {
 
 ## Estimate storage fee
 
-Use [calc\_storage\_fee](../../reference/types-and-methods/mod\_utils.md#calc\_storage\_fee) method.
+Use [calc\_storage\_fee](../../reference/types-and-methods/mod_utils.md#calc_storage_fee) method.
 
 ## Sample source code
 
 **Core**
 
-[https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/run\_executor](https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/run\_executor)
-
-**AppKit**
-
-[https://github.com/tonlabs/sdk-samples/blob/master/appkit-examples/fee-calculation/index.js](https://github.com/tonlabs/sdk-samples/blob/master/appkit-examples/fee-calculation/index.js)
+[https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/run\_executor](https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/run_executor)

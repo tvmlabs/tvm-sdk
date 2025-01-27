@@ -17,23 +17,23 @@ pragma solidity >=0.5.0;
 pragma AbiHeader time;
 pragma AbiHeader expire;
 
-contract HelloTON {
+contract HelloWorld {
 uint32 timestamp;
 
 // Modifier that allows public function to accept all external calls.
 modifier alwaysAccept {
     tvm.accept();
     _;
-    }
+}
 
 constructor() public {
     tvm.accept();
     timestamp = uint32(now);
-    }
+}
 //Function setting set value to state variable timestamp
 function touch() public alwaysAccept {
     timestamp = uint32(now);
-    }
+}
 //Function returns value of state variable timestamp
 function sayHello() public view returns (uint32) {
     return timestamp;
@@ -41,10 +41,10 @@ function sayHello() public view returns (uint32) {
 }
 ```
 
-The `pragma AbiHeader expire;` line initiates the message expiration option for the contract functions. TON Labs SDK automatically defines the expiration time according to the client default timeout specified in client config. We use the following formula to define the expiration time: `expire time = current time + timeout`. You can define the applied timeout at the SDK initialization via the `abi.message_expiration_timeout` parameter that takes the timeout value in ms. If no timeout is specified at initialization, the default value is 40 seconds.
+The `pragma AbiHeader expire;` line initiates the message expiration option for the contract functions. TVM Labs SDK automatically defines the expiration time according to the client default timeout specified in client config. We use the following formula to define the expiration time: `expire time = current time + timeout`. You can define the applied timeout at the SDK initialization via the `abi.message_expiration_timeout` parameter that takes the timeout value in ms. If no timeout is specified at initialization, the default value is 40 seconds.
 
 ```graphql
-const client = new TonClient({
+const client = new TvmClient({
     network: {
         endpoints: [
             your-endpoint(s)-here
