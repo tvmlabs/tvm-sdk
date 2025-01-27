@@ -272,7 +272,7 @@ pub trait TransactionExecutor {
         is_masterchain: bool,
         is_special: bool,
         available_credit: i128,
-        minted_shell: &mut u128
+        minted_shell: &mut u128,
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
         if tr.now() < acc.last_paid() {
@@ -313,8 +313,7 @@ pub trait TransactionExecutor {
                     acc_balance.grams.add(&diff)?;
                     *minted_shell += diff.as_u128();
                     diff = Grams::zero();
-                }
-                else {
+                } else {
                     acc_balance.grams.add(&Grams::from(available_credit as u64))?;
                     *minted_shell += available_credit as u128;
                     diff.sub(&Grams::from(available_credit as u64))?;
@@ -323,7 +322,7 @@ pub trait TransactionExecutor {
             let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
                 Ok(Some(data)) => data,
                 Ok(None) => VarUInteger32::default(),
-                Err(_) => VarUInteger32::default()
+                Err(_) => VarUInteger32::default(),
             };
             if ecc_balance > VarUInteger32::from(diff.as_u128()) {
                 let mut sub_value = CurrencyCollection::new();
@@ -706,7 +705,7 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
-        mut available_credit: i128,
+        available_credit: i128,
         minted_shell: &mut u128,
         need_to_burn: u64,
         message_src_dapp_id: Option<UInt256>,
@@ -911,16 +910,13 @@ pub trait TransactionExecutor {
                 }
                 OutAction::MintShellToken { mut value } => {
                     if available_credit != INFINITY_CREDIT {
-                        if value as i128 > available_credit {
+                        if value as i128 + minted_shell.clone() as i128 > available_credit {
                             value = available_credit.clone().try_into()?;
                         }
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
                             *minted_shell += value as u128;
-                            if available_credit != INFINITY_CREDIT {
-                                available_credit -= value as i128;
-                            }
                             phase.spec_actions += 1;
                             0
                         }
