@@ -1,7 +1,3 @@
----
-hidden: true
----
-
 # Dapp ID Full Guide: creation, fees, centralized replenishment
 
 ## **What will you learn from this guide?** <a href="#prerequisites" id="prerequisites"></a>
