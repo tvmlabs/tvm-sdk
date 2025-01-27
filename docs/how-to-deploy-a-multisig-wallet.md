@@ -4,6 +4,11 @@ description: Create a Multisig wallet  with TVM CLI
 
 # How to deploy a Multisig Wallet
 
+## Prerequisites <a href="#create-a-wallet" id="create-a-wallet"></a>
+
+* latest Rust release&#x20;
+* cargo
+
 ## **Build and install CLI tool** <a href="#create-a-wallet" id="create-a-wallet"></a>
 
 <pre><code>cd ~
