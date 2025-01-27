@@ -116,20 +116,14 @@ fn calc_mbk(t: f64) -> f64 {
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
     fetch_stack(engine, 7)?;
-    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //average reputation time of licenses in one stake
+    let mut repcoef = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //average reputation coef of licenses in one stake
     let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //value of stake
     let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //sum of stakes at start of epoch
     let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //duration of epoch
     let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepers
     let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64; //last calculated reward_adjustment
-    let repcoef = if bkrt < MAXRT {
-        MINRC
-            + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
-                * (1_f64 - (-1_f64 * ARFC.ln() * bkrt / MAXRT).exp())
-    } else {
-        MAXRC
-    };
+    repcoef = repcoef / 1e9_f64; 
     let reward;
     if mbk == 0_f64 {
         reward = rbk * t * repcoef / nbk;
