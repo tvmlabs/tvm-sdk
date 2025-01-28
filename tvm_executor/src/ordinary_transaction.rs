@@ -22,6 +22,7 @@ use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
+use tvm_block::CurrencyCollection;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
 use tvm_block::MASTERCHAIN_ID;
@@ -130,6 +131,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut burned = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
+        let mut msg_balance_flag = msg_balance.clone();
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}, available_credit {:?}", params.src_dapp_id, in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
@@ -152,6 +154,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 burned -= msg_balance.grams;
                 need_to_burn = msg_balance.grams;
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
+                msg_balance_flag = CurrencyCollection::default();
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
@@ -452,7 +455,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "bounce_phase");
                 msg_balance.grams += burned;
                 description.bounce = match self.bounce_phase(
-                    msg_balance.clone(),
+                    msg_balance_flag.clone(),
                     &mut acc_balance,
                     &compute_phase_gas_fees,
                     in_msg,
