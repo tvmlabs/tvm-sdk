@@ -303,24 +303,24 @@ pub trait TransactionExecutor {
             acc.set_due_payment(None);
         }
 
-        if acc_balance.grams < fee {
-            let mut diff = fee.clone();
-            diff.sub(&acc_balance.grams)?;
-            if available_credit == INFINITY_CREDIT {
+        let mut diff = fee.clone();
+        diff.sub(&acc_balance.grams)?;
+        if available_credit == INFINITY_CREDIT {
+            acc_balance.grams.add(&diff)?;
+            *minted_shell += diff.as_u128();
+            diff = Grams::zero();
+        } else {
+            if Grams::from(available_credit as u64) > diff {
                 acc_balance.grams.add(&diff)?;
                 *minted_shell += diff.as_u128();
                 diff = Grams::zero();
             } else {
-                if Grams::from(available_credit as u64) > diff {
-                    acc_balance.grams.add(&diff)?;
-                    *minted_shell += diff.as_u128();
-                    diff = Grams::zero();
-                } else {
-                    acc_balance.grams.add(&Grams::from(available_credit as u64))?;
-                    *minted_shell += available_credit as u128;
-                    diff.sub(&Grams::from(available_credit as u64))?;
-                }
+                acc_balance.grams.add(&Grams::from(available_credit as u64))?;
+                *minted_shell += available_credit as u128;
+                diff.sub(&Grams::from(available_credit as u64))?;
             }
+        }
+        if acc_balance.grams < diff {            
             let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
                 Ok(Some(data)) => data,
                 Ok(None) => VarUInteger32::default(),
