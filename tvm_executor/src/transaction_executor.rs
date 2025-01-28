@@ -806,7 +806,7 @@ pub trait TransactionExecutor {
                         &mut out_msg,
                         &mut acc_remaining_balance,
                         msg_remaining_balance,
-                        compute_phase_fees,
+//                        compute_phase_fees,
                         self.config(),
                         is_special,
                         my_addr,
@@ -962,7 +962,7 @@ pub trait TransactionExecutor {
                     &mut out_msg,
                     &mut free_to_send,
                     msg_remaining_balance,
-                    compute_phase_fees,
+//                    compute_phase_fees,
                     self.config(),
                     is_special,
                     my_addr,
@@ -1466,7 +1466,7 @@ fn outmsg_action_handler(
     msg: &mut Message,
     acc_balance: &mut CurrencyCollection,
     msg_balance: &mut CurrencyCollection,
-    compute_phase_fees: &Grams,
+//    compute_phase_fees: &Grams,
     config: &BlockchainConfig,
     is_special: bool,
     my_addr: &MsgAddressInt,
@@ -1474,7 +1474,7 @@ fn outmsg_action_handler(
     account_deleted: &mut bool,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
-    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE | SENDMSG_IGNORE_ERROR;
+    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE | SENDMSG_IGNORE_ERROR | SENDMSG_REMAINING_MSG_BALANCE;
     if (mode & !SENDMSG_VALID_FLAGS) != 0
         || (mode & invalid_flags) == invalid_flags
         || ((mode & SENDMSG_DELETE_IF_EMPTY) != 0 && (mode & SENDMSG_ALL_BALANCE) == 0)
@@ -1561,7 +1561,7 @@ fn outmsg_action_handler(
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
-        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+/*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
             // send all remainig balance of inbound message
             result_value.add(msg_balance).ok();
             if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
@@ -1575,6 +1575,7 @@ fn outmsg_action_handler(
             }
             int_header.value = result_value.clone();
         }
+*/
         if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
             // we must pay the fees, sum them with msg value
             result_value.grams += total_fwd_fees;
@@ -1661,7 +1662,8 @@ fn outmsg_action_handler(
         return Err(RESULT_CODE_INVALID_BALANCE);
     }
 
-    if (mode & (SENDMSG_ALL_BALANCE | SENDMSG_REMAINING_MSG_BALANCE)) != 0 {
+//    if (mode & (SENDMSG_ALL_BALANCE | SENDMSG_REMAINING_MSG_BALANCE)) != 0 {
+    if mode & SENDMSG_ALL_BALANCE != 0 {
         *msg_balance = CurrencyCollection::default();
     }
 

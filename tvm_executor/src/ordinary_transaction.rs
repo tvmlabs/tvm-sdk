@@ -130,7 +130,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut burned = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
-        let mut msg_balance_flag = msg_balance.clone();
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}, available_credit {:?}", params.src_dapp_id, in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
@@ -153,7 +152,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 burned -= msg_balance.grams;
                 need_to_burn = msg_balance.grams;
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
-                msg_balance_flag.grams = Grams::zero();
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
@@ -363,7 +361,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         account,
                         &original_acc_balance,
                         &mut new_acc_balance,
-                        &mut msg_balance_flag,
+                        &mut msg_balance,
                         &compute_phase_gas_fees,
                         actions.unwrap_or_default(),
                         new_data,
