@@ -197,10 +197,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             acc_balance.grams += credit;
 
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
-            if !acc_balance.grams.sub(&in_fwd_fee)? {
-                fail!(ExecutorError::NoFundsToImportMsg)
+            if !params.is_same_thread_id {
+                if !acc_balance.grams.sub(&in_fwd_fee)? {
+                    fail!(ExecutorError::NoFundsToImportMsg)
+                }
+                tr.add_fee_grams(&in_fwd_fee)?;
             }
-            tr.add_fee_grams(&in_fwd_fee)?;
         }
 
         if description.credit_first && !is_ext_msg {
@@ -459,6 +461,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     &mut tr,
                     account_address,
                     params.block_version,
+                    params.is_same_thread_id
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
                         out_msgs.push(bounce_msg);
