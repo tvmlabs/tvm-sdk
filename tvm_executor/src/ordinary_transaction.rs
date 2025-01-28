@@ -22,7 +22,6 @@ use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
-use tvm_block::CurrencyCollection;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
 use tvm_block::MASTERCHAIN_ID;
@@ -154,7 +153,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 burned -= msg_balance.grams;
                 need_to_burn = msg_balance.grams;
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
-                msg_balance_flag = CurrencyCollection::default();
+                msg_balance_flag.grams = Grams::zero();
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
