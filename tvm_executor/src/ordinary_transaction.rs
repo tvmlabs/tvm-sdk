@@ -364,7 +364,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         account,
                         &original_acc_balance,
                         &mut new_acc_balance,
-                        &mut msg_balance,
+                        &mut msg_balance_flag,
                         &compute_phase_gas_fees,
                         actions.unwrap_or_default(),
                         new_data,
@@ -455,7 +455,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "bounce_phase");
                 msg_balance.grams += burned;
                 description.bounce = match self.bounce_phase(
-                    msg_balance_flag.clone(),
+                    msg_balance.clone(),
                     &mut acc_balance,
                     &compute_phase_gas_fees,
                     in_msg,
