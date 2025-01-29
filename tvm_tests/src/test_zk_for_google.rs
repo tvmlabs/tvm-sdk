@@ -69,7 +69,7 @@ mod tests {
     pub const TEST_AUTH_DATA_20: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6ImJlMTgtZlBDdV9ZRndybE43TDhKV1BHX3hFbyIsIm5iZiI6MTcxNTY4NjgzMSwiaWF0IjoxNzE1Njg3MTMxLCJleHAiOjE3MTU2OTA3MzEsImp0aSI6IjdmZTFkZTM5NDVkMjliYTBhOWQ4MGFlODZiZGRmNjkyMDE1N2RlMDcifQ.RMM8wIiEzZ97DVdngkDhKapTMZq-R7woI2yjclLqTgnYZKTZ5N9y67zFJLDfcg017VyyRK18OS1OLsnUgnphi3ULotImnJ2292VDBd7kxhyq9QAqfHVDK2-MYNlJXy53UIr2xS9td1aoHUDZkvBy690IhV4nPrxLOUhI8c4gAvpkfHFmAvxYuQoUu69c_hSzREhrVOa979t5nZuJjNWwUcwgD40To1DM6Dxwy186basvY4AyWPHcI4ARFoyPEMRFUOtO05fUrwUH8O63Ay6K1DwxaLXDzx4T7O9X9nlrCj2uROdahsv-Dj24hruudSYxi4GH2uO6u0a1RlTIvWJ-1A\",\"user_pass_to_int_format\":\"525451525655\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":66,\"1\":155,\"2\":237,\"3\":117,\"4\":45,\"5\":166,\"6\":245,\"7\":92,\"8\":78,\"9\":225,\"10\":218,\"11\":156,\"12\":7,\"13\":132,\"14\":164,\"15\":47,\"16\":114,\"17\":174,\"18\":4,\"19\":86,\"20\":18,\"21\":212,\"22\":182,\"23\":62,\"24\":50,\"25\":219,\"26\":104,\"27\":185,\"28\":183,\"29\":108,\"30\":38,\"31\":252},\"secret_key\":{\"0\":13,\"1\":127,\"2\":13,\"3\":29,\"4\":128,\"5\":121,\"6\":142,\"7\":51,\"8\":210,\"9\":28,\"10\":131,\"11\":160,\"12\":209,\"13\":42,\"14\":214,\"15\":198,\"16\":137,\"17\":147,\"18\":155,\"19\":40,\"20\":86,\"21\":167,\"22\":168,\"23\":10,\"24\":249,\"25\":180,\"26\":188,\"27\":132,\"28\":41,\"29\":146,\"30\":192,\"31\":28,\"32\":66,\"33\":155,\"34\":237,\"35\":117,\"36\":45,\"37\":166,\"38\":245,\"39\":92,\"40\":78,\"41\":225,\"42\":218,\"43\":156,\"44\":7,\"45\":132,\"46\":164,\"47\":47,\"48\":114,\"49\":174,\"50\":4,\"51\":86,\"52\":18,\"53\":212,\"54\":182,\"55\":62,\"56\":50,\"57\":219,\"58\":104,\"59\":185,\"60\":183,\"61\":108,\"62\":38,\"63\":252}}},\"zk_addr\":\"0x86ab13e3c90b7f5b52a0e7d045425f1a5ce4f2938d82fe32013b5c5dffc8aa40\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"13280060882937967421268531103181473070897547065707830941266439167277535861998\",\"9934433138500558951890280258062370504217382435917636186873727481367280202864\",\"1\"],\"b\":[[\"3838124130316726849360987686807592227651253623250263168834039482151640975443\",\"10050190797101422174255450354163308725608018844614813729840170282126147936409\"],[\"18360080471111693027482741715722945557865825591442098780536696036281663618095\",\"1378964582828950987975075563637558653759765511530268169302574447782691787466\"],[\"1\",\"0\"]],\"c\":[\"1373142722414479432483215105546507593017308819682036641663292686387425172376\",\"3353210342014729825799146687716012229927760750084040417279416030868174996451\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extended_ephemeral_public_key\":\"AEKb7XUtpvVcTuHanAeEpC9yrgRWEtS2PjLbaLm3bCb8\"}";
     pub const TEST_AUTH_DATA_21: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6Im12NUNKY1dsMXE1ek03Y0lyR1ZUdHF6SnFTNCIsIm5iZiI6MTcxNTY4NjgxOSwiaWF0IjoxNzE1Njg3MTE5LCJleHAiOjE3MTU2OTA3MTksImp0aSI6IjYxMDM2YmQwZWE3YjI5MDY4MjgwODYxMzMyODZhODZlNmY0ZmMwNGEifQ.VE2a8s2ZuyTVklFwSvh05y_mGrDMJXww-5Pu3-UUIQi3sBQnMzpnvWo3MIb32rXxwU6Obtx9izsR-Csk-U0QH4WuseGHnhHA90lACdeXNXHUWNktsY62_z2lkseTlJQV_ccNVctNgqornxmtV6gRvihLKkYCJt08umhAcRe8-Fh9iNmlCf5sMngaA-k0bvIbdnxkoP0KI9em7sgpTDB0FJFCgVAVYkzQTuJJlfuKjeF0lgpLnkjTOtgMyCpuZrrxf9GH6wY2VSme3Zk6xVJfl5cC6YugQFs-t56CEhPDrm-LIlLTD9JuNAKctlRRaTmkTembZAzweu6Wqh322MDx1g\",\"user_pass_to_int_format\":\"100102100102100115106107\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":227,\"1\":142,\"2\":234,\"3\":83,\"4\":36,\"5\":125,\"6\":219,\"7\":233,\"8\":159,\"9\":30,\"10\":60,\"11\":195,\"12\":110,\"13\":130,\"14\":105,\"15\":107,\"16\":44,\"17\":46,\"18\":151,\"19\":154,\"20\":116,\"21\":131,\"22\":237,\"23\":231,\"24\":159,\"25\":119,\"26\":35,\"27\":130,\"28\":56,\"29\":90,\"30\":121,\"31\":26},\"secret_key\":{\"0\":34,\"1\":107,\"2\":197,\"3\":227,\"4\":209,\"5\":156,\"6\":36,\"7\":233,\"8\":231,\"9\":171,\"10\":100,\"11\":210,\"12\":113,\"13\":247,\"14\":59,\"15\":222,\"16\":214,\"17\":129,\"18\":238,\"19\":254,\"20\":13,\"21\":13,\"22\":3,\"23\":151,\"24\":9,\"25\":173,\"26\":77,\"27\":113,\"28\":126,\"29\":7,\"30\":203,\"31\":52,\"32\":227,\"33\":142,\"34\":234,\"35\":83,\"36\":36,\"37\":125,\"38\":219,\"39\":233,\"40\":159,\"41\":30,\"42\":60,\"43\":195,\"44\":110,\"45\":130,\"46\":105,\"47\":107,\"48\":44,\"49\":46,\"50\":151,\"51\":154,\"52\":116,\"53\":131,\"54\":237,\"55\":231,\"56\":159,\"57\":119,\"58\":35,\"59\":130,\"60\":56,\"61\":90,\"62\":121,\"63\":26}}},\"zk_addr\":\"0xb092062dc38ee15b239fedd8955547cae553068e350add6a186a900308ca1704\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"19083893384522082364200015848081882762611466511855277173108395395690822433582\",\"15765871630522826744343212165387977339454134778029147662517994756792436892191\",\"1\"],\"b\":[[\"3347275249816013439391836622904014049361323482158752310150932588414843416768\",\"9261935324040115069949005166058871304117632278716385673922763868694265924905\"],[\"10774327302040930015542399179222458502634829694095804484749135988841930351850\",\"409015645239595129631982791901837203813000443262394810220799589635024410401\"],[\"1\",\"0\"]],\"c\":[\"805618312212200473153836203801534856685701602304097276485035246177305246575\",\"12984127923817330198936709848850019846193356630613954592225359007088568774616\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extended_ephemeral_public_key\":\"AOOO6lMkfdvpnx48w26CaWssLpeadIPt5593I4I4Wnka\"}";
     pub const TEST_AUTH_DATA_1_NEW: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBlMzQ1ZmQ3ZTRhOTcyNzFkZmZhOTkxZjVhODkzY2QxNmI4ZTA4MjciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6InZ0WGVzaFJyX2ZrVGR3SHpFQXY4a2wtbllHWSIsIm5iZiI6MTcyMTA2NzkzNiwiaWF0IjoxNzIxMDY4MjM2LCJleHAiOjE3MjEwNzE4MzYsImp0aSI6IjkzMjQ2YjIxNjg1NzM5YWE2MjI3MGY4NDllNTNmNDFhNTRiZGMxYWUifQ.HjDKI_m-uWUsgYzhc7Ovuy_bms0NEFdIoFUIjoG1axwxNKkZ1Hh-lXa1wyGDl0Zy1RM9fCblkMmyLY0Mm7-ACL1nqDA-EmWlIfytk6PPRu8YOFI_mMg-YmZmgGQTn1bJv0jUOo3yPaRa9hKceDfifFLS1tbWuOIyKZTCy2oH_TEcZo6O3UI2_ksOlf0tnfwtUmF-I2vhtlbH57AH6Uc0Kx4cSObrE4VV1Pj_rCwwEDGxxpAiSth8tCKM80mlzJ6Si3F11Epqj2vDLAX5IzZtn2gMj18MADlWsgmrxNbRh4-suVE_p7VIzlTuBfjmZps_5w6E62KPzovypo2ql3KISQ\",\"user_pass_to_int_format\":\"9910010710611510499100106115107\",\"zk_addr\":\"0x3a934c047196bdfdd751778f758cc2642a9cfa574ddb5d57025b67d109225e20\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":141,\"1\":251,\"2\":140,\"3\":40,\"4\":213,\"5\":82,\"6\":20,\"7\":190,\"8\":208,\"9\":214,\"10\":244,\"11\":203,\"12\":156,\"13\":205,\"14\":36,\"15\":19,\"16\":24,\"17\":131,\"18\":176,\"19\":142,\"20\":74,\"21\":37,\"22\":199,\"23\":244,\"24\":70,\"25\":101,\"26\":194,\"27\":80,\"28\":211,\"29\":235,\"30\":171,\"31\":245},\"secret_key\":{\"0\":47,\"1\":220,\"2\":171,\"3\":167,\"4\":122,\"5\":143,\"6\":157,\"7\":242,\"8\":79,\"9\":81,\"10\":91,\"11\":236,\"12\":14,\"13\":127,\"14\":102,\"15\":140,\"16\":193,\"17\":217,\"18\":93,\"19\":88,\"20\":41,\"21\":18,\"22\":94,\"23\":40,\"24\":39,\"25\":63,\"26\":178,\"27\":120,\"28\":104,\"29\":214,\"30\":208,\"31\":207,\"32\":141,\"33\":251,\"34\":140,\"35\":40,\"36\":213,\"37\":82,\"38\":20,\"39\":190,\"40\":208,\"41\":214,\"42\":244,\"43\":203,\"44\":156,\"45\":205,\"46\":36,\"47\":19,\"48\":24,\"49\":131,\"50\":176,\"51\":142,\"52\":74,\"53\":37,\"54\":199,\"55\":244,\"56\":70,\"57\":101,\"58\":194,\"59\":80,\"60\":211,\"61\":235,\"62\":171,\"63\":245}}},\"maxEpoch\":142,\"extended_ephemeral_public_key\":\"AI37jCjVUhS+0Nb0y5zNJBMYg7COSiXH9EZlwlDT66v1\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"16813421039278654796395330442837655698730555183413337856642209109628683845443\",\"17226506757024740186126597704040151976665029813672291135146823263440625226230\",\"1\"],\"b\":[[\"19865189571716457271280707825159835672267817382424243521747870225851449993660\",\"8171164569532624421381183938498786515254461782830166752970857493983192858118\"],[\"19433278357078234147721454549239782691011759423461848201596076417708238357802\",\"20376887254972130170934329519774996610471771975828424380410011418190971129130\"],[\"1\",\"0\"]],\"c\":[\"12219856656033196506465767208555446381917939816812556286240154247316268622405\",\"17874973202272136490287260014626440020057757567816424198331948639084405340444\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBlMzQ1ZmQ3ZTRhOTcyNzFkZmZhOTkxZjVhODkzY2QxNmI4ZTA4MjciLCJ0eXAiOiJKV1QifQ\"}}";
-
+    pub const TEST_AUTH_DATA_2_NEW: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImRkMTI1ZDVmNDYyZmJjNjAxNGFlZGFiODFkZGYzYmNlZGFiNzA4NDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6InNpZS1zLXRHRXdMbXlENF8wREpPMGNYcGM0WSIsIm5iZiI6MTczNzExNTUxMCwiaWF0IjoxNzM3MTE1ODEwLCJleHAiOjE3MzcxMTk0MTAsImp0aSI6IjYyNjllMzhjNGEwM2ZmODAzNTcxMWVkYjFjZWZkOWZkZmZhMjE0MDAifQ.bhAgccsHF6n912Ya7QDH7MJiJJ-7Zj3i5xAjrkuMuJLlVeESpwQq1rZIqranK90Jxj0ZiFRm_vOHgidMdcN7CKw3V7w6eDHln0QKqa3b9ZRbuZpBI1khUy4sf7HNk7wsy-jWR7hYNnPTGD2YmWILukhzxVvmJXoyy1XD46cJLjqN8a1Exdo4Bm98e03s_dEI9VvVfC8MyctoITdn421Lrfki37wmMehYSoWhtpGkrI9wRncmrFdu9svJmNVhAe6wK1GbhbR4W4mXgXNpl8CRl8Tp-FwdTp5rY10qetIwp9vNAmjMQJPc14aVcfj0RUbZgARzO40sKDoyj2O7CtO_2Q\",\"user_pass_to_int_format\":\"535455565748\",\"zk_addr\":\"0xa780f54b9c44308332c81d9910470e067380af96c2f494205e927c5f93386005\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":110,\"1\":17,\"2\":197,\"3\":3,\"4\":83,\"5\":102,\"6\":123,\"7\":244,\"8\":22,\"9\":108,\"10\":150,\"11\":178,\"12\":47,\"13\":185,\"14\":253,\"15\":114,\"16\":208,\"17\":166,\"18\":202,\"19\":109,\"20\":101,\"21\":22,\"22\":73,\"23\":95,\"24\":154,\"25\":223,\"26\":121,\"27\":191,\"28\":253,\"29\":141,\"30\":201,\"31\":213},\"secret_key\":{\"0\":65,\"1\":196,\"2\":101,\"3\":77,\"4\":52,\"5\":177,\"6\":191,\"7\":119,\"8\":30,\"9\":119,\"10\":130,\"11\":204,\"12\":40,\"13\":143,\"14\":58,\"15\":29,\"16\":110,\"17\":28,\"18\":157,\"19\":220,\"20\":120,\"21\":123,\"22\":87,\"23\":131,\"24\":208,\"25\":96,\"26\":57,\"27\":169,\"28\":29,\"29\":175,\"30\":210,\"31\":228,\"32\":110,\"33\":17,\"34\":197,\"35\":3,\"36\":83,\"37\":102,\"38\":123,\"39\":244,\"40\":22,\"41\":108,\"42\":150,\"43\":178,\"44\":47,\"45\":185,\"46\":253,\"47\":114,\"48\":208,\"49\":166,\"50\":202,\"51\":109,\"52\":101,\"53\":22,\"54\":73,\"55\":95,\"56\":154,\"57\":223,\"58\":121,\"59\":191,\"60\":253,\"61\":141,\"62\":201,\"63\":213}}},\"maxEpoch\": 1837114018,\"extended_ephemeral_public_key\":\"AG4RxQNTZnv0FmyWsi+5/XLQpsptZRZJX5rfeb/9jcnV\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"6566436956407348611735801138198435794374896218268962144199400806695782675054\",\"14361495018751587947090073252807238289583115985790934726655545854196179567092\",\"1\"],\"b\":[[\"11816360002469779838539088955070938290313046870927317794425160768477938349840\",\"1330777975486291423534672160265987950714911827305039142236890771601276842581\"],[\"5541578835739883586300476045164456722145454593644802369307386827756822688412\",\"20941629064830582682252122653921503562307109391512613529427791477779849672253\"],[\"1\",\"0\"]],\"c\":[\"12423809325644729989117111555104880285885231778137620988410665749715381194339\",\"13730785368198551395955577102987138098828695008699358716881692024279204327674\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImRkMTI1ZDVmNDYyZmJjNjAxNGFlZGFiODFkZGYzYmNlZGFiNzA4NDciLCJ0eXAiOiJKV1QifQ\"}}";
     
     #[derive(Debug, Deserialize)]
     pub struct JwtDataDecodedPart1 {
@@ -457,6 +457,109 @@ mod tests {
 
             println!("ephemeral secret_key is {:?}", eph_secret_key);
             println!("ephemeral public_key is {:?}", eph_pubkey);
+
+            let eph_pubkey_len = eph_pubkey.clone().len();
+            println!("len eph_pubkey: {:?}", eph_pubkey_len);
+
+            let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
+            println!("jwt_data_vector[0] {:?}", jwt_data_vector[0]);
+
+            let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
+
+            let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
+            println!("jwt_string_1 is {:?}", jwt_string_1); 
+
+            // JwtDataDecodedPart1
+            let jwt_data_decoded1: JwtDataDecodedPart1 =
+                serde_json::from_str(&jwt_string_1).unwrap();
+            println!("kid: {:?}", jwt_data_decoded1.kid);
+
+            let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
+            let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
+            println!("jwt_string_2 is {:?}", jwt_string_2); 
+
+            // JwtDataDecodedPart2
+            let jwt_data_decoded2: JwtDataDecodedPart2 =
+                serde_json::from_str(&jwt_string_2).unwrap();
+            println!("aud: {:?}", jwt_data_decoded2.aud);
+            println!("sub: {:?}", jwt_data_decoded2.sub);
+            println!("azp: {:?}", jwt_data_decoded2.azp);
+            println!("exp: {:?}", jwt_data_decoded2.exp);
+            println!("nonce: {:?}", jwt_data_decoded2.nonce);
+            println!("iss: {:?}", jwt_data_decoded2.iss);
+            println!("iat: {:?}", jwt_data_decoded2.iat);
+            println!("jti: {:?}", jwt_data_decoded2.jti);
+            println!("nbf: {:?}", jwt_data_decoded2.nbf);
+
+            let zk_seed = gen_address_seed(
+                user_pass_salt,
+                "sub",
+                jwt_data_decoded2.sub.as_str(),
+                jwt_data_decoded2.aud.as_str(), 
+            )
+            .unwrap();
+
+            println!("jwt_data.zk_proofs = {:?}", jwt_data.zk_proofs);
+            let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
+
+            let zk_login_inputs =
+                ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string())
+                    .unwrap();
+
+            
+
+            let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk, verification_key_id, max_epoch);
+            println!("time_for_vergrth16 is {time_for_vergrth16}");
+
+            println!("==========================================");
+        }
+    }
+
+    #[test]
+    fn test_eval_time_vrgrth16_new_() {
+        let max_epoch = 1837114018;
+        let verification_key_id: u32 = 0;
+        let content: JWK = JWK {
+            kty: "RSA".to_string(),
+            e: "AQAB".to_string(),
+            n: "jwstqI4w2drqbTTVRDriFqepwVVI1y05D5TZCmGvgMK5hyOsVW0tBRiY9Jk9HKDRue3vdXiMgarwqZEDOyOA0rpWh-M76eauFhRl9lTXd5gkX0opwh2-dU1j6UsdWmMa5OpVmPtqXl4orYr2_3iAxMOhHZ_vuTeD0KGeAgbeab7_4ijyLeJ-a8UmWPVkglnNb5JmG8To77tSXGcPpBcAFpdI_jftCWr65eL1vmAkPNJgUTgI4sGunzaybf98LSv_w4IEBc3-nY5GfL-mjPRqVCRLUtbhHO_5AYDpqGj6zkKreJ9-KsoQUP6RrAVxkNuOHV9g1G-CHihKsyAifxNN2Q".to_string(),
+            alg: "RS256".to_string(),
+        };
+
+        let mut all_jwk = HashMap::new();
+        all_jwk.insert(
+            JwkId::new(
+                OIDCProvider::Google.get_config().iss,
+                "dd125d5f462fbc6014aedab81ddf3bcedab70847".to_string(), 
+            ),
+            content,
+        );
+
+        let data = [TEST_AUTH_DATA_2_NEW];
+
+        for i in 0..data.len() {
+            println!("====================== Iter@ is {i} =========================");
+            // parse
+            let jwt_data: JwtData = serde_json::from_str(&data[i]).unwrap();
+            // println!("{:?}", jwt_data);
+
+            let user_pass_salt = jwt_data.user_pass_to_int_format.as_str();
+            println!("user_pass_salt is {user_pass_salt}");
+
+            let eph_secret_key =
+                secret_key_from_integer_map(jwt_data.ephemeral_key_pair.keypair.secret_key);
+
+            let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
+            let mut eph_pubkey = Vec::new(); // vec![0x00];
+            eph_pubkey.extend(ephemeral_kp.public().as_ref());
+
+            println!("ephemeral secret_key is {:?}", eph_secret_key);
+            println!("ephemeral public_key is {:?}", eph_pubkey);
+
+            let eph_pubkey_hex_number = "0x".to_owned() + &hex::encode(eph_pubkey.clone());
+            println!("eph_pubkey_hex_number: {:?}", eph_pubkey_hex_number);
+
+      
 
             let eph_pubkey_len = eph_pubkey.clone().len();
             println!("len eph_pubkey: {:?}", eph_pubkey_len);
