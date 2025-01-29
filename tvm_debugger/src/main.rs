@@ -8,6 +8,7 @@ use std::path::PathBuf;
 
 use clap::ArgAction;
 use clap::Parser;
+use serde_json::Value;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
@@ -41,16 +42,16 @@ struct Args {
     abi_file: Option<PathBuf>,
 
     /// ABI header
-    #[arg(short('r'), long)]
-    abi_header: Option<serde_json::Value>,
+    #[arg(short('r'), long, value_parser = parse_json_object)]
+    abi_header: Option<Value>,
 
     /// Contract function name
     #[arg(short('m'), long)]
     function_name: Option<String>,
 
     /// Call parameters. Must be specified as a json string
-    #[arg(short('p'), long)]
-    call_parameters: Option<serde_json::Value>,
+    #[arg(short('p'), long, value_parser = parse_json_object)]
+    call_parameters: Option<Value>,
 
     /// Contract address, that will be used for execution
     #[arg(long, allow_hyphen_values(true))]
@@ -91,6 +92,17 @@ struct Args {
     /// Update code in tvc without executing anything
     #[arg(long)]
     replace_code: Option<String>,
+}
+
+fn parse_json_object(s: &str) -> Result<Value, String> {
+    let s = s.trim_matches('"').trim_matches('\'');
+    if s.is_empty() {
+        Ok(Value::Object(serde_json::Map::new()))
+    } else if s.starts_with('{') && s.ends_with('}') {
+        Ok(serde_json::from_str::<Value>(s).map_err(|e| format!("Failed to parse json arg: {e}"))?)
+    } else {
+        Err(format!("Invalid json object: {s}"))
+    }
 }
 
 fn main() -> anyhow::Result<()> {
