@@ -2,11 +2,15 @@
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+
     use base64ct::Encoding as bEncoding;
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
-
+    use serde::Deserialize;
+    use serde_derive::Serialize;
+    use tvm_types::Cell;
+    use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
     use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
     use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
     use tvm_vm::executor::zk_stuff::zk_login::JWK;
@@ -14,11 +18,6 @@ mod tests {
     use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
     use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
     use tvm_vm::executor::zk_stuff::zk_login::ZkLoginProof;
-
-    use serde::Deserialize;
-    use serde_derive::Serialize;
-    use tvm_types::Cell;
-    use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
     use tvm_vm::int;
     use tvm_vm::stack::Stack;
     use tvm_vm::stack::StackItem;
@@ -70,7 +69,6 @@ mod tests {
         pub value: String,
         pub index_mod4: i32,
     }
-
 
     pub struct TestPrecomputedData {
         pub public_inputs_cell: Cell,
@@ -186,15 +184,11 @@ mod tests {
 
         let proof = zk_login_inputs.get_proof();
 
-        TestPrecomputedData{
-            public_inputs_cell,
-            proof: proof.clone()
-        }
+        TestPrecomputedData { public_inputs_cell, proof: proof.clone() }
     }
 
     #[test]
     fn test_vrgrth16_short_proof() {
-        
         let data = do_initial_work();
 
         let public_inputs_cell = data.public_inputs_cell;
@@ -205,7 +199,7 @@ mod tests {
         println!("proof_as_bytes : {:?}", proof_as_bytes);
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-        //INTENTIONALLY SPOIL PROOF
+        // INTENTIONALLY SPOIL PROOF
 
         proof_as_bytes.pop();
 
@@ -228,7 +222,6 @@ mod tests {
 
     #[test]
     fn test_vrgrth16_long_proof() {
-        
         let data = do_initial_work();
 
         let public_inputs_cell = data.public_inputs_cell;
@@ -239,7 +232,7 @@ mod tests {
         println!("proof_as_bytes : {:?}", proof_as_bytes);
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-        //INTENTIONALLY SPOIL PROOF
+        // INTENTIONALLY SPOIL PROOF
 
         proof_as_bytes.push(1);
 
@@ -258,12 +251,11 @@ mod tests {
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_stack(Stack::new().push(int!(-1)));
-            //.expect_failure(tvm_types::ExceptionCode::FatalError);
+        //.expect_failure(tvm_types::ExceptionCode::FatalError);
     }
 
     #[test]
     fn test_vrgrth16_long_incorrect_proof() {
-        
         let data = do_initial_work();
 
         let public_inputs_cell = data.public_inputs_cell;
@@ -272,7 +264,6 @@ mod tests {
 
         println!("proof_as_bytes: {:?}", proof_as_bytes);
 
-
         println!("proof_as_bytes : {:?}", proof_as_bytes);
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
@@ -286,13 +277,12 @@ mod tests {
         code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
         code = code + "VERGRTH16";
 
-        test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).
-            expect_failure(tvm_types::ExceptionCode::FatalError);
+        test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
+            .expect_failure(tvm_types::ExceptionCode::FatalError);
     }
 
     #[test]
     fn test_vrgrth16_incorrect_proof() {
-        
         let data = do_initial_work();
 
         let public_inputs_cell = data.public_inputs_cell;
@@ -301,7 +291,6 @@ mod tests {
 
         println!("proof_as_bytes: {:?}", proof_as_bytes);
 
-
         println!("proof_as_bytes : {:?}", proof_as_bytes);
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
@@ -315,13 +304,12 @@ mod tests {
         code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
         code = code + "VERGRTH16";
 
-        test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()]).
-            expect_failure(tvm_types::ExceptionCode::FatalError);
+        test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
+            .expect_failure(tvm_types::ExceptionCode::FatalError);
     }
 
     #[test]
     fn test_vrgrth16_invalid_proof() {
-        
         let data = do_initial_work();
 
         let public_inputs_cell = data.public_inputs_cell;
@@ -332,7 +320,7 @@ mod tests {
         println!("proof_as_bytes : {:?}", proof_as_bytes);
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-        //INTENTIONALLY SPOIL PROOF
+        // INTENTIONALLY SPOIL PROOF
 
         proof_as_bytes[0] = 1;
 
@@ -355,7 +343,6 @@ mod tests {
 
     #[test]
     fn test_vrgrth16_invalid_proof_one_more_case() {
-        
         let data = do_initial_work();
 
         let public_inputs_cell = data.public_inputs_cell;
@@ -366,7 +353,7 @@ mod tests {
         println!("proof_as_bytes : {:?}", proof_as_bytes);
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-        //INTENTIONALLY SPOIL PROOF
+        // INTENTIONALLY SPOIL PROOF
 
         proof_as_bytes[120] = 25;
 

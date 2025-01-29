@@ -40,6 +40,5 @@ mod test_helper;
 
 fn main() {}
 
-//https://github.com/MystenLabs/fastcrypto/blob/3bbbcac27b84707491277ad89cd8f7177a2beddb/fastcrypto-zkp/src/bn254/zk_login.rs
-//here there all jwk
-
+// https://github.com/MystenLabs/fastcrypto/blob/3bbbcac27b84707491277ad89cd8f7177a2beddb/fastcrypto-zkp/src/bn254/zk_login.rs
+// here there all jwk

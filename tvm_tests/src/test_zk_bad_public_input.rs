@@ -2,11 +2,14 @@
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+
     use base64ct::Encoding as bEncoding;
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
-        
+    use serde::Deserialize;
+    use serde_derive::Serialize;
+    use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
     use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
     use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
     use tvm_vm::executor::zk_stuff::zk_login::JWK;
@@ -14,10 +17,6 @@ mod tests {
     use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
     use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
     use tvm_vm::executor::zk_stuff::zk_login::ZkLoginProof;
-    
-    use serde::Deserialize;
-    use serde_derive::Serialize;
-    use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
     use tvm_vm::int;
     use tvm_vm::stack::Stack;
     use tvm_vm::stack::StackItem;
@@ -69,7 +68,6 @@ mod tests {
         pub value: String,
         pub index_mod4: i32,
     }
-
 
     pub struct TestPrecomputedData {
         pub public_inputs_as_bytes: Vec<u8>,
@@ -183,15 +181,11 @@ mod tests {
 
         let proof = zk_login_inputs.get_proof();
 
-        TestPrecomputedData{
-            public_inputs_as_bytes: public_inputs_as_bytes,
-            proof: proof.clone()
-        }
+        TestPrecomputedData { public_inputs_as_bytes, proof: proof.clone() }
     }
 
     #[test]
     fn test_vrgrth16_short_public_input() {
-        
         let data = do_initial_work();
 
         let proof = data.proof.as_arkworks().unwrap();
@@ -206,7 +200,7 @@ mod tests {
         public_inputs_as_bytes.pop();
 
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
-        
+
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
         let verification_key_id: u32 = 0; // valid key id
@@ -224,7 +218,6 @@ mod tests {
 
     #[test]
     fn test_vrgrth16_long_public_input() {
-        
         let data = do_initial_work();
 
         let proof = data.proof.as_arkworks().unwrap();
@@ -243,9 +236,8 @@ mod tests {
 
         println!("public_inputs_as_bytes len: {:?}", public_inputs_as_bytes.len());
 
-
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
-        
+
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
         let verification_key_id: u32 = 0; // valid key id
@@ -263,7 +255,6 @@ mod tests {
 
     #[test]
     fn test_vrgrth16_bad_public_input() {
-        
         let data = do_initial_work();
 
         let proof = data.proof.as_arkworks().unwrap();
@@ -282,9 +273,8 @@ mod tests {
 
         println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
 
-
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
-        
+
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
         let verification_key_id: u32 = 0; // valid key id
@@ -297,12 +287,11 @@ mod tests {
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_stack(Stack::new().push(int!(0)));
-            //.expect_failure(tvm_types::ExceptionCode::FatalError);
+        //.expect_failure(tvm_types::ExceptionCode::FatalError);
     }
 
     #[test]
     fn test_vrgrth16_bad_public_input_1() {
-        
         let data = do_initial_work();
 
         let proof = data.proof.as_arkworks().unwrap();
@@ -321,9 +310,8 @@ mod tests {
 
         println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
 
-
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
-        
+
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
         let verification_key_id: u32 = 0; // valid key id
@@ -336,12 +324,11 @@ mod tests {
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_stack(Stack::new().push(int!(0)));
-            //.expect_failure(tvm_types::ExceptionCode::FatalError);
+        //.expect_failure(tvm_types::ExceptionCode::FatalError);
     }
 
     #[test]
     fn test_vrgrth16_bad_public_input_2() {
-        
         let data = do_initial_work();
 
         let proof = data.proof.as_arkworks().unwrap();
@@ -351,14 +338,12 @@ mod tests {
         println!("proof_as_bytes : {:?}", proof_as_bytes);
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-
         let public_inputs_as_bytes = vec![0; 32];
 
         println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
 
-
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
-        
+
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
         let verification_key_id: u32 = 0; // valid key id
@@ -371,8 +356,6 @@ mod tests {
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_stack(Stack::new().push(int!(0)));
-            //.expect_failure(tvm_types::ExceptionCode::FatalError);
+        //.expect_failure(tvm_types::ExceptionCode::FatalError);
     }
-
-   
 }

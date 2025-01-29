@@ -7,20 +7,19 @@ mod tests {
     use fastcrypto::ed25519::Ed25519KeyPair;
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
-    
+    use serde::Deserialize;
     use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
     use tvm_vm::executor::zk_stuff::zk_login::JWK;
     use tvm_vm::executor::zk_stuff::zk_login::JwkId;
     use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
     use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
 
-    use serde::Deserialize;
-
-    use crate::test_helper::test_helper::{JwtData, single_vrgrth16, secret_key_from_integer_map};
+    use crate::test_helper::test_helper::JwtData;
+    use crate::test_helper::test_helper::secret_key_from_integer_map;
+    use crate::test_helper::test_helper::single_vrgrth16;
 
     pub const TWITCH_DATA: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEifQ.eyJhdWQiOiI2cm05Z254cXZvNDJvcHJmbnF4OGI3aHB0cWtmbjkiLCJleHAiOjE3MzMyMTI3MjgsImlhdCI6MTczMzIxMTgyOCwiaXNzIjoiaHR0cHM6Ly9pZC50d2l0Y2gudHYvb2F1dGgyIiwic3ViIjoiMTIxMDM3MTI4NCIsImF6cCI6IjZybTlnbnhxdm80Mm9wcmZucXg4YjdocHRxa2ZuOSIsIm5vbmNlIjoidXo4bGYzRFhQaWI3T3pEVHVtQnRPZEg0Uk5ZIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWxpbmF0OTUifQ.NyHeUJRbME6fKKlMf8EGpZLbuu6egmKfWPueiLRuGjuzHaJJClzatI9-Xf526KpnWS7cKt10rhbZx6VOV7tjRxb3ARzZu52jY1CWyBvBgfqct5XJN67kE0GybBNXo40EwhCKRuS3pNjNHsrP9G5fdNYDZRG6d3hVvvD9rsTS6Rtxl-uUz-JI_1C2pomUM9qNPcXQhCy-WFvq1fJ2AZi9qE5ZeQBVB9LhW0tWA0oF0ho5pggS4H4_wX2qx1_b_WMBfDW8oYybuAfuW9Uf4J7rgze9pePIkktna4ZIoiMDhFc7TUKQiW8k-z9RJ0oqF1NenSDqruRC7RaVGjpqJnsYdw\",\"user_pass_to_int_format\":\"49505152\",\"zk_addr\":\"0x54570f826deb9cca5498c43fb92b63a175a929214ce9a849d5ae7b29d20f3b5b\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":67,\"1\":151,\"2\":191,\"3\":17,\"4\":230,\"5\":112,\"6\":244,\"7\":134,\"8\":200,\"9\":230,\"10\":47,\"11\":135,\"12\":250,\"13\":196,\"14\":155,\"15\":97,\"16\":34,\"17\":196,\"18\":158,\"19\":38,\"20\":32,\"21\":184,\"22\":255,\"23\":219,\"24\":229,\"25\":253,\"26\":9,\"27\":39,\"28\":153,\"29\":110,\"30\":29,\"31\":244},\"secret_key\":{\"0\":118,\"1\":234,\"2\":132,\"3\":235,\"4\":35,\"5\":86,\"6\":14,\"7\":125,\"8\":235,\"9\":218,\"10\":61,\"11\":111,\"12\":125,\"13\":207,\"14\":12,\"15\":70,\"16\":116,\"17\":99,\"18\":48,\"19\":180,\"20\":122,\"21\":120,\"22\":169,\"23\":150,\"24\":41,\"25\":77,\"26\":68,\"27\":112,\"28\":98,\"29\":164,\"30\":80,\"31\":226,\"32\":67,\"33\":151,\"34\":191,\"35\":17,\"36\":230,\"37\":112,\"38\":244,\"39\":134,\"40\":200,\"41\":230,\"42\":47,\"43\":135,\"44\":250,\"45\":196,\"46\":155,\"47\":97,\"48\":34,\"49\":196,\"50\":158,\"51\":38,\"52\":32,\"53\":184,\"54\":255,\"55\":219,\"56\":229,\"57\":253,\"58\":9,\"59\":39,\"60\":153,\"61\":110,\"62\":29,\"63\":244}}},\"maxEpoch\":142,\"extended_ephemeral_public_key\":\"ALkW5W6lM6+D2DUfiDU0JnmKuete4r4kScr71UmD7m4S\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"5512737220132661764763433666303745333622817838157246990491883457014772558790\",\"7741191131945326076605655541116327963387701820619204753669967744720810301194\",\"1\"],\"b\":[[\"975939824369696756004366458915319869031560554018320503553850551436103240713\",\"3318646493849785946054690844048321975990817279130676318569276416356932186331\"],[\"20363373817397831189796445832313036107992446943102660272248262372612972428627\",\"10352628036168685925901531114370646835780137031944433752597548025858647162549\"],[\"1\",\"0\"]],\"c\":[\"16764924754241855698364440343184497893704852638018863579795588761000070680187\",\"12850393671928953693043671631466186518426175933356485428915985566432485937123\",\"1\"]},\"issBase64Details\":{\"value\":\"wiaXNzIjoiaHR0cHM6Ly9pZC50d2l0Y2gudHYvb2F1dGgyIiw\",\"indexMod4\":2},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEifQ\"}}";
-    
-    
+
     #[derive(Debug, Deserialize)]
     pub struct JwtDataDecodedPart1 {
         pub alg: String,
@@ -43,7 +42,6 @@ mod tests {
     #[ignore]
     #[test]
     fn test_vrgrth16() {
-
         let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
@@ -52,21 +50,12 @@ mod tests {
         };
 
         let mut all_jwk = HashMap::new();
-        all_jwk.insert(
-            JwkId::new(
-                OIDCProvider::Twitch.get_config().iss,
-                "1".to_string(), 
-            ),
-            content,
-        );
+        all_jwk.insert(JwkId::new(OIDCProvider::Twitch.get_config().iss, "1".to_string()), content);
 
-        let data = [
-            TWITCH_DATA
-        ];
+        let data = [TWITCH_DATA];
 
         let max_epoch = 142;
         let verification_key_id: u32 = 0;
-
 
         for i in 0..data.len() {
             println!("====================== Iter@ is {i} =========================");
@@ -96,7 +85,6 @@ mod tests {
 
             let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
             println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
-      
 
             // JwtDataDecodedPart1
             let jwt_data_decoded1: JwtDataDecodedPart1 =
@@ -116,8 +104,8 @@ mod tests {
             let zk_seed = gen_address_seed(
                 user_pass_salt,
                 "sub",
-                jwt_data_decoded2.sub.as_str(), 
-                jwt_data_decoded2.aud.as_str(), 
+                jwt_data_decoded2.sub.as_str(),
+                jwt_data_decoded2.aud.as_str(),
             )
             .unwrap();
 
@@ -128,12 +116,16 @@ mod tests {
                 ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string())
                     .unwrap();
 
-            let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk, verification_key_id, max_epoch);
+            let time_for_vergrth16 = single_vrgrth16(
+                &eph_pubkey,
+                &zk_login_inputs,
+                &all_jwk,
+                verification_key_id,
+                max_epoch,
+            );
             println!("time_for_vergrth16 is {time_for_vergrth16}");
 
             println!("==========================================");
         }
     }
-
-    
 }

@@ -3,26 +3,21 @@
 
 pub mod test_helper {
     use std::collections::HashMap;
-  
     use std::time::Instant;
 
     use base64ct::Encoding as bEncoding;
-
+    use serde::Deserialize;
+    use serde_derive::Serialize;
+    use tvm_types::Cell;
+    use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
     use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
     use tvm_vm::executor::zk_stuff::zk_login::JWK;
     use tvm_vm::executor::zk_stuff::zk_login::JwkId;
     use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
-
-    use tvm_types::Cell;
-
-    use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
-
     use tvm_vm::utils::pack_data_to_cell;
 
     use crate::test_framework::Expects;
     use crate::test_framework::test_case_with_refs;
-    use serde::Deserialize;
-    use serde_derive::Serialize;
 
     #[derive(Debug, Deserialize)]
     pub struct JwtData {
@@ -71,7 +66,7 @@ pub mod test_helper {
         eph_pubkey: &Vec<u8>,
         zk_login_inputs: &ZkLoginInputs,
         all_jwk: &HashMap<JwkId, JWK>,
-        max_epoch: u64
+        max_epoch: u64,
     ) -> (Cell, Cell) {
         let (iss, kid) =
             (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
@@ -118,10 +113,14 @@ pub mod test_helper {
         zk_login_inputs: &ZkLoginInputs,
         all_jwk: &HashMap<JwkId, JWK>,
         verification_key_id: u32,
-        max_epoch: u64
+        max_epoch: u64,
     ) -> u128 {
-        let (proof_cell, public_inputs_cell) =
-            prepare_proof_and_public_key_cells_for_stack(eph_pubkey, zk_login_inputs, all_jwk, max_epoch);
+        let (proof_cell, public_inputs_cell) = prepare_proof_and_public_key_cells_for_stack(
+            eph_pubkey,
+            zk_login_inputs,
+            all_jwk,
+            max_epoch,
+        );
 
         let mut code = "PUSHREF \n".to_string();
         code = code + "PUSHREF \n";

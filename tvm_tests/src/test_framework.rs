@@ -10,6 +10,7 @@ use tvm_types::ExceptionCode;
 use tvm_types::HashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_vm::error::TvmError;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::IndexProvider;
@@ -17,7 +18,6 @@ use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::savelist::SaveList;
 use tvm_vm::types::Exception;
-use tvm_vm::error::TvmError;
 
 pub type Bytecode = SliceData;
 
@@ -162,8 +162,17 @@ pub trait Expects {
     fn expect_success(self) -> TestCase;
     fn expect_success_extended(self, message: Option<&str>) -> TestCase;
     fn expect_failure(self, exception_code: ExceptionCode) -> TestCase;
-    fn expect_custom_failure_extended<F : Fn(&Exception) -> bool>(self, op: F, exc_name: &str, message: Option <&str>) -> TestCase;
-    fn expect_failure_extended(self, exception_code: ExceptionCode, message: Option <&str>) -> TestCase; 
+    fn expect_custom_failure_extended<F: Fn(&Exception) -> bool>(
+        self,
+        op: F,
+        exc_name: &str,
+        message: Option<&str>,
+    ) -> TestCase;
+    fn expect_failure_extended(
+        self,
+        exception_code: ExceptionCode,
+        message: Option<&str>,
+    ) -> TestCase;
 }
 
 impl<T: Into<TestCase>> Expects for T {
@@ -259,22 +268,22 @@ impl<T: Into<TestCase>> Expects for T {
     }
 
     fn expect_failure_extended(
-        self, 
-        exception_code: ExceptionCode, 
-        message: Option <&str>
+        self,
+        exception_code: ExceptionCode,
+        message: Option<&str>,
     ) -> TestCase {
-       self.expect_custom_failure_extended(
-           |e| e.exception_code() != Some(exception_code),
-           &format!("{}", exception_code),
-           message
-       )
+        self.expect_custom_failure_extended(
+            |e| e.exception_code() != Some(exception_code),
+            &format!("{}", exception_code),
+            message,
+        )
     }
 
-    fn expect_custom_failure_extended<F : Fn(&Exception) -> bool>(
-        self, 
-        op: F, 
-        exc_name: &str, 
-        message: Option <&str>
+    fn expect_custom_failure_extended<F: Fn(&Exception) -> bool>(
+        self,
+        op: F,
+        exc_name: &str,
+        message: Option<&str>,
     ) -> TestCase {
         let test_case: TestCase = self.into();
         let executor = test_case.executor(message);
@@ -287,14 +296,11 @@ impl<T: Into<TestCase>> Expects for T {
                 );
                 print_stack(&test_case, executor);
                 match message {
-                    None => panic!(
-                        "Expected failure: {}, however execution succeeded.", 
-                        exc_name
-                    ),
+                    None => panic!("Expected failure: {}, however execution succeeded.", exc_name),
                     Some(msg) => panic!(
-                        "{}.\nExpected failure: {}, however execution succeeded.", 
+                        "{}.\nExpected failure: {}, however execution succeeded.",
                         msg, exc_name
-                    )
+                    ),
                 }
             }
             Err(ref e) => {
@@ -302,13 +308,13 @@ impl<T: Into<TestCase>> Expects for T {
                     if op(e) {
                         match message {
                             Some(msg) => panic!(
-                                "{} - {}\nNon expected exception: {}, expected: {}", 
+                                "{} - {}\nNon expected exception: {}, expected: {}",
                                 msg2, msg, e, exc_name
                             ),
                             None => panic!(
-                                "{}\nNon expected exception: {}, expected: {}", 
+                                "{}\nNon expected exception: {}, expected: {}",
                                 msg2, e, exc_name
-                            )
+                            ),
                         }
                     }
                 } else {
