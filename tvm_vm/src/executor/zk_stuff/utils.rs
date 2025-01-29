@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use fastcrypto::hash::Blake2b256;
+use fastcrypto::hash::HashFunction;
 use num_bigint::BigUint;
 use serde::Deserialize;
 use serde::Serialize;
@@ -9,7 +11,6 @@ use crate::executor::zk::Bn254Fr;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
-use fastcrypto::hash::{Blake2b256, HashFunction};
 
 const MAX_KEY_CLAIM_NAME_LENGTH: u8 = 32;
 const MAX_KEY_CLAIM_VALUE_LENGTH: u8 = 115;

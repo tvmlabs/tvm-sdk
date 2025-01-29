@@ -117,7 +117,6 @@ pub fn poseidon_merkle_tree(inputs: Vec<Fr>) -> Result<Fr, ZkCryptoError> {
 /// If one of the inputs is in non-canonical form, e.g. it represents an integer
 /// greater than the field size or is longer than 32 bytes, an error is
 /// returned.
-///
 pub fn poseidon_bytes(
     inputs: &Vec<Vec<u8>>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {

@@ -12,12 +12,11 @@ pub use ark_serialize::CanonicalDeserialize;
 pub use ark_serialize::CanonicalSerialize;
 use itertools::Itertools;
 use num_bigint::BigUint;
+use regex::Regex;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
-
-use regex::Regex;
 
 use super::utils::split_to_two_frs;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
@@ -29,8 +28,6 @@ use crate::executor::zk_stuff::curve_utils::g2_affine_from_str_projective;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::error::ZkCryptoResult;
 use crate::executor::zk_stuff::jwt_utils::JWTHeader;
-
-
 
 pub const MAX_HEADER_LEN: u8 = 248;
 pub const PACK_WIDTH: u8 = 248;
@@ -54,10 +51,7 @@ impl JwkId {
     pub fn new(iss: String, kid: String) -> Self {
         // if a Microsoft iss is found, remove the tenant id from it
         if match_micrsoft_iss_substring(&iss) {
-            return Self {
-                iss: "https://login.microsoftonline.com/v2.0".to_string(),
-                kid,
-            };
+            return Self { iss: "https://login.microsoftonline.com/v2.0".to_string(), kid };
         }
         Self { iss, kid }
     }
@@ -180,7 +174,7 @@ impl OIDCProvider {
             ),
             OIDCProvider::Slack => {
                 ProviderConfig::new("https://slack.com", "https://slack.com/openid/connect/keys")
-            },
+            }
             OIDCProvider::Microsoft => ProviderConfig::new(
                 "https://login.microsoftonline.com/v2.0",
                 "https://login.microsoftonline.com/common/discovery/v2.0/keys",
@@ -199,7 +193,7 @@ impl OIDCProvider {
             OIDCProvider::Credenza3 => ProviderConfig::new(
                 "https://accounts.credenza3.com",
                 "https://accounts.credenza3.com/jwks",
-            )
+            ),
         }
     }
 
@@ -286,19 +280,15 @@ impl JWK {
     /// Parse JWK from the reader struct.
     pub fn from_reader(reader: JWKReader) -> ZkCryptoResult<Self> {
         let trimmed_e = trim(reader.e);
-        // Microsoft does not contain alg field in JWK, so here we only check if it equals to RS256 only if alg field is present.
+        // Microsoft does not contain alg field in JWK, so here we only check if it
+        // equals to RS256 only if alg field is present.
         if (reader.alg.is_some() && reader.alg != Some("RS256".to_string()))
             || reader.kty != "RSA"
             || trimmed_e != "AQAB"
         {
             return Err(ZkCryptoError::InvalidInput);
         }
-        Ok(Self {
-            kty: reader.kty,
-            e: trimmed_e,
-            n: trim(reader.n),
-            alg: "RS256".to_string(),
-        })
+        Ok(Self { kty: reader.kty, e: trimmed_e, n: trim(reader.n), alg: "RS256".to_string() })
     }
 }
 

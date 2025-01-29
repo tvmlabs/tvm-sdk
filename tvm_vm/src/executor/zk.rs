@@ -22,11 +22,9 @@ use num_bigint::BigUint;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
+use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
-use tvm_types::ExceptionCode;
-
-use crate::types::Exception;
 
 use crate::error::TvmError;
 use crate::executor::Engine;
@@ -44,6 +42,7 @@ use crate::stack::StackItem;
 use crate::stack::StackItem::Cell;
 use crate::stack::integer::IntegerData;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
+use crate::types::Exception;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
@@ -727,7 +726,7 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     // todo: add alternative for elliptic curve (BLS), read from stack curve id
 
     let res = Groth16::<Bn254>::verify_with_processed_vk(&vk, &x, &proof.0)
-            .map_err(|e| ZkCryptoError::GeneralError(e.to_string()));
+        .map_err(|e| ZkCryptoError::GeneralError(e.to_string()));
 
     let succes = res.is_ok();
     let res = if succes { boolean!(res?) } else { boolean!(false) };
@@ -783,8 +782,8 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     };
     let addr_seed = (&address_seed).into();
 
-    let (first, second)  = match split_to_two_frs(&eph_pub_key_bytes) {
-        Ok((first, second)  ) => (first, second) ,
+    let (first, second) = match split_to_two_frs(&eph_pub_key_bytes) {
+        Ok((first, second)) => (first, second),
         Err(err) => {
             return err!(ExceptionCode::FatalError, "Incorrect ephemeral public key {}", err);
         }
@@ -850,39 +849,4 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     engine.cc.stack.push(Cell(public_inputs_cell));
 
     Ok(())
-
 }
-
-/*pub fn calculate_poseidon_hash(
-    address_seed: &str,
-    header_base_64: &str,
-    iss_base_64: &str,
-    index_mod_4: &str,
-    eph_pk_bytes: &[u8],
-    modulus: &[u8],
-    max_epoch: u64,
-) -> Result<Bn254Fr, Error> {
-    let address_seed = Bn254FrElement::from_str(address_seed)?;
-
-
-    let addr_seed = (&address_seed).into();
-
-    let (first, second) = split_to_two_frs(eph_pk_bytes)?;
-    let max_epoch_f = (&Bn254FrElement::from_str(&max_epoch.to_string())?).into();
-    let index_mod_4_f = (&Bn254FrElement::from_str(&index_mod_4)?).into();
-    let iss_base64_f = hash_ascii_str_to_field(&iss_base_64, MAX_ISS_LEN_B64)?;
-    let header_f = hash_ascii_str_to_field(&header_base_64, MAX_HEADER_LEN)?;
-    let modulus_f = hash_to_field(&[BigUint::from_bytes_be(modulus)], 2048, PACK_WIDTH)?;
-
-    poseidon_zk_login(vec![
-        first,
-        second,
-        addr_seed,
-        max_epoch_f,
-        iss_base64_f,
-        index_mod_4_f,
-        header_f,
-        modulus_f,
-    ])
-
-}*/
