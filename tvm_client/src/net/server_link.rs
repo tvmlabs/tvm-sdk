@@ -9,8 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::cmp::max;
-use std::cmp::min;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::pin::Pin;
@@ -159,7 +157,7 @@ impl NetworkState {
 
     pub fn next_resume_timeout(&self) -> u32 {
         let timeout = self.resume_timeout.load(Ordering::Relaxed);
-        let next_timeout = min(max(timeout * 2, MIN_RESUME_TIMEOUT), MAX_RESUME_TIMEOUT); // 0, 0.5, 1, 2, 3, 3, 3...
+        let next_timeout = (timeout * 2).clamp(MIN_RESUME_TIMEOUT, MAX_RESUME_TIMEOUT); // 0, 0.5, 1, 2, 3, 3, 3...
         self.resume_timeout.store(next_timeout, Ordering::Relaxed);
         timeout
     }
@@ -746,7 +744,7 @@ impl ServerLink {
             threadId: Some(thread_id.to_string()),
         };
 
-        self.query(&&GraphQLQuery::with_send_message(&message), endpoint).await
+        self.query(&GraphQLQuery::with_send_message(&message), endpoint).await
     }
 
     pub async fn send_messages(

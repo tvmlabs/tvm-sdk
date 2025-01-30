@@ -98,6 +98,7 @@ pub(crate) fn is_empty_pubkey(pubkey: &PublicKeyData) -> bool {
 /// 1. Initial public key from the deploy set
 /// 2. Public key from TVC image
 /// 3. Signer
+///
 /// Returns None, if no public key was resolved.
 pub(crate) fn resolve_pubkey(
     deploy_set: &DeploySet,

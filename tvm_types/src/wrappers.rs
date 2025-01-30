@@ -251,7 +251,7 @@ pub struct Crc32<'a> {
     hasher: crc::Digest<'a, u32>,
 }
 
-impl<'a> Crc32<'a> {
+impl Crc32<'_> {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self { hasher: CASTAGNOLI.digest() }

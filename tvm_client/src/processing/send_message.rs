@@ -100,7 +100,7 @@ pub struct ResultOfSendMessage {
 #[derive(Clone)]
 struct SendingMessage {
     serialized: String,
-    _deserialized: DeserializedObject<Message>,
+    deserialized: DeserializedObject<Message>,
     id: String,
     body: Vec<u8>,
     dst: MsgAddressInt,
@@ -129,7 +129,7 @@ impl SendingMessage {
         let body = base64_decode(serialized)?;
         Ok(Self {
             serialized: serialized.to_string(),
-            _deserialized: deserialized,
+            deserialized,
             id,
             body,
             dst,
