@@ -105,6 +105,8 @@ const MAX_ACTIONS: usize = 255;
 const MAX_MSG_BITS: usize = 1 << 21;
 const MAX_MSG_CELLS: usize = 1 << 13;
 
+const STORAGE_FEE_COOLER_TIME: u32 = 2592000;
+
 #[derive(Eq, PartialEq, Debug)]
 pub enum IncorrectCheckRewrite {
     Anycast,
@@ -275,6 +277,7 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
+        is_same_thread_id: bool
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
         if tr.now() < acc.last_paid() {
@@ -302,35 +305,38 @@ pub trait TransactionExecutor {
             fee.add(due_payment)?;
             acc.set_due_payment(None);
         }
-
-        let mut diff = fee.clone();
-        diff.sub(&acc_balance.grams)?;
-        if available_credit == INFINITY_CREDIT {
-            acc_balance.grams.add(&diff)?;
-            *minted_shell += diff.as_u128();
-            diff = Grams::zero();
+        if (tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME) && (is_same_thread_id) {
+            acc_balance.grams.add(&fee)?;
         } else {
-            if Grams::from(available_credit as u64) > diff {
+            let mut diff = fee.clone();
+            diff.sub(&acc_balance.grams)?;
+            if available_credit == INFINITY_CREDIT {
                 acc_balance.grams.add(&diff)?;
                 *minted_shell += diff.as_u128();
                 diff = Grams::zero();
             } else {
-                acc_balance.grams.add(&Grams::from(available_credit as u64))?;
-                *minted_shell += available_credit as u128;
-                diff.sub(&Grams::from(available_credit as u64))?;
+                if Grams::from(available_credit as u64) > diff {
+                    acc_balance.grams.add(&diff)?;
+                    *minted_shell += diff.as_u128();
+                    diff = Grams::zero();
+                } else {
+                    acc_balance.grams.add(&Grams::from(available_credit as u64))?;
+                    *minted_shell += available_credit as u128;
+                    diff.sub(&Grams::from(available_credit as u64))?;
+                }
             }
-        }
-        if acc_balance.grams < diff {            
-            let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
-                Ok(Some(data)) => data,
-                Ok(None) => VarUInteger32::default(),
-                Err(_) => VarUInteger32::default(),
-            };
-            if ecc_balance > VarUInteger32::from(diff.as_u128()) {
-                let mut sub_value = CurrencyCollection::new();
-                sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
-                acc_balance.grams.add(&Grams::from(diff.as_u64_quiet()))?;
-                acc_balance.sub(&sub_value)?;
+            if acc_balance.grams < diff {            
+                let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
+                    Ok(Some(data)) => data,
+                    Ok(None) => VarUInteger32::default(),
+                    Err(_) => VarUInteger32::default(),
+                };
+                if ecc_balance > VarUInteger32::from(diff.as_u128()) {
+                    let mut sub_value = CurrencyCollection::new();
+                    sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
+                    acc_balance.grams.add(&Grams::from(diff.as_u64_quiet()))?;
+                    acc_balance.sub(&sub_value)?;
+                }
             }
         }
         if acc_balance.grams >= fee {

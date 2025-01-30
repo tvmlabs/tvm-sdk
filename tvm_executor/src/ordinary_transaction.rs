@@ -229,6 +229,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             is_special,
             params.available_credit,
             minted_shell,
+            params.is_same_thread_id
         ) {
             Ok(storage_ph) => {
                 storage_fee = storage_ph.storage_fees_collected.as_u128();
