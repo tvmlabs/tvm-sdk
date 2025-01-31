@@ -851,6 +851,3 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     Ok(())
 }
 
-// #[cfg(test)]
-// #[path = "../../../tvm_assembler/src/instruction_tests/test_zk_for_google.rs"
-// ] mod tests;
