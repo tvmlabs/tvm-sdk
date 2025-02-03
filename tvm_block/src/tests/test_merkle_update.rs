@@ -23,6 +23,7 @@ use tvm_types::write_boc;
 use super::*;
 use crate::Block;
 use crate::CurrencyCollection;
+use crate::ExternalCellStruct;
 use crate::Grams;
 use crate::HashmapE;
 use crate::HashmapType;
@@ -37,6 +38,8 @@ use crate::OutQueueUpdate;
 use crate::OutQueueUpdates;
 use crate::ProcessedInfoKey;
 use crate::ProcessedUpto;
+use crate::ShardAccount;
+use crate::ShardAccounts;
 use crate::ShardIdent;
 use crate::ShardState;
 use crate::ShardStateSplit;
@@ -890,4 +893,160 @@ fn test_prepare_first_update_for_wc() -> Result<()> {
     assert_eq!(queue_proof.proof.virtualize(1).repr_hash(), next_state_root.repr_hash());
 
     Ok(())
+}
+
+#[test]
+fn test_update_shard_state_with_external_cell() {
+    let mut shard_state_full = ShardStateUnsplit::default();
+    let mut shard_accounts = ShardAccounts::default();
+
+    for n in 5..70u8 {
+        let mut acc = generate_test_account_by_init_code_hash(false);
+        let f = CurrencyCollection::with_grams(n as u64);
+        acc.add_funds(&f).unwrap();
+        shard_accounts
+            .insert(
+                &UInt256::from([n].as_slice()),
+                &ShardAccount::with_params(&acc, UInt256::default(), 0, Some(Default::default()))
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+    shard_state_full.write_accounts(&shard_accounts).unwrap();
+    let account_id5 = UInt256::from([50].as_slice());
+    let account_id6 = UInt256::from([60].as_slice());
+
+    let create_apply_and_check = |old_state: &ShardStateUnsplit,
+                                  apply_to: &ShardStateUnsplit,
+                                  update_old_state: bool|
+     -> Result<(MerkleUpdate, MerkleUpdate)> {
+        let mut old_state = old_state.clone();
+        let old_state_root = old_state.serialize().unwrap();
+        let usage_tree = UsageTree::with_root(old_state_root);
+        let old_state_root = usage_tree.root_cell();
+        let mut new_state = ShardStateUnsplit::construct_from_cell(old_state_root.clone()).unwrap();
+
+        let mut new_shard_accounts = new_state.read_accounts().unwrap();
+        let mut new_shard_acc =
+            new_shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
+        let mut new_acc = match new_shard_acc.read_account().unwrap() {
+            ExternalCellStruct::External(_) => {
+                let acc = shard_accounts
+                    .account(&account_id5.clone().into())
+                    .unwrap()
+                    .unwrap()
+                    .read_account()
+                    .unwrap()
+                    .as_struct()
+                    .unwrap();
+                if update_old_state {
+                    let mut shard_accounts = old_state.read_accounts().unwrap();
+                    let mut shard_acc =
+                        shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
+                    shard_acc.set_account_cell(acc.serialize().unwrap());
+                    shard_accounts.insert(&account_id5, &shard_acc).unwrap();
+                    old_state.write_accounts(&shard_accounts).unwrap();
+                }
+                acc
+            }
+            ExternalCellStruct::Struct(acc) => acc,
+        };
+        let f = CurrencyCollection::with_grams(20);
+        new_acc.add_funds(&f).unwrap();
+        let new_balance = new_acc.get_balance().unwrap();
+        new_shard_acc.set_account_cell(new_acc.serialize().unwrap());
+        new_shard_accounts.insert(&account_id5.clone().into(), &new_shard_acc).unwrap();
+        new_state.write_accounts(&new_shard_accounts).unwrap();
+
+        println!("{:?}", usage_tree.build_visited_set());
+        let create_fast_result = MerkleUpdate::create_fast(
+            &old_state.serialize().unwrap(),
+            &new_state.serialize().unwrap(),
+            |hash| usage_tree.contains(hash),
+        );
+        let create_result =
+            MerkleUpdate::create(&old_state.serialize().unwrap(), &new_state.serialize().unwrap());
+        assert_eq!(create_fast_result.is_ok(), create_result.is_ok());
+        let update = create_result?;
+        let update_fast = create_fast_result?;
+
+        let new_state_acc = apply_to
+            .read_accounts()
+            .unwrap()
+            .account(&account_id6.clone().into())
+            .unwrap()
+            .unwrap()
+            .read_account()
+            .unwrap();
+
+        let check = |update: &MerkleUpdate| -> Result<()> {
+            let new_state_constructed = ShardStateUnsplit::construct_from_cell(
+                update.apply_for(&apply_to.serialize().unwrap())?,
+            )
+            .unwrap();
+            let shard_accounts = new_state_constructed.read_accounts().unwrap();
+            let shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
+            assert_eq!(
+                shard_acc.read_account().unwrap().as_struct().unwrap().get_balance().unwrap(),
+                new_balance
+            );
+            let shard_acc = shard_accounts.account(&account_id6.clone().into()).unwrap().unwrap();
+            assert_eq!(shard_acc.read_account().unwrap(), new_state_acc);
+            Ok(())
+        };
+
+        let result = dbg!(check(&update));
+        let result_fast = dbg!(check(&update_fast));
+        assert_eq!(result.is_ok(), result_fast.is_ok());
+        result?;
+        result_fast?;
+
+        Ok((update, update_fast))
+    };
+
+    let update_full_full =
+        create_apply_and_check(&shard_state_full, &shard_state_full, false).unwrap();
+
+    let mut shard_accounts_ext5 = shard_accounts.clone();
+    let acc5_root = shard_accounts_ext5.replace_with_external(&account_id5).unwrap();
+    let mut shard_state_ext5 = shard_state_full.clone();
+    shard_state_ext5.write_accounts(&shard_accounts_ext5).unwrap();
+
+    let mut shard_accounts_ext6 = shard_accounts.clone();
+    shard_accounts_ext6.replace_with_external(&account_id6).unwrap();
+    let mut shard_state_ext6 = shard_state_full.clone();
+    shard_state_ext6.write_accounts(&shard_accounts_ext6).unwrap();
+
+    // assert!(create_apply_and_check(&shard_state_full, &shard_state_ext5, false).is_err());
+    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_full, false).is_err());
+    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false).is_err());
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext5, &shard_state_full, true).unwrap();
+    assert_eq!(update_full_full, update_ext_full);
+    // assert!(create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true).is_err());
+
+    let mut shard_acc = shard_accounts_ext5.account(&account_id5.clone().into()).unwrap().unwrap();
+    shard_acc.set_account_cell(acc5_root);
+    shard_accounts_ext5.insert(&account_id5, &shard_acc).unwrap();
+    let mut shard_state_loaded = shard_state_ext5.clone();
+    shard_state_loaded.write_accounts(&shard_accounts_ext5).unwrap();
+
+    let update_full_ext =
+    create_apply_and_check(&shard_state_full, &shard_state_loaded, false).unwrap();
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext5, &shard_state_loaded, true).unwrap();
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext6, &shard_state_full, false).unwrap();
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_ext6, false).unwrap();
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, false).unwrap();
+
+    assert_eq!(update_full_full, update_ext_full);
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
 }

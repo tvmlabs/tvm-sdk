@@ -15,6 +15,7 @@ use std::fmt;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
+use tvm_types::CellType;
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
 use tvm_types::Result;
@@ -26,13 +27,14 @@ use tvm_types::fail;
 
 use crate::ConfigParams;
 use crate::Deserializable;
+use crate::ExternalCell;
+use crate::ExternalCellStruct;
 use crate::GetRepresentationHash;
 use crate::MaybeDeserialize;
 use crate::MaybeSerialize;
 use crate::Serializable;
 use crate::error::BlockError;
 use crate::hashmapaug::Augmentation;
-use crate::hashmapaug::HashmapAugType;
 use crate::merkle_proof::MerkleProof;
 use crate::messages::AnycastInfo;
 use crate::messages::Message;
@@ -45,7 +47,6 @@ use crate::shard::ShardIdent;
 use crate::shard::ShardStateUnsplit;
 use crate::shard_accounts::DepthBalanceInfo;
 use crate::types::AddSub;
-use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
 use crate::types::Grams;
 use crate::types::Number5;
@@ -1082,13 +1083,12 @@ impl Account {
                 let ss = ShardStateUnsplit::construct_from_cell(usage_tree.root_cell())?;
 
                 ss.read_accounts()?
-                    .get_serialized(addr)?
+                    .account(&addr)?
                     .ok_or_else(|| {
                         error!(BlockError::InvalidArg(
                             "Account doesn't belong to given shard state".to_string()
                         ))
-                    })?
-                    .read_account()?;
+                    })?;
 
                 MerkleProof::create_by_usage_tree(state_root, usage_tree)
                     .and_then(|proof| proof.serialize())
@@ -1239,7 +1239,7 @@ impl fmt::Display for Account {
 /// struct ShardAccount
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct ShardAccount {
-    account: ChildCell<Account>,
+    account: ExternalCell<Account>,
     last_trans_hash: UInt256,
     last_trans_lt: u64,
     dapp_id: Option<UInt256>,
@@ -1253,7 +1253,7 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Self {
         ShardAccount {
-            account: ChildCell::with_cell(account_root),
+            account: ExternalCell::with_cell(account_root),
             last_trans_hash,
             last_trans_lt,
             dapp_id,
@@ -1267,43 +1267,23 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Result<Self> {
         Ok(ShardAccount {
-            account: ChildCell::with_struct(account)?,
+            account: ExternalCell::with_struct(account)?,
             last_trans_hash,
             last_trans_lt,
             dapp_id,
         })
     }
 
-    pub fn read_account(&self) -> Result<Account> {
+    pub fn read_account(&self) -> Result<ExternalCellStruct<Account>> {
         self.account.read_struct()
-    }
-
-    pub fn write_account(&mut self, value: &Account) -> Result<()> {
-        self.account.write_struct(value)
     }
 
     pub fn last_trans_hash(&self) -> &UInt256 {
         &self.last_trans_hash
     }
 
-    pub fn set_last_trans_hash(&mut self, hash: UInt256) {
-        self.last_trans_hash = hash
-    }
-
     pub fn last_trans_lt(&self) -> u64 {
         self.last_trans_lt
-    }
-
-    pub fn set_last_trans_lt(&mut self, lt: u64) {
-        self.last_trans_lt = lt
-    }
-
-    pub fn last_trans_hash_mut(&mut self) -> &mut UInt256 {
-        &mut self.last_trans_hash
-    }
-
-    pub fn last_trans_lt_mut(&mut self) -> &mut u64 {
-        &mut self.last_trans_lt
     }
 
     pub fn account_cell(&self) -> Cell {
@@ -1311,15 +1291,21 @@ impl ShardAccount {
     }
 
     pub fn set_account_cell(&mut self, cell: Cell) {
-        self.account.set_cell(cell);
+        self.account.set_cell(cell)
     }
 
     pub fn get_dapp_id(&self) -> Option<&UInt256> {
         self.dapp_id.as_ref()
     }
 
-    pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {
-        self.dapp_id = dapp_id;
+    pub fn replace_with_external(&mut self) -> Result<Cell> {
+        let cell = self.account.cell();
+        if cell.cell_type() != CellType::Ordinary {
+            fail!("Only ordinary cells can be replaced with external")
+        }
+        let external = cell.to_external()?;
+        self.account = ExternalCell::with_cell(external);
+        Ok(cell)
     }
 }
 

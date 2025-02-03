@@ -18,6 +18,7 @@ use num::BigInt;
 use num_traits::sign::Signed;
 use serde_json::Map;
 use serde_json::Value;
+use shard_accounts::ShardAccounts;
 use tvm_api::ton::ton_node::RempMessageLevel;
 use tvm_api::ton::ton_node::RempMessageStatus;
 use tvm_api::ton::ton_node::RempReceipt;
@@ -1318,8 +1319,8 @@ fn serialize_shard_accounts(
     mode: SerializationMode,
 ) -> Result<()> {
     let mut accounts = Vec::new();
-    shard_accounts.iterate_objects(&mut |ref mut value: ShardAccount| -> Result<bool> {
-        let account = value.read_account()?;
+    shard_accounts.iterate_accounts(|_, shard_acc, _| -> Result<bool> {
+        let account = shard_acc.read_account()?.as_struct()?;
         let mut boc1 = None;
         if account.init_code_hash().is_some() {
             let mut builder = BuilderData::new();
@@ -1330,10 +1331,10 @@ fn serialize_shard_accounts(
         let account_set = AccountSerializationSet {
             account,
             prev_code_hash: None,
-            boc: write_boc(&value.account_cell())?,
+            boc: write_boc(&shard_acc.account_cell())?,
             boc1,
             proof: None,
-            dapp_id: value.get_dapp_id().cloned(),
+            dapp_id: shard_acc.get_dapp_id().cloned(),
         };
         let mut account = db_serialize_account_ex("id", &account_set, mode)?;
         account.remove("json_version");

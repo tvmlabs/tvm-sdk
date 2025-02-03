@@ -15,6 +15,7 @@
 use tvm_block::ConfigCopyleft;
 use tvm_block::ConfigVotingSetup;
 use tvm_block::Number16;
+use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;

@@ -71,7 +71,6 @@ use tvm_types::error;
 use tvm_types::fail;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::BehaviorModifiers;
-use tvm_vm::executor::IndexProvider;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::token::INFINITY_CREDIT;
@@ -120,7 +119,6 @@ pub struct ExecuteParams {
     pub seed_block: UInt256,
     pub debug: bool,
     pub trace_callback: Option<Arc<tvm_vm::executor::TraceCallback>>,
-    pub index_provider: Option<Arc<dyn IndexProvider>>,
     pub behavior_modifiers: Option<BehaviorModifiers>,
     pub block_version: u32,
     #[cfg(feature = "signature_with_id")]
@@ -162,7 +160,6 @@ impl Default for ExecuteParams {
             seed_block: UInt256::default(),
             debug: false,
             trace_callback: None,
-            index_provider: None,
             behavior_modifiers: None,
             block_version: 0,
             #[cfg(feature = "signature_with_id")]

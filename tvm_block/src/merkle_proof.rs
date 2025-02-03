@@ -147,6 +147,10 @@ impl MerkleProof {
         pruned_branches: &mut Option<HashSet<UInt256>>,
         done_cells: &mut HashMap<UInt256, Cell>,
     ) -> Result<Cell> {
+        if cell.cell_type() == CellType::External {
+            fail!("External cell can not be included into Merkle proof");
+        }
+        println!("traversing {:?}", cell);
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
 
         let mut proof_cell = BuilderData::from_cell(cell)?;
@@ -361,7 +365,7 @@ pub fn check_message_proof(
 }
 
 /// checks if account with given address is exist in shard state.
-/// Proof must contain account's root cell
+/// Proof must contain account's root cell as a pruned branch
 /// Returns info about the block corresponds to shard state the account belongs
 /// to.
 pub fn check_account_proof(proof: &MerkleProof, acc: &Account) -> Result<BlockSeqNoAndShard> {
@@ -375,7 +379,7 @@ pub fn check_account_proof(proof: &MerkleProof, acc: &Account) -> Result<BlockSe
         BlockError::WrongMerkleProof(format!("Error extracting accounts dict from proof: {}", err))
     })?;
 
-    let shard_acc = accounts.get_serialized(acc.get_addr().unwrap().get_address());
+    let shard_acc = accounts.account(&acc.get_addr().unwrap().get_address());
     if let Ok(Some(shard_acc)) = shard_acc {
         let acc_root = shard_acc.account_cell();
         let acc_hash = Cell::hash(&acc_root, (max(acc_root.level(), 1) - 1) as usize);

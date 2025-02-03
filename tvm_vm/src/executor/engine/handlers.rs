@@ -17,7 +17,6 @@ use tvm_types::error;
 use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
-use crate::executor::accounts::*;
 use crate::executor::blockchain::*;
 use crate::executor::config::*;
 use crate::executor::continuation::*;
@@ -945,10 +944,6 @@ impl Handlers {
                 .set(0x41, execute_cdatasize)
                 .set(0x42, execute_sdatasizeq)
                 .set(0x43, execute_sdatasize)
-                .set(0x44, execute_find_by_init_code_hash)
-                .set(0x45, execute_find_by_code_hash)
-                .set(0x46, execute_find_by_data_hash)
-                .set(0x50, execute_try_elect),
         )
     }
 

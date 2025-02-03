@@ -25,9 +25,7 @@ use crate::Deserializable;
 use crate::Serializable;
 use crate::define_HashmapE;
 use crate::error::BlockError;
-use crate::hashmapaug::HashmapAugType;
 use crate::shard::ShardIdent;
-use crate::shard_accounts::ShardAccounts;
 use crate::signature::CryptoSignature;
 use crate::signature::SigPubKey;
 use crate::types::ChildCell;
@@ -110,30 +108,6 @@ impl ConfigParams {
         let key = SliceData::load_bitstring(index.write_to_new_cell()?)?;
         self.config_params.set_builder(key, &value)?;
         Ok(())
-    }
-
-    pub fn get_smc_tick_tock(&self, smc_addr: &UInt256, accounts: &ShardAccounts) -> Result<usize> {
-        let account = match accounts.get(smc_addr)? {
-            Some(shard_account) => shard_account.read_account()?,
-            None => fail!("Tick-tock smartcontract not found"),
-        };
-        Ok(account.get_tick_tock().map(|tick_tock| tick_tock.as_usize()).unwrap_or_default())
-    }
-
-    pub fn special_ticktock_smartcontracts(
-        &self,
-        tick_tock: usize,
-        accounts: &ShardAccounts,
-    ) -> Result<Vec<(UInt256, usize)>> {
-        let mut vec = Vec::new();
-        self.fundamental_smc_addr()?.iterate_keys(|key: UInt256| {
-            let tt = self.get_smc_tick_tock(&key, accounts)?;
-            if (tick_tock & tt) != 0 {
-                vec.push((key, tt))
-            }
-            Ok(true)
-        })?;
-        Ok(vec)
     }
 
     // Wrappers

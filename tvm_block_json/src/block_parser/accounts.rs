@@ -107,7 +107,7 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
                         .to_string(),
                 )
             })?;
-            let acc = shard_acc.read_account()?;
+            let acc = shard_acc.read_account()?.as_struct()?;
 
             let last_trans_chain_order = self.last_trans_chain_order.remove(account_id);
             result.accounts.push(Self::prepare_account_entry(
@@ -202,7 +202,7 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
                 return Ok(None);
             }
         }
-        Ok(if let Some(acc) = acc? { acc.read_account()?.get_code_hash() } else { None })
+        Ok(if let Some(acc) = acc? { acc.read_account()?.as_struct()?.get_code_hash() } else { None })
     }
 
     pub(crate) fn prepare_account_entry(

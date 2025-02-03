@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use std::convert::Into;
-use std::sync::Arc;
 
 use tvm_assembler::CompileError;
 use tvm_assembler::compile_code;
@@ -11,7 +10,6 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::Engine;
-use tvm_vm::executor::IndexProvider;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::savelist::SaveList;
@@ -48,7 +46,6 @@ pub struct TestCaseInputs {
     capabilities: u64,
     block_version: u32,
     skip_fift_check: bool,
-    index_provider: Option<Arc<dyn IndexProvider>>,
 }
 
 impl TestCaseInputs {
@@ -65,7 +62,6 @@ impl TestCaseInputs {
             capabilities,
             block_version: 0,
             skip_fift_check: false,
-            index_provider: None,
         }
     }
 }
@@ -133,9 +129,6 @@ impl TestCase {
                 executor.set_block_version(args.block_version);
                 if let Some(modifiers) = args.behavior_modifiers {
                     executor.modify_behavior(modifiers);
-                }
-                if let Some(index_provider) = args.index_provider.clone() {
-                    executor.set_index_provider(index_provider)
                 }
                 let execution_result = executor.execute();
 

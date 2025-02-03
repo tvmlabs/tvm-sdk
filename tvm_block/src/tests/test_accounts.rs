@@ -648,9 +648,9 @@ fn test_real_account_serde() {
         state
             .read_accounts()
             .unwrap()
-            .iterate_objects(|sa| {
+            .iterate_accounts(|_, sa, _| {
                 let acc_cell = sa.account_cell();
-                let acc = sa.read_account().unwrap();
+                let acc = sa.read_account().unwrap().as_struct().unwrap();
 
                 let cell = acc.serialize().unwrap();
                 let acc2 = Account::construct_from_cell(cell.clone()).unwrap();

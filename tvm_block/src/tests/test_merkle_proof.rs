@@ -521,8 +521,8 @@ fn test_check_correct_account_proof() {
         state
             .read_accounts()
             .unwrap()
-            .iterate_objects(|account| {
-                let account = account.read_account().unwrap();
+            .iterate_accounts(|_, account, _| {
+                let account = account.read_account().unwrap().as_struct().unwrap();
 
                 println!("account: {}", account.get_id().unwrap());
 
@@ -553,8 +553,8 @@ fn test_check_wrong_account_proof() {
         state
             .read_accounts()
             .unwrap()
-            .iterate_objects(|account| {
-                let account = account.read_account().unwrap();
+            .iterate_accounts(|_, account, _| {
+                let account = account.read_account().unwrap().as_struct().unwrap();
 
                 println!("account: {}", account.get_id().unwrap());
 
