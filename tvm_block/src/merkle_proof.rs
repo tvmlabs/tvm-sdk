@@ -150,7 +150,7 @@ impl MerkleProof {
         if cell.cell_type() == CellType::External {
             fail!("External cell can not be included into Merkle proof");
         }
-        println!("traversing {:?}", cell);
+        // println!("traversing {:?}", cell);
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
 
         let mut proof_cell = BuilderData::from_cell(cell)?;

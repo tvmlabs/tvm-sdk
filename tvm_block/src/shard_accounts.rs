@@ -14,6 +14,7 @@ use std::fmt;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
+use tvm_types::HashmapRemover;
 use tvm_types::HashmapSubtree;
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
@@ -92,6 +93,10 @@ impl ShardAccounts {
         let cell = account.replace_with_external()?;
         self.shard_accounts.set(account_id, &account, &aug)?;
         Ok(cell)
+    }
+
+    pub fn remove(&mut self, account_id: &UInt256) -> Result<Option<SliceData>> {
+        self.shard_accounts.remove(account_id.into())
     }
 }
 

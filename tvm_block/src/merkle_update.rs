@@ -210,7 +210,7 @@ impl MerkleUpdate {
             ) {
                 used_paths_cells.insert(old.repr_hash());
             }
-            println!("traversing old");
+            // println!("traversing old");
             let mut done_cells = HashMap::new();
             let old_update_cell = MerkleProof::create_raw(
                 old,
@@ -221,10 +221,10 @@ impl MerkleUpdate {
                 &mut done_cells,
             )?;
 
-            println!("old_update_cell:");
-            println!("{:#.10}", old_update_cell);
-            println!("new_update_cell:");
-            println!("{:#.10}", new_update_cell);
+            // println!("old_update_cell:");
+            // println!("{:#.10}", old_update_cell);
+            // println!("new_update_cell:");
+            // println!("{:#.10}", new_update_cell);
             Ok(MerkleUpdate {
                 old_hash: old.repr_hash(),
                 new_hash: new.repr_hash(),
