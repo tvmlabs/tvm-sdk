@@ -55,7 +55,11 @@ pub struct ShardAccounts {
 impl ShardAccounts {
     pub fn insert(&mut self, account_id: &UInt256, shard_account: &ShardAccount) -> Result<()> {
         let depth_balance_info = shard_account.aug()?;
-        self.shard_accounts.set(account_id, &shard_account, &depth_balance_info)
+        self.shard_accounts.set(account_id, shard_account, &depth_balance_info)
+    }
+
+    pub fn insert_with_aug(&mut self, account_id: &UInt256, shard_account: &ShardAccount, aug: &DepthBalanceInfo) -> Result<()> {
+        self.shard_accounts.set(account_id, shard_account, aug)
     }
 
     pub fn account(&self, account_id: &AccountId) -> Result<Option<ShardAccount>> {
