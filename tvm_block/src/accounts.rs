@@ -576,13 +576,9 @@ impl AccountStuff {
 
 impl Serializable for AccountStuff {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
-        let mut builder_stuff = BuilderData::new();
-        self.addr.write_to(&mut builder_stuff)?;
-        let mut builder_stuff2 = BuilderData::new();
-        self.storage_stat.write_to(&mut builder_stuff2)?;
-        self.storage.write_to(&mut builder_stuff2)?;
-        builder.checked_append_reference(builder_stuff.into_cell().unwrap()).unwrap();
-        builder.checked_append_reference(builder_stuff2.into_cell().unwrap()).unwrap();
+        self.addr.write_to(builder)?;
+        self.storage_stat.write_to(builder)?;
+        self.storage.write_to(builder)?;
         Ok(())
     }
 }
@@ -1099,47 +1095,35 @@ impl Account {
 
     pub fn write_original_format(&self, builder: &mut BuilderData) -> Result<()> {
         if let Some(stuff) = self.stuff() {
-            let mut builder_stuff = BuilderData::new();
             builder.append_bit_one()?;
-            stuff.addr.write_to(&mut builder_stuff)?;
-            builder.checked_append_reference(builder_stuff.into_cell().unwrap()).unwrap();
-            let mut builder_stuff2 = BuilderData::new();
-            stuff.storage_stat.write_to(&mut builder_stuff2)?;
-            stuff.storage.last_trans_lt.write_to(&mut builder_stuff2)?; // last_trans_lt:uint64
-            stuff.storage.balance.write_to(&mut builder_stuff2)?; // balance:CurrencyCollection
-            stuff.storage.state.write_to(&mut builder_stuff2)?; // state:AccountState
-            builder.checked_append_reference(builder_stuff2.into_cell().unwrap()).unwrap();
+            stuff.addr.write_to(builder)?;
+            stuff.storage_stat.write_to(builder)?;
+            stuff.storage.last_trans_lt.write_to(builder)?; //last_trans_lt:uint64
+            stuff.storage.balance.write_to(builder)?; //balance:CurrencyCollection
+            stuff.storage.state.write_to(builder)?; //state:AccountState
         } else {
             builder.append_bit_zero()?;
         }
         Ok(())
     }
 
-    pub fn read_original_format(slice: &mut SliceData) -> Result<Self> {
-        let builder = slice.reference(0).unwrap();
-        let mut slice_builder = SliceData::load_cell(builder).unwrap();
-        let addr = Deserializable::construct_from(&mut slice_builder)?;
-        let builder2 = slice.reference(1).unwrap();
-        slice_builder = SliceData::load_cell(builder2).unwrap();
-        let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
-        let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; // last_trans_lt:uint64
-        let balance = Deserializable::construct_from(&mut slice_builder)?; // balance:CurrencyCollection
-        let state = Deserializable::construct_from(&mut slice_builder)?; // state:AccountState
+    fn read_original_format(slice: &mut SliceData) -> Result<Self> {
+        let addr = Deserializable::construct_from(slice)?;
+        let storage_stat = Deserializable::construct_from(slice)?;
+        let last_trans_lt = Deserializable::construct_from(slice)?; //last_trans_lt:uint64
+        let balance = Deserializable::construct_from(slice)?; //balance:CurrencyCollection
+        let state = Deserializable::construct_from(slice)?; //state:AccountState
         let storage = AccountStorage { last_trans_lt, balance, state, ..AccountStorage::default() };
         Ok(Account::with_stuff(AccountStuff { addr, storage_stat, storage }))
     }
 
     pub fn read_version(slice: &mut SliceData, _version: u32) -> Result<Self> {
-        let builder = slice.reference(0).unwrap();
-        let mut slice_builder = SliceData::load_cell(builder).unwrap();
-        let addr = Deserializable::construct_from(&mut slice_builder)?;
-        let builder2 = slice.reference(1).unwrap();
-        slice_builder = SliceData::load_cell(builder2).unwrap();
-        let storage_stat = Deserializable::construct_from(&mut slice_builder)?;
-        let last_trans_lt = Deserializable::construct_from(&mut slice_builder)?; // last_trans_lt:uint64
-        let balance = CurrencyCollection::construct_from(&mut slice_builder)?; // balance:CurrencyCollection
-        let state = Deserializable::construct_from(&mut slice_builder)?; // state:AccountState
-        let init_code_hash = UInt256::read_maybe_from(&mut slice_builder)?;
+        let addr = Deserializable::construct_from(slice)?;
+        let storage_stat = Deserializable::construct_from(slice)?;
+        let last_trans_lt = Deserializable::construct_from(slice)?; //last_trans_lt:uint64
+        let balance = CurrencyCollection::construct_from(slice)?; //balance:CurrencyCollection
+        let state = Deserializable::construct_from(slice)?; //state:AccountState
+        let init_code_hash = UInt256::read_maybe_from(slice)?;
         let storage = AccountStorage { last_trans_lt, balance, state, init_code_hash };
         let stuff = AccountStuff { addr, storage_stat, storage };
         Ok(Account::with_stuff(stuff))
