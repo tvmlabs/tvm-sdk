@@ -1541,8 +1541,7 @@ impl<T: Default + Serializable + Deserializable> PartialEq for ChildCell<T> {
     }
 }
 
-
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExternalCell<T: Default + Serializable + Deserializable> {
     cell: Cell,
     phantom: PhantomData<T>,
@@ -1560,6 +1559,12 @@ impl<T> ExternalCellStruct<T> {
             ExternalCellStruct::Struct(s) => Ok(s),
             _ => Err(BlockError::ExternalCellRead.into()),
         }
+    }
+}
+
+impl<T: Default + Serializable + Deserializable + Clone> Default for ExternalCell<T> {
+    fn default() -> Self {
+        Self { cell: T::default().serialize().unwrap_or_default(), phantom: PhantomData }
     }
 }
 
