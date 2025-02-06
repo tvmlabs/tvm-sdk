@@ -71,13 +71,13 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let u = -1_f64 / TTMT * (TMTAFC / (1_f64 + TMTAFC)).ln();
     let grps = TOTALSUPPLY * (1_f64 + TMTAFC) * ((-u * t).exp() - (-u * (t + 1_f64)).exp());
     let tbbkrps = BKSFC * grps;
-    let bkrpve;
-    if totalbkstake != 0_f64 {
+
+    let bkrpve = if totalbkstake != 0_f64 {
         let bkrps = tbbkrps * repcoef * bkstake / totalbkstake;
-        bkrpve = bkrps * bked * TOKEN_DECIMALS;
+        bkrps * bked * TOKEN_DECIMALS
     } else {
-        bkrpve = tbbkrps * repcoef * bked * TOKEN_DECIMALS / active_bk;
-    }
+        tbbkrps * repcoef * bked * TOKEN_DECIMALS / active_bk
+    };
     engine.cc.stack.push(int!(bkrpve as u128));
     Ok(())
 }

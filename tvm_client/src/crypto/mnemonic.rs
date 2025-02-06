@@ -399,8 +399,7 @@ impl CryptoMnemonic for TonMnemonic {
         let max_iterations: i32 = 256 * 20;
         for _ in 0..max_iterations {
             let mut rng = rand::thread_rng();
-            let mut rnd: Vec<u8> = Vec::new();
-            rnd.resize(((self.word_count as usize) * 11 + 7) / 8, 0);
+            let mut rnd: Vec<u8> = vec![0; ((self.word_count as usize) * 11 + 7) / 8];
             rng.fill_bytes(&mut rnd);
             let words = self.words_from_bytes(&rnd);
             let phrase: String = words.join(" ");
@@ -443,7 +442,7 @@ impl CryptoMnemonic for TonMnemonic {
     }
 }
 
-const TVM_WORDS: [&str; 2048] = [
+static TVM_WORDS: [&str; 2048] = [
     "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd",
     "abuse", "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire",
     "across", "act", "action", "actor", "actress", "actual", "adapt", "add", "addict", "address",

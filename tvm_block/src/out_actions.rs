@@ -140,6 +140,7 @@ pub const SENDMSG_VALID_FLAGS: u8 = SENDMSG_ORDINARY
 /// variants of reserve action
 pub const RESERVE_EXACTLY: u8 = 0;
 pub const RESERVE_ALL_BUT: u8 = 1;
+pub const RESERVE_IGNORE_ERROR: u8 = 2;
 
 pub const CHANGE_LIB_REMOVE: u8 = 0;
 pub const SET_LIB_CODE_REMOVE: u8 = 1;

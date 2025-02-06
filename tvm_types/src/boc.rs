@@ -756,7 +756,7 @@ pub struct BocReader<'a> {
     max_depth: u16,
 }
 
-impl<'a> Default for BocReader<'a> {
+impl Default for BocReader<'_> {
     fn default() -> Self {
         Self {
             abort: &|| false,
@@ -1388,7 +1388,7 @@ impl<'a, T: Read> IoCrcFilter<'a, T> {
     }
 }
 
-impl<'a, T> IoCrcFilter<'a, T>
+impl<T> IoCrcFilter<'_, T>
 where
     T: Seek,
 {
@@ -1398,7 +1398,7 @@ where
     }
 }
 
-impl<'a, T> Write for IoCrcFilter<'a, T>
+impl<T> Write for IoCrcFilter<'_, T>
 where
     T: Write,
 {
@@ -1412,7 +1412,7 @@ where
     }
 }
 
-impl<'a, T> Read for IoCrcFilter<'a, T>
+impl<T> Read for IoCrcFilter<'_, T>
 where
     T: Read,
 {
@@ -1427,7 +1427,7 @@ trait Rest {
     fn rest(&mut self) -> Result<u64>;
 }
 
-impl<'a, T> Rest for IoCrcFilter<'a, T>
+impl<T> Rest for IoCrcFilter<'_, T>
 where
     T: Seek,
 {

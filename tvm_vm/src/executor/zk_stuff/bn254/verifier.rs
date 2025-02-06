@@ -89,7 +89,7 @@ impl PreparedVerifyingKey {
 
     /// Deserialize the prepared verifying key from the serialized fields of
     /// vk_gamma_abc_g1, alpha_g1_beta_g2, gamma_g2_neg_pc, delta_g2_neg_pc
-    pub fn deserialize<V: Borrow<[u8]>>(bytes: &Vec<V>) -> Result<Self, ZkCryptoError> {
+    pub fn deserialize<V: Borrow<[u8]>>(bytes: &[V]) -> Result<Self, ZkCryptoError> {
         if bytes.len() != 4 {
             return Err(ZkCryptoError::InputLengthWrong(bytes.len()));
         }
