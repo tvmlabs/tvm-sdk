@@ -127,6 +127,7 @@ pub fn now_ms() -> u64 {
 }
 
 pub type TonClient = Arc<ClientContext>;
+pub type TvmClient = Arc<ClientContext>;
 
 pub fn create_client_local() -> Result<TonClient, String> {
     let cli = ClientContext::new(ClientConfig::default())

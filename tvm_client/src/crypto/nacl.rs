@@ -32,7 +32,7 @@ use crate::error::ClientResult;
 // Signing
 
 //------------------------------------------------------------------------ sign_keypair_from_secret
-///
+/// ParamsOfNaclSignKeyPairFromSecret
 #[derive(Serialize, Deserialize, ApiType, Default, ZeroizeOnDrop)]
 pub struct ParamsOfNaclSignKeyPairFromSecret {
     /// Secret key - unprefixed 0-padded to 64 symbols hex string
@@ -59,7 +59,7 @@ pub fn nacl_sign_keypair_from_secret_key(
 }
 
 //--------------------------------------------------------------------------------------- nacl_sign
-///
+/// ParamsOfNaclSign
 #[derive(Serialize, Deserialize, ApiType, Default, ZeroizeOnDrop)]
 pub struct ParamsOfNaclSign {
     /// Data that must be signed encoded in `base64`.
@@ -123,7 +123,7 @@ pub fn nacl_sign_detached(
 }
 
 //---------------------------------------------------------------------------------- nacl_sign_open
-///
+/// ParamsOfNaclSignOpen
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfNaclSignOpen {
     /// Signed data that must be unsigned. Encoded with `base64`.
@@ -164,7 +164,7 @@ pub fn nacl_sign_open(
 
 //----------------------------------------------------------------------- nacl_sign_detached_verify
 
-///
+/// ParamsOfNaclSignDetachedVerify
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfNaclSignDetachedVerify {
     /// Unsigned data that must be verified. Encoded with `base64`.
@@ -203,11 +203,9 @@ fn prepare_to_convert(
     key: &[u8],
     pad_len: usize,
 ) -> ClientResult<(Vec<u8>, Vec<u8>, [u8; 24], SecretBufConst<32>)> {
-    let mut padded_input = Vec::new();
-    padded_input.resize(pad_len, 0);
+    let mut padded_input = vec![0; pad_len];
     padded_input.extend(input);
-    let mut padded_output = Vec::new();
-    padded_output.resize(padded_input.len(), 0);
+    let mut padded_output = vec![0; padded_input.len()];
     Ok((padded_output, padded_input, key192(nonce)?.0, key256(key)?))
 }
 
@@ -223,7 +221,7 @@ pub fn nacl_box_keypair(_context: std::sync::Arc<ClientContext>) -> ClientResult
 }
 
 //-------------------------------------------------------------------- nacl_box_keypair_from_secret
-///
+/// ParamsOfNaclBoxKeyPairFromSecret
 #[derive(Serialize, Deserialize, ApiType, Default, ZeroizeOnDrop)]
 pub struct ParamsOfNaclBoxKeyPairFromSecret {
     /// Secret key - unprefixed 0-padded to 64 symbols hex string
@@ -246,7 +244,7 @@ pub fn nacl_box_keypair_from_secret_key(
 }
 
 //---------------------------------------------------------------------------------------- nacl_box
-///
+/// ParamsOfNaclBox
 #[derive(Serialize, Deserialize, ApiType, Default, Zeroize, ZeroizeOnDrop)]
 pub struct ParamsOfNaclBox {
     /// Data that must be encrypted encoded in `base64`.
@@ -297,7 +295,7 @@ pub fn nacl_box(
 }
 
 //----------------------------------------------------------------------------------- nacl_box_open
-///
+/// ParamsOfNaclBoxOpen
 #[derive(Serialize, Deserialize, ApiType, Default, Zeroize, ZeroizeOnDrop)]
 pub struct ParamsOfNaclBoxOpen {
     /// Data that must be decrypted. Encoded with `base64`.
@@ -353,7 +351,7 @@ pub fn nacl_box_open_internal(
 // Secret Box
 
 //--------------------------------------------------------------------------------- nacl_secret_box
-///
+/// ParamsOfNaclSecretBox
 #[derive(Serialize, Deserialize, ApiType, Default, Zeroize, ZeroizeOnDrop)]
 pub struct ParamsOfNaclSecretBox {
     /// Data that must be encrypted. Encoded with `base64`.
@@ -386,7 +384,7 @@ pub fn nacl_secret_box(
 }
 
 //---------------------------------------------------------------------------- nacl_secret_box_open
-///
+/// ParamsOfNaclSecretBoxOpen
 #[derive(Serialize, Deserialize, ApiType, Default, Zeroize, ZeroizeOnDrop)]
 pub struct ParamsOfNaclSecretBoxOpen {
     /// Data that must be decrypted. Encoded with `base64`.

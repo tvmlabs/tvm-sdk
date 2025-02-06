@@ -9,8 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::cmp::max;
-use std::cmp::min;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::pin::Pin;
@@ -31,6 +29,7 @@ use tvm_types::UInt256;
 use tvm_types::base64_encode;
 
 use super::ErrorCode;
+use super::tvm_gql::ExtMessage;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
 use crate::error::AddNetworkUrl;
@@ -49,6 +48,7 @@ use crate::net::endpoint::Endpoint;
 use crate::net::tvm_gql::GraphQLQuery;
 use crate::net::types::NetworkQueriesProtocol;
 use crate::net::websocket_link::WebsocketLink;
+use crate::processing::ThreadIdentifier;
 
 pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
@@ -157,7 +157,7 @@ impl NetworkState {
 
     pub fn next_resume_timeout(&self) -> u32 {
         let timeout = self.resume_timeout.load(Ordering::Relaxed);
-        let next_timeout = min(max(timeout * 2, MIN_RESUME_TIMEOUT), MAX_RESUME_TIMEOUT); // 0, 0.5, 1, 2, 3, 3, 3...
+        let next_timeout = (timeout * 2).clamp(MIN_RESUME_TIMEOUT, MAX_RESUME_TIMEOUT); // 0, 0.5, 1, 2, 3, 3, 3...
         self.resume_timeout.store(next_timeout, Ordering::Relaxed);
         timeout
     }
@@ -562,7 +562,6 @@ impl ServerLink {
                     query.timeout.unwrap_or(self.config.query_timeout),
                 )
                 .await;
-
             let result = match result {
                 Err(err) => Err(err),
                 Ok(response) => {
@@ -736,18 +735,16 @@ impl ServerLink {
         key: &[u8],
         value: &[u8],
         endpoint: Option<&Endpoint>,
-    ) -> ClientResult<Option<ClientError>> {
-        let request = PostRequest { id: base64_encode(key), body: base64_encode(value) };
+        thread_id: ThreadIdentifier,
+    ) -> ClientResult<Value> {
+        let message = ExtMessage {
+            id: base64_encode(key),
+            body: base64_encode(value),
+            expireAt: None,
+            threadId: Some(thread_id.to_string()),
+        };
 
-        let result = self.query(&GraphQLQuery::with_post_requests(&[request]), endpoint).await;
-
-        // send message is always successful in order to process case when server
-        // received message but client didn't receive response
-        if let Err(err) = &result {
-            log::warn!("Post message error: {}", err.message);
-        }
-
-        Ok(result.err())
+        self.query(&GraphQLQuery::with_send_message(&message), endpoint).await
     }
 
     pub async fn send_messages(

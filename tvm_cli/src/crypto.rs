@@ -167,7 +167,7 @@ pub fn generate_keypair(
     let keys_json = serde_json::to_string_pretty(&keys)
         .map_err(|e| format!("failed to serialize the keypair: {}", e))?;
     if let Some(keys_path) = keys_path {
-        let folder_path = keys_path.trim_end_matches(|c| c != '/').trim_end_matches(|c| c == '/');
+        let folder_path = keys_path.trim_end_matches(|c| c != '/').trim_end_matches('/');
         check_dir(folder_path)?;
         std::fs::write(keys_path, &keys_json)
             .map_err(|e| format!("failed to create file with keys: {}", e))?;

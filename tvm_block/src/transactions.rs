@@ -1388,8 +1388,8 @@ impl Transaction {
         &mut self.total_fees
     }
 
-    /// Calculate total transaction fees
-    /// transaction fees is the amount fee for all out-messages
+    // Calculate total transaction fees
+    // transaction fees is the amount fee for all out-messages
     //    pub fn calc_total_fees(&mut self) -> &CurrencyCollection {
     //        self.total_fees = CurrencyCollection::default();
     // TODO uncomment after merge with feature-block-builder

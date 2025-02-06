@@ -257,7 +257,7 @@ impl Bocs {
         match cache_type {
             BocCacheType::Pinned { pin } => self.add_new_pinned(hash.clone(), pin, cell),
             BocCacheType::Unpinned => {
-                if let Some(_) = self.get_cached(&hash) {
+                if self.get_cached(&hash).is_some() {
                     return Ok(hash);
                 }
                 let size = size.unwrap_or_else(|| calc_tree_size(&cell));
@@ -346,8 +346,8 @@ pub struct ParamsOfBocCacheUnpin {
     /// is unpinned
     pub boc_ref: Option<String>,
 }
-/// Unpin BOCs with specified pin defined in the `cache_set`.
 
+/// Unpin BOCs with specified pin defined in the `cache_set`.
 /// Decrease pin reference counter for BOCs with specified pin defined in the
 /// `cache_set`. BOCs which have only 1 pin and its reference counter become 0
 /// will be removed from cache

@@ -759,11 +759,11 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     let max_epoch = u64::from_be_bytes(*max_epoch_bytes);
 
     let public_inputs = calculate_poseidon_hash(
-        &*zkaddr,
+        &zkaddr,
         &header_base_64,
         &iss_base_64,
         &index_mod_4,
-        &eph_pub_key_bytes,
+        eph_pub_key_bytes,
         &modulus,
         max_epoch,
     )?;
@@ -790,9 +790,9 @@ pub fn calculate_poseidon_hash(
     let addr_seed = (&address_seed).into();
     let (first, second) = split_to_two_frs(eph_pk_bytes)?;
     let max_epoch_f = (&Bn254FrElement::from_str(&max_epoch.to_string())?).into();
-    let index_mod_4_f = (&Bn254FrElement::from_str(&index_mod_4)?).into();
-    let iss_base64_f = hash_ascii_str_to_field(&iss_base_64, MAX_ISS_LEN_B64)?;
-    let header_f = hash_ascii_str_to_field(&header_base_64, MAX_HEADER_LEN)?;
+    let index_mod_4_f = (&Bn254FrElement::from_str(index_mod_4)?).into();
+    let iss_base64_f = hash_ascii_str_to_field(iss_base_64, MAX_ISS_LEN_B64)?;
+    let header_f = hash_ascii_str_to_field(header_base_64, MAX_HEADER_LEN)?;
     let modulus_f = hash_to_field(&[BigUint::from_bytes_be(modulus)], 2048, PACK_WIDTH)?;
     poseidon_zk_login(vec![
         first,

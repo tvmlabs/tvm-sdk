@@ -63,15 +63,13 @@ const CONFIG_BASE_NAME: &str = "tonos-cli.conf.json";
 
 fn print_paths(prefix: &str) {
     let folder = if !prefix.contains('/') { "./" } else { prefix.trim_end_matches(|c| c != '/') };
-    let paths = std::fs::read_dir(folder);
-    if paths.is_err() {
+    let Ok(paths) = std::fs::read_dir(folder) else {
         return;
-    }
+    };
     let mut saved_path: Vec<PathBuf> = vec![];
-    for path in paths.unwrap() {
-        if let Ok(path) = path {
-            let path = path.path();
-            let path_str = path.to_str().unwrap();
+    for path in paths.flatten() {
+        let path = path.path();
+        if let Some(path_str) = path.to_str() {
             if path_str.starts_with(prefix) {
                 saved_path.push(path);
             }

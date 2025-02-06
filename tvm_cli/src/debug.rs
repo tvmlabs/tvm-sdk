@@ -1108,8 +1108,8 @@ async fn query_address(tr_id: &str, config: &Config) -> Result<String, String> {
         0 => Err("Transaction was not found".to_string()),
         _ => Ok(query_result[0]["account_addr"]
             .to_string()
-            .trim_start_matches(|c| c == '"')
-            .trim_end_matches(|c| c == '"')
+            .trim_start_matches('"')
+            .trim_end_matches('"')
             .to_string()),
     }
 }
@@ -1178,8 +1178,8 @@ fn choose_transaction(transactions: Vec<TrDetails>) -> Result<String, String> {
     }
     Ok(transactions[chosen - 1]
         .transaction_id
-        .trim_start_matches(|c| c == '"')
-        .trim_end_matches(|c| c == '"')
+        .trim_start_matches('"')
+        .trim_end_matches('"')
         .to_string())
 }
 

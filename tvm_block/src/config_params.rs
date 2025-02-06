@@ -2018,7 +2018,6 @@ impl IntoIterator for &FundamentalSmcAddresses {
 }
 
 /// ConfigParam 30;
-
 const DELECTOR_PARAMS_TAG: u8 = 0x1;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct DelectorParams {

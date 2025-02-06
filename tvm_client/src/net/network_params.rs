@@ -10,24 +10,16 @@
 // limitations under the License.
 //
 
-use std::sync::Arc;
-
 use serde_json::Value;
+use std::sync::Arc;
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
 use tvm_executor::BlockchainConfig;
 
 use super::acki_config;
-use crate::boc::blockchain_config::extract_config_from_block;
-use crate::boc::blockchain_config::extract_config_from_zerostate;
-use crate::boc::internal::deserialize_object_from_base64;
 use crate::client::ClientContext;
 use crate::client::NetworkParams;
 use crate::error::ClientResult;
-use crate::net::OrderBy;
-use crate::net::ParamsOfQueryCollection;
-use crate::net::ServerLink;
-use crate::net::SortDirection;
 
 const DEFAULT_ACKI_GLOBAL_ID: i32 = 100;
 
@@ -64,104 +56,17 @@ pub(crate) fn offline_config() -> (BlockchainConfig, i32) {
 }
 
 pub(crate) async fn get_default_params(
-    context: &Arc<ClientContext>,
+    _context: &Arc<ClientContext>,
 ) -> ClientResult<NetworkParams> {
-    if let Some(params) = &*context.network_params.read().await {
-        return Ok(params.clone());
-    }
-
-    let mut params_lock = context.network_params.write().await;
-    if let Some(params) = &*params_lock {
-        return Ok(params.clone());
-    }
-
-    let (config, global_id) = if let Ok(link) = context.get_server_link() {
-        query_network_params(link).await?
-        // query_network_params_from_file().await?
-    } else {
-        offline_config()
-    };
-    let params = NetworkParams { blockchain_config: Arc::new(config), global_id };
-
-    *params_lock = Some(params.clone());
-
-    Ok(params)
+    ackinacki_network().map(|(blockchain_config, global_id)| NetworkParams {
+        blockchain_config: Arc::new(blockchain_config),
+        global_id,
+    })
 }
 
-pub(crate) async fn query_network_params(
-    link: &ServerLink,
-) -> ClientResult<(BlockchainConfig, i32)> {
-    let key_block = link
-        .query_collection(
-            ParamsOfQueryCollection {
-                collection: "blocks".to_owned(),
-                filter: Some(serde_json::json!({
-                    "key_block": { "eq": true },
-                    "workchain_id": { "eq": -1 },
-                })),
-                order: Some(vec![OrderBy {
-                    path: "seq_no".to_owned(),
-                    direction: SortDirection::DESC,
-                }]),
-                limit: Some(1),
-                result: "boc".to_owned(),
-            },
-            None,
-        )
-        .await?;
-
-    let (config, global_id) = if let Some(block_boc) = key_block[0]["boc"].as_str() {
-        let block = deserialize_object_from_base64(block_boc, "block")?;
-        (extract_config_from_block(&block.object)?, block.object.global_id())
-    } else {
-        let try_zerostate = link
-            .query_collection(
-                ParamsOfQueryCollection {
-                    collection: "zerostates".to_owned(),
-                    filter: Some(serde_json::json!({
-                        "id": { "eq": "zerostate:-1" },
-                    })),
-                    result: "boc".to_owned(),
-                    ..Default::default()
-                },
-                None,
-            )
-            .await;
-
-        // if there is no zerostate collection it will be a GraphQL error
-        // e.g. "message": "AQL: collection or view not found: zerostates (while
-        // parsing)"
-
-        // TODO: make it more subtle (e.g. distinguesh between
-        // regular 500 and no zerostate collection)
-        let Ok(zerostate) = try_zerostate else {
-            return ackinacki_network().await;
-        };
-
-        // if there is no zerostate in the -1 workchain, use the masterchainless network
-        // right now it's hardcoded to AckiNacki network
-        if zerostate.get(0).is_none() {
-            return ackinacki_network().await;
-        }
-
-        let boc = zerostate[0]["boc"].as_str().ok_or(
-            crate::tvm::Error::can_not_read_blockchain_config(
-                "Can not find key block or zerostate",
-            ),
-        )?;
-
-        let zerostate = deserialize_object_from_base64(boc, "block")?;
-        (extract_config_from_zerostate(&zerostate.object)?, zerostate.object.global_id())
-    };
-
-    let config = BlockchainConfig::with_config(config)
-        .map_err(crate::tvm::Error::can_not_read_blockchain_config)?;
-
-    Ok((config, global_id))
-}
 
 /// TODO: make it more generic
-pub(crate) async fn ackinacki_network() -> ClientResult<(BlockchainConfig, i32)> {
+pub(crate) fn ackinacki_network() -> ClientResult<(BlockchainConfig, i32)> {
     let global_id = DEFAULT_ACKI_GLOBAL_ID;
     let config = blockchain_config_from_json(&acki_config::get_config()?)?;
     Ok((config, global_id))

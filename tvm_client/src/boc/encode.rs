@@ -104,8 +104,8 @@ pub fn encode_boc(
     loop {
         match builder.build(&context)? {
             BuildResult::Nested { nested, prev } => {
-                stack.push(prev);
-                builder = nested;
+                stack.push(*prev);
+                builder = *nested;
             }
             BuildResult::Complete(cell) => {
                 if let Some(prev) = stack.pop() {
@@ -135,12 +135,12 @@ struct Builder<'a> {
 }
 
 enum BuildResult<'a> {
-    Nested { nested: Builder<'a>, prev: Builder<'a> },
+    Nested { nested: Box<Builder<'a>>, prev: Box<Builder<'a>> },
     Complete(Cell),
 }
 
 impl<'a> Builder<'a> {
-    fn new(builder: &'a Vec<BuilderOp>) -> Self {
+    fn new(builder: &'a [BuilderOp]) -> Self {
         Self { input: builder.iter(), result: BuilderData::new() }
     }
 
@@ -163,7 +163,7 @@ impl<'a> Builder<'a> {
                         .map_err(|err| Error::serialization_error(err, "encode_boc"))?;
                 }
                 BuilderOp::Cell { ref builder } => {
-                    return Ok(BuildResult::Nested { nested: Self::new(builder), prev: self });
+                    return Ok(BuildResult::Nested { nested: Box::new(Self::new(builder)), prev: Box::new(self) });
                 }
                 BuilderOp::Address { address } => {
                     account_decode(address)?

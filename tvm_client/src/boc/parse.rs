@@ -61,7 +61,6 @@ pub fn parse_message(
         status: tvm_block::MessageProcessingStatus::Finalized,
         transaction_id: None,
         transaction_now: None,
-        ..Default::default()
     };
 
     let parsed = tvm_block_json::db_serialize_message_ex(
@@ -167,7 +166,6 @@ pub fn parse_block(
         id: object.cell.repr_hash(),
         block: object.object,
         status: tvm_block::BlockProcessingStatus::Finalized,
-        ..Default::default()
     };
 
     let parsed = tvm_block_json::db_serialize_block_ex(
@@ -200,7 +198,6 @@ pub fn parse_shardstate(
         state: object.object,
         block_id: None,
         workchain_id: params.workchain_id,
-        ..Default::default()
     };
 
     let parsed = tvm_block_json::db_serialize_shard_state_ex(
