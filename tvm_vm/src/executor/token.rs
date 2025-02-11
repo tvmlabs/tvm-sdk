@@ -101,6 +101,8 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
         let tsta = tmta * (1_f64 - free_flt_frac);
         base_min_val_stake = BKSFC * tsta / 2_f64 / need_bk_num * TOKEN_DECIMALS;
     }
+    // todo: we should resolve warning below
+    #[allow(clippy::if_same_then_else)]
     let min_val_stake =
         if bk_num > need_bk_num { base_min_val_stake as u128 } else { base_min_val_stake as u128 };
     engine.cc.stack.push(int!(min_val_stake));

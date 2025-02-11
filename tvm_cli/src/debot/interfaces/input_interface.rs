@@ -44,7 +44,7 @@ impl DebotInterface for InputInterface {
         if self.get_id() == TERMINAL_ID && (func == "print" || func == "printf") {
             return self.inner_interface.call(func, args).await;
         }
-        let result = self.processor.write().await.next_input(&self.get_id(), func, args);
+        let result = self.processor.write().await.next_input(&self.get_id(), func);
         match result {
             Err(ProcessorError::InterfaceCallNeeded) => {
                 let res = self.inner_interface.call(func, args).await?;

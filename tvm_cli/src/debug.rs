@@ -473,15 +473,15 @@ async fn debug_transaction_command(
         let address = query_address(tx_id.unwrap(), config).await?;
         (tx_id.unwrap().to_string(), address)
     } else {
-        let address = Some(
+        let address =
             matches.value_of("ADDRESS").map(|s| s.to_string()).or(config.addr.clone()).ok_or(
                 "ADDRESS is not defined. Supply it in the config file or command line.".to_string(),
-            )?,
-        );
+            )?;
+
         if !config.is_json {
-            print_args!(address, trace_path, config_path, contract_path);
+            let address_arg = Some(address.clone());
+            print_args!(address_arg, trace_path, config_path, contract_path);
         }
-        let address = address.unwrap();
         let transactions = query_transactions(&address, config).await?;
         let tr_id = choose_transaction(transactions)?;
         (tr_id, address)
@@ -575,7 +575,6 @@ async fn replay_transaction_command(
         result: "lt block { start_lt } boc".to_string(),
         limit: Some(1),
         order: None,
-        ..Default::default()
     })
     .await
     .map_err(|e| format!("Failed to query transaction: {}", e))?;
@@ -1398,7 +1397,7 @@ pub async fn sequence_diagram_command(
     })
 }
 
-fn infer_address_width(input: &Vec<String>, min_width: usize) -> Result<usize, String> {
+fn infer_address_width(input: &[String], min_width: usize) -> Result<usize, String> {
     let max_width = input.iter().fold(0, |acc, item| std::cmp::max(acc, item.len()));
     let addresses =
         input.iter().map(|address| format!("{:>max_width$}", address)).collect::<Vec<_>>();

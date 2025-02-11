@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::Range;
@@ -416,7 +417,7 @@ impl Engine {
         self.trace_callback.is_some()
     }
 
-    fn trace_info(&self, info_type: EngineTraceInfoType, gas: i64, log_string: Option<String>) {
+    fn trace_info(&self, info_type: EngineTraceInfoType, gas: i64, log_string: Option<Cow<str>>) {
         if let Some(trace_callback) = self.trace_callback.as_ref() {
             // bigint param has been withdrawn during execution, so take it from the stack
             let cmd_str = if self.cmd.biginteger_raw().is_some() {
@@ -427,7 +428,7 @@ impl Engine {
                     self.cc.stack.get(0).as_integer().unwrap_or(&IntegerData::default())
                 )
             } else if let Some(string) = log_string {
-                string
+                string.to_string()
             } else {
                 self.cmd.dump_with_params().unwrap_or_default()
             };
@@ -647,7 +648,7 @@ impl Engine {
         self.trace_info(
             EngineTraceInfoType::Finish,
             self.gas_used(),
-            Some("NORMAL TERMINATION".to_string()),
+            Some("NORMAL TERMINATION".into()),
         );
         self.commit();
         Ok(result)
@@ -834,11 +835,7 @@ impl Engine {
             };
             if self.is_trace_enabled() {
                 if let Some(log_string) = self.log_string {
-                    self.trace_info(
-                        EngineTraceInfoType::Implicit,
-                        gas,
-                        Some(log_string.to_string()),
-                    );
+                    self.trace_info(EngineTraceInfoType::Implicit, gas, Some(log_string.into()));
                 }
             }
             match self.gas.check_gas_remaining().and(result) {
@@ -1164,7 +1161,7 @@ impl Engine {
             if self.trace_callback.is_none() {
                 log::info!(target: "tvm", "{}", buffer);
             } else {
-                self.trace_info(EngineTraceInfoType::Dump, 0, Some(buffer));
+                self.trace_info(EngineTraceInfoType::Dump, 0, Some(buffer.into()));
             }
         } else {
             self.debug_buffer = String::new()
@@ -1544,7 +1541,7 @@ impl Engine {
             self.cmd.vars[n].as_continuation_mut()?.nargs = 1;
             switch(self, var!(n))?;
         } else {
-            let log_string = Some(format!("UNHANDLED EXCEPTION: {}", err));
+            let log_string = Some(Cow::Owned(format!("UNHANDLED EXCEPTION: {}", err)));
             self.trace_info(EngineTraceInfoType::Exception, self.gas_used(), log_string);
             return Err(err);
         }

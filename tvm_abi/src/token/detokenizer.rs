@@ -53,7 +53,7 @@ pub struct FunctionParams<'a> {
     params: &'a [Token],
 }
 
-impl<'a> Serialize for FunctionParams<'a> {
+impl Serialize for FunctionParams<'_> {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,

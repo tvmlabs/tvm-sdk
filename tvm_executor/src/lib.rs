@@ -29,7 +29,12 @@ pub use vmsetup::*;
 
 pub mod blockchain_config;
 pub use blockchain_config::*;
+use tvm_block::{Account, AccountState};
 
 pub fn build_commit() -> Option<&'static str> {
     std::option_env!("BUILD_GIT_COMMIT")
+}
+
+pub(crate) fn is_previous_state_active(account: &Account) -> bool {
+    !matches!(account.state(), Some(AccountState::AccountUninit {}) | None)
 }

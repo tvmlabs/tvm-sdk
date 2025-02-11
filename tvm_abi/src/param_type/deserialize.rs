@@ -33,7 +33,7 @@ impl<'a> Deserialize<'a> for ParamType {
 
 struct ParamTypeVisitor;
 
-impl<'a> Visitor<'a> for ParamTypeVisitor {
+impl Visitor<'_> for ParamTypeVisitor {
     type Value = ParamType;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

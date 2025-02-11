@@ -44,12 +44,12 @@ use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
 use tvm_vm::stack::integer::IntegerData;
 
-use crate::ActionPhaseResult;
 use crate::ExecuteParams;
 use crate::TransactionExecutor;
 use crate::VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
 use crate::blockchain_config::BlockchainConfig;
 use crate::error::ExecutorError;
+use crate::{ActionPhaseResult, is_previous_state_active};
 
 pub struct OrdinaryTransactionExecutor {
     config: BlockchainConfig,
@@ -86,11 +86,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
 
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active = is_previous_state_active(account);
 
         let revert_anycast =
             self.config.global_version() >= VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;

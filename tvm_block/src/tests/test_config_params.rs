@@ -156,14 +156,14 @@ fn test_config_msg_forward_prices() {
 
 fn get_cat_chain_config() -> CatchainConfig {
     let mut rng = rand::thread_rng();
-    let mut cc = CatchainConfig::default();
-    cc.shuffle_mc_validators = rng.gen();
-    cc.isolate_mc_validators = rng.gen();
-    cc.mc_catchain_lifetime = rng.gen();
-    cc.shard_catchain_lifetime = rng.gen();
-    cc.shard_validators_lifetime = rng.gen();
-    cc.shard_validators_num = rng.gen();
-    cc
+    CatchainConfig {
+        shuffle_mc_validators: rng.gen(),
+        isolate_mc_validators: rng.gen(),
+        mc_catchain_lifetime: rng.gen(),
+        shard_catchain_lifetime: rng.gen(),
+        shard_validators_lifetime: rng.gen(),
+        shard_validators_num: rng.gen(),
+    }
 }
 
 #[test]
@@ -214,38 +214,29 @@ fn get_validator_set() -> ValidatorSet {
 
 #[test]
 fn test_config_param_32_34_36() {
-    let mut cp32 = ConfigParam32::default();
-    cp32.prev_validators = get_validator_set();
-    write_read_and_assert(cp32);
-
-    let mut cp34 = ConfigParam34::default();
-    cp34.cur_validators = get_validator_set();
-    write_read_and_assert(cp34);
-
-    let mut cp36 = ConfigParam36::default();
-    cp36.next_validators = get_validator_set();
-    write_read_and_assert(cp36);
+    write_read_and_assert(ConfigParam32 { prev_validators: get_validator_set() });
+    write_read_and_assert(ConfigParam34 { cur_validators: get_validator_set() });
+    write_read_and_assert(ConfigParam36 { next_validators: get_validator_set() });
 }
 
 fn get_workchain_desc() -> WorkchainDescr {
-    let mut wc = WorkchainDescr::default();
-    wc.enabled_since = 332;
-    wc.accept_msgs = true;
-    wc.active = false;
-    wc.flags = 0x345;
-    wc.max_split = 32;
-    wc.min_split = 2;
-    wc.version = 1;
-    wc.zerostate_file_hash = UInt256::rand();
-    wc.zerostate_root_hash = UInt256::rand();
-
-    if rand::random::<u8>() > 128 {
-        wc.format = WorkchainFormat::Basic(WorkchainFormat1::with_params(123, 453454));
-    } else {
-        wc.format =
-            WorkchainFormat::Extended(WorkchainFormat0::with_params(64, 128, 64, 1).unwrap());
+    WorkchainDescr {
+        enabled_since: 332,
+        accept_msgs: true,
+        active: false,
+        flags: 0x345,
+        max_split: 32,
+        min_split: 2,
+        version: 1,
+        zerostate_file_hash: UInt256::rand(),
+        zerostate_root_hash: UInt256::rand(),
+        format: if rand::random::<u8>() > 128 {
+            WorkchainFormat::Basic(WorkchainFormat1::with_params(123, 453454))
+        } else {
+            WorkchainFormat::Extended(WorkchainFormat0::with_params(64, 128, 64, 1).unwrap())
+        },
+        ..Default::default()
     }
-    wc
 }
 
 fn get_config_param11() -> ConfigParam11 {
@@ -492,9 +483,8 @@ fn test_config_params() {
     );
     assert!(!cp.prev_validator_set_present().unwrap());
 
-    let mut cp32 = ConfigParam32::default();
-    cp32.prev_validators = get_validator_set();
-    let c32 = ConfigParamEnum::ConfigParam32(cp32);
+    let c32 =
+        ConfigParamEnum::ConfigParam32(ConfigParam32 { prev_validators: get_validator_set() });
     cp.set_config(c32.clone()).unwrap();
     let c = cp.config(32).unwrap().unwrap();
     assert_eq!(c32, c);
@@ -502,9 +492,7 @@ fn test_config_params() {
     assert!(cp.prev_validator_set_present().unwrap());
     write_read_and_assert(cp.clone());
 
-    let mut cp34 = ConfigParam34::default();
-    cp34.cur_validators = get_validator_set();
-    let c34 = ConfigParamEnum::ConfigParam34(cp34);
+    let c34 = ConfigParamEnum::ConfigParam34(ConfigParam34 { cur_validators: get_validator_set() });
     cp.set_config(c34.clone()).unwrap();
     let c = cp.config(34).unwrap().unwrap();
     assert_eq!(c34, c);
@@ -519,9 +507,8 @@ fn test_config_params() {
     );
     assert!(!cp.next_validator_set_present().unwrap());
 
-    let mut cp36 = ConfigParam36::default();
-    cp36.next_validators = get_validator_set();
-    let c36 = ConfigParamEnum::ConfigParam36(cp36);
+    let c36 =
+        ConfigParamEnum::ConfigParam36(ConfigParam36 { next_validators: get_validator_set() });
     cp.set_config(c36.clone()).unwrap();
     let c = cp.config(36).unwrap().unwrap();
     assert_eq!(c36, c);

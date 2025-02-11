@@ -122,7 +122,6 @@ pub async fn fetch(
             field: "fn".to_owned(),
             aggregation_fn: AggregationFn::COUNT,
         }]),
-        ..Default::default()
     })
     .await
     .map_err(|e| format!("Failed to fetch txns count: {}", e))?;
@@ -148,7 +147,6 @@ pub async fn fetch(
         result: "accounts { id boc }".to_owned(),
         limit: Some(1),
         order: None,
-        ..Default::default()
     })
     .await;
 
@@ -216,7 +214,6 @@ pub async fn fetch(
                 result: "id lt block { start_lt } boc".to_owned(),
                 limit: None,
                 order: Some(vec![OrderBy { path: "lt".to_owned(), direction: SortDirection::ASC }]),
-                ..Default::default()
             });
             query.await
         };
@@ -541,7 +538,6 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         result: "workchain_id end_lt boc".to_owned(),
         limit: None,
         order: None,
-        ..Default::default()
     })
     .await?;
 

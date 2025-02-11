@@ -955,7 +955,7 @@ fn test_big_map_value() {
 fn test_abi_2_1_types() {
     let string = "Some string";
     let string_builder =
-        BuilderData::with_raw(string.as_bytes().to_vec(), string.as_bytes().len() * 8).unwrap();
+        BuilderData::with_raw(string.as_bytes().to_vec(), string.len() * 8).unwrap();
     let string_value = TokenValue::String(string.into());
 
     let tuple_tokens = tokens_from_values(vec![
@@ -1094,7 +1094,7 @@ fn test_partial_decoding() {
 fn test_four_optional_strings() {
     let string = "Some string";
     let string_builder =
-        BuilderData::with_raw(string.as_bytes().to_vec(), string.as_bytes().len() * 8).unwrap();
+        BuilderData::with_raw(string.as_bytes().to_vec(), string.len() * 8).unwrap();
     let string_some_value =
         TokenValue::Optional(ParamType::String, Some(Box::new(TokenValue::String(string.into()))));
     let string_none_value = TokenValue::Optional(ParamType::String, None);
