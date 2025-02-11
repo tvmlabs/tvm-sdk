@@ -332,7 +332,7 @@ pub enum ExceptionCode {
     CellOverflow = 8,
     #[error("cell underflow")]
     CellUnderflow = 9,
-    #[error("dictionaty error")]
+    #[error("dictionary error")]
     DictionaryError = 10,
     #[error("unknown error")]
     UnknownError = 11,

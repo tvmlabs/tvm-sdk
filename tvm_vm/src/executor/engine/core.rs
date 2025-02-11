@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
-
+use std::time::Instant;
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
 use tvm_block::ShardAccount;
@@ -127,6 +127,7 @@ pub struct Engine {
     signature_id: i32,
     vm_execution_is_block_related: Arc<Mutex<bool>>,
     block_collation_was_finished: Arc<Mutex<bool>>,
+    termination_deadline: Option<Instant>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -286,6 +287,7 @@ impl Engine {
             signature_id: 0,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
+            termination_deadline: None,
         }
     }
 
@@ -296,6 +298,10 @@ impl Engine {
     ) {
         self.vm_execution_is_block_related = vm_execution_is_block_related;
         self.block_collation_was_finished = block_collation_was_finished;
+    }
+
+    pub fn set_termination_deadline(&mut self, deadline: Option<Instant>) {
+        self.termination_deadline = deadline;
     }
 
     pub fn mark_execution_as_block_related(&mut self) -> Status {
@@ -610,8 +616,14 @@ impl Engine {
     }
 
     pub fn execute(&mut self) -> Result<i32> {
+        let termination_deadline = self.termination_deadline;
         self.trace_info(EngineTraceInfoType::Start, 0, None);
         let result = loop {
+            if let Some(deadline) = termination_deadline {
+                if Instant::now() > deadline {
+                    return Err(TvmError::TerminationDeadlineReached.into());
+                }
+            }
             if let Some(result) = self.seek_next_cmd()? {
                 break result;
             }

@@ -16,7 +16,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
-
+use std::time::Instant;
 use tvm_block::AccStatusChange;
 use tvm_block::Account;
 use tvm_block::AccountState;
@@ -129,6 +129,7 @@ pub struct ExecuteParams {
     pub block_collation_was_finished: Arc<Mutex<bool>>,
     pub src_dapp_id: Option<UInt256>,
     pub available_credit: i128,
+    pub termination_deadline: Option<Instant>,
 }
 
 pub struct ActionPhaseResult {
@@ -171,6 +172,7 @@ impl Default for ExecuteParams {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             src_dapp_id: None,
             available_credit: 0,
+            termination_deadline: None,
         }
     }
 }
@@ -516,6 +518,7 @@ pub trait TransactionExecutor {
         .set_libraries(libs)
         .set_gas(gas)
         .set_debug(params.debug)
+        .set_termination_deadline(params.termination_deadline)
         .set_block_related_flags(
             params.vm_execution_is_block_related.clone(),
             params.block_collation_was_finished.clone(),
