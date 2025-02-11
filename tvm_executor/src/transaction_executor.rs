@@ -69,7 +69,7 @@ use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::error;
 use tvm_types::fail;
-use tvm_vm::error::tvm_exception;
+use tvm_vm::error::{tvm_exception, TvmError};
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::IndexProvider;
 use tvm_vm::executor::gas::gas_state::Gas;
@@ -541,6 +541,9 @@ pub trait TransactionExecutor {
         match result {
             Err(err) => {
                 log::debug!(target: "executor", "VM terminated with exception: {}", err);
+                if let Some(TvmError::TerminationDeadlineReached) = err.downcast_ref() {
+                    fail!(ExecutorError::TerminationDeadlineReached);
+                }
                 let exception = tvm_exception(err)?;
                 vm_phase.exit_code = if let Some(code) = exception.custom_code() {
                     code

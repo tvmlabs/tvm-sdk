@@ -321,7 +321,7 @@ fn test_termination_deadline() {
     );
     let from_start = Instant::now();
     // usually this execution requires 250-300 ms
-    engine.set_termination_deadline(Instant::now() + std::time::Duration::from_millis(50));
+    engine.set_termination_deadline(Some(Instant::now() + std::time::Duration::from_millis(50)));
     let err = engine.execute().expect_err("Should be failed with termination deadline reached");
     assert!(from_start.elapsed() < std::time::Duration::from_millis(55));
     assert!(matches!(

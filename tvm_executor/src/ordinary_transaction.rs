@@ -39,6 +39,7 @@ use tvm_types::error;
 use tvm_types::fail;
 use tvm_vm::SmartContractInfo;
 use tvm_vm::boolean;
+use tvm_vm::error::TvmError;
 use tvm_vm::int;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
@@ -319,7 +320,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             Err(e) => {
                 log::debug!(target: "executor", "compute_phase error: {}", e);
                 match e.downcast_ref::<ExecutorError>() {
-                    Some(ExecutorError::NoAcceptError(_, _)) => return Err(e),
+                    Some(ExecutorError::NoAcceptError(_, _))
+                    | Some(ExecutorError::TerminationDeadlineReached) => return Err(e),
                     _ => fail!(ExecutorError::TrExecutorError(e.to_string())),
                 }
             }

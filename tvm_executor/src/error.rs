@@ -26,6 +26,8 @@ pub enum ExecutorError {
     NoAcceptError(i32, Option<StackItem>),
     #[error("Cannot pay for importing this external message")]
     NoFundsToImportMsg,
-    #[error("Compute phase skipped while processing exteranl inbound messagewith reason {:?}", 0)]
+    #[error("Compute phase skipped while processing external inbound message with reason {:?}", 0)]
     ExtMsgComputeSkipped(ComputeSkipReason),
+    #[error("Compute phase terminated due to deadline reached (transaction execution takes too long time)")]
+    TerminationDeadlineReached,
 }
