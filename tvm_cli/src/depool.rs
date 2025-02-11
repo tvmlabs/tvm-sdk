@@ -404,7 +404,6 @@ impl<'a> DepoolCmd<'a> {
                 filter: Some(answer_filter(&wallet, &depool, since)),
                 result: "id body created_at created_at_string".to_owned(),
                 timeout: Some(self.config.timeout),
-                ..Default::default()
             })
             .await
             .map_err(|e| println!("failed to query message: {}", e));
@@ -448,7 +447,6 @@ impl<'a> DepoolCmd<'a> {
                     filter: Some(answer_filter(&depool, &wallet, since)),
                     result: "id body created_at created_at_string value".to_owned(),
                     timeout: Some(self.config.timeout),
-                    ..Default::default()
                 })
                 .await
                 .map_err(|e| println!("failed to query answer: {}", e));
@@ -700,7 +698,6 @@ async fn wait_for_event(config: &Config, depool: &str) -> Result<(), String> {
         filter: Some(events_filter(depool, now())),
         result: "id body created_at created_at_string".to_owned(),
         timeout: Some(config.timeout),
-        ..Default::default()
     })
     .await
     .map_err(|e| println!("failed to query event: {}", e));

@@ -110,7 +110,7 @@ pub struct DataItem {
 
 struct StringVisitor;
 
-impl<'de> serde::de::Visitor<'de> for StringVisitor {
+impl serde::de::Visitor<'_> for StringVisitor {
     type Value = String;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

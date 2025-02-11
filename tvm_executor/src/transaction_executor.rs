@@ -78,12 +78,12 @@ use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
 
-use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 use crate::blockchain_config::BlockchainConfig;
 use crate::blockchain_config::CalcMsgFwdFees;
 use crate::error::ExecutorError;
 use crate::vmsetup::VMSetup;
 use crate::vmsetup::VMSetupContext;
+use crate::{VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE, is_previous_state_active};
 
 const RESULT_CODE_ACTIONLIST_INVALID: i32 = 32;
 const RESULT_CODE_TOO_MANY_ACTIONS: i32 = 33;
@@ -193,11 +193,7 @@ pub trait TransactionExecutor {
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut u128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active = is_previous_state_active(&account);
         let src_dapp_id = params.src_dapp_id.clone();
         log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", src_dapp_id, is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
@@ -678,7 +674,7 @@ pub trait TransactionExecutor {
         need_to_burn: u64,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
-        let mut need_to_reserve = need_to_burn.clone();
+        let mut need_to_reserve = need_to_burn;
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
@@ -877,10 +873,8 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellToken { mut value } => {
-                    if available_credit != INFINITY_CREDIT {
-                        if value as i128 > available_credit {
-                            value = available_credit.clone().try_into()?;
-                        }
+                    if available_credit != INFINITY_CREDIT && value as i128 > available_credit {
+                        value = available_credit.try_into()?;
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
@@ -954,10 +948,8 @@ pub trait TransactionExecutor {
                 if process_err_code(err_code, i, &mut phase)? {
                     return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
                 }
-            } else {
-                if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
-                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
-                }
+            } else if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
 

@@ -18,10 +18,10 @@ use tvm_client::abi::encode_message;
 use tvm_client::crypto::KeyPair;
 use tvm_types::base64_encode;
 
-use crate::call::send_message;
 use crate::Config;
 use crate::call::emulate_locally;
 use crate::call::print_json_result;
+use crate::call::send_message;
 use crate::config::FullConfig;
 use crate::crypto::load_keypair;
 use crate::helpers::create_client_local;
@@ -67,20 +67,21 @@ pub async fn deploy_contract(
 
     let result = send_message(tvm_client.clone(), msg, config, None).await?;
 
-    let mut map: serde_json::Map<String, serde_json::Value> = serde_json::from_value(result.clone())
-        .map_err(|e| format!("failed to convert result: {e}"))?;
+    let mut map: serde_json::Map<String, serde_json::Value> =
+        serde_json::from_value(result.clone())
+            .map_err(|e| format!("failed to convert result: {e}"))?;
 
     if !config.is_json {
         if !config.async_call {
             println!("Transaction succeeded.");
         }
-        map.iter().for_each(|(k, v)|
+        map.iter().for_each(|(k, v)| {
             if let Some(str) = v.as_str() {
                 println!("{k}: {str}");
             } else {
                 println!("{k}: {v}");
             }
-        );
+        });
         println!("Contract deployed at address: {}", addr);
     } else {
         map.insert("deployed_at".to_string(), serde_json::Value::String(addr.clone()));
@@ -182,8 +183,7 @@ pub async fn prepare_deploy_message_params(
         Some(DeploySet { tvc: Some(tvc), workchain_id: Some(wc), ..Default::default() });
     let params = serde_json::from_str(params)
         .map_err(|e| format!("function arguments is not a json: {}", e))?;
-    let call_set =
-        Some(CallSet { function_name, input: Some(params), header, ..Default::default() });
+    let call_set = Some(CallSet { function_name, input: Some(params), header });
     let signer = if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None };
     Ok((
         ParamsOfEncodeMessage {

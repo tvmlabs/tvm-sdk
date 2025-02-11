@@ -67,7 +67,7 @@ impl<'de> serde::de::Visitor<'de> for StringVisitor {
 
 struct U8Visitor;
 
-impl<'de> serde::de::Visitor<'de> for U8Visitor {
+impl serde::de::Visitor<'_> for U8Visitor {
     type Value = u8;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

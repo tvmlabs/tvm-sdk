@@ -1,6 +1,7 @@
 use std::cmp::Ordering::Equal;
 use std::cmp::Ordering::Greater;
 use std::cmp::Ordering::Less;
+use std::fmt::Display;
 use std::str::FromStr;
 
 pub use ark_bn254::Bn254;
@@ -105,17 +106,17 @@ impl FromStr for OIDCProvider {
     }
 }
 
-impl ToString for OIDCProvider {
-    fn to_string(&self) -> String {
-        match self {
-            Self::Google => "Google".to_string(),
-            Self::Twitch => "Twitch".to_string(),
-            Self::Facebook => "Facebook".to_string(),
-            Self::Kakao => "Kakao".to_string(),
-            Self::Apple => "Apple".to_string(),
-            Self::Slack => "Slack".to_string(),
-            Self::TestIssuer => "TestIssuer".to_string(),
-        }
+impl Display for OIDCProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Google => "Google",
+            Self::Twitch => "Twitch",
+            Self::Facebook => "Facebook",
+            Self::Kakao => "Kakao",
+            Self::Apple => "Apple",
+            Self::Slack => "Slack",
+            Self::TestIssuer => "TestIssuer",
+        })
     }
 }
 

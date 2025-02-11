@@ -231,7 +231,6 @@ pub async fn query_raw(
         limit,
         order,
         result: result.to_owned(),
-        ..Default::default()
     })
     .await
     .map_err(|e| format!("Failed to execute query: {}", e))?;
@@ -254,7 +253,6 @@ pub async fn query_with_limit(
         result: result.to_owned(),
         order,
         limit,
-        ..Default::default()
     })
     .await
     .map(|r| r.result)

@@ -42,7 +42,6 @@ pub fn gen_seed_phrase() -> Result<String, String> {
     mnemonic_from_random(client, ParamsOfMnemonicFromRandom {
         dictionary: Some(MnemonicDictionary::English),
         word_count: Some(WORD_COUNT),
-        ..Default::default()
     })
     .map_err(|e| format!("{}", e))
     .map(|r| r.phrase)
@@ -54,27 +53,23 @@ pub fn generate_keypair_from_mnemonic(mnemonic: &str) -> Result<KeyPair, String>
         dictionary: Some(MnemonicDictionary::English),
         word_count: Some(WORD_COUNT),
         phrase: mnemonic.to_string(),
-        ..Default::default()
     })
     .map_err(|e| format!("{}", e))?;
 
     let hdk_root = hdkey_derive_from_xprv_path(client.clone(), ParamsOfHDKeyDeriveFromXPrvPath {
         xprv: hdk_master.xprv.clone(),
         path: HD_PATH.to_string(),
-        ..Default::default()
     })
     .map_err(|e| format!("{}", e))?;
 
     let secret = hdkey_secret_from_xprv(client.clone(), ParamsOfHDKeySecretFromXPrv {
         xprv: hdk_root.xprv.clone(),
-        ..Default::default()
     })
     .map_err(|e| format!("{}", e))?;
 
     let mut keypair: KeyPair =
         nacl_sign_keypair_from_secret_key(client, ParamsOfNaclSignKeyPairFromSecret {
             secret: secret.secret.clone(),
-            ..Default::default()
         })
         .map_err(|e| format!("failed to get KeyPair from secret key: {}", e))?;
 
@@ -90,11 +85,8 @@ pub fn generate_keypair_from_mnemonic(mnemonic: &str) -> Result<KeyPair, String>
 pub fn generate_keypair_from_secret(secret: String) -> Result<KeyPair, String> {
     let client = create_client_local()?;
     let mut keypair: KeyPair =
-        nacl_sign_keypair_from_secret_key(client, ParamsOfNaclSignKeyPairFromSecret {
-            secret,
-            ..Default::default()
-        })
-        .map_err(|e| format!("failed to get KeyPair from secret key: {}", e))?;
+        nacl_sign_keypair_from_secret_key(client, ParamsOfNaclSignKeyPairFromSecret { secret })
+            .map_err(|e| format!("failed to get KeyPair from secret key: {}", e))?;
     // special case if secret contains public key too.
     let secret =
         hex::decode(&keypair.secret).map_err(|e| format!("failed to decode the keypair: {}", e))?;
