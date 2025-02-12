@@ -74,7 +74,6 @@ pub struct ClientContext {
 
     // client module
     pub(crate) env: Arc<ClientEnv>,
-    pub(crate) network_params: RwLock<Option<NetworkParams>>,
 
     // crypto module
     pub(crate) boxes: Boxes,
@@ -144,7 +143,6 @@ impl ClientContext {
             debots: LockfreeMap::new(),
             boxes: Default::default(),
             bocs,
-            network_params: RwLock::new(None),
             app_requests: Mutex::new(HashMap::new()),
             proofs_storage: Default::default(),
             derived_keys: DerivedKeys::new(env),

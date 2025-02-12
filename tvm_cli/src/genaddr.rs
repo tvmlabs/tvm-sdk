@@ -11,15 +11,11 @@
 use std::fs::OpenOptions;
 
 use serde_json::json;
-use tvm_client::utils::AddressStringFormat;
-use tvm_client::utils::ParamsOfConvertAddress;
-use tvm_client::utils::convert_address;
 
 use crate::config::Config;
 use crate::crypto::gen_seed_phrase;
 use crate::crypto::generate_keypair_from_mnemonic;
 use crate::helpers::calc_acc_address;
-use crate::helpers::create_client_local;
 use crate::helpers::load_abi;
 use crate::helpers::load_abi_str;
 use crate::helpers::read_keys;
@@ -99,25 +95,6 @@ pub async fn generate_address(
             println!(r#"Seed phrase: "{}""#, phrase);
         }
         println!("Raw address: {}", addr);
-        println!("testnet:");
-        println!(
-            "Non-bounceable address (for init): {}",
-            calc_userfriendly_address(&addr, false, true)?
-        );
-        println!(
-            "Bounceable address (for later access): {}",
-            calc_userfriendly_address(&addr, true, true)?
-        );
-        println!("mainnet:");
-        println!(
-            "Non-bounceable address (for init): {}",
-            calc_userfriendly_address(&addr, false, false)?
-        );
-        println!(
-            "Bounceable address (for later access): {}",
-            calc_userfriendly_address(&addr, true, false)?
-        );
-
         println!("Succeeded");
     } else {
         let mut res = json!({});
@@ -125,27 +102,9 @@ pub async fn generate_address(
             res["seed_phrase"] = json!(phrase);
         }
         res["raw_address"] = json!(addr);
-        res["testnet"] = json!({
-            "non-bounceable": calc_userfriendly_address(&addr, false, true)?,
-            "bounceable": calc_userfriendly_address(&addr, true, true)?
-        });
-        res["mainnet"] = json!({
-            "non-bounceable": calc_userfriendly_address(&addr, false, false)?,
-            "bounceable": calc_userfriendly_address(&addr, true, false)?
-        });
         println!("{:#}", res);
     }
     Ok(())
-}
-
-fn calc_userfriendly_address(address: &str, bounce: bool, test: bool) -> Result<String, String> {
-    convert_address(create_client_local()?, ParamsOfConvertAddress {
-        address: address.to_owned(),
-        output_format: AddressStringFormat::Base64 { url: true, bounce, test },
-        ..Default::default()
-    })
-    .map(|r| r.address)
-    .map_err(|e| format!("failed to convert address to base64 form: {}", e))
 }
 
 fn update_contract_state(

@@ -24,6 +24,7 @@ pub(crate) mod process_message;
 mod remp;
 pub(crate) mod send_message;
 mod send_messages;
+mod thread_identifier;
 mod types;
 pub(crate) mod wait_for_transaction;
 
@@ -53,6 +54,7 @@ pub use send_messages::ParamsOfSendMessages;
 pub use send_messages::ResultOfSendMessages;
 pub use send_messages::send_messages;
 pub use send_messages::send_messages_api;
+pub use thread_identifier::ThreadIdentifier;
 pub use tvm_client_processing::MessageMonitoringParams;
 pub use tvm_client_processing::MessageMonitoringResult;
 pub use tvm_client_processing::MessageMonitoringStatus;
