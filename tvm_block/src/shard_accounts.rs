@@ -58,7 +58,12 @@ impl ShardAccounts {
         self.shard_accounts.set(account_id, shard_account, &depth_balance_info)
     }
 
-    pub fn insert_with_aug(&mut self, account_id: &UInt256, shard_account: &ShardAccount, aug: &DepthBalanceInfo) -> Result<()> {
+    pub fn insert_with_aug(
+        &mut self,
+        account_id: &UInt256,
+        shard_account: &ShardAccount,
+        aug: &DepthBalanceInfo,
+    ) -> Result<()> {
         self.shard_accounts.set(account_id, shard_account, aug)
     }
 
@@ -97,6 +102,24 @@ impl ShardAccounts {
         let cell = account.replace_with_external()?;
         self.shard_accounts.set(account_id, &account, &aug)?;
         Ok(cell)
+    }
+
+    pub fn replace_all_with_external(&mut self) -> Result<()> {
+        let copy = self.shard_accounts.clone();
+        copy.iterate_with_keys_and_aug(|account_id, mut account, aug| {
+            account.replace_with_external()?;
+            self.shard_accounts.set(&account_id, &account, &aug)?;
+            Ok(true)
+        })?;
+        Ok(())
+    }
+
+    pub fn is_external(&self, account_id: &UInt256) -> Result<bool> {
+        Ok(self
+            .shard_accounts
+            .get(account_id)?
+            .map(|account| account.is_external())
+            .unwrap_or(false))
     }
 
     pub fn remove(&mut self, account_id: &UInt256) -> Result<Option<SliceData>> {

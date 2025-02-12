@@ -1291,6 +1291,10 @@ impl ShardAccount {
         self.account = ExternalCell::with_cell(external);
         Ok(cell)
     }
+
+    pub fn is_external(&self) -> bool {
+        self.account.is_external()
+    }
 }
 
 impl Serializable for ShardAccount {

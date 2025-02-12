@@ -1605,4 +1605,8 @@ impl<T: Default + Serializable + Deserializable + Clone> ExternalCell<T> {
     pub fn hash(&self) -> UInt256 {
         self.cell.repr_hash()
     }
+
+    pub fn is_external(&self) -> bool {
+        self.cell.cell_type() == CellType::External
+    }
 }
