@@ -346,6 +346,8 @@ pub enum ExceptionCode {
     PrunedCellAccess = 15,
     #[error("big cell")]
     BigCellAccess = 16,
+    #[error("execution timeout")]
+    ExecutionTimeout = 17,
 }
 
 // impl fmt::Display for ExceptionCode {

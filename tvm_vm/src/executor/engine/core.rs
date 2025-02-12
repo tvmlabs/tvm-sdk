@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
 use tvm_block::ShardAccount;
@@ -128,6 +128,7 @@ pub struct Engine {
     vm_execution_is_block_related: Arc<Mutex<bool>>,
     block_collation_was_finished: Arc<Mutex<bool>>,
     termination_deadline: Option<Instant>,
+    execution_timeout: Option<Duration>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -288,6 +289,7 @@ impl Engine {
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
+            execution_timeout: None,
         }
     }
 
@@ -302,6 +304,10 @@ impl Engine {
 
     pub fn set_termination_deadline(&mut self, deadline: Option<Instant>) {
         self.termination_deadline = deadline;
+    }
+
+    pub fn set_execution_timeout(&mut self, timeout: Option<Duration>) {
+        self.execution_timeout = timeout;
     }
 
     pub fn mark_execution_as_block_related(&mut self) -> Status {
@@ -616,35 +622,41 @@ impl Engine {
     }
 
     pub fn execute(&mut self) -> Result<i32> {
-        let termination_deadline = self.termination_deadline;
+        let deadline =
+            match (self.termination_deadline, self.execution_timeout.map(|x| Instant::now() + x)) {
+                (Some(a), Some(b)) => Some(a.min(b)),
+                (a, b) => a.or(b),
+            };
         self.trace_info(EngineTraceInfoType::Start, 0, None);
         let result = loop {
-            if let Some(deadline) = termination_deadline {
-                if Instant::now() > deadline {
-                    return Err(TvmError::TerminationDeadlineReached.into());
-                }
-            }
             if let Some(result) = self.seek_next_cmd()? {
                 break result;
             }
             let gas = self.gas_used();
             self.cmd_code = SliceProto::from(self.cc.code());
-            let execution_result = match HANDLERS_CP0.get_handler(self) {
-                Err(err) => {
-                    self.basic_use_gas(8);
-                    Some(err)
+            let execution_result = if is_deadline_reached(deadline) {
+                if is_deadline_reached(self.termination_deadline) {
+                    return Err(TvmError::TerminationDeadlineReached.into());
                 }
-                Ok(handler) => match handler(self) {
-                    Err(e) => Some(update_error_description(e, |e| {
-                        format!(
-                            "CMD: {}{} err: {}",
-                            self.cmd.proto.name_prefix.unwrap_or_default(),
-                            self.cmd.proto.name,
-                            e
-                        )
-                    })),
-                    Ok(_) => self.gas.check_gas_remaining().err(),
-                },
+                Some(exception!(ExceptionCode::ExecutionTimeout, "execution_timeout"))
+            } else {
+                match HANDLERS_CP0.get_handler(self) {
+                    Err(err) => {
+                        self.basic_use_gas(8);
+                        Some(err)
+                    }
+                    Ok(handler) => match handler(self) {
+                        Err(e) => Some(update_error_description(e, |e| {
+                            format!(
+                                "CMD: {}{} err: {}",
+                                self.cmd.proto.name_prefix.unwrap_or_default(),
+                                self.cmd.proto.name,
+                                e
+                            )
+                        })),
+                        Ok(_) => self.gas.check_gas_remaining().err(),
+                    },
+                }
             };
             self.trace_info(EngineTraceInfoType::Normal, gas, None);
             self.cmd.clear();
@@ -1533,6 +1545,10 @@ impl Engine {
         if exception.exception_code().is_some() {
             self.step += 1;
         }
+        if exception.exception_code() == Some(ExceptionCode::ExecutionTimeout) {
+            log::trace!(target: "tvm", "EXECUTION TIMEOUT CODE: {}\n", self.cmd_code_string());
+            return Err(err);
+        }
         if exception.exception_code() == Some(ExceptionCode::OutOfGas) {
             log::trace!(target: "tvm", "OUT OF GAS CODE: {}\n", self.cmd_code_string());
             return Err(err);
@@ -1734,4 +1750,9 @@ impl Engine {
             None => err!("Cannot get config param {}", index),
         }
     }
+}
+
+#[inline(always)]
+fn is_deadline_reached(deadline: Option<Instant>) -> bool {
+    deadline.map(|deadline| Instant::now() > deadline).unwrap_or(false)
 }

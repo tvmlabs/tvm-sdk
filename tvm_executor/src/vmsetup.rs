@@ -11,7 +11,7 @@
 
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tvm_block::GlobalCapabilities;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
@@ -46,6 +46,7 @@ pub struct VMSetup {
     vm_execution_is_block_related: Arc<Mutex<bool>>,
     block_collation_was_finished: Arc<Mutex<bool>>,
     termination_deadline: Option<Instant>,
+    execution_timeout: Option<Duration>,
 }
 
 impl VMSetup {
@@ -73,6 +74,7 @@ impl VMSetup {
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
+            execution_timeout: None,
         }
     }
 
@@ -144,6 +146,12 @@ impl VMSetup {
     /// Sets termination deadline
     pub fn set_termination_deadline(mut self, deadline: Option<Instant>) -> VMSetup {
         self.vm.set_termination_deadline(deadline);
+        self
+    }
+
+    /// Sets execution timeout
+    pub fn set_execution_timeout(mut self, timeout: Option<Duration>) -> VMSetup {
+        self.vm.set_execution_timeout(timeout);
         self
     }
 
