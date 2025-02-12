@@ -64,6 +64,15 @@ pub struct PostRequest {
     pub body: String,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[allow(non_snake_case)]
+pub struct ExtMessage {
+    pub id: String,
+    pub body: String,
+    pub expireAt: Option<f64>,
+    pub threadId: Option<String>,
+}
+
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ParamsOfAggregateCollection {
     /// Collection name (accounts, blocks, transactions, messages,
@@ -493,6 +502,13 @@ impl GraphQLQuery {
         let query = "mutation postRequests($requests:[Request]){postRequests(requests:$requests)}"
             .to_owned();
         let variables = Some(json!({ "requests": serde_json::json!(requests) }));
+        Self { query, variables, timeout: None, is_batch: false }
+    }
+
+    pub fn with_send_message(message: &ExtMessage) -> Self {
+        let query = "mutation sendMessage($message:ExtMessage){sendMessage(message:$message){block_hash tx_hash message_hash thread_id aborted tvm_exit_code producers current_time}}"
+            .to_owned();
+        let variables = Some(json!({ "message": serde_json::json!(message) }));
         Self { query, variables, timeout: None, is_batch: false }
     }
 

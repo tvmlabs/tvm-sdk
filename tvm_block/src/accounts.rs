@@ -100,7 +100,6 @@ mod tests;
 /// _ split_depth:(Maybe (## 5)) special:(Maybe TickTock)
 /// code:(Maybe ^Cell) data:(Maybe ^Cell)
 /// library:(Maybe ^Cell) = StateInit;
-
 ///////////////////////////////////////////////////////////////////////////////
 /// 4.1.5. Storage profile of an account.
 ///
@@ -486,7 +485,6 @@ impl fmt::Display for AccountStorage {
 /// account_uninit$00 = AccountState;
 /// account_active$1 _:StateInit = AccountState;
 /// account_frozen$01 state_hash:uint256 = AccountState;
-
 #[allow(clippy::enum_variant_names)]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum AccountState {

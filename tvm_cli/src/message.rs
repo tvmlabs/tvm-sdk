@@ -82,7 +82,7 @@ pub fn prepare_message_params(
         abi,
         address: Some(addr.to_owned()),
         call_set,
-        signer: if keys.is_some() { Signer::Keys { keys: keys.unwrap() } } else { Signer::None },
+        signer: if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None },
         ..Default::default()
     })
 }

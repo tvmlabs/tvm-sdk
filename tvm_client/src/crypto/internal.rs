@@ -158,11 +158,9 @@ pub(crate) fn sign_using_secret(
     unsigned: &[u8],
     secret: &[u8],
 ) -> ClientResult<(Vec<u8>, Vec<u8>)> {
-    let mut signed: Vec<u8> = Vec::new();
-    signed.resize(unsigned.len() + sodalite::SIGN_LEN, 0);
+    let mut signed: Vec<u8> = vec![0; unsigned.len() + sodalite::SIGN_LEN];
     sodalite::sign_attached(&mut signed, unsigned, &key512(secret)?.0);
-    let mut signature: Vec<u8> = Vec::new();
-    signature.resize(64, 0);
+    let mut signature: Vec<u8> = vec![0; 64];
     for (place, element) in signature.iter_mut().zip(signed.iter()) {
         *place = *element;
     }

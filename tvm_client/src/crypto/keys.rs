@@ -38,7 +38,7 @@ pub(crate) fn strip_secret(secret: &str) -> String {
 }
 
 //----------------------------------------------------------------------------------------- KeyPair
-///
+/// KeyPair
 #[derive(Serialize, Deserialize, Clone, ApiType, Default, PartialEq, zeroize::ZeroizeOnDrop)]
 pub struct KeyPair {
     /// Public key - 64 symbols hex string
@@ -79,7 +79,7 @@ impl Debug for KeyPair {
 }
 
 //----------------------------------------------------------- convert_public_key_to_tvm_safe_format
-///
+/// ParamsOfConvertPublicKeyToTonSafeFormat
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfConvertPublicKeyToTonSafeFormat {
     /// Public key - 64 symbols hex string
@@ -123,7 +123,7 @@ pub fn generate_random_sign_keys(_context: std::sync::Arc<ClientContext>) -> Cli
 
 //-------------------------------------------------------------------------------------------- sign
 
-///
+/// ParamsOfSign
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfSign {
     /// Data that must be signed encoded in `base64`.
@@ -153,7 +153,7 @@ pub fn sign(
 
 //-------------------------------------------------------------------------------- verify_signature
 
-///
+/// ParamsOfVerifySignature
 #[derive(Serialize, Deserialize, ApiType, Default)]
 pub struct ParamsOfVerifySignature {
     /// Signed data that must be verified encoded in `base64`.

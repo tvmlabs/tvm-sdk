@@ -376,6 +376,7 @@ impl MultisigArgs {
             &self.params().to_string(),
             Some(self.keys.clone()),
             false,
+            None,
         )
         .await
     }
@@ -529,6 +530,7 @@ async fn multisig_deploy_command(matches: &ArgMatches<'_>, config: &Config) -> R
             &params,
             None,
             false,
+            None,
         )
         .await?;
     }

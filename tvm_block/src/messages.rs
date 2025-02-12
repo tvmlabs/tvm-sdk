@@ -51,7 +51,7 @@ mod tests;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// MessageAddress
-
+///
 // 3.1.2. TL-B scheme for addresses. The serialization of source and destination
 // addresses is defined by the following TL-B scheme: addr_none$00 =
 // MsgAddressExt; addr_extern$01 len:(## 9) external_address:(len * Bit)
@@ -63,7 +63,6 @@ mod tests;
 // workchain_id:int32 address:(addr_len * Bit) = MsgAddressInt;
 // _ MsgAddressInt = MsgAddress;
 // _ MsgAddressExt = MsgAddress;
-
 impl AnycastInfo {
     pub fn with_rewrite_pfx(pfx: SliceData) -> Result<Self> {
         Ok(Self { depth: Number5::new(pfx.remaining_bits() as u32)?, rewrite_pfx: pfx })
@@ -723,7 +722,7 @@ impl Deserializable for InternalMessageHeader {
         self.fwd_fee.read_from(cell)?; // fwd_fee
         self.created_lt.read_from(cell)?; // created_lt
         self.created_at.read_from(cell)?; // created_at
-        if cell.get_next_bit()? == true {
+        if cell.get_next_bit()? {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
         }
         Ok(())
@@ -849,7 +848,6 @@ impl Deserializable for ExtOutMessageHeader {
 /// import_fee:Grams = CommonMsgInfo;
 /// ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
 /// created_lt:uint64 created_at:uint32 = CommonMsgInfo;
-
 impl fmt::Display for CommonMsgInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

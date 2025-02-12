@@ -34,6 +34,7 @@ pub enum ErrorCode {
     MessageRejected = 514,
     InvalidRempStatus = 515,
     NextRempStatusTimeout = 516,
+    InvalidThread = 517,
 }
 
 pub struct Error;

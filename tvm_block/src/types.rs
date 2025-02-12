@@ -46,7 +46,6 @@ use crate::hashmapaug::Augmentable;
 mod tests;
 
 /// var_uint$_ {n:#} len:(#< n) value:(uint (len * 8)) = VarUInteger n;
-
 /// var_int$_ {n:#} len:(#< n) value:(int (len * 8)) = VarInteger n;
 /// nanograms$_ amount:(VarUInteger 16) = Grams;
 ///
@@ -54,7 +53,6 @@ mod tests;
 /// that x < 2^8*l, and serializes first l as an unsigned 4-bit integer, then x
 /// itself as an unsigned 8`-bit integer. Notice that four zero bits represent a
 /// zero amount of Grams.
-
 macro_rules! define_VarIntegerN {
     ($varname:ident, $N:expr,BigInt) => {
         #[derive(Eq, Clone, Debug)]
@@ -897,11 +895,10 @@ impl AddSub for CurrencyCollection {
                     self.other.set(&key, &a)?;
                     return Ok(true);
                 }
-            } else {
-                if b == VarUInteger32::zero() {
-                    return Ok(true);
-                }
+            } else if b == VarUInteger32::zero() {
+                return Ok(true);
             }
+
             Ok(false) // coin not found in mine or amount is smaller - cannot
             // subtract
         })

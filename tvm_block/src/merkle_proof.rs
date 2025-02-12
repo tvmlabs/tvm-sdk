@@ -382,11 +382,11 @@ pub fn check_account_proof(proof: &MerkleProof, acc: &Account) -> Result<BlockSe
         if acc.hash()? != acc_hash {
             fail!(BlockError::WrongMerkleProof("Wrong account's hash in proof".to_string()))
         } else {
-            return Ok(BlockSeqNoAndShard {
+            Ok(BlockSeqNoAndShard {
                 seq_no: ss.seq_no(),
                 vert_seq_no: ss.vert_seq_no(),
                 shard_id: ss.shard().clone(),
-            });
+            })
         }
     } else {
         fail!(BlockError::WrongMerkleProof("No account in proof".to_string()))
