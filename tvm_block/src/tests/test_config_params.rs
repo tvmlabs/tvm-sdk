@@ -20,9 +20,7 @@ use crate::VarUInteger32;
 use crate::write_read_and_assert;
 
 fn get_config_param0() -> ConfigParam0 {
-    let mut c = ConfigParam0::default();
-    c.config_addr = UInt256::from([1; 32]);
-    c
+    ConfigParam0 { config_addr: UInt256::from([1; 32]) }
 }
 
 #[test]
@@ -31,9 +29,7 @@ fn test_config_param_0() {
 }
 
 fn get_config_param1() -> ConfigParam1 {
-    let mut c = ConfigParam1::default();
-    c.elector_addr = UInt256::from([1; 32]);
-    c
+    ConfigParam1 { elector_addr: UInt256::from([1; 32]) }
 }
 
 #[test]
@@ -42,11 +38,11 @@ fn test_config_param_1() {
 }
 
 fn get_config_param16() -> ConfigParam16 {
-    let mut c = ConfigParam16::default();
-    c.max_validators = Number16::from(23424u16);
-    c.max_main_validators = Number16::from(35553u16);
-    c.min_validators = Number16::from(11u16);
-    c
+    ConfigParam16 {
+        max_validators: Number16::from(23424u16),
+        max_main_validators: Number16::from(35553u16),
+        min_validators: Number16::from(11u16),
+    }
 }
 
 #[test]
@@ -55,11 +51,12 @@ fn test_config_param_16() {
 }
 
 fn get_config_param17() -> ConfigParam17 {
-    let mut c = ConfigParam17::default();
-    c.min_stake = Grams::zero();
-    c.max_stake = Grams::one();
-    c.max_stake_factor = 12121;
-    c
+    ConfigParam17 {
+        min_stake: Grams::zero(),
+        max_stake: Grams::one(),
+        max_stake_factor: 12121,
+        ..Default::default()
+    }
 }
 
 #[test]
@@ -69,13 +66,13 @@ fn test_config_param_17() {
 
 fn get_storage_prices() -> StoragePrices {
     let mut rng = rand::thread_rng();
-    let mut st = StoragePrices::default();
-    st.bit_price_ps = rng.gen();
-    st.cell_price_ps = rng.gen();
-    st.mc_bit_price_ps = rng.gen();
-    st.mc_cell_price_ps = rng.gen();
-    st.utime_since = rng.gen();
-    st
+    StoragePrices {
+        bit_price_ps: rng.gen(),
+        cell_price_ps: rng.gen(),
+        mc_bit_price_ps: rng.gen(),
+        mc_cell_price_ps: rng.gen(),
+        utime_since: rng.gen(),
+    }
 }
 
 #[test]
@@ -140,14 +137,14 @@ fn test_config_gas_limit_price() {
 
 fn get_msg_forward_prices() -> MsgForwardPrices {
     let mut rng = rand::thread_rng();
-    let mut mfp = MsgForwardPrices::default();
-    mfp.lump_price = rng.gen();
-    mfp.bit_price = rng.gen();
-    mfp.cell_price = rng.gen();
-    mfp.ihr_price_factor = rng.gen();
-    mfp.first_frac = rng.gen();
-    mfp.next_frac = rng.gen();
-    mfp
+    MsgForwardPrices {
+        lump_price: rng.gen(),
+        bit_price: rng.gen(),
+        cell_price: rng.gen(),
+        ihr_price_factor: rng.gen(),
+        first_frac: rng.gen(),
+        next_frac: rng.gen(),
+    }
 }
 
 #[test]

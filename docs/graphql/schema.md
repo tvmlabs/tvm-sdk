@@ -64,6 +64,7 @@ See non-root type descriptions in Field descriptions section.
 ## Mutation types
 
 * postRequests - used to send messages to blockchain.
+* sendMessage - used to send message to blockchain (using API v2).
 
 ## Syntax
 

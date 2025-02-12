@@ -298,6 +298,7 @@ fn required_public_key(public_key: Option<String>) -> ClientResult<String> {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn encode_deploy(
     context: Arc<ClientContext>,
     abi: &str,
@@ -344,6 +345,7 @@ fn encode_deploy(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 fn encode_int_deploy(
     src: Option<MsgAddressInt>,
     context: Arc<ClientContext>,
@@ -919,7 +921,7 @@ pub struct ResultOfAttachSignatureToMessageBody {
     pub body: String,
 }
 
-///
+/// Attach signature
 #[api_function]
 pub fn attach_signature_to_message_body(
     context: Arc<ClientContext>,

@@ -17,7 +17,6 @@ use tvm_vm::stack::savelist::SaveList;
 pub type Bytecode = SliceData;
 
 #[allow(dead_code)]
-
 fn logger_init() {
     if log::log_enabled!(log::Level::Info) {
         return;

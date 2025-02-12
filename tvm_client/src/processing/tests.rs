@@ -23,6 +23,7 @@ use crate::processing::ParamsOfWaitForTransaction;
 use crate::processing::ProcessingEvent;
 use crate::processing::ProcessingResponseType;
 use crate::processing::types::DecodedOutput;
+use crate::processing::ThreadIdentifier;
 use crate::tests::EVENTS_OLD;
 use crate::tests::GIVER_V2;
 use crate::tests::HELLO;
@@ -153,12 +154,13 @@ async fn test_wait_message() {
     client.get_tokens_from_giver_async(&encoded.address, None).await;
 
     let encoded = client.encode_message(encode_params).await.unwrap();
-    let result = send_message
+    let _result = send_message
         .call_with_callback(
             ParamsOfSendMessage {
-                message: encoded.message.clone(),
-                send_events: true,
                 abi: Some(abi.clone()),
+                message: encoded.message.clone(),
+                thread_id: ThreadIdentifier::default(),
+                send_events: true,
             },
             callback.clone(),
         )
@@ -169,10 +171,9 @@ async fn test_wait_message() {
         .call_with_callback(
             ParamsOfWaitForTransaction {
                 message: encoded.message.clone(),
-                shard_block_id: result.shard_block_id,
                 send_events: true,
                 abi: Some(abi.clone()),
-                sending_endpoints: Some(result.sending_endpoints),
+                ..Default::default()
             },
             callback.clone(),
         )

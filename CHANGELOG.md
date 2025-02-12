@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] – 2024-02-06
+### New
+- `processing.send_message` works with `bm/v2/messages` endpoint and synchronously returns  execution result from the node
+
 ## [2.3.3] – 2024-12-18
 
 ### New

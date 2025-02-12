@@ -150,7 +150,7 @@ pub struct EngineTraceInfo<'a> {
     pub gas_cmd: i64,
 }
 
-impl<'a> EngineTraceInfo<'a> {
+impl EngineTraceInfo<'_> {
     pub fn has_cmd(&self) -> bool {
         matches!(self.info_type, EngineTraceInfoType::Normal | EngineTraceInfoType::Implicit)
     }

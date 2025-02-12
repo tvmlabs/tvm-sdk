@@ -257,7 +257,7 @@ impl HDPrivateKey {
         compliant: bool,
     ) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = Default::default();
-        child.depth = self.depth + 1;
+        child.depth += 1;
 
         let public = self.public();
         let mut sha_hasher = sha2::Sha256::new();
@@ -397,8 +397,7 @@ impl Ripemd160 {
     }
 
     fn split32(msg: &[u32]) -> Vec<u8> {
-        let mut res: Vec<u8> = Vec::new();
-        res.resize(msg.len() * 4, 0);
+        let mut res: Vec<u8> = vec![0; msg.len() * 4];
         for i in 0..msg.len() {
             LittleEndian::write_u32(&mut res[i * 4..(i + 1) * 4], msg[i]);
         }
@@ -506,8 +505,7 @@ impl Ripemd160 {
         let len = self.pending_total;
         let bytes = self._delta8;
         let k = bytes - ((len + self.pad_length) % bytes);
-        let mut res: Vec<u8> = Vec::new();
-        res.resize(k + self.pad_length, 0);
+        let mut res: Vec<u8> = vec![0; k + self.pad_length];
         res[0] = 0x80;
         LittleEndian::write_u32(&mut res[k..(k + 4)], (len as u32) << 3);
         res
