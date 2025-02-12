@@ -24,11 +24,11 @@ use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
 use std::collections::HashSet;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tvm_block::{Deserializable, StateInit};
-use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
+use tvm_types::{BuilderData, ExceptionCode};
 
 #[test]
 fn test_assert_stack() {
@@ -280,8 +280,58 @@ fn test_termination_deadline() {
     let elector_data = load_boc("benches/elector-data.boc");
     let config_data = load_boc("benches/config-data.boc");
 
-    let elector_data_output = load_boc("benches/elector-data-output.boc");
-    let elector_actions = load_boc("benches/elector-actions.boc");
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let mut stack = Stack::new();
+    stack.push(StackItem::int(1000000000));
+    stack.push(StackItem::int(0));
+    stack.push(StackItem::int(0));
+    stack.push(StackItem::int(-2));
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+    let from_start = Instant::now();
+    // usually this execution requires 250-300 ms
+    engine.set_termination_deadline(Some(Instant::now() + Duration::from_millis(50)));
+    let err = engine.execute().expect_err("Should be failed with termination deadline reached");
+    assert!(from_start.elapsed() < Duration::from_millis(55));
+    assert!(matches!(
+        err.downcast_ref::<TvmError>().unwrap(),
+        TvmError::TerminationDeadlineReached
+    ));
+}
+
+#[test]
+fn test_execution_timeout() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
 
     let mut ctrls = SaveList::default();
     ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
@@ -321,11 +371,11 @@ fn test_termination_deadline() {
     );
     let from_start = Instant::now();
     // usually this execution requires 250-300 ms
-    engine.set_termination_deadline(Some(Instant::now() + std::time::Duration::from_millis(50)));
-    let err = engine.execute().expect_err("Should be failed with termination deadline reached");
-    assert!(from_start.elapsed() < std::time::Duration::from_millis(55));
-    assert!(matches!(
-        err.downcast_ref::<TvmError>().unwrap(),
-        TvmError::TerminationDeadlineReached
-    ));
+    engine.set_execution_timeout(Some(Duration::from_millis(50)));
+    let err = engine.execute().expect_err("Should be failed with execution timeout");
+    assert!(from_start.elapsed() < Duration::from_millis(55));
+    let TvmError::TvmExceptionFull(exc, _) = err.downcast_ref::<TvmError>().unwrap() else {
+        panic!("Should be TvmExceptionFull");
+    };
+    assert_eq!(exc.exception_code(), Some(ExceptionCode::ExecutionTimeout));
 }

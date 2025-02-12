@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.4.0] – 2024-02-06
+## [2.5.0] – 2025-02-13
+### New
+- `tvm_vm`: execution time control parameters `termination_deadline` and `execution_timeout`. [See details](tvm_vm/CHANGELOG.md)
+
+## [2.4.0] – 2025-02-06
 ### New
 - `processing.send_message` works with `bm/v2/messages` endpoint and synchronously returns  execution result from the node
 
