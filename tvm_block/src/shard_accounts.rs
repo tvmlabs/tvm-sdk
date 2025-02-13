@@ -107,8 +107,10 @@ impl ShardAccounts {
     pub fn replace_all_with_external(&mut self) -> Result<()> {
         let copy = self.shard_accounts.clone();
         copy.iterate_with_keys_and_aug(|account_id, mut account, aug| {
-            account.replace_with_external()?;
-            self.shard_accounts.set(&account_id, &account, &aug)?;
+            if !account.is_external() {
+                account.replace_with_external()?;
+                self.shard_accounts.set(&account_id, &account, &aug)?;               
+            }
             Ok(true)
         })?;
         Ok(())
