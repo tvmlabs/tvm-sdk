@@ -9,6 +9,17 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
+use std::time::Duration;
+use std::time::Instant;
+
+use tvm_block::Deserializable;
+use tvm_block::StateInit;
+use tvm_types::BuilderData;
+use tvm_types::ExceptionCode;
+use tvm_types::IBitstring;
+use tvm_types::SliceData;
+
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
 use crate::executor::math::DivMode;
@@ -23,12 +34,6 @@ use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
-use std::collections::HashSet;
-use std::time::{Duration, Instant};
-use tvm_block::{Deserializable, StateInit};
-use tvm_types::IBitstring;
-use tvm_types::SliceData;
-use tvm_types::{BuilderData, ExceptionCode};
 
 #[test]
 fn test_assert_stack() {

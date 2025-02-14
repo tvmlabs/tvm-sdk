@@ -14,7 +14,9 @@ use std::collections::HashSet;
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use std::time::Instant;
+
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
 use tvm_block::ShardAccount;

@@ -28,6 +28,8 @@ pub enum ExecutorError {
     NoFundsToImportMsg,
     #[error("Compute phase skipped while processing external inbound message with reason {:?}", 0)]
     ExtMsgComputeSkipped(ComputeSkipReason),
-    #[error("Compute phase terminated due to deadline reached (transaction execution takes too long time)")]
+    #[error(
+        "Compute phase terminated due to deadline reached (transaction execution takes too long time)"
+    )]
     TerminationDeadlineReached,
 }
