@@ -204,7 +204,7 @@ pub struct CallArgs {
 }
 
 impl CallArgs {
-    pub async fn submit(matches: &ArgMatches<'_>) -> Result<Self, String> {
+    pub async fn submit(matches: &ArgMatches) -> Result<Self, String> {
         let dest = matches
             .value_of("DEST")
             .map(|s| s.to_owned())
@@ -222,7 +222,7 @@ impl CallArgs {
     }
 
     pub async fn submit_with_args(
-        matches: &ArgMatches<'_>,
+        matches: &ArgMatches,
         dest: &str,
         value: &str,
         bounce: bool,
@@ -243,7 +243,7 @@ impl CallArgs {
         Ok(Self { params, func_name: "submitTransaction".to_owned(), ..Default::default() })
     }
 
-    pub async fn deploy(matches: &ArgMatches<'_>) -> Result<Self, String> {
+    pub async fn deploy(matches: &ArgMatches) -> Result<Self, String> {
         let is_setcode = matches.is_present("SETCODE");
         let v2 = matches.is_present("V2");
 
@@ -293,7 +293,7 @@ pub struct MultisigArgs {
 
 impl MultisigArgs {
     pub fn new(
-        matches: &ArgMatches<'_>,
+        matches: &ArgMatches,
         config: &Config,
         call_args: CallArgs,
     ) -> Result<Self, String> {
@@ -382,18 +382,18 @@ impl MultisigArgs {
     }
 }
 
-pub fn create_multisig_command<'a, 'b>() -> App<'a, 'b> {
+pub fn create_multisig_command<'b>() -> App<'b> {
     let v2_arg = Arg::with_name("V2")
         .long("--v2")
         .help("Force to interact with wallet account as multisig v2.");
     let bounce_arg = Arg::with_name("BOUNCE")
         .long("--bounce")
-        .short("-b")
+        .short('b')
         .help("Send bounce message to destination account.");
 
     let keys_arg = Arg::with_name("KEYS")
         .long("--keys")
-        .short("-k")
+        .short('k')
         .takes_value(true)
         .help("Path to the file with a keypair.");
 
@@ -436,22 +436,22 @@ pub fn create_multisig_command<'a, 'b>() -> App<'a, 'b> {
             .arg(Arg::with_name("VALUE")
                 .long("--local")
                 .takes_value(true)
-                .short("-l")
+                .short('l')
                 .help("Perform a preliminary call of local giver to initialize contract with given value."))
             .arg(Arg::with_name("OWNERS")
                 .long("--owners")
                 .takes_value(true)
-                .short("-o")
+                .short('o')
                 .help("Array of wallet owners public keys. Note: deployer could be not included in this case. If not specified the only owner is contract deployer."))
             .arg(Arg::with_name("CONFIRMS")
                 .long("--confirms")
                 .takes_value(true)
-                .short("-c")
+                .short('c')
                 .help("Number of confirmations required for executing transaction. Default value is 1."))
             .arg(v2_arg))
 }
 
-pub async fn multisig_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub async fn multisig_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     if let Some(m) = m.subcommand_matches("send") {
         return multisig_send_command(m, config).await;
     }
@@ -461,7 +461,7 @@ pub async fn multisig_command(m: &ArgMatches<'_>, config: &Config) -> Result<(),
     Err("unknown multisig command".to_owned())
 }
 
-async fn multisig_send_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn multisig_send_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let call_args = CallArgs::submit(matches).await?;
     let common_args = MultisigArgs::new(matches, config, call_args)?;
     send(config, common_args).await
@@ -493,7 +493,7 @@ async fn send(config: &Config, args: MultisigArgs) -> Result<(), String> {
     call::print_json_result(result, config)
 }
 
-async fn multisig_deploy_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let call_args = CallArgs::deploy(matches).await?;
     let args = MultisigArgs::new(matches, config, call_args)?;
 

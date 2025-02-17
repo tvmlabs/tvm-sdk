@@ -43,7 +43,7 @@ use crate::helpers::query_message;
 use crate::load_abi;
 use crate::print_args;
 
-pub fn create_decode_command<'a, 'b>() -> App<'a, 'b> {
+pub fn create_decode_command<'b>() -> App<'b> {
     let tvc_cmd = SubCommand::with_name("stateinit")
         .setting(AppSettings::AllowLeadingHyphen)
         .about("Decodes tvc data (including compiler version) from different sources.")
@@ -98,13 +98,13 @@ pub fn create_decode_command<'a, 'b>() -> App<'a, 'b> {
                 .about("Decodes data fields from the contract state.")
                 .arg(Arg::with_name("TVC")
                     .long("--tvc")
-                    .short("-t")
+                    .short('t')
                     .takes_value(true)
                     .help("Path to the tvc file with contract state.")
                     .conflicts_with("ADDRESS"))
                 .arg(Arg::with_name("ADDRESS")
                     .long("--addr")
-                    .short("-a")
+                    .short('a')
                     .takes_value(true)
                     .help("Contract address.")
                     .conflicts_with("TVC"))
@@ -119,12 +119,12 @@ pub fn create_decode_command<'a, 'b>() -> App<'a, 'b> {
                     .help("Path to the account boc file."))
                 .arg(Arg::with_name("DUMPTVC")
                     .long("--dumptvc")
-                    .short("-d")
+                    .short('d')
                     .takes_value(true)
                     .help("Path to the TVC file where to save the dump."))))
 }
 
-pub async fn decode_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub async fn decode_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     if let Some(m) = m.subcommand_matches("body") {
         return decode_body_command(m, config).await;
     }
@@ -145,7 +145,7 @@ pub async fn decode_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), S
     Err("unknown command".to_owned())
 }
 
-async fn decode_data_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_data_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     if m.is_present("TVC") {
         return decode_tvc_fields(m, config).await;
     }
@@ -155,7 +155,7 @@ async fn decode_data_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), 
     Err("unknown command".to_owned())
 }
 
-async fn decode_body_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_body_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let body = m.value_of("BODY");
     let abi = Some(abi_from_matches_or_config(m, config)?);
     if !config.is_json {
@@ -165,7 +165,7 @@ async fn decode_body_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), 
     Ok(())
 }
 
-async fn decode_account_from_boc(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_account_from_boc(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let boc = m.value_of("BOCFILE");
     let tvc_path = m.value_of("DUMPTVC");
 
@@ -254,7 +254,7 @@ pub async fn print_account_data(
     Ok(())
 }
 
-async fn decode_message_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_message_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let msg = m.value_of("MSG");
     let abi = Some(abi_from_matches_or_config(m, config)?);
     if !config.is_json {
@@ -305,7 +305,7 @@ async fn decode_message_command(m: &ArgMatches<'_>, config: &Config) -> Result<(
     Ok(())
 }
 
-async fn decode_tvc_fields(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_tvc_fields(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let tvc = m.value_of("TVC");
     let abi = Some(abi_from_matches_or_config(m, config)?);
     if !config.is_json {
@@ -329,7 +329,7 @@ async fn decode_tvc_fields(m: &ArgMatches<'_>, config: &Config) -> Result<(), St
     Ok(())
 }
 
-async fn decode_account_fields(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_account_fields(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = m.value_of("ADDRESS");
     let abi = Some(abi_from_matches_or_config(m, config)?);
     if !config.is_json {
@@ -439,7 +439,7 @@ async fn decode_message(msg_boc: Vec<u8>, abi_path: Option<String>) -> Result<St
         .map_err(|e| format!("Failed to serialize the result: {}", e))
 }
 
-fn load_state_init(m: &ArgMatches<'_>) -> Result<StateInit, String> {
+fn load_state_init(m: &ArgMatches) -> Result<StateInit, String> {
     let input = m.value_of("INPUT").unwrap();
     let stat_init = if m.is_present("BOC") {
         let account = Account::construct_from_file(input)
@@ -452,7 +452,7 @@ fn load_state_init(m: &ArgMatches<'_>) -> Result<StateInit, String> {
     Ok(stat_init)
 }
 
-async fn decode_tvc_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_tvc_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let input = m.value_of("INPUT");
     if !config.is_json {
         print_args!(input);

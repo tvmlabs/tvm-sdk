@@ -689,7 +689,7 @@ struct BlockAccountDescr {
     transactions: Vec<String>,
 }
 
-pub async fn fetch_block_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub async fn fetch_block_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     fetch_block(
         config,
         m.value_of("BLOCKID").ok_or("Missing block id")?,
@@ -700,7 +700,7 @@ pub async fn fetch_block_command(m: &ArgMatches<'_>, config: &Config) -> Result<
     Ok(())
 }
 
-pub async fn fetch_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub async fn fetch_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     fetch(
         config,
         m.value_of("ADDRESS").ok_or("Missing account address")?,
@@ -717,7 +717,7 @@ pub async fn fetch_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), St
     Ok(())
 }
 
-pub async fn replay_command(m: &ArgMatches<'_>, cli_config: &Config) -> Result<(), String> {
+pub async fn replay_command(m: &ArgMatches, cli_config: &Config) -> Result<(), String> {
     let (config_txns, bc_config) = if m.is_present("DEFAULT_CONFIG") {
         ("", Some(get_blockchain_config(cli_config, None).await?))
     } else {
