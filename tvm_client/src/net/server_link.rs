@@ -645,10 +645,28 @@ impl ServerLink {
         query: &GraphQLQuery,
         endpoint: Option<&Endpoint>,
     ) -> ClientResult<Value> {
-        match self.config.queries_protocol {
+        let mut result = match self.config.queries_protocol {
             NetworkQueriesProtocol::HTTP => self.query_http(query, endpoint).await,
             NetworkQueriesProtocol::WS => self.query_ws(query).await,
+        };
+
+        if let Err(ref err) = result {
+            if let Some(active_bp) = self.get_active_bp(err) {
+                if !active_bp.is_empty() {
+                    let mut endpoint = endpoint.cloned();
+                    if let Some(ref mut ep) = endpoint {
+                        // resend to the first BP in list
+                        ep.query_url = active_bp[0].clone();
+                    }
+                    result = match self.config.queries_protocol {
+                        NetworkQueriesProtocol::HTTP => self.query_http(query, endpoint.as_ref()).await,
+                        NetworkQueriesProtocol::WS => self.query_ws(query).await,
+                    };
+                }
+            }
         }
+
+        result
     }
 
     pub async fn batch_query(
@@ -820,5 +838,26 @@ impl ServerLink {
 
     pub async fn invalidate_querying_endpoint(&self) {
         self.state.invalidate_querying_endpoint().await
+    }
+
+    fn get_active_bp(&self, err: &ClientError) -> Option<Vec<String>> {
+        let ext = err.data.get("node_error")?.get("extensions")?;
+        let result = if ext.get("code")?.as_str()? == "WRONG_PRODUCER" {
+            let producers = ext.get("details")?.get("producers")?.as_array()?;
+
+            Some(producers.iter()
+                .filter_map(|v| v.as_str().map(|s| {
+                    if let Some(pos) = s.find(':') {
+                        format!("{}{}", &s[..pos], "/graphql")
+                    } else {
+                        s.to_string()
+                    }
+                }))
+                .collect::<Vec<String>>())
+        } else {
+            None
+        };
+
+        result
     }
 }
