@@ -306,9 +306,9 @@ pub trait TransactionExecutor {
         }
         if tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME {
             fee = Grams::zero();
-        } 
+        }
         if acc_balance.grams < fee {
-            let mut diff = fee.clone(); 
+            let mut diff = fee.clone();
             diff.sub(&acc_balance.grams)?; //Calculate number of Grams that need to be added to the balance to cover the Storage Fee.
             if available_credit == INFINITY_CREDIT {
                 acc_balance.grams.add(&diff)?;
@@ -525,10 +525,10 @@ pub trait TransactionExecutor {
                 vm_phase.exit_arg = None;
                 vm_phase.success = false;
                 vm_phase.gas_fees = match params.is_same_thread_id {
-                    false =>  Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?,
+                    false => Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?,
                     true => Grams::zero(),
                 };
-                
+
                 if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
                     log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
                     fail!("can't sub funds: from acc_balance")
@@ -622,7 +622,7 @@ pub trait TransactionExecutor {
             // credit == 0 means contract accepted
             let gas_fees = if is_special { 0 } else { gas_config.calc_gas_fee(used) };
             vm_phase.gas_fees = match params.is_same_thread_id {
-                false =>  gas_fees.try_into()?,
+                false => gas_fees.try_into()?,
                 true => Grams::zero(),
             };
         };
