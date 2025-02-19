@@ -325,7 +325,7 @@ pub trait TransactionExecutor {
                     diff.sub(&Grams::from(available_credit as u64))?;
                 }
             }
-            if acc_balance.grams < diff {            
+            if diff > 0 {            
                 let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
                     Ok(Some(data)) => data,
                     Ok(None) => VarUInteger32::default(),
