@@ -190,19 +190,20 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         // first check if contract can pay for importing external message
         if is_ext_msg && !is_special {
             // extranal message comes serialized
-            let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
+            let in_fwd_fee = match params.is_same_thread_id {
+                true => Grams::zero(),
+                false => self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?,
+            };
 
             let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
             need_to_burn += credit;
             acc_balance.grams += credit;
 
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
-            if !params.is_same_thread_id {
-                if !acc_balance.grams.sub(&in_fwd_fee)? {
-                    fail!(ExecutorError::NoFundsToImportMsg)
-                }
-                tr.add_fee_grams(&in_fwd_fee)?;
+            if !acc_balance.grams.sub(&in_fwd_fee)? {
+                fail!(ExecutorError::NoFundsToImportMsg)
             }
+            tr.add_fee_grams(&in_fwd_fee)?;
         }
 
         if description.credit_first && !is_ext_msg {
