@@ -97,12 +97,13 @@ pub struct ResultOfSendMessage {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct SendingMessage {
-    _serialized: String,
-    _deserialized: DeserializedObject<Message>,
+    serialized: String,
+    deserialized: DeserializedObject<Message>,
     id: String,
     body: Vec<u8>,
-    _dst: MsgAddressInt,
+    dst: MsgAddressInt,
     thread_id: ThreadIdentifier,
 }
 
