@@ -478,7 +478,7 @@ pub trait TransactionExecutor {
         log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
         log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
         let is_ordinary = self.ordinary_transaction();
-        if acc_balance.grams.is_zero() {
+        if acc_balance.grams.is_zero() && !params.is_same_thread_id {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
@@ -491,7 +491,7 @@ pub trait TransactionExecutor {
             is_ordinary,
             gas_config,
         );
-        if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0 {
+        if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0 && !params.is_same_thread_id {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
