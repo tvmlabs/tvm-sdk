@@ -277,7 +277,6 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
-        is_same_thread_id: bool,
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
         if tr.now() < acc.last_paid() {
@@ -305,11 +304,12 @@ pub trait TransactionExecutor {
             fee.add(due_payment)?;
             acc.set_due_payment(None);
         }
-        if (tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME) && (is_same_thread_id) {
-            acc_balance.grams.add(&fee)?;
-        } else {
-            let mut diff = fee.clone();
-            diff.sub(&acc_balance.grams)?;
+        if tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME {
+            fee = Grams::zero();
+        } 
+        if acc_balance.grams < fee {
+            let mut diff = fee.clone(); 
+            diff.sub(&acc_balance.grams)?; //Calculate number of Grams that need to be added to the balance to cover the Storage Fee.
             if available_credit == INFINITY_CREDIT {
                 acc_balance.grams.add(&diff)?;
                 *minted_shell += diff.as_u128();
@@ -331,7 +331,7 @@ pub trait TransactionExecutor {
                     Ok(None) => VarUInteger32::default(),
                     Err(_) => VarUInteger32::default(),
                 };
-                if ecc_balance > VarUInteger32::from(diff.as_u128()) {
+                if ecc_balance >= VarUInteger32::from(diff.as_u128()) {
                     let mut sub_value = CurrencyCollection::new();
                     sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
                     acc_balance.grams.add(&Grams::from(diff.as_u64_quiet()))?;

@@ -97,7 +97,6 @@ impl TransactionExecutor for TickTockTransactionExecutor {
             is_special,
             0,
             &mut 0,
-            params.is_same_thread_id,
         ) {
             Ok(storage_ph) => {
                 let mut storage_fee = storage_ph.storage_fees_collected.as_u128();
