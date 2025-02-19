@@ -53,7 +53,7 @@ use crate::processing::ThreadIdentifier;
 pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
-pub const _ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
+pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
 
 pub(crate) struct Subscription {
     pub unsubscribe: Pin<Box<dyn Future<Output = ()> + Send>>,
@@ -344,7 +344,7 @@ impl NetworkState {
     pub async fn get_resolved_endpoint(&self, address: &str) -> Option<Arc<Endpoint>> {
         let lock = self.resolved_endpoints.read().await;
         lock.get(address).and_then(|endpoint| {
-            if endpoint.time_added + _ENDPOINT_CACHE_TIMEOUT > self.client_env.now_ms() {
+            if endpoint.time_added + ENDPOINT_CACHE_TIMEOUT > self.client_env.now_ms() {
                 Some(endpoint.endpoint.clone())
             } else {
                 None
