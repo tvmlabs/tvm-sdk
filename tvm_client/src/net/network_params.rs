@@ -44,7 +44,7 @@ pub async fn get_signature_id(
     }
 }
 
-pub(crate) fn offline_config() -> (BlockchainConfig, i32) {
+pub(crate) fn _offline_config() -> (BlockchainConfig, i32) {
     let bytes = include_bytes!("../default_config.boc");
     (
         BlockchainConfig::with_config(

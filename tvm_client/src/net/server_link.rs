@@ -53,7 +53,7 @@ use crate::processing::ThreadIdentifier;
 pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
-pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
+pub const _ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
 
 pub(crate) struct Subscription {
     pub unsubscribe: Pin<Box<dyn Future<Output = ()> + Send>>,
@@ -72,8 +72,8 @@ pub(crate) enum EndpointStat {
 }
 
 pub(crate) struct ResolvedEndpoint {
-    pub endpoint: Arc<Endpoint>,
-    pub time_added: u64,
+    pub _endpoint: Arc<Endpoint>,
+    pub _time_added: u64,
 }
 
 pub(crate) struct NetworkState {
@@ -196,7 +196,7 @@ impl NetworkState {
         *self.endpoint_addresses.write().await = addresses;
     }
 
-    pub async fn get_addresses_for_sending(&self) -> Vec<String> {
+    pub async fn _get_addresses_for_sending(&self) -> Vec<String> {
         let mut addresses = self.endpoint_addresses.read().await.clone();
         addresses.shuffle(&mut rand::thread_rng());
         let bad_delivery = self.bad_delivery_addresses.read().await.clone();
@@ -335,14 +335,14 @@ impl NetworkState {
 
     pub async fn add_resolved_endpoint(&self, address: String, endpoint: Arc<Endpoint>) {
         let mut lock = self.resolved_endpoints.write().await;
-        lock.insert(address, ResolvedEndpoint { endpoint, time_added: self.client_env.now_ms() });
+        lock.insert(address, ResolvedEndpoint { _endpoint: endpoint, _time_added: self.client_env.now_ms() });
     }
 
-    pub async fn get_resolved_endpoint(&self, address: &str) -> Option<Arc<Endpoint>> {
+    pub async fn _get_resolved_endpoint(&self, address: &str) -> Option<Arc<Endpoint>> {
         let lock = self.resolved_endpoints.read().await;
         lock.get(address).and_then(|endpoint| {
-            if endpoint.time_added + ENDPOINT_CACHE_TIMEOUT > self.client_env.now_ms() {
-                Some(endpoint.endpoint.clone())
+            if endpoint._time_added + _ENDPOINT_CACHE_TIMEOUT > self.client_env.now_ms() {
+                Some(endpoint._endpoint.clone())
             } else {
                 None
             }
@@ -802,8 +802,8 @@ impl ServerLink {
         self.state.set_endpoint_addresses(endpoints).await;
     }
 
-    pub async fn get_addresses_for_sending(&self) -> Vec<String> {
-        self.state.get_addresses_for_sending().await
+    pub async fn _get_addresses_for_sending(&self) -> Vec<String> {
+        self.state._get_addresses_for_sending().await
     }
 
     pub async fn get_query_endpoint(&self) -> ClientResult<Arc<Endpoint>> {

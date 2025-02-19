@@ -45,7 +45,6 @@ use crate::json_interface::modules::BocModule;
 use crate::json_interface::modules::TvmModule;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::ResultOfQueryCollection;
-use crate::net::network_params::offline_config;
 use crate::processing::ParamsOfProcessMessage;
 use crate::processing::ResultOfProcessMessage;
 use crate::tests::EXCEPTION;

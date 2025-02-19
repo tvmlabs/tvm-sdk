@@ -99,11 +99,11 @@ pub struct ResultOfSendMessage {
 
 #[derive(Clone)]
 struct SendingMessage {
-    serialized: String,
-    deserialized: DeserializedObject<Message>,
+    _serialized: String,
+    _deserialized: DeserializedObject<Message>,
     id: String,
     body: Vec<u8>,
-    dst: MsgAddressInt,
+    _dst: MsgAddressInt,
     thread_id: ThreadIdentifier,
 }
 
@@ -128,11 +128,11 @@ impl SendingMessage {
         }
         let body = base64_decode(serialized)?;
         Ok(Self {
-            serialized: serialized.to_string(),
-            deserialized,
+            _serialized: serialized.to_string(),
+            _deserialized: deserialized,
             id,
             body,
-            dst,
+            _dst: dst,
             thread_id,
         })
     }

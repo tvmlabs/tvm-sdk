@@ -390,7 +390,7 @@ async fn message_sending_addresses() {
     link.update_stat(&["a".to_string(), "e".to_string()], EndpointStat::MessageUndelivered).await;
     let bad: HashSet<_> = ["a".to_string(), "e".to_string()].iter().cloned().collect();
     for _ in 0..100 {
-        let addresses = link.get_addresses_for_sending().await;
+        let addresses = link._get_addresses_for_sending().await;
         let tail: HashSet<_> = addresses[addresses.len() - 2..].iter().cloned().collect();
         assert_eq!(tail, bad);
     }
@@ -398,7 +398,7 @@ async fn message_sending_addresses() {
     let mut a_good = false;
     let mut e_good = false;
     for _ in 0..100 {
-        let addresses = link.get_addresses_for_sending().await;
+        let addresses = link._get_addresses_for_sending().await;
         let tail: HashSet<_> = addresses[addresses.len() - 2..].iter().cloned().collect();
         if !tail.contains("a") {
             a_good = true;
