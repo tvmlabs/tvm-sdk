@@ -126,14 +126,7 @@ impl SendingMessage {
             }
         }
         let body = base64_decode(serialized)?;
-        Ok(Self {
-            _serialized: serialized.to_string(),
-            _deserialized: deserialized,
-            id,
-            body,
-            _dst: dst,
-            thread_id,
-        })
+        Ok(Self { serialized: serialized.to_string(), deserialized, id, body, dst, thread_id })
     }
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
