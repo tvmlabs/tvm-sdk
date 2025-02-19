@@ -97,6 +97,7 @@ pub struct ResultOfSendMessage {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct SendingMessage {
     serialized: String,
     deserialized: DeserializedObject<Message>,
