@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use super::ThreadIdentifier;
 use crate::abi::ParamsOfEncodeMessage;
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;
@@ -13,8 +14,6 @@ use crate::processing::internal::can_retry_expired_message;
 use crate::processing::send_message;
 use crate::processing::wait_for_transaction;
 use crate::tvm::StdContractError;
-
-use super::ThreadIdentifier;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
 pub struct ParamsOfProcessMessage {
