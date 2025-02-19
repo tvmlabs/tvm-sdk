@@ -10,8 +10,9 @@
 // limitations under the License.
 //
 
-use serde_json::Value;
 use std::sync::Arc;
+
+use serde_json::Value;
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
 use tvm_executor::BlockchainConfig;
@@ -63,7 +64,6 @@ pub(crate) async fn get_default_params(
         global_id,
     })
 }
-
 
 /// TODO: make it more generic
 pub(crate) fn ackinacki_network() -> ClientResult<(BlockchainConfig, i32)> {
