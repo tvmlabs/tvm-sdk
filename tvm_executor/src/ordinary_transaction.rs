@@ -462,7 +462,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     &mut tr,
                     account_address,
                     params.block_version,
-                    params.is_same_thread_id,
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
                         out_msgs.push(bounce_msg);

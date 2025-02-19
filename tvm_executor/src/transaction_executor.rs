@@ -524,13 +524,14 @@ pub trait TransactionExecutor {
             } else {
                 vm_phase.exit_arg = None;
                 vm_phase.success = false;
-                vm_phase.gas_fees =
-                    Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?;
-                if !params.is_same_thread_id {
-                    if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
-                        log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
-                        fail!("can't sub funds: from acc_balance")
-                    }
+                vm_phase.gas_fees = match params.is_same_thread_id {
+                    false =>  Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?,
+                    true => Grams::zero(),
+                };
+                
+                if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
+                    log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
+                    fail!("can't sub funds: from acc_balance")
                 }
                 *acc = result_acc;
                 return Ok((TrComputePhase::Vm(vm_phase), None, None));
@@ -620,7 +621,10 @@ pub trait TransactionExecutor {
         } else {
             // credit == 0 means contract accepted
             let gas_fees = if is_special { 0 } else { gas_config.calc_gas_fee(used) };
-            vm_phase.gas_fees = gas_fees.try_into()?;
+            vm_phase.gas_fees = match params.is_same_thread_id {
+                false =>  gas_fees.try_into()?,
+                true => Grams::zero(),
+            };
         };
 
         log::debug!(
@@ -634,11 +638,9 @@ pub trait TransactionExecutor {
         vm_phase.vm_steps = vm.steps();
         // TODO: vm_final_state_hash
         log::debug!(target: "executor", "acc_balance: {}, gas fees: {}", acc_balance.grams, vm_phase.gas_fees);
-        if !params.is_same_thread_id {
-            if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
-                log::error!(target: "executor", "This situation is unreachable: can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
-                fail!("can't sub funds: from acc_balance")
-            }
+        if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
+            log::error!(target: "executor", "This situation is unreachable: can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
+            fail!("can't sub funds: from acc_balance")
         }
 
         let new_data = if let Ok(cell) = vm.get_committed_state().get_root().as_cell() {
@@ -1050,7 +1052,6 @@ pub trait TransactionExecutor {
         tr: &mut Transaction,
         my_addr: &MsgAddressInt,
         block_version: u32,
-        is_same_thread_id: bool,
     ) -> Result<(TrBouncePhase, Option<Message>)> {
         let header = msg.int_header().ok_or_else(|| error!("Not found msg internal header"))?;
         if !header.bounce {
@@ -1128,9 +1129,7 @@ pub trait TransactionExecutor {
 
         acc_balance.sub(&remaining_msg_balance)?;
         remaining_msg_balance.grams.sub(&fwd_full_fees)?;
-        if !is_same_thread_id {
-            remaining_msg_balance.grams.sub(compute_phase_fees)?;
-        }
+        remaining_msg_balance.grams.sub(compute_phase_fees)?;
         match bounce_msg.header_mut() {
             CommonMsgInfo::IntMsgInfo(header) => {
                 header.value = remaining_msg_balance.clone();
