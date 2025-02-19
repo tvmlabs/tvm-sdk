@@ -51,7 +51,6 @@ mod tests;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// MessageAddress
-///
 // 3.1.2. TL-B scheme for addresses. The serialization of source and destination
 // addresses is defined by the following TL-B scheme: addr_none$00 =
 // MsgAddressExt; addr_extern$01 len:(## 9) external_address:(len * Bit)
