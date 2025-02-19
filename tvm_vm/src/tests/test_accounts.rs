@@ -51,7 +51,7 @@ impl Validator {
     }
 }
 
-impl<'a> SortedList<'a> {
+impl SortedList<'_> {
     #[cfg(test)]
     fn check_order(&self) -> bool {
         let mut iter = self.list.iter();

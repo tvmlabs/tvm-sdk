@@ -411,6 +411,7 @@ async fn profile_tvm() {
 
     let start = chrono::prelude::Utc::now().timestamp_millis();
     let mut messages = vec![];
+    #[allow(clippy::never_loop)]
     for id in result.decoded.unwrap().output.unwrap()["ids"].as_array().unwrap() {
         let mut contender_messages = vec![];
         for func in
@@ -445,6 +446,7 @@ async fn profile_tvm() {
     );
     let start = chrono::prelude::Utc::now().timestamp_millis();
 
+    #[allow(clippy::never_loop)]
     for contender_messages in messages {
         for message in contender_messages {
             run_tvm

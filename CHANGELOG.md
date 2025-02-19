@@ -1,14 +1,18 @@
 # Release Notes
 
 All notable changes to this project will be documented in this file.
-
-## [2.3.4] – 2025-01-20
+## [2.5.0] – 2025-01-20
 
 ### New
 - Add instructions CALCBKREWARDADJ, CALCREPCOEF functions
+- Add free fee with same ThreadId
 
 ### Fixed
 - Fix CNVRTSHELLQ, CALCBKREWARD, CALCMINSTAKE instructions.
+
+## [2.4.0] – 2024-02-06
+### New
+- `processing.send_message` works with `bm/v2/messages` endpoint and synchronously returns  execution result from the node
 
 ## [2.3.3] – 2024-12-18
 
