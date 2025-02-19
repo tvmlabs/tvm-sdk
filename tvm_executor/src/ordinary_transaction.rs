@@ -233,11 +233,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         ) {
             Ok(storage_ph) => {
                 storage_fee = storage_ph.storage_fees_collected.as_u128();
-                if let Some(due) = &storage_ph.storage_fees_due {
-                    storage_fee += due.as_u128()
-                }
-                if let Some(due) = due_before_storage {
-                    storage_fee -= due;
+                if storage_fee != 0 {
+                    if let Some(due) = &storage_ph.storage_fees_due {
+                        storage_fee += due.as_u128()
+                    }
+                    if let Some(due) = due_before_storage {
+                        storage_fee -= due;
+                    }
                 }
                 Some(storage_ph)
             }
