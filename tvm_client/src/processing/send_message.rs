@@ -58,19 +58,18 @@ pub struct ParamsOfSendMessage {
 
 #[derive(Serialize, Deserialize, ApiType, Default, PartialEq, Debug)]
 pub struct ResultOfSendMessage {
-    /* /// The last generated shard block of the message destination account before
-    /// the message was sent.
-    ///
-    /// This block id must be used as a parameter of the
-    /// `wait_for_transaction`.
-    pub shard_block_id: String,
-
-    /// The list of endpoints to which the message was sent.
-    ///
-    /// This list id must be used as a parameter of the
-    /// `wait_for_transaction`.
-    pub sending_endpoints: Vec<String>, */
-
+    // /// The last generated shard block of the message destination account before
+    // the message was sent.
+    //
+    // This block id must be used as a parameter of the
+    // `wait_for_transaction`.
+    // pub shard_block_id: String,
+    //
+    // The list of endpoints to which the message was sent.
+    //
+    // This list id must be used as a parameter of the
+    // `wait_for_transaction`.
+    // pub sending_endpoints: Vec<String>,
     /// The hash of the processed message.
     pub message_hash: Option<String>,
 
@@ -149,24 +148,23 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
     params: ParamsOfSendMessage,
     _callback: impl Fn(ProcessingEvent) -> F + Send + Sync + Clone,
 ) -> ClientResult<ResultOfSendMessage> {
-    let message = SendingMessage::new(
-        &context,
-        &params.message,
-        params.abi.as_ref(),
-        params.thread_id,
-    )?;
+    let message =
+        SendingMessage::new(&context, &params.message, params.abi.as_ref(), params.thread_id)?;
 
     let result = message.send(&context).await;
     match result {
-        Ok(value) => if value["data"].is_object() {
-            let res: ResultOfSendMessage = serde_json::from_value(value["data"]["sendMessage"].clone())
-                .map_err(Error::invalid_data)?;
-            Ok(res)
-        } else {
-            let err: ClientError = serde_json::from_value(value["error"].clone())
-                .map_err(Error::invalid_data)?;
-            Err(err)
-        },
-        Err(err) => Err(err)
+        Ok(value) => {
+            if value["data"].is_object() {
+                let res: ResultOfSendMessage =
+                    serde_json::from_value(value["data"]["sendMessage"].clone())
+                        .map_err(Error::invalid_data)?;
+                Ok(res)
+            } else {
+                let err: ClientError =
+                    serde_json::from_value(value["error"].clone()).map_err(Error::invalid_data)?;
+                Err(err)
+            }
+        }
+        Err(err) => Err(err),
     }
 }

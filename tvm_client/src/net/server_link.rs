@@ -335,7 +335,10 @@ impl NetworkState {
 
     pub async fn add_resolved_endpoint(&self, address: String, endpoint: Arc<Endpoint>) {
         let mut lock = self.resolved_endpoints.write().await;
-        lock.insert(address, ResolvedEndpoint { _endpoint: endpoint, _time_added: self.client_env.now_ms() });
+        lock.insert(address, ResolvedEndpoint {
+            _endpoint: endpoint,
+            _time_added: self.client_env.now_ms(),
+        });
     }
 
     pub async fn _get_resolved_endpoint(&self, address: &str) -> Option<Arc<Endpoint>> {

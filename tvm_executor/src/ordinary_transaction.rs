@@ -229,7 +229,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             is_special,
             params.available_credit,
             minted_shell,
-            params.is_same_thread_id
+            params.is_same_thread_id,
         ) {
             Ok(storage_ph) => {
                 storage_fee = storage_ph.storage_fees_collected.as_u128();
@@ -462,7 +462,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     &mut tr,
                     account_address,
                     params.block_version,
-                    params.is_same_thread_id
+                    params.is_same_thread_id,
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
                         out_msgs.push(bounce_msg);

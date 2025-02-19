@@ -99,7 +99,8 @@ fn parse_json_object(s: &str) -> Result<Value, String> {
     if s.is_empty() {
         Ok(Value::Object(serde_json::Map::new()))
     } else if s.starts_with('{') && s.ends_with('}') {
-        Ok(serde_json::from_str::<Value>(s).map_err(|e| format!("Failed to parse json arg: {e}"))?)
+        Ok(serde_json::from_str::<Value>(s)
+            .map_err(|e| format!("Failed to parse json arg: {e}"))?)
     } else {
         Err(format!("Invalid json object: {s}"))
     }

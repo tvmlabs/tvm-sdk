@@ -131,7 +131,7 @@ pub struct ExecuteParams {
     pub block_collation_was_finished: Arc<Mutex<bool>>,
     pub src_dapp_id: Option<UInt256>,
     pub available_credit: i128,
-    pub is_same_thread_id: bool
+    pub is_same_thread_id: bool,
 }
 
 pub struct ActionPhaseResult {
@@ -174,7 +174,7 @@ impl Default for ExecuteParams {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             src_dapp_id: None,
             available_credit: 0,
-            is_same_thread_id: false
+            is_same_thread_id: false,
         }
     }
 }
@@ -277,7 +277,7 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
-        is_same_thread_id: bool
+        is_same_thread_id: bool,
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
         if tr.now() < acc.last_paid() {
@@ -325,7 +325,7 @@ pub trait TransactionExecutor {
                     diff.sub(&Grams::from(available_credit as u64))?;
                 }
             }
-            if diff > 0 {            
+            if diff > 0 {
                 let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
                     Ok(Some(data)) => data,
                     Ok(None) => VarUInteger32::default(),
@@ -818,7 +818,7 @@ pub trait TransactionExecutor {
                         &mut out_msg,
                         &mut acc_remaining_balance,
                         msg_remaining_balance,
-//                        compute_phase_fees,
+                        //                        compute_phase_fees,
                         self.config(),
                         is_special,
                         my_addr,
@@ -974,7 +974,7 @@ pub trait TransactionExecutor {
                     &mut out_msg,
                     &mut free_to_send,
                     msg_remaining_balance,
-//                    compute_phase_fees,
+                    //                    compute_phase_fees,
                     self.config(),
                     is_special,
                     my_addr,
@@ -1481,7 +1481,7 @@ fn outmsg_action_handler(
     msg: &mut Message,
     acc_balance: &mut CurrencyCollection,
     msg_balance: &mut CurrencyCollection,
-//    compute_phase_fees: &Grams,
+    //    compute_phase_fees: &Grams,
     config: &BlockchainConfig,
     is_special: bool,
     my_addr: &MsgAddressInt,
@@ -1489,7 +1489,10 @@ fn outmsg_action_handler(
     account_deleted: &mut bool,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
-    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE | SENDMSG_IGNORE_ERROR | SENDMSG_REMAINING_MSG_BALANCE;
+    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE
+        | SENDMSG_ALL_BALANCE
+        | SENDMSG_IGNORE_ERROR
+        | SENDMSG_REMAINING_MSG_BALANCE;
     if (mode & !SENDMSG_VALID_FLAGS) != 0
         || (mode & invalid_flags) == invalid_flags
         || ((mode & SENDMSG_DELETE_IF_EMPTY) != 0 && (mode & SENDMSG_ALL_BALANCE) == 0)
@@ -1677,7 +1680,7 @@ fn outmsg_action_handler(
         return Err(RESULT_CODE_INVALID_BALANCE);
     }
 
-//    if (mode & (SENDMSG_ALL_BALANCE | SENDMSG_REMAINING_MSG_BALANCE)) != 0 {
+    //    if (mode & (SENDMSG_ALL_BALANCE | SENDMSG_REMAINING_MSG_BALANCE)) != 0 {
     if mode & SENDMSG_ALL_BALANCE != 0 {
         *msg_balance = CurrencyCollection::default();
     }
