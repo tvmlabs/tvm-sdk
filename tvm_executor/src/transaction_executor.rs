@@ -334,7 +334,7 @@ pub trait TransactionExecutor {
                 if ecc_balance >= VarUInteger32::from(diff.as_u128()) {
                     let mut sub_value = CurrencyCollection::new();
                     sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
-                    acc_balance.grams.add(&Grams::from(diff.as_u64_quiet()))?;
+                    acc_balance.grams.add(&diff)?;
                     acc_balance.sub(&sub_value)?;
                 }
             }
