@@ -1,3 +1,4 @@
+mod boc;
 mod decode;
 mod execute;
 mod helper;
@@ -24,9 +25,49 @@ lazy_static::lazy_static!(
 
 /// Helper tool, that allows you to run Acki-Nacki virtual machine, get VM
 /// trace, output messages and update contract state offchain.
-#[derive(Parser, Debug, Default)]
+#[derive(Parser, Debug)]
 #[command(long_version = &**LONG_VERSION, about, long_about = None)]
-struct Args {
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Parser, Debug)]
+enum Commands {
+    /// Run contract localy with specified parameters
+    Run(RunArgs),
+    /// Reads parameters in JSON from stdin and encode them into BOC
+    BocEncode(BocEncodeArgs),
+    /// Read BOC string fron stdin and encode it as a set of provided parameters in JSON
+    BocDecode(BocDecodeArgs),
+    /// Read BOC string from stdin and print its hash
+    BocHash,
+}
+
+#[derive(Parser, Debug, Default)]
+struct BocEncodeArgs {
+    /// Path to the contract ABI file
+    #[arg(short, long)]
+    abi_file: PathBuf,
+
+    /// ABI header
+    #[arg(short('r'), long)]
+    abi_header: Option<serde_json::Value>,
+}
+
+#[derive(Parser, Debug, Default)]
+struct BocDecodeArgs {
+    /// Path to the contract ABI file
+    #[arg(short, long)]
+    abi_file: PathBuf,
+
+    /// ABI header
+    #[arg(short('r'), long)]
+    abi_header: Option<serde_json::Value>,
+}
+
+#[derive(Parser, Debug, Default)]
+struct RunArgs {
     /// TVC file with contract state init
     #[arg(short, long, required(true))]
     input_file: PathBuf,
@@ -85,10 +126,37 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<()> {
-    let args: Args = Args::parse();
-    let mut res: ExecutionResult = ExecutionResult::new(args.json);
-    execute(&args, &mut res)?;
-    println!("{}", res.output());
+    let cli: Cli = Cli::parse();
+
+    match &cli.command {
+        Commands::Run(args) => {
+            let mut res = ExecutionResult::new(args.json);
+            execute(args, &mut res)?;
+            println!("{}", res.output());
+        }
+        Commands::BocEncode(args) => match boc::encode(args) {
+            Ok(result) => println!("{}", result.boc),
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
+        },
+        Commands::BocDecode(args) => match boc::decode(args) {
+            Ok(result) => println!("{}", result.data), // ZZZ as json
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
+        },
+        Commands::BocHash => match boc::hash() {
+            Ok(result) => println!("{}", result.hash),
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
+        },
+    }
+
     Ok(())
 }
 
@@ -111,8 +179,8 @@ mod tests {
         fs::remove_file(temp_path).expect("Failed to delete temporary contract file");
     }
 
-    fn default_args(input_file: PathBuf, func: &str) -> Args {
-        Args {
+    fn default_args(input_file: PathBuf, func: &str) -> RunArgs {
+        RunArgs {
             input_file,
             abi_file: Some(PathBuf::from("tests/contract/contract.abi.json")),
             abi_header: None,
