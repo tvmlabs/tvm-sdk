@@ -848,7 +848,7 @@ impl ServerLink {
             Some(producers.iter()
                 .filter_map(|v| v.as_str().map(|s| {
                     if let Some(pos) = s.find(':') {
-                        format!("{}{}", &s[..pos], "/graphql")
+                        format!("http://{}:8600{}", &s[..pos], "/graphql")
                     } else {
                         s.to_string()
                     }
