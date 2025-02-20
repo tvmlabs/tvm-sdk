@@ -645,28 +645,31 @@ impl ServerLink {
         query: &GraphQLQuery,
         endpoint: Option<&Endpoint>,
     ) -> ClientResult<Value> {
-        let mut result = match self.config.queries_protocol {
-            NetworkQueriesProtocol::HTTP => self.query_http(query, endpoint).await,
-            NetworkQueriesProtocol::WS => self.query_ws(query).await,
-        };
+        let mut result = self.execute_query(query, endpoint).await;
 
         if let Err(ref err) = result {
-            if let Some(active_bp) = self.get_active_bp(err) {
-                if !active_bp.is_empty() {
-                    let mut endpoint = endpoint.cloned();
-                    if let Some(ref mut ep) = endpoint {
-                        // resend to the first BP in list
-                        ep.query_url = active_bp[0].clone();
-                    }
-                    result = match self.config.queries_protocol {
-                        NetworkQueriesProtocol::HTTP => self.query_http(query, endpoint.as_ref()).await,
-                        NetworkQueriesProtocol::WS => self.query_ws(query).await,
-                    };
+            if let Some(active_bp) = self.get_active_bp(err).filter(|bp| !bp.is_empty()) {
+                let mut endpoint = endpoint.cloned();
+                if let Some(ref mut ep) = endpoint {
+                    // resend to the first BP in list
+                    ep.query_url = active_bp[0].clone();
+                    result = self.execute_query(query, endpoint.as_ref()).await;
                 }
             }
         }
 
         result
+    }
+
+    async fn execute_query(
+        &self,
+        query: &GraphQLQuery,
+        endpoint: Option<&Endpoint>,
+    ) -> ClientResult<Value> {
+        match self.config.queries_protocol {
+            NetworkQueriesProtocol::HTTP => self.query_http(query, endpoint).await,
+            NetworkQueriesProtocol::WS => self.query_ws(query).await,
+        }
     }
 
     pub async fn batch_query(
