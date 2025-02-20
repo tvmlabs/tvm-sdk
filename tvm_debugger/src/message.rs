@@ -18,13 +18,13 @@ use tvm_block::VarUInteger32;
 use tvm_types::SliceData;
 use tvm_types::ed25519_create_private_key;
 
-use crate::Args;
+use crate::RunArgs;
 use crate::helper::get_dest_address;
 use crate::helper::get_now;
 use crate::helper::load_abi_as_string;
 use crate::helper::read_keys;
 
-pub(crate) fn generate_message(args: &Args) -> anyhow::Result<(Message, SliceData)> {
+pub(crate) fn generate_message(args: &RunArgs) -> anyhow::Result<(Message, SliceData)> {
     let body = generate_message_body(args)?;
     let message = if args.internal {
         generate_internal_message(args, Some(body.clone()))
@@ -35,7 +35,7 @@ pub(crate) fn generate_message(args: &Args) -> anyhow::Result<(Message, SliceDat
 }
 
 pub(crate) fn generate_external_message(
-    args: &Args,
+    args: &RunArgs,
     body: Option<SliceData>,
 ) -> anyhow::Result<Message> {
     let dst = get_dest_address(args)?;
@@ -52,7 +52,7 @@ pub(crate) fn generate_external_message(
 }
 
 pub(crate) fn generate_internal_message(
-    args: &Args,
+    args: &RunArgs,
     body: Option<SliceData>,
 ) -> anyhow::Result<Message> {
     let dst = get_dest_address(args)?;
@@ -92,7 +92,7 @@ pub(crate) fn generate_internal_message(
     Ok(msg)
 }
 
-pub(crate) fn generate_message_body(args: &Args) -> anyhow::Result<SliceData> {
+pub(crate) fn generate_message_body(args: &RunArgs) -> anyhow::Result<SliceData> {
     assert!(args.abi_file.is_some());
     assert!(args.function_name.is_some());
     let abi = load_abi_as_string(args.abi_file.as_ref().unwrap())?;
@@ -139,7 +139,7 @@ pub(crate) fn generate_message_body(args: &Args) -> anyhow::Result<SliceData> {
 
 #[test]
 fn test_encode_body() -> anyhow::Result<()> {
-    let mut args = Args::default();
+    let mut args = RunArgs::default();
     args.abi_file = Some(PathBuf::from_str("./tests/contract/contract.abi.json").unwrap());
     args.function_name = Some("inc".to_string());
     let _body = generate_message_body(&args)?;
@@ -155,7 +155,7 @@ fn test_encode_body() -> anyhow::Result<()> {
 
 #[test]
 fn test_generate_message() -> anyhow::Result<()> {
-    let mut args = Args::default();
+    let mut args = RunArgs::default();
     args.abi_file = Some(PathBuf::from_str("./tests/contract/contract.abi.json").unwrap());
     args.function_name = Some("inc".to_string());
     let _ext_message = generate_message(&args)?;

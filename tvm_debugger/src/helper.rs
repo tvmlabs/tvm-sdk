@@ -13,7 +13,7 @@ use tvm_vm::executor::Engine;
 use tvm_vm::executor::EngineTraceInfo;
 use tvm_vm::executor::EngineTraceInfoType;
 
-use crate::Args;
+use crate::RunArgs;
 
 const DEFAULT_CAPABILITIES: u64 = 1525038;
 const DEFAULT_CONTRACT_BALANCE: u64 = 1_000_000_000_000_000;
@@ -31,11 +31,11 @@ pub(crate) fn read_keys(filename: &PathBuf) -> anyhow::Result<KeyPair> {
     Ok(keys)
 }
 
-pub(crate) fn get_now(_args: &Args) -> UnixTime32 {
+pub(crate) fn get_now(_args: &RunArgs) -> UnixTime32 {
     (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as u32).into()
 }
 
-pub(crate) fn get_dest_address(args: &Args) -> anyhow::Result<MsgAddressInt> {
+pub(crate) fn get_dest_address(args: &RunArgs) -> anyhow::Result<MsgAddressInt> {
     Ok(match args.address.as_ref() {
         Some(address) => MsgAddressInt::from_str(address)
             .map_err(|e| anyhow::format_err!("Failed to decode contract address: {e}"))?,
@@ -50,15 +50,15 @@ pub(crate) fn load_code_and_data_from_state_init(state_init: &StateInit) -> (Sli
     (code, data)
 }
 
-pub(crate) fn contract_balance(_args: &Args) -> CurrencyCollection {
+pub(crate) fn contract_balance(_args: &RunArgs) -> CurrencyCollection {
     CurrencyCollection::with_grams(DEFAULT_CONTRACT_BALANCE)
 }
 
-pub(crate) fn capabilities(_args: &Args) -> u64 {
+pub(crate) fn capabilities(_args: &RunArgs) -> u64 {
     DEFAULT_CAPABILITIES
 }
 
-pub(crate) fn config_params(_args: &Args) -> Option<Cell> {
+pub(crate) fn config_params(_args: &RunArgs) -> Option<Cell> {
     None
 }
 
