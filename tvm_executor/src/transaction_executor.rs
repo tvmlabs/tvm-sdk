@@ -277,6 +277,7 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
+        is_due: bool,
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
         if tr.now() < acc.last_paid() {
@@ -304,7 +305,7 @@ pub trait TransactionExecutor {
             fee.add(due_payment)?;
             acc.set_due_payment(None);
         }
-        if tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME {
+        if tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME && !is_due {
             fee = Grams::zero();
         }
         if acc_balance.grams < fee {

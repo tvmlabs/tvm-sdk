@@ -221,6 +221,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             };
         }
         let due_before_storage = account.due_payment().map(|due| due.as_u128());
+        let is_due = account.due_payment().map(|due| due.as_u128()).map_or(false, |due| due != 0);
         let mut storage_fee;
         description.storage_ph = match self.storage_phase(
             account,
@@ -230,16 +231,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             is_special,
             params.available_credit,
             minted_shell,
+            is_due,
         ) {
             Ok(storage_ph) => {
                 storage_fee = storage_ph.storage_fees_collected.as_u128();
-                if storage_fee != 0 {
-                    if let Some(due) = &storage_ph.storage_fees_due {
-                        storage_fee += due.as_u128()
-                    }
-                    if let Some(due) = due_before_storage {
-                        storage_fee -= due;
-                    }
+                if let Some(due) = &storage_ph.storage_fees_due {
+                    storage_fee += due.as_u128()
+                }
+                if let Some(due) = due_before_storage {
+                    storage_fee -= due;
                 }
                 Some(storage_ph)
             }
