@@ -39,7 +39,6 @@ use tvm_types::error;
 use tvm_types::fail;
 use tvm_vm::SmartContractInfo;
 use tvm_vm::boolean;
-use tvm_vm::error::TvmError;
 use tvm_vm::int;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
@@ -222,7 +221,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             };
         }
         let due_before_storage = account.due_payment().map(|due| due.as_u128());
-        let is_due = account.due_payment().map(|due| due.as_u128()).map_or(false, |due| due != 0);
+        let is_due = account.due_payment().map(|due| due.as_u128()).is_some_and(|due| due != 0);
         let mut storage_fee;
         description.storage_ph = match self.storage_phase(
             account,

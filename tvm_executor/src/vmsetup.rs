@@ -186,6 +186,8 @@ impl VMSetup {
             self.vm_execution_is_block_related,
             self.block_collation_was_finished,
         );
+        vm.set_termination_deadline(self.termination_deadline);
+        vm.set_execution_timeout(self.execution_timeout);
         vm
     }
 }
