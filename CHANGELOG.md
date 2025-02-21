@@ -1,6 +1,14 @@
 # Release Notes
 
 All notable changes to this project will be documented in this file.
+## [2.5.0] – 2025-02-19
+
+### New
+- Add instructions CALCBKREWARDADJ, CALCREPCOEF functions
+- Add free fee with same ThreadId
+
+### Fixed
+- Fix CNVRTSHELLQ, CALCBKREWARD, CALCMINSTAKE instructions.
 
 ## [2.5.0] – 2025-02-13
 ### New

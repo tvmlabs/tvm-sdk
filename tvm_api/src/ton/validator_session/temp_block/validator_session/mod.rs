@@ -1,1 +1,3 @@
-use serde_derive :: { Serialize , Deserialize } ;pub mod candidate ;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+pub mod candidate;
