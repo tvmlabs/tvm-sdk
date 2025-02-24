@@ -86,3 +86,26 @@ pub(crate) fn trace_callback(
     }
     println!("----------------------------------------\n");
 }
+
+fn is_valid_base64(s: &str) -> bool {
+    base64::Engine::decode(&base64::engine::general_purpose::STANDARD, s).is_ok()
+}
+
+// Read the value from the file if the value is not a valid base64 string
+pub(crate) fn get_value_or_read_file(value: Option<&str>) -> anyhow::Result<Option<String>> {
+    Ok(match value {
+        Some(value) => {
+            if is_valid_base64(value) {
+                Some(value.to_string())
+            } else {
+                let value = std::fs::read_to_string(value)?;
+                if is_valid_base64(&value) {
+                    Some(value)
+                } else {
+                    anyhow::bail!("File content is not a valid base64 string!")
+                }
+            }
+        }
+        None => None,
+    })
+}
