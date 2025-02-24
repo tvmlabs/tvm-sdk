@@ -1,15 +1,19 @@
-use crate::{
-    StateDecodeArgs, StateEncodeArgs, helper::get_base64_or_read_from_file, read_file_as_base64,
-};
-use anyhow::bail;
 use std::sync::Arc;
-use tvm_client::{
-    ClientConfig, ClientContext,
-    boc::{
-        ParamsOfDecodeStateInit, ParamsOfEncodeStateInit, ResultOfDecodeStateInit,
-        ResultOfEncodeStateInit, decode_state_init, encode_state_init,
-    },
-};
+
+use anyhow::bail;
+use tvm_client::ClientConfig;
+use tvm_client::ClientContext;
+use tvm_client::boc::ParamsOfDecodeStateInit;
+use tvm_client::boc::ParamsOfEncodeStateInit;
+use tvm_client::boc::ResultOfDecodeStateInit;
+use tvm_client::boc::ResultOfEncodeStateInit;
+use tvm_client::boc::decode_state_init;
+use tvm_client::boc::encode_state_init;
+
+use crate::StateDecodeArgs;
+use crate::StateEncodeArgs;
+use crate::helper::get_base64_or_read_from_file;
+use crate::read_file_as_base64;
 
 pub fn encode(args: &StateEncodeArgs) -> anyhow::Result<ResultOfEncodeStateInit> {
     let code = get_base64_or_read_from_file(args.code.as_deref())?;
