@@ -11,21 +11,21 @@ use tvm_client::{
 
 use crate::{
     BocDecodeArgs, BocEncodeArgs,
-    helper::{get_base64_value_or_read_file, get_json_value_or_read_file, load_abi_as_string},
+    helper::{get_base64_or_read_from_file, get_json_value_or_read_file, load_abi_as_string},
 };
 
 pub fn encode(args: &BocEncodeArgs) -> anyhow::Result<ResultOfAbiEncodeBoc> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
-    let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.abi_file)?)?;
-    let data = get_json_value_or_read_file(&args.params)?;
+    let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.params)?)?;
+    let data = get_json_value_or_read_file(&args.data)?;
 
     Ok(encode_boc(client, ParamsOfAbiEncodeBoc { params: abi.fields, data, boc_cache: None })?)
 }
 
 pub fn decode(args: &BocDecodeArgs) -> anyhow::Result<ResultOfDecodeBoc> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
-    let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.abi_file)?)?;
-    let boc = get_base64_value_or_read_file(Some(&args.boc))?
+    let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.params)?)?;
+    let boc = get_base64_or_read_from_file(Some(&args.boc))?
         .ok_or_else(|| anyhow::anyhow!("BOC is required"))?;
     let params = ParamsOfDecodeBoc { params: abi.fields, boc, allow_partial: false };
 
@@ -64,15 +64,14 @@ mod tests {
             "_timestamp":"1234567890"
         }"#;
 
-        let args =
-            BocEncodeArgs { abi_file: abi_file.into(), abi_header: None, params: params.into() };
+        let args = BocEncodeArgs { params: abi_file.into(), data: params.into() };
         let result = encode(&args);
         assert!(result.is_ok());
         let boc = result.unwrap().boc;
         assert_eq!(boc, expected_boc.to_string());
 
         // Decode
-        let args = BocDecodeArgs { abi_file: abi_file.into(), abi_header: None, boc };
+        let args = BocDecodeArgs { params: abi_file.into(), boc };
         let result = decode(&args);
         assert!(result.is_ok());
         let data = result.unwrap().data.to_string();
@@ -92,8 +91,7 @@ mod tests {
     fn test_encode_from_file() {
         let params = "./tests/contract/everwallet.params.json";
         let abi_file = "./tests/contract/everwallet.abi.json";
-        let args =
-            BocEncodeArgs { abi_file: abi_file.into(), abi_header: None, params: params.into() };
+        let args = BocEncodeArgs { params: abi_file.into(), data: params.into() };
 
         let result = encode(&args);
 
@@ -108,7 +106,7 @@ mod tests {
     fn test_decode_from_file() {
         let boc = "./tests/contract/everwallet.boc".to_string();
         let abi_file = "./tests/contract/everwallet.abi.json";
-        let args = BocDecodeArgs { boc, abi_file: abi_file.into(), abi_header: None };
+        let args = BocDecodeArgs { boc, params: abi_file.into() };
 
         let result = decode(&args);
 
