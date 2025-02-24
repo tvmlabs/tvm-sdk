@@ -50,18 +50,20 @@ enum Commands {
     BocDecode(BocDecodeArgs),
     /// Read BOC string from stdin and print its hash
     BocHash,
-    /// Encodes initial contract state from code, data, libraries ans special options
+    /// Encodes initial contract state from code, data, libraries ans special
+    /// options
     StateEncode(StateEncodeArgs),
 
-    /// Decodes initial contract state into code, data, libraries ans special options
+    /// Decodes initial contract state into code, data, libraries ans special
+    /// options
     StateDecode(StateDecodeArgs),
 
     /// Creates account state BOC
     AccountEncode(AccountEncodeArgs),
 }
 
-// Read BOC string fron stdin and encode it as a set of provided parameters in JSON
-// BocDecode(BocDecodeArgs),
+// Read BOC string fron stdin and encode it as a set of provided parameters in
+// JSON BocDecode(BocDecodeArgs),
 
 #[derive(Parser, Debug, Default)]
 struct BocEncodeArgs {
