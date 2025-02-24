@@ -43,14 +43,14 @@ pub fn hash() -> anyhow::Result<ResultOfGetBocHash> {
 
 fn hash_inner(input: &str) -> anyhow::Result<ResultOfGetBocHash> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
-
     let params = ParamsOfGetBocHash { boc: input.to_string() };
-
     Ok(get_boc_hash(client, params)?)
 }
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::*;
     #[test]
     fn test_encode_decode() {
@@ -61,7 +61,7 @@ mod tests {
         // Encode
         let params = r#"{
             "_pubkey":"0x104d24065a68f9dff2457cfa7413f6e7a08eb055b42fbf27d14ad26596470836",
-            "_timestamp":1234567890
+            "_timestamp":"1234567890"
         }"#;
 
         let args =
@@ -102,6 +102,24 @@ mod tests {
         assert_eq!(
             boc,
             "te6ccgEBAQEAKgAAUBBNJAZaaPnf8kV8+nQT9uegjrBVtC+/J9FK0mWWRwg2AAAAAEmWAtI=".to_string()
+        );
+    }
+    #[test]
+    fn test_decode_from_file() {
+        let boc = "./tests/contract/everwallet.boc".to_string();
+        let abi_file = "./tests/contract/everwallet.abi.json";
+        let args = BocDecodeArgs { boc, abi_file: abi_file.into(), abi_header: None };
+
+        let result = decode(&args);
+
+        assert!(result.is_ok());
+        let data = result.unwrap().data;
+        assert_eq!(
+            data,
+            json!({
+                "_pubkey":"0x104d24065a68f9dff2457cfa7413f6e7a08eb055b42fbf27d14ad26596470836",
+                "_timestamp":"1234567890"
+            })
         );
     }
 }
