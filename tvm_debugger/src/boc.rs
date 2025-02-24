@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tvm_client::{
     ClientConfig, ClientContext,
     abi::{
-        AbiContract, ParamsOfAbiEncodeBoc, ParamsOfDecodeBoc, ResultOfAbiEncodeBoc,
+        AbiContract, AbiParam, ParamsOfAbiEncodeBoc, ParamsOfDecodeBoc, ResultOfAbiEncodeBoc,
         ResultOfDecodeBoc, decode_boc, encode_boc,
     },
     boc::{ParamsOfGetBocHash, ResultOfGetBocHash, get_boc_hash},
@@ -16,18 +16,18 @@ use crate::{
 
 pub fn encode(args: &BocEncodeArgs) -> anyhow::Result<ResultOfAbiEncodeBoc> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
-    let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.params)?)?;
+    let params: Vec<AbiParam> = serde_json::from_str(&load_abi_as_string(&args.params)?)?;
     let data = get_json_value_or_read_file(&args.data)?;
 
-    Ok(encode_boc(client, ParamsOfAbiEncodeBoc { params: abi.fields, data, boc_cache: None })?)
+    Ok(encode_boc(client, ParamsOfAbiEncodeBoc { params, data, boc_cache: None })?)
 }
 
 pub fn decode(args: &BocDecodeArgs) -> anyhow::Result<ResultOfDecodeBoc> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
-    let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.params)?)?;
+    let params: Vec<AbiParam> = serde_json::from_str(&load_abi_as_string(&args.params)?)?;
     let boc = get_base64_or_read_from_file(Some(&args.boc))?
         .ok_or_else(|| anyhow::anyhow!("BOC is required"))?;
-    let params = ParamsOfDecodeBoc { params: abi.fields, boc, allow_partial: false };
+    let params = ParamsOfDecodeBoc { params, boc, allow_partial: false };
 
     Ok(decode_boc(client, params)?)
 }
@@ -54,24 +54,24 @@ mod tests {
     use super::*;
     #[test]
     fn test_encode_decode() {
-        let abi_file = "./tests/contract/everwallet.abi.json";
+        let params = "./tests/contract/everwallet.params.json";
         let expected_boc =
             "te6ccgEBAQEAKgAAUBBNJAZaaPnf8kV8+nQT9uegjrBVtC+/J9FK0mWWRwg2AAAAAEmWAtI=";
 
         // Encode
-        let params = r#"{
+        let data = r#"{
             "_pubkey":"0x104d24065a68f9dff2457cfa7413f6e7a08eb055b42fbf27d14ad26596470836",
             "_timestamp":"1234567890"
         }"#;
 
-        let args = BocEncodeArgs { params: abi_file.into(), data: params.into() };
+        let args = BocEncodeArgs { params: params.into(), data: data.into() };
         let result = encode(&args);
         assert!(result.is_ok());
         let boc = result.unwrap().boc;
         assert_eq!(boc, expected_boc.to_string());
 
         // Decode
-        let args = BocDecodeArgs { params: abi_file.into(), boc };
+        let args = BocDecodeArgs { params: params.into(), boc };
         let result = decode(&args);
         assert!(result.is_ok());
         let data = result.unwrap().data.to_string();
@@ -89,9 +89,9 @@ mod tests {
 
     #[test]
     fn test_encode_from_file() {
+        let data = "./tests/contract/everwallet.data.json";
         let params = "./tests/contract/everwallet.params.json";
-        let abi_file = "./tests/contract/everwallet.abi.json";
-        let args = BocEncodeArgs { params: abi_file.into(), data: params.into() };
+        let args = BocEncodeArgs { params: params.into(), data: data.into() };
 
         let result = encode(&args);
 
@@ -105,8 +105,8 @@ mod tests {
     #[test]
     fn test_decode_from_file() {
         let boc = "./tests/contract/everwallet.boc".to_string();
-        let abi_file = "./tests/contract/everwallet.abi.json";
-        let args = BocDecodeArgs { boc, params: abi_file.into() };
+        let params = "./tests/contract/everwallet.params.json";
+        let args = BocDecodeArgs { boc, params: params.into() };
 
         let result = decode(&args);
 
