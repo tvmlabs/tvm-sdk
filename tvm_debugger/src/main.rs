@@ -65,11 +65,11 @@ enum Commands {
 
 #[derive(Parser, Debug, Default)]
 struct BocEncodeArgs {
-    /// Provided parameters specified as a json string or file path
+    /// Provided parameters specified as a JSON string or file path
     #[arg(short, long)]
     data: String,
 
-    /// Json encoded ABI params or file path
+    /// JSON encoded ABI params or file path
     #[arg(short, long)]
     params: PathBuf,
 }
@@ -80,7 +80,7 @@ struct BocDecodeArgs {
     #[arg(short, long)]
     boc: String,
 
-    /// Json encoded ABI params or file path
+    /// JSON encoded ABI params or file path
     #[arg(short, long)]
     params: PathBuf,
 }
