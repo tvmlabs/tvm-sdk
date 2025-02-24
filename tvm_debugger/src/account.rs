@@ -1,14 +1,13 @@
-use std::sync::Arc;
-
 use crate::{AccountEncodeArgs, helper::get_value_or_read_file};
+use std::sync::Arc;
 use tvm_client::{
     ClientConfig, ClientContext,
     abi::{ParamsOfEncodeAccount, ResultOfEncodeAccount, encode_account},
 };
 
 pub fn encode(args: &AccountEncodeArgs) -> anyhow::Result<ResultOfEncodeAccount> {
-    let state_init =
-        get_value_or_read_file(Some(&args.state_init))?.expect("The state init is required");
+    let state_init = get_value_or_read_file(Some(&args.state_init))?
+        .ok_or_else(|| anyhow::anyhow!("The state init is required"))?;
 
     let params = ParamsOfEncodeAccount {
         state_init,

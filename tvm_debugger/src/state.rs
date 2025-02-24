@@ -9,8 +9,6 @@ use tvm_client::{
 };
 
 pub fn encode(args: &StateEncodeArgs) -> anyhow::Result<ResultOfEncodeStateInit> {
-    // ParamsOfEncodeStateInit
-
     let code = get_value_or_read_file(args.code.as_deref())?;
     let data = get_value_or_read_file(args.data.as_deref())?;
     let library = get_value_or_read_file(args.library.as_deref())?;
