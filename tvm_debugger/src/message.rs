@@ -97,21 +97,17 @@ pub(crate) fn generate_message_body(args: &RunArgs) -> anyhow::Result<SliceData>
     assert!(args.function_name.is_some());
     let abi = load_abi_as_string(args.abi_file.as_ref().unwrap())?;
     let function_name = args.function_name.as_ref().unwrap();
-    let header = args.abi_header.clone().map(|v| {
-        serde_json::to_string(&v)
-            .unwrap_or("{}".to_string())
-            .trim_matches(|c| c == '"')
-            .replace('\\', "")
-            .to_string()
-    });
+    let header = args
+        .abi_header
+        .clone()
+        .map(|v| serde_json::to_string(&v).unwrap_or("{}".to_string()).to_string());
     let parameters = args
         .call_parameters
         .clone()
         .map(|v| {
             serde_json::to_string(&v)
+                .map_err(|err| anyhow::format_err!("Failed to serialize call parameters: {err}"))
                 .unwrap()
-                .trim_matches(|c| c == '"')
-                .replace('\\', "")
                 .to_string()
         })
         .unwrap_or("{}".to_string());
