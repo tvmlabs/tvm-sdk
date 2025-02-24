@@ -44,9 +44,9 @@ struct Cli {
 enum Commands {
     /// Run contract localy with specified parameters
     Run(RunArgs),
-    /// Reads parameters in JSON from stdin and encode them into BOC
+    /// Encodes given parameters in JSON into a BOC
     BocEncode(BocEncodeArgs),
-    /// Read BOC string fron stdin and encode it as a set of provided parameters in JSON
+    /// Decodes BOC into JSON as a set of provided parameters
     BocDecode(BocDecodeArgs),
     /// Read BOC string from stdin and print its hash
     BocHash,
@@ -72,6 +72,10 @@ struct BocEncodeArgs {
     /// ABI header
     #[arg(short('r'), long)]
     abi_header: Option<serde_json::Value>,
+
+    /// Provided parameters. Must be specified as a json string
+    #[arg(short('p'), long, value_parser = parse_json_object)]
+    params: Value,
 }
 
 #[derive(Parser, Debug, Default)]
@@ -83,6 +87,10 @@ struct BocDecodeArgs {
     /// ABI header
     #[arg(short('r'), long)]
     abi_header: Option<serde_json::Value>,
+
+    /// Contract code BOC encoded as base64 or file path
+    #[arg(short, long)]
+    boc: String,
 }
 
 #[derive(Parser, Debug, Default)]
@@ -230,14 +238,6 @@ fn main() {
     }
 }
 
-fn run_command<F, T>(f: F) -> anyhow::Result<String>
-where
-    F: FnOnce() -> anyhow::Result<T>,
-    T: serde::Serialize,
-{
-    f().map(|result| serde_json::to_string(&result).expect("Failed to serialize result"))
-}
-
 fn replace_code(input_file: &PathBuf, code: String) -> anyhow::Result<()> {
     let mut contract_state_init = StateInit::construct_from_file(input_file).map_err(|e| {
         anyhow::format_err!("Failed to load state init from input file {:?}: {e}", input_file)
@@ -252,6 +252,14 @@ fn replace_code(input_file: &PathBuf, code: String) -> anyhow::Result<()> {
         .write_to_file(input_file)
         .map_err(|e| anyhow::format_err!("Failed to save state init after execution: {e}"))?;
     Ok(())
+}
+
+fn run_command<F, T>(f: F) -> anyhow::Result<String>
+where
+    F: FnOnce() -> anyhow::Result<T>,
+    T: serde::Serialize,
+{
+    f().map(|result| serde_json::to_string(&result).expect("Failed to serialize result"))
 }
 
 #[cfg(test)]
