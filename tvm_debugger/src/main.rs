@@ -66,16 +66,12 @@ enum Commands {
 #[derive(Parser, Debug, Default)]
 struct BocEncodeArgs {
     /// Provided parameters specified as a json string or file path
-    #[arg(short('p'), long)]
-    params: String,
-
-    /// Path to the contract ABI file
     #[arg(short, long)]
-    abi_file: PathBuf,
+    data: String,
 
-    /// ABI header
-    #[arg(short('r'), long)]
-    abi_header: Option<serde_json::Value>,
+    /// Json encoded ABI params or file path
+    #[arg(short, long)]
+    params: PathBuf,
 }
 
 #[derive(Parser, Debug, Default)]
@@ -84,13 +80,9 @@ struct BocDecodeArgs {
     #[arg(short, long)]
     boc: String,
 
-    /// Path to the contract ABI file
+    /// Json encoded ABI params or file path
     #[arg(short, long)]
-    abi_file: PathBuf,
-
-    /// ABI header
-    #[arg(short('r'), long)]
-    abi_header: Option<serde_json::Value>,
+    params: PathBuf,
 }
 
 #[derive(Parser, Debug, Default)]
@@ -102,10 +94,6 @@ struct StateEncodeArgs {
     /// Contract data BOC encoded as base64 or file path
     #[arg(short, long)]
     data: Option<String>,
-
-    /// Contract library BOC encoded as base64 or file path
-    #[arg(short, long)]
-    library: Option<String>,
 }
 
 #[derive(Parser, Debug, Default)]
@@ -274,6 +262,13 @@ where
     f().map(|result| serde_json::to_string(&result).expect("Failed to serialize result"))
 }
 
+pub(crate) fn read_file_as_base64(file_path: &str) -> anyhow::Result<String> {
+    let mut file = std::fs::File::open(file_path)?;
+    let mut buffer = Vec::new();
+    std::io::Read::read_to_end(&mut file, &mut buffer)?;
+    Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &buffer))
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -311,13 +306,6 @@ mod tests {
             trace: false,
             replace_code: None,
         }
-    }
-
-    pub(crate) fn read_file_as_base64(file_path: &str) -> anyhow::Result<String> {
-        let mut file = std::fs::File::open(file_path)?;
-        let mut buffer = Vec::new();
-        std::io::Read::read_to_end(&mut file, &mut buffer)?;
-        Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &buffer))
     }
 
     #[test]
