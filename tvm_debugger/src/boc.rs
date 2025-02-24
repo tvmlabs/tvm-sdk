@@ -11,13 +11,13 @@ use tvm_client::{
 
 use crate::{
     BocDecodeArgs, BocEncodeArgs,
-    helper::{get_value_or_read_file, load_abi_as_string},
+    helper::{get_base64_value_or_read_file, get_json_value_or_read_file, load_abi_as_string},
 };
 
 pub fn encode(args: &BocEncodeArgs) -> anyhow::Result<ResultOfAbiEncodeBoc> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
     let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.abi_file)?)?;
-    let data = args.params.clone();
+    let data = get_json_value_or_read_file(&args.params)?;
 
     Ok(encode_boc(client, ParamsOfAbiEncodeBoc { params: abi.fields, data, boc_cache: None })?)
 }
@@ -25,7 +25,7 @@ pub fn encode(args: &BocEncodeArgs) -> anyhow::Result<ResultOfAbiEncodeBoc> {
 pub fn decode(args: &BocDecodeArgs) -> anyhow::Result<ResultOfDecodeBoc> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
     let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.abi_file)?)?;
-    let boc = get_value_or_read_file(Some(&args.boc))?
+    let boc = get_base64_value_or_read_file(Some(&args.boc))?
         .ok_or_else(|| anyhow::anyhow!("BOC is required"))?;
     let params = ParamsOfDecodeBoc { params: abi.fields, boc, allow_partial: false };
 
@@ -40,6 +40,7 @@ pub fn hash() -> anyhow::Result<ResultOfGetBocHash> {
     input = input.trim_end().to_string();
     hash_inner(&input)
 }
+
 fn hash_inner(input: &str) -> anyhow::Result<ResultOfGetBocHash> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
 
@@ -58,11 +59,13 @@ mod tests {
             "te6ccgEBAQEAKgAAUBBNJAZaaPnf8kV8+nQT9uegjrBVtC+/J9FK0mWWRwg2AAAAAEmWAtI=";
 
         // Encode
-        let params = serde_json::json!({
+        let params = r#"{
             "_pubkey":"0x104d24065a68f9dff2457cfa7413f6e7a08eb055b42fbf27d14ad26596470836",
             "_timestamp":1234567890
-        });
-        let args = BocEncodeArgs { abi_file: abi_file.into(), abi_header: None, params };
+        }"#;
+
+        let args =
+            BocEncodeArgs { abi_file: abi_file.into(), abi_header: None, params: params.into() };
         let result = encode(&args);
         assert!(result.is_ok());
         let boc = result.unwrap().boc;
@@ -83,5 +86,22 @@ mod tests {
         assert!(result.is_ok());
         let hash = result.unwrap().hash;
         assert_eq!(&hash, "6130dc45e6a2c5ea4334f338bd50429a75c0e430c628a01910ef2987cbd62dba");
+    }
+
+    #[test]
+    fn test_encode_from_file() {
+        let params = "./tests/contract/everwallet.params.json";
+        let abi_file = "./tests/contract/everwallet.abi.json";
+        let args =
+            BocEncodeArgs { abi_file: abi_file.into(), abi_header: None, params: params.into() };
+
+        let result = encode(&args);
+
+        assert!(result.is_ok());
+        let boc = result.unwrap().boc;
+        assert_eq!(
+            boc,
+            "te6ccgEBAQEAKgAAUBBNJAZaaPnf8kV8+nQT9uegjrBVtC+/J9FK0mWWRwg2AAAAAEmWAtI=".to_string()
+        );
     }
 }
