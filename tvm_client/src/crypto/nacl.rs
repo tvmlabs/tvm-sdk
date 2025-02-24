@@ -205,7 +205,7 @@ fn prepare_to_convert(
 ) -> ClientResult<(Vec<u8>, Vec<u8>, [u8; 24], SecretBufConst<32>)> {
     let mut padded_input = vec![0; pad_len];
     padded_input.extend(input);
-    let mut padded_output = vec![0; padded_input.len()];
+    let padded_output = vec![0; padded_input.len()];
     Ok((padded_output, padded_input, key192(nonce)?.0, key256(key)?))
 }
 
