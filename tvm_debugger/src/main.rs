@@ -65,6 +65,10 @@ enum Commands {
 
 #[derive(Parser, Debug, Default)]
 struct BocEncodeArgs {
+    /// Provided parameters specified as a json string or file path
+    #[arg(short('p'), long)]
+    params: String,
+
     /// Path to the contract ABI file
     #[arg(short, long)]
     abi_file: PathBuf,
@@ -72,14 +76,14 @@ struct BocEncodeArgs {
     /// ABI header
     #[arg(short('r'), long)]
     abi_header: Option<serde_json::Value>,
-
-    /// Provided parameters. Must be specified as a json string
-    #[arg(short('p'), long, value_parser = parse_json_object)]
-    params: Value,
 }
 
 #[derive(Parser, Debug, Default)]
 struct BocDecodeArgs {
+    /// Contract code BOC encoded as base64 or file path
+    #[arg(short, long)]
+    boc: String,
+
     /// Path to the contract ABI file
     #[arg(short, long)]
     abi_file: PathBuf,
@@ -87,10 +91,6 @@ struct BocDecodeArgs {
     /// ABI header
     #[arg(short('r'), long)]
     abi_header: Option<serde_json::Value>,
-
-    /// Contract code BOC encoded as base64 or file path
-    #[arg(short, long)]
-    boc: String,
 }
 
 #[derive(Parser, Debug, Default)]
