@@ -1,4 +1,4 @@
-use crate::{AccountEncodeArgs, helper::get_base64_value_or_read_file};
+use crate::{AccountEncodeArgs, helper::get_base64_or_read_from_file};
 use std::sync::Arc;
 use tvm_client::{
     ClientConfig, ClientContext,
@@ -6,7 +6,7 @@ use tvm_client::{
 };
 
 pub fn encode(args: &AccountEncodeArgs) -> anyhow::Result<ResultOfEncodeAccount> {
-    let state_init = get_base64_value_or_read_file(Some(&args.state_init))?
+    let state_init = get_base64_or_read_from_file(Some(&args.state_init))?
         .ok_or_else(|| anyhow::anyhow!("The state init is required"))?;
 
     let params = ParamsOfEncodeAccount {
@@ -23,7 +23,7 @@ pub fn encode(args: &AccountEncodeArgs) -> anyhow::Result<ResultOfEncodeAccount>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::read_file_as_base64;
+    use crate::read_file_as_base64;
 
     #[test]
     fn test_encode_decode_state_init() {
