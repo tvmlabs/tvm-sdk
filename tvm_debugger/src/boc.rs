@@ -9,39 +9,25 @@ use tvm_client::{
     boc::{ParamsOfGetBocHash, ResultOfGetBocHash, get_boc_hash},
 };
 
-use crate::{BocDecodeArgs, BocEncodeArgs, helper::load_abi_as_string};
+use crate::{
+    BocDecodeArgs, BocEncodeArgs,
+    helper::{get_value_or_read_file, load_abi_as_string},
+};
 
 pub fn encode(args: &BocEncodeArgs) -> anyhow::Result<ResultOfAbiEncodeBoc> {
-    println!("Enter parameters in JSON format:");
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input)?;
-    encode_inner(&input, args)
-}
-
-fn encode_inner(input: &str, args: &BocEncodeArgs) -> anyhow::Result<ResultOfAbiEncodeBoc> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
     let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.abi_file)?)?;
-    let data = serde_json::from_str(input)?;
+    let data = args.params.clone();
 
-    let params = ParamsOfAbiEncodeBoc { params: abi.fields, data, boc_cache: None };
-
-    Ok(encode_boc(client, params)?)
+    Ok(encode_boc(client, ParamsOfAbiEncodeBoc { params: abi.fields, data, boc_cache: None })?)
 }
 
 pub fn decode(args: &BocDecodeArgs) -> anyhow::Result<ResultOfDecodeBoc> {
-    let mut input = String::new();
-    println!("Enter BOC");
-    std::io::stdin().read_line(&mut input)?;
-    // Remove whitespace/newline characters
-    input = input.trim_end().to_string();
-    decode_inner(&input, args)
-}
-fn decode_inner(input: &str, args: &BocDecodeArgs) -> anyhow::Result<ResultOfDecodeBoc> {
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
     let abi: AbiContract = serde_json::from_str(&load_abi_as_string(&args.abi_file)?)?;
-
-    let params =
-        ParamsOfDecodeBoc { params: abi.fields, boc: input.to_string(), allow_partial: false };
+    let boc = get_value_or_read_file(Some(&args.boc))?
+        .ok_or_else(|| anyhow::anyhow!("BOC is required"))?;
+    let params = ParamsOfDecodeBoc { params: abi.fields, boc, allow_partial: false };
 
     Ok(decode_boc(client, params)?)
 }
@@ -72,19 +58,19 @@ mod tests {
             "te6ccgEBAQEAKgAAUBBNJAZaaPnf8kV8+nQT9uegjrBVtC+/J9FK0mWWRwg2AAAAAEmWAtI=";
 
         // Encode
-        let input = r#"{
+        let params = serde_json::json!({
             "_pubkey":"0x104d24065a68f9dff2457cfa7413f6e7a08eb055b42fbf27d14ad26596470836",
             "_timestamp":1234567890
-        }"#;
-        let args = BocEncodeArgs { abi_file: abi_file.into(), abi_header: None };
-        let result = encode_inner(input, &args);
+        });
+        let args = BocEncodeArgs { abi_file: abi_file.into(), abi_header: None, params };
+        let result = encode(&args);
         assert!(result.is_ok());
         let boc = result.unwrap().boc;
         assert_eq!(boc, expected_boc.to_string());
 
         // Decode
-        let args = BocDecodeArgs { abi_file: abi_file.into(), abi_header: None };
-        let result = decode_inner(expected_boc, &args);
+        let args = BocDecodeArgs { abi_file: abi_file.into(), abi_header: None, boc };
+        let result = decode(&args);
         assert!(result.is_ok());
         let data = result.unwrap().data.to_string();
         assert_eq!(
