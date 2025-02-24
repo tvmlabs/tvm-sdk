@@ -92,7 +92,7 @@ fn is_valid_base64(s: &str) -> bool {
 }
 
 // Read the value from the file if the value is not a valid base64 string
-pub(crate) fn get_base64_value_or_read_file(s: Option<&str>) -> anyhow::Result<Option<String>> {
+pub(crate) fn get_base64_or_read_from_file(s: Option<&str>) -> anyhow::Result<Option<String>> {
     if let Some(s) = s {
         if is_valid_base64(s) {
             return Ok(Some(s.to_string()));
