@@ -1353,8 +1353,7 @@ mod tests {
             let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
 
             let zk_login_inputs =
-                ZkLoginInputs::from_json(&proof_and_jwt.to_string(), &zk_seed.to_string())
-                    .unwrap();
+                ZkLoginInputs::from_json(&proof_and_jwt.to_string(), &zk_seed.to_string()).unwrap();
 
             let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
 
@@ -1521,8 +1520,7 @@ mod tests {
             let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
 
             let zk_login_inputs =
-                ZkLoginInputs::from_json(&proof_and_jwt.to_string(), &zk_seed.to_string())
-                    .unwrap();
+                ZkLoginInputs::from_json(&proof_and_jwt.to_string(), &zk_seed.to_string()).unwrap();
 
             let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk);
             let time_for_chcksgns = single_chcksgns(&eph_pubkey, &zk_login_inputs, &all_jwk);

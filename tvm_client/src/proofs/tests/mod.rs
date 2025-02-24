@@ -747,6 +747,7 @@ fn gen_full_schema_query(object_type: &str) -> Result<String> {
 }
 
 #[ignore]
+#[allow(warnings)]
 #[tokio::test]
 async fn test_proof_block_data() -> Result<()> {
     let client = TestClient::new_with_config(mainnet_config());

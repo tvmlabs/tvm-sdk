@@ -1,1 +1,4 @@
-use serde_derive :: { Serialize , Deserialize } ;pub mod v1 ; pub mod v2 ;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+pub mod v1;
+pub mod v2;
