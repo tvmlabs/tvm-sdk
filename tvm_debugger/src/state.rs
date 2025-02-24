@@ -1,4 +1,4 @@
-use crate::{StateDecodeArgs, StateEncodeArgs, helper::get_value_or_read_file};
+use crate::{StateDecodeArgs, StateEncodeArgs, helper::get_base64_value_or_read_file};
 use std::sync::Arc;
 use tvm_client::{
     ClientConfig, ClientContext,
@@ -9,9 +9,9 @@ use tvm_client::{
 };
 
 pub fn encode(args: &StateEncodeArgs) -> anyhow::Result<ResultOfEncodeStateInit> {
-    let code = get_value_or_read_file(args.code.as_deref())?;
-    let data = get_value_or_read_file(args.data.as_deref())?;
-    let library = get_value_or_read_file(args.library.as_deref())?;
+    let code = get_base64_value_or_read_file(args.code.as_deref())?;
+    let data = get_base64_value_or_read_file(args.data.as_deref())?;
+    let library = get_base64_value_or_read_file(args.library.as_deref())?;
 
     let params = ParamsOfEncodeStateInit { code, data, library, ..Default::default() };
     let client = Arc::new(ClientContext::new(ClientConfig { ..Default::default() })?);
