@@ -189,7 +189,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         // first check if contract can pay for importing external message
         if is_ext_msg && !is_special {
             // extranal message comes serialized
-            let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
+            let in_fwd_fee = match params.is_same_thread_id {
+                true => Grams::zero(),
+                false => self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?,
+            };
 
             let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
             need_to_burn += credit;
@@ -217,6 +220,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             };
         }
         let due_before_storage = account.due_payment().map(|due| due.as_u128());
+        let is_due = account.due_payment().map(|due| due.as_u128()).map_or(false, |due| due != 0);
         let mut storage_fee;
         description.storage_ph = match self.storage_phase(
             account,
@@ -224,6 +228,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             &mut tr,
             is_masterchain,
             is_special,
+            params.available_credit,
+            minted_shell,
+            is_due,
         ) {
             Ok(storage_ph) => {
                 storage_fee = storage_ph.storage_fees_collected.as_u128();
@@ -240,7 +247,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 e
             ))),
         };
-
         if description.credit_first && msg_balance.grams > acc_balance.grams {
             msg_balance.grams = acc_balance.grams;
         }

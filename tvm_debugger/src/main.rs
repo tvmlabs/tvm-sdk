@@ -8,6 +8,12 @@ use std::path::PathBuf;
 
 use clap::ArgAction;
 use clap::Parser;
+use serde_json::Value;
+use tvm_block::Deserializable;
+use tvm_block::Serializable;
+use tvm_block::StateInit;
+use tvm_types::base64_decode;
+use tvm_types::read_single_root_boc;
 
 use crate::execute::execute;
 use crate::result::ExecutionResult;
@@ -36,16 +42,16 @@ struct Args {
     abi_file: Option<PathBuf>,
 
     /// ABI header
-    #[arg(short('r'), long)]
-    abi_header: Option<serde_json::Value>,
+    #[arg(short('r'), long, value_parser = parse_json_object)]
+    abi_header: Option<Value>,
 
     /// Contract function name
     #[arg(short('m'), long)]
     function_name: Option<String>,
 
     /// Call parameters. Must be specified as a json string
-    #[arg(short('p'), long)]
-    call_parameters: Option<serde_json::Value>,
+    #[arg(short('p'), long, value_parser = parse_json_object)]
+    call_parameters: Option<Value>,
 
     /// Contract address, that will be used for execution
     #[arg(long, allow_hyphen_values(true))]
@@ -82,13 +88,49 @@ struct Args {
     /// Trace VM execution
     #[arg(long, action=ArgAction::SetTrue, default_value = "false")]
     trace: bool,
+
+    /// Update code in tvc without executing anything
+    #[arg(long)]
+    replace_code: Option<String>,
+}
+
+fn parse_json_object(s: &str) -> Result<Value, String> {
+    let s = s.trim_matches('"').trim_matches('\'');
+    if s.is_empty() {
+        Ok(Value::Object(serde_json::Map::new()))
+    } else if s.starts_with('{') && s.ends_with('}') {
+        Ok(serde_json::from_str::<Value>(s)
+            .map_err(|e| format!("Failed to parse json arg: {e}"))?)
+    } else {
+        Err(format!("Invalid json object: {s}"))
+    }
 }
 
 fn main() -> anyhow::Result<()> {
     let args: Args = Args::parse();
+    if let Some(new_code) = args.replace_code {
+        replace_code(args.input_file, new_code)?;
+        return Ok(());
+    }
     let mut res: ExecutionResult = ExecutionResult::new(args.json);
     execute(&args, &mut res)?;
     println!("{}", res.output());
+    Ok(())
+}
+
+fn replace_code(input_file: PathBuf, code: String) -> anyhow::Result<()> {
+    let mut contract_state_init = StateInit::construct_from_file(&input_file).map_err(|e| {
+        anyhow::format_err!("Failed to load state init from input file {:?}: {e}", input_file)
+    })?;
+    let bytes = base64_decode(&code)
+        .map_err(|e| anyhow::format_err!("Failed to decode code as base64: {e}"))?;
+    let code_cell = read_single_root_boc(bytes).map_err(|e| {
+        anyhow::format_err!("Failed to construct code cell from base64 decoded code cell: {e}",)
+    })?;
+    contract_state_init.set_code(code_cell);
+    contract_state_init
+        .write_to_file(&input_file)
+        .map_err(|e| anyhow::format_err!("Failed to save state init after execution: {e}"))?;
     Ok(())
 }
 
@@ -127,6 +169,7 @@ mod tests {
             decode_out_messages: false,
             json: true,
             trace: false,
+            replace_code: None,
         }
     }
 
