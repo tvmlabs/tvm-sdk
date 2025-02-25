@@ -71,6 +71,7 @@ pub(crate) enum EndpointStat {
     MessageUndelivered,
 }
 
+#[allow(dead_code)]
 pub(crate) struct ResolvedEndpoint {
     pub endpoint: Arc<Endpoint>,
     pub time_added: u64,
@@ -196,6 +197,7 @@ impl NetworkState {
         *self.endpoint_addresses.write().await = addresses;
     }
 
+    #[allow(dead_code)]
     pub async fn get_addresses_for_sending(&self) -> Vec<String> {
         let mut addresses = self.endpoint_addresses.read().await.clone();
         addresses.shuffle(&mut rand::thread_rng());
@@ -338,6 +340,7 @@ impl NetworkState {
         lock.insert(address, ResolvedEndpoint { endpoint, time_added: self.client_env.now_ms() });
     }
 
+    #[allow(dead_code)]
     pub async fn get_resolved_endpoint(&self, address: &str) -> Option<Arc<Endpoint>> {
         let lock = self.resolved_endpoints.read().await;
         lock.get(address).and_then(|endpoint| {
@@ -802,6 +805,7 @@ impl ServerLink {
         self.state.set_endpoint_addresses(endpoints).await;
     }
 
+    #[allow(dead_code)]
     pub async fn get_addresses_for_sending(&self) -> Vec<String> {
         self.state.get_addresses_for_sending().await
     }

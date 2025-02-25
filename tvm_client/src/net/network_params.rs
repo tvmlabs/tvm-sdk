@@ -13,7 +13,6 @@
 use std::sync::Arc;
 
 use serde_json::Value;
-use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
 use tvm_executor::BlockchainConfig;
 
@@ -43,17 +42,6 @@ pub async fn get_signature_id(
     } else {
         Ok(ResultOfGetSignatureId { signature_id: None })
     }
-}
-
-pub(crate) fn offline_config() -> (BlockchainConfig, i32) {
-    let bytes = include_bytes!("../default_config.boc");
-    (
-        BlockchainConfig::with_config(
-            tvm_block::ConfigParams::construct_from_bytes(bytes).unwrap(),
-        )
-        .unwrap(),
-        42,
-    )
 }
 
 pub(crate) async fn get_default_params(
