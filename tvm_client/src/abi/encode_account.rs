@@ -48,7 +48,7 @@ pub fn encode_account(
     )?;
     let id = state_init.cell.repr_hash();
     let address = MsgAddressInt::with_standart(None, 0, id.clone().into()).unwrap();
-    let mut account = Account::with_address(address, None);
+    let mut account = Account::with_address(address);
     account.set_balance(CurrencyCollection::from(params.balance.unwrap_or(100000000000)));
     account
         .try_activate_by_init_code_hash(&state_init.object, false)

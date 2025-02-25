@@ -131,18 +131,17 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let gas_config = self.config().get_gas_config(false);
-        log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}, available_credit {:?}", params.src_dapp_id, in_msg.int_header(), params.available_credit);
+        log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
-            if Some(params.src_dapp_id.clone()) != account.get_dapp_id().cloned()
+            if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
-                    && (account.is_none()
-                        || account
-                            .state()
-                            .map(|s| *s == AccountState::AccountUninit {})
-                            .unwrap_or(false)))
+                    && account
+                        .state()
+                        .map(|s| *s == AccountState::AccountUninit {})
+                        .unwrap_or(true))
                 && !h.bounced
             {
-                log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
+                log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id);
                 log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_limit * gas_config.gas_price / 65536));
                 burned = msg_balance.grams;
                 msg_balance.grams = min(
@@ -350,13 +349,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     }) = account.state()
                     {
                         if !is_previous_state_active {
-                            if in_msg.int_header().is_some() {
-                                params.src_dapp_id.clone()
+                            if let Some(header) = in_msg.int_header() {
+                                header.src_dapp_id().clone()
                             } else {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
                         } else {
-                            account.get_dapp_id().cloned().unwrap()
+                            params.dapp_id
                         }
                     } else {
                         None

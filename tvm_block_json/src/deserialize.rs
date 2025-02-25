@@ -1028,7 +1028,7 @@ impl StateParser {
                 let account = Account::construct_from_bytes(&account.get_base64("boc")?)?;
                 if let Some(account_id) = account.get_id() {
                     let aug = account.aug()?;
-                    let account = ShardAccount::with_params(&account, UInt256::ZERO, 0)?;
+                    let account = ShardAccount::with_params(&account, UInt256::ZERO, 0, None)?;
                     shard_accounts.set_builder_serialized(
                         account_id,
                         &account.write_to_new_cell()?,
