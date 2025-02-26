@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::iter::repeat;
     use std::str::FromStr;
     use std::time::Instant;
 
@@ -168,7 +167,8 @@ mod tests {
             "sub",
             "112897468626716626103", // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
             "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", // Alina's data (fixed by app id ) from jwt
-        ).unwrap();
+        )
+        .unwrap();
 
         println!("zk_seed = {:?}", zk_seed);
 
@@ -262,12 +262,10 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell,
-            header_base_64_cell,
-            zk_seed_cell,
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![modulus_cell.clone(), iss_base_64_cell, header_base_64_cell, zk_seed_cell],
+        )
         .expect_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_success();
 
@@ -394,12 +392,10 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell,
-            iss_base_64_cell,
-            header_base_64_cell,
-            zk_seed_cell,
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![modulus_cell, iss_base_64_cell, header_base_64_cell, zk_seed_cell],
+        )
         .expect_success();
 
         println!("====== Start Vergrth16 ========");
@@ -429,15 +425,15 @@ mod tests {
         println!("proof.a.x.0.to_string(): {:?}", proof.a.x.0.to_string());
 
         println!("y1: {:?}", y1);
-        for i in 0..y1.len() {
-            print!("{}", y1[i] as i32);
+        for y in y1 {
+            print!("{}", y as i32);
         }
-        println!("");
+        println!();
         println!("y2: {:?}", y2);
-        for i in 0..y2.len() {
-            print!("{}", y2[i] as i32);
+        for y in y2 {
+            print!("{}", y as i32);
         }
-        println!("");
+        println!();
         // println!("y_: {:?}", y_);
 
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
@@ -453,9 +449,9 @@ mod tests {
         let verification_key_id: u32 = 1;
 
         let mut code = "PUSHREF \n".to_string();
-        code = code + "PUSHREF \n";
+        code.push_str("PUSHREF \n");
         code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
-        code = code + "VERGRTH16";
+        code.push_str("VERGRTH16");
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_success();
@@ -488,10 +484,10 @@ mod tests {
 
         let sui_data = [SUI_DATA_FROM_REACT_1_NEW];
 
-        for i in 0..sui_data.len() {
+        for (i, d) in sui_data.iter().enumerate() {
             println!("====================== Iter@ is {i} =========================");
             // parse
-            let jwt_data: JwtData = serde_json::from_str(&sui_data[i]).unwrap();
+            let jwt_data: JwtData = serde_json::from_str(d).unwrap();
             // println!("{:?}", jwt_data);
 
             let user_pass_salt = jwt_data.user_pass_to_int_format.as_str();
@@ -555,8 +551,7 @@ mod tests {
             let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
 
             let zk_login_inputs =
-                ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string())
-                    .unwrap();
+                ZkLoginInputs::from_json(&proof_and_jwt.to_string(), &zk_seed.to_string()).unwrap();
 
             let time_for_vergrth16 = single_vrgrth16(&eph_pubkey, &zk_login_inputs, &all_jwk);
             println!("time_for_vergrth16 is {time_for_vergrth16}");
@@ -603,7 +598,8 @@ mod tests {
             "sub",
             "112897468626716626103", // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
             "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", // Alina's data (fixed by app id ) from jwt
-        ).unwrap();
+        )
+        .unwrap();
 
         println!("zk_seed = {:?}", zk_seed);
 
@@ -621,7 +617,7 @@ mod tests {
         println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
         let zk_login_inputs =
-            ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+            ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
         // summary from 132 to 146 : need to parse jwt, see jwt header to check that kid
         // in this header is equal to one specified in line 143,... take kid from jwt if
         // not equal
@@ -681,9 +677,9 @@ mod tests {
         // let verification_key_id: u32 = 1; //invalid key id
 
         let mut code = "PUSHREF \n".to_string();
-        code = code + "PUSHREF \n";
+        code += "PUSHREF \n";
         code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
-        code = code + "VERGRTH16";
+        code += "VERGRTH16";
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_success();
@@ -706,8 +702,8 @@ mod tests {
         println!("proof_and_jwt: {}", proof_and_jwt);
 
         let zk_login_inputs = tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs::from_json(
-            &*proof_and_jwt,
-            &*zk_seed.to_string(),
+            proof_and_jwt,
+            &zk_seed.to_string(),
         )
         .unwrap();
 
@@ -730,14 +726,15 @@ mod tests {
             "sub",
             "112897468626716626103", // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
             "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", // Alina's data (fixed by app id ) from jwt
-        ).unwrap();
+        )
+        .unwrap();
 
         println!("zk_seed {zk_seed}");
 
         let iss = "https://accounts.google.com";
 
         let xxx = get_zk_login_address(&Bn254FrElement::from_str(&zk_seed).unwrap(), iss).unwrap();
-        let xx = hex::encode(&xxx);
+        let xx = hex::encode(xxx);
         println!("xxx {xx}");
 
         let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"20032491544466004395942516676927853848812757556091814296260914209848471949133\",\"2383319895045368406863089991961299436327009667970727469594098906910899823518\",\"1\"],\"b\":[[\"17524079199473031626933714849790290610990375813469214348846178898325828270802\",\"14967860363718375858883445892553389848174133418448836833724123534259346456965\"],[\"8012103671455598651673212917030479015077366694912593401917441922282850889728\",\"9619406946838713340504188077859322423191842838375117333667670119492063405148\"],[\"1\",\"0\"]],\"c\":[\"1155327534990006564455106296492790109069125857506281397147103620914309288350\",\"11642927414888703901346255147864200862372140915112720472429308471936285279899\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyNjIwZDVlN2YxMzJiNTJhZmU4ODc1Y2RmMzc3NmMwNjQyNDlkMDQiLCJ0eXAiOiJKV1QifQ\"}";
@@ -748,7 +745,7 @@ mod tests {
         println!("iss_and_header_base64details: {}", iss_and_header_base64details);
 
         let zk_login_inputs =
-            ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+            ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
 
         let content: JWK = JWK {
             kty: "RSA".to_string(),
@@ -822,9 +819,9 @@ mod tests {
         let verification_key_id: u32 = 0;
 
         let mut code = "PUSHREF \n".to_string();
-        code = code + "PUSHREF \n";
+        code += "PUSHREF \n";
         code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
-        code = code + "VERGRTH16";
+        code += "VERGRTH16";
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_success();
@@ -866,7 +863,7 @@ mod tests {
         let index_mod_4 = "1";
 
         let zk_login_inputs =
-            ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+            ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
 
         let content: JWK = JWK {
             kty: "RSA".to_string(),
@@ -912,33 +909,36 @@ mod tests {
         // let iss_and_header_base64details_cell =
         // pack_string_to_cell(&iss_and_header_base64details, &mut 0).unwrap();
 
-        let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+        let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
-        let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+        let iss_base_64_cell = pack_string_to_cell(iss_base_64, &mut 0).unwrap();
 
         let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
         let max_epoch = "142"; //"200142";
 
         let mut code = format!("PUSHINT {index_mod_4} \n").to_string();
-        code = code + &*format!("PUSHINT {max_epoch} \n").to_string();
-        code = code + &*format!("PUSHINT {eph_pubkey_hex_number} \n").to_string();
-        code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"PUSHREF \n".to_string();
+        code += &*format!("PUSHINT {max_epoch} \n").to_string();
+        code += &*format!("PUSHINT {eph_pubkey_hex_number} \n").to_string();
+        code += &*"PUSHREF \n".to_string();
+        code += &*"PUSHREF \n".to_string();
+        code += &*"PUSHREF \n".to_string();
+        code += &*"PUSHREF \n".to_string();
         // code = code + &*"PUSHREF \n".to_string();
-        code = code + &*"POSEIDON \n".to_string(); //
+        code += &*"POSEIDON \n".to_string(); //
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell,
-            // &iss_and_header_base64details_cell
-            iss_base_64_cell,
-            header_base_64_cell,
-            zk_seed_cell,
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell,
+                // &iss_and_header_base64details_cell
+                iss_base_64_cell,
+                header_base_64_cell,
+                zk_seed_cell,
+            ],
+        )
         .expect_success();
     }
 
@@ -977,7 +977,7 @@ mod tests {
         println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
         let zk_login_inputs =
-            ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+            ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
 
         let content: JWK = JWK {
             kty: "RSA".to_string(),
@@ -1035,9 +1035,9 @@ mod tests {
         let verification_key_id: u32 = 1;
 
         let mut code = "PUSHREF \n".to_string();
-        code = code + "PUSHREF \n";
+        code += "PUSHREF \n";
         code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
-        code = code + "VERGRTH16";
+        code += "VERGRTH16";
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_success();
@@ -1058,7 +1058,7 @@ mod tests {
         let second = binding.data();
         // b.append_raw(second, len);
 
-        let concatenated = [&first[..], &second[..]].concat();
+        let concatenated = [first, second].concat();
         println!("len concatenated = {}", concatenated.len());
 
         // test cell with data and one not empty reference
@@ -1128,7 +1128,8 @@ mod tests {
             "sub",
             "112897468626716626103", // Alina's data (stable id, fixed by gmail alina.t@gosh.sh) from jwt
             "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", // Alina's data (fixed by app id ) from jwt
-        ).unwrap();
+        )
+        .unwrap();
 
         println!("zk_seed = {:?}", zk_seed);
 
@@ -1146,7 +1147,7 @@ mod tests {
         println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
         let zk_login_inputs =
-            ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+            ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
         // summary from 132 to 146 : need to parse jwt, see jwt header to check that kid
         // in this header is equal to one specified in line 143,... take kid from jwt if
         // not equal
@@ -1207,9 +1208,9 @@ mod tests {
         // let verification_key_id: u32 = 1;
 
         let mut code = "PUSHREF \n".to_string();
-        code = code + "PUSHREF \n";
+        code += "PUSHREF \n";
         code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
-        code = code + "VERGRTH16";
+        code += "VERGRTH16";
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
             .expect_success();
@@ -1219,10 +1220,10 @@ mod tests {
         let mut vec: Vec<u8> = Vec::new();
         for i in 0..=31 {
             if let Some(value) = key_data.get(&i.to_string()) {
-                vec.push(value.clone());
+                vec.push(*value);
             }
         }
-        return vec;
+        vec
     }
 
     fn to_binary_string(value: &str) -> String {
@@ -1238,7 +1239,7 @@ mod tests {
         }
 
         let zeros_to_add = 256 - current_length;
-        format!("{}{}", repeat('0').take(zeros_to_add).collect::<String>(), input)
+        format!("{}{}", "0".repeat(zeros_to_add), input)
     }
 
     fn bits_to_decimal_and_reverse(bits: &str) -> Vec<u8> {
@@ -1267,8 +1268,9 @@ mod tests {
         let reversed_byte_array = bits_to_decimal_and_reverse(&binary_representation);
 
         // Преобразуем массив байтов в hex-строку
-        let hex_string =
-            reversed_byte_array.iter().map(|byte| format!("{:02x}", byte)).collect::<String>();
+        let hex_string = reversed_byte_array
+            .iter()
+            .fold(String::new(), |hex, byte| format!("{hex}{:02x}", byte));
 
         hex_string
     }
@@ -1299,16 +1301,16 @@ mod tests {
             SUI_DATA_FROM_REACT_21,
         ];
 
-        for i in 0..sui_data.len() {
-            let jwt_data: JwtData = serde_json::from_str(&sui_data[i]).unwrap();
+        for d in sui_data {
+            let jwt_data: JwtData = serde_json::from_str(d).unwrap();
             let json_string = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
-            print!("{:?}, \n", json_string);
-            print!("{:?}, \n", jwt_data.zk_addr);
-            print!("{:?}, \n", jwt_data.extended_ephemeral_public_key);
+            println!("{:?}, ", json_string);
+            println!("{:?}, ", jwt_data.zk_addr);
+            println!("{:?}, ", jwt_data.extended_ephemeral_public_key);
         }
 
-        for i in 0..sui_data.len() {
-            let jwt_data: JwtData = serde_json::from_str(sui_data[i]).unwrap();
+        for d in sui_data {
+            let jwt_data: JwtData = serde_json::from_str(d).unwrap();
 
             //////
 
@@ -1461,10 +1463,10 @@ mod tests {
 
         let mut sum_ratio: u128 = 0;
 
-        for i in 0..sui_data.len() {
+        for (i, d) in sui_data.iter().enumerate() {
             println!("====================== Iter@ is {i} =========================");
             // parse
-            let jwt_data: JwtData = serde_json::from_str(sui_data[i]).unwrap();
+            let jwt_data: JwtData = serde_json::from_str(d).unwrap();
             // println!("{:?}", jwt_data);
 
             let user_pass_salt = jwt_data.user_pass_to_int_format.as_str();
@@ -1540,7 +1542,7 @@ mod tests {
     }
 
     fn prepare_proof_and_public_key_cells_for_stack(
-        eph_pubkey: &Vec<u8>,
+        eph_pubkey: &[u8],
         zk_login_inputs: &ZkLoginInputs,
         all_jwk: &HashMap<JwkId, JWK>,
     ) -> (Cell, Cell) {
@@ -1587,7 +1589,7 @@ mod tests {
     }
 
     fn single_vrgrth16(
-        eph_pubkey: &Vec<u8>,
+        eph_pubkey: &[u8],
         zk_login_inputs: &ZkLoginInputs,
         all_jwk: &HashMap<JwkId, JWK>,
     ) -> u128 {
@@ -1609,7 +1611,7 @@ mod tests {
     }
 
     fn single_chcksgns(
-        eph_pubkey: &Vec<u8>,
+        eph_pubkey: &[u8],
         zk_login_inputs: &ZkLoginInputs,
         all_jwk: &HashMap<JwkId, JWK>,
     ) -> u128 {

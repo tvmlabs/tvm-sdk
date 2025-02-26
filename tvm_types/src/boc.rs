@@ -542,7 +542,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
 
         // has index | has CRC | has cache bits | flags   | ref_size
         // 7         | 6       | 5              | 4 3     | 2 1 0
-        dest.write_all(&[(include_index as u8) << 7 | (include_crc as u8) << 6 | ref_size as u8])?;
+        dest.write_all(&[((include_index as u8) << 7) | ((include_crc as u8) << 6) | ref_size as u8])?;
 
         dest.write_all(&[offset_size as u8])?; // off_bytes:(## 8) { off_bytes <= 8 }
         dest.write_all(&(self.cells_count as u64).to_be_bytes()[(8 - ref_size)..8])?;

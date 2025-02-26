@@ -757,7 +757,7 @@ impl Engine {
         TRUE                                 => 0x7F
         TRY                                  => 0xF2, 0xFF
         TRYARGS s1 = parse_const_u4;
-                s2 = parse_const_u4          => 0xF3, (s1 << 4 | s2)
+                s2 = parse_const_u4          => 0xF3, (s1 << 4) | s2
         TRYELECT                             => 0xF9, 0x50
         TRYKEEP                              => 0xF2, 0xFE
         TUCK                                 => 0x66

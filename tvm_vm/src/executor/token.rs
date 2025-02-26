@@ -84,16 +84,15 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let repavg = repavgbig / 1e9_f64;
-    let rbkmin;
-    if t <= TTMT - 1_f64 {
-        rbkmin = TOTALSUPPLY
+    let rbkmin = if t <= TTMT - 1_f64 {
+        TOTALSUPPLY
             * 0.675_f64
             * (1_f64 + KM)
             * ((-1_f64 * um * t).exp() - (-1_f64 * um * (t + 1_f64)).exp())
-            / 3.5_f64;
+            / 3.5_f64
     } else {
-        rbkmin = 0_f64;
-    }
+        0_f64
+    };
     let rbk = (((calc_mbk(t + drbkavg) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
@@ -102,14 +101,12 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
 #[allow(clippy::excessive_precision)]
 fn calc_mbk(t: f64) -> f64 {
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
-    let mt;
-    if t > TTMT {
-        mt = TOTALSUPPLY;
+    let mt = if t > TTMT {
+        TOTALSUPPLY
     } else {
-        mt = TOTALSUPPLY * (1_f64 + KM) * (1_f64 - (-1_f64 * um * t).exp());
-    }
-    let mbk = KRBK * mt;
-    return mbk;
+        TOTALSUPPLY * (1_f64 + KM) * (1_f64 - (-1_f64 * um * t).exp())
+    };
+    KRBK * mt
 }
 
 #[allow(clippy::excessive_precision)]
@@ -123,7 +120,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepers
     let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64; //last calculated reward_adjustment
-    repcoef = repcoef / 1e9_f64;
+    repcoef /= 1e9_f64;
     let reward;
     if mbk == 0_f64 {
         reward = rbk * t * repcoef / nbk;
@@ -145,27 +142,24 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepersAtBlockStart
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token without slash tokens
-    let sbkbase;
-    if mbkav != 0_f64 {
-        let fstk;
-        if tstk > TTMT {
-            fstk = MAX_FREE_FLOAT_FRAC;
+    let sbkbase = if mbkav != 0_f64 {
+        let fstk = if tstk > TTMT {
+            MAX_FREE_FLOAT_FRAC
         } else {
             let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
-            fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
-        }
-        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq;
+            MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp())
+        };
+        (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq
     } else {
-        sbkbase = 0_f64;
-    }
-    let sbkmin;
+        0_f64
+    };
     let us = -1_f64 * (KS / (KS + 1_f64)).ln() / nbkreq;
-    if (nbk >= 0_f64) && (nbk <= nbkreq) {
-        sbkmin = sbkbase * (1_f64 + KS) * (1_f64 - (-1_f64 * us * nbk).exp());
+    let sbkmin = if (nbk >= 0_f64) && (nbk <= nbkreq) {
+        sbkbase * (1_f64 + KS) * (1_f64 - (-1_f64 * us * nbk).exp())
     } else {
         let unbk = 2_f64 * nbkreq - nbk;
-        sbkmin = sbkbase * (2_f64 - (1_f64 + KS) * (1_f64 - (-1_f64 * us * unbk).exp()));
-    }
+        sbkbase * (2_f64 - (1_f64 + KS) * (1_f64 - (-1_f64 * us * unbk).exp()))
+    };
     engine.cc.stack.push(int!(sbkmin as u128));
     Ok(())
 }

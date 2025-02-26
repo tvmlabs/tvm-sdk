@@ -57,7 +57,8 @@ fn calc_tree_cells(cell: &Cell, hashes: &mut HashSet<UInt256>) -> (usize, usize,
     let mut refs_count = cell.references_count();
     hashes.insert(cell.repr_hash());
 
-    for i in 0..refs_count {
+    let refs_range = 0..refs_count;
+    for i in refs_range {
         let cell = cell.reference(i).unwrap();
         if hashes.contains(&cell.repr_hash()) {
             continue;
@@ -198,8 +199,8 @@ impl Bocs {
         boc: &str,
         name: &str,
     ) -> ClientResult<(DeserializedBoc, Cell)> {
-        if boc.starts_with('*') {
-            let hash = UInt256::from_str(&boc[1..]).map_err(|err| {
+        if let Some(boc) = boc.strip_prefix('*') {
+            let hash = UInt256::from_str(boc).map_err(|err| {
                 Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {}", err))
             })?;
 
@@ -367,10 +368,10 @@ pub struct CachedBoc {
 
 impl CachedBoc {
     pub fn new(context: Arc<ClientContext>, boc: String, pin: String) -> ClientResult<Self> {
-        let boc_ref = cache_set(context.clone(), ParamsOfBocCacheSet {
-            boc,
-            cache_type: BocCacheType::Pinned { pin: pin.clone() },
-        })?
+        let boc_ref = cache_set(
+            context.clone(),
+            ParamsOfBocCacheSet { boc, cache_type: BocCacheType::Pinned { pin: pin.clone() } },
+        )?
         .boc_ref;
 
         Ok(Self { context, boc_ref, pin })
@@ -387,9 +388,12 @@ impl CachedBoc {
 
 impl Drop for CachedBoc {
     fn drop(&mut self) {
-        let _ = cache_unpin(self.context.clone(), ParamsOfBocCacheUnpin {
-            pin: std::mem::take(&mut self.pin),
-            boc_ref: Some(std::mem::take(&mut self.boc_ref)),
-        });
+        let _ = cache_unpin(
+            self.context.clone(),
+            ParamsOfBocCacheUnpin {
+                pin: std::mem::take(&mut self.pin),
+                boc_ref: Some(std::mem::take(&mut self.boc_ref)),
+            },
+        );
     }
 }

@@ -89,8 +89,8 @@ impl NetworkInterface {
             let mut iter = h.split(':');
             let key = iter.next();
             let value = iter.next();
-            if key.is_some() && value.is_some() {
-                header_map.insert(key.unwrap().trim().to_owned(), value.unwrap().trim().to_owned());
+            if let (Some(key), Some(value)) = (key, value) {
+                header_map.insert(key.trim().to_owned(), value.trim().to_owned());
             }
         }
         let response = self

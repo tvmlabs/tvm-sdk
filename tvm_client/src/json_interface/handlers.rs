@@ -139,12 +139,12 @@ fn check_type(
     match field_type {
         Type::Array { item } => {
             if let Value::Array(ref vec) = value {
-                for index in 0..vec.len() {
+                for (i, v) in vec.iter().enumerate() {
                     check_type(
-                        &path.append(&format!("{}[{}]", path.resolve_field_name(), index)),
+                        &path.append(&format!("{}[{}]", path.resolve_field_name(), i)),
                         class_name,
                         item,
-                        &vec[index],
+                        v,
                         errors,
                         suggest_use_helper_for,
                     );
@@ -219,7 +219,7 @@ fn check_type(
 fn get_incorrect_enum_errors(
     field_name: &str,
     class_name: &Option<&str>,
-    types: &Vec<Field>,
+    types: &[Field],
     errors: &mut Vec<String>,
     suggest_use_helper_for: &mut Vec<&'static str>,
 ) {
@@ -310,6 +310,7 @@ where
 {
     handler: Arc<F>,
     // Mutex is needed to have Sync trait implemented for struct
+    #[allow(clippy::type_complexity)]
     phantom: PhantomData<std::sync::Mutex<(P, R, Fut, AP, AR)>>,
 }
 

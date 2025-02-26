@@ -63,20 +63,19 @@ impl Value {
     }
 
     fn new_string(v: String) -> Option<Self> {
-        let mut val = Self::default();
-        val.kind = ValKind::String;
-        if deserialize_cell_from_base64(&v, "QueryValue").is_ok() {
-            val.value = v;
-            val.kind = ValKind::Cell;
+        Some(if deserialize_cell_from_base64(&v, "QueryValue").is_ok() {
+            Self { kind: ValKind::Cell, value: v, ..Default::default() }
         } else {
-            val.value = Self::serialize(ParamType::Bytes, json!(hex::encode(v)))?;
-        }
-        Some(val)
+            Self {
+                kind: ValKind::String,
+                value: Self::serialize(ParamType::Bytes, json!(hex::encode(v)))?,
+                ..Default::default()
+            }
+        })
     }
 
     fn new_object(map: serde_json::map::Map<String, JsonValue>) -> Option<Self> {
-        let mut val = Self::default();
-        val.kind = ValKind::Object;
+        let mut val = Self { kind: ValKind::Object, ..Self::default() };
         for (k, v) in map {
             let json: JsonValue = serde_json::to_value(pack(v)?).ok()?;
             let packed = Self::pack_value_to_cell(json, Some(&k))?;
@@ -89,8 +88,7 @@ impl Value {
     }
 
     fn new_array(array: Vec<JsonValue>) -> Option<Self> {
-        let mut val = Self::default();
-        val.kind = ValKind::Array;
+        let mut val = Self { kind: ValKind::Array, ..Self::default() };
         for element in array {
             let json: JsonValue = serde_json::to_value(pack(element)?).ok()?;
             let packed = Self::pack_value_to_cell(json, None)?;

@@ -151,7 +151,7 @@ impl EncryptionBox for AesEncryptionBox {
     }
 
     /// Encrypts data
-    async fn encrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
+    async fn encrypt(&self, _context: Arc<ClientContext>, data: &str) -> ClientResult<String> {
         let (mut data, size) = Self::decode_base64_aligned(data, aes::BLOCK_SIZE)?;
         let result = match (self.key.len(), &self.mode) {
             (16, CipherMode::CBC) => {
@@ -169,7 +169,7 @@ impl EncryptionBox for AesEncryptionBox {
     }
 
     /// Decrypts data
-    async fn decrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
+    async fn decrypt(&self, _context: Arc<ClientContext>, data: &str) -> ClientResult<String> {
         let mut data = base64_decode(data)?;
         match (self.key.len(), &self.mode) {
             (16, CipherMode::CBC) => {

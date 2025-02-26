@@ -102,7 +102,7 @@ pub(crate) fn tvm_crc16(data: &[u8]) -> u16 {
     XMODEM.checksum(data)
 }
 
-pub(crate) fn decode_public_key(string: &String) -> ClientResult<VerifyingKey> {
+pub(crate) fn decode_public_key(string: &str) -> ClientResult<VerifyingKey> {
     VerifyingKey::from_bytes(
         &hex_decode_secret_const(string)
             .map_err(|err| crypto::Error::invalid_public_key(err, string))?
@@ -111,7 +111,7 @@ pub(crate) fn decode_public_key(string: &String) -> ClientResult<VerifyingKey> {
     .map_err(|err| crypto::Error::invalid_public_key(err, string))
 }
 
-pub(crate) fn decode_secret_key(string: &String) -> ClientResult<SigningKey> {
+pub(crate) fn decode_secret_key(string: &str) -> ClientResult<SigningKey> {
     Ok(SigningKey::from_bytes(
         &hex_decode_secret_const(string)
             .map_err(|err| crypto::Error::invalid_secret_key(err, string))?

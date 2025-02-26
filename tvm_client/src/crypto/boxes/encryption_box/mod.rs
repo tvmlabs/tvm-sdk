@@ -51,9 +51,9 @@ pub trait EncryptionBox: Send + Sync {
     /// Gets encryption box information
     async fn get_info(&self, context: Arc<ClientContext>) -> ClientResult<EncryptionBoxInfo>;
     /// Encrypts data
-    async fn encrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String>;
+    async fn encrypt(&self, context: Arc<ClientContext>, data: &str) -> ClientResult<String>;
     /// Decrypts data
-    async fn decrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String>;
+    async fn decrypt(&self, context: Arc<ClientContext>, data: &str) -> ClientResult<String>;
     /// Zeroize all secret data
     async fn drop_secret(&self, _crypto_box_handle: CryptoBoxHandle) {
         // Not implemented by default, but must be implemented for encryption

@@ -308,6 +308,7 @@ fn choose<'a>(st1: &'a mut State, st2: &'a mut State) -> &'a mut State {
     if lt1 <= lt2 { st1 } else { st2 }
 }
 
+#[allow(clippy::type_complexity)]
 pub async fn replay(
     input_filename: &str,
     config_filename: &str,
