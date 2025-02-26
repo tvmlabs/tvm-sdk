@@ -14,6 +14,7 @@ use std::fmt;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
+use tvm_types::HashmapRemover;
 use tvm_types::HashmapSubtree;
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
@@ -27,7 +28,6 @@ use tvm_types::hm_label;
 use crate::Augmentation;
 use crate::Deserializable;
 use crate::Serializable;
-use crate::accounts::Account;
 use crate::accounts::ShardAccount;
 use crate::define_HashmapAugE;
 use crate::hashmapaug::Augmentable;
@@ -44,62 +44,108 @@ mod tests;
 // of the shardchain state (cf. 1.2.1 and 1.2.2) is given by (upd from Lite
 // Client v11): _ (HashmapAugE 256 ShardAccount DepthBalanceInfo) =
 // ShardAccounts;
-define_HashmapAugE!(ShardAccounts, 256, UInt256, ShardAccount, DepthBalanceInfo);
-impl HashmapSubtree for ShardAccounts {}
+define_HashmapAugE!(ShardAccountsMap, 256, UInt256, ShardAccount, DepthBalanceInfo);
+impl HashmapSubtree for ShardAccountsMap {}
+
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
+pub struct ShardAccounts {
+    shard_accounts: ShardAccountsMap,
+}
 
 impl ShardAccounts {
-    pub fn insert(
+    pub fn insert(&mut self, account_id: &UInt256, shard_account: &ShardAccount) -> Result<()> {
+        let depth_balance_info = shard_account.aug()?;
+        self.shard_accounts.set(account_id, shard_account, &depth_balance_info)
+    }
+
+    pub fn insert_with_aug(
         &mut self,
-        split_depth: u8,
-        account: &Account,
-        last_trans_hash: UInt256,
-        last_trans_lt: u64,
-    ) -> Result<Option<AccountId>> {
-        match account.get_id() {
-            Some(acc_id) => {
-                let depth_balance_info =
-                    DepthBalanceInfo::new(split_depth, account.get_balance().unwrap())?;
-                let sh_account =
-                    ShardAccount::with_params(account, last_trans_hash, last_trans_lt)?;
-                self.set_builder_serialized(
-                    acc_id.clone(),
-                    &sh_account.write_to_new_cell()?,
-                    &depth_balance_info,
-                )
-                .unwrap();
-                Ok(Some(acc_id))
-            }
-            _ => Ok(None),
-        }
+        account_id: &UInt256,
+        shard_account: &ShardAccount,
+        aug: &DepthBalanceInfo,
+    ) -> Result<()> {
+        self.shard_accounts.set(account_id, shard_account, aug)
     }
 
     pub fn account(&self, account_id: &AccountId) -> Result<Option<ShardAccount>> {
-        self.get_serialized(account_id.clone())
+        self.shard_accounts.get_serialized(account_id.clone())
     }
 
     pub fn balance(&self, account_id: &AccountId) -> Result<Option<DepthBalanceInfo>> {
-        match self.get_serialized_raw(account_id.clone())? {
+        match self.shard_accounts.get_serialized_raw(account_id.clone())? {
             Some(mut slice) => Ok(Some(DepthBalanceInfo::construct_from(&mut slice)?)),
             None => Ok(None),
         }
     }
 
     pub fn full_balance(&self) -> &CurrencyCollection {
-        &self.root_extra().balance
+        &self.shard_accounts.root_extra().balance
     }
 
     pub fn split_for(&mut self, split_key: &SliceData) -> Result<&DepthBalanceInfo> {
-        self.into_subtree_with_prefix(split_key, &mut 0)?;
-        self.update_root_extra()
+        self.shard_accounts.into_subtree_with_prefix(split_key, &mut 0)?;
+        self.shard_accounts.update_root_extra()
+    }
+
+    pub fn iterate_accounts<F>(&self, f: F) -> Result<bool>
+    where
+        F: FnMut(UInt256, ShardAccount, DepthBalanceInfo) -> Result<bool>,
+    {
+        self.shard_accounts.iterate_with_keys_and_aug(f)
+    }
+
+    pub fn replace_with_external(&mut self, account_id: &UInt256) -> Result<Cell> {
+        let (mut account, aug) = self
+            .shard_accounts
+            .get_with_aug(account_id)?
+            .ok_or_else(|| error!("Account not found"))?;
+        let cell = account.replace_with_external()?;
+        self.shard_accounts.set(account_id, &account, &aug)?;
+        Ok(cell)
+    }
+
+    pub fn replace_all_with_external(&mut self) -> Result<()> {
+        let copy = self.shard_accounts.clone();
+        copy.iterate_with_keys_and_aug(|account_id, mut account, aug| {
+            if !account.is_external() {
+                account.replace_with_external()?;
+                self.shard_accounts.set(&account_id, &account, &aug)?;               
+            }
+            Ok(true)
+        })?;
+        Ok(())
+    }
+
+    pub fn is_external(&self, account_id: &UInt256) -> Result<bool> {
+        Ok(self
+            .shard_accounts
+            .get(account_id)?
+            .map(|account| account.is_external())
+            .unwrap_or(false))
+    }
+
+    pub fn remove(&mut self, account_id: &UInt256) -> Result<Option<SliceData>> {
+        self.shard_accounts.remove(account_id.into())
+    }
+}
+
+impl Deserializable for ShardAccounts {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        self.shard_accounts.read_from(cell)?;
+        Ok(())
+    }
+}
+
+impl Serializable for ShardAccounts {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        self.shard_accounts.write_to(cell)?;
+        Ok(())
     }
 }
 
 impl Augmentation<DepthBalanceInfo> for ShardAccount {
     fn aug(&self) -> Result<DepthBalanceInfo> {
-        let account = self.read_account()?;
-        let balance = account.balance().cloned().unwrap_or_default();
-        let split_depth = account.split_depth().unwrap_or_default();
-        Ok(DepthBalanceInfo { split_depth, balance })
+        self.read_account()?.as_struct()?.aug()
     }
 }
 
