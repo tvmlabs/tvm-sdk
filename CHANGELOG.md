@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## [2.7.0] – 2025-02-26
+## [2.6.1] – 2025-02-26
 
 ### Fixed
 - Fix bugs in VERGRTH16 and POSEIDON instructions.
