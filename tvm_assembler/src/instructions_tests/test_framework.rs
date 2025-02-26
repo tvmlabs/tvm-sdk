@@ -1,22 +1,27 @@
 #![allow(dead_code)]
 use std::convert::Into;
 
-use tvm_assembler::CompileError;
-use tvm_assembler::compile_code;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
+use tvm_types::ExceptionCode;
 use tvm_types::HashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_vm::error::TvmError;
 use tvm_vm::executor::BehaviorModifiers;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::types::Exception;
+
+use crate::CompileError;
+use crate::compile_code;
 
 pub type Bytecode = SliceData;
 
 #[allow(dead_code)]
+
 fn logger_init() {
     if log::log_enabled!(log::Level::Info) {
         return;
@@ -146,14 +151,60 @@ impl TestCase {
 
 pub trait Expects {
     fn expect_stack(self, stack: &Stack) -> TestCase;
+    fn expect_not_stack(self, stack: &Stack) -> TestCase;
     fn expect_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase;
+    fn expect_not_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase;
     fn expect_success(self) -> TestCase;
     fn expect_success_extended(self, message: Option<&str>) -> TestCase;
+    fn expect_failure(self, exception_code: ExceptionCode) -> TestCase;
+    fn expect_custom_failure_extended<F: Fn(&Exception) -> bool>(
+        self,
+        op: F,
+        exc_name: &str,
+        message: Option<&str>,
+    ) -> TestCase;
+    fn expect_failure_extended(
+        self,
+        exception_code: ExceptionCode,
+        message: Option<&str>,
+    ) -> TestCase;
 }
 
 impl<T: Into<TestCase>> Expects for T {
     fn expect_stack(self, stack: &Stack) -> TestCase {
         self.expect_stack_extended(stack, None)
+    }
+
+    fn expect_not_stack(self, stack: &Stack) -> TestCase {
+        self.expect_not_stack_extended(stack, None)
+    }
+
+    fn expect_not_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase {
+        let test_case: TestCase = self.into();
+        let executor = test_case.executor(message);
+        match test_case.execution_result {
+            Ok(_) => {
+                if executor.eq_stack(stack) {
+                    if let Some(msg) = message {
+                        log::info!("{}", msg)
+                    }
+                    log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
+                    log::info!(
+                        target: "tvm",
+                        "\n{}\n",
+                        executor.dump_stack("Actual Stack:", false)
+                    );
+                    panic!("Stack is not expected")
+                }
+            }
+            // TODO this is not quite right: execution may fail but still produce a stack
+            Err(ref e) => {
+                log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
+                // print_failed_detail_extended(&test_case, e, message);
+                panic!("Execution error: {:?}", e)
+            }
+        }
+        test_case
     }
 
     fn expect_stack_extended(self, stack: &Stack, message: Option<&str>) -> TestCase {
@@ -201,6 +252,81 @@ impl<T: Into<TestCase>> Expects for T {
                 Some(msg) => {
                     // print_failed_detail_extended(&test_case, e, message);
                     panic!("{}\nExecution error: {:?}", msg, e);
+                }
+            }
+        }
+        test_case
+    }
+
+    fn expect_failure(self, exception_code: ExceptionCode) -> TestCase {
+        self.expect_failure_extended(exception_code, None)
+    }
+
+    fn expect_failure_extended(
+        self,
+        exception_code: ExceptionCode,
+        message: Option<&str>,
+    ) -> TestCase {
+        self.expect_custom_failure_extended(
+            |e| e.exception_code() != Some(exception_code),
+            &format!("{}", exception_code),
+            message,
+        )
+    }
+
+    fn expect_custom_failure_extended<F: Fn(&Exception) -> bool>(
+        self,
+        op: F,
+        exc_name: &str,
+        message: Option<&str>,
+    ) -> TestCase {
+        let test_case: TestCase = self.into();
+        let executor = test_case.executor(message);
+        match test_case.execution_result {
+            Ok(_) => {
+                log::info!(
+                    target: "tvm",
+                    "Expected failure: {}, however execution succeeded.",
+                    exc_name
+                );
+                print_stack(&test_case, executor);
+                match message {
+                    None => panic!("Expected failure: {}, however execution succeeded.", exc_name),
+                    Some(msg) => panic!(
+                        "{}.\nExpected failure: {}, however execution succeeded.",
+                        msg, exc_name
+                    ),
+                }
+            }
+            Err(ref e) => {
+                if let Some(TvmError::TvmExceptionFull(e, msg2)) = e.downcast_ref() {
+                    if op(e) {
+                        match message {
+                            Some(msg) => panic!(
+                                "{} - {}\nNon expected exception: {}, expected: {}",
+                                msg2, msg, e, exc_name
+                            ),
+                            None => panic!(
+                                "{}\nNon expected exception: {}, expected: {}",
+                                msg2, e, exc_name
+                            ),
+                        }
+                    }
+                } else {
+                    let code = e.downcast_ref::<ExceptionCode>();
+                    match code {
+                        Some(code) => {
+                            let e = Exception::from(*code);
+                            if op(&e) {
+                                panic!("Non expected exception: {}, expected: {}", e, exc_name)
+                            }
+                        }
+                        None => {
+                            if op(&Exception::from(ExceptionCode::FatalError)) {
+                                panic!("Non expected exception: {}, expected: {}", e, exc_name)
+                            }
+                        }
+                    }
                 }
             }
         }

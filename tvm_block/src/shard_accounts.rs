@@ -109,7 +109,7 @@ impl ShardAccounts {
         copy.iterate_with_keys_and_aug(|account_id, mut account, aug| {
             if !account.is_external() {
                 account.replace_with_external()?;
-                self.shard_accounts.set(&account_id, &account, &aug)?;               
+                self.shard_accounts.set(&account_id, &account, &aug)?;
             }
             Ok(true)
         })?;

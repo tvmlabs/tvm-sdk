@@ -494,7 +494,7 @@ impl MerkleUpdate {
         if old_cell.cell_type() == CellType::External {
             fail!("External cell can not be included into Merkle update");
         }
-        
+
         if old_cell.is_merkle() {
             merkle_depth += 1;
         }

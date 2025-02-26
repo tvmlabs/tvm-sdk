@@ -15,7 +15,8 @@ use std::str::FromStr;
 use tvm_types::read_single_root_boc;
 
 use super::*;
-use crate::{BlockIdExt, HashmapAugType};
+use crate::BlockIdExt;
+use crate::HashmapAugType;
 
 fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     println!("messages");

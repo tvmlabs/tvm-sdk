@@ -848,12 +848,6 @@ impl Engine {
         CALCREPCOEF                          => 0xC7, 0x34
     }
 
-    #[cfg(feature = "groth")]
-    simple_commands! {
-        enumerate_groth_commands
-        VERGRTH16                            => 0xF9, 0x12
-    }
-
     fn add_commands<'a>(
         &mut self,
         iter: impl IntoIterator<Item = &'a (&'static str, CompileHandler)>,
@@ -872,8 +866,5 @@ impl Engine {
 
         #[cfg(feature = "gosh")]
         self.add_commands(Self::enumerate_diff_commands());
-
-        #[cfg(feature = "groth")]
-        self.add_commands(Self::enumerate_groth_commands());
     }
 }

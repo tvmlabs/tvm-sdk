@@ -945,7 +945,7 @@ impl Handlers {
                 .set(0x40, execute_cdatasizeq)
                 .set(0x41, execute_cdatasize)
                 .set(0x42, execute_sdatasizeq)
-                .set(0x43, execute_sdatasize)
+                .set(0x43, execute_sdatasize),
         )
     }
 

@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use fastcrypto::hash::Blake2b256;
+use fastcrypto::hash::HashFunction;
 use num_bigint::BigUint;
 use serde::Deserialize;
 use serde::Serialize;
@@ -13,6 +15,7 @@ use crate::executor::zk_stuff::error::ZkCryptoError;
 const MAX_KEY_CLAIM_NAME_LENGTH: u8 = 32;
 const MAX_KEY_CLAIM_VALUE_LENGTH: u8 = 115;
 const MAX_AUD_VALUE_LENGTH: u8 = 145;
+const ZK_LOGIN_AUTHENTICATOR_FLAG: u8 = 0x05;
 
 pub fn gen_address_seed(
     salt: &str,
@@ -22,6 +25,19 @@ pub fn gen_address_seed(
 ) -> Result<String, ZkCryptoError> {
     let salt_hash = poseidon_zk_login(vec![(&Bn254FrElement::from_str(salt)?).into()])?;
     gen_address_seed_with_salt_hash(&salt_hash.to_string(), name, value, aud)
+}
+
+pub fn get_zk_login_address(
+    address_seed: &Bn254FrElement,
+    iss: &str,
+) -> Result<[u8; 32], ZkCryptoError> {
+    let mut hasher = Blake2b256::default();
+    hasher.update([ZK_LOGIN_AUTHENTICATOR_FLAG]);
+    let bytes = iss.as_bytes();
+    hasher.update([bytes.len() as u8]);
+    hasher.update(bytes);
+    hasher.update(address_seed.padded());
+    Ok(hasher.finalize().digest)
 }
 
 /// Same as [`gen_address_seed`] but takes the poseidon hash of the salt as

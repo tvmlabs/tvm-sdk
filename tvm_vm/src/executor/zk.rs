@@ -22,8 +22,11 @@ use num_bigint::BigUint;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
+use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
+use tvm_types::error;
 
+use crate::error::TvmError;
 use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
@@ -39,6 +42,7 @@ use crate::stack::StackItem;
 use crate::stack::StackItem::Cell;
 use crate::stack::integer::IntegerData;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
+use crate::types::Exception;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
@@ -695,8 +699,20 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     let proof_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
     let proof_as_bytes = unpack_data_from_cell(proof_slice, engine)?;
 
-    let proof = ProofWrapper::deserialize(&proof_as_bytes)?;
-    let public_inputs = FieldElementWrapper::deserialize_vector(&public_inputs_as_bytes)?;
+    let public_inputs = match FieldElementWrapper::deserialize_vector(&public_inputs_as_bytes) {
+        Ok(public_inputs) => public_inputs,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect public inputs {}", err);
+        }
+    };
+
+    let proof = match ProofWrapper::deserialize(&proof_as_bytes) {
+        Ok(proof) => proof,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect proof {}", err);
+        }
+    };
+
     let x: Vec<Fr> = public_inputs.iter().map(|x| x.0).collect();
 
     let vk = if vk_index == 0 {
@@ -713,9 +729,7 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
         .map_err(|e| ZkCryptoError::GeneralError(e.to_string()));
 
     let succes = res.is_ok();
-
     let res = if succes { boolean!(res?) } else { boolean!(false) };
-
     engine.cc.stack.push(res);
 
     Ok(())
@@ -758,43 +772,61 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
 
     let max_epoch = u64::from_be_bytes(*max_epoch_bytes);
 
-    let public_inputs = calculate_poseidon_hash(
-        &zkaddr,
-        &header_base_64,
-        &iss_base_64,
-        &index_mod_4,
-        eph_pub_key_bytes,
-        &modulus,
-        max_epoch,
-    )?;
+    /////////
 
-    let mut public_inputs_as_bytes = vec![];
-    public_inputs.serialize_compressed(&mut public_inputs_as_bytes)?;
-
-    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0)?;
-    engine.cc.stack.push(Cell(public_inputs_cell));
-
-    Ok(())
-}
-
-pub fn calculate_poseidon_hash(
-    address_seed: &str,
-    header_base_64: &str,
-    iss_base_64: &str,
-    index_mod_4: &str,
-    eph_pk_bytes: &[u8],
-    modulus: &[u8],
-    max_epoch: u64,
-) -> Result<Bn254Fr, ZkCryptoError> {
-    let address_seed = Bn254FrElement::from_str(address_seed)?;
+    let address_seed = match Bn254FrElement::from_str(&*zkaddr) {
+        Ok(address_seed) => address_seed,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect address seed {}", err);
+        }
+    };
     let addr_seed = (&address_seed).into();
-    let (first, second) = split_to_two_frs(eph_pk_bytes)?;
-    let max_epoch_f = (&Bn254FrElement::from_str(&max_epoch.to_string())?).into();
-    let index_mod_4_f = (&Bn254FrElement::from_str(index_mod_4)?).into();
-    let iss_base64_f = hash_ascii_str_to_field(iss_base_64, MAX_ISS_LEN_B64)?;
-    let header_f = hash_ascii_str_to_field(header_base_64, MAX_HEADER_LEN)?;
-    let modulus_f = hash_to_field(&[BigUint::from_bytes_be(modulus)], 2048, PACK_WIDTH)?;
-    poseidon_zk_login(vec![
+
+    let (first, second) = match split_to_two_frs(&eph_pub_key_bytes) {
+        Ok((first, second)) => (first, second),
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect ephemeral public key {}", err);
+        }
+    };
+
+    let max_epoch_f = match Bn254FrElement::from_str(&max_epoch.to_string()) {
+        Ok(max_epoch_f) => max_epoch_f,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect max_epoch {}", err);
+        }
+    };
+    let max_epoch_f = (&max_epoch_f).into();
+
+    let index_mod_4_f = match Bn254FrElement::from_str(&index_mod_4) {
+        Ok(index_mod_4_f) => index_mod_4_f,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect index_mod_4 {}", err);
+        }
+    };
+    let index_mod_4_f = (&index_mod_4_f).into();
+
+    let iss_base64_f = match hash_ascii_str_to_field(&iss_base_64, MAX_ISS_LEN_B64) {
+        Ok(iss_base64_f) => iss_base64_f,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect iss_base64 {}", err);
+        }
+    };
+
+    let header_f = match hash_ascii_str_to_field(&header_base_64, MAX_HEADER_LEN) {
+        Ok(header_f) => header_f,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect header {}", err);
+        }
+    };
+
+    let modulus_f = match hash_to_field(&[BigUint::from_bytes_be(&modulus)], 2048, PACK_WIDTH) {
+        Ok(modulus_f) => modulus_f,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect modulus {}", err);
+        }
+    };
+
+    let public_inputs = match poseidon_zk_login(vec![
         first,
         second,
         addr_seed,
@@ -803,5 +835,18 @@ pub fn calculate_poseidon_hash(
         index_mod_4_f,
         header_f,
         modulus_f,
-    ])
+    ]) {
+        Ok(public_inputs) => public_inputs,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "poseidon computation issue {}", err);
+        }
+    };
+
+    let mut public_inputs_as_bytes = vec![];
+    public_inputs.serialize_compressed(&mut public_inputs_as_bytes)?;
+
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0)?;
+    engine.cc.stack.push(Cell(public_inputs_cell));
+
+    Ok(())
 }

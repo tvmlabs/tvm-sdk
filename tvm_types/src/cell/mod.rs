@@ -48,9 +48,11 @@ pub const MAX_LEVEL: usize = 3;
 pub const MAX_LEVEL_MASK: u8 = 7;
 pub const MAX_DEPTH: u16 = u16::MAX - 1;
 
-// type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count len) (1) + max tree cells count (1) + max tree bits count (1)
+// type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
+// len) (1) + max tree cells count (1) + max tree bits count (1)
 const EXTERNAL_CELL_MIN_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 2;
-// type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count len) (1) + max tree cells count (8) + max tree bits count (8)
+// type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
+// len) (1) + max tree cells count (8) + max tree bits count (8)
 const EXTERNAL_CELL_MAX_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 8 * 2;
 
 // recommended maximum depth, this value is safe for stack. Use custom stack
@@ -1654,7 +1656,8 @@ impl DataCell {
                 // all checks were performed before finalization
             }
             CellType::External => {
-                // type + hash + depth + (tree cells count len | tree bits count len) + tree cells count + tree bits count
+                // type + hash + depth + (tree cells count len | tree bits count len) + tree
+                // cells count + tree bits count
                 let min_required_len = 8 * (EXTERNAL_CELL_MIN_SIZE);
                 if bit_len < min_required_len {
                     fail!("fail creating external cell: bit_len {} < {}", bit_len, min_required_len)
