@@ -1484,7 +1484,7 @@ async fn deployx_command(
         full_config,
         tvc.unwrap(),
         &abi.unwrap(),
-        &params.unwrap(),
+        &xparams.unwrap(),
         keys,
         wc,
         false,

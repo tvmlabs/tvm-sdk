@@ -96,7 +96,7 @@ impl Error {
     pub fn fetch_block_failed<E: std::fmt::Display>(
         err: E,
         message_id: &str,
-        shard_block_id: &String,
+        shard_block_id: &str,
     ) -> ClientError {
         Self::processing_error(
             ErrorCode::FetchBlockFailed,
@@ -130,7 +130,7 @@ impl Error {
     pub fn invalid_block_received<E: std::fmt::Display>(
         err: E,
         message_id: &str,
-        shard_block_id: &String,
+        shard_block_id: &str,
     ) -> ClientError {
         Self::processing_error(
             ErrorCode::InvalidBlockReceived,
@@ -176,7 +176,7 @@ impl Error {
 
     pub fn transaction_wait_timeout(
         message_id: &str,
-        shard_block_id: &String,
+        shard_block_id: &str,
         expiration_time: u32,
         timeout: u32,
         block_time: u32,

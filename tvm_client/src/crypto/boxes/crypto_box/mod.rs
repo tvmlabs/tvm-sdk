@@ -597,7 +597,7 @@ impl EncryptionBox for EncryptionBoxFromCryptoBox {
             .await
     }
 
-    async fn encrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
+    async fn encrypt(&self, context: Arc<ClientContext>, data: &str) -> ClientResult<String> {
         self.manager
             .with_internal_box(
                 Arc::clone(&context),
@@ -610,7 +610,7 @@ impl EncryptionBox for EncryptionBoxFromCryptoBox {
             .await
     }
 
-    async fn decrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
+    async fn decrypt(&self, context: Arc<ClientContext>, data: &str) -> ClientResult<String> {
         self.manager
             .with_internal_box(
                 Arc::clone(&context),

@@ -163,9 +163,11 @@ impl EncryptionBox for ExternalEncryptionBox {
         }
     }
 
-    async fn encrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
-        let response =
-            self.app_object.call(ParamsOfAppEncryptionBox::Encrypt { data: data.clone() }).await?;
+    async fn encrypt(&self, _context: Arc<ClientContext>, data: &str) -> ClientResult<String> {
+        let response = self
+            .app_object
+            .call(ParamsOfAppEncryptionBox::Encrypt { data: data.to_string() })
+            .await?;
 
         match response {
             ResultOfAppEncryptionBox::Encrypt { data } => Ok(data),
@@ -173,9 +175,11 @@ impl EncryptionBox for ExternalEncryptionBox {
         }
     }
 
-    async fn decrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
-        let response =
-            self.app_object.call(ParamsOfAppEncryptionBox::Decrypt { data: data.clone() }).await?;
+    async fn decrypt(&self, _context: Arc<ClientContext>, data: &str) -> ClientResult<String> {
+        let response = self
+            .app_object
+            .call(ParamsOfAppEncryptionBox::Decrypt { data: data.to_string() })
+            .await?;
 
         match response {
             ResultOfAppEncryptionBox::Decrypt { data } => Ok(data),

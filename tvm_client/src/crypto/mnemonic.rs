@@ -266,14 +266,14 @@ pub trait CryptoMnemonic {
     fn derive_ed25519_keys_from_phrase(
         &self,
         config: &CryptoConfig,
-        phrase: &String,
-        path: &String,
+        phrase: &str,
+        path: &str,
     ) -> ClientResult<KeyPair>;
     fn phrase_from_entropy(&self, entropy: &[u8]) -> ClientResult<String>;
-    fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool>;
+    fn is_phrase_valid(&self, phrase: &str) -> ClientResult<bool>;
 }
 
-pub(super) fn check_phrase(mnemonic: &dyn CryptoMnemonic, phrase: &String) -> ClientResult<()> {
+pub(super) fn check_phrase(mnemonic: &dyn CryptoMnemonic, phrase: &str) -> ClientResult<()> {
     if mnemonic.is_phrase_valid(phrase)? {
         Ok(())
     } else {
@@ -320,8 +320,8 @@ impl CryptoMnemonic for Bip39Mnemonic {
     fn derive_ed25519_keys_from_phrase(
         &self,
         _config: &CryptoConfig,
-        phrase: &String,
-        path: &String,
+        phrase: &str,
+        path: &str,
     ) -> ClientResult<KeyPair> {
         check_phrase(self, phrase)?;
         let derived =
@@ -335,8 +335,8 @@ impl CryptoMnemonic for Bip39Mnemonic {
         Ok(mnemonic.phrase().into())
     }
 
-    fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool> {
-        Ok(Mnemonic::validate(phrase.as_str(), self.language).is_ok())
+    fn is_phrase_valid(&self, phrase: &str) -> ClientResult<bool> {
+        Ok(Mnemonic::validate(phrase, self.language).is_ok())
     }
 }
 
@@ -364,21 +364,21 @@ impl TonMnemonic {
         words
     }
 
-    fn entropy_from_string(string: &String) -> [u8; 64] {
+    fn entropy_from_string(string: &str) -> [u8; 64] {
         hmac_sha512(string.as_bytes(), &[])
     }
 
-    fn seed_from_string(string: &String, salt: &str, c: u32) -> [u8; 64] {
+    fn seed_from_string(string: &str, salt: &str, c: u32) -> [u8; 64] {
         let entropy = Self::entropy_from_string(string);
         pbkdf2_hmac_sha512(&entropy, salt.as_bytes(), c)
     }
 
-    fn is_basic_seed(string: &String) -> bool {
+    fn is_basic_seed(string: &str) -> bool {
         let seed = Self::seed_from_string(string, "TON seed version", 100_000 / 256);
         seed[0] == 0
     }
 
-    fn internal_is_phrase_valid(&self, phrase: &String) -> bool {
+    fn internal_is_phrase_valid(&self, phrase: &str) -> bool {
         let mut count = 0u8;
         for word in phrase.split(' ') {
             if !TVM_WORDS.contains(&word) {
@@ -414,8 +414,8 @@ impl CryptoMnemonic for TonMnemonic {
     fn derive_ed25519_keys_from_phrase(
         &self,
         _config: &CryptoConfig,
-        phrase: &String,
-        path: &String,
+        phrase: &str,
+        path: &str,
     ) -> ClientResult<KeyPair> {
         check_phrase(self, phrase)?;
 
@@ -437,7 +437,7 @@ impl CryptoMnemonic for TonMnemonic {
         }
     }
 
-    fn is_phrase_valid(&self, phrase: &String) -> ClientResult<bool> {
+    fn is_phrase_valid(&self, phrase: &str) -> ClientResult<bool> {
         Ok(self.internal_is_phrase_valid(phrase))
     }
 }

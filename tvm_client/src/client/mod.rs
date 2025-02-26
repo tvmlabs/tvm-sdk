@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+#[allow(clippy::module_inception)]
 mod client;
 mod client_env;
 pub(crate) mod errors;

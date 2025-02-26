@@ -159,14 +159,17 @@ async fn run(
     .await?;
 
     let execution_options = prepare_execution_options(bc_config)?;
-    let result = run_tvm(ton_client.clone(), ParamsOfRunTvm {
-        message: msg.message.clone(),
-        account: account_boc.clone(),
-        abi: Some(abi.clone()),
-        return_updated_account: Some(true),
-        execution_options,
-        ..Default::default()
-    })
+    let result = run_tvm(
+        ton_client.clone(),
+        ParamsOfRunTvm {
+            message: msg.message.clone(),
+            account: account_boc.clone(),
+            abi: Some(abi.clone()),
+            return_updated_account: Some(true),
+            execution_options,
+            ..Default::default()
+        },
+    )
     .await;
 
     let result = match result {
@@ -251,13 +254,16 @@ pub async fn run_get_method(
         println!("Running get-method...");
     }
     let execution_options = prepare_execution_options(bc_config)?;
-    let result = run_get(ton, ParamsOfRunGet {
-        account: acc_boc,
-        function_name: method.to_owned(),
-        input: params,
-        execution_options,
-        ..Default::default()
-    })
+    let result = run_get(
+        ton,
+        ParamsOfRunGet {
+            account: acc_boc,
+            function_name: method.to_owned(),
+            input: params,
+            execution_options,
+            ..Default::default()
+        },
+    )
     .await
     .map_err(|e| format!("run failed: {}", e))?
     .output;
@@ -269,10 +275,8 @@ pub async fn run_get_method(
         let mut res = Map::new();
         match result {
             Value::Array(array) => {
-                let mut i = 0;
-                for val in array.iter() {
+                for (i, val) in array.iter().enumerate() {
                     res.insert(format!("value{}", i), val.to_owned());
-                    i += 1;
                 }
             }
             _ => {

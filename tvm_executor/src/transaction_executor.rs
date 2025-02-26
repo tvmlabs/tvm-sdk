@@ -305,22 +305,16 @@ pub trait TransactionExecutor {
             fee = Grams::zero();
         }
         if acc_balance.grams < fee {
-            let mut diff = fee.clone();
+            let mut diff = fee;
             diff.sub(&acc_balance.grams)?; //Calculate number of Grams that need to be added to the balance to cover the Storage Fee.
-            if available_credit == INFINITY_CREDIT {
+            if available_credit == INFINITY_CREDIT || Grams::from(available_credit as u64) > diff {
                 acc_balance.grams.add(&diff)?;
                 *minted_shell += diff.as_u128();
                 diff = Grams::zero();
             } else {
-                if Grams::from(available_credit as u64) > diff {
-                    acc_balance.grams.add(&diff)?;
-                    *minted_shell += diff.as_u128();
-                    diff = Grams::zero();
-                } else {
-                    acc_balance.grams.add(&Grams::from(available_credit as u64))?;
-                    *minted_shell += available_credit as u128;
-                    diff.sub(&Grams::from(available_credit as u64))?;
-                }
+                acc_balance.grams.add(&Grams::from(available_credit as u64))?;
+                *minted_shell += available_credit as u128;
+                diff.sub(&Grams::from(available_credit as u64))?;
             }
             if diff > 0 {
                 let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
@@ -544,12 +538,15 @@ pub trait TransactionExecutor {
         if let Some(init_code_hash) = result_acc.init_code_hash() {
             smc_info.set_init_code_hash(init_code_hash.clone());
         }
-        let mut vm = VMSetup::with_context(SliceData::load_cell(code)?, VMSetupContext {
-            capabilities: self.config().capabilites(),
-            block_version: params.block_version,
-            #[cfg(feature = "signature_with_id")]
-            signature_id: params.signature_id,
-        })
+        let mut vm = VMSetup::with_context(
+            SliceData::load_cell(code)?,
+            VMSetupContext {
+                capabilities: self.config().capabilites(),
+                block_version: params.block_version,
+                #[cfg(feature = "signature_with_id")]
+                signature_id: params.signature_id,
+            },
+        )
         .set_smart_contract_info(smc_info)?
         .set_stack(stack)
         .set_data(data)?
@@ -920,10 +917,10 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellToken { mut value } => {
-                    if available_credit != INFINITY_CREDIT {
-                        if value as i128 + minted_shell.clone() as i128 > available_credit {
-                            value = available_credit.clone().try_into()?;
-                        }
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + *minted_shell as i128 > available_credit
+                    {
+                        value = available_credit.try_into()?;
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
@@ -1573,21 +1570,21 @@ fn outmsg_action_handler(
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
-/*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
-            // send all remainig balance of inbound message
-            result_value.add(msg_balance).ok();
-            if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
-                if &result_value.grams < compute_phase_fees {
-                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+        /*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+                    // send all remainig balance of inbound message
+                    result_value.add(msg_balance).ok();
+                    if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                        if &result_value.grams < compute_phase_fees {
+                            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                        }
+                        result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                            log::error!(target: "executor", "cannot subtract msg balance : {}", err);
+                            RESULT_CODE_ACTIONLIST_INVALID
+                        })?;
+                    }
+                    int_header.value = result_value.clone();
                 }
-                result_value.grams.sub(compute_phase_fees).map_err(|err| {
-                    log::error!(target: "executor", "cannot subtract msg balance : {}", err);
-                    RESULT_CODE_ACTIONLIST_INVALID
-                })?;
-            }
-            int_header.value = result_value.clone();
-        }
-*/
+        */
         if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
             // we must pay the fees, sum them with msg value
             result_value.grams += total_fwd_fees;

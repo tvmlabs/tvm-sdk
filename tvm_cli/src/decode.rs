@@ -316,11 +316,10 @@ async fn decode_tvc_fields(m: &ArgMatches<'_>, config: &Config) -> Result<(), St
         .map_err(|e| format!("failed to load StateInit from the tvc file: {}", e))?;
     let b64 = tree_of_cells_into_base64(state.data.as_ref())?;
     let ton = create_client_local()?;
-    let res = decode_account_data(ton, ParamsOfDecodeAccountData {
-        abi,
-        data: b64,
-        ..Default::default()
-    })
+    let res = decode_account_data(
+        ton,
+        ParamsOfDecodeAccountData { abi, data: b64, ..Default::default() },
+    )
     .map_err(|e| format!("failed to decode data: {}", e))?;
     if !config.is_json {
         println!("TVC fields:");
@@ -515,8 +514,7 @@ pub mod msg_printer {
     }
 
     async fn get_code_version(ton: TonClient, code: String) -> String {
-        let result =
-            get_compiler_version(ton, ParamsOfGetCompilerVersion { code, ..Default::default() });
+        let result = get_compiler_version(ton, ParamsOfGetCompilerVersion { code });
 
         if let Ok(result) = result {
             if let Some(version) = result.version {

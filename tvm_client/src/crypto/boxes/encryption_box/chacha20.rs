@@ -68,11 +68,11 @@ impl EncryptionBox for ChaCha20EncryptionBox {
         })
     }
 
-    async fn encrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
+    async fn encrypt(&self, _context: Arc<ClientContext>, data: &str) -> ClientResult<String> {
         self.chacha20(data)
     }
 
-    async fn decrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
+    async fn decrypt(&self, _context: Arc<ClientContext>, data: &str) -> ClientResult<String> {
         self.chacha20(data)
     }
 }

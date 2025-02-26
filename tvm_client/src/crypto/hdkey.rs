@@ -201,7 +201,7 @@ impl HDPrivateKey {
         }
     }
 
-    pub(crate) fn from_mnemonic(phrase: &String) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn from_mnemonic(phrase: &str) -> ClientResult<HDPrivateKey> {
         let salt = "mnemonic";
         let mut seed = vec![0u8; 64];
         pbkdf2::<Hmac<Sha512>>(phrase.as_bytes(), salt.as_bytes(), 2048, &mut seed);
@@ -300,7 +300,7 @@ impl HDPrivateKey {
         Ok(child)
     }
 
-    pub(crate) fn derive_path(&self, path: &String, compliant: bool) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn derive_path(&self, path: &str, compliant: bool) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = self.clone();
         for step in path.split('/') {
             if step == "m" {
@@ -326,8 +326,7 @@ impl HDPrivateKey {
         if version != XPRV_VERSION {
             return Err(crypto::Error::bip32_invalid_key("wrong key version"));
         }
-        let mut xprv: HDPrivateKey = Default::default();
-        xprv.depth = bytes[4];
+        let mut xprv = HDPrivateKey { depth: bytes[4], ..Default::default() };
         xprv.parent_fingerprint.copy_from_slice(&bytes[5..9]);
         xprv.child_number.copy_from_slice(&bytes[9..13]);
         xprv.child_chain.0.copy_from_slice(&bytes[13..45]);
@@ -351,7 +350,7 @@ impl HDPrivateKey {
         bytes
     }
 
-    fn from_serialized_string(string: &String) -> ClientResult<HDPrivateKey> {
+    fn from_serialized_string(string: &str) -> ClientResult<HDPrivateKey> {
         Self::from_serialized(
             &string
                 .from_base58()
@@ -388,8 +387,7 @@ impl Ripemd160 {
 
     fn join32(msg: &[u8]) -> Vec<u32> {
         assert_eq!(msg.len() % 4, 0usize);
-        let mut res: Vec<u32> = Vec::new();
-        res.resize(msg.len() / 4, 0);
+        let mut res: Vec<u32> = vec![0; msg.len() / 4];
         for i in 0..res.len() {
             res[i] = LittleEndian::read_u32(&msg[i * 4..(i + 1) * 4]);
         }

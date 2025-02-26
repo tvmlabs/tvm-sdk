@@ -729,6 +729,7 @@ pub fn wc_from_matches_or_config(matches: &ArgMatches<'_>, config: &Config) -> R
         .unwrap_or(config.wc))
 }
 
+#[allow(clippy::type_complexity)]
 pub fn contract_data_from_matches_or_config_alias(
     matches: &ArgMatches<'_>,
     full_config: &FullConfig,

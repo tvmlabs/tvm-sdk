@@ -183,7 +183,7 @@ impl Endpoint {
             let mut parts: Vec<&str> = version.split('.').collect();
             parts.resize(3, "0");
             let parse_part = |i: usize| {
-                u32::from_str_radix(parts[i], 10).map_err(|err| {
+                parts[i].parse::<u32>().map_err(|err| {
                     Error::invalid_server_response(format!(
                         "Can not parse version {}: {}",
                         version, err

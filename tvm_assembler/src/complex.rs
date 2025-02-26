@@ -291,7 +291,7 @@ fn write_pushcont(
         return Err(OperationError::NotFitInSlice);
     }
     // 1000111r rxxxxxxx ccc...
-    let mut code = vec![0x8e | (r & 2) >> 1, (r & 1) << 7 | x];
+    let mut code = vec![0x8e | ((r & 2) >> 1), ((r & 1) << 7) | x];
     let mut dbg2 = DbgNode::from(pos);
     dbg2.inline_node(code.len() * 8, dbg);
     code.extend_from_slice(cont.data());

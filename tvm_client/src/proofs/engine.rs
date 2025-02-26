@@ -489,10 +489,10 @@ impl ProofHelperEngineImpl {
             }
 
             let (expected, remaining) = proofs_sorted.split_at_mut(blocks.len());
-            for i in 0..blocks.len() {
+            for (expected_seq_no, expected_block) in expected {
                 let (seq_no, mut block) = blocks.remove(0);
 
-                let expected_seq_no = expected[i].0 + 1;
+                let expected_seq_no = *expected_seq_no + 1;
                 if seq_no != expected_seq_no {
                     tvm_types::fail!(
                         "Block with seq_no: {} missed on DApp server (actual seq_no: {})",
@@ -501,7 +501,7 @@ impl ProofHelperEngineImpl {
                     );
                 }
 
-                expected[i].1["file_hash"] = block["prev_ref"]["file_hash"].take();
+                expected_block["file_hash"] = block["prev_ref"]["file_hash"].take();
             }
 
             proofs_sorted = remaining;
@@ -629,7 +629,6 @@ impl ProofHelperEngineImpl {
                     })),
                     order: Some(Self::sorting_by_seq_no()),
                     limit: Some(10),
-                    ..Default::default()
                 })
                 .await?
                 .result,
@@ -703,11 +702,9 @@ impl ProofHelperEngineImpl {
         }
 
         let mut result = Vec::with_capacity(blocks.len());
-        for i in 0..blocks.len() {
-            let (seq_no, block) = &blocks[i];
-
+        for (i, (seq_no, block)) in blocks.into_iter().enumerate() {
             let expected_seq_no = seq_no_range.start + i as u32;
-            if *seq_no != expected_seq_no {
+            if seq_no != expected_seq_no {
                 tvm_types::fail!(
                     "Unexpected seq_no of block returned by DApp server for specified range \
                         (shard: {}, seq_no_range: {:?}, expected seq_no: {}, actual seq_no: {})",
@@ -717,7 +714,6 @@ impl ProofHelperEngineImpl {
                     seq_no,
                 );
             }
-
             result.push(base64_decode(block.get_str("boc")?)?);
         }
 

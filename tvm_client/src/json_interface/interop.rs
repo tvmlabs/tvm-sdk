@@ -11,6 +11,7 @@
 //
 
 use std::ffi::c_void;
+use std::fmt::{Display, Formatter};
 use std::ptr::null;
 
 use serde_json::Value;
@@ -103,11 +104,13 @@ pub fn request_sync(context: ContextHandle, function_name: String, params_json: 
 // C-style interface
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn tc_create_context(config: StringData) -> *const String {
     Box::into_raw(Box::new(create_context(config.to_string())))
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn tc_destroy_context(context: ContextHandle) {
     destroy_context(context)
 }
@@ -116,6 +119,7 @@ pub type CResponseHandler =
     extern "C" fn(request_id: u32, params_json: StringData, response_type: u32, finished: bool);
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn tc_request(
     context: ContextHandle,
     function_name: StringData,
@@ -139,6 +143,7 @@ pub type CResponseHandlerPtr = extern "C" fn(
 );
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn tc_request_ptr(
     context: ContextHandle,
     function_name: StringData,
@@ -155,6 +160,7 @@ pub unsafe extern "C" fn tc_request_ptr(
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn tc_request_sync(
     context: ContextHandle,
     function_name: StringData,
@@ -168,6 +174,7 @@ pub unsafe extern "C" fn tc_request_sync(
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn tc_destroy_string(string: *const String) {
     if string.is_null() {
         return;
@@ -177,6 +184,7 @@ pub unsafe extern "C" fn tc_destroy_string(string: *const String) {
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn tc_read_string(string: *const String) -> StringData {
     if string.is_null() { StringData::default() } else { StringData::new(&*string) }
 }
@@ -189,22 +197,25 @@ pub struct StringData {
 }
 
 impl StringData {
-    pub fn new(s: &String) -> Self {
+    pub fn new(s: &str) -> Self {
         Self { content: s.as_ptr(), len: s.len() as u32 }
     }
+}
 
-    pub fn default() -> Self {
-        Self { content: null(), len: 0 }
-    }
-
-    pub fn to_string(&self) -> String {
+impl Display for StringData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         unsafe {
             let utf8 = std::slice::from_raw_parts(self.content, self.len as usize);
-            String::from_utf8(utf8.to_vec()).unwrap()
+            f.write_str(std::str::from_utf8_unchecked(utf8))
         }
     }
 }
 
+impl Default for StringData {
+    fn default() -> Self {
+        Self { content: null(), len: 0 }
+    }
+}
 // Internals
 
 fn convert_result_to_sync_response(result: ClientResult<Value>) -> String {

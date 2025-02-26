@@ -565,17 +565,20 @@ async fn replay_transaction_command(
     }
 
     let ton_client = create_client(config)?;
-    let trans = query_collection(ton_client.clone(), ParamsOfQueryCollection {
-        collection: "transactions".to_owned(),
-        filter: Some(json!({
-            "id": {
-                "eq": tx_id.unwrap()
-            },
-        })),
-        result: "lt block { start_lt } boc".to_string(),
-        limit: Some(1),
-        order: None,
-    })
+    let trans = query_collection(
+        ton_client.clone(),
+        ParamsOfQueryCollection {
+            collection: "transactions".to_owned(),
+            filter: Some(json!({
+                "id": {
+                    "eq": tx_id.unwrap()
+                },
+            })),
+            result: "lt block { start_lt } boc".to_string(),
+            limit: Some(1),
+            order: None,
+        },
+    )
     .await
     .map_err(|e| format!("Failed to query transaction: {}", e))?;
 
@@ -1329,6 +1332,7 @@ fn get_position(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) -> Result<
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn generate_callback(
     matches: Option<&ArgMatches<'_>>,
     config: &Config,
@@ -1380,11 +1384,9 @@ pub async fn sequence_diagram_command(
 
     let mut addresses = vec![];
     let lines = std::io::BufReader::new(file).lines();
-    for line in lines {
-        if let Ok(line) = line {
-            if !line.is_empty() && !line.starts_with('#') {
-                addresses.push(load_ton_address(&line, config)?);
-            }
+    for line in lines.flatten() {
+        if !line.is_empty() && !line.starts_with('#') {
+            addresses.push(load_ton_address(&line, config)?);
         }
     }
     if addresses.iter().collect::<HashSet<_>>().len() < addresses.len() {
@@ -1434,23 +1436,26 @@ async fn fetch_transactions(
         let mut lt = String::from("0x0");
         loop {
             let action = || async {
-                query_collection(context.clone(), ParamsOfQueryCollection {
-                    collection: "transactions".to_owned(),
-                    filter: Some(json!({
-                        "account_addr": {
-                            "eq": address.clone()
-                        },
-                        "lt": {
-                            "gt": lt
-                        }
-                    })),
-                    result: "lt boc id workchain_id".to_owned(),
-                    order: Some(vec![OrderBy {
-                        path: "lt".to_owned(),
-                        direction: SortDirection::ASC,
-                    }]),
-                    limit: None,
-                })
+                query_collection(
+                    context.clone(),
+                    ParamsOfQueryCollection {
+                        collection: "transactions".to_owned(),
+                        filter: Some(json!({
+                            "account_addr": {
+                                "eq": address.clone()
+                            },
+                            "lt": {
+                                "gt": lt
+                            }
+                        })),
+                        result: "lt boc id workchain_id".to_owned(),
+                        order: Some(vec![OrderBy {
+                            path: "lt".to_owned(),
+                            direction: SortDirection::ASC,
+                        }]),
+                        limit: None,
+                    },
+                )
                 .await
             };
 
