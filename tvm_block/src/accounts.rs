@@ -1076,13 +1076,11 @@ impl Account {
                 let usage_tree = UsageTree::with_root(state_root.clone());
                 let ss = ShardStateUnsplit::construct_from_cell(usage_tree.root_cell())?;
 
-                ss.read_accounts()?
-                    .account(&addr)?
-                    .ok_or_else(|| {
-                        error!(BlockError::InvalidArg(
-                            "Account doesn't belong to given shard state".to_string()
-                        ))
-                    })?;
+                ss.read_accounts()?.account(&addr)?.ok_or_else(|| {
+                    error!(BlockError::InvalidArg(
+                        "Account doesn't belong to given shard state".to_string()
+                    ))
+                })?;
 
                 MerkleProof::create_by_usage_tree(state_root, usage_tree)
                     .and_then(|proof| proof.serialize())

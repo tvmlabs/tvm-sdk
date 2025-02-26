@@ -202,7 +202,11 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
                 return Ok(None);
             }
         }
-        Ok(if let Some(acc) = acc? { acc.read_account()?.as_struct()?.get_code_hash() } else { None })
+        Ok(if let Some(acc) = acc? {
+            acc.read_account()?.as_struct()?.get_code_hash()
+        } else {
+            None
+        })
     }
 
     pub(crate) fn prepare_account_entry(

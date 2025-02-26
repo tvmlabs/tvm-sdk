@@ -200,7 +200,7 @@ checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
 name = "api_derive"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "api_info",
  "proc-macro2",
@@ -211,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "api_info"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "serde",
  "serde_derive",
@@ -220,7 +220,7 @@ dependencies = [
 
 [[package]]
 name = "api_test"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "api_derive",
  "api_info",
@@ -649,15 +649,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
 
 [[package]]
-name = "bitmaps"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "031043d04099746d8db04daf1fa424b2bc8bd69d92b25962dcde24da39ab64a2"
-dependencies = [
- "typenum",
-]
-
-[[package]]
 name = "bitvec"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -767,7 +758,6 @@ checksum = "7a8a8ed6fefbeef4a8c7b460e4110e12c5e22a5b7cf32621aae6ad650c4dcf29"
 dependencies = [
  "blst",
  "byte-slice-cast",
- "ec-gpu",
  "ff",
  "group",
  "pairing",
@@ -980,21 +970,9 @@ dependencies = [
  "atty",
  "bitflags 1.3.2",
  "strsim 0.8.0",
- "textwrap 0.11.0",
+ "textwrap",
  "unicode-width 0.1.14",
  "vec_map",
-]
-
-[[package]]
-name = "clap"
-version = "3.2.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ea181bf566f71cb9a5d17a59e1871af638180a18fb0035c92ae62b705207123"
-dependencies = [
- "bitflags 1.3.2",
- "clap_lex 0.2.4",
- "indexmap 1.9.3",
- "textwrap 0.16.1",
 ]
 
 [[package]]
@@ -1015,7 +993,7 @@ checksum = "1b26884eb4b57140e4d2d93652abfa49498b938b3c9179f9fc487b0acc3edad7"
 dependencies = [
  "anstream",
  "anstyle",
- "clap_lex 0.7.4",
+ "clap_lex",
  "strsim 0.11.1",
 ]
 
@@ -1029,15 +1007,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.96",
-]
-
-[[package]]
-name = "clap_lex"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
-dependencies = [
- "os_str_bytes",
 ]
 
 [[package]]
@@ -1215,32 +1184,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a97769d94ddab943e4510d138150169a2758b5ef3eb191a9ee688de3e23ef7b3"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "criterion"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7c76e09c1aae2bc52b3d2f29e13c6572553b30c4aa1b8a49fd70de6412654cb"
-dependencies = [
- "anes",
- "atty",
- "cast",
- "ciborium",
- "clap 3.2.25",
- "criterion-plot",
- "itertools 0.10.5",
- "lazy_static",
- "num-traits",
- "oorandom",
- "plotters",
- "rayon",
- "regex",
- "serde",
- "serde_derive",
- "serde_json",
- "tinytemplate",
- "walkdir",
 ]
 
 [[package]]
@@ -1634,12 +1577,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
 
 [[package]]
-name = "ec-gpu"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd63582de2b59ea1aa48d7c1941b5d87618d95484397521b3acdfa0e1e9f5e45"
-
-[[package]]
 name = "ecdsa"
 version = "0.16.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1878,38 +1815,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "fastcrypto-zkp"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2510946ae11008ca0c5d11e8acf7168914bcc5cf5d770eae8c03ad3d1526872"
-dependencies = [
- "ark-bls12-381",
- "ark-bn254",
- "ark-ec",
- "ark-ff",
- "ark-groth16",
- "ark-relations",
- "ark-serialize",
- "ark-snark",
- "blst",
- "byte-slice-cast",
- "derive_more",
- "fastcrypto",
- "ff",
- "im",
- "itertools 0.12.1",
- "lazy_static",
- "neptune",
- "num-bigint 0.4.6",
- "once_cell",
- "reqwest",
- "schemars",
- "serde",
- "serde_json",
- "typenum",
 ]
 
 [[package]]
@@ -2657,20 +2562,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "im"
-version = "15.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0acd33ff0285af998aaf9b57342af478078f53492322fafc47450e09397e0e9"
-dependencies = [
- "bitmaps",
- "rand_core 0.6.4",
- "rand_xoshiro",
- "sized-chunks",
- "typenum",
- "version_check",
-]
-
-[[package]]
 name = "index-fixed"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2847,16 +2738,6 @@ name = "libc"
 version = "0.2.169"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5aba8db14291edd000dfcc4d620c7ebfb122c613afb886ca8803fa4e128a20a"
-
-[[package]]
-name = "libloading"
-version = "0.6.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "351a32417a12d5f7e82c368a66781e307834dae04c6ce0cd4456d52989229883"
-dependencies = [
- "cfg-if",
- "winapi",
-]
 
 [[package]]
 name = "libloading"
@@ -3090,15 +2971,6 @@ checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
 name = "memmap2"
-version = "0.5.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83faa42c0a078c393f6b29d5db232d8be22776a891f8f56e5284faee4a20b327"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "memmap2"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd3f7eed9d3848f8b98834af67102b720745c4ec028fcd0aa0239277e7de374f"
@@ -3238,7 +3110,6 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
- "rand 0.8.5",
 ]
 
 [[package]]
@@ -3466,12 +3337,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "os_str_bytes"
-version = "6.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2355d85b9a3786f481747ced0e0ff2ba35213a1f9bd406ed906554d7af805a1"
-
-[[package]]
 name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3534,7 +3399,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3e57598f73cc7e1b2ac63c79c517b31a0877cd7c402cdcaa311b5208de7a095"
 dependencies = [
  "blake2b_simd",
- "ec-gpu",
  "ff",
  "group",
  "hex",
@@ -3711,35 +3575,13 @@ checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
 
 [[package]]
 name = "pprof"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "196ded5d4be535690899a4631cc9f18cdc41b7ebf24a79400f46f48e49a11059"
-dependencies = [
- "backtrace",
- "cfg-if",
- "criterion 0.4.0",
- "findshlibs",
- "inferno",
- "libc",
- "log",
- "nix",
- "once_cell",
- "parking_lot",
- "smallvec",
- "symbolic-demangle 10.2.1",
- "tempfile",
- "thiserror",
-]
-
-[[package]]
-name = "pprof"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef5c97c51bd34c7e742402e216abdeb44d415fbe6ae41d56b114723e953711cb"
 dependencies = [
  "backtrace",
  "cfg-if",
- "criterion 0.5.1",
+ "criterion",
  "findshlibs",
  "inferno",
  "libc",
@@ -3748,7 +3590,7 @@ dependencies = [
  "once_cell",
  "parking_lot",
  "smallvec",
- "symbolic-demangle 12.13.3",
+ "symbolic-demangle",
  "tempfile",
  "thiserror",
 ]
@@ -3964,15 +3806,6 @@ name = "rand_xorshift"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d25bf25ec5ae4a3f1b92f929810509a2f53d7dca2f50b794ff57e3face536c8f"
-dependencies = [
- "rand_core 0.6.4",
-]
-
-[[package]]
-name = "rand_xoshiro"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f97cdb2a36ed4183de61b2f824cc45c9f1037f28afe0a322e9fff4c108b5aaa"
 dependencies = [
  "rand_core 0.6.4",
 ]
@@ -4632,16 +4465,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sized-chunks"
-version = "0.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16d69225bde7a69b235da73377861095455d298f2b970996eec25ddbb42b3d1e"
-dependencies = [
- "bitmaps",
- "typenum",
-]
-
-[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4760,37 +4583,14 @@ checksum = "734676eb262c623cec13c3155096e08d1f8f29adce39ba17948b18dad1e54142"
 
 [[package]]
 name = "symbolic-common"
-version = "10.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b55cdc318ede251d0957f07afe5fed912119b8c1bc5a7804151826db999e737"
-dependencies = [
- "debugid",
- "memmap2 0.5.10",
- "stable_deref_trait",
- "uuid",
-]
-
-[[package]]
-name = "symbolic-common"
 version = "12.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13a4dfe4bbeef59c1f32fc7524ae7c95b9e1de5e79a43ce1604e181081d71b0c"
 dependencies = [
  "debugid",
- "memmap2 0.9.5",
+ "memmap2",
  "stable_deref_trait",
  "uuid",
-]
-
-[[package]]
-name = "symbolic-demangle"
-version = "10.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79be897be8a483a81fff6a3a4e195b4ac838ef73ca42d348b3f722da9902e489"
-dependencies = [
- "cpp_demangle",
- "rustc-demangle",
- "symbolic-common 10.2.1",
 ]
 
 [[package]]
@@ -4801,7 +4601,7 @@ checksum = "98cf6a95abff97de4d7ff3473f33cacd38f1ddccad5c1feab435d6760300e3b6"
 dependencies = [
  "cpp_demangle",
  "rustc-demangle",
- "symbolic-common 12.13.3",
+ "symbolic-common",
 ]
 
 [[package]]
@@ -4928,12 +4728,6 @@ checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width 0.1.14",
 ]
-
-[[package]]
-name = "textwrap"
-version = "0.16.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23d434d3f8967a09480fb04132ebe0a3e088c173e6d0ee7897abbdf4eab0f8b9"
 
 [[package]]
 name = "thiserror"
@@ -5330,7 +5124,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_abi"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5347,7 +5141,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_api"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -5368,24 +5162,35 @@ dependencies = [
 
 [[package]]
 name = "tvm_assembler"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
+ "ark-ff",
+ "ark-std",
+ "base64 0.13.1",
+ "base64ct",
  "clap 4.5.27",
+ "ed25519-dalek",
  "failure",
+ "fastcrypto",
  "hex",
  "log",
+ "log4rs",
  "num",
+ "num-bigint 0.4.6",
  "num-traits",
+ "rand 0.8.5",
  "serde",
+ "serde_derive",
  "serde_json",
+ "serde_repr",
  "tvm_types",
  "tvm_vm",
 ]
 
 [[package]]
 name = "tvm_block"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -5406,7 +5211,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block_json"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "failure",
@@ -5428,7 +5233,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_cli"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -5470,7 +5275,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "aes",
  "anyhow",
@@ -5540,7 +5345,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client_processing"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "api_derive",
  "api_info",
@@ -5560,7 +5365,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_common"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "external-ip",
  "failure",
@@ -5573,7 +5378,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_debugger"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -5591,7 +5396,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_executor"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "failure",
@@ -5605,7 +5410,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_sdk"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "api_derive",
@@ -5630,7 +5435,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_struct"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "failure",
  "hex-literal",
@@ -5640,46 +5445,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "tvm_tests"
-version = "2.5.0"
-dependencies = [
- "anyhow",
- "ark-ff",
- "ark-std",
- "base64 0.13.1",
- "base64ct",
- "criterion 0.4.0",
- "diffy",
- "ed25519",
- "ed25519-dalek",
- "fastcrypto",
- "fastcrypto-zkp",
- "hex",
- "lazy_static",
- "libloading 0.6.7",
- "log",
- "log4rs",
- "num",
- "num-bigint 0.4.6",
- "num-traits",
- "pprof 0.11.1",
- "pretty_assertions",
- "rand 0.8.5",
- "serde",
- "serde_derive",
- "serde_json",
- "serde_repr",
- "similar",
- "tvm_assembler",
- "tvm_block",
- "tvm_types",
- "tvm_vm",
- "zstd",
-]
-
-[[package]]
 name = "tvm_tl_codegen"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "crc 1.8.1",
  "failure",
@@ -5693,14 +5460,14 @@ dependencies = [
 
 [[package]]
 name = "tvm_types"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "aes-ctr",
  "anyhow",
  "base64 0.21.7",
  "blst",
  "crc 3.2.1",
- "criterion 0.5.1",
+ "criterion",
  "curve25519-dalek",
  "ed25519",
  "ed25519-dalek",
@@ -5712,7 +5479,7 @@ dependencies = [
  "num",
  "num-derive",
  "num-traits",
- "pprof 0.13.0",
+ "pprof",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -5724,7 +5491,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_vm"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -5742,7 +5509,7 @@ dependencies = [
  "bls12_381",
  "blst",
  "byte-slice-cast",
- "criterion 0.5.1",
+ "criterion",
  "derive_more",
  "diffy",
  "ed25519",
@@ -5753,7 +5520,7 @@ dependencies = [
  "hex",
  "itertools 0.12.1",
  "lazy_static",
- "libloading 0.8.6",
+ "libloading",
  "log",
  "log4rs",
  "neptune",
@@ -5761,7 +5528,7 @@ dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
  "once_cell",
- "pprof 0.13.0",
+ "pprof",
  "pretty_assertions",
  "rand 0.8.5",
  "regex",
@@ -5859,7 +5626,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "update_trusted_blocks"
-version = "2.5.0"
+version = "2.6.1"
 dependencies = [
  "bincode",
  "serde",
