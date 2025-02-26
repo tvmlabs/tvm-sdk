@@ -182,6 +182,12 @@ impl MerkleUpdate {
         } else {
             let mut pruned_branches = Some(HashSet::new());
             let mut done_cells = HashMap::new();
+            // println!("MerkleUpdate::create_fast");
+            // println!("old:");
+            // println!("{:#.10}", old);
+            // println!("new:");
+            // println!("{:#.10}", new);
+            // println!("traversing new");
             let new_update_cell = MerkleProof::create_raw(
                 new,
                 &|hash| !is_visited_old(hash),
@@ -204,7 +210,7 @@ impl MerkleUpdate {
             ) {
                 used_paths_cells.insert(old.repr_hash());
             }
-
+            // println!("traversing old");
             let mut done_cells = HashMap::new();
             let old_update_cell = MerkleProof::create_raw(
                 old,
@@ -215,6 +221,10 @@ impl MerkleUpdate {
                 &mut done_cells,
             )?;
 
+            // println!("old_update_cell:");
+            // println!("{:#.10}", old_update_cell);
+            // println!("new_update_cell:");
+            // println!("{:#.10}", new_update_cell);
             Ok(MerkleUpdate {
                 old_hash: old.repr_hash(),
                 new_hash: new.repr_hash(),
@@ -432,7 +442,7 @@ impl MerkleUpdate {
                         update_child.clone()
                     }
                 }
-                _ => fail!("Unknown cell type while applying merkle update!"),
+                cell_type => fail!("{} cell type while applying merkle update!", cell_type),
             };
             child_mask |= new_child.level_mask();
             new_cell.checked_append_reference(new_child)?;
@@ -448,6 +458,10 @@ impl MerkleUpdate {
         new_cell: &Cell,
         common_pruned: &HashMap<UInt256, Cell>,
     ) -> Result<BuilderData> {
+        if new_cell.cell_type() == CellType::External {
+            fail!("External cell can not be included into Merkle update");
+        }
+
         let mut new_update_cell = BuilderData::new();
         new_update_cell.set_type(new_cell.cell_type());
         let mut level_mask = new_cell.level_mask();
@@ -477,6 +491,10 @@ impl MerkleUpdate {
         pruned_branches: &mut HashMap<UInt256, Cell>,
         mut merkle_depth: u8,
     ) -> Result<Option<BuilderData>> {
+        if old_cell.cell_type() == CellType::External {
+            fail!("External cell can not be included into Merkle update");
+        }
+        
         if old_cell.is_merkle() {
             merkle_depth += 1;
         }
