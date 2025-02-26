@@ -387,9 +387,11 @@ impl ContractCall {
                 ParamsOfWaitForTransaction {
                     abi: None,
                     message: fixed_msg,
-                    shard_block_id: "".to_string()/* result.shard_block_id */,
+                    shard_block_id: "".to_string(), // result.shard_block_id
                     send_events: true,
-                    sending_endpoints: Some(vec!["".to_string()]/* result.sending_endpoints */),
+                    sending_endpoints: Some(
+                        vec!["".to_string()], // result.sending_endpoints
+                    ),
                 },
                 callback,
             )

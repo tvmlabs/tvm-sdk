@@ -112,7 +112,9 @@ impl Error {
         )
     }
 
-    fn try_get_error_details(server_errors: &[Value]) -> (Option<String>, Option<i64>, Option<Value>) {
+    fn try_get_error_details(
+        server_errors: &[Value],
+    ) -> (Option<String>, Option<i64>, Option<Value>) {
         for error in server_errors.iter() {
             if let Some(message) = error["message"].as_str() {
                 let code = error["extensions"]["exception"]["code"]
@@ -125,8 +127,7 @@ impl Error {
     }
 
     pub fn graphql_server_error(operation: Option<&str>, errors: &[Value]) -> ClientError {
-        let (message, code, details) =
-            Self::try_get_error_details(errors);
+        let (message, code, details) = Self::try_get_error_details(errors);
         let message = match (operation, message) {
             (None, None) => "Graphql server returned error.".to_string(),
             (None, Some(message)) => format!("Graphql server returned error: {}.", message),
@@ -142,7 +143,9 @@ impl Error {
         }
 
         if let Some(mut node_error) = details {
-            if node_error["extensions"]["code"].is_string() && node_error["extensions"]["details"].is_object() {
+            if node_error["extensions"]["code"].is_string()
+                && node_error["extensions"]["details"].is_object()
+            {
                 if let Value::Object(ref mut map) = node_error {
                     map.remove("locations");
                     map.remove("path");

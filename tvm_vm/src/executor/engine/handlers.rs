@@ -394,7 +394,9 @@ impl Handlers {
                 .set(0x29, execute_calculate_validator_reward)
                 .set(0x30, execute_calculate_min_stake)
                 .set(0x31, execute_vergrth16)
-                .set(0x32, execute_poseidon_zk_login);
+                .set(0x32, execute_poseidon_zk_login)
+                .set(0x33, execute_calculate_adjustment_reward)
+                .set(0x34, execute_calculate_repcoef);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }

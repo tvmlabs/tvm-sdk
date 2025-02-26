@@ -10,9 +10,9 @@
 // limitations under the License.
 //
 
-use serde_json::Value;
 use std::sync::Arc;
-use tvm_block::Deserializable;
+
+use serde_json::Value;
 use tvm_block::GlobalCapabilities;
 use tvm_executor::BlockchainConfig;
 
@@ -44,17 +44,6 @@ pub async fn get_signature_id(
     }
 }
 
-pub(crate) fn offline_config() -> (BlockchainConfig, i32) {
-    let bytes = include_bytes!("../default_config.boc");
-    (
-        BlockchainConfig::with_config(
-            tvm_block::ConfigParams::construct_from_bytes(bytes).unwrap(),
-        )
-        .unwrap(),
-        42,
-    )
-}
-
 pub(crate) async fn get_default_params(
     _context: &Arc<ClientContext>,
 ) -> ClientResult<NetworkParams> {
@@ -63,7 +52,6 @@ pub(crate) async fn get_default_params(
         global_id,
     })
 }
-
 
 /// TODO: make it more generic
 pub(crate) fn ackinacki_network() -> ClientResult<(BlockchainConfig, i32)> {
