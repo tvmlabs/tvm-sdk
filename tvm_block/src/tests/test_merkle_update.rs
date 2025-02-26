@@ -21,6 +21,7 @@ use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
 
 use super::*;
+use crate::Account;
 use crate::Block;
 use crate::CurrencyCollection;
 use crate::Grams;
@@ -37,6 +38,8 @@ use crate::OutQueueUpdate;
 use crate::OutQueueUpdates;
 use crate::ProcessedInfoKey;
 use crate::ProcessedUpto;
+use crate::ShardAccount;
+use crate::ShardAccounts;
 use crate::ShardIdent;
 use crate::ShardState;
 use crate::ShardStateSplit;
@@ -890,4 +893,336 @@ fn test_prepare_first_update_for_wc() -> Result<()> {
     assert_eq!(queue_proof.proof.virtualize(1).repr_hash(), next_state_root.repr_hash());
 
     Ok(())
+}
+
+#[test]
+fn test_update_shard_state_with_external_cell() {
+    let mut shard_state_full = ShardStateUnsplit::default();
+    let mut shard_accounts_full = ShardAccounts::default();
+
+    for n in 5..70u8 {
+        let mut acc = generate_test_account_by_init_code_hash(false);
+        let f = CurrencyCollection::with_grams(n as u64);
+        acc.add_funds(&f).unwrap();
+        shard_accounts_full
+            .insert(
+                &UInt256::from([n].as_slice()),
+                &ShardAccount::with_params(&acc, UInt256::default(), 0, Some(Default::default()))
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+    shard_state_full.write_accounts(&shard_accounts_full).unwrap();
+    let account_id5 = UInt256::from([60].as_slice());
+    let account_id6 = UInt256::from([50].as_slice());
+
+    let create_apply_and_check = |old_state: &ShardStateUnsplit,
+                                  apply_to: &ShardStateUnsplit,
+                                  fast: bool,
+                                  modifier: &dyn Fn(
+        &mut ShardStateUnsplit,
+        &mut ShardStateUnsplit,
+    ) -> Option<ShardAccount>|
+     -> Result<MerkleUpdate> {
+        let mut old_state = old_state.clone();
+        let old_state_root = old_state.serialize().unwrap();
+        let usage_tree = UsageTree::with_params(old_state_root, true);
+        let old_state_root = usage_tree.root_cell();
+        let mut new_state = ShardStateUnsplit::construct_from_cell(old_state_root.clone()).unwrap();
+
+        let acc = modifier(&mut old_state, &mut new_state);
+
+        let update = if fast {
+            MerkleUpdate::create_fast(
+                &old_state.serialize().unwrap(),
+                &new_state.serialize().unwrap(),
+                |hash| usage_tree.contains(hash),
+            )?
+        } else {
+            MerkleUpdate::create(&old_state.serialize().unwrap(), &new_state.serialize().unwrap())?
+        };
+
+        let new_state_acc = apply_to
+            .read_accounts()
+            .unwrap()
+            .account(&account_id6.clone().into())
+            .unwrap()
+            .unwrap()
+            .read_account()
+            .unwrap();
+
+        let new_state_constructed = ShardStateUnsplit::construct_from_cell(
+            update.apply_for(&apply_to.serialize().unwrap())?,
+        )
+        .unwrap();
+        let shard_accounts = new_state_constructed.read_accounts().unwrap();
+        assert_eq!(acc, shard_accounts.account(&account_id5.clone().into()).unwrap());
+        let shard_acc = shard_accounts.account(&account_id6.clone().into()).unwrap().unwrap();
+        assert_eq!(shard_acc.read_account().unwrap(), new_state_acc);
+
+        Ok(update)
+    };
+
+    let add_balance = |_old_state: &mut ShardStateUnsplit,
+                       new_state: &mut ShardStateUnsplit|
+     -> Option<ShardAccount> {
+        let mut shard_accounts = new_state.read_accounts().unwrap();
+        let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
+        let mut acc = shard_acc.read_account().unwrap().as_struct().unwrap();
+        acc.add_funds(&CurrencyCollection::with_grams(20)).unwrap();
+        shard_acc.set_account_cell(acc.serialize().unwrap());
+        shard_accounts.insert(&account_id5, &shard_acc).unwrap();
+        new_state.write_accounts(&shard_accounts).unwrap();
+
+        Some(shard_acc)
+    };
+
+    let mut shard_accounts_ext5 = shard_accounts_full.clone();
+    let acc5_root = shard_accounts_ext5.replace_with_external(&account_id5).unwrap();
+    let mut shard_state_ext5 = shard_state_full.clone();
+    shard_state_ext5.write_accounts(&shard_accounts_ext5).unwrap();
+
+    let add_balance_ext = |_old_state: &mut ShardStateUnsplit,
+                           new_state: &mut ShardStateUnsplit|
+     -> Option<ShardAccount> {
+        let mut shard_accounts = new_state.read_accounts().unwrap();
+        let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
+        shard_acc.read_account().unwrap();
+        let mut acc = Account::construct_from_cell(acc5_root.clone()).unwrap();
+        acc.add_funds(&CurrencyCollection::with_grams(20)).unwrap();
+        shard_acc.set_account_cell(acc.serialize().unwrap());
+        shard_accounts.insert(&account_id5, &shard_acc).unwrap();
+        new_state.write_accounts(&shard_accounts).unwrap();
+
+        Some(shard_acc)
+    };
+
+    let add_balance_ext_update = |old_state: &mut ShardStateUnsplit,
+                                  new_state: &mut ShardStateUnsplit|
+     -> Option<ShardAccount> {
+        let result = add_balance_ext(old_state, new_state);
+
+        let mut shard_accounts = old_state.read_accounts().unwrap();
+        let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
+        shard_acc.set_account_cell(acc5_root.clone());
+        shard_accounts.insert(&account_id5, &shard_acc).unwrap();
+        old_state.write_accounts(&shard_accounts).unwrap();
+
+        result
+    };
+
+    let mut shard_acc = shard_accounts_ext5.account(&account_id5.clone().into()).unwrap().unwrap();
+    shard_acc.set_account_cell(acc5_root.clone());
+    shard_accounts_ext5.insert(&account_id5, &shard_acc).unwrap();
+    let mut shard_state_loaded = shard_state_ext5.clone();
+    shard_state_loaded.write_accounts(&shard_accounts_ext5).unwrap();
+
+    let mut shard_accounts_ext6 = shard_accounts_full.clone();
+    shard_accounts_ext6.replace_with_external(&account_id6).unwrap();
+    let mut shard_state_ext6 = shard_state_full.clone();
+    shard_state_ext6.write_accounts(&shard_accounts_ext6).unwrap();
+
+    let update_full_full =
+        create_apply_and_check(&shard_state_full, &shard_state_full, false, &add_balance).unwrap();
+
+    assert!(
+        create_apply_and_check(&shard_state_full, &shard_state_ext5, false, &add_balance).is_err()
+    );
+    assert!(
+        create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &add_balance_ext)
+            .is_err()
+    );
+    assert!(
+        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &add_balance_ext)
+            .is_err()
+    );
+
+    let update_ext_full = create_apply_and_check(
+        &shard_state_ext5,
+        &shard_state_full,
+        false,
+        &add_balance_ext_update,
+    )
+    .unwrap();
+    assert_eq!(update_full_full, update_ext_full);
+    assert!(
+        create_apply_and_check(
+            &shard_state_ext5,
+            &shard_state_ext5,
+            false,
+            &add_balance_ext_update
+        )
+        .is_err()
+    );
+
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_loaded, false, &add_balance)
+            .unwrap();
+    let update_ext_ext = create_apply_and_check(
+        &shard_state_ext5,
+        &shard_state_loaded,
+        false,
+        &add_balance_ext_update,
+    )
+    .unwrap();
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext6, &shard_state_full, false, &add_balance).unwrap();
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_ext6, false, &add_balance).unwrap();
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, false, &add_balance).unwrap();
+
+    assert_eq!(update_full_full, update_ext_full);
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let update_full_full =
+        create_apply_and_check(&shard_state_full, &shard_state_full, true, &add_balance).unwrap();
+
+    assert!(
+        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &add_balance_ext)
+            .is_err()
+    );
+    assert!(
+        create_apply_and_check(&shard_state_full, &shard_state_ext5, true, &add_balance).is_err()
+    );
+    assert!(
+        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &add_balance_ext)
+            .is_err()
+    );
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &add_balance_ext_update)
+            .unwrap();
+    assert_ne!(update_full_full, update_ext_full);
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &add_balance_ext_update)
+            .unwrap();
+    assert_ne!(update_full_full, update_ext_ext);
+
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_loaded, true, &add_balance).unwrap();
+    let update_ext_ext = create_apply_and_check(
+        &shard_state_ext5,
+        &shard_state_loaded,
+        true,
+        &add_balance_ext_update,
+    )
+    .unwrap();
+    assert_eq!(update_full_full, update_full_ext);
+    assert_ne!(update_full_full, update_ext_ext);
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext6, &shard_state_full, true, &add_balance).unwrap();
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_ext6, true, &add_balance).unwrap();
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, true, &add_balance).unwrap();
+
+    assert_eq!(update_full_full, update_ext_full);
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let remove = |_old_state: &mut ShardStateUnsplit,
+                  new_state: &mut ShardStateUnsplit|
+     -> Option<ShardAccount> {
+        let mut shard_accounts = new_state.read_accounts().unwrap();
+        let shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
+        shard_acc.read_account().unwrap();
+        shard_accounts.remove(&account_id5).unwrap();
+        new_state.write_accounts(&shard_accounts).unwrap();
+
+        None
+    };
+
+    let remove_update = |old_state: &mut ShardStateUnsplit,
+                         new_state: &mut ShardStateUnsplit|
+     -> Option<ShardAccount> {
+        remove(old_state, new_state);
+
+        let mut shard_accounts = old_state.read_accounts().unwrap();
+        let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
+        shard_acc.set_account_cell(acc5_root.clone());
+        shard_accounts.insert(&account_id5, &shard_acc).unwrap();
+        old_state.write_accounts(&shard_accounts).unwrap();
+
+        None
+    };
+
+    let update_full_full =
+        create_apply_and_check(&shard_state_full, &shard_state_full, false, &remove).unwrap();
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_ext5, false, &remove).unwrap();
+    assert_eq!(update_full_full, update_full_ext);
+
+    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &remove).is_err());
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &remove_update)
+            .unwrap();
+    assert_eq!(update_full_full, update_ext_full);
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &remove_update)
+            .unwrap();
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_loaded, false, &remove_update)
+            .unwrap();
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext5, &shard_state_loaded, false, &remove_update)
+            .unwrap();
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext6, &shard_state_full, false, &remove).unwrap();
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_ext6, false, &remove).unwrap();
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, false, &remove).unwrap();
+
+    assert_eq!(update_full_full, update_ext_full);
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let update_full_full =
+        create_apply_and_check(&shard_state_full, &shard_state_full, true, &remove).unwrap();
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_ext5, true, &remove).unwrap();
+    assert_eq!(update_full_full, update_full_ext);
+
+    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &remove).is_err());
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &remove_update).unwrap();
+    assert_eq!(update_full_full, update_ext_full);
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &remove_update).unwrap();
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_loaded, true, &remove_update)
+            .unwrap();
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext5, &shard_state_loaded, true, &remove_update)
+            .unwrap();
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
+
+    let update_ext_full =
+        create_apply_and_check(&shard_state_ext6, &shard_state_full, true, &remove).unwrap();
+    let update_full_ext =
+        create_apply_and_check(&shard_state_full, &shard_state_ext6, true, &remove).unwrap();
+    let update_ext_ext =
+        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, true, &remove).unwrap();
+
+    assert_eq!(update_full_full, update_ext_full);
+    assert_eq!(update_full_full, update_full_ext);
+    assert_eq!(update_full_full, update_ext_ext);
 }

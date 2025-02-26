@@ -216,6 +216,16 @@ impl From<Vec<u8>> for UInt256 {
     }
 }
 
+impl TryFrom<SliceData> for UInt256 {
+    type Error = Error;
+
+    fn try_from(mut value: SliceData) -> Result<Self> {
+        let mut result = Self::default();
+        value.get_next_bytes_to_slice(result.0.as_mut())?;
+        Ok(result)
+    }
+}
+
 impl FromStr for UInt256 {
     type Err = Error;
 

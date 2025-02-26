@@ -1804,7 +1804,7 @@ impl AccountBlock {
             // otherwice it is need to calculate Hash update
             let old_hash = old_state
                 .read_accounts()?
-                .get_serialized(self.account_addr.clone())?
+                .account(&self.account_addr)?
                 .ok_or_else(|| {
                     BlockError::Other(format!(
                         "Account should be in old shard state {:x}",
@@ -1815,7 +1815,7 @@ impl AccountBlock {
                 .repr_hash();
             let new_hash = new_state
                 .read_accounts()?
-                .get_serialized(self.account_addr.clone())?
+                .account(&self.account_addr)?
                 .ok_or_else(|| {
                     BlockError::Other(format!(
                         "Account should be in new shard state {:x}",

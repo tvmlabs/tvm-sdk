@@ -18,6 +18,7 @@ use num::BigInt;
 use num_traits::sign::Signed;
 use serde_json::Map;
 use serde_json::Value;
+use shard_accounts::ShardAccounts;
 use tvm_api::ton::ton_node::RempMessageLevel;
 use tvm_api::ton::ton_node::RempMessageStatus;
 use tvm_api::ton::ton_node::RempReceipt;
@@ -1318,8 +1319,8 @@ fn serialize_shard_accounts(
     mode: SerializationMode,
 ) -> Result<()> {
     let mut accounts = Vec::new();
-    shard_accounts.iterate_objects(&mut |ref mut value: ShardAccount| -> Result<bool> {
-        let account = value.read_account()?;
+    shard_accounts.iterate_accounts(|_, shard_acc, _| -> Result<bool> {
+        let account = shard_acc.read_account()?.as_struct()?;
         let mut boc1 = None;
         if account.init_code_hash().is_some() {
             let mut builder = BuilderData::new();
@@ -1330,9 +1331,10 @@ fn serialize_shard_accounts(
         let account_set = AccountSerializationSet {
             account,
             prev_code_hash: None,
-            boc: write_boc(&value.account_cell())?,
+            boc: write_boc(&shard_acc.account_cell())?,
             boc1,
             proof: None,
+            dapp_id: shard_acc.get_dapp_id().cloned(),
         };
         let mut account = db_serialize_account_ex("id", &account_set, mode)?;
         account.remove("json_version");
@@ -2031,6 +2033,7 @@ pub struct AccountSerializationSet {
     pub boc: Vec<u8>,
     pub boc1: Option<Vec<u8>>,
     pub proof: Option<Vec<u8>>,
+    pub dapp_id: Option<UInt256>,
 }
 
 pub fn debug_account(account: Account) -> Result<String> {
@@ -2040,6 +2043,7 @@ pub fn debug_account(account: Account) -> Result<String> {
         boc: Vec::new(),
         boc1: None,
         proof: None,
+        dapp_id: None,
     };
     let map = db_serialize_account_ex("id", &set, SerializationMode::Debug)?;
     Ok(format!("{:#}", serde_json::json!(map)))
@@ -2063,12 +2067,10 @@ pub fn db_serialize_account_ex(
         serialize_field(&mut map, id_str, addr.to_string());
         serialize_field(&mut map, "workchain_id", addr.get_workchain_id());
     }
-    if let Some(dapp_id) = set.account.get_dapp_id() {
-        if let Some(dapp_id_in) = dapp_id {
-            serialize_field(&mut map, "dapp_id", dapp_id_in.as_hex_string());
-        } else {
-            serialize_field(&mut map, "dapp_id", "None".to_string());
-        }
+    if let Some(dapp_id) = &set.dapp_id {
+        serialize_field(&mut map, "dapp_id", dapp_id.as_hex_string());
+    } else {
+        serialize_field(&mut map, "dapp_id", "None".to_string());
     }
     serialize_field(&mut map, "boc", base64_encode(&set.boc));
     if let Some(boc1) = set.boc1.as_ref() {

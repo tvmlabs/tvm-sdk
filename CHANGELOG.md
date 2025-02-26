@@ -1,6 +1,13 @@
 # Release Notes
 
 All notable changes to this project will be documented in this file.
+
+## [2.6.0] – 2025-02-19
+
+### New
+
+`dapp_id` is moved form `Account` structure to the wrapping structure `ShardAccount`
+
 ## [2.5.0] – 2025-02-19
 
 ### New

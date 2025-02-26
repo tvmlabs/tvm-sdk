@@ -58,7 +58,7 @@ fn test_reserve_action_serde() {
         CurrencyCollection::with_grams(12345),
     ));
     test_action_serde_equality(OutAction::new_reserve(
-        RESERVE_EXACTLY | RESERVE_IGNORE_ERROR,
+        RESERVE_EXACTLY,
         CurrencyCollection::with_grams(54321),
     ));
 }

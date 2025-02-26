@@ -199,6 +199,7 @@ macro_rules! err {
     };
 }
 
+#[cfg(test)]
 macro_rules! custom_err {
     ($code:expr, $msg:literal, $($arg:tt)*) => {
         return Err(

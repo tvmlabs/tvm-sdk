@@ -15,9 +15,7 @@ use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
-use tvm_block::ShardAccount;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -63,12 +61,6 @@ use crate::types::Status;
 
 pub(super) type ExecuteHandler = fn(&mut Engine) -> Status;
 
-pub trait IndexProvider: Send + Sync {
-    fn get_accounts_by_init_code_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
-    fn get_accounts_by_code_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
-    fn get_accounts_by_data_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
-}
-
 pub(super) struct SliceProto {
     data_window: Range<usize>,
     references_window: Range<usize>,
@@ -102,7 +94,6 @@ pub struct Engine {
     pub(in crate::executor) cmd: InstructionExt,
     pub(in crate::executor) ctrls: SaveList,
     pub(in crate::executor) libraries: Vec<HashmapE>, // 256 bit dictionaries
-    pub(in crate::executor) index_provider: Option<Arc<dyn IndexProvider>>,
     pub(in crate::executor) modifiers: BehaviorModifiers,
     // SliceData::load_cell() is faster than trying to cache SliceData for each
     // visited cell with HashMap<UInt256, SliceData>
@@ -260,7 +251,6 @@ impl Engine {
             cmd: InstructionExt::new("NOP"),
             ctrls: SaveList::new(),
             libraries: Vec::new(),
-            index_provider: None,
             #[cfg(not(feature = "signature_no_check"))]
             modifiers: BehaviorModifiers,
             #[cfg(feature = "signature_no_check")]
@@ -1063,10 +1053,6 @@ impl Engine {
         (self.trace & trace_mask) == trace_mask
     }
 
-    pub fn set_index_provider(&mut self, index_provider: Arc<dyn IndexProvider>) {
-        self.index_provider = Some(index_provider)
-    }
-
     pub fn behavior_modifiers(&self) -> &BehaviorModifiers {
         &self.modifiers
     }
@@ -1714,12 +1700,5 @@ impl Engine {
             }
         }
         Ok(None)
-    }
-
-    pub(crate) fn read_config_param<T: Deserializable>(&mut self, index: i32) -> Result<T> {
-        match self.get_config_param(index)? {
-            Some(cell) => T::construct_from_cell(cell),
-            None => err!("Cannot get config param {}", index),
-        }
     }
 }
