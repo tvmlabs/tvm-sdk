@@ -38,6 +38,8 @@ pub use writer::Units;
 
 pub mod disasm;
 
+pub mod instructions_tests;
+
 // Basic types *****************************************************************
 /// Operation Compilation result
 type CompileResult = Result<(), OperationError>;
