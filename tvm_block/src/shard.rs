@@ -25,7 +25,6 @@ use tvm_types::UInt256;
 use tvm_types::error;
 use tvm_types::fail;
 
-use crate::Account;
 use crate::CopyleftRewards;
 use crate::Deserializable;
 use crate::IntermediateAddress;
@@ -38,8 +37,6 @@ use crate::config_params::CatchainConfig;
 use crate::define_HashmapE;
 use crate::envelope_message::FULL_BITS;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentation;
-use crate::hashmapaug::HashmapAugType;
 use crate::master::BlkMasterInfo;
 use crate::master::LibDescr;
 use crate::master::McStateExtra;
@@ -929,9 +926,8 @@ impl ShardStateUnsplit {
     }
 
     pub fn insert_account(&mut self, account_id: &UInt256, acc: &ShardAccount) -> Result<()> {
-        let account = acc.read_account()?;
         let mut accounts = self.read_accounts()?;
-        accounts.set(account_id, acc, &account.aug()?)?;
+        accounts.insert(account_id, acc)?;
         self.write_accounts(&accounts)
     }
 
@@ -1055,78 +1051,6 @@ impl ShardStateUnsplit {
             })?
             .config
             .read_cur_validator_set_and_cc_conf()
-    }
-
-    fn update_smc_internal(
-        &mut self,
-        address: &UInt256,
-        op: impl FnOnce(&mut Account) -> Result<()>,
-    ) -> Result<()> {
-        let mut accounts = self.read_accounts()?;
-        let mut shard_smc =
-            accounts.get(address)?.ok_or_else(|| error!("SMC {:x} isn't present", address))?;
-        let mut smc = shard_smc.read_account()?;
-        op(&mut smc)?;
-        shard_smc.write_account(&smc)?;
-        accounts.set(address, &shard_smc, &smc.aug()?)?;
-        self.write_accounts(&accounts)
-    }
-
-    pub fn update_smc(
-        &mut self,
-        address: &UInt256,
-        code: Option<&Cell>,
-        data: Option<&Cell>,
-    ) -> Result<()> {
-        self.update_smc_internal(address, |smc| {
-            if let Some(code) = code {
-                smc.set_code(code.clone());
-            }
-            if let Some(data) = data {
-                smc.set_data(data.clone());
-            }
-            Ok(())
-        })
-    }
-
-    pub fn update_config_smc(&mut self) -> Result<()> {
-        self.update_config_smc_with_code(None)
-    }
-
-    pub fn update_config_smc_with_code(&mut self, new_code: Option<Cell>) -> Result<()> {
-        let config = self
-            .read_custom()?
-            .ok_or_else(|| error!("masterchain state must contain config"))?
-            .config;
-        let address = config.config_address()?;
-        self.update_smc_internal(&address, |smc| {
-            smc.update_config_smc(&config)?;
-            if let Some(new_code) = new_code {
-                smc.set_code(new_code);
-            }
-            Ok(())
-        })
-    }
-
-    pub fn update_elector_smc(
-        &mut self,
-        new_code: Option<Cell>,
-        new_data: Option<Cell>,
-    ) -> Result<()> {
-        let config = self
-            .read_custom()?
-            .ok_or_else(|| error!("masterchain state must contain config"))?
-            .config;
-        let address = config.elector_address()?;
-        self.update_smc_internal(&address, |smc| {
-            if let Some(new_code) = new_code {
-                smc.set_code(new_code);
-            }
-            if let Some(new_data) = new_data {
-                smc.set_data(new_data);
-            }
-            Ok(())
-        })
     }
 }
 
