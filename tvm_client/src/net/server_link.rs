@@ -648,27 +648,6 @@ impl ServerLink {
         query: &GraphQLQuery,
         endpoint: Option<&Endpoint>,
     ) -> ClientResult<Value> {
-        let mut result = self.execute_query(query, endpoint).await;
-
-        if let Err(ref err) = result {
-            if let Some(active_bp) = self.get_active_bp(err).filter(|bp| !bp.is_empty()) {
-                let mut endpoint = endpoint.cloned();
-                if let Some(ref mut ep) = endpoint {
-                    // resend to the first BP in list
-                    ep.query_url = active_bp[0].clone();
-                    result = self.execute_query(query, endpoint.as_ref()).await;
-                }
-            }
-        }
-
-        result
-    }
-
-    async fn execute_query(
-        &self,
-        query: &GraphQLQuery,
-        endpoint: Option<&Endpoint>,
-    ) -> ClientResult<Value> {
         match self.config.queries_protocol {
             NetworkQueriesProtocol::HTTP => self.query_http(query, endpoint).await,
             NetworkQueriesProtocol::WS => self.query_ws(query).await,
@@ -761,14 +740,41 @@ impl ServerLink {
         endpoint: Option<&Endpoint>,
         thread_id: ThreadIdentifier,
     ) -> ClientResult<Value> {
-        let message = ExtMessage {
+        let thread_id = Some(thread_id.to_string());
+        let mut message = ExtMessage {
             id: base64_encode(key),
             body: base64_encode(value),
             expireAt: None,
-            threadId: Some(thread_id.to_string()),
+            threadId: thread_id,
         };
 
-        self.query(&GraphQLQuery::with_send_message(&message), endpoint).await
+        let mut endpoint = endpoint.cloned();
+        let query = GraphQLQuery::with_send_message(&message);
+        let result = self.query(&query, endpoint.as_ref()).await;
+
+        let Err(ref err) = result else { return result };
+
+        let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
+            return result
+        };
+
+        let Some(code) = ext.get("code").and_then(|c| c.as_str()) else { return result };
+
+        if !["WRONG_PRODUCER", "THREAD_MISMATCH"].contains(&code) { return result };
+
+        let (real_thread_id, redirect_url) = err.get_redirection_data();
+        if real_thread_id.is_some() {
+            message.set_thread_id(real_thread_id);
+        }
+
+        if let Some(url) = redirect_url {
+            if let Some(ep) = endpoint.as_mut() {
+                ep.query_url = url;
+                log::error!("Resending request to {}", ep.query_url);
+            }
+        }
+
+        self.query(&GraphQLQuery::with_send_message(&message), endpoint.as_ref()).await
     }
 
     pub async fn send_messages(
@@ -847,24 +853,8 @@ impl ServerLink {
         self.state.invalidate_querying_endpoint().await
     }
 
-    fn get_active_bp(&self, err: &ClientError) -> Option<Vec<String>> {
-        let ext = err.data.get("node_error")?.get("extensions")?;
-        let result = if ext.get("code")?.as_str()? == "WRONG_PRODUCER" {
-            let producers = ext.get("details")?.get("producers")?.as_array()?;
-
-            Some(producers.iter()
-                .filter_map(|v| v.as_str().map(|s| {
-                    if let Some(pos) = s.find(':') {
-                        format!("http://{}/graphql", &s[..pos])
-                    } else {
-                        s.to_string()
-                    }
-                }))
-                .collect::<Vec<String>>())
-        } else {
-            None
-        };
-
-        result
-    }
 }
+
+// #[cfg(test)]
+// #[path = "tests/test_server_link.rs"]
+// mod tests;

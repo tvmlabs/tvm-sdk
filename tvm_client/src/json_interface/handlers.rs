@@ -219,7 +219,7 @@ fn check_type(
 fn get_incorrect_enum_errors(
     field_name: &str,
     class_name: &Option<&str>,
-    types: &Vec<Field>,
+    types: &[Field],
     errors: &mut Vec<String>,
     suggest_use_helper_for: &mut Vec<&'static str>,
 ) {
