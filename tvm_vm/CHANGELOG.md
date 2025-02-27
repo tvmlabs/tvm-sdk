@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Version 2.6.0
+## Version 2.7.0
 
 Added VM execution time control parameters:
 
