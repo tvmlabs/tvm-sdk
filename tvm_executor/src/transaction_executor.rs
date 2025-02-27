@@ -16,6 +16,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
+use std::time::Duration;
+use std::time::Instant;
 
 use tvm_block::AccStatusChange;
 use tvm_block::Account;
@@ -69,9 +71,9 @@ use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::error;
 use tvm_types::fail;
+use tvm_vm::error::TvmError;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::BehaviorModifiers;
-use tvm_vm::executor::IndexProvider;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::token::INFINITY_CREDIT;
@@ -122,16 +124,17 @@ pub struct ExecuteParams {
     pub seed_block: UInt256,
     pub debug: bool,
     pub trace_callback: Option<Arc<tvm_vm::executor::TraceCallback>>,
-    pub index_provider: Option<Arc<dyn IndexProvider>>,
     pub behavior_modifiers: Option<BehaviorModifiers>,
     pub block_version: u32,
     #[cfg(feature = "signature_with_id")]
     pub signature_id: i32,
     pub vm_execution_is_block_related: Arc<Mutex<bool>>,
     pub block_collation_was_finished: Arc<Mutex<bool>>,
-    pub src_dapp_id: Option<UInt256>,
+    pub dapp_id: Option<UInt256>,
     pub available_credit: i128,
     pub is_same_thread_id: bool,
+    pub termination_deadline: Option<Instant>,
+    pub execution_timeout: Option<Duration>,
 }
 
 pub struct ActionPhaseResult {
@@ -165,16 +168,17 @@ impl Default for ExecuteParams {
             seed_block: UInt256::default(),
             debug: false,
             trace_callback: None,
-            index_provider: None,
             behavior_modifiers: None,
             block_version: 0,
             #[cfg(feature = "signature_with_id")]
             signature_id: 0,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
-            src_dapp_id: None,
+            dapp_id: None,
             available_credit: 0,
             is_same_thread_id: false,
+            termination_deadline: None,
+            execution_timeout: None,
         }
     }
 }
@@ -202,8 +206,7 @@ pub trait TransactionExecutor {
             None => false,
             _ => true,
         };
-        let src_dapp_id = params.src_dapp_id.clone();
-        log::trace!(target: "executor", "Src_dapp_id {:?}, previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", src_dapp_id, is_previous_state_active, account, account.state(), minted_shell);
+        log::trace!(target: "executor", "previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
             self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
@@ -212,21 +215,6 @@ pub trait TransactionExecutor {
             account.update_storage_stat()?;
         }
         log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
-        if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
-            if !is_previous_state_active {
-                if let Some(message) = in_msg {
-                    if message.int_header().is_some() {
-                        if let Some(dapp_id) = src_dapp_id.clone() {
-                            account.set_dapp_id(Some(dapp_id.clone()));
-                        }
-                    } else {
-                        account.set_dapp_id(Some(
-                            account.get_id().unwrap().get_bytestring(0).as_slice().into(),
-                        ));
-                    }
-                }
-            }
-        }
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
@@ -560,6 +548,8 @@ pub trait TransactionExecutor {
         .set_libraries(libs)
         .set_gas(gas)
         .set_debug(params.debug)
+        .set_termination_deadline(params.termination_deadline)
+        .set_execution_timeout(params.execution_timeout)
         .set_block_related_flags(
             params.vm_execution_is_block_related.clone(),
             params.block_collation_was_finished.clone(),
@@ -582,6 +572,9 @@ pub trait TransactionExecutor {
         match result {
             Err(err) => {
                 log::debug!(target: "executor", "VM terminated with exception: {}", err);
+                if let Some(TvmError::TerminationDeadlineReached) = err.downcast_ref() {
+                    fail!(ExecutorError::TerminationDeadlineReached);
+                }
                 let exception = tvm_exception(err)?;
                 vm_phase.exit_code = if let Some(code) = exception.custom_code() {
                     code
@@ -1879,7 +1872,6 @@ fn account_from_message(
                 if check_libraries(init, disable_set_lib, text, msg) {
                     return Account::active_by_init_code_hash(
                         hdr.dst.clone(),
-                        None,
                         msg_remaining_balance.clone(),
                         0,
                         init.clone(),

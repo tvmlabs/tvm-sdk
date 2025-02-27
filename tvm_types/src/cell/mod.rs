@@ -15,6 +15,7 @@ use std::collections::HashSet;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::{self};
+use std::io::Cursor;
 use std::io::ErrorKind;
 use std::io::Read;
 use std::io::Write;
@@ -47,6 +48,13 @@ pub const MAX_LEVEL: usize = 3;
 pub const MAX_LEVEL_MASK: u8 = 7;
 pub const MAX_DEPTH: u16 = u16::MAX - 1;
 
+// type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
+// len) (1) + max tree cells count (1) + max tree bits count (1)
+const EXTERNAL_CELL_MIN_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 2;
+// type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
+// len) (1) + max tree cells count (8) + max tree bits count (8)
+const EXTERNAL_CELL_MAX_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 8 * 2;
+
 // recommended maximum depth, this value is safe for stack. Use custom stack
 // size to use bigger depths (see `test_max_depth`).
 pub const MAX_SAFE_DEPTH: u16 = 2048;
@@ -71,6 +79,7 @@ pub enum CellType {
     MerkleProof,
     MerkleUpdate,
     Big,
+    External,
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Copy, Hash)]
@@ -183,6 +192,7 @@ impl TryFrom<u8> for CellType {
             3 => CellType::MerkleProof,
             4 => CellType::MerkleUpdate,
             5 => CellType::Big,
+            6 => CellType::External,
             0xff => CellType::Ordinary,
             _ => fail!("unknown cell type {}", num),
         };
@@ -200,6 +210,7 @@ impl From<CellType> for u8 {
             CellType::MerkleProof => 3,
             CellType::MerkleUpdate => 4,
             CellType::Big => 5,
+            CellType::External => 6,
         }
     }
 }
@@ -213,6 +224,7 @@ impl fmt::Display for CellType {
             CellType::MerkleProof => "Merkle proof",
             CellType::MerkleUpdate => "Merkle update",
             CellType::Big => "Big",
+            CellType::External => "External",
             CellType::Unknown => "Unknown",
         };
         f.write_str(msg)
@@ -269,6 +281,10 @@ pub trait CellImpl: Sync + Send {
 
     fn downcast_usage(&self) -> Cell {
         unreachable!("Function can be called only for UsageCell")
+    }
+
+    fn to_external(&self) -> Result<Arc<dyn CellImpl>> {
+        fail!("Cell can not be converted to external")
     }
 }
 
@@ -592,6 +608,10 @@ impl Cell {
 
     fn tree_cell_count(&self) -> u64 {
         self.0.tree_cell_count()
+    }
+
+    pub fn to_external(&self) -> Result<Cell> {
+        self.0.to_external().map(Cell::with_cell_impl_arc)
     }
 }
 
@@ -1173,8 +1193,12 @@ impl CellData {
                 depths,
             )?
         };
-        let hashes_count =
-            if cell_type == CellType::PrunedBranch { 1 } else { level(&buffer) as usize + 1 };
+        let hashes_count = if cell_type == CellType::PrunedBranch || cell_type == CellType::External
+        {
+            1
+        } else {
+            level(&buffer) as usize + 1
+        };
         let allocate_for_hashes = (!store_hashes) as usize * hashes_count;
         let mut hashes_depths = Vec::with_capacity(allocate_for_hashes);
         match (store_hashes, hashes, depths) {
@@ -1270,6 +1294,11 @@ impl CellData {
                 index = 0;
             }
         }
+        // external cell has only representation hash
+        if self.cell_type() == CellType::External {
+            let offset = 1;
+            return &self.data()[offset..offset + SHA256_SIZE];
+        }
         if self.store_hashes() {
             hash(self.buf.unbounded_data(), index)
         } else {
@@ -1289,6 +1318,12 @@ impl CellData {
             } else {
                 index = 0;
             }
+        }
+        // external cell stores only representation depth
+        if self.cell_type() == CellType::External {
+            let offset = 1 + SHA256_SIZE;
+            let data = self.data();
+            return ((data[offset] as u16) << 8) | (data[offset + 1] as u16);
         }
         if self.store_hashes() {
             depth(self.buf.unbounded_data(), index)
@@ -1620,6 +1655,45 @@ impl DataCell {
             CellType::Big => {
                 // all checks were performed before finalization
             }
+            CellType::External => {
+                // type + hash + depth + (tree cells count len | tree bits count len) + tree
+                // cells count + tree bits count
+                let min_required_len = 8 * (EXTERNAL_CELL_MIN_SIZE);
+                if bit_len < min_required_len {
+                    fail!("fail creating external cell: bit_len {} < {}", bit_len, min_required_len)
+                }
+                if !self.references.is_empty() {
+                    fail!("fail creating external cell: references {} != 0", self.references.len())
+                }
+                let lengnts_offset = 1 + SHA256_SIZE + 2;
+                let mut reader = Cursor::new(&self.data()[lengnts_offset..]);
+                let lengts = reader.read_byte()?;
+                let tree_cells_count_len = (lengts >> 4) as usize;
+                let tree_bits_count_len = (lengts & 0x0F) as usize;
+
+                if bit_len != 8 * (lengnts_offset + 1 + tree_bits_count_len + tree_cells_count_len)
+                {
+                    fail!(
+                        "fail creating external cell: bit_len {} != {}",
+                        bit_len,
+                        8 * (lengnts_offset + 1 + tree_bits_count_len + tree_cells_count_len)
+                    )
+                }
+
+                let mut buffer = [0u8; 8];
+                reader.read(&mut buffer[tree_cells_count_len..])?;
+                let tree_cell_count = u64::from_be_bytes(buffer);
+                let mut buffer = [0u8; 8];
+                reader.read(&mut buffer[tree_bits_count_len..])?;
+                let tree_bits_count = u64::from_be_bytes(buffer);
+
+                drop(reader);
+                self.tree_bits_count = tree_bits_count;
+                self.tree_cell_count = tree_cell_count;
+
+                // hashes are not calculated for external cell
+                return Ok(());
+            }
             CellType::Unknown => {
                 fail!("fail creating unknown cell")
             }
@@ -1638,6 +1712,7 @@ impl DataCell {
             CellType::MerkleProof => LevelMask::for_merkle_cell(children_mask),
             CellType::MerkleUpdate => LevelMask::for_merkle_cell(children_mask),
             CellType::Big => LevelMask::with_mask(0),
+            CellType::External => LevelMask::with_mask(0),
             CellType::Unknown => fail!(ExceptionCode::RangeCheckError),
         };
         if self.cell_data.level_mask() != level_mask {
@@ -1792,6 +1867,40 @@ impl CellImpl for DataCell {
     fn tree_cell_count(&self) -> u64 {
         self.tree_cell_count
     }
+
+    fn to_external(&self) -> Result<Arc<dyn CellImpl>> {
+        if self.cell_type() != CellType::Ordinary && self.cell_type() != CellType::Big {
+            fail!("Only ordinary and big cells can be converted to external")
+        }
+
+        let mut data = [0u8; EXTERNAL_CELL_MAX_SIZE];
+        let mut cursor = std::io::Cursor::new(data.as_mut());
+        cursor.write_all(&[u8::from(CellType::External)])?;
+        cursor.write_all(self.hash(MAX_LEVEL).as_slice())?;
+        cursor.write_all(&self.depth(MAX_LEVEL).to_be_bytes())?;
+
+        let tree_cells_count = self.tree_cell_count.to_be_bytes();
+        let tree_cells_count_len = 8 - self.tree_cell_count.leading_zeros() as u8 / 8;
+        let tree_bits_count = self.tree_bits_count.to_be_bytes();
+        let tree_bits_count_len = 8 - self.tree_bits_count.leading_zeros() as u8 / 8;
+        cursor.write_all(&[(tree_cells_count_len << 4) | tree_bits_count_len])?;
+        cursor.write_all(&tree_cells_count[8 - tree_cells_count_len as usize..])?;
+        cursor.write_all(&tree_bits_count[8 - tree_bits_count_len as usize..])?;
+        cursor.write_all(&[0x80])?;
+        let size = cursor.position() as usize;
+
+        let cell = DataCell::with_params(
+            vec![],
+            &cursor.into_inner()[..size],
+            CellType::External,
+            0,
+            None,
+            None,
+            None,
+        )?;
+
+        Ok(Arc::new(cell) as Arc<dyn CellImpl>)
+    }
 }
 
 #[derive(Clone)]
@@ -1905,6 +2014,14 @@ impl CellImpl for UsageCell {
 
     fn downcast_usage(&self) -> Cell {
         self.cell.clone()
+    }
+
+    fn to_external(&self) -> Result<Arc<dyn CellImpl>> {
+        Ok(Arc::new(UsageCell::new(
+            self.cell.to_external()?,
+            self.visit_on_load,
+            self.visited.clone(),
+        )))
     }
 }
 

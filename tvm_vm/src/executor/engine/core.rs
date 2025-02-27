@@ -14,10 +14,10 @@ use std::collections::HashSet;
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Duration;
+use std::time::Instant;
 
-use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
-use tvm_block::ShardAccount;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -63,12 +63,6 @@ use crate::types::Status;
 
 pub(super) type ExecuteHandler = fn(&mut Engine) -> Status;
 
-pub trait IndexProvider: Send + Sync {
-    fn get_accounts_by_init_code_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
-    fn get_accounts_by_code_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
-    fn get_accounts_by_data_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
-}
-
 pub(super) struct SliceProto {
     data_window: Range<usize>,
     references_window: Range<usize>,
@@ -102,7 +96,6 @@ pub struct Engine {
     pub(in crate::executor) cmd: InstructionExt,
     pub(in crate::executor) ctrls: SaveList,
     pub(in crate::executor) libraries: Vec<HashmapE>, // 256 bit dictionaries
-    pub(in crate::executor) index_provider: Option<Arc<dyn IndexProvider>>,
     pub(in crate::executor) modifiers: BehaviorModifiers,
     // SliceData::load_cell() is faster than trying to cache SliceData for each
     // visited cell with HashMap<UInt256, SliceData>
@@ -127,6 +120,8 @@ pub struct Engine {
     signature_id: i32,
     vm_execution_is_block_related: Arc<Mutex<bool>>,
     block_collation_was_finished: Arc<Mutex<bool>>,
+    termination_deadline: Option<Instant>,
+    execution_timeout: Option<Duration>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -260,7 +255,6 @@ impl Engine {
             cmd: InstructionExt::new("NOP"),
             ctrls: SaveList::new(),
             libraries: Vec::new(),
-            index_provider: None,
             #[cfg(not(feature = "signature_no_check"))]
             modifiers: BehaviorModifiers,
             #[cfg(feature = "signature_no_check")]
@@ -286,6 +280,8 @@ impl Engine {
             signature_id: 0,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
+            termination_deadline: None,
+            execution_timeout: None,
         }
     }
 
@@ -296,6 +292,14 @@ impl Engine {
     ) {
         self.vm_execution_is_block_related = vm_execution_is_block_related;
         self.block_collation_was_finished = block_collation_was_finished;
+    }
+
+    pub fn set_termination_deadline(&mut self, deadline: Option<Instant>) {
+        self.termination_deadline = deadline;
+    }
+
+    pub fn set_execution_timeout(&mut self, timeout: Option<Duration>) {
+        self.execution_timeout = timeout;
     }
 
     pub fn mark_execution_as_block_related(&mut self) -> Status {
@@ -610,6 +614,11 @@ impl Engine {
     }
 
     pub fn execute(&mut self) -> Result<i32> {
+        let deadline =
+            match (self.termination_deadline, self.execution_timeout.map(|x| Instant::now() + x)) {
+                (Some(a), Some(b)) => Some(a.min(b)),
+                (a, b) => a.or(b),
+            };
         self.trace_info(EngineTraceInfoType::Start, 0, None);
         let result = loop {
             if let Some(result) = self.seek_next_cmd()? {
@@ -617,22 +626,29 @@ impl Engine {
             }
             let gas = self.gas_used();
             self.cmd_code = SliceProto::from(self.cc.code());
-            let execution_result = match HANDLERS_CP0.get_handler(self) {
-                Err(err) => {
-                    self.basic_use_gas(8);
-                    Some(err)
+            let execution_result = if is_deadline_reached(deadline) {
+                if is_deadline_reached(self.termination_deadline) {
+                    return Err(TvmError::TerminationDeadlineReached.into());
                 }
-                Ok(handler) => match handler(self) {
-                    Err(e) => Some(update_error_description(e, |e| {
-                        format!(
-                            "CMD: {}{} err: {}",
-                            self.cmd.proto.name_prefix.unwrap_or_default(),
-                            self.cmd.proto.name,
-                            e
-                        )
-                    })),
-                    Ok(_) => self.gas.check_gas_remaining().err(),
-                },
+                Some(exception!(ExceptionCode::ExecutionTimeout, "execution_timeout"))
+            } else {
+                match HANDLERS_CP0.get_handler(self) {
+                    Err(err) => {
+                        self.basic_use_gas(8);
+                        Some(err)
+                    }
+                    Ok(handler) => match handler(self) {
+                        Err(e) => Some(update_error_description(e, |e| {
+                            format!(
+                                "CMD: {}{} err: {}",
+                                self.cmd.proto.name_prefix.unwrap_or_default(),
+                                self.cmd.proto.name,
+                                e
+                            )
+                        })),
+                        Ok(_) => self.gas.check_gas_remaining().err(),
+                    },
+                }
             };
             self.trace_info(EngineTraceInfoType::Normal, gas, None);
             self.cmd.clear();
@@ -1061,10 +1077,6 @@ impl Engine {
 
     pub fn trace_bit(&self, trace_mask: u8) -> bool {
         (self.trace & trace_mask) == trace_mask
-    }
-
-    pub fn set_index_provider(&mut self, index_provider: Arc<dyn IndexProvider>) {
-        self.index_provider = Some(index_provider)
     }
 
     pub fn behavior_modifiers(&self) -> &BehaviorModifiers {
@@ -1521,6 +1533,10 @@ impl Engine {
         if exception.exception_code().is_some() {
             self.step += 1;
         }
+        if exception.exception_code() == Some(ExceptionCode::ExecutionTimeout) {
+            log::trace!(target: "tvm", "EXECUTION TIMEOUT CODE: {}\n", self.cmd_code_string());
+            return Err(err);
+        }
         if exception.exception_code() == Some(ExceptionCode::OutOfGas) {
             log::trace!(target: "tvm", "OUT OF GAS CODE: {}\n", self.cmd_code_string());
             return Err(err);
@@ -1563,6 +1579,10 @@ impl Engine {
         };
         if exception.exception_code().is_some() {
             self.step += 1;
+        }
+        if exception.exception_code() == Some(ExceptionCode::ExecutionTimeout) {
+            log::trace!(target: "tvm", "EXECUTION TIMEOUT CODE: {}\n", self.cmd_code_string());
+            return Err(err);
         }
         if exception.exception_code() == Some(ExceptionCode::OutOfGas) {
             log::trace!(target: "tvm", "OUT OF GAS CODE: {}\n", self.cmd_code_string());
@@ -1715,11 +1735,9 @@ impl Engine {
         }
         Ok(None)
     }
+}
 
-    pub(crate) fn read_config_param<T: Deserializable>(&mut self, index: i32) -> Result<T> {
-        match self.get_config_param(index)? {
-            Some(cell) => T::construct_from_cell(cell),
-            None => err!("Cannot get config param {}", index),
-        }
-    }
+#[inline(always)]
+fn is_deadline_reached(deadline: Option<Instant>) -> bool {
+    deadline.map(|deadline| Instant::now() > deadline).unwrap_or(false)
 }

@@ -1537,3 +1537,73 @@ impl<T: Default + Serializable + Deserializable> PartialEq for ChildCell<T> {
         }
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExternalCell<T: Default + Serializable + Deserializable> {
+    cell: Cell,
+    phantom: PhantomData<T>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExternalCellStruct<T> {
+    Struct(T),
+    External(UInt256),
+}
+
+impl<T> ExternalCellStruct<T> {
+    pub fn as_struct(self) -> Result<T> {
+        match self {
+            ExternalCellStruct::Struct(s) => Ok(s),
+            _ => Err(BlockError::ExternalCellRead.into()),
+        }
+    }
+}
+
+impl<T: Default + Serializable + Deserializable + Clone> Default for ExternalCell<T> {
+    fn default() -> Self {
+        Self { cell: T::default().serialize().unwrap_or_default(), phantom: PhantomData }
+    }
+}
+
+impl<T: Default + Serializable + Deserializable + Clone> ExternalCell<T> {
+    pub fn with_cell(cell: Cell) -> Self {
+        Self { cell, phantom: PhantomData }
+    }
+
+    pub fn with_struct(s: &T) -> Result<Self> {
+        Ok(ExternalCell { cell: s.serialize()?, phantom: PhantomData })
+    }
+
+    pub fn write_struct(&mut self, s: &T) -> Result<()> {
+        self.cell = s.serialize()?;
+        Ok(())
+    }
+
+    pub fn read_struct(&self) -> Result<ExternalCellStruct<T>> {
+        if self.cell.cell_type() == CellType::External {
+            return Ok(ExternalCellStruct::External(self.cell.repr_hash()));
+        }
+        T::construct_from_cell(self.cell.clone()).map(ExternalCellStruct::Struct)
+    }
+
+    pub fn read_from_reference(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.cell = slice.checked_drain_reference()?;
+        Ok(())
+    }
+
+    pub fn cell(&self) -> Cell {
+        self.cell.clone()
+    }
+
+    pub fn set_cell(&mut self, cell: Cell) {
+        self.cell = cell;
+    }
+
+    pub fn hash(&self) -> UInt256 {
+        self.cell.repr_hash()
+    }
+
+    pub fn is_external(&self) -> bool {
+        self.cell.cell_type() == CellType::External
+    }
+}

@@ -19,11 +19,10 @@ members = [
   "tvm_struct",
   "tvm_tl_codegen",
   "tvm_types",
-  "tvm_vm",
-  "tvm_tests",
+  "tvm_vm"
 ]
 [workspace.package]
-version = "2.5.0"
+version = "2.7.0"
 
 rust-version = "1.76.0"
 
@@ -73,6 +72,7 @@ clap = { version = "4.4", features = ["derive"] }
 crc = "3.0.1"
 curve25519-dalek = "4.1.1"
 diffy = "0.3.0"
+dirs = "5.0.1"
 ed25519 = "2.2.3"
 ed25519-dalek = "2.1.0"
 external-ip = "4.2.0"
@@ -80,6 +80,8 @@ extfmt = "0.1.1"
 failure = "0.1.8"
 futures = "0.3"
 hex = "0.4.3"
+hex-literal = "0.4.1"
+json5 = "0.4.1"
 lazy_static = "1.4.0"
 lockfree = { git = "https://github.com/tvmlabs/lockfree" }
 log = "0.4.20"
@@ -104,6 +106,7 @@ serde_json = "1.0.114"
 serde_repr = "0.1.18"
 sha2 = "0.10.8"
 similar = "2.4.0"
+smallvec = "1.13.1"
 thiserror = "1.0.56"
 tokio = { default-features = false, version = "1.36.0" }
 tokio-stream = "0.1.14"
@@ -115,8 +118,11 @@ tvm_api = { path = "./tvm_api" }
 tvm_assembler = { path = "./tvm_assembler" }
 tvm_block = { path = "./tvm_block" }
 tvm_block_json = { path = "./tvm_block_json" }
+tvm_cli = { path = "./tvm_cli" }
 tvm_client = { path = "./tvm_client", default-features = false }
 tvm_client_processing = { path = "./tvm_client_processing" }
+tvm_common = { path = "./tvm_common" }
+tvm_debugger = { path = "./tvm_debugger" }
 tvm_executor = { path = "./tvm_executor" }
 tvm_sdk = { path = "./tvm_sdk" }
 tvm_struct = { path = "./tvm_struct" }
