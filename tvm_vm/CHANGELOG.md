@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version 2.7.0
+
+Added VM execution time control parameters:
+
+- `termination_deadline` – set time deadline for VM execution. If VM reaches this deadline, it aborts 
+  the current execution and returns `TvmError::TerminationDeadline`.
+  Transaction executor will map this error to the `ExecutorError::TerminationDeadline`.
+  
+- `execution_timeout` – set maximum duration for VM execution. If VM reaches this limit, it aborts 
+  the current execution and returns `TvmError::TvmExceptionFull` with `ExceptionCode::ExecutionTimeout` (17).
+  Behaviour of this error is the same as `ExceptionCode::OutOfGas`.
+
+Both parameters are optional. Thus, if the limit is omitted it is not checked during execution.
+
+If both limits are specified, then the VM execution will be aborted with reason of the limit with an earlier time.
+
 ## Version 1.8.217
 
 - BLS pubkey dummy

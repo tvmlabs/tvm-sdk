@@ -11,6 +11,8 @@
 
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Duration;
+use std::time::Instant;
 
 use tvm_block::GlobalCapabilities;
 use tvm_types::Cell;
@@ -45,6 +47,8 @@ pub struct VMSetup {
     ctx: VMSetupContext,
     vm_execution_is_block_related: Arc<Mutex<bool>>,
     block_collation_was_finished: Arc<Mutex<bool>>,
+    termination_deadline: Option<Instant>,
+    execution_timeout: Option<Duration>,
 }
 
 impl VMSetup {
@@ -71,6 +75,8 @@ impl VMSetup {
             ctx,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
+            termination_deadline: None,
+            execution_timeout: None,
         }
     }
 
@@ -139,6 +145,18 @@ impl VMSetup {
         self
     }
 
+    /// Sets termination deadline
+    pub fn set_termination_deadline(mut self, deadline: Option<Instant>) -> VMSetup {
+        self.vm.set_termination_deadline(deadline);
+        self
+    }
+
+    /// Sets execution timeout
+    pub fn set_execution_timeout(mut self, timeout: Option<Duration>) -> VMSetup {
+        self.vm.set_execution_timeout(timeout);
+        self
+    }
+
     /// Creates new instance of TVM with defined stack, registers and code.
     pub fn create(self) -> Engine {
         if cfg!(debug_assertions) {
@@ -168,6 +186,8 @@ impl VMSetup {
             self.vm_execution_is_block_related,
             self.block_collation_was_finished,
         );
+        vm.set_termination_deadline(self.termination_deadline);
+        vm.set_execution_timeout(self.execution_timeout);
         vm
     }
 }

@@ -220,7 +220,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             };
         }
         let due_before_storage = account.due_payment().map(|due| due.as_u128());
-        let is_due = account.due_payment().map(|due| due.as_u128()).map_or(false, |due| due != 0);
+        let is_due = account.due_payment().map(|due| due.as_u128()).is_some_and(|due| due != 0);
         let mut storage_fee;
         description.storage_ph = match self.storage_phase(
             account,
@@ -324,7 +324,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             Err(e) => {
                 log::debug!(target: "executor", "compute_phase error: {}", e);
                 match e.downcast_ref::<ExecutorError>() {
-                    Some(ExecutorError::NoAcceptError(_, _)) => return Err(e),
+                    Some(ExecutorError::NoAcceptError(_, _))
+                    | Some(ExecutorError::TerminationDeadlineReached) => return Err(e),
                     _ => fail!(ExecutorError::TrExecutorError(e.to_string())),
                 }
             }

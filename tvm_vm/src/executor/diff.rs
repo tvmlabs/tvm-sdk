@@ -45,8 +45,12 @@ fn ignore_error(engine: &mut Engine, result: Status) -> Status {
         Ok(()) => Ok(()),
         Err(err) => {
             let exception_code = tvm_exception_code(&err);
-            if exception_code == Some(ExceptionCode::OutOfGas) {
-                return err!(ExceptionCode::OutOfGas);
+            match exception_code {
+                Some(ExceptionCode::OutOfGas) => return err!(ExceptionCode::OutOfGas),
+                Some(ExceptionCode::ExecutionTimeout) => {
+                    return err!(ExceptionCode::ExecutionTimeout);
+                }
+                _ => {}
             }
             engine.cc.stack.push(StackItem::None);
             Ok(())
