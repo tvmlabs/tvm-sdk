@@ -139,12 +139,12 @@ fn check_type(
     match field_type {
         Type::Array { item } => {
             if let Value::Array(ref vec) = value {
-                for index in 0..vec.len() {
+                for (index, val) in vec.iter().enumerate() {
                     check_type(
                         &path.append(&format!("{}[{}]", path.resolve_field_name(), index)),
                         class_name,
                         item,
-                        &vec[index],
+                        val,
                         errors,
                         suggest_use_helper_for,
                     );

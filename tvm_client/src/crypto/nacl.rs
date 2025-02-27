@@ -419,8 +419,7 @@ pub fn nacl_secret_box_open(
 // Internals
 
 fn sign(unsigned: &[u8], secret: &[u8]) -> ClientResult<Vec<u8>> {
-    let mut signed: Vec<u8> = Vec::new();
-    signed.resize(unsigned.len() + sodalite::SIGN_LEN, 0);
+    let mut signed: Vec<u8> = vec![0; unsigned.len() + sodalite::SIGN_LEN];
     sodalite::sign_attached(&mut signed, unsigned, &key512(secret)?.0);
     Ok(signed)
 }

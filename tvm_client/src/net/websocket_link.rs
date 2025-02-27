@@ -479,7 +479,7 @@ impl LinkHandler {
         operation_id: &str,
         operation_event: GraphQLQueryEvent,
     ) {
-        if let Ok(id) = u32::from_str_radix(operation_id, 10) {
+        if let Ok(id) = operation_id.parse::<u32>() {
             if remove {
                 if let Some(mut operation) = self.operations.remove(&id) {
                     operation.notify(operation_event).await;
@@ -511,13 +511,13 @@ impl LinkHandler {
     }
 
     async fn send_error_to_running_operations(&mut self, err: ClientError) {
-        for (_, operation) in &mut self.operations {
+        for operation in self.operations.values_mut() {
             operation.notify(GraphQLQueryEvent::Error(err.clone())).await;
         }
     }
 
     async fn stop_running_operations(&self, ws: &mut WSSender) -> ClientResult<()> {
-        for (id, _) in &self.operations {
+        for id in self.operations.keys() {
             ws_send(ws, GraphQLMessageFromClient::Stop { id: id.to_string() }).await?;
         }
         Ok(())

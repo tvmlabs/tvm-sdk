@@ -34,7 +34,7 @@ pub(crate) fn can_retry_expired_message(context: &Arc<ClientContext>, retries: u
 pub fn find_transactions(
     block: &Block,
     message_id: &str,
-    shard_block_id: &String,
+    shard_block_id: &str,
 ) -> ClientResult<Vec<String>> {
     let mut ids = Vec::new();
     let msg_id: MessageId = message_id.into();
