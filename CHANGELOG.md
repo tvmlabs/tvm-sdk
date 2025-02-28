@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.8.0] – 2025-02-28
+### New
+- tvm-debugger commands:
+    boc-encode      Encodes given parameters in JSON into a BOC
+    boc-decode      Decodes BOC into JSON as a set of provided parameters
+    boc-hash        Read BOC string from stdin and print its hash
+    state-encode    Encodes initial contract state from code, data, libraries ans special options
+    state-decode    Decodes initial contract state into code, data, libraries ans special options
+    account-encode  Creates account state BOC
+
+### Breaking changes
+- tvm-debugger:
+  - existing functionality was moved under command `run`
+
+
 ## [2.7.1] – 2025-02-28
 
 ### New
