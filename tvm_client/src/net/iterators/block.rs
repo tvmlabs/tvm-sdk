@@ -299,13 +299,16 @@ impl MasterBlock {
         limit: u32,
         fields: &str,
     ) -> ClientResult<Vec<Value>> {
-        query_collection(context.clone(), ParamsOfQueryCollection {
-            collection: "blocks".to_string(),
-            filter: Some(filter),
-            order: Some(vec![OrderBy { path: "gen_utime".to_string(), direction }]),
-            result: format!("{} {}", BLOCK_MASTER_FIELDS, fields),
-            limit: Some(limit),
-        })
+        query_collection(
+            context.clone(),
+            ParamsOfQueryCollection {
+                collection: "blocks".to_string(),
+                filter: Some(filter),
+                order: Some(vec![OrderBy { path: "gen_utime".to_string(), direction }]),
+                result: format!("{} {}", BLOCK_MASTER_FIELDS, fields),
+                limit: Some(limit),
+            },
+        )
         .await
         .map(|x| x.result)
     }

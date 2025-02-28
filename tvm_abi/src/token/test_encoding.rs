@@ -142,11 +142,12 @@ fn test_one_input_and_output() {
 
     let values = vec![TokenValue::Uint(Uint { number: BigUint::from(1123u128), size: 128 })];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -161,11 +162,12 @@ fn test_with_grams() {
 
     let values = vec![TokenValue::Token(grams)];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -220,10 +222,12 @@ fn test_with_address() {
         values.push(TokenValue::Address(address.clone()));
     });
 
-    test_parameters_set(&tokens_from_values(values.clone()), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values.clone()),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0],
+    );
 
     test_parameters_set(&tokens_from_values(values), None, builder_v2_2, &[ABI_VERSION_2_2]);
 }
@@ -239,11 +243,12 @@ fn test_one_input_and_output_by_data() {
 
     let values = vec![TokenValue::Int(Int { number: BigInt::from(-596784153684i64), size: 64 })];
 
-    test_parameters_set(&tokens_from_values(values), None, expected_tree, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        expected_tree,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -271,11 +276,12 @@ fn test_two_params() {
         TokenValue::Int(Int { number: BigInt::from(9434567), size: 32 }),
     ];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -353,10 +359,12 @@ fn test_five_refs_v2() {
         TokenValue::Int(Int::new(9434567, 32)),
     ];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -400,11 +408,12 @@ fn test_nested_tuples_with_all_simples() {
         ])),
     ];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -423,11 +432,12 @@ fn test_static_array_of_ints() {
         input_array.iter().map(|i| TokenValue::Uint(Uint::new(i.to_owned() as u128, 32))).collect(),
     )];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -444,11 +454,12 @@ fn test_empty_dynamic_array() {
     let params =
         vec![Param { name: "a".to_owned(), kind: ParamType::Array(Box::new(ParamType::Uint(16))) }];
 
-    test_parameters_set(&tokens_from_values(values), Some(&params), builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        Some(&params),
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -467,11 +478,12 @@ fn test_dynamic_array_of_ints() {
         input_array.iter().map(|i| TokenValue::Uint(Uint::new(i.to_owned() as u128, 16))).collect(),
     )];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 struct TupleDwordBool(u32, bool);
@@ -523,11 +535,12 @@ fn test_dynamic_array_of_tuples() {
             .collect(),
     )];
 
-    test_parameters_set(&tokens_from_values(values), None, expected_tree, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        expected_tree,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -600,14 +613,16 @@ fn test_tuples_with_combined_types() {
         input_array2.iter().map(|i| TokenValue::Int(Int::new(*i as i128, 64))).collect(),
     );
 
-    let array3_token_value =
-        TokenValue::FixedArray(ParamType::Array(Box::new(ParamType::Int(64))), vec![
+    let array3_token_value = TokenValue::FixedArray(
+        ParamType::Array(Box::new(ParamType::Int(64))),
+        vec![
             array2_token_value.clone(),
             array2_token_value.clone(),
             array2_token_value.clone(),
             array2_token_value.clone(),
             array2_token_value.clone(),
-        ]);
+        ],
+    );
 
     let values = vec![
         TokenValue::Uint(Uint::new(18, 8)),
@@ -618,14 +633,19 @@ fn test_tuples_with_combined_types() {
         TokenValue::Tuple(tokens_from_values(vec![array2_token_value, array3_token_value])),
     ];
 
-    test_parameters_set(&tokens_from_values(values.clone()), None, chain_builder, &[
-        ABI_VERSION_1_0,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values.clone()),
+        None,
+        chain_builder,
+        &[ABI_VERSION_1_0],
+    );
 
-    test_parameters_set(&tokens_from_values(values), None, chain_builder_v2, &[
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        chain_builder_v2,
+        &[ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -663,11 +683,12 @@ fn test_four_refs_and_four_int256() {
         TokenValue::Uint(Uint { number: BigUint::from_bytes_be(&bytes), size: 256 }),
     ];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -702,10 +723,12 @@ fn test_four_refs_and_one_int256() {
 
     test_parameters_set(&tokens_from_values(values.clone()), None, builder, &[ABI_VERSION_1_0]);
 
-    test_parameters_set(&tokens_from_values(values), None, builder_v2, &[
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder_v2,
+        &[ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -730,11 +753,12 @@ fn test_header_params() {
         TokenValue::Expire(67890),
     ];
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 fn vec_to_map<K: Serializable>(vec: &[(K, BuilderData)], size: usize) -> HashmapE {
@@ -838,10 +862,12 @@ fn test_map() {
         TokenValue::Map(ParamType::Int(256), ParamType::Bool, BTreeMap::new()),
     ];
 
-    test_parameters_set(&tokens_from_values(values.clone()), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values.clone()),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_2],
+    );
 
     test_parameters_set(&tokens_from_values(values.clone()), None, builder_v2, &[ABI_VERSION_2_0]);
 }
@@ -878,11 +904,12 @@ fn test_address_map_key() {
 
     builder.append_builder(&map.write_to_new_cell().unwrap()).unwrap();
 
-    test_parameters_set(&tokens_from_values(vec![value]), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(vec![value]),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -945,10 +972,12 @@ fn test_big_map_value() {
     builder.append_u32(1).unwrap();
     builder.append_builder(&array.write_to_new_cell().unwrap()).unwrap();
 
-    test_parameters_set(&tokens_from_values(vec![value_map, value_array]), None, builder, &[
-        ABI_VERSION_2_0,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(vec![value_map, value_array]),
+        None,
+        builder,
+        &[ABI_VERSION_2_0, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -1008,12 +1037,16 @@ fn test_abi_2_1_types() {
         BuilderData::with_raw_and_refs(vec![0x80], 1, vec![varuint_builder.into_cell().unwrap()])
             .unwrap();
 
-    let tuple_builder = BuilderData::with_raw_and_refs(vec![], 0, vec![
-        string_builder.clone().into_cell().unwrap(),
-        string_builder.clone().into_cell().unwrap(),
-        string_builder.clone().into_cell().unwrap(),
-        string_builder.clone().into_cell().unwrap(),
-    ])
+    let tuple_builder = BuilderData::with_raw_and_refs(
+        vec![],
+        0,
+        vec![
+            string_builder.clone().into_cell().unwrap(),
+            string_builder.clone().into_cell().unwrap(),
+            string_builder.clone().into_cell().unwrap(),
+            string_builder.clone().into_cell().unwrap(),
+        ],
+    )
     .unwrap();
     let tuple_builder =
         BuilderData::with_raw_and_refs(vec![0x80], 1, vec![tuple_builder.into_cell().unwrap()])
@@ -1023,10 +1056,12 @@ fn test_abi_2_1_types() {
     uint_builder.checked_append_reference(varuint_builder.into_cell().unwrap()).unwrap();
     builder.checked_append_reference(uint_builder.into_cell().unwrap()).unwrap();
 
-    test_parameters_set(&tokens_from_values(values), None, builder, &[
-        ABI_VERSION_2_1,
-        ABI_VERSION_2_2,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values),
+        None,
+        builder,
+        &[ABI_VERSION_2_1, ABI_VERSION_2_2],
+    );
 }
 
 #[test]
@@ -1114,9 +1149,11 @@ fn test_four_optional_strings() {
     builder.append_bits(1, 2).unwrap();
     builder.checked_append_reference(string_builder.clone().into_cell().unwrap()).unwrap();
 
-    let second_builder = BuilderData::with_raw_and_refs(vec![0x40], 2, vec![
-        string_builder.clone().into_cell().unwrap(),
-    ])
+    let second_builder = BuilderData::with_raw_and_refs(
+        vec![0x40],
+        2,
+        vec![string_builder.clone().into_cell().unwrap()],
+    )
     .unwrap();
 
     builder.checked_append_reference(second_builder.into_cell().unwrap()).unwrap();
@@ -1315,9 +1352,11 @@ fn test_fixed_bytes() {
 
     let values = vec![TokenValue::FixedBytes(bytes)];
 
-    test_parameters_set(&tokens_from_values(values.clone()), None, builder, &[
-        ABI_VERSION_1_0,
-        ABI_VERSION_2_3,
-    ]);
+    test_parameters_set(
+        &tokens_from_values(values.clone()),
+        None,
+        builder,
+        &[ABI_VERSION_1_0, ABI_VERSION_2_3],
+    );
     test_parameters_set(&tokens_from_values(values), None, builder_v24, &[ABI_VERSION_2_4]);
 }

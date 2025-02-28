@@ -141,31 +141,32 @@ impl ClientError {
     }
 
     pub fn get_redirection_data(&self) -> (Option<String>, Option<String>) {
-        let details = self.data
+        let details = self
+            .data
             .get("node_error")
             .and_then(|ne| ne.get("extensions"))
             .and_then(|e| e.get("details"));
 
-        let producers = details
-            .and_then(|d| d.get("producers"))
-            .and_then(Value::as_array)
-            .map(|producers|
-                producers.iter().filter_map(|v| v.as_str().map(|s| {
-                    if let Some(pos) = s.find(':') {
-                        format!("http://{}/graphql", &s[..pos])
-                    } else {
-                        format!("http://{}/graphql", s)
-                    }
-                }))
-                .collect::<Vec<String>>()
-            );
+        let producers =
+            details.and_then(|d| d.get("producers")).and_then(Value::as_array).map(|producers| {
+                producers
+                    .iter()
+                    .filter_map(|v| {
+                        v.as_str().map(|s| {
+                            if let Some(pos) = s.find(':') {
+                                format!("http://{}/graphql", &s[..pos])
+                            } else {
+                                format!("http://{}/graphql", s)
+                            }
+                        })
+                    })
+                    .collect::<Vec<String>>()
+            });
 
         let redirect_url = producers.as_ref().and_then(|p| p.first()).cloned();
 
-        let thread_id = details
-            .and_then(|d| d.get("thread_id"))
-            .and_then(Value::as_str)
-            .map(|s| s.to_string());
+        let thread_id =
+            details.and_then(|d| d.get("thread_id")).and_then(Value::as_str).map(|s| s.to_string());
 
         (thread_id, redirect_url)
     }

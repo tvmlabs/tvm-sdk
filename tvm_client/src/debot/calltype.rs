@@ -302,14 +302,17 @@ impl ContractCall {
     }
 
     async fn run_get_method(&self, func_id: u32, fixed_msg: String) -> ClientResult<String> {
-        let result = run_tvm(self.ton.clone(), ParamsOfRunTvm {
-            account: self.target_state.clone(),
-            message: fixed_msg,
-            abi: None,
-            execution_options: None,
-            boc_cache: None,
-            return_updated_account: Some(true),
-        })
+        let result = run_tvm(
+            self.ton.clone(),
+            ParamsOfRunTvm {
+                account: self.target_state.clone(),
+                message: fixed_msg,
+                abi: None,
+                execution_options: None,
+                boc_cache: None,
+                return_updated_account: Some(true),
+            },
+        )
         .await
         .map_err(Error::get_method_failed);
 
@@ -398,12 +401,11 @@ impl ContractCall {
             .await;
             match result {
                 Ok(res) => {
-                    let result =
-                        query_transaction_tree(self.ton.clone(), ParamsOfQueryTransactionTree {
-                            in_msg: msg_id,
-                            ..Default::default()
-                        })
-                        .await;
+                    let result = query_transaction_tree(
+                        self.ton.clone(),
+                        ParamsOfQueryTransactionTree { in_msg: msg_id, ..Default::default() },
+                    )
+                    .await;
                     if let Err(e) = result {
                         return self.build_error_answer_msg(e);
                     }
@@ -540,11 +542,14 @@ async fn emulate_transaction(
     target_state: String,
     signer: Signer,
 ) -> ClientResult<DebotActivity> {
-    let result = run_executor(client.clone(), ParamsOfRunExecutor {
-        message: msg.clone(),
-        account: AccountForExecutor::Account { boc: target_state, unlimited_balance: None },
-        ..Default::default()
-    })
+    let result = run_executor(
+        client.clone(),
+        ParamsOfRunExecutor {
+            message: msg.clone(),
+            account: AccountForExecutor::Account { boc: target_state, unlimited_balance: None },
+            ..Default::default()
+        },
+    )
     .await?;
 
     let exit_code =

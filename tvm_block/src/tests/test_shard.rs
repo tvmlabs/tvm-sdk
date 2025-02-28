@@ -917,20 +917,20 @@ mod account_id_prefix_full {
 
         assert_eq!(prefix1.interpolate_addr(&prefix2, 0), prefix1);
 
-        assert_eq!(prefix1.interpolate_addr(&prefix2, 1), AccountIdPrefixFull {
-            workchain_id: 0x8000_0001u64 as i32,
-            prefix: prefix1.prefix
-        });
+        assert_eq!(
+            prefix1.interpolate_addr(&prefix2, 1),
+            AccountIdPrefixFull { workchain_id: 0x8000_0001u64 as i32, prefix: prefix1.prefix }
+        );
 
-        assert_eq!(prefix1.interpolate_addr(&prefix2, 20), AccountIdPrefixFull {
-            workchain_id: 0xFFFF_F001u64 as i32,
-            prefix: prefix1.prefix
-        });
+        assert_eq!(
+            prefix1.interpolate_addr(&prefix2, 20),
+            AccountIdPrefixFull { workchain_id: 0xFFFF_F001u64 as i32, prefix: prefix1.prefix }
+        );
 
-        assert_eq!(prefix1.interpolate_addr(&prefix2, 32 + 20), AccountIdPrefixFull {
-            workchain_id: prefix2.workchain_id,
-            prefix: 0x0FEDC6789ABCDEF0
-        });
+        assert_eq!(
+            prefix1.interpolate_addr(&prefix2, 32 + 20),
+            AccountIdPrefixFull { workchain_id: prefix2.workchain_id, prefix: 0x0FEDC6789ABCDEF0 }
+        );
 
         assert_eq!(prefix1.interpolate_addr(&prefix2, 32 + 64), prefix2);
     }

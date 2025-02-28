@@ -28,7 +28,7 @@ impl RunOutput {
         return_value: Option<JsonValue>,
         mut msgs: Vec<String>,
     ) -> Result<Self, ClientError> {
-        let mut output =  Self {
+        let mut output = Self {
             account,
             return_value,
             std_addr: Some(account_decode(&debot_addr)?),

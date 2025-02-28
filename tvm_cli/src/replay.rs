@@ -115,15 +115,18 @@ pub async fn fetch(
         })
     };
 
-    let tr_count = aggregate_collection(context.clone(), ParamsOfAggregateCollection {
-        collection: "transactions".to_owned(),
-        filter: Some(filter),
-        fields: Some(vec![FieldAggregation {
-            field: "fn".to_owned(),
-            aggregation_fn: AggregationFn::COUNT,
-        }]),
-        ..Default::default()
-    })
+    let tr_count = aggregate_collection(
+        context.clone(),
+        ParamsOfAggregateCollection {
+            collection: "transactions".to_owned(),
+            filter: Some(filter),
+            fields: Some(vec![FieldAggregation {
+                field: "fn".to_owned(),
+                aggregation_fn: AggregationFn::COUNT,
+            }]),
+            ..Default::default()
+        },
+    )
     .await
     .map_err(|e| format!("Failed to fetch txns count: {}", e))?;
     let tr_count = u64::from_str_radix(
@@ -142,14 +145,17 @@ pub async fn fetch(
     let file = File::create(filename).map_err(|e| format!("Failed to create file: {}", e))?;
     let mut writer = std::io::LineWriter::new(file);
 
-    let zerostates = query_collection(context.clone(), ParamsOfQueryCollection {
-        collection: "zerostates".to_owned(),
-        filter: None,
-        result: "accounts { id boc }".to_owned(),
-        limit: Some(1),
-        order: None,
-        ..Default::default()
-    })
+    let zerostates = query_collection(
+        context.clone(),
+        ParamsOfQueryCollection {
+            collection: "zerostates".to_owned(),
+            filter: None,
+            result: "accounts { id boc }".to_owned(),
+            limit: Some(1),
+            order: None,
+            ..Default::default()
+        },
+    )
     .await;
 
     let mut zerostate_found = false;
@@ -210,14 +216,20 @@ pub async fn fetch(
                     "lt": { "gt": lt },
                 })
             };
-            let query = query_collection(context.clone(), ParamsOfQueryCollection {
-                collection: "transactions".to_owned(),
-                filter: Some(filter),
-                result: "id lt block { start_lt } boc".to_owned(),
-                limit: None,
-                order: Some(vec![OrderBy { path: "lt".to_owned(), direction: SortDirection::ASC }]),
-                ..Default::default()
-            });
+            let query = query_collection(
+                context.clone(),
+                ParamsOfQueryCollection {
+                    collection: "transactions".to_owned(),
+                    filter: Some(filter),
+                    result: "id lt block { start_lt } boc".to_owned(),
+                    limit: None,
+                    order: Some(vec![OrderBy {
+                        path: "lt".to_owned(),
+                        direction: SortDirection::ASC,
+                    }]),
+                    ..Default::default()
+                },
+            );
             query.await
         };
 
@@ -531,18 +543,21 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     let context = create_client(config)
         .map_err(|e| failure::err_msg(format!("Failed to create ctx: {}", e)))?;
 
-    let block = query_collection(context.clone(), ParamsOfQueryCollection {
-        collection: "blocks".to_owned(),
-        filter: Some(serde_json::json!({
-            "id": {
-                "eq": block_id
-            },
-        })),
-        result: "workchain_id end_lt boc".to_owned(),
-        limit: None,
-        order: None,
-        ..Default::default()
-    })
+    let block = query_collection(
+        context.clone(),
+        ParamsOfQueryCollection {
+            collection: "blocks".to_owned(),
+            filter: Some(serde_json::json!({
+                "id": {
+                    "eq": block_id
+                },
+            })),
+            result: "workchain_id end_lt boc".to_owned(),
+            limit: None,
+            order: None,
+            ..Default::default()
+        },
+    )
     .await?;
 
     if block.result.len() != 1 {

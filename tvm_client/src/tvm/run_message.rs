@@ -207,9 +207,10 @@ fn parse_transaction(
     context: &Arc<ClientContext>,
     transaction: &Transaction,
 ) -> ClientResult<Value> {
-    Ok(crate::boc::parse_transaction(context.clone(), crate::boc::ParamsOfParse {
-        boc: serialize_object_to_base64(transaction, "transaction")?,
-    })?
+    Ok(crate::boc::parse_transaction(
+        context.clone(),
+        crate::boc::ParamsOfParse { boc: serialize_object_to_base64(transaction, "transaction")? },
+    )?
     .parsed)
 }
 
