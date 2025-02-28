@@ -148,7 +148,7 @@ pub(crate) fn call_tvm_msg(
         .map_err(|err| Error::internal_error(format!("can not parse actions: {}", err)))?;
 
     let mut msgs = vec![];
-    for (_, action) in actions.iter_mut().enumerate() {
+    for action in actions.iter_mut() {
         if let OutAction::SendMsg { out_msg, .. } = std::mem::replace(action, OutAction::None) {
             msgs.push(out_msg);
         }
@@ -158,6 +158,7 @@ pub(crate) fn call_tvm_msg(
     Ok(msgs)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_contract_info(
     config_params: &ConfigParams,
     address: &MsgAddressInt,

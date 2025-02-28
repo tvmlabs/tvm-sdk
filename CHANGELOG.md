@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.7.0] – 2025-02-21
+## [2.7.1] – 2025-02-28
+
+### New
+
+- In case of "THREAD_MISMATCH" error message will be re-sent to the right thread.
+
+### Fixed
+- In case of "WRONG_PRODUCER" error message was not re-sent to the right producer correctly. 
+
+### Improvements
+- Removed some unused dependencies 
+
+## [2.7.0] – 2025-02-27
 ### New
 - `tvm_vm`: execution time control parameters `termination_deadline` and `execution_timeout`. [See details](tvm_vm/CHANGELOG.md)
 

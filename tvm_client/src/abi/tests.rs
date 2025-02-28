@@ -663,10 +663,12 @@ async fn test_encode_internal_message_empty_body() -> Result<()> {
     let src_address =
         String::from("0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94");
 
-    let mut msg_header = InternalMessageHeader::default();
-    msg_header.ihr_disabled = true;
-    msg_header.bounce = true;
-    msg_header.value = CurrencyCollection::with_grams(1000000000);
+    let mut msg_header = InternalMessageHeader {
+        ihr_disabled: true,
+        bounce: true,
+        value: CurrencyCollection::with_grams(1000000000),
+        ..Default::default()
+    };
     msg_header.set_dst(account_decode(&dst_address)?);
 
     let msg = Message::with_int_header(msg_header.clone());

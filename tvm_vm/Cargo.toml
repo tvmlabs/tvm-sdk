@@ -10,6 +10,7 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+blst.workspace = true
 diffy = { optional = true, version = "0.3.0" }
 ed25519.workspace = true
 ed25519-dalek.workspace = true
@@ -20,9 +21,9 @@ log.workspace = true
 num.workspace = true
 num-traits.workspace = true
 rand.workspace = true
-similar = { features = ["bytes"], optional = true, version = "2.4.0" }
+similar = { features = ["bytes"], optional = true, workspace = true }
 thiserror.workspace = true
-zstd = { default-features = false, optional = true, version = "0.13.0" }
+zstd = { default-features = false, optional = true, workspace = true }
 
 tvm_block.workspace = true
 tvm_types.workspace = true
@@ -43,7 +44,6 @@ ark-groth16 = { version = "0.4.0", default-features = false }
 ark-relations = "0.4.0"
 ark-serialize = "0.4.1"
 ark-snark = "0.4.0"
-blst = "0.3.11"
 byte-slice-cast = "1.2.2"
 ark-crypto-primitives = { version = "0.4.0", features = ["r1cs", "prf"] }
 ark-r1cs-std = "0.4.0"

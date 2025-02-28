@@ -47,7 +47,7 @@ use crate::message::prepare_message;
 use crate::replay::construct_blockchain_config;
 
 pub async fn run_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &FullConfig,
     is_alternative: bool,
 ) -> Result<(), String> {
@@ -107,7 +107,7 @@ pub async fn run_command(
 }
 
 async fn run(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     config: &Config,
     ton_client: Option<TonClient>,
     address: &str,

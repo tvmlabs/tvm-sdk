@@ -193,7 +193,7 @@ impl BlockIterator {
     async fn query_next_blocks(
         &self,
         context: &Arc<ClientContext>,
-        branches: &Vec<Branch>,
+        branches: &[Branch],
     ) -> ClientResult<HashMap<String, Vec<Value>>> {
         let mut branches: Vec<&Branch> = branches.iter().collect();
         let mut next_blocks: HashMap<String, Vec<Value>> = HashMap::new();

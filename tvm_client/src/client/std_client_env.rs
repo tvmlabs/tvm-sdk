@@ -185,7 +185,7 @@ impl ClientEnv {
         let read = read.filter_map(|result| async move {
             match result {
                 Ok(message) => match message {
-                    WsMessage::Text(text) => Some(Ok(text)),
+                    WsMessage::Text(text) => Some(Ok(text.to_string())),
                     _ => None,
                 },
                 Err(err) => Some(Err(Error::websocket_receive_error(err))),

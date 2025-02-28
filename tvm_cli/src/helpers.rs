@@ -664,7 +664,7 @@ pub fn check_file_exists(path: &str, trim: &[&str], ending: &[&str]) -> Option<S
 }
 
 pub fn abi_from_matches_or_config(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     config: &Config,
 ) -> Result<String, String> {
     matches
@@ -708,7 +708,7 @@ pub fn load_params(params: &str) -> Result<String, String> {
 }
 
 pub async fn unpack_alternative_params(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     abi_path: &str,
     method: &str,
     config: &Config,
@@ -721,7 +721,7 @@ pub async fn unpack_alternative_params(
     }
 }
 
-pub fn wc_from_matches_or_config(matches: &ArgMatches<'_>, config: &Config) -> Result<i32, String> {
+pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<i32, String> {
     Ok(matches
         .value_of("WC")
         .map(|v| i32::from_str_radix(v, 10))
@@ -731,7 +731,7 @@ pub fn wc_from_matches_or_config(matches: &ArgMatches<'_>, config: &Config) -> R
 }
 
 pub fn contract_data_from_matches_or_config_alias(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &FullConfig,
 ) -> Result<(Option<String>, Option<String>, Option<String>), String> {
     let address = matches

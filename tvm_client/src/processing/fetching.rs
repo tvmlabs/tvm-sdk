@@ -55,7 +55,7 @@ pub async fn fetch_next_shard_block<F: futures::Future<Output = ()> + Send>(
             Err(err) => {
                 let is_retryable_error = crate::client::Error::is_network_error(&err)
                     || err.code == crate::net::ErrorCode::WaitForTimeout as u32;
-                let error = Error::fetch_block_failed(err, message_id, &block_id.to_string());
+                let error = Error::fetch_block_failed(err, message_id, block_id);
 
                 // Notify app about error
                 if params.send_events {
@@ -176,6 +176,7 @@ async fn fetch_contract_balance(
     Ok(balance.balance)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn fetch_transaction_result(
     context: &Arc<ClientContext>,
     shard_block_id: &str,

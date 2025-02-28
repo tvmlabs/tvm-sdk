@@ -177,18 +177,18 @@ pub fn init_debug_logger(trace_path: &str) -> Result<(), String> {
     log::set_boxed_logger(logger).map_err(|e| format!("Failed to set logger {trace_path}: {e}"))
 }
 
-pub fn create_debug_command<'a, 'b>() -> App<'a, 'b> {
+pub fn create_debug_command<'b>() -> App<'b> {
     let output_arg = Arg::with_name("LOG_PATH")
         .help("Path where to store the trace. Default path is \"./trace.log\". Note: old file will be removed.")
         .takes_value(true)
         .long("--output")
-        .short("-o");
+        .short('o');
 
     let dbg_info_arg = Arg::with_name("DBG_INFO")
         .help("Path to the file with debug info.")
         .takes_value(true)
         .long("--dbg_info")
-        .short("-d");
+        .short('d');
 
     let address_arg = Arg::with_name("ADDRESS")
         .long("--addr")
@@ -197,7 +197,7 @@ pub fn create_debug_command<'a, 'b>() -> App<'a, 'b> {
 
     let method_arg = Arg::with_name("METHOD")
         .long("--method")
-        .short("-m")
+        .short('m')
         .takes_value(true)
         .help("Name of the function being called. Can be specified in the config file.");
 
@@ -236,26 +236,26 @@ pub fn create_debug_command<'a, 'b>() -> App<'a, 'b> {
     let config_path_arg = Arg::with_name("CONFIG_PATH")
         .help("Path to the file with saved config contract state.")
         .long("--config")
-        .short("-c")
+        .short('c')
         .takes_value(true);
 
     let default_config_arg = Arg::with_name("DEFAULT_CONFIG")
         .help("Execute debug with current blockchain config or default if it is not available.")
         .long("--default_config")
-        .short("-e")
+        .short('e')
         .conflicts_with_all(&["CONFIG_PATH", "CONFIG_BOC"]);
 
     let config_save_path_arg = Arg::with_name("CONFIG_PATH")
         .help("Path to the file with saved config contract transactions. If not set and config contract state is not specified with other options transactions will be fetched to file \"config.txns\".")
         .long("--config")
-        .short("-c")
+        .short('c')
         .takes_value(true)
         .conflicts_with_all(&["DEFAULT_CONFIG", "CONFIG_BOC"]);
 
     let contract_path_arg = Arg::with_name("CONTRACT_PATH")
         .help("Path to the file with saved target contract transactions. If not set transactions will be fetched to file \"contract.txns\".")
         .long("--contract")
-        .short("-t")
+        .short('t')
         .takes_value(true);
 
     let dump_config_arg = Arg::with_name("DUMP_CONFIG")
@@ -269,7 +269,7 @@ pub fn create_debug_command<'a, 'b>() -> App<'a, 'b> {
 
     let update_arg = Arg::with_name("UPDATE_BOC")
         .long("--update")
-        .short("-u")
+        .short('u')
         .help("Update contract BOC after execution.");
 
     let now_arg = Arg::with_name("NOW")
@@ -329,7 +329,7 @@ pub fn create_debug_command<'a, 'b>() -> App<'a, 'b> {
         .arg(now_arg.clone())
         .arg(config_path_arg.clone())
         .arg(
-            Arg::with_name("TVC")
+      Arg::with_name("TVC")
                 .required(true)
                 .takes_value(true)
                 .help("Path to the TVC file with contract stateinit."),
@@ -405,7 +405,7 @@ pub fn create_debug_command<'a, 'b>() -> App<'a, 'b> {
             .arg(Arg::with_name("UPDATE_STATE")
                 .help("Update state of the contract.")
                 .long("--update")
-                .short("-u"))
+                .short('u'))
             .arg(Arg::with_name("INPUT")
                 .help("Path to the saved account state.")
                 .required(true)
@@ -424,7 +424,7 @@ pub fn create_debug_command<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub async fn debug_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &FullConfig,
 ) -> Result<(), String> {
     let config = &full_config.config;
@@ -456,7 +456,7 @@ pub async fn debug_command(
 }
 
 async fn debug_transaction_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     config: &Config,
     is_account: bool,
 ) -> Result<(), String> {
@@ -551,7 +551,7 @@ async fn debug_transaction_command(
 }
 
 async fn replay_transaction_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     config: &Config,
 ) -> Result<(), String> {
     let tx_id = matches.value_of("TX_ID");
@@ -652,14 +652,14 @@ async fn replay_transaction_command(
     Ok(())
 }
 
-fn parse_now(matches: &ArgMatches<'_>) -> Result<u64, String> {
+fn parse_now(matches: &ArgMatches) -> Result<u64, String> {
     Ok(match matches.value_of("NOW") {
         Some(now) => now.parse().map_err(|e| format!("Failed to convert now to u64: {}", e))?,
         _ => now_ms(),
     })
 }
 
-fn load_decode_abi(matches: &ArgMatches<'_>, config: &Config) -> Option<String> {
+fn load_decode_abi(matches: &ArgMatches, config: &Config) -> Option<String> {
     let abi = matches
         .value_of("DECODE_ABI")
         .map(|s| s.to_owned())
@@ -679,7 +679,7 @@ fn load_decode_abi(matches: &ArgMatches<'_>, config: &Config) -> Option<String> 
 }
 
 async fn debug_call_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &FullConfig,
     is_getter: bool,
 ) -> Result<(), String> {
@@ -848,7 +848,7 @@ async fn debug_call_command(
     Ok(())
 }
 
-async fn debug_message_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let input = matches.value_of("ADDRESS");
     let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
     let debug_info = matches.value_of("DBG_INFO").map(|s| s.to_string());
@@ -926,7 +926,7 @@ async fn debug_message_command(matches: &ArgMatches<'_>, config: &Config) -> Res
     }
 }
 
-async fn debug_deploy_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let tvc = matches.value_of("TVC");
     let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
     let opt_abi = Some(abi_from_matches_or_config(matches, config)?);
@@ -1213,7 +1213,7 @@ pub async fn execute_debug(
     bc_config: BlockchainConfig,
     account_root: &mut Cell,
     message: Option<&Message>,
-    matches: Option<&ArgMatches<'_>>,
+    matches: Option<&ArgMatches>,
     time_in_ms: u64,
     block_lt: u64,
     last_tr_lt: u64,
@@ -1331,7 +1331,7 @@ fn get_position(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) -> Result<
 }
 
 fn generate_callback(
-    matches: Option<&ArgMatches<'_>>,
+    matches: Option<&ArgMatches>,
     config: &Config,
 ) -> Arc<dyn Fn(&Engine, &EngineTraceInfo) + Send + Sync> {
     if let Some(matches) = matches {
@@ -1373,7 +1373,7 @@ const RENDER_NONE: u8 = 0x00;
 const RENDER_GAS: u8 = 0x01;
 
 pub async fn sequence_diagram_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     config: &Config,
 ) -> Result<(), String> {
     let filename = matches.value_of("ADDRESSES").unwrap();
@@ -1676,7 +1676,7 @@ async fn make_sequence_diagram(
 
 pub struct DebugParams<'a> {
     pub config: &'a Config,
-    pub matches: Option<&'a ArgMatches<'a>>,
+    pub matches: Option<&'a ArgMatches>,
     pub bc_config: BlockchainConfig,
     pub account: &'a str,
     pub message: Option<&'a str>,

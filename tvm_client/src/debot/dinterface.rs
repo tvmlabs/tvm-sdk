@@ -75,7 +75,7 @@ pub trait DebotInterfaceExecutor {
 
     async fn try_execute(
         &self,
-        msg: &String,
+        msg: &str,
         interface_id: &String,
         abi_version: &str,
     ) -> Option<InterfaceResult> {
@@ -96,12 +96,12 @@ pub trait DebotInterfaceExecutor {
 
     async fn execute(
         client: TonClient,
-        msg: &String,
+        msg: &'life0 str,
         interface_id: &String,
         interfaces: &HashMap<String, Arc<dyn DebotInterface + Send + Sync>>,
         abi_version: &str,
     ) -> InterfaceResult {
-        let parsed = parse_message(client.clone(), ParamsOfParse { boc: msg.clone() })
+        let parsed = parse_message(client.clone(), ParamsOfParse { boc: msg.to_owned() })
             .map_err(|e| format!("{}", e))?;
 
         let body = parsed.parsed["body"]

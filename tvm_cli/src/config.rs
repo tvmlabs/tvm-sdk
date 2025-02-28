@@ -446,7 +446,7 @@ pub fn clear_config(
         config.access_key = None;
     }
 
-    if matches.args.is_empty() {
+    if !matches.args_present() {
         *config = Config::new();
     }
 

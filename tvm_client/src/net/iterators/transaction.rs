@@ -34,7 +34,7 @@ pub const TRANSACTION_FIELDS: &str = r#"
 
 pub(crate) struct MessageFields<'a>(&'a Value);
 
-impl<'a> MessageFields<'a> {
+impl MessageFields<'_> {
     pub fn id(&self) -> &str {
         self.0["id"].as_str().unwrap_or("")
     }
@@ -54,7 +54,7 @@ impl<'a> MessageFields<'a> {
 
 pub(crate) struct TransactionBounceFields<'a>(&'a Value);
 
-impl<'a> TransactionBounceFields<'a> {
+impl TransactionBounceFields<'_> {
     pub fn bounce_type(&self) -> u32 {
         self.0["bounce_type"].as_u64().unwrap_or(0) as u32
     }
@@ -62,7 +62,7 @@ impl<'a> TransactionBounceFields<'a> {
 
 pub(crate) struct TransactionFields<'a>(pub &'a Value);
 
-impl<'a> TransactionFields<'a> {
+impl TransactionFields<'_> {
     pub fn bounce(&self) -> Option<TransactionBounceFields> {
         self.0.get("bounce").map(TransactionBounceFields)
     }

@@ -314,7 +314,7 @@ async fn aggregates() {
         .await
         .unwrap();
 
-    let count = u32::from_str_radix(result.values[0].as_str().unwrap(), 10).unwrap();
+    let count = result.values[0].as_str().unwrap().parse::<u32>().unwrap();
     assert!(count > 0);
 }
 
@@ -1326,7 +1326,6 @@ async fn transaction_tree() {
             abi_registry: Some(abi_registry.clone()),
             transaction_max_count: Some(2),
             timeout: Some(0),
-            ..Default::default()
         })
         .await
         .unwrap();
