@@ -201,14 +201,17 @@ fn test_merkle_proof_hi_hashes() {
     block_info.set_shard(ShardIdent::with_workchain_id(0x22222222).unwrap());
     block_info.set_seq_no(u32::MAX - 22).unwrap();
     block_info
-        .set_prev_stuff(false, &BlkPrevInfo::Block {
-            prev: ExtBlkRef {
-                end_lt: 1,
-                seq_no: 1000,
-                root_hash: UInt256::from([10; 32]),
-                file_hash: UInt256::from([10; 32]),
+        .set_prev_stuff(
+            false,
+            &BlkPrevInfo::Block {
+                prev: ExtBlkRef {
+                    end_lt: 1,
+                    seq_no: 1000,
+                    root_hash: UInt256::from([10; 32]),
+                    file_hash: UInt256::from([10; 32]),
+                },
             },
-        })
+        )
         .unwrap();
 
     let block =
