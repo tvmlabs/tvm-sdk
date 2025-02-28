@@ -203,14 +203,14 @@ fn main() {
     let cli: Cli = Cli::parse();
 
     let output = match &cli.command {
-        Commands::Run(args) => run_command(|| {
+        Commands::Run(args) => {
             if let Some(new_code) = args.replace_code.clone() {
-                return replace_code(&args.input_file, new_code)
-                    .map(|_| "Code replaced".to_string());
+                replace_code(&args.input_file, new_code).map(|_| "".to_string())
+            } else {
+                let mut res = ExecutionResult::new(args.json);
+                execute(args, &mut res).map(|_| res.output())
             }
-            let mut res = ExecutionResult::new(args.json);
-            execute(args, &mut res).map(|_| res.output())
-        }),
+        }
         Commands::BocEncode(args) => run_command(|| boc::encode(args)),
         Commands::BocDecode(args) => run_command(|| boc::decode(args)),
         Commands::BocHash => run_command(boc::hash),
