@@ -770,7 +770,7 @@ impl ServerLink {
         if let Some(url) = redirect_url {
             if let Some(ep) = endpoint.as_mut() {
                 ep.query_url = url;
-                log::error!("Resending request to {}", ep.query_url);
+                // log::error!("Resending request to {}", ep.query_url);
             }
         }
 
