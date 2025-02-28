@@ -185,7 +185,7 @@ pub struct AsyncFuncWrapper<'a, P, R> {
     p: std::marker::PhantomData<(P, R)>,
 }
 
-impl<'a, P: Serialize, R: DeserializeOwned> AsyncFuncWrapper<'a, P, R> {
+impl<P: Serialize, R: DeserializeOwned> AsyncFuncWrapper<'_, P, R> {
     pub(crate) async fn call(&self, params: P) -> ClientResult<R> {
         self.client.request_async(&self.name, params).await
     }
@@ -210,7 +210,7 @@ pub struct FuncWrapper<'a, P, R> {
     p: std::marker::PhantomData<(P, R)>,
 }
 
-impl<'a, P: Serialize, R: DeserializeOwned> FuncWrapper<'a, P, R> {
+impl<P: Serialize, R: DeserializeOwned> FuncWrapper<'_, P, R> {
     pub(crate) fn call(&self, params: P) -> ClientResult<R> {
         self.client.request(&self.name, params)
     }
@@ -379,7 +379,7 @@ impl TestClient {
     }
 
     pub fn abi_version() -> u8 {
-        u8::from_str_radix(&env::abi_version(), 10).unwrap()
+        env::abi_version().parse::<u8>().unwrap()
     }
 
     pub fn contracts_path(abi_version: Option<u8>) -> String {
@@ -442,7 +442,7 @@ impl TestClient {
         parse_sync_response(unsafe {
             tc_request_sync(
                 self.context,
-                StringData::new(&method.to_string()),
+                StringData::new(method),
                 StringData::new(&params_json),
             )
         })
@@ -556,7 +556,7 @@ impl TestClient {
             let params_json = if params.is_null() { String::new() } else { params.to_string() };
             tc_request(
                 self.context,
-                StringData::new(&method.to_string()),
+                StringData::new(method),
                 StringData::new(&params_json),
                 request_id,
                 on_result,

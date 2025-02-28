@@ -996,7 +996,6 @@ async fn test_run_executor_fees() {
                     "value": 100_000_000u64,
                     "bounce": false
                 })),
-                ..Default::default()
             }),
             signer: bad_signer,
             ..Default::default()

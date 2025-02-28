@@ -55,37 +55,37 @@ use crate::helpers::load_params;
 use crate::helpers::now_ms;
 use crate::helpers::unpack_alternative_params;
 
-pub fn create_test_sign_command<'a, 'b>() -> App<'a, 'b> {
+pub fn create_test_sign_command<'b>() -> App<'b> {
     SubCommand::with_name("sign")
         .about("Generates the ED25519 signature for bytestring.")
         .arg(
             Arg::with_name("DATA")
                 .long("--data")
-                .short("-d")
+                .short('d')
                 .takes_value(true)
                 .help("Bytestring for signing base64 or hex encoded."),
         )
         .arg(
             Arg::with_name("CELL")
                 .long("--cell")
-                .short("-c")
+                .short('c')
                 .takes_value(true)
                 .help("Serialized TOC for signing base64 or hex encoded."),
         )
 }
 
-pub fn create_test_command<'a, 'b>() -> App<'a, 'b> {
+pub fn create_test_command<'b>() -> App<'b> {
     let output_arg = Arg::with_name("LOG_PATH")
         .help("Path where to store the trace. Default path is \"./trace.log\". Note: old file will be removed.")
         .takes_value(true)
         .long("--output")
-        .short("-o");
+        .short('o');
 
     let dbg_info_arg = Arg::with_name("DBG_INFO")
         .help("Path to the file with debug info.")
         .takes_value(true)
         .long("--dbg_info")
-        .short("-d");
+        .short('d');
 
     let boc_path_arg = Arg::with_name("PATH")
         .required(true)
@@ -93,7 +93,7 @@ pub fn create_test_command<'a, 'b>() -> App<'a, 'b> {
 
     let params_arg = Arg::with_name("PARAMS")
         .long("--params")
-        .short("-p")
+        .short('p')
         .takes_value(true)
         .help("Constructor arguments. Must be a json string with all arguments or path to the file with parameters.");
 
@@ -110,18 +110,18 @@ pub fn create_test_command<'a, 'b>() -> App<'a, 'b> {
 
     let full_trace_arg = Arg::with_name("FULL_TRACE")
         .long("--full_trace")
-        .short("-f")
+        .short('f')
         .help("Flag that changes trace to full version.");
 
     let config_boc_arg = Arg::with_name("CONFIG_BOC")
         .long("--bc_config")
-        .short("-c")
+        .short('c')
         .takes_value(true)
         .help("Path to the config contract boc.");
 
     let now_arg = Arg::with_name("NOW")
         .long("--now")
-        .short("-n")
+        .short('n')
         .takes_value(true)
         .help("Now timestamp (in milliseconds) for execution. If not set it is equal to the current timestamp.");
 
@@ -211,7 +211,7 @@ pub fn create_test_command<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub async fn test_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &FullConfig,
 ) -> Result<(), String> {
     let config = &full_config.config;
@@ -230,7 +230,7 @@ pub async fn test_command(
     Err("unknown command".to_string())
 }
 
-async fn test_deploy(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let input = matches.value_of("PATH").unwrap();
     let abi_path = matches.value_of("ABI").unwrap();
     let function_name = "constructor".to_string();
@@ -338,7 +338,7 @@ async fn test_deploy(matches: &ArgMatches<'_>, config: &Config) -> Result<(), St
     Ok(())
 }
 
-async fn test_ticktock(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let input = matches.value_of("PATH").unwrap();
     let bc_config = matches.value_of("CONFIG_BOC");
     let now = matches.value_of("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
@@ -385,7 +385,7 @@ async fn test_ticktock(matches: &ArgMatches<'_>, config: &Config) -> Result<(), 
     Ok(())
 }
 
-pub fn test_sign_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub fn test_sign_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let data = if let Some(data) = matches.value_of("DATA") {
         decode_data(data, "data")?
     } else if let Some(data) = matches.value_of("CELL") {
@@ -426,7 +426,7 @@ pub fn test_sign_command(matches: &ArgMatches<'_>, config: &Config) -> Result<()
     Ok(())
 }
 
-pub fn test_config_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub fn test_config_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     if let Some(encode) = matches.value_of("ENCODE") {
         let (cell, index) = serialize_config_param(&load_params(encode)?)?;
         let result = write_boc(&cell);

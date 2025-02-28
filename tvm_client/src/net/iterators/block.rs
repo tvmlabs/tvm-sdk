@@ -78,7 +78,7 @@ pub(crate) const BLOCK_TRANSACTIONS_FIELDS: &str = r#"
 
 pub(crate) struct ShardIdentFields<'a>(&'a Value);
 
-impl<'a> ShardIdentFields<'a> {
+impl ShardIdentFields<'_> {
     pub fn workchain_id(&self) -> i32 {
         self.0["workchain_id"].as_i64().unwrap_or(0) as i32
     }
@@ -94,7 +94,7 @@ impl<'a> ShardIdentFields<'a> {
 
 pub(crate) struct RefFields<'a>(&'a Value);
 
-impl<'a> RefFields<'a> {
+impl RefFields<'_> {
     pub fn root_hash(&self) -> &str {
         self.0["root_hash"].as_str().unwrap_or("")
     }
@@ -102,13 +102,13 @@ impl<'a> RefFields<'a> {
 
 pub(crate) struct BlockFields<'a>(pub &'a Value);
 
-impl<'a> Clone for BlockFields<'a> {
+impl Clone for BlockFields<'_> {
     fn clone(&self) -> Self {
         Self(self.0)
     }
 }
 
-impl<'a> BlockFields<'a> {
+impl BlockFields<'_> {
     pub fn clone_value(&self) -> Value {
         self.0.clone()
     }
@@ -186,7 +186,7 @@ impl<'a> BlockFields<'a> {
 
 pub(crate) struct AccountBlockTransactionFields<'a>(&'a Value);
 
-impl<'a> AccountBlockTransactionFields<'a> {
+impl AccountBlockTransactionFields<'_> {
     pub fn transaction_id(&self) -> &str {
         self.0["transaction_id"].as_str().unwrap_or("")
     }
@@ -194,7 +194,7 @@ impl<'a> AccountBlockTransactionFields<'a> {
 
 pub(crate) struct AccountBlockFields<'a>(&'a Value);
 
-impl<'a> AccountBlockFields<'a> {
+impl AccountBlockFields<'_> {
     pub fn account_addr(&self) -> &str {
         self.0["account_addr"].as_str().unwrap_or("")
     }
@@ -208,7 +208,7 @@ impl<'a> AccountBlockFields<'a> {
 
 pub(crate) struct DescrFields<'a>(&'a Value);
 
-impl<'a> DescrFields<'a> {
+impl DescrFields<'_> {
     pub fn gen_utime(&self) -> u32 {
         self.0["gen_utime"].as_u64().unwrap_or(0) as u32
     }
@@ -224,7 +224,7 @@ impl<'a> DescrFields<'a> {
 
 pub(crate) struct ShardHashFields<'a>(&'a Value);
 
-impl<'a> ShardHashFields<'a> {
+impl ShardHashFields<'_> {
     pub fn as_shard_ident(&self) -> ShardIdentFields {
         ShardIdentFields(self.0)
     }
@@ -236,7 +236,7 @@ impl<'a> ShardHashFields<'a> {
 
 pub(crate) struct MasterFields<'a>(&'a Value);
 
-impl<'a> MasterFields<'a> {
+impl MasterFields<'_> {
     pub fn shard_hashes(&self) -> Option<Vec<ShardHashFields>> {
         self.0["shard_hashes"].as_array().map(|x| x.iter().map(ShardHashFields).collect())
     }
@@ -321,8 +321,8 @@ fn shard_ident(workchain_id: i32, hex_prefix: &str) -> ClientResult<ShardIdent> 
 pub(crate) fn shard_ident_parse(s: &str) -> ClientResult<ShardIdent> {
     let (workchain_id, tail) = match s.find(':') {
         Some(colon_pos) => {
-            let workchain_id = i32::from_str_radix(&s[..colon_pos], 10)
-                .map_err(crate::client::Error::internal_error)?;
+            let workchain_id =
+                s[..colon_pos].parse::<i32>().map_err(crate::client::Error::internal_error)?;
             (workchain_id, &s[colon_pos + 1..])
         }
         None => (0, s),

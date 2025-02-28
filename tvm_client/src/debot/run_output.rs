@@ -28,10 +28,12 @@ impl RunOutput {
         return_value: Option<JsonValue>,
         mut msgs: Vec<String>,
     ) -> Result<Self, ClientError> {
-        let mut output = RunOutput::default();
-        output.account = account;
-        output.return_value = return_value;
-        output.std_addr = Some(account_decode(&debot_addr)?);
+        let mut output =  Self {
+            account,
+            return_value,
+            std_addr: Some(account_decode(&debot_addr)?),
+            ..Default::default()
+        };
         while let Some(msg_base64) = msgs.pop() {
             let msg: Message = deserialize_object_from_base64(&msg_base64, "message")?.object;
             output.filter_msg(msg, msg_base64);

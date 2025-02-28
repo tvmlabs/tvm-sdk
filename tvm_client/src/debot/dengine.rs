@@ -683,10 +683,10 @@ impl DEngine {
         let msg_params = ParamsOfEncodeMessage {
             abi: abi.clone(),
             address: Some(addr.clone()),
-            call_set: if args.is_none() {
-                CallSet::some_with_function(func)
+            call_set: if let Some(args) = args {
+                CallSet::some_with_function_and_input(func, args)
             } else {
-                CallSet::some_with_function_and_input(func, args.unwrap())
+                CallSet::some_with_function(func)
             },
             ..Default::default()
         };
@@ -728,10 +728,10 @@ impl DEngine {
             abi: abi.clone(),
             address: Some(addr),
             deploy_set: state.and_then(|s| DeploySet::some_with_tvc(Some(s.to_string()))),
-            call_set: if args.is_none() {
-                CallSet::some_with_function(func)
+            call_set: if let Some(args) = args {
+                CallSet::some_with_function_and_input(func, args)
             } else {
-                CallSet::some_with_function_and_input(func, args.unwrap())
+                CallSet::some_with_function(func)
             },
             signer: match signer {
                 Some(signing_box) => Signer::SigningBox { handle: signing_box },

@@ -74,7 +74,6 @@ impl ResolvedExecutionOptions {
         let block_time = options.block_time.unwrap_or_else(|| (context.env.now_ms() / 1000) as u32);
         let behavior_modifiers = BehaviorModifiers {
             chksig_always_succeed: options.chksig_always_succeed.unwrap_or(false),
-            ..Default::default()
         };
         Ok(Self {
             block_lt,
