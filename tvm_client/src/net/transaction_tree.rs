@@ -137,14 +137,15 @@ impl MessageNode {
                 if let Some(body) = message["body"].as_str() {
                     let is_internal = message["msg_type"].as_u64().unwrap_or(0) == 0;
                     for abi in abi_registry {
-                        if let Ok(result) =
-                            decode_message_body(client.clone(), ParamsOfDecodeMessageBody {
+                        if let Ok(result) = decode_message_body(
+                            client.clone(),
+                            ParamsOfDecodeMessageBody {
                                 body: body.to_string(),
                                 abi: abi.clone(),
                                 is_internal,
                                 ..Default::default()
-                            })
-                        {
+                            },
+                        ) {
                             return Some(result);
                         }
                     }

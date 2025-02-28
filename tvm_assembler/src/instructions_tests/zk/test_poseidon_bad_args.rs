@@ -212,12 +212,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         // expect_failure(tvm_types::ExceptionCode::FatalError);
         //.expect_success();
@@ -231,12 +234,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_failure(tvm_types::ExceptionCode::FatalError);
 
         println!("Spoiled modulus...");
@@ -247,12 +253,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
 
         println!("Spoiled modulus again...");
@@ -264,12 +273,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
     }
 
@@ -394,12 +406,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_failure(tvm_types::ExceptionCode::FatalError);
         //.expect_success();
@@ -412,12 +427,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
 
         println!("Test too long wrong iss_base_64...");
@@ -428,12 +446,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
 
         println!("Test too too long wrong iss_base_64...");
@@ -444,12 +465,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_failure(tvm_types::ExceptionCode::FatalError);
         //.expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
     }
@@ -575,12 +599,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
 
         println!("Empty header...");
@@ -591,12 +618,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
 
         println!("Too long wrong header...");
@@ -607,12 +637,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
 
         println!("Too long wrong header...");
@@ -623,12 +656,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_failure(tvm_types::ExceptionCode::FatalError);
     }
 
@@ -773,12 +809,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_failure(tvm_types::ExceptionCode::FatalError);
         //.expect_success();
@@ -793,12 +832,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_failure(tvm_types::ExceptionCode::FatalError);
         //.expect_success();
@@ -833,12 +875,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_failure(tvm_types::ExceptionCode::FatalError);
         //.expect_success();
@@ -853,12 +898,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_failure(tvm_types::ExceptionCode::FatalError);
         //.expect_success();
@@ -1004,12 +1052,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
 
         let wrong_index_mod_4 = "0";
@@ -1025,12 +1076,15 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(code.as_str(), vec![
-            modulus_cell.clone(),
-            iss_base_64_cell.clone(),
-            header_base_64_cell.clone(),
-            zk_seed_cell.clone(),
-        ])
+        test_case_with_refs(
+            code.as_str(),
+            vec![
+                modulus_cell.clone(),
+                iss_base_64_cell.clone(),
+                header_base_64_cell.clone(),
+                zk_seed_cell.clone(),
+            ],
+        )
         .expect_not_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
     }
 }

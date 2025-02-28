@@ -755,12 +755,14 @@ impl ServerLink {
         let Err(ref err) = result else { return result };
 
         let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
-            return result
+            return result;
         };
 
         let Some(code) = ext.get("code").and_then(|c| c.as_str()) else { return result };
 
-        if !["WRONG_PRODUCER", "THREAD_MISMATCH"].contains(&code) { return result };
+        if !["WRONG_PRODUCER", "THREAD_MISMATCH"].contains(&code) {
+            return result;
+        };
 
         let (real_thread_id, redirect_url) = err.get_redirection_data();
         if real_thread_id.is_some() {
@@ -852,7 +854,6 @@ impl ServerLink {
     pub async fn invalidate_querying_endpoint(&self) {
         self.state.invalidate_querying_endpoint().await
     }
-
 }
 
 // #[cfg(test)]

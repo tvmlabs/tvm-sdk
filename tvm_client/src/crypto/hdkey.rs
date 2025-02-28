@@ -248,9 +248,7 @@ impl HDPrivateKey {
             libsecp256k1::Error::TweakOutOfRange => {
                 crypto::Error::bip32_invalid_key("TweakOutOfRange")
             }
-            libsecp256k1::Error::InvalidAffine => {
-                crypto::Error::bip32_invalid_key("InvalidAffine")
-            }
+            libsecp256k1::Error::InvalidAffine => crypto::Error::bip32_invalid_key("InvalidAffine"),
         }
     }
 

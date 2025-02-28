@@ -329,7 +329,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
         .arg(now_arg.clone())
         .arg(config_path_arg.clone())
         .arg(
-      Arg::with_name("TVC")
+            Arg::with_name("TVC")
                 .required(true)
                 .takes_value(true)
                 .help("Path to the TVC file with contract stateinit."),
@@ -423,10 +423,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
         .subcommand(msg_cmd)
 }
 
-pub async fn debug_command(
-    matches: &ArgMatches,
-    full_config: &FullConfig,
-) -> Result<(), String> {
+pub async fn debug_command(matches: &ArgMatches, full_config: &FullConfig) -> Result<(), String> {
     let config = &full_config.config;
     if let Some(matches) = matches.subcommand_matches("transaction") {
         return debug_transaction_command(matches, config, false).await;
@@ -550,10 +547,7 @@ async fn debug_transaction_command(
     Ok(())
 }
 
-async fn replay_transaction_command(
-    matches: &ArgMatches,
-    config: &Config,
-) -> Result<(), String> {
+async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let tx_id = matches.value_of("TX_ID");
     let config_path = matches.value_of("CONFIG_PATH");
     let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
@@ -565,18 +559,21 @@ async fn replay_transaction_command(
     }
 
     let ton_client = create_client(config)?;
-    let trans = query_collection(ton_client.clone(), ParamsOfQueryCollection {
-        collection: "transactions".to_owned(),
-        filter: Some(json!({
-            "id": {
-                "eq": tx_id.unwrap()
-            },
-        })),
-        result: "lt block { start_lt } boc".to_string(),
-        limit: Some(1),
-        order: None,
-        ..Default::default()
-    })
+    let trans = query_collection(
+        ton_client.clone(),
+        ParamsOfQueryCollection {
+            collection: "transactions".to_owned(),
+            filter: Some(json!({
+                "id": {
+                    "eq": tx_id.unwrap()
+                },
+            })),
+            result: "lt block { start_lt } boc".to_string(),
+            limit: Some(1),
+            order: None,
+            ..Default::default()
+        },
+    )
     .await
     .map_err(|e| format!("Failed to query transaction: {}", e))?;
 
@@ -1372,10 +1369,7 @@ fn generate_callback(
 const RENDER_NONE: u8 = 0x00;
 const RENDER_GAS: u8 = 0x01;
 
-pub async fn sequence_diagram_command(
-    matches: &ArgMatches,
-    config: &Config,
-) -> Result<(), String> {
+pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let filename = matches.value_of("ADDRESSES").unwrap();
     let file = std::fs::File::open(filename).map_err(|e| format!("Failed to open file: {}", e))?;
 
@@ -1435,23 +1429,26 @@ async fn fetch_transactions(
         let mut lt = String::from("0x0");
         loop {
             let action = || async {
-                query_collection(context.clone(), ParamsOfQueryCollection {
-                    collection: "transactions".to_owned(),
-                    filter: Some(json!({
-                        "account_addr": {
-                            "eq": address.clone()
-                        },
-                        "lt": {
-                            "gt": lt
-                        }
-                    })),
-                    result: "lt boc id workchain_id".to_owned(),
-                    order: Some(vec![OrderBy {
-                        path: "lt".to_owned(),
-                        direction: SortDirection::ASC,
-                    }]),
-                    limit: None,
-                })
+                query_collection(
+                    context.clone(),
+                    ParamsOfQueryCollection {
+                        collection: "transactions".to_owned(),
+                        filter: Some(json!({
+                            "account_addr": {
+                                "eq": address.clone()
+                            },
+                            "lt": {
+                                "gt": lt
+                            }
+                        })),
+                        result: "lt boc id workchain_id".to_owned(),
+                        order: Some(vec![OrderBy {
+                            path: "lt".to_owned(),
+                            direction: SortDirection::ASC,
+                        }]),
+                        limit: None,
+                    },
+                )
                 .await
             };
 

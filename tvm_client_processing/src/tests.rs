@@ -31,10 +31,13 @@ async fn test_fetch() {
         msg_res(2, MessageMonitoringStatus::Finalized),
     ]);
     let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::All).await.unwrap();
-    assert_eq!(sorted(results, |x| &x.hash), vec![
-        msg_res(1, MessageMonitoringStatus::Finalized),
-        msg_res(2, MessageMonitoringStatus::Finalized)
-    ]);
+    assert_eq!(
+        sorted(results, |x| &x.hash),
+        vec![
+            msg_res(1, MessageMonitoringStatus::Finalized),
+            msg_res(2, MessageMonitoringStatus::Finalized)
+        ]
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -63,10 +66,13 @@ async fn test_fetch_at_least_one() {
         msg_res(2, MessageMonitoringStatus::Finalized),
     ]);
     let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::All).await.unwrap();
-    assert_eq!(sorted(results, |x| &x.hash), vec![
-        msg_res(1, MessageMonitoringStatus::Finalized),
-        msg_res(2, MessageMonitoringStatus::Finalized)
-    ]);
+    assert_eq!(
+        sorted(results, |x| &x.hash),
+        vec![
+            msg_res(1, MessageMonitoringStatus::Finalized),
+            msg_res(2, MessageMonitoringStatus::Finalized)
+        ]
+    );
     let results = mon.fetch_next_monitor_results("1", MonitorFetchWaitMode::NoWait).await.unwrap();
     assert_eq!(results.len(), 0);
 }
@@ -110,10 +116,13 @@ async fn test_fetch_wait_all() {
 
     // Check that spawned thread has received all monitoring messages
     let results = std::mem::take(&mut *fetched.write().unwrap());
-    assert_eq!(sorted(results, |x| &x.hash), vec![
-        msg_res(1, MessageMonitoringStatus::Finalized),
-        msg_res(2, MessageMonitoringStatus::Finalized)
-    ]);
+    assert_eq!(
+        sorted(results, |x| &x.hash),
+        vec![
+            msg_res(1, MessageMonitoringStatus::Finalized),
+            msg_res(2, MessageMonitoringStatus::Finalized)
+        ]
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

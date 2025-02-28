@@ -411,15 +411,18 @@ impl Function {
                     remove_bits = 1;
                 }
             }
-            cells.insert(0, SerializedValue {
-                data: sign_builder,
-                max_bits: if self.abi_version >= ABI_VERSION_2_3 {
-                    TokenValue::max_bit_size(&ParamType::Address, &self.abi_version)
-                } else {
-                    1 + ED25519_SIGNATURE_LENGTH * 8
+            cells.insert(
+                0,
+                SerializedValue {
+                    data: sign_builder,
+                    max_bits: if self.abi_version >= ABI_VERSION_2_3 {
+                        TokenValue::max_bit_size(&ParamType::Address, &self.abi_version)
+                    } else {
+                        1 + ED25519_SIGNATURE_LENGTH * 8
+                    },
+                    max_refs: if remove_ref { 1 } else { 0 },
                 },
-                max_refs: if remove_ref { 1 } else { 0 },
-            });
+            );
         }
 
         // encoding itself

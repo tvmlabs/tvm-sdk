@@ -1245,13 +1245,16 @@ async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
         .map_err(|e| format!("arguments are not in json format: {}", e))?;
 
     let client = create_client_local()?;
-    let body = tvm_client::abi::encode_message_body(client.clone(), ParamsOfEncodeMessageBody {
-        abi: load_abi(abi.as_ref().unwrap(), config).await?,
-        call_set: CallSet::some_with_function_and_input(method.unwrap(), params)
-            .ok_or("failed to create CallSet with specified parameters.")?,
-        is_internal: true,
-        ..Default::default()
-    })
+    let body = tvm_client::abi::encode_message_body(
+        client.clone(),
+        ParamsOfEncodeMessageBody {
+            abi: load_abi(abi.as_ref().unwrap(), config).await?,
+            call_set: CallSet::some_with_function_and_input(method.unwrap(), params)
+                .ok_or("failed to create CallSet with specified parameters.")?,
+            is_internal: true,
+            ..Default::default()
+        },
+    )
     .await
     .map_err(|e| format!("failed to encode body: {}", e))
     .map(|r| r.body)?;
@@ -1267,11 +1270,7 @@ async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
     Ok(())
 }
 
-async fn call_command(
-    matches: &ArgMatches,
-    config: &Config,
-    call: CallType,
-) -> Result<(), String> {
+async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> Result<(), String> {
     let address = matches.value_of("ADDRESS");
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
@@ -1466,10 +1465,7 @@ async fn deploy_command(
     }
 }
 
-async fn deployx_command(
-    matches: &ArgMatches,
-    full_config: &mut FullConfig,
-) -> Result<(), String> {
+async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> Result<(), String> {
     let config = &full_config.config;
     let tvc = matches.value_of("TVC");
     let wc = wc_from_matches_or_config(matches, config)?;

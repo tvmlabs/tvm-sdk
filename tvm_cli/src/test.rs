@@ -210,10 +210,7 @@ pub fn create_test_command<'b>() -> App<'b> {
         .subcommand(create_test_sign_command().alias("ts").arg(keys_arg.clone()))
 }
 
-pub async fn test_command(
-    matches: &ArgMatches,
-    full_config: &FullConfig,
-) -> Result<(), String> {
+pub async fn test_command(matches: &ArgMatches, full_config: &FullConfig) -> Result<(), String> {
     let config = &full_config.config;
     if let Some(matches) = matches.subcommand_matches("deploy") {
         return test_deploy(matches, config).await;
