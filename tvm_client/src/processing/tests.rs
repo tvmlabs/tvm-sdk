@@ -93,10 +93,10 @@ fn assert_events(events: &[ProcessingEvent], remp_enabled: bool) {
 
 async fn remp_enabled(client: &TestClient) -> bool {
     let info: ResultOfQuery = client
-        .request_async("net.query", ParamsOfQuery {
-            query: "query{info{rempEnabled}}".to_owned(),
-            variables: None,
-        })
+        .request_async(
+            "net.query",
+            ParamsOfQuery { query: "query{info{rempEnabled}}".to_owned(), variables: None },
+        )
         .await
         .unwrap_or_default();
 
@@ -560,11 +560,14 @@ async fn test_fees() {
     let message = client.encode_message(params.clone()).await.unwrap();
 
     let local_result: ResultOfRunExecutor = client
-        .request_async("tvm.run_executor", ParamsOfRunExecutor {
-            account: AccountForExecutor::Account { boc: account, unlimited_balance: None },
-            message: message.message,
-            ..Default::default()
-        })
+        .request_async(
+            "tvm.run_executor",
+            ParamsOfRunExecutor {
+                account: AccountForExecutor::Account { boc: account, unlimited_balance: None },
+                message: message.message,
+                ..Default::default()
+            },
+        )
         .await
         .unwrap();
 
