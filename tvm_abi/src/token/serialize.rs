@@ -468,17 +468,13 @@ fn test_pack_cells() {
     ];
 
     let builder = BuilderData::with_raw(vec![0x55; 127], 127 * 8).unwrap();
-    let builder = BuilderData::with_raw_and_refs(
-        vec![0x55; 127],
-        127 * 8,
-        vec![builder.into_cell().unwrap()],
-    )
+    let builder = BuilderData::with_raw_and_refs(vec![0x55; 127], 127 * 8, vec![
+        builder.into_cell().unwrap(),
+    ])
     .unwrap();
-    let builder = BuilderData::with_raw_and_refs(
-        vec![0x55; 100],
-        100 * 8,
-        vec![builder.into_cell().unwrap()],
-    )
+    let builder = BuilderData::with_raw_and_refs(vec![0x55; 100], 100 * 8, vec![
+        builder.into_cell().unwrap(),
+    ])
     .unwrap();
     let tree = TokenValue::pack_cells_into_chain(cells, &ABI_VERSION_1_0).unwrap();
     assert_eq!(tree, builder);

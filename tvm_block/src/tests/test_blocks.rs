@@ -109,25 +109,22 @@ fn test_block_info_with_invalid_vertical_stuff_2() {
 fn test_block_info_with_seq_no() {
     let mut info = BlockInfo::new();
     info.set_seq_no(1).unwrap();
-    info.set_prev_stuff(
-        true,
-        &BlkPrevInfo::Blocks {
-            prev1: ChildCell::with_struct(&ExtBlkRef {
-                end_lt: 1,
-                seq_no: 1000,
-                root_hash: UInt256::from([10; 32]),
-                file_hash: UInt256::from([10; 32]),
-            })
-            .unwrap(),
-            prev2: ChildCell::with_struct(&ExtBlkRef {
-                end_lt: 1,
-                seq_no: 999,
-                root_hash: UInt256::from([10; 32]),
-                file_hash: UInt256::from([10; 32]),
-            })
-            .unwrap(),
-        },
-    )
+    info.set_prev_stuff(true, &BlkPrevInfo::Blocks {
+        prev1: ChildCell::with_struct(&ExtBlkRef {
+            end_lt: 1,
+            seq_no: 1000,
+            root_hash: UInt256::from([10; 32]),
+            file_hash: UInt256::from([10; 32]),
+        })
+        .unwrap(),
+        prev2: ChildCell::with_struct(&ExtBlkRef {
+            end_lt: 1,
+            seq_no: 999,
+            root_hash: UInt256::from([10; 32]),
+            file_hash: UInt256::from([10; 32]),
+        })
+        .unwrap(),
+    })
     .unwrap();
     write_read_and_assert(info.clone());
 
@@ -152,17 +149,14 @@ fn test_blockinfo_some_some_none() {
     let mut info = BlockInfo::new();
     info.set_shard(ShardIdent::with_workchain_id(0x22222222).unwrap());
     info.set_seq_no(u32::MAX - 22).unwrap();
-    info.set_prev_stuff(
-        false,
-        &BlkPrevInfo::Block {
-            prev: ExtBlkRef {
-                end_lt: 1,
-                seq_no: 1000,
-                root_hash: UInt256::from([10; 32]),
-                file_hash: UInt256::from([10; 32]),
-            },
+    info.set_prev_stuff(false, &BlkPrevInfo::Block {
+        prev: ExtBlkRef {
+            end_lt: 1,
+            seq_no: 1000,
+            root_hash: UInt256::from([10; 32]),
+            file_hash: UInt256::from([10; 32]),
         },
-    )
+    })
     .unwrap();
     test_blockinfo(info);
 }

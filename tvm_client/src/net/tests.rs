@@ -29,10 +29,10 @@ async fn bad_request() {
     }));
 
     let result = client
-        .request_async::<_, ResultOfQuery>(
-            "net.query",
-            ParamsOfQuery { query: r#"query { accounts { id }"#.to_string(), variables: None },
-        )
+        .request_async::<_, ResultOfQuery>("net.query", ParamsOfQuery {
+            query: r#"query { accounts { id }"#.to_string(),
+            variables: None,
+        })
         .await;
 
     if let Err(err) = result {
@@ -193,36 +193,33 @@ async fn batch_query() {
     let client = TestClient::new();
 
     let batch: ResultOfBatchQuery = client
-        .request_async(
-            "net.batch_query",
-            ParamsOfBatchQuery {
-                operations: vec![
-                    ParamsOfQueryOperation::QueryCollection(ParamsOfQueryCollection {
-                        collection: "blocks_signatures".to_owned(),
-                        filter: None,
-                        result: "id".to_owned(),
-                        limit: Some(1),
-                        order: None,
-                    }),
-                    ParamsOfQueryOperation::AggregateCollection(ParamsOfAggregateCollection {
-                        collection: "accounts".to_owned(),
-                        filter: None,
-                        fields: Some(vec![FieldAggregation {
-                            field: "".into(),
-                            aggregation_fn: AggregationFn::COUNT,
-                        }]),
-                    }),
-                    ParamsOfQueryOperation::WaitForCollection(ParamsOfWaitForCollection {
-                        collection: "transactions".to_owned(),
-                        filter: Some(json!({
-                            "now": { "gt": 20 }
-                        })),
-                        result: "id now".to_owned(),
-                        timeout: None,
-                    }),
-                ],
-            },
-        )
+        .request_async("net.batch_query", ParamsOfBatchQuery {
+            operations: vec![
+                ParamsOfQueryOperation::QueryCollection(ParamsOfQueryCollection {
+                    collection: "blocks_signatures".to_owned(),
+                    filter: None,
+                    result: "id".to_owned(),
+                    limit: Some(1),
+                    order: None,
+                }),
+                ParamsOfQueryOperation::AggregateCollection(ParamsOfAggregateCollection {
+                    collection: "accounts".to_owned(),
+                    filter: None,
+                    fields: Some(vec![FieldAggregation {
+                        field: "".into(),
+                        aggregation_fn: AggregationFn::COUNT,
+                    }]),
+                }),
+                ParamsOfQueryOperation::WaitForCollection(ParamsOfWaitForCollection {
+                    collection: "transactions".to_owned(),
+                    filter: Some(json!({
+                        "now": { "gt": 20 }
+                    })),
+                    result: "id now".to_owned(),
+                    timeout: None,
+                }),
+            ],
+        })
         .await
         .unwrap();
 
@@ -234,10 +231,10 @@ async fn query() {
     let client = TestClient::new();
 
     let info: ResultOfQuery = client
-        .request_async(
-            "net.query",
-            ParamsOfQuery { query: "query{info{version}}".to_owned(), variables: None },
-        )
+        .request_async("net.query", ParamsOfQuery {
+            query: "query{info{version}}".to_owned(),
+            variables: None,
+        })
         .await
         .unwrap();
 
@@ -250,19 +247,19 @@ fn query_sync() {
     let client = TestClient::new();
 
     let info: ResultOfQuery = client
-        .request(
-            "net.query",
-            ParamsOfQuery { query: "query{info{version}}".to_owned(), variables: None },
-        )
+        .request("net.query", ParamsOfQuery {
+            query: "query{info{version}}".to_owned(),
+            variables: None,
+        })
         .unwrap();
 
     let version = info.result["data"]["info"]["version"].as_str().unwrap();
     assert_eq!(version.split('.').count(), 3);
 
-    let result: ClientResult<ResultOfQuery> = client.request(
-        "net.query",
-        ParamsOfQuery { query: "query{info111{version}}".to_owned(), variables: None },
-    );
+    let result: ClientResult<ResultOfQuery> = client.request("net.query", ParamsOfQuery {
+        query: "query{info111{version}}".to_owned(),
+        variables: None,
+    });
 
     assert!(result.is_err());
 }
@@ -272,16 +269,13 @@ async fn block_signatures() {
     let client = TestClient::new();
 
     let _: ResultOfQueryCollection = client
-        .request_async(
-            "net.query_collection",
-            ParamsOfQueryCollection {
-                collection: "blocks_signatures".to_owned(),
-                filter: Some(json!({})),
-                result: "id".to_owned(),
-                limit: Some(1),
-                order: None,
-            },
-        )
+        .request_async("net.query_collection", ParamsOfQueryCollection {
+            collection: "blocks_signatures".to_owned(),
+            filter: Some(json!({})),
+            result: "id".to_owned(),
+            limit: Some(1),
+            order: None,
+        })
         .await
         .unwrap();
 }
@@ -291,16 +285,13 @@ async fn all_accounts() {
     let client = TestClient::new();
 
     let accounts: ResultOfQueryCollection = client
-        .request_async(
-            "net.query_collection",
-            ParamsOfQueryCollection {
-                collection: "accounts".to_owned(),
-                filter: Some(json!({})),
-                result: "id balance".to_owned(),
-                limit: None,
-                order: None,
-            },
-        )
+        .request_async("net.query_collection", ParamsOfQueryCollection {
+            collection: "accounts".to_owned(),
+            filter: Some(json!({})),
+            result: "id balance".to_owned(),
+            limit: None,
+            order: None,
+        })
         .await
         .unwrap();
 
@@ -312,17 +303,14 @@ async fn aggregates() {
     let client = TestClient::new();
 
     let result: ResultOfAggregateCollection = client
-        .request_async(
-            "net.aggregate_collection",
-            ParamsOfAggregateCollection {
-                collection: "accounts".to_owned(),
-                filter: Some(json!({})),
-                fields: Some(vec![FieldAggregation {
-                    field: "".into(),
-                    aggregation_fn: AggregationFn::COUNT,
-                }]),
-            },
-        )
+        .request_async("net.aggregate_collection", ParamsOfAggregateCollection {
+            collection: "accounts".to_owned(),
+            filter: Some(json!({})),
+            fields: Some(vec![FieldAggregation {
+                field: "".into(),
+                aggregation_fn: AggregationFn::COUNT,
+            }]),
+        })
         .await
         .unwrap();
 
@@ -335,18 +323,15 @@ async fn ranges() {
     let client = TestClient::new();
 
     let accounts: ResultOfQueryCollection = client
-        .request_async(
-            "net.query_collection",
-            ParamsOfQueryCollection {
-                collection: "messages".to_owned(),
-                filter: Some(json!({
-                    "created_at": { "gt": 1562342740 }
-                })),
-                result: "body created_at".to_owned(),
-                limit: None,
-                order: None,
-            },
-        )
+        .request_async("net.query_collection", ParamsOfQueryCollection {
+            collection: "messages".to_owned(),
+            filter: Some(json!({
+                "created_at": { "gt": 1562342740 }
+            })),
+            result: "body created_at".to_owned(),
+            limit: None,
+            order: None,
+        })
         .await
         .unwrap();
 
@@ -360,17 +345,14 @@ async fn wait_for() {
     let request = tokio::spawn(async move {
         let client = TestClient::new();
         let transactions: ResultOfWaitForCollection = client
-            .request_async(
-                "net.wait_for_collection",
-                ParamsOfWaitForCollection {
-                    collection: "transactions".to_owned(),
-                    filter: Some(json!({
-                        "now": { "gt": now }
-                    })),
-                    result: "id now".to_owned(),
-                    timeout: None,
-                },
-            )
+            .request_async("net.wait_for_collection", ParamsOfWaitForCollection {
+                collection: "transactions".to_owned(),
+                filter: Some(json!({
+                    "now": { "gt": now }
+                })),
+                result: "id now".to_owned(),
+                timeout: None,
+            })
             .await
             .unwrap();
         assert!(transactions.result["now"].as_u64().unwrap() > now as u64);
@@ -666,10 +648,9 @@ async fn find_last_shard_block() {
     let client = TestClient::new();
 
     let block: ResultOfFindLastShardBlock = client
-        .request_async(
-            "net.find_last_shard_block",
-            ParamsOfFindLastShardBlock { address: client.giver_address().await },
-        )
+        .request_async("net.find_last_shard_block", ParamsOfFindLastShardBlock {
+            address: client.giver_address().await,
+        })
         .await
         .unwrap();
 
@@ -729,15 +710,12 @@ async fn test_query_counterparties() {
     let account = client.giver_address().await;
 
     let counterparties1: ResultOfQueryCollection = client
-        .request_async(
-            "net.query_counterparties",
-            ParamsOfQueryCounterparties {
-                account: account.clone(),
-                first: Some(5),
-                after: None,
-                result: "counterparty last_message_id cursor".to_owned(),
-            },
-        )
+        .request_async("net.query_counterparties", ParamsOfQueryCounterparties {
+            account: account.clone(),
+            first: Some(5),
+            after: None,
+            result: "counterparty last_message_id cursor".to_owned(),
+        })
         .await
         .unwrap();
 
@@ -745,15 +723,12 @@ async fn test_query_counterparties() {
 
     if counterparties1.result.len() == 5 {
         let counterparties2: ResultOfQueryCollection = client
-            .request_async(
-                "net.query_counterparties",
-                ParamsOfQueryCounterparties {
-                    account: account.clone(),
-                    first: Some(5),
-                    after: Some(counterparties1.result[4]["cursor"].as_str().unwrap().to_owned()),
-                    result: "counterparty last_message_id cursor".to_owned(),
-                },
-            )
+            .request_async("net.query_counterparties", ParamsOfQueryCounterparties {
+                account: account.clone(),
+                first: Some(5),
+                after: Some(counterparties1.result[4]["cursor"].as_str().unwrap().to_owned()),
+                result: "counterparty last_message_id cursor".to_owned(),
+            })
             .await
             .unwrap();
 
@@ -762,14 +737,11 @@ async fn test_query_counterparties() {
 }
 
 async fn query_block_id(client: &Arc<ClientContext>) -> ClientResult<String> {
-    crate::net::query_collection(
-        client.clone(),
-        ParamsOfQueryCollection {
-            collection: "blocks".to_string(),
-            result: "id".to_string(),
-            ..Default::default()
-        },
-    )
+    crate::net::query_collection(client.clone(), ParamsOfQueryCollection {
+        collection: "blocks".to_string(),
+        result: "id".to_string(),
+        ..Default::default()
+    })
     .await
     .map(|result| result.result[0]["id"].as_str().unwrap().to_string())
 }
@@ -1064,14 +1036,11 @@ async fn querying_endpoint_selection() {
         .unwrap(),
     );
     NetworkMock::build().url("a").delay(100).repeat(3).network_err().reset_client(&client).await;
-    let result = crate::net::query_collection(
-        client.clone(),
-        ParamsOfQueryCollection {
-            collection: "blocks".to_string(),
-            result: "id id".to_string(),
-            ..Default::default()
-        },
-    )
+    let result = crate::net::query_collection(client.clone(), ParamsOfQueryCollection {
+        collection: "blocks".to_string(),
+        result: "id id".to_string(),
+        ..Default::default()
+    })
     .await;
 
     assert_eq!(
@@ -1288,28 +1257,23 @@ async fn transaction_tree() {
 
     let abi_registry = vec![abi];
     let result: ResultOfQueryTransactionTree = client
-        .request_async(
-            "net.query_transaction_tree",
-            ParamsOfQueryTransactionTree {
-                in_msg: run_result.transaction["in_msg"].as_str().unwrap().to_string(),
-                abi_registry: Some(abi_registry.clone()),
-                transaction_max_count: Some(0),
-                ..Default::default()
-            },
-        )
+        .request_async("net.query_transaction_tree", ParamsOfQueryTransactionTree {
+            in_msg: run_result.transaction["in_msg"].as_str().unwrap().to_string(),
+            abi_registry: Some(abi_registry.clone()),
+            transaction_max_count: Some(0),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     let messages: ResultOfQueryCollection = client
-        .request_async(
-            "net.query_collection",
-            ParamsOfQueryCollection {
-                collection: "messages".to_owned(),
-                filter: Some(json!({
-                    "id": { "eq": run_result.transaction["in_msg"].as_str() },
-                    "msg_type": { "eq": 1 },
-                })),
-                result: r#"
+        .request_async("net.query_collection", ParamsOfQueryCollection {
+            collection: "messages".to_owned(),
+            filter: Some(json!({
+                "id": { "eq": run_result.transaction["in_msg"].as_str() },
+                "msg_type": { "eq": 1 },
+            })),
+            result: r#"
             id dst
             dst_transaction { id aborted
               out_messages { id dst msg_type_name
@@ -1322,11 +1286,10 @@ async fn transaction_tree() {
               }
             }
         "#
-                .to_string(),
-                limit: None,
-                order: None,
-            },
-        )
+            .to_string(),
+            limit: None,
+            order: None,
+        })
         .await
         .unwrap();
 
@@ -1536,29 +1499,23 @@ async fn query_using_ws() {
     }));
 
     let accounts: ResultOfQueryCollection = client
-        .request_async(
-            "net.query_collection",
-            ParamsOfQueryCollection {
-                collection: "accounts".to_owned(),
-                filter: Some(json!({})),
-                result: "id".to_owned(),
-                ..Default::default()
-            },
-        )
+        .request_async("net.query_collection", ParamsOfQueryCollection {
+            collection: "accounts".to_owned(),
+            filter: Some(json!({})),
+            result: "id".to_owned(),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     assert!(!accounts.result.is_empty());
     let messages: ResultOfQueryCollection = client
-        .request_async(
-            "net.query_collection",
-            ParamsOfQueryCollection {
-                collection: "messages".to_owned(),
-                filter: Some(json!({})),
-                result: "id".to_owned(),
-                ..Default::default()
-            },
-        )
+        .request_async("net.query_collection", ParamsOfQueryCollection {
+            collection: "messages".to_owned(),
+            filter: Some(json!({})),
+            result: "id".to_owned(),
+            ..Default::default()
+        })
         .await
         .unwrap();
 

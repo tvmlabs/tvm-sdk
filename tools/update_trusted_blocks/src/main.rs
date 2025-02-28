@@ -49,29 +49,26 @@ async fn query_network_keyblocks(
     let mut last_gen_utime = 0;
 
     loop {
-        let key_blocks = query_collection(
-            Arc::clone(&context),
-            ParamsOfQueryCollection {
-                collection: "blocks".to_string(),
-                result: "id seq_no gen_utime boc".to_string(),
-                filter: Some(json!({
-                    "workchain_id": {
-                        "eq": -1,
-                    },
-                    "key_block": {
-                        "eq": true,
-                    },
-                    "seq_no": {
-                        "gt": last_seq_no,
-                    }
-                })),
-                order: Some(vec![OrderBy {
-                    path: "seq_no".to_string(),
-                    direction: SortDirection::ASC,
-                }]),
-                ..Default::default()
-            },
-        )
+        let key_blocks = query_collection(Arc::clone(&context), ParamsOfQueryCollection {
+            collection: "blocks".to_string(),
+            result: "id seq_no gen_utime boc".to_string(),
+            filter: Some(json!({
+                "workchain_id": {
+                    "eq": -1,
+                },
+                "key_block": {
+                    "eq": true,
+                },
+                "seq_no": {
+                    "gt": last_seq_no,
+                }
+            })),
+            order: Some(vec![OrderBy {
+                path: "seq_no".to_string(),
+                direction: SortDirection::ASC,
+            }]),
+            ..Default::default()
+        })
         .await?
         .result;
 
@@ -84,10 +81,9 @@ async fn query_network_keyblocks(
             let seq_no =
                 key_block["seq_no"].as_u64().expect("Field `seq_no` must be an integer") as u32;
             print!("Proof for key_block #{}...", seq_no);
-            proof_block_data(
-                Arc::clone(&context),
-                ParamsOfProofBlockData { block: key_block.clone() },
-            )
+            proof_block_data(Arc::clone(&context), ParamsOfProofBlockData {
+                block: key_block.clone(),
+            })
             .await?;
             let root_hash = <UInt256 as std::str::FromStr>::from_str(
                 key_block["id"].as_str().expect("Field `id` must be a string"),

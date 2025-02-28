@@ -160,15 +160,16 @@ mod tokenize_tests {
             "b" : "false"
         }"#;
 
-        let params = vec![
-            Param { name: "a".to_owned(), kind: ParamType::Bool },
-            Param { name: "b".to_owned(), kind: ParamType::Bool },
-        ];
+        let params = vec![Param { name: "a".to_owned(), kind: ParamType::Bool }, Param {
+            name: "b".to_owned(),
+            kind: ParamType::Bool,
+        }];
 
-        let expected_tokens = vec![
-            Token { name: "a".to_owned(), value: TokenValue::Bool(true) },
-            Token { name: "b".to_owned(), value: TokenValue::Bool(false) },
-        ];
+        let expected_tokens =
+            vec![Token { name: "a".to_owned(), value: TokenValue::Bool(true) }, Token {
+                name: "b".to_owned(),
+                value: TokenValue::Bool(false),
+            }];
 
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(input).unwrap()).unwrap(),
@@ -248,13 +249,10 @@ mod tokenize_tests {
             },
             Token {
                 name: "b".to_owned(),
-                value: TokenValue::FixedArray(
-                    ParamType::Array(Box::new(ParamType::Bool)),
-                    vec![
-                        TokenValue::Array(ParamType::Bool, bool_array1),
-                        TokenValue::Array(ParamType::Bool, bool_array2),
-                    ],
-                ),
+                value: TokenValue::FixedArray(ParamType::Array(Box::new(ParamType::Bool)), vec![
+                    TokenValue::Array(ParamType::Bool, bool_array1),
+                    TokenValue::Array(ParamType::Bool, bool_array2),
+                ]),
             },
         ];
 
@@ -303,18 +301,16 @@ mod tokenize_tests {
             Param { name: "c".to_owned(), kind: ParamType::Int(16) },
         ];
 
-        let tuple_params2 = vec![
-            Param { name: "a".to_owned(), kind: ParamType::Bool },
-            Param { name: "b".to_owned(), kind: ParamType::Int(8) },
-        ];
+        let tuple_params2 = vec![Param { name: "a".to_owned(), kind: ParamType::Bool }, Param {
+            name: "b".to_owned(),
+            kind: ParamType::Int(8),
+        }];
 
-        let params = vec![
-            Param { name: "t1".to_owned(), kind: ParamType::Tuple(tuple_params1) },
-            Param {
+        let params =
+            vec![Param { name: "t1".to_owned(), kind: ParamType::Tuple(tuple_params1) }, Param {
                 name: "t2".to_owned(),
                 kind: ParamType::Array(Box::new(ParamType::Tuple(tuple_params2))),
-            },
-        ];
+            }];
 
         let expected_tokens = vec![
             Token {
@@ -322,14 +318,11 @@ mod tokenize_tests {
                 value: TokenValue::Tuple(vec![
                     Token {
                         name: "a".to_owned(),
-                        value: TokenValue::Array(
-                            ParamType::Int(16),
-                            vec![
-                                TokenValue::Int(Int::new(-123, 16)),
-                                TokenValue::Int(Int::new(456, 16)),
-                                TokenValue::Int(Int::new(0x789, 16)),
-                            ],
-                        ),
+                        value: TokenValue::Array(ParamType::Int(16), vec![
+                            TokenValue::Int(Int::new(-123, 16)),
+                            TokenValue::Int(Int::new(456, 16)),
+                            TokenValue::Int(Int::new(0x789, 16)),
+                        ]),
                     },
                     Token { name: "b".to_owned(), value: TokenValue::Bool(false) },
                     Token { name: "c".to_owned(), value: TokenValue::Int(Int::new(0x1234, 16)) },
@@ -909,17 +902,17 @@ mod types_check_tests {
             Token { name: "e".to_owned(), value: TokenValue::Bool(false) },
             Token {
                 name: "f".to_owned(),
-                value: TokenValue::Array(
-                    ParamType::Bool,
-                    vec![TokenValue::Bool(false), TokenValue::Bool(true)],
-                ),
+                value: TokenValue::Array(ParamType::Bool, vec![
+                    TokenValue::Bool(false),
+                    TokenValue::Bool(true),
+                ]),
             },
             Token {
                 name: "g".to_owned(),
-                value: TokenValue::FixedArray(
-                    ParamType::Int(64),
-                    vec![TokenValue::Int(big_int.clone()), TokenValue::Int(big_int.clone())],
-                ),
+                value: TokenValue::FixedArray(ParamType::Int(64), vec![
+                    TokenValue::Int(big_int.clone()),
+                    TokenValue::Int(big_int.clone()),
+                ]),
             },
             Token {
                 name: "j".to_owned(),
@@ -963,10 +956,10 @@ mod types_check_tests {
             },
         ];
 
-        let tuple_params = vec![
-            Param { name: "a".to_owned(), kind: ParamType::Bool },
-            Param { name: "b".to_owned(), kind: ParamType::Uint(32) },
-        ];
+        let tuple_params = vec![Param { name: "a".to_owned(), kind: ParamType::Bool }, Param {
+            name: "b".to_owned(),
+            kind: ParamType::Uint(32),
+        }];
 
         let params = vec![
             Param { name: "a".to_owned(), kind: ParamType::Uint(32) },
@@ -1023,20 +1016,19 @@ mod types_check_tests {
         let mut tokens_wrong_fixed_array_size = tokens.clone();
         tokens_wrong_fixed_array_size[6] = Token {
             name: "g".to_owned(),
-            value: TokenValue::FixedArray(
-                ParamType::Int(64),
-                vec![TokenValue::Int(big_int.clone())],
-            ),
+            value: TokenValue::FixedArray(ParamType::Int(64), vec![TokenValue::Int(
+                big_int.clone(),
+            )]),
         };
         assert_not_type_check(&tokens_wrong_fixed_array_size, &params);
 
         let mut tokens_wrong_array_type = tokens.clone();
         tokens_wrong_array_type[5] = Token {
             name: "f".to_owned(),
-            value: TokenValue::Array(
-                ParamType::Bool,
-                vec![TokenValue::Bool(false), TokenValue::Int(big_int.clone())],
-            ),
+            value: TokenValue::Array(ParamType::Bool, vec![
+                TokenValue::Bool(false),
+                TokenValue::Int(big_int.clone()),
+            ]),
         };
         assert_not_type_check(&tokens_wrong_array_type, &params);
 

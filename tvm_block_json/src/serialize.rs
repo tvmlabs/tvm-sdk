@@ -1606,16 +1606,12 @@ pub fn db_serialize_block_ex<'a>(
     serialize_file_hash(&mut map, set.file_hash, set.boc);
     serialize_field(&mut map, "status", set.status as u8);
     if mode.is_q_server() {
-        serialize_field(
-            &mut map,
-            "status_name",
-            match set.status {
-                BlockProcessingStatus::Unknown => "unknown",
-                BlockProcessingStatus::Proposed => "proposed",
-                BlockProcessingStatus::Finalized => "finalized",
-                BlockProcessingStatus::Refused => "refused",
-            },
-        );
+        serialize_field(&mut map, "status_name", match set.status {
+            BlockProcessingStatus::Unknown => "unknown",
+            BlockProcessingStatus::Proposed => "proposed",
+            BlockProcessingStatus::Finalized => "finalized",
+            BlockProcessingStatus::Refused => "refused",
+        });
     }
     map.insert("boc".to_string(), base64_encode(set.boc).into());
     map.insert("global_id".to_string(), set.block.global_id.into());
@@ -1853,17 +1849,13 @@ pub fn db_serialize_transaction_ex<'a>(
     serialize_field(&mut map, "boc", base64_encode(set.boc));
     serialize_field(&mut map, "status", set.status as u8);
     if mode.is_q_server() {
-        serialize_field(
-            &mut map,
-            "status_name",
-            match set.status {
-                TransactionProcessingStatus::Unknown => "unknown",
-                TransactionProcessingStatus::Preliminary => "preliminary",
-                TransactionProcessingStatus::Proposed => "proposed",
-                TransactionProcessingStatus::Finalized => "finalized",
-                TransactionProcessingStatus::Refused => "refused",
-            },
-        );
+        serialize_field(&mut map, "status_name", match set.status {
+            TransactionProcessingStatus::Unknown => "unknown",
+            TransactionProcessingStatus::Preliminary => "preliminary",
+            TransactionProcessingStatus::Proposed => "proposed",
+            TransactionProcessingStatus::Finalized => "finalized",
+            TransactionProcessingStatus::Refused => "refused",
+        });
     }
     let mut ext_in_msg_fee = None;
     let (tr_type, tr_type_name) = match &set.transaction.read_description()? {
@@ -2016,29 +2008,21 @@ fn serialize_account_status(
     status: &AccountStatus,
     mode: SerializationMode,
 ) {
-    serialize_field(
-        map,
-        name,
-        match status {
-            AccountStatus::AccStateUninit => 0b00,
-            AccountStatus::AccStateFrozen => 0b10,
-            AccountStatus::AccStateActive => 0b01,
-            AccountStatus::AccStateNonexist => 0b11,
-        },
-    );
+    serialize_field(map, name, match status {
+        AccountStatus::AccStateUninit => 0b00,
+        AccountStatus::AccStateFrozen => 0b10,
+        AccountStatus::AccStateActive => 0b01,
+        AccountStatus::AccStateNonexist => 0b11,
+    });
 
     if mode.is_q_server() {
         let name = format!("{}_name", name);
-        serialize_field(
-            map,
-            &name,
-            match status {
-                AccountStatus::AccStateUninit => "Uninit",
-                AccountStatus::AccStateFrozen => "Frozen",
-                AccountStatus::AccStateActive => "Active",
-                AccountStatus::AccStateNonexist => "NonExist",
-            },
-        );
+        serialize_field(map, &name, match status {
+            AccountStatus::AccStateUninit => "Uninit",
+            AccountStatus::AccStateFrozen => "Frozen",
+            AccountStatus::AccStateActive => "Active",
+            AccountStatus::AccStateNonexist => "NonExist",
+        });
     }
 }
 
@@ -2218,20 +2202,16 @@ pub fn db_serialize_message_ex(
     serialize_field(&mut map, "boc", base64_encode(&set.boc));
     serialize_field(&mut map, "status", set.status as u8);
     if mode.is_q_server() {
-        serialize_field(
-            &mut map,
-            "status_name",
-            match set.status {
-                MessageProcessingStatus::Unknown => "unknown",
-                MessageProcessingStatus::Queued => "queued",
-                MessageProcessingStatus::Processing => "processing",
-                MessageProcessingStatus::Preliminary => "preliminary",
-                MessageProcessingStatus::Proposed => "proposed",
-                MessageProcessingStatus::Finalized => "finalized",
-                MessageProcessingStatus::Refused => "refused",
-                MessageProcessingStatus::Transiting => "transiting",
-            },
-        );
+        serialize_field(&mut map, "status_name", match set.status {
+            MessageProcessingStatus::Unknown => "unknown",
+            MessageProcessingStatus::Queued => "queued",
+            MessageProcessingStatus::Processing => "processing",
+            MessageProcessingStatus::Preliminary => "preliminary",
+            MessageProcessingStatus::Proposed => "proposed",
+            MessageProcessingStatus::Finalized => "finalized",
+            MessageProcessingStatus::Refused => "refused",
+            MessageProcessingStatus::Transiting => "transiting",
+        });
     }
     if let Some(state) = &set.message.state_init() {
         if let Some(split_depth) = state.split_depth() {

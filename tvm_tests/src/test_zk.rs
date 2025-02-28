@@ -262,10 +262,12 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(
-            code.as_str(),
-            vec![modulus_cell.clone(), iss_base_64_cell, header_base_64_cell, zk_seed_cell],
-        )
+        test_case_with_refs(code.as_str(), vec![
+            modulus_cell.clone(),
+            iss_base_64_cell,
+            header_base_64_cell,
+            zk_seed_cell,
+        ])
         .expect_stack(Stack::new().push(StackItem::Cell(public_inputs_cell.clone())));
         //.expect_success();
 
@@ -392,10 +394,12 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(
-            code.as_str(),
-            vec![modulus_cell, iss_base_64_cell, header_base_64_cell, zk_seed_cell],
-        )
+        test_case_with_refs(code.as_str(), vec![
+            modulus_cell,
+            iss_base_64_cell,
+            header_base_64_cell,
+            zk_seed_cell,
+        ])
         .expect_success();
 
         println!("====== Start Vergrth16 ========");
@@ -928,16 +932,13 @@ mod tests {
 
         println!("code : {code}");
 
-        test_case_with_refs(
-            code.as_str(),
-            vec![
-                modulus_cell,
-                // &iss_and_header_base64details_cell
-                iss_base_64_cell,
-                header_base_64_cell,
-                zk_seed_cell,
-            ],
-        )
+        test_case_with_refs(code.as_str(), vec![
+            modulus_cell,
+            // &iss_and_header_base64details_cell
+            iss_base_64_cell,
+            header_base_64_cell,
+            zk_seed_cell,
+        ])
         .expect_success();
     }
 

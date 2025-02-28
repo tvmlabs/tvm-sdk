@@ -650,20 +650,17 @@ async fn query_data(
     id: &str,
     result: &str,
 ) -> Result<Value> {
-    Ok(query_collection(
-        context,
-        ParamsOfQueryCollection {
-            collection: collection.to_string(),
-            result: result.to_string(),
-            filter: Some(json!({
-                "id": {
-                    "eq": id,
-                },
-            })),
-            limit: Some(1),
-            ..Default::default()
-        },
-    )
+    Ok(query_collection(context, ParamsOfQueryCollection {
+        collection: collection.to_string(),
+        result: result.to_string(),
+        filter: Some(json!({
+            "id": {
+                "eq": id,
+            },
+        })),
+        limit: Some(1),
+        ..Default::default()
+    })
     .await?
     .result
     .remove(0))
@@ -763,29 +760,26 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json.clone() },
-        )
+        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
+            block: block_json.clone(),
+        })
         .await?;
 
     block_json["boc"] = Value::Null;
 
     client
-        .request_async(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json.clone() },
-        )
+        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
+            block: block_json.clone(),
+        })
         .await?;
 
     block_json["boc"] = SHARD_BLOCK_0_A000000000000000_99_BOC.into();
 
     assert!(
         client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: block_json.clone() },
-            )
+            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
+                block: block_json.clone()
+            },)
             .await
             .is_err()
     );
@@ -796,10 +790,9 @@ async fn test_proof_block_data() -> Result<()> {
 
     assert!(
         client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: block_json },
-            )
+            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
+                block: block_json
+            },)
             .await
             .is_err()
     );
@@ -832,10 +825,9 @@ async fn test_proof_block_data() -> Result<()> {
 
     assert!(
         client
-            .request_async::<_, ()>(
-                "proofs.proof_block_data",
-                ParamsOfProofBlockData { block: proof_json },
-            )
+            .request_async::<_, ()>("proofs.proof_block_data", ParamsOfProofBlockData {
+                block: proof_json
+            },)
             .await
             .is_err()
     );
@@ -972,10 +964,9 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json.clone() },
-        )
+        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
+            block: block_json.clone(),
+        })
         .await?;
 
     // Shardchain block
@@ -987,10 +978,9 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
-            "proofs.proof_block_data",
-            ParamsOfProofBlockData { block: block_json.clone() },
-        )
+        .request_async("proofs.proof_block_data", ParamsOfProofBlockData {
+            block: block_json.clone(),
+        })
         .await?;
 
     Ok(())
@@ -1052,10 +1042,9 @@ async fn test_proof_transaction_data() -> Result<()> {
     )
     .await?;
 
-    proof_transaction_data(
-        client.context(),
-        ParamsOfProofTransactionData { transaction: transaction_json },
-    )
+    proof_transaction_data(client.context(), ParamsOfProofTransactionData {
+        transaction: transaction_json,
+    })
     .await?;
 
     let transaction_json = query_transaction_data(
@@ -1079,10 +1068,9 @@ async fn test_proof_transaction_data() -> Result<()> {
         "#,
     ).await?;
 
-    proof_transaction_data(
-        client.context(),
-        ParamsOfProofTransactionData { transaction: transaction_json },
-    )
+    proof_transaction_data(client.context(), ParamsOfProofTransactionData {
+        transaction: transaction_json,
+    })
     .await?;
 
     Ok(())

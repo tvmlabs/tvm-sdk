@@ -145,16 +145,13 @@ impl QueryInterface {
     ) -> Result<Vec<JsonValue>, QueryStatus> {
         let filter: Option<JsonValue> =
             Some(serde_json::from_str(&filter).map_err(|_| QueryStatus::FilterError)?);
-        let result = query_collection(
-            self.ton.clone(),
-            ParamsOfQueryCollection {
-                collection,
-                filter,
-                result,
-                order: Some(vec![order_by]),
-                limit: Some(limit),
-            },
-        )
+        let result = query_collection(self.ton.clone(), ParamsOfQueryCollection {
+            collection,
+            filter,
+            result,
+            order: Some(vec![order_by]),
+            limit: Some(limit),
+        })
         .await
         .map_err(|_| QueryStatus::NetworkError)?;
         Ok(result.result)
@@ -177,10 +174,12 @@ impl QueryInterface {
     ) -> Result<JsonValue, QueryStatus> {
         let filter: Option<JsonValue> =
             Some(serde_json::from_str(&filter).map_err(|_| QueryStatus::FilterError)?);
-        let result = wait_for_collection(
-            self.ton.clone(),
-            ParamsOfWaitForCollection { collection, filter, result, timeout: Some(timeout) },
-        )
+        let result = wait_for_collection(self.ton.clone(), ParamsOfWaitForCollection {
+            collection,
+            filter,
+            result,
+            timeout: Some(timeout),
+        })
         .await
         .map_err(|_| QueryStatus::NetworkError)?;
         Ok(result.result)

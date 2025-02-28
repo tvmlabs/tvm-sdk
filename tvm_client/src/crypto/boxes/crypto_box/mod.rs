@@ -325,17 +325,14 @@ pub async fn get_signing_box_from_crypto_box(
     context: Arc<ClientContext>,
     params: ParamsOfGetSigningBoxFromCryptoBox,
 ) -> ClientResult<RegisteredSigningBox> {
-    register_signing_box(
-        context,
-        BoxFromCryptoBoxLifeCycleManager::<KeysSigningBox> {
-            params: InternalBoxParams {
-                handle: params.handle,
-                hdpath: params.hdpath,
-                secret_lifetime: params.secret_lifetime,
-            },
-            internal_box: Default::default(),
+    register_signing_box(context, BoxFromCryptoBoxLifeCycleManager::<KeysSigningBox> {
+        params: InternalBoxParams {
+            handle: params.handle,
+            hdpath: params.hdpath,
+            secret_lifetime: params.secret_lifetime,
         },
-    )
+        internal_box: Default::default(),
+    })
     .await
 }
 
@@ -363,10 +360,9 @@ impl<T: Send + Sync + 'static> BoxFromCryptoBoxLifeCycleManager<T> {
             return callback(Arc::clone(internal_box)).await;
         }
 
-        let seed_phrase = get_crypto_box_seed_phrase(
-            Arc::clone(&context),
-            RegisteredCryptoBox { handle: CryptoBoxHandle(self.params.handle) },
-        )
+        let seed_phrase = get_crypto_box_seed_phrase(Arc::clone(&context), RegisteredCryptoBox {
+            handle: CryptoBoxHandle(self.params.handle),
+        })
         .await?;
 
         let hdpath =

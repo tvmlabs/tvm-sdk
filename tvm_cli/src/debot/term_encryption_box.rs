@@ -38,10 +38,9 @@ pub(super) struct TerminalEncryptionBox {
 impl Drop for TerminalEncryptionBox {
     fn drop(&mut self) {
         if self.handle.0 != 0 {
-            let _ = remove_encryption_box(
-                self.client.clone(),
-                RegisteredEncryptionBox { handle: self.handle() },
-            );
+            let _ = remove_encryption_box(self.client.clone(), RegisteredEncryptionBox {
+                handle: self.handle(),
+            });
         }
     }
 }

@@ -31,16 +31,13 @@ fn test_parallel_requests() {
 
     let query = |client: &TestClient| {
         let _: ResultOfQueryCollection = client
-            .request(
-                "net.query_collection",
-                ParamsOfQueryCollection {
-                    collection: "accounts".to_owned(),
-                    filter: Some(json!({})),
-                    result: "id".to_owned(),
-                    limit: Some(1),
-                    order: None,
-                },
-            )
+            .request("net.query_collection", ParamsOfQueryCollection {
+                collection: "accounts".to_owned(),
+                filter: Some(json!({})),
+                result: "id".to_owned(),
+                limit: Some(1),
+                order: None,
+            })
             .unwrap();
     };
 
