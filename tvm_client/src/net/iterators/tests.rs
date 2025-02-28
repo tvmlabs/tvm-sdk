@@ -13,17 +13,14 @@ async fn query_ids_in_range(
     let mut start_time = start_time;
     while start_time < end_time {
         let items: ResultOfQueryCollection = client
-            .request_async(
-                "net.query_collection",
-                ParamsOfQueryCollection {
-                    collection: collection.to_string(),
-                    filter: Some(json!({
-                        time_field: { "eq": start_time },
-                    })),
-                    result: format!("id {}", time_field),
-                    ..Default::default()
-                },
-            )
+            .request_async("net.query_collection", ParamsOfQueryCollection {
+                collection: collection.to_string(),
+                filter: Some(json!({
+                    time_field: { "eq": start_time },
+                })),
+                result: format!("id {}", time_field),
+                ..Default::default()
+            })
             .await
             .unwrap();
         for item in items.result {

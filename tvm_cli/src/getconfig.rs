@@ -547,10 +547,10 @@ pub async fn dump_blockchain_config(config: &Config, path: &str) -> Result<(), S
         .ok_or("Failed to query last block BOC.")?
         .to_owned();
 
-    let bc_config = get_blockchain_config(
-        ton.clone(),
-        ParamsOfGetBlockchainConfig { block_boc: block, ..Default::default() },
-    )
+    let bc_config = get_blockchain_config(ton.clone(), ParamsOfGetBlockchainConfig {
+        block_boc: block,
+        ..Default::default()
+    })
     .map_err(|e| format!("Failed to get blockchain config: {}", e))?;
 
     let bc_config =

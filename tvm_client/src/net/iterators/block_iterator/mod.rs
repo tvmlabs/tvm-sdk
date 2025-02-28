@@ -211,18 +211,15 @@ impl BlockIterator {
             let by_prev_ids = prev_ids_by(NextLink::ByPrev);
             let by_prev_alt_ids = prev_ids_by(NextLink::ByPrevAlt);
 
-            let mut blocks = query_collection(
-                context.clone(),
-                ParamsOfQueryCollection {
-                    collection: "blocks".to_string(),
-                    filter: Some(json!({
-                        "prev_ref": { "root_hash": { "in": by_prev_ids } },
-                        "OR": { "prev_alt_ref": { "root_hash": { "in": by_prev_alt_ids } } },
-                    })),
-                    result: format!("{} {}", BLOCK_TRAVERSE_FIELDS, self.filter.result_fields),
-                    ..Default::default()
-                },
-            )
+            let mut blocks = query_collection(context.clone(), ParamsOfQueryCollection {
+                collection: "blocks".to_string(),
+                filter: Some(json!({
+                    "prev_ref": { "root_hash": { "in": by_prev_ids } },
+                    "OR": { "prev_alt_ref": { "root_hash": { "in": by_prev_alt_ids } } },
+                })),
+                result: format!("{} {}", BLOCK_TRAVERSE_FIELDS, self.filter.result_fields),
+                ..Default::default()
+            })
             .await?
             .result;
 

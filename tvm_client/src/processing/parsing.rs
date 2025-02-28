@@ -32,10 +32,11 @@ pub(crate) fn decode_output(
     let mut out_messages = Vec::new();
     let mut output = None;
     for message in messages {
-        let decode_result = decode_message(
-            context.clone(),
-            ParamsOfDecodeMessage { message, abi: abi.clone(), ..Default::default() },
-        );
+        let decode_result = decode_message(context.clone(), ParamsOfDecodeMessage {
+            message,
+            abi: abi.clone(),
+            ..Default::default()
+        });
         let decoded = match decode_result {
             Ok(decoded) => {
                 if decoded.body_type == MessageBodyType::Output {

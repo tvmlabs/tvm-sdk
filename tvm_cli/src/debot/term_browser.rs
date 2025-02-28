@@ -100,17 +100,14 @@ impl TerminalBrowser {
 
         if !start && init_message.is_none() {
             init_message = Some(
-                encode_internal_message(
-                    browser.client.clone(),
-                    ParamsOfEncodeInternalMessage {
-                        abi: Some(abi),
-                        address: Some(addr.to_owned()),
-                        src_address: Some(format!("{}:{}", DEBOT_WC, BROWSER_ID)),
-                        call_set,
-                        value: "1000000000000000".to_owned(),
-                        ..Default::default()
-                    },
-                )
+                encode_internal_message(browser.client.clone(), ParamsOfEncodeInternalMessage {
+                    abi: Some(abi),
+                    address: Some(addr.to_owned()),
+                    src_address: Some(format!("{}:{}", DEBOT_WC, BROWSER_ID)),
+                    call_set,
+                    value: "1000000000000000".to_owned(),
+                    ..Default::default()
+                })
                 .map_err(|e| format!("{}", e))?
                 .message,
             );
@@ -191,18 +188,16 @@ impl TerminalBrowser {
                     CallSet::some_with_function_and_input(&format!("0x{:x}", func_id), return_args)
                 }
             };
-            let response_msg = encode_internal_message(
-                self.client.clone(),
-                ParamsOfEncodeInternalMessage {
+            let response_msg =
+                encode_internal_message(self.client.clone(), ParamsOfEncodeInternalMessage {
                     abi: Some(debot.abi.clone()),
                     address: Some(debot_addr.to_owned()),
                     call_set,
                     value: "1000000000000000".to_owned(),
                     ..Default::default()
-                },
-            )
-            .map_err(|e| format!("{}", e))?
-            .message;
+                })
+                .map_err(|e| format!("{}", e))?
+                .message;
             let result = debot.dengine.send(response_msg).await;
             debot.callbacks.take_messages(&mut self.msg_queue);
             if let Err(e) = result {
@@ -240,10 +235,11 @@ impl TerminalBrowser {
     async fn set_exit_arg(&mut self, message: String, _debot_addr: &str) -> Result<(), String> {
         let abi = self.processor.read().await.abi();
         let arg = if let Some(abi) = abi {
-            let decoded = decode_message(
-                self.client.clone(),
-                ParamsOfDecodeMessage { abi, message, ..Default::default() },
-            )
+            let decoded = decode_message(self.client.clone(), ParamsOfDecodeMessage {
+                abi,
+                message,
+                ..Default::default()
+            })
             .map_err(|e| format!("{}", e))?;
             decoded.value.unwrap_or(json!({}))
         } else {
@@ -342,10 +338,10 @@ pub async fn run_debot_browser(
     loop {
         let mut next_msg = browser.msg_queue.pop_front();
         while let Some(msg) = next_msg {
-            let parsed = parse_message(
-                ton.clone(),
-                ParamsOfParse { boc: msg.clone(), ..Default::default() },
-            )
+            let parsed = parse_message(ton.clone(), ParamsOfParse {
+                boc: msg.clone(),
+                ..Default::default()
+            })
             .map_err(|e| format!("{}", e))?
             .parsed;
 

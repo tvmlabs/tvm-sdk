@@ -1245,16 +1245,13 @@ async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
         .map_err(|e| format!("arguments are not in json format: {}", e))?;
 
     let client = create_client_local()?;
-    let body = tvm_client::abi::encode_message_body(
-        client.clone(),
-        ParamsOfEncodeMessageBody {
-            abi: load_abi(abi.as_ref().unwrap(), config).await?,
-            call_set: CallSet::some_with_function_and_input(method.unwrap(), params)
-                .ok_or("failed to create CallSet with specified parameters.")?,
-            is_internal: true,
-            ..Default::default()
-        },
-    )
+    let body = tvm_client::abi::encode_message_body(client.clone(), ParamsOfEncodeMessageBody {
+        abi: load_abi(abi.as_ref().unwrap(), config).await?,
+        call_set: CallSet::some_with_function_and_input(method.unwrap(), params)
+            .ok_or("failed to create CallSet with specified parameters.")?,
+        is_internal: true,
+        ..Default::default()
+    })
     .await
     .map_err(|e| format!("failed to encode body: {}", e))
     .map(|r| r.body)?;

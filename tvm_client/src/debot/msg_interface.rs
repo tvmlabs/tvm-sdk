@@ -100,14 +100,11 @@ impl MsgInterface {
         .map_err(|e| format!("{}", e))?;
         let answer_msg = callobj.execute(true).await.map_err(|e| format!("{}", e))?;
 
-        let result = decode_message(
-            self.ton.clone(),
-            ParamsOfDecodeMessage {
-                abi: self.debot_abi.clone(),
-                message: answer_msg,
-                ..Default::default()
-            },
-        )
+        let result = decode_message(self.ton.clone(), ParamsOfDecodeMessage {
+            abi: self.debot_abi.clone(),
+            message: answer_msg,
+            ..Default::default()
+        })
         .map_err(|e| format!("failed to decode message: {}", e))?;
         let abi_str = self.debot_abi.json_string().unwrap();
         let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{}", e))?;
@@ -138,14 +135,11 @@ impl MsgInterface {
         .map_err(|e| format!("{}", e))?;
         let answer_msg = callobj.execute(false).await.map_err(|e| format!("{}", e))?;
 
-        let result = decode_message(
-            self.ton.clone(),
-            ParamsOfDecodeMessage {
-                abi: self.debot_abi.clone(),
-                message: answer_msg,
-                ..Default::default()
-            },
-        )
+        let result = decode_message(self.ton.clone(), ParamsOfDecodeMessage {
+            abi: self.debot_abi.clone(),
+            message: answer_msg,
+            ..Default::default()
+        })
         .map_err(|e| format!("failed to decode message: {}", e))?;
         let abi_str = self.debot_abi.json_string().unwrap();
         let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{}", e))?;

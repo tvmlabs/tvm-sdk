@@ -53,15 +53,12 @@ impl TransactionIterator {
         context: &Arc<ClientContext>,
         params: ParamsOfCreateTransactionIterator,
     ) -> ClientResult<Self> {
-        let blocks = BlockIterator::new(
-            context,
-            ParamsOfCreateBlockIterator {
-                start_time: params.start_time,
-                end_time: params.end_time,
-                result: Some(BLOCK_TRANSACTIONS_FIELDS.to_string()),
-                shard_filter: params.shard_filter,
-            },
-        )
+        let blocks = BlockIterator::new(context, ParamsOfCreateBlockIterator {
+            start_time: params.start_time,
+            end_time: params.end_time,
+            result: Some(BLOCK_TRANSACTIONS_FIELDS.to_string()),
+            shard_filter: params.shard_filter,
+        })
         .await?;
         Ok(Self {
             blocks,

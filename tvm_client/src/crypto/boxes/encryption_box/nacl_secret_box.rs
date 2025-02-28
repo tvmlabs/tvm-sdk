@@ -45,26 +45,20 @@ impl EncryptionBox for NaclSecretEncryptionBox {
     }
 
     async fn encrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
-        nacl_secret_box(
-            context,
-            ParamsOfNaclSecretBox {
-                decrypted: data.clone(),
-                nonce: self.params.nonce.clone(),
-                key: self.params.key.clone(),
-            },
-        )
+        nacl_secret_box(context, ParamsOfNaclSecretBox {
+            decrypted: data.clone(),
+            nonce: self.params.nonce.clone(),
+            key: self.params.key.clone(),
+        })
         .map(|result| result.encrypted)
     }
 
     async fn decrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
-        nacl_secret_box_open(
-            context,
-            ParamsOfNaclSecretBoxOpen {
-                encrypted: data.clone(),
-                nonce: self.params.nonce.clone(),
-                key: self.params.key.to_string(),
-            },
-        )
+        nacl_secret_box_open(context, ParamsOfNaclSecretBoxOpen {
+            encrypted: data.clone(),
+            nonce: self.params.nonce.clone(),
+            key: self.params.key.to_string(),
+        })
         .map(|result| result.decrypted)
     }
 }

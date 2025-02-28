@@ -568,25 +568,22 @@ fn test_stack_serialization() {
 
     let stack_items = stack::deserialize_items(input.as_array().unwrap().iter()).unwrap();
 
-    assert_eq!(
-        stack_items,
-        vec![
-            StackItem::None,
-            StackItem::nan(),
-            StackItem::int(123),
-            StackItem::int(0x456),
-            StackItem::boolean(true),
-            StackItem::boolean(false),
-            StackItem::cell(empty_cell.clone()),
-            StackItem::builder(BuilderData::new()),
-            StackItem::continuation(ContinuationData::with_code(SliceData::default())),
-            StackItem::slice(SliceData::default()),
-            StackItem::tuple(vec![StackItem::int(123), StackItem::int(456)]),
-            list.clone(),
-            list.clone(),
-            extended_list.clone(),
-        ]
-    );
+    assert_eq!(stack_items, vec![
+        StackItem::None,
+        StackItem::nan(),
+        StackItem::int(123),
+        StackItem::int(0x456),
+        StackItem::boolean(true),
+        StackItem::boolean(false),
+        StackItem::cell(empty_cell.clone()),
+        StackItem::builder(BuilderData::new()),
+        StackItem::continuation(ContinuationData::with_code(SliceData::default())),
+        StackItem::slice(SliceData::default()),
+        StackItem::tuple(vec![StackItem::int(123), StackItem::int(456)]),
+        list.clone(),
+        list.clone(),
+        extended_list.clone(),
+    ]);
 
     let serialized = stack::serialize_items(Box::new(stack_items.iter()), true).unwrap();
 
@@ -755,13 +752,10 @@ async fn test_method_error(
         params: &ParamsOfEncodeMessage,
     ) -> ClientResult<ResultOfProcessMessage> {
         client
-            .request_async(
-                "processing.process_message",
-                ParamsOfProcessMessage {
-                    message_encode_params: params.clone(),
-                    ..Default::default()
-                },
-            )
+            .request_async("processing.process_message", ParamsOfProcessMessage {
+                message_encode_params: params.clone(),
+                ..Default::default()
+            })
             .await
     }
 
@@ -772,15 +766,12 @@ async fn test_method_error(
         message: &str,
     ) -> ClientResult<ResultOfRunTvm> {
         client
-            .request_async(
-                "tvm.run_tvm",
-                ParamsOfRunTvm {
-                    message: message.to_owned(),
-                    account: account_boc.to_owned(),
-                    abi: Some(abi.clone()),
-                    ..Default::default()
-                },
-            )
+            .request_async("tvm.run_tvm", ParamsOfRunTvm {
+                message: message.to_owned(),
+                account: account_boc.to_owned(),
+                abi: Some(abi.clone()),
+                ..Default::default()
+            })
             .await
     }
 
@@ -791,18 +782,15 @@ async fn test_method_error(
         message: &str,
     ) -> ClientResult<ResultOfRunExecutor> {
         client
-            .request_async(
-                "tvm.run_executor",
-                ParamsOfRunExecutor {
-                    message: message.to_owned(),
-                    account: AccountForExecutor::Account {
-                        boc: account_boc.to_owned(),
-                        unlimited_balance: None,
-                    },
-                    abi: Some(abi.clone()),
-                    ..Default::default()
+            .request_async("tvm.run_executor", ParamsOfRunExecutor {
+                message: message.to_owned(),
+                account: AccountForExecutor::Account {
+                    boc: account_boc.to_owned(),
+                    unlimited_balance: None,
                 },
-            )
+                abi: Some(abi.clone()),
+                ..Default::default()
+            })
             .await
     }
 
@@ -870,65 +858,53 @@ async fn test_my_code() {
     let ctor_params = json!({ "pubkey": format!("0x{}", keys.public) });
 
     let deploy_message: ResultOfEncodeMessage = client
-        .request_async(
-            "abi.encode_message",
-            ParamsOfEncodeMessage {
-                abi: abi.clone(),
-                call_set: Some(CallSet {
-                    function_name: "constructor".into(),
-                    input: Some(ctor_params),
-                    ..Default::default()
-                }),
-                deploy_set: Some(DeploySet { tvc: tvc.clone(), ..Default::default() }),
-                signer: Signer::Keys { keys: keys.clone() },
+        .request_async("abi.encode_message", ParamsOfEncodeMessage {
+            abi: abi.clone(),
+            call_set: Some(CallSet {
+                function_name: "constructor".into(),
+                input: Some(ctor_params),
                 ..Default::default()
-            },
-        )
+            }),
+            deploy_set: Some(DeploySet { tvc: tvc.clone(), ..Default::default() }),
+            signer: Signer::Keys { keys: keys.clone() },
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     let deployed: ResultOfRunExecutor = client
-        .request_async(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                message: deploy_message.message.clone(),
-                account: AccountForExecutor::Uninit,
-                return_updated_account: Some(true),
-                abi: Some(abi.clone()),
-                ..Default::default()
-            },
-        )
+        .request_async("tvm.run_executor", ParamsOfRunExecutor {
+            message: deploy_message.message.clone(),
+            account: AccountForExecutor::Uninit,
+            return_updated_account: Some(true),
+            abi: Some(abi.clone()),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     let get_my_code_message: ResultOfEncodeMessage = client
-        .request_async(
-            "abi.encode_message",
-            ParamsOfEncodeMessage {
-                abi: abi.clone(),
-                address: Some(deploy_message.address.clone()),
-                call_set: Some(CallSet {
-                    function_name: "getCodeRefs".into(),
-                    input: Some(json!({})),
-                    ..Default::default()
-                }),
-                signer: Signer::None,
+        .request_async("abi.encode_message", ParamsOfEncodeMessage {
+            abi: abi.clone(),
+            address: Some(deploy_message.address.clone()),
+            call_set: Some(CallSet {
+                function_name: "getCodeRefs".into(),
+                input: Some(json!({})),
                 ..Default::default()
-            },
-        )
+            }),
+            signer: Signer::None,
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     let get_my_code: ResultOfRunTvm = client
-        .request_async(
-            "tvm.run_tvm",
-            ParamsOfRunTvm {
-                message: get_my_code_message.message.clone(),
-                account: deployed.account.clone(),
-                abi: Some(abi.clone()),
-                ..Default::default()
-            },
-        )
+        .request_async("tvm.run_tvm", ParamsOfRunTvm {
+            message: get_my_code_message.message.clone(),
+            account: deployed.account.clone(),
+            abi: Some(abi.clone()),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
@@ -948,73 +924,58 @@ async fn test_run_executor_fees() {
 
     // use correct signature
     let deploy_message: ResultOfEncodeMessage = client
-        .request_async(
-            "abi.encode_message",
-            ParamsOfEncodeMessage {
-                abi: abi.clone(),
-                call_set: Some(CallSet {
-                    function_name: "constructor".into(),
-                    ..Default::default()
-                }),
-                deploy_set: Some(DeploySet { tvc: tvc.clone(), ..Default::default() }),
-                signer: signer.clone(),
-                ..Default::default()
-            },
-        )
+        .request_async("abi.encode_message", ParamsOfEncodeMessage {
+            abi: abi.clone(),
+            call_set: Some(CallSet { function_name: "constructor".into(), ..Default::default() }),
+            deploy_set: Some(DeploySet { tvc: tvc.clone(), ..Default::default() }),
+            signer: signer.clone(),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     let address = deploy_message.address.clone();
 
     let deployed: ResultOfRunExecutor = client
-        .request_async(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                message: deploy_message.message.clone(),
-                account: AccountForExecutor::Uninit,
-                return_updated_account: Some(true),
-                abi: Some(abi.clone()),
-                ..Default::default()
-            },
-        )
+        .request_async("tvm.run_executor", ParamsOfRunExecutor {
+            message: deploy_message.message.clone(),
+            account: AccountForExecutor::Uninit,
+            return_updated_account: Some(true),
+            abi: Some(abi.clone()),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     let send_message: ResultOfEncodeMessage = client
-        .request_async(
-            "abi.encode_message",
-            ParamsOfEncodeMessage {
-                abi: abi.clone(),
-                address: Some(address.clone()),
-                call_set: CallSet::some_with_function_and_input(
-                    "sendTransaction",
-                    json!({
-                        "dest": address.clone(),
-                        "value": 100_000_000u64,
-                        "bounce": false
-                    }),
-                ),
-                signer,
-                ..Default::default()
-            },
-        )
+        .request_async("abi.encode_message", ParamsOfEncodeMessage {
+            abi: abi.clone(),
+            address: Some(address.clone()),
+            call_set: CallSet::some_with_function_and_input(
+                "sendTransaction",
+                json!({
+                    "dest": address.clone(),
+                    "value": 100_000_000u64,
+                    "bounce": false
+                }),
+            ),
+            signer,
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     // first run - with correct signature
     let return_value: ResultOfRunExecutor = client
-        .request_async(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                message: send_message.message.clone(),
-                account: AccountForExecutor::Account {
-                    boc: deployed.account.clone(),
-                    unlimited_balance: Some(true),
-                },
-                abi: Some(abi.clone()),
-                ..Default::default()
+        .request_async("tvm.run_executor", ParamsOfRunExecutor {
+            message: send_message.message.clone(),
+            account: AccountForExecutor::Account {
+                boc: deployed.account.clone(),
+                unlimited_balance: Some(true),
             },
-        )
+            abi: Some(abi.clone()),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
@@ -1040,46 +1001,42 @@ async fn test_run_executor_fees() {
                 }),
                 signer: bad_signer,
                 ..Default::default()
-            },
-        )
+            }),
+            signer: bad_signer,
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     // second run - with wrong signature
     let _err = client
-        .request_async::<_, ResultOfRunExecutor>(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                message: send_message.message.clone(),
-                account: AccountForExecutor::Account {
-                    boc: deployed.account.clone(),
-                    unlimited_balance: Some(true),
-                },
-                abi: Some(abi.clone()),
-                ..Default::default()
+        .request_async::<_, ResultOfRunExecutor>("tvm.run_executor", ParamsOfRunExecutor {
+            message: send_message.message.clone(),
+            account: AccountForExecutor::Account {
+                boc: deployed.account.clone(),
+                unlimited_balance: Some(true),
             },
-        )
+            abi: Some(abi.clone()),
+            ..Default::default()
+        })
         .await
         .unwrap_err();
 
     // third run - with wrong signature and with skipped signature checking
     let return_value: ResultOfRunExecutor = client
-        .request_async(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                message: send_message.message.clone(),
-                account: AccountForExecutor::Account {
-                    boc: deployed.account.clone(),
-                    unlimited_balance: Some(true),
-                },
-                execution_options: Some(ExecutionOptions {
-                    chksig_always_succeed: Some(true),
-                    ..Default::default()
-                }),
-                abi: Some(abi.clone()),
-                ..Default::default()
+        .request_async("tvm.run_executor", ParamsOfRunExecutor {
+            message: send_message.message.clone(),
+            account: AccountForExecutor::Account {
+                boc: deployed.account.clone(),
+                unlimited_balance: Some(true),
             },
-        )
+            execution_options: Some(ExecutionOptions {
+                chksig_always_succeed: Some(true),
+                ..Default::default()
+            }),
+            abi: Some(abi.clone()),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
@@ -1097,76 +1054,61 @@ async fn test_gosh() {
     let signer = Signer::Keys { keys };
 
     let deploy_message: ResultOfEncodeMessage = client
-        .request_async(
-            "abi.encode_message",
-            ParamsOfEncodeMessage {
-                abi: abi.clone(),
-                call_set: CallSet::some_with_function("constructor"),
-                deploy_set: DeploySet::some_with_tvc(tvc.clone()),
-                signer: signer.clone(),
-                ..Default::default()
-            },
-        )
+        .request_async("abi.encode_message", ParamsOfEncodeMessage {
+            abi: abi.clone(),
+            call_set: CallSet::some_with_function("constructor"),
+            deploy_set: DeploySet::some_with_tvc(tvc.clone()),
+            signer: signer.clone(),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     let address = deploy_message.address.clone();
 
     let deployed: ResultOfRunExecutor = client
-        .request_async(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                message: deploy_message.message,
-                account: AccountForExecutor::Uninit,
-                return_updated_account: Some(true),
-                abi: Some(abi.clone()),
-                ..Default::default()
-            },
-        )
+        .request_async("tvm.run_executor", ParamsOfRunExecutor {
+            message: deploy_message.message,
+            account: AccountForExecutor::Uninit,
+            return_updated_account: Some(true),
+            abi: Some(abi.clone()),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     for function in abi.abi().unwrap().functions().keys().filter(|f| *f != "constructor") {
         let call_message: ResultOfEncodeMessage = client
-            .request_async(
-                "abi.encode_message",
-                ParamsOfEncodeMessage {
-                    abi: abi.clone(),
-                    address: Some(address.clone()),
-                    call_set: CallSet::some_with_function(function.as_str()),
-                    signer: signer.clone(),
-                    ..Default::default()
-                },
-            )
+            .request_async("abi.encode_message", ParamsOfEncodeMessage {
+                abi: abi.clone(),
+                address: Some(address.clone()),
+                call_set: CallSet::some_with_function(function.as_str()),
+                signer: signer.clone(),
+                ..Default::default()
+            })
             .await
             .unwrap();
 
         let _: ResultOfRunExecutor = client
-            .request_async(
-                "tvm.run_executor",
-                ParamsOfRunExecutor {
-                    message: call_message.message.clone(),
-                    account: AccountForExecutor::Account {
-                        boc: deployed.account.clone(),
-                        unlimited_balance: Some(true),
-                    },
-                    abi: Some(abi.clone()),
-                    ..Default::default()
+            .request_async("tvm.run_executor", ParamsOfRunExecutor {
+                message: call_message.message.clone(),
+                account: AccountForExecutor::Account {
+                    boc: deployed.account.clone(),
+                    unlimited_balance: Some(true),
                 },
-            )
+                abi: Some(abi.clone()),
+                ..Default::default()
+            })
             .await
             .unwrap();
 
         let _: ResultOfRunTvm = client
-            .request_async(
-                "tvm.run_tvm",
-                ParamsOfRunTvm {
-                    message: call_message.message,
-                    account: deployed.account.clone(),
-                    abi: Some(abi.clone()),
-                    ..Default::default()
-                },
-            )
+            .request_async("tvm.run_tvm", ParamsOfRunTvm {
+                message: call_message.message,
+                account: deployed.account.clone(),
+                abi: Some(abi.clone()),
+                ..Default::default()
+            })
             .await
             .unwrap();
     }
@@ -1189,54 +1131,45 @@ async fn test_signature_id() {
     let orig_config = base64_encode(orig_config.raw_config().write_to_bytes().unwrap());
 
     let deploy_message: ResultOfEncodeMessage = client
-        .request_async(
-            "abi.encode_message",
-            ParamsOfEncodeMessage {
-                abi: abi.clone(),
-                call_set: CallSet::some_with_function("constructor"),
-                deploy_set: DeploySet::some_with_tvc(tvc.clone()),
-                signer: signer.clone(),
-                signature_id: Some(global_id),
-                ..Default::default()
-            },
-        )
+        .request_async("abi.encode_message", ParamsOfEncodeMessage {
+            abi: abi.clone(),
+            call_set: CallSet::some_with_function("constructor"),
+            deploy_set: DeploySet::some_with_tvc(tvc.clone()),
+            signer: signer.clone(),
+            signature_id: Some(global_id),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     client
-        .request_async::<_, ResultOfRunExecutor>(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                message: deploy_message.message.clone(),
-                account: AccountForExecutor::Uninit,
-                abi: Some(abi.clone()),
-                execution_options: Some(ExecutionOptions {
-                    blockchain_config: Some(config.clone()),
-                    signature_id: Some(global_id),
-                    ..Default::default()
-                }),
+        .request_async::<_, ResultOfRunExecutor>("tvm.run_executor", ParamsOfRunExecutor {
+            message: deploy_message.message.clone(),
+            account: AccountForExecutor::Uninit,
+            abi: Some(abi.clone()),
+            execution_options: Some(ExecutionOptions {
+                blockchain_config: Some(config.clone()),
+                signature_id: Some(global_id),
                 ..Default::default()
-            },
-        )
+            }),
+            ..Default::default()
+        })
         .await
         .unwrap();
 
     // check signature verification is failed if capability is disabled
     let result = client
-        .request_async::<_, ResultOfRunExecutor>(
-            "tvm.run_executor",
-            ParamsOfRunExecutor {
-                message: deploy_message.message,
-                account: AccountForExecutor::Uninit,
-                abi: Some(abi.clone()),
-                execution_options: Some(ExecutionOptions {
-                    blockchain_config: Some(orig_config.clone()),
-                    signature_id: Some(global_id),
-                    ..Default::default()
-                }),
+        .request_async::<_, ResultOfRunExecutor>("tvm.run_executor", ParamsOfRunExecutor {
+            message: deploy_message.message,
+            account: AccountForExecutor::Uninit,
+            abi: Some(abi.clone()),
+            execution_options: Some(ExecutionOptions {
+                blockchain_config: Some(orig_config.clone()),
+                signature_id: Some(global_id),
                 ..Default::default()
-            },
-        )
+            }),
+            ..Default::default()
+        })
         .await
         .unwrap_err();
     assert_eq!(
