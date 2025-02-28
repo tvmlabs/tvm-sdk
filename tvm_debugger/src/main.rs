@@ -9,8 +9,10 @@ mod state;
 
 use std::path::PathBuf;
 
+
 use clap::ArgAction;
 use clap::Parser;
+
 use serde_json::Value;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
@@ -256,13 +258,6 @@ fn replace_code(input_file: PathBuf, code: String) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn run_command<F, T>(f: F) -> anyhow::Result<String>
-where
-    F: FnOnce() -> anyhow::Result<T>,
-    T: serde::Serialize,
-{
-    f().map(|result| serde_json::to_string(&result).expect("Failed to serialize result"))
-}
 
 pub(crate) fn read_file_as_base64(file_path: &str) -> anyhow::Result<String> {
     let mut file = std::fs::File::open(file_path)?;
