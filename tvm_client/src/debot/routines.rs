@@ -200,10 +200,13 @@ pub(super) async fn sign_hash(
 ) -> Result<String, String> {
     let hash_str = arg_json["hash"].as_str().ok_or(r#""hash" argument not found"#.to_string())?;
     let hash_as_bigint = decode_abi_bigint(hash_str).map_err(|err| err.to_string())?;
-    let result = signing_box_sign(ton, ParamsOfSigningBoxSign {
-        unsigned: base64_encode(&hash_as_bigint.to_bytes_be().1),
-        signing_box: signer,
-    })
+    let result = signing_box_sign(
+        ton,
+        ParamsOfSigningBoxSign {
+            unsigned: base64_encode(&hash_as_bigint.to_bytes_be().1),
+            signing_box: signer,
+        },
+    )
     .await
     .map_err(|err| format!("Can not sign hash: {}", err))?;
     Ok(result.signature)
@@ -225,12 +228,15 @@ fn get_arg(args: &serde_json::Value, name: &str) -> Result<String, String> {
 pub(super) fn nacl_box(ton: TonClient, args: serde_json::Value) -> Result<String, String> {
     let public = decode_abi_bigint(&get_arg(&args, "publicKey")?).map_err(|e| e.to_string())?;
     let secret = decode_abi_bigint(&get_arg(&args, "secretKey")?).map_err(|e| e.to_string())?;
-    let result = crate::crypto::nacl_box(ton, ParamsOfNaclBox {
-        decrypted: base64_encode(get_arg(&args, "decrypted")?),
-        nonce: get_arg(&args, "nonce")?,
-        their_public: hex::encode(public.to_bytes_be().1),
-        secret: hex::encode(secret.to_bytes_be().1),
-    })
+    let result = crate::crypto::nacl_box(
+        ton,
+        ParamsOfNaclBox {
+            decrypted: base64_encode(get_arg(&args, "decrypted")?),
+            nonce: get_arg(&args, "nonce")?,
+            their_public: hex::encode(public.to_bytes_be().1),
+            secret: hex::encode(secret.to_bytes_be().1),
+        },
+    )
     .map_err(|e| format!(" failed to encrypt with nacl box: {}", e))?;
     Ok(result.encrypted)
 }
@@ -240,9 +246,10 @@ pub(super) fn nacl_box_gen_keypair(
     args: serde_json::Value,
 ) -> Result<KeyPair, String> {
     let secret = decode_abi_bigint(&get_arg(&args, "secret")?).map_err(|e| e.to_string())?;
-    let result = nacl_box_keypair_from_secret_key(ton, ParamsOfNaclBoxKeyPairFromSecret {
-        secret: hex::encode(secret.to_bytes_be().1),
-    })
+    let result = nacl_box_keypair_from_secret_key(
+        ton,
+        ParamsOfNaclBoxKeyPairFromSecret { secret: hex::encode(secret.to_bytes_be().1) },
+    )
     .map_err(|e| format!(" failed to generate keypair from secret: {}", e))?;
     Ok(result)
 }
@@ -271,15 +278,18 @@ pub(super) async fn get_account(
     args: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
     let addr = get_arg(args, "addr")?.to_lowercase();
-    let mut accounts = query_collection(ton.clone(), ParamsOfQueryCollection {
-        collection: "accounts".to_owned(),
-        filter: Some(json!({
-            "id": { "eq": addr }
-        })),
-        result: "boc".to_owned(),
-        order: None,
-        limit: Some(1),
-    })
+    let mut accounts = query_collection(
+        ton.clone(),
+        ParamsOfQueryCollection {
+            collection: "accounts".to_owned(),
+            filter: Some(json!({
+                "id": { "eq": addr }
+            })),
+            result: "boc".to_owned(),
+            order: None,
+            limit: Some(1),
+        },
+    )
     .await
     .map_err(|e| format!("account query failed: {}", e))?
     .result;

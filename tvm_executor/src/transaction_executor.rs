@@ -548,12 +548,15 @@ pub trait TransactionExecutor {
         if let Some(init_code_hash) = result_acc.init_code_hash() {
             smc_info.set_init_code_hash(init_code_hash.clone());
         }
-        let mut vm = VMSetup::with_context(SliceData::load_cell(code)?, VMSetupContext {
-            capabilities: self.config().capabilites(),
-            block_version: params.block_version,
-            #[cfg(feature = "signature_with_id")]
-            signature_id: params.signature_id,
-        })
+        let mut vm = VMSetup::with_context(
+            SliceData::load_cell(code)?,
+            VMSetupContext {
+                capabilities: self.config().capabilites(),
+                block_version: params.block_version,
+                #[cfg(feature = "signature_with_id")]
+                signature_id: params.signature_id,
+            },
+        )
         .set_smart_contract_info(smc_info)?
         .set_stack(stack)
         .set_data(data)?

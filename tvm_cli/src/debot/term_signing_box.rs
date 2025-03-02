@@ -69,9 +69,10 @@ impl TerminalSigningBox {
 impl Drop for TerminalSigningBox {
     fn drop(&mut self) {
         if self.handle.0 != 0 {
-            let _ = remove_signing_box(self.client.clone(), RegisteredSigningBox {
-                handle: self.handle.clone(),
-            });
+            let _ = remove_signing_box(
+                self.client.clone(),
+                RegisteredSigningBox { handle: self.handle.clone() },
+            );
         }
     }
 }

@@ -50,11 +50,10 @@ async fn decode_call_parameters(
     msg: &EncodedMessage,
     abi: Abi,
 ) -> Result<(String, String), String> {
-    let result = decode_message(ton, ParamsOfDecodeMessage {
-        abi,
-        message: msg.message.clone(),
-        ..Default::default()
-    })
+    let result = decode_message(
+        ton,
+        ParamsOfDecodeMessage { abi, message: msg.message.clone(), ..Default::default() },
+    )
     .map_err(|e| format!("couldn't decode message: {}", e))?;
 
     Ok((result.name, format!("{:#}", result.value.unwrap_or(json!({})))))
@@ -141,14 +140,17 @@ pub async fn emulate_locally(
     } else {
         state = state_boc.unwrap();
     }
-    let res = run_executor(ton.clone(), ParamsOfRunExecutor {
-        message: msg.clone(),
-        account: AccountForExecutor::Account {
-            boc: state,
-            unlimited_balance: if is_fee { Some(true) } else { None },
+    let res = run_executor(
+        ton.clone(),
+        ParamsOfRunExecutor {
+            message: msg.clone(),
+            account: AccountForExecutor::Account {
+                boc: state,
+                unlimited_balance: if is_fee { Some(true) } else { None },
+            },
+            ..Default::default()
         },
-        ..Default::default()
-    })
+    )
     .await;
 
     if res.is_err() {

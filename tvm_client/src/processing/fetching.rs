@@ -94,14 +94,17 @@ impl TransactionBoc {
         context: &Arc<ClientContext>,
         transaction_id: &str,
     ) -> ClientResult<Value> {
-        Ok(wait_for_collection(context.clone(), ParamsOfWaitForCollection {
-            collection: TRANSACTIONS_COLLECTION.into(),
-            filter: Some(json!({
-                "id": { "eq": transaction_id.to_string() }
-            })),
-            result: "boc out_messages { boc }".into(),
-            timeout: Some(MAX_TIMEOUT),
-        })
+        Ok(wait_for_collection(
+            context.clone(),
+            ParamsOfWaitForCollection {
+                collection: TRANSACTIONS_COLLECTION.into(),
+                filter: Some(json!({
+                    "id": { "eq": transaction_id.to_string() }
+                })),
+                result: "boc out_messages { boc }".into(),
+                timeout: Some(MAX_TIMEOUT),
+            },
+        )
         .await?
         .result)
     }
@@ -111,15 +114,18 @@ impl TransactionBoc {
         message_id: &str,
         block_id: &str,
     ) -> ClientResult<Value> {
-        Ok(wait_for_collection(context.clone(), ParamsOfWaitForCollection {
-            collection: TRANSACTIONS_COLLECTION.into(),
-            filter: Some(json!({
-                "in_msg": { "eq": message_id },
-                "block_id": { "eq": block_id },
-            })),
-            result: "boc out_messages { boc }".into(),
-            timeout: Some(MAX_TIMEOUT),
-        })
+        Ok(wait_for_collection(
+            context.clone(),
+            ParamsOfWaitForCollection {
+                collection: TRANSACTIONS_COLLECTION.into(),
+                filter: Some(json!({
+                    "in_msg": { "eq": message_id },
+                    "block_id": { "eq": block_id },
+                })),
+                result: "boc out_messages { boc }".into(),
+                timeout: Some(MAX_TIMEOUT),
+            },
+        )
         .await?
         .result)
     }

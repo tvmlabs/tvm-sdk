@@ -565,18 +565,21 @@ async fn replay_transaction_command(
     }
 
     let ton_client = create_client(config)?;
-    let trans = query_collection(ton_client.clone(), ParamsOfQueryCollection {
-        collection: "transactions".to_owned(),
-        filter: Some(json!({
-            "id": {
-                "eq": tx_id.unwrap()
-            },
-        })),
-        result: "lt block { start_lt } boc".to_string(),
-        limit: Some(1),
-        order: None,
-        ..Default::default()
-    })
+    let trans = query_collection(
+        ton_client.clone(),
+        ParamsOfQueryCollection {
+            collection: "transactions".to_owned(),
+            filter: Some(json!({
+                "id": {
+                    "eq": tx_id.unwrap()
+                },
+            })),
+            result: "lt block { start_lt } boc".to_string(),
+            limit: Some(1),
+            order: None,
+            ..Default::default()
+        },
+    )
     .await
     .map_err(|e| format!("Failed to query transaction: {}", e))?;
 
@@ -1435,23 +1438,26 @@ async fn fetch_transactions(
         let mut lt = String::from("0x0");
         loop {
             let action = || async {
-                query_collection(context.clone(), ParamsOfQueryCollection {
-                    collection: "transactions".to_owned(),
-                    filter: Some(json!({
-                        "account_addr": {
-                            "eq": address.clone()
-                        },
-                        "lt": {
-                            "gt": lt
-                        }
-                    })),
-                    result: "lt boc id workchain_id".to_owned(),
-                    order: Some(vec![OrderBy {
-                        path: "lt".to_owned(),
-                        direction: SortDirection::ASC,
-                    }]),
-                    limit: None,
-                })
+                query_collection(
+                    context.clone(),
+                    ParamsOfQueryCollection {
+                        collection: "transactions".to_owned(),
+                        filter: Some(json!({
+                            "account_addr": {
+                                "eq": address.clone()
+                            },
+                            "lt": {
+                                "gt": lt
+                            }
+                        })),
+                        result: "lt boc id workchain_id".to_owned(),
+                        order: Some(vec![OrderBy {
+                            path: "lt".to_owned(),
+                            direction: SortDirection::ASC,
+                        }]),
+                        limit: None,
+                    },
+                )
                 .await
             };
 
