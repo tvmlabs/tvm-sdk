@@ -13,7 +13,8 @@ use base58::*;
 use byteorder::BigEndian;
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
-use hmac::*;
+use hmac::Hmac;
+use hmac::Mac;
 use libsecp256k1::PublicKey;
 use libsecp256k1::SecretKey;
 use pbkdf2::pbkdf2;
@@ -201,10 +202,10 @@ impl HDPrivateKey {
         }
     }
 
-    pub(crate) fn from_mnemonic(phrase: &String) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn from_mnemonic(phrase: &str) -> ClientResult<HDPrivateKey> {
         let salt = "mnemonic";
         let mut seed = vec![0u8; 64];
-        pbkdf2::<Hmac<Sha512>>(phrase.as_bytes(), salt.as_bytes(), 2048, &mut seed);
+        let _ = pbkdf2::<Hmac<Sha512>>(phrase.as_bytes(), salt.as_bytes(), 2048, &mut seed);
         let mut hmac: Hmac<Sha512> = Hmac::new_from_slice(b"Bitcoin seed").unwrap();
         hmac.update(&seed);
         let child_chain_with_key = key512(&hmac.finalize().into_bytes())?;
@@ -247,6 +248,7 @@ impl HDPrivateKey {
             libsecp256k1::Error::TweakOutOfRange => {
                 crypto::Error::bip32_invalid_key("TweakOutOfRange")
             }
+            libsecp256k1::Error::InvalidAffine => crypto::Error::bip32_invalid_key("InvalidAffine"),
         }
     }
 
@@ -300,7 +302,7 @@ impl HDPrivateKey {
         Ok(child)
     }
 
-    pub(crate) fn derive_path(&self, path: &String, compliant: bool) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn derive_path(&self, path: &str, compliant: bool) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = self.clone();
         for step in path.split('/') {
             if step == "m" {
@@ -326,8 +328,7 @@ impl HDPrivateKey {
         if version != XPRV_VERSION {
             return Err(crypto::Error::bip32_invalid_key("wrong key version"));
         }
-        let mut xprv: HDPrivateKey = Default::default();
-        xprv.depth = bytes[4];
+        let mut xprv = HDPrivateKey { depth: bytes[4], ..Default::default() };
         xprv.parent_fingerprint.copy_from_slice(&bytes[5..9]);
         xprv.child_number.copy_from_slice(&bytes[9..13]);
         xprv.child_chain.0.copy_from_slice(&bytes[13..45]);
@@ -351,7 +352,7 @@ impl HDPrivateKey {
         bytes
     }
 
-    fn from_serialized_string(string: &String) -> ClientResult<HDPrivateKey> {
+    fn from_serialized_string(string: &str) -> ClientResult<HDPrivateKey> {
         Self::from_serialized(
             &string
                 .from_base58()
@@ -388,8 +389,7 @@ impl Ripemd160 {
 
     fn join32(msg: &[u8]) -> Vec<u32> {
         assert_eq!(msg.len() % 4, 0usize);
-        let mut res: Vec<u32> = Vec::new();
-        res.resize(msg.len() / 4, 0);
+        let mut res: Vec<u32> = vec![0; msg.len() / 4];
         for i in 0..res.len() {
             res[i] = LittleEndian::read_u32(&msg[i * 4..(i + 1) * 4]);
         }

@@ -16,6 +16,7 @@ use tvm_types::read_single_root_boc;
 
 use super::*;
 use crate::BlockIdExt;
+use crate::HashmapAugType;
 
 fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     println!("messages");
@@ -35,8 +36,8 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     let mut len = 0;
     ss.read_accounts()
         .unwrap()
-        .iterate_objects(|sh_account_ref| {
-            let account = sh_account_ref.read_account().unwrap();
+        .iterate_accounts(|_, sh_account_ref, _| {
+            let account = sh_account_ref.read_account().unwrap().as_struct().unwrap();
             println!("account: {}", account.get_id().unwrap());
             println!("  balance: {}", account.get_balance().unwrap());
 

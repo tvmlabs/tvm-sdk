@@ -587,7 +587,6 @@ pub fn construct_account_from_tvc(
                 .map_err(|e| format!("Failed to set address: {}", e))?,
             _ => MsgAddressInt::default(),
         },
-        None,
         match balance {
             Some(balance) => CurrencyCollection::with_grams(balance),
             _ => CurrencyCollection::default(),
@@ -674,10 +673,7 @@ pub fn check_file_exists(path: &str, trim: &[&str], ending: &[&str]) -> Option<S
     None
 }
 
-pub fn abi_from_matches_or_config(
-    matches: &ArgMatches<'_>,
-    config: &Config,
-) -> Result<String, String> {
+pub fn abi_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<String, String> {
     matches
         .value_of("ABI")
         .map(|s| s.to_string())
@@ -719,7 +715,7 @@ pub fn load_params(params: &str) -> Result<String, String> {
 }
 
 pub async fn unpack_alternative_params(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     abi_path: &str,
     method: &str,
     config: &Config,
@@ -732,7 +728,7 @@ pub async fn unpack_alternative_params(
     }
 }
 
-pub fn wc_from_matches_or_config(matches: &ArgMatches<'_>, config: &Config) -> Result<i32, String> {
+pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<i32, String> {
     Ok(matches
         .value_of("WC")
         .map(|v| i32::from_str_radix(v, 10))
@@ -742,7 +738,7 @@ pub fn wc_from_matches_or_config(matches: &ArgMatches<'_>, config: &Config) -> R
 }
 
 pub fn contract_data_from_matches_or_config_alias(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &FullConfig,
 ) -> Result<(Option<String>, Option<String>, Option<String>), String> {
     let address = matches

@@ -740,14 +740,43 @@ impl ServerLink {
         endpoint: Option<&Endpoint>,
         thread_id: ThreadIdentifier,
     ) -> ClientResult<Value> {
-        let message = ExtMessage {
+        let thread_id = Some(thread_id.to_string());
+        let mut message = ExtMessage {
             id: base64_encode(key),
             body: base64_encode(value),
             expireAt: None,
-            threadId: Some(thread_id.to_string()),
+            threadId: thread_id,
         };
 
-        self.query(&GraphQLQuery::with_send_message(&message), endpoint).await
+        let mut endpoint = endpoint.cloned();
+        let query = GraphQLQuery::with_send_message(&message);
+        let result = self.query(&query, endpoint.as_ref()).await;
+
+        let Err(ref err) = result else { return result };
+
+        let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
+            return result;
+        };
+
+        let Some(code) = ext.get("code").and_then(|c| c.as_str()) else { return result };
+
+        if !["WRONG_PRODUCER", "THREAD_MISMATCH"].contains(&code) {
+            return result;
+        };
+
+        let (real_thread_id, redirect_url) = err.get_redirection_data();
+        if real_thread_id.is_some() {
+            message.set_thread_id(real_thread_id);
+        }
+
+        if let Some(url) = redirect_url {
+            if let Some(ep) = endpoint.as_mut() {
+                ep.query_url = url;
+                // log::error!("Resending request to {}", ep.query_url);
+            }
+        }
+
+        self.query(&GraphQLQuery::with_send_message(&message), endpoint.as_ref()).await
     }
 
     pub async fn send_messages(
@@ -826,3 +855,7 @@ impl ServerLink {
         self.state.invalidate_querying_endpoint().await
     }
 }
+
+// #[cfg(test)]
+// #[path = "tests/test_server_link.rs"]
+// mod tests;

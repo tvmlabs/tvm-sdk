@@ -37,13 +37,13 @@ use term_browser::terminal_input;
 use crate::config::Config;
 use crate::helpers::load_ton_address;
 
-pub fn create_debot_command<'a, 'b>() -> App<'a, 'b> {
+pub fn create_debot_command<'a, 'b>() -> App<'a> {
     SubCommand::with_name("debot")
         .about("Debot commands.")
         .setting(AppSettings::AllowLeadingHyphen)
         .setting(AppSettings::TrailingVarArg)
         .setting(AppSettings::DontCollapseArgsInUsage)
-        .arg(Arg::with_name("DEBUG").long("--debug").short("-d"))
+        .arg(Arg::with_name("DEBUG").long("--debug").short('d'))
         .subcommand(
             SubCommand::with_name("fetch")
                 .setting(AppSettings::AllowLeadingHyphen)
@@ -55,14 +55,14 @@ pub fn create_debot_command<'a, 'b>() -> App<'a, 'b> {
                 .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address."))
                 .arg(
                     Arg::with_name("PIPECHAIN")
-                        .short("m")
+                        .short('m')
                         .long("pipechain")
                         .takes_value(true)
                         .help("Path to the DeBot Manifest."),
                 )
                 .arg(
                     Arg::with_name("SIGNKEY")
-                        .short("s")
+                        .short('s')
                         .long("signkey")
                         .takes_value(true)
                         .help("Define keypair to auto sign transactions."),
@@ -80,7 +80,7 @@ pub fn create_debot_command<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn debot_command(m: &ArgMatches<'_>, config: Config) -> Result<(), String> {
+pub async fn debot_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     let debug = m.is_present("DEBUG");
     let log_conf = ConfigBuilder::new()
         .add_filter_ignore_str("executor")
@@ -111,12 +111,12 @@ pub async fn debot_command(m: &ArgMatches<'_>, config: Config) -> Result<(), Str
         return fetch_command(m, config).await;
     }
     if let Some(m) = m.subcommand_matches("invoke") {
-        return invoke_command(m, config).await;
+        return invoke_command(m, config);
     }
     Err("unknown debot command".to_owned())
 }
 
-async fn fetch_command(m: &ArgMatches<'_>, config: Config) -> Result<(), String> {
+async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     let addr = m.value_of("ADDRESS");
     let pipechain = m.value_of("PIPECHAIN");
     let signkey_path = m.value_of("SIGNKEY").map(|x| x.to_owned()).or(config.keys_path.clone());
@@ -144,7 +144,7 @@ async fn fetch_command(m: &ArgMatches<'_>, config: Config) -> Result<(), String>
     }
 }
 
-async fn invoke_command(m: &ArgMatches<'_>, config: Config) -> Result<(), String> {
+fn invoke_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     let addr = m.value_of("ADDRESS");
     load_ton_address(addr.unwrap(), &config)?;
     let _ = m.value_of("MESSAGE").unwrap().to_owned();

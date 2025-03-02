@@ -138,7 +138,7 @@ pub fn convert_string_to_tokens(_ton: TonClient, arg: &str) -> Result<String, St
         } else {
             result += "000000000";
         }
-        u64::from_str_radix(&result, 10).map_err(|e| format!("failed to parse amount: {}", e))?;
+        result.parse::<u64>().map_err(|e| format!("failed to parse amount: {}", e))?;
         return Ok(result);
     }
     Err("Invalid amount value".to_string())
@@ -214,8 +214,7 @@ pub(super) async fn sign_hash(
 
 pub(super) fn generate_random(ton: TonClient, args: &serde_json::Value) -> Result<String, String> {
     let len_str = get_arg(args, "length")?;
-    let len =
-        u32::from_str_radix(&len_str, 10).map_err(|e| format!("failed to parse length: {}", e))?;
+    let len = len_str.parse::<u32>().map_err(|e| format!("failed to parse length: {}", e))?;
     let result = generate_random_bytes(ton, ParamsOfGenerateRandomBytes { length: len })
         .map_err(|e| format!(" failed to generate random: {}", e))?;
     Ok(result.bytes)

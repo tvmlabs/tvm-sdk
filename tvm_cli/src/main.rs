@@ -73,6 +73,7 @@ use helpers::create_client_local;
 use helpers::load_abi;
 use helpers::load_ton_address;
 use helpers::query_raw;
+use lazy_static;
 use multisig::create_multisig_command;
 use multisig::multisig_command;
 use replay::fetch_block_command;
@@ -109,6 +110,17 @@ use crate::run::run_get_method;
 
 const DEF_MSG_LIFETIME: u32 = 30;
 const DEF_STORAGE_PERIOD: u32 = 60 * 60 * 24 * 365;
+
+lazy_static::lazy_static!(
+    static ref VERSION: String = format!(
+        "{}\nCOMMIT_ID: {}\nBUILD_DATE: {}\nCOMMIT_DATE: {}\nGIT_BRANCH: {}",
+        env!("CARGO_PKG_VERSION"),
+        env!("BUILD_GIT_COMMIT"),
+        env!("BUILD_TIME"),
+        env!("BUILD_GIT_DATE"),
+        env!("BUILD_GIT_BRANCH")
+    );
+);
 
 enum CallType {
     Call,
@@ -163,7 +175,7 @@ async fn main_internal() -> Result<(), String> {
     let method_opt_arg = Arg::with_name("METHOD")
         .takes_value(true)
         .long("--method")
-        .short("-m")
+        .short('m')
         .help("Name of the function being called.");
 
     let address_opt_arg = Arg::with_name("ADDRESS")
@@ -310,12 +322,12 @@ async fn main_internal() -> Result<(), String> {
         .arg(Arg::with_name("KEY_FILE")
             .takes_value(true)
             .long("--output")
-            .short("-o")
+            .short('o')
             .help("Path to the file where to store the keypair."))
         .arg(Arg::with_name("PHRASE")
             .takes_value(true)
             .long("--phrase")
-            .short("-p")
+            .short('p')
             .help("Seed phrase (12 words) or secret (private) key. Seed phrase should be specified in quotes, secret key as 64 hex chars."));
 
     let genaddr_cmd = SubCommand::with_name("genaddr")
@@ -360,7 +372,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(wc_arg.clone());
 
     let output_arg = Arg::with_name("OUTPUT")
-        .short("-o")
+        .short('o')
         .long("--output")
         .takes_value(true)
         .help("Path to the file where to store the message.");
@@ -583,7 +595,7 @@ async fn main_internal() -> Result<(), String> {
         .author(author)
         .arg(Arg::with_name("GLOBAL")
             .long("--global")
-            .short("-g")
+            .short('g')
             .help("Change parameters of the global config which contains default values for ordinary configs."))
         .arg(Arg::with_name("URL")
             .long("--url")
@@ -694,13 +706,13 @@ async fn main_internal() -> Result<(), String> {
             .multiple(true))
         .arg(Arg::with_name("DUMPTVC")
             .long("--dumptvc")
-            .short("-d")
+            .short('d')
             .takes_value(true)
             .conflicts_with("DUMPBOC")
             .help("Dumps account StateInit to the specified tvc file. Works only if one address was given."))
         .arg(Arg::with_name("DUMPBOC")
             .long("--dumpboc")
-            .short("-b")
+            .short('b')
             .takes_value(true)
             .conflicts_with("DUMPTVC")
             .conflicts_with("BOC")
@@ -766,7 +778,7 @@ async fn main_internal() -> Result<(), String> {
                 .arg(
                     Arg::with_name("PERIOD")
                         .long("--period")
-                        .short("-p")
+                        .short('p')
                         .takes_value(true)
                         .help("Time period in seconds (default value is 1 year)."),
                 ),
@@ -794,11 +806,11 @@ async fn main_internal() -> Result<(), String> {
                     .help("Proposal description (max symbols 382)."))
                 .arg(keys_arg.clone())
                 .arg(Arg::with_name("OFFLINE")
-                    .short("-f")
+                    .short('f')
                     .long("--offline")
                     .help("Prints signed message to terminal instead of sending it."))
                 .arg(Arg::with_name("LIFETIME")
-                    .short("-l")
+                    .short('l')
                     .long("--lifetime")
                     .takes_value(true)
                     .help("Period of time in seconds while message is valid.")))
@@ -812,11 +824,11 @@ async fn main_internal() -> Result<(), String> {
                     .help("Proposal transaction id."))
                 .arg(keys_arg.clone())
                 .arg(Arg::with_name("OFFLINE")
-                    .short("-f")
+                    .short('f')
                     .long("--offline")
                     .help("Prints signed message to terminal instead of sending it."))
                 .arg(Arg::with_name("LIFETIME")
-                    .short("-l")
+                    .short('l')
                     .long("--lifetime")
                     .takes_value(true)
                     .help("Period of time in seconds while message is valid.")))
@@ -872,7 +884,7 @@ async fn main_internal() -> Result<(), String> {
                         .help("List of addresses.")
                         .multiple(true),
                 )
-                .arg(Arg::with_name("PATH").takes_value(true).long("--path").short("-p").help(
+                .arg(Arg::with_name("PATH").takes_value(true).long("--path").short('p').help(
                     "Path to folder where to store the dumped accounts. Default value is \".\".",
                 )),
         );
@@ -906,7 +918,7 @@ async fn main_internal() -> Result<(), String> {
         .about("Replays account's transactions starting from zerostate.")
         .arg(Arg::with_name("CONFIG_TXNS")
             .long("--config")
-            .short("-c")
+            .short('c')
             .takes_value(true)
             .help("File containing zerostate and txns of -1:555..5 account.")
             .conflicts_with("DEFAULT_CONFIG"))
@@ -921,39 +933,31 @@ async fn main_internal() -> Result<(), String> {
         .arg(Arg::with_name("DEFAULT_CONFIG")
             .help("Replay transaction with current network config or default if it is not available.")
             .long("--default_config")
-            .short("-e")
+            .short('e')
             .conflicts_with("CONFIG_TXNS"));
 
-    let version = format!(
-        "{}\nCOMMIT_ID: {}\nBUILD_DATE: {}\nCOMMIT_DATE: {}\nGIT_BRANCH: {}",
-        env!("CARGO_PKG_VERSION"),
-        env!("BUILD_GIT_COMMIT"),
-        env!("BUILD_TIME"),
-        env!("BUILD_GIT_DATE"),
-        env!("BUILD_GIT_BRANCH")
-    );
     let matches = App::new("tonos_cli")
-        .version(&*version)
+        .version(VERSION.as_str())
         .author(author)
         .about("TVMLabs console tool for TVM networks")
         .arg(
             Arg::with_name("NETWORK")
                 .help("Network to connect.")
-                .short("-u")
+                .short('u')
                 .long("--url")
                 .takes_value(true),
         )
         .arg(
             Arg::with_name("CONFIG")
                 .help("Path to the tonos-cli configuration file.")
-                .short("-c")
+                .short('c')
                 .long("--config")
                 .takes_value(true),
         )
         .arg(
             Arg::with_name("JSON")
                 .help("Cli prints output in json format.")
-                .short("-j")
+                .short('j')
                 .long("--json"),
         )
         .subcommand(version_cmd)
@@ -996,17 +1000,17 @@ async fn main_internal() -> Result<(), String> {
         .setting(AppSettings::SubcommandRequired);
 
     let matches = matches.get_matches_safe().map_err(|e| match e.kind {
-        clap::ErrorKind::VersionDisplayed => {
+        clap::ErrorKind::DisplayVersion => {
             println!();
             exit(0);
         }
-        clap::ErrorKind::HelpDisplayed => {
+        clap::ErrorKind::DisplayHelp => {
             println!("{}", e);
             exit(0);
         }
         _ => {
             eprintln!("{}", e);
-            format!("{:#}", json!({"Error": e.message}))
+            format!("{:#}", json!({"Error": e.to_string()}))
         }
     })?;
 
@@ -1024,7 +1028,7 @@ async fn main_internal() -> Result<(), String> {
     })
 }
 
-async fn command_parser(matches: &ArgMatches<'_>, is_json: bool) -> Result<(), String> {
+async fn command_parser(matches: &ArgMatches, is_json: bool) -> Result<(), String> {
     let config_file = matches
         .value_of("CONFIG")
         .map(|v| v.to_string())
@@ -1216,7 +1220,7 @@ fn getkeypair_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
     generate_keypair(key_file, phrase, config)
 }
 
-async fn send_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn send_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let message = matches.value_of("MESSAGE");
     let abi = Some(abi_from_matches_or_config(matches, config)?);
 
@@ -1227,7 +1231,7 @@ async fn send_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), S
     call_contract_with_msg(config, message.unwrap().to_owned(), &abi.unwrap()).await
 }
 
-async fn body_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
     let output = matches.value_of("OUTPUT");
@@ -1266,11 +1270,7 @@ async fn body_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), S
     Ok(())
 }
 
-async fn call_command(
-    matches: &ArgMatches<'_>,
-    config: &Config,
-    call: CallType,
-) -> Result<(), String> {
+async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> Result<(), String> {
     let address = matches.value_of("ADDRESS");
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
@@ -1341,7 +1341,7 @@ async fn call_command(
     }
 }
 
-async fn callx_command(matches: &ArgMatches<'_>, full_config: &FullConfig) -> Result<(), String> {
+async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result<(), String> {
     let config = &full_config.config;
     let method = Some(
         matches
@@ -1374,7 +1374,7 @@ async fn callx_command(matches: &ArgMatches<'_>, full_config: &FullConfig) -> Re
     .await
 }
 
-async fn runget_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn runget_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS");
     let method = matches.value_of("METHOD");
     let params = matches.values_of("PARAMS");
@@ -1399,7 +1399,7 @@ async fn runget_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(),
 }
 
 async fn deploy_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &mut FullConfig,
     deploy_type: DeployType,
 ) -> Result<(), String> {
@@ -1465,10 +1465,7 @@ async fn deploy_command(
     }
 }
 
-async fn deployx_command(
-    matches: &ArgMatches<'_>,
-    full_config: &mut FullConfig,
-) -> Result<(), String> {
+async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> Result<(), String> {
     let config = &full_config.config;
     let tvc = matches.value_of("TVC");
     let wc = wc_from_matches_or_config(matches, config)?;
@@ -1538,7 +1535,7 @@ fn config_command(
             full_config.print_aliases();
             return Ok(());
         } else {
-            if matches.args.is_empty() {
+            if !matches.args_present() {
                 return Err("At least one option must be specified".to_string());
             }
 
@@ -1553,7 +1550,7 @@ fn config_command(
     result
 }
 
-async fn genaddr_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn genaddr_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let tvc = matches.value_of("TVC");
     let wc = matches.value_of("WC");
     let keys = matches.value_of("GENKEY").or(matches.value_of("SETKEY"));
@@ -1575,7 +1572,7 @@ async fn genaddr_command(matches: &ArgMatches<'_>, config: &Config) -> Result<()
         .await
 }
 
-async fn account_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn account_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let addresses_list = matches
         .values_of("ADDRESS")
         .map(|val| val.collect::<Vec<_>>())
@@ -1611,7 +1608,7 @@ async fn account_command(matches: &ArgMatches<'_>, config: &Config) -> Result<()
     get_account(config, formatted_list, tvcname, bocname, is_boc).await
 }
 
-async fn dump_accounts_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn dump_accounts_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let addresses_list = matches.values_of("ADDRESS").unwrap().collect::<Vec<_>>();
     let mut formatted_list = vec![];
     for address in addresses_list.iter() {
@@ -1626,7 +1623,7 @@ async fn dump_accounts_command(matches: &ArgMatches<'_>, config: &Config) -> Res
     dump_accounts(config, formatted_list, path).await
 }
 
-async fn account_wait_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn account_wait_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS").unwrap();
     let address = load_ton_address(address, config)?;
     let timeout = matches
@@ -1637,7 +1634,7 @@ async fn account_wait_command(matches: &ArgMatches<'_>, config: &Config) -> Resu
     wait_for_change(config, &address, timeout).await
 }
 
-async fn query_raw_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn query_raw_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let collection = matches.value_of("COLLECTION").unwrap();
     let filter = matches.value_of("FILTER");
     let limit = matches.value_of("LIMIT");
@@ -1646,7 +1643,7 @@ async fn query_raw_command(matches: &ArgMatches<'_>, config: &Config) -> Result<
     query_raw(config, collection, filter, limit, order, result).await
 }
 
-async fn storage_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn storage_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS");
     let period = matches.value_of("PERIOD");
     if !config.is_json {
@@ -1662,7 +1659,7 @@ async fn storage_command(matches: &ArgMatches<'_>, config: &Config) -> Result<()
     calc_storage(config, address.as_str(), period).await
 }
 
-async fn proposal_create_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn proposal_create_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS");
     let dest = matches.value_of("DEST");
     let keys = matches.value_of("KEYS");
@@ -1687,7 +1684,7 @@ async fn proposal_create_command(matches: &ArgMatches<'_>, config: &Config) -> R
     .await
 }
 
-async fn proposal_vote_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn proposal_vote_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS");
     let keys = matches.value_of("KEYS");
     let id = matches.value_of("ID");
@@ -1704,7 +1701,7 @@ async fn proposal_vote_command(matches: &ArgMatches<'_>, config: &Config) -> Res
     Ok(())
 }
 
-async fn proposal_decode_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn proposal_decode_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS");
     let id = matches.value_of("ID");
     if !config.is_json {
@@ -1714,7 +1711,7 @@ async fn proposal_decode_command(matches: &ArgMatches<'_>, config: &Config) -> R
     decode_proposal(config, address.as_str(), id.unwrap()).await
 }
 
-async fn getconfig_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn getconfig_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let index = matches.value_of("INDEX");
     if !config.is_json {
         print_args!(index);
@@ -1722,7 +1719,7 @@ async fn getconfig_command(matches: &ArgMatches<'_>, config: &Config) -> Result<
     query_global_config(config, index).await
 }
 
-async fn update_config_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn update_config_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let abi = matches.value_of("ABI");
     let seqno = matches.value_of("SEQNO");
     let config_master = matches.value_of("CONFIG_MASTER_KEY_FILE");
@@ -1740,7 +1737,7 @@ async fn update_config_command(matches: &ArgMatches<'_>, config: &Config) -> Res
     .await
 }
 
-async fn dump_bc_config_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn dump_bc_config_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let path = matches.value_of("PATH");
     if !config.is_json {
         print_args!(path);
@@ -1776,7 +1773,7 @@ fn nodeid_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-async fn sendfile_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn sendfile_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let boc = m.value_of("BOC");
     if !config.is_json {
         print_args!(boc);

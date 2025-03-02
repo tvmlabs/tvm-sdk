@@ -479,11 +479,11 @@ fn build_onerror_body(onerror_id: u32, e: ClientError) -> ClientResult<SliceData
 }
 
 fn build_answer_msg(
-    out_msg: &String,
+    out_msg: &str,
     answer_id: u32,
     func_id: u32,
-    dest_addr: &String,
-    debot_addr: &String,
+    dest_addr: &str,
+    debot_addr: &str,
 ) -> Option<String> {
     let out_message: Message = deserialize_object_from_base64(out_msg, "message").ok()?.object;
     if out_message.is_internal() {

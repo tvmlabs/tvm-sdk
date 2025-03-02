@@ -43,50 +43,47 @@ use crate::multisig::CallArgs;
 use crate::multisig::MultisigArgs;
 use crate::print_args;
 
-pub fn create_depool_command<'a, 'b>() -> App<'a, 'b> {
+pub fn create_depool_command<'b>() -> App<'b> {
     let wallet_arg = Arg::with_name("MSIG")
         .takes_value(true)
         .long("--wallet")
-        .short("-w")
+        .short('w')
         .help("Multisig wallet address.");
-    let value_arg = Arg::with_name("VALUE")
-        .takes_value(true)
-        .long("--value")
-        .short("-v")
-        .help("Value in tons.");
+    let value_arg =
+        Arg::with_name("VALUE").takes_value(true).long("--value").short('v').help("Value in tons.");
     let keys_arg = Arg::with_name("SIGN")
         .takes_value(true)
         .long("--sign")
-        .short("-s")
+        .short('s')
         .help("Seed phrase or path to file with keypair which must be used to sign message to multisig wallet.");
     let total_period_arg = Arg::with_name("TPERIOD")
         .takes_value(true)
         .long("--total")
-        .short("-t")
+        .short('t')
         .help("Total period of vesting stake (days).");
     let withdrawal_period_arg = Arg::with_name("WPERIOD")
         .takes_value(true)
         .long("--withdrawal")
-        .short("-i")
+        .short('i')
         .help("Payment period of vesting stake (days).");
     let beneficiary_arg = Arg::with_name("BENEFICIARY")
         .takes_value(true)
         .long("--beneficiary")
-        .short("-b")
+        .short('b')
         .help("Smart contract address which will own lock stake rewards.");
     let donor_arg = Arg::with_name("DONOR")
         .takes_value(true)
         .long("--donor")
-        .short("-d")
+        .short('d')
         .help("Donor smart contract address.");
     let dest_arg = Arg::with_name("DEST")
         .takes_value(true)
         .long("--dest")
-        .short("-d")
+        .short('d')
         .help("Address of the destination smart contract.");
     let wait_answer = Arg::with_name("WAIT_ANSWER")
         .long("--wait-answer")
-        .short("-a")
+        .short('a')
         .help("Wait for depool answer when calling a depool function.");
     let v2_arg =
         Arg::with_name("V2").long("--v2").help("Force to interpret wallet account as multisig v2.");
@@ -125,7 +122,7 @@ pub fn create_depool_command<'a, 'b>() -> App<'a, 'b> {
             .arg(Arg::with_name("SINCE")
                 .takes_value(true)
                 .long("--since")
-                .short("-s")
+                .short('s')
                 .help("Prints answers since this unixtime.")) )
         .subcommand(SubCommand::with_name("stake")
             .about(r#"Top level command for managing stakes in depool. Uses a supplied multisignature wallet to send internal message with stake to depool."#)
@@ -218,11 +215,11 @@ pub fn create_depool_command<'a, 'b>() -> App<'a, 'b> {
             .arg(Arg::with_name("SINCE")
                 .takes_value(true)
                 .long("--since")
-                .short("-s")
+                .short('s')
                 .help("Prints events since this unixtime."))
             .arg(Arg::with_name("WAITONE")
                 .long("--wait-one")
-                .short("-w")
+                .short('w')
                 .help("Waits until new event will be emitted.")) )
 }
 
@@ -231,7 +228,7 @@ pub fn create_depool_command<'a, 'b>() -> App<'a, 'b> {
 /// Stores parameters for request from wallet to depool
 struct DepoolCmd<'a> {
     /// Reference to command line arguments
-    m: &'a ArgMatches<'a>,
+    m: &'a ArgMatches,
     /// Reference to depool address
     depool: &'a str,
     /// Amount of nanovmshells to send from wallet to depool
@@ -247,7 +244,7 @@ struct DepoolCmd<'a> {
 
 impl<'a> DepoolCmd<'a> {
     pub async fn stake_ordinary(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -258,7 +255,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn stake_vesting(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
         with_lock: bool,
@@ -298,7 +295,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn stake_remove(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -309,7 +306,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn stake_withdraw_part(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -320,7 +317,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn stake_transfer(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -333,7 +330,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn donor(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
         for_vesting: bool,
@@ -345,7 +342,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn withdraw(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
         enable: bool,
@@ -356,7 +353,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn replenish(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -366,7 +363,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn ticktock(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -493,14 +490,14 @@ impl<'a> DepoolCmd<'a> {
     }
 }
 
-fn parse_value(m: &ArgMatches<'_>) -> Result<u64, String> {
+fn parse_value(m: &ArgMatches) -> Result<u64, String> {
     let amount = m.value_of("VALUE").ok_or("value is not defined.".to_string())?;
     let amount = u64::from_str_radix(&convert::convert_token(amount)?, 10)
         .map_err(|e| format!(r#"failed to parse stake value: {}"#, e))?;
     Ok(amount)
 }
 
-pub async fn depool_command(m: &ArgMatches<'_>, config: &mut Config) -> Result<(), String> {
+pub async fn depool_command(m: &ArgMatches, config: &mut Config) -> Result<(), String> {
     let depool = m.value_of("ADDRESS").map(|s| s.to_owned()).or(config.addr.clone()).ok_or(
         "depool address is not defined. Supply it in the config file or in command line."
             .to_string(),
@@ -572,7 +569,7 @@ pub async fn depool_command(m: &ArgMatches<'_>, config: &mut Config) -> Result<(
     Err("unknown depool command".to_owned())
 }
 
-async fn answer_command(m: &ArgMatches<'_>, config: &Config, depool: &str) -> Result<(), String> {
+async fn answer_command(m: &ArgMatches, config: &Config, depool: &str) -> Result<(), String> {
     let wallet = m
         .value_of("MSIG")
         .map(|s| s.to_string())
@@ -621,7 +618,7 @@ async fn print_answer(ton: TonClient, message: &serde_json::Value) -> Result<(),
 
 // Events command
 
-async fn events_command(m: &ArgMatches<'_>, config: &Config, depool: &str) -> Result<(), String> {
+async fn events_command(m: &ArgMatches, config: &Config, depool: &str) -> Result<(), String> {
     let since = m.value_of("SINCE");
     let wait_for = m.is_present("WAITONE");
     let depool = Some(depool);

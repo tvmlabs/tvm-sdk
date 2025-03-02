@@ -73,6 +73,12 @@ pub struct ExtMessage {
     pub threadId: Option<String>,
 }
 
+impl ExtMessage {
+    pub fn set_thread_id(&mut self, thread_id: Option<String>) {
+        self.threadId = thread_id;
+    }
+}
+
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ParamsOfAggregateCollection {
     /// Collection name (accounts, blocks, transactions, messages,

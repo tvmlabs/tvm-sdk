@@ -532,10 +532,10 @@ fn test_block_id_ext_from_str() {
 #[test]
 fn calc_value_flow() {
     let root_cell = read_file_de_and_serialise(Path::new(
-            //"src/tests/data/91FDE9DA6661FE9D1FCB013C1079411AFC7BFEDF7FE533C6FD48D25388A3FC26.boc" // master
-            "src/tests/data/9C2B3FC5AD455917D374CFADBED8FC2343E31A27C1DF2EB29E84404FA96DE9F8.boc" // old testnet WC
-            //"src/tests/data/EC6D799FC7EA14D9FD1D840542514BA774EA3FB5E04B70B6E314C48F95B0C131.boc" // new testnet WC
-        ));
+        //"src/tests/data/91FDE9DA6661FE9D1FCB013C1079411AFC7BFEDF7FE533C6FD48D25388A3FC26.boc" // master
+        "src/tests/data/9C2B3FC5AD455917D374CFADBED8FC2343E31A27C1DF2EB29E84404FA96DE9F8.boc", // old testnet WC
+                                                                                               //"src/tests/data/EC6D799FC7EA14D9FD1D840542514BA774EA3FB5E04B70B6E314C48F95B0C131.boc" // new testnet WC
+    ));
     let block = Block::construct_from_cell(root_cell).unwrap();
 
     let mut new_transaction_fees = Grams::default();

@@ -649,7 +649,6 @@ impl ProofHelperEngineImpl {
                         })),
                         order: Some(Self::sorting_by_seq_no()),
                         limit: Some(10),
-                        ..Default::default()
                     },
                 )
                 .await?

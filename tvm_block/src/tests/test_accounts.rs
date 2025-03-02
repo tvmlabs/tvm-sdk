@@ -427,7 +427,7 @@ fn test_account_account() {
         AccountStorage::active_by_init_code_hash(0, CurrencyCollection::default(), stinit, false);
 
     let addr = MsgAddressInt::with_standart(Some(anc), 0, acc_id).unwrap();
-    let mut acc = Account::with_storage(&addr, Some(UInt256::new()), &st_info, &acc_st);
+    let mut acc = Account::with_storage(&addr, &st_info, &acc_st);
     acc.update_storage_stat().unwrap();
 
     write_read_and_assert(acc);
@@ -486,7 +486,7 @@ fn test_account_account2() {
     let acc_st = AccountStorage::active_by_init_code_hash(0, balance, stinit, false);
 
     let addr = MsgAddressInt::with_standart(Some(anc), 0, acc_id).unwrap();
-    let mut acc = Account::with_storage(&addr, Some(UInt256::new()), &st_info, &acc_st);
+    let mut acc = Account::with_storage(&addr, &st_info, &acc_st);
     acc.update_storage_stat().unwrap();
 
     println!("acc before update {}", acc);
@@ -648,9 +648,9 @@ fn test_real_account_serde() {
         state
             .read_accounts()
             .unwrap()
-            .iterate_objects(|sa| {
+            .iterate_accounts(|_, sa, _| {
                 let acc_cell = sa.account_cell();
-                let acc = sa.read_account().unwrap();
+                let acc = sa.read_account().unwrap().as_struct().unwrap();
 
                 let cell = acc.serialize().unwrap();
                 let acc2 = Account::construct_from_cell(cell.clone()).unwrap();
@@ -729,7 +729,7 @@ fn test_account_from_message() {
     let hdr = crate::ExternalInboundMessageHeader::new(ext.clone(), dst.clone());
     let msg = Message::with_ext_in_header(hdr);
     assert!(
-        Account::from_message_by_init_code_hash(&msg, false, Some(UInt256::new())).is_none(),
+        Account::from_message_by_init_code_hash(&msg, false).is_none(),
         "account mustn't be constructed using external message"
     );
 
@@ -737,7 +737,7 @@ fn test_account_from_message() {
     let hdr = crate::ExtOutMessageHeader::with_addresses(src.clone(), ext);
     let msg = Message::with_ext_out_header(hdr);
     assert!(
-        Account::from_message_by_init_code_hash(&msg, false, Some(UInt256::new())).is_none(),
+        Account::from_message_by_init_code_hash(&msg, false).is_none(),
         "account mustn't be constructed using external message"
     );
 
@@ -751,7 +751,7 @@ fn test_account_from_message() {
     );
     let msg = Message::with_int_header(hdr);
     assert!(
-        Account::from_message_by_init_code_hash(&msg, false, Some(UInt256::new())).is_none(),
+        Account::from_message_by_init_code_hash(&msg, false).is_none(),
         "account mustn't be constructed without StateInit and with bounce"
     );
 
@@ -767,7 +767,7 @@ fn test_account_from_message() {
     let init = StateInit::default();
     msg.set_state_init(init);
     assert!(
-        Account::from_message_by_init_code_hash(&msg, false, Some(UInt256::new())).is_none(),
+        Account::from_message_by_init_code_hash(&msg, false).is_none(),
         "account mustn't be constructed without code"
     );
 
@@ -783,7 +783,7 @@ fn test_account_from_message() {
     init.set_code(SliceData::new(vec![0x71, 0x80]).into_cell());
     msg.set_state_init(init);
     assert!(
-        Account::from_message_by_init_code_hash(&msg, false, Some(UInt256::new())).is_none(),
+        Account::from_message_by_init_code_hash(&msg, false).is_none(),
         "account mustn't be constructed without balance"
     );
 
@@ -797,7 +797,7 @@ fn test_account_from_message() {
     );
     let msg = Message::with_int_header(hdr);
     assert!(
-        Account::from_message_by_init_code_hash(&msg, false, Some(UInt256::new())).is_some(),
+        Account::from_message_by_init_code_hash(&msg, false).is_some(),
         "account must be constructed without StateInit and without bounce"
     );
 
@@ -814,7 +814,7 @@ fn test_account_from_message() {
     init.set_code(BuilderData::with_bitstring(vec![0x71, 0x80]).unwrap().into_cell().unwrap());
     msg.set_state_init(init);
     assert!(
-        Account::from_message_by_init_code_hash(&msg, false, Some(UInt256::new())).is_some(),
+        Account::from_message_by_init_code_hash(&msg, false).is_some(),
         "account must be constructed with code and without bounce"
     );
 
@@ -826,7 +826,7 @@ fn test_account_from_message() {
     init.set_code(BuilderData::with_bitstring(vec![0x71, 0x80]).unwrap().into_cell().unwrap());
     msg.set_state_init(init);
     assert!(
-        Account::from_message_by_init_code_hash(&msg, false, Some(UInt256::new())).is_some(),
+        Account::from_message_by_init_code_hash(&msg, false).is_some(),
         "account must be constructed with code and with bounce"
     );
 }

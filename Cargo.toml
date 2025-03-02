@@ -19,11 +19,10 @@ members = [
   "tvm_struct",
   "tvm_tl_codegen",
   "tvm_types",
-  "tvm_vm",
-  "tvm_tests",
+  "tvm_vm"
 ]
 [workspace.package]
-version = "2.5.0"
+version = "2.7.1"
 
 rust-version = "1.76.0"
 
@@ -62,7 +61,6 @@ strip = true      # Automatically strip symbols from the binary.
 panic = "unwind"
 
 [workspace.dependencies]
-aes-ctr = "0.6.0"
 anyhow = "1.0.79"
 async-trait = "0.1.77"
 base64 = "0.21.7"
@@ -71,43 +69,39 @@ byteorder = "1.5.0"
 chrono = "0.4"
 clap = { version = "4.4", features = ["derive"] }
 crc = "3.0.1"
-curve25519-dalek = "4.1.1"
 diffy = "0.3.0"
+dirs = "5.0.1"
 ed25519 = "2.2.3"
 ed25519-dalek = "2.1.0"
-external-ip = "4.2.0"
 extfmt = "0.1.1"
 failure = "0.1.8"
 futures = "0.3"
 hex = "0.4.3"
+hex-literal = "0.4.1"
+json5 = "0.4.1"
 lazy_static = "1.4.0"
 lockfree = { git = "https://github.com/tvmlabs/lockfree" }
 log = "0.4.20"
-lru = "0.12.3"
-metrics = "0.22"
 num = "0.4.1"
 num-bigint = "0.4.4"
 num-derive = "0.4.1"
-num-traits = "0.2.17"
-ordered-float = "4.2.0"
+num-traits = "0.2.18"
 proc-macro2 = "1.0.78"
 quote = "1.0.35"
 rand = "0.8.5"
 regex = "1.10.3"
-reqwest = { version = "0.11.24", default-features = false, features = [
+reqwest = { version = "0.12.12", default-features = false, features = [
   "rustls-tls-webpki-roots",
 ] }
-secstr = "0.5.1"
 serde = "1.0.197"
 serde_derive = "1.0.197"
 serde_json = "1.0.114"
 serde_repr = "0.1.18"
 sha2 = "0.10.8"
 similar = "2.4.0"
+smallvec = "1.13.1"
 thiserror = "1.0.56"
 tokio = { default-features = false, version = "1.36.0" }
-tokio-stream = "0.1.14"
-x25519-dalek = "2.0.0"
 zstd = "0.13.0"
 #
 tvm_abi = { path = "./tvm_abi" }
@@ -115,8 +109,11 @@ tvm_api = { path = "./tvm_api" }
 tvm_assembler = { path = "./tvm_assembler" }
 tvm_block = { path = "./tvm_block" }
 tvm_block_json = { path = "./tvm_block_json" }
+tvm_cli = { path = "./tvm_cli" }
 tvm_client = { path = "./tvm_client", default-features = false }
 tvm_client_processing = { path = "./tvm_client_processing" }
+tvm_common = { path = "./tvm_common" }
+tvm_debugger = { path = "./tvm_debugger" }
 tvm_executor = { path = "./tvm_executor" }
 tvm_sdk = { path = "./tvm_sdk" }
 tvm_struct = { path = "./tvm_struct" }
@@ -125,4 +122,4 @@ tvm_vm = { path = "./tvm_vm" }
 
 [workspace.dependencies.tokio-tungstenite]
 # TODO: upgrade when reqwest supports http@1, tungstenite 0.20.0 is the last version which uses http@0.2
-version = "<0.21.0"
+version = "0.26.2"

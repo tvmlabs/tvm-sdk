@@ -10,13 +10,14 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-crc = "1.8"
 failure.workspace = true
-pom = "1.1"
-proc-macro2 = "1.0.78"
-quote = "1.0.35"
+proc-macro2.workspace = true
+quote.workspace = true
 serde.workspace = true
 serde_derive.workspace = true
+
+crc = "1.8"
+pom = "1.1"
 syn = "2.0.48"
 
 [features]

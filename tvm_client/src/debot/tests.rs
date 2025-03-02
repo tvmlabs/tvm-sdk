@@ -232,9 +232,8 @@ impl TestBrowser {
         terminal_outputs: Vec<String>,
         abi: String,
     ) {
-        let mut info = DebotInfo::default();
-        info.dabi = Some(abi);
-        info.dabi_version = "2.0".to_string();
+        let info =
+            DebotInfo { dabi: Some(abi), dabi_version: "2.0".to_string(), ..Default::default() };
         let state = Arc::new(BrowserData {
             current: Mutex::new(Default::default()),
             next: Mutex::new(steps),
@@ -402,7 +401,7 @@ impl TestBrowser {
             let src_addr = parsed.parsed["src"].as_str().unwrap();
             let wc_and_addr: Vec<_> = dest_addr.split(':').collect();
             let interface_id = wc_and_addr[1];
-            let wc = i8::from_str_radix(wc_and_addr[0], 10).unwrap();
+            let wc = wc_and_addr[0].parse::<i8>().unwrap();
 
             if wc == DEBOT_WC {
                 assert!(SUPPORTED_INTERFACES.contains(&interface_id));
@@ -1805,7 +1804,7 @@ async fn download_account(client: &Arc<TestClient>, addr: &str) -> Option<String
 }
 async fn assert_get_method(
     client: &Arc<TestClient>,
-    addr: &String,
+    addr: &str,
     abi: &Abi,
     func: &str,
     params: Value,
@@ -1816,7 +1815,7 @@ async fn assert_get_method(
 
     let call_params = ParamsOfEncodeMessage {
         abi: abi.clone(),
-        address: Some(addr.clone()),
+        address: Some(addr.to_owned()),
         call_set: CallSet::some_with_function_and_input(func, params),
         ..Default::default()
     };

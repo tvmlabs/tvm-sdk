@@ -166,6 +166,6 @@ pub enum ProcessingEvent {
     RempOther { message_id: String, message_dst: String, timestamp: u64, json: Value },
     /// Notifies the app about any problem that has occurred in REMP processing
     /// - in this case library switches to the fallback transaction awaiting
-    /// scenario (sequential block reading).
+    ///   scenario (sequential block reading).
     RempError { message_id: String, message_dst: String, error: ClientError },
 }

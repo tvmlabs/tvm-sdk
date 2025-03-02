@@ -214,8 +214,7 @@ impl EncryptionBoxInput {
     pub async fn call(&self, func: &str, args: &Value) -> (u32, Value) {
         match func {
             "getNaclBox" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 let nonce = args["nonce"].as_str().unwrap().to_owned();
                 let their_key = args["theirPubkey"].as_str().unwrap().to_owned();
                 let client_copy = Arc::clone(&self.client);
@@ -256,13 +255,11 @@ impl EncryptionBoxInput {
                 (answer_id, json!({ "handle": box_handle.clone() }))
             }
             "getSupportedInterfaces" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 (answer_id, json!({ "names": vec![hex::encode("NaclBox")] }))
             }
             "remove" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 (answer_id, json!({ "removed": true }))
             }
             _ => panic!("interface function not found"),
@@ -339,8 +336,7 @@ impl SingingBoxInput {
     pub fn call(&self, func: &str, args: &Value) -> (u32, Value) {
         match func {
             "get" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 (answer_id, json!({ "handle": self.box_handle.clone() }))
             }
             _ => panic!("interface function not found"),
@@ -357,8 +353,7 @@ impl Echo {
     pub fn call(&self, func: &str, args: &Value) -> (u32, Value) {
         match func {
             "echo" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 let request_vec = hex::decode(args["request"].as_str().unwrap()).unwrap();
                 let request = std::str::from_utf8(&request_vec).unwrap();
                 (answer_id, json!({ "response": hex::encode(request.as_bytes()) }))

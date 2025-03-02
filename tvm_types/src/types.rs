@@ -216,6 +216,16 @@ impl From<Vec<u8>> for UInt256 {
     }
 }
 
+impl TryFrom<SliceData> for UInt256 {
+    type Error = Error;
+
+    fn try_from(mut value: SliceData) -> Result<Self> {
+        let mut result = Self::default();
+        value.get_next_bytes_to_slice(result.0.as_mut())?;
+        Ok(result)
+    }
+}
+
 impl FromStr for UInt256 {
     type Err = Error;
 
@@ -332,7 +342,7 @@ pub enum ExceptionCode {
     CellOverflow = 8,
     #[error("cell underflow")]
     CellUnderflow = 9,
-    #[error("dictionaty error")]
+    #[error("dictionary error")]
     DictionaryError = 10,
     #[error("unknown error")]
     UnknownError = 11,
@@ -346,6 +356,8 @@ pub enum ExceptionCode {
     PrunedCellAccess = 15,
     #[error("big cell")]
     BigCellAccess = 16,
+    #[error("execution timeout")]
+    ExecutionTimeout = 17,
 }
 
 // impl fmt::Display for ExceptionCode {
