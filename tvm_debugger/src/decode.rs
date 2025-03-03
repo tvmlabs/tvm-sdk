@@ -19,8 +19,8 @@ use tvm_types::base64_encode;
 use tvm_types::write_boc;
 use tvm_vm::stack::StackItem;
 
-use crate::Args;
 use crate::ExecutionResult;
+use crate::RunArgs;
 use crate::helper::load_abi_as_string;
 
 pub(crate) fn decode_body(
@@ -40,7 +40,7 @@ pub(crate) fn decode_body(
 pub(crate) fn decode_actions(
     actions: StackItem,
     state: &mut StateInit,
-    args: &Args,
+    args: &RunArgs,
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
     let abi_file = args.abi_file.as_ref();

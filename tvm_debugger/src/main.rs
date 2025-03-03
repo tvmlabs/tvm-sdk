@@ -1,8 +1,11 @@
+mod account;
+mod boc;
 mod decode;
 mod execute;
 mod helper;
 mod message;
 mod result;
+mod state;
 
 use std::path::PathBuf;
 
@@ -30,9 +33,99 @@ lazy_static::lazy_static!(
 
 /// Helper tool, that allows you to run Acki-Nacki virtual machine, get VM
 /// trace, output messages and update contract state offchain.
-#[derive(Parser, Debug, Default)]
+#[derive(Parser, Debug)]
 #[command(long_version = &**LONG_VERSION, about, long_about = None)]
-struct Args {
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Parser, Debug)]
+enum Commands {
+    /// Run contract localy with specified parameters
+    Run(RunArgs),
+    /// Encodes given parameters in JSON into a BOC
+    BocEncode(BocEncodeArgs),
+    /// Decodes BOC into JSON as a set of provided parameters
+    BocDecode(BocDecodeArgs),
+    /// Read BOC string from stdin and print its hash
+    BocHash,
+    /// Encodes initial contract state from code, data, libraries ans special
+    /// options
+    StateEncode(StateEncodeArgs),
+
+    /// Decodes initial contract state into code, data, libraries ans special
+    /// options
+    StateDecode(StateDecodeArgs),
+
+    /// Creates account state BOC
+    AccountEncode(AccountEncodeArgs),
+}
+
+// Read BOC string fron stdin and encode it as a set of provided parameters in
+// JSON BocDecode(BocDecodeArgs),
+
+#[derive(Parser, Debug, Default)]
+struct BocEncodeArgs {
+    /// Provided parameters specified as a JSON string or file path
+    #[arg(short, long)]
+    data: String,
+
+    /// JSON encoded ABI params or file path
+    #[arg(short, long)]
+    params: PathBuf,
+}
+
+#[derive(Parser, Debug, Default)]
+struct BocDecodeArgs {
+    /// Contract code BOC encoded as base64 or file path
+    #[arg(short, long)]
+    boc: String,
+
+    /// JSON encoded ABI params or file path
+    #[arg(short, long)]
+    params: PathBuf,
+}
+
+#[derive(Parser, Debug, Default)]
+struct StateEncodeArgs {
+    /// Contract code BOC encoded as base64 or file path
+    #[arg(short, long)]
+    code: Option<String>,
+
+    /// Contract data BOC encoded as base64 or file path
+    #[arg(short, long)]
+    data: Option<String>,
+}
+
+#[derive(Parser, Debug, Default)]
+struct StateDecodeArgs {
+    /// Contract state init encoded as base64 or file path
+    #[arg(short, long)]
+    state_init: String,
+}
+
+#[derive(Parser, Debug, Default)]
+struct AccountEncodeArgs {
+    /// Contract state init encoded as base64 or file path
+    #[arg(short, long)]
+    state_init: String,
+
+    /// Initial balance.
+    #[arg(short, long)]
+    balance: Option<u64>,
+
+    /// Initial value for the `last_trans_lt`.
+    #[arg(long)]
+    last_trans_lt: Option<u64>,
+
+    /// Initial value for the `last_paid`.
+    #[arg(long)]
+    last_paid: Option<u32>,
+}
+
+#[derive(Parser, Debug, Default)]
+struct RunArgs {
     /// TVC file with contract state init
     #[arg(short, long, required(true))]
     input_file: PathBuf,
@@ -106,20 +199,37 @@ fn parse_json_object(s: &str) -> Result<Value, String> {
     }
 }
 
-fn main() -> anyhow::Result<()> {
-    let args: Args = Args::parse();
-    if let Some(new_code) = args.replace_code {
-        replace_code(args.input_file, new_code)?;
-        return Ok(());
+fn main() {
+    let cli: Cli = Cli::parse();
+
+    let output = match &cli.command {
+        Commands::Run(args) => {
+            if let Some(new_code) = args.replace_code.clone() {
+                replace_code(&args.input_file, new_code).map(|_| "".to_string())
+            } else {
+                let mut res = ExecutionResult::new(args.json);
+                execute(args, &mut res).map(|_| res.output())
+            }
+        }
+        Commands::BocEncode(args) => run_command(|| boc::encode(args)),
+        Commands::BocDecode(args) => run_command(|| boc::decode(args)),
+        Commands::BocHash => run_command(boc::hash),
+        Commands::StateEncode(args) => run_command(|| state::encode(args)),
+        Commands::StateDecode(args) => run_command(|| state::decode(args)),
+        Commands::AccountEncode(args) => run_command(|| account::encode(args)),
+    };
+
+    match output {
+        Ok(output) => println!("{}", output),
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
     }
-    let mut res: ExecutionResult = ExecutionResult::new(args.json);
-    execute(&args, &mut res)?;
-    println!("{}", res.output());
-    Ok(())
 }
 
-fn replace_code(input_file: PathBuf, code: String) -> anyhow::Result<()> {
-    let mut contract_state_init = StateInit::construct_from_file(&input_file).map_err(|e| {
+fn replace_code(input_file: &PathBuf, code: String) -> anyhow::Result<()> {
+    let mut contract_state_init = StateInit::construct_from_file(input_file).map_err(|e| {
         anyhow::format_err!("Failed to load state init from input file {:?}: {e}", input_file)
     })?;
     let bytes = base64_decode(&code)
@@ -129,9 +239,24 @@ fn replace_code(input_file: PathBuf, code: String) -> anyhow::Result<()> {
     })?;
     contract_state_init.set_code(code_cell);
     contract_state_init
-        .write_to_file(&input_file)
+        .write_to_file(input_file)
         .map_err(|e| anyhow::format_err!("Failed to save state init after execution: {e}"))?;
     Ok(())
+}
+
+fn run_command<F, T>(f: F) -> anyhow::Result<String>
+where
+    F: FnOnce() -> anyhow::Result<T>,
+    T: serde::Serialize,
+{
+    f().map(|result| serde_json::to_string(&result).expect("Failed to serialize result"))
+}
+
+pub(crate) fn read_file_as_base64(file_path: &str) -> anyhow::Result<String> {
+    let mut file = std::fs::File::open(file_path)?;
+    let mut buffer = Vec::new();
+    std::io::Read::read_to_end(&mut file, &mut buffer)?;
+    Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &buffer))
 }
 
 #[cfg(test)]
@@ -153,8 +278,8 @@ mod tests {
         fs::remove_file(temp_path).expect("Failed to delete temporary contract file");
     }
 
-    fn default_args(input_file: PathBuf, func: &str) -> Args {
-        Args {
+    fn default_args(input_file: PathBuf, func: &str) -> RunArgs {
+        RunArgs {
             input_file,
             abi_file: Some(PathBuf::from("tests/contract/contract.abi.json")),
             abi_header: None,
