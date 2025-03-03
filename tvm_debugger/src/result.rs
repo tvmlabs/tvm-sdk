@@ -47,7 +47,7 @@ impl ExecutionResult {
     }
 
     pub fn response(&mut self, data: String) {
-        self.response = serde_json::from_str(&*data.clone()).expect("Failed to parse JSON");
+        self.response = serde_json::from_str(&data).expect("Failed to parse JSON");
         self.log(data);
     }
 

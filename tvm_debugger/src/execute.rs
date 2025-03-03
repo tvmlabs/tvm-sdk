@@ -13,8 +13,8 @@ use tvm_vm::stack::StackItem;
 use tvm_vm::stack::integer::IntegerData;
 use tvm_vm::stack::savelist::SaveList;
 
-use crate::Args;
 use crate::ExecutionResult;
+use crate::RunArgs;
 use crate::decode::decode_actions;
 use crate::helper::capabilities;
 use crate::helper::config_params;
@@ -25,7 +25,7 @@ use crate::helper::load_code_and_data_from_state_init;
 use crate::helper::trace_callback;
 use crate::message::generate_message;
 
-pub(crate) fn execute(args: &Args, res: &mut ExecutionResult) -> anyhow::Result<()> {
+pub(crate) fn execute(args: &RunArgs, res: &mut ExecutionResult) -> anyhow::Result<()> {
     let mut contract_state_init =
         StateInit::construct_from_file(&args.input_file).map_err(|e| {
             anyhow::format_err!(
@@ -88,7 +88,11 @@ pub(crate) fn execute(args: &Args, res: &mut ExecutionResult) -> anyhow::Result<
     Ok(())
 }
 
-fn initialize_registers(args: &Args, code: SliceData, data: SliceData) -> anyhow::Result<SaveList> {
+fn initialize_registers(
+    args: &RunArgs,
+    code: SliceData,
+    data: SliceData,
+) -> anyhow::Result<SaveList> {
     let mut ctrls = SaveList::new();
     let address = SliceData::load_cell(
         get_dest_address(args)?
@@ -115,7 +119,7 @@ fn initialize_registers(args: &Args, code: SliceData, data: SliceData) -> anyhow
     Ok(ctrls)
 }
 
-fn prepare_stack(args: &Args) -> anyhow::Result<Stack> {
+fn prepare_stack(args: &RunArgs) -> anyhow::Result<Stack> {
     let mut stack = Stack::new();
     let (message, body) = generate_message(args)?;
     let msg_value = args.message_value.map(|v| v as u64).unwrap_or(0);
