@@ -9,21 +9,21 @@ You can find error codes with descriptions on this page
 
 ## SDK Errors
 
-[Client Error codes (1-99)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_client#clienterrorcode)
+[Client Error codes (1-99)](https://dev.ackinacki.com/reference/types-and-methods/mod_client#clienterrorcode)
 
-[Crypto Error codes (100-199)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_crypto#cryptoerrorcode)
+[Crypto Error codes (100-199)](https://dev.ackinacki.com/reference/types-and-methods/mod_crypto#cryptoerrorcode)
 
-[Boc error codes(200-299)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_boc#bocerrorcode)
+[Boc error codes(200-299)](https://dev.ackinacki.com/reference/types-and-methods/mod_boc#bocerrorcode)
 
-[Abi Error codes (300-399)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#abierrorcode)
+[Abi Error codes (300-399)](https://dev.ackinacki.com/reference/types-and-methods/mod_abi#abierrorcode)
 
-[TVM Error codes (400-499)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_tvm#tvmerrorcode)
+[TVM Error codes (400-499)](https://dev.ackinacki.com/reference/types-and-methods/mod_tvm#tvmerrorcode)
 
-[Processing Error codes (500-599)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_processing#processingerrorcode)
+[Processing Error codes (500-599)](https://dev.ackinacki.com/reference/types-and-methods/mod_processing#processingerrorcode)
 
-[Net Error Codes (600-699)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_net#neterrorcode)
+[Net Error Codes (600-699)](https://dev.ackinacki.com/reference/types-and-methods/mod_net#neterrorcode)
 
-[DeBot Error Codes (800-899)](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_debot#deboterrorcode)
+[DeBot Error Codes (800-899)](https://dev.ackinacki.com/reference/types-and-methods/mod_debot#deboterrorcode)
 
 ## Solidity Runtime Errors
 
@@ -33,31 +33,33 @@ You can find error codes with descriptions on this page
 
 `0` TVM terminated successfully
 
-`-2` TVM terminated successfully: alternative code
+`1` TVM terminated successfully: alternative code
 
-`-3` Stack underflow
+`2` Stack underflow
 
-`-4` Stack overflow
+`3` Stack overflow
 
-`-5` Integer overflow
+`4` Integer overflow
 
-`-6` Range check error
+`5` Range check error
 
-`-7` Invalid opcode
+`6` Invalid opcode
 
-`-8` Type check error
+`7` Type check error
 
-`-9` Cell overflow
+`8` Cell overflow
 
-`-10` Cell underflow
+`9` Cell underflow
 
-`-11` Dictionary error
+`10` Dictionary error
 
-`-12` Unknown error
+`11` Unknown error
 
-`-13` Fatal error
+`12` Fatal error
 
 `-14` Out of gas: the contract is either low on gas, or its limit is exceeded
+
+`17`  Execution timeout: the transaction execution time limit for the Virtual Machine has been reached.
 
 ### Action phase errors
 
