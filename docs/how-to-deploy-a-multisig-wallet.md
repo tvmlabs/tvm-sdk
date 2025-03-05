@@ -68,7 +68,7 @@ After this step, the `.tvc` file will be overwritten with the specified keys.
 
 The `raw address` is the future Multisig wallet address. Keys are saved to `multisig.keys.json`. Be sure to copy your seed phrase if you need it.
 
-<figure><img src=".gitbook/assets/raw addr (1).jpg" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/raw addr.jpg" alt=""><figcaption></figcaption></figure>
 
 ## **Request SHELL tokens** <a href="#request-test-tokens-for-future-use" id="request-test-tokens-for-future-use"></a>
 
@@ -92,7 +92,7 @@ tvm-cli account <YourAddress>
 The received SHELL tokens will be displayed in the `ecc` field.
 {% endhint %}
 
-<figure><img src=".gitbook/assets/uninit (2).jpg" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/uninit.jpg" alt=""><figcaption></figcaption></figure>
 
 Now you are ready to deploy your Multisig wallet using the following command:
 
@@ -120,14 +120,18 @@ From this amount, the deployment fee for the contract will be deducted, and the 
 
 Check the contract state again. This time, it should be `Active`.
 
-<figure><img src=".gitbook/assets/active (1).jpg" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/active.jpg" alt=""><figcaption></figcaption></figure>
+
+{% hint style="success" %}
+In the `balance` field, you can see **10,000,000,000** nanoVMSHELL tokens, which were converted from SHELL during deployment (as specified in the `value` parameter). The remaining SHELL tokens can be found in the `ecc` field at index **`2`**.
+{% endhint %}
 
 If you need VMSHELL tokens later, simply call the `exchangeToken(uint64 value)` method in the Multisig and exchange the required amount.\
 \
 For example, let's convert 10 SHELL tokens into 10 VMSHELL tokens:
 
 ```
-tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 exchangeToken '{"value":10000000000}' --abi multisig.abi.json --sign multisig.keys.json
+tvm-cli call 0:d2ba0db26f05a5f661599e3dfa1a88349bd8a4826dbf5c701ddeb191c178f95e exchangeToken '{"value":10000000000}' --abi multisig.abi.json --sign multisig.keys.json
 
 ```
 
@@ -159,13 +163,13 @@ In this case, the fees will be paid from the Multisig wallet's account
 {% endhint %}
 
 {% hint style="warning" %}
-In order for the recipient's contract to be deployed, its constructor must include a function for exchange SHELL tokens for VMSHELL
+In order for the recipient's contract to be deployed, its constructor must include a [function for exchange SHELL tokens for VMSHELL](https://github.com/tvmlabs/sdk-examples/blob/main/contracts/helloWorld/helloWorld.sol#L22)
 {% endhint %}
 
 For example, we transfer 5 SHELL from the Multisig wallet's balance to the address of the future contract, with the fees also being paid from the Multisig wallet's balance:
 
 ```
-tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:2672bb98816f2f9088d027f99681b65e05843b19367fe690cb4b5130d04eccf1", "value":0, "bounce":false, "cc": {"2": 5000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+tvm-cli call 0:d2ba0db26f05a5f661599e3dfa1a88349bd8a4826dbf5c701ddeb191c178f95e sendTransaction '{"dest":"0:2672bb98816f2f9088d027f99681b65e05843b19367fe690cb4b5130d04eccf1", "value":0, "bounce":false, "cc": {"2": 5000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
 ```
 
 \

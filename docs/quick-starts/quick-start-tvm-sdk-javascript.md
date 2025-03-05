@@ -2,7 +2,7 @@
 
 ### **Prerequisites**
 
-* Rust v1.76+
+* Rust v1.85+
 * Node.js v18.19.1
 * Python 3
 * Python 3 setuptools
