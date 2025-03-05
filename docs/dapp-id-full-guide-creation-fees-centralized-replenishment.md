@@ -294,7 +294,7 @@ tvm-cli deploy --abi helloWorld.abi.json --sign helloWorld.keys.json helloWorld.
 
 6. Check the contract state again. This time, it is should be `Active`.
 
-<figure><img src=".gitbook/assets/active.jpg" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/active (2).jpg" alt=""><figcaption></figcaption></figure>
 
 **View contract information with Explorer**
 
