@@ -37,7 +37,7 @@ mutation {
     message_hash
     producers
     thread_id
-    tvm_exit_code
+    exit_code
     tx_hash
   }
 }
