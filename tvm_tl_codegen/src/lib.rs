@@ -497,7 +497,7 @@ fn reformat(filename: &Path) {
     let status = match Command::new("rustfmt")
         .arg("+nightly")
         .arg("--edition")
-        .arg("2018")
+        .arg("2024")
         .arg(filename)
         .status()
     {
