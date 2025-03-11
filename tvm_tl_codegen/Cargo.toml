@@ -21,5 +21,4 @@ pom = "1.1"
 syn = "2.0.48"
 
 [features]
-default = ["reformat"]
 reformat = []

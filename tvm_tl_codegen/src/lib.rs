@@ -494,7 +494,13 @@ fn reformat(filename: &Path) {
     const INSTALL_INSTRUCTIONS: &str = "It's not an issue, the building will proceed. \
         If you wish to develop using tvm_api, you can install rustfmt by running command: \
         `rustup component add rustfmt`";
-    let status = match Command::new("rustfmt").arg("--edition").arg("2018").arg(filename).status() {
+    let status = match Command::new("rustfmt")
+        .arg("+nightly")
+        .arg("--edition")
+        .arg("2024")
+        .arg(filename)
+        .status()
+    {
         Ok(status) => status,
         Err(err) => {
             if !WARNING_PRINTED.swap(true, Ordering::Relaxed) {
