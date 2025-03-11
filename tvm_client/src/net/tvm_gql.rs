@@ -512,7 +512,7 @@ impl GraphQLQuery {
     }
 
     pub fn with_send_message(message: &ExtMessage) -> Self {
-        let query = "mutation sendMessage($message:ExtMessage){sendMessage(message:$message){block_hash tx_hash message_hash thread_id aborted tvm_exit_code producers current_time}}"
+        let query = "mutation sendMessage($message:ExtMessage){sendMessage(message:$message){block_hash tx_hash message_hash thread_id aborted exit_code producers current_time}}"
             .to_owned();
         let variables = Some(json!({ "message": serde_json::json!(message) }));
         Self { query, variables, timeout: None, is_batch: false }
