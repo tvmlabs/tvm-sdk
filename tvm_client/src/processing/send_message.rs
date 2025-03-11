@@ -84,7 +84,7 @@ pub struct ResultOfSendMessage {
     pub aborted: Option<bool>,
 
     /// The exit code of the computing phase
-    pub tvm_exit_code: Option<i32>,
+    pub exit_code: Option<i32>,
 
     /// The identifier of the thread in which the message was processed.
     pub thread_id: Option<String>,
