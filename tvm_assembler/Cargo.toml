@@ -26,14 +26,14 @@ ed25519-dalek.workspace = true
 rand.workspace = true
 
 tvm_types.workspace = true
-tvm_vm = {workspace = true, features = ['gosh']}
+tvm_vm = { workspace = true, features = ['gosh'] }
 
 base64 = "0.13"
 log4rs = '1.2'
 fastcrypto = "0.1.8"
 ark-std = "0.4.0"
 ark-ff = "0.4.2"
-base64ct ={ version = "1.5.3", features = ["alloc"]}
+base64ct = { version = "1.5.3", features = ["alloc"] }
 
 #[dev-dependencies]
 #tvm_vm = {workspace = true, features = ['gosh']}

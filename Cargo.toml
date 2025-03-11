@@ -19,7 +19,7 @@ members = [
   "tvm_struct",
   "tvm_tl_codegen",
   "tvm_types",
-  "tvm_vm"
+  "tvm_vm",
 ]
 [workspace.package]
 version = "2.8.0"
@@ -112,7 +112,6 @@ tvm_block_json = { path = "./tvm_block_json" }
 tvm_cli = { path = "./tvm_cli" }
 tvm_client = { path = "./tvm_client", default-features = false }
 tvm_client_processing = { path = "./tvm_client_processing" }
-tvm_common = { path = "./tvm_common" }
 tvm_debugger = { path = "./tvm_debugger" }
 tvm_executor = { path = "./tvm_executor" }
 tvm_sdk = { path = "./tvm_sdk" }
@@ -121,5 +120,4 @@ tvm_types = { path = "./tvm_types" }
 tvm_vm = { path = "./tvm_vm" }
 
 [workspace.dependencies.tokio-tungstenite]
-# TODO: upgrade when reqwest supports http@1, tungstenite 0.20.0 is the last version which uses http@0.2
 version = "0.26.2"
