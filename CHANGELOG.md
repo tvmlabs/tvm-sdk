@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [2.9.0] – 2025-03-11
 
 ### New
-
 - Message delivery to the target thread has been made more reliable. 
 
-### Breaking changes
+### Fixed
+- Issue with tvm_api formatting
 
+### Breaking changes
 `Error.data.tvm_exit_code` renamed to `Error.data.exit_code`
 
 ## [2.8.0] – 2025-02-28
