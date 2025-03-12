@@ -4,6 +4,7 @@ exclude = ["examples/rust"]
 members = [
   "api/test",
   "tools/update_trusted_blocks",
+  "tools/tl_code_gen",
   "tvm_abi",
   "tvm_api",
   "tvm_assembler",
@@ -22,7 +23,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "2.9.0"
+version = "2.9.1"
 
 rust-version = "1.76.0"
 

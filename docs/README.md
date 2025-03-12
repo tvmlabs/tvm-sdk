@@ -172,6 +172,12 @@ Note that the build script generates binaries compatible with the platform used 
 
 ## Build artifacts
 
+Run code generation
+
+```shell
+cargo run  --bin tl_code_gen
+```
+
 Rebuild `api.json`:
 
 ```shell
