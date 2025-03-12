@@ -678,12 +678,6 @@ checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
 name = "base64"
-version = "0.21.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
-
-[[package]]
-name = "base64"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
@@ -2826,6 +2820,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "json5"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96b0db21af676c1ce64250b5f40f3ce2cf27e4e47cb91ed91eb6fe9350b430c1"
+dependencies = [
+ "pest",
+ "pest_derive",
+ "serde",
+]
+
+[[package]]
 name = "keccak"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3591,6 +3596,51 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+
+[[package]]
+name = "pest"
+version = "2.7.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b7cafe60d6cf8e62e1b9b2ea516a089c008945bb5a275416789e7db0bc199dc"
+dependencies = [
+ "memchr",
+ "thiserror 2.0.11",
+ "ucd-trie",
+]
+
+[[package]]
+name = "pest_derive"
+version = "2.7.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "816518421cfc6887a0d62bf441b6ffb4536fcc926395a69e1a85852d4363f57e"
+dependencies = [
+ "pest",
+ "pest_generator",
+]
+
+[[package]]
+name = "pest_generator"
+version = "2.7.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d1396fd3a870fc7838768d171b4616d5c91f6cc25e377b673d714567d99377b"
+dependencies = [
+ "pest",
+ "pest_meta",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
+]
+
+[[package]]
+name = "pest_meta"
+version = "2.7.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1e58089ea25d717bfd31fb534e4f3afcc2cc569c70de3e239778991ea3b7dea"
+dependencies = [
+ "once_cell",
+ "pest",
+ "sha2 0.10.8",
+]
 
 [[package]]
 name = "pin-project"
@@ -5321,6 +5371,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "tvm-api-gen"
+version = "1.49.2"
+dependencies = [
+ "api_info",
+ "assert_cmd",
+ "base64 0.22.1",
+ "dirs",
+ "json5",
+ "predicates",
+ "regex",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tvm_client",
+]
+
+[[package]]
 name = "tvm_abi"
 version = "2.9.0"
 dependencies = [
@@ -5391,7 +5458,7 @@ name = "tvm_block"
 version = "2.9.0"
 dependencies = [
  "anyhow",
- "base64 0.21.7",
+ "base64 0.22.1",
  "crc 3.2.1",
  "ed25519",
  "ed25519-dalek",
@@ -5436,7 +5503,7 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "async-trait",
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "clap 3.2.25",
  "failure",
@@ -5482,7 +5549,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "base58",
- "base64 0.21.7",
+ "base64 0.22.1",
  "bincode",
  "block-modes",
  "byteorder",
@@ -5550,7 +5617,7 @@ dependencies = [
  "api_derive",
  "api_info",
  "async-trait",
- "base64 0.21.7",
+ "base64 0.22.1",
  "failure",
  "futures",
  "log",
@@ -5580,7 +5647,7 @@ name = "tvm_debugger"
 version = "2.9.0"
 dependencies = [
  "anyhow",
- "base64 0.21.7",
+ "base64 0.22.1",
  "clap 4.5.31",
  "hex",
  "lazy_static",
@@ -5614,7 +5681,7 @@ dependencies = [
  "anyhow",
  "api_derive",
  "api_info",
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "failure",
  "hex",
@@ -5662,7 +5729,7 @@ name = "tvm_types"
 version = "2.9.0"
 dependencies = [
  "aes-ctr",
- "base64 0.21.7",
+ "base64 0.22.1",
  "blst",
  "crc 3.2.1",
  "criterion",
@@ -5754,6 +5821,12 @@ name = "typenum"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
+
+[[package]]
+name = "ucd-trie"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2896d95c02a80c6d6a5d6e953d479f5ddf2dfdb6a244441010e373ac0fb88971"
 
 [[package]]
 name = "unicode-ident"
