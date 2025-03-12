@@ -26,11 +26,5 @@ tvm_types.workspace = true
 ordered-float = "4.2.0"
 secstr = "0.5.1"
 
-[build-dependencies]
-serde_json.workspace = true
-tvm_tl_codegen = { path = "../tvm_tl_codegen", default-features = false, features = [
-    "reformat",
-] }
-
 [features]
 bytes_as_vec = []
