@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [2.9.0] – 2025-03-11
 
-### New
+### New  
 - Message delivery to the target thread has been made more reliable. 
 
 ### Fixed
