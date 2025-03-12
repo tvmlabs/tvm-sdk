@@ -11,5 +11,5 @@ license.workspace = true
 [dependencies]
 serde_json.workspace = true
 tvm_tl_codegen = { path = "../../tvm_tl_codegen", default-features = false, features = [
-    "reformat",
+  "reformat",
 ] }
