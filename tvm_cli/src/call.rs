@@ -24,7 +24,6 @@ use tvm_client::error::ClientError;
 use tvm_client::processing::ParamsOfProcessMessage;
 use tvm_client::processing::ParamsOfSendMessage;
 use tvm_client::processing::ProcessingEvent;
-use tvm_client::processing::ThreadIdentifier;
 use tvm_client::tvm::AccountForExecutor;
 use tvm_client::tvm::ParamsOfRunExecutor;
 use tvm_client::tvm::run_executor;
@@ -206,12 +205,14 @@ pub async fn send_message(
         println!("Processing... ");
     }
 
-    let thread_id = thread_id
-        .map_or(ThreadIdentifier::default(), |s| s.to_string().try_into().ok().unwrap_or_default());
     let callback = |_| async move {};
     let result = tvm_client::processing::send_message(
         context.clone(),
-        ParamsOfSendMessage { message: msg.clone(), thread_id, ..Default::default() },
+        ParamsOfSendMessage {
+            message: msg.clone(),
+            thread_id: thread_id.map(ToString::to_string),
+            ..Default::default()
+        },
         callback,
     )
     .await

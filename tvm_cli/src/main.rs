@@ -73,7 +73,6 @@ use helpers::create_client_local;
 use helpers::load_abi;
 use helpers::load_ton_address;
 use helpers::query_raw;
-use lazy_static;
 use multisig::create_multisig_command;
 use multisig::multisig_command;
 use replay::fetch_block_command;

@@ -1,5 +1,5 @@
 {
-  "version": "2.9.0",
+  "version": "2.9.1",
   "modules": [
     {
       "name": "client",
@@ -10619,8 +10619,10 @@
             },
             {
               "name": "thread_id",
-              "type": "Ref",
-              "ref_name": "ThreadIdentifier",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
               "summary": null,
               "description": null
             },
