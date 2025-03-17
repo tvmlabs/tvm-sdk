@@ -30,8 +30,8 @@ impl TryFrom<String> for ThreadIdentifier {
     type Error = anyhow::Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        let array =
-            hex::decode(value).map_err(|_| anyhow::anyhow!("Failed to decode hex string"))?;
+        let array = hex::decode(value)
+            .map_err(|_| anyhow::anyhow!("Failed to decode ThreadIdentifier from hex string"))?;
         let boxed_array: Box<[u8; 34]> =
             array.into_boxed_slice().try_into().map_err(|e: Box<[u8]>| {
                 anyhow::anyhow!("Expected a Vec of length 34 but it was {}", e.len())
