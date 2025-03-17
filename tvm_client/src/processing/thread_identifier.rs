@@ -26,21 +26,17 @@ impl From<[u8; 34]> for ThreadIdentifier {
     }
 }
 
-impl TryFrom<std::string::String> for ThreadIdentifier {
+impl TryFrom<String> for ThreadIdentifier {
     type Error = anyhow::Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        match hex::decode(value) {
-            Ok(array) => {
-                let boxed_slice = array.into_boxed_slice();
-                let boxed_array: Box<[u8; 34]> = match boxed_slice.try_into() {
-                    Ok(array) => array,
-                    Err(e) => anyhow::bail!("Expected a Vec of length 34 but it was {}", e.len()),
-                };
-                Ok(Self(*boxed_array))
-            }
-            Err(_) => anyhow::bail!("Failed to convert to ThreadIdentifier"),
-        }
+        let array =
+            hex::decode(value).map_err(|_| anyhow::anyhow!("Failed to decode hex string"))?;
+        let boxed_array: Box<[u8; 34]> =
+            array.into_boxed_slice().try_into().map_err(|e: Box<[u8]>| {
+                anyhow::anyhow!("Expected a Vec of length 34 but it was {}", e.len())
+            })?;
+        Ok(Self(*boxed_array))
     }
 }
 
