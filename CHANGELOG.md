@@ -1,6 +1,7 @@
 # Release Notes
 
 All notable changes to this project will be documented in this file.
+
 ## [2.9.2] - 2025-03-18
 
 ### Fixed
