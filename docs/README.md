@@ -194,7 +194,7 @@ tsc
 node index docs -o ../docs
 ```
 
-Rebuild `modules.ts`:
+Rebuild `modules.ts` from `api.json`:
 
 ```shell
 cd tools
