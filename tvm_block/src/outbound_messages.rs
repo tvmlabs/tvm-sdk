@@ -134,6 +134,29 @@ impl Deserializable for EnqueuedMsg {
 // Blockchain: 3.3.5
 // _ (HashmapAugE 256 OutMsg CurrencyCollection) = OutMsgDescr;
 //
+#[derive(Default, Clone, Debug, PartialEq, Eq)]
+pub struct OutMsgList(pub Vec<OutMsg>);
+
+impl Serializable for OutMsgList {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        for msg in &self.0 {
+            msg.write_to(builder)?;
+        }
+        Ok(())
+    }
+}
+
+impl Deserializable for OutMsgList {
+    fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
+        while !slice.is_empty() {
+            let mut msg = OutMsg::default();
+            msg.read_from(slice)?;
+            self.0.push(msg);
+        }
+        Ok(())
+    }
+}
+
 define_HashmapAugE!(OutMsgDescr, 256, UInt256, OutMsg, CurrencyCollection);
 
 impl OutMsgDescr {

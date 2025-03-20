@@ -11,6 +11,7 @@
 
 use std::borrow::Cow;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::{self};
@@ -55,6 +56,8 @@ use crate::types::Grams;
 use crate::types::InRefValue;
 use crate::types::UnixTime32;
 use crate::validators::ValidatorSet;
+use crate::inbound_messages::InMsgList;
+use crate::outbound_messages::OutMsgList;
 
 #[cfg(test)]
 #[path = "tests/test_blocks.rs"]
@@ -918,8 +921,12 @@ impl PartialOrd for Block {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct BlockExtra {
-    in_msg_descr: ChildCell<InMsgDescr>,
-    out_msg_descr: ChildCell<OutMsgDescr>,
+    in_msg_descr_empty: ChildCell<InMsgDescr>,
+    out_msg_descr_empty: ChildCell<OutMsgDescr>,
+    in_msg_descr: ChildCell<HashMap<AccountId, InMsgList>>,
+    out_msg_descr: ChildCell<HashMap<AccountId, OutMsgList>>,
+    in_msg_descr_id: ChildCell<HashMap<UInt256, u8>>,
+    out_msg_descr_id: ChildCell<HashMap<UInt256, u8>>,
     account_blocks: ChildCell<ShardAccountBlocks>,
     pub rand_seed: UInt256,
     pub created_by: UInt256,
@@ -930,8 +937,12 @@ pub struct BlockExtra {
 impl BlockExtra {
     pub fn new() -> BlockExtra {
         BlockExtra {
+            in_msg_descr_empty: ChildCell::default(),
+            out_msg_descr_empty: ChildCell::default(),
             in_msg_descr: ChildCell::default(),
             out_msg_descr: ChildCell::default(),
+            in_msg_descr_id: ChildCell::default(),
+            out_msg_descr_id: ChildCell::default(),
             account_blocks: ChildCell::default(),
             rand_seed: UInt256::rand(),
             created_by: UInt256::default(), // TODO: Need to fill?
@@ -940,11 +951,35 @@ impl BlockExtra {
         }
     }
 
-    pub fn read_in_msg_descr(&self) -> Result<InMsgDescr> {
+    pub fn read_in_msg_descr_empty(&self) -> Result<InMsgDescr> {
+        self.in_msg_descr_empty.read_struct()
+    }
+
+    pub fn write_in_msg_descr_empty(&mut self, value: &InMsgDescr) -> Result<()> {
+        self.in_msg_descr_empty.write_struct(value)
+    }
+
+    pub fn in_msg_descr_cell_empty(&self) -> Cell {
+        self.in_msg_descr_empty.cell()
+    }
+
+    pub fn read_out_msg_descr_empty(&self) -> Result<OutMsgDescr> {
+        self.out_msg_descr_empty.read_struct()
+    }
+
+    pub fn write_out_msg_descr_empty(&mut self, value: &OutMsgDescr) -> Result<()> {
+        self.out_msg_descr_empty.write_struct(value)
+    }
+
+    pub fn out_msg_descr_cell_empty(&self) -> Cell {
+        self.out_msg_descr_empty.cell()
+    }
+
+    pub fn read_in_msg_descr(&self) -> Result<HashMap<AccountId, InMsgList>> {
         self.in_msg_descr.read_struct()
     }
 
-    pub fn write_in_msg_descr(&mut self, value: &InMsgDescr) -> Result<()> {
+    pub fn write_in_msg_descr(&mut self, value: &HashMap<AccountId, InMsgList>) -> Result<()> {
         self.in_msg_descr.write_struct(value)
     }
 
@@ -952,16 +987,40 @@ impl BlockExtra {
         self.in_msg_descr.cell()
     }
 
-    pub fn read_out_msg_descr(&self) -> Result<OutMsgDescr> {
+    pub fn read_out_msg_descr(&self) -> Result<HashMap<AccountId, OutMsgList>> {
         self.out_msg_descr.read_struct()
     }
 
-    pub fn write_out_msg_descr(&mut self, value: &OutMsgDescr) -> Result<()> {
+    pub fn write_out_msg_descr(&mut self, value: &HashMap<AccountId, OutMsgList>) -> Result<()> {
         self.out_msg_descr.write_struct(value)
     }
 
     pub fn out_msg_descr_cell(&self) -> Cell {
         self.out_msg_descr.cell()
+    }
+
+    pub fn read_in_msg_descr_id(&self) -> Result<HashMap<UInt256, u8>> {
+        self.in_msg_descr_id.read_struct()
+    }
+
+    pub fn write_in_msg_descr_id(&mut self, value: &HashMap<UInt256, u8>) -> Result<()> {
+        self.in_msg_descr_id.write_struct(value)
+    }
+
+    pub fn in_msg_descr_cell_id(&self) -> Cell {
+        self.in_msg_descr_id.cell()
+    }
+
+    pub fn read_out_msg_descr_id(&self) -> Result<HashMap<UInt256, u8>> {
+        self.out_msg_descr_id.read_struct()
+    }
+
+    pub fn write_out_msg_descr_id(&mut self, value: &HashMap<UInt256, u8>) -> Result<()> {
+        self.out_msg_descr_id.write_struct(value)
+    }
+
+    pub fn out_msg_descr_cell_id(&self) -> Cell {
+        self.out_msg_descr_id.cell()
     }
 
     pub fn read_account_blocks(&self) -> Result<ShardAccountBlocks> {

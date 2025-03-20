@@ -35,7 +35,6 @@ use crate::Serializable;
 use crate::blocks::Block;
 use crate::define_HashmapE;
 use crate::error::BlockError;
-use crate::hashmapaug::HashmapAugType;
 use crate::merkle_proof::MerkleProof;
 use crate::shard::MASTERCHAIN_ID;
 use crate::types::AddSub;
@@ -44,7 +43,8 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
-
+use crate::hashmapaug::HashmapAugType;
+use crate::MsgAddressInt::*;
 #[cfg(test)]
 #[path = "tests/test_messages.rs"]
 mod tests;
@@ -1354,27 +1354,105 @@ impl Message {
         block.read_info()?;
 
         if is_inbound {
-            block
-                .read_extra()?
-                .read_in_msg_descr()?
-                .get(&msg_hash)?
-                .ok_or_else(|| {
-                    BlockError::InvalidArg(
-                        "Message isn't belonged given block's in_msg_descr".to_string(),
-                    )
-                })?
-                .read_message()?;
+            let mut addr = None;
+            match self.dst() {
+                Some(AddrStd(data)) => {
+                    addr = Some(data.address);
+                },
+                Some(AddrVar(data)) => {
+                    addr = Some(data.address);
+                },
+                None => {
+                    block
+                        .read_extra()?
+                        .read_in_msg_descr_empty()?
+                        .get(&msg_hash)?
+                        .ok_or_else(|| {
+                            BlockError::InvalidArg(
+                                "Message isn't belonged given block's in_msg_descr".to_string(),
+                            )
+                        })?
+                        .read_message()?;
+                }
+            }
+            if let Some(data) = addr {
+                let num = block
+                    .read_extra()?
+                    .read_in_msg_descr_id()?
+                    .get(&msg_hash)
+                    .ok_or_else(|| {
+                        BlockError::InvalidArg(
+                            "Message isn't belonged given block's in_msg_descr".to_string(),
+                        )
+                    })?.clone();
+                block
+                    .read_extra()?
+                    .read_in_msg_descr()?
+                    .get(&data)
+                    .ok_or_else(|| {
+                        BlockError::InvalidArg(
+                            "Message isn't belonged given block's in_msg_descr".to_string(),
+                        )
+                    })?
+                    .0
+                    .get(num as usize)
+                    .ok_or_else(|| {
+                        BlockError::InvalidArg(
+                            "Message isn't belonged given block's in_msg_descr because of index".to_string(),
+                        )
+                    })?
+                    .read_message()?;
+            }
         } else {
-            block
-                .read_extra()?
-                .read_out_msg_descr()?
-                .get(&msg_hash)?
-                .ok_or_else(|| {
-                    BlockError::InvalidArg(
-                        "Message isn't belonged given block's out_msg_descr".to_string(),
-                    )
-                })?
-                .read_message()?;
+            let mut addr = None;
+            match self.dst() {
+                Some(AddrStd(data)) => {
+                    addr = Some(data.address);
+                },
+                Some(AddrVar(data)) => {
+                    addr = Some(data.address);
+                },
+                None => {
+                    block
+                        .read_extra()?
+                        .read_out_msg_descr_empty()?
+                        .get(&msg_hash)?
+                        .ok_or_else(|| {
+                            BlockError::InvalidArg(
+                                "Message isn't belonged given block's in_msg_descr".to_string(),
+                            )
+                        })?
+                        .read_message()?;
+                }
+            }
+            if let Some(data) = addr {
+                let num = block
+                    .read_extra()?
+                    .read_out_msg_descr_id()?
+                    .get(&msg_hash)
+                    .ok_or_else(|| {
+                        BlockError::InvalidArg(
+                            "Message isn't belonged given block's in_msg_descr".to_string(),
+                        )
+                    })?.clone();
+                block
+                    .read_extra()?
+                    .read_out_msg_descr()?
+                    .get(&data)
+                    .ok_or_else(|| {
+                        BlockError::InvalidArg(
+                            "Message isn't belonged given block's in_msg_descr".to_string(),
+                        )
+                    })?
+                    .0
+                    .get(num as usize)
+                    .ok_or_else(|| {
+                        BlockError::InvalidArg(
+                            "Message isn't belonged given block's in_msg_descr because of index".to_string(),
+                        )
+                    })?
+                    .read_message()?;
+            }
         }
 
         MerkleProof::create_by_usage_tree(block_root, usage_tree)?.serialize()

@@ -1564,19 +1564,34 @@ pub fn debug_block_full(block: &Block) -> Result<String> {
 
     let mut text = format!("Block: {:#}\n", serde_json::json!(map));
     let extra = block.read_extra()?;
-    let in_msgs = extra.read_in_msg_descr()?;
+    let in_msgs = extra.read_in_msg_descr_empty()?;
     in_msgs.iterate_objects(|in_msg| {
         let msg = in_msg.read_message()?;
         text += &format!("InMsg: {}\n", debug_message(msg)?);
         Ok(true)
     })?;
-    let out_msgs = extra.read_out_msg_descr()?;
+    let in_msgs_descr = extra.read_in_msg_descr()?;
+    for  (_, list) in in_msgs_descr {
+        for msg in list.0 {
+            let msg = msg.read_message()?;
+            text += &format!("InMsg: {}\n", debug_message(msg)?);
+        }
+    }
+    let out_msgs = extra.read_out_msg_descr_empty()?;
     out_msgs.iterate_objects(|out_msg| {
         if let Some(msg) = out_msg.read_message()? {
             text += &format!("OutMsg: {}\n", debug_message(msg)?);
         }
         Ok(true)
     })?;
+    let out_msgs_descr = extra.read_out_msg_descr()?;
+    for  (_, list) in out_msgs_descr {
+        for msg in list.0 {
+            if let Some(msg) = msg.read_message()? {
+                text += &format!("OutMsg: {}\n", debug_message(msg)?);
+            }
+        }
+    }
     let acc_blocks = extra.read_account_blocks()?;
     acc_blocks.iterate_objects(|block| {
         block.transactions().iterate_objects(|InRefValue(tr)| {
@@ -1695,17 +1710,29 @@ pub fn db_serialize_block_ex<'a>(
 
     let extra = set.block.read_extra()?;
     let mut msgs = vec![];
-    extra.read_in_msg_descr()?.iterate_objects(|ref msg| {
+    extra.read_in_msg_descr_empty()?.iterate_objects(|ref msg| {
         msgs.push(serialize_in_msg(msg, mode)?);
         Ok(true)
     })?;
+    let in_msgs_descr = extra.read_in_msg_descr()?;
+    for  (_, list) in in_msgs_descr {
+        for msg in list.0 {
+            msgs.push(serialize_in_msg(&msg, mode)?);
+        }
+    }
     map.insert("in_msg_descr".to_string(), msgs.into());
 
     let mut msgs = vec![];
-    extra.read_out_msg_descr()?.iterate_objects(|ref msg| {
+    extra.read_out_msg_descr_empty()?.iterate_objects(|ref msg| {
         msgs.push(serialize_out_msg(msg, mode)?);
         Ok(true)
     })?;
+    let out_msgs_descr = extra.read_out_msg_descr()?;
+    for  (_, list) in out_msgs_descr {
+        for msg in list.0 {
+            msgs.push(serialize_out_msg(&msg, mode)?);
+        }
+    }
     map.insert("out_msg_descr".to_string(), msgs.into());
     let mut total_tr_count = 0;
     let mut account_blocks = Vec::new();

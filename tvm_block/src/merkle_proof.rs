@@ -37,6 +37,7 @@ use crate::merkle_update::MerkleUpdate;
 use crate::messages::Message;
 use crate::shard::ShardStateUnsplit;
 use crate::transactions::Transaction;
+use crate::MsgAddressInt::*;
 
 #[cfg(test)]
 #[path = "tests/test_merkle_proof.rs"]
@@ -322,8 +323,108 @@ pub fn check_message_proof(
 
     let msg_hash = msg.hash()?;
     // attempt to read in msg descr, if fail - read out one
-    if let Ok(in_msg_descr) = block_extra.read_in_msg_descr() {
-        if let Ok(Some(in_msg)) = in_msg_descr.get(&msg_hash) {
+    let mut addr = None;
+    match msg.dst() {
+        Some(AddrStd(data)) => {
+            addr = Some(data.address);
+        },
+        Some(AddrVar(data)) => {
+            addr = Some(data.address);
+        },
+        None => { }
+    }
+    if let Ok(in_msg_descr_id) = block_extra.read_in_msg_descr_id() {
+        if let Some(addr_in) = addr.clone() {
+            if let Some(num) = in_msg_descr_id.get(&msg_hash) {
+                if let Some(list) = block_extra.read_in_msg_descr()?.get(&addr_in) {
+                    if let Some(in_msg) = list.0.get(*num as usize) {
+                        check_transaction_id(tr_id, in_msg.transaction_cell())?;
+                        if let Ok(msg_cell) = in_msg.message_cell() {
+                            if msg_cell.repr_hash() != msg_hash {
+                                fail!(BlockError::WrongMerkleProof(format!(
+                                    "Wrong message's hash in proof {:x} but {:x}",
+                                    msg_cell.repr_hash(),
+                                    msg_hash
+                                )))
+                            } else {
+                                return Ok(());
+                            }
+                        } else {
+                            fail!(BlockError::WrongMerkleProof(
+                                "Error extracting message from in message".to_string()
+                            ))
+                        }
+                    } else {
+                        fail!(BlockError::WrongMerkleProof(
+                            "Error extracting message from block extra".to_string()
+                        ))    
+                    }
+                } else {
+                    fail!(BlockError::WrongMerkleProof(
+                        "Error extracting message from block extra".to_string()
+                    ))    
+                }
+            }
+        } else {
+            if let Some(in_msg) = block_extra
+                .read_in_msg_descr_empty()?
+                .get(&msg_hash)? {
+                check_transaction_id(tr_id, in_msg.transaction_cell())?;
+                if let Ok(msg_cell) = in_msg.message_cell() {
+                    if msg_cell.repr_hash() != msg_hash {
+                        fail!(BlockError::WrongMerkleProof(format!(
+                            "Wrong message's hash in proof {:x} but {:x}",
+                            msg_cell.repr_hash(),
+                            msg_hash
+                        )))
+                    } else {
+                        return Ok(());
+                    }
+                } else {
+                    fail!(BlockError::WrongMerkleProof(
+                        "Error extracting message from in message".to_string()
+                    ))
+                }
+            }
+        }
+    }
+
+    let out_msg_descr_id = block_extra.read_out_msg_descr_id().map_err(|err| {
+        BlockError::WrongMerkleProof(format!("Error extracting out msg descr from proof: {}", err))
+    })?;
+    if let Some(addr_out) = addr {
+        if let Some(num) = out_msg_descr_id.get(&msg_hash) {
+            if let Some(list) = block_extra.read_out_msg_descr()?.get(&addr_out) {
+                if let Some(out_msg) = list.0.get(*num as usize) {
+                    if let Ok(real_msg_hash) = out_msg.read_message_hash() {
+                        check_transaction_id(tr_id, out_msg.transaction_cell())?;
+                        if real_msg_hash != msg_hash {
+                            fail!(BlockError::WrongMerkleProof("Wrong message's hash in proof".to_string()))
+                        } else {
+                            return Ok(());
+                        }
+                    } else {
+                        fail!(BlockError::WrongMerkleProof(
+                            "Error extracting message from out message".to_string()
+                        ))
+                    }
+                } else {
+                    fail!(BlockError::WrongMerkleProof(
+                        "Error extracting out message from block extra".to_string()
+                    ))    
+                }
+            } else {
+                fail!(BlockError::WrongMerkleProof(
+                    "Error extracting message from out message".to_string()
+                ))
+            }
+        } else {
+            fail!(BlockError::WrongMerkleProof("No message in proof".to_string()))
+        }
+    } else {
+        if let Some(in_msg) = block_extra
+            .read_in_msg_descr_empty()?
+            .get(&msg_hash)? {
             check_transaction_id(tr_id, in_msg.transaction_cell())?;
             if let Ok(msg_cell) = in_msg.message_cell() {
                 if msg_cell.repr_hash() != msg_hash {
@@ -340,27 +441,9 @@ pub fn check_message_proof(
                     "Error extracting message from in message".to_string()
                 ))
             }
-        }
-    }
-
-    let out_msg_descr = block_extra.read_out_msg_descr().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting out msg descr from proof: {}", err))
-    })?;
-    if let Ok(Some(out_msg)) = out_msg_descr.get(&msg_hash) {
-        if let Ok(real_msg_hash) = out_msg.read_message_hash() {
-            check_transaction_id(tr_id, out_msg.transaction_cell())?;
-            if real_msg_hash != msg_hash {
-                fail!(BlockError::WrongMerkleProof("Wrong message's hash in proof".to_string()))
-            } else {
-                Ok(())
-            }
         } else {
-            fail!(BlockError::WrongMerkleProof(
-                "Error extracting message from out message".to_string()
-            ))
+            fail!(BlockError::WrongMerkleProof("No message in proof".to_string()))
         }
-    } else {
-        fail!(BlockError::WrongMerkleProof("No message in proof".to_string()))
     }
 }
 
