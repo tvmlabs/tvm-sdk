@@ -1564,19 +1564,12 @@ pub fn debug_block_full(block: &Block) -> Result<String> {
 
     let mut text = format!("Block: {:#}\n", serde_json::json!(map));
     let extra = block.read_extra()?;
-    let in_msgs = extra.read_in_msg_descr_empty()?;
+    let in_msgs = extra.read_in_msg_descr()?;
     in_msgs.iterate_objects(|in_msg| {
         let msg = in_msg.read_message()?;
         text += &format!("InMsg: {}\n", debug_message(msg)?);
         Ok(true)
     })?;
-    let in_msgs_descr = extra.read_in_msg_descr()?;
-    for  (_, list) in in_msgs_descr {
-        for msg in list.0 {
-            let msg = msg.read_message()?;
-            text += &format!("InMsg: {}\n", debug_message(msg)?);
-        }
-    }
     let out_msgs = extra.read_out_msg_descr_empty()?;
     out_msgs.iterate_objects(|out_msg| {
         if let Some(msg) = out_msg.read_message()? {
@@ -1710,16 +1703,10 @@ pub fn db_serialize_block_ex<'a>(
 
     let extra = set.block.read_extra()?;
     let mut msgs = vec![];
-    extra.read_in_msg_descr_empty()?.iterate_objects(|ref msg| {
+    extra.read_in_msg_descr()?.iterate_objects(|ref msg| {
         msgs.push(serialize_in_msg(msg, mode)?);
         Ok(true)
     })?;
-    let in_msgs_descr = extra.read_in_msg_descr()?;
-    for  (_, list) in in_msgs_descr {
-        for msg in list.0 {
-            msgs.push(serialize_in_msg(&msg, mode)?);
-        }
-    }
     map.insert("in_msg_descr".to_string(), msgs.into());
 
     let mut msgs = vec![];

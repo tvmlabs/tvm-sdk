@@ -333,62 +333,26 @@ pub fn check_message_proof(
         },
         None => { }
     }
-    if let Ok(in_msg_descr_id) = block_extra.read_in_msg_descr_id() {
-        if let Some(addr_in) = addr.clone() {
-            if let Some(num) = in_msg_descr_id.get(&msg_hash) {
-                if let Some(list) = block_extra.read_in_msg_descr()?.get(&addr_in) {
-                    if let Some(in_msg) = list.0.get(*num as usize) {
-                        check_transaction_id(tr_id, in_msg.transaction_cell())?;
-                        if let Ok(msg_cell) = in_msg.message_cell() {
-                            if msg_cell.repr_hash() != msg_hash {
-                                fail!(BlockError::WrongMerkleProof(format!(
-                                    "Wrong message's hash in proof {:x} but {:x}",
-                                    msg_cell.repr_hash(),
-                                    msg_hash
-                                )))
-                            } else {
-                                return Ok(());
-                            }
-                        } else {
-                            fail!(BlockError::WrongMerkleProof(
-                                "Error extracting message from in message".to_string()
-                            ))
-                        }
-                    } else {
-                        fail!(BlockError::WrongMerkleProof(
-                            "Error extracting message from block extra".to_string()
-                        ))    
-                    }
+    if let Ok(in_msg_descr) = block_extra.read_in_msg_descr() {
+        if let Ok(Some(in_msg)) = in_msg_descr.get(&msg_hash) {
+            check_transaction_id(tr_id, in_msg.transaction_cell())?;
+            if let Ok(msg_cell) = in_msg.message_cell() {
+                if msg_cell.repr_hash() != msg_hash {
+                    fail!(BlockError::WrongMerkleProof(format!(
+                        "Wrong message's hash in proof {:x} but {:x}",
+                        msg_cell.repr_hash(),
+                        msg_hash
+                    )))
                 } else {
-                    fail!(BlockError::WrongMerkleProof(
-                        "Error extracting message from block extra".to_string()
-                    ))    
+                    return Ok(());
                 }
-            }
-        } else {
-            if let Some(in_msg) = block_extra
-                .read_in_msg_descr_empty()?
-                .get(&msg_hash)? {
-                check_transaction_id(tr_id, in_msg.transaction_cell())?;
-                if let Ok(msg_cell) = in_msg.message_cell() {
-                    if msg_cell.repr_hash() != msg_hash {
-                        fail!(BlockError::WrongMerkleProof(format!(
-                            "Wrong message's hash in proof {:x} but {:x}",
-                            msg_cell.repr_hash(),
-                            msg_hash
-                        )))
-                    } else {
-                        return Ok(());
-                    }
-                } else {
-                    fail!(BlockError::WrongMerkleProof(
-                        "Error extracting message from in message".to_string()
-                    ))
-                }
+            } else {
+                fail!(BlockError::WrongMerkleProof(
+                    "Error extracting message from in message".to_string()
+                ))
             }
         }
     }
-
     let out_msg_descr_id = block_extra.read_out_msg_descr_id().map_err(|err| {
         BlockError::WrongMerkleProof(format!("Error extracting out msg descr from proof: {}", err))
     })?;
@@ -423,10 +387,10 @@ pub fn check_message_proof(
         }
     } else {
         if let Some(in_msg) = block_extra
-            .read_in_msg_descr_empty()?
+            .read_out_msg_descr_empty()?
             .get(&msg_hash)? {
             check_transaction_id(tr_id, in_msg.transaction_cell())?;
-            if let Ok(msg_cell) = in_msg.message_cell() {
+            if let Ok(Some(msg_cell)) = in_msg.message_cell() {
                 if msg_cell.repr_hash() != msg_hash {
                     fail!(BlockError::WrongMerkleProof(format!(
                         "Wrong message's hash in proof {:x} but {:x}",
