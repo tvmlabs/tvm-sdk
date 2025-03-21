@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2.9.2] - 2025-03-18
 
 ### Fixed
-- Restored the utility (formerly `evercli`) for generating `api.json`.  
+- Restored the utility  for generating `api.json`.  
 - Changed the type of the `thread_id` field in the `ParamsOfSendMessage` structure.
 
 ## [2.9.0] – 2025-03-11
