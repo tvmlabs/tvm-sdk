@@ -1,0 +1,26 @@
+[package]
+description = 'TVM CLient Command Line Tool'
+keywords = ['TVM', 'SDK', 'smart-contract', 'tvmlabs']
+license = 'Apache-2.0'
+name = 'tvm-api-gen'
+readme = 'README.md'
+version = '1.49.2'
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+
+[dependencies]
+base64.workspace = true
+dirs.workspace = true
+json5.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+
+api_info = { path = '../../api/info' }
+tvm_client = { path = '../../tvm_client' }
+
+[dev-dependencies]
+assert_cmd = "2.0.13"
+predicates = "3.1.0"

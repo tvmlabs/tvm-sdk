@@ -1,5 +1,5 @@
 {
-  "version": "1.45.1",
+  "version": "2.9.2",
   "modules": [
     {
       "name": "client",
@@ -395,7 +395,7 @@
                 }
               },
               "summary": "List of Evernode endpoints.",
-              "description": "Any correct URL format can be specified, including IP addresses. This parameter is prevailing over `server_address`.\nCheck the full list of [supported network endpoints](https://docs.evercloud.dev/products/evercloud/networks-endpoints)."
+              "description": "Any correct URL format can be specified, including IP addresses. This parameter is prevailing over\n`server_address`. Check the full list of [supported network endpoints](https://docs.evercloud.dev/products/evercloud/networks-endpoints)."
             },
             {
               "name": "network_retries_count",
@@ -504,8 +504,8 @@
                 "number_type": "UInt",
                 "number_size": 32
               },
-              "summary": "Maximum value for the endpoint's blockchain data synchronization latency (time-lag). Library periodically checks the current endpoint for blockchain data synchronization latency. If the latency (time-lag) is less then `NetworkConfig.max_latency` then library selects another endpoint.",
-              "description": "Must be specified in milliseconds. Default is 60000 (1 min)."
+              "summary": "Maximum value for the endpoint's blockchain data synchronization latency (time-lag).",
+              "description": "Library periodically checks the current endpoint for blockchain data synchronization latency.\nIf the latency (time-lag) is less then `NetworkConfig.max_latency`\nthen library selects another endpoint.\n\nMust be specified in milliseconds. Default is 60000 (1 min)."
             },
             {
               "name": "query_timeout",
@@ -516,7 +516,7 @@
                 "number_size": 32
               },
               "summary": "Default timeout for http requests.",
-              "description": "Is is used when no timeout specified for the request to limit the answer waiting time. If no answer received during the timeout requests ends with\nerror.\n\nMust be specified in milliseconds. Default is 60000 (1 min)."
+              "description": "Is is used when no timeout specified for the request to limit the answer waiting time. If no answer\nreceived during the timeout requests ends with error.\n\nMust be specified in milliseconds. Default is 60000 (1 min)."
             },
             {
               "name": "queries_protocol",
@@ -537,7 +537,7 @@
                 "number_size": 32
               },
               "summary": "UNSTABLE.",
-              "description": "First REMP status awaiting timeout. If no status received during the timeout than fallback transaction scenario is activated.\n\nMust be specified in milliseconds. Default is 1 (1 ms) in order to start fallback scenario\ntogether with REMP statuses processing while REMP is not properly tuned yet."
+              "description": "First REMP status awaiting timeout. If no status received during the timeout than fallback transaction scenario is activated.\n\nMust be specified in milliseconds. Default is 1 (1 ms) in order to start\nfallback scenario together with REMP statuses processing while REMP\nis not properly tuned yet."
             },
             {
               "name": "next_remp_status_timeout",
@@ -559,7 +559,7 @@
                 "number_size": 32
               },
               "summary": "Network signature ID which is used by VM in signature verifying instructions if capability `CapSignatureWithId` is enabled in blockchain configuration parameters.",
-              "description": "This parameter should be set to `global_id` field from any blockchain block if network can\nnot be reachable at the moment of message encoding and the message is aimed to be sent into\nnetwork with `CapSignatureWithId` enabled. Otherwise signature ID is detected automatically\ninside message encoding functions"
+              "description": "This parameter should be set to `global_id` field from any blockchain\nblock if network can not be reachable at the moment of message\nencoding and the message is aimed to be sent into network with\n`CapSignatureWithId` enabled. Otherwise signature ID is detected\nautomatically inside message encoding functions"
             },
             {
               "name": "access_key",
@@ -729,7 +729,7 @@
                 "type": "Boolean"
               },
               "summary": "Cache proofs in the local storage.",
-              "description": "Default is `true`. If this value is set to `true`, downloaded proofs and master-chain BOCs are saved into the\npersistent local storage (e.g. file system for native environments or browser's IndexedDB\nfor the web); otherwise all the data is cached only in memory in current client's context\nand will be lost after destruction of the client."
+              "description": "Default is `true`. If this value is set to `true`, downloaded proofs and master-chain BOCs\nare saved into the persistent local storage (e.g. file system for\nnative environments or browser's IndexedDB for the web); otherwise\nall the data is cached only in memory in current client's context\nand will be lost after destruction of the client."
             }
           ],
           "summary": null,
@@ -1608,7 +1608,7 @@
                 }
               ],
               "summary": "Creates Crypto Box from a random seed phrase. This option can be used if a developer doesn't want the seed phrase to leave the core library's memory, where it is stored encrypted.",
-              "description": "This type should be used upon the first wallet initialization, all further initializations\nshould use `EncryptedSecret` type instead.\n\nGet `encrypted_secret` with `get_crypto_box_info` function and store it on your side."
+              "description": "This type should be used upon the first wallet initialization, all\nfurther initializations should use `EncryptedSecret` type instead.\n\nGet `encrypted_secret` with `get_crypto_box_info` function and store it\non your side."
             },
             {
               "name": "PredefinedSeedPhrase",
@@ -1637,7 +1637,7 @@
                 }
               ],
               "summary": "Restores crypto box instance from an existing seed phrase. This type should be used when Crypto Box is initialized from a seed phrase, entered by a user.",
-              "description": "This type should be used only upon the first wallet initialization, all further\ninitializations should use `EncryptedSecret` type instead.\n\nGet `encrypted_secret` with `get_crypto_box_info` function and store it on your side."
+              "description": "This type should be used only upon the first wallet initialization, all\nfurther initializations should use `EncryptedSecret` type instead.\n\nGet `encrypted_secret` with `get_crypto_box_info` function and store it\non your side."
             },
             {
               "name": "EncryptedSecret",
@@ -1650,8 +1650,8 @@
                   "description": null
                 }
               ],
-              "summary": "Use this type for wallet reinitializations, when you already have `encrypted_secret` on hands. To get `encrypted_secret`, use `get_crypto_box_info` function after you initialized your crypto box for the first time.",
-              "description": "It is an object, containing seed phrase or private key, encrypted with\n`secret_encryption_salt` and password from `password_provider`.\n\nNote that if you want to change salt or password provider, then you need to reinitialize\nthe wallet with `PredefinedSeedPhrase`, then get `EncryptedSecret` via `get_crypto_box_info`,\nstore it somewhere, and only after that initialize the wallet with `EncryptedSecret` type."
+              "summary": "Use this type for wallet reinitializations, when you already have `encrypted_secret` on hands.",
+              "description": "To get `encrypted_secret`, use `get_crypto_box_info` function after you initialized your crypto box\nfor the first time.\n\nIt is an object, containing seed phrase or private key, encrypted with\n`secret_encryption_salt` and password from `password_provider`.\n\nNote that if you want to change salt or password provider, then you need\nto reinitialize the wallet with `PredefinedSeedPhrase`, then get\n`EncryptedSecret` via `get_crypto_box_info`, store it somewhere, and\nonly after that initialize the wallet with `EncryptedSecret` type."
             }
           ],
           "summary": "Crypto Box Secret.",
@@ -1979,7 +1979,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfConvertPublicKeyToTonSafeFormat",
           "description": null
         },
         {
@@ -1987,7 +1987,7 @@
           "type": "Struct",
           "struct_fields": [
             {
-              "name": "ton_public_key",
+              "name": "tvm_public_key",
               "type": "String",
               "summary": "Public key represented in TON safe format.",
               "description": null
@@ -2013,7 +2013,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "KeyPair",
           "description": null
         },
         {
@@ -2034,7 +2034,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfSign",
           "description": null
         },
         {
@@ -2074,7 +2074,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfVerifySignature",
           "description": null
         },
         {
@@ -2132,8 +2132,8 @@
             {
               "name": "salt",
               "type": "String",
-              "summary": "Salt bytes that modify the hash to protect against Rainbow table attacks. Must be encoded with `base64`.",
-              "description": null
+              "summary": "Salt bytes that modify the hash to protect against Rainbow table attacks.",
+              "description": "Must be encoded with `base64`."
             },
             {
               "name": "log_n",
@@ -2196,7 +2196,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclSignKeyPairFromSecret",
           "description": null
         },
         {
@@ -2216,7 +2216,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclSign",
           "description": null
         },
         {
@@ -2250,7 +2250,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclSignOpen",
           "description": null
         },
         {
@@ -2304,7 +2304,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclSignDetachedVerify",
           "description": null
         },
         {
@@ -2332,7 +2332,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclBoxKeyPairFromSecret",
           "description": null
         },
         {
@@ -2364,7 +2364,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclBox",
           "description": null
         },
         {
@@ -2410,7 +2410,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclBoxOpen",
           "description": null
         },
         {
@@ -2450,7 +2450,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclSecretBox",
           "description": null
         },
         {
@@ -2476,7 +2476,7 @@
               "description": null
             }
           ],
-          "summary": null,
+          "summary": "ParamsOfNaclSecretBoxOpen",
           "description": null
         },
         {
@@ -2964,8 +2964,8 @@
                 {
                   "name": "encryption_public_key",
                   "type": "String",
-                  "summary": "Temporary library pubkey, that is used on application side for password encryption, along with application temporary private key and nonce. Used for password decryption on library side.",
-                  "description": null
+                  "summary": "Temporary library pubkey, that is used on application side for password encryption, along with application temporary private key and nonce.",
+                  "description": "Used for password decryption on library side."
                 }
               ],
               "summary": null,
@@ -2973,7 +2973,7 @@
             }
           ],
           "summary": "Interface that provides a callback that returns an encrypted password, used for cryptobox secret encryption",
-          "description": "To secure the password while passing it from application to the library,\nthe library generates a temporary key pair, passes the pubkey\nto the passwordProvider, decrypts the received password with private key,\nand deletes the key pair right away.\n\nApplication should generate a temporary nacl_box_keypair\nand encrypt the password with naclbox function using nacl_box_keypair.secret\nand encryption_public_key keys + nonce = 24-byte prefix of encryption_public_key."
+          "description": "To secure the password while passing it from application to the library,\nthe library generates a temporary key pair, passes the pubkey\nto the passwordProvider, decrypts the received password with private key,\nand deletes the key pair right away.\n\nApplication should generate a temporary nacl_box_keypair\nand encrypt the password with naclbox function using nacl_box_keypair.secret\nand encryption_public_key keys + nonce = 24-byte prefix of\nencryption_public_key."
         },
         {
           "name": "ResultOfAppPasswordProvider",
@@ -3521,7 +3521,7 @@
         {
           "name": "modular_power",
           "summary": "Modular exponentiation",
-          "description": "Performs modular exponentiation for big integers (`base`^`exponent` mod `modulus`).\nSee [https://en.wikipedia.org/wiki/Modular_exponentiation]",
+          "description": "Performs modular exponentiation for big integers (`base`^`exponent` mod\n`modulus`). See [https://en.wikipedia.org/wiki/Modular_exponentiation]",
           "params": [
             {
               "name": "_context",
@@ -3557,7 +3557,7 @@
           "errors": null
         },
         {
-          "name": "ton_crc16",
+          "name": "tvm_crc16",
           "summary": "Calculates CRC16 using TON algorithm.",
           "description": null,
           "params": [
@@ -3633,7 +3633,7 @@
           "errors": null
         },
         {
-          "name": "convert_public_key_to_ton_safe_format",
+          "name": "convert_public_key_to_tvm_safe_format",
           "summary": "Converts public key to ton safe_format",
           "description": null,
           "params": [
@@ -4153,7 +4153,7 @@
         {
           "name": "nacl_box",
           "summary": "Public key authenticated encryption",
-          "description": "Encrypt and authenticate a message using the senders secret key, the receivers public\nkey, and a nonce.",
+          "description": "Encrypt and authenticate a message using the senders secret key, the\nreceivers public key, and a nonce.",
           "params": [
             {
               "name": "_context",
@@ -4419,7 +4419,7 @@
         {
           "name": "mnemonic_verify",
           "summary": "Validates a mnemonic phrase",
-          "description": "The phrase supplied will be checked for word length and validated according to the checksum\nspecified in BIP0039.",
+          "description": "The phrase supplied will be checked for word length and validated according\nto the checksum specified in BIP0039.",
           "params": [
             {
               "name": "context",
@@ -4723,7 +4723,7 @@
         {
           "name": "create_crypto_box",
           "summary": "Creates a Crypto Box instance.",
-          "description": "Crypto Box is a root crypto object, that encapsulates some secret (seed phrase usually)\nin encrypted form and acts as a factory for all crypto primitives used in SDK:\nkeys for signing and encryption, derived from this secret.\n\nCrypto Box encrypts original Seed Phrase with salt and password that is retrieved\nfrom `password_provider` callback, implemented on Application side.\n\nWhen used, decrypted secret shows up in core library's memory for a very short period\nof time and then is immediately overwritten with zeroes.",
+          "description": "Crypto Box is a root crypto object, that encapsulates some secret (seed\nphrase usually) in encrypted form and acts as a factory for all crypto\nprimitives used in SDK: keys for signing and encryption, derived from this\nsecret.\n\nCrypto Box encrypts original Seed Phrase with salt and password that is\nretrieved from `password_provider` callback, implemented on Application\nside.\n\nWhen used, decrypted secret shows up in core library's memory for a very\nshort period of time and then is immediately overwritten with zeroes.",
           "params": [
             {
               "name": "context",
@@ -4853,7 +4853,7 @@
         {
           "name": "get_crypto_box_seed_phrase",
           "summary": "Get Crypto Box Seed Phrase.",
-          "description": "Attention! Store this data in your application for a very short period of time and overwrite it with zeroes ASAP.",
+          "description": "Attention! Store this data in your application for a very short period of\ntime and overwrite it with zeroes ASAP.",
           "params": [
             {
               "name": "context",
@@ -4929,7 +4929,7 @@
         {
           "name": "get_encryption_box_from_crypto_box",
           "summary": "Gets Encryption Box from Crypto Box.",
-          "description": "Derives encryption keypair from cryptobox secret and hdpath and\nstores it in cache for `secret_lifetime`\nor until explicitly cleared by `clear_crypto_box_secret_cache` method.\nIf `secret_lifetime` is not specified - overwrites encryption secret with zeroes immediately after\nencryption operation.",
+          "description": "Derives encryption keypair from cryptobox secret and hdpath and\nstores it in cache for `secret_lifetime`\nor until explicitly cleared by `clear_crypto_box_secret_cache` method.\nIf `secret_lifetime` is not specified - overwrites encryption secret with\nzeroes immediately after encryption operation.",
           "params": [
             {
               "name": "context",
@@ -5326,7 +5326,7 @@
         {
           "name": "encryption_box_encrypt",
           "summary": "Encrypts data using given encryption box Note.",
-          "description": "Block cipher algorithms pad data to cipher block size so encrypted data can be longer then original data. Client should store the original data size after encryption and use it after\ndecryption to retrieve the original data from decrypted data.",
+          "description": "Block cipher algorithms pad data to cipher block size so encrypted data can be longer then original data. Client should store the original data\nsize after encryption and use it after decryption to retrieve the original\ndata from decrypted data.",
           "params": [
             {
               "name": "context",
@@ -5364,7 +5364,7 @@
         {
           "name": "encryption_box_decrypt",
           "summary": "Decrypts data using given encryption box Note.",
-          "description": "Block cipher algorithms pad data to cipher block size so encrypted data can be longer then original data. Client should store the original data size after encryption and use it after\ndecryption to retrieve the original data from decrypted data.",
+          "description": "Block cipher algorithms pad data to cipher block size so encrypted data can be longer then original data. Client should store the original data\nsize after encryption and use it after decryption to retrieve the original\ndata from decrypted data.",
           "params": [
             {
               "name": "context",
@@ -5652,7 +5652,7 @@
                 "number_size": 32
               },
               "summary": "Message expiration timestamp (UNIX time) in seconds.",
-              "description": "If not specified - calculated automatically from message_expiration_timeout(),\ntry_index and message_expiration_timeout_grow_factor() (if ABI includes `expire` header)."
+              "description": "If not specified - calculated automatically from\nmessage_expiration_timeout(), try_index and\nmessage_expiration_timeout_grow_factor() (if ABI includes `expire`\nheader)."
             },
             {
               "name": "time",
@@ -5672,11 +5672,11 @@
                 "type": "String"
               },
               "summary": "Public key is used by the contract to check the signature.",
-              "description": "Encoded in `hex`. If not specified, method fails with exception (if ABI includes `pubkey` header).."
+              "description": "Encoded in `hex`. If not specified, method fails with exception (if ABI\nincludes `pubkey` header).."
             }
           ],
           "summary": "The ABI function header.",
-          "description": "Includes several hidden function parameters that contract\nuses for security, message delivery monitoring and replay protection reasons.\n\nThe actual set of header fields depends on the contract's ABI.\nIf a contract's ABI does not include some headers, then they are not filled."
+          "description": "Includes several hidden function parameters that contract\nuses for security, message delivery monitoring and replay protection\nreasons.\n\nThe actual set of header fields depends on the contract's ABI.\nIf a contract's ABI does not include some headers, then they are not filled."
         },
         {
           "name": "CallSet",
@@ -5771,7 +5771,7 @@
                 "type": "String"
               },
               "summary": "Optional public key that can be provided in deploy set in order to substitute one in TVM file or provided by Signer.",
-              "description": "Public key resolving priority:\n1. Public key from deploy set.\n2. Public key, specified in TVM file.\n3. Public key, provided by Signer.\n\nApplicable only for contracts with ABI version < 2.4. Contract initial public key should be\nexplicitly provided inside `initial_data` since ABI 2.4"
+              "description": "Public key resolving priority:\n1. Public key from deploy set.\n2. Public key, specified in TVM file.\n3. Public key, provided by Signer.\n\nApplicable only for contracts with ABI version < 2.4. Contract initial\npublic key should be explicitly provided inside `initial_data` since\nABI 2.4"
             }
           ],
           "summary": null,
@@ -6208,7 +6208,7 @@
                 "type": "String"
               },
               "summary": "Destination address of the message",
-              "description": "Since ABI version 2.3 destination address of external inbound message is used in message\nbody signature calculation. Should be provided when signed external inbound message body is\ncreated. Otherwise can be omitted."
+              "description": "Since ABI version 2.3 destination address of external inbound message is\nused in message body signature calculation. Should be provided when\nsigned external inbound message body is created. Otherwise can be\nomitted."
             },
             {
               "name": "signature_id",
@@ -6351,7 +6351,7 @@
                 "number_size": 8
               },
               "summary": "Processing try index.",
-              "description": "Used in message processing with retries (if contract's ABI includes \"expire\" header).\n\nEncoder uses the provided try index to calculate message\nexpiration time. The 1st message expiration time is specified in\nClient config.\n\nExpiration timeouts will grow with every retry.\nRetry grow factor is set in Client config:\n<.....add config parameter with default value here>\n\nDefault value is 0."
+              "description": "Used in message processing with retries (if contract's ABI includes\n\"expire\" header).\n\nEncoder uses the provided try index to calculate message\nexpiration time. The 1st message expiration time is specified in\nClient config.\n\nExpiration timeouts will grow with every retry.\nRetry grow factor is set in Client config:\n<.....add config parameter with default value here>\n\nDefault value is 0."
             },
             {
               "name": "signature_id",
@@ -6385,7 +6385,7 @@
                 "type": "String"
               },
               "summary": "Optional data to be signed encoded in `base64`.",
-              "description": "Returned in case of `Signer::External`. Can be used for external\nmessage signing. Is this case you need to use this data to create signature and\nthen produce signed message using `abi.attach_signature`."
+              "description": "Returned in case of `Signer::External`. Can be used for external\nmessage signing. Is this case you need to use this data to create\nsignature and then produce signed message using\n`abi.attach_signature`."
             },
             {
               "name": "address",
@@ -6585,8 +6585,8 @@
               "optional_inner": {
                 "type": "Boolean"
               },
-              "summary": "Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)",
-              "description": null
+              "summary": "Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.",
+              "description": "Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:\n`true` - return decoded values\n`false` - return error of incomplete BOC deserialization (default)"
             },
             {
               "name": "function_name",
@@ -6681,8 +6681,8 @@
               "optional_inner": {
                 "type": "Boolean"
               },
-              "summary": "Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)",
-              "description": null
+              "summary": "Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.",
+              "description": "Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:\n`true` - return decoded values\n`false` - return error of incomplete BOC deserialization (default)"
             },
             {
               "name": "function_name",
@@ -6807,8 +6807,8 @@
               "optional_inner": {
                 "type": "Boolean"
               },
-              "summary": "Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)",
-              "description": null
+              "summary": "Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.",
+              "description": "Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:\n`true` - return decoded values\n`false` - return error of incomplete BOC deserialization (default)"
             }
           ],
           "summary": null,
@@ -6974,8 +6974,8 @@
               "optional_inner": {
                 "type": "Boolean"
               },
-              "summary": "Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)",
-              "description": null
+              "summary": "Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.",
+              "description": "Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:\n`true` - return decoded values\n`false` - return error of incomplete BOC deserialization (default)"
             }
           ],
           "summary": null,
@@ -7119,8 +7119,8 @@
               "optional_inner": {
                 "type": "Boolean"
               },
-              "summary": "If set to `true` output function ID will be returned which is used in contract response. Default is `false`",
-              "description": null
+              "summary": "If set to `true` output function ID will be returned which is used in contract response.",
+              "description": "Default is `false`"
             }
           ],
           "summary": null,
@@ -7236,7 +7236,7 @@
         },
         {
           "name": "attach_signature_to_message_body",
-          "summary": null,
+          "summary": "Attach signature",
           "description": null,
           "params": [
             {
@@ -7275,7 +7275,7 @@
         {
           "name": "encode_message",
           "summary": "Encodes an ABI-compatible message",
-          "description": "Allows to encode deploy and function call messages,\nboth signed and unsigned.\n\nUse cases include messages of any possible type:\n- deploy with initial function call (i.e. `constructor` or any other function that is used for some kind\nof initialization);\n- deploy without initial function call;\n- signed/unsigned + data for signing.\n\n`Signer` defines how the message should or shouldn't be signed:\n\n`Signer::None` creates an unsigned message. This may be needed in case of some public methods,\nthat do not require authorization by pubkey.\n\n`Signer::External` takes public key and returns `data_to_sign` for later signing.\nUse `attach_signature` method with the result signature to get the signed message.\n\n`Signer::Keys` creates a signed message with provided key pair.\n\n[SOON] `Signer::SigningBox` Allows using a special interface to implement signing\nwithout private key disclosure to SDK. For instance, in case of using a cold wallet or HSM,\nwhen application calls some API to sign data.\n\nThere is an optional public key can be provided in deploy set in order to substitute one\nin TVM file.\n\nPublic key resolving priority:\n1. Public key from deploy set.\n2. Public key, specified in TVM file.\n3. Public key, provided by signer.",
+          "description": "Allows to encode deploy and function call messages,\nboth signed and unsigned.\n\nUse cases include messages of any possible type:\n- deploy with initial function call (i.e. `constructor` or any other\n  function that is used for some kind\nof initialization);\n- deploy without initial function call;\n- signed/unsigned + data for signing.\n\n`Signer` defines how the message should or shouldn't be signed:\n\n`Signer::None` creates an unsigned message. This may be needed in case of\nsome public methods, that do not require authorization by pubkey.\n\n`Signer::External` takes public key and returns `data_to_sign` for later\nsigning. Use `attach_signature` method with the result signature to get the\nsigned message.\n\n`Signer::Keys` creates a signed message with provided key pair.\n\n[SOON] `Signer::SigningBox` Allows using a special interface to implement\nsigning without private key disclosure to SDK. For instance, in case of\nusing a cold wallet or HSM, when application calls some API to sign data.\n\nThere is an optional public key can be provided in deploy set in order to\nsubstitute one in TVM file.\n\nPublic key resolving priority:\n1. Public key from deploy set.\n2. Public key, specified in TVM file.\n3. Public key, provided by signer.",
           "params": [
             {
               "name": "context",
@@ -7313,7 +7313,7 @@
         {
           "name": "encode_internal_message",
           "summary": "Encodes an internal ABI-compatible message",
-          "description": "Allows to encode deploy and function call messages.\n\nUse cases include messages of any possible type:\n- deploy with initial function call (i.e. `constructor` or any other function that is used for some kind\nof initialization);\n- deploy without initial function call;\n- simple function call\n\nThere is an optional public key can be provided in deploy set in order to substitute one\nin TVM file.\n\nPublic key resolving priority:\n1. Public key from deploy set.\n2. Public key, specified in TVM file.",
+          "description": "Allows to encode deploy and function call messages.\n\nUse cases include messages of any possible type:\n- deploy with initial function call (i.e. `constructor` or any other\n  function that is used for some kind\nof initialization);\n- deploy without initial function call;\n- simple function call\n\nThere is an optional public key can be provided in deploy set in order to\nsubstitute one in TVM file.\n\nPublic key resolving priority:\n1. Public key from deploy set.\n2. Public key, specified in TVM file.",
           "params": [
             {
               "name": "context",
@@ -7540,8 +7540,8 @@
         },
         {
           "name": "update_initial_data",
-          "summary": "Updates initial account data with initial values for the contract's static variables and owner's public key. This operation is applicable only for initial account data (before deploy). If the contract is already deployed, its data doesn't contain this data section any more.",
-          "description": "Doesn't support ABI version >= 2.4. Use `encode_initial_data` instead",
+          "summary": "Updates initial account data with initial values for the contract's static variables and owner's public key.",
+          "description": "This operation is applicable only for initial account data (before deploy). If the contract is already deployed,\nits data doesn't contain this data section any more.\n\nDoesn't support ABI version >= 2.4. Use `encode_initial_data` instead",
           "params": [
             {
               "name": "context",
@@ -7616,8 +7616,8 @@
         },
         {
           "name": "decode_initial_data",
-          "summary": "Decodes initial values of a contract's static variables and owner's public key from account initial data This operation is applicable only for initial account data (before deploy). If the contract is already deployed, its data doesn't contain this data section any more.",
-          "description": "Doesn't support ABI version >= 2.4. Use `decode_account_data` instead",
+          "summary": "Decodes initial values of a contract's static variables and owner's public key from account initial data This operation is applicable only for initial account data (before deploy).",
+          "description": "If the contract is already deployed, its data doesn't contain this data section any more.\n\nDoesn't support ABI version >= 2.4. Use `decode_account_data` instead",
           "params": [
             {
               "name": "context",
@@ -7655,7 +7655,7 @@
         {
           "name": "decode_boc",
           "summary": "Decodes BOC into JSON as a set of provided parameters.",
-          "description": "Solidity functions use ABI types for [builder encoding](https://github.com/tonlabs/TON-Solidity-Compiler/blob/master/API.md#tvmbuilderstore).\nThe simplest way to decode such a BOC is to use ABI decoding.\nABI has it own rules for fields layout in cells so manually encoded\nBOC can not be described in terms of ABI rules.\n\nTo solve this problem we introduce a new ABI type `Ref(<ParamType>)`\nwhich allows to store `ParamType` ABI parameter in cell reference and, thus,\ndecode manually encoded BOCs. This type is available only in `decode_boc` function\nand will not be available in ABI messages encoding until it is included into some ABI revision.\n\nSuch BOC descriptions covers most users needs. If someone wants to decode some BOC which\ncan not be described by these rules (i.e. BOC with TLB containing constructors of flags\ndefining some parsing conditions) then they can decode the fields up to fork condition,\ncheck the parsed data manually, expand the parsing schema and then decode the whole BOC\nwith the full schema.",
+          "description": "Solidity functions use ABI types for [builder encoding](https://github.com/tonlabs/TON-Solidity-Compiler/blob/master/API.md#tvmbuilderstore).\nThe simplest way to decode such a BOC is to use ABI decoding.\nABI has it own rules for fields layout in cells so manually encoded\nBOC can not be described in terms of ABI rules.\n\nTo solve this problem we introduce a new ABI type `Ref(<ParamType>)`\nwhich allows to store `ParamType` ABI parameter in cell reference and, thus,\ndecode manually encoded BOCs. This type is available only in `decode_boc`\nfunction and will not be available in ABI messages encoding until it is\nincluded into some ABI revision.\n\nSuch BOC descriptions covers most users needs. If someone wants to decode\nsome BOC which can not be described by these rules (i.e. BOC with TLB\ncontaining constructors of flags defining some parsing conditions) then they\ncan decode the fields up to fork condition, check the parsed data manually,\nexpand the parsing schema and then decode the whole BOC with the full\nschema.",
           "params": [
             {
               "name": "context",
@@ -7827,7 +7827,7 @@
                 }
               ],
               "summary": "Pin the BOC with `pin` name.",
-              "description": "Such BOC will not be removed from cache until it is unpinned BOCs can have several pins and each of the pins has reference counter indicating how many\ntimes the BOC was pinned with the pin. BOC is removed from cache after all references for all\npins are unpinned with `cache_unpin` function calls."
+              "description": "Such BOC will not be removed from cache until it is unpinned BOCs can have several pins and each of the pins\nhas reference counter indicating how many times the BOC was pinned\nwith the pin. BOC is removed from cache after all references for all\npins are unpinned with `cache_unpin` function calls."
             },
             {
               "name": "Unpinned",
@@ -7861,7 +7861,7 @@
                   "type": "Ref",
                   "ref_name": "Value",
                   "summary": "Value: - `Number` containing integer number.",
-                  "description": "e.g. `123`, `-123`. - Decimal string. e.g. `\"123\"`, `\"-123\"`.\n- `0x` prefixed hexadecimal string.\n  e.g `0x123`, `0X123`, `-0x123`."
+                  "description": "e.g. `123`, `-123`. - Decimal string. e.g. `\"123\"`, `\"-123\"`.\n- `0x` prefixed hexadecimal string. e.g `0x123`, `0X123`, `-0x123`."
                 }
               ],
               "summary": "Append integer to cell data.",
@@ -9240,8 +9240,8 @@
         },
         {
           "name": "cache_unpin",
-          "summary": "Unpin BOCs with specified pin defined in the `cache_set`. Decrease pin reference counter for BOCs with specified pin defined in the `cache_set`. BOCs which have only 1 pin and its reference counter become 0 will be removed from cache",
-          "description": null,
+          "summary": "Unpin BOCs with specified pin defined in the `cache_set`. Decrease pin reference counter for BOCs with specified pin defined in the `cache_set`.",
+          "description": "BOCs which have only 1 pin and its reference counter become 0 will be removed from cache",
           "params": [
             {
               "name": "context",
@@ -9663,6 +9663,13 @@
               "value": "516",
               "summary": null,
               "description": null
+            },
+            {
+              "name": "InvalidThread",
+              "type": "Number",
+              "value": "517",
+              "summary": null,
+              "description": null
             }
           ],
           "summary": null,
@@ -9717,7 +9724,7 @@
                 }
               ],
               "summary": "Notifies the app that the client has failed to fetch the account's current shard block.",
-              "description": "This may happen due to the network issues. Receiving this event means that message processing will not proceed -\nmessage was not sent, and Developer can try to run `process_message` again,\nin the hope that the connection is restored."
+              "description": "This may happen due to the network issues. Receiving this event means that message processing will not proceed -\nmessage was not sent, and Developer can try to run `process_message`\nagain, in the hope that the connection is restored."
             },
             {
               "name": "WillSend",
@@ -9781,7 +9788,7 @@
                 }
               ],
               "summary": "Notifies the app that the message was sent to the network, i.e `processing.send_message` was successfully executed. Now, the message is in the blockchain. If Application exits at this phase, Developer needs to proceed with processing after the application is restored with `wait_for_transaction` function, passing shard_block_id and message from this event.",
-              "description": "Do not forget to specify abi of your contract as well, it is crucial for processing. See `processing.wait_for_transaction` documentation."
+              "description": "Do not forget to specify abi of your contract as well, it is crucial for processing. See\n`processing.wait_for_transaction` documentation."
             },
             {
               "name": "SendFailed",
@@ -9820,7 +9827,7 @@
                 }
               ],
               "summary": "Notifies the app that the sending operation was failed with network error.",
-              "description": "Nevertheless the processing will be continued at the waiting\nphase because the message possibly has been delivered to the\nnode.\nIf Application exits at this phase, Developer needs to proceed with processing\nafter the application is restored with `wait_for_transaction` function, passing\nshard_block_id and message from this event. Do not forget to specify abi of your contract\nas well, it is crucial for processing. See `processing.wait_for_transaction` documentation."
+              "description": "Nevertheless the processing will be continued at the waiting\nphase because the message possibly has been delivered to the\nnode.\nIf Application exits at this phase, Developer needs to proceed with\nprocessing after the application is restored with\n`wait_for_transaction` function, passing shard_block_id and message\nfrom this event. Do not forget to specify abi of your contract\nas well, it is crucial for processing. See\n`processing.wait_for_transaction` documentation."
             },
             {
               "name": "WillFetchNextBlock",
@@ -9852,7 +9859,7 @@
                 }
               ],
               "summary": "Notifies the app that the next shard block will be fetched from the network.",
-              "description": "Event can occurs more than one time due to block walking\nprocedure.\nIf Application exits at this phase, Developer needs to proceed with processing\nafter the application is restored with `wait_for_transaction` function, passing\nshard_block_id and message from this event. Do not forget to specify abi of your contract\nas well, it is crucial for processing. See `processing.wait_for_transaction` documentation."
+              "description": "Event can occurs more than one time due to block walking\nprocedure.\nIf Application exits at this phase, Developer needs to proceed with\nprocessing after the application is restored with\n`wait_for_transaction` function, passing shard_block_id and message\nfrom this event. Do not forget to specify abi of your contract\nas well, it is crucial for processing. See\n`processing.wait_for_transaction` documentation."
             },
             {
               "name": "FetchNextBlockFailed",
@@ -9891,7 +9898,7 @@
                 }
               ],
               "summary": "Notifies the app that the next block can't be fetched.",
-              "description": "If no block was fetched within `NetworkConfig.wait_for_timeout` then processing stops.\nThis may happen when the shard stops, or there are other network issues.\nIn this case Developer should resume message processing with `wait_for_transaction`, passing shard_block_id,\nmessage and contract abi to it. Note that passing ABI is crucial, because it will influence the processing strategy.\n\nAnother way to tune this is to specify long timeout in `NetworkConfig.wait_for_timeout`"
+              "description": "If no block was fetched within `NetworkConfig.wait_for_timeout` then\nprocessing stops. This may happen when the shard stops, or there are\nother network issues. In this case Developer should resume message\nprocessing with `wait_for_transaction`, passing shard_block_id,\nmessage and contract abi to it. Note that passing ABI is crucial,\nbecause it will influence the processing strategy.\n\nAnother way to tune this is to specify long timeout in\n`NetworkConfig.wait_for_timeout`"
             },
             {
               "name": "MessageExpired",
@@ -9924,7 +9931,7 @@
                 }
               ],
               "summary": "Notifies the app that the message was not executed within expire timeout on-chain and will never be because it is already expired. The expiration timeout can be configured with `AbiConfig` parameters.",
-              "description": "This event occurs only for the contracts which ABI includes \"expire\" header.\n\nIf Application specifies `NetworkConfig.message_retries_count` > 0, then `process_message`\nwill perform retries: will create a new message and send it again and repeat it until it reaches\nthe maximum retries count or receives a successful result.  All the processing\nevents will be repeated."
+              "description": "This event occurs only for the contracts which ABI includes \"expire\"\nheader.\n\nIf Application specifies `NetworkConfig.message_retries_count` > 0, then\n`process_message` will perform retries: will create a new message\nand send it again and repeat it until it reaches the maximum retries\ncount or receives a successful result.  All the processing\nevents will be repeated."
             },
             {
               "name": "RempSentToValidators",
@@ -10090,7 +10097,7 @@
                   "description": null
                 }
               ],
-              "summary": "Notifies the app about any problem that has occurred in REMP processing - in this case library switches to the fallback transaction awaiting scenario (sequential block reading).",
+              "summary": "Notifies the app about any problem that has occurred in REMP processing - in this case library switches to the fallback transaction awaiting   scenario (sequential block reading).",
               "description": null
             }
           ],
@@ -10389,7 +10396,7 @@
               "name": "Reserved",
               "type": "None",
               "summary": "Reserved for future statuses.",
-              "description": "Is never returned. Application should wait for one of the `Finalized` or `Timeout` statuses.\nAll other statuses are intermediate."
+              "description": "Is never returned. Application should wait for one of the `Finalized` or `Timeout`\nstatuses. All other statuses are intermediate."
             }
           ],
           "summary": null,
@@ -10608,7 +10615,16 @@
                 "ref_name": "abi.Abi"
               },
               "summary": "Optional message ABI.",
-              "description": "If this parameter is specified and the message has the\n`expire` header then expiration time will be checked against\nthe current time to prevent unnecessary sending of already expired message.\n\nThe `message already expired` error will be returned in this\ncase.\n\nNote, that specifying `abi` for ABI compliant contracts is\nstrongly recommended, so that proper processing strategy can be\nchosen."
+              "description": "If this parameter is specified and the message has the\n`expire` header then expiration time will be checked against\nthe current time to prevent unnecessary sending of already expired\nmessage.\n\nThe `message already expired` error will be returned in this\ncase.\n\nNote, that specifying `abi` for ABI compliant contracts is\nstrongly recommended, so that proper processing strategy can be\nchosen."
+            },
+            {
+              "name": "thread_id",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": null,
+              "description": null
             },
             {
               "name": "send_events",
@@ -10628,19 +10644,78 @@
           "type": "Struct",
           "struct_fields": [
             {
-              "name": "shard_block_id",
-              "type": "String",
-              "summary": "The last generated shard block of the message destination account before the message was sent.",
-              "description": "This block id must be used as a parameter of the\n`wait_for_transaction`."
+              "name": "message_hash",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "The hash of the processed message.",
+              "description": null
             },
             {
-              "name": "sending_endpoints",
+              "name": "block_hash",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "The hash of the block in which the message was included.",
+              "description": null
+            },
+            {
+              "name": "tx_hash",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "The hash of the transaction generated by the message.",
+              "description": null
+            },
+            {
+              "name": "aborted",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "Boolean"
+              },
+              "summary": "The flag is set either if there is no action phase or if the action phase was unsuccessful.",
+              "description": null
+            },
+            {
+              "name": "exit_code",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "Number",
+                "number_type": "Int",
+                "number_size": 32
+              },
+              "summary": "The exit code of the computing phase",
+              "description": null
+            },
+            {
+              "name": "thread_id",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "The identifier of the thread in which the message was processed.",
+              "description": null
+            },
+            {
+              "name": "producers",
               "type": "Array",
               "array_item": {
                 "type": "String"
               },
-              "summary": "The list of endpoints to which the message was sent.",
-              "description": "This list id must be used as a parameter of the\n`wait_for_transaction`."
+              "summary": "The list (IP addresses) of block producers processing the thread.",
+              "description": null
+            },
+            {
+              "name": "current_time",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "The timestamp of generating this response.",
+              "description": null
             }
           ],
           "summary": null,
@@ -10691,7 +10766,7 @@
                 }
               },
               "summary": "The list of endpoints to which the message was sent.",
-              "description": "Use this field to get more informative errors.\nProvide the same value as the `send_message` has returned.\nIf the message was not delivered (expired), SDK will log the endpoint URLs, used for its sending."
+              "description": "Use this field to get more informative errors.\nProvide the same value as the `send_message` has returned.\nIf the message was not delivered (expired), SDK will log the endpoint\nURLs, used for its sending."
             }
           ],
           "summary": null,
@@ -10726,7 +10801,7 @@
         {
           "name": "monitor_messages",
           "summary": "Starts monitoring for the processing results of the specified messages.",
-          "description": "Message monitor performs background monitoring for a message processing results\nfor the specified set of messages.\n\nMessage monitor can serve several isolated monitoring queues.\nEach monitor queue has a unique application defined identifier (or name) used\nto separate several queue's.\n\nThere are two important lists inside of the monitoring queue:\n\n- unresolved messages: contains messages requested by the application for monitoring\n  and not yet resolved;\n\n- resolved results: contains resolved processing results for monitored messages.\n\nEach monitoring queue tracks own unresolved and resolved lists.\nApplication can add more messages to the monitoring queue at any time.\n\nMessage monitor accumulates resolved results.\nApplication should fetch this results with `fetchNextMonitorResults` function.\n\nWhen both unresolved and resolved lists becomes empty, monitor stops any background activity\nand frees all allocated internal memory.\n\nIf monitoring queue with specified name already exists then messages will be added\nto the unresolved list.\n\nIf monitoring queue with specified name does not exist then monitoring queue will be created\nwith specified unresolved messages.",
+          "description": "Message monitor performs background monitoring for a message processing\nresults for the specified set of messages.\n\nMessage monitor can serve several isolated monitoring queues.\nEach monitor queue has a unique application defined identifier (or name)\nused to separate several queue's.\n\nThere are two important lists inside of the monitoring queue:\n\n- unresolved messages: contains messages requested by the application for\n  monitoring and not yet resolved;\n\n- resolved results: contains resolved processing results for monitored\n  messages.\n\nEach monitoring queue tracks own unresolved and resolved lists.\nApplication can add more messages to the monitoring queue at any time.\n\nMessage monitor accumulates resolved results.\nApplication should fetch this results with `fetchNextMonitorResults`\nfunction.\n\nWhen both unresolved and resolved lists becomes empty, monitor stops any\nbackground activity and frees all allocated internal memory.\n\nIf monitoring queue with specified name already exists then messages will be\nadded to the unresolved list.\n\nIf monitoring queue with specified name does not exist then monitoring queue\nwill be created with specified unresolved messages.",
           "params": [
             {
               "name": "context",
@@ -10914,7 +10989,7 @@
         {
           "name": "send_message",
           "summary": "Sends message to the network",
-          "description": "Sends message to the network and returns the last generated shard block of the destination account\nbefore the message was sent. It will be required later for message processing.",
+          "description": "Sends message to the network and returns the last generated shard block of\nthe destination account before the message was sent. It will be required\nlater for message processing.",
           "params": [
             {
               "name": "context",
@@ -10965,7 +11040,7 @@
         {
           "name": "wait_for_transaction",
           "summary": "Performs monitoring of the network for the result transaction of the external inbound message processing.",
-          "description": "`send_events` enables intermediate events, such as `WillFetchNextBlock`,\n`FetchNextBlockFailed` that may be useful for logging of new shard blocks creation\nduring message processing.\n\nNote, that presence of the `abi` parameter is critical for ABI\ncompliant contracts. Message processing uses drastically\ndifferent strategy for processing message for contracts which\nABI includes \"expire\" header.\n\nWhen the ABI header `expire` is present, the processing uses\n`message expiration` strategy:\n- The maximum block gen time is set to\n  `message_expiration_timeout + transaction_wait_timeout`.\n- When maximum block gen time is reached, the processing will\n  be finished with `MessageExpired` error.\n\nWhen the ABI header `expire` isn't present or `abi` parameter\nisn't specified, the processing uses `transaction waiting`\nstrategy:\n- The maximum block gen time is set to\n  `now() + transaction_wait_timeout`.\n\n- If maximum block gen time is reached and no result transaction is found,\nthe processing will exit with an error.",
+          "description": "`send_events` enables intermediate events, such as `WillFetchNextBlock`,\n`FetchNextBlockFailed` that may be useful for logging of new shard blocks\ncreation during message processing.\n\nNote, that presence of the `abi` parameter is critical for ABI\ncompliant contracts. Message processing uses drastically\ndifferent strategy for processing message for contracts which\nABI includes \"expire\" header.\n\nWhen the ABI header `expire` is present, the processing uses\n`message expiration` strategy:\n- The maximum block gen time is set to `message_expiration_timeout +\n  transaction_wait_timeout`.\n- When maximum block gen time is reached, the processing will be finished\n  with `MessageExpired` error.\n\nWhen the ABI header `expire` isn't present or `abi` parameter\nisn't specified, the processing uses `transaction waiting`\nstrategy:\n- The maximum block gen time is set to `now() + transaction_wait_timeout`.\n\n- If maximum block gen time is reached and no result transaction is found,\nthe processing will exit with an error.",
           "params": [
             {
               "name": "context",
@@ -11016,7 +11091,7 @@
         {
           "name": "process_message",
           "summary": "Creates message, sends it to the network and monitors its processing.",
-          "description": "Creates ABI-compatible message,\nsends it to the network and monitors for the result transaction.\nDecodes the output messages' bodies.\n\nIf contract's ABI includes \"expire\" header, then\nSDK implements retries in case of unsuccessful message delivery within the expiration\ntimeout: SDK recreates the message, sends it and processes it again.\n\nThe intermediate events, such as `WillFetchFirstBlock`, `WillSend`, `DidSend`,\n`WillFetchNextBlock`, etc - are switched on/off by `send_events` flag\nand logged into the supplied callback function.\n\nThe retry configuration parameters are defined in the client's `NetworkConfig` and `AbiConfig`.\n\nIf contract's ABI does not include \"expire\" header\nthen, if no transaction is found within the network timeout (see config parameter ), exits with error.",
+          "description": "Creates ABI-compatible message,\nsends it to the network and monitors for the result transaction.\nDecodes the output messages' bodies.\n\nIf contract's ABI includes \"expire\" header, then\nSDK implements retries in case of unsuccessful message delivery within the\nexpiration timeout: SDK recreates the message, sends it and processes it\nagain.\n\nThe intermediate events, such as `WillFetchFirstBlock`, `WillSend`,\n`DidSend`, `WillFetchNextBlock`, etc - are switched on/off by `send_events`\nflag and logged into the supplied callback function.\n\nThe retry configuration parameters are defined in the client's\n`NetworkConfig` and `AbiConfig`.\n\nIf contract's ABI does not include \"expire\" header\nthen, if no transaction is found within the network timeout (see config\nparameter ), exits with error.",
           "params": [
             {
               "name": "context",
@@ -11355,7 +11430,7 @@
         {
           "name": "get_address_type",
           "summary": "Validates and returns the type of any TON address.",
-          "description": "Address types are the following\n\n`0:919db8e740d50bf349df2eea03fa30c385d846b991ff5542e67098ee833fc7f7` - standard TON address most\ncommonly used in all cases. Also called as hex address\n`919db8e740d50bf349df2eea03fa30c385d846b991ff5542e67098ee833fc7f7` - account ID. A part of full\naddress. Identifies account inside particular workchain\n`EQCRnbjnQNUL80nfLuoD+jDDhdhGuZH/VULmcJjugz/H9wam` - base64 address. Also called \"user-friendly\".\nWas used at the beginning of TON. Now it is supported for compatibility",
+          "description": "Address types are the following\n\n`0:919db8e740d50bf349df2eea03fa30c385d846b991ff5542e67098ee833fc7f7` -\nstandard TON address most commonly used in all cases. Also called as hex\naddress `919db8e740d50bf349df2eea03fa30c385d846b991ff5542e67098ee833fc7f7` -\naccount ID. A part of full address. Identifies account inside particular\nworkchain `EQCRnbjnQNUL80nfLuoD+jDDhdhGuZH/VULmcJjugz/H9wam` - base64\naddress. Also called \"user-friendly\". Was used at the beginning of TON. Now\nit is supported for compatibility",
           "params": [
             {
               "name": "_context",
@@ -11773,7 +11848,7 @@
               "number_type": "UInt",
               "number_size": 64,
               "summary": "Deprecated.",
-              "description": "Contains the same data as total_fwd_fees field. Deprecated because of its confusing name, that is not the same with GraphQL API Transaction type's field."
+              "description": "Contains the same data as total_fwd_fees field. Deprecated because of its confusing name, that is not the same with GraphQL API\nTransaction type's field."
             },
             {
               "name": "total_account_fees",
@@ -12021,7 +12096,7 @@
               "name": "account",
               "type": "String",
               "summary": "Updated account state BOC.",
-              "description": "Encoded as `base64`. Attention! Only `account_state.storage.state.data` part of the BOC is updated."
+              "description": "Encoded as `base64`. Attention! Only `account_state.storage.state.data` part of the BOC is\nupdated."
             }
           ],
           "summary": null,
@@ -12070,7 +12145,7 @@
                 "type": "Boolean"
               },
               "summary": "Convert lists based on nested tuples in the **result** into plain arrays.",
-              "description": "Default is `false`. Input parameters may use any of lists representations\nIf you receive this error on Web: \"Runtime error. Unreachable code should not be executed...\",\nset this flag to true.\nThis may happen, for example, when elector contract contains too many participants"
+              "description": "Default is `false`. Input parameters may use any of lists representations If you receive this error on Web: \"Runtime error.\nUnreachable code should not be executed...\", set this flag to true.\nThis may happen, for example, when elector contract contains too many\nparticipants"
             }
           ],
           "summary": null,
@@ -12096,7 +12171,7 @@
         {
           "name": "run_executor",
           "summary": "Emulates all the phases of contract execution locally",
-          "description": "Performs all the phases of contract execution on Transaction Executor -\nthe same component that is used on Validator Nodes.\n\nCan be used for contract debugging, to find out the reason why a message was not delivered successfully.\nValidators throw away the failed external inbound messages (if they failed before `ACCEPT`) in the real network.\nThis is why these messages are impossible to debug in the real network.\nWith the help of run_executor you can do that. In fact, `process_message` function\nperforms local check with `run_executor` if there was no transaction as a result of processing\nand returns the error, if there is one.\n\nAnother use case to use `run_executor` is to estimate fees for message execution.\nSet  `AccountForExecutor::Account.unlimited_balance`\nto `true` so that emulation will not depend on the actual balance.\nThis may be needed to calculate deploy fees for an account that does not exist yet.\nJSON with fees is in `fees` field of the result.\n\nOne more use case - you can produce the sequence of operations,\nthus emulating the sequential contract calls locally.\nAnd so on.\n\nTransaction executor requires account BOC (bag of cells) as a parameter.\nTo get the account BOC - use `net.query` method to download it from GraphQL API\n(field `boc` of `account`) or generate it with `abi.encode_account` method.\n\nAlso it requires message BOC. To get the message BOC - use `abi.encode_message` or `abi.encode_internal_message`.\n\nIf you need this emulation to be as precise as possible (for instance - emulate transaction\nwith particular lt in particular block or use particular blockchain config,\ndownloaded from a particular key block - then specify `execution_options` parameter.\n\nIf you need to see the aborted transaction as a result, not as an error, set `skip_transaction_check` to `true`.",
+          "description": "Performs all the phases of contract execution on Transaction Executor -\nthe same component that is used on Validator Nodes.\n\nCan be used for contract debugging, to find out the reason why a message was\nnot delivered successfully. Validators throw away the failed external\ninbound messages (if they failed before `ACCEPT`) in the real network.\nThis is why these messages are impossible to debug in the real network.\nWith the help of run_executor you can do that. In fact, `process_message`\nfunction performs local check with `run_executor` if there was no\ntransaction as a result of processing and returns the error, if there is\none.\n\nAnother use case to use `run_executor` is to estimate fees for message\nexecution. Set  `AccountForExecutor::Account.unlimited_balance`\nto `true` so that emulation will not depend on the actual balance.\nThis may be needed to calculate deploy fees for an account that does not\nexist yet. JSON with fees is in `fees` field of the result.\n\nOne more use case - you can produce the sequence of operations,\nthus emulating the sequential contract calls locally.\nAnd so on.\n\nTransaction executor requires account BOC (bag of cells) as a parameter.\nTo get the account BOC - use `net.query` method to download it from GraphQL\nAPI (field `boc` of `account`) or generate it with `abi.encode_account`\nmethod.\n\nAlso it requires message BOC. To get the message BOC - use\n`abi.encode_message` or `abi.encode_internal_message`.\n\nIf you need this emulation to be as precise as possible (for instance -\nemulate transaction with particular lt in particular block or use particular\nblockchain config, downloaded from a particular key block - then specify\n`execution_options` parameter.\n\nIf you need to see the aborted transaction as a result, not as an error, set\n`skip_transaction_check` to `true`.",
           "params": [
             {
               "name": "context",
@@ -12134,7 +12209,7 @@
         {
           "name": "run_tvm",
           "summary": "Executes get-methods of ABI-compatible contracts",
-          "description": "Performs only a part of compute phase of transaction execution\nthat is used to run get-methods of ABI-compatible contracts.\n\nIf you try to run get-methods with `run_executor` you will get an error, because it checks ACCEPT and exits\nif there is none, which is actually true for get-methods.\n\n To get the account BOC (bag of cells) - use `net.query` method to download it from GraphQL API\n(field `boc` of `account`) or generate it with `abi.encode_account method`.\nTo get the message BOC - use `abi.encode_message` or prepare it any other way, for instance, with FIFT script.\n\nAttention! Updated account state is produces as well, but only\n`account_state.storage.state.data`  part of the BOC is updated.",
+          "description": "Performs only a part of compute phase of transaction execution\nthat is used to run get-methods of ABI-compatible contracts.\n\nIf you try to run get-methods with `run_executor` you will get an error,\nbecause it checks ACCEPT and exits if there is none, which is actually true\nfor get-methods.\n\n To get the account BOC (bag of cells) - use `net.query` method to download\nit from GraphQL API (field `boc` of `account`) or generate it with\n`abi.encode_account method`. To get the message BOC - use\n`abi.encode_message` or prepare it any other way, for instance, with FIFT\nscript.\n\nAttention! Updated account state is produces as well, but only\n`account_state.storage.state.data`  part of the BOC is updated.",
           "params": [
             {
               "name": "context",
@@ -12611,7 +12686,7 @@
                 "ref_name": "abi.DecodedMessageBody"
               },
               "summary": "Decoded body.",
-              "description": "Library tries to decode message body using provided `params.abi_registry`.\nThis field will be missing if none of the provided abi can be used to decode."
+              "description": "Library tries to decode message body using provided\n`params.abi_registry`. This field will be missing if none of the\nprovided abi can be used to decode."
             }
           ],
           "summary": null,
@@ -12810,7 +12885,7 @@
               "type": "Ref",
               "ref_name": "Value",
               "summary": "Values for requested fields.",
-              "description": "Returns an array of strings. Each string refers to the corresponding `fields` item.\nNumeric value is returned as a decimal string representations."
+              "description": "Returns an array of strings. Each string refers to the corresponding\n`fields` item. Numeric value is returned as a decimal string\nrepresentations."
             }
           ],
           "summary": null,
@@ -13082,7 +13157,7 @@
                 "number_size": 32
               },
               "summary": "Timeout used to limit waiting time for the missing messages and transaction.",
-              "description": "If some of the following messages and transactions are missing yet\nThe maximum waiting time is regulated by this option.\n\nDefault value is 60000 (1 min). If `timeout` is set to 0 then function will wait infinitely\nuntil the whole transaction tree is executed"
+              "description": "If some of the following messages and transactions are missing yet\nThe maximum waiting time is regulated by this option.\n\nDefault value is 60000 (1 min). If `timeout` is set to 0 then function\nwill wait infinitely until the whole transaction tree is executed"
             },
             {
               "name": "transaction_max_count",
@@ -13093,7 +13168,7 @@
                 "number_size": 32
               },
               "summary": "Maximum transaction count to wait.",
-              "description": "If transaction tree contains more transaction then this parameter then only first `transaction_max_count` transaction are awaited and returned.\n\nDefault value is 50. If `transaction_max_count` is set to 0 then no limitation on\ntransaction count is used and all transaction are returned."
+              "description": "If transaction tree contains more transaction then this parameter then only first\n`transaction_max_count` transaction are awaited and returned.\n\nDefault value is 50. If `transaction_max_count` is set to 0 then no\nlimitation on transaction count is used and all transaction are\nreturned."
             }
           ],
           "summary": null,
@@ -13163,7 +13238,7 @@
                 }
               },
               "summary": "Shard prefix filter.",
-              "description": "If the application specifies this parameter and it is not the empty array\nthen the iteration will include items related to accounts that belongs to\nthe specified shard prefixes.\nShard prefix must be represented as a string \"workchain:prefix\".\nWhere `workchain` is a signed integer and the `prefix` if a hexadecimal\nrepresentation if the 64-bit unsigned integer with tagged shard prefix.\nFor example: \"0:3800000000000000\"."
+              "description": "If the application specifies this parameter and it is not the empty\narray then the iteration will include items related to accounts that\nbelongs to the specified shard prefixes.\nShard prefix must be represented as a string \"workchain:prefix\".\nWhere `workchain` is a signed integer and the `prefix` if a hexadecimal\nrepresentation if the 64-bit unsigned integer with tagged shard prefix.\nFor example: \"0:3800000000000000\"."
             },
             {
               "name": "result",
@@ -13245,7 +13320,7 @@
                 }
               },
               "summary": "Shard prefix filters.",
-              "description": "If the application specifies this parameter and it is not an empty array\nthen the iteration will include items related to accounts that belongs to\nthe specified shard prefixes.\nShard prefix must be represented as a string \"workchain:prefix\".\nWhere `workchain` is a signed integer and the `prefix` if a hexadecimal\nrepresentation if the 64-bit unsigned integer with tagged shard prefix.\nFor example: \"0:3800000000000000\".\nAccount address conforms to the shard filter if\nit belongs to the filter workchain and the first bits of address match to\nthe shard prefix. Only transactions with suitable account addresses are iterated."
+              "description": "If the application specifies this parameter and it is not an empty array\nthen the iteration will include items related to accounts that belongs\nto the specified shard prefixes.\nShard prefix must be represented as a string \"workchain:prefix\".\nWhere `workchain` is a signed integer and the `prefix` if a hexadecimal\nrepresentation if the 64-bit unsigned integer with tagged shard prefix.\nFor example: \"0:3800000000000000\".\nAccount address conforms to the shard filter if\nit belongs to the filter workchain and the first bits of address match\nto the shard prefix. Only transactions with suitable account\naddresses are iterated."
             },
             {
               "name": "accounts_filter",
@@ -13257,7 +13332,7 @@
                 }
               },
               "summary": "Account address filter.",
-              "description": "Application can specify the list of accounts for which\nit wants to iterate transactions.\n\nIf this parameter is missing or an empty list then the library iterates\ntransactions for all accounts that pass the shard filter.\n\nNote that the library doesn't detect conflicts between the account filter and the shard filter\nif both are specified.\nSo it is an application responsibility to specify the correct filter combination."
+              "description": "Application can specify the list of accounts for which\nit wants to iterate transactions.\n\nIf this parameter is missing or an empty list then the library iterates\ntransactions for all accounts that pass the shard filter.\n\nNote that the library doesn't detect conflicts between the account\nfilter and the shard filter if both are specified.\nSo it is an application responsibility to specify the correct filter\ncombination."
             },
             {
               "name": "result",
@@ -13275,7 +13350,7 @@
                 "type": "Boolean"
               },
               "summary": "Include `transfers` field in iterated transactions.",
-              "description": "If this parameter is `true` then each transaction contains field\n`transfers` with list of transfer. See more about this structure in function description."
+              "description": "If this parameter is `true` then each transaction contains field\n`transfers` with list of transfer. See more about this structure in\nfunction description."
             }
           ],
           "summary": null,
@@ -13302,7 +13377,7 @@
                 }
               },
               "summary": "Account address filter.",
-              "description": "Application can specify the list of accounts for which\nit wants to iterate transactions.\n\nIf this parameter is missing or an empty list then the library iterates\ntransactions for all accounts that passes the shard filter.\n\nNote that the library doesn't detect conflicts between the account filter and the shard filter\nif both are specified.\nSo it is the application's responsibility to specify the correct filter combination."
+              "description": "Application can specify the list of accounts for which\nit wants to iterate transactions.\n\nIf this parameter is missing or an empty list then the library iterates\ntransactions for all accounts that passes the shard filter.\n\nNote that the library doesn't detect conflicts between the account\nfilter and the shard filter if both are specified.\nSo it is the application's responsibility to specify the correct filter\ncombination."
             }
           ],
           "summary": null,
@@ -13356,7 +13431,7 @@
                 "ref_name": "Value"
               },
               "summary": "Next available items.",
-              "description": "Note that `iterator_next` can return an empty items and `has_more` equals to `true`.\nIn this case the application have to continue iteration.\nSuch situation can take place when there is no data yet but\nthe requested `end_time` is not reached."
+              "description": "Note that `iterator_next` can return an empty items and `has_more`\nequals to `true`. In this case the application have to continue\niteration. Such situation can take place when there is no data yet\nbut the requested `end_time` is not reached."
             },
             {
               "name": "has_more",
@@ -13679,7 +13754,7 @@
         },
         {
           "name": "subscribe",
-          "summary": "Creates a subscription",
+          "summary": "Creates a subscription (Deprecated)",
           "description": "The subscription is a persistent communication channel between\nclient and Acki Nacki Network.\n\n### Important Notes on Subscriptions\n\nUnfortunately sometimes the connection with the network breaks down.\nIn this situation the library attempts to reconnect to the network.\nThis reconnection sequence can take significant time.\nAll of this time the client is disconnected from the network.\n\nBad news is that all changes that happened while\nthe client was disconnected are lost.\n\nGood news is that the client report errors to the callback when\nit loses and resumes connection.\n\nSo, if the lost changes are important to the application then\nthe application must handle these error reports.\n\nLibrary reports errors with `responseType` == 101\nand the error object passed via `params`.\n\nWhen the library has successfully reconnected\nthe application receives callback with\n`responseType` == 101 and `params.code` == 614 (NetworkModuleResumed).\n\nApplication can use several ways to handle this situation:\n- If application monitors changes for the single\nobject (for example specific account):  application\ncan perform a query for this object and handle actual data as a\nregular data from the subscription.\n- If application monitors sequence of some objects\n(for example transactions of the specific account): application must\nrefresh all cached (or visible to user) lists where this sequences presents.",
           "params": [
             {
@@ -13928,7 +14003,7 @@
         {
           "name": "query_counterparties",
           "summary": "Allows to query and paginate through the list of accounts that the specified account has interacted with, sorted by the time of the last internal message between accounts",
-          "description": "*Attention* this query retrieves data from 'Counterparties' service which is not supported in\nthe opensource version of DApp Server (and will not be supported) as well as in Evernode SE (will be supported in SE in future),\nbut is always accessible via [EVER OS Clouds](../ton-os-api/networks.md)",
+          "description": "*Attention* this query retrieves data from 'Counterparties' service which is\nnot supported in the opensource version of DApp Server (and will not be\nsupported) as well as in Evernode SE (will be supported in SE in future),\nbut is always accessible via [EVER OS Clouds](../ton-os-api/networks.md)",
           "params": [
             {
               "name": "context",
@@ -13966,7 +14041,7 @@
         {
           "name": "query_transaction_tree",
           "summary": "Returns a tree of transactions triggered by a specific message.",
-          "description": "Performs recursive retrieval of a transactions tree produced by a specific message:\nin_msg -> dst_transaction -> out_messages -> dst_transaction -> ...\nIf the chain of transactions execution is in progress while the function is running,\nit will wait for the next transactions to appear until the full tree or more than 50 transactions\nare received.\n\nAll the retrieved messages and transactions are included\ninto `result.messages` and `result.transactions` respectively.\n\nFunction reads transactions layer by layer, by pages of 20 transactions.\n\nThe retrieval process goes like this:\nLet's assume we have an infinite chain of transactions and each transaction generates 5 messages.\n1. Retrieve 1st message (input parameter) and corresponding transaction - put it into result.\nIt is the first level of the tree of transactions - its root.\nRetrieve 5 out message ids from the transaction for next steps.\n2. Retrieve 5 messages and corresponding transactions on the 2nd layer. Put them into result.\nRetrieve 5*5 out message ids from these transactions for next steps\n3. Retrieve 20 (size of the page) messages and transactions (3rd layer) and 20*5=100 message ids (4th layer).\n4. Retrieve the last 5 messages and 5 transactions on the 3rd layer + 15 messages and transactions (of 100) from the 4th layer\n+ 25 message ids of the 4th layer + 75 message ids of the 5th layer.\n5. Retrieve 20 more messages and 20 more transactions of the 4th layer + 100 more message ids of the 5th layer.\n6. Now we have 1+5+20+20+20 = 66 transactions, which is more than 50. Function exits with the tree of\n1m->1t->5m->5t->25m->25t->35m->35t. If we see any message ids in the last transactions out_msgs, which don't have\ncorresponding messages in the function result, it means that the full tree was not received and we need to continue iteration.\n\nTo summarize, it is guaranteed that each message in `result.messages` has the corresponding transaction\nin the `result.transactions`.\nBut there is no guarantee that all messages from transactions `out_msgs` are\npresented in `result.messages`.\nSo the application has to continue retrieval for missing messages if it requires.",
+          "description": "Performs recursive retrieval of a transactions tree produced by a specific\nmessage: in_msg -> dst_transaction -> out_messages -> dst_transaction -> ...\nIf the chain of transactions execution is in progress while the function is\nrunning, it will wait for the next transactions to appear until the full\ntree or more than 50 transactions are received.\n\nAll the retrieved messages and transactions are included\ninto `result.messages` and `result.transactions` respectively.\n\nFunction reads transactions layer by layer, by pages of 20 transactions.\n\nThe retrieval process goes like this:\nLet's assume we have an infinite chain of transactions and each transaction\ngenerates 5 messages.\n1. Retrieve 1st message (input parameter) and corresponding transaction -\n   put it into result.\nIt is the first level of the tree of transactions - its root.\nRetrieve 5 out message ids from the transaction for next steps.\n2. Retrieve 5 messages and corresponding transactions on the 2nd layer. Put\n   them into result.\nRetrieve 5*5 out message ids from these transactions for next steps\n3. Retrieve 20 (size of the page) messages and transactions (3rd layer) and\n   20*5=100 message ids (4th layer).\n4. Retrieve the last 5 messages and 5 transactions on the 3rd layer + 15\n   messages and transactions (of 100) from the 4th layer\n+ 25 message ids of the 4th layer + 75 message ids of the 5th layer.\n5. Retrieve 20 more messages and 20 more transactions of the 4th layer + 100\n   more message ids of the 5th layer.\n6. Now we have 1+5+20+20+20 = 66 transactions, which is more than 50.\n   Function exits with the tree of\n1m->1t->5m->5t->25m->25t->35m->35t. If we see any message ids in the last\ntransactions out_msgs, which don't have corresponding messages in the\nfunction result, it means that the full tree was not received and we need to\ncontinue iteration.\n\nTo summarize, it is guaranteed that each message in `result.messages` has\nthe corresponding transaction in the `result.transactions`.\nBut there is no guarantee that all messages from transactions `out_msgs` are\npresented in `result.messages`.\nSo the application has to continue retrieval for missing messages if it\nrequires.",
           "params": [
             {
               "name": "context",
@@ -14004,7 +14079,7 @@
         {
           "name": "create_block_iterator",
           "summary": "Creates block iterator.",
-          "description": "Block iterator uses robust iteration methods that guaranties that every\nblock in the specified range isn't missed or iterated twice.\n\nIterated range can be reduced with some filters:\n- `start_time` – the bottom time range. Only blocks with `gen_utime`\nmore or equal to this value is iterated. If this parameter is omitted then there is\nno bottom time edge, so all blocks since zero state is iterated.\n- `end_time` – the upper time range. Only blocks with `gen_utime`\nless then this value is iterated. If this parameter is omitted then there is\nno upper time edge, so iterator never finishes.\n- `shard_filter` – workchains and shard prefixes that reduce the set of interesting\nblocks. Block conforms to the shard filter if it belongs to the filter workchain\nand the first bits of block's `shard` fields matches to the shard prefix.\nOnly blocks with suitable shard are iterated.\n\nItems iterated is a JSON objects with block data. The minimal set of returned\nfields is:\n```text\nid\ngen_utime\nworkchain_id\nshard\nafter_split\nafter_merge\nprev_ref {\n    root_hash\n}\nprev_alt_ref {\n    root_hash\n}\n```\nApplication can request additional fields in the `result` parameter.\n\nApplication should call the `remove_iterator` when iterator is no longer required.",
+          "description": "Block iterator uses robust iteration methods that guaranties that every\nblock in the specified range isn't missed or iterated twice.\n\nIterated range can be reduced with some filters:\n- `start_time` – the bottom time range. Only blocks with `gen_utime`\nmore or equal to this value is iterated. If this parameter is omitted then\nthere is no bottom time edge, so all blocks since zero state is iterated.\n- `end_time` – the upper time range. Only blocks with `gen_utime`\nless then this value is iterated. If this parameter is omitted then there is\nno upper time edge, so iterator never finishes.\n- `shard_filter` – workchains and shard prefixes that reduce the set of\n  interesting\nblocks. Block conforms to the shard filter if it belongs to the filter\nworkchain and the first bits of block's `shard` fields matches to the shard\nprefix. Only blocks with suitable shard are iterated.\n\nItems iterated is a JSON objects with block data. The minimal set of\nreturned fields is:\n```text\nid\ngen_utime\nworkchain_id\nshard\nafter_split\nafter_merge\nprev_ref {\n    root_hash\n}\nprev_alt_ref {\n    root_hash\n}\n```\nApplication can request additional fields in the `result` parameter.\n\nApplication should call the `remove_iterator` when iterator is no longer\nrequired.",
           "params": [
             {
               "name": "context",
@@ -14042,7 +14117,7 @@
         {
           "name": "resume_block_iterator",
           "summary": "Resumes block iterator.",
-          "description": "The iterator stays exactly at the same position where the `resume_state` was caught.\n\nApplication should call the `remove_iterator` when iterator is no longer required.",
+          "description": "The iterator stays exactly at the same position where the `resume_state` was\ncaught.\n\nApplication should call the `remove_iterator` when iterator is no longer\nrequired.",
           "params": [
             {
               "name": "context",
@@ -14080,7 +14155,7 @@
         {
           "name": "create_transaction_iterator",
           "summary": "Creates transaction iterator.",
-          "description": "Transaction iterator uses robust iteration methods that guaranty that every\ntransaction in the specified range isn't missed or iterated twice.\n\nIterated range can be reduced with some filters:\n- `start_time` – the bottom time range. Only transactions with `now`\nmore or equal to this value are iterated. If this parameter is omitted then there is\nno bottom time edge, so all the transactions since zero state are iterated.\n- `end_time` – the upper time range. Only transactions with `now`\nless then this value are iterated. If this parameter is omitted then there is\nno upper time edge, so iterator never finishes.\n- `shard_filter` – workchains and shard prefixes that reduce the set of interesting\naccounts. Account address conforms to the shard filter if\nit belongs to the filter workchain and the first bits of address match to\nthe shard prefix. Only transactions with suitable account addresses are iterated.\n- `accounts_filter` – set of account addresses whose transactions must be iterated.\nNote that accounts filter can conflict with shard filter so application must combine\nthese filters carefully.\n\nIterated item is a JSON objects with transaction data. The minimal set of returned\nfields is:\n```text\nid\naccount_addr\nnow\nbalance_delta(format:DEC)\nbounce { bounce_type }\nin_message {\n    id\n    value(format:DEC)\n    msg_type\n    src\n}\nout_messages {\n    id\n    value(format:DEC)\n    msg_type\n    dst\n}\n```\nApplication can request an additional fields in the `result` parameter.\n\nAnother parameter that affects on the returned fields is the `include_transfers`.\nWhen this parameter is `true` the iterator computes and adds `transfer` field containing\nlist of the useful `TransactionTransfer` objects.\nEach transfer is calculated from the particular message related to the transaction\nand has the following structure:\n- message – source message identifier.\n- isBounced – indicates that the transaction is bounced, which means the value will be returned back to the sender.\n- isDeposit – indicates that this transfer is the deposit (true) or withdraw (false).\n- counterparty – account address of the transfer source or destination depending on `isDeposit`.\n- value – amount of nano tokens transferred. The value is represented as a decimal string\nbecause the actual value can be more precise than the JSON number can represent. Application\nmust use this string carefully – conversion to number can follow to loose of precision.\n\nApplication should call the `remove_iterator` when iterator is no longer required.",
+          "description": "Transaction iterator uses robust iteration methods that guaranty that every\ntransaction in the specified range isn't missed or iterated twice.\n\nIterated range can be reduced with some filters:\n- `start_time` – the bottom time range. Only transactions with `now`\nmore or equal to this value are iterated. If this parameter is omitted then\nthere is no bottom time edge, so all the transactions since zero state are\niterated.\n- `end_time` – the upper time range. Only transactions with `now`\nless then this value are iterated. If this parameter is omitted then there\nis no upper time edge, so iterator never finishes.\n- `shard_filter` – workchains and shard prefixes that reduce the set of\n  interesting\naccounts. Account address conforms to the shard filter if\nit belongs to the filter workchain and the first bits of address match to\nthe shard prefix. Only transactions with suitable account addresses are\niterated.\n- `accounts_filter` – set of account addresses whose transactions must be\n  iterated.\nNote that accounts filter can conflict with shard filter so application must\ncombine these filters carefully.\n\nIterated item is a JSON objects with transaction data. The minimal set of\nreturned fields is:\n```text\nid\naccount_addr\nnow\nbalance_delta(format:DEC)\nbounce { bounce_type }\nin_message {\n    id\n    value(format:DEC)\n    msg_type\n    src\n}\nout_messages {\n    id\n    value(format:DEC)\n    msg_type\n    dst\n}\n```\nApplication can request an additional fields in the `result` parameter.\n\nAnother parameter that affects on the returned fields is the\n`include_transfers`. When this parameter is `true` the iterator computes and\nadds `transfer` field containing list of the useful `TransactionTransfer`\nobjects. Each transfer is calculated from the particular message related to\nthe transaction and has the following structure:\n- message – source message identifier.\n- isBounced – indicates that the transaction is bounced, which means the\n  value will be returned back to the sender.\n- isDeposit – indicates that this transfer is the deposit (true) or withdraw\n  (false).\n- counterparty – account address of the transfer source or destination\n  depending on `isDeposit`.\n- value – amount of nano tokens transferred. The value is represented as a\n  decimal string\nbecause the actual value can be more precise than the JSON number can\nrepresent. Application must use this string carefully – conversion to number\ncan follow to loose of precision.\n\nApplication should call the `remove_iterator` when iterator is no longer\nrequired.",
           "params": [
             {
               "name": "context",
@@ -14118,7 +14193,7 @@
         {
           "name": "resume_transaction_iterator",
           "summary": "Resumes transaction iterator.",
-          "description": "The iterator stays exactly at the same position where the `resume_state` was caught.\nNote that `resume_state` doesn't store the account filter. If the application requires\nto use the same account filter as it was when the iterator was created then the application\nmust pass the account filter again in `accounts_filter` parameter.\n\nApplication should call the `remove_iterator` when iterator is no longer required.",
+          "description": "The iterator stays exactly at the same position where the `resume_state` was\ncaught. Note that `resume_state` doesn't store the account filter. If the\napplication requires to use the same account filter as it was when the\niterator was created then the application must pass the account filter again\nin `accounts_filter` parameter.\n\nApplication should call the `remove_iterator` when iterator is no longer\nrequired.",
           "params": [
             {
               "name": "context",
@@ -14865,8 +14940,8 @@
               "description": null
             }
           ],
-          "summary": "[UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters to start DeBot. DeBot must be already initialized with init() function.",
-          "description": null
+          "summary": "[UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Parameters to start DeBot.",
+          "description": "DeBot must be already initialized with init() function."
         },
         {
           "name": "ParamsOfFetch",
@@ -15015,7 +15090,7 @@
         {
           "name": "start",
           "summary": "[UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Starts the DeBot.",
-          "description": "Downloads debot smart contract from blockchain and switches it to\ncontext zero.\n\nThis function must be used by Debot Browser to start a dialog with debot.\nWhile the function is executing, several Browser Callbacks can be called,\nsince the debot tries to display all actions from the context 0 to the user.\n\nWhen the debot starts SDK registers `BrowserCallbacks` AppObject.\nTherefore when `debote.remove` is called the debot is being deleted and the callback is called\nwith `finish`=`true` which indicates that it will never be used again.",
+          "description": "Downloads debot smart contract from blockchain and switches it to\ncontext zero.\n\nThis function must be used by Debot Browser to start a dialog with debot.\nWhile the function is executing, several Browser Callbacks can be called,\nsince the debot tries to display all actions from the context 0 to the user.\n\nWhen the debot starts SDK registers `BrowserCallbacks` AppObject.\nTherefore when `debote.remove` is called the debot is being deleted and the\ncallback is called with `finish`=`true` which indicates that it will never\nbe used again.",
           "params": [
             {
               "name": "context",
@@ -15090,7 +15165,7 @@
         {
           "name": "execute",
           "summary": "[UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Executes debot action.",
-          "description": "Calls debot engine referenced by debot handle to execute input action.\nCalls Debot Browser Callbacks if needed.\n\n# Remarks\nChain of actions can be executed if input action generates a list of subactions.",
+          "description": "Calls debot engine referenced by debot handle to execute input action.\nCalls Debot Browser Callbacks if needed.\n\n# Remarks\nChain of actions can be executed if input action generates a list of\nsubactions.",
           "params": [
             {
               "name": "context",
@@ -15127,7 +15202,7 @@
         {
           "name": "send",
           "summary": "[UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Sends message to Debot.",
-          "description": "Used by Debot Browser to send response on Dinterface call or from other Debots.",
+          "description": "Used by Debot Browser to send response on Dinterface call or from other\nDebots.",
           "params": [
             {
               "name": "context",
@@ -15164,7 +15239,7 @@
         {
           "name": "remove",
           "summary": "[UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Destroys debot handle.",
-          "description": "Removes handle from Client Context and drops debot engine referenced by that handle.",
+          "description": "Removes handle from Client Context and drops debot engine referenced by that\nhandle.",
           "params": [
             {
               "name": "context",
@@ -15264,8 +15339,8 @@
               "name": "transaction",
               "type": "Ref",
               "ref_name": "Value",
-              "summary": "Single transaction's data as queried from DApp server, without modifications. The required fields are `id` and/or top-level `boc`, others are optional. In order to reduce network requests count, it is recommended to provide `block_id` and `boc` of transaction.",
-              "description": null
+              "summary": "Single transaction's data as queried from DApp server, without modifications.",
+              "description": "The required fields are `id` and/or top-level `boc`, others are optional. In order to reduce network requests count, it\nis recommended to provide `block_id` and `boc` of transaction."
             }
           ],
           "summary": null,
@@ -15279,8 +15354,8 @@
               "name": "message",
               "type": "Ref",
               "ref_name": "Value",
-              "summary": "Single message's data as queried from DApp server, without modifications. The required fields are `id` and/or top-level `boc`, others are optional. In order to reduce network requests count, it is recommended to provide at least `boc` of message and non-null `src_transaction.id` or `dst_transaction.id`.",
-              "description": null
+              "summary": "Single message's data as queried from DApp server, without modifications.",
+              "description": "The required fields are `id` and/or top-level `boc`, others are optional. In order to reduce network requests count, it\nis recommended to provide at least `boc` of message and non-null\n`src_transaction.id` or `dst_transaction.id`."
             }
           ],
           "summary": null,
@@ -15291,7 +15366,7 @@
         {
           "name": "proof_block_data",
           "summary": "Proves that a given block's data, which is queried from TONOS API, can be trusted.",
-          "description": "This function checks block proofs and compares given data with the proven.\nIf the given data differs from the proven, the exception will be thrown.\nThe input param is a single block's JSON object, which was queried from DApp server using\nfunctions such as `net.query`, `net.query_collection` or `net.wait_for_collection`.\nIf block's BOC is not provided in the JSON, it will be queried from DApp server\n(in this case it is required to provide at least `id` of block).\n\nPlease note, that joins (like `signatures` in `Block`) are separated entities and not supported,\nso function will throw an exception in a case if JSON being checked has such entities in it.\n\nIf `cache_in_local_storage` in config is set to `true` (default), downloaded proofs and\nmaster-chain BOCs are saved into the persistent local storage (e.g. file system for native\nenvironments or browser's IndexedDB for the web); otherwise all the data is cached only in\nmemory in current client's context and will be lost after destruction of the client.\n\n**Why Proofs are needed**\n\nProofs are needed to ensure that the data downloaded from a DApp server is real blockchain\ndata. Checking proofs can protect from the malicious DApp server which can potentially provide\nfake data, or also from \"Man in the Middle\" attacks class.\n\n**What Proofs are**\n\nSimply, proof is a list of signatures of validators', which have signed this particular master-\nblock.\n\nThe very first validator set's public keys are included in the zero-state. Whe know a root hash\nof the zero-state, because it is stored in the network configuration file, it is our authority\nroot. For proving zero-state it is enough to calculate and compare its root hash.\n\nIn each new validator cycle the validator set is changed. The new one is stored in a key-block,\nwhich is signed by the validator set, which we already trust, the next validator set will be\nstored to the new key-block and signed by the current validator set, and so on.\n\nIn order to prove any block in the master-chain we need to check, that it has been signed by\na trusted validator set. So we need to check all key-blocks' proofs, started from the zero-state\nand until the block, which we want to prove. But it can take a lot of time and traffic to\ndownload and prove all key-blocks on a client. For solving this, special trusted blocks are used\nin Ever-SDK.\n\nThe trusted block is the authority root, as well, as the zero-state. Each trusted block is the\n`id` (e.g. `root_hash`) of the already proven key-block. There can be plenty of trusted\nblocks, so there can be a lot of authority roots. The hashes of trusted blocks for MainNet\nand DevNet are hardcoded in SDK in a separated binary file (trusted_key_blocks.bin) and is\nbeing updated for each release by using `update_trusted_blocks` utility.\n\nSee [update_trusted_blocks](../../../tools/update_trusted_blocks) directory for more info.\n\nIn future SDK releases, one will also be able to provide their hashes of trusted blocks for\nother networks, besides for MainNet and DevNet.\nBy using trusted key-blocks, in order to prove any block, we can prove chain of key-blocks to\nthe closest previous trusted key-block, not only to the zero-state.\n\nBut shard-blocks don't have proofs on DApp server. In this case, in order to prove any shard-\nblock data, we search for a corresponding master-block, which contains the root hash of this\nshard-block, or some shard block which is linked to that block in shard-chain. After proving\nthis master-block, we traverse through each link and calculate and compare hashes with links,\none-by-one. After that we can ensure that this shard-block has also been proven.",
+          "description": "This function checks block proofs and compares given data with the proven.\nIf the given data differs from the proven, the exception will be thrown.\nThe input param is a single block's JSON object, which was queried from DApp\nserver using functions such as `net.query`, `net.query_collection` or\n`net.wait_for_collection`. If block's BOC is not provided in the JSON, it\nwill be queried from DApp server (in this case it is required to provide at\nleast `id` of block).\n\nPlease note, that joins (like `signatures` in `Block`) are separated\nentities and not supported, so function will throw an exception in a case if\nJSON being checked has such entities in it.\n\nIf `cache_in_local_storage` in config is set to `true` (default), downloaded\nproofs and master-chain BOCs are saved into the persistent local storage\n(e.g. file system for native environments or browser's IndexedDB for the\nweb); otherwise all the data is cached only in memory in current client's\ncontext and will be lost after destruction of the client.\n\n**Why Proofs are needed**\n\nProofs are needed to ensure that the data downloaded from a DApp server is\nreal blockchain data. Checking proofs can protect from the malicious DApp\nserver which can potentially provide fake data, or also from \"Man in the\nMiddle\" attacks class.\n\n**What Proofs are**\n\nSimply, proof is a list of signatures of validators', which have signed this\nparticular master- block.\n\nThe very first validator set's public keys are included in the zero-state.\nWhe know a root hash of the zero-state, because it is stored in the network\nconfiguration file, it is our authority root. For proving zero-state it is\nenough to calculate and compare its root hash.\n\nIn each new validator cycle the validator set is changed. The new one is\nstored in a key-block, which is signed by the validator set, which we\nalready trust, the next validator set will be stored to the new key-block\nand signed by the current validator set, and so on.\n\nIn order to prove any block in the master-chain we need to check, that it\nhas been signed by a trusted validator set. So we need to check all\nkey-blocks' proofs, started from the zero-state and until the block, which\nwe want to prove. But it can take a lot of time and traffic to download and\nprove all key-blocks on a client. For solving this, special trusted blocks\nare used in Ever-SDK.\n\nThe trusted block is the authority root, as well, as the zero-state. Each\ntrusted block is the `id` (e.g. `root_hash`) of the already proven\nkey-block. There can be plenty of trusted blocks, so there can be a lot of\nauthority roots. The hashes of trusted blocks for MainNet and DevNet are\nhardcoded in SDK in a separated binary file (trusted_key_blocks.bin) and is\nbeing updated for each release by using `update_trusted_blocks` utility.\n\nSee [update_trusted_blocks](../../../tools/update_trusted_blocks) directory\nfor more info.\n\nIn future SDK releases, one will also be able to provide their hashes of\ntrusted blocks for other networks, besides for MainNet and DevNet.\nBy using trusted key-blocks, in order to prove any block, we can prove chain\nof key-blocks to the closest previous trusted key-block, not only to the\nzero-state.\n\nBut shard-blocks don't have proofs on DApp server. In this case, in order to\nprove any shard- block data, we search for a corresponding master-block,\nwhich contains the root hash of this shard-block, or some shard block which\nis linked to that block in shard-chain. After proving this master-block, we\ntraverse through each link and calculate and compare hashes with links,\none-by-one. After that we can ensure that this shard-block has also been\nproven.",
           "params": [
             {
               "name": "context",
@@ -15328,7 +15403,7 @@
         {
           "name": "proof_transaction_data",
           "summary": "Proves that a given transaction's data, which is queried from TONOS API, can be trusted.",
-          "description": "This function requests the corresponding block, checks block proofs, ensures that given\ntransaction exists in the proven block and compares given data with the proven.\nIf the given data differs from the proven, the exception will be thrown.\nThe input parameter is a single transaction's JSON object (see params description),\nwhich was queried from TONOS API using functions such as `net.query`, `net.query_collection`\nor `net.wait_for_collection`.\n\nIf transaction's BOC and/or `block_id` are not provided in the JSON, they will be queried from\nTONOS API.\n\nPlease note, that joins (like `account`, `in_message`, `out_messages`, etc. in `Transaction`\nentity) are separated entities and not supported, so function will throw an exception in a case\nif JSON being checked has such entities in it.\n\nFor more information about proofs checking, see description of `proof_block_data` function.",
+          "description": "This function requests the corresponding block, checks block proofs, ensures\nthat given transaction exists in the proven block and compares given data\nwith the proven. If the given data differs from the proven, the exception\nwill be thrown. The input parameter is a single transaction's JSON object\n(see params description), which was queried from TONOS API using functions\nsuch as `net.query`, `net.query_collection` or `net.wait_for_collection`.\n\nIf transaction's BOC and/or `block_id` are not provided in the JSON, they\nwill be queried from TONOS API.\n\nPlease note, that joins (like `account`, `in_message`, `out_messages`, etc.\nin `Transaction` entity) are separated entities and not supported, so\nfunction will throw an exception in a case if JSON being checked has such\nentities in it.\n\nFor more information about proofs checking, see description of\n`proof_block_data` function.",
           "params": [
             {
               "name": "context",
@@ -15365,7 +15440,7 @@
         {
           "name": "proof_message_data",
           "summary": "Proves that a given message's data, which is queried from TONOS API, can be trusted.",
-          "description": "This function first proves the corresponding transaction, ensures that the proven transaction\nrefers to the given message and compares given data with the proven.\nIf the given data differs from the proven, the exception will be thrown.\nThe input parameter is a single message's JSON object (see params description),\nwhich was queried from TONOS API using functions such as `net.query`, `net.query_collection`\nor `net.wait_for_collection`.\n\nIf message's BOC and/or non-null `src_transaction.id` or `dst_transaction.id` are not provided\nin the JSON, they will be queried from TONOS API.\n\nPlease note, that joins (like `block`, `dst_account`, `dst_transaction`, `src_account`,\n`src_transaction`, etc. in `Message` entity) are separated entities and not supported,\nso function will throw an exception in a case if JSON being checked has such entities in it.\n\nFor more information about proofs checking, see description of `proof_block_data` function.",
+          "description": "This function first proves the corresponding transaction, ensures that the\nproven transaction refers to the given message and compares given data with\nthe proven. If the given data differs from the proven, the exception will be\nthrown. The input parameter is a single message's JSON object (see params\ndescription), which was queried from TONOS API using functions such as\n`net.query`, `net.query_collection` or `net.wait_for_collection`.\n\nIf message's BOC and/or non-null `src_transaction.id` or\n`dst_transaction.id` are not provided in the JSON, they will be queried from\nTONOS API.\n\nPlease note, that joins (like `block`, `dst_account`, `dst_transaction`,\n`src_account`, `src_transaction`, etc. in `Message` entity) are separated\nentities and not supported, so function will throw an exception in a case if\nJSON being checked has such entities in it.\n\nFor more information about proofs checking, see description of\n`proof_block_data` function.",
           "params": [
             {
               "name": "context",
