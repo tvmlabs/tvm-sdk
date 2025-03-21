@@ -1,6 +1,6 @@
 [package]
 description = 'TVM CLient Command Line Tool'
-keywords = [ 'TVM', 'SDK', 'smart-contract', 'tvmlabs' ]
+keywords = ['TVM', 'SDK', 'smart-contract', 'tvmlabs']
 license = 'Apache-2.0'
 name = 'tvm-api-gen'
 readme = 'README.md'
