@@ -168,21 +168,21 @@ The resulting binaries are placed to `bin` folder in the gz-compressed format.
 
 Note that the build script generates binaries compatible with the platform used to run the script. For example, if you run it on Mac OS, you get binaries targeted at Darwin (macOS) platform.
 
-**Note**: You need latest version of rust. Upgrade it with `rustup update` command. Check version with `rustc --version`, it should be above or equal to `1.47.0`.
+**Note**: You need latest version of rust. Upgrade it with `rustup update` command. Check version with `rustc --version`, it should be above or equal to `1.85.0`.
 
 ## Build artifacts
 
 Run code generation
 
 ```shell
-cargo run  --bin tl_code_gen
+cargo run --bin tl_code_gen
 ```
 
 Rebuild `api.json`:
 
 ```shell
-cd toncli
-cargo run api -o ../tools
+cd tools/tvm_api_gen
+cargo run api -o ..
 ```
 
 Rebuild `docs`:
@@ -194,13 +194,13 @@ tsc
 node index docs -o ../docs
 ```
 
-Rebuild `modules.ts`:
+Rebuild `modules.ts` from `api.json`:
 
 ```shell
 cd tools
 npm i
 tsc
-node index binding -l ts -o ../../ever-sdk-js/packages/core/src
+node index binding -l ts -o ../../tvm-sdk-js/packages/core/src
 ```
 
 ## Run tests

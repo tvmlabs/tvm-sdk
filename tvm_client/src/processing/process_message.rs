@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use super::ThreadIdentifier;
 use crate::abi::ParamsOfEncodeMessage;
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;
@@ -46,7 +45,7 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
             ParamsOfSendMessage {
                 message: message.message.clone(),
                 abi: Some(abi.clone()),
-                thread_id: ThreadIdentifier::default(),
+                thread_id: None,
                 send_events: params.send_events,
             },
             &callback,

@@ -22,7 +22,6 @@ use crate::processing::ParamsOfSendMessage;
 use crate::processing::ParamsOfWaitForTransaction;
 use crate::processing::ProcessingEvent;
 use crate::processing::ProcessingResponseType;
-use crate::processing::ThreadIdentifier;
 use crate::processing::types::DecodedOutput;
 use crate::tests::EVENTS_OLD;
 use crate::tests::GIVER_V2;
@@ -159,7 +158,7 @@ async fn test_wait_message() {
             ParamsOfSendMessage {
                 abi: Some(abi.clone()),
                 message: encoded.message.clone(),
-                thread_id: ThreadIdentifier::default(),
+                thread_id: None,
                 send_events: true,
             },
             callback.clone(),

@@ -49,7 +49,7 @@ pub struct ParamsOfSendMessage {
     /// chosen.
     pub abi: Option<Abi>,
 
-    pub thread_id: ThreadIdentifier,
+    pub thread_id: Option<String>,
     /// Flag for requesting events sending.
     /// Default is `false`.
     #[serde(default)]
@@ -112,21 +112,25 @@ impl SendingMessage {
         context: &Arc<ClientContext>,
         serialized: &str,
         abi: Option<&Abi>,
-        thread_id: ThreadIdentifier,
+        thread_id: Option<String>,
     ) -> ClientResult<Self> {
         // Check message
         let deserialized = deserialize_object_from_boc::<Message>(context, serialized, "message")?;
         let id = deserialized.cell.repr_hash().as_hex_string();
         let dst = deserialized.object.dst().ok_or(Error::message_has_not_destination_address())?;
 
-        let message_expiration_time =
-            get_message_expiration_time(context.clone(), abi, serialized)?;
-        if let Some(message_expiration_time) = message_expiration_time {
-            if message_expiration_time <= context.env.now_ms() {
+        if let Some(expiration_time) =
+            get_message_expiration_time(context.clone(), abi, serialized)?
+        {
+            if expiration_time <= context.env.now_ms() {
                 return Err(Error::message_already_expired());
             }
         }
         let body = base64_decode(serialized)?;
+        let thread_id = match thread_id {
+            Some(t) => ThreadIdentifier::try_from(t).unwrap_or_default(),
+            None => ThreadIdentifier::default(),
+        };
         Ok(Self { serialized: serialized.to_string(), deserialized, id, body, dst, thread_id })
     }
 
