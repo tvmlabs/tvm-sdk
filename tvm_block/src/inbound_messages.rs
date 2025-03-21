@@ -15,6 +15,7 @@
 //! Serialization and deserialization of this structs.
 
 use std::fmt;
+use std::sync::Arc;
 
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -825,12 +826,13 @@ impl Deserializable for InMsgDiscardedTransit {
 }
 
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
-pub struct InMsgList(pub Vec<InMsg>);
+pub struct InMsgList(pub Vec<Arc<InMsg>>);
 
 impl Serializable for InMsgList {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
         for msg in &self.0 {
-            msg.write_to(builder)?;
+            let msg_in = (**msg).clone();
+            msg_in.write_to(builder)?;
         }
         Ok(())
     }
@@ -841,7 +843,7 @@ impl Deserializable for InMsgList {
         while !slice.is_empty() {
             let mut msg = InMsg::default();
             msg.read_from(slice)?;
-            self.0.push(msg);
+            self.0.push(Arc::new(msg));
         }
         Ok(())
     }
