@@ -1570,13 +1570,6 @@ pub fn debug_block_full(block: &Block) -> Result<String> {
         text += &format!("InMsg: {}\n", debug_message(msg)?);
         Ok(true)
     })?;
-    let out_msgs = extra.read_out_msg_descr_empty()?;
-    out_msgs.iterate_objects(|out_msg| {
-        if let Some(msg) = out_msg.read_message()? {
-            text += &format!("OutMsg: {}\n", debug_message(msg)?);
-        }
-        Ok(true)
-    })?;
     let out_msgs_descr = extra.read_out_msg_descr()?;
     for  (_, list) in out_msgs_descr {
         for msg in list.0 {
@@ -1710,10 +1703,6 @@ pub fn db_serialize_block_ex<'a>(
     map.insert("in_msg_descr".to_string(), msgs.into());
 
     let mut msgs = vec![];
-    extra.read_out_msg_descr_empty()?.iterate_objects(|ref msg| {
-        msgs.push(serialize_out_msg(msg, mode)?);
-        Ok(true)
-    })?;
     let out_msgs_descr = extra.read_out_msg_descr()?;
     for  (_, list) in out_msgs_descr {
         for msg in list.0 {

@@ -1365,7 +1365,7 @@ impl Message {
                 })?
                 .read_message()?;
         } else {
-            let mut addr = None;
+            let addr;
             match self.dst() {
                 Some(AddrStd(data)) => {
                     addr = Some(data.address);
@@ -1374,16 +1374,7 @@ impl Message {
                     addr = Some(data.address);
                 },
                 None => {
-                    block
-                        .read_extra()?
-                        .read_out_msg_descr_empty()?
-                        .get(&msg_hash)?
-                        .ok_or_else(|| {
-                            BlockError::InvalidArg(
-                                "Message isn't belonged given block's in_msg_descr".to_string(),
-                            )
-                        })?
-                        .read_message()?;
+                    return Err(BlockError::InvalidArg("wrong format".to_string()).into());
                 }
             }
             if let Some(data) = addr {

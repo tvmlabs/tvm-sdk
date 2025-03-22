@@ -47,7 +47,6 @@ use crate::inbound_messages::InMsgDescr;
 use crate::master::BlkMasterInfo;
 use crate::master::McBlockExtra;
 use crate::merkle_update::MerkleUpdate;
-use crate::outbound_messages::OutMsgDescr;
 use crate::shard::ShardIdent;
 use crate::signature::BlockSignatures;
 use crate::transactions::ShardAccountBlocks;
@@ -946,7 +945,6 @@ impl Deserializable for HashSet<OutMsgQueueKey> {
 pub struct BlockExtra {
     in_msg_descr: ChildCell<InMsgDescr>,
     in_msg_descr_id: ChildCell<HashMap<AccountId, HashSet<OutMsgQueueKey>>>,
-    out_msg_descr_empty: ChildCell<OutMsgDescr>,
     out_msg_descr: ChildCell<HashMap<AccountId, OutMsgList>>,
     out_msg_descr_id: ChildCell<HashMap<UInt256, u8>>,
     account_blocks: ChildCell<ShardAccountBlocks>,
@@ -959,7 +957,6 @@ pub struct BlockExtra {
 impl BlockExtra {
     pub fn new() -> BlockExtra {
         BlockExtra {
-            out_msg_descr_empty: ChildCell::default(),
             in_msg_descr: ChildCell::default(),
             out_msg_descr: ChildCell::default(),
             in_msg_descr_id: ChildCell::default(),
@@ -994,18 +991,6 @@ impl BlockExtra {
 
     pub fn in_msg_descr_cell_id(&self) -> Cell {
         self.in_msg_descr_id.cell()
-    }
-
-    pub fn read_out_msg_descr_empty(&self) -> Result<OutMsgDescr> {
-        self.out_msg_descr_empty.read_struct()
-    }
-
-    pub fn write_out_msg_descr_empty(&mut self, value: &OutMsgDescr) -> Result<()> {
-        self.out_msg_descr_empty.write_struct(value)
-    }
-
-    pub fn out_msg_descr_cell_empty(&self) -> Cell {
-        self.out_msg_descr_empty.cell()
     }
 
     pub fn read_out_msg_descr(&self) -> Result<HashMap<AccountId, OutMsgList>> {

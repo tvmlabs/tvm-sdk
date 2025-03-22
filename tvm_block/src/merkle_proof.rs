@@ -386,28 +386,7 @@ pub fn check_message_proof(
             fail!(BlockError::WrongMerkleProof("No message in proof".to_string()))
         }
     } else {
-        if let Some(in_msg) = block_extra
-            .read_out_msg_descr_empty()?
-            .get(&msg_hash)? {
-            check_transaction_id(tr_id, in_msg.transaction_cell())?;
-            if let Ok(Some(msg_cell)) = in_msg.message_cell() {
-                if msg_cell.repr_hash() != msg_hash {
-                    fail!(BlockError::WrongMerkleProof(format!(
-                        "Wrong message's hash in proof {:x} but {:x}",
-                        msg_cell.repr_hash(),
-                        msg_hash
-                    )))
-                } else {
-                    return Ok(());
-                }
-            } else {
-                fail!(BlockError::WrongMerkleProof(
-                    "Error extracting message from in message".to_string()
-                ))
-            }
-        } else {
-            fail!(BlockError::WrongMerkleProof("No message in proof".to_string()))
-        }
+        fail!(BlockError::WrongMerkleProof("No message in proof".to_string()))
     }
 }
 
