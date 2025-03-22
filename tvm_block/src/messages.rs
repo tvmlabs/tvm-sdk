@@ -1405,6 +1405,7 @@ impl Message {
                                 .to_string(),
                         )
                     })?
+                    .1
                     .read_message()?;
             }
         }

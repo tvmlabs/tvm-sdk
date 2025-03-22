@@ -136,11 +136,12 @@ impl Deserializable for EnqueuedMsg {
 // _ (HashmapAugE 256 OutMsg CurrencyCollection) = OutMsgDescr;
 //
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
-pub struct OutMsgList(pub Vec<Arc<OutMsg>>);
+pub struct OutMsgList(pub Vec<(OutMsgQueueKey, Arc<OutMsg>)>);
 
 impl Serializable for OutMsgList {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
-        for msg in &self.0 {
+        for (key, msg) in &self.0 {
+            key.write_to(builder)?;
             let msg_in = (**msg).clone();
             msg_in.write_to(builder)?;
         }
@@ -151,9 +152,11 @@ impl Serializable for OutMsgList {
 impl Deserializable for OutMsgList {
     fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
         while !slice.is_empty() {
+            let mut key = OutMsgQueueKey::default();
+            key.read_from(slice)?;
             let mut msg = OutMsg::default();
             msg.read_from(slice)?;
-            self.0.push(Arc::new(msg));
+            self.0.push((key, Arc::new(msg)));
         }
         Ok(())
     }

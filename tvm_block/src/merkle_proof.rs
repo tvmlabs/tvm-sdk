@@ -360,8 +360,8 @@ pub fn check_message_proof(
         if let Some(num) = out_msg_descr_id.get(&msg_hash) {
             if let Some(list) = block_extra.read_out_msg_descr()?.get(&addr_out) {
                 if let Some(out_msg) = list.0.get(*num as usize) {
-                    if let Ok(real_msg_hash) = out_msg.read_message_hash() {
-                        check_transaction_id(tr_id, out_msg.transaction_cell())?;
+                    if let Ok(real_msg_hash) = out_msg.1.read_message_hash() {
+                        check_transaction_id(tr_id, out_msg.1.transaction_cell())?;
                         if real_msg_hash != msg_hash {
                             fail!(BlockError::WrongMerkleProof(
                                 "Wrong message's hash in proof".to_string()

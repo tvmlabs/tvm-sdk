@@ -1573,7 +1573,7 @@ pub fn debug_block_full(block: &Block) -> Result<String> {
     let out_msgs_descr = extra.read_out_msg_descr()?;
     for (_, list) in out_msgs_descr {
         for msg in list.0 {
-            if let Some(msg) = msg.read_message()? {
+            if let Some(msg) = msg.1.read_message()? {
                 text += &format!("OutMsg: {}\n", debug_message(msg)?);
             }
         }
@@ -1706,7 +1706,7 @@ pub fn db_serialize_block_ex<'a>(
     let out_msgs_descr = extra.read_out_msg_descr()?;
     for (_, list) in out_msgs_descr {
         for msg in list.0 {
-            msgs.push(serialize_out_msg(&msg, mode)?);
+            msgs.push(serialize_out_msg(&msg.1, mode)?);
         }
     }
     map.insert("out_msg_descr".to_string(), msgs.into());
