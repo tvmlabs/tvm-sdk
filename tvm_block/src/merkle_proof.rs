@@ -26,6 +26,7 @@ use tvm_types::types::UInt256;
 
 use crate::Deserializable;
 use crate::GetRepresentationHash;
+use crate::MsgAddressInt::*;
 use crate::Serializable;
 use crate::accounts::Account;
 use crate::blocks::Block;
@@ -37,7 +38,6 @@ use crate::merkle_update::MerkleUpdate;
 use crate::messages::Message;
 use crate::shard::ShardStateUnsplit;
 use crate::transactions::Transaction;
-use crate::MsgAddressInt::*;
 
 #[cfg(test)]
 #[path = "tests/test_merkle_proof.rs"]
@@ -327,11 +327,11 @@ pub fn check_message_proof(
     match msg.dst() {
         Some(AddrStd(data)) => {
             addr = Some(data.address);
-        },
+        }
         Some(AddrVar(data)) => {
             addr = Some(data.address);
-        },
-        None => { }
+        }
+        None => {}
     }
     if let Ok(in_msg_descr) = block_extra.read_in_msg_descr() {
         if let Ok(Some(in_msg)) = in_msg_descr.get(&msg_hash) {
@@ -363,7 +363,9 @@ pub fn check_message_proof(
                     if let Ok(real_msg_hash) = out_msg.read_message_hash() {
                         check_transaction_id(tr_id, out_msg.transaction_cell())?;
                         if real_msg_hash != msg_hash {
-                            fail!(BlockError::WrongMerkleProof("Wrong message's hash in proof".to_string()))
+                            fail!(BlockError::WrongMerkleProof(
+                                "Wrong message's hash in proof".to_string()
+                            ))
                         } else {
                             return Ok(());
                         }
@@ -375,7 +377,7 @@ pub fn check_message_proof(
                 } else {
                     fail!(BlockError::WrongMerkleProof(
                         "Error extracting out message from block extra".to_string()
-                    ))    
+                    ))
                 }
             } else {
                 fail!(BlockError::WrongMerkleProof(

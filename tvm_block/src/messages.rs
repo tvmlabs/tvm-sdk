@@ -31,10 +31,12 @@ use crate::Deserializable;
 use crate::GetRepresentationHash;
 use crate::MaybeDeserialize;
 use crate::MaybeSerialize;
+use crate::MsgAddressInt::*;
 use crate::Serializable;
 use crate::blocks::Block;
 use crate::define_HashmapE;
 use crate::error::BlockError;
+use crate::hashmapaug::HashmapAugType;
 use crate::merkle_proof::MerkleProof;
 use crate::shard::MASTERCHAIN_ID;
 use crate::types::AddSub;
@@ -43,8 +45,6 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
-use crate::hashmapaug::HashmapAugType;
-use crate::MsgAddressInt::*;
 #[cfg(test)]
 #[path = "tests/test_messages.rs"]
 mod tests;
@@ -1369,10 +1369,10 @@ impl Message {
             match self.dst() {
                 Some(AddrStd(data)) => {
                     addr = Some(data.address);
-                },
+                }
                 Some(AddrVar(data)) => {
                     addr = Some(data.address);
-                },
+                }
                 None => {
                     return Err(BlockError::InvalidArg("wrong format".to_string()).into());
                 }
@@ -1386,7 +1386,8 @@ impl Message {
                         BlockError::InvalidArg(
                             "Message isn't belonged given block's in_msg_descr".to_string(),
                         )
-                    })?.clone();
+                    })?
+                    .clone();
                 block
                     .read_extra()?
                     .read_out_msg_descr()?
@@ -1400,7 +1401,8 @@ impl Message {
                     .get(num as usize)
                     .ok_or_else(|| {
                         BlockError::InvalidArg(
-                            "Message isn't belonged given block's in_msg_descr because of index".to_string(),
+                            "Message isn't belonged given block's in_msg_descr because of index"
+                                .to_string(),
                         )
                     })?
                     .read_message()?;

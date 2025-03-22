@@ -47,6 +47,7 @@ use crate::inbound_messages::InMsgDescr;
 use crate::master::BlkMasterInfo;
 use crate::master::McBlockExtra;
 use crate::merkle_update::MerkleUpdate;
+use crate::outbound_messages::OutMsgList;
 use crate::shard::ShardIdent;
 use crate::signature::BlockSignatures;
 use crate::transactions::ShardAccountBlocks;
@@ -57,7 +58,6 @@ use crate::types::Grams;
 use crate::types::InRefValue;
 use crate::types::UnixTime32;
 use crate::validators::ValidatorSet;
-use crate::outbound_messages::OutMsgList;
 
 #[cfg(test)]
 #[path = "tests/test_blocks.rs"]
@@ -928,7 +928,7 @@ impl Serializable for HashSet<OutMsgQueueKey> {
         Ok(())
     }
 }
-    
+
 impl Deserializable for HashSet<OutMsgQueueKey> {
     fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
         let len = slice.get_next_u32()? as usize;
@@ -985,7 +985,10 @@ impl BlockExtra {
         self.in_msg_descr_id.read_struct()
     }
 
-    pub fn write_in_msg_descr_id(&mut self, value: &HashMap<AccountId, HashSet<OutMsgQueueKey>>) -> Result<()> {
+    pub fn write_in_msg_descr_id(
+        &mut self,
+        value: &HashMap<AccountId, HashSet<OutMsgQueueKey>>,
+    ) -> Result<()> {
         self.in_msg_descr_id.write_struct(value)
     }
 

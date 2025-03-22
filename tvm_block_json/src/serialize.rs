@@ -1571,7 +1571,7 @@ pub fn debug_block_full(block: &Block) -> Result<String> {
         Ok(true)
     })?;
     let out_msgs_descr = extra.read_out_msg_descr()?;
-    for  (_, list) in out_msgs_descr {
+    for (_, list) in out_msgs_descr {
         for msg in list.0 {
             if let Some(msg) = msg.read_message()? {
                 text += &format!("OutMsg: {}\n", debug_message(msg)?);
@@ -1704,7 +1704,7 @@ pub fn db_serialize_block_ex<'a>(
 
     let mut msgs = vec![];
     let out_msgs_descr = extra.read_out_msg_descr()?;
-    for  (_, list) in out_msgs_descr {
+    for (_, list) in out_msgs_descr {
         for msg in list.0 {
             msgs.push(serialize_out_msg(&msg, mode)?);
         }
