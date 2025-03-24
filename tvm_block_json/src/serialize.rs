@@ -659,6 +659,7 @@ fn serialize_in_msg(msg: &InMsg, mode: SerializationMode) -> Result<Value> {
     Ok(map.into())
 }
 
+#[allow(dead_code)]
 fn serialize_out_msg(msg: &OutMsg, mode: SerializationMode) -> Result<Value> {
     let mut map = Map::new();
     let (type_, type_name) = match msg {
@@ -1572,10 +1573,8 @@ pub fn debug_block_full(block: &Block) -> Result<String> {
     })?;
     let out_msgs_descr = extra.read_out_msg_descr()?;
     for (_, list) in out_msgs_descr {
-        for msg in list.0 {
-            if let Some(msg) = msg.1.read_message()? {
-                text += &format!("OutMsg: {}\n", debug_message(msg)?);
-            }
+        for (_, (msg, _)) in list.0 {
+            text += &format!("OutMsg: {}\n", debug_message(msg)?);
         }
     }
     let acc_blocks = extra.read_account_blocks()?;
@@ -1704,9 +1703,10 @@ pub fn db_serialize_block_ex<'a>(
 
     let mut msgs = vec![];
     let out_msgs_descr = extra.read_out_msg_descr()?;
+    let mut new_map = Map::new();
     for (_, list) in out_msgs_descr {
-        for msg in list.0 {
-            msgs.push(serialize_out_msg(&msg.1, mode)?);
+        for (_, (msg, _)) in list.0 {
+            msgs.push(serialize_id(&mut new_map, "msg_id", Some(&msg.hash().unwrap())));
         }
     }
     map.insert("out_msg_descr".to_string(), msgs.into());

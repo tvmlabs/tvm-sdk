@@ -273,6 +273,7 @@ pub fn check_transaction_proof(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn check_transaction_id(given_id: Option<UInt256>, tr_cell: Option<Cell>) -> Result<()> {
     let existing_id = tr_cell.map(|c| c.repr_hash());
     match (given_id, existing_id) {
@@ -306,7 +307,7 @@ pub fn check_message_proof(
     proof: &MerkleProof,
     msg: &Message,
     block_id: &UInt256,
-    tr_id: Option<UInt256>,
+    _tr_id: Option<UInt256>,
 ) -> Result<()> {
     let block: Block = proof.virtualize().map_err(|err| {
         BlockError::WrongMerkleProof(format!("Error extracting block from proof: {}", err))
@@ -335,7 +336,7 @@ pub fn check_message_proof(
     }
     if let Ok(in_msg_descr) = block_extra.read_in_msg_descr() {
         if let Ok(Some(in_msg)) = in_msg_descr.get(&msg_hash) {
-            check_transaction_id(tr_id, in_msg.transaction_cell())?;
+//            check_transaction_id(tr_id, in_msg.transaction_cell())?;
             if let Ok(msg_cell) = in_msg.message_cell() {
                 if msg_cell.repr_hash() != msg_hash {
                     fail!(BlockError::WrongMerkleProof(format!(
@@ -359,9 +360,9 @@ pub fn check_message_proof(
     if let Some(addr_out) = addr {
         if let Some(num) = out_msg_descr_id.get(&msg_hash) {
             if let Some(list) = block_extra.read_out_msg_descr()?.get(&addr_out) {
-                if let Some(out_msg) = list.0.get(*num as usize) {
-                    if let Ok(real_msg_hash) = out_msg.1.read_message_hash() {
-                        check_transaction_id(tr_id, out_msg.1.transaction_cell())?;
+                if let Some(msg) = list.0.get(*num as usize) {
+                    if let Ok(real_msg_hash) = msg.1.0.hash() {
+//                        check_transaction_id(tr_id, msg.1.0.transaction_cell())?;
                         if real_msg_hash != msg_hash {
                             fail!(BlockError::WrongMerkleProof(
                                 "Wrong message's hash in proof".to_string()

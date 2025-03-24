@@ -36,7 +36,6 @@ use tvm_types::fail;
 use crate::Deserializable;
 use crate::MaybeDeserialize;
 use crate::MaybeSerialize;
-use crate::OutMsgQueueKey;
 use crate::RefShardBlocks;
 use crate::Serializable;
 use crate::config_params::CatchainConfig;
@@ -919,7 +918,7 @@ impl PartialOrd for Block {
 //    custom:(Maybe ^McBlockExtra)
 //    = BlockExtra;
 
-impl Serializable for HashSet<OutMsgQueueKey> {
+impl Serializable for HashSet<UInt256> {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
         builder.append_u32(self.len() as u32)?;
         for key in self {
@@ -929,11 +928,11 @@ impl Serializable for HashSet<OutMsgQueueKey> {
     }
 }
 
-impl Deserializable for HashSet<OutMsgQueueKey> {
+impl Deserializable for HashSet<UInt256> {
     fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
         let len = slice.get_next_u32()? as usize;
         for _ in 0..len {
-            let mut key = OutMsgQueueKey::default();
+            let mut key = UInt256::default();
             key.read_from(slice)?;
             self.insert(key);
         }
@@ -944,7 +943,7 @@ impl Deserializable for HashSet<OutMsgQueueKey> {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct BlockExtra {
     in_msg_descr: ChildCell<InMsgDescr>,
-    in_msg_descr_id: ChildCell<HashMap<AccountId, HashSet<OutMsgQueueKey>>>,
+    in_msg_descr_id: ChildCell<HashMap<AccountId, HashSet<UInt256>>>,
     out_msg_descr: ChildCell<HashMap<AccountId, OutMsgList>>,
     out_msg_descr_id: ChildCell<HashMap<UInt256, u8>>,
     account_blocks: ChildCell<ShardAccountBlocks>,
@@ -981,13 +980,13 @@ impl BlockExtra {
         self.in_msg_descr.cell()
     }
 
-    pub fn read_in_msg_descr_id(&self) -> Result<HashMap<AccountId, HashSet<OutMsgQueueKey>>> {
+    pub fn read_in_msg_descr_id(&self) -> Result<HashMap<AccountId, HashSet<UInt256>>> {
         self.in_msg_descr_id.read_struct()
     }
 
     pub fn write_in_msg_descr_id(
         &mut self,
-        value: &HashMap<AccountId, HashSet<OutMsgQueueKey>>,
+        value: &HashMap<AccountId, HashSet<UInt256>>,
     ) -> Result<()> {
         self.in_msg_descr_id.write_struct(value)
     }

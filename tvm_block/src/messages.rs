@@ -1388,7 +1388,7 @@ impl Message {
                         )
                     })?
                     .clone();
-                block
+                let _ = block
                     .read_extra()?
                     .read_out_msg_descr()?
                     .get(&data)
@@ -1405,8 +1405,7 @@ impl Message {
                                 .to_string(),
                         )
                     })?
-                    .1
-                    .read_message()?;
+                    .1.clone();
             }
         }
 
