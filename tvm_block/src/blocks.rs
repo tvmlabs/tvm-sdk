@@ -943,8 +943,8 @@ impl Deserializable for HashSet<UInt256> {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct BlockExtra {
     in_msg_descr: ChildCell<InMsgDescr>,
-    in_msg_descr_id: ChildCell<HashMap<AccountId, HashSet<UInt256>>>,
-    out_msg_descr: ChildCell<HashMap<AccountId, OutMsgList>>,
+    in_msg_descr_id: ChildCell<HashMap<SliceData, HashSet<UInt256>>>,
+    out_msg_descr: ChildCell<HashMap<SliceData, OutMsgList>>,
     out_msg_descr_id: ChildCell<HashMap<UInt256, u8>>,
     account_blocks: ChildCell<ShardAccountBlocks>,
     pub rand_seed: UInt256,
@@ -980,13 +980,13 @@ impl BlockExtra {
         self.in_msg_descr.cell()
     }
 
-    pub fn read_in_msg_descr_id(&self) -> Result<HashMap<AccountId, HashSet<UInt256>>> {
+    pub fn read_in_msg_descr_id(&self) -> Result<HashMap<SliceData, HashSet<UInt256>>> {
         self.in_msg_descr_id.read_struct()
     }
 
     pub fn write_in_msg_descr_id(
         &mut self,
-        value: &HashMap<AccountId, HashSet<UInt256>>,
+        value: &HashMap<SliceData, HashSet<UInt256>>,
     ) -> Result<()> {
         self.in_msg_descr_id.write_struct(value)
     }
@@ -995,11 +995,11 @@ impl BlockExtra {
         self.in_msg_descr_id.cell()
     }
 
-    pub fn read_out_msg_descr(&self) -> Result<HashMap<AccountId, OutMsgList>> {
+    pub fn read_out_msg_descr(&self) -> Result<HashMap<SliceData, OutMsgList>> {
         self.out_msg_descr.read_struct()
     }
 
-    pub fn write_out_msg_descr(&mut self, value: &HashMap<AccountId, OutMsgList>) -> Result<()> {
+    pub fn write_out_msg_descr(&mut self, value: &HashMap<SliceData, OutMsgList>) -> Result<()> {
         self.out_msg_descr.write_struct(value)
     }
 
