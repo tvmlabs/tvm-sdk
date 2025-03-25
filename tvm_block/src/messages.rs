@@ -981,6 +981,12 @@ pub struct Message {
     init_to_ref: Option<bool>,
 }
 
+impl From<Message> for UInt256 {
+    fn from(msg: Message) -> Self {
+        msg.hash().unwrap()
+    }
+}
+
 impl PartialOrd for Message {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
