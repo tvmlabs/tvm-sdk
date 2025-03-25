@@ -1573,8 +1573,8 @@ pub fn debug_block_full(block: &Block) -> Result<String> {
     })?;
     let out_msgs_descr = extra.read_out_msg_descr()?;
     for (_, list) in out_msgs_descr {
-        for (_, value) in list.0 {
-            text += &format!("OutMsg: {}\n", debug_message(value.0.clone())?);
+        for (_, msg) in list.0 {
+            text += &format!("OutMsg: {}\n", debug_message((*msg).clone())?);
         }
     }
     let acc_blocks = extra.read_account_blocks()?;
@@ -1705,8 +1705,8 @@ pub fn db_serialize_block_ex<'a>(
     let out_msgs_descr = extra.read_out_msg_descr()?;
     let mut new_map = Map::new();
     for (_, list) in out_msgs_descr {
-        for (_, value) in list.0 {
-            msgs.push(serialize_id(&mut new_map, "msg_id", Some(&value.0.clone().hash().unwrap())));
+        for (_, msg) in list.0 {
+            msgs.push(serialize_id(&mut new_map, "msg_id", Some(&(*msg).clone().hash().unwrap())));
         }
     }
     map.insert("out_msg_descr".to_string(), msgs.into());

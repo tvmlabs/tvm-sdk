@@ -28,7 +28,6 @@ use tvm_types::fail;
 use tvm_types::hm_label;
 
 use crate::Deserializable;
-use crate::ImportFees;
 use crate::MerkleProof;
 use crate::MerkleUpdate;
 use crate::OutQueueUpdate;
@@ -137,14 +136,13 @@ impl Deserializable for EnqueuedMsg {
 // _ (HashmapAugE 256 OutMsg CurrencyCollection) = OutMsgDescr;
 //
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
-pub struct OutMsgList(pub Vec<(UInt256, Arc<(Message, ImportFees)>)>);
+pub struct OutMsgList(pub Vec<(UInt256, Arc<Message>)>);
 
 impl Serializable for OutMsgList {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
         for (key, msg) in &self.0 {
             key.write_to(builder)?;
-            msg.0.write_to(builder)?;
-            msg.1.write_to(builder)?;
+            msg.write_to(builder)?;
         }
         Ok(())
     }
@@ -157,9 +155,7 @@ impl Deserializable for OutMsgList {
             key.read_from(slice)?;
             let mut msg = Message::default();
             msg.read_from(slice)?;
-            let mut fees = ImportFees::default();
-            fees.read_from(slice)?;
-            self.0.push((key, Arc::new((msg, fees))));
+            self.0.push((key, Arc::new(msg)));
         }
         Ok(())
     }

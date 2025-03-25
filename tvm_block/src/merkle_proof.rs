@@ -361,7 +361,7 @@ pub fn check_message_proof(
         if let Some(num) = out_msg_descr_id.get(&msg_hash) {
             if let Some(list) = block_extra.read_out_msg_descr()?.get(&addr_out) {
                 if let Some(msg) = list.0.get(*num as usize) {
-                    if let Ok(real_msg_hash) = msg.1.0.hash() {
+                    if let Ok(real_msg_hash) = msg.1.hash() {
                         //                        check_transaction_id(tr_id,
                         // msg.1.0.transaction_cell())?;
                         if real_msg_hash != msg_hash {
