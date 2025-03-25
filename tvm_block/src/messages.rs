@@ -1405,7 +1405,8 @@ impl Message {
                                 .to_string(),
                         )
                     })?
-                    .1.clone();
+                    .1
+                    .clone();
             }
         }
 

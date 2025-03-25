@@ -336,7 +336,7 @@ pub fn check_message_proof(
     }
     if let Ok(in_msg_descr) = block_extra.read_in_msg_descr() {
         if let Ok(Some(in_msg)) = in_msg_descr.get(&msg_hash) {
-//            check_transaction_id(tr_id, in_msg.transaction_cell())?;
+            //            check_transaction_id(tr_id, in_msg.transaction_cell())?;
             if let Ok(msg_cell) = in_msg.message_cell() {
                 if msg_cell.repr_hash() != msg_hash {
                     fail!(BlockError::WrongMerkleProof(format!(
@@ -362,7 +362,8 @@ pub fn check_message_proof(
             if let Some(list) = block_extra.read_out_msg_descr()?.get(&addr_out) {
                 if let Some(msg) = list.0.get(*num as usize) {
                     if let Ok(real_msg_hash) = msg.1.0.hash() {
-//                        check_transaction_id(tr_id, msg.1.0.transaction_cell())?;
+                        //                        check_transaction_id(tr_id,
+                        // msg.1.0.transaction_cell())?;
                         if real_msg_hash != msg_hash {
                             fail!(BlockError::WrongMerkleProof(
                                 "Wrong message's hash in proof".to_string()
