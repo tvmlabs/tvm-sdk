@@ -988,6 +988,9 @@ impl BlockExtra {
         &mut self,
         value: &HashMap<SliceData, HashSet<UInt256>>,
     ) -> Result<()> {
+        if value.is_empty() {
+            self.in_msg_descr_id = ChildCell::with_cell(Cell::default());
+        }
         self.in_msg_descr_id.write_struct(value)
     }
 
@@ -1012,6 +1015,9 @@ impl BlockExtra {
     }
 
     pub fn write_out_msg_descr_id(&mut self, value: &HashMap<UInt256, u8>) -> Result<()> {
+        if value.is_empty() {
+            self.out_msg_descr_id = ChildCell::with_cell(Cell::default());
+        }
         self.out_msg_descr_id.write_struct(value)
     }
 
