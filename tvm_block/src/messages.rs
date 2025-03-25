@@ -981,6 +981,30 @@ pub struct Message {
     init_to_ref: Option<bool>,
 }
 
+impl PartialOrd for Message {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Message {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self.lt(), other.lt()) {
+            (Some(a_lt), Some(b_lt)) => match a_lt.cmp(&b_lt) {
+                std::cmp::Ordering::Equal => self
+                    .hash()
+                    .expect("Message hash must be set")
+                    .cmp(&other.hash().expect("Message hash must be set")),
+                other => other,
+            },
+            _ => self
+                .hash()
+                .expect("Message hash must be set")
+                .cmp(&other.hash().expect("Message hash must be set")),
+        }
+    }
+}
+
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Message {{header: {}", self.header)?;
