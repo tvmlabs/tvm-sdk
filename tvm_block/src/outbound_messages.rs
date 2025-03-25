@@ -11,6 +11,7 @@
 
 use std::collections::HashSet;
 use std::fmt;
+use std::sync::Arc;
 
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
@@ -136,7 +137,7 @@ impl Deserializable for EnqueuedMsg {
 // _ (HashmapAugE 256 OutMsg CurrencyCollection) = OutMsgDescr;
 //
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
-pub struct OutMsgList(pub Vec<(UInt256, (Message, ImportFees))>);
+pub struct OutMsgList(pub Vec<(UInt256, Arc<(Message, ImportFees)>)>);
 
 impl Serializable for OutMsgList {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
@@ -158,7 +159,7 @@ impl Deserializable for OutMsgList {
             msg.read_from(slice)?;
             let mut fees = ImportFees::default();
             fees.read_from(slice)?;
-            self.0.push((key, (msg, fees)));
+            self.0.push((key, Arc::new((msg, fees))));
         }
         Ok(())
     }
