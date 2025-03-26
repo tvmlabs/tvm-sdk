@@ -99,7 +99,10 @@ where
     V: Serializable,
 {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        let bit_len = K::default().write_to_new_cell()?.length_in_bits();
+        let bit_len = K::default()
+            .write_to_new_cell()
+            .map(|cell| cell.length_in_bits())
+            .unwrap_or(256);
         let mut dictionary = HashmapE::with_bit_len(bit_len);
         for (key, value) in self.iter() {
             let key = SliceData::load_bitstring(key.write_to_new_cell()?)?;
@@ -115,7 +118,10 @@ where
     V: Deserializable + Default,
 {
     fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
-        let bit_len = K::default().write_to_new_cell()?.length_in_bits();
+        let bit_len = K::default()
+            .write_to_new_cell()
+            .map(|cell| cell.length_in_bits())
+            .unwrap_or(256);
         let mut dictionary = HashmapE::with_bit_len(bit_len);
         dictionary.read_hashmap_data(slice)?;
         dictionary
