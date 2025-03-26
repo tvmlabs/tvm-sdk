@@ -144,7 +144,8 @@ impl Serializable for OutMsgList {
         for (key, msg) in self.0.iter().rev() {
             let mut new_cell = BuilderData::new(); 
             key.write_to(&mut new_cell)?; 
-            msg.write_to(&mut new_cell)?; 
+            let msg_in = (**msg).clone();
+            msg_in.write_to(&mut new_cell)?; 
             if let Some(next) = next_cell {
                 new_cell.checked_append_reference(next)?; 
             }
@@ -161,8 +162,7 @@ impl Serializable for OutMsgList {
 impl Deserializable for OutMsgList {
     fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
         while slice.remaining_references() != 0 {
-            let mut new_slice = SliceData::load_cell(slice.checked_drain_reference()?)?;
-            let mut key = UInt256::default();
+            let mut new_slice = SliceData::load_cell(slice.checked_drain_reference()?)?;            let mut key = UInt256::default();
             key.read_from(&mut new_slice)?;
             let mut msg = Message::default();
             msg.read_from(&mut new_slice)?;
