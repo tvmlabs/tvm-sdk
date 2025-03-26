@@ -140,26 +140,40 @@ pub struct OutMsgList(pub Vec<(UInt256, Arc<Message>)>);
 
 impl Serializable for OutMsgList {
     fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
-        for (key, msg) in &self.0 {
-            key.write_to(builder)?;
-            msg.write_to(builder)?;
+        let mut next_cell: Option<Cell> = None;
+        for (key, msg) in self.0.iter().rev() {
+            let mut new_cell = BuilderData::new(); 
+            key.write_to(&mut new_cell)?; 
+            msg.write_to(&mut new_cell)?; 
+            if let Some(next) = next_cell {
+                new_cell.checked_append_reference(next)?; 
+            }
+            next_cell = Some(new_cell.into_cell()?); 
         }
+        if let Some(head) = next_cell {
+            builder.checked_append_reference(head)?; 
+        }
+
         Ok(())
     }
 }
 
 impl Deserializable for OutMsgList {
     fn read_from(&mut self, slice: &mut SliceData) -> Result<()> {
-        while !slice.is_empty() {
+        while slice.remaining_references() != 0 {
+            let mut new_slice = SliceData::load_cell(slice.checked_drain_reference()?)?;
             let mut key = UInt256::default();
-            key.read_from(slice)?;
+            key.read_from(&mut new_slice)?;
             let mut msg = Message::default();
-            msg.read_from(slice)?;
-            self.0.push((key, Arc::new(msg)));
+            msg.read_from(&mut new_slice)?;
+            self.0.insert(0, (key, Arc::new(msg))); 
+            *slice = new_slice; 
         }
         Ok(())
     }
 }
+
+
 
 define_HashmapAugE!(OutMsgDescr, 256, UInt256, OutMsg, CurrencyCollection);
 
