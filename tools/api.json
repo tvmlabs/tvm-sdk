@@ -10671,6 +10671,19 @@
               "description": null
             },
             {
+              "name": "ext_out_msgs",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "Array",
+                "array_item": {
+                  "type": "Ref",
+                  "ref_name": "Value"
+                }
+              },
+              "summary": "The list of external outbound messages.",
+              "description": null
+            },
+            {
               "name": "aborted",
               "type": "Optional",
               "optional_inner": {
