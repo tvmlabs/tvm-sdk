@@ -542,7 +542,9 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
 
         // has index | has CRC | has cache bits | flags   | ref_size
         // 7         | 6       | 5              | 4 3     | 2 1 0
-        dest.write_all(&[(include_index as u8) << 7 | (include_crc as u8) << 6 | ref_size as u8])?;
+        dest.write_all(&[((include_index as u8) << 7)
+            | ((include_crc as u8) << 6)
+            | ref_size as u8])?;
 
         dest.write_all(&[offset_size as u8])?; // off_bytes:(## 8) { off_bytes <= 8 }
         dest.write_all(&(self.cells_count as u64).to_be_bytes()[(8 - ref_size)..8])?;
@@ -776,6 +778,15 @@ pub fn read_single_root_boc(data: impl AsRef<[u8]>) -> Result<Cell> {
     read_boc(data)?.withdraw_single_root()
 }
 
+pub fn read_boc_in_mem(data: Vec<u8>, verify: bool) -> Result<Vec<Cell>> {
+    Ok(BocReader::new().read_in_mem(Arc::new(data), verify)?.roots)
+    // cell::BocBuf::new(data)?.into_root_cells()
+}
+
+pub fn read_single_root_boc_in_mem(data: Vec<u8>, verify: bool) -> Result<Cell> {
+    Ok(read_boc_in_mem(data, verify)?.remove(0))
+}
+
 impl<'a> BocReader<'a> {
     pub fn new() -> Self {
         Self::default()
@@ -905,7 +916,11 @@ impl<'a> BocReader<'a> {
         Ok(BocReaderResult { roots, header })
     }
 
-    pub fn read_inmem(mut self, data: Arc<Vec<u8>>) -> Result<BocReaderResult> {
+    pub fn read_inmem(self, data: Arc<Vec<u8>>) -> Result<BocReaderResult> {
+        self.read_in_mem(data, true)
+    }
+
+    pub fn read_in_mem(mut self, data: Arc<Vec<u8>>, verify: bool) -> Result<BocReaderResult> {
         #[cfg(not(target_family = "wasm"))]
         let now = std::time::Instant::now();
         let mut src = Cursor::new(data.deref());
@@ -970,7 +985,8 @@ impl<'a> BocReader<'a> {
                 refs.push(child.clone());
             }
 
-            let cell = DataCell::with_external_data(refs, &data, offset, Some(self.max_depth))?;
+            let cell =
+                DataCell::with_external_data(refs, &data, offset, Some(self.max_depth), verify)?;
             if cell.cell_type() == CellType::Big {
                 if remaining_big_cells == 0 {
                     fail!("Big cell is not allowed");
@@ -1026,7 +1042,7 @@ impl<'a> BocReader<'a> {
         Ok(BocReaderResult { roots, header })
     }
 
-    fn read_header<T>(src: &mut T) -> Result<BocHeader>
+    pub(crate) fn read_header<T>(src: &mut T) -> Result<BocHeader>
     where
         T: Read,
     {
@@ -1199,7 +1215,7 @@ impl<'a> BocReader<'a> {
         })
     }
 
-    fn precheck_cells_tree_len(
+    pub(crate) fn precheck_cells_tree_len(
         header: &BocHeader,
         header_len: u64,
         actual_len: u64,
@@ -1289,7 +1305,7 @@ impl<'a> BocReader<'a> {
         Ok(RawCell { data, refs })
     }
 
-    fn read_refs_indexes<T>(
+    pub(crate) fn read_refs_indexes<T>(
         src: &mut T,
         ref_size: usize,
         cell_index: usize,
@@ -1334,7 +1350,7 @@ impl<'a> BocReader<'a> {
         }
     }
 
-    fn skip_cell<T>(src: &mut T, ref_size: usize) -> Result<()>
+    pub(crate) fn skip_cell<T>(src: &mut T, ref_size: usize) -> Result<()>
     where
         T: Read + Seek,
     {

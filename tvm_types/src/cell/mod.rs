@@ -234,7 +234,6 @@ impl fmt::Display for CellType {
 pub trait CellImpl: Sync + Send {
     fn data(&self) -> &[u8];
     fn raw_data(&self) -> Result<&[u8]>;
-    fn cell_data(&self) -> &CellData;
     fn bit_length(&self) -> usize;
     fn references_count(&self) -> usize;
     fn reference(&self, index: usize) -> Result<Cell>;
@@ -288,17 +287,23 @@ pub trait CellImpl: Sync + Send {
     }
 }
 
-pub struct Cell(Arc<dyn CellImpl>);
+pub enum Cell {
+    Impl(Arc<dyn CellImpl>),
+    Boc(BocCell),
+}
 
 lazy_static::lazy_static! {
-    pub(crate) static ref CELL_DEFAULT: Cell = Cell(Arc::new(DataCell::new()));
+    pub(crate) static ref CELL_DEFAULT: Cell = Cell::Impl(Arc::new(DataCell::new()));
     static ref CELL_COUNT: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
     // static ref FINALIZATION_NANOS: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
 }
 
 impl Clone for Cell {
     fn clone(&self) -> Self {
-        Cell::with_cell_impl_arc(self.0.clone())
+        match self {
+            Self::Impl(cell) => Cell::with_cell_impl_arc(cell.clone()),
+            Self::Boc(cell) => Cell::Boc(cell.clone()),
+        }
     }
 }
 
@@ -318,17 +323,24 @@ impl Cell {
     }
 
     pub fn virtualization(&self) -> u8 {
-        self.0.virtualization()
+        match self {
+            Self::Impl(cell) => cell.virtualization(),
+            Self::Boc(cell) => cell.virtualization(),
+        }
+    }
+
+    pub fn with_boc(boc: Arc<BocBuf>, index: usize) -> Self {
+        Self::Boc(BocCell::new(boc, index))
     }
 
     pub fn with_cell_impl<T: 'static + CellImpl>(cell_impl: T) -> Self {
-        let ret = Cell(Arc::new(cell_impl));
+        let ret = Cell::Impl(Arc::new(cell_impl));
         CELL_COUNT.fetch_add(1, Ordering::Relaxed);
         ret
     }
 
     pub fn with_cell_impl_arc(cell_impl: Arc<dyn CellImpl>) -> Self {
-        let ret = Cell(cell_impl);
+        let ret = Cell::Impl(cell_impl);
         CELL_COUNT.fetch_add(1, Ordering::Relaxed);
         ret
     }
@@ -342,49 +354,66 @@ impl Cell {
     // }
 
     pub fn reference(&self, index: usize) -> Result<Cell> {
-        self.0.reference(index)
+        match self {
+            Self::Impl(cell) => cell.reference(index),
+            Self::Boc(cell) => cell.reference(index),
+        }
     }
 
     pub fn reference_repr_hash(&self, index: usize) -> Result<UInt256> {
-        self.0.reference_repr_hash(index)
+        match self {
+            Self::Impl(cell) => cell.reference_repr_hash(index),
+            Self::Boc(cell) => cell.reference_repr_hash(index),
+        }
     }
 
     // TODO: make as simple clone
     pub fn clone_references(&self) -> SmallVec<[Cell; 4]> {
-        let count = self.0.references_count();
+        let count = self.references_count();
         let mut refs = SmallVec::with_capacity(count);
         for i in 0..count {
-            refs.push(self.0.reference(i).unwrap())
+            refs.push(self.reference(i).unwrap())
         }
         refs
     }
 
     pub fn data(&self) -> &[u8] {
-        self.0.data()
+        match self {
+            Self::Impl(cell) => cell.data(),
+            Self::Boc(cell) => cell.data(),
+        }
     }
 
     fn raw_data(&self) -> Result<&[u8]> {
-        self.0.raw_data()
-    }
-
-    pub fn cell_data(&self) -> &CellData {
-        self.0.cell_data()
+        match self {
+            Self::Impl(cell) => cell.raw_data(),
+            Self::Boc(cell) => cell.raw_data(),
+        }
     }
 
     pub fn bit_length(&self) -> usize {
-        self.0.bit_length()
+        match self {
+            Self::Impl(cell) => cell.bit_length(),
+            Self::Boc(cell) => cell.bit_length(),
+        }
     }
 
     pub fn cell_type(&self) -> CellType {
-        self.0.cell_type()
+        match self {
+            Self::Impl(cell) => cell.cell_type(),
+            Self::Boc(cell) => cell.cell_type(),
+        }
     }
 
     pub fn level(&self) -> u8 {
-        self.0.level()
+        match self {
+            Self::Impl(cell) => cell.level(),
+            Self::Boc(cell) => cell.level(),
+        }
     }
 
     pub fn hashes_count(&self) -> usize {
-        self.0.level() as usize + 1
+        self.level() as usize + 1
     }
 
     pub fn count_cells(&self, max: usize) -> Result<usize> {
@@ -404,22 +433,34 @@ impl Cell {
     }
 
     pub fn level_mask(&self) -> LevelMask {
-        self.0.level_mask()
+        match self {
+            Self::Impl(cell) => cell.level_mask(),
+            Self::Boc(cell) => cell.level_mask(),
+        }
     }
 
     pub fn references_count(&self) -> usize {
-        self.0.references_count()
+        match self {
+            Self::Impl(cell) => cell.references_count(),
+            Self::Boc(cell) => cell.references_count(),
+        }
     }
 
     /// Returns cell's higher hash for given index (last one - representation
     /// hash)
     pub fn hash(&self, index: usize) -> UInt256 {
-        self.0.hash(index)
+        match self {
+            Self::Impl(cell) => cell.hash(index),
+            Self::Boc(cell) => cell.hash(index),
+        }
     }
 
     /// Returns cell's depth for given index
     pub fn depth(&self, index: usize) -> u16 {
-        self.0.depth(index)
+        match self {
+            Self::Impl(cell) => cell.depth(index),
+            Self::Boc(cell) => cell.depth(index),
+        }
     }
 
     /// Returns cell's hashes (representation and highers)
@@ -449,25 +490,34 @@ impl Cell {
     }
 
     pub fn repr_hash(&self) -> UInt256 {
-        self.0.hash(MAX_LEVEL)
+        self.hash(MAX_LEVEL)
     }
 
     pub fn repr_depth(&self) -> u16 {
-        self.0.depth(MAX_LEVEL)
+        self.depth(MAX_LEVEL)
     }
 
     pub fn store_hashes(&self) -> bool {
-        self.0.store_hashes()
+        match self {
+            Self::Impl(cell) => cell.store_hashes(),
+            Self::Boc(cell) => cell.store_hashes(),
+        }
     }
 
     #[allow(dead_code)]
     pub fn is_merkle(&self) -> bool {
-        self.0.is_merkle()
+        match self {
+            Self::Impl(cell) => cell.is_merkle(),
+            Self::Boc(cell) => cell.is_merkle(),
+        }
     }
 
     #[allow(dead_code)]
     pub fn is_pruned(&self) -> bool {
-        self.0.is_pruned()
+        match self {
+            Self::Impl(cell) => cell.is_pruned(),
+            Self::Boc(cell) => cell.is_pruned(),
+        }
     }
 
     pub fn to_hex_string(&self, lower: bool) -> String {
@@ -603,15 +653,24 @@ impl Cell {
     }
 
     fn tree_bits_count(&self) -> u64 {
-        self.0.tree_bits_count()
+        match self {
+            Self::Impl(cell) => cell.tree_bits_count(),
+            Self::Boc(cell) => cell.tree_bits_count(),
+        }
     }
 
     fn tree_cell_count(&self) -> u64 {
-        self.0.tree_cell_count()
+        match self {
+            Self::Impl(cell) => cell.tree_cell_count(),
+            Self::Boc(cell) => cell.tree_cell_count(),
+        }
     }
 
     pub fn to_external(&self) -> Result<Cell> {
-        self.0.to_external().map(Cell::with_cell_impl_arc)
+        match self {
+            Self::Impl(cell) => cell.to_external().map(Self::Impl),
+            Self::Boc(cell) => cell.to_external().map(Self::Impl),
+        }
     }
 }
 
@@ -619,7 +678,10 @@ impl Deref for Cell {
     type Target = dyn CellImpl;
 
     fn deref(&self) -> &Self::Target {
-        self.0.deref()
+        match self {
+            Self::Impl(cell) => cell.deref(),
+            Self::Boc(cell) => cell,
+        }
     }
 }
 
@@ -826,6 +888,26 @@ pub(crate) fn refs_count(buf: &[u8]) -> usize {
     }
 }
 
+/// Return child indexes.
+/// result.0 contains fixed array of child indexes. But only first items are filled.
+/// result.1 contains actual child count for which result.0 are filled.
+#[inline(always)]
+pub(crate) fn child_refs(buf: &[u8], ref_size: usize) -> ([usize; 4], usize) {
+    if is_big_cell(buf) {
+        ([0usize; 4], 0)
+    } else {
+        debug_assert!(!buf.is_empty());
+        let mut refs = [0usize; 4];
+        let refs_count = refs_count(buf);
+        let mut ref_start = full_len(buf);
+        for i in 0..refs_count {
+            refs[i] = read_be_int(buf, ref_start, ref_size);
+            ref_start += ref_size;
+        }
+        (refs, refs_count)
+    }
+}
+
 #[inline(always)]
 pub(crate) fn is_big_cell(buf: &[u8]) -> bool {
     debug_assert!(!buf.is_empty());
@@ -836,7 +918,7 @@ pub(crate) fn is_big_cell(buf: &[u8]) -> bool {
 pub(crate) fn cell_data_len(buf: &[u8]) -> usize {
     if is_big_cell(buf) {
         debug_assert!(buf.len() >= 4);
-        (buf[1] as usize) << 16 | (buf[2] as usize) << 8 | buf[3] as usize
+        ((buf[1] as usize) << 16) | ((buf[2] as usize) << 8) | buf[3] as usize
     } else {
         debug_assert!(buf.len() >= 2);
         ((buf[1] >> 1) + (buf[1] & 1)) as usize
@@ -847,7 +929,7 @@ pub(crate) fn cell_data_len(buf: &[u8]) -> usize {
 pub(crate) fn bit_len(buf: &[u8]) -> usize {
     if is_big_cell(buf) {
         debug_assert!(buf.len() >= 4);
-        let bytes = (buf[1] as usize) << 16 | (buf[2] as usize) << 8 | buf[3] as usize;
+        let bytes = ((buf[1] as usize) << 16) | ((buf[2] as usize) << 8) | buf[3] as usize;
         bytes * 8
     } else {
         debug_assert!(buf.len() >= 2);
@@ -1488,7 +1570,7 @@ impl DataCell {
             hashes,
             depths,
         )?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, true)
     }
 
     pub fn with_external_data(
@@ -1496,9 +1578,10 @@ impl DataCell {
         buffer: &Arc<Vec<u8>>,
         offset: usize,
         max_depth: Option<u16>,
+        verify: bool,
     ) -> Result<DataCell> {
         let cell_data = CellData::with_external_data(buffer, offset)?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, verify)
     }
 
     pub fn with_raw_data(
@@ -1507,13 +1590,14 @@ impl DataCell {
         max_depth: Option<u16>,
     ) -> Result<DataCell> {
         let cell_data = CellData::with_raw_data(data)?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, true)
     }
 
     fn construct_cell(
         cell_data: CellData,
         references: Vec<Cell>,
         max_depth: Option<u16>,
+        verify: bool,
     ) -> Result<DataCell> {
         const MAX_56_BITS: u64 = 0x00FF_FFFF_FFFF_FFFFu64;
         let mut tree_bits_count = cell_data.bit_length() as u64;
@@ -1529,7 +1613,7 @@ impl DataCell {
             tree_cell_count = MAX_56_BITS;
         }
         let mut cell = DataCell { cell_data, references, tree_bits_count, tree_cell_count };
-        cell.finalize(true, max_depth)?;
+        cell.finalize(verify, max_depth)?;
         Ok(cell)
     }
 
@@ -1681,13 +1765,12 @@ impl DataCell {
                 }
 
                 let mut buffer = [0u8; 8];
-                reader.read(&mut buffer[tree_cells_count_len..])?;
+                let _ = reader.read(&mut buffer[tree_cells_count_len..])?;
                 let tree_cell_count = u64::from_be_bytes(buffer);
                 let mut buffer = [0u8; 8];
-                reader.read(&mut buffer[tree_bits_count_len..])?;
+                let _ = reader.read(&mut buffer[tree_bits_count_len..])?;
                 let tree_bits_count = u64::from_be_bytes(buffer);
 
-                drop(reader);
                 self.tree_bits_count = tree_bits_count;
                 self.tree_cell_count = tree_cell_count;
 
@@ -1824,10 +1907,6 @@ impl CellImpl for DataCell {
         Ok(self.cell_data.raw_data())
     }
 
-    fn cell_data(&self) -> &CellData {
-        self.cell_data()
-    }
-
     fn bit_length(&self) -> usize {
         self.cell_data.bit_length()
     }
@@ -1950,13 +2029,6 @@ impl CellImpl for UsageCell {
         self.cell.raw_data()
     }
 
-    fn cell_data(&self) -> &CellData {
-        if !self.visit_on_load {
-            self.visit();
-        }
-        self.cell.cell_data()
-    }
-
     fn bit_length(&self) -> usize {
         self.cell.bit_length()
     }
@@ -2044,10 +2116,6 @@ impl CellImpl for VirtualCell {
 
     fn raw_data(&self) -> Result<&[u8]> {
         fail!("Virtual cell doesn't support raw_data()");
-    }
-
-    fn cell_data(&self) -> &CellData {
-        self.cell.cell_data()
     }
 
     fn bit_length(&self) -> usize {
@@ -2181,11 +2249,14 @@ pub mod builder;
 
 pub use self::builder::*;
 
+mod boc_cell;
+
+pub use self::boc_cell::*;
+
 mod builder_operations;
 
-use smallvec::SmallVec;
-
 pub use self::builder_operations::*;
+use smallvec::SmallVec;
 
 pub(crate) fn to_hex_string(data: impl AsRef<[u8]>, len: usize, lower: bool) -> String {
     if len == 0 {
