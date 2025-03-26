@@ -13,8 +13,8 @@ use std::fs::read;
 use std::fs::read_dir;
 use std::path::Path;
 
-use tvm_types::read_boc;
 use tvm_types::read_single_root_boc;
+use tvm_types::read_single_root_boc_in_mem;
 
 use super::*;
 use crate::AccountBlock;
@@ -276,8 +276,10 @@ fn test_value_flow() {
 fn read_file_de_and_serialise(filename: &Path) -> Cell {
     let orig_bytes =
         read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
-    let mut root_cells = read_boc(orig_bytes).expect("Error deserializing BOC").roots;
-    root_cells.remove(0)
+    read_single_root_boc_in_mem(orig_bytes, false).unwrap()
+
+    // let mut root_cells = read_boc(orig_bytes).expect("Error deserializing BOC").roots;
+    // root_cells.remove(0)
 }
 
 #[test]
@@ -295,6 +297,7 @@ fn test_real_tvm_boc() {
                 }
                 println!("BOC file: {:?}", in_path);
                 read_file_de_and_serialise(&in_path);
+                // read_file_de_and_serialise(&in_path);
             }
         }
     }
