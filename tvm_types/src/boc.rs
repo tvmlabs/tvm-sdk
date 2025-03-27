@@ -10,17 +10,13 @@
 // limitations under the License.
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::collections::hash_map;
 use std::fmt::Debug;
-use std::fs::File;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
 use std::ops::Deref;
-use std::path::Path;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use smallvec::SmallVec;
@@ -34,17 +30,16 @@ use crate::MAX_REFERENCES_COUNT;
 use crate::Result;
 use crate::Status;
 use crate::UInt256;
-use crate::cell::Cell;
-use crate::cell::DEPTH_SIZE;
 use crate::cell::DataCell;
 use crate::cell::MAX_DATA_BYTES;
 use crate::cell::MAX_SAFE_DEPTH;
 use crate::cell::SHA256_SIZE;
 use crate::cell::{self};
+use crate::cell::{Cell, HASHES_D1_FLAG};
+use crate::cell::{DEPTH_SIZE, hashes_count};
 use crate::crc32_digest;
 use crate::error;
 use crate::fail;
-use crate::full_len;
 
 const BOC_INDEXED_TAG: u32 = 0x68ff65f3; // deprecated, is used only for read
 const BOC_INDEXED_CRC32_TAG: u32 = 0xacc3a728; // deprecated, is used only for read
@@ -123,6 +118,7 @@ pub struct BocWriter<'a, S: OrderedCellsStorage> {
     cells_count: usize,
     big_cells_count: usize,
     big_cells_size: usize,
+    force_store_hashes: bool,
     abort: &'a dyn Fn() -> bool,
 }
 
@@ -142,6 +138,13 @@ impl<'a> BocWriter<'a, SimpleOrderedCellsStorage> {
     }
 
     pub fn with_roots(root_cells: impl IntoIterator<Item = Cell>) -> Result<Self> {
+        Self::with_roots_ex(root_cells, false)
+    }
+
+    pub fn with_roots_ex(
+        root_cells: impl IntoIterator<Item = Cell>,
+        force_store_hashes: bool,
+    ) -> Result<Self> {
         fn default_abort() -> bool {
             false
         }
@@ -150,262 +153,8 @@ impl<'a> BocWriter<'a, SimpleOrderedCellsStorage> {
             MAX_SAFE_DEPTH,
             SimpleOrderedCellsStorage::default(),
             &default_abort,
+            force_store_hashes,
         )
-    }
-}
-
-struct IntermediateState {
-    file: File,
-    cell_sizes: Vec<u16>,
-    ref_count: usize,
-    total_size: u64,
-    raw_cell_size: usize,
-}
-
-const FILE_BUFFER_LEN: usize = 128 * 1024 * 1024; // 128 MB
-const TEMP_REF_SIZE: usize = std::mem::size_of::<u32>();
-
-struct RemoveOnDrop(PathBuf);
-
-impl Drop for RemoveOnDrop {
-    fn drop(&mut self) {
-        if let Err(e) = std::fs::remove_file(&self.0) {
-            log::trace!("failed to remove file:{} error: {e:?}", self.0.display());
-        }
-    }
-}
-pub struct BocWriterStack {}
-
-impl BocWriterStack {
-    // no big cell allowed!
-    // only single root boc
-    // max cells count is u32::MAX
-    pub fn write<T: Write, S: CellByHashStorage>(
-        dest: &mut T,
-        temp_dir: &Path,
-        root_cell: Cell,
-        max_depth: u16,
-        cells_storage: S,
-        abort: &dyn Fn() -> bool,
-    ) -> Result<()> {
-        // check root_cell
-        if root_cell.virtualization() != 0 {
-            fail!("Virtual cells serialisation is prohibited");
-        }
-        let depth = root_cell.repr_depth();
-        if depth > max_depth {
-            fail!("Cell {:x} is too deep: {} > {}", root_cell.repr_hash(), depth, max_depth);
-        }
-        let file_name = format!("temp_boc_{:x}", root_cell.repr_hash());
-        let tmp_file_path = temp_dir.join(file_name);
-        let tmp_file = std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(&tmp_file_path)?;
-        let remove_on_drop = RemoveOnDrop(tmp_file_path);
-
-        let mut state = Self::traverse(tmp_file, root_cell, cells_storage, abort)?;
-
-        // write to the main file
-        let cells_count = state.cell_sizes.len();
-        let ref_size =
-            BocWriter::<SimpleOrderedCellsStorage>::number_of_bytes_to_fit(state.cell_sizes.len());
-
-        let total_cells_size = state.raw_cell_size + state.ref_count * ref_size;
-        let offset_size =
-            BocWriter::<SimpleOrderedCellsStorage>::number_of_bytes_to_fit(total_cells_size);
-
-        debug_assert!(ref_size <= 4);
-        debug_assert!(offset_size <= 8);
-
-        // Header
-        let magic = BOC_GENERIC_TAG;
-        dest.write_all(&magic.to_be_bytes())?;
-
-        // has index | has CRC | has cache bits | flags   | ref_size
-        // 7         | 6       | 5              | 4 3     | 2 1 0
-        dest.write_all(&[ref_size as u8])?;
-
-        dest.write_all(&[offset_size as u8])?; // off_bytes:(## 8) { off_bytes <= 8 }
-        dest.write_all(&(cells_count as u64).to_be_bytes()[(8 - ref_size)..8])?;
-        dest.write_all(&1_u64.to_be_bytes()[(8 - ref_size)..8])?;
-        dest.write_all(&0_u64.to_be_bytes()[(8 - ref_size)..8])?;
-        dest.write_all(&(total_cells_size as u64).to_be_bytes()[(8 - offset_size)..8])?;
-
-        // Root's indexes
-        dest.write_all(&(0u64).to_be_bytes()[(8 - ref_size)..8])?;
-
-        // Cells
-        let mut cell_buffer =
-            [0; 2 + 4 * (SHA256_SIZE + DEPTH_SIZE) + MAX_DATA_BYTES + 4 * TEMP_REF_SIZE];
-        for &cell_size in state.cell_sizes.iter().rev() {
-            check_abort(abort)?;
-            state.total_size -= cell_size as u64;
-            state.file.seek(SeekFrom::Start(state.total_size))?;
-            state.file.read_exact(&mut cell_buffer[..cell_size as usize])?;
-
-            // let slice = &mut cell_buffer[0..TEMP_REF_SIZE];
-            // let ref_count = u32::from_be_bytes(slice.try_into().unwrap());
-            let ref_count = cell::refs_count(&cell_buffer);
-
-            let data_size = cell_size as usize - ref_count * TEMP_REF_SIZE;
-            let ref_offset = data_size;
-
-            let raw_data_slice = &cell_buffer[..data_size];
-            dest.write_all(raw_data_slice)?;
-
-            for r in 0..ref_count {
-                let ref_offset = ref_offset + r * TEMP_REF_SIZE;
-                let slice = &mut cell_buffer[ref_offset..ref_offset + TEMP_REF_SIZE];
-                let index = u32::from_be_bytes(slice.try_into().unwrap());
-                let child_index = cells_count as u64 - index as u64 - 1;
-                dest.write_all(&(child_index as u64).to_be_bytes()[(8 - ref_size)..8])?;
-            }
-        }
-
-        drop(state);
-        drop(remove_on_drop);
-
-        Ok(())
-    }
-
-    // move throught boc and prepare data for writing to the main file
-    // write cells to the temp file and collect aditional info
-    fn traverse<S: CellByHashStorage>(
-        file: File,
-        root_cell: Cell,
-        cells_storage: S,
-        abort: &dyn Fn() -> bool,
-    ) -> Result<IntermediateState> {
-        enum StackItem {
-            New(Cell),
-            Loaded(LoadedCell),
-        }
-        struct LoadedCell {
-            cell: Cell,
-            // Indeses of cild cells in the file
-            references: SmallVec<[u32; 4]>,
-        }
-
-        let mut temp_file_buffer = std::io::BufWriter::with_capacity(FILE_BUFFER_LEN, file);
-
-        // map of cell hashes to indeces and written flag
-        let mut indices: HashMap<UInt256, (u32, bool)> = HashMap::default();
-        // map of indeces to iteration.
-        // when we write some cell to file we put it to remap
-        // Key: the cell with index(u32) from indeces
-        // Value: the cell serial number(u32 as [u8; 4]) into the file
-        let mut remap: HashMap<u32, [u8; 4]> = HashMap::default();
-        // stack of cells to process
-        // we use stack because we need to write child cells first
-        let mut stack: Vec<(u32, StackItem)> = Vec::with_capacity(32);
-
-        // vec of cell sizes
-        // todo we can write cell size after cell. So at the end of file we will have
-        // the size of last cell
-        let mut cell_sizes: Vec<u16> = Vec::<u16>::with_capacity(FILE_BUFFER_LEN);
-        // total size of all cells and its references
-        let mut total_size: u64 = 0;
-        // all references count in boc
-        let mut ref_count = 0;
-        // iteration is index of cell in the file
-        let mut iteration = 0u32;
-        // index in the remao map
-        let mut remap_index = 0u32;
-        // total size of all cells without references
-        let mut raw_cell_size = 0usize;
-
-        let mut max_stack_len: usize = 0;
-
-        indices.insert(root_cell.repr_hash(), (iteration, false));
-        stack.push((iteration, StackItem::New(root_cell)));
-
-        while let Some((index, item)) = stack.pop() {
-            check_abort(abort)?;
-            if stack.len() > max_stack_len {
-                max_stack_len = stack.len();
-            }
-            match item {
-                StackItem::New(cell) => {
-                    let mut reference_indices = SmallVec::with_capacity(4);
-
-                    // references that are not written in the file yet
-                    let mut cells: Vec<(u32, Cell)> = Vec::with_capacity(4);
-
-                    for i in 0..cell.references_count() {
-                        let index = match indices.entry(cell.reference_repr_hash(i)?) {
-                            hash_map::Entry::Vacant(entry) => {
-                                remap_index += 1;
-                                entry.insert((remap_index, false));
-                                cells.push((
-                                    remap_index,
-                                    cells_storage
-                                        .get_cell_by_hash(&cell.reference_repr_hash(i)?)?,
-                                ));
-                                remap_index
-                            }
-                            hash_map::Entry::Occupied(entry) => {
-                                let (remap_index, written) = *entry.get();
-                                if !written {
-                                    cells.push((
-                                        remap_index,
-                                        cells_storage
-                                            .get_cell_by_hash(&cell.reference_repr_hash(i)?)?,
-                                    ));
-                                }
-                                remap_index
-                            }
-                        };
-
-                        reference_indices.push(index);
-                    }
-
-                    stack.push((
-                        index,
-                        StackItem::Loaded(LoadedCell { cell, references: reference_indices }),
-                    ));
-
-                    for (index, cell) in cells {
-                        stack.push((index, StackItem::New(cell)));
-                    }
-                }
-                StackItem::Loaded(loaded) => {
-                    match remap.entry(index) {
-                        hash_map::Entry::Vacant(entry) => {
-                            entry.insert(iteration.to_be_bytes());
-                        }
-                        hash_map::Entry::Occupied(_) => continue,
-                    };
-
-                    if let Some((_, written)) = indices.get_mut(&loaded.cell.repr_hash()) {
-                        *written = true;
-                    }
-
-                    iteration += 1;
-
-                    // update counters
-                    let raw_cell = full_len(loaded.cell.raw_data()?);
-                    let cell_size = raw_cell + TEMP_REF_SIZE * loaded.cell.references_count();
-                    cell_sizes.push(cell_size as u16);
-                    ref_count += loaded.cell.references_count();
-                    total_size += cell_size as u64;
-                    raw_cell_size += raw_cell;
-
-                    // write cella and references to the temp file
-                    temp_file_buffer.write_all(loaded.cell.raw_data()?)?;
-                    for index in loaded.references.iter() {
-                        let index = remap.get(index).ok_or_else(|| error!("index not found"))?;
-                        temp_file_buffer.write_all(index)?;
-                    }
-                }
-            }
-        }
-
-        let mut file = temp_file_buffer.into_inner()?;
-        file.flush()?;
-        Ok(IntermediateState { file, cell_sizes, ref_count, total_size, raw_cell_size })
     }
 }
 
@@ -415,6 +164,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
         max_depth: u16,
         cells_storage: S,
         abort: &'a dyn Fn() -> bool,
+        force_store_hashes: bool,
     ) -> Result<Self> {
         let mut boc = BocWriter {
             roots_indexes_rev: Vec::new(),
@@ -425,6 +175,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             big_cells_count: 0,
             big_cells_size: 0,
             abort,
+            force_store_hashes,
         };
         let mut roots_set = HashSet::new();
         for root_cell in root_cells {
@@ -512,6 +263,49 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
         }
     }
 
+    fn calc_write_cell_size(&self, cell: &Cell) -> Result<usize> {
+        let raw_data = cell.raw_data()?;
+        if self.force_store_hashes && !cell::store_hashes(raw_data) {
+            Ok(raw_data.len() + hashes_count(raw_data) * (SHA256_SIZE + DEPTH_SIZE))
+        } else {
+            Ok(raw_data.len())
+        }
+    }
+
+    fn write_cell<W: Write>(&self, writer: &mut W, cell: &Cell) -> Result<()> {
+        let raw_data = cell.raw_data()?;
+        if self.force_store_hashes && !cell::store_hashes(raw_data) {
+            let hashes = cell.hashes();
+            let depths = cell.depths();
+            if hashes.len() != depths.len() {
+                fail!("hashes and depths must be the same length");
+            }
+
+            writer.write_all(&[raw_data[0] | HASHES_D1_FLAG])?;
+            writer.write_all(&raw_data[1..2])?;
+            let cell_type = cell::cell_type(raw_data);
+            if cell_type == CellType::PrunedBranch {
+                writer.write_all(cell.repr_hash().as_slice())?;
+                writer.write_all(&cell.repr_depth().to_be_bytes())?;
+            } else {
+                let hashes_count = hashes_count(raw_data);
+                if hashes.len() < hashes_count {
+                    fail!("hashes and depths must be the same length");
+                }
+                for hash in hashes.iter().take(hashes_count) {
+                    writer.write_all(hash.as_slice())?;
+                }
+                for depth in depths.iter().take(hashes_count) {
+                    writer.write_all(&depth.to_be_bytes())?;
+                }
+            }
+            writer.write_all(&raw_data[2..])?;
+        } else {
+            writer.write_all(raw_data)?;
+        }
+        Ok(())
+    }
+
     fn write_ex_impl<T: Write>(
         mut self,
         dest: &mut T,
@@ -570,7 +364,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             for cell_index in (0..self.cells_count).rev() {
                 check_abort(self.abort)?;
                 let cell = &self.cells.get_cell_by_index(cell_index as u32)?;
-                total_size += full_len(cell.raw_data()?) + ref_size * cell.references_count();
+                total_size += self.calc_write_cell_size(cell)?;
                 dest.write_all(&(total_size as u64).to_be_bytes()[(8 - offset_size)..8])?;
             }
         }
@@ -579,10 +373,10 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
         for cell_rev_index in (0..self.cells_count).rev() {
             check_abort(self.abort)?;
             let cell = &self.cells.get_cell_by_index(cell_rev_index as u32)?;
-            dest.write_all(cell.raw_data()?)?;
+            self.write_cell(dest, cell)?;
             let cell_index = self.cells_count - 1 - cell_rev_index;
             for i in 0..cell.references_count() {
-                let child_hash = cell.reference_repr_hash(i).unwrap();
+                let child_hash = cell.reference_repr_hash(i)?;
                 let child_index =
                     self.cells_count - 1 - self.cells.get_rev_index_by_hash(&child_hash)? as usize;
                 debug_assert!(child_index > cell_index);
@@ -642,7 +436,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
 
     fn update_counters(&mut self, cell: &Cell) -> Result<()> {
         self.cells_count += 1;
-        let cell_size = cell.raw_data()?.len();
+        let cell_size = self.calc_write_cell_size(&cell)?;
         self.data_size += cell_size;
         self.references += cell.references_count();
         if cell.cell_type() == CellType::Big {

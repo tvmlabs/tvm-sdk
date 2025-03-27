@@ -13,8 +13,8 @@ use std::fs::read;
 use std::fs::read_dir;
 use std::path::Path;
 
-use tvm_types::read_single_root_boc;
 use tvm_types::read_single_root_boc_in_mem;
+use tvm_types::{BocWriter, read_single_root_boc};
 
 use super::*;
 use crate::AccountBlock;
@@ -274,12 +274,50 @@ fn test_value_flow() {
 }
 
 fn read_file_de_and_serialise(filename: &Path) -> Cell {
+    println!("BOC file: {:?}", filename);
     let orig_bytes =
         read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
-    read_single_root_boc_in_mem(orig_bytes, false).unwrap()
+
+    let original_root = read_single_root_boc_in_mem(orig_bytes, true).unwrap();
+
+    let mut buf = Vec::<u8>::new();
+    BocWriter::with_roots_ex([original_root.clone()], true).unwrap().write(&mut buf).unwrap();
+
+    let root = read_single_root_boc_in_mem(buf, false).unwrap();
+    cmp_cell(&original_root, &root);
+    root
 
     // let mut root_cells = read_boc(orig_bytes).expect("Error deserializing BOC").roots;
     // root_cells.remove(0)
+}
+
+fn cmp_cell(cell1: &Cell, cell2: &Cell) {
+    // if cell1.hashes() != cell2.hashes() {
+    //     panic!("Hashes are different");
+    // }
+    let cell_type = cell1.cell_type();
+    if cell_type != cell2.cell_type() {
+        panic!("Cell types are different");
+    }
+
+    if cell1.repr_hash() != cell2.repr_hash() {
+        println!("{cell_type} repr_hash are different {:?} vs {:?}", cell1.repr_hash(), cell2.repr_hash());
+    }
+    // if cell1.depths() != cell2.depths() {
+    //     println!("{cell_type} depths are different {:?} vs {:?}", cell1.depths(), cell2.depths());
+    // }
+    if cell1.hashes() != cell2.hashes() {
+        println!("{cell_type} hashes are different {:?} vs {:?}", cell1.hashes(), cell2.hashes());
+    }
+    if cell1.data() != cell2.data() {
+        println!("{cell_type} data are different {:?} vs {:?}", cell1.data(), cell2.data());
+    }
+    if cell1.references_count() != cell2.references_count() {
+        panic!("References count is different");
+    }
+    for i in 0..cell1.references_count() {
+        cmp_cell(&cell1.reference(i).unwrap(), &cell2.reference(i).unwrap())
+    }
 }
 
 #[test]
@@ -534,11 +572,12 @@ fn test_block_id_ext_from_str() {
 
 #[test]
 fn calc_value_flow() {
-    let root_cell = read_file_de_and_serialise(Path::new(
+    let path = Path::new(
         //"src/tests/data/91FDE9DA6661FE9D1FCB013C1079411AFC7BFEDF7FE533C6FD48D25388A3FC26.boc" // master
         "src/tests/data/9C2B3FC5AD455917D374CFADBED8FC2343E31A27C1DF2EB29E84404FA96DE9F8.boc", // old testnet WC
                                                                                                //"src/tests/data/EC6D799FC7EA14D9FD1D840542514BA774EA3FB5E04B70B6E314C48F95B0C131.boc" // new testnet WC
-    ));
+    );
+    let root_cell = read_file_de_and_serialise(path);
     let block = Block::construct_from_cell(root_cell).unwrap();
 
     let mut new_transaction_fees = Grams::default();

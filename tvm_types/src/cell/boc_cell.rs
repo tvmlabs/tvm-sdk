@@ -122,7 +122,7 @@ impl BocBuf {
         let cell_type = cell::cell_type(raw_data);
         let bit_len = cell::bit_len(raw_data);
         let cell_data = cell::cell_data(raw_data);
-        let (refs_buf, refs_count) = cell::child_refs(raw_data, self.ref_size);
+        let (refs_buf, refs_count) = cell::child_indexes(raw_data, self.ref_size);
         let refs = &refs_buf[0..refs_count];
 
         self.verify_cell(raw_data, cell_type, bit_len, cell_data, refs_count)?;
