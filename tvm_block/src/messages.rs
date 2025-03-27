@@ -23,20 +23,15 @@ use tvm_types::MAX_REFERENCES_COUNT;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-use tvm_types::UsageTree;
 use tvm_types::error;
 use tvm_types::fail;
 
 use crate::Deserializable;
-use crate::GetRepresentationHash;
 use crate::MaybeDeserialize;
 use crate::MaybeSerialize;
 use crate::Serializable;
-use crate::blocks::Block;
 use crate::define_HashmapE;
 use crate::error::BlockError;
-use crate::hashmapaug::HashmapAugType;
-use crate::merkle_proof::MerkleProof;
 use crate::shard::MASTERCHAIN_ID;
 use crate::types::AddSub;
 use crate::types::CurrencyCollection;
@@ -1342,42 +1337,6 @@ impl Message {
     pub fn is_masterchain(&self) -> bool {
         self.src_workchain_id() == Some(MASTERCHAIN_ID)
             || self.dst_workchain_id() == Some(MASTERCHAIN_ID)
-    }
-
-    pub fn prepare_proof(&self, is_inbound: bool, block_root: &Cell) -> Result<Cell> {
-        // proof for message and block info in block
-
-        let msg_hash = self.hash()?;
-        let usage_tree = UsageTree::with_root(block_root.clone());
-        let block = Block::construct_from_cell(usage_tree.root_cell()).unwrap();
-
-        block.read_info()?;
-
-        if is_inbound {
-            block
-                .read_extra()?
-                .read_in_msg_descr()?
-                .get(&msg_hash)?
-                .ok_or_else(|| {
-                    BlockError::InvalidArg(
-                        "Message isn't belonged given block's in_msg_descr".to_string(),
-                    )
-                })?
-                .read_message()?;
-        } else {
-            block
-                .read_extra()?
-                .read_out_msg_descr()?
-                .get(&msg_hash)?
-                .ok_or_else(|| {
-                    BlockError::InvalidArg(
-                        "Message isn't belonged given block's out_msg_descr".to_string(),
-                    )
-                })?
-                .read_message()?;
-        }
-
-        MerkleProof::create_by_usage_tree(block_root, usage_tree)?.serialize()
     }
 
     #[cfg(test)]

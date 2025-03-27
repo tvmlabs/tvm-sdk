@@ -473,7 +473,6 @@ pub(crate) fn serialize_message(id: UInt256, message: Message, boc: Vec<u8>) -> 
             transaction_now: None,
             status: tvm_block::MessageProcessingStatus::Finalized,
             boc,
-            proof: None,
         },
         tvm_block_json::SerializationMode::QServer,
     )?

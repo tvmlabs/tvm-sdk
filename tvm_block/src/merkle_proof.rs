@@ -34,7 +34,6 @@ use crate::blocks::BlockSeqNoAndShard;
 use crate::error::BlockError;
 use crate::hashmapaug::HashmapAugType;
 use crate::merkle_update::MerkleUpdate;
-use crate::messages::Message;
 use crate::shard::ShardStateUnsplit;
 use crate::transactions::Transaction;
 
@@ -270,98 +269,6 @@ pub fn check_transaction_proof(
         fail!(BlockError::WrongMerkleProof("No transaction in proof".to_string()))
     }
     Ok(())
-}
-
-fn check_transaction_id(given_id: Option<UInt256>, tr_cell: Option<Cell>) -> Result<()> {
-    let existing_id = tr_cell.map(|c| c.repr_hash());
-    match (given_id, existing_id) {
-        (None, Some(_)) => {
-            fail!(BlockError::WrongMerkleProof(
-                "Invalid transaction id: None is passed, \
-                     but the transaction exists in a block"
-                    .to_string()
-            ))
-        }
-        (Some(_), None) => {
-            fail!(BlockError::WrongMerkleProof(
-                "Invalid transaction id: it is passed, \
-                     but the transaction doesn't exists in a block"
-                    .to_string()
-            ))
-        }
-        (None, None) => Ok(()),
-        (Some(id1), Some(id2)) => {
-            if id1 != id2 {
-                fail!(BlockError::WrongMerkleProof("Invalid transaction id".to_string()))
-            }
-            Ok(())
-        }
-    }
-}
-
-/// checks if message with given id is exist in block.
-/// Proof must contain message's root cell and block info
-pub fn check_message_proof(
-    proof: &MerkleProof,
-    msg: &Message,
-    block_id: &UInt256,
-    tr_id: Option<UInt256>,
-) -> Result<()> {
-    let block: Block = proof.virtualize().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting block from proof: {}", err))
-    })?;
-
-    // check if block id in message is corresponds to block in proof
-    check_block_info_proof(&block, &proof.hash, block_id)?;
-
-    // read message from block and check it
-
-    let block_extra = block.read_extra().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting block extra from proof: {}", err))
-    })?;
-
-    let msg_hash = msg.hash()?;
-    // attempt to read in msg descr, if fail - read out one
-    if let Ok(in_msg_descr) = block_extra.read_in_msg_descr() {
-        if let Ok(Some(in_msg)) = in_msg_descr.get(&msg_hash) {
-            check_transaction_id(tr_id, in_msg.transaction_cell())?;
-            if let Ok(msg_cell) = in_msg.message_cell() {
-                if msg_cell.repr_hash() != msg_hash {
-                    fail!(BlockError::WrongMerkleProof(format!(
-                        "Wrong message's hash in proof {:x} but {:x}",
-                        msg_cell.repr_hash(),
-                        msg_hash
-                    )))
-                } else {
-                    return Ok(());
-                }
-            } else {
-                fail!(BlockError::WrongMerkleProof(
-                    "Error extracting message from in message".to_string()
-                ))
-            }
-        }
-    }
-
-    let out_msg_descr = block_extra.read_out_msg_descr().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting out msg descr from proof: {}", err))
-    })?;
-    if let Ok(Some(out_msg)) = out_msg_descr.get(&msg_hash) {
-        if let Ok(real_msg_hash) = out_msg.read_message_hash() {
-            check_transaction_id(tr_id, out_msg.transaction_cell())?;
-            if real_msg_hash != msg_hash {
-                fail!(BlockError::WrongMerkleProof("Wrong message's hash in proof".to_string()))
-            } else {
-                Ok(())
-            }
-        } else {
-            fail!(BlockError::WrongMerkleProof(
-                "Error extracting message from out message".to_string()
-            ))
-        }
-    } else {
-        fail!(BlockError::WrongMerkleProof("No message in proof".to_string()))
-    }
 }
 
 /// checks if account with given address is exist in shard state.

@@ -659,91 +659,6 @@ fn serialize_in_msg(msg: &InMsg, mode: SerializationMode) -> Result<Value> {
     Ok(map.into())
 }
 
-fn serialize_out_msg(msg: &OutMsg, mode: SerializationMode) -> Result<Value> {
-    let mut map = Map::new();
-    let (type_, type_name) = match msg {
-        OutMsg::External(msg) => {
-            serialize_id(&mut map, "msg_id", Some(&msg.message_cell().repr_hash()));
-            serialize_id(&mut map, "transaction_id", Some(&msg.transaction_cell().repr_hash()));
-            (0, "external")
-        }
-        OutMsg::Immediate(msg) => {
-            map.insert(
-                "out_msg".to_string(),
-                serialize_envelope_msg(&msg.read_out_message()?, mode).into(),
-            );
-            serialize_id(&mut map, "transaction_id", Some(&msg.transaction_cell().repr_hash()));
-            map.insert(
-                "reimport".to_string(),
-                serialize_in_msg(&msg.read_reimport_message()?, mode)?,
-            );
-            (1, "immediately")
-        }
-        OutMsg::New(msg) => {
-            map.insert(
-                "out_msg".to_string(),
-                serialize_envelope_msg(&msg.read_out_message()?, mode).into(),
-            );
-            serialize_id(&mut map, "transaction_id", Some(&msg.transaction_cell().repr_hash()));
-            (2, "outMsgNew")
-        }
-        OutMsg::Transit(msg) => {
-            map.insert(
-                "out_msg".to_string(),
-                serialize_envelope_msg(&msg.read_out_message()?, mode).into(),
-            );
-            map.insert("imported".to_string(), serialize_in_msg(&msg.read_imported()?, mode)?);
-            (3, "transit")
-        }
-        OutMsg::DequeueImmediate(msg) => {
-            map.insert(
-                "out_msg".to_string(),
-                serialize_envelope_msg(&msg.read_out_message()?, mode).into(),
-            );
-            map.insert(
-                "reimport".to_string(),
-                serialize_in_msg(&msg.read_reimport_message()?, mode)?,
-            );
-            (4, "dequeueImmediately")
-        }
-        OutMsg::Dequeue(msg) => {
-            map.insert(
-                "out_msg".to_string(),
-                serialize_envelope_msg(&msg.read_out_message()?, mode).into(),
-            );
-            serialize_lt(&mut map, "import_block_lt", &msg.import_block_lt(), mode);
-            (5, "dequeue")
-        }
-        OutMsg::TransitRequeued(msg) => {
-            map.insert(
-                "out_msg".to_string(),
-                serialize_envelope_msg(&msg.read_out_message()?, mode).into(),
-            );
-            map.insert("imported".to_string(), serialize_in_msg(&msg.read_imported()?, mode)?);
-            (6, "transitRequeued")
-        }
-        OutMsg::DequeueShort(msg) => {
-            serialize_id(&mut map, "msg_env_hash", Some(&msg.msg_env_hash));
-            map.insert("next_workchain".to_string(), msg.next_workchain.into());
-            map.insert("next_addr_pfx".to_string(), shard_to_string(msg.next_addr_pfx).into());
-            if let SerializationMode::Debug = mode {
-                map.insert(
-                    "next_prefix".to_string(),
-                    format!("{}:{:016X}", msg.next_workchain, msg.next_addr_pfx).into(),
-                );
-            }
-            serialize_lt(&mut map, "import_block_lt", &msg.import_block_lt, mode);
-            (7, "dequeueShort")
-        }
-        _ => (-1, "none"),
-    };
-    map.insert("msg_type".to_string(), type_.into());
-    if mode.is_q_server() {
-        map.insert("msg_type_name".to_string(), type_name.into());
-    }
-    Ok(map.into())
-}
-
 fn serialize_shard_descr(descr: &ShardDescr, mode: SerializationMode) -> Result<Value> {
     let mut map = Map::new();
     serialize_field(&mut map, "seq_no", descr.seq_no);
@@ -1564,19 +1479,6 @@ pub fn debug_block_full(block: &Block) -> Result<String> {
 
     let mut text = format!("Block: {:#}\n", serde_json::json!(map));
     let extra = block.read_extra()?;
-    let in_msgs = extra.read_in_msg_descr()?;
-    in_msgs.iterate_objects(|in_msg| {
-        let msg = in_msg.read_message()?;
-        text += &format!("InMsg: {}\n", debug_message(msg)?);
-        Ok(true)
-    })?;
-    let out_msgs = extra.read_out_msg_descr()?;
-    out_msgs.iterate_objects(|out_msg| {
-        if let Some(msg) = out_msg.read_message()? {
-            text += &format!("OutMsg: {}\n", debug_message(msg)?);
-        }
-        Ok(true)
-    })?;
     let acc_blocks = extra.read_account_blocks()?;
     acc_blocks.iterate_objects(|block| {
         block.transactions().iterate_objects(|InRefValue(tr)| {
@@ -1694,19 +1596,6 @@ pub fn db_serialize_block_ex<'a>(
     map.insert("new_depth".to_string(), state_update.new_depth.into());
 
     let extra = set.block.read_extra()?;
-    let mut msgs = vec![];
-    extra.read_in_msg_descr()?.iterate_objects(|ref msg| {
-        msgs.push(serialize_in_msg(msg, mode)?);
-        Ok(true)
-    })?;
-    map.insert("in_msg_descr".to_string(), msgs.into());
-
-    let mut msgs = vec![];
-    extra.read_out_msg_descr()?.iterate_objects(|ref msg| {
-        msgs.push(serialize_out_msg(msg, mode)?);
-        Ok(true)
-    })?;
-    map.insert("out_msg_descr".to_string(), msgs.into());
     let mut total_tr_count = 0;
     let mut account_blocks = Vec::new();
     extra.read_account_blocks()?.iterate_objects(|account_block| {
@@ -2174,7 +2063,6 @@ pub struct MessageSerializationSet {
     pub transaction_now: Option<u32>,
     pub status: MessageProcessingStatus,
     pub boc: Vec<u8>,
-    pub proof: Option<Vec<u8>>,
 }
 
 pub fn debug_message(message: Message) -> Result<String> {
@@ -2187,7 +2075,6 @@ pub fn debug_message(message: Message) -> Result<String> {
         transaction_now: None,
         status: MessageProcessingStatus::Finalized,
         boc: Vec::new(),
-        proof: None,
     };
     let map = db_serialize_message_ex("id", &set, SerializationMode::Debug)?;
     Ok(format!("{:#}", serde_json::json!(map)))
@@ -2212,9 +2099,6 @@ pub fn db_serialize_message_ex(
     // block to destination one serialize_id(&mut map, "block_id",
     // set.block_id.as_ref());
     serialize_id(&mut map, "transaction_id", set.transaction_id.as_ref());
-    if let Some(proof) = &set.proof {
-        serialize_field(&mut map, "proof", base64_encode(proof));
-    }
     serialize_field(&mut map, "boc", base64_encode(&set.boc));
     serialize_field(&mut map, "status", set.status as u8);
     if mode.is_q_server() {

@@ -57,7 +57,6 @@ pub fn parse_message(
         boc: object.boc.bytes("message")?,
         id: object.cell.repr_hash(),
         message: object.object,
-        proof: None,
         status: tvm_block::MessageProcessingStatus::Finalized,
         transaction_id: None,
         transaction_now: None,

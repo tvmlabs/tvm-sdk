@@ -209,11 +209,6 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
 
         // parse message
         let boc = write_boc(&message_cell)?;
-        let proof = if self.with_proofs {
-            Some(write_boc(&message.prepare_proof(true, self.parsing.root)?)?)
-        } else {
-            None
-        };
         let set = crate::MessageSerializationSet {
             message,
             id: message_cell.repr_hash(),
@@ -221,7 +216,6 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
             transaction_id: None,
             status: MessageProcessingStatus::Finalized,
             boc,
-            proof,
             transaction_now,
         };
         let mut doc = crate::db_serialize_message("id", &set)?;

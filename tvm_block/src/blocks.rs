@@ -40,11 +40,9 @@ use crate::config_params::CatchainConfig;
 use crate::config_params::GlobalVersion;
 use crate::define_HashmapE;
 use crate::error::BlockError;
-use crate::inbound_messages::InMsgDescr;
 use crate::master::BlkMasterInfo;
 use crate::master::McBlockExtra;
 use crate::merkle_update::MerkleUpdate;
-use crate::outbound_messages::OutMsgDescr;
 use crate::shard::ShardIdent;
 use crate::signature::BlockSignatures;
 use crate::transactions::ShardAccountBlocks;
@@ -918,8 +916,6 @@ impl PartialOrd for Block {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct BlockExtra {
-    in_msg_descr: ChildCell<InMsgDescr>,
-    out_msg_descr: ChildCell<OutMsgDescr>,
     account_blocks: ChildCell<ShardAccountBlocks>,
     pub rand_seed: UInt256,
     pub created_by: UInt256,
@@ -930,38 +926,12 @@ pub struct BlockExtra {
 impl BlockExtra {
     pub fn new() -> BlockExtra {
         BlockExtra {
-            in_msg_descr: ChildCell::default(),
-            out_msg_descr: ChildCell::default(),
             account_blocks: ChildCell::default(),
             rand_seed: UInt256::rand(),
             created_by: UInt256::default(), // TODO: Need to fill?
             custom: None,
             ref_shard_blocks: RefShardBlocks::default(),
         }
-    }
-
-    pub fn read_in_msg_descr(&self) -> Result<InMsgDescr> {
-        self.in_msg_descr.read_struct()
-    }
-
-    pub fn write_in_msg_descr(&mut self, value: &InMsgDescr) -> Result<()> {
-        self.in_msg_descr.write_struct(value)
-    }
-
-    pub fn in_msg_descr_cell(&self) -> Cell {
-        self.in_msg_descr.cell()
-    }
-
-    pub fn read_out_msg_descr(&self) -> Result<OutMsgDescr> {
-        self.out_msg_descr.read_struct()
-    }
-
-    pub fn write_out_msg_descr(&mut self, value: &OutMsgDescr) -> Result<()> {
-        self.out_msg_descr.write_struct(value)
-    }
-
-    pub fn out_msg_descr_cell(&self) -> Cell {
-        self.out_msg_descr.cell()
     }
 
     pub fn read_account_blocks(&self) -> Result<ShardAccountBlocks> {
@@ -1027,8 +997,6 @@ impl Deserializable for BlockExtra {
         if tag != BLOCK_EXTRA_TAG && tag != BLOCK_EXTRA_TAG_2 {
             fail!(BlockError::InvalidConstructorTag { t: tag, s: "BlockExtra".to_string() })
         }
-        self.in_msg_descr.read_from_reference(cell)?;
-        self.out_msg_descr.read_from_reference(cell)?;
         self.account_blocks.read_from_reference(cell)?;
         self.rand_seed.read_from(cell)?;
         self.created_by.read_from(cell)?;
@@ -1052,8 +1020,6 @@ impl Serializable for BlockExtra {
         let tag =
             if self.ref_shard_blocks.is_empty() { BLOCK_EXTRA_TAG } else { BLOCK_EXTRA_TAG_2 };
         cell.append_u32(tag)?;
-        cell.checked_append_reference(self.in_msg_descr.cell())?;
-        cell.checked_append_reference(self.out_msg_descr.cell())?;
         cell.checked_append_reference(self.account_blocks.cell())?;
         self.rand_seed.write_to(cell)?;
         self.created_by.write_to(cell)?;
