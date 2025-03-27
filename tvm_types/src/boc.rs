@@ -573,8 +573,11 @@ pub fn read_single_root_boc(data: impl AsRef<[u8]>) -> Result<Cell> {
 }
 
 pub fn read_boc_in_mem(data: Vec<u8>, verify: bool) -> Result<Vec<Cell>> {
-    Ok(BocReader::new().read_in_mem(Arc::new(data), verify)?.roots)
-    // cell::BocBuf::new(data)?.into_root_cells()
+    if verify {
+        Ok(BocReader::new().read_in_mem(Arc::new(data), verify)?.roots)
+    } else {
+        cell::BocBuf::new(data)?.into_root_cells()
+    }
 }
 
 pub fn read_single_root_boc_in_mem(data: Vec<u8>, verify: bool) -> Result<Cell> {
