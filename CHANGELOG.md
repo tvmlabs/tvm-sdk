@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.10.0] - 2025-03-28
+
+### New
+- `BocWriter` parameter `force_store_hashes` - forces storing cell hashes in BOC. It increases BOC size 
+  but speeds up deserialization time.   
+- `BocReader` parameter `force_cell_finalization` - forces cell verification and hash rebuilding when reading
+  cell(s) from BOC. It is by default. Turning this parameter off will speed up deserialization time in case when
+  BOC contains stored hashes.
+
 ## [2.9.2] - 2025-03-18
 
 ### Fixed
