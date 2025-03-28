@@ -895,7 +895,7 @@ pub(crate) fn full_len(buf: &[u8]) -> usize {
 }
 
 pub(crate) fn supports_store_hashes(cell_type: CellType) -> bool {
-    cell_type != CellType::Big && cell_type != CellType::PrunedBranch
+    cell_type == CellType::Ordinary
 }
 
 #[inline(always)]
