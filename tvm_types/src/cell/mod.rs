@@ -903,26 +903,6 @@ pub(crate) fn refs_count(buf: &[u8]) -> usize {
     }
 }
 
-/// Return child indexes.
-/// result.0 contains fixed array of child indexes. But only first items are filled.
-/// result.1 contains actual child count for which result.0 are filled.
-#[inline(always)]
-pub(crate) fn child_indexes(buf: &[u8], ref_size: usize) -> ([usize; 4], usize) {
-    if is_big_cell(buf) {
-        ([0usize; 4], 0)
-    } else {
-        debug_assert!(!buf.is_empty());
-        let mut refs = [0usize; 4];
-        let refs_count = refs_count(buf);
-        let mut ref_start = full_len(buf);
-        for i in 0..refs_count {
-            refs[i] = read_be_int(buf, ref_start, ref_size);
-            ref_start += ref_size;
-        }
-        (refs, refs_count)
-    }
-}
-
 #[inline(always)]
 pub(crate) fn is_big_cell(buf: &[u8]) -> bool {
     debug_assert!(!buf.is_empty());
