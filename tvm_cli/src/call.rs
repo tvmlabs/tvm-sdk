@@ -198,6 +198,7 @@ pub async fn send_message_and_wait(
 pub async fn send_message(
     context: TvmClient,
     msg: String,
+    abi: Option<Abi>,
     config: &Config,
     thread_id: Option<&str>,
 ) -> Result<Value, String> {
@@ -210,6 +211,7 @@ pub async fn send_message(
         context.clone(),
         ParamsOfSendMessage {
             message: msg.clone(),
+            abi,
             thread_id: thread_id.map(ToString::to_string),
             ..Default::default()
         },
@@ -309,7 +311,7 @@ pub async fn call_contract_with_client(
         }
     }
 
-    send_message(tvm_client.clone(), msg, config, thread_id).await
+    send_message(tvm_client.clone(), msg, Some(abi), config, thread_id).await
 }
 
 pub fn print_json_result(result: Value, config: &Config) -> Result<(), String> {

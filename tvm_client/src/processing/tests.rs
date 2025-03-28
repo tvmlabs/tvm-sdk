@@ -773,3 +773,60 @@ fn test_process_message_sync() {
         })
     );
 }
+
+#[allow(clippy::module_inception)]
+#[cfg(test)]
+mod tests {
+    use crate::processing::send_message::decode_send_message_result;
+    use crate::processing::tests::TestClient;
+
+    #[test]
+    fn test_decode_send_message_result_output() {
+        let client = TestClient::new();
+
+        let abi = crate::abi::Abi::Json(
+            json!({
+                "ABI version": 2,
+                "version": "2.4",
+                "header": ["pubkey", "time", "expire"],
+                "functions": [{
+                    "name": "sendTransaction",
+                    "inputs": [
+                            {"name":"dest","type":"address"},
+                            {"name":"value","type":"uint128"},
+                            {"name":"cc","type":"map(uint32,varuint32)"},
+                            {"name":"bounce","type":"bool"},
+                            {"name":"flags","type":"uint8"},
+                            {"name":"payload","type":"cell"}
+                    ],
+                    "outputs": [{"name":"value0","type":"address"}]
+                }],
+                "events": [{
+                    "name": "SentTransaction",
+                    "inputs": [
+                            {"name":"src","type":"address"},
+                            {"name":"dst","type":"address"},
+                            {"name":"value","type":"uint128"}
+                    ],
+                    "outputs": []
+                }]
+            })
+            .to_string(),
+        );
+        let body = json!(
+            "te6ccgEBAQEAKAAAS/4I/2WADu7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7w".to_string()
+        );
+        let expected =
+            json!({"value0": "0:7777777777777777777777777777777777777777777777777777777777777777"});
+
+        let result = decode_send_message_result(&client.context(), abi.clone(), &body);
+        assert!(result == Some(expected));
+
+        // event
+        let body = json!(
+            "te6ccgEBAgEAXQABS0UU8XeACMgteSt64fgM3MmkIPvL/p31cocoQ/E9IDq1jX0lMEvwAQBjgA7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u4AAAAAAAAAAAAAAAAAHoSBA="
+        );
+        let result = decode_send_message_result(&client.context(), abi, &body);
+        assert!(result.is_none());
+    }
+}
