@@ -266,7 +266,13 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
     fn calc_write_cell_size(&self, cell: &Cell) -> Result<usize> {
         let raw_data = cell.raw_data()?;
         if self.force_store_hashes && !cell::store_hashes(raw_data) {
-            Ok(raw_data.len() + hashes_count(raw_data) * (SHA256_SIZE + DEPTH_SIZE))
+            let cell_type = cell::cell_type(raw_data);
+            let hashes_count = match cell_type {
+                CellType::PrunedBranch => 1,
+                CellType::External => 0,
+                _ => hashes_count(raw_data),
+            };
+            Ok(raw_data.len() + hashes_count * (SHA256_SIZE + DEPTH_SIZE))
         } else {
             Ok(raw_data.len())
         }
@@ -284,19 +290,23 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             writer.write_all(&[raw_data[0] | HASHES_D1_FLAG])?;
             writer.write_all(&raw_data[1..2])?;
             let cell_type = cell::cell_type(raw_data);
-            if cell_type == CellType::PrunedBranch {
-                writer.write_all(cell.repr_hash().as_slice())?;
-                writer.write_all(&cell.repr_depth().to_be_bytes())?;
-            } else {
-                let hashes_count = hashes_count(raw_data);
-                if hashes.len() < hashes_count {
-                    fail!("hashes and depths must be the same length");
+            match cell_type {
+                CellType::PrunedBranch => {
+                    writer.write_all(cell.repr_hash().as_slice())?;
+                    writer.write_all(&cell.repr_depth().to_be_bytes())?;
                 }
-                for hash in hashes.iter().take(hashes_count) {
-                    writer.write_all(hash.as_slice())?;
-                }
-                for depth in depths.iter().take(hashes_count) {
-                    writer.write_all(&depth.to_be_bytes())?;
+                CellType::External => {}
+                _ => {
+                    let hashes_count = hashes_count(raw_data);
+                    if hashes.len() < hashes_count {
+                        fail!("hashes and depths must be the same length");
+                    }
+                    for hash in hashes.iter().take(hashes_count) {
+                        writer.write_all(hash.as_slice())?;
+                    }
+                    for depth in depths.iter().take(hashes_count) {
+                        writer.write_all(&depth.to_be_bytes())?;
+                    }
                 }
             }
             writer.write_all(&raw_data[2..])?;
@@ -364,7 +374,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             for cell_index in (0..self.cells_count).rev() {
                 check_abort(self.abort)?;
                 let cell = &self.cells.get_cell_by_index(cell_index as u32)?;
-                total_size += self.calc_write_cell_size(cell)?;
+                total_size += self.calc_write_cell_size(cell)? + cell.references_count() * ref_size;
                 dest.write_all(&(total_size as u64).to_be_bytes()[(8 - offset_size)..8])?;
             }
         }

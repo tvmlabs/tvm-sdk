@@ -12,8 +12,8 @@
 use std::fs::read;
 use std::fs::read_dir;
 use std::path::Path;
-
-use tvm_types::read_single_root_boc_in_mem;
+use std::sync::Arc;
+use tvm_types::BocReader;
 use tvm_types::{BocWriter, read_single_root_boc};
 
 use super::*;
@@ -24,6 +24,68 @@ use crate::bintree::BinTreeType;
 use crate::hashmapaug::HashmapAugType;
 use crate::transactions::tests::generate_test_shard_account_block;
 use crate::write_read_and_assert;
+
+#[inline(never)]
+fn read_file_de_and_serialise(filename: &Path) -> Cell {
+    println!("BOC file: {:?}", filename);
+    let orig_bytes =
+        read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
+
+    let original_root = BocReader::new()
+        .read_in_mem(Arc::new(orig_bytes), true)
+        .unwrap()
+        .withdraw_single_root()
+        .unwrap();
+
+    let mut buf = Vec::<u8>::new();
+    BocWriter::with_roots_ex([original_root.clone()], false)
+        .unwrap()
+        .write_ex(&mut buf, true, false, None, None)
+        .unwrap();
+
+    let root =
+        BocReader::new().read(&mut Cursor::new(&buf)).unwrap().withdraw_single_root().unwrap();
+    cmp_cell(&original_root, &root);
+    println!(">>> {}", 1);
+    let root =
+        BocReader::new().read_in_mem(Arc::new(buf), false).unwrap().withdraw_single_root().unwrap();
+    cmp_cell(&original_root, &root);
+    println!(">>> {}", 2);
+    root
+
+    // let mut root_cells = read_boc(orig_bytes).expect("Error deserializing BOC").roots;
+    // root_cells.remove(0)
+}
+
+fn cmp_cell(cell1: &Cell, cell2: &Cell) {
+    let cell_type = cell1.cell_type();
+    if cell_type != cell2.cell_type() {
+        panic!("Cell types are different");
+    }
+
+    if cell1.repr_hash() != cell2.repr_hash() {
+        println!(
+            "{cell_type} repr_hash are different {:?} vs {:?}",
+            cell1.repr_hash(),
+            cell2.repr_hash()
+        );
+    }
+    if cell1.depths() != cell2.depths() {
+        println!("{cell_type} depths are different {:?} vs {:?}", cell1.depths(), cell2.depths());
+    }
+    if cell1.hashes() != cell2.hashes() {
+        println!("{cell_type} hashes are different {:?} vs {:?}", cell1.hashes(), cell2.hashes());
+    }
+    if cell1.data() != cell2.data() {
+        println!("{cell_type} data are different {:?} vs {:?}", cell1.data(), cell2.data());
+    }
+    if cell1.references_count() != cell2.references_count() {
+        panic!("References count is different");
+    }
+    for i in 0..cell1.references_count() {
+        cmp_cell(&cell1.reference(i).unwrap(), &cell2.reference(i).unwrap())
+    }
+}
 
 #[test]
 fn test_serialize_tick_tock() {
@@ -273,52 +335,6 @@ fn test_value_flow() {
     write_read_and_assert(value_flow_without_copyleft);
 }
 
-fn read_file_de_and_serialise(filename: &Path) -> Cell {
-    println!("BOC file: {:?}", filename);
-    let orig_bytes =
-        read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
-
-    let original_root = read_single_root_boc_in_mem(orig_bytes, true).unwrap();
-
-    let mut buf = Vec::<u8>::new();
-    BocWriter::with_roots_ex([original_root.clone()], true).unwrap().write(&mut buf).unwrap();
-
-    let root = read_single_root_boc_in_mem(buf, false).unwrap();
-    cmp_cell(&original_root, &root);
-    root
-
-    // let mut root_cells = read_boc(orig_bytes).expect("Error deserializing BOC").roots;
-    // root_cells.remove(0)
-}
-
-fn cmp_cell(cell1: &Cell, cell2: &Cell) {
-    // if cell1.hashes() != cell2.hashes() {
-    //     panic!("Hashes are different");
-    // }
-    let cell_type = cell1.cell_type();
-    if cell_type != cell2.cell_type() {
-        panic!("Cell types are different");
-    }
-
-    if cell1.repr_hash() != cell2.repr_hash() {
-        println!("{cell_type} repr_hash are different {:?} vs {:?}", cell1.repr_hash(), cell2.repr_hash());
-    }
-    // if cell1.depths() != cell2.depths() {
-    //     println!("{cell_type} depths are different {:?} vs {:?}", cell1.depths(), cell2.depths());
-    // }
-    if cell1.hashes() != cell2.hashes() {
-        println!("{cell_type} hashes are different {:?} vs {:?}", cell1.hashes(), cell2.hashes());
-    }
-    if cell1.data() != cell2.data() {
-        println!("{cell_type} data are different {:?} vs {:?}", cell1.data(), cell2.data());
-    }
-    if cell1.references_count() != cell2.references_count() {
-        panic!("References count is different");
-    }
-    for i in 0..cell1.references_count() {
-        cmp_cell(&cell1.reference(i).unwrap(), &cell2.reference(i).unwrap())
-    }
-}
 
 #[test]
 fn test_real_tvm_boc() {
