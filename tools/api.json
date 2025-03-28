@@ -10671,16 +10671,13 @@
               "description": null
             },
             {
-              "name": "ext_out_msgs",
+              "name": "return_value",
               "type": "Optional",
               "optional_inner": {
-                "type": "Array",
-                "array_item": {
-                  "type": "Ref",
-                  "ref_name": "Value"
-                }
+                "type": "Ref",
+                "ref_name": "Value"
               },
-              "summary": "The list of external outbound messages.",
+              "summary": "Returned values",
               "description": null
             },
             {
