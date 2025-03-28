@@ -12,9 +12,9 @@
 use std::fs::read;
 use std::fs::read_dir;
 use std::path::Path;
-
-use tvm_types::read_boc;
-use tvm_types::read_single_root_boc;
+use std::sync::Arc;
+use tvm_types::BocReader;
+use tvm_types::{BocWriter, read_single_root_boc};
 
 use super::*;
 use crate::AccountBlock;
@@ -273,11 +273,98 @@ fn test_value_flow() {
     write_read_and_assert(value_flow_without_copyleft);
 }
 
+fn read_boc_ex(boc: &[u8], in_mem: bool, force_cell_finalization: bool) -> Vec<Cell> {
+    let reader = BocReader::new();
+    if in_mem {
+        reader
+            .read_inmem_ex(Arc::new(boc.to_vec()), force_cell_finalization)
+            .expect("Error deserializing BOC")
+            .roots
+    } else {
+        reader.read(&mut Cursor::new(&boc)).expect("Error deserializing BOC").roots
+    }
+}
+
+fn read_boc_checked(
+    boc: &[u8],
+    orig_cells: &[Cell],
+    in_mem: bool,
+    force_finalize_cells: bool,
+) -> Vec<Cell> {
+    let cells = read_boc_ex(boc, in_mem, force_finalize_cells);
+    if cells.len() != orig_cells.len() {
+        panic!("Cells len mismatch: {} != {}", orig_cells.len(), cells.len());
+    }
+    for i in 0..orig_cells.len() {
+        cmp_cell(&orig_cells[i], &cells[i]);
+    }
+    cells
+}
+
+fn write_boc_ex(root_cells: &[Cell], include_index: bool, force_store_hashes: bool) -> Vec<u8> {
+    let mut boc = Vec::new();
+    BocWriter::with_roots_ex(root_cells.to_vec(), force_store_hashes)
+        .unwrap()
+        .write_ex(&mut boc, include_index, false, None, None)
+        .unwrap();
+    boc
+}
+
 fn read_file_de_and_serialise(filename: &Path) -> Cell {
     let orig_bytes =
         read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
-    let mut root_cells = read_boc(orig_bytes).expect("Error deserializing BOC").roots;
-    root_cells.remove(0)
+
+    let orig_cells = read_boc_ex(&orig_bytes, false, false);
+
+    // try in mem
+    for read_inmem in 0..=1 {
+        for read_force in 0..=1 {
+            read_boc_checked(&orig_bytes, &orig_cells, read_inmem == 1, read_force == 1);
+        }
+    }
+
+    // try different ser and deser options
+    for write_index in 0..=1 {
+        for write_force in 0..=1 {
+            let boc = write_boc_ex(&orig_cells, write_index == 1, write_force == 1);
+            for read_inmem in 0..=1 {
+                for read_force in 0..=1 {
+                    read_boc_checked(&boc, &orig_cells, read_inmem == 1, read_force == 1);
+                }
+            }
+        }
+    }
+
+    let mut cells = orig_cells;
+    cells.remove(0)
+}
+
+fn cmp_cell(a: &Cell, b: &Cell) {
+    if a.cell_type() != b.cell_type() {
+        panic!("Cell type mismatch: {} != {}", a.cell_type(), b.cell_type());
+    }
+    if a.repr_hash() != b.repr_hash() {
+        panic!("Cell repr_hash mismatch: {} != {}", a.repr_hash(), b.repr_hash());
+    }
+    if a.data() != b.data() {
+        panic!("Cell data mismatch: {:?} != {:?}", a.data(), b.data());
+    }
+    if a.hashes() != b.hashes() {
+        panic!("Cell hashes mismatch: {:?} != {:?}", a.hashes(), b.hashes());
+    }
+    if a.depths() != b.depths() {
+        panic!("Cell depths mismatch: {:?} != {:?}", a.depths(), b.depths());
+    }
+    if a.references_count() != b.references_count() {
+        panic!(
+            "Cell references_count mismatch: {} != {}",
+            a.references_count(),
+            b.references_count()
+        );
+    }
+    for i in 0..a.references_count() {
+        cmp_cell(&a.reference(i).unwrap(), &b.reference(i).unwrap());
+    }
 }
 
 #[test]

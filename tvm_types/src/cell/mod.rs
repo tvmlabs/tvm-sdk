@@ -894,6 +894,20 @@ pub(crate) fn full_len(buf: &[u8]) -> usize {
     data_offset(buf) + cell_data_len(buf)
 }
 
+pub(crate) fn supports_store_hashes(cell_type: CellType) -> bool {
+    cell_type != CellType::Big && cell_type != CellType::PrunedBranch
+}
+
+#[inline(always)]
+pub(crate) fn full_len_ex(buf: &[u8], force_store_hashes: bool) -> usize {
+    let len = data_offset(buf) + cell_data_len(buf);
+    if supports_store_hashes(cell_type(buf)) && !store_hashes(buf) && force_store_hashes {
+        len + hashes_count(buf) * (SHA256_SIZE + DEPTH_SIZE)
+    } else {
+        len
+    }
+}
+
 #[inline(always)]
 pub(crate) fn hashes_len(buf: &[u8]) -> usize {
     hashes_count(buf) * SHA256_SIZE
@@ -1488,7 +1502,7 @@ impl DataCell {
             hashes,
             depths,
         )?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, true)
     }
 
     pub fn with_external_data(
@@ -1496,24 +1510,27 @@ impl DataCell {
         buffer: &Arc<Vec<u8>>,
         offset: usize,
         max_depth: Option<u16>,
+        force_finalization: bool,
     ) -> Result<DataCell> {
         let cell_data = CellData::with_external_data(buffer, offset)?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, force_finalization)
     }
 
     pub fn with_raw_data(
         references: Vec<Cell>,
         data: Vec<u8>,
         max_depth: Option<u16>,
+        force_finalization: bool,
     ) -> Result<DataCell> {
         let cell_data = CellData::with_raw_data(data)?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, force_finalization)
     }
 
     fn construct_cell(
         cell_data: CellData,
         references: Vec<Cell>,
         max_depth: Option<u16>,
+        force_finalization: bool,
     ) -> Result<DataCell> {
         const MAX_56_BITS: u64 = 0x00FF_FFFF_FFFF_FFFFu64;
         let mut tree_bits_count = cell_data.bit_length() as u64;
@@ -1529,7 +1546,7 @@ impl DataCell {
             tree_cell_count = MAX_56_BITS;
         }
         let mut cell = DataCell { cell_data, references, tree_bits_count, tree_cell_count };
-        cell.finalize(true, max_depth)?;
+        cell.finalize(force_finalization, max_depth)?;
         Ok(cell)
     }
 
