@@ -10671,6 +10671,16 @@
               "description": null
             },
             {
+              "name": "return_value",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "Ref",
+                "ref_name": "Value"
+              },
+              "summary": "Returned values",
+              "description": null
+            },
+            {
               "name": "aborted",
               "type": "Optional",
               "optional_inner": {
