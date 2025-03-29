@@ -34,11 +34,11 @@ use crate::MAX_REFERENCES_COUNT;
 use crate::Result;
 use crate::Status;
 use crate::UInt256;
+use crate::cell::DataCell;
 use crate::cell::SHA256_SIZE;
 use crate::cell::{self};
 use crate::cell::{Cell, store_hashes};
 use crate::cell::{DEPTH_SIZE, HASHES_D1_FLAG};
-use crate::cell::{DataCell, hashes_count};
 use crate::cell::{MAX_DATA_BYTES, full_len_ex};
 use crate::cell::{MAX_SAFE_DEPTH, supports_store_hashes};
 use crate::crc32_digest;
@@ -597,11 +597,11 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             {
                 dest.write_all(&[raw_data[0] | HASHES_D1_FLAG])?;
                 dest.write_all(&raw_data[1..2])?;
-                let hashes_count = hashes_count(raw_data);
-                for hash in cell.hashes().iter().take(hashes_count) {
+                let hashes_depths = cell.store_hashes_depths()?;
+                for (hash, _) in &hashes_depths {
                     dest.write_all(hash.as_slice())?
                 }
-                for depth in cell.depths().iter().take(hashes_count) {
+                for (_, depth) in &hashes_depths {
                     dest.write_all(&depth.to_be_bytes())?
                 }
                 dest.write_all(&raw_data[2..])?;

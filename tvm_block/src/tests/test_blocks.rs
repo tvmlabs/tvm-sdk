@@ -327,6 +327,9 @@ fn read_file_de_and_serialise(filename: &Path) -> Cell {
     for write_index in 0..=1 {
         for write_force in 0..=1 {
             let boc = write_boc_ex(&orig_cells, write_index == 1, write_force == 1);
+            if write_index == 0 && write_force == 1 {
+                println!("BOC size: {} vs {}", boc.len(), orig_bytes.len());
+            }
             for read_inmem in 0..=1 {
                 for read_force in 0..=1 {
                     read_boc_checked(&boc, &orig_cells, read_inmem == 1, read_force == 1);

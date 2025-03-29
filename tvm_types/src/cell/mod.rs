@@ -247,6 +247,8 @@ pub trait CellImpl: Sync + Send {
     fn depth(&self, index: usize) -> u16;
     fn store_hashes(&self) -> bool;
 
+    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>>;
+
     fn level(&self) -> u8 {
         self.level_mask().level()
     }
@@ -385,6 +387,10 @@ impl Cell {
 
     pub fn hashes_count(&self) -> usize {
         self.0.level() as usize + 1
+    }
+
+    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>> {
+        self.0.store_hashes_depths()
     }
 
     pub fn count_cells(&self, max: usize) -> Result<usize> {
@@ -1877,6 +1883,22 @@ impl CellImpl for DataCell {
         self.cell_data().store_hashes()
     }
 
+    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>> {
+        let raw_data = self.raw_data()?;
+        Ok(if store_hashes(raw_data) {
+            let hashes_count = hashes_count(raw_data);
+            let mut result = Vec::with_capacity(hashes_count);
+            for i in 0..hashes_count {
+                let hash = hash(raw_data, i).into();
+                let depth = depth(raw_data, i);
+                result.push((hash, depth));
+            }
+            result
+        } else {
+            self.cell_data.hashes_depths.clone()
+        })
+    }
+
     fn tree_bits_count(&self) -> u64 {
         self.tree_bits_count
     }
@@ -2013,6 +2035,10 @@ impl CellImpl for UsageCell {
         self.cell.store_hashes()
     }
 
+    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>> {
+        self.cell.store_hashes_depths()
+    }
+
     fn tree_bits_count(&self) -> u64 {
         self.cell.tree_bits_count()
     }
@@ -2097,6 +2123,10 @@ impl CellImpl for VirtualCell {
 
     fn store_hashes(&self) -> bool {
         self.cell.store_hashes()
+    }
+
+    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>> {
+        self.cell.store_hashes_depths()
     }
 
     fn tree_bits_count(&self) -> u64 {
