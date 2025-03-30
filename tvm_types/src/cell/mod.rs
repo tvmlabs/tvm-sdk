@@ -901,26 +901,6 @@ pub(crate) fn full_len(buf: &[u8]) -> usize {
     data_offset(buf) + cell_data_len(buf)
 }
 
-pub(crate) fn supports_store_hashes(cell_type: CellType) -> bool {
-    cell_type == CellType::Ordinary
-}
-
-#[inline(always)]
-pub(crate) fn boc_cell_len(cell: &Cell, force_store_hashes: bool) -> Result<usize> {
-    let raw_data = cell.raw_data()?;
-    let len = data_offset(raw_data) + cell_data_len(raw_data);
-    Ok(
-        if supports_store_hashes(cell_type(raw_data))
-            && !store_hashes(raw_data)
-            && force_store_hashes
-        {
-            len + cell.store_hashes_depths_len() * (SHA256_SIZE + DEPTH_SIZE)
-        } else {
-            len
-        },
-    )
-}
-
 #[inline(always)]
 pub(crate) fn hashes_len(buf: &[u8]) -> usize {
     hashes_count(buf) * SHA256_SIZE

@@ -34,13 +34,13 @@ use crate::MAX_REFERENCES_COUNT;
 use crate::Result;
 use crate::Status;
 use crate::UInt256;
-use crate::cell::MAX_DATA_BYTES;
-use crate::cell::SHA256_SIZE;
+use crate::cell::DataCell;
+use crate::cell::MAX_SAFE_DEPTH;
 use crate::cell::{self};
 use crate::cell::{Cell, store_hashes};
 use crate::cell::{DEPTH_SIZE, HASHES_D1_FLAG};
-use crate::cell::{DataCell, boc_cell_len};
-use crate::cell::{MAX_SAFE_DEPTH, supports_store_hashes};
+use crate::cell::{MAX_DATA_BYTES, hashes_count};
+use crate::cell::{SHA256_SIZE, cell_data_len, cell_type, data_offset};
 use crate::crc32_digest;
 use crate::error;
 use crate::fail;
@@ -114,6 +114,18 @@ impl OrderedCellsStorage for SimpleOrderedCellsStorage {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct BocWriterOptions {
+    pub max_depth: u16,
+    pub store_hashes: Option<bool>,
+}
+
+impl Default for BocWriterOptions {
+    fn default() -> Self {
+        Self { max_depth: MAX_SAFE_DEPTH, store_hashes: None }
+    }
+}
+
 #[derive(Clone)]
 pub struct BocWriter<'a, S: OrderedCellsStorage> {
     roots_indexes_rev: Vec<usize>,
@@ -124,7 +136,7 @@ pub struct BocWriter<'a, S: OrderedCellsStorage> {
     big_cells_count: usize,
     big_cells_size: usize,
     abort: &'a dyn Fn() -> bool,
-    force_store_hashes: bool,
+    options: BocWriterOptions,
 }
 
 pub fn write_boc(root_cell: &Cell) -> Result<Vec<u8>> {
@@ -143,22 +155,21 @@ impl<'a> BocWriter<'a, SimpleOrderedCellsStorage> {
     }
 
     pub fn with_roots(root_cells: impl IntoIterator<Item = Cell>) -> Result<Self> {
-        Self::with_roots_ex(root_cells, false)
+        Self::with_roots_ex(root_cells, Default::default())
     }
 
     pub fn with_roots_ex(
         root_cells: impl IntoIterator<Item = Cell>,
-        force_store_hashes: bool,
+        options: BocWriterOptions,
     ) -> Result<Self> {
         fn default_abort() -> bool {
             false
         }
         BocWriter::<SimpleOrderedCellsStorage>::with_params(
             root_cells,
-            MAX_SAFE_DEPTH,
             SimpleOrderedCellsStorage::default(),
             &default_abort,
-            force_store_hashes,
+            options,
         )
     }
 }
@@ -418,13 +429,69 @@ impl BocWriterStack {
     }
 }
 
+fn supports_store_hashes(cell_type: CellType) -> bool {
+    cell_type == CellType::Ordinary
+}
+
+fn boc_cell_len(cell: &Cell, store_hashes: Option<bool>) -> Result<usize> {
+    let raw_data = cell.raw_data()?;
+    let mut len = data_offset(raw_data) + cell_data_len(raw_data);
+    if supports_store_hashes(cell_type(raw_data)) {
+        match store_hashes {
+            Some(true) if !self::store_hashes(raw_data) => {
+                len += hashes_count(raw_data) * (SHA256_SIZE + DEPTH_SIZE);
+            }
+            Some(false) if self::store_hashes(raw_data) => {
+                len -= hashes_count(raw_data) * (SHA256_SIZE + DEPTH_SIZE);
+            }
+            _ => {}
+        }
+    }
+    Ok(len)
+}
+
+fn write_boc_cell<W: Write>(writer: &mut W, cell: &Cell, store_hashes: Option<bool>) -> Result<()> {
+    let raw_data = cell.raw_data()?;
+    if supports_store_hashes(cell_type(raw_data)) {
+        match store_hashes {
+            Some(true) if !cell::store_hashes(raw_data) => {
+                // insert hashes
+                writer.write_all(&[raw_data[0] | HASHES_D1_FLAG])?;
+                writer.write_all(&raw_data[1..2])?;
+                let hashes_depths = cell.store_hashes_depths();
+                if hashes_depths.len() != hashes_count(raw_data) {
+                    fail!("Invalid hashes count");
+                }
+                for (hash, _) in &hashes_depths {
+                    writer.write_all(hash.as_slice())?
+                }
+                for (_, depth) in &hashes_depths {
+                    writer.write_all(&depth.to_be_bytes())?
+                }
+                writer.write_all(&raw_data[2..])?;
+                return Ok(());
+            }
+            Some(false) if self::store_hashes(raw_data) => {
+                // remove hashes
+                writer.write_all(&[raw_data[0] & !HASHES_D1_FLAG])?;
+                writer.write_all(&raw_data[1..2])?;
+                let hashes_len = hashes_count(raw_data) * (SHA256_SIZE + DEPTH_SIZE);
+                writer.write_all(&raw_data[2 + hashes_len..])?;
+                return Ok(());
+            }
+            _ => {}
+        }
+    }
+    writer.write_all(&raw_data)?;
+    Ok(())
+}
+
 impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
     pub fn with_params(
         root_cells: impl IntoIterator<Item = Cell>,
-        max_depth: u16,
         cells_storage: S,
         abort: &'a dyn Fn() -> bool,
-        force_store_hashes: bool,
+        options: BocWriterOptions,
     ) -> Result<Self> {
         let mut boc = BocWriter {
             roots_indexes_rev: Vec::new(),
@@ -435,7 +502,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             big_cells_count: 0,
             big_cells_size: 0,
             abort,
-            force_store_hashes,
+            options,
         };
         let mut roots_set = HashSet::new();
         for root_cell in root_cells {
@@ -446,8 +513,13 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
                 fail!("roots must be all unique")
             }
             let depth = root_cell.repr_depth();
-            if depth > max_depth {
-                fail!("Cell {:x} is too deep: {} > {}", root_cell.repr_hash(), depth, max_depth);
+            if depth > options.max_depth {
+                fail!(
+                    "Cell {:x} is too deep: {} > {}",
+                    root_cell.repr_hash(),
+                    depth,
+                    options.max_depth
+                );
             }
 
             if let Ok(rev_index) = boc.cells.get_rev_index_by_hash(&root_cell.repr_hash()) {
@@ -579,7 +651,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             for cell_index in (0..self.cells_count).rev() {
                 check_abort(self.abort)?;
                 let cell = &self.cells.get_cell_by_index(cell_index as u32)?;
-                total_size += boc_cell_len(cell, self.force_store_hashes)?
+                total_size += boc_cell_len(cell, self.options.store_hashes)?
                     + ref_size * cell.references_count();
                 dest.write_all(&(total_size as u64).to_be_bytes()[(8 - offset_size)..8])?;
             }
@@ -589,25 +661,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
         for cell_rev_index in (0..self.cells_count).rev() {
             check_abort(self.abort)?;
             let cell = &self.cells.get_cell_by_index(cell_rev_index as u32)?;
-            let raw_data = cell.raw_data()?;
-            let cell_type = cell::cell_type(raw_data);
-            if supports_store_hashes(cell_type)
-                && !store_hashes(raw_data)
-                && self.force_store_hashes
-            {
-                dest.write_all(&[raw_data[0] | HASHES_D1_FLAG])?;
-                dest.write_all(&raw_data[1..2])?;
-                let hashes_depths = cell.store_hashes_depths();
-                for (hash, _) in &hashes_depths {
-                    dest.write_all(hash.as_slice())?
-                }
-                for (_, depth) in &hashes_depths {
-                    dest.write_all(&depth.to_be_bytes())?
-                }
-                dest.write_all(&raw_data[2..])?;
-            } else {
-                dest.write_all(raw_data)?;
-            }
+            write_boc_cell(dest, cell, self.options.store_hashes)?;
             let cell_index = self.cells_count - 1 - cell_rev_index;
             for i in 0..cell.references_count() {
                 let child_hash = cell.reference_repr_hash(i).unwrap();
@@ -670,7 +724,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
 
     fn update_counters(&mut self, cell: &Cell) -> Result<()> {
         self.cells_count += 1;
-        let cell_size = boc_cell_len(cell, self.force_store_hashes)?;
+        let cell_size = boc_cell_len(cell, self.options.store_hashes)?;
         self.data_size += cell_size;
         self.references += cell.references_count();
         if cell.cell_type() == CellType::Big {
