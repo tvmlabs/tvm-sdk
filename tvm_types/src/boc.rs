@@ -34,12 +34,12 @@ use crate::MAX_REFERENCES_COUNT;
 use crate::Result;
 use crate::Status;
 use crate::UInt256;
-use crate::cell::DataCell;
+use crate::cell::MAX_DATA_BYTES;
 use crate::cell::SHA256_SIZE;
 use crate::cell::{self};
 use crate::cell::{Cell, store_hashes};
 use crate::cell::{DEPTH_SIZE, HASHES_D1_FLAG};
-use crate::cell::{MAX_DATA_BYTES, full_len_ex};
+use crate::cell::{DataCell, boc_cell_len};
 use crate::cell::{MAX_SAFE_DEPTH, supports_store_hashes};
 use crate::crc32_digest;
 use crate::error;
@@ -579,7 +579,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             for cell_index in (0..self.cells_count).rev() {
                 check_abort(self.abort)?;
                 let cell = &self.cells.get_cell_by_index(cell_index as u32)?;
-                total_size += full_len_ex(cell.raw_data()?, self.force_store_hashes)
+                total_size += boc_cell_len(cell, self.force_store_hashes)?
                     + ref_size * cell.references_count();
                 dest.write_all(&(total_size as u64).to_be_bytes()[(8 - offset_size)..8])?;
             }
@@ -597,7 +597,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             {
                 dest.write_all(&[raw_data[0] | HASHES_D1_FLAG])?;
                 dest.write_all(&raw_data[1..2])?;
-                let hashes_depths = cell.store_hashes_depths()?;
+                let hashes_depths = cell.store_hashes_depths();
                 for (hash, _) in &hashes_depths {
                     dest.write_all(hash.as_slice())?
                 }
@@ -670,7 +670,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
 
     fn update_counters(&mut self, cell: &Cell) -> Result<()> {
         self.cells_count += 1;
-        let cell_size = full_len_ex(cell.raw_data()?, self.force_store_hashes);
+        let cell_size = boc_cell_len(cell, self.force_store_hashes)?;
         self.data_size += cell_size;
         self.references += cell.references_count();
         if cell.cell_type() == CellType::Big {

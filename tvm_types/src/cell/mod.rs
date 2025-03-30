@@ -247,7 +247,8 @@ pub trait CellImpl: Sync + Send {
     fn depth(&self, index: usize) -> u16;
     fn store_hashes(&self) -> bool;
 
-    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>>;
+    fn store_hashes_depths_len(&self) -> usize;
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)>;
 
     fn level(&self) -> u8 {
         self.level_mask().level()
@@ -389,7 +390,7 @@ impl Cell {
         self.0.level() as usize + 1
     }
 
-    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>> {
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
         self.0.store_hashes_depths()
     }
 
@@ -905,13 +906,19 @@ pub(crate) fn supports_store_hashes(cell_type: CellType) -> bool {
 }
 
 #[inline(always)]
-pub(crate) fn full_len_ex(buf: &[u8], force_store_hashes: bool) -> usize {
-    let len = data_offset(buf) + cell_data_len(buf);
-    if supports_store_hashes(cell_type(buf)) && !store_hashes(buf) && force_store_hashes {
-        len + hashes_count(buf) * (SHA256_SIZE + DEPTH_SIZE)
-    } else {
-        len
-    }
+pub(crate) fn boc_cell_len(cell: &Cell, force_store_hashes: bool) -> Result<usize> {
+    let raw_data = cell.raw_data()?;
+    let len = data_offset(raw_data) + cell_data_len(raw_data);
+    Ok(
+        if supports_store_hashes(cell_type(raw_data))
+            && !store_hashes(raw_data)
+            && force_store_hashes
+        {
+            len + cell.store_hashes_depths_len() * (SHA256_SIZE + DEPTH_SIZE)
+        } else {
+            len
+        },
+    )
 }
 
 #[inline(always)]
@@ -1883,9 +1890,18 @@ impl CellImpl for DataCell {
         self.cell_data().store_hashes()
     }
 
-    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>> {
-        let raw_data = self.raw_data()?;
-        Ok(if store_hashes(raw_data) {
+    fn store_hashes_depths_len(&self) -> usize {
+        let raw_data = self.cell_data().buf.unbounded_data();
+        if store_hashes(raw_data) {
+            hashes_count(raw_data)
+        } else {
+            self.cell_data.hashes_depths.len()
+        }
+    }
+
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
+        let raw_data = self.cell_data().buf.unbounded_data();
+        if store_hashes(raw_data) {
             let hashes_count = hashes_count(raw_data);
             let mut result = Vec::with_capacity(hashes_count);
             for i in 0..hashes_count {
@@ -1896,7 +1912,7 @@ impl CellImpl for DataCell {
             result
         } else {
             self.cell_data.hashes_depths.clone()
-        })
+        }
     }
 
     fn tree_bits_count(&self) -> u64 {
@@ -2035,7 +2051,11 @@ impl CellImpl for UsageCell {
         self.cell.store_hashes()
     }
 
-    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>> {
+    fn store_hashes_depths_len(&self) -> usize {
+        self.cell.store_hashes_depths_len()
+    }
+
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
         self.cell.store_hashes_depths()
     }
 
@@ -2125,7 +2145,11 @@ impl CellImpl for VirtualCell {
         self.cell.store_hashes()
     }
 
-    fn store_hashes_depths(&self) -> Result<Vec<(UInt256, u16)>> {
+    fn store_hashes_depths_len(&self) -> usize {
+        self.cell.store_hashes_depths_len()
+    }
+
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
         self.cell.store_hashes_depths()
     }
 
