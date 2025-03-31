@@ -40,8 +40,10 @@ fn collect_boc_files(path: impl AsRef<Path>, result: &mut Vec<PathBuf>) -> std::
 fn read_boc_ex(boc: &[u8], in_mem: bool, force_cell_finalization: bool) -> Vec<Cell> {
     let reader = BocReader::new();
     if in_mem {
+        let boc = Arc::new(boc.to_vec());
+        let len = boc.len();
         reader
-            .read_inmem_ex(Arc::new(boc.to_vec()), 0, force_cell_finalization)
+            .read_inmem_ex(boc, 0..len, force_cell_finalization)
             .expect("Error deserializing BOC")
             .roots
     } else {

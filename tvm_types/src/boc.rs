@@ -18,7 +18,7 @@ use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
-use std::ops::Deref;
+use std::ops::{Deref, Range};
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -990,23 +990,29 @@ impl<'a> BocReader<'a> {
     }
 
     pub fn read_inmem(self, data: Arc<Vec<u8>>) -> Result<BocReaderResult> {
-        Self::read_inmem_ex(self, data, 0, true)
+        let len = data.len();
+        Self::read_inmem_ex(self, data, 0..len, true)
     }
 
     pub fn read_inmem_ex(
         mut self,
         data: Arc<Vec<u8>>,
-        offset: usize,
+        range: Range<usize>,
         force_cell_finalization: bool,
     ) -> Result<BocReaderResult> {
         #[cfg(not(target_family = "wasm"))]
         let now = std::time::Instant::now();
         let mut src = Cursor::new(data.deref());
-        src.seek(SeekFrom::Start(offset as u64))?;
+        src.seek(SeekFrom::Start(range.start as u64))?;
 
         let header = Self::read_header(&mut src)?;
 
-        Self::precheck_cells_tree_len(&header, src.position(), data.len() as u64, false)?;
+        Self::precheck_cells_tree_len(
+            &header,
+            src.position() - range.start as u64,
+            range.len() as u64,
+            false,
+        )?;
 
         // Index processing - read existing index or traverse all vector to create own
         // index2
