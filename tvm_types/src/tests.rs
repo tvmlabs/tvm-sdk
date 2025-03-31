@@ -41,7 +41,7 @@ fn read_boc_ex(boc: &[u8], in_mem: bool, force_cell_finalization: bool) -> Vec<C
     let reader = BocReader::new();
     if in_mem {
         reader
-            .read_inmem_ex(Arc::new(boc.to_vec()), force_cell_finalization)
+            .read_inmem_ex(Arc::new(boc.to_vec()), 0, force_cell_finalization)
             .expect("Error deserializing BOC")
             .roots
     } else {

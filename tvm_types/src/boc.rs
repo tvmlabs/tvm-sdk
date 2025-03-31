@@ -990,17 +990,19 @@ impl<'a> BocReader<'a> {
     }
 
     pub fn read_inmem(self, data: Arc<Vec<u8>>) -> Result<BocReaderResult> {
-        Self::read_inmem_ex(self, data, true)
+        Self::read_inmem_ex(self, data, 0, true)
     }
 
     pub fn read_inmem_ex(
         mut self,
         data: Arc<Vec<u8>>,
+        offset: usize,
         force_cell_finalization: bool,
     ) -> Result<BocReaderResult> {
         #[cfg(not(target_family = "wasm"))]
         let now = std::time::Instant::now();
         let mut src = Cursor::new(data.deref());
+        src.seek(SeekFrom::Start(offset as u64))?;
 
         let header = Self::read_header(&mut src)?;
 
