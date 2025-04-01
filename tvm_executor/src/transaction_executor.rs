@@ -107,7 +107,7 @@ const MAX_ACTIONS: usize = 255;
 const MAX_MSG_BITS: usize = 1 << 21;
 const MAX_MSG_CELLS: usize = 1 << 13;
 
-const STORAGE_FEE_COOLER_TIME: u32 = 2592000;
+const STORAGE_FEE_COOLER_TIME: u32 = 10/* 2592000 */;
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum IncorrectCheckRewrite {
