@@ -11,6 +11,12 @@ All notable changes to this project will be documented in this file.
   cell(s) from BOC. It is by default. Turning this parameter off will speed up deserialization time in case when
   BOC contains stored hashes.
 
+## [2.10.0] - 2025-03-28
+
+### New
+
+- `return_value` is added to the `ResultOfSendMessage` - returns the executed contract's return value
+
 ## [2.9.2] - 2025-03-18
 
 ### Fixed
