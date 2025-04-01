@@ -247,6 +247,9 @@ pub trait CellImpl: Sync + Send {
     fn depth(&self, index: usize) -> u16;
     fn store_hashes(&self) -> bool;
 
+    fn store_hashes_depths_len(&self) -> usize;
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)>;
+
     fn level(&self) -> u8 {
         self.level_mask().level()
     }
@@ -385,6 +388,10 @@ impl Cell {
 
     pub fn hashes_count(&self) -> usize {
         self.0.level() as usize + 1
+    }
+
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
+        self.0.store_hashes_depths()
     }
 
     pub fn count_cells(&self, max: usize) -> Result<usize> {
@@ -1488,7 +1495,7 @@ impl DataCell {
             hashes,
             depths,
         )?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, true)
     }
 
     pub fn with_external_data(
@@ -1496,24 +1503,27 @@ impl DataCell {
         buffer: &Arc<Vec<u8>>,
         offset: usize,
         max_depth: Option<u16>,
+        force_finalization: bool,
     ) -> Result<DataCell> {
         let cell_data = CellData::with_external_data(buffer, offset)?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, force_finalization)
     }
 
     pub fn with_raw_data(
         references: Vec<Cell>,
         data: Vec<u8>,
         max_depth: Option<u16>,
+        force_finalization: bool,
     ) -> Result<DataCell> {
         let cell_data = CellData::with_raw_data(data)?;
-        Self::construct_cell(cell_data, references, max_depth)
+        Self::construct_cell(cell_data, references, max_depth, force_finalization)
     }
 
     fn construct_cell(
         cell_data: CellData,
         references: Vec<Cell>,
         max_depth: Option<u16>,
+        force_finalization: bool,
     ) -> Result<DataCell> {
         const MAX_56_BITS: u64 = 0x00FF_FFFF_FFFF_FFFFu64;
         let mut tree_bits_count = cell_data.bit_length() as u64;
@@ -1529,7 +1539,7 @@ impl DataCell {
             tree_cell_count = MAX_56_BITS;
         }
         let mut cell = DataCell { cell_data, references, tree_bits_count, tree_cell_count };
-        cell.finalize(true, max_depth)?;
+        cell.finalize(force_finalization, max_depth)?;
         Ok(cell)
     }
 
@@ -1860,6 +1870,31 @@ impl CellImpl for DataCell {
         self.cell_data().store_hashes()
     }
 
+    fn store_hashes_depths_len(&self) -> usize {
+        let raw_data = self.cell_data().buf.unbounded_data();
+        if store_hashes(raw_data) {
+            hashes_count(raw_data)
+        } else {
+            self.cell_data.hashes_depths.len()
+        }
+    }
+
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
+        let raw_data = self.cell_data().buf.unbounded_data();
+        if store_hashes(raw_data) {
+            let hashes_count = hashes_count(raw_data);
+            let mut result = Vec::with_capacity(hashes_count);
+            for i in 0..hashes_count {
+                let hash = hash(raw_data, i).into();
+                let depth = depth(raw_data, i);
+                result.push((hash, depth));
+            }
+            result
+        } else {
+            self.cell_data.hashes_depths.clone()
+        }
+    }
+
     fn tree_bits_count(&self) -> u64 {
         self.tree_bits_count
     }
@@ -1996,6 +2031,14 @@ impl CellImpl for UsageCell {
         self.cell.store_hashes()
     }
 
+    fn store_hashes_depths_len(&self) -> usize {
+        self.cell.store_hashes_depths_len()
+    }
+
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
+        self.cell.store_hashes_depths()
+    }
+
     fn tree_bits_count(&self) -> u64 {
         self.cell.tree_bits_count()
     }
@@ -2080,6 +2123,14 @@ impl CellImpl for VirtualCell {
 
     fn store_hashes(&self) -> bool {
         self.cell.store_hashes()
+    }
+
+    fn store_hashes_depths_len(&self) -> usize {
+        self.cell.store_hashes_depths_len()
+    }
+
+    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
+        self.cell.store_hashes_depths()
     }
 
     fn tree_bits_count(&self) -> u64 {
