@@ -221,6 +221,35 @@ pub trait TransactionExecutor {
         Ok((transaction, *minted_shell))
     }
 
+    fn execute_with_libs_and_params_without_serde(
+        &self,
+        in_msg: Option<&Message>,
+        account: &mut Account,
+        params: ExecuteParams,
+    ) -> Result<(Transaction, u128)> {
+        // let old_hash = account_root.repr_hash();
+        let minted_shell: &mut u128 = &mut 0;
+        // let mut account = Account::construct_from_cell(account_root.clone())?;
+        let is_previous_state_active = match account.state() {
+            Some(AccountState::AccountUninit {}) => false,
+            None => false,
+            _ => true,
+        };
+        log::trace!(target: "executor", "previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", is_previous_state_active, account, account.state(), minted_shell);
+        let transaction =
+            self.execute_with_params(in_msg, account, params, minted_shell)?;
+        if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
+            account.update_storage_stat_fast()?;
+        } else {
+            account.update_storage_stat()?;
+        }
+        log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
+        // *account_root = account.serialize()?;
+        // let new_hash = account_root.repr_hash();
+        // transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
+        Ok((transaction, *minted_shell))
+    }
+
     #[deprecated]
     fn build_contract_info(
         &self,
