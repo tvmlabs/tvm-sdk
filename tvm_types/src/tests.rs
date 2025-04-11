@@ -104,7 +104,7 @@ fn collect_boc_files(path: impl AsRef<Path>, result: &mut Vec<PathBuf>) -> std::
     }
     Ok(())
 }
-fn read_boc_ex(boc: Arc<Vec<u8>>, in_mem: bool, force_cell_finalization: bool) -> Vec<Cell> {
+fn read_boc_ex(boc: Arc<Vec<u8>>, in_mem: bool, _force_cell_finalization: bool) -> Vec<Cell> {
     let reader = BocReader::new();
     if in_mem {
         let boc_buf = BocBuf::new(boc).unwrap();
@@ -265,6 +265,20 @@ fn cmp_cell(a: &Cell, b: &Cell, info: &str) {
     }
     if a.level() != b.level() {
         panic!("{info} Cell level mismatch: {} != {}", a.level(), b.level());
+    }
+    if a.tree_cell_count() != b.tree_cell_count() {
+        panic!(
+            "{info} Cell tree_cell_count mismatch: {} != {}",
+            a.tree_cell_count(),
+            b.tree_cell_count()
+        );
+    }
+    if a.tree_bits_count() != b.tree_bits_count() {
+        panic!(
+            "{info} Cell tree_bits_count mismatch: {} != {}",
+            a.tree_bits_count(),
+            b.tree_bits_count()
+        );
     }
     for i in 0..a.level() + 1 {
         if a.hash(i as usize) != b.hash(i as usize) {

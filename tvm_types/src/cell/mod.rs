@@ -676,7 +676,7 @@ impl Cell {
         Ok(indent)
     }
 
-    fn tree_bits_count(&self) -> u64 {
+    pub fn tree_bits_count(&self) -> u64 {
         match self {
             Cell::Boc(cell) => cell.tree_bits_count(),
             Cell::Data(cell) => cell.tree_bits_count(),
@@ -684,7 +684,7 @@ impl Cell {
         }
     }
 
-    fn tree_cell_count(&self) -> u64 {
+    pub fn tree_cell_count(&self) -> u64 {
         match self {
             Cell::Boc(cell) => cell.tree_cell_count(),
             Cell::Data(cell) => cell.tree_cell_count(),

@@ -14,6 +14,8 @@ const HASH_INDEX_STORED: u32 = u32::MAX;
 struct CellInfo {
     raw_offset: u32,
     hash_index: u32,
+    tree_bits_count: u64,
+    tree_cells_count: u64,
 }
 
 pub struct BocBuf {
@@ -39,20 +41,23 @@ impl BocBuf {
         for _ in 0_usize..header.cells_count {
             let raw_offset = src.position() as u32;
             let hash_index = Self::pre_scan_cell(&mut src, header.ref_size)?;
-            cell_infos.push(CellInfo { raw_offset, hash_index });
+            cell_infos.push(CellInfo {
+                raw_offset,
+                hash_index,
+                tree_cells_count: 0,
+                tree_bits_count: 0,
+            });
         }
 
         for i in (0..header.cells_count).rev() {
-            if cell_infos[i].hash_index != HASH_INDEX_STORED {
-                Self::calc_hashes(
-                    i,
-                    data.as_slice(),
-                    header.ref_size,
-                    &mut cell_infos,
-                    &mut hashes,
-                    None,
-                )?;
-            }
+            Self::finalize_cell_info(
+                i,
+                data.as_slice(),
+                header.ref_size,
+                &mut cell_infos,
+                &mut hashes,
+                None,
+            )?;
         }
 
         Ok(Self {
@@ -84,7 +89,7 @@ impl BocBuf {
         Ok(if cell::store_hashes(&d1d2) { HASH_INDEX_STORED } else { 0 })
     }
 
-    fn calc_hashes(
+    fn finalize_cell_info(
         cell_index: usize,
         boc: &[u8],
         ref_size: usize,
@@ -94,8 +99,25 @@ impl BocBuf {
     ) -> crate::Result<()> {
         let raw_data = &boc[cell_infos[cell_index].raw_offset as usize..];
         let cell_type = cell::cell_type(raw_data);
+        let cell_data = cell::cell_data(raw_data);
+        let bit_len = cell::bit_len(raw_data);
 
         if cell_type == CellType::External {
+            let lengths_offset = 1 + SHA256_SIZE + 2;
+            let mut reader = Cursor::new(&cell_data[lengths_offset..]);
+            let lengths = reader.read_byte()?;
+            let tree_cells_count_len = (lengths >> 4) as usize;
+            let tree_bits_count_len = (lengths & 0x0F) as usize;
+
+            let mut buffer = [0u8; 8];
+            let _ = reader.read(&mut buffer[tree_cells_count_len..])?;
+            let tree_cell_count = u64::from_be_bytes(buffer);
+            let mut buffer = [0u8; 8];
+            let _ = reader.read(&mut buffer[tree_bits_count_len..])?;
+            let tree_bits_count = u64::from_be_bytes(buffer);
+
+            cell_infos[cell_index].tree_bits_count = tree_bits_count;
+            cell_infos[cell_index].tree_cells_count = tree_cell_count;
             // hashes are not calculated for external cell
             return Ok(());
         }
@@ -105,10 +127,19 @@ impl BocBuf {
         let refs = cell::refs_count(raw_data);
         let refs_start = &raw_data[cell::full_len(raw_data)..];
         let mut children_mask = LevelMask::with_mask(0);
+        const MAX_56_BITS: u64 = 0x00FF_FFFF_FFFF_FFFF;
+        let mut tree_bits_count = bit_len as u64;
+        let mut tree_cell_count = 1u64;
         for r in 0..refs {
-            let (child_raw, _) = raw_child(refs_start, r, ref_size, boc, &cell_infos);
+            let (child_raw, child_info) = raw_child(refs_start, r, ref_size, boc, &cell_infos);
+
+            tree_bits_count = tree_bits_count.saturating_add(child_info.tree_bits_count);
+            tree_cell_count = tree_cell_count.saturating_add(child_info.tree_cells_count);
+
             children_mask |= cell::level_mask(child_raw);
         }
+        cell_infos[cell_index].tree_bits_count = tree_bits_count.min(MAX_56_BITS);
+        cell_infos[cell_index].tree_cells_count = tree_cell_count.min(MAX_56_BITS);
         let level_mask = match cell_type {
             CellType::Ordinary => children_mask,
             CellType::PrunedBranch => cell::level_mask(raw_data),
@@ -128,13 +159,13 @@ impl BocBuf {
             );
         }
 
+        if cell_infos[cell_index].hash_index == HASH_INDEX_STORED {
+            return Ok(());
+        }
         // calculate hashes and depths
 
         let is_merkle_cell = matches!(cell_type, CellType::MerkleProof | CellType::MerkleUpdate);
         let is_pruned_cell = cell_type == CellType::PrunedBranch;
-
-        let cell_data = cell::cell_data(raw_data);
-        let bit_len = cell::bit_len(raw_data);
 
         let mut d1d2: [u8; 2] = raw_data[..2].try_into()?;
 
@@ -221,7 +252,7 @@ impl BocBuf {
         let boc = Arc::new(self);
         let mut cells = vec![];
         for index in &boc.root_indexes {
-            cells.push(Cell::Boc(BocCell::new(boc.clone(), *index as usize)));
+            cells.push(Cell::Boc(BocCell::new(boc.clone(), *index)));
         }
         Ok(cells)
     }
@@ -248,34 +279,38 @@ fn raw_cell_len(raw_data: &[u8], ref_size: usize) -> usize {
 #[derive(Clone)]
 pub struct BocCell {
     boc: Arc<BocBuf>,
-    info: CellInfo,
+    index: u32,
 }
 
 impl BocCell {
-    pub fn new(boc: Arc<BocBuf>, index: usize) -> Self {
-        Self { info: boc.cell_infos[index], boc }
+    pub fn new(boc: Arc<BocBuf>, index: u32) -> Self {
+        Self { index, boc }
     }
 
     fn unbounded_raw_data(&self) -> &[u8] {
-        &self.boc.data[self.info.raw_offset as usize..]
+        &self.boc.data[self.info().raw_offset as usize..]
     }
 
     fn bounded_raw_data(&self) -> &[u8] {
-        let offset = self.info.raw_offset as usize;
+        let offset = self.info().raw_offset as usize;
         let len = raw_cell_len(self.unbounded_raw_data(), self.boc.ref_size);
         &self.boc.data[offset..offset + len]
     }
+
+    fn info(&self) -> &CellInfo {
+        &self.boc.cell_infos[self.index as usize]
+    }
 }
 
-fn raw_child<'a>(
+fn raw_child<'a, 'b>(
     refs_start: &[u8],
     r: usize,
     ref_size: usize,
     boc: &'a [u8],
-    cell_infos: &[CellInfo],
-) -> (&'a [u8], CellInfo) {
+    cell_infos: &'b [CellInfo],
+) -> (&'a [u8], &'b CellInfo) {
     let child_index = read_be_int(refs_start, r * ref_size, ref_size);
-    let child_info = cell_infos[child_index];
+    let child_info = &cell_infos[child_index];
     let child_raw = &boc[child_info.raw_offset as usize..];
     (child_raw, child_info)
 }
@@ -376,7 +411,7 @@ impl CellImpl for BocCell {
         let cell_index =
             read_be_int(raw_data, refs_start + index * self.boc.ref_size, self.boc.ref_size);
 
-        Ok(Cell::Boc(BocCell::new(self.boc.clone(), cell_index)))
+        Ok(Cell::Boc(BocCell::new(self.boc.clone(), cell_index as u32)))
     }
 
     fn cell_type(&self) -> CellType {
@@ -388,11 +423,18 @@ impl CellImpl for BocCell {
     }
 
     fn hash(&self, index: usize) -> UInt256 {
-        raw_hash(self.unbounded_raw_data(), index, self.info.hash_index, &self.boc.hashes).unwrap()
+        raw_hash(
+            self.unbounded_raw_data(),
+            index,
+            self.boc.cell_infos[self.index as usize].hash_index,
+            &self.boc.hashes,
+        )
+        .unwrap()
     }
 
     fn depth(&self, index: usize) -> u16 {
-        raw_depth(self.unbounded_raw_data(), index, self.info.hash_index, &self.boc.hashes).unwrap()
+        raw_depth(self.unbounded_raw_data(), index, self.info().hash_index, &self.boc.hashes)
+            .unwrap()
     }
 
     fn store_hashes(&self) -> bool {
@@ -411,9 +453,17 @@ impl CellImpl for BocCell {
             if cell::store_hashes(raw_data) {
                 result.push((cell::hash(raw_data, i).into(), cell::depth(raw_data, i)));
             } else {
-                result.push(self.boc.hashes[self.info.hash_index as usize + i].clone());
+                result.push(self.boc.hashes[self.info().hash_index as usize + i].clone());
             };
         }
         result
+    }
+
+    fn tree_cell_count(&self) -> u64 {
+        self.info().tree_cells_count
+    }
+
+    fn tree_bits_count(&self) -> u64 {
+        self.info().tree_bits_count
     }
 }
