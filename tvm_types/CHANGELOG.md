@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version 2.11.0
+
+### New
+- `BocWriter` parameter `store_hashes: Option<bool>` - determines how cell stores hashes in BOC.
+  Some(true) – forces storing cell hashes in BOC. It increases BOC size but speeds up deserialization time.
+  Some(false) – forces removing cell hashes from BOC.
+  None – leaves the stored hashes intact as they were loaded from BOC.
+- `BocReader` parameter `force_cell_finalization` - forces cell verification and hash rebuilding when reading
+  cell(s) from BOC. It is by default. Turning this parameter off will speed up deserialization time in case when
+  BOC contains stored hashes.
+
 ## Version 2.0.31
 
 - Add BLS KeyOption from ever-crypto
