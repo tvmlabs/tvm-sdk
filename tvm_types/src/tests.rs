@@ -107,7 +107,8 @@ fn collect_boc_files(path: impl AsRef<Path>, result: &mut Vec<PathBuf>) -> std::
 fn read_boc_ex(boc: Arc<Vec<u8>>, in_mem: bool, _force_cell_finalization: bool) -> Vec<Cell> {
     let reader = BocReader::new();
     if in_mem {
-        let boc_buf = BocBuf::new(boc).unwrap();
+        let range = 0..boc.len();
+        let boc_buf = BocBuf::new(boc, range).unwrap();
         boc_buf.into_root_cells().unwrap()
 
         // let len = boc.len();

@@ -6,6 +6,7 @@ use crate::{
 use crate::{cell, fail};
 use std::cmp::max;
 use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::ops::Range;
 use std::sync::Arc;
 
 const HASH_INDEX_STORED: u32 = u32::MAX;
@@ -27,10 +28,11 @@ pub struct BocBuf {
 }
 
 impl BocBuf {
-    pub fn new(data: Arc<Vec<u8>>) -> Result<Self, failure::Error> {
-        let mut src = Cursor::new(data.as_slice());
+    pub fn new(data: Arc<Vec<u8>>, range: Range<usize>) -> Result<Self, failure::Error> {
+        let boc = &data[range];
+        let mut src = Cursor::new(boc);
         let header = BocReader::read_header(&mut src)?;
-        BocReader::precheck_cells_tree_len(&header, src.position(), data.len() as u64, false)?;
+        BocReader::precheck_cells_tree_len(&header, src.position(), boc.len() as u64, false)?;
 
         let mut cell_infos = Vec::with_capacity(header.cells_count);
         let mut hashes = Vec::new();
@@ -50,14 +52,7 @@ impl BocBuf {
         }
 
         for i in (0..header.cells_count).rev() {
-            Self::finalize_cell_info(
-                i,
-                data.as_slice(),
-                header.ref_size,
-                &mut cell_infos,
-                &mut hashes,
-                None,
-            )?;
+            Self::finalize_cell_info(i, boc, header.ref_size, &mut cell_infos, &mut hashes, None)?;
         }
 
         Ok(Self {
