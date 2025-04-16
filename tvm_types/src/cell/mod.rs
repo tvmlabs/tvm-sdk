@@ -282,25 +282,22 @@ pub trait CellImpl: Sync + Send {
     }
 }
 
-pub enum Cell {
-    Boc(BocCell),
-    Data(DataCell),
-    Dyn(Arc<dyn CellImpl>),
-}
+pub struct Cell(Arc<dyn CellImpl>);
 
 lazy_static::lazy_static! {
-    pub(crate) static ref CELL_DEFAULT: Cell = Cell::Dyn(Arc::new(DataCell::new()));
+    pub(crate) static ref CELL_DEFAULT: Cell = Cell::with_data(DataCell::new());
     static ref CELL_COUNT: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
     // static ref FINALIZATION_NANOS: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
 }
 
 impl Clone for Cell {
     fn clone(&self) -> Self {
-        match self {
-            Cell::Boc(boc) => Cell::Boc(boc.clone()),
-            Cell::Data(cell) => Cell::Data(cell.clone()),
-            Cell::Dyn(cell) => Cell::with_dyn_arc(cell.clone()),
-        }
+        Self(self.0.clone())
+        // match self {
+        //     Cell::Boc(boc) => Cell::Boc(boc.clone()),
+        //     Cell::Data(cell) => Cell::Data(cell.clone()),
+        //     Cell::Dyn(cell) => Cell::with_dyn_arc(cell.clone()),
+        // }
     }
 }
 
@@ -320,23 +317,34 @@ impl Cell {
     }
 
     pub fn virtualization(&self) -> u8 {
-        match self {
-            Cell::Boc(cell) => cell.virtualization(),
-            Cell::Data(cell) => cell.virtualization(),
-            Cell::Dyn(cell) => cell.virtualization(),
-        }
+        self.0.virtualization()
+        // match self {
+        //     Cell::Boc(cell) => cell.virtualization(),
+        //     Cell::Data(cell) => cell.virtualization(),
+        //     Cell::Dyn(cell) => cell.virtualization(),
+        // }
     }
 
     pub fn with_dyn<T: 'static + CellImpl>(cell_impl: T) -> Self {
-        let ret = Cell::Dyn(Arc::new(cell_impl));
+        let ret = Cell(Arc::new(cell_impl));
         CELL_COUNT.fetch_add(1, Ordering::Relaxed);
         ret
     }
 
     pub fn with_dyn_arc(cell_impl: Arc<dyn CellImpl>) -> Self {
-        let ret = Cell::Dyn(cell_impl);
+        let ret = Cell(cell_impl);
         CELL_COUNT.fetch_add(1, Ordering::Relaxed);
         ret
+    }
+
+    pub fn with_boc(cell: BocCell) -> Self {
+        Self(Arc::new(cell))
+        // Self::Boc(cell)
+    }
+
+    pub fn with_data(cell: DataCell) -> Self {
+        Self(Arc::new(cell))
+        // Self::Data(cell)
     }
 
     pub fn cell_count() -> u64 {
@@ -348,19 +356,21 @@ impl Cell {
     // }
 
     pub fn reference(&self, index: usize) -> Result<Cell> {
-        match self {
-            Cell::Boc(cell) => cell.reference(index),
-            Cell::Data(cell) => cell.reference(index),
-            Cell::Dyn(cell) => cell.reference(index),
-        }
+        self.0.reference(index)
+        // match self {
+        //     Cell::Boc(cell) => cell.reference(index),
+        //     Cell::Data(cell) => cell.reference(index),
+        //     Cell::Dyn(cell) => cell.reference(index),
+        // }
     }
 
     pub fn reference_repr_hash(&self, index: usize) -> Result<UInt256> {
-        match self {
-            Cell::Boc(cell) => cell.reference_repr_hash(index),
-            Cell::Data(cell) => cell.reference_repr_hash(index),
-            Cell::Dyn(cell) => cell.reference_repr_hash(index),
-        }
+        self.0.reference_repr_hash(index)
+        // match self {
+        //     Cell::Boc(cell) => cell.reference_repr_hash(index),
+        //     Cell::Data(cell) => cell.reference_repr_hash(index),
+        //     Cell::Dyn(cell) => cell.reference_repr_hash(index),
+        // }
     }
 
     // TODO: make as simple clone
@@ -374,43 +384,48 @@ impl Cell {
     }
 
     pub fn data(&self) -> &[u8] {
-        match self {
-            Cell::Boc(cell) => cell.data(),
-            Cell::Data(cell) => cell.data(),
-            Cell::Dyn(cell) => cell.data(),
-        }
+        self.0.data()
+        // match self {
+        //     Cell::Boc(cell) => cell.data(),
+        //     Cell::Data(cell) => cell.data(),
+        //     Cell::Dyn(cell) => cell.data(),
+        // }
     }
 
     pub fn raw_data(&self) -> Result<&[u8]> {
-        match self {
-            Cell::Boc(cell) => cell.raw_data(),
-            Cell::Data(cell) => cell.raw_data(),
-            Cell::Dyn(cell) => cell.raw_data(),
-        }
+        self.0.raw_data()
+        // match self {
+        //     Cell::Boc(cell) => cell.raw_data(),
+        //     Cell::Data(cell) => cell.raw_data(),
+        //     Cell::Dyn(cell) => cell.raw_data(),
+        // }
     }
 
     pub fn bit_length(&self) -> usize {
-        match self {
-            Cell::Boc(cell) => cell.bit_length(),
-            Cell::Data(cell) => cell.bit_length(),
-            Cell::Dyn(cell) => cell.bit_length(),
-        }
+        self.0.bit_length()
+        // match self {
+        //     Cell::Boc(cell) => cell.bit_length(),
+        //     Cell::Data(cell) => cell.bit_length(),
+        //     Cell::Dyn(cell) => cell.bit_length(),
+        // }
     }
 
     pub fn cell_type(&self) -> CellType {
-        match self {
-            Cell::Boc(cell) => cell.cell_type(),
-            Cell::Data(cell) => cell.cell_type(),
-            Cell::Dyn(cell) => cell.cell_type(),
-        }
+        self.0.cell_type()
+        // match self {
+        //     Cell::Boc(cell) => cell.cell_type(),
+        //     Cell::Data(cell) => cell.cell_type(),
+        //     Cell::Dyn(cell) => cell.cell_type(),
+        // }
     }
 
     pub fn level(&self) -> u8 {
-        match self {
-            Cell::Boc(cell) => cell.level(),
-            Cell::Data(cell) => cell.level(),
-            Cell::Dyn(cell) => cell.level(),
-        }
+        self.0.level()
+        // match self {
+        //     Cell::Boc(cell) => cell.level(),
+        //     Cell::Data(cell) => cell.level(),
+        //     Cell::Dyn(cell) => cell.level(),
+        // }
     }
 
     pub fn hashes_count(&self) -> usize {
@@ -418,11 +433,12 @@ impl Cell {
     }
 
     pub fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
-        match self {
-            Cell::Boc(cell) => cell.store_hashes_depths(),
-            Cell::Data(cell) => cell.store_hashes_depths(),
-            Cell::Dyn(cell) => cell.store_hashes_depths(),
-        }
+        self.0.store_hashes_depths()
+        // match self {
+        //     Cell::Boc(cell) => cell.store_hashes_depths(),
+        //     Cell::Data(cell) => cell.store_hashes_depths(),
+        //     Cell::Dyn(cell) => cell.store_hashes_depths(),
+        // }
     }
 
     pub fn count_cells(&self, max: usize) -> Result<usize> {
@@ -442,38 +458,42 @@ impl Cell {
     }
 
     pub fn level_mask(&self) -> LevelMask {
-        match self {
-            Cell::Boc(cell) => cell.level_mask(),
-            Cell::Data(cell) => cell.level_mask(),
-            Cell::Dyn(cell) => cell.level_mask(),
-        }
+        self.0.level_mask()
+        // match self {
+        //     Cell::Boc(cell) => cell.level_mask(),
+        //     Cell::Data(cell) => cell.level_mask(),
+        //     Cell::Dyn(cell) => cell.level_mask(),
+        // }
     }
 
     pub fn references_count(&self) -> usize {
-        match self {
-            Cell::Boc(cell) => cell.references_count(),
-            Cell::Data(cell) => cell.references_count(),
-            Cell::Dyn(cell) => cell.references_count(),
-        }
+        self.0.references_count()
+        // match self {
+        //     Cell::Boc(cell) => cell.references_count(),
+        //     Cell::Data(cell) => cell.references_count(),
+        //     Cell::Dyn(cell) => cell.references_count(),
+        // }
     }
 
     /// Returns cell's higher hash for given index (last one - representation
     /// hash)
     pub fn hash(&self, index: usize) -> UInt256 {
-        match self {
-            Cell::Boc(cell) => cell.hash(index),
-            Cell::Data(cell) => cell.hash(index),
-            Cell::Dyn(cell) => cell.hash(index),
-        }
+        self.0.hash(index)
+        // match self {
+        //     Cell::Boc(cell) => cell.hash(index),
+        //     Cell::Data(cell) => cell.hash(index),
+        //     Cell::Dyn(cell) => cell.hash(index),
+        // }
     }
 
     /// Returns cell's depth for given index
     pub fn depth(&self, index: usize) -> u16 {
-        match self {
-            Cell::Boc(cell) => cell.depth(index),
-            Cell::Data(cell) => cell.depth(index),
-            Cell::Dyn(cell) => cell.depth(index),
-        }
+        self.0.depth(index)
+        // match self {
+        //     Cell::Boc(cell) => cell.depth(index),
+        //     Cell::Data(cell) => cell.depth(index),
+        //     Cell::Dyn(cell) => cell.depth(index),
+        // }
     }
 
     /// Returns cell's hashes (representation and highers)
@@ -503,45 +523,50 @@ impl Cell {
     }
 
     pub fn repr_hash(&self) -> UInt256 {
-        match self {
-            Self::Boc(cell) => cell.hash(MAX_LEVEL),
-            Self::Data(cell) => cell.hash(MAX_LEVEL),
-            Self::Dyn(cell) => cell.hash(MAX_LEVEL),
-        }
+        self.0.hash(MAX_LEVEL)
+        // match self {
+        //     Self::Boc(cell) => cell.hash(MAX_LEVEL),
+        //     Self::Data(cell) => cell.hash(MAX_LEVEL),
+        //     Self::Dyn(cell) => cell.hash(MAX_LEVEL),
+        // }
     }
 
     pub fn repr_depth(&self) -> u16 {
-        match self {
-            Self::Boc(cell) => cell.depth(MAX_LEVEL),
-            Self::Data(cell) => cell.depth(MAX_LEVEL),
-            Self::Dyn(cell) => cell.depth(MAX_LEVEL),
-        }
+        self.0.depth(MAX_LEVEL)
+        // match self {
+        //     Self::Boc(cell) => cell.depth(MAX_LEVEL),
+        //     Self::Data(cell) => cell.depth(MAX_LEVEL),
+        //     Self::Dyn(cell) => cell.depth(MAX_LEVEL),
+        // }
     }
 
     pub fn store_hashes(&self) -> bool {
-        match self {
-            Self::Boc(cell) => cell.store_hashes(),
-            Self::Data(cell) => cell.store_hashes(),
-            Self::Dyn(cell) => cell.store_hashes(),
-        }
+        self.0.store_hashes()
+        // match self {
+        //     Self::Boc(cell) => cell.store_hashes(),
+        //     Self::Data(cell) => cell.store_hashes(),
+        //     Self::Dyn(cell) => cell.store_hashes(),
+        // }
     }
 
     #[allow(dead_code)]
     pub fn is_merkle(&self) -> bool {
-        match self {
-            Self::Boc(cell) => cell.is_merkle(),
-            Self::Data(cell) => cell.is_merkle(),
-            Self::Dyn(cell) => cell.is_merkle(),
-        }
+        self.0.is_merkle()
+        // match self {
+        //     Self::Boc(cell) => cell.is_merkle(),
+        //     Self::Data(cell) => cell.is_merkle(),
+        //     Self::Dyn(cell) => cell.is_merkle(),
+        // }
     }
 
     #[allow(dead_code)]
     pub fn is_pruned(&self) -> bool {
-        match self {
-            Self::Boc(cell) => cell.is_pruned(),
-            Self::Data(cell) => cell.is_pruned(),
-            Self::Dyn(cell) => cell.is_pruned(),
-        }
+        self.0.is_pruned()
+        // match self {
+        //     Self::Boc(cell) => cell.is_pruned(),
+        //     Self::Data(cell) => cell.is_pruned(),
+        //     Self::Dyn(cell) => cell.is_pruned(),
+        // }
     }
 
     pub fn to_hex_string(&self, lower: bool) -> String {
@@ -677,59 +702,66 @@ impl Cell {
     }
 
     pub fn tree_bits_count(&self) -> u64 {
-        match self {
-            Cell::Boc(cell) => cell.tree_bits_count(),
-            Cell::Data(cell) => cell.tree_bits_count(),
-            Cell::Dyn(cell) => cell.tree_bits_count(),
-        }
+        self.0.tree_bits_count()
+        // match self {
+        //     Cell::Boc(cell) => cell.tree_bits_count(),
+        //     Cell::Data(cell) => cell.tree_bits_count(),
+        //     Cell::Dyn(cell) => cell.tree_bits_count(),
+        // }
     }
 
     pub fn tree_cell_count(&self) -> u64 {
-        match self {
-            Cell::Boc(cell) => cell.tree_cell_count(),
-            Cell::Data(cell) => cell.tree_cell_count(),
-            Cell::Dyn(cell) => cell.tree_cell_count(),
-        }
+        self.0.tree_cell_count()
+        // match self {
+        //     Cell::Boc(cell) => cell.tree_cell_count(),
+        //     Cell::Data(cell) => cell.tree_cell_count(),
+        //     Cell::Dyn(cell) => cell.tree_cell_count(),
+        // }
     }
 
     pub fn to_external(&self) -> Result<Cell> {
-        match self {
-            Cell::Boc(cell) => cell.to_external(),
-            Cell::Data(cell) => cell.to_external(),
-            Cell::Dyn(cell) => cell.to_external(),
-        }
+        self.0.to_external()
+        // match self {
+        //     Cell::Boc(cell) => cell.to_external(),
+        //     Cell::Data(cell) => cell.to_external(),
+        //     Cell::Dyn(cell) => cell.to_external(),
+        // }
     }
 
     pub fn usage_level(&self) -> u64 {
-        match self {
-            Cell::Boc(cell) => cell.usage_level(),
-            Cell::Data(cell) => cell.usage_level(),
-            Cell::Dyn(cell) => cell.usage_level(),
-        }
+        self.0.usage_level()
+        // match self {
+        //     Cell::Boc(cell) => cell.usage_level(),
+        //     Cell::Data(cell) => cell.usage_level(),
+        //     Cell::Dyn(cell) => cell.usage_level(),
+        // }
     }
 
     fn is_usage_cell(&self) -> bool {
-        match self {
-            Cell::Boc(cell) => cell.is_usage_cell(),
-            Cell::Data(cell) => cell.is_usage_cell(),
-            Cell::Dyn(cell) => cell.is_usage_cell(),
-        }
+        self.0.is_usage_cell()
+        // match self {
+        //     Cell::Boc(cell) => cell.is_usage_cell(),
+        //     Cell::Data(cell) => cell.is_usage_cell(),
+        //     Cell::Dyn(cell) => cell.is_usage_cell(),
+        // }
     }
 
     fn downcast_usage(&self) -> Cell {
-        match self {
-            Cell::Boc(cell) => cell.downcast_usage(),
-            Cell::Data(cell) => cell.downcast_usage(),
-            Cell::Dyn(cell) => cell.downcast_usage(),
-        }
+        self.0.downcast_usage()
+        // match self {
+        //     Cell::Boc(cell) => cell.downcast_usage(),
+        //     Cell::Data(cell) => cell.downcast_usage(),
+        //     Cell::Dyn(cell) => cell.downcast_usage(),
+        // }
     }
 
     fn store_hashes_depths_len(&self) -> usize {
-        match self {
-            Cell::Boc(cell) => cell.store_hashes_depths_len(),
-            Cell::Data(cell) => cell.store_hashes_depths_len(),
-            Cell::Dyn(cell) => cell.store_hashes_depths_len(),
-        }
+        self.0.store_hashes_depths_len()
+        // match self {
+        //     Cell::Boc(cell) => cell.store_hashes_depths_len(),
+        //     Cell::Data(cell) => cell.store_hashes_depths_len(),
+        //     Cell::Dyn(cell) => cell.store_hashes_depths_len(),
+        // }
     }
 }
 

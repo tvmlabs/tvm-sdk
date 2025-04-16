@@ -247,13 +247,12 @@ impl BocBuf {
         let boc = Arc::new(self);
         let mut cells = vec![];
         for index in &boc.root_indexes {
-            cells.push(Cell::Boc(BocCell::new(boc.clone(), *index)));
+            cells.push(Cell::with_boc(BocCell::new(boc.clone(), *index as usize)));
         }
         Ok(cells)
     }
 }
 
-#[inline(always)]
 pub(crate) fn read_be_int(buf: &[u8], offset: usize, len: usize) -> usize {
     let available = buf.len().saturating_sub(offset);
     let take = len.min(available).min(8);
@@ -262,7 +261,6 @@ pub(crate) fn read_be_int(buf: &[u8], offset: usize, len: usize) -> usize {
     u64::from_be_bytes(padded) as usize
 }
 
-#[inline(always)]
 fn raw_cell_len(raw_data: &[u8], ref_size: usize) -> usize {
     if cell::is_big_cell(raw_data) {
         4 + read_be_int(raw_data, 1, 3)
@@ -274,26 +272,22 @@ fn raw_cell_len(raw_data: &[u8], ref_size: usize) -> usize {
 #[derive(Clone)]
 pub struct BocCell {
     boc: Arc<BocBuf>,
-    index: u32,
+    info: CellInfo,
 }
 
 impl BocCell {
-    pub fn new(boc: Arc<BocBuf>, index: u32) -> Self {
-        Self { index, boc }
+    pub fn new(boc: Arc<BocBuf>, index: usize) -> Self {
+        Self { info: boc.cell_infos[index], boc }
     }
 
     fn unbounded_raw_data(&self) -> &[u8] {
-        &self.boc.data[self.info().raw_offset as usize..]
+        &self.boc.data[self.info.raw_offset as usize..]
     }
 
     fn bounded_raw_data(&self) -> &[u8] {
-        let offset = self.info().raw_offset as usize;
+        let offset = self.info.raw_offset as usize;
         let len = raw_cell_len(self.unbounded_raw_data(), self.boc.ref_size);
         &self.boc.data[offset..offset + len]
-    }
-
-    fn info(&self) -> &CellInfo {
-        &self.boc.cell_infos[self.index as usize]
     }
 }
 
@@ -406,7 +400,7 @@ impl CellImpl for BocCell {
         let cell_index =
             read_be_int(raw_data, refs_start + index * self.boc.ref_size, self.boc.ref_size);
 
-        Ok(Cell::Boc(BocCell::new(self.boc.clone(), cell_index as u32)))
+        Ok(Cell::with_boc(BocCell::new(self.boc.clone(), cell_index)))
     }
 
     fn cell_type(&self) -> CellType {
@@ -418,17 +412,12 @@ impl CellImpl for BocCell {
     }
 
     fn hash(&self, index: usize) -> UInt256 {
-        raw_hash(
-            self.unbounded_raw_data(),
-            index,
-            self.boc.cell_infos[self.index as usize].hash_index,
-            &self.boc.hashes,
-        )
-        .unwrap()
+        raw_hash(self.unbounded_raw_data(), index, self.info.hash_index, &self.boc.hashes)
+            .unwrap()
     }
 
     fn depth(&self, index: usize) -> u16 {
-        raw_depth(self.unbounded_raw_data(), index, self.info().hash_index, &self.boc.hashes)
+        raw_depth(self.unbounded_raw_data(), index, self.info.hash_index, &self.boc.hashes)
             .unwrap()
     }
 
@@ -448,17 +437,17 @@ impl CellImpl for BocCell {
             if cell::store_hashes(raw_data) {
                 result.push((cell::hash(raw_data, i).into(), cell::depth(raw_data, i)));
             } else {
-                result.push(self.boc.hashes[self.info().hash_index as usize + i].clone());
+                result.push(self.boc.hashes[self.info.hash_index as usize + i].clone());
             };
         }
         result
     }
 
     fn tree_cell_count(&self) -> u64 {
-        self.info().tree_cells_count
+        self.info.tree_cells_count
     }
 
     fn tree_bits_count(&self) -> u64 {
-        self.info().tree_bits_count
+        self.info.tree_bits_count
     }
 }

@@ -45,6 +45,7 @@ const BOC_INDEXED_TAG: u32 = 0x68ff65f3; // deprecated, is used only for read
 const BOC_INDEXED_CRC32_TAG: u32 = 0xacc3a728; // deprecated, is used only for read
 const BOC_GENERIC_TAG: u32 = 0xb5ee9c72;
 const BOC_GENERIC_V2_TAG: u32 = 0xb6ff9a73; // with big cells
+const BOC_GENERIC_V3_TAG: u32 = 0x08778da1; // with stored stats (tree cell/bits count)
 
 const MAX_ROOTS_COUNT: usize = 1024;
 
@@ -113,11 +114,12 @@ impl OrderedCellsStorage for SimpleOrderedCellsStorage {
 pub struct BocWriterOptions {
     pub max_depth: u16,
     pub store_hashes: Option<bool>,
+    pub store_stats: bool,
 }
 
 impl Default for BocWriterOptions {
     fn default() -> Self {
-        Self { max_depth: MAX_SAFE_DEPTH, store_hashes: None }
+        Self { max_depth: MAX_SAFE_DEPTH, store_hashes: None, store_stats: false }
     }
 }
 
@@ -189,6 +191,10 @@ fn boc_cell_len(cell: &Cell, store_hashes: Option<bool>) -> Result<usize> {
         }
     }
     Ok(len)
+}
+
+fn write_sized_u64(writer: &mut impl Write, value: u64, size: usize) -> Result<()> {
+    Ok(writer.write_all(&value.to_be_bytes()[(8 - size)..8])?)
 }
 
 fn write_boc_cell<W: Write>(writer: &mut W, cell: &Cell, store_hashes: Option<bool>) -> Result<()> {
@@ -274,8 +280,8 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             }
         }
 
-        // roots must be firtst
-        // TODO: due to real ton sorces it is not necceary to write roots first
+        // roots must be first
+        // TODO: due to real ton sources it is not necessary to write roots first
         Ok(boc)
     }
 
@@ -351,6 +357,7 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
         });
         let total_cells_size = self.data_size + self.references * ref_size;
         let bytes_total_size = Self::number_of_bytes_to_fit(total_cells_size);
+
         let offset_size = custom_offset_size.map_or(bytes_total_size, |cos| {
             debug_assert!(cos >= bytes_total_size);
             std::cmp::max(cos, bytes_total_size)
@@ -359,33 +366,48 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
         debug_assert!(ref_size <= 4);
         debug_assert!(offset_size <= 8);
 
+        let (tree_cell_count_size, tree_cell_bits_size) = if self.options.store_stats {
+            (ref_size, Self::number_of_bytes_to_fit(total_cells_size * 8))
+        } else {
+            (0, 0)
+        };
+
         // Header
 
-        let magic = if self.big_cells_count > 0 { BOC_GENERIC_V2_TAG } else { BOC_GENERIC_TAG };
+        let magic = if self.options.store_stats {
+            BOC_GENERIC_V3_TAG
+        } else if self.big_cells_count > 0 {
+            BOC_GENERIC_V2_TAG
+        } else {
+            BOC_GENERIC_TAG
+        };
         dest.write_all(&magic.to_be_bytes())?;
 
         // has index | has CRC | has cache bits | flags   | ref_size
         // 7         | 6       | 5              | 4 3     | 2 1 0
-        dest.write_all(&[((include_index as u8) << 7)
-            | ((include_crc as u8) << 6)
-            | ref_size as u8])?;
+        let flags = ((include_index as u8) << 7) | ((include_crc as u8) << 6) | ref_size as u8;
+        dest.write_all(&[flags])?;
+        if magic == BOC_GENERIC_V3_TAG {
+            // - | - | cells_stats_size | bits_stats_size
+            // 7 | 6 | 5 4 3            | 2 1 0
+            let flags_v3 = (tree_cell_count_size << 3) | tree_cell_bits_size;
+            dest.write_all(&[flags_v3 as u8])?;
+        }
 
         dest.write_all(&[offset_size as u8])?; // off_bytes:(## 8) { off_bytes <= 8 }
-        dest.write_all(&(self.cells_count as u64).to_be_bytes()[(8 - ref_size)..8])?;
-        dest.write_all(&(self.roots_count() as u64).to_be_bytes()[(8 - ref_size)..8])?;
-        dest.write_all(&0_u64.to_be_bytes()[(8 - ref_size)..8])?;
-        dest.write_all(&(total_cells_size as u64).to_be_bytes()[(8 - offset_size)..8])?;
+        write_sized_u64(dest, self.cells_count as u64, ref_size)?;
+        write_sized_u64(dest, self.roots_count() as u64, ref_size)?;
+        write_sized_u64(dest, 0_u64, ref_size)?;
+        write_sized_u64(dest, total_cells_size as u64, offset_size)?;
         if self.big_cells_count > 0 {
-            dest.write_all(&(self.big_cells_count as u64).to_be_bytes()[(8 - ref_size)..8])?;
-            dest.write_all(&(self.big_cells_size as u64).to_be_bytes()[(8 - offset_size)..8])?;
+            write_sized_u64(dest, self.big_cells_count as u64, ref_size)?;
+            write_sized_u64(dest, self.big_cells_size as u64, offset_size)?;
         }
 
         // Root's indexes
         for index in self.roots_indexes_rev.iter() {
             check_abort(self.abort)?;
-            dest.write_all(
-                &((self.cells_count - *index - 1) as u64).to_be_bytes()[(8 - ref_size)..8],
-            )?;
+            write_sized_u64(dest, (self.cells_count - *index - 1) as u64, ref_size)?;
         }
 
         // Index
@@ -395,8 +417,11 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
                 check_abort(self.abort)?;
                 let cell = &self.cells.get_cell_by_index(cell_index as u32)?;
                 total_size += boc_cell_len(cell, self.options.store_hashes)?
-                    + ref_size * cell.references_count();
-                dest.write_all(&(total_size as u64).to_be_bytes()[(8 - offset_size)..8])?;
+                    + ref_size * cell.references_count()
+                    + tree_cell_count_size
+                    + tree_cell_bits_size;
+
+                write_sized_u64(dest, total_size as u64, offset_size)?;
             }
         }
 
@@ -407,11 +432,15 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
             write_boc_cell(dest, cell, self.options.store_hashes)?;
             let cell_index = self.cells_count - 1 - cell_rev_index;
             for i in 0..cell.references_count() {
-                let child_hash = cell.reference_repr_hash(i).unwrap();
+                let child_hash = cell.reference_repr_hash(i)?;
                 let child_index =
                     self.cells_count - 1 - self.cells.get_rev_index_by_hash(&child_hash)? as usize;
                 debug_assert!(child_index > cell_index);
-                dest.write_all(&(child_index as u64).to_be_bytes()[(8 - ref_size)..8])?;
+                write_sized_u64(dest, child_index as u64, ref_size)?;
+            }
+            if self.options.store_stats {
+                write_sized_u64(dest, cell.tree_cell_count(), tree_cell_count_size)?;
+                write_sized_u64(dest, cell.tree_bits_count(), tree_cell_bits_size)?;
             }
         }
 
@@ -501,6 +530,8 @@ fn check_abort(abort: &dyn Fn() -> bool) -> Result<()> {
 pub struct RawCell {
     pub data: Vec<u8>,
     pub refs: [u32; 4],
+    pub tree_cell_count: u64,
+    pub tree_bits_count: u64,
 }
 
 #[derive(Debug)]
@@ -512,11 +543,19 @@ pub struct BocHeader {
     pub cells_count: usize,
     pub offset_size: usize,
     pub has_crc: bool,
+    pub tree_cell_count_size: usize,
+    pub tree_cell_bits_size: usize,
     pub has_cache_bits: bool,
     pub roots_indexes: Vec<u32>,
     pub tot_cells_size: usize,
     pub big_cells_count: usize,
     pub big_cells_size: usize,
+}
+
+impl BocHeader {
+    fn store_stats(&self) -> bool {
+        self.tree_cell_bits_size > 0
+    }
 }
 
 pub struct BocReaderResult {
@@ -664,6 +703,7 @@ impl<'a> BocReader<'a> {
                 header.ref_size,
                 cell_index,
                 header.cells_count,
+                header.store_stats(),
                 &mut remaining_big_cells,
             )?;
             self.indexed_cells.insert(cell_index as u32, raw_cell)?;
@@ -768,7 +808,7 @@ impl<'a> BocReader<'a> {
             for _ in 0_usize..header.cells_count {
                 check_abort(self.abort)?;
                 index2.push(src.position());
-                Self::skip_cell(&mut src, header.ref_size)?;
+                Self::skip_cell(&mut src, &header)?;
             }
         } else if index.len() < header.cells_count * header.offset_size {
             fail!("Invalid data: too small to fit index");
@@ -886,7 +926,8 @@ impl<'a> BocReader<'a> {
         let ref_size;
         let mut has_big_cells = false;
         let mut has_cache_bits = false;
-
+        let mut tree_cell_count_size = 0;
+        let mut tree_cell_bits_size = 0;
         match magic {
             BOC_INDEXED_TAG => {
                 ref_size = first_byte as usize;
@@ -897,7 +938,7 @@ impl<'a> BocReader<'a> {
                 index_included = true;
                 has_crc = true;
             }
-            BOC_GENERIC_TAG | BOC_GENERIC_V2_TAG => {
+            BOC_GENERIC_TAG | BOC_GENERIC_V2_TAG | BOC_GENERIC_V3_TAG => {
                 index_included = first_byte & 0b1000_0000 != 0;
                 has_crc = first_byte & 0b0100_0000 != 0;
                 has_cache_bits = first_byte & 0b0010_0000 != 0;
@@ -906,7 +947,12 @@ impl<'a> BocReader<'a> {
                     fail!("non-zero flags field is not supported")
                 }
                 ref_size = (first_byte & 0b0000_0111) as usize;
-                has_big_cells = magic == BOC_GENERIC_V2_TAG;
+                has_big_cells = magic == BOC_GENERIC_V2_TAG || magic == BOC_GENERIC_V3_TAG;
+                if magic == BOC_GENERIC_V3_TAG {
+                    let second_byte = src.read_byte()?;
+                    tree_cell_count_size = ((second_byte >> 3) & 0b0000_0111) as usize;
+                    tree_cell_bits_size = (second_byte & 0b0000_0111) as usize;
+                }
             }
             _ => fail!("unknown BOC_TAG: {}", magic),
         };
@@ -998,7 +1044,7 @@ impl<'a> BocReader<'a> {
             (0, 0)
         };
         let max_cell_size = 2 + // descr bytes
-            4 * (DEPTH_SIZE + SHA256_SIZE) + // stored hashe & depths
+            4 * (DEPTH_SIZE + SHA256_SIZE) + // stored hashes & depths
             MAX_DATA_BYTES +
             MAX_REFERENCES_COUNT * ref_size;
         let min_cell_size = 2; // descr bytes only
@@ -1036,6 +1082,8 @@ impl<'a> BocReader<'a> {
             magic,
             roots_count,
             ref_size,
+            tree_cell_count_size,
+            tree_cell_bits_size,
             index_included,
             cells_count,
             offset_size,
@@ -1074,6 +1122,7 @@ impl<'a> BocReader<'a> {
         ref_size: usize,
         cell_index: usize,
         cells_count: usize,
+        store_stats: bool,
         remaining_big_cells: &mut usize,
     ) -> Result<RawCell>
     where
@@ -1103,7 +1152,12 @@ impl<'a> BocReader<'a> {
             data[2] = (len >> 8) as u8;
             data[3] = len as u8;
             src.read_exact(&mut data[4..])?;
-            return Ok(RawCell { data, refs });
+            let (tree_cell_count, tree_bits_count) = if store_stats {
+                (src.read_be_uint(8)?, src.read_be_uint(8)?) // tree_cell_count
+            } else {
+                (0, 0)
+            };
+            return Ok(RawCell { data, refs, tree_cell_count, tree_bits_count });
         }
 
         src.read_exact(&mut d1d2[1..2])?;
@@ -1135,7 +1189,9 @@ impl<'a> BocReader<'a> {
                 *reference = r;
             }
         }
-        Ok(RawCell { data, refs })
+        let (tree_cell_count, tree_bits_count) =
+            if store_stats { (src.read_be_uint(8)?, src.read_be_uint(8)?) } else { (0, 0) };
+        Ok(RawCell { data, refs, tree_cell_count, tree_bits_count })
     }
 
     fn read_refs_indexes<T>(
@@ -1183,7 +1239,7 @@ impl<'a> BocReader<'a> {
         }
     }
 
-    pub(crate) fn skip_cell<T>(src: &mut T, ref_size: usize) -> Result<()>
+    pub(crate) fn skip_cell<T>(src: &mut T, header: &BocHeader) -> Result<()>
     where
         T: Read + Seek,
     {
@@ -1197,8 +1253,9 @@ impl<'a> BocReader<'a> {
             len
         } else {
             src.read_exact(&mut d1d2[1..2])?;
-            cell::full_len(&d1d2) + ref_size * cell::refs_count(&d1d2) - 2
-        };
+            cell::full_len(&d1d2) + header.ref_size * cell::refs_count(&d1d2) - 2
+        } + header.tree_cell_count_size
+            + header.tree_cell_bits_size;
         src.seek(SeekFrom::Current(rest_size as i64))?;
         Ok(())
     }

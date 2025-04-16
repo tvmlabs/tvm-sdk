@@ -48,10 +48,11 @@ fn test_boc_reader_writer() {
     collect_boc_files(repo_dir.join("tvm_block_json/src/tests/data"), &mut boc_paths).unwrap();
 
     let mut stats = Stats::default();
-    for path in boc_paths {
+    for path in &boc_paths {
         println!("Testing file {}", path.file_name().unwrap().to_string_lossy());
         test_boc_file(&path, &mut stats);
     }
+    println!("total files: {}", boc_paths.len());
     println!("index hashes inmem force deser traverse     size");
     for write_index in [false, true] {
         for write_store_hashes in [Some(false), Some(true)] {
@@ -138,9 +139,12 @@ fn read_boc_checked(
     if cells.len() != orig_cells.len() {
         panic!("{info} Cells len mismatch: {} != {}", orig_cells.len(), cells.len());
     }
-    let start = Instant::now();
     for i in 0..orig_cells.len() {
         cmp_cell(&orig_cells[i], &cells[i], &info);
+    }
+    let start = Instant::now();
+    for i in 0..cells.len() {
+        traverse_cell(&cells[i]);
     }
     let traverse_time = start.elapsed();
     stats.report(
@@ -311,5 +315,21 @@ fn cmp_cell(a: &Cell, b: &Cell, info: &str) {
     }
     for i in 0..a.references_count() {
         cmp_cell(&a.reference(i).unwrap(), &b.reference(i).unwrap(), info);
+    }
+}
+
+fn traverse_cell(a: &Cell) {
+    a.repr_hash();
+    a.data();
+    a.hashes();
+    a.depths();
+    a.tree_cell_count();
+    a.tree_bits_count();
+    for i in 0..a.level() + 1 {
+        a.hash(i as usize);
+        a.depth(i as usize);
+    }
+    for i in 0..a.references_count() {
+        traverse_cell(&a.reference(i).unwrap());
     }
 }
