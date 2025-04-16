@@ -25,7 +25,6 @@ use tvm_types::Result;
 use tvm_types::UInt256;
 
 pub const VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES: u32 = 8;
-pub const VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE: u32 = 30;
 
 pub(crate) trait TONDefaultConfig {
     /// Get default value for masterchain

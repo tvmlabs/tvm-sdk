@@ -253,8 +253,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 
         log::debug!(target: "executor",
             "storage_phase: {}", if description.storage_ph.is_some() {"present"} else {"none"});
-        let mut original_acc_balance = account.balance().cloned().unwrap_or_default();
-        original_acc_balance.sub(tr.total_fees())?;
+        let original_acc_balance = acc_balance.clone();
 
         if !description.credit_first && !is_ext_msg {
             description.credit_ph = match self.credit_phase(
@@ -463,7 +462,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     in_msg,
                     &mut tr,
                     account_address,
-                    params.block_version,
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
                         out_msgs.push(bounce_msg);
