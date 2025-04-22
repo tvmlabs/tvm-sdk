@@ -1,6 +1,7 @@
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
 use tvm_block::ACTION_MINTECC;
+use tvm_block::ACTION_ULTIMATEADD;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
@@ -40,6 +41,18 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     let mut cell = BuilderData::new();
     data.write_to(&mut cell)?;
     add_action(engine, ACTION_MINTECC, None, cell)
+}
+
+pub(super) fn execute_ultimate_add(engine: &mut Engine) -> Status {
+    // add a+b
+    engine.load_instruction(Instruction::new("ULTIMATEADD"))?;
+    fetch_stack(engine, 2)?;
+    let mut a: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
+    let b: u64 = engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?;
+    a += b;
+    let mut cell = BuilderData::new();
+    a.write_to(&mut cell)?;
+    add_action(engine, ACTION_ULTIMATEADD, None, cell)
 }
 
 pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {

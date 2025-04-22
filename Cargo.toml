@@ -63,6 +63,7 @@ strip = true      # Automatically strip symbols from the binary.
 panic = "unwind"
 
 [workspace.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
 anyhow = "1.0.79"
 async-trait = "0.1.77"
 base64 = "0.22.1"
