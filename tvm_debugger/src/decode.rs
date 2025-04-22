@@ -223,7 +223,7 @@ fn print_grams(grams: &CurrencyBalance) -> String {
 
 fn print_cc(cc: &CurrencyCollection) -> String {
     let mut result = print_grams(&cc.vmshell);
-    if !cc.other.0.is_empty() {
+    if !cc.other.is_empty() {
         result += " other: {";
         cc.other
             .iterate_with_keys(|key: u32, value| {

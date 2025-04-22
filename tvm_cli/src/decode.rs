@@ -559,7 +559,7 @@ pub mod msg_printer {
 
     fn serialize_currency_collection(cc: &CurrencyCollection) -> Value {
         let grams = serialize_grams(&cc.vmshell);
-        if cc.other.0.is_empty() {
+        if cc.other.is_empty() {
             return grams;
         }
         let mut other = json!({});

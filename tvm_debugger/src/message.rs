@@ -72,7 +72,7 @@ pub(crate) fn generate_internal_message(
             let value_str = v.as_str().ok_or(anyhow::format_err!("Failed to parse ecc value"))?;
             let value = CurrencyBalance::from_str(value_str)
                 .map_err(|e| anyhow::format_err!("Failed to decode ecc value: {e}"))?;
-            ecc.set(key, value);
+            ecc.set(&key, &value).map_err(|e| anyhow::format_err!("Failed to set ecc key: {e}"))?;
         }
     }
     let value = CurrencyCollection { vmshell, other: ecc };
