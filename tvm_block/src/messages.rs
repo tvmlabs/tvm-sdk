@@ -696,21 +696,17 @@ impl Serializable for InternalMessageHeader {
         let mut data = BuilderData::new();
         self.value.write_to(&mut data)?; // value: CurrencyCollection
 
-        println!("FFFFFF1 {} {}", cell.bits_free(), cell.references_free());
         cell.checked_append_reference(data.into_cell()?)?;
 
-        println!("FFFFFF2 {} {}", cell.bits_free(), cell.references_free());
 
         self.ihr_fee.write_to(cell)?; // ihr_fee
         self.fwd_fee.write_to(cell)?; // fwd_fee
 
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
-        println!("FFFFFF {} {}", cell.bits_free(), cell.references_free());
         data = BuilderData::new();
         self.src_dapp_id.write_maybe_to(&mut data)?;
         cell.checked_append_reference(data.into_cell()?)?;
-        println!("FFFFFF3 {} {}", cell.bits_free(), cell.references_free());
         Ok(())
     }
 }
@@ -731,8 +727,10 @@ impl Deserializable for InternalMessageHeader {
         self.fwd_fee.read_from(cell)?; // fwd_fee
         self.created_lt.read_from(cell)?; // created_lt
         self.created_at.read_from(cell)?; // created_at
-        if cell.get_next_bit()? {
-            self.src_dapp_id = Some(UInt256::construct_from(cell)?);
+
+        let mut data_slice = SliceData::load_cell(cell.checked_drain_reference()?)?;
+        if data_slice.get_next_bit()? {
+            self.src_dapp_id = Some(UInt256::construct_from(&mut data_slice)?);
         }
         Ok(())
     }
