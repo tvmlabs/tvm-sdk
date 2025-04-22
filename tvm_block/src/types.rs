@@ -952,19 +952,16 @@ impl CurrencyCollection {
 
 impl Serializable for CurrencyCollection {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        let mut data = BuilderData::new();
-        self.vmshell.0.write_to(&mut data)?;
-        self.other.write_to(&mut data)?;
-        cell.checked_append_reference(data.into_cell()?)?;
+        self.vmshell.0.write_to(cell)?;
+        self.other.write_to(cell)?;
         Ok(())
     }
 }
 
 impl Deserializable for CurrencyCollection {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        let mut data = SliceData::load_cell(cell.checked_drain_reference()?)?;
-        self.vmshell.read_from(&mut data)?;
-        self.other.read_from(&mut data)?;
+        self.vmshell.read_from(cell)?;
+        self.other.read_from(cell)?;
         Ok(())
     }
 }
