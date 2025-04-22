@@ -689,26 +689,24 @@ impl Serializable for InternalMessageHeader {
             .append_bit_bool(self.ihr_disabled)?
             .append_bit_bool(self.bounce)?
             .append_bit_bool(self.bounced)?;
-        println!("FFFFFF1 {} {}", cell.bits_free(), cell.references_free());
+
         self.src.write_to(cell)?;
         self.dst.write_to(cell)?;
-        println!("FFFFFF2 {} {}", cell.bits_free(), cell.references_free());
+
         let mut data = BuilderData::new();
         self.value.write_to(&mut data)?; // value: CurrencyCollection
-        println!("FFFFFF3 {} {}", cell.bits_free(), cell.references_free());
+
         cell.checked_append_reference(data.into_cell()?)?;
 
-        println!("FFFFFF4 {} {}", cell.bits_free(), cell.references_free());
+
         self.ihr_fee.write_to(cell)?; // ihr_fee
         self.fwd_fee.write_to(cell)?; // fwd_fee
-        println!("FFFFFF5 {} {}", cell.bits_free(), cell.references_free());
+
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
-        println!("FFFFFF6 {} {}", cell.bits_free(), cell.references_free());
         data = BuilderData::new();
         self.src_dapp_id.write_maybe_to(&mut data)?;
         cell.checked_append_reference(data.into_cell()?)?;
-        println!("FFFFFF7 {} {}", cell.bits_free(), cell.references_free());
         Ok(())
     }
 }
