@@ -301,7 +301,9 @@ impl BuilderData {
     }
 
     pub fn checked_append_reference(&mut self, cell: Cell) -> Result<&mut Self> {
+        println!("FFFFFF4");
         if self.references_free() == 0 {
+            println!("FFFFFF44");
             fail!(ExceptionCode::CellOverflow)
         } else {
             self.references.push(cell);
