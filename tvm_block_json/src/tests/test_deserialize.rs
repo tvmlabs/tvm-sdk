@@ -87,7 +87,7 @@ fn get_config_param1() -> ConfigParam1 {
 fn get_config_param7() -> ConfigParam7 {
     let mut ecc = ExtraCurrencyCollection::default();
     for i in 1..100 {
-        ecc.set(i as u32, CurrencyBalance(i * 100)).unwrap();
+        ecc.set(&(i as u32), &CurrencyBalance(i * 100)).unwrap();
     }
     ConfigParam7 { to_mint: ecc }
 }

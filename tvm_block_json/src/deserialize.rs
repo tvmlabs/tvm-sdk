@@ -716,7 +716,7 @@ impl StateParser {
                     Err(_) => currency.get_str("value")?.parse()?,
                 };
                 let currency_id = currency.get_num("currency")? as u32;
-                to_mint.set(currency_id, CurrencyBalance(value));
+                to_mint.set(&currency_id, &CurrencyBalance(value))?;
                 Ok::<(), failure::Error>(())
             })?;
             Ok(ConfigParamEnum::ConfigParam7(ConfigParam7 { to_mint }))

@@ -314,13 +314,13 @@ pub trait TransactionExecutor {
                 }
             }
             if diff > CurrencyBalance::zero() {
-                let ecc_balance = match acc_balance.other.0.get(&ECC_SHELL_KEY) {
-                    Some(data) => data,
-                    None => &CurrencyBalance::default(),
+                let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
+                    Ok(Some(data)) => data,
+                    _ => CurrencyBalance::zero(),
                 };
-                if ecc_balance >= &diff {
+                if ecc_balance >= diff {
                     let mut sub_value = CurrencyCollection::new();
-                    sub_value.other.set(ECC_SHELL_KEY, diff);
+                    sub_value.other.set(&ECC_SHELL_KEY, &diff)?;
                     acc_balance.vmshell.add(&diff)?;
                     acc_balance.sub(&sub_value)?;
                 }
@@ -898,9 +898,9 @@ pub trait TransactionExecutor {
                 OutAction::ExchangeShell { value } => {
                     let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
-                    if let Some(a) = acc_remaining_balance.other.0.get(&ECC_SHELL_KEY) {
-                        if a <= &CurrencyBalance(value as u128) {
-                            sub_value.other.set(ECC_SHELL_KEY, *a);
+                    if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
+                        if a <= CurrencyBalance(value as u128) {
+                            sub_value.other.set(&ECC_SHELL_KEY, &a)?;
                             exchange_value = a.0;
                         } else {
                             sub_value.set_other(ECC_SHELL_KEY, value as u128)?;
@@ -1637,7 +1637,7 @@ fn outmsg_action_handler(
     let mut acc_balance_copy = ExtraCurrencyCollection::default();
     let predicate = |key: u32, b: CurrencyBalance| -> Result<bool> {
         if !b.is_zero() {
-            acc_balance_copy.set(key, b);
+            acc_balance_copy.set(&key, &b)?;
         }
         Ok(true)
     };

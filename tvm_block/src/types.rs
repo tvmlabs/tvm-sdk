@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::{self};
@@ -34,9 +33,7 @@ use num::bigint::Sign;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
-#[cfg(test)]
 use tvm_types::HashmapE;
-#[cfg(test)]
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
 use tvm_types::Result;
@@ -47,6 +44,7 @@ use tvm_types::fail;
 
 use crate::Deserializable;
 use crate::Serializable;
+use crate::define_HashmapE;
 use crate::error::BlockError;
 use crate::hashmapaug::Augmentable;
 
@@ -670,144 +668,7 @@ impl CurrencyBalance {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ExtraCurrencyCollection(pub HashMap<u32, CurrencyBalance>);
-
-impl Default for ExtraCurrencyCollection {
-    fn default() -> Self {
-        ExtraCurrencyCollection(HashMap::new())
-    }
-}
-
-impl Serializable for ExtraCurrencyCollection {
-    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        (self.0.len() as u32).write_to(cell)?;
-        for (key, value) in &self.0 {
-            key.write_to(cell)?;
-            value.0.write_to(cell)?;
-        }
-        Ok(())
-    }
-}
-
-impl Deserializable for ExtraCurrencyCollection {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        let mut len = 0u32;
-        len.read_from(cell)?;
-        for _ in 0..len {
-            let mut key = 0u32;
-            let mut value = CurrencyBalance::zero();
-
-            key.read_from(cell)?;
-            value.read_from(cell)?;
-
-            self.0.insert(key, value);
-        }
-        Ok(())
-    }
-}
-
-impl ExtraCurrencyCollection {
-    pub fn new() -> Self {
-        Self(HashMap::new())
-    }
-
-    pub fn set(&mut self, key: u32, value: CurrencyBalance) -> Option<CurrencyBalance> {
-        self.0.insert(key, value)
-    }
-
-    pub fn checked_add(&mut self, other: &Self) -> Result<()> {
-        let mut temp = self.0.clone();
-        for (key, other_balance) in &other.0 {
-            match temp.get_mut(key) {
-                Some(self_balance) => {
-                    self_balance.checked_add(other_balance)?;
-                }
-                None => {
-                    temp.insert(*key, other_balance.clone());
-                }
-            }
-        }
-        self.0 = temp;
-        Ok(())
-    }
-
-    pub fn checked_sub(&mut self, other: &Self) -> Result<()> {
-        let mut temp = self.0.clone();
-        for (key, other_balance) in &other.0 {
-            match temp.get_mut(key) {
-                Some(self_balance) => {
-                    self_balance.checked_sub(other_balance)?;
-                }
-                None => {
-                    let mut temp_balance = CurrencyBalance::zero();
-                    temp_balance.checked_sub(other_balance)?;
-                    temp.insert(*key, temp_balance);
-                }
-            }
-        }
-        temp.retain(|_, v| !v.is_zero());
-        self.0 = temp;
-        Ok(())
-    }
-
-    pub fn data(&self) -> Result<Cell> {
-        let mut data = BuilderData::default();
-        self.write_to(&mut data)?;
-        data.into_cell()
-    }
-
-    pub fn total_currencies(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (&u32, &CurrencyBalance)> {
-        self.0.iter()
-    }
-
-    pub fn iterate<F>(&self, mut p: F) -> Result<bool>
-    where
-        F: FnMut(CurrencyBalance) -> Result<bool>,
-    {
-        for value in self.0.values() {
-            let should_continue = p(value.clone())?;
-            if !should_continue {
-                return Ok(false);
-            }
-        }
-        Ok(true)
-    }
-
-    pub fn iterate_keys<K, F>(&self, mut p: F) -> Result<bool>
-    where
-        K: From<u32>,
-        F: FnMut(K) -> Result<bool>,
-    {
-        for key in self.0.keys() {
-            let k: K = K::from(*key);
-            let should_continue = p(k)?;
-            if !should_continue {
-                return Ok(false);
-            }
-        }
-        Ok(true)
-    }
-
-    pub fn iterate_with_keys<K, F>(&self, mut p: F) -> Result<bool>
-    where
-        K: From<u32>,
-        F: FnMut(K, CurrencyBalance) -> Result<bool>,
-    {
-        for (key, value) in &self.0 {
-            let k: K = K::from(*key);
-            let should_continue = p(k, value.clone())?;
-            if !should_continue {
-                return Ok(false);
-            }
-        }
-        Ok(true)
-    }
-}
+define_HashmapE! {ExtraCurrencyCollection, 16, CurrencyBalance}
 
 #[cfg(test)]
 define_VarIntegerN!(Grams, 15, u128);
@@ -1050,8 +911,8 @@ impl CurrencyCollection {
         Self::from_vmshell(CurrencyBalance::zero())
     }
 
-    pub fn get_other(&self, key: u32) -> Option<&CurrencyBalance> {
-        self.other.0.get(&key)
+    pub fn get_other(&self, key: u32) -> Result<Option<CurrencyBalance>> {
+        self.other.get(&key)
     }
 
     pub fn set_other(&mut self, key: u32, other: u128) -> Result<()> {
@@ -1060,32 +921,32 @@ impl CurrencyCollection {
     }
 
     pub fn set_other_ex(&mut self, key: u32, other: &CurrencyBalance) -> Result<()> {
-        self.other.0.insert(key, other.clone());
+        self.other.set(&key, other)?;
         Ok(())
     }
 
-    pub fn other_as_hashmap(&self) -> ExtraCurrencyCollection {
-        self.other.clone()
+    pub fn other_as_hashmap(&self) -> HashmapE {
+        self.other.0.clone()
     }
 
     pub fn with_vmshell(vmshell: u128) -> Self {
-        Self::from_vmshell(CurrencyBalance::new(vmshell))
+        Self::from_vmshell(CurrencyBalance(vmshell))
     }
 
     pub fn set_vmshell(&mut self, vmshell: u128) -> Result<()> {
-        self.vmshell = CurrencyBalance::new(vmshell);
+        self.vmshell = CurrencyBalance(vmshell);
         Ok(())
     }
 
-    pub fn from_vmshell(vmshell: CurrencyBalance) -> Self {
+    pub const fn from_vmshell(vmshell: CurrencyBalance) -> Self {
         CurrencyCollection { vmshell, other: ExtraCurrencyCollection::default() }
     }
 
-    pub fn is_zero(&self) -> bool {
+    pub fn is_zero(&self) -> Result<bool> {
         if !self.vmshell.is_zero() {
-            return false;
+            return Ok(false);
         }
-        self.other.0.values().all(|balance| balance.is_zero())
+        self.other.iterate(|value| Ok(value.is_zero()))
     }
 }
 
@@ -1112,40 +973,71 @@ pub trait AddSub {
 
 impl AddSub for CurrencyCollection {
     fn sub(&mut self, other: &Self) -> Result<()> {
-        if let Err(e) = self.vmshell.checked_sub(&other.vmshell) {
-            return Err(e);
+        if self.vmshell.checked_sub(&other.vmshell).is_err() {
+            return Err(err_msg("Substitution error"));
         }
-        if let Err(e) = self.other.checked_sub(&other.other) {
-            return Err(e);
+        let result = other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
+            if let Some(mut a) = self.other.get(&key)? {
+                if a >= b {
+                    a.checked_sub(&b)?;
+                    self.other.set(&key, &a)?;
+                    return Ok(true);
+                }
+            } else if b == CurrencyBalance::zero() {
+                return Ok(true);
+            }
+
+            return Ok(false); // coin not found in mine or amount is smaller - cannot
+            // subtract
+        })?;
+        if result {
+            return Ok(());
+        } else {
+            return Err(err_msg("Substitution failed"));
         }
-        Ok(())
     }
 
     fn add(&mut self, other: &Self) -> Result<()> {
-        if let Err(e) = self.vmshell.checked_add(&other.vmshell) {
-            return Err(e);
+        if self.vmshell.checked_add(&other.vmshell).is_err() {
+            return Err(err_msg("Add failed"));
         }
-        if let Err(e) = self.other.checked_add(&other.other) {
-            return Err(e);
+        let mut result = self.other.clone();
+        let res = other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
+            match self.other.get(&key)? {
+                Some(mut a) => {
+                    if a.checked_add(&b).is_err() {
+                        return Ok(false);
+                    }
+                    result.set(&key, &a)?;
+                }
+                None => {
+                    result.set(&key, &b)?;
+                }
+            }
+            Ok(true)
+        })?;
+        if res {
+            self.other = result;
+            return Ok(());
         }
-        Ok(())
+        return Err(err_msg("Add failed"));
     }
 }
 
 impl fmt::Display for CurrencyCollection {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.vmshell.0)?;
-        if !self.other.0.is_empty() {
-            write!(f, ", other ({}): {{", self.other.0.len())?;
-            let entries = self
-                .other
-                .0
-                .iter()
-                .map(|(k, v)| format!("{} => {}", k, v.0))
-                .collect::<Vec<_>>()
-                .join(", ");
-
-            write!(f, "{} }}", entries)?;
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.vmshell)?;
+        if !self.other.is_empty() {
+            let mut len = 0;
+            write!(f, ", other: {{")?;
+            self.other
+                .iterate_with_keys(|key: u32, value| {
+                    len += 1;
+                    write!(f, " {} => {},", key, value.0)?;
+                    Ok(true)
+                })
+                .ok();
+            write!(f, " count: {} }}", len)?;
         }
         Ok(())
     }

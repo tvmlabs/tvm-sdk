@@ -27,7 +27,7 @@ fn test_out_action_create_mint() {
     let mut value = ExtraCurrencyCollection::default();
     let action_send = OutAction::new_mint(value.clone());
     assert_eq!(action_send, OutAction::MintToken { value: value.clone() });
-    let _ = value.0.insert(1, CurrencyBalance(500_u128));
+    let _ = value.set(&1, &CurrencyBalance(500_u128));
     let action_set = OutAction::new_mint(value.clone());
     assert_eq!(action_set, OutAction::MintToken { value: value.clone() });
 }

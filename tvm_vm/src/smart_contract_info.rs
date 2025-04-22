@@ -158,7 +158,7 @@ impl SmartContractInfo {
             .balance_remaining_other
             .data()
             .cloned()
-            .or_else(|| Some(self.balance.other_as_hashmap().data().unwrap()));
+            .or_else(|| self.balance.other_as_hashmap().data().cloned());
 
         let mut params = vec![
             int!(0x076ef1ea),     // magic - should be changed because of structure change

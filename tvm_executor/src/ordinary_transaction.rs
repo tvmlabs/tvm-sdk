@@ -482,12 +482,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             if let Some(TrBouncePhase::Ok(_)) = description.bounce {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.vmshell, original_acc_balance.vmshell);
                 acc_balance = original_acc_balance;
-            } else if account.is_none() && !acc_balance.is_zero() {
+            } else if account.is_none() && !acc_balance.is_zero()? {
                 *account =
                     Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
             }
         }
-        if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero() {
+        if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {
             *account = Account::default();
         }
         tr.set_end_status(account.status());

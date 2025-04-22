@@ -688,9 +688,9 @@ fn test_block_limits() {
 fn get_config_param7() -> ConfigParam7 {
     let mut ecc = ExtraCurrencyCollection::default();
     for _ in 1..100 {
-        ecc.0.insert(
-            rand::random::<u32>(),
-            CurrencyBalance(rand::random::<u128>() & 0x00ffffff_ffffffff_ffffffff_ffffffff), /* VarUInteger32
+        ecc.set(
+            &rand::random::<u32>(),
+            &CurrencyBalance(rand::random::<u128>() & 0x00ffffff_ffffffff_ffffffff_ffffffff), /* VarUInteger32
                                                                                  * stores 31 bytes
                                                                                  * NOT 32!!! */
         )

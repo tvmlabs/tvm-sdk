@@ -37,7 +37,7 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     let y: CurrencyBalance =
         CurrencyBalance(engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)? as u128);
     let mut data = ExtraCurrencyCollection::new();
-    data.set(x, y);
+    data.set(&x, &y)?;
     let mut cell = BuilderData::new();
     data.write_to(&mut cell)?;
     add_action(engine, ACTION_MINTECC, None, cell)
