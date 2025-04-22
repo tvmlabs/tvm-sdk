@@ -888,6 +888,7 @@ pub trait TransactionExecutor {
                         RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
                 }
+                OutAction::UltimateAdd { value } => value as i32,
                 OutAction::ExchangeShell { value } => {
                     let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
@@ -1575,21 +1576,21 @@ fn outmsg_action_handler(
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
-/*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
-            // send all remainig balance of inbound message
-            result_value.add(msg_balance).ok();
-            if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
-                if &result_value.grams < compute_phase_fees {
-                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+        /*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+                    // send all remainig balance of inbound message
+                    result_value.add(msg_balance).ok();
+                    if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                        if &result_value.grams < compute_phase_fees {
+                            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                        }
+                        result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                            log::error!(target: "executor", "cannot subtract msg balance : {}", err);
+                            RESULT_CODE_ACTIONLIST_INVALID
+                        })?;
+                    }
+                    int_header.value = result_value.clone();
                 }
-                result_value.grams.sub(compute_phase_fees).map_err(|err| {
-                    log::error!(target: "executor", "cannot subtract msg balance : {}", err);
-                    RESULT_CODE_ACTIONLIST_INVALID
-                })?;
-            }
-            int_header.value = result_value.clone();
-        }
-*/
+        */
         if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
             // we must pay the fees, sum them with msg value
             result_value.grams += total_fwd_fees;

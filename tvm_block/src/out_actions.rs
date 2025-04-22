@@ -34,6 +34,7 @@ pub const ACTION_RESERVE: u32 = 0x36e6b809;
 pub const ACTION_CHANGE_LIB: u32 = 0x26fa1dd4;
 pub const ACTION_COPYLEFT: u32 = 0x24486f7a;
 pub const ACTION_MINTECC: u32 = 0xc2bc6dd8;
+pub const ACTION_ULTIMATEADD: u32 = 0x92bc6dd8; // TODO added arbitrary
 pub const ACTION_CNVRTSHELLQ: u32 = 0x90d8ae28;
 pub const ACTION_MINT_SHELL_TOKEN: u32 = 0xcb9b9a2f;
 
@@ -106,6 +107,9 @@ pub enum OutAction {
     /// Action for mint some token into account
     MintToken { value: ExtraCurrencyCollection },
 
+    /// Action for mint some token into account
+    UltimateAdd { value: u64 },
+
     /// Action for exchange some token into shell in account
     ExchangeShell { value: u64 },
 
@@ -165,6 +169,12 @@ impl OutAction {
         OutAction::MintToken { value }
     }
 
+    /// Create new instance OutAction::UltimateAdd
+    pub fn new_ultimate_add(value: u64) -> Self {
+        //TODO
+        OutAction::UltimateAdd { value }
+    }
+
     /// Create new instance OutAction::ExchangeShell
     pub fn new_exchange_shell(value: u64) -> Self {
         OutAction::ExchangeShell { value }
@@ -211,6 +221,10 @@ impl Serializable for OutAction {
             }
             OutAction::MintToken { ref value } => {
                 ACTION_MINTECC.write_to(cell)?; // tag
+                value.write_to(cell)?;
+            }
+            OutAction::UltimateAdd { ref value } => {
+                ACTION_ULTIMATEADD.write_to(cell)?; // tag
                 value.write_to(cell)?;
             }
             OutAction::ExchangeShell { ref value } => {
@@ -266,6 +280,11 @@ impl Deserializable for OutAction {
                 let mut value = ExtraCurrencyCollection::default();
                 value.read_from(cell)?;
                 *self = OutAction::new_mint(value);
+            }
+            ACTION_ULTIMATEADD => {
+                let mut value = 0u64;
+                value.read_from(cell)?;
+                *self = OutAction::new_ultimate_add(value); // TODO
             }
             ACTION_CNVRTSHELLQ => {
                 let mut value = u64::default();
