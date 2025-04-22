@@ -94,8 +94,14 @@ fn test_save_external_serialization_order() {
     let body = SliceData::new(vec![0x55; 64]);
     msg.set_body(body);
     msg.int_header_mut().expect("header").set_src_dapp_id(Some(UInt256::ZERO));
+    let value = msg.int_header_mut().expect("header");
+    let mut cc = CurrencyCollection::with_vmshell(10000000000000);
+    cc.other.set(&(5 as u32), &CurrencyBalance(10000000)).unwrap();
+    value.value = cc;
 
-    msg.set_serialization_params(Some(true), Some(false));
+    msg.set_serialization_params(None, None);
+    println!("hash {:?}", msg.hash());
+    println!("message {:?}", msg);
     let b = msg.serialize().unwrap();
 
     let m1 = Message::construct_from_cell(b).unwrap();

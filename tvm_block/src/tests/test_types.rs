@@ -275,7 +275,7 @@ fn test_cc_serialization() {
     let mut data = ExtraCurrencyCollection::default();
     data.set(&(1 as u32), &CurrencyBalance(100000)).unwrap();
     println!("ss {:#?}", data);
-    let g = CurrencyCollection{ 
+    let g = CurrencyCollection {
         vmshell: CurrencyBalance(956_956_956_956_000_000_000u128),
         other: data,
     };
