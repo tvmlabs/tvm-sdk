@@ -707,7 +707,9 @@ impl Serializable for InternalMessageHeader {
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
         println!("FFFFFF {} {}", cell.bits_free(), cell.references_free());
-        self.src_dapp_id.write_maybe_to(cell)?;
+        data = BuilderData::new();
+        self.src_dapp_id.write_maybe_to(&mut data)?;
+        cell.checked_append_reference(data.into_cell()?)?;
         println!("FFFFFF3 {} {}", cell.bits_free(), cell.references_free());
         Ok(())
     }
