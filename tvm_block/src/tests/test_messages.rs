@@ -281,7 +281,7 @@ fn test_check_message_output() {
             [55; 32].into(),
         )
         .unwrap(),
-        CurrencyCollection::with_grams(79),
+        CurrencyCollection::with_vmshell(79),
         false,
     ));
     let mut stinit = StateInit::default();

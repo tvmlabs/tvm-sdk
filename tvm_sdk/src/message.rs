@@ -18,7 +18,7 @@ use tvm_types::SliceData;
 
 use crate::json_helper;
 use crate::types::StringId;
-use crate::types::grams_to_u64;
+use crate::types::currency_to_u64;
 
 #[derive(Deserialize, Debug, PartialEq, Clone, Default)]
 pub enum MessageType {
@@ -48,7 +48,8 @@ impl Message {
     pub fn with_msg(tvm_msg: &TvmMessage) -> Result<Self> {
         let id = tvm_msg.hash()?.as_slice()[..].into();
         let body = tvm_msg.body().map(|slice| slice.into_cell());
-        let value = tvm_msg.get_value().map(|cc| grams_to_u64(&cc.grams)).transpose()?.unwrap_or(0);
+        let value =
+            tvm_msg.get_value().map(|cc| currency_to_u64(&cc.vmshell)).transpose()?.unwrap_or(0);
 
         let msg_type = match tvm_msg.header() {
             CommonMsgInfo::IntMsgInfo(_) => MessageType::Internal,

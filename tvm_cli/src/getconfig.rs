@@ -16,8 +16,8 @@ use tvm_abi::Contract;
 use tvm_abi::Token;
 use tvm_abi::TokenValue;
 use tvm_abi::Uint;
+use tvm_block::CurrencyBalance;
 use tvm_block::ExternalInboundMessageHeader;
-use tvm_block::Grams;
 use tvm_block::Message;
 use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
@@ -474,7 +474,7 @@ fn prepare_message_new_config_param(
     let config_contract_address = MsgAddressInt::with_standart(None, -1, config_account).unwrap();
     let mut header =
         ExternalInboundMessageHeader::new(MsgAddressExt::AddrNone, config_contract_address);
-    header.import_fee = Grams::zero();
+    header.import_fee = CurrencyBalance::zero();
     let body = SliceData::load_builder(cell).unwrap();
     let message = Message::with_ext_in_header_and_body(header, body);
 

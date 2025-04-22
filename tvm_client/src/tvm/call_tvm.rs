@@ -123,7 +123,7 @@ pub(crate) fn call_tvm_msg(
         .map_err(|err| Error::internal_error(format!("can not serialize message: {}", err)))?;
 
     let mut stack = Stack::new();
-    let balance = account.balance().map_or(0, |cc| cc.grams.as_u128());
+    let balance = account.balance().map_or(0, |cc| cc.vmshell.0);
     let function_selector = match msg.header() {
         CommonMsgInfo::IntMsgInfo(_) => tvm_vm::int!(0),
         CommonMsgInfo::ExtInMsgInfo(_) => tvm_vm::int!(-1),

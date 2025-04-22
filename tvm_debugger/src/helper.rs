@@ -51,7 +51,7 @@ pub(crate) fn load_code_and_data_from_state_init(state_init: &StateInit) -> (Sli
 }
 
 pub(crate) fn contract_balance(_args: &RunArgs) -> CurrencyCollection {
-    CurrencyCollection::with_grams(DEFAULT_CONTRACT_BALANCE)
+    CurrencyCollection::with_vmshell(DEFAULT_CONTRACT_BALANCE as u128)
 }
 
 pub(crate) fn capabilities(_args: &RunArgs) -> u64 {

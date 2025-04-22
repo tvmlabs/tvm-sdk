@@ -9,16 +9,24 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::{self};
 use std::marker::PhantomData;
+use std::ops::Add;
+use std::ops::AddAssign;
 use std::ops::Deref;
+use std::ops::Div;
+use std::ops::Mul;
+use std::ops::Sub;
+use std::ops::SubAssign;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
+use failure::err_msg;
 use num::BigInt;
 use num::One;
 use num::Zero;
@@ -26,7 +34,9 @@ use num::bigint::Sign;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
+#[cfg(test)]
 use tvm_types::HashmapE;
+#[cfg(test)]
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
 use tvm_types::Result;
@@ -37,7 +47,6 @@ use tvm_types::fail;
 
 use crate::Deserializable;
 use crate::Serializable;
-use crate::define_HashmapE;
 use crate::error::BlockError;
 use crate::hashmapaug::Augmentable;
 
@@ -158,26 +167,26 @@ macro_rules! define_VarIntegerN {
         }
 
         impl AddSub for $varname {
-            fn add(&mut self, other: &Self) -> Result<bool> {
+            fn add(&mut self, other: &Self) -> Result<()> {
                 if let Some(result) = self.0.checked_add(&other.0) {
                     if let Err(err) = Self::check_overflow(&result) {
                         log::warn!("{} + {} overflow: {:?}", self, other, err);
-                        Ok(false)
+                        Err(err)
                     } else {
                         self.0 = result;
-                        Ok(true)
+                        Ok(())
                     }
                 } else {
-                    Ok(false)
+                    Err(err_msg("Addition fail"))
                 }
             }
 
-            fn sub(&mut self, other: &Self) -> Result<bool> {
+            fn sub(&mut self, other: &Self) -> Result<()> {
                 if let Some(result) = self.0.checked_sub(&other.0) {
                     self.0 = result;
-                    Ok(true)
+                    Ok(())
                 } else {
-                    Ok(false)
+                    Err(err_msg("Sub fail"))
                 }
             }
         }
@@ -332,12 +341,18 @@ macro_rules! define_VarIntegerN {
         }
 
         impl AddSub for $varname {
-            fn add(&mut self, other: &Self) -> Result<bool> {
-                Ok(self.add_checked(other.0))
+            fn add(&mut self, other: &Self) -> Result<()> {
+                if self.add_checked(other.0) {
+                    return Ok(());
+                }
+                Err(err_msg("Add failed"))
             }
 
-            fn sub(&mut self, other: &Self) -> Result<bool> {
-                Ok(self.sub_checked(other.0))
+            fn sub(&mut self, other: &Self) -> Result<()> {
+                if self.sub_checked(other.0) {
+                    return Ok(());
+                }
+                Err(err_msg("Sub failed"))
             }
         }
 
@@ -537,23 +552,269 @@ macro_rules! define_VarIntegerN {
         }
     };
 }
-define_VarIntegerN!(Grams, 15, u128);
-define_VarIntegerN!(VarUInteger32, 32, BigInt);
-define_VarIntegerN!(VarUInteger3, 3, u32);
-define_VarIntegerN!(VarUInteger7, 7, u64);
 
-impl Augmentable for Grams {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
+pub struct CurrencyBalance(pub u128);
+
+impl SubAssign for CurrencyBalance {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 = self.0.checked_sub(rhs.0).expect("Subtraction underflow in CurrencyBalance");
+    }
+}
+
+impl Add for CurrencyBalance {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        CurrencyBalance(self.0 + rhs.0)
+    }
+}
+
+impl Sub for CurrencyBalance {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self {
+        CurrencyBalance(self.0 - rhs.0)
+    }
+}
+
+impl Mul for CurrencyBalance {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self {
+        CurrencyBalance(self.0 * rhs.0)
+    }
+}
+
+impl Div for CurrencyBalance {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self {
+        CurrencyBalance(self.0 / rhs.0)
+    }
+}
+
+impl AddAssign for CurrencyBalance {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 = self.0.checked_add(rhs.0).expect("Add overrflow in CurrencyBalance");
+    }
+}
+
+impl FromStr for CurrencyBalance {
+    type Err = failure::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let cleaned = s.replace(&['_', ' '][..], "");
+        cleaned.parse::<u128>().map(CurrencyBalance).map_err(failure::Error::from)
+    }
+}
+
+impl fmt::Display for CurrencyBalance {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl AddSub for CurrencyBalance {
+    fn sub(&mut self, other: &Self) -> Result<()> {
+        self.0 = self.0.checked_sub(other.0).ok_or_else(|| err_msg("Subtraction underflow"))?;
+        Ok(())
+    }
+
+    fn add(&mut self, other: &Self) -> Result<()> {
+        self.0 = self.0.checked_add(other.0).ok_or_else(|| err_msg("Addition overflow"))?;
+        Ok(())
+    }
+}
+
+impl Serializable for CurrencyBalance {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        self.0.write_to(cell)
+    }
+}
+
+impl Deserializable for CurrencyBalance {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        self.0.read_from(cell)?;
+        Ok(())
+    }
+}
+
+impl Augmentable for CurrencyBalance {
+    fn calc(&mut self, other: &Self) -> Result<()> {
         self.add(other)
     }
 }
 
-// it cannot produce problem
-impl From<u64> for Grams {
-    fn from(value: u64) -> Self {
-        Self(value as u128)
+impl CurrencyBalance {
+    pub fn new(value: u128) -> Self {
+        Self(value)
+    }
+
+    pub fn zero() -> Self {
+        Self(0)
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.0 == 0
+    }
+
+    pub fn checked_add(&mut self, other: &Self) -> Result<()> {
+        self.0 = self.0.checked_add(other.0).ok_or_else(|| err_msg("Addition overflow"))?;
+        Ok(())
+    }
+
+    pub fn checked_sub(&mut self, other: &Self) -> Result<()> {
+        self.0 = self.0.checked_sub(other.0).ok_or_else(|| err_msg("Subtraction underflow"))?;
+        Ok(())
     }
 }
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExtraCurrencyCollection(pub HashMap<u32, CurrencyBalance>);
+
+impl Default for ExtraCurrencyCollection {
+    fn default() -> Self {
+        ExtraCurrencyCollection(HashMap::new())
+    }
+}
+
+impl Serializable for ExtraCurrencyCollection {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        (self.0.len() as u32).write_to(cell)?;
+        for (key, value) in &self.0 {
+            key.write_to(cell)?;
+            value.0.write_to(cell)?;
+        }
+        Ok(())
+    }
+}
+
+impl Deserializable for ExtraCurrencyCollection {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        let mut len = 0u32;
+        len.read_from(cell)?;
+        for _ in 0..len {
+            let mut key = 0u32;
+            let mut value = CurrencyBalance::zero();
+
+            key.read_from(cell)?;
+            value.read_from(cell)?;
+
+            self.0.insert(key, value);
+        }
+        Ok(())
+    }
+}
+
+impl ExtraCurrencyCollection {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn set(&mut self, key: u32, value: CurrencyBalance) -> Option<CurrencyBalance> {
+        self.0.insert(key, value)
+    }
+
+    pub fn checked_add(&mut self, other: &Self) -> Result<()> {
+        let mut temp = self.0.clone();
+        for (key, other_balance) in &other.0 {
+            match temp.get_mut(key) {
+                Some(self_balance) => {
+                    self_balance.checked_add(other_balance)?;
+                }
+                None => {
+                    temp.insert(*key, other_balance.clone());
+                }
+            }
+        }
+        self.0 = temp;
+        Ok(())
+    }
+
+    pub fn checked_sub(&mut self, other: &Self) -> Result<()> {
+        let mut temp = self.0.clone();
+        for (key, other_balance) in &other.0 {
+            match temp.get_mut(key) {
+                Some(self_balance) => {
+                    self_balance.checked_sub(other_balance)?;
+                }
+                None => {
+                    let mut temp_balance = CurrencyBalance::zero();
+                    temp_balance.checked_sub(other_balance)?;
+                    temp.insert(*key, temp_balance);
+                }
+            }
+        }
+        temp.retain(|_, v| !v.is_zero());
+        self.0 = temp;
+        Ok(())
+    }
+
+    pub fn data(&self) -> Result<Cell> {
+        let mut data = BuilderData::default();
+        self.write_to(&mut data)?;
+        data.into_cell()
+    }
+
+    pub fn total_currencies(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&u32, &CurrencyBalance)> {
+        self.0.iter()
+    }
+
+    pub fn iterate<F>(&self, mut p: F) -> Result<bool>
+    where
+        F: FnMut(CurrencyBalance) -> Result<bool>,
+    {
+        for value in self.0.values() {
+            let should_continue = p(value.clone())?;
+            if !should_continue {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    pub fn iterate_keys<K, F>(&self, mut p: F) -> Result<bool>
+    where
+        K: From<u32>,
+        F: FnMut(K) -> Result<bool>,
+    {
+        for key in self.0.keys() {
+            let k: K = K::from(*key);
+            let should_continue = p(k)?;
+            if !should_continue {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    pub fn iterate_with_keys<K, F>(&self, mut p: F) -> Result<bool>
+    where
+        K: From<u32>,
+        F: FnMut(K, CurrencyBalance) -> Result<bool>,
+    {
+        for (key, value) in &self.0 {
+            let k: K = K::from(*key);
+            let should_continue = p(k, value.clone())?;
+            if !should_continue {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+}
+
+#[cfg(test)]
+define_VarIntegerN!(Grams, 15, u128);
+
+define_VarIntegerN!(VarUInteger32, 32, BigInt);
+define_VarIntegerN!(VarUInteger3, 3, u32);
+define_VarIntegerN!(VarUInteger7, 7, u64);
 
 // it cannot produce problem
 impl From<u16> for VarUInteger3 {
@@ -578,32 +839,6 @@ impl VarUInteger7 {
 impl VarUInteger3 {
     pub const fn as_u32(&self) -> u32 {
         self.0
-    }
-}
-
-impl Grams {
-    pub const fn as_u128(&self) -> u128 {
-        self.0
-    }
-
-    pub const fn as_u64(&self) -> Option<u64> {
-        if self.0 <= u64::MAX as u128 { Some(self.0 as u64) } else { None }
-    }
-
-    pub const fn as_u64_quiet(&self) -> u64 {
-        if self.0 <= u64::MAX as u128 { self.0 as u64 } else { u64::MAX }
-    }
-}
-
-impl FromStr for Grams {
-    type Err = tvm_types::Error;
-
-    fn from_str(string: &str) -> Result<Self> {
-        if let Some(stripped) = string.strip_prefix("0x") {
-            Ok(Self(u128::from_str_radix(stripped, 16)?))
-        } else {
-            Ok(Self(string.parse::<u128>()?))
-        }
     }
 }
 
@@ -702,14 +937,6 @@ define_NumberN_up32bit!(Number13, 13);
 define_NumberN_up32bit!(Number16, 16);
 define_NumberN_up32bit!(Number32, 32);
 
-define_HashmapE! {ExtraCurrencyCollection, 32, VarUInteger32}
-
-impl From<HashmapE> for ExtraCurrencyCollection {
-    fn from(other: HashmapE) -> Self {
-        Self(other)
-    }
-}
-
 impl From<u8> for Number8 {
     fn from(value: u8) -> Self {
         Self(value as u32)
@@ -804,67 +1031,67 @@ impl std::convert::TryFrom<u32> for Number16 {
 // = CurrencyCollection;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CurrencyCollection {
-    pub grams: Grams,
+    pub vmshell: CurrencyBalance,
     pub other: ExtraCurrencyCollection,
 }
 
 impl Augmentable for CurrencyCollection {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
+    fn calc(&mut self, other: &Self) -> Result<()> {
         self.add(other)
     }
 }
 
 impl CurrencyCollection {
-    pub const fn default() -> Self {
+    pub fn default() -> Self {
         Self::new()
     }
 
-    pub const fn new() -> Self {
-        Self::from_grams(Grams::zero())
+    pub fn new() -> Self {
+        Self::from_vmshell(CurrencyBalance::zero())
     }
 
-    pub fn get_other(&self, key: u32) -> Result<Option<VarUInteger32>> {
-        self.other.get(&key)
+    pub fn get_other(&self, key: u32) -> Option<&CurrencyBalance> {
+        self.other.0.get(&key)
     }
 
     pub fn set_other(&mut self, key: u32, other: u128) -> Result<()> {
-        self.set_other_ex(key, &VarUInteger32::from_two_u128(0, other)?)?;
+        self.set_other_ex(key, &CurrencyBalance::new(other))?;
         Ok(())
     }
 
-    pub fn set_other_ex(&mut self, key: u32, other: &VarUInteger32) -> Result<()> {
-        self.other.set(&key, other)?;
+    pub fn set_other_ex(&mut self, key: u32, other: &CurrencyBalance) -> Result<()> {
+        self.other.0.insert(key, other.clone());
         Ok(())
     }
 
-    pub fn other_as_hashmap(&self) -> HashmapE {
-        self.other.0.clone()
+    pub fn other_as_hashmap(&self) -> ExtraCurrencyCollection {
+        self.other.clone()
     }
 
-    pub fn with_grams(grams: u64) -> Self {
-        Self::from_grams(Grams::from(grams))
+    pub fn with_vmshell(vmshell: u128) -> Self {
+        Self::from_vmshell(CurrencyBalance::new(vmshell))
     }
 
-    pub fn set_grams(&mut self, grams: u64) -> Result<()> {
-        self.grams = Grams::from(grams);
+    pub fn set_vmshell(&mut self, vmshell: u128) -> Result<()> {
+        self.vmshell = CurrencyBalance::new(vmshell);
         Ok(())
     }
 
-    pub const fn from_grams(grams: Grams) -> Self {
-        CurrencyCollection { grams, other: ExtraCurrencyCollection::default() }
+    pub fn from_vmshell(vmshell: CurrencyBalance) -> Self {
+        CurrencyCollection { vmshell, other: ExtraCurrencyCollection::default() }
     }
 
-    pub fn is_zero(&self) -> Result<bool> {
-        if !self.grams.is_zero() {
-            return Ok(false);
+    pub fn is_zero(&self) -> bool {
+        if !self.vmshell.is_zero() {
+            return false;
         }
-        self.other.iterate(|value| Ok(value.is_zero()))
+        self.other.0.values().all(|balance| balance.is_zero())
     }
 }
 
 impl Serializable for CurrencyCollection {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        self.grams.write_to(cell)?;
+        self.vmshell.0.write_to(cell)?;
         self.other.write_to(cell)?;
         Ok(())
     }
@@ -872,76 +1099,53 @@ impl Serializable for CurrencyCollection {
 
 impl Deserializable for CurrencyCollection {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.grams.read_from(cell)?;
+        self.vmshell.read_from(cell)?;
         self.other.read_from(cell)?;
         Ok(())
     }
 }
 
 pub trait AddSub {
-    fn sub(&mut self, other: &Self) -> Result<bool>;
-    fn add(&mut self, other: &Self) -> Result<bool>;
+    fn sub(&mut self, other: &Self) -> Result<()>;
+    fn add(&mut self, other: &Self) -> Result<()>;
 }
 
 impl AddSub for CurrencyCollection {
-    fn sub(&mut self, other: &Self) -> Result<bool> {
-        if !self.grams.sub(&other.grams)? {
-            return Ok(false);
+    fn sub(&mut self, other: &Self) -> Result<()> {
+        if let Err(e) = self.vmshell.checked_sub(&other.vmshell) {
+            return Err(e);
         }
-        other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
-            if let Some(mut a) = self.other.get(&key)? {
-                if a >= b {
-                    a.sub(&b)?;
-                    self.other.set(&key, &a)?;
-                    return Ok(true);
-                }
-            } else if b == VarUInteger32::zero() {
-                return Ok(true);
-            }
-
-            Ok(false) // coin not found in mine or amount is smaller - cannot
-            // subtract
-        })
+        if let Err(e) = self.other.checked_sub(&other.other) {
+            return Err(e);
+        }
+        Ok(())
     }
 
-    fn add(&mut self, other: &Self) -> Result<bool> {
-        if !self.grams.add(&other.grams)? {
-            return Ok(false);
+    fn add(&mut self, other: &Self) -> Result<()> {
+        if let Err(e) = self.vmshell.checked_add(&other.vmshell) {
+            return Err(e);
         }
-        let mut result = self.other.clone();
-        other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
-            match self.other.get(&key)? {
-                Some(mut a) => {
-                    if !a.add(&b)? {
-                        return Ok(false);
-                    }
-                    result.set(&key, &a)?;
-                }
-                None => {
-                    result.set(&key, &b)?;
-                }
-            }
-            Ok(true)
-        })?;
-        self.other = result;
-        Ok(true)
+        if let Err(e) = self.other.checked_add(&other.other) {
+            return Err(e);
+        }
+        Ok(())
     }
 }
 
 impl fmt::Display for CurrencyCollection {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.grams)?;
-        if !self.other.is_empty() {
-            let mut len = 0;
-            write!(f, ", other: {{")?;
-            self.other
-                .iterate_with_keys(|key: u32, value| {
-                    len += 1;
-                    write!(f, " {} => {},", key, value.0)?;
-                    Ok(true)
-                })
-                .ok();
-            write!(f, " count: {} }}", len)?;
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.vmshell.0)?;
+        if !self.other.0.is_empty() {
+            write!(f, ", other ({}): {{", self.other.0.len())?;
+            let entries = self
+                .other
+                .0
+                .iter()
+                .map(|(k, v)| format!("{} => {}", k, v.0))
+                .collect::<Vec<_>>()
+                .join(", ");
+
+            write!(f, "{} }}", entries)?;
         }
         Ok(())
     }
@@ -949,13 +1153,13 @@ impl fmt::Display for CurrencyCollection {
 
 impl From<u64> for CurrencyCollection {
     fn from(value: u64) -> Self {
-        Self::with_grams(value)
+        Self::with_vmshell(value as u128)
     }
 }
 
 impl From<u32> for CurrencyCollection {
     fn from(value: u32) -> Self {
-        Self::with_grams(value as u64)
+        Self::with_vmshell(value as u128)
     }
 }
 
@@ -1009,6 +1213,12 @@ impl Serializable for u128 {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         cell.append_u128(*self)?;
         Ok(())
+    }
+}
+
+impl Deserializable for u128 {
+    fn construct_from(slice: &mut SliceData) -> Result<Self> {
+        slice.get_next_u128()
     }
 }
 

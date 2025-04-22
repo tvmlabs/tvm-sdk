@@ -105,7 +105,7 @@ fn test_compute_phase() {
         success: false,
         msg_state_used: false,
         account_activated: false,
-        gas_fees: 18740987136491.into(),
+        gas_fees: CurrencyBalance(18740987136491),
         gas_used: 45.into(),
         gas_limit: 58.into(),
         gas_credit: Some(58.into()),
@@ -127,7 +127,7 @@ fn test_compute_phase() {
         success: true,
         msg_state_used: false,
         account_activated: true,
-        gas_fees: 18740987136491.into(),
+        gas_fees: CurrencyBalance(18740987136491),
         gas_used: 45.into(),
         gas_limit: 58.into(),
         gas_credit: None,
@@ -149,12 +149,12 @@ fn test_compute_phase() {
 #[test]
 fn test_tr_storage_phase() {
     write_read_and_assert(TrStoragePhase {
-        storage_fees_collected: 653.into(),
-        storage_fees_due: Some(12345679567653.into()),
+        storage_fees_collected: CurrencyBalance(653),
+        storage_fees_due: Some(CurrencyBalance(12345679567653)),
         status_change: AccStatusChange::Frozen,
     });
     write_read_and_assert(TrStoragePhase {
-        storage_fees_collected: 653.into(),
+        storage_fees_collected: CurrencyBalance(653),
         storage_fees_due: None,
         status_change: AccStatusChange::Deleted,
     });
@@ -166,19 +166,19 @@ fn test_bounce_phase() {
 
     write_read_and_assert(TrBouncePhase::Nofunds(TrBouncePhaseNofunds {
         msg_size: StorageUsedShort::with_values_checked(4, 5).unwrap(),
-        req_fwd_fees: 3425978345987.into(),
+        req_fwd_fees: CurrencyBalance(3425978345987),
     }));
 
     write_read_and_assert(TrBouncePhase::Ok(TrBouncePhaseOk {
         msg_size: StorageUsedShort::with_values_checked(4, 5).unwrap(),
-        msg_fees: Grams::one(),
-        fwd_fees: 456.into(),
+        msg_fees: CurrencyBalance(1),
+        fwd_fees: CurrencyBalance(456),
     }));
 }
 
 #[test]
 fn test_credit_phase() {
-    let mut credit = CurrencyCollection::with_grams(1);
+    let mut credit = CurrencyCollection::with_vmshell(1);
     credit.set_other(500, 9_000_000 + 777).unwrap();
     credit.set_other(1005001, 8_000_000 + 1005700).unwrap();
     credit.set_other(1005002, 555_000_000 + 1070500).unwrap();
@@ -199,9 +199,12 @@ fn test_credit_phase() {
     credit.set_other(1005000, 1_005_050_000_000 + 100500).unwrap();
     credit.set_other(80, 100_500_000_000 + 8).unwrap();
 
-    write_read_and_assert(TrCreditPhase { due_fees_collected: Some(123600079553.into()), credit });
+    write_read_and_assert(TrCreditPhase {
+        due_fees_collected: Some(CurrencyBalance(123600079553)),
+        credit,
+    });
 
-    let mut credit = CurrencyCollection::with_grams(1);
+    let mut credit = CurrencyCollection::with_vmshell(1);
     credit.set_other(500, 9_000_000 + 777).unwrap();
     credit.set_other(1005001, 8_000_000 + 1005700).unwrap();
     credit.set_other(1005002, 555_000_000 + 1070500).unwrap();
@@ -223,7 +226,7 @@ fn test_tr_action_phase() {
         valid: false,
         no_funds: true,
         status_change: AccStatusChange::Frozen,
-        total_fwd_fees: Some(111.into()),
+        total_fwd_fees: Some(CurrencyBalance(111)),
         total_action_fees: None,
         result_code: -123456,
         result_arg: Some(-876),
@@ -244,7 +247,7 @@ fn test_tr_action_phase() {
         no_funds: false,
         status_change: AccStatusChange::Frozen,
         total_fwd_fees: None,
-        total_action_fees: Some(111.into()),
+        total_action_fees: Some(CurrencyBalance(111)),
         result_code: -123,
         result_arg: None,
         tot_actions: 45,
@@ -296,13 +299,13 @@ fn test_split_merge_info2() {
 fn test_tr_descr_order() {
     // TrStoragePhase //
     let stor_phase = TrStoragePhase {
-        storage_fees_collected: 653.into(),
-        storage_fees_due: Some(12345679567653.into()),
+        storage_fees_collected: CurrencyBalance(653),
+        storage_fees_due: Some(CurrencyBalance(12345679567653)),
         status_change: AccStatusChange::Frozen,
     };
 
     // TrCreditPhase //
-    let mut credit = CurrencyCollection::with_grams(1);
+    let mut credit = CurrencyCollection::with_vmshell(1);
     credit.set_other(500, 9_000_000 + 777).unwrap();
     credit.set_other(1005001, 8_000_000 + 1005700).unwrap();
     credit.set_other(1005002, 555_000_000 + 1070500).unwrap();
@@ -323,14 +326,15 @@ fn test_tr_descr_order() {
     credit.set_other(1005000, 1_005_050_000_000 + 100500).unwrap();
     credit.set_other(80, 100_500_000_000 + 8).unwrap();
 
-    let credit_phase = TrCreditPhase { due_fees_collected: Some(123600079553.into()), credit };
+    let credit_phase =
+        TrCreditPhase { due_fees_collected: Some(CurrencyBalance(123600079553)), credit };
 
     // TrComputePhase Vm //
     let compute_phase = TrComputePhase::Vm(TrComputePhaseVm {
         success: true,
         msg_state_used: false,
         account_activated: true,
-        gas_fees: 18740987136491.into(),
+        gas_fees: CurrencyBalance(18740987136491),
         gas_used: 45.into(),
         gas_limit: 58.into(),
         gas_credit: Some(3.into()),
@@ -354,7 +358,7 @@ fn test_tr_descr_order() {
         valid: false,
         no_funds: true,
         status_change: AccStatusChange::Frozen,
-        total_fwd_fees: Some(111.into()),
+        total_fwd_fees: Some(CurrencyBalance(111)),
         total_action_fees: None,
         result_code: -123456,
         result_arg: Some(-876),
@@ -372,7 +376,7 @@ fn test_tr_descr_order() {
     // TrBouncePhase //
     let bounce_phase = TrBouncePhase::Nofunds(TrBouncePhaseNofunds {
         msg_size: StorageUsedShort::with_values_checked(4, 5).unwrap(),
-        req_fwd_fees: 3425978345987.into(),
+        req_fwd_fees: CurrencyBalance(3425978345987),
     });
 
     write_read_and_assert(TransactionDescr::Ordinary(TransactionDescrOrdinary {
@@ -392,8 +396,8 @@ fn test_tr_descr_tick_tock() {
     write_read_and_assert(TransactionDescr::TickTock(TransactionDescrTickTock {
         tt: TransactionTickTock::Tick,
         storage: TrStoragePhase {
-            storage_fees_collected: 653.into(),
-            storage_fees_due: Some(12345679567653.into()),
+            storage_fees_collected: CurrencyBalance(653),
+            storage_fees_due: Some(CurrencyBalance(12345679567653)),
             status_change: AccStatusChange::Frozen,
         },
         compute_ph: TrComputePhase::Skipped(TrComputePhaseSkipped {
@@ -407,15 +411,15 @@ fn test_tr_descr_tick_tock() {
     write_read_and_assert(TransactionDescr::TickTock(TransactionDescrTickTock {
         tt: TransactionTickTock::Tick,
         storage: TrStoragePhase {
-            storage_fees_collected: 653.into(),
-            storage_fees_due: Some(12345679567653.into()),
+            storage_fees_collected: CurrencyBalance(653),
+            storage_fees_due: Some(CurrencyBalance(12345679567653)),
             status_change: AccStatusChange::Frozen,
         },
         compute_ph: TrComputePhase::Vm(TrComputePhaseVm {
             success: true,
             msg_state_used: false,
             account_activated: true,
-            gas_fees: 18740987136491.into(),
+            gas_fees: CurrencyBalance(18740987136491),
             gas_used: 45.into(),
             gas_limit: 58.into(),
             gas_credit: None,
@@ -437,7 +441,7 @@ fn test_tr_descr_tick_tock() {
             valid: false,
             no_funds: true,
             status_change: AccStatusChange::Frozen,
-            total_fwd_fees: Some(111.into()),
+            total_fwd_fees: Some(CurrencyBalance(111)),
             total_action_fees: None,
             result_code: -123456,
             result_arg: Some(-876),
@@ -479,7 +483,7 @@ fn test_tr_descr_split_prepare() {
             valid: false,
             no_funds: true,
             status_change: AccStatusChange::Frozen,
-            total_fwd_fees: Some(111.into()),
+            total_fwd_fees: Some(CurrencyBalance(111)),
             total_action_fees: None,
             result_code: -123456,
             result_arg: Some(-876),
@@ -514,7 +518,7 @@ fn test_tr_descr_split_prepare() {
             success: true,
             msg_state_used: false,
             account_activated: true,
-            gas_fees: 18740987136491.into(),
+            gas_fees: CurrencyBalance(18740987136491),
             gas_used: 45.into(),
             gas_limit: 58.into(),
             gas_credit: None,
@@ -573,8 +577,8 @@ fn test_tr_descr_mege_prepare() {
             .unwrap(),
         },
         storage_ph: TrStoragePhase {
-            storage_fees_collected: 653.into(),
-            storage_fees_due: Some(12345679567653.into()),
+            storage_fees_collected: CurrencyBalance(653),
+            storage_fees_due: Some(CurrencyBalance(12345679567653)),
             status_change: AccStatusChange::Frozen,
         },
         aborted: true,
@@ -584,7 +588,7 @@ fn test_tr_descr_mege_prepare() {
 #[test]
 fn test_tr_descr_mege_install() {
     // TrCreditPhase //
-    let mut credit = CurrencyCollection::with_grams(1);
+    let mut credit = CurrencyCollection::with_vmshell(1);
     credit.set_other(500, 9_000_000 + 777).unwrap();
     credit.set_other(1005001, 8_000_000 + 1005700).unwrap();
     credit.set_other(1005002, 555_000_000 + 1070500).unwrap();
@@ -605,7 +609,8 @@ fn test_tr_descr_mege_install() {
     credit.set_other(1005000, 1_005_050_000_000 + 100500).unwrap();
     credit.set_other(80, 100_500_000_000 + 8).unwrap();
 
-    let credit_phase = TrCreditPhase { due_fees_collected: Some(123600079553.into()), credit };
+    let credit_phase =
+        TrCreditPhase { due_fees_collected: Some(CurrencyBalance(123600079553)), credit };
 
     write_read_and_assert(TransactionDescr::MergeInstall(TransactionDescrMergeInstall {
         split_info: SplitMergeInfo {
@@ -626,7 +631,7 @@ fn test_tr_descr_mege_install() {
             success: true,
             msg_state_used: false,
             account_activated: true,
-            gas_fees: 18740987136491.into(),
+            gas_fees: CurrencyBalance(18740987136491),
             gas_used: 45.into(),
             gas_limit: 58.into(),
             gas_credit: None,
@@ -648,7 +653,7 @@ fn test_tr_descr_mege_install() {
             valid: false,
             no_funds: true,
             status_change: AccStatusChange::Frozen,
-            total_fwd_fees: Some(111.into()),
+            total_fwd_fees: Some(CurrencyBalance(111)),
             total_action_fees: None,
             result_code: -123456,
             result_arg: Some(-876),

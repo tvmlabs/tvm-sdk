@@ -27,6 +27,7 @@ use tvm_types::UsageTree;
 use tvm_types::error;
 use tvm_types::fail;
 
+use crate::CurrencyBalance;
 use crate::Deserializable;
 use crate::GetRepresentationHash;
 use crate::MaybeDeserialize;
@@ -40,7 +41,6 @@ use crate::merkle_proof::MerkleProof;
 use crate::shard::MASTERCHAIN_ID;
 use crate::types::AddSub;
 use crate::types::CurrencyCollection;
-use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
@@ -599,8 +599,8 @@ pub struct InternalMessageHeader {
     pub src: MsgAddressIntOrNone,
     pub dst: MsgAddressInt,
     pub value: CurrencyCollection,
-    pub ihr_fee: Grams,
-    pub fwd_fee: Grams,
+    pub ihr_fee: CurrencyBalance,
+    pub fwd_fee: CurrencyBalance,
     pub created_lt: u64,
     pub created_at: UnixTime32,
     pub src_dapp_id: Option<UInt256>,
@@ -621,8 +621,8 @@ impl InternalMessageHeader {
             src: MsgAddressIntOrNone::Some(src),
             dst,
             value,
-            ihr_fee: Grams::default(),
-            fwd_fee: Grams::default(),
+            ihr_fee: CurrencyBalance::default(),
+            fwd_fee: CurrencyBalance::default(),
             created_lt: 0, // Logical Time will be set on BlockBuilder
             created_at: UnixTime32::default(), // UNIX time too
             src_dapp_id: None,
@@ -654,12 +654,12 @@ impl InternalMessageHeader {
     }
 
     /// Get IHR fee for message
-    pub fn ihr_fee(&self) -> &Grams {
+    pub fn ihr_fee(&self) -> &CurrencyBalance {
         &self.ihr_fee
     }
 
     /// Get forwarding fee for message transfer
-    pub fn fwd_fee(&self) -> &Grams {
+    pub fn fwd_fee(&self) -> &CurrencyBalance {
         &self.fwd_fee
     }
 
@@ -742,12 +742,12 @@ impl fmt::Display for ExternalInboundMessageHeader {
 pub struct ExternalInboundMessageHeader {
     pub src: MsgAddressExt,
     pub dst: MsgAddressInt,
-    pub import_fee: Grams,
+    pub import_fee: CurrencyBalance,
 }
 
 impl ExternalInboundMessageHeader {
-    pub const fn new(src: MsgAddressExt, dst: MsgAddressInt) -> Self {
-        let import_fee = Grams::zero();
+    pub fn new(src: MsgAddressExt, dst: MsgAddressInt) -> Self {
+        let import_fee = CurrencyBalance::zero();
         Self { src, dst, import_fee }
     }
 }
@@ -905,14 +905,14 @@ impl CommonMsgInfo {
     /// Get message header fees
     /// Fee collected only for transfer internal and external outbound messages.
     /// for other types of messages, function returned None
-    pub fn fee(&self) -> Result<Option<Grams>> {
+    pub fn fee(&self) -> Result<Option<CurrencyBalance>> {
         match self {
             CommonMsgInfo::IntMsgInfo(header) => {
-                let mut result = header.ihr_fee;
+                let mut result = header.ihr_fee.clone();
                 result.add(&header.fwd_fee)?;
                 Ok(Some(result))
             }
-            CommonMsgInfo::ExtInMsgInfo(header) => Ok(Some(header.import_fee)),
+            CommonMsgInfo::ExtInMsgInfo(header) => Ok(Some(header.import_fee.clone())),
             _ => Ok(None),
         }
     }
@@ -1288,7 +1288,7 @@ impl Message {
     /// Only Internal and External outbound messages has a fee
     /// If the transmittal of a message it is necessary to collect a fee.
     /// Otherwise None
-    pub fn get_fee(&self) -> Result<Option<Grams>> {
+    pub fn get_fee(&self) -> Result<Option<CurrencyBalance>> {
         self.header.fee()
     }
 
@@ -1565,8 +1565,8 @@ impl InternalMessageHeader {
             src: MsgAddressIntOrNone::None,
             dst: MsgAddressInt::default(),
             value: CurrencyCollection::default(),
-            ihr_fee: Grams::default(),
-            fwd_fee: Grams::default(),
+            ihr_fee: CurrencyBalance::default(),
+            fwd_fee: CurrencyBalance::default(),
             created_lt: 0,
             created_at: UnixTime32::default(),
             src_dapp_id: None,

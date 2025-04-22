@@ -3,9 +3,9 @@ use std::str::FromStr;
 
 use tvm_abi::decode_function_response;
 use tvm_block::CommonMsgInfo;
+use tvm_block::CurrencyBalance;
 use tvm_block::CurrencyCollection;
 use tvm_block::Deserializable;
-use tvm_block::Grams;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 use tvm_block::OutAction;
@@ -217,13 +217,13 @@ fn print_msg_header(header: &CommonMsgInfo) -> String {
     }
 }
 
-fn print_grams(grams: &Grams) -> String {
+fn print_grams(grams: &CurrencyBalance) -> String {
     grams.to_string()
 }
 
 fn print_cc(cc: &CurrencyCollection) -> String {
-    let mut result = print_grams(&cc.grams);
-    if !cc.other.is_empty() {
+    let mut result = print_grams(&cc.vmshell);
+    if !cc.other.0.is_empty() {
         result += " other: {";
         cc.other
             .iterate_with_keys(|key: u32, value| {

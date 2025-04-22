@@ -13,8 +13,6 @@ use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
 
-use tvm_block::Deserializable;
-use tvm_block::StateInit;
 use tvm_types::BuilderData;
 use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
@@ -273,10 +271,6 @@ fn read_boc(filename: &str) -> Vec<u8> {
 fn load_boc(filename: &str) -> tvm_types::Cell {
     let bytes = read_boc(filename);
     tvm_types::read_single_root_boc(bytes).unwrap()
-}
-
-fn load_stateinit(filename: &str) -> StateInit {
-    StateInit::construct_from_file(filename).unwrap()
 }
 
 #[test]

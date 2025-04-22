@@ -27,6 +27,7 @@ use tvm_types::error;
 use tvm_types::fail;
 use tvm_types::hm_label;
 
+use crate::CurrencyBalance;
 use crate::Deserializable;
 use crate::Serializable;
 use crate::define_HashmapAugE;
@@ -40,7 +41,6 @@ use crate::transactions::Transaction;
 use crate::types::AddSub;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
-use crate::types::Grams;
 
 #[cfg(test)]
 #[path = "tests/test_in_msgs.rs"]
@@ -66,25 +66,28 @@ macro_rules! write_ctor_tag {
 // 3.2.7. Augmentation of InMsgDescr
 #[derive(Default, PartialEq, Eq, Clone, Debug)]
 pub struct ImportFees {
-    pub fees_collected: Grams,
+    pub fees_collected: CurrencyBalance,
     pub value_imported: CurrencyCollection,
 }
 
 impl Augmentable for ImportFees {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
-        let mut result = self.fees_collected.calc(&other.fees_collected)?;
-        result |= self.value_imported.calc(&other.value_imported)?;
-        Ok(result)
+    fn calc(&mut self, other: &Self) -> Result<()> {
+        self.fees_collected.calc(&other.fees_collected)?;
+        self.value_imported.calc(&other.value_imported)?;
+        Ok(())
     }
 }
 
 impl ImportFees {
-    pub const fn new() -> ImportFees {
-        ImportFees { fees_collected: Grams::zero(), value_imported: CurrencyCollection::new() }
+    pub fn new() -> ImportFees {
+        ImportFees {
+            fees_collected: CurrencyBalance::zero(),
+            value_imported: CurrencyCollection::new(),
+        }
     }
 
-    pub fn with_grams(grams: u64) -> Self {
-        Self { fees_collected: Grams::from(grams), value_imported: CurrencyCollection::new() }
+    pub fn with_vmshell(vmshell: u128) -> Self {
+        Self { fees_collected: CurrencyBalance(vmshell), value_imported: CurrencyCollection::new() }
     }
 }
 
@@ -201,32 +204,37 @@ impl InMsg {
     }
 
     /// Create IHR
-    pub fn ihr(msg_cell: Cell, tr_cell: Cell, ihr_fee: Grams, proof: Cell) -> InMsg {
+    pub fn ihr(msg_cell: Cell, tr_cell: Cell, ihr_fee: CurrencyBalance, proof: Cell) -> InMsg {
         InMsg::IHR(InMsgIHR::with_cells(msg_cell, tr_cell, ihr_fee, proof))
     }
 
     /// Create Immediate
-    pub fn immediate(env_cell: Cell, tr_cell: Cell, fwd_fee: Grams) -> InMsg {
+    pub fn immediate(env_cell: Cell, tr_cell: Cell, fwd_fee: CurrencyBalance) -> InMsg {
         InMsg::Immediate(InMsgFinal::with_cells(env_cell, tr_cell, fwd_fee))
     }
 
     /// Create Final
-    pub fn final_msg(env_cell: Cell, tr_cell: Cell, fwd_fee: Grams) -> InMsg {
+    pub fn final_msg(env_cell: Cell, tr_cell: Cell, fwd_fee: CurrencyBalance) -> InMsg {
         InMsg::Final(InMsgFinal::with_cells(env_cell, tr_cell, fwd_fee))
     }
 
     /// Create Transit
-    pub fn transit(in_msg_cell: Cell, out_msg_cell: Cell, fwd_fee: Grams) -> InMsg {
+    pub fn transit(in_msg_cell: Cell, out_msg_cell: Cell, fwd_fee: CurrencyBalance) -> InMsg {
         InMsg::Transit(InMsgTransit::with_cells(in_msg_cell, out_msg_cell, fwd_fee))
     }
 
     /// Create DiscardedFinal
-    pub fn discarded_final(env_cell: Cell, tr_id: u64, fwd_fee: Grams) -> InMsg {
+    pub fn discarded_final(env_cell: Cell, tr_id: u64, fwd_fee: CurrencyBalance) -> InMsg {
         InMsg::DiscardedFinal(InMsgDiscardedFinal::with_cells(env_cell, tr_id, fwd_fee))
     }
 
     /// Create DiscardedTransit
-    pub fn discarded_transit(env_cell: Cell, tr_id: u64, fwd_fee: Grams, proof: Cell) -> InMsg {
+    pub fn discarded_transit(
+        env_cell: Cell,
+        tr_id: u64,
+        fwd_fee: CurrencyBalance,
+        proof: Cell,
+    ) -> InMsg {
         InMsg::DiscardedTransit(InMsgDiscardedTransit::with_cells(env_cell, tr_id, fwd_fee, proof))
     }
 
@@ -386,7 +394,7 @@ impl Augmentation<ImportFees> for InMsg {
                 fees.fees_collected = header.ihr_fee;
 
                 fees.value_imported = header.value.clone();
-                fees.value_imported.grams.add(&header.ihr_fee)?;
+                fees.value_imported.vmshell.add(&header.ihr_fee)?;
             }
             InMsg::Immediate(_) => {
                 // println!("InMsg::Immediate");
@@ -401,8 +409,8 @@ impl Augmentation<ImportFees> for InMsg {
                 fees.fees_collected = *env.fwd_fee_remaining();
 
                 fees.value_imported = header.value.clone();
-                fees.value_imported.grams.add(env.fwd_fee_remaining())?;
-                fees.value_imported.grams.add(&header.ihr_fee)?;
+                fees.value_imported.vmshell.add(env.fwd_fee_remaining())?;
+                fees.value_imported.vmshell.add(&header.ihr_fee)?;
             }
             InMsg::Transit(ref x) => {
                 // println!("InMsg::Transit");
@@ -414,20 +422,20 @@ impl Augmentation<ImportFees> for InMsg {
                 fees.fees_collected = *x.transit_fee();
 
                 fees.value_imported = header.value.clone();
-                fees.value_imported.grams.add(&header.ihr_fee)?;
-                fees.value_imported.grams.add(env.fwd_fee_remaining())?;
+                fees.value_imported.vmshell.add(&header.ihr_fee)?;
+                fees.value_imported.vmshell.add(env.fwd_fee_remaining())?;
             }
             InMsg::DiscardedFinal(_) => {
                 // println!("InMsg::DiscardedFinal");
                 fees.fees_collected = header.fwd_fee;
 
-                fees.value_imported.grams = header.fwd_fee;
+                fees.value_imported.vmshell = header.fwd_fee;
             }
             InMsg::DiscardedTransit(_) => {
                 // println!("InMsg::DiscardedTransit");
                 fees.fees_collected = header.fwd_fee;
 
-                fees.value_imported.grams = header.fwd_fee;
+                fees.value_imported.vmshell = header.fwd_fee;
             }
             InMsg::None => fail!("wrong InMsg type"),
         }
@@ -521,12 +529,17 @@ impl Deserializable for InMsgExternal {
 pub struct InMsgIHR {
     msg: ChildCell<Message>,
     transaction: ChildCell<Transaction>,
-    ihr_fee: Grams,
+    ihr_fee: CurrencyBalance,
     proof_created: Cell,
 }
 
 impl InMsgIHR {
-    pub fn with_cells(msg_cell: Cell, tr_cell: Cell, ihr_fee: Grams, proof_created: Cell) -> Self {
+    pub fn with_cells(
+        msg_cell: Cell,
+        tr_cell: Cell,
+        ihr_fee: CurrencyBalance,
+        proof_created: Cell,
+    ) -> Self {
         InMsgIHR {
             msg: ChildCell::with_cell(msg_cell),
             transaction: ChildCell::with_cell(tr_cell),
@@ -551,7 +564,7 @@ impl InMsgIHR {
         self.transaction.cell()
     }
 
-    pub fn ihr_fee(&self) -> &Grams {
+    pub fn ihr_fee(&self) -> &CurrencyBalance {
         &self.ihr_fee
     }
 
@@ -584,11 +597,11 @@ impl Deserializable for InMsgIHR {
 pub struct InMsgFinal {
     in_msg: ChildCell<MsgEnvelope>,
     transaction: ChildCell<Transaction>,
-    pub fwd_fee: Grams,
+    pub fwd_fee: CurrencyBalance,
 }
 
 impl InMsgFinal {
-    pub fn with_cells(msg_cell: Cell, tr_cell: Cell, fwd_fee: Grams) -> Self {
+    pub fn with_cells(msg_cell: Cell, tr_cell: Cell, fwd_fee: CurrencyBalance) -> Self {
         InMsgFinal {
             in_msg: ChildCell::with_cell(msg_cell),
             transaction: ChildCell::with_cell(tr_cell),
@@ -616,7 +629,7 @@ impl InMsgFinal {
         self.transaction.cell()
     }
 
-    pub fn fwd_fee(&self) -> &Grams {
+    pub fn fwd_fee(&self) -> &CurrencyBalance {
         &self.fwd_fee
     }
 }
@@ -643,11 +656,11 @@ impl Deserializable for InMsgFinal {
 pub struct InMsgTransit {
     in_msg: ChildCell<MsgEnvelope>,
     out_msg: ChildCell<MsgEnvelope>,
-    pub transit_fee: Grams,
+    pub transit_fee: CurrencyBalance,
 }
 
 impl InMsgTransit {
-    pub fn with_cells(in_msg_cell: Cell, out_msg_cell: Cell, fee: Grams) -> Self {
+    pub fn with_cells(in_msg_cell: Cell, out_msg_cell: Cell, fee: CurrencyBalance) -> Self {
         InMsgTransit {
             in_msg: ChildCell::with_cell(in_msg_cell),
             out_msg: ChildCell::with_cell(out_msg_cell),
@@ -675,7 +688,7 @@ impl InMsgTransit {
         self.out_msg.cell()
     }
 
-    pub fn transit_fee(&self) -> &Grams {
+    pub fn transit_fee(&self) -> &CurrencyBalance {
         &self.transit_fee
     }
 }
@@ -702,11 +715,11 @@ impl Deserializable for InMsgTransit {
 pub struct InMsgDiscardedFinal {
     in_msg: ChildCell<MsgEnvelope>,
     pub transaction_id: u64,
-    pub fwd_fee: Grams,
+    pub fwd_fee: CurrencyBalance,
 }
 
 impl InMsgDiscardedFinal {
-    pub fn with_cells(in_msg_cell: Cell, transaction_id: u64, fee: Grams) -> Self {
+    pub fn with_cells(in_msg_cell: Cell, transaction_id: u64, fee: CurrencyBalance) -> Self {
         InMsgDiscardedFinal {
             in_msg: ChildCell::with_cell(in_msg_cell),
             transaction_id,
@@ -734,7 +747,7 @@ impl InMsgDiscardedFinal {
         self.transaction_id
     }
 
-    pub fn fwd_fee(&self) -> &Grams {
+    pub fn fwd_fee(&self) -> &CurrencyBalance {
         &self.fwd_fee
     }
 }
@@ -761,12 +774,17 @@ impl Deserializable for InMsgDiscardedFinal {
 pub struct InMsgDiscardedTransit {
     in_msg: ChildCell<MsgEnvelope>,
     transaction_id: u64,
-    fwd_fee: Grams,
+    fwd_fee: CurrencyBalance,
     proof_delivered: Cell,
 }
 
 impl InMsgDiscardedTransit {
-    pub fn with_cells(env_cell: Cell, transaction_id: u64, fee: Grams, proof: Cell) -> Self {
+    pub fn with_cells(
+        env_cell: Cell,
+        transaction_id: u64,
+        fee: CurrencyBalance,
+        proof: Cell,
+    ) -> Self {
         InMsgDiscardedTransit {
             in_msg: ChildCell::with_cell(env_cell),
             transaction_id,
@@ -795,7 +813,7 @@ impl InMsgDiscardedTransit {
         self.transaction_id
     }
 
-    pub fn fwd_fee(&self) -> &Grams {
+    pub fn fwd_fee(&self) -> &CurrencyBalance {
         &self.fwd_fee
     }
 

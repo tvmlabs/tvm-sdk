@@ -17,6 +17,7 @@ use tvm_types::read_single_root_boc;
 use super::*;
 use crate::BASE_WORKCHAIN_ID;
 use crate::BlockExtra;
+use crate::CurrencyBalance;
 use crate::MsgAddressInt;
 use crate::ShardStateUnsplit;
 use crate::transactions::tests::generate_test_shard_account_block;
@@ -83,9 +84,9 @@ fn test_shard_descr() {
 fn test_shard_descr_with_copyleft() {
     let mut copyleft_rewards = CopyleftRewards::default();
     let address = MsgAddressInt::with_standart(None, 0, AccountId::from([1; 32])).unwrap();
-    copyleft_rewards.set(&address.address(), &100.into()).unwrap();
+    copyleft_rewards.set(&address.address(), &CurrencyBalance(100)).unwrap();
     let address = MsgAddressInt::with_standart(None, 0, AccountId::from([2; 32])).unwrap();
-    copyleft_rewards.set(&address.address(), &200.into()).unwrap();
+    copyleft_rewards.set(&address.address(), &CurrencyBalance(200)).unwrap();
 
     let mut descr_none =
         ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::None);
@@ -259,8 +260,8 @@ fn test_mc_block_extra() {
         .fees
         .store_shard_fees(
             &ident,
-            CurrencyCollection::with_grams(1),
-            CurrencyCollection::with_grams(1),
+            CurrencyCollection::with_vmshell(1),
+            CurrencyCollection::with_vmshell(1),
         )
         .unwrap();
     extra.shards.split_shard(&ident, |_| Ok((shard1, shard1_1))).unwrap();
@@ -270,8 +271,8 @@ fn test_mc_block_extra() {
         .fees
         .store_shard_fees(
             &ident,
-            CurrencyCollection::with_grams(1),
-            CurrencyCollection::with_grams(1),
+            CurrencyCollection::with_vmshell(1),
+            CurrencyCollection::with_vmshell(1),
         )
         .unwrap();
     extra.shards.split_shard(&ident, |_| Ok((shard2, shard2_2))).unwrap();
@@ -322,8 +323,8 @@ fn test_mc_block_extra_2() {
         .fees
         .store_shard_fees(
             &ident,
-            CurrencyCollection::with_grams(1),
-            CurrencyCollection::with_grams(1),
+            CurrencyCollection::with_vmshell(1),
+            CurrencyCollection::with_vmshell(1),
         )
         .unwrap();
     extra.shards.split_shard(&ident, |_| Ok((shard1, shard1_1))).unwrap();
@@ -333,8 +334,8 @@ fn test_mc_block_extra_2() {
         .fees
         .store_shard_fees(
             &ident,
-            CurrencyCollection::with_grams(1),
-            CurrencyCollection::with_grams(1),
+            CurrencyCollection::with_vmshell(1),
+            CurrencyCollection::with_vmshell(1),
         )
         .unwrap();
     extra.shards.split_shard(&ident, |_| Ok((shard2, shard2_2))).unwrap();
@@ -500,7 +501,7 @@ fn test_serialization_shard_fees() {
     // let mut summ = 0;
     for n in 1..12u32 {
         // summ += 2 * n * 100;
-        let mut cc = CurrencyCollection::with_grams(n as u64 * 100);
+        let mut cc = CurrencyCollection::with_vmshell(n as u128 * 100);
         cc.set_other(n, n as u128).unwrap();
         let fee = ShardFeeCreated::with_fee(cc);
         let ident = ShardIdentFull::new(n as i32, 0x8000_0000_0000_0000);

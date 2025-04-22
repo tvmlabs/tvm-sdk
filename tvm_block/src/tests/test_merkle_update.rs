@@ -23,8 +23,8 @@ use tvm_types::write_boc;
 use super::*;
 use crate::Account;
 use crate::Block;
+use crate::CurrencyBalance;
 use crate::CurrencyCollection;
-use crate::Grams;
 use crate::HashmapE;
 use crate::HashmapType;
 use crate::InternalMessageHeader;
@@ -56,7 +56,7 @@ fn test_merkle_update() {
 
     let old_cell = acc.serialize().unwrap();
 
-    let f = CurrencyCollection::with_grams(20);
+    let f = CurrencyCollection::with_vmshell(20);
     acc.add_funds(&f).unwrap();
 
     let mut data = SliceData::new(vec![
@@ -99,7 +99,7 @@ fn test_merkle_update_serialization() {
 
     let old_cell = acc.serialize().unwrap();
 
-    let f = CurrencyCollection::with_grams(20);
+    let f = CurrencyCollection::with_vmshell(20);
     acc.add_funds(&f).unwrap();
 
     let data = SliceData::new(vec![
@@ -160,7 +160,7 @@ fn test_merkle_update_with_hasmaps() {
         let old_cell = acc.serialize().unwrap();
 
         let mut f = CurrencyCollection::new();
-        f.grams = Grams::new(a as u128).unwrap();
+        f.vmshell = CurrencyBalance(a as u128);
         acc.add_funds(&f).unwrap();
 
         let data = SliceData::new(vec![
@@ -540,7 +540,7 @@ fn get_message_with_addrs(src: AccountId, dst: AccountId) -> Message {
 fn get_message(val: u8) -> MsgEnvelope {
     MsgEnvelope::with_message_and_fee(
         &get_message_with_addrs(AccountId::from([val; 32]), AccountId::from([val + 1; 32])),
-        Grams::from(val as u64 * 2),
+        CurrencyBalance(val as u128 * 2),
     )
     .unwrap()
 }
@@ -902,7 +902,7 @@ fn test_update_shard_state_with_external_cell() {
 
     for n in 5..70u8 {
         let mut acc = generate_test_account_by_init_code_hash(false);
-        let f = CurrencyCollection::with_grams(n as u64);
+        let f = CurrencyCollection::with_vmshell(n as u128);
         acc.add_funds(&f).unwrap();
         shard_accounts_full
             .insert(
@@ -969,7 +969,7 @@ fn test_update_shard_state_with_external_cell() {
         let mut shard_accounts = new_state.read_accounts().unwrap();
         let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
         let mut acc = shard_acc.read_account().unwrap().as_struct().unwrap();
-        acc.add_funds(&CurrencyCollection::with_grams(20)).unwrap();
+        acc.add_funds(&CurrencyCollection::with_vmshell(20)).unwrap();
         shard_acc.set_account_cell(acc.serialize().unwrap());
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         new_state.write_accounts(&shard_accounts).unwrap();
@@ -989,7 +989,7 @@ fn test_update_shard_state_with_external_cell() {
         let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
         shard_acc.read_account().unwrap();
         let mut acc = Account::construct_from_cell(acc5_root.clone()).unwrap();
-        acc.add_funds(&CurrencyCollection::with_grams(20)).unwrap();
+        acc.add_funds(&CurrencyCollection::with_vmshell(20)).unwrap();
         shard_acc.set_account_cell(acc.serialize().unwrap());
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         new_state.write_accounts(&shard_accounts).unwrap();

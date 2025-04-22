@@ -684,7 +684,7 @@ async fn test_encode_internal_message_empty_body() -> Result<()> {
     let mut msg_header = InternalMessageHeader {
         ihr_disabled: true,
         bounce: true,
-        value: CurrencyCollection::with_grams(1000000000),
+        value: CurrencyCollection::with_vmshell(1000000000),
         ..Default::default()
     };
     msg_header.set_dst(account_decode(&dst_address)?);

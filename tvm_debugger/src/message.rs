@@ -6,15 +6,14 @@ use serde_json::Value;
 #[cfg(test)]
 use serde_json::json;
 use tvm_abi::encode_function_call;
+use tvm_block::CurrencyBalance;
 use tvm_block::CurrencyCollection;
 use tvm_block::ExternalInboundMessageHeader;
 use tvm_block::ExtraCurrencyCollection;
-use tvm_block::Grams;
 use tvm_block::InternalMessageHeader;
 use tvm_block::Message;
 use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
-use tvm_block::VarUInteger32;
 use tvm_types::SliceData;
 use tvm_types::ed25519_create_private_key;
 
@@ -42,7 +41,7 @@ pub(crate) fn generate_external_message(
     let header = ExternalInboundMessageHeader {
         src: MsgAddressExt::with_extern(SliceData::from_raw(vec![0x55; 8], 64)).unwrap(),
         dst,
-        import_fee: 0x1234u64.into(), // Taken from TVM-linker
+        import_fee: CurrencyBalance(0x1234), // Taken from TVM-linker
     };
     let mut msg = Message::with_ext_in_header(header);
     if let Some(body) = body {
@@ -61,8 +60,7 @@ pub(crate) fn generate_internal_message(
             .map_err(|e| anyhow::format_err!("Failed to decode message source: {e}"))?,
         None => MsgAddressInt::default(),
     };
-    let grams = Grams::new(args.message_value.unwrap_or(0))
-        .map_err(|e| anyhow::format_err!("Failed to setup message value: {e}"))?;
+    let vmshell = CurrencyBalance::new(args.message_value.unwrap_or(0));
     let mut ecc = ExtraCurrencyCollection::new();
     if let Some(value) = args.message_ecc.as_ref() {
         let map_value: Value = serde_json::from_str(value)
@@ -72,12 +70,12 @@ pub(crate) fn generate_internal_message(
         for (k, v) in ecc_map {
             let key = k.parse::<u32>()?;
             let value_str = v.as_str().ok_or(anyhow::format_err!("Failed to parse ecc value"))?;
-            let value = VarUInteger32::from_str(value_str)
+            let value = CurrencyBalance::from_str(value_str)
                 .map_err(|e| anyhow::format_err!("Failed to decode ecc value: {e}"))?;
-            ecc.set(&key, &value).map_err(|e| anyhow::format_err!("Failed to set ecc key: {e}"))?;
+            ecc.set(key, value);
         }
     }
-    let value = CurrencyCollection { grams, other: ecc };
+    let value = CurrencyCollection { vmshell, other: ecc };
     let mut header = InternalMessageHeader::with_addresses(src, dst, value);
 
     // Constants taken from TVM-linker

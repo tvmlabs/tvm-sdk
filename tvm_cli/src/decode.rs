@@ -210,7 +210,7 @@ pub async fn print_account_data(
     };
 
     let balance = match account.balance() {
-        Some(balance) => format!("{}", balance.grams.clone()),
+        Some(balance) => format!("{}", balance.vmshell.clone()),
         _ => "Undefined".to_owned(),
     };
 
@@ -487,8 +487,8 @@ pub mod msg_printer {
     use serde_json::Value;
     use serde_json::json;
     use tvm_block::CommonMsgInfo;
+    use tvm_block::CurrencyBalance;
     use tvm_block::CurrencyCollection;
-    use tvm_block::Grams;
     use tvm_block::Message;
     use tvm_block::StateInit;
     use tvm_client::boc::ParamsOfGetCompilerVersion;
@@ -553,13 +553,13 @@ pub mod msg_printer {
         )
     }
 
-    fn serialize_grams(grams: &Grams) -> Value {
+    fn serialize_grams(grams: &CurrencyBalance) -> Value {
         json!(grams.to_string())
     }
 
     fn serialize_currency_collection(cc: &CurrencyCollection) -> Value {
-        let grams = serialize_grams(&cc.grams);
-        if cc.other.is_empty() {
+        let grams = serialize_grams(&cc.vmshell);
+        if cc.other.0.is_empty() {
             return grams;
         }
         let mut other = json!({});

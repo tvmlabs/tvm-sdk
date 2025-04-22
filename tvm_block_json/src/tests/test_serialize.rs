@@ -620,7 +620,7 @@ fn test_message_into_json_0() {
     let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader {
         src: MsgAddressExt::with_extern(SliceData::new(vec![1, 2, 3, 4, 5, 0x80])).unwrap(),
         dst: MsgAddressInt::default(),
-        import_fee: 15u64.into(),
+        import_fee: CurrencyBalance(15),
     });
 
     let mut stinit = StateInit::default();
@@ -681,7 +681,7 @@ fn test_message_into_json_q() {
     let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader {
         src: MsgAddressExt::with_extern(SliceData::new(vec![1, 2, 3, 4, 5, 0x80])).unwrap(),
         dst: MsgAddressInt::default(),
-        import_fee: 15u64.into(),
+        import_fee: CurrencyBalance(15),
     });
 
     let mut stinit = StateInit::default();
@@ -1201,8 +1201,8 @@ fn test_crafted_key_block_into_json() {
     let cp4 =
         ConfigParamEnum::ConfigParam4(ConfigParam4 { dns_root_addr: UInt256::from([144; 32]) });
     let cp6 = ConfigParamEnum::ConfigParam6(ConfigParam6 {
-        mint_new_price: 123u64.into(),
-        mint_add_price: 1458347523u64.into(),
+        mint_new_price: CurrencyBalance(123),
+        mint_add_price: CurrencyBalance(1458347523),
     });
     let cp9 = ConfigParamEnum::ConfigParam9({
         let mut mp = MandatoryParams::default();

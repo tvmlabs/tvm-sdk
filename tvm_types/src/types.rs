@@ -187,6 +187,39 @@ impl UInt256 {
     pub fn into_vec(self) -> Vec<u8> {
         self.0.to_vec()
     }
+
+    pub fn checked_add(&self, other: &Self) -> Option<Self> {
+        let mut result = [0u8; 32];
+        let mut carry = 0u16;
+
+        for i in (0..32).rev() {
+            let sum = self.0[i] as u16 + other.0[i] as u16 + carry;
+            result[i] = sum as u8;
+            carry = sum >> 8;
+        }
+
+        (carry == 0).then_some(Self(result))
+    }
+
+    pub fn checked_sub(&self, other: &Self) -> Option<Self> {
+        let mut result = [0u8; 32];
+        let mut borrow = 0u16;
+
+        for i in (0..32).rev() {
+            let minuend = self.0[i] as u16;
+            let subtrahend = other.0[i] as u16 + borrow;
+
+            if minuend < subtrahend {
+                borrow = 1;
+                result[i] = (minuend + 256 - subtrahend) as u8;
+            } else {
+                borrow = 0;
+                result[i] = (minuend - subtrahend) as u8;
+            }
+        }
+
+        (borrow == 0).then_some(Self(result))
+    }
 }
 
 impl From<[u8; 32]> for UInt256 {

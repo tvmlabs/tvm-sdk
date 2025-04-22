@@ -16,7 +16,6 @@ use tvm_block::ConfigCopyleft;
 use tvm_block::ConfigVotingSetup;
 use tvm_block::Number16;
 use tvm_block::Serializable;
-use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 
@@ -88,7 +87,7 @@ fn get_config_param1() -> ConfigParam1 {
 fn get_config_param7() -> ConfigParam7 {
     let mut ecc = ExtraCurrencyCollection::default();
     for i in 1..100 {
-        ecc.set(&(i as u32), &VarUInteger32::from_two_u128(i * 100, i * 205).unwrap()).unwrap();
+        ecc.set(i as u32, CurrencyBalance(i * 100)).unwrap();
     }
     ConfigParam7 { to_mint: ecc }
 }
@@ -103,8 +102,8 @@ fn get_config_param16() -> ConfigParam16 {
 
 fn get_config_param17() -> ConfigParam17 {
     let mut c = ConfigParam17::new();
-    c.min_stake = Grams::zero();
-    c.max_stake = Grams::one();
+    c.min_stake = CurrencyBalance::zero();
+    c.max_stake = CurrencyBalance(1);
     c.max_stake_factor = 12121;
     c
 }
@@ -241,8 +240,8 @@ fn get_config_param10() -> ConfigParam10 {
 fn get_config_param14() -> ConfigParam14 {
     ConfigParam14 {
         block_create_fees: BlockCreateFees {
-            masterchain_block_fee: Grams::from(1458347523u64),
-            basechain_block_fee: Grams::from(145800000000003u64),
+            masterchain_block_fee: CurrencyBalance(1458347523),
+            basechain_block_fee: CurrencyBalance(145800000000003),
         },
     }
 }
@@ -288,8 +287,10 @@ fn get_config_param40() -> ConfigParam40 {
 }
 
 fn get_config_param42() -> ConfigCopyleft {
-    let mut cfg =
-        ConfigCopyleft { copyleft_reward_threshold: 100.into(), license_rates: Default::default() };
+    let mut cfg = ConfigCopyleft {
+        copyleft_reward_threshold: CurrencyBalance(100),
+        license_rates: Default::default(),
+    };
     for i in 0..10 {
         cfg.license_rates.set(&{ i }, &(i * 10_u8)).unwrap();
     }
@@ -368,8 +369,8 @@ fn prepare_config_params() -> ConfigParams {
     cp.set_config(c5).unwrap();
 
     let c6 = ConfigParamEnum::ConfigParam6(ConfigParam6 {
-        mint_new_price: Grams::from(123u64),
-        mint_add_price: Grams::from(1458347523u64),
+        mint_new_price: CurrencyBalance(123),
+        mint_add_price: CurrencyBalance(1458347523),
     });
     cp.set_config(c6).unwrap();
 

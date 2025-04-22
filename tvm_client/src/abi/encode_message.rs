@@ -639,12 +639,12 @@ pub fn encode_internal_message(
     };
     let ihr_disabled = !params.enable_ihr.unwrap_or(false);
     let bounce = params.bounce.unwrap_or(true);
-    let value = CurrencyCollection::with_grams(u64::from_str(&params.value).map_err(|err| {
+    let value = CurrencyCollection::with_vmshell(u64::from_str(&params.value).map_err(|err| {
         Error::encode_run_message_failed(
             err,
             params.call_set.as_ref().map(|call_set| call_set.function_name.as_str()),
         )
-    })?);
+    })? as u128);
 
     let (message, address) = if let Some(deploy_set) = params.deploy_set {
         let abi = params.abi.ok_or_else(|| Error::invalid_abi("abi is undefined"))?;

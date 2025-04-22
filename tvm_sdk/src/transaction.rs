@@ -22,7 +22,7 @@ use crate::MessageId;
 use crate::error::SdkError;
 use crate::json_helper;
 use crate::types::StringId;
-use crate::types::grams_to_u64;
+use crate::types::currency_to_u64;
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(default)]
@@ -93,7 +93,7 @@ impl TryFrom<&tvm_block::Transaction> for Transaction {
         let storage_phase = if let Some(phase) = descr.storage_ph {
             Some(StoragePhase {
                 status_change: phase.status_change,
-                storage_fees_collected: grams_to_u64(&phase.storage_fees_collected)?,
+                storage_fees_collected: currency_to_u64(&phase.storage_fees_collected)?,
             })
         } else {
             None
@@ -113,7 +113,7 @@ impl TryFrom<&tvm_block::Transaction> for Transaction {
                 exit_code: Some(ph.exit_code),
                 exit_arg: ph.exit_arg,
                 success: Some(ph.success),
-                gas_fees: grams_to_u64(&ph.gas_fees)?,
+                gas_fees: currency_to_u64(&ph.gas_fees)?,
                 gas_used: ph.gas_used.as_u64(),
             },
         };
@@ -124,8 +124,8 @@ impl TryFrom<&tvm_block::Transaction> for Transaction {
                 valid: phase.valid,
                 no_funds: phase.no_funds,
                 result_code: phase.result_code,
-                total_fwd_fees: grams_to_u64(&phase.total_fwd_fees.unwrap_or_default())?,
-                total_action_fees: grams_to_u64(&phase.total_action_fees.unwrap_or_default())?,
+                total_fwd_fees: currency_to_u64(&phase.total_fwd_fees.unwrap_or_default())?,
+                total_action_fees: currency_to_u64(&phase.total_action_fees.unwrap_or_default())?,
             })
         } else {
             None
@@ -153,7 +153,7 @@ impl TryFrom<&tvm_block::Transaction> for Transaction {
             out_msgs,
             out_messages,
             aborted: descr.aborted,
-            total_fees: grams_to_u64(&transaction.total_fees().grams)?,
+            total_fees: currency_to_u64(&transaction.total_fees().vmshell)?,
             storage: storage_phase,
             compute: compute_phase,
             action: action_phase,

@@ -16,7 +16,6 @@ use rand::Rng;
 use tvm_types::read_single_root_boc;
 
 use super::*;
-use crate::VarUInteger32;
 use crate::write_read_and_assert;
 
 fn get_config_param0() -> ConfigParam0 {
@@ -52,8 +51,8 @@ fn test_config_param_16() {
 
 fn get_config_param17() -> ConfigParam17 {
     ConfigParam17 {
-        min_stake: Grams::zero(),
-        max_stake: Grams::one(),
+        min_stake: CurrencyBalance::zero(),
+        max_stake: CurrencyBalance(1),
         max_stake_factor: 12121,
         ..Default::default()
     }
@@ -333,8 +332,8 @@ fn test_config_params() {
     write_read_and_assert(cp.clone());
 
     let c6 = ConfigParamEnum::ConfigParam6(ConfigParam6 {
-        mint_new_price: Grams::new(123).unwrap(),
-        mint_add_price: Grams::new(1458347523).unwrap(),
+        mint_new_price: CurrencyBalance::new(123),
+        mint_add_price: CurrencyBalance::new(1458347523),
     });
     cp.set_config(c6.clone()).unwrap();
     let c = cp.config(6).unwrap().unwrap();
@@ -689,15 +688,11 @@ fn test_block_limits() {
 fn get_config_param7() -> ConfigParam7 {
     let mut ecc = ExtraCurrencyCollection::default();
     for _ in 1..100 {
-        ecc.set(
-            &rand::random::<u32>(),
-            &VarUInteger32::from_two_u128(
-                rand::random::<u128>() & 0x00ffffff_ffffffff_ffffffff_ffffffff, /* VarUInteger32
+        ecc.0.insert(
+            rand::random::<u32>(),
+            CurrencyBalance(rand::random::<u128>() & 0x00ffffff_ffffffff_ffffffff_ffffffff), /* VarUInteger32
                                                                                  * stores 31 bytes
                                                                                  * NOT 32!!! */
-                rand::random::<u128>(),
-            )
-            .unwrap(),
         )
         .unwrap();
     }
@@ -723,8 +718,8 @@ fn get_config_param10() -> ConfigParam10 {
 fn get_config_param14() -> ConfigParam14 {
     ConfigParam14 {
         block_create_fees: BlockCreateFees {
-            masterchain_block_fee: Grams::new(1458347523).unwrap(),
-            basechain_block_fee: Grams::new(145800000000003).unwrap(),
+            masterchain_block_fee: CurrencyBalance::new(1458347523),
+            basechain_block_fee: CurrencyBalance::new(145800000000003),
         },
     }
 }
@@ -770,8 +765,10 @@ fn get_config_param40() -> ConfigParam40 {
 }
 
 fn get_config_param42() -> ConfigCopyleft {
-    let mut cfg =
-        ConfigCopyleft { copyleft_reward_threshold: 100.into(), license_rates: Default::default() };
+    let mut cfg = ConfigCopyleft {
+        copyleft_reward_threshold: CurrencyBalance(100),
+        license_rates: Default::default(),
+    };
     for i in 0..10u8 {
         cfg.license_rates.set(&i, &(i * 10)).unwrap();
     }

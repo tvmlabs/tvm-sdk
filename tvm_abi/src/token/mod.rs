@@ -16,7 +16,7 @@ use std::fmt;
 use chrono::prelude::Utc;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
-use tvm_block::Grams;
+use tvm_block::CurrencyBalance;
 use tvm_block::MsgAddress;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -125,7 +125,7 @@ pub enum TokenValue {
     /// Encoded similar to `Bytes`
     String(String),
     /// Nanograms
-    Token(Grams),
+    Token(CurrencyBalance),
     /// Timestamp
     Time(u64),
     /// Message expiration time

@@ -26,6 +26,7 @@ use tvm_types::error;
 use tvm_types::fail;
 
 use crate::ConfigParams;
+use crate::CurrencyBalance;
 use crate::Deserializable;
 use crate::ExternalCell;
 use crate::ExternalCellStruct;
@@ -48,7 +49,6 @@ use crate::shard::ShardStateUnsplit;
 use crate::shard_accounts::DepthBalanceInfo;
 use crate::types::AddSub;
 use crate::types::CurrencyCollection;
-use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::VarUInteger7;
 
@@ -280,7 +280,7 @@ impl fmt::Display for StorageUsedShort {
 pub struct StorageInfo {
     used: StorageUsed,
     last_paid: u32,
-    due_payment: Option<Grams>,
+    due_payment: Option<CurrencyBalance>,
 }
 
 impl StorageInfo {
@@ -292,7 +292,7 @@ impl StorageInfo {
         StorageInfo { used: StorageUsed::default(), last_paid: 0, due_payment: None }
     }
 
-    pub const fn with_values(last_paid: u32, due_payment: Option<Grams>) -> Self {
+    pub const fn with_values(last_paid: u32, due_payment: Option<CurrencyBalance>) -> Self {
         StorageInfo { used: StorageUsed::default(), last_paid, due_payment }
     }
 
@@ -304,7 +304,7 @@ impl StorageInfo {
         self.last_paid
     }
 
-    pub const fn due_payment(&self) -> Option<&Grams> {
+    pub const fn due_payment(&self) -> Option<&CurrencyBalance> {
         self.due_payment.as_ref()
     }
 }
@@ -322,7 +322,7 @@ impl Deserializable for StorageInfo {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         self.used.read_from(cell)?;
         self.last_paid = cell.get_next_u32()?;
-        self.due_payment = Grams::read_maybe_from(cell)?;
+        self.due_payment = CurrencyBalance::read_maybe_from(cell)?;
         Ok(())
     }
 }
@@ -401,7 +401,7 @@ pub struct AccountStorage {
 
 impl AccountStorage {
     /// Construct empty account storage
-    pub const fn default() -> Self {
+    pub fn default() -> Self {
         Self {
             last_trans_lt: 0,
             balance: CurrencyCollection::default(),
@@ -648,7 +648,7 @@ impl Account {
     }
 
     /// Create unintialize account with zero balance
-    pub const fn with_address(addr: MsgAddressInt) -> Self {
+    pub fn with_address(addr: MsgAddressInt) -> Self {
         Account::with_stuff(AccountStuff {
             addr,
             storage_stat: StorageInfo::default(),
@@ -659,7 +659,7 @@ impl Account {
     /// Create initialized account from "constructor internal message"
     pub fn from_message_by_init_code_hash(msg: &Message, init_code_hash: bool) -> Option<Self> {
         let hdr = msg.int_header()?;
-        if hdr.value().grams.is_zero() {
+        if hdr.value().vmshell.is_zero() {
             return None;
         }
         let mut storage = AccountStorage::default();
@@ -713,7 +713,7 @@ impl Account {
         last_trans_lt: u64,
         last_paid: u32,
         state_hash: UInt256,
-        due_payment: Option<Grams>,
+        due_payment: Option<CurrencyBalance>,
         balance: CurrencyCollection,
     ) -> Self {
         let storage = AccountStorage::frozen(last_trans_lt, balance, state_hash);
@@ -1001,12 +1001,12 @@ impl Account {
     }
 
     /// getting due payment
-    pub fn due_payment(&self) -> Option<&Grams> {
+    pub fn due_payment(&self) -> Option<&CurrencyBalance> {
         self.stuff().and_then(|s| s.storage_stat.due_payment.as_ref())
     }
 
     /// setting due payment
-    pub fn set_due_payment(&mut self, due_payment: Option<Grams>) {
+    pub fn set_due_payment(&mut self, due_payment: Option<CurrencyBalance>) {
         if let Some(stuff) = self.stuff_mut() {
             stuff.storage_stat.due_payment = due_payment
         }
@@ -1046,11 +1046,11 @@ impl Account {
     }
 
     /// subtraction funds from account (for example, rollback transaction)
-    pub fn sub_funds(&mut self, funds_to_sub: &CurrencyCollection) -> Result<bool> {
+    pub fn sub_funds(&mut self, funds_to_sub: &CurrencyCollection) -> Result<()> {
         if let Some(stuff) = self.stuff_mut() {
             stuff.storage.balance.sub(funds_to_sub)
         } else {
-            Ok(false)
+            Err(failure::err_msg("Sub error"))
         }
     }
 
@@ -1325,7 +1325,7 @@ pub fn generate_test_account_by_init_code_hash(init_code_hash: bool) -> Account 
     ]);
 
     // let st_used = StorageUsed::with_values(1,2,3,4,5);
-    let g = Some(111.into());
+    let g = Some(CurrencyBalance(111));
     let st_info = StorageInfo::with_values(123456789, g);
 
     let mut stinit = StateInit::default();
@@ -1368,7 +1368,7 @@ pub fn generate_test_account_by_init_code_hash(init_code_hash: bool) -> Account 
     stinit.set_library_code(library.into_cell(), true).unwrap();
 
     let mut balance = CurrencyCollection::default();
-    balance.grams = 100000000000.into();
+    balance.vmshell = CurrencyBalance(100000000000);
     balance.set_other(1, 100).unwrap();
     balance.set_other(2, 200).unwrap();
     balance.set_other(3, 300).unwrap();

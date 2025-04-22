@@ -20,6 +20,7 @@ use tvm_types::UInt256;
 use tvm_types::error;
 use tvm_types::fail;
 
+use crate::CurrencyBalance;
 use crate::Deserializable;
 use crate::Serializable;
 use crate::error::BlockError;
@@ -28,7 +29,6 @@ use crate::shard::AccountIdPrefixFull;
 use crate::shard::ShardIdent;
 use crate::types::AddSub;
 use crate::types::ChildCell;
-use crate::types::Grams;
 
 #[cfg(test)]
 #[path = "tests/test_envelope_message.rs"]
@@ -350,13 +350,13 @@ impl Deserializable for IntermediateAddressExt {
 pub struct MsgEnvelope {
     cur_addr: IntermediateAddress,
     next_addr: IntermediateAddress,
-    fwd_fee_remaining: Grams,
+    fwd_fee_remaining: CurrencyBalance,
     msg: ChildCell<Message>,
 }
 
 impl MsgEnvelope {
     /// Create Envelope with message and remainig_fee
-    pub fn with_message_and_fee(msg: &Message, fwd_fee_remaining: Grams) -> Result<Self> {
+    pub fn with_message_and_fee(msg: &Message, fwd_fee_remaining: CurrencyBalance) -> Result<Self> {
         if !msg.is_internal() {
             fail!("MsgEnvelope can be made only for internal messages")
         }
@@ -369,7 +369,7 @@ impl MsgEnvelope {
     }
 
     /// Create Envelope with message cell and remainig_fee
-    pub fn with_message_cell_and_fee(msg_cell: Cell, fwd_fee_remaining: Grams) -> Self {
+    pub fn with_message_cell_and_fee(msg_cell: Cell, fwd_fee_remaining: CurrencyBalance) -> Self {
         Self::with_routing(
             msg_cell,
             fwd_fee_remaining,
@@ -381,7 +381,7 @@ impl MsgEnvelope {
     /// Create Envelope with message and remainig_fee and routing settings
     pub fn with_routing(
         msg_cell: Cell,
-        fwd_fee_remaining: Grams,
+        fwd_fee_remaining: CurrencyBalance,
         cur_addr: IntermediateAddress,
         next_addr: IntermediateAddress,
     ) -> Self {
@@ -394,7 +394,7 @@ impl MsgEnvelope {
     pub(crate) fn hypercube_routing(
         msg: &Message,
         src_shard: &ShardIdent,
-        fwd_fee_remaining: Grams,
+        fwd_fee_remaining: CurrencyBalance,
     ) -> Result<Self> {
         let msg_cell = msg.serialize()?;
         let src = msg.src_ref().ok_or_else(|| {
@@ -453,13 +453,19 @@ impl MsgEnvelope {
     }
 
     /// Get remaining fee of envelope
-    pub fn fwd_fee_remaining(&self) -> &Grams {
+    pub fn fwd_fee_remaining(&self) -> &CurrencyBalance {
         &self.fwd_fee_remaining
     }
 
     /// Collect transfer fee from envelope
-    pub fn collect_fee(&mut self, fee: Grams) -> bool {
-        self.fwd_fee_remaining.sub(&fee).unwrap() // no excpetion here
+    pub fn collect_fee(&mut self, fee: CurrencyBalance) -> bool {
+        let mut temp = self.fwd_fee_remaining.clone();
+        if temp.sub(&fee).is_ok() {
+            self.fwd_fee_remaining = temp;
+            true
+        } else {
+            false
+        }
     }
 
     /// Set current address of envelope

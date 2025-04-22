@@ -12,7 +12,7 @@
 mod tokenize_tests {
     use std::collections::BTreeMap;
 
-    use tvm_block::Grams;
+    use tvm_block::CurrencyBalance;
     use tvm_block::MsgAddress;
     use tvm_types::AccountId;
     use tvm_types::BuilderData;
@@ -63,7 +63,7 @@ mod tokenize_tests {
                 name: "f".to_owned(),
                 value: TokenValue::Int(Int::new(-12345678900987654321i128, 128)),
             },
-            Token::new("g", TokenValue::Token(Grams::new(max_gram).unwrap())),
+            Token::new("g", TokenValue::Token(CurrencyBalance(max_gram))),
             Token { name: "h".to_owned(), value: TokenValue::VarInt(16, (-1000i32).into()) },
             Token { name: "i".to_owned(), value: TokenValue::VarUint(32, 1000u32.into()) },
         ];
@@ -944,7 +944,10 @@ mod types_check_tests {
             },
             Token { name: "n".to_owned(), value: TokenValue::Bytes(vec![1]) },
             Token { name: "o".to_owned(), value: TokenValue::FixedBytes(vec![1, 2, 3]) },
-            Token { name: "p".to_owned(), value: TokenValue::Token(17u64.into()) },
+            Token {
+                name: "p".to_owned(),
+                value: TokenValue::Token(tvm_block::CurrencyBalance(17)),
+            },
             Token { name: "q".to_owned(), value: TokenValue::Time(123) },
             Token { name: "r".to_owned(), value: TokenValue::Expire(456) },
             Token { name: "s".to_owned(), value: TokenValue::PublicKey(None) },

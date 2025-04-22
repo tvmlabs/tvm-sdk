@@ -15,6 +15,7 @@ use std::sync::atomic::AtomicU64;
 
 use serde_json::Value;
 use tvm_block::Account;
+use tvm_block::CurrencyBalance;
 use tvm_block::CurrencyCollection;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
@@ -101,7 +102,7 @@ impl AccountForExecutor {
                         })?
                         .clone();
                     let mut balance = original_balance.clone();
-                    balance.grams = UNLIMITED_BALANCE.into();
+                    balance.vmshell = CurrencyBalance(UNLIMITED_BALANCE as u128);
                     account.set_balance(balance);
                     let account = serialize_object_to_cell(&account, "account")?;
                     Ok((account, Some(original_balance)))
@@ -278,7 +279,7 @@ pub async fn run_executor_internal(
     let contract_info = move || async move {
         let account = deserialize_object_from_cell::<Account>(account_copy.clone(), "account")?;
         if let (Some(addr), Some(balance)) = (account.get_addr(), account.balance()) {
-            Ok((addr.clone(), balance.grams.as_u128() as u64))
+            Ok((addr.clone(), balance.vmshell.0 as u64))
         } else {
             Ok((msg_address.clone(), 0))
         }

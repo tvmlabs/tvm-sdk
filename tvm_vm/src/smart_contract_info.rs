@@ -153,12 +153,12 @@ impl SmartContractInfo {
         debug_assert_eq!(self.balance_remaining_grams, 0, "use balance instead old");
         debug_assert!(self.balance_remaining_other.data().is_none(), "use balance instead old");
 
-        let balance = std::cmp::max(self.balance_remaining_grams, self.balance.grams.as_u128());
+        let balance = std::cmp::max(self.balance_remaining_grams, self.balance.vmshell.0);
         let balance_other = self
             .balance_remaining_other
             .data()
             .cloned()
-            .or_else(|| self.balance.other_as_hashmap().data().cloned());
+            .or_else(|| Some(self.balance.other_as_hashmap().data().unwrap()));
 
         let mut params = vec![
             int!(0x076ef1ea),     // magic - should be changed because of structure change

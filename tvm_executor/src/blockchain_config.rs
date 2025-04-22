@@ -11,10 +11,10 @@
 
 use tvm_block::ConfigParam18;
 use tvm_block::ConfigParams;
+use tvm_block::CurrencyBalance;
 use tvm_block::FundamentalSmcAddresses;
 use tvm_block::GasLimitsPrices;
 use tvm_block::GlobalCapabilities;
-use tvm_block::Grams;
 use tvm_block::MsgAddressInt;
 use tvm_block::MsgForwardPrices;
 use tvm_block::StorageInfo;
@@ -60,9 +60,9 @@ impl TONDefaultConfig for MsgForwardPrices {
 
 pub trait CalcMsgFwdFees {
     fn fwd_fee(&self, msg_cell: &Cell) -> u128;
-    fn ihr_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams>;
-    fn mine_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams>;
-    fn next_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams>;
+    fn ihr_fee_checked(&self, fwd_fee: &CurrencyBalance) -> Result<CurrencyBalance>;
+    fn mine_fee_checked(&self, fwd_fee: &CurrencyBalance) -> Result<CurrencyBalance>;
+    fn next_fee_checked(&self, fwd_fee: &CurrencyBalance) -> Result<CurrencyBalance>;
 }
 
 impl CalcMsgFwdFees for MsgForwardPrices {
@@ -91,8 +91,8 @@ impl CalcMsgFwdFees for MsgForwardPrices {
 
     /// Calculate message IHR fee
     /// IHR fee is calculated as `(msg_forward_fee * ihr_factor) >> 16`
-    fn ihr_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        Grams::new((fwd_fee.as_u128() * self.ihr_price_factor as u128) >> 16)
+    fn ihr_fee_checked(&self, fwd_fee: &CurrencyBalance) -> Result<CurrencyBalance> {
+        Ok(CurrencyBalance((fwd_fee.0 * self.ihr_price_factor as u128) >> 16))
     }
 
     /// Calculate mine part of forward fee
@@ -103,12 +103,12 @@ impl CalcMsgFwdFees for MsgForwardPrices {
     /// `int_msg_remain_fee` is placed in header of internal message and will go
     /// to validators of shard to which message destination address is
     /// belong.
-    fn mine_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        Grams::new((fwd_fee.as_u128() * self.first_frac as u128) >> 16)
+    fn mine_fee_checked(&self, fwd_fee: &CurrencyBalance) -> Result<CurrencyBalance> {
+        Ok(CurrencyBalance((fwd_fee.0 * self.first_frac as u128) >> 16))
     }
 
-    fn next_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        Grams::new((fwd_fee.as_u128() * self.next_frac as u128) >> 16)
+    fn next_fee_checked(&self, fwd_fee: &CurrencyBalance) -> Result<CurrencyBalance> {
+        Ok(CurrencyBalance((fwd_fee.0 * self.next_frac as u128) >> 16))
     }
 }
 
@@ -298,12 +298,12 @@ impl BlockchainConfig {
     }
 
     /// Calculate forward fee
-    pub fn calc_fwd_fee(&self, is_masterchain: bool, msg_cell: &Cell) -> Result<Grams> {
+    pub fn calc_fwd_fee(&self, is_masterchain: bool, msg_cell: &Cell) -> Result<CurrencyBalance> {
         let mut in_fwd_fee = self.get_fwd_prices(is_masterchain).fwd_fee(msg_cell);
         if self.raw_config.has_capability(GlobalCapabilities::CapFeeInGasUnits) {
             in_fwd_fee = self.get_gas_config(is_masterchain).calc_gas_fee(in_fwd_fee.try_into()?)
         }
-        Grams::new(in_fwd_fee)
+        Ok(CurrencyBalance(in_fwd_fee))
     }
 
     /// Calculate account storage fee
@@ -312,7 +312,7 @@ impl BlockchainConfig {
         storage: &StorageInfo,
         is_masterchain: bool,
         now: u32,
-    ) -> Result<Grams> {
+    ) -> Result<CurrencyBalance> {
         let mut storage_fee = self.storage_prices.calc_storage_fee(
             storage.used().cells().into(),
             storage.used().bits().into(),
@@ -323,7 +323,7 @@ impl BlockchainConfig {
         if self.raw_config.has_capability(GlobalCapabilities::CapFeeInGasUnits) {
             storage_fee = self.get_gas_config(is_masterchain).calc_gas_fee(storage_fee.try_into()?)
         }
-        Grams::new(storage_fee)
+        Ok(CurrencyBalance(storage_fee))
     }
 
     /// Check if account is special TON account

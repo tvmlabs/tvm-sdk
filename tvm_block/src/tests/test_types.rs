@@ -9,9 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use num::CheckedAdd;
-use num::CheckedSub;
-
 use super::*;
 use crate::write_read_and_assert;
 
@@ -214,43 +211,45 @@ fn test_number32_serialization() {
 
 #[test]
 fn test_grams_serialization() {
-    let g = Grams::new(956_956_956_956_000_000_000u128).unwrap();
+    let g = CurrencyBalance(956_956_956_956_000_000_000u128);
+    let mut gg = CurrencyBalance(0);
     let s = g.write_to_new_cell().unwrap();
     assert_eq!(s.data(), hex::decode("933e072122d1d2818000").unwrap());
-    assert_eq!(g, Grams::construct_from_cell(s.into_cell().unwrap()).unwrap());
+    gg.read_from(&mut SliceData::load_cell(s.into_cell().unwrap()).unwrap()).unwrap();
+    assert_eq!(g, gg);
 
-    let mut g = Grams::zero();
+    let mut g = CurrencyBalance::zero();
     g.read_from(&mut SliceData::new(vec![0b00010000, 0b000101000])).unwrap();
-    assert_eq!(Grams::from(2), g);
+    assert_eq!(CurrencyBalance(2), g);
     g.read_from(&mut SliceData::new(vec![0b00011111, 0b11110001])).unwrap();
-    assert_eq!(Grams::from(255), g);
+    assert_eq!(CurrencyBalance(255), g);
     g.read_from(&mut SliceData::new(vec![0b00001000])).unwrap();
-    assert_eq!(Grams::zero(), g);
+    assert_eq!(CurrencyBalance::zero(), g);
     g.read_from(&mut SliceData::new(vec![0b00101111, 0b11111111, 0b11110001])).unwrap();
-    assert_eq!(Grams::from(65535), g);
+    assert_eq!(CurrencyBalance(65535), g);
     g.read_from(&mut SliceData::new(vec![
         0b01111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
         0b11110001,
     ]))
     .unwrap();
-    assert_eq!(Grams::new(256u128 * 256 * 256 * 256 * 256 * 256 * 256 - 1).unwrap(), g);
+    assert_eq!(CurrencyBalance::new(256u128 * 256 * 256 * 256 * 256 * 256 * 256 - 1), g);
 
-    let s = Grams::from(2).write_to_new_cell().unwrap();
+    let s = CurrencyBalance(2).write_to_new_cell().unwrap();
     assert_eq!(SliceData::load_builder(s).unwrap(), SliceData::new(vec![0b00010000, 0b00101000]));
 
-    let s = Grams::from(252).write_to_new_cell().unwrap();
+    let s = CurrencyBalance(252).write_to_new_cell().unwrap();
     assert_eq!(SliceData::load_builder(s).unwrap(), SliceData::new(vec![0b00011111, 0b11001000]));
 
     let s = Grams::zero().write_to_new_cell().unwrap();
     assert_eq!(SliceData::load_builder(s).unwrap(), SliceData::new(vec![0b00001000]));
 
-    let s = Grams::from(65534).write_to_new_cell().unwrap();
+    let s = CurrencyBalance(65534).write_to_new_cell().unwrap();
     assert_eq!(
         SliceData::load_builder(s).unwrap(),
         SliceData::new(vec![0b00101111, 0b11111111, 0b11101000])
     );
 
-    let s = Grams::from(0xFFFFFFFFFFFFFE).write_to_new_cell().unwrap();
+    let s = CurrencyBalance(0xFFFFFFFFFFFFFE).write_to_new_cell().unwrap();
     assert_eq!(
         SliceData::load_builder(s).unwrap(),
         SliceData::new(vec![
@@ -260,19 +259,19 @@ fn test_grams_serialization() {
     );
 
     for n in 0..1000 {
-        write_read_and_assert(Grams::from(n));
+        write_read_and_assert(CurrencyBalance(n));
     }
 
     for n in 1000000000..1000001000 {
-        write_read_and_assert(Grams::from(n));
+        write_read_and_assert(CurrencyBalance(n));
     }
 
     for n in 1000000000000000..1000000000001000 {
-        write_read_and_assert(Grams::from(n));
+        write_read_and_assert(CurrencyBalance(n));
     }
 }
 
-define_HashmapE! {SimpleMap, 8, u8}
+crate::define_HashmapE! {SimpleMap, 8, u8}
 
 #[test]
 fn test_filter() {
@@ -305,16 +304,6 @@ fn test_filter() {
 }
 
 #[test]
-fn test_grams_parsing() {
-    let g = Grams::from_str("0xffffffffffffffffffffffffffffffff").unwrap();
-    assert_eq!(g.0, 340282366920938463463374607431768211455u128);
-    Grams::from_str("0x100000000000000000000000000000000").unwrap_err();
-    Grams::from_str("340282366920938463463374607431768211455").unwrap();
-    assert_eq!(g.0, 340282366920938463463374607431768211455u128);
-    Grams::from_str("340282366920938463463374607431768211456").unwrap_err();
-}
-
-#[test]
 fn test_checked_operations() {
     let mut v = VarUInteger7::new(0x00FF_FFFF_FFFF_FFFFu64).unwrap();
     assert!(!v.add_checked(1));
@@ -334,20 +323,15 @@ fn test_checked_operations() {
 
 #[test]
 fn test_math_traits() {
-    let mut a = Grams::from(10);
-    a *= 10;
-    a *= Grams::from(10);
-    a <<= 3;
-    let mut b = ((a >> 2) << 1) + 5;
+    let mut a = CurrencyBalance(10);
+    a.0 *= 10;
+    a.0 *= CurrencyBalance(10).0;
+    a.0 <<= 3;
+    let mut b = ((a.0 >> 2) << 1) + 5;
     b += 1;
     b -= 3;
-    assert_eq!(b.as_u128(), (1000 << 3 >> 2 << 1) + 5 + 1 - 3);
+    assert_eq!(b, (1000 << 3 >> 2 << 1) + 5 + 1 - 3);
 
-    let mut a = Grams::new((1u128 << 120) - 1).unwrap();
-    assert!(!a.add_checked(1), "should not fit in Grams");
-    assert!(a.checked_add(&Grams::one()).is_none(), "should not fit in Grams");
-
-    let mut a = Grams::zero();
-    assert!(!a.sub_checked(1), "should not sub with negative");
-    assert!(a.checked_sub(&Grams::one()).is_none(), "should not sub with negative");
+    let mut a = CurrencyBalance::zero();
+    assert!(!a.checked_sub(&CurrencyBalance(1)).is_ok(), "should not sub with negative");
 }

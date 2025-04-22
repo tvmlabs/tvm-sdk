@@ -15,7 +15,7 @@ use std::str::FromStr;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
 use tvm_block::AnycastInfo;
-use tvm_block::Grams;
+use tvm_block::CurrencyBalance;
 use tvm_block::MsgAddress;
 use tvm_block::Serializable;
 use tvm_types::AccountId;
@@ -157,7 +157,7 @@ fn test_with_grams() {
     builder.append_u32(0).unwrap();
     builder.checked_append_reference(Cell::default()).unwrap();
 
-    let grams = Grams::from(173742);
+    let grams = CurrencyBalance(173742);
     grams.write_to(&mut builder).unwrap();
 
     let values = vec![TokenValue::Token(grams)];

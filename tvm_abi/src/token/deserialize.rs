@@ -14,8 +14,9 @@ use std::collections::BTreeMap;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
+use tvm_block::CurrencyBalance;
+use tvm_block::Deserializable;
 use tvm_block::MsgAddress;
-use tvm_block::types::Grams;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
@@ -96,7 +97,9 @@ impl TokenValue {
             ParamType::String => Self::read_string(slice, last, abi_version),
             ParamType::Token => {
                 let mut slice = find_next_bits(slice, 1)?;
-                let gram = <Grams as tvm_block::Deserializable>::construct_from(&mut slice)?;
+                let mut value = CurrencyBalance(0);
+                value.read_from(&mut slice)?;
+                let gram = value;
                 Ok((TokenValue::Token(gram), slice))
             }
             ParamType::Time => Self::read_time(slice),

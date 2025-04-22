@@ -14,6 +14,7 @@ use std::str::FromStr;
 
 use super::*;
 use crate::AccountStatus;
+use crate::CurrencyBalance;
 use crate::HashUpdate;
 use crate::InMsgExternal;
 use crate::InternalMessageHeader;
@@ -21,7 +22,6 @@ use crate::MsgAddressInt;
 use crate::StateInit;
 use crate::TickTock;
 use crate::TransactionDescr;
-use crate::types::Grams;
 use crate::types::Number5;
 use crate::write_read_and_assert;
 
@@ -76,7 +76,7 @@ fn transaction() -> Transaction {
 
     tr.set_logical_time(123423);
     tr.set_end_status(AccountStatus::AccStateFrozen);
-    tr.set_total_fees(CurrencyCollection::with_grams(653));
+    tr.set_total_fees(CurrencyCollection::with_vmshell(653));
     tr.write_in_msg(Some(&s_in_msg)).unwrap();
     tr.add_out_message(&s_out_msg1).unwrap();
     tr.add_out_message(&s_out_msg2).unwrap();
@@ -222,7 +222,7 @@ fn test_serialization_out_msg_queue() {
 
     for n in 0..100 {
         let msg = get_message();
-        let out_msg_env = MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap();
+        let out_msg_env = MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap();
         queue.insert(0, n, &out_msg_env, 11).unwrap();
     }
 
@@ -266,7 +266,7 @@ fn test_work_with_out_msg_desc() {
     let msg_in =
         InMsg::External(InMsgExternal::with_cells(msg.serialize().unwrap(), tr_cell.clone()));
 
-    let env = MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap();
+    let env = MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap();
     let out_msg = OutMsgImmediate::with_cells(
         env.serialize().unwrap(),
         tr_cell.clone(),
@@ -279,7 +279,7 @@ fn test_work_with_out_msg_desc() {
 
     // test OutMsg::OutMsgNew
     let msg = get_message_with_addrs(create_account_id(4), create_account_id(5));
-    let env = MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap();
+    let env = MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap();
 
     let out_msg_new = OutMsg::new(env.serialize().unwrap(), tr_cell.clone());
 
@@ -292,7 +292,7 @@ fn test_work_with_out_msg_desc() {
         InMsg::External(InMsgExternal::with_cells(msg.serialize().unwrap(), tr_cell.clone()));
 
     let out_msg_transit = OutMsg::Transit(OutMsgTransit::with_cells(
-        MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap().serialize().unwrap(),
+        MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap().serialize().unwrap(),
         msg_in.serialize().unwrap(),
     ));
 
@@ -301,7 +301,7 @@ fn test_work_with_out_msg_desc() {
 
     // test OutMsg::OutMsgDequeue
     let msg = get_message_with_addrs(create_account_id(6), create_account_id(7));
-    let env = MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap();
+    let env = MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap();
     let out_msg = OutMsgDequeue::with_cells(env.serialize().unwrap(), 32523);
     let out_msg_dequeue = OutMsg::Dequeue(out_msg);
 
@@ -329,7 +329,7 @@ fn test_work_with_out_msg_desc() {
     let msg_in = InMsg::External(InMsgExternal::with_cells(msg.serialize().unwrap(), tr_cell));
 
     let out_msg_transit = OutMsg::TransitRequeued(OutMsgTransitRequeued::with_cells(
-        MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap().serialize().unwrap(),
+        MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap().serialize().unwrap(),
         msg_in.serialize().unwrap(),
     ));
 
@@ -343,7 +343,7 @@ fn test_out_msg_queue_and_info() {
 
     // test OutMsg::External
     let msg = get_message_with_addrs(create_account_id(1), create_account_id(2));
-    let out_msg_env = MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap();
+    let out_msg_env = MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap();
 
     queue.insert(0, 1, &out_msg_env, 11).unwrap();
     assert_eq!(queue.len().unwrap(), 1);
@@ -365,12 +365,12 @@ fn test_enqueued_msg() {
 
     let em1 = EnqueuedMsg::with_param(
         234523452345,
-        &MsgEnvelope::with_message_and_fee(&Message::default(), 27348376.into()).unwrap(),
+        &MsgEnvelope::with_message_and_fee(&Message::default(), CurrencyBalance(27348376)).unwrap(),
     )
     .unwrap();
     let em2 = EnqueuedMsg::with_param(
         234523452346,
-        &MsgEnvelope::with_message_and_fee(&Message::default(), 27348377.into()).unwrap(),
+        &MsgEnvelope::with_message_and_fee(&Message::default(), CurrencyBalance(27348377)).unwrap(),
     )
     .unwrap();
     assert_ne!(em1, em2);

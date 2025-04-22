@@ -12,8 +12,8 @@
 use std::sync::atomic::Ordering;
 
 use tvm_block::Account;
+use tvm_block::CurrencyBalance;
 use tvm_block::CurrencyCollection;
-use tvm_block::Grams;
 use tvm_block::Message;
 use tvm_block::Serializable;
 use tvm_block::TrComputePhase;
@@ -88,7 +88,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
         tr.set_logical_time(lt);
         tr.set_now(params.block_unixtime);
         account.set_last_paid(0);
-        let due_before_storage = account.due_payment().map_or(0, |due| due.as_u128());
+        let due_before_storage = account.due_payment().map_or(0, |due| due.0);
         let (storage, storage_fee) = match self.storage_phase(
             account,
             &mut acc_balance,
@@ -100,9 +100,9 @@ impl TransactionExecutor for TickTockTransactionExecutor {
             false,
         ) {
             Ok(storage_ph) => {
-                let mut storage_fee = storage_ph.storage_fees_collected.as_u128();
+                let mut storage_fee = storage_ph.storage_fees_collected.0;
                 if let Some(due) = &storage_ph.storage_fees_due {
-                    storage_fee += due.as_u128()
+                    storage_fee += due.0
                 }
                 storage_fee -= due_before_storage;
                 (storage_ph, storage_fee)
@@ -143,7 +143,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
         );
         let mut stack = Stack::new();
         stack
-            .push(int!(account.balance().map_or(0, |value| value.grams.as_u128())))
+            .push(int!(account.balance().map_or(0, |value| value.vmshell.0)))
             .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(
                 account_id.get_bytestring(0),
             )))
@@ -175,7 +175,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
         description.compute_ph = compute_ph;
         description.action = match description.compute_ph {
             TrComputePhase::Vm(ref phase) => {
-                tr.add_fee_grams(&phase.gas_fees)?;
+                tr.add_fee_vmshell(&phase.gas_fees)?;
                 if phase.success {
                     log::debug!(target: "executor", "compute_phase: TrComputePhase::Vm success");
                     log::debug!(target: "executor", "action_phase {}", lt);
@@ -185,7 +185,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
                         &original_acc_balance,
                         &mut acc_balance,
                         &mut CurrencyCollection::default(),
-                        &Grams::zero(),
+                        &CurrencyBalance::zero(),
                         actions.unwrap_or_default(),
                         new_data,
                         &account_address,
@@ -252,7 +252,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
     }
 
     fn build_stack(&self, _in_msg: Option<&Message>, account: &Account) -> Stack {
-        let account_balance = account.balance().unwrap().grams.as_u128();
+        let account_balance = account.balance().unwrap().vmshell.0;
         let account_id = account.get_id().unwrap();
         let mut stack = Stack::new();
         stack

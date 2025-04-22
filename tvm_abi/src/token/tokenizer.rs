@@ -19,7 +19,7 @@ use num_bigint::BigUint;
 use num_bigint::Sign;
 use num_traits::cast::ToPrimitive;
 use serde_json::Value;
-use tvm_block::Grams;
+use tvm_block::CurrencyBalance;
 use tvm_block::MsgAddress;
 use tvm_types::Cell;
 use tvm_types::ED25519_PUBLIC_KEY_LENGTH;
@@ -240,11 +240,11 @@ impl Tokenizer {
     }
 
     /// Tries to read grams from `Value`
-    fn read_grams(value: &Value, name: &str) -> Result<Grams> {
+    fn read_grams(value: &Value, name: &str) -> Result<CurrencyBalance> {
         if let Some(number) = value.as_u64() {
-            Ok(Grams::from(number))
+            Ok(CurrencyBalance(number as u128))
         } else if let Some(string) = value.as_str() {
-            Grams::from_str(string).map_err(|_| {
+            CurrencyBalance::from_str(string).map_err(|_| {
                 error!(AbiError::InvalidParameterValue {
                     val: value.clone(),
                     name: name.to_string(),

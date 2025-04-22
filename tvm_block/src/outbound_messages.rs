@@ -205,11 +205,11 @@ impl HashmapSubtree for OutMsgQueue {}
 pub type MsgTime = u64;
 
 impl Augmentable for MsgTime {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
+    fn calc(&mut self, other: &Self) -> Result<()> {
         if *self > *other {
             *self = *other;
         }
-        Ok(true)
+        Ok(())
     }
 }
 
@@ -750,9 +750,9 @@ impl Augmentation<CurrencyCollection> for OutMsg {
                 // exported value = msg.value + msg.ihr_fee + fwd_fee_remaining
                 exported.add(msg.header().get_value().unwrap())?;
                 if let CommonMsgInfo::IntMsgInfo(header) = msg.header() {
-                    exported.grams.add(&header.ihr_fee)?;
+                    exported.vmshell.add(&header.ihr_fee)?;
                 }
-                exported.grams.add(env.fwd_fee_remaining())?;
+                exported.vmshell.add(env.fwd_fee_remaining())?;
             }
             OutMsg::Transit(ref x) => {
                 let env = x.read_out_message()?;
@@ -760,9 +760,9 @@ impl Augmentation<CurrencyCollection> for OutMsg {
                 // exported value = msg.value + msg.ihr_fee + fwd_fee_remaining
                 exported.add(msg.header().get_value().unwrap())?;
                 if let CommonMsgInfo::IntMsgInfo(header) = msg.header() {
-                    exported.grams.add(&header.ihr_fee)?;
+                    exported.vmshell.add(&header.ihr_fee)?;
                 }
-                exported.grams.add(env.fwd_fee_remaining())?;
+                exported.vmshell.add(env.fwd_fee_remaining())?;
             }
             OutMsg::TransitRequeued(ref x) => {
                 let env = x.read_out_message()?;
@@ -770,9 +770,9 @@ impl Augmentation<CurrencyCollection> for OutMsg {
                 // exported value = msg.value + msg.ihr_fee + fwd_fee_remaining
                 exported.add(msg.header().get_value().unwrap())?;
                 if let CommonMsgInfo::IntMsgInfo(header) = msg.header() {
-                    exported.grams.add(&header.ihr_fee)?;
+                    exported.vmshell.add(&header.ihr_fee)?;
                 }
-                exported.grams.add(env.fwd_fee_remaining())?;
+                exported.vmshell.add(env.fwd_fee_remaining())?;
             }
             OutMsg::None => fail!("wrong OutMsg type"),
             // for other types - no value exported

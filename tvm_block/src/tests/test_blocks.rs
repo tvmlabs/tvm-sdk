@@ -41,7 +41,7 @@ fn test_blockinfo(block_info: BlockInfo) {
     let mut block_extra = BlockExtra::new();
     block_extra.write_account_blocks(&generate_test_shard_account_block()).unwrap();
 
-    let mut collection = CurrencyCollection::with_grams(3);
+    let mut collection = CurrencyCollection::with_vmshell(3);
     collection.set_other(1005004, 2_000_003).unwrap();
 
     let value_flow = ValueFlow {
@@ -169,7 +169,7 @@ fn test_blockinfo_some_some_none() {
 
 #[test]
 fn test_currency_collection() {
-    let mut cc = CurrencyCollection::from_grams(Grams::one());
+    let mut cc = CurrencyCollection::with_vmshell(1);
     cc.set_other(500, 9_000_000 + 777).unwrap();
     cc.set_other(1005001, 8_000_000 + 1005700).unwrap();
     cc.set_other(1005002, 555_000_000 + 1070500).unwrap();
@@ -195,15 +195,15 @@ fn test_currency_collection() {
 
 #[test]
 fn test_value_flow() {
-    let mut from_prev_blk = CurrencyCollection::with_grams(1);
-    let mut to_next_blk = CurrencyCollection::with_grams(1);
-    let mut imported = CurrencyCollection::with_grams(1);
-    let mut exported = CurrencyCollection::with_grams(1);
-    let mut fees_collected = CurrencyCollection::with_grams(1);
-    let mut fees_imported = CurrencyCollection::with_grams(1);
-    let mut recovered = CurrencyCollection::with_grams(1);
-    let mut created = CurrencyCollection::with_grams(1);
-    let mut minted = CurrencyCollection::with_grams(1);
+    let mut from_prev_blk = CurrencyCollection::with_vmshell(1);
+    let mut to_next_blk = CurrencyCollection::with_vmshell(1);
+    let mut imported = CurrencyCollection::with_vmshell(1);
+    let mut exported = CurrencyCollection::with_vmshell(1);
+    let mut fees_collected = CurrencyCollection::with_vmshell(1);
+    let mut fees_imported = CurrencyCollection::with_vmshell(1);
+    let mut recovered = CurrencyCollection::with_vmshell(1);
+    let mut created = CurrencyCollection::with_vmshell(1);
+    let mut minted = CurrencyCollection::with_vmshell(1);
 
     from_prev_blk.set_other(1001, 1_000_000 + 1).unwrap();
     from_prev_blk.set_other(100500, 9_000_000 + 777).unwrap();
@@ -238,9 +238,9 @@ fn test_value_flow() {
 
     let mut copyleft_rewards = CopyleftRewards::default();
     let address = AccountId::from([1; 32]);
-    copyleft_rewards.set(&address, &100.into()).unwrap();
+    copyleft_rewards.set(&address, &CurrencyBalance(100)).unwrap();
     let address = AccountId::from([2; 32]);
-    copyleft_rewards.set(&address, &200.into()).unwrap();
+    copyleft_rewards.set(&address, &&CurrencyBalance(200)).unwrap();
 
     let value_flow = ValueFlow {
         from_prev_blk: from_prev_blk.clone(),
@@ -538,7 +538,7 @@ fn calc_value_flow() {
     ));
     let block = Block::construct_from_cell(root_cell).unwrap();
 
-    let mut new_transaction_fees = Grams::default();
+    let mut new_transaction_fees = CurrencyBalance::default();
 
     block
         .read_extra()
@@ -546,7 +546,7 @@ fn calc_value_flow() {
         .read_account_blocks()
         .unwrap()
         .iterate_objects(|account_block: AccountBlock| {
-            new_transaction_fees.add(&account_block.transactions().root_extra().grams)?;
+            new_transaction_fees.add(&account_block.transactions().root_extra().vmshell)?;
             Ok(true)
         })
         .unwrap();
@@ -555,32 +555,32 @@ fn calc_value_flow() {
     let mut fees_collected = import_fees.fees_collected;
     let value_imported = import_fees.value_imported;
 
-    let exported = block.read_extra().unwrap().read_out_msg_descr().unwrap().root_extra().grams;
+    let exported = block.read_extra().unwrap().read_out_msg_descr().unwrap().root_extra().vmshell;
 
     fees_collected.add(&new_transaction_fees).unwrap();
 
     let ethalon_value_flow = block.read_value_flow().unwrap();
 
-    println!("exported       = {:12}", ethalon_value_flow.exported.grams);
-    println!("fees_imported  = {:12}", ethalon_value_flow.fees_imported.grams);
-    println!("recovered      = {:12}", ethalon_value_flow.recovered.grams);
-    println!("created        = {:12}", ethalon_value_flow.created.grams);
-    println!("minted         = {:12}", ethalon_value_flow.minted.grams);
-    println!("imported       = {:12}", ethalon_value_flow.imported.grams);
-    println!("fees_collected = {:12}", ethalon_value_flow.fees_collected.grams);
+    println!("exported       = {:12}", ethalon_value_flow.exported.vmshell);
+    println!("fees_imported  = {:12}", ethalon_value_flow.fees_imported.vmshell);
+    println!("recovered      = {:12}", ethalon_value_flow.recovered.vmshell);
+    println!("created        = {:12}", ethalon_value_flow.created.vmshell);
+    println!("minted         = {:12}", ethalon_value_flow.minted.vmshell);
+    println!("imported       = {:12}", ethalon_value_flow.imported.vmshell);
+    println!("fees_collected = {:12}", ethalon_value_flow.fees_collected.vmshell);
 
-    let created = Grams::from(1_000_000_000 / 4); // 1G / 4 shards  // 1_700_000_000 for masterchain
+    let created = CurrencyBalance(1_000_000_000 / 4); // 1G / 4 shards  // 1_700_000_000 for masterchain
 
-    fees_collected.add(&ethalon_value_flow.fees_imported.grams).unwrap(); // TODO calc it
+    fees_collected.add(&ethalon_value_flow.fees_imported.vmshell).unwrap(); // TODO calc it
     fees_collected.add(&created).unwrap(); // TODO calc it
 
-    assert_eq!(ethalon_value_flow.exported.grams, exported);
-    // assert_eq!(ethalon_value_flow.fees_imported.grams, // TODO
-    // assert_eq!(ethalon_value_flow.recovered.grams, // TODO
-    assert_eq!(ethalon_value_flow.created.grams, created);
-    // assert_eq!(ethalon_value_flow.minted.grams, // TODO
+    assert_eq!(ethalon_value_flow.exported.vmshell, exported);
+    // assert_eq!(ethalon_value_flow.fees_imported.vmshell, // TODO
+    // assert_eq!(ethalon_value_flow.recovered.vmshell, // TODO
+    assert_eq!(ethalon_value_flow.created.vmshell, created);
+    // assert_eq!(ethalon_value_flow.minted.vmshell, // TODO
     assert_eq!(ethalon_value_flow.imported, value_imported);
-    assert_eq!(ethalon_value_flow.fees_collected.grams, fees_collected);
+    assert_eq!(ethalon_value_flow.fees_collected.vmshell, fees_collected);
 }
 
 #[test]
@@ -594,27 +594,27 @@ fn test_read_tob_block_descr() {
 #[test]
 fn test_copyleft_rewards() {
     let mut copyleft_rewards = CopyleftRewards::default();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([1; 32]), &100.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &200.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([3; 32]), &300.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([4; 32]), &400.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([5; 32]), &500.into()).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([1; 32]), &CurrencyBalance(100)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &CurrencyBalance(200)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([3; 32]), &CurrencyBalance(300)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([4; 32]), &CurrencyBalance(400)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([5; 32]), &CurrencyBalance(500)).unwrap();
 
     assert_eq!(copyleft_rewards.len().unwrap(), 5);
     let mut index = 1;
     copyleft_rewards
         .iterate_with_keys(|address: AccountId, value| {
             assert_eq!(address, AccountId::from([index as u8; 32]));
-            assert_eq!(value, Grams::from(index * 100));
+            assert_eq!(value, CurrencyBalance(index * 100));
             index += 1;
             Ok(true)
         })
         .unwrap();
     assert_eq!(index, 6);
 
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &300.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &500.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([5; 32]), &700.into()).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &CurrencyBalance(300)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &CurrencyBalance(500)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([5; 32]), &CurrencyBalance(700)).unwrap();
 
     assert_eq!(copyleft_rewards.len().unwrap(), 5);
     let mut index = 1;
@@ -622,33 +622,51 @@ fn test_copyleft_rewards() {
         .iterate_with_keys(|address: AccountId, value| {
             if index != 2 && index != 5 {
                 assert_eq!(address, AccountId::from([index as u8; 32]));
-                assert_eq!(value, Grams::from(index * 100));
+                assert_eq!(value, CurrencyBalance(index * 100));
             }
             index += 1;
             Ok(true)
         })
         .unwrap();
     assert_eq!(index, 6);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([2; 32])).unwrap().unwrap(), 1000);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([5; 32])).unwrap().unwrap(), 1200);
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([2; 32])).unwrap().unwrap(),
+        CurrencyBalance(1000)
+    );
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([5; 32])).unwrap().unwrap(),
+        CurrencyBalance(1200)
+    );
 }
 
 #[test]
 fn test_copyleft_rewards_merge() {
     let mut copyleft_rewards = CopyleftRewards::default();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([1; 32]), &100.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &200.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([3; 32]), &300.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([4; 32]), &400.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([5; 32]), &500.into()).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([1; 32]), &CurrencyBalance(100)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &CurrencyBalance(200)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([3; 32]), &CurrencyBalance(300)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([4; 32]), &CurrencyBalance(400)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([5; 32]), &CurrencyBalance(500)).unwrap();
 
     let mut copyleft_rewards2 = CopyleftRewards::default();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([1; 32]), &1000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([2; 32]), &2000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([4; 32]), &4000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([6; 32]), &6000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([7; 32]), &7000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([8; 32]), &8000.into()).unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([1; 32]), &CurrencyBalance(1000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([2; 32]), &CurrencyBalance(2000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([4; 32]), &CurrencyBalance(4000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([6; 32]), &CurrencyBalance(6000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([7; 32]), &CurrencyBalance(7000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([8; 32]), &CurrencyBalance(8000))
+        .unwrap();
 
     copyleft_rewards.merge_rewards(&copyleft_rewards2).unwrap();
     assert_eq!(copyleft_rewards.len().unwrap(), 8);
@@ -658,9 +676,9 @@ fn test_copyleft_rewards_merge() {
             if index != 3 && index != 5 {
                 assert_eq!(address, AccountId::from([index as u8; 32]));
                 if index < 5 {
-                    assert_eq!(value, Grams::from(index * 100 + index * 1000));
+                    assert_eq!(value, CurrencyBalance(index * 100 + index * 1000));
                 } else {
-                    assert_eq!(value, Grams::from(index * 1000));
+                    assert_eq!(value, CurrencyBalance(index * 1000));
                 }
             }
             index += 1;
@@ -668,40 +686,76 @@ fn test_copyleft_rewards_merge() {
         })
         .unwrap();
     assert_eq!(index, 9);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([3; 32])).unwrap().unwrap(), 300);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([5; 32])).unwrap().unwrap(), 500);
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([3; 32])).unwrap().unwrap(),
+        CurrencyBalance(300)
+    );
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([5; 32])).unwrap().unwrap(),
+        CurrencyBalance(500)
+    );
 }
 
 #[test]
 fn test_copyleft_rewards_merge_threshold() {
     let mut copyleft_rewards = CopyleftRewards::default();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([1; 32]), &100.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &200.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([3; 32]), &300.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([4; 32]), &400.into()).unwrap();
-    copyleft_rewards.add_copyleft_reward(&AccountId::from([5; 32]), &5100.into()).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([1; 32]), &CurrencyBalance(100)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([2; 32]), &CurrencyBalance(200)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([3; 32]), &CurrencyBalance(300)).unwrap();
+    copyleft_rewards.add_copyleft_reward(&AccountId::from([4; 32]), &CurrencyBalance(400)).unwrap();
+    copyleft_rewards
+        .add_copyleft_reward(&AccountId::from([5; 32]), &CurrencyBalance(5100))
+        .unwrap();
 
     let mut copyleft_rewards2 = CopyleftRewards::default();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([1; 32]), &1000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([2; 32]), &2000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([4; 32]), &4000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([6; 32]), &6000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([7; 32]), &7000.into()).unwrap();
-    copyleft_rewards2.add_copyleft_reward(&AccountId::from([8; 32]), &8000.into()).unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([1; 32]), &CurrencyBalance(1000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([2; 32]), &CurrencyBalance(2000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([4; 32]), &CurrencyBalance(4000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([6; 32]), &CurrencyBalance(6000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([7; 32]), &CurrencyBalance(7000))
+        .unwrap();
+    copyleft_rewards2
+        .add_copyleft_reward(&AccountId::from([8; 32]), &CurrencyBalance(8000))
+        .unwrap();
 
-    let arr =
-        copyleft_rewards.merge_rewards_with_threshold(&copyleft_rewards2, &5000.into()).unwrap();
+    let arr = copyleft_rewards
+        .merge_rewards_with_threshold(&copyleft_rewards2, &CurrencyBalance(5000))
+        .unwrap();
     assert_eq!(copyleft_rewards.len().unwrap(), 5);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([1; 32])).unwrap().unwrap(), 1100);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([2; 32])).unwrap().unwrap(), 2200);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([3; 32])).unwrap().unwrap(), 300);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([4; 32])).unwrap().unwrap(), 4400);
-    assert_eq!(copyleft_rewards.get(&AccountId::from([5; 32])).unwrap().unwrap(), 5100); // because old values don't check
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([1; 32])).unwrap().unwrap(),
+        CurrencyBalance(1100)
+    );
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([2; 32])).unwrap().unwrap(),
+        CurrencyBalance(2200)
+    );
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([3; 32])).unwrap().unwrap(),
+        CurrencyBalance(300)
+    );
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([4; 32])).unwrap().unwrap(),
+        CurrencyBalance(4400)
+    );
+    assert_eq!(
+        copyleft_rewards.get(&AccountId::from([5; 32])).unwrap().unwrap(),
+        CurrencyBalance(5100)
+    ); // because old values don't check
 
     assert_eq!(arr.len(), 3);
-    assert_eq!(arr[0], (AccountId::from([6; 32]), 6000.into()));
-    assert_eq!(arr[1], (AccountId::from([7; 32]), 7000.into()));
-    assert_eq!(arr[2], (AccountId::from([8; 32]), 8000.into()));
+    assert_eq!(arr[0], (AccountId::from([6; 32]), CurrencyBalance(6000)));
+    assert_eq!(arr[1], (AccountId::from([7; 32]), CurrencyBalance(7000)));
+    assert_eq!(arr[2], (AccountId::from([8; 32]), CurrencyBalance(8000)));
 }
 
 #[test]

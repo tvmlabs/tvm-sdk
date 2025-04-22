@@ -21,6 +21,7 @@ use tvm_types::UInt256;
 use tvm_types::error;
 use tvm_types::fail;
 
+use crate::CurrencyBalance;
 use crate::Deserializable;
 use crate::Serializable;
 use crate::define_HashmapE;
@@ -30,7 +31,6 @@ use crate::signature::CryptoSignature;
 use crate::signature::SigPubKey;
 use crate::types::ChildCell;
 use crate::types::ExtraCurrencyCollection;
-use crate::types::Grams;
 use crate::types::Number8;
 use crate::types::Number12;
 use crate::types::Number13;
@@ -186,7 +186,7 @@ impl ConfigParams {
     }
 
     // TODO 13 compliant pricing
-    pub fn block_create_fees(&self, masterchain: bool) -> Result<Grams> {
+    pub fn block_create_fees(&self, masterchain: bool) -> Result<CurrencyBalance> {
         match self.config(14)? {
             Some(ConfigParamEnum::ConfigParam14(param)) => {
                 if masterchain {
@@ -1075,8 +1075,8 @@ impl Serializable for ConfigParam5 {
 /// Config Param 6 structure
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct ConfigParam6 {
-    pub mint_new_price: Grams,
-    pub mint_add_price: Grams,
+    pub mint_new_price: CurrencyBalance,
+    pub mint_add_price: CurrencyBalance,
 }
 
 impl ConfigParam6 {
@@ -1261,8 +1261,8 @@ impl Serializable for ConfigParam10 {
 
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct BlockCreateFees {
-    pub masterchain_block_fee: Grams,
-    pub basechain_block_fee: Grams,
+    pub masterchain_block_fee: CurrencyBalance,
+    pub basechain_block_fee: CurrencyBalance,
 }
 
 impl BlockCreateFees {
@@ -1405,9 +1405,9 @@ impl Serializable for ConfigParam16 {
 /// Config Param 17 structure
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct ConfigParam17 {
-    pub min_stake: Grams,
-    pub max_stake: Grams,
-    pub min_total_stake: Grams,
+    pub min_stake: CurrencyBalance,
+    pub max_stake: CurrencyBalance,
+    pub min_total_stake: CurrencyBalance,
     pub max_stake_factor: u32,
 }
 
@@ -3256,7 +3256,7 @@ const COPYLEFT_TAG: u8 = 0x9A;
 /// ConfigParam 42 struct
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct ConfigCopyleft {
-    pub copyleft_reward_threshold: Grams,
+    pub copyleft_reward_threshold: CurrencyBalance,
     pub license_rates: LicenseRates,
 }
 

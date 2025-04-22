@@ -588,7 +588,7 @@ pub fn construct_account_from_tvc(
             _ => MsgAddressInt::default(),
         },
         match balance {
-            Some(balance) => CurrencyCollection::with_grams(balance),
+            Some(balance) => CurrencyCollection::with_vmshell(balance as u128),
             _ => CurrencyCollection::default(),
         },
         0,

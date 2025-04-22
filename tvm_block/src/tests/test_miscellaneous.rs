@@ -15,6 +15,7 @@ use tvm_types::AccountId;
 
 use super::*;
 use crate::Block;
+use crate::CurrencyBalance;
 use crate::CurrencyCollection;
 use crate::IntermediateAddress;
 use crate::InternalMessageHeader;
@@ -106,11 +107,11 @@ fn test_find_shards_by_routing_custom() {
     let hdr = InternalMessageHeader::with_addresses_and_bounce(
         MsgAddressInt::with_standart(None, 0, src).unwrap(),
         MsgAddressInt::with_standart(None, 0, dst).unwrap(),
-        CurrencyCollection::with_grams(3000000000),
+        CurrencyCollection::with_vmshell(3000000000),
         true,
     );
     let msg = Message::with_int_header(hdr);
-    let mut env = MsgEnvelope::with_message_and_fee(&msg, 100.into()).unwrap();
+    let mut env = MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(100)).unwrap();
     env.set_next_addr(IntermediateAddress::use_dest_bits(37).unwrap())
         .set_cur_addr(IntermediateAddress::use_dest_bits(32).unwrap());
     let (cur_prefix, next_prefix) = env.calc_cur_next_prefix().unwrap();

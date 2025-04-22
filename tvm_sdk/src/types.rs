@@ -12,6 +12,7 @@
 use std::fmt;
 
 use num_traits::cast::ToPrimitive;
+use tvm_block::CurrencyBalance;
 use tvm_types::Result;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
@@ -70,8 +71,8 @@ impl StringId {
     }
 }
 
-pub fn grams_to_u64(grams: &tvm_block::types::Grams) -> Result<u64> {
-    grams.as_u128().to_u64().ok_or_else(|| {
-        SdkError::InvalidData { msg: format!("Cannot convert grams value {}", grams) }.into()
+pub fn currency_to_u64(vmshell: &CurrencyBalance) -> Result<u64> {
+    vmshell.0.to_u64().ok_or_else(|| {
+        SdkError::InvalidData { msg: format!("Cannot convert vmshell value {}", vmshell) }.into()
     })
 }

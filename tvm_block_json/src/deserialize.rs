@@ -61,6 +61,7 @@ use tvm_block::ConfigParams;
 use tvm_block::ConfigProposalSetup;
 use tvm_block::ConsensusConfig;
 use tvm_block::CryptoSignature;
+use tvm_block::CurrencyBalance;
 use tvm_block::CurrencyCollection;
 use tvm_block::DelectorParams;
 use tvm_block::Deserializable;
@@ -68,7 +69,6 @@ use tvm_block::ExtraCurrencyCollection;
 use tvm_block::FundamentalSmcAddresses;
 use tvm_block::GasLimitsPrices;
 use tvm_block::GlobalVersion;
-use tvm_block::Grams;
 use tvm_block::LibDescr;
 use tvm_block::MASTERCHAIN_ID;
 use tvm_block::MandatoryParams;
@@ -268,15 +268,15 @@ impl<'m, 'a> PathMap<'m, 'a> {
         fail!("{}/{} must be the integer or a string with the integer", self.path.join("/"), name)
     }
 
-    fn get_grams(&self, name: &'a str) -> Result<Grams> {
+    fn get_vmshell(&self, name: &'a str) -> Result<CurrencyBalance> {
         if let Ok(value) = self.get_item(name) {
             if let Some(v) = value.as_u64() {
-                return Ok(v.into());
+                return Ok(CurrencyBalance(v as u128));
             }
         }
         if let Ok(value) = self.get_item(&(name.to_string() + "_dec")) {
             if let Some(v) = value.as_str() {
-                return Grams::from_str(v).map_err(|err| {
+                return CurrencyBalance::from_str(v).map_err(|err| {
                     error!(
                         "{}/{} must be the integer or a string with the integer {}: {}",
                         self.path.join("/"),
@@ -289,7 +289,7 @@ impl<'m, 'a> PathMap<'m, 'a> {
         }
         if let Ok(value) = self.get_item(name) {
             if let Some(v) = value.as_str() {
-                return Grams::from_str(v).map_err(|err| {
+                return CurrencyBalance::from_str(v).map_err(|err| {
                     error!(
                         "{}/{} must be the integer or a string with the integer {}: {}",
                         self.path.join("/"),
@@ -701,21 +701,23 @@ impl StateParser {
 
         self.parse_parameter(config, 6, |value| {
             Ok(ConfigParamEnum::ConfigParam6(ConfigParam6 {
-                mint_new_price: value.get_grams("mint_new_price")?,
-                mint_add_price: value.get_grams("mint_add_price")?,
+                mint_new_price: value.get_vmshell("mint_new_price")?,
+                mint_add_price: value.get_vmshell("mint_add_price")?,
             }))
         })?;
 
         self.parse_array(config, 7, |p7| {
             let mut to_mint = ExtraCurrencyCollection::default();
             p7.iter().try_for_each(|currency| {
-                let currency = PathMap::cont(config, "p7", currency)?;
-                let value = if let Ok(value) = currency.get_str("value_dec") {
-                    value.parse()?
-                } else {
-                    currency.get_str("value")?.parse()?
+                let currency = PathMap::cont(config, "p7", currency)
+                    .map_err(|e| failure::err_msg(format!("p7 parsing failed: {}", e)))?;
+                let value = match currency.get_str("value_dec") {
+                    Ok(s) => s.parse()?,
+                    Err(_) => currency.get_str("value")?.parse()?,
                 };
-                to_mint.set(&(currency.get_num("currency")? as u32), &value)
+                let currency_id = currency.get_num("currency")? as u32;
+                to_mint.set(currency_id, CurrencyBalance(value));
+                Ok::<(), failure::Error>(())
             })?;
             Ok(ConfigParamEnum::ConfigParam7(ConfigParam7 { to_mint }))
         })?;
@@ -740,8 +742,8 @@ impl StateParser {
         self.parse_parameter(config, 14, |p14| {
             Ok(ConfigParamEnum::ConfigParam14(ConfigParam14 {
                 block_create_fees: BlockCreateFees {
-                    masterchain_block_fee: p14.get_grams("masterchain_block_fee")?,
-                    basechain_block_fee: p14.get_grams("basechain_block_fee")?,
+                    masterchain_block_fee: p14.get_vmshell("masterchain_block_fee")?,
+                    basechain_block_fee: p14.get_vmshell("basechain_block_fee")?,
                 },
             }))
         })?;
@@ -765,9 +767,9 @@ impl StateParser {
 
         self.parse_parameter(config, 17, |p17| {
             Ok(ConfigParamEnum::ConfigParam17(ConfigParam17 {
-                min_stake: p17.get_grams("min_stake")?,
-                max_stake: p17.get_grams("max_stake")?,
-                min_total_stake: p17.get_grams("min_total_stake")?,
+                min_stake: p17.get_vmshell("min_stake")?,
+                max_stake: p17.get_vmshell("max_stake")?,
+                min_total_stake: p17.get_vmshell("min_total_stake")?,
                 max_stake_factor: p17.get_num("max_stake_factor")? as u32,
             }))
         })?;
@@ -898,7 +900,7 @@ impl StateParser {
 
         self.parse_parameter(config, 42, |p42| {
             let mut copyleft_config = tvm_block::ConfigCopyleft {
-                copyleft_reward_threshold: p42.get_grams("threshold")?,
+                copyleft_reward_threshold: p42.get_vmshell("threshold")?,
                 ..Default::default()
             };
             p42.get_vec("payouts").and_then(|p| {
@@ -955,8 +957,8 @@ impl StateParser {
             }
         }
 
-        match map_path.get_grams("total_balance") {
-            Ok(balance) => self.state.set_total_balance(CurrencyCollection::from_grams(balance)),
+        match map_path.get_vmshell("total_balance") {
+            Ok(balance) => self.state.set_total_balance(CurrencyCollection::from_vmshell(balance)),
             Err(err) => {
                 if self.mandatory_params != 0 {
                     return Err(err);
@@ -1000,8 +1002,8 @@ impl StateParser {
                         }
                     }
                 }
-                match master.get_grams("global_balance") {
-                    Ok(balance) => self.extra.global_balance.grams = balance,
+                match master.get_vmshell("global_balance") {
+                    Ok(balance) => self.extra.global_balance.vmshell = balance,
                     Err(err) => {
                         if self.mandatory_params != 0 {
                             return Err(err);

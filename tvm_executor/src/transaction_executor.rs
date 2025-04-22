@@ -28,13 +28,13 @@ use tvm_block::BASE_WORKCHAIN_ID;
 use tvm_block::CommonMsgInfo;
 use tvm_block::ComputeSkipReason;
 use tvm_block::CopyleftReward;
+use tvm_block::CurrencyBalance;
 use tvm_block::CurrencyCollection;
 use tvm_block::Deserializable;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::GasLimitsPrices;
 use tvm_block::GetRepresentationHash;
 use tvm_block::GlobalCapabilities;
-use tvm_block::Grams;
 use tvm_block::HashUpdate;
 use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
@@ -58,7 +58,6 @@ use tvm_block::TrComputePhaseVm;
 use tvm_block::TrCreditPhase;
 use tvm_block::TrStoragePhase;
 use tvm_block::Transaction;
-use tvm_block::VarUInteger32;
 use tvm_block::WorkchainFormat;
 use tvm_types::AccountId;
 use tvm_types::Cell;
@@ -275,7 +274,7 @@ pub trait TransactionExecutor {
         if is_special {
             log::debug!(target: "executor", "Special account: AccStatusChange::Unchanged");
             return Ok(TrStoragePhase::with_params(
-                Grams::zero(),
+                CurrencyBalance::zero(),
                 acc.due_payment().cloned(),
                 AccStatusChange::Unchanged,
             ));
@@ -294,55 +293,59 @@ pub trait TransactionExecutor {
             acc.set_due_payment(None);
         }
         if tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME && !is_due {
-            fee = Grams::zero();
+            fee = CurrencyBalance::zero();
         }
-        if acc_balance.grams < fee {
+        if acc_balance.vmshell < fee {
             let mut diff = fee.clone();
-            diff.sub(&acc_balance.grams)?; //Calculate number of Grams that need to be added to the balance to cover the Storage Fee.
+            diff.sub(&acc_balance.vmshell)?; //Calculate number of CurrencyBalance that need to be added to the balance to cover the Storage Fee.
             if available_credit == INFINITY_CREDIT {
-                acc_balance.grams.add(&diff)?;
-                *minted_shell += diff.as_u128();
-                diff = Grams::zero();
+                acc_balance.vmshell.add(&diff)?;
+                *minted_shell += diff.0;
+                diff = CurrencyBalance::zero();
             } else {
-                if Grams::from(available_credit as u64) > diff {
-                    acc_balance.grams.add(&diff)?;
-                    *minted_shell += diff.as_u128();
-                    diff = Grams::zero();
+                if CurrencyBalance(available_credit as u128) > diff {
+                    acc_balance.vmshell.add(&diff)?;
+                    *minted_shell += diff.0;
+                    diff = CurrencyBalance::zero();
                 } else {
-                    acc_balance.grams.add(&Grams::from(available_credit as u64))?;
+                    acc_balance.vmshell.add(&CurrencyBalance(available_credit as u128))?;
                     *minted_shell += available_credit as u128;
-                    diff.sub(&Grams::from(available_credit as u64))?;
+                    diff.sub(&CurrencyBalance(available_credit as u128))?;
                 }
             }
-            if diff > 0 {
-                let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
-                    Ok(Some(data)) => data,
-                    Ok(None) => VarUInteger32::default(),
-                    Err(_) => VarUInteger32::default(),
+            if diff > CurrencyBalance::zero() {
+                let ecc_balance = match acc_balance.other.0.get(&ECC_SHELL_KEY) {
+                    Some(data) => data,
+                    None => &CurrencyBalance::default(),
                 };
-                if ecc_balance >= VarUInteger32::from(diff.as_u128()) {
+                if ecc_balance >= &diff {
                     let mut sub_value = CurrencyCollection::new();
-                    sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
-                    acc_balance.grams.add(&diff)?;
+                    sub_value.other.set(ECC_SHELL_KEY, diff);
+                    acc_balance.vmshell.add(&diff)?;
                     acc_balance.sub(&sub_value)?;
                 }
             }
         }
-        if acc_balance.grams >= fee {
-            log::debug!(target: "executor", "acc_balance: {}, storage fee: {}", acc_balance.grams, fee);
-            acc_balance.grams.sub(&fee)?;
-            tr.add_fee_grams(&fee)?;
+        if acc_balance.vmshell >= fee {
+            log::debug!(target: "executor", "acc_balance: {}, storage fee: {}", acc_balance.vmshell, fee);
+            acc_balance.vmshell.sub(&fee)?;
+            tr.add_fee_vmshell(&fee)?;
             Ok(TrStoragePhase::with_params(fee, None, AccStatusChange::Unchanged))
         } else {
-            log::debug!(target: "executor", "acc_balance: {} is storage fee from total: {}", acc_balance.grams, fee);
-            let storage_fees_collected = std::mem::take(&mut acc_balance.grams);
-            tr.add_fee_grams(&storage_fees_collected)?;
+            log::debug!(target: "executor", "acc_balance: {} is storage fee from total: {}", acc_balance.vmshell, fee);
+            let storage_fees_collected = std::mem::take(&mut acc_balance.vmshell);
+            tr.add_fee_vmshell(&storage_fees_collected)?;
             fee.sub(&storage_fees_collected)?;
-            let need_freeze =
-                fee > Grams::from(self.config().get_gas_config(is_masterchain).freeze_due_limit);
+            let need_freeze = fee
+                > CurrencyBalance(
+                    self.config().get_gas_config(is_masterchain).freeze_due_limit as u128,
+                );
             let need_delete = (acc.status() == AccountStatus::AccStateUninit
                 || acc.status() == AccountStatus::AccStateFrozen)
-                && fee > Grams::from(self.config().get_gas_config(is_masterchain).delete_due_limit);
+                && fee
+                    > CurrencyBalance(
+                        self.config().get_gas_config(is_masterchain).delete_due_limit as u128,
+                    );
 
             if need_delete {
                 tr.total_fees_mut().add(acc_balance)?;
@@ -392,8 +395,8 @@ pub trait TransactionExecutor {
         acc_balance: &mut CurrencyCollection,
     ) -> Result<TrCreditPhase> {
         let collected = if let Some(due_payment) = acc.due_payment() {
-            let collected = *min(due_payment, &msg_balance.grams);
-            msg_balance.grams.sub(&collected)?;
+            let collected = *min(due_payment, &msg_balance.vmshell);
+            msg_balance.vmshell.sub(&collected)?;
             let mut due_payment_remaining = *due_payment;
             due_payment_remaining.sub(&collected)?;
             acc.set_due_payment(if due_payment_remaining.is_zero() {
@@ -401,7 +404,7 @@ pub trait TransactionExecutor {
             } else {
                 Some(due_payment_remaining)
             });
-            tr.total_fees_mut().grams.add(&collected)?;
+            tr.total_fees_mut().vmshell.add(&collected)?;
             if collected.is_zero() { None } else { Some(collected) }
         } else {
             None
@@ -409,7 +412,7 @@ pub trait TransactionExecutor {
         log::debug!(
             target: "executor",
             "credit_phase: add funds {} to {}",
-            msg_balance.grams, acc_balance.grams
+            msg_balance.vmshell, acc_balance.vmshell
         );
         acc_balance.add(msg_balance)?;
         Ok(TrCreditPhase::with_params(collected, msg_balance.clone()))
@@ -465,16 +468,16 @@ pub trait TransactionExecutor {
             false
         };
         log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
-        log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
+        log::debug!(target: "executor", "msg balance: {}", msg_balance.vmshell);
         let is_ordinary = self.ordinary_transaction();
-        if acc_balance.grams.is_zero() && !params.is_same_thread_id {
+        if acc_balance.vmshell.is_zero() && !params.is_same_thread_id {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
         let gas_config = self.config().get_gas_config(is_masterchain);
         let gas = init_gas(
-            acc_balance.grams.as_u128(),
-            msg_balance.grams.as_u128(),
+            acc_balance.vmshell.0,
+            msg_balance.vmshell.0,
             is_external,
             is_special,
             is_ordinary,
@@ -514,12 +517,16 @@ pub trait TransactionExecutor {
                 vm_phase.exit_arg = None;
                 vm_phase.success = false;
                 vm_phase.gas_fees = match params.is_same_thread_id {
-                    false => Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?,
-                    true => Grams::zero(),
+                    false => CurrencyBalance::new(if is_special {
+                        0
+                    } else {
+                        gas_config.calc_gas_fee(0) as u128
+                    }),
+                    true => CurrencyBalance::zero(),
                 };
 
-                if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
-                    log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
+                if acc_balance.vmshell.sub(&vm_phase.gas_fees).is_err() {
+                    log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.vmshell);
                     fail!("can't sub funds: from acc_balance")
                 }
                 *acc = result_acc;
@@ -614,13 +621,13 @@ pub trait TransactionExecutor {
             if is_external {
                 fail!(ExecutorError::NoAcceptError(vm_phase.exit_code, raw_exit_arg))
             }
-            vm_phase.gas_fees = Grams::zero();
+            vm_phase.gas_fees = CurrencyBalance::zero();
         } else {
             // credit == 0 means contract accepted
             let gas_fees = if is_special { 0 } else { gas_config.calc_gas_fee(used) };
             vm_phase.gas_fees = match params.is_same_thread_id {
-                false => gas_fees.try_into()?,
-                true => Grams::zero(),
+                false => CurrencyBalance(gas_fees),
+                true => CurrencyBalance::zero(),
             };
         };
 
@@ -634,9 +641,9 @@ pub trait TransactionExecutor {
         vm_phase.mode = 0;
         vm_phase.vm_steps = vm.steps();
         // TODO: vm_final_state_hash
-        log::debug!(target: "executor", "acc_balance: {}, gas fees: {}", acc_balance.grams, vm_phase.gas_fees);
-        if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
-            log::error!(target: "executor", "This situation is unreachable: can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
+        log::debug!(target: "executor", "acc_balance: {}, gas fees: {}", acc_balance.vmshell, vm_phase.gas_fees);
+        if acc_balance.vmshell.sub(&vm_phase.gas_fees).is_err() {
+            log::error!(target: "executor", "This situation is unreachable: can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.vmshell);
             fail!("can't sub funds: from acc_balance")
         }
 
@@ -676,14 +683,14 @@ pub trait TransactionExecutor {
         original_acc_balance: &CurrencyCollection,
         acc_balance: &mut CurrencyCollection,
         msg_remaining_balance: &mut CurrencyCollection,
-        compute_phase_fees: &Grams,
+        compute_phase_fees: &CurrencyBalance,
         actions_cell: Cell,
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
-        need_to_burn: u64,
+        need_to_burn: u128,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -711,14 +718,14 @@ pub trait TransactionExecutor {
         original_acc_balance: &CurrencyCollection,
         acc_balance: &mut CurrencyCollection,
         msg_remaining_balance: &mut CurrencyCollection,
-        compute_phase_fees: &Grams,
+        compute_phase_fees: &CurrencyBalance,
         actions_cell: Cell,
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut u128,
-        need_to_burn: u64,
+        need_to_burn: u128,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
         let mut need_to_reserve = need_to_burn.clone();
@@ -891,25 +898,18 @@ pub trait TransactionExecutor {
                 OutAction::ExchangeShell { value } => {
                     let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
-                    if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
-                        if a <= VarUInteger32::from(value as u128) {
-                            sub_value.other.set(&ECC_SHELL_KEY, &a)?;
-                            let digits = a.value().to_u64_digits();
-                            if !digits.1.is_empty() {
-                                exchange_value = digits.1[0];
-                            }
+                    if let Some(a) = acc_remaining_balance.other.0.get(&ECC_SHELL_KEY) {
+                        if a <= &CurrencyBalance(value as u128) {
+                            sub_value.other.set(ECC_SHELL_KEY, *a);
+                            exchange_value = a.0;
                         } else {
                             sub_value.set_other(ECC_SHELL_KEY, value as u128)?;
-                            exchange_value = value;
+                            exchange_value = value as u128;
                         }
                     }
-                    match acc_remaining_balance.grams.add(&Grams::from(exchange_value)) {
-                        Ok(true) => {
+                    match acc_remaining_balance.vmshell.add(&CurrencyBalance(exchange_value)) {
+                        Ok(_) => {
                             acc_remaining_balance.sub(&sub_value)?;
-                            phase.spec_actions += 1;
-                            0
-                        }
-                        Ok(false) => {
                             phase.spec_actions += 1;
                             0
                         }
@@ -925,14 +925,13 @@ pub trait TransactionExecutor {
                             value = available_credit.clone().try_into()?;
                         }
                     }
-                    match acc_remaining_balance.grams.add(&(Grams::from(value))) {
-                        Ok(true) => {
+                    match acc_remaining_balance.vmshell.add(&(CurrencyBalance(value as u128))) {
+                        Ok(_) => {
                             *minted_shell += value as u128;
                             phase.spec_actions += 1;
                             0
                         }
-                        Ok(false) => RESULT_CODE_OVERFLOW,
-                        Err(_) => RESULT_CODE_UNSUPPORTED,
+                        Err(_) => RESULT_CODE_OVERFLOW,
                     }
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
@@ -946,7 +945,7 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
-        if acc_remaining_balance.grams < Grams::from(need_to_reserve) {
+        if acc_remaining_balance.vmshell < CurrencyBalance(need_to_reserve) {
             let err_code = RESULT_CODE_NOT_ENOUGH_GRAMS;
             if process_err_code(err_code, 0, &mut phase)? {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
@@ -961,9 +960,9 @@ pub trait TransactionExecutor {
                 continue;
             }
             let mut free_to_send = acc_remaining_balance.clone();
-            if acc_remaining_balance.grams > Grams::from(need_to_reserve) {
+            if acc_remaining_balance.vmshell > CurrencyBalance(need_to_reserve) {
                 if need_to_reserve != 0 {
-                    free_to_send.grams.sub(&Grams::from(need_to_reserve))?;
+                    free_to_send.vmshell.sub(&CurrencyBalance(need_to_reserve))?;
                 }
                 log::debug!(target: "executor", "\nSend message with all balance:\nInitial balance: {}",
                     balance_to_string(&acc_remaining_balance));
@@ -981,7 +980,7 @@ pub trait TransactionExecutor {
                     &mut account_deleted,
                 );
                 if need_to_reserve != 0 {
-                    free_to_send.grams.add(&Grams::from(need_to_reserve))?;
+                    free_to_send.vmshell.add(&CurrencyBalance(need_to_reserve))?;
                 }
                 acc_remaining_balance = free_to_send.clone();
                 log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
@@ -1017,7 +1016,7 @@ pub trait TransactionExecutor {
 
         let fee = phase.total_action_fees();
         log::debug!(target: "executor", "Total action fees: {}", fee);
-        tr.add_fee_grams(&fee)?;
+        tr.add_fee_vmshell(&fee)?;
 
         if account_deleted {
             log::debug!(target: "executor", "\nAccount deleted");
@@ -1044,7 +1043,7 @@ pub trait TransactionExecutor {
         &self,
         mut remaining_msg_balance: CurrencyCollection,
         acc_balance: &mut CurrencyCollection,
-        compute_phase_fees: &Grams,
+        compute_phase_fees: &CurrencyBalance,
         msg: &Message,
         tr: &mut Transaction,
         my_addr: &MsgAddressInt,
@@ -1074,7 +1073,7 @@ pub trait TransactionExecutor {
         header.ihr_disabled = true;
         header.bounce = false;
         header.bounced = true;
-        header.ihr_fee = Grams::zero();
+        header.ihr_fee = CurrencyBalance::zero();
 
         let mut bounce_msg = Message::with_int_header(header);
         if self.config().has_capability(GlobalCapabilities::CapBounceMsgBody) {
@@ -1116,7 +1115,7 @@ pub trait TransactionExecutor {
 
         log::debug!(target: "executor", "get fee {} from bounce msg {}", fwd_full_fees, remaining_msg_balance);
 
-        if remaining_msg_balance.grams < fwd_full_fees + *compute_phase_fees {
+        if remaining_msg_balance.vmshell < fwd_full_fees + *compute_phase_fees {
             log::debug!(
                 target: "executor", "bounce phase - not enough grams {} to get fwd fee {}",
                 remaining_msg_balance, fwd_full_fees
@@ -1125,8 +1124,8 @@ pub trait TransactionExecutor {
         }
 
         acc_balance.sub(&remaining_msg_balance)?;
-        remaining_msg_balance.grams.sub(&fwd_full_fees)?;
-        remaining_msg_balance.grams.sub(compute_phase_fees)?;
+        remaining_msg_balance.vmshell.sub(&fwd_full_fees)?;
+        remaining_msg_balance.vmshell.sub(compute_phase_fees)?;
         match bounce_msg.header_mut() {
             CommonMsgInfo::IntMsgInfo(header) => {
                 header.value = remaining_msg_balance.clone();
@@ -1138,19 +1137,19 @@ pub trait TransactionExecutor {
         log::debug!(
             target: "executor",
             "bounce fees: {} bounce value: {}",
-            fwd_mine_fees, bounce_msg.get_value().unwrap().grams
+            fwd_mine_fees, bounce_msg.get_value().unwrap().vmshell
         );
-        tr.add_fee_grams(&fwd_mine_fees)?;
+        tr.add_fee_vmshell(&fwd_mine_fees)?;
         Ok((TrBouncePhase::ok(storage, fwd_mine_fees, fwd_fees), Some(bounce_msg)))
     }
 
     fn copyleft_action_handler(
         &self,
-        compute_phase_fees: &Grams,
+        compute_phase_fees: &CurrencyBalance,
         phase: &mut TrActionPhase,
         actions: &LinkedList<OutAction>,
     ) -> Result<Option<CopyleftReward>> {
-        let mut copyleft_reward = Grams::zero();
+        let mut copyleft_reward = CurrencyBalance::zero();
         let mut copyleft_address = AccountId::default();
         let mut was_copyleft_instruction = false;
 
@@ -1174,7 +1173,9 @@ pub trait TransactionExecutor {
                         "Found copyleft action: license: {}, address: {}",
                         license, address
                     );
-                    copyleft_reward = (*compute_phase_fees * copyleft_percent as u128) / 100;
+                    copyleft_reward = (*compute_phase_fees
+                        * CurrencyBalance(copyleft_percent as u128))
+                        / CurrencyBalance(100);
                     copyleft_address = address.clone();
                     was_copyleft_instruction = true;
                 } else {
@@ -1280,7 +1281,7 @@ fn compute_new_state(
             // account balance was credited and if it positive after that
             // and inbound message bear code and data then make some check and unfreeze
             // account
-            if !acc_balance.grams.is_zero() {
+            if !acc_balance.vmshell.is_zero() {
                 // This check is redundant
                 if let Some(state_init) = in_msg.state_init() {
                     let text = "Cannot unfreeze account from message with hash";
@@ -1477,7 +1478,7 @@ fn outmsg_action_handler(
     msg: &mut Message,
     acc_balance: &mut CurrencyCollection,
     msg_balance: &mut CurrencyCollection,
-    //    compute_phase_fees: &Grams,
+    //    compute_phase_fees: &CurrencyBalance,
     config: &BlockchainConfig,
     is_special: bool,
     my_addr: &MsgAddressInt,
@@ -1509,7 +1510,7 @@ fn outmsg_action_handler(
 
     let fwd_prices = config.get_fwd_prices(msg.is_masterchain());
     let compute_fwd_fee = if is_special {
-        Grams::default()
+        CurrencyBalance::default()
     } else {
         msg
             .serialize()
@@ -1550,7 +1551,7 @@ fn outmsg_action_handler(
                 int_header.ihr_fee = compute_ihr_fee
             }
         } else {
-            int_header.ihr_fee = Grams::zero();
+            int_header.ihr_fee = CurrencyBalance::zero();
         }
         let fwd_fee = *std::cmp::max(&int_header.fwd_fee, &compute_fwd_fee);
         fwd_mine_fee =
@@ -1562,10 +1563,10 @@ fn outmsg_action_handler(
             // send all remaining account balance
             result_value = acc_balance.clone();
             //    if need_to_reserve != 0 {
-            // match result_value.grams.sub(&Grams::from(need_to_burn)) {
+            // match result_value.vmshell.sub(&CurrencyBalance::from(need_to_burn)) {
             // Ok(true) => (),
             // Ok(false) => {
-            // result_value.grams = Grams::zero();
+            // result_value.vmshell = CurrencyBalance::zero();
             // return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
             // }
             // Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
@@ -1579,10 +1580,10 @@ fn outmsg_action_handler(
             // send all remainig balance of inbound message
             result_value.add(msg_balance).ok();
             if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
-                if &result_value.grams < compute_phase_fees {
+                if &result_value.vmshell < compute_phase_fees {
                     return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
                 }
-                result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                result_value.vmshell.sub(compute_phase_fees).map_err(|err| {
                     log::error!(target: "executor", "cannot subtract msg balance : {}", err);
                     RESULT_CODE_ACTIONLIST_INVALID
                 })?;
@@ -1592,18 +1593,18 @@ fn outmsg_action_handler(
 */
         if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
             // we must pay the fees, sum them with msg value
-            result_value.grams += total_fwd_fees;
-        } else if int_header.value.grams < total_fwd_fees {
+            result_value.vmshell += total_fwd_fees;
+        } else if int_header.value.vmshell < total_fwd_fees {
             // msg value is too small, reciever cannot pay the fees
             log::warn!(
                 target: "executor",
                 "msg balance {} is too small, cannot pay fwd+ihr fees: {}",
-                int_header.value.grams, total_fwd_fees
+                int_header.value.vmshell, total_fwd_fees
             );
             return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
         } else {
             // reciever will pay the fees
-            int_header.value.grams -= total_fwd_fees;
+            int_header.value.vmshell -= total_fwd_fees;
         }
 
         // set evaluated fees and value back to msg
@@ -1611,20 +1612,20 @@ fn outmsg_action_handler(
     } else if msg.ext_out_header().is_some() {
         fwd_mine_fee = compute_fwd_fee;
         total_fwd_fees = compute_fwd_fee;
-        result_value = CurrencyCollection::from_grams(compute_fwd_fee);
+        result_value = CurrencyCollection::from_vmshell(compute_fwd_fee);
     } else {
         return Err(-1);
     }
 
-    if acc_balance.grams < result_value.grams {
+    if acc_balance.vmshell < result_value.vmshell {
         log::warn!(
             target: "executor",
-            "account balance {} is too small, cannot send {}", acc_balance.grams, result_value.grams
+            "account balance {} is too small, cannot send {}", acc_balance.vmshell, result_value.vmshell
         );
         return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
     }
     match acc_balance.sub(&result_value) {
-        Ok(false) | Err(_) => {
+        Err(_) => {
             log::warn!(
                 target: "executor",
                 "account balance {} is too small, cannot send {}", acc_balance, result_value
@@ -1634,9 +1635,9 @@ fn outmsg_action_handler(
         _ => (),
     }
     let mut acc_balance_copy = ExtraCurrencyCollection::default();
-    let predicate = |key: u32, b: tvm_block::VarUInteger32| -> Result<bool> {
+    let predicate = |key: u32, b: CurrencyBalance| -> Result<bool> {
         if !b.is_zero() {
-            acc_balance_copy.set(&key, &b)?;
+            acc_balance_copy.set(key, b);
         }
         Ok(true)
     };
@@ -1651,8 +1652,8 @@ fn outmsg_action_handler(
 
     if (mode & SENDMSG_DELETE_IF_EMPTY) != 0
         && (mode & SENDMSG_ALL_BALANCE) != 0
-        && acc_balance.grams == Grams::from(0)
-        && reserved_value.grams.is_zero()
+        && acc_balance.vmshell == CurrencyBalance::zero()
+        && reserved_value.vmshell.is_zero()
     {
         *account_deleted = true;
     }
@@ -1700,22 +1701,21 @@ fn reserve_action_handler(
     mode: u8,
     val: &mut CurrencyCollection,
     acc_remaining_balance: &mut CurrencyCollection,
-    need_to_reserve: &mut u64,
+    need_to_reserve: &mut u128,
 ) -> std::result::Result<CurrencyCollection, i32> {
     if mode > RESERVE_ALL_BUT {
         return Err(RESULT_CODE_UNKNOWN_OR_INVALID_ACTION);
     }
     if mode & RESERVE_ALL_BUT == 0 {
         if *need_to_reserve != 0 {
-            match val.grams.add(&Grams::from(*need_to_reserve)) {
-                Ok(true) => (),
-                Ok(false) => return Err(RESULT_CODE_UNSUPPORTED),
+            match val.vmshell.add(&CurrencyBalance(*need_to_reserve)) {
+                Ok(_) => (),
                 Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
             }
             *need_to_reserve = 0;
         }
     } else {
-        if acc_remaining_balance.grams - val.grams < Grams::from(*need_to_reserve) {
+        if acc_remaining_balance.vmshell - val.vmshell < CurrencyBalance(*need_to_reserve) {
             return Err(RESULT_CODE_INVALID_BALANCE);
         }
         if *need_to_reserve != 0 {
@@ -1726,14 +1726,13 @@ fn reserve_action_handler(
 
     let mut reserved = val.clone();
     let mut remaining = acc_remaining_balance.clone();
-    if remaining.grams.as_u128() < reserved.grams.as_u128() {
+    if remaining.vmshell < reserved.vmshell {
         return Err(RESULT_CODE_NOT_ENOUGH_GRAMS);
     }
     let result = remaining.sub(&reserved);
     match result {
-        Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
-        Ok(false) => return Err(RESULT_CODE_NOT_ENOUGH_EXTRA),
-        Ok(true) => (),
+        Err(_) => return Err(RESULT_CODE_NOT_ENOUGH_EXTRA),
+        Ok(_) => (),
     }
     std::mem::swap(&mut remaining, acc_remaining_balance);
 
@@ -1905,7 +1904,7 @@ fn account_from_message(
 }
 
 fn balance_to_string(balance: &CurrencyCollection) -> String {
-    let value = balance.grams.as_u128();
+    let value = balance.vmshell.0;
     format!(
         "{}.{:03} {:03} {:03}      ({})",
         value / 1e9 as u128,

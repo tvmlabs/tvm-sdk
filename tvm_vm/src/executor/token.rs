@@ -1,9 +1,9 @@
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
 use tvm_block::ACTION_MINTECC;
+use tvm_block::CurrencyBalance;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
-use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
 
 use crate::executor::blockchain::add_action;
@@ -34,9 +34,10 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
     fetch_stack(engine, 2)?;
     let x: u32 = engine.cmd.var(0).as_integer()?.into(0..=255)?;
-    let y: VarUInteger32 = VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?);
+    let y: CurrencyBalance =
+        CurrencyBalance(engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)? as u128);
     let mut data = ExtraCurrencyCollection::new();
-    data.set(&x, &y)?;
+    data.set(x, y);
     let mut cell = BuilderData::new();
     data.write_to(&mut cell)?;
     add_action(engine, ACTION_MINTECC, None, cell)

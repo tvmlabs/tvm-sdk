@@ -775,7 +775,7 @@ async fn debug_call_command(
         .map_err(|e| format!("Failed to construct message: {}", e))?;
 
     if is_getter {
-        account.set_balance(CurrencyCollection::with_grams(u64::MAX));
+        account.set_balance(CurrencyCollection::with_vmshell(u64::MAX as u128));
     }
     let mut acc_root =
         account.serialize().map_err(|e| format!("Failed to serialize account: {}", e))?;
@@ -967,7 +967,7 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
             .map_err(|e| format!("{}", e))?;
         let addr =
             MsgAddressInt::with_standart(None, wc as i8, address).map_err(|e| format!("{}", e))?;
-        let balance = CurrencyCollection::with_grams(initial_balance);
+        let balance = CurrencyCollection::with_vmshell(initial_balance as u128);
         Account::with_address_and_ballance(&addr, &balance)
     } else {
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
@@ -1074,7 +1074,7 @@ pub async fn decode_messages(
             "description": {
                 "exit_code": exit_code,
                 "gas_usage": gas_usage,
-                "total_fees": tr.total_fees().grams.as_u128(),
+                "total_fees": tr.total_fees().vmshell.0,
                 // "in_msg": _in_msg,
             },
             "messages": output,

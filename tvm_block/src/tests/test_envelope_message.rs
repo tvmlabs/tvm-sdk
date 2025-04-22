@@ -239,7 +239,8 @@ fn gen_big_message() -> Message {
 fn test_serialization_msg_envelope() {
     write_read_and_assert(MsgEnvelope::default());
 
-    let mut msg = MsgEnvelope::with_message_and_fee(&gen_big_message(), 12312.into()).unwrap();
+    let mut msg =
+        MsgEnvelope::with_message_and_fee(&gen_big_message(), CurrencyBalance(12312)).unwrap();
 
     write_read_and_assert(msg.clone());
 
@@ -254,7 +255,7 @@ fn test_serialization_msg_envelope() {
 
     write_read_and_assert(msg.clone());
 
-    assert!(msg.collect_fee(123.into()));
+    assert!(msg.collect_fee(CurrencyBalance(123)));
 
     write_read_and_assert(msg.clone());
 }
@@ -285,12 +286,12 @@ fn prepare_test_env_message(
     let hdr = InternalMessageHeader::with_addresses(
         src,
         dst,
-        CurrencyCollection::with_grams(1_000_000_000),
+        CurrencyCollection::with_vmshell(1_000_000_000),
     );
     let mut msg = Message::with_int_header(hdr);
     msg.set_at_and_lt(at, lt);
 
-    let env = MsgEnvelope::hypercube_routing(&msg, &shard, 1_000_000.into())?;
+    let env = MsgEnvelope::hypercube_routing(&msg, &shard, CurrencyBalance(1_000_000))?;
     Ok((msg, env))
 }
 

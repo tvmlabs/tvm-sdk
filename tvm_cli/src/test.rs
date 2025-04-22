@@ -278,7 +278,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         let balance =
             balance.parse().map_err(|e| format!("Failed to parse initial balance: {e}"))?;
 
-        let balance = CurrencyCollection::with_grams(balance);
+        let balance = CurrencyCollection::with_vmshell(balance);
         account = Account::with_address_and_ballance(addr, &balance);
     } else {
         let src_address = "-1:0000000000000000000000000000000000000000000000000000000000000000";
@@ -295,7 +295,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
             .map_err(|e| format!("Failed to create deploy internal message: {e}"))?;
         message = Message::construct_from_base64(&enc_msg.message).unwrap();
         if let Some(header) = message.int_header_mut() {
-            header.value.grams =
+            header.value.vmshell =
                 balance.parse().map_err(|e| format!("Failed to parse initial balance: {e}"))?;
         }
         account = Account::default();

@@ -30,7 +30,7 @@ fn create_external_message() -> Arc<Message> {
         MsgAddressExt::with_extern(SliceData::new(vec![0x23, 0x52, 0x73, 0x00, 0x80])).unwrap();
     let dst = MsgAddressInt::with_standart(None, -1, AccountId::from([0x11; 32])).unwrap();
     let mut hdr = ExternalInboundMessageHeader::new(src, dst);
-    hdr.import_fee = 10.into();
+    hdr.import_fee = CurrencyBalance(10);
     Arc::new(Message::with_ext_in_header(hdr))
 }
 
@@ -40,7 +40,7 @@ fn create_internal_message() -> Message {
         MsgAddressInt::with_standart(None, -1, AccountId::from([0x22; 32])).unwrap(),
         CurrencyCollection::default(),
     );
-    hdr.ihr_fee = 10.into();
+    hdr.ihr_fee = CurrencyBalance(10);
     Message::with_int_header(hdr)
 }
 
@@ -50,7 +50,7 @@ fn create_transation() -> Transaction {
         AccountStatus::AccStateActive,
     );
     t.set_logical_time(1111);
-    t.set_total_fees(CurrencyCollection::with_grams(2222));
+    t.set_total_fees(CurrencyCollection::with_vmshell(2222));
     t
 }
 
@@ -75,7 +75,7 @@ fn test_serde_inmsg_ihr_withdata() {
     let msg_descriptor = InMsgIHR::with_cells(
         create_internal_message().serialize().unwrap(),
         create_transation().serialize().unwrap(),
-        10.into(),
+        CurrencyBalance(10),
         Cell::default(),
     );
 
@@ -94,7 +94,7 @@ fn test_serde_inmsg_imm_withdata() {
     let msg_descriptor = InMsgFinal::with_cells(
         MsgEnvelope::default().serialize().unwrap(),
         create_transation().serialize().unwrap(),
-        10.into(),
+        CurrencyBalance(10),
     );
 
     write_read_and_assert(msg_descriptor);
@@ -112,7 +112,7 @@ fn test_serde_inmsg_tr_withdata() {
     let msg_descriptor = InMsgTransit::with_cells(
         MsgEnvelope::default().serialize().unwrap(),
         MsgEnvelope::default().serialize().unwrap(),
-        123.into(),
+        CurrencyBalance(123),
     );
 
     write_read_and_assert(msg_descriptor);
@@ -130,7 +130,7 @@ fn test_serde_inmsg_discarded_fin_withdata() {
     let msg_descriptor = InMsgDiscardedFinal::with_cells(
         MsgEnvelope::default().serialize().unwrap(),
         1234567,
-        123.into(),
+        CurrencyBalance(123),
     );
 
     write_read_and_assert(msg_descriptor);
@@ -150,7 +150,7 @@ fn test_serde_inmsg_discarded_tr_withdata() {
     let msg_descriptor = InMsgDiscardedTransit::with_cells(
         MsgEnvelope::default().serialize().unwrap(),
         1234567,
-        123.into(),
+        CurrencyBalance(123),
         b.into_cell().unwrap(),
     );
 
@@ -222,7 +222,7 @@ fn transaction() -> Transaction {
 
     tr.set_logical_time(123423);
     tr.set_end_status(AccountStatus::AccStateFrozen);
-    tr.set_total_fees(CurrencyCollection::with_grams(653));
+    tr.set_total_fees(CurrencyCollection::with_vmshell(653));
     tr.write_in_msg(Some(&s_in_msg)).unwrap();
     tr.add_out_message(&s_out_msg1).unwrap();
     tr.add_out_message(&s_out_msg2).unwrap();
@@ -262,7 +262,7 @@ fn test_work_with_in_msg_desc() {
     let in_msg_ihr = InMsg::IHR(InMsgIHR::with_cells(
         msg.serialize().unwrap(),
         tr_cell.clone(),
-        Grams::one(),
+        CurrencyBalance(1),
         Cell::default(),
     ));
 
@@ -271,10 +271,10 @@ fn test_work_with_in_msg_desc() {
 
     // test InMsg::Final
     let msg = get_message_with_addrs(create_account_id(4), create_account_id(5));
-    let msg = MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap();
+    let msg = MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap();
 
     let in_msg_final =
-        InMsg::Final(InMsgFinal::with_cells(msg.serialize().unwrap(), tr_cell, Grams::one()));
+        InMsg::Final(InMsgFinal::with_cells(msg.serialize().unwrap(), tr_cell, CurrencyBalance(1)));
 
     msg_desc.insert(&in_msg_final).unwrap();
     assert_eq!(msg_desc.len().unwrap(), 4);
@@ -284,9 +284,9 @@ fn test_work_with_in_msg_desc() {
     let msg1 = get_message_with_addrs(create_account_id(6), create_account_id(4));
 
     let in_msg_transit = InMsg::Transit(InMsgTransit::with_cells(
-        MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap().serialize().unwrap(),
-        MsgEnvelope::with_message_and_fee(&msg1, Grams::one()).unwrap().serialize().unwrap(),
-        Grams::one(),
+        MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap().serialize().unwrap(),
+        MsgEnvelope::with_message_and_fee(&msg1, CurrencyBalance(1)).unwrap().serialize().unwrap(),
+        CurrencyBalance(1),
     ));
 
     msg_desc.insert(&in_msg_transit).unwrap();
@@ -294,12 +294,12 @@ fn test_work_with_in_msg_desc() {
 
     // test InMsg::DiscardedFinal
     let msg = get_message_with_addrs(create_account_id(6), create_account_id(7));
-    let msg = MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap();
+    let msg = MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap();
 
     let in_msg_final = InMsg::DiscardedFinal(InMsgDiscardedFinal::with_cells(
         msg.serialize().unwrap(),
         453453,
-        Grams::one(),
+        CurrencyBalance(1),
     ));
 
     msg_desc.insert(&in_msg_final).unwrap();
@@ -309,9 +309,9 @@ fn test_work_with_in_msg_desc() {
     let msg = get_message_with_addrs(create_account_id(7), create_account_id(8));
 
     let in_msg_transit = InMsg::DiscardedTransit(InMsgDiscardedTransit::with_cells(
-        MsgEnvelope::with_message_and_fee(&msg, Grams::one()).unwrap().serialize().unwrap(),
+        MsgEnvelope::with_message_and_fee(&msg, CurrencyBalance(1)).unwrap().serialize().unwrap(),
         453453,
-        Grams::one(),
+        CurrencyBalance(1),
         SliceData::new_empty().into_cell(),
     ));
 

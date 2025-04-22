@@ -76,14 +76,12 @@ impl SignedCurrencyCollection {
 
     pub fn from_cc(cc: &CurrencyCollection) -> Result<Self> {
         let mut other = HashMap::new();
-        cc.other_as_hashmap().iterate_slices(|ref mut key, ref mut value| -> Result<bool> {
-            let key = key.get_next_u32()?;
-            let value = VarUInteger32::construct_from(value)?;
-            other.insert(key, value.value().clone());
+        cc.other.iterate_with_keys(|key: u32, value| -> Result<bool> {
+            other.insert(key, BigInt::from(value.0.clone()));
             Ok(true)
         })?;
 
-        Ok(SignedCurrencyCollection { grams: cc.grams.as_u128().into(), other })
+        Ok(SignedCurrencyCollection { grams: cc.vmshell.0.into(), other })
     }
 
     pub fn add(&mut self, other: &Self) {
@@ -115,7 +113,7 @@ impl SignedCurrencyCollection {
     }
 }
 
-fn get_msg_fees(msg: &Message) -> Option<(&Grams, &Grams)> {
+fn get_msg_fees(msg: &Message) -> Option<(&CurrencyBalance, &CurrencyBalance)> {
     match msg.header() {
         CommonMsgInfo::IntMsgInfo(header) => Some((&header.ihr_fee, &header.fwd_fee)),
         _ => None,
@@ -165,20 +163,20 @@ pub fn block_order(block: &Block, mc_seq_no: u32) -> Result<String> {
 fn serialize_grams(
     map: &mut Map<String, Value>,
     id_str: &'static str,
-    value: &Grams,
+    value: &CurrencyBalance,
     mode: SerializationMode,
 ) {
     let string = match mode {
         SerializationMode::Standart => {
             serialize_field(map, &(id_str.to_owned() + "_dec"), value.to_string());
-            let mut string = format!("{:x}", value.as_u128());
+            let mut string = format!("{:x}", value.0);
             string.insert_str(0, &format!("{:02x}", string.len() - 1));
             string
         }
         SerializationMode::QServer => {
-            format!("0x{:x}", value.as_u128())
+            format!("0x{:x}", value.0)
         }
-        SerializationMode::Debug => format!("{}", value.as_u128()),
+        SerializationMode::Debug => format!("{}", value.0),
     };
 
     serialize_field(map, id_str, string);
@@ -322,7 +320,7 @@ fn serialize_storage_phase<'a>(
     map: &mut Map<String, Value>,
     ph: Option<&'a TrStoragePhase>,
     mode: SerializationMode,
-) -> Option<&'a Grams> {
+) -> Option<&'a CurrencyBalance> {
     if let Some(ph) = ph {
         let mut ph_map = serde_json::Map::new();
         serialize_grams(&mut ph_map, "storage_fees_collected", &ph.storage_fees_collected, mode);
@@ -354,7 +352,7 @@ fn serialize_compute_phase<'a>(
     map: &mut Map<String, Value>,
     ph: Option<&'a TrComputePhase>,
     mode: SerializationMode,
-) -> Option<&'a Grams> {
+) -> Option<&'a CurrencyBalance> {
     let mut ph_map = serde_json::Map::new();
     let mut fees = None;
     let (type_, type_name) = match ph {
@@ -427,7 +425,7 @@ fn serialize_action_phase<'a>(
     map: &mut Map<String, Value>,
     ph: Option<&'a TrActionPhase>,
     mode: SerializationMode,
-) -> Option<&'a Grams> {
+) -> Option<&'a CurrencyBalance> {
     if let Some(ph) = ph {
         let mut ph_map = serde_json::Map::new();
         ph_map.insert("success".to_string(), ph.success.into());
@@ -466,7 +464,7 @@ fn serialize_bounce_phase<'a>(
     map: &mut Map<String, Value>,
     ph: Option<&'a TrBouncePhase>,
     mode: SerializationMode,
-) -> Option<&'a Grams> {
+) -> Option<&'a CurrencyBalance> {
     let mut ph_map = serde_json::Map::new();
     let mut fees = None;
     let (bounce_type, type_name) = match ph {
@@ -501,7 +499,7 @@ fn serialize_cc(
     cc: &CurrencyCollection,
     mode: SerializationMode,
 ) -> Result<()> {
-    serialize_grams(map, prefix, &cc.grams, mode);
+    serialize_grams(map, prefix, &cc.vmshell, mode);
     let other = serialize_ecc(&cc.other, mode)?;
     if !other.is_empty() {
         map.insert(format!("{}_other", prefix), other.into());
@@ -517,7 +515,7 @@ fn serialize_ecc(
     ecc.iterate_with_keys(|key: u32, ref mut value| -> Result<bool> {
         let mut other_map = Map::new();
         serialize_field(&mut other_map, "currency", key);
-        serialize_bigint(&mut other_map, "value", value.value(), mode);
+        serialize_grams(&mut other_map, "value", value, mode);
         other.push(other_map);
         Ok(true)
     })?;
@@ -1868,7 +1866,7 @@ pub fn db_serialize_transaction_ex<'a>(
     let mut ext_in_msg_fee = None;
     let (tr_type, tr_type_name) = match &set.transaction.read_description()? {
         TransactionDescr::Ordinary(tr) => {
-            let mut fees = set.transaction.total_fees().grams;
+            let mut fees = set.transaction.total_fees().vmshell;
             if let Some(fee) = serialize_storage_phase(&mut map, tr.storage_ph.as_ref(), mode) {
                 fees.sub(fee)?;
             }
@@ -1963,7 +1961,7 @@ pub fn db_serialize_transaction_ex<'a>(
         // IHR fee is added to account balance if IHR is not used or to total fees if
         // message delivered through IHR
         if let Some((ihr_fee, _)) = get_msg_fees(&msg) {
-            balance_delta.grams += ihr_fee.as_u128();
+            balance_delta.grams += ihr_fee.0;
         }
         address_from_message = msg.dst_ref().cloned();
 
@@ -1981,8 +1979,8 @@ pub fn db_serialize_transaction_ex<'a>(
                 balance_delta.sub(&SignedCurrencyCollection::from_cc(value)?);
             }
             if let Some((ihr_fee, fwd_fee)) = get_msg_fees(&msg) {
-                balance_delta.grams -= ihr_fee.as_u128();
-                balance_delta.grams -= fwd_fee.as_u128();
+                balance_delta.grams -= ihr_fee.0;
+                balance_delta.grams -= fwd_fee.0;
             }
             if address_from_message.is_none() {
                 address_from_message = msg.src_ref().cloned();

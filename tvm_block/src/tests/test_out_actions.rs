@@ -10,7 +10,7 @@
 // limitations under the License.
 
 use super::*;
-use crate::VarUInteger32;
+use crate::CurrencyBalance;
 
 #[test]
 fn test_out_action_create() {
@@ -27,7 +27,7 @@ fn test_out_action_create_mint() {
     let mut value = ExtraCurrencyCollection::default();
     let action_send = OutAction::new_mint(value.clone());
     assert_eq!(action_send, OutAction::MintToken { value: value.clone() });
-    let _ = value.set(&1, &VarUInteger32::from(500_u64));
+    let _ = value.0.insert(1, CurrencyBalance(500_u128));
     let action_set = OutAction::new_mint(value.clone());
     assert_eq!(action_set, OutAction::MintToken { value: value.clone() });
 }
@@ -55,11 +55,11 @@ fn test_setcode_action_serde() {
 fn test_reserve_action_serde() {
     test_action_serde_equality(OutAction::new_reserve(
         RESERVE_EXACTLY,
-        CurrencyCollection::with_grams(12345),
+        CurrencyCollection::with_vmshell(12345),
     ));
     test_action_serde_equality(OutAction::new_reserve(
         RESERVE_EXACTLY,
-        CurrencyCollection::with_grams(54321),
+        CurrencyCollection::with_vmshell(54321),
     ));
 }
 
@@ -82,8 +82,14 @@ fn get_out_actions() -> OutActions {
     oa.push_back(OutAction::new_set(Cell::default()));
     oa.push_back(OutAction::new_set(Cell::default()));
     oa.push_back(OutAction::new_set(Cell::default()));
-    oa.push_back(OutAction::new_reserve(RESERVE_EXACTLY, CurrencyCollection::with_grams(12345678)));
-    oa.push_back(OutAction::new_reserve(RESERVE_ALL_BUT, CurrencyCollection::with_grams(87654321)));
+    oa.push_back(OutAction::new_reserve(
+        RESERVE_EXACTLY,
+        CurrencyCollection::with_vmshell(12345678),
+    ));
+    oa.push_back(OutAction::new_reserve(
+        RESERVE_ALL_BUT,
+        CurrencyCollection::with_vmshell(87654321),
+    ));
     oa.push_back(OutAction::new_change_library(CHANGE_LIB_REMOVE, None, Some(code.repr_hash())));
     oa.push_back(OutAction::new_change_library(SET_LIB_CODE_REMOVE, Some(code), None));
     let acc_id = AccountId::from([0x11; 32]);
@@ -126,7 +132,7 @@ fn test_outactions_serialization() {
 //     let grams1 = serialize_currency_collection(grams1, None).unwrap();
 //     let grams1: CurrencyCollection = CurrencyCollection::construct_from(&mut
 // grams1.into()).unwrap();     let grams2 =
-// CurrencyCollection::with_grams(grams);     assert_eq!(grams1, grams2);
+// CurrencyCollection::with_vmshell(grams);     assert_eq!(grams1, grams2);
 
 //     assert_eq!(int!(1u128<<120).as_grams().expect_err("Expect range check
 // error").code,         ExceptionCode::RangeCheckError);

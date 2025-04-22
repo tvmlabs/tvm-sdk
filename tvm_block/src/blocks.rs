@@ -31,6 +31,7 @@ use tvm_types::UInt256;
 use tvm_types::error;
 use tvm_types::fail;
 
+use crate::CurrencyBalance;
 use crate::Deserializable;
 use crate::MaybeDeserialize;
 use crate::MaybeSerialize;
@@ -51,7 +52,6 @@ use crate::transactions::ShardAccountBlocks;
 use crate::types::AddSub;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
-use crate::types::Grams;
 use crate::types::InRefValue;
 use crate::types::UnixTime32;
 use crate::validators::ValidatorSet;
@@ -1070,13 +1070,13 @@ impl Serializable for BlockExtra {
     }
 }
 
-define_HashmapE! {CopyleftRewards, 256, Grams}
+define_HashmapE! {CopyleftRewards, 256, CurrencyBalance}
 
 impl CopyleftRewards {
     pub fn add_copyleft_reward(
         &mut self,
         reward_address: &AccountId,
-        reward: &Grams,
+        reward: &CurrencyBalance,
     ) -> Result<()> {
         if let Some(mut value) = self.get(reward_address)? {
             value.add(reward)?;
@@ -1102,8 +1102,8 @@ impl CopyleftRewards {
     pub fn merge_rewards_with_threshold(
         &mut self,
         other: &Self,
-        threshold: &Grams,
-    ) -> Result<Vec<(AccountId, Grams)>> {
+        threshold: &CurrencyBalance,
+    ) -> Result<Vec<(AccountId, CurrencyBalance)>> {
         // if map size is big, iterating will be long
         let mut send_rewards = vec![];
         other.iterate_with_keys(|key: AccountId, mut value| {

@@ -123,7 +123,7 @@ fn prepare_stack(args: &RunArgs) -> anyhow::Result<Stack> {
     let mut stack = Stack::new();
     let (message, body) = generate_message(args)?;
     let msg_value = args.message_value.map(|v| v as u64).unwrap_or(0);
-    let contract_balance = contract_balance(args).grams.as_u64().unwrap();
+    let contract_balance = contract_balance(args).vmshell.0 as u64;
 
     stack
         .push(int!(contract_balance))

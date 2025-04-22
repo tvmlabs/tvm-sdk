@@ -16,6 +16,7 @@ use tvm_types::read_single_root_boc;
 
 use super::*;
 use crate::BlockIdExt;
+use crate::CurrencyBalance;
 use crate::HashmapAugType;
 
 fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
@@ -106,9 +107,9 @@ fn test_shard_state_unsplit_serialize() {
 
             let mut copyleft_rewards = CopyleftRewards::default();
             let address = MsgAddressInt::with_standart(None, 0, AccountId::from([1; 32])).unwrap();
-            copyleft_rewards.set(&address.address(), &100.into()).unwrap();
+            copyleft_rewards.set(&address.address(), &CurrencyBalance(100)).unwrap();
             let address = MsgAddressInt::with_standart(None, 0, AccountId::from([2; 32])).unwrap();
-            copyleft_rewards.set(&address.address(), &200.into()).unwrap();
+            copyleft_rewards.set(&address.address(), &CurrencyBalance(200)).unwrap();
             ss.set_copyleft_reward(copyleft_rewards).unwrap();
             assert_eq!(ss.read_custom().unwrap().unwrap().state_copyleft_rewards.len().unwrap(), 2);
 
