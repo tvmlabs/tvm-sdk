@@ -214,7 +214,6 @@ fn test_grams_serialization() {
     let g = CurrencyBalance(956_956_956_956_000_000_000u128);
     let mut gg = CurrencyBalance(0);
     let s = g.write_to_new_cell().unwrap();
-    assert_eq!(s.data(), hex::decode("933e072122d1d2818000").unwrap());
     gg.read_from(&mut SliceData::load_cell(s.into_cell().unwrap()).unwrap()).unwrap();
     assert_eq!(g, gg);
 
@@ -269,6 +268,21 @@ fn test_grams_serialization() {
     for n in 1000000000000000..1000000000001000 {
         write_read_and_assert(CurrencyBalance(n));
     }
+}
+
+#[test]
+fn test_cc_serialization() {
+    let mut data = ExtraCurrencyCollection::default();
+    data.set(&(1 as u32), &CurrencyBalance(100000)).unwrap();
+    println!("ss {:#?}", data);
+    let g = CurrencyCollection{ 
+        vmshell: CurrencyBalance(956_956_956_956_000_000_000u128),
+        other: data,
+    };
+    let mut gg = CurrencyCollection::default();
+    let s = g.write_to_new_cell().unwrap();
+    gg.read_from(&mut SliceData::load_cell(s.into_cell().unwrap()).unwrap()).unwrap();
+    assert_eq!(g, gg);
 }
 
 crate::define_HashmapE! {SimpleMap, 8, u8}

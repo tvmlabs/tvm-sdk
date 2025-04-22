@@ -668,7 +668,7 @@ impl CurrencyBalance {
     }
 }
 
-define_HashmapE! {ExtraCurrencyCollection, 16, CurrencyBalance}
+define_HashmapE! {ExtraCurrencyCollection, 32, CurrencyBalance}
 
 #[cfg(test)]
 define_VarIntegerN!(Grams, 15, u128);
