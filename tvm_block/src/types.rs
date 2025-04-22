@@ -953,13 +953,9 @@ impl CurrencyCollection {
 impl Serializable for CurrencyCollection {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         let mut data = BuilderData::new();
-        println!("here1");
         self.vmshell.0.write_to(&mut data)?;
-        println!("here2");
         self.other.write_to(&mut data)?;
-        println!("here3");
         cell.checked_append_reference(data.into_cell()?)?;
-        println!("here6");
         Ok(())
     }
 }

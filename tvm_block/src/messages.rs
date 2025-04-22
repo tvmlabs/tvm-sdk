@@ -685,6 +685,8 @@ impl InternalMessageHeader {
 
 impl Serializable for InternalMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+
+        println!("HERE10");
         cell.append_bit_zero()? //tag
             .append_bit_bool(self.ihr_disabled)?
             .append_bit_bool(self.bounce)?
@@ -693,14 +695,21 @@ impl Serializable for InternalMessageHeader {
         self.src.write_to(cell)?;
         self.dst.write_to(cell)?;
 
+        println!("HERE11");
         self.value.write_to(cell)?; // value: CurrencyCollection
 
+        println!("HERE12");
         self.ihr_fee.write_to(cell)?; // ihr_fee
+        println!("HERE13");
         self.fwd_fee.write_to(cell)?; // fwd_fee
+        println!("HERE14");
 
         self.created_lt.write_to(cell)?; // created_lt
+        println!("HERE15");
         self.created_at.write_to(cell)?; // created_at
+        println!("HERE16");
         self.src_dapp_id.write_maybe_to(cell)?;
+        println!("HERE17");
         Ok(())
     }
 }
@@ -1402,13 +1411,20 @@ impl Message {
         init_to_ref: &Option<bool>,
     ) -> Result<()> {
         // write header
+        println!("HERE2");
         self.header.write_to(builder)?;
 
+        println!("HERE3");
+
         let init_builder = if let Some(ref init) = self.init {
+
+            println!("HERE4");
             init.write_to_new_cell()?
         } else {
             BuilderData::new()
         };
+
+        println!("HERE5");
 
         let mut header_bits = builder.length_in_bits() + 2; // 2 is state_init's Maybe bit + body's Either bit
         if self.state_init().is_some() {
@@ -1501,6 +1517,7 @@ impl Serializable for Message {
             }
             *builder = b;
         }
+        println!("HERE1");
         // now try to repack to possible serilalize
         self.serialize_with_params(builder, &None, &None)
     }
