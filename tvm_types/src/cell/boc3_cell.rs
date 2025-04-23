@@ -11,7 +11,7 @@ const OFFSET_SIZE: usize = 4;
 pub fn write_boc3_to_bytes(root_cells: &[Cell]) -> Result<Vec<u8>, failure::Error> {
     let mut result = Vec::new();
     write_boc3(&mut std::io::Cursor::new(&mut result), root_cells)?;
-    Ok(Vec::new())
+    Ok(result)
 }
 
 pub fn write_boc3<W: Write + Seek>(
@@ -140,7 +140,7 @@ pub fn read_boc3_bytes(data: Arc<Vec<u8>>, boc_offset: usize) -> Result<Vec<Cell
 }
 
 fn get_u32_checked(buf: &[u8], offset: usize) -> Result<u32, failure::Error> {
-    if buf.len() - offset < 4 {
+    if buf.len() - offset >= 4 {
         let mut offset_buf = [0u8; 4];
         offset_buf.copy_from_slice(&buf[offset..offset + 4]);
         Ok(u32::from_be_bytes(offset_buf))

@@ -1,4 +1,4 @@
-use crate::{BocReader, BocWriter, BocWriterOptions, Cell, read_boc3_bytes, write_boc3_to_bytes};
+use crate::{BocReader, BocWriter, Cell, read_boc3_bytes, write_boc3_to_bytes};
 use std::collections::HashMap;
 use std::fs::read;
 use std::io::Cursor;
@@ -137,7 +137,7 @@ fn write_boc_ex(root_cells: &[Cell], boc3: bool) -> Arc<Vec<u8>> {
         Arc::new(write_boc3_to_bytes(root_cells).unwrap())
     } else {
         let mut boc = Vec::new();
-        BocWriter::with_roots_ex(root_cells.to_vec(), BocWriterOptions { ..Default::default() })
+        BocWriter::with_roots(root_cells.to_vec())
             .unwrap()
             .write_ex(&mut boc, false, false, None, None)
             .unwrap();
