@@ -714,24 +714,33 @@ impl Serializable for InternalMessageHeader {
 impl Deserializable for InternalMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // constructor tag will be readed in Message
+        println!("cell200 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.ihr_disabled = cell.get_next_bit()?; // ihr_disabled
         self.bounce = cell.get_next_bit()?; // bounce
         self.bounced = cell.get_next_bit()?;
+        println!("cell201 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
 
         self.src.read_from(cell)?; // addr src
         self.dst.read_from(cell)?; // addr dst
-        let data = cell.checked_drain_reference()?;
-        self.value.read_from(&mut SliceData::load_cell(data)?)?; // value - balance
 
+        println!("cell202 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
+        let mut data_slice = SliceData::load_cell(cell.checked_drain_reference()?)?;
+        println!("cell203 data {:?} {:?}", data_slice.remaining_bits(), data_slice.remaining_references());
+        self.value.read_from(&mut data_slice)?; // value - balance
+
+        println!("cell204 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.ihr_fee.read_from(cell)?; // ihr_fee
         self.fwd_fee.read_from(cell)?; // fwd_fee
         self.created_lt.read_from(cell)?; // created_lt
         self.created_at.read_from(cell)?; // created_at
 
+        println!("cell205 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         let mut data_slice = SliceData::load_cell(cell.checked_drain_reference()?)?;
+        println!("cell207 data {:?} {:?}", data_slice.remaining_bits(), data_slice.remaining_references());
         if data_slice.get_next_bit()? {
             self.src_dapp_id = Some(UInt256::construct_from(&mut data_slice)?);
         }
+        println!("cell206 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         Ok(())
     }
 }
@@ -762,16 +771,11 @@ impl ExternalInboundMessageHeader {
 
 impl Serializable for ExternalInboundMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        println!("LOG10 {:?} {:?}", cell.bits_free(), cell.references_free());
         cell.append_bit_one()?.append_bit_zero()?;
-        println!("LOG11 {:?} {:?}", cell.bits_free(), cell.references_free());
 
         self.src.write_to(cell)?; // addr src
-        println!("LOG12 {:?} {:?}", cell.bits_free(), cell.references_free());
         self.dst.write_to(cell)?; // addr dst
-        println!("LOG13 {:?} {:?}", cell.bits_free(), cell.references_free());
         self.import_fee.write_to(cell)?; // ihr_fee
-        println!("LOG14 {:?} {:?}", cell.bits_free(), cell.references_free());
 
         Ok(())
     }
@@ -780,13 +784,14 @@ impl Serializable for ExternalInboundMessageHeader {
 impl Deserializable for ExternalInboundMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // constructor tag will be readed in Message
-        println!("LOG1 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
+
+        println!("cell100 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.src.read_from(cell)?; // addr src
-        println!("LOG2 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
+        println!("cell101 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.dst.read_from(cell)?; // addr dst
-        println!("LOG3 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
+        println!("cell102 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.import_fee.read_from(cell)?; // ihr_fee
-        println!("LOG4 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
+        println!("cell103 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         Ok(())
     }
 }
@@ -1525,7 +1530,10 @@ impl Serializable for Message {
 impl Deserializable for Message {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // read header
+
+        println!("cell10 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.header.read_from(cell)?;
+        println!("cell11 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         // read StateInit
         if cell.get_next_bit()? {
             // maybe of init

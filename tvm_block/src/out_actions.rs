@@ -72,12 +72,18 @@ impl Serializable for OutActions {
 /// Implementation of Deserializable for OutActions
 impl Deserializable for OutActions {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        println!("HOH1 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         let mut cell = cell.clone();
         while cell.remaining_references() != 0 {
+            println!("HOH2 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
             let prev_cell = cell.checked_drain_reference()?;
+            println!("HOH3 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
             let action = OutAction::construct_from(&mut cell)?;
+            println!("HOH4 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
             self.push_front(action);
+            println!("HOH5 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
             cell = SliceData::load_cell(prev_cell)?;
+            println!("HOH6 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         }
         if !cell.is_empty() {
             fail!(BlockError::Other("cell is not empty".to_string()))
@@ -248,10 +254,14 @@ impl Deserializable for OutAction {
             fail!(BlockError::InvalidArg("cell can't be shorter than 32 bits".to_string()))
         }
         let tag = cell.get_next_u32()?;
+        println!("TAG {}", tag);
+        println!("cell1 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         match tag {
             ACTION_SEND_MSG => {
                 let mode = cell.get_next_byte()?;
+                println!("cell2 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
                 let msg = Message::construct_from_reference(cell)?;
+                println!("cell3 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
                 *self = OutAction::new_send(mode, msg);
             }
             ACTION_SET_CODE => *self = OutAction::new_set(cell.checked_drain_reference()?),

@@ -43,6 +43,7 @@ pub(crate) fn decode_actions(
     args: &RunArgs,
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
+    println!("actions {:#?}", actions);
     let abi_file = args.abi_file.as_ref();
     let function_name = args.function_name.as_ref();
     let address =
