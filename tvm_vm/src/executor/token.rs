@@ -1,18 +1,22 @@
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
 use tvm_block::ACTION_MINTECC;
-use tvm_block::ACTION_ULTIMATEADD;
+use tvm_block::ACTION_RUNWASM;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
+use tvm_types::ExceptionCode;
+use tvm_types::error;
 
+use crate::error::TvmError;
 use crate::executor::blockchain::add_action;
 use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::types::Instruction;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
+use crate::types::Exception;
 use crate::types::Status;
 
 pub const ECC_NACKL_KEY: u32 = 1;
@@ -43,16 +47,49 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_MINTECC, None, cell)
 }
 
-pub(super) fn execute_ultimate_add(engine: &mut Engine) -> Status {
-    // add a+b
-    engine.load_instruction(Instruction::new("ULTIMATEADD"))?;
+// execute wasm binary
+pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 2)?;
-    let mut a: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
-    let b: u64 = engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?;
-    a += b;
+
+    // load or access engine
+    let wasm_engine = wasmtime::Engine::default();
+    let mut wasm_store = wasmtime::Store::new(&wasm_engine, ());
+
+    // load wasm binary
+    let wasm_module = match wasmtime::Module::from_file(
+        &wasm_engine,
+        "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/wasm/hello.wat",
+    ) {
+        Ok(module) => module,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM module {:?}", e)?,
+    };
+    let wasm_instance = match wasmtime::Instance::new(&mut wasm_store, &wasm_module, &[]) {
+        Ok(instance) => instance,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM instance {:?}", e)?,
+    };
+
+    let wasm_answer = wasm_instance
+        .get_func(&mut wasm_store, "answer")
+        .expect("`answer` was not an exported function");
+    let wasm_answer = match wasm_answer.typed::<(), i32>(&wasm_store) {
+        Ok(answer) => answer,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
+    };
+
+    // execute wasm binary
+    // collect result
+    // let result = wasm_answer.call(&mut wasm_store, ());
+    let result = match wasm_answer.call(&mut wasm_store, ()) {
+        Ok(result) => result,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
+    };
+    // return result
+    println!("EXEC Wasm execution result: {:?}", result);
+    let mut a: u64 = result as u64;
     let mut cell = BuilderData::new();
     a.write_to(&mut cell)?;
-    add_action(engine, ACTION_ULTIMATEADD, None, cell)
+    add_action(engine, ACTION_RUNWASM, None, cell)
 }
 
 pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
