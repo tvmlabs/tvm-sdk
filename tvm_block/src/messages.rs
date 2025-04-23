@@ -704,7 +704,9 @@ impl Serializable for InternalMessageHeader {
 
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
-        self.src_dapp_id.write_maybe_to(cell)?;
+        data = BuilderData::new();
+        self.src_dapp_id.write_maybe_to(&mut data)?;
+        cell.checked_append_reference(data.into_cell()?)?;
         Ok(())
     }
 }
@@ -725,8 +727,10 @@ impl Deserializable for InternalMessageHeader {
         self.fwd_fee.read_from(cell)?; // fwd_fee
         self.created_lt.read_from(cell)?; // created_lt
         self.created_at.read_from(cell)?; // created_at
-        if cell.get_next_bit()? {
-            self.src_dapp_id = Some(UInt256::construct_from(cell)?);
+
+        let mut data_slice = SliceData::load_cell(cell.checked_drain_reference()?)?;
+        if data_slice.get_next_bit()? {
+            self.src_dapp_id = Some(UInt256::construct_from(&mut data_slice)?);
         }
         Ok(())
     }
@@ -758,11 +762,16 @@ impl ExternalInboundMessageHeader {
 
 impl Serializable for ExternalInboundMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        println!("LOG10 {:?} {:?}", cell.bits_free(), cell.references_free());
         cell.append_bit_one()?.append_bit_zero()?;
+        println!("LOG11 {:?} {:?}", cell.bits_free(), cell.references_free());
 
         self.src.write_to(cell)?; // addr src
+        println!("LOG12 {:?} {:?}", cell.bits_free(), cell.references_free());
         self.dst.write_to(cell)?; // addr dst
+        println!("LOG13 {:?} {:?}", cell.bits_free(), cell.references_free());
         self.import_fee.write_to(cell)?; // ihr_fee
+        println!("LOG14 {:?} {:?}", cell.bits_free(), cell.references_free());
 
         Ok(())
     }
@@ -771,9 +780,13 @@ impl Serializable for ExternalInboundMessageHeader {
 impl Deserializable for ExternalInboundMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // constructor tag will be readed in Message
+        println!("LOG1 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.src.read_from(cell)?; // addr src
+        println!("LOG2 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.dst.read_from(cell)?; // addr dst
+        println!("LOG3 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         self.import_fee.read_from(cell)?; // ihr_fee
+        println!("LOG4 {:?} {:?}", cell.remaining_bits(), cell.remaining_references());
         Ok(())
     }
 }
