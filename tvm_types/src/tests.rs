@@ -1,4 +1,4 @@
-use crate::{BocBuf, BocReader, BocWriter, BocWriterOptions, Cell};
+use crate::{BocReader, BocWriter, BocWriterOptions, Cell, read_boc3_bytes, write_boc3_to_bytes};
 use std::collections::HashMap;
 use std::fs::read;
 use std::io::Cursor;
@@ -14,21 +14,18 @@ struct Stat {
 
 #[derive(Default)]
 struct Stats {
-    times: HashMap<(bool, Option<bool>, bool, bool), Stat>,
+    times: HashMap<bool, Stat>,
 }
 
 impl Stats {
     fn report(
         &mut self,
-        index_included: bool,
-        store_hashes: Option<bool>,
-        in_mem: bool,
-        force_finalize: bool,
+        use_boc3: bool,
         deser_time: Duration,
         traverse_time: Duration,
         size: usize,
     ) {
-        let key = (index_included, store_hashes, in_mem, force_finalize);
+        let key = use_boc3;
         if let Some(t) = self.times.get_mut(&key) {
             t.deser_time += deser_time;
             t.traverse_time += traverse_time;
@@ -49,41 +46,30 @@ fn test_boc_reader_writer() {
 
     let mut stats = Stats::default();
     for path in &boc_paths {
-        println!("Testing file {}", path.file_name().unwrap().to_string_lossy());
+        println!(
+            "Testing file {}, size {}",
+            path.file_name().unwrap().to_string_lossy(),
+            std::fs::metadata(&path).unwrap().len()
+        );
         test_boc_file(&path, &mut stats);
     }
     println!("total files: {}", boc_paths.len());
-    println!("index hashes inmem force deser traverse     size");
-    for write_index in [false, true] {
-        for write_store_hashes in [Some(false), Some(true)] {
-            for read_inmem in [false, true] {
-                for read_force in [false, true] {
-                    if let Some(stat) =
-                        stats.times.get(&(write_index, write_store_hashes, read_inmem, read_force))
-                    {
-                        println!(
-                            "{}     {}      {}     {}    {:6}   {:6}  {:8}",
-                            bs(write_index),
-                            obs(write_store_hashes),
-                            bs(read_inmem),
-                            bs(read_force),
-                            stat.deser_time.as_millis(),
-                            stat.traverse_time.as_millis(),
-                            stat.size,
-                        )
-                    }
-                }
-            }
+    println!("boc3 deser traverse     size");
+    for use_boc3 in [false, true] {
+        if let Some(stat) = stats.times.get(&(use_boc3)) {
+            println!(
+                "{}   {:6}   {:6}  {:8}",
+                bs(use_boc3),
+                stat.deser_time.as_millis(),
+                stat.traverse_time.as_millis(),
+                stat.size,
+            )
         }
     }
 }
 
 fn bs(b: bool) -> &'static str {
     if b { "+" } else { "-" }
-}
-
-fn obs(b: Option<bool>) -> &'static str {
-    if let Some(b) = b { bs(b) } else { " " }
 }
 
 fn collect_boc_files(path: impl AsRef<Path>, result: &mut Vec<PathBuf>) -> std::io::Result<()> {
@@ -105,12 +91,10 @@ fn collect_boc_files(path: impl AsRef<Path>, result: &mut Vec<PathBuf>) -> std::
     }
     Ok(())
 }
-fn read_boc_ex(boc: Arc<Vec<u8>>, in_mem: bool, _force_cell_finalization: bool) -> Vec<Cell> {
+fn read_boc_ex(boc: Arc<Vec<u8>>, use_boc3: bool) -> Vec<Cell> {
     let reader = BocReader::new();
-    if in_mem {
-        let range = 0..boc.len();
-        let boc_buf = BocBuf::new(boc, range).unwrap();
-        boc_buf.into_root_cells().unwrap()
+    if use_boc3 {
+        read_boc3_bytes(boc, 0).unwrap()
 
         // let len = boc.len();
         // reader
@@ -125,17 +109,14 @@ fn read_boc_ex(boc: Arc<Vec<u8>>, in_mem: bool, _force_cell_finalization: bool) 
 fn read_boc_checked(
     boc: Arc<Vec<u8>>,
     orig_cells: &[Cell],
-    write_index: bool,
-    write_store_hashes: Option<bool>,
-    in_mem: bool,
-    force_finalize_cells: bool,
+    use_boc3: bool,
     stats: &mut Stats,
 ) -> Vec<Cell> {
     let size = boc.len();
     let start = Instant::now();
-    let cells = read_boc_ex(boc, in_mem, force_finalize_cells);
+    let cells = read_boc_ex(boc, use_boc3);
     let deser_time = start.elapsed();
-    let info = info(write_index, write_store_hashes, in_mem, force_finalize_cells);
+    let info = info(use_boc3);
     if cells.len() != orig_cells.len() {
         panic!("{info} Cells len mismatch: {} != {}", orig_cells.len(), cells.len());
     }
@@ -147,59 +128,25 @@ fn read_boc_checked(
         traverse_cell(&cells[i]);
     }
     let traverse_time = start.elapsed();
-    stats.report(
-        write_index,
-        write_store_hashes,
-        in_mem,
-        force_finalize_cells,
-        deser_time,
-        traverse_time,
-        size,
-    );
+    stats.report(use_boc3, deser_time, traverse_time, size);
     cells
 }
 
-fn write_boc_ex(
-    root_cells: &[Cell],
-    include_index: bool,
-    store_hashes: Option<bool>,
-) -> Arc<Vec<u8>> {
-    let mut boc = Vec::new();
-    BocWriter::with_roots_ex(
-        root_cells.to_vec(),
-        BocWriterOptions { store_hashes, ..Default::default() },
-    )
-    .unwrap()
-    .write_ex(&mut boc, include_index, false, None, None)
-    .unwrap();
-    Arc::new(boc)
+fn write_boc_ex(root_cells: &[Cell], boc3: bool) -> Arc<Vec<u8>> {
+    if boc3 {
+        Arc::new(write_boc3_to_bytes(root_cells).unwrap())
+    } else {
+        let mut boc = Vec::new();
+        BocWriter::with_roots_ex(root_cells.to_vec(), BocWriterOptions { ..Default::default() })
+            .unwrap()
+            .write_ex(&mut boc, false, false, None, None)
+            .unwrap();
+        Arc::new(boc)
+    }
 }
 
-fn info(
-    write_index: bool,
-    write_store_hashes: Option<bool>,
-    read_inmem: bool,
-    read_finalize: bool,
-) -> String {
-    let mut info = "(".to_string();
-    if write_index {
-        info.push_str("index, ");
-    }
-    match write_store_hashes {
-        Some(true) => info.push_str("store_hashes, "),
-        Some(false) => info.push_str("no_store_hashes, "),
-        _ => {}
-    }
-    if read_inmem {
-        info.push_str("inmem, ");
-    }
-    if read_finalize {
-        info.push_str("finalize, ");
-    }
-    info.pop();
-    info.pop();
-    info.push(')');
-    info
+fn info(use_boc3: bool) -> String {
+    if use_boc3 { "(boc3)" } else { "" }.to_string()
 }
 
 fn test_boc_file(filename: &Path, stats: &mut Stats) -> Cell {
@@ -207,41 +154,12 @@ fn test_boc_file(filename: &Path, stats: &mut Stats) -> Cell {
         read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename)),
     );
 
-    let orig_cells = read_boc_ex(orig_bytes.clone(), false, false);
-
-    // try in mem
-    for read_inmem in [false, true] {
-        for read_force in [false, true] {
-            read_boc_checked(
-                orig_bytes.clone(),
-                &orig_cells,
-                false,
-                None,
-                read_inmem,
-                read_force,
-                &mut Stats::default(),
-            );
-        }
-    }
+    let orig_cells = read_boc_ex(orig_bytes.clone(), false);
 
     // try different ser and deser options
-    for write_index in [false, true] {
-        for write_store_hashes in [Some(false), None, Some(true)] {
-            let boc = write_boc_ex(&orig_cells, write_index, write_store_hashes);
-            for read_inmem in [false, true] {
-                for read_force in [false, true] {
-                    read_boc_checked(
-                        boc.clone(),
-                        &orig_cells,
-                        write_index,
-                        write_store_hashes,
-                        read_inmem,
-                        read_force,
-                        stats,
-                    );
-                }
-            }
-        }
+    for use_boc3 in [false, true] {
+        let boc = write_boc_ex(&orig_cells, use_boc3);
+        read_boc_checked(boc.clone(), &orig_cells, use_boc3, stats);
     }
 
     let mut cells = orig_cells;

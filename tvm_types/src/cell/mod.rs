@@ -24,9 +24,9 @@ use crate::fail;
 use crate::types::Result;
 use crate::types::UInt256;
 
-mod boc_cell;
+mod boc3_cell;
 mod usage_cell;
-pub use boc_cell::{BocBuf, BocCell};
+pub use boc3_cell::{Boc3Cell, read_boc3_bytes, write_boc3, write_boc3_to_bytes};
 pub use data_cell::DataCell;
 pub use usage_cell::UsageTree;
 
@@ -337,7 +337,7 @@ impl Cell {
         ret
     }
 
-    pub fn with_boc(cell: BocCell) -> Self {
+    pub fn with_boc3(cell: Boc3Cell) -> Self {
         Self(Arc::new(cell))
         // Self::Boc(cell)
     }
