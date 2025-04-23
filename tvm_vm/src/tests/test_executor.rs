@@ -24,6 +24,7 @@ use crate::error::TvmError;
 use crate::executor::engine::Engine;
 use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
+use crate::executor::token::execute_run_wasm;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::stack::Stack;
@@ -383,4 +384,59 @@ fn test_execution_timeout() {
         panic!("Should be TvmExceptionFull");
     };
     assert_eq!(exc.exception_code(), Some(ExceptionCode::ExecutionTimeout));
+}
+
+#[test]
+fn test_run_wasm_fortytwo() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let mut stack = Stack::new();
+    stack.push(StackItem::int(1000000000));
+    stack.push(StackItem::int(0));
+    stack.push(StackItem::int(0));
+    stack.push(StackItem::int(-2));
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+    let from_start = Instant::now();
+    // usually this execution requires 250-300 ms
+    // engine.set_execution_timeout(Some(Duration::from_millis(50)));
+    let status = execute_run_wasm(&mut engine);
+    println!("Wasm Return Status: {:?}", status);
+    let err = engine.execute();
+    assert!(from_start.elapsed() < Duration::from_millis(55));
+    // let TvmError::TvmExceptionFull(exc, _) =
+    // err.downcast_ref::<TvmError>().unwrap() else {     panic!("Should be
+    // TvmExceptionFull"); };
+    // assert_eq!(exc.exception_code(), Some(ExceptionCode::ExecutionTimeout));
 }

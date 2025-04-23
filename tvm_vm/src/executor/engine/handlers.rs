@@ -396,7 +396,7 @@ impl Handlers {
                 .set(0x32, execute_poseidon_zk_login)
                 .set(0x33, execute_calculate_adjustment_reward)
                 .set(0x34, execute_calculate_repcoef)
-                .set(0x35, execute_ultimate_add);
+                .set(0x35, execute_run_wasm);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
