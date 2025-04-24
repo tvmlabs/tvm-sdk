@@ -7,6 +7,7 @@ use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
 use tvm_types::ExceptionCode;
+use tvm_types::SliceData;
 use tvm_types::error;
 
 use crate::error::TvmError;
@@ -16,8 +17,11 @@ use crate::executor::engine::storage::fetch_stack;
 use crate::executor::types::Instruction;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
+use crate::stack::items_serialize;
 use crate::types::Exception;
 use crate::types::Status;
+use crate::utils::pack_data_to_cell;
+use crate::utils::unpack_data_from_cell;
 
 pub const ECC_NACKL_KEY: u32 = 1;
 pub const ECC_SHELL_KEY: u32 = 2;
@@ -50,17 +54,16 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
 // execute wasm binary
 pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
-    fetch_stack(engine, 2)?;
+    fetch_stack(engine, 3)?; //TODO match the stack depth change elsewhere
 
     // load or access engine
     let wasm_engine = wasmtime::Engine::default();
     let mut wasm_store = wasmtime::Store::new(&wasm_engine, ());
 
     // load wasm binary
-    let wasm_module = match wasmtime::Module::from_file(
-        &wasm_engine,
-        "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/wasm/hello.wat",
-    ) {
+    let s = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
+    let wasm_executable = unpack_data_from_cell(s, engine)?;
+    let wasm_module = match wasmtime::Module::new(&wasm_engine, &wasm_executable.as_slice()) {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM module {:?}", e)?,
     };
@@ -69,27 +72,37 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM instance {:?}", e)?,
     };
 
-    let wasm_answer = wasm_instance
+    let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+    let wasm_func_name = unpack_data_from_cell(s, engine)?;
+    let wasm_function = wasm_instance
         .get_func(&mut wasm_store, "answer")
         .expect("`answer` was not an exported function");
-    let wasm_answer = match wasm_answer.typed::<(), i32>(&wasm_store) {
+    let wasm_function = match wasm_function.typed::<(), i32>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
     };
 
     // execute wasm binary
     // collect result
-    // let result = wasm_answer.call(&mut wasm_store, ());
-    let result = match wasm_answer.call(&mut wasm_store, ()) {
+    // let result = wasm_function.call(&mut wasm_store, ());
+    let s = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
+    let wasm_func_args = unpack_data_from_cell(s, engine)?;
+    let result = match wasm_function.call(&mut wasm_store, ()) {
         Ok(result) => result,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
     };
     // return result
     println!("EXEC Wasm execution result: {:?}", result);
-    let mut a: u64 = result as u64;
-    let mut cell = BuilderData::new();
-    a.write_to(&mut cell)?;
-    add_action(engine, ACTION_RUNWASM, None, cell)
+    let mut res_vec = Vec::<u8>::new();
+    res_vec.push(result as u8);
+    // let result = items_serialize(res_vec, engine);
+    let cell = pack_data_to_cell(&res_vec, engine)?;
+    engine.cc.stack.push(StackItem::cell(cell));
+    // let mut a: u64 = result as u64;
+    // let mut cell = BuilderData::new();
+    // a.write_to(&mut cell)?;
+    // add_action(engine, ACTION_RUNWASM, None, cell) // todo change to OK
+    Ok(())
 }
 
 pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
