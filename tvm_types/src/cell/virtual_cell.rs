@@ -53,14 +53,6 @@ impl CellImpl for VirtualCell {
         self.cell.store_hashes()
     }
 
-    fn store_hashes_depths_len(&self) -> usize {
-        self.cell.store_hashes_depths_len()
-    }
-
-    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
-        self.cell.store_hashes_depths()
-    }
-
     fn tree_bits_count(&self) -> u64 {
         self.cell.tree_bits_count()
     }

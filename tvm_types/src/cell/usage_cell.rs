@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::sync::{Arc, Weak};
 
 #[derive(Clone)]
-struct UsageCell {
+pub struct UsageCell {
     cell: Cell,
     visit_on_load: bool,
     visited: Weak<lockfree::map::Map<UInt256, Cell>>,
@@ -61,8 +61,7 @@ impl CellImpl for UsageCell {
         if self.visit_on_load && self.visited.upgrade().is_some() || self.visit() {
             let cell = self.cell.reference(index)?;
             let cell = if cell.is_usage_cell() { cell.downcast_usage() } else { cell };
-            let usage_cell = UsageCell::new(cell, self.visit_on_load, self.visited.clone());
-            Ok(Cell::with_dyn(usage_cell))
+            Ok(Cell::with_usage(UsageCell::new(cell, self.visit_on_load, self.visited.clone())))
         } else {
             self.cell.reference(index)
         }
@@ -88,14 +87,6 @@ impl CellImpl for UsageCell {
         self.cell.store_hashes()
     }
 
-    fn store_hashes_depths_len(&self) -> usize {
-        self.cell.store_hashes_depths_len()
-    }
-
-    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
-        self.cell.store_hashes_depths()
-    }
-
     fn tree_bits_count(&self) -> u64 {
         self.cell.tree_bits_count()
     }
@@ -117,7 +108,7 @@ impl CellImpl for UsageCell {
     }
 
     fn to_external(&self) -> crate::Result<Cell> {
-        Ok(Cell::with_dyn(UsageCell::new(
+        Ok(Cell::with_usage(UsageCell::new(
             self.cell.to_external()?,
             self.visit_on_load,
             self.visited.clone(),
@@ -134,25 +125,20 @@ pub struct UsageTree {
 impl UsageTree {
     pub fn with_root(root: Cell) -> Self {
         let visited = Arc::new(lockfree::map::Map::new());
-        let usage_cell = UsageCell::new(root, false, Arc::downgrade(&visited));
-        let root = Cell::with_dyn_arc(Arc::new(usage_cell));
+        let root = Cell::with_usage(UsageCell::new(root, false, Arc::downgrade(&visited)));
         Self { root, visited }
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
         let visited = Arc::new(lockfree::map::Map::new());
-        let root = Cell::with_dyn_arc(Arc::new(UsageCell::new(
-            root,
-            visit_on_load,
-            Arc::downgrade(&visited),
-        )));
+        let root = Cell::with_usage(UsageCell::new(root, visit_on_load, Arc::downgrade(&visited)));
         Self { root, visited }
     }
 
     pub fn use_cell(&self, cell: Cell, visit_on_load: bool) -> Cell {
         let usage_cell = UsageCell::new(cell, visit_on_load, Arc::downgrade(&self.visited));
         usage_cell.visit();
-        Cell::with_dyn(usage_cell)
+        Cell::with_usage(usage_cell)
     }
 
     pub fn use_cell_opt(&self, cell_opt: &mut Option<Cell>, visit_on_load: bool) {

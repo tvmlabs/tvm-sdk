@@ -424,31 +424,6 @@ impl CellImpl for DataCell {
         self.cell_data().store_hashes()
     }
 
-    fn store_hashes_depths_len(&self) -> usize {
-        let raw_data = self.cell_data().buf.unbounded_data();
-        if cell::store_hashes(raw_data) {
-            cell::hashes_count(raw_data)
-        } else {
-            self.cell_data.hashes_depths.len()
-        }
-    }
-
-    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
-        let raw_data = self.cell_data().buf.unbounded_data();
-        if cell::store_hashes(raw_data) {
-            let hashes_count = cell::hashes_count(raw_data);
-            let mut result = Vec::with_capacity(hashes_count);
-            for i in 0..hashes_count {
-                let hash = cell::hash(raw_data, i).into();
-                let depth = cell::depth(raw_data, i);
-                result.push((hash, depth));
-            }
-            result
-        } else {
-            self.cell_data.hashes_depths.clone()
-        }
-    }
-
     fn tree_bits_count(&self) -> u64 {
         self.tree_bits_count
     }
@@ -488,6 +463,6 @@ impl CellImpl for DataCell {
             None,
         )?;
 
-        Ok(Cell::with_dyn(cell))
+        Ok(Cell::with_data(cell))
     }
 }

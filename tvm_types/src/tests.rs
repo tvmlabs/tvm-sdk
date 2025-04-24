@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 struct Stat {
     deser_time: Duration,
     traverse_time: Duration,
+    cmp_time: Duration,
     size: usize,
 }
 
@@ -23,15 +24,17 @@ impl Stats {
         use_boc3: bool,
         deser_time: Duration,
         traverse_time: Duration,
+        cmp_time: Duration,
         size: usize,
     ) {
         let key = use_boc3;
         if let Some(t) = self.times.get_mut(&key) {
             t.deser_time += deser_time;
             t.traverse_time += traverse_time;
+            t.cmp_time += cmp_time;
             t.size += size;
         } else {
-            self.times.insert(key, Stat { deser_time, traverse_time, size });
+            self.times.insert(key, Stat { deser_time, traverse_time, cmp_time, size });
         }
     }
 }
@@ -49,18 +52,19 @@ fn test_boc_reader_writer() {
         println!(
             "Testing file {}, size {}",
             path.file_name().unwrap().to_string_lossy(),
-            std::fs::metadata(&path).unwrap().len()
+            std::fs::metadata(path).unwrap().len()
         );
-        test_boc_file(&path, &mut stats);
+        test_boc_file(path, &mut stats);
     }
     println!("total files: {}", boc_paths.len());
-    println!("boc3 deser traverse     size");
+    println!("boc3 deser    cmp    traverse     size");
     for use_boc3 in [false, true] {
         if let Some(stat) = stats.times.get(&(use_boc3)) {
             println!(
-                "{}   {:6}   {:6}  {:8}",
+                "{}   {:6}   {:6}   {:6}  {:8}",
                 bs(use_boc3),
                 stat.deser_time.as_millis(),
+                stat.cmp_time.as_millis(),
                 stat.traverse_time.as_millis(),
                 stat.size,
             )
@@ -120,15 +124,17 @@ fn read_boc_checked(
     if cells.len() != orig_cells.len() {
         panic!("{info} Cells len mismatch: {} != {}", orig_cells.len(), cells.len());
     }
+    let start = Instant::now();
     for i in 0..orig_cells.len() {
         cmp_cell(&orig_cells[i], &cells[i], &info);
     }
+    let cmp_time = start.elapsed();
     let start = Instant::now();
-    for i in 0..cells.len() {
-        traverse_cell(&cells[i]);
+    for cell in &cells {
+        traverse_cell(cell);
     }
     let traverse_time = start.elapsed();
-    stats.report(use_boc3, deser_time, traverse_time, size);
+    stats.report(use_boc3, deser_time, traverse_time, cmp_time, size);
     cells
 }
 
@@ -222,9 +228,6 @@ fn cmp_cell(a: &Cell, b: &Cell, info: &str) {
             );
         }
     }
-    if a.store_hashes_depths() != b.store_hashes_depths() {
-        panic!("{info} Cell store_hashes_depths mismatch");
-    }
     if a.references_count() != b.references_count() {
         panic!(
             "{info} Cell references_count mismatch: {} != {}",
@@ -238,16 +241,19 @@ fn cmp_cell(a: &Cell, b: &Cell, info: &str) {
 }
 
 fn traverse_cell(a: &Cell) {
-    a.repr_hash();
-    a.data();
-    a.hashes();
-    a.depths();
-    a.tree_cell_count();
-    a.tree_bits_count();
+    assert!((a.cell_type() as u8) < 200);
+    assert!((a.repr_hash().as_slice()[0] as u32) < 1000);
+    assert!(a.data().len() < 1000000000);
+    assert!(a.hashes().len() < 1000000000);
+    assert!(a.depths().len() < 1000000000);
+    assert!(a.level() < 100);
+    assert!(a.tree_cell_count() < 1000000000);
+    assert!(a.tree_bits_count() < 1000000000);
     for i in 0..a.level() + 1 {
-        a.hash(i as usize);
-        a.depth(i as usize);
+        assert!((a.hash(i as usize).as_slice()[0] as u32) < 1000);
+        assert!((a.depth(i as usize) as u32) < 100000000);
     }
+    // assert!(a.store_hashes_depths().len() < 1000000000);
     for i in 0..a.references_count() {
         traverse_cell(&a.reference(i).unwrap());
     }

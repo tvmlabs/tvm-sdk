@@ -2,8 +2,7 @@ use crate::{Cell, CellImpl, CellType, DEPTH_SIZE, LevelMask, SHA256_SIZE, UInt25
 use crate::{cell, fail};
 use std::io::{Seek, Write};
 use std::sync::Arc;
-
-const BOC_V3: u32 = 0xacc3a728;
+use crate::boc::BOC_V3_TAG;
 
 type Offset = u32;
 const OFFSET_SIZE: usize = 4;
@@ -33,10 +32,10 @@ pub fn write_boc3<W: Write + Seek>(
     writer: &mut W,
     root_cells: &[Cell],
 ) -> Result<(), failure::Error> {
-    writer.write_u32_be(BOC_V3)?;
+    writer.write_u32_be(BOC_V3_TAG)?;
     writer.write_u32_be(root_cells.len() as u32)?;
 
-    let root_offsets_start = writer.seek(std::io::SeekFrom::Current(0))?;
+    let root_offsets_start = writer.stream_position()?;
     for _ in 0..root_cells.len() {
         writer.write_u32_be(0)?;
     }
@@ -47,7 +46,7 @@ pub fn write_boc3<W: Write + Seek>(
         root_offsets.push(write_cell_tree(writer, &mut offset, cell.clone())?);
     }
 
-    let end = writer.seek(std::io::SeekFrom::Current(0))?;
+    let end = writer.stream_position()?;
     writer.seek(std::io::SeekFrom::Start(root_offsets_start))?;
     for offset in root_offsets {
         writer.write_u32_be(offset)?;
@@ -97,7 +96,7 @@ fn write_cell_tree<W: Write>(
                     writer,
                     offset,
                     &current.cell,
-                    &raw_data,
+                    raw_data,
                     &current.child_offsets,
                     current.children_count,
                 )?;
@@ -142,8 +141,9 @@ fn write_non_big_cell<W: Write>(
         writer.write_all(&raw_data[0..len])?;
         *offset += len as u32;
     } else {
-        write_with_hashes(writer, offset, &cell, &raw_data)?;
+        write_with_hashes(writer, offset, cell, raw_data)?;
     }
+    #[allow(clippy::needless_range_loop)]
     for i in 0..child_count {
         writer.write_u32_be(child_offsets[i])?;
     }
@@ -184,7 +184,7 @@ fn write_with_hashes<W: Write>(
 
 pub fn read_boc3_bytes(data: Arc<Vec<u8>>, boc_offset: usize) -> Result<Vec<Cell>, failure::Error> {
     let magic = get_u32_checked(&data, boc_offset)?;
-    if magic != BOC_V3 {
+    if magic != BOC_V3_TAG {
         fail!("Invalid BOC3 magic: {}", magic);
     }
     let root_count = get_u32_checked(&data, boc_offset + 4)? as usize;
@@ -272,7 +272,7 @@ impl CellImpl for Boc3Cell {
             fail!("reference out of range, cells_count: {}, ref: {}", refs_count, index,)
         }
         let child_offset =
-            get_u32_checked(&raw_data, cell::full_len(raw_data) + index * OFFSET_SIZE)?;
+            get_u32_checked(raw_data, cell::full_len(raw_data) + index * OFFSET_SIZE)?;
         Ok(Cell::with_boc3(Boc3Cell::new(self.data.clone(), self.boc_offset, child_offset)))
     }
 
@@ -340,20 +340,6 @@ impl CellImpl for Boc3Cell {
         true
     }
 
-    fn store_hashes_depths_len(&self) -> usize {
-        cell::hashes_count(self.unbounded_raw_data())
-    }
-
-    fn store_hashes_depths(&self) -> Vec<(UInt256, u16)> {
-        let raw_data = self.unbounded_raw_data();
-        let hashes_count = cell::hashes_count(raw_data);
-        let mut result = Vec::with_capacity(hashes_count);
-        for i in 0..hashes_count {
-            result.push((cell::hash(raw_data, i).into(), cell::depth(raw_data, i)));
-        }
-        result
-    }
-
     fn tree_bits_count(&self) -> u64 {
         let raw_data = self.unbounded_raw_data();
         if cell::is_big_cell(raw_data) {
@@ -368,7 +354,7 @@ impl CellImpl for Boc3Cell {
         if cell::is_big_cell(raw_data) {
             1
         } else {
-            get_u32_checked(&raw_data, stats_offset(raw_data)).unwrap_or(0) as u64
+            get_u32_checked(raw_data, stats_offset(raw_data)).unwrap_or(0) as u64
         }
     }
 }
