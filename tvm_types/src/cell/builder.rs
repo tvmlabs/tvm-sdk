@@ -135,7 +135,7 @@ impl BuilderData {
         };
         append_tag(&mut self.data, self.length_in_bits);
 
-        Ok(Cell::with_dyn(DataCell::with_params(
+        Ok(Cell::with_data(DataCell::with_params(
             self.references.to_vec(),
             &self.data,
             self.cell_type,

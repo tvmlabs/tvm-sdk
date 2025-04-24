@@ -14,97 +14,106 @@ pub fn write_boc3_to_bytes(root_cells: &[Cell]) -> Result<Vec<u8>, failure::Erro
     Ok(result)
 }
 
+trait WriteInts {
+    fn write_u32_be(&mut self, value: u32) -> std::io::Result<()>;
+    fn write_u8(&mut self, value: u8) -> std::io::Result<()>;
+}
+
+impl<W: Write> WriteInts for W {
+    fn write_u32_be(&mut self, value: u32) -> std::io::Result<()> {
+        self.write_all(&value.to_be_bytes())
+    }
+
+    fn write_u8(&mut self, value: u8) -> std::io::Result<()> {
+        self.write_all(&[value])
+    }
+}
+
 pub fn write_boc3<W: Write + Seek>(
     writer: &mut W,
     root_cells: &[Cell],
-) -> Result<Vec<u8>, failure::Error> {
-    let mut offset = 0u32;
-    writer.write_all(&BOC_V3.to_be_bytes())?;
-    writer.write_all(&(root_cells.len() as u32).to_be_bytes())?;
-    offset += 4 + 4;
-    let root_offsets_start = offset as u64;
+) -> Result<(), failure::Error> {
+    writer.write_u32_be(BOC_V3)?;
+    writer.write_u32_be(root_cells.len() as u32)?;
+
+    let root_offsets_start = writer.seek(std::io::SeekFrom::Current(0))?;
     for _ in 0..root_cells.len() {
-        writer.write_all(&0u32.to_be_bytes())?;
+        writer.write_u32_be(0)?;
     }
-    offset += (OFFSET_SIZE * root_cells.len()) as u32;
+    let mut offset = 4 + 4 + (OFFSET_SIZE * root_cells.len()) as u32;
+
     let mut root_offsets = Vec::with_capacity(root_cells.len());
     for cell in root_cells {
-        root_offsets.push(offset);
-        write_cell_tree(writer, &mut offset, cell)?;
+        root_offsets.push(write_cell_tree(writer, &mut offset, cell.clone())?);
     }
-    let end = offset as u64;
+
+    let end = writer.seek(std::io::SeekFrom::Current(0))?;
     writer.seek(std::io::SeekFrom::Start(root_offsets_start))?;
     for offset in root_offsets {
-        writer.write_all(&offset.to_be_bytes())?;
+        writer.write_u32_be(offset)?;
     }
     writer.seek(std::io::SeekFrom::Start(end))?;
-    Ok(Vec::new())
+    Ok(())
 }
 
 fn write_cell_tree<W: Write>(
     writer: &mut W,
     offset: &mut u32,
-    cell: &Cell,
-) -> Result<(), failure::Error> {
-    let raw_data = cell.raw_data()?;
-    if cell::is_big_cell(raw_data) {
-        write_big_cell(writer, offset, cell, raw_data)?;
-    } else {
-        let mut child_offsets = [0u32; 4];
-        let child_count = cell.references_count();
+    cell: Cell,
+) -> Result<Offset, failure::Error> {
+    struct Processing {
+        cell: Cell,
+        children_processed: usize,
+        children_count: usize,
+        child_offsets: [u32; 4],
+    }
 
-        for i in 0..child_count {
-            child_offsets[i] = *offset;
-            write_cell_tree(writer, offset, &cell.reference(i)?)?
+    impl Processing {
+        fn new(cell: Cell) -> Self {
+            let children_count = cell.references_count();
+            Self { cell, children_processed: 0, children_count, child_offsets: [0u32; 4] }
         }
-        write_non_big_cell(writer, offset, &cell, &raw_data, &mut child_offsets, child_count)?;
     }
-    Ok(())
-}
 
-fn write_non_big_cell<W: Write>(
-    writer: &mut W,
-    offset: &mut u32,
-    cell: &&Cell,
-    raw_data: &&[u8],
-    child_offsets: &mut [u32; 4],
-    child_count: usize,
-) -> Result<(), failure::Error> {
-    if cell::store_hashes(raw_data) {
-        let len = cell::full_len(raw_data);
-        writer.write_all(&raw_data[0..len])?;
-        *offset += len as u32;
-    } else {
-        write_with_hashes(writer, offset, &cell, &raw_data)?;
-    }
-    for i in 0..child_count {
-        writer.write_all(&child_offsets[i].to_be_bytes())?;
-    }
-    writer.write_all(&(cell.tree_cell_count() as u32).to_be_bytes())?;
-    writer.write_all(&cell.tree_bits_count().to_be_bytes())?;
-    *offset += child_count as u32 * OFFSET_SIZE as u32 + 4 + 8;
-    Ok(())
-}
+    let mut stack = Vec::new();
+    let mut return_offset = 0;
 
-fn write_with_hashes<W: Write>(
-    writer: &mut W,
-    offset: &mut u32,
-    cell: &&&Cell,
-    raw_data: &&&[u8],
-) -> Result<(), failure::Error> {
-    writer.write_all(&[raw_data[0] | cell::HASHES_D1_FLAG])?;
-    writer.write_all(&raw_data[1..2])?;
-    let hashes_count = cell::hashes_count(raw_data);
-    for i in 0..hashes_count {
-        writer.write_all(cell.hash(i).as_slice())?;
+    stack.push(Processing::new(cell));
+
+    while let Some(current) = stack.last_mut() {
+        if current.children_processed < current.children_count {
+            // Still need to process next child
+            let child = Processing::new(current.cell.reference(current.children_processed)?);
+            stack.push(child);
+        } else {
+            // All children processed now write the current cell
+            let raw_data = current.cell.raw_data()?;
+            let cell_offset = *offset;
+
+            if cell::is_big_cell(raw_data) {
+                write_big_cell(writer, offset, &current.cell, raw_data)?;
+            } else {
+                write_non_big_cell(
+                    writer,
+                    offset,
+                    &current.cell,
+                    &raw_data,
+                    &current.child_offsets,
+                    current.children_count,
+                )?;
+            }
+
+            stack.pop();
+            return_offset = cell_offset;
+
+            if let Some(parent) = stack.last_mut() {
+                parent.child_offsets[parent.children_processed] = cell_offset;
+                parent.children_processed += 1;
+            }
+        }
     }
-    for i in 0..hashes_count {
-        writer.write_all(&cell.depth(i).to_be_bytes())?;
-    }
-    let data = cell::cell_data(raw_data);
-    writer.write_all(data)?;
-    *offset += (2 + hashes_count * (DEPTH_SIZE + SHA256_SIZE) + data.len()) as u32;
-    Ok(())
+
+    Ok(return_offset)
 }
 
 fn write_big_cell<W: Write>(
@@ -115,9 +124,61 @@ fn write_big_cell<W: Write>(
 ) -> Result<(), failure::Error> {
     writer.write_all(raw_data)?;
     *offset += raw_data.len() as u32;
-    let hash = cell.hash(0);
-    writer.write_all(hash.as_slice())?;
+    writer.write_all(cell.hash(0).as_slice())?;
     *offset += SHA256_SIZE as u32;
+    Ok(())
+}
+
+fn write_non_big_cell<W: Write>(
+    writer: &mut W,
+    offset: &mut u32,
+    cell: &Cell,
+    raw_data: &[u8],
+    child_offsets: &[u32; 4],
+    child_count: usize,
+) -> Result<(), failure::Error> {
+    if cell::store_hashes(raw_data) {
+        let len = cell::full_len(raw_data);
+        writer.write_all(&raw_data[0..len])?;
+        *offset += len as u32;
+    } else {
+        write_with_hashes(writer, offset, &cell, &raw_data)?;
+    }
+    for i in 0..child_count {
+        writer.write_u32_be(child_offsets[i])?;
+    }
+    writer.write_u32_be(cell.tree_cell_count() as u32)?;
+    writer.write_u32_be(cell.tree_bits_count() as u32)?;
+    *offset += (child_count * OFFSET_SIZE + 4 + 4) as u32;
+    Ok(())
+}
+
+fn write_with_hashes<W: Write>(
+    writer: &mut W,
+    offset: &mut u32,
+    cell: &Cell,
+    raw_data: &[u8],
+) -> Result<(), failure::Error> {
+    writer.write_u8(raw_data[0] | cell::HASHES_D1_FLAG)?;
+    writer.write_u8(raw_data[1])?;
+
+    let hashes_count: usize;
+    if cell::cell_type(raw_data) == CellType::PrunedBranch {
+        hashes_count = 1;
+        writer.write_all(cell.repr_hash().as_slice())?;
+        writer.write_all(&cell.repr_depth().to_be_bytes())?;
+    } else {
+        hashes_count = cell::hashes_count(raw_data);
+        for i in 0..hashes_count {
+            writer.write_all(cell.hash(i).as_slice())?;
+        }
+        for i in 0..hashes_count {
+            writer.write_all(&cell.depth(i).to_be_bytes())?;
+        }
+    }
+    let data = cell::cell_data(raw_data);
+    writer.write_all(data)?;
+    *offset += (2 + hashes_count * (DEPTH_SIZE + SHA256_SIZE) + data.len()) as u32;
     Ok(())
 }
 
@@ -129,7 +190,7 @@ pub fn read_boc3_bytes(data: Arc<Vec<u8>>, boc_offset: usize) -> Result<Vec<Cell
     let root_count = get_u32_checked(&data, boc_offset + 4)? as usize;
     let mut root_cells = Vec::with_capacity(root_count);
     for i in 0..root_count {
-        let cell_rel_offset = get_u32_checked(&data, boc_offset + 4 + i * 4)?;
+        let cell_rel_offset = get_u32_checked(&data, boc_offset + 4 + 4 + i * 4)?;
         root_cells.push(Cell::with_boc3(Boc3Cell::new(
             data.clone(),
             boc_offset as Offset,
@@ -298,8 +359,7 @@ impl CellImpl for Boc3Cell {
         if cell::is_big_cell(raw_data) {
             cell::cell_data_len(raw_data) as u64 * 8
         } else {
-            let offset = cell::full_len(raw_data) + cell::refs_count(raw_data) * OFFSET_SIZE + 4;
-            get_u32_checked(raw_data, offset).unwrap_or(0) as u64
+            get_u32_checked(raw_data, stats_offset(raw_data) + 4).unwrap_or(0) as u64
         }
     }
 
@@ -308,8 +368,11 @@ impl CellImpl for Boc3Cell {
         if cell::is_big_cell(raw_data) {
             1
         } else {
-            let offset = cell::full_len(raw_data) + cell::refs_count(raw_data) * OFFSET_SIZE;
-            get_u32_checked(&raw_data, offset).unwrap_or(0) as u64
+            get_u32_checked(&raw_data, stats_offset(raw_data)).unwrap_or(0) as u64
         }
     }
+}
+
+fn stats_offset(raw_data: &[u8]) -> usize {
+    cell::full_len(raw_data) + cell::refs_count(raw_data) * OFFSET_SIZE
 }

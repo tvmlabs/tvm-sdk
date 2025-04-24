@@ -172,7 +172,8 @@ fn cmp_cell(a: &Cell, b: &Cell, info: &str) {
     }
     if a.repr_hash() != b.repr_hash() {
         panic!(
-            "{info} Cell repr_hash mismatch: {} != {}",
+            "{info} Cell {} repr_hash mismatch: {} != {}",
+            a.cell_type(),
             a.repr_hash().to_hex_string(),
             b.repr_hash().to_hex_string()
         );
