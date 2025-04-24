@@ -2,13 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.11.0] - 2025-04-01
+## [2.11.0] - 2025-04-22
 
 ### New
-- `BocWriter` parameter `store_hashes: Option<bool>` - determines how cell stores hashes in BOC.
-  Some(true) – forces storing cell hashes in BOC. It increases BOC size but speeds up deserialization time.
-  Some(false) – forces removing cell hashes from BOC.
-  None – leaves the stored hashes intact as they were loaded from BOC.
+- `BOC v3` stores all hashes and cell stats (tree cell count, tree bits count).
+  It increases BOC size but speeds up deserialization time. It stores cell offsets instead of cell indexes, 
+  to avoid extra indirection level when resolving cell address inside boc. 
+  It also introduces new internal cell variant `Boc3Cell` that holds ref to entire boc and offset 
+  of raw cell data. So whe using boc3 and new cell variant, it is possible to avoid boc deserialization into 
+  cell tree structure. 
+- `Cell` now declared as ан enum instead of Arc<dyn CellImpl>. 
 - `BocReader` parameter `force_cell_finalization` - forces cell verification and hash rebuilding when reading
   cell(s) from BOC. It is by default. Turning this parameter off will speed up deserialization time in case when
   BOC contains stored hashes.
