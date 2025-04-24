@@ -19,6 +19,7 @@ use tvm_types::BuilderData;
 use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
+use zstd::dict::from_files;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
@@ -35,6 +36,8 @@ use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
+use crate::utils::pack_data_to_cell;
+use crate::utils::unpack_data_from_cell;
 
 #[test]
 fn test_assert_stack() {
@@ -428,13 +431,30 @@ fn test_run_wasm_fortytwo() {
         None,
         vec![],
     );
+    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/wasm/hello.wat";
+    let wasm_dict = std::fs::read(filename).unwrap();
+    let cell = pack_data_to_cell(&(Vec::<u8>::from([0u8])), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
     let from_start = Instant::now();
     // usually this execution requires 250-300 ms
     // engine.set_execution_timeout(Some(Duration::from_millis(50)));
-    let status = execute_run_wasm(&mut engine);
+    let status = execute_run_wasm(&mut engine).unwrap();
     println!("Wasm Return Status: {:?}", status);
-    let err = engine.execute();
-    assert!(from_start.elapsed() < Duration::from_millis(55));
+    // let err = engine.execute();
+    assert!(
+        unpack_data_from_cell(
+            SliceData::load_cell_ref(engine.cc.stack.get(0).as_cell().unwrap()).unwrap(),
+            &mut engine
+        )
+        .unwrap()
+        .pop()
+        .unwrap()
+            == 42u8
+    );
+
     // let TvmError::TvmExceptionFull(exc, _) =
     // err.downcast_ref::<TvmError>().unwrap() else {     panic!("Should be
     // TvmExceptionFull"); };
