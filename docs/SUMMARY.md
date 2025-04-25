@@ -25,7 +25,12 @@
 * [Core Library Error API](reference/error_api.md)
 * [Error Codes](reference/error_codes.md)
 * [TVM-CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_cli/README.md)
-* [Gosh VM Instructions](reference/gosh-vm-instructions.md)
+
+## VM Instructions
+
+* [Acki Nacki VM Instructions](vm-instructions/acki-nacki-vm-instructions.md)
+* [Formal Verification](vm-instructions/formal-verification/README.md)
+  * [Acki Nacki VM Instructions Business-Level Specification](vm-instructions/formal-verification/acki-nacki-vm-instructions-business-level-specification.md)
 
 ## GraphQL
 
