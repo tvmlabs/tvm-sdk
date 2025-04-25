@@ -12,8 +12,7 @@
 use std::fs::read;
 use std::fs::read_dir;
 use std::path::Path;
-
-use tvm_types::read_boc;
+use tvm_types::BocReader;
 use tvm_types::read_single_root_boc;
 
 use super::*;
@@ -274,10 +273,11 @@ fn test_value_flow() {
 }
 
 fn read_file_de_and_serialise(filename: &Path) -> Cell {
-    let orig_bytes =
+    let boc =
         read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
-    let mut root_cells = read_boc(orig_bytes).expect("Error deserializing BOC").roots;
-    root_cells.remove(0)
+    let mut cells =
+        BocReader::new().read(&mut Cursor::new(&boc)).expect("Error deserializing BOC").roots;
+    cells.remove(0)
 }
 
 #[test]
