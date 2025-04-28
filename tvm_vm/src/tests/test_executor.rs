@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::cell;
 use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
@@ -16,9 +17,11 @@ use std::time::Instant;
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_types::BuilderData;
+use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
+use tvm_types::read_single_root_boc;
 use zstd::dict::from_files;
 
 use crate::error::TvmError;
@@ -279,6 +282,40 @@ fn load_boc(filename: &str) -> tvm_types::Cell {
     tvm_types::read_single_root_boc(bytes).unwrap()
 }
 
+fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
+    let cellsize = 128usize;
+    let len = input.len();
+    let mut cell_vec = Vec::<Vec<u8>>::new();
+    // Process the input in 1024-byte chunks
+    for i in (0..len).step_by(cellsize) {
+        let end = std::cmp::min(i + cellsize, len);
+        let chunk = &input[i..end];
+
+        // Convert slice to Vec<u8> and pass to omnom function
+        let chunk_vec = chunk.to_vec();
+        cell_vec.push(chunk_vec);
+    }
+    let mut cell = BuilderData::with_bitstring(cell_vec[cell_vec.len() - 1].clone())
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    for i in (0..(cell_vec.len() - 1)).rev() {
+        let mut builder = BuilderData::with_bitstring(cell_vec[i].clone()).unwrap();
+        let builder = builder.checked_append_reference(cell).unwrap();
+        cell = builder.clone().into_cell().unwrap();
+    }
+    cell // return first cell
+}
+
+fn rejoin_chain_of_cells(mut input: Cell) -> Vec<u8> {
+    let mut data_vec = input.data().to_vec();
+    while input.reference(0).is_ok() {
+        input = input.reference(0).unwrap();
+        data_vec.append(&mut input.data().to_vec());
+    }
+    data_vec
+}
+
 fn load_stateinit(filename: &str) -> StateInit {
     StateInit::construct_from_file(filename).unwrap()
 }
@@ -431,12 +468,16 @@ fn test_run_wasm_fortytwo() {
         None,
         vec![],
     );
-    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/wasm/hello.wat";
-    let wasm_dict = std::fs::read(filename).unwrap();
     let cell = pack_data_to_cell(&(Vec::<u8>::from([0u8])), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_func = "answer";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/wasm/hitchhiker.wat";
+    let wasm_dict = std::fs::read(filename).unwrap();
+
+    let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let from_start = Instant::now();
     // usually this execution requires 250-300 ms
