@@ -6,6 +6,7 @@ use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
+use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
@@ -19,6 +20,7 @@ use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
 use crate::stack::items_serialize;
 use crate::types::Exception;
+use crate::types::ResultRef;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
@@ -38,6 +40,16 @@ pub const KS: f64 = 0.001_f64;
 pub const KM: f64 = 0.00001_f64;
 pub const KRBK: f64 = 0.675_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
+
+fn rejoin_chain_of_cells(mut input: &Cell) -> Result<Vec<u8>, failure::Error> {
+    let mut data_vec = input.data().to_vec();
+    let mut cur_cell: Cell = input.clone();
+    while cur_cell.reference(0).is_ok() {
+        cur_cell = cur_cell.reference(0)?;
+        data_vec.append(&mut cur_cell.data().to_vec());
+    }
+    Ok(data_vec)
+}
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
@@ -61,8 +73,8 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let mut wasm_store = wasmtime::Store::new(&wasm_engine, ());
 
     // load wasm binary
-    let s = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
-    let wasm_executable = unpack_data_from_cell(s, engine)?;
+    let s = engine.cmd.var(0).as_cell()?;
+    let wasm_executable = rejoin_chain_of_cells(s)?;
     let wasm_module = match wasmtime::Module::new(&wasm_engine, &wasm_executable.as_slice()) {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM module {:?}", e)?,
@@ -74,9 +86,10 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
 
     let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let wasm_func_name = unpack_data_from_cell(s, engine)?;
+    let wasm_func_name = String::from_utf8(wasm_func_name)?;
     let wasm_function = wasm_instance
-        .get_func(&mut wasm_store, "answer")
-        .expect("`answer` was not an exported function");
+        .get_func(&mut wasm_store, &wasm_func_name)
+        .expect(&format!("`{}` was not an exported function", wasm_func_name));
     let wasm_function = match wasm_function.typed::<(), i32>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
