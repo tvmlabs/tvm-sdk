@@ -154,9 +154,9 @@ impl ClientError {
                     .filter_map(|v| {
                         v.as_str().map(|s| {
                             if let Some(pos) = s.find(':') {
-                                format!("http://{}/graphql", &s[..pos])
+                                format!("http://{}:8600/bk/v2/messages", &s[..pos])
                             } else {
-                                format!("http://{}/graphql", s)
+                                format!("http://{}:8600/bk/v2/messages", s)
                             }
                         })
                     })
