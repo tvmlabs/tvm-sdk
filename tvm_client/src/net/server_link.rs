@@ -656,19 +656,11 @@ impl ServerLink {
 
             if let Err(err) = &result {
                 if crate::client::Error::is_network_error(err) {
-                    let multiple_endpoints = self.state.has_multiple_endpoints();
-                    if multiple_endpoints {
-                        self.state.internal_suspend().await;
-                        self.websocket_link.suspend().await;
-                        self.websocket_link.resume().await;
-                    }
                     if self.state.can_retry_network_error(start) {
-                        if !multiple_endpoints {
-                            let _ = self
-                                .client_env
-                                .set_timer(self.state.next_resume_timeout() as u64)
-                                .await;
-                        }
+                        let _ = self
+                            .client_env
+                            .set_timer(self.state.next_resume_timeout() as u64)
+                            .await;
                         continue;
                     }
                 }
