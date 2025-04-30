@@ -368,23 +368,22 @@ pub(crate) struct ServerLink {
     state: Arc<NetworkState>,
 }
 
-fn strip_endpoint(endpoint: &str) -> &str {
+fn strip_endpoint(endpoint: &str) -> String {
     endpoint
         .trim_start_matches("https://")
         .trim_start_matches("http://")
         .trim_end_matches('/')
         .trim_end_matches('\\')
-}
-
-fn same_endpoint(a: &str, b: &str) -> bool {
-    strip_endpoint(a) == strip_endpoint(b)
+        .to_string()
 }
 
 fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
-    let mut result: Vec<String> = vec![];
+    let mut seen = std::collections::HashSet::new();
+    let mut result = Vec::new();
 
     for endpoint in endpoints {
-        if !result.iter().any(|val| same_endpoint(val, &endpoint)) {
+        let norm = strip_endpoint(&endpoint);
+        if seen.insert(norm) {
             result.push(endpoint);
         }
     }
@@ -529,7 +528,7 @@ impl ServerLink {
         })
     }
 
-    pub(crate) async fn query_http(
+    pub(crate) async fn query_graphql(
         &self,
         query: &GraphQLQuery,
         endpoint: Option<&Endpoint>,
@@ -607,6 +606,70 @@ impl ServerLink {
         }
     }
 
+    pub(crate) async fn query_http(
+        &self,
+        request: String,
+        endpoint: Option<&Endpoint>,
+    ) -> ClientResult<Value> {
+        let mut headers = HashMap::new();
+        headers.insert("content-type".to_owned(), "application/json".to_owned());
+        for (name, value) in Endpoint::http_headers(&self.config) {
+            headers.insert(name, value);
+        }
+
+        let mut current_endpoint: Option<Arc<Endpoint>>;
+        let start = self.client_env.now_ms();
+        loop {
+            let endpoint = if let Some(endpoint) = endpoint {
+                endpoint
+            } else {
+                current_endpoint = Some(self.state.get_query_endpoint().await?.clone());
+                current_endpoint.as_ref().unwrap()
+            };
+            let result = self
+                .client_env
+                .fetch(
+                    &endpoint.send_message_url,
+                    FetchMethod::Post,
+                    Some(headers.clone()),
+                    Some(request.clone()),
+                    self.config.query_timeout,
+                )
+                .await;
+            let result = match result {
+                Err(err) => Err(err),
+                Ok(response) => {
+                    self.state.reset_resume_timeout();
+                    if response.status == 401 {
+                        Err(Error::unauthorized(&response))
+                    } else {
+                        match response.body_as_json() {
+                            Err(err) => Err(err),
+                            Ok(value) => match Error::try_extract_send_messages_error(&value) {
+                                Some(err) => Err(err),
+                                None => Ok(value),
+                            },
+                        }
+                    }
+                }
+            };
+
+            if let Err(err) = &result {
+                if crate::client::Error::is_network_error(err) {
+                    if self.state.can_retry_network_error(start) {
+                        let _ = self
+                            .client_env
+                            .set_timer(self.state.next_resume_timeout() as u64)
+                            .await;
+                        continue;
+                    }
+                }
+            }
+
+            return result;
+        }
+    }
+
     pub(crate) async fn query_ws(&self, query: &GraphQLQuery) -> ClientResult<Value> {
         let mut receiver = self.websocket_link.start_operation(query.clone()).await?;
         let mut id = None::<u32>;
@@ -649,7 +712,7 @@ impl ServerLink {
         endpoint: Option<&Endpoint>,
     ) -> ClientResult<Value> {
         match self.config.queries_protocol {
-            NetworkQueriesProtocol::HTTP => self.query_http(query, endpoint).await,
+            NetworkQueriesProtocol::HTTP => self.query_graphql(query, endpoint).await,
             NetworkQueriesProtocol::WS => self.query_ws(query).await,
         }
     }
@@ -739,32 +802,33 @@ impl ServerLink {
         value: &[u8],
         endpoint: Option<&Endpoint>,
         thread_id: ThreadIdentifier,
-    ) -> ClientResult<Value> {
+    ) -> ClientResult<(ClientResult<Value>, Option<Endpoint>)> {
         let mut attempts = 0;
         let mut message = ExtMessage {
             id: base64_encode(key),
             body: base64_encode(value),
-            expireAt: None,
-            threadId: Some(thread_id.to_string()),
+            expire_at: None,
+            thread_id: Some(thread_id.to_string()),
         };
 
         let mut endpoint = endpoint.cloned();
-        let query = GraphQLQuery::with_send_message(&message);
+        let query = json!([message]).to_string();
 
-        let mut result = self.query(&query, endpoint.as_ref()).await;
-
+        let mut result = self.query_http(query, endpoint.as_ref()).await;
         while attempts < self.config.message_retries_count {
             attempts += 1;
-            let Err(ref err) = result else { return result };
+            let Err(ref err) = result else { return Ok((result, None)) };
 
             let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
-                return result;
+                return Ok((result, None));
             };
 
-            let Some(code) = ext.get("code").and_then(Value::as_str) else { return result };
+            let Some(code) = ext.get("code").and_then(Value::as_str) else {
+                return Ok((result, None));
+            };
 
             if !["WRONG_PRODUCER", "THREAD_MISMATCH"].contains(&code) {
-                return result;
+                return Ok((result, None));
             }
 
             let (real_thread_id, redirect_url) = err.get_redirection_data();
@@ -775,16 +839,14 @@ impl ServerLink {
 
             if let Some(url) = redirect_url {
                 if let Some(ep) = endpoint.as_mut() {
-                    ep.query_url = url;
-                    // log::error!("Resending request to {}", ep.query_url);
+                    ep.send_message_url = url;
                 }
             }
 
-            result =
-                self.query(&GraphQLQuery::with_send_message(&message), endpoint.as_ref()).await;
+            result = self.query_http(json!([message]).to_string(), endpoint.as_ref()).await;
         }
 
-        result
+        Ok((result, endpoint))
     }
 
     pub async fn send_messages(
