@@ -41,6 +41,8 @@ pub const KM: f64 = 0.00001_f64;
 pub const KRBK: f64 = 0.675_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
+pub const WASM_FUEL_MULTIPLIER: u64 = 8u64;
+
 fn rejoin_chain_of_cells(mut input: &Cell) -> Result<Vec<u8>, failure::Error> {
     let mut data_vec = input.data().to_vec();
     let mut cur_cell: Cell = input.clone();
@@ -74,11 +76,21 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // load or access engine
     let mut wasm_config = wasmtime::Config::new();
     wasm_config.wasm_component_model(true);
+    wasm_config.consume_fuel(true);
     let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
     };
     let mut wasm_store = wasmtime::Store::new(&wasm_engine, ());
+    println!("Starting gas: {:?}", engine.gas_remaining());
+    let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
+        true => u64::try_from(engine.gas_remaining())? * WASM_FUEL_MULTIPLIER,
+        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    };
+    match wasm_store.set_fuel(wasm_fuel) {
+        Ok(module) => module,
+        Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
+    };
 
     // load wasm binary
     let s = engine.cmd.var(0).as_cell()?;
@@ -131,6 +143,20 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Ok(result) => result,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
     };
+    let gas_used: i64 = match wasm_store.get_fuel() {
+        Ok(new_fuel) => i64::try_from((wasm_fuel - new_fuel).div_ceil(WASM_FUEL_MULTIPLIER))?,
+        Err(e) => err!(
+            ExceptionCode::WasmLoadFail,
+            "Failed to get WASM engine fuel after execution {:?}",
+            e
+        )?,
+    };
+    engine.use_gas(gas_used);
+    println!("Remaining gas: {:?}", engine.gas_remaining());
+    match engine.gas_remaining() > 0 {
+        true => {}
+        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    }
     // return result
     println!("EXEC Wasm execution result: {:?}", result);
     let mut res_vec = Vec::<u8>::new();
