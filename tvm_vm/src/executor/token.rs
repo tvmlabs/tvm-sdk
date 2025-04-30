@@ -45,8 +45,11 @@ fn rejoin_chain_of_cells(mut input: &Cell) -> Result<Vec<u8>, failure::Error> {
     let mut data_vec = input.data().to_vec();
     let mut cur_cell: Cell = input.clone();
     while cur_cell.reference(0).is_ok() {
+        let old_len = data_vec.len();
         cur_cell = cur_cell.reference(0)?;
         data_vec.append(&mut cur_cell.data().to_vec());
+
+        assert!(data_vec.len() - old_len == cur_cell.data().len());
     }
     Ok(data_vec)
 }
@@ -69,17 +72,40 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     fetch_stack(engine, 3)?; //TODO match the stack depth change elsewhere
 
     // load or access engine
-    let wasm_engine = wasmtime::Engine::default();
+    let mut wasm_config = wasmtime::Config::new();
+    wasm_config.wasm_component_model(true);
+    let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+        Ok(module) => module,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
+    };
     let mut wasm_store = wasmtime::Store::new(&wasm_engine, ());
 
     // load wasm binary
     let s = engine.cmd.var(0).as_cell()?;
     let wasm_executable = rejoin_chain_of_cells(s)?;
-    let wasm_module = match wasmtime::Module::new(&wasm_engine, &wasm_executable.as_slice()) {
-        Ok(module) => module,
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM module {:?}", e)?,
-    };
-    let wasm_instance = match wasmtime::Instance::new(&mut wasm_store, &wasm_module, &[]) {
+    // std::fs::write(
+    //     "/Users/elar/Code/Havok/AckiNacki/awnion/adder_after_boc.wasm",
+    //     wasm_executable.clone(),
+    // );
+    let wasm_component =
+        match wasmtime::component::Component::new(&wasm_engine, &wasm_executable.as_slice()) {
+            Ok(module) => module,
+            Err(e) => err!(
+                ExceptionCode::WasmLoadFail,
+                "Failed to load WASM
+    component {:?}",
+                e
+            )?,
+        };
+    // let wasm_component = match wasmtime::component::Component::from_file(
+    //     &wasm_engine,
+    //     "/Users/elar/Code/Havok/AckiNacki/awnion/adder.wasm",
+    // ) {
+    //     Ok(module) => module,
+    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM
+    // component {:?}", e)?, };
+    let mut wasm_linker = wasmtime::component::Linker::new(&wasm_engine);
+    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
         Ok(instance) => instance,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM instance {:?}", e)?,
     };
@@ -87,10 +113,11 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let wasm_func_name = unpack_data_from_cell(s, engine)?;
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
+    // println!("{:?}", );
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, &wasm_func_name)
         .expect(&format!("`{}` was not an exported function", wasm_func_name));
-    let wasm_function = match wasm_function.typed::<(), i32>(&wasm_store) {
+    let wasm_function = match wasm_function.typed::<(i32, i32), (i32,)>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
     };
@@ -100,14 +127,14 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // let result = wasm_function.call(&mut wasm_store, ());
     let s = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
     let wasm_func_args = unpack_data_from_cell(s, engine)?;
-    let result = match wasm_function.call(&mut wasm_store, ()) {
+    let result = match wasm_function.call(&mut wasm_store, (1i32, 2i32)) {
         Ok(result) => result,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
     };
     // return result
     println!("EXEC Wasm execution result: {:?}", result);
     let mut res_vec = Vec::<u8>::new();
-    res_vec.push(result as u8);
+    res_vec.push(result.0 as u8);
     // let result = items_serialize(res_vec, engine);
     let cell = pack_data_to_cell(&res_vec, engine)?;
     engine.cc.stack.push(StackItem::cell(cell));
