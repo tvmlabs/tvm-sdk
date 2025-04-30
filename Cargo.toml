@@ -22,7 +22,8 @@ members = [
   "tvm_tl_codegen",
   "tvm_types",
   "tvm_vm",
-]
+  "wasm/wasm_programs"
+, "wasm/wasm_test", "wasm/wasm_test_cmd", "wasm/add"]
 [workspace.package]
 version = "2.10.0"
 

@@ -62,7 +62,7 @@ itertools = "0.12.0"
 typenum = "1.13.0"
 ff = { version = "0.13.0", features = ["derive"] }
 
-wasmtime = "19.0.0" # TODO consolidate and format deps
+wasmtime = "32.0.0" # TODO consolidate and format deps
 
 [dev-dependencies]
 criterion = "0.5.1"

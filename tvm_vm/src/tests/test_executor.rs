@@ -14,6 +14,7 @@ use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
 
+use ark_std::iterable::Iterable;
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_types::BuilderData;
@@ -283,7 +284,7 @@ fn load_boc(filename: &str) -> tvm_types::Cell {
 }
 
 fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
-    let cellsize = 128usize;
+    let cellsize = 120usize;
     let len = input.len();
     let mut cell_vec = Vec::<Vec<u8>>::new();
     // Process the input in 1024-byte chunks
@@ -294,15 +295,27 @@ fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
         // Convert slice to Vec<u8> and pass to omnom function
         let chunk_vec = chunk.to_vec();
         cell_vec.push(chunk_vec);
+        println!(
+            "chunk: {:?}, cell: {:?}, size: {:?}",
+            chunk.len(),
+            cell_vec.last().expect("msg").len(),
+            cellsize
+        );
+        assert!(cell_vec.last().expect("msg").len() == cellsize || i + cellsize > len);
     }
-    let mut cell = BuilderData::with_bitstring(cell_vec[cell_vec.len() - 1].clone())
-        .unwrap()
-        .into_cell()
-        .unwrap();
+    let mut cell = BuilderData::with_raw(
+        cell_vec[cell_vec.len() - 1].clone(),
+        cell_vec[cell_vec.len() - 1].len() * 8,
+    )
+    .unwrap()
+    .into_cell()
+    .unwrap();
     for i in (0..(cell_vec.len() - 1)).rev() {
-        let mut builder = BuilderData::with_bitstring(cell_vec[i].clone()).unwrap();
+        let mut builder =
+            BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8).unwrap();
         let builder = builder.checked_append_reference(cell).unwrap();
         cell = builder.clone().into_cell().unwrap();
+        println!("data: {:?}, vec: {:?}, i: {:?}", cell.data().len(), cell_vec[i].len(), i);
     }
     cell // return first cell
 }
@@ -470,10 +483,10 @@ fn test_run_wasm_fortytwo() {
     );
     let cell = pack_data_to_cell(&(Vec::<u8>::from([0u8])), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let wasm_func = "answer";
+    let wasm_func = "add";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/wasm/hitchhiker.wat";
+    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/wasm/adder.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = split_to_chain_of_cells(wasm_dict);
@@ -493,7 +506,7 @@ fn test_run_wasm_fortytwo() {
         .unwrap()
         .pop()
         .unwrap()
-            == 42u8
+            == 3u8
     );
 
     // let TvmError::TvmExceptionFull(exc, _) =
