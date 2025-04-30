@@ -501,7 +501,7 @@ fn test_serialization_shard_fees() {
     for n in 1..12u32 {
         // summ += 2 * n * 100;
         let mut cc = CurrencyCollection::with_grams(n as u64 * 100);
-        cc.set_other(n, n as u128).unwrap();
+        cc.set_other(n, n as u64).unwrap();
         let fee = ShardFeeCreated::with_fee(cc);
         let ident = ShardIdentFull::new(n as i32, 0x8000_0000_0000_0000);
         shard_fees.set_augmentable(&ident, &fee).unwrap();

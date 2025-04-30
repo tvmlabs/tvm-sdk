@@ -517,7 +517,7 @@ fn serialize_ecc(
     ecc.iterate_with_keys(|key: u32, ref mut value| -> Result<bool> {
         let mut other_map = Map::new();
         serialize_field(&mut other_map, "currency", key);
-        serialize_bigint(&mut other_map, "value", value.value(), mode);
+        serialize_grams(&mut other_map, "value", value, mode);
         other.push(other_map);
         Ok(true)
     })?;

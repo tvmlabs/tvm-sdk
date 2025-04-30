@@ -16,7 +16,6 @@ use rand::Rng;
 use tvm_types::read_single_root_boc;
 
 use super::*;
-use crate::VarUInteger32;
 use crate::write_read_and_assert;
 
 fn get_config_param0() -> ConfigParam0 {
@@ -691,13 +690,9 @@ fn get_config_param7() -> ConfigParam7 {
     for _ in 1..100 {
         ecc.set(
             &rand::random::<u32>(),
-            &VarUInteger32::from_two_u128(
-                rand::random::<u128>() & 0x00ffffff_ffffffff_ffffffff_ffffffff, /* VarUInteger32
-                                                                                 * stores 31 bytes
-                                                                                 * NOT 32!!! */
-                rand::random::<u128>(),
-            )
-            .unwrap(),
+            &Grams::from(
+                rand::random::<u64>()
+            ),
         )
         .unwrap();
     }

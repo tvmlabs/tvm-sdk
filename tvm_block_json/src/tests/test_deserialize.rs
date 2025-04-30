@@ -16,7 +16,6 @@ use tvm_block::ConfigCopyleft;
 use tvm_block::ConfigVotingSetup;
 use tvm_block::Number16;
 use tvm_block::Serializable;
-use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 
@@ -88,7 +87,7 @@ fn get_config_param1() -> ConfigParam1 {
 fn get_config_param7() -> ConfigParam7 {
     let mut ecc = ExtraCurrencyCollection::default();
     for i in 1..100 {
-        ecc.set(&(i as u32), &VarUInteger32::from_two_u128(i * 100, i * 205).unwrap()).unwrap();
+        ecc.set(&(i as u32), &Grams::from(i * 100)).unwrap();
     }
     ConfigParam7 { to_mint: ecc }
 }
