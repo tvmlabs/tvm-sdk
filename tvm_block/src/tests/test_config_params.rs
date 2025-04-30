@@ -688,13 +688,7 @@ fn test_block_limits() {
 fn get_config_param7() -> ConfigParam7 {
     let mut ecc = ExtraCurrencyCollection::default();
     for _ in 1..100 {
-        ecc.set(
-            &rand::random::<u32>(),
-            &Grams::from(
-                rand::random::<u64>()
-            ),
-        )
-        .unwrap();
+        ecc.set(&rand::random::<u32>(), &Grams::from(rand::random::<u64>())).unwrap();
     }
     ConfigParam7 { to_mint: ecc }
 }

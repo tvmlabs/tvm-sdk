@@ -430,7 +430,7 @@ impl SliceData {
             let index = self.data_window.start + offset;
             let q = index / 8;
             let r = index % 8;
-            Some((self.storage()[q] >> (7 - r) & 1) != 0)
+            Some((self.storage()[q] >> (7 - r)) & 1 != 0)
         }
     }
 
@@ -451,7 +451,7 @@ impl SliceData {
         if r == 0 {
             Ok(self.storage()[q] >> (8 - r - bits))
         } else if bits <= (8 - r) {
-            Ok(self.storage()[q] >> (8 - r - bits) & ((1 << bits) - 1))
+            Ok((self.storage()[q] >> (8 - r - bits)) & ((1 << bits) - 1))
         } else {
             let mut ret = 0u16;
             let data = self.storage();

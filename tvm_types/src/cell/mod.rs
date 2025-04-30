@@ -836,7 +836,7 @@ pub(crate) fn is_big_cell(buf: &[u8]) -> bool {
 pub(crate) fn cell_data_len(buf: &[u8]) -> usize {
     if is_big_cell(buf) {
         debug_assert!(buf.len() >= 4);
-        (buf[1] as usize) << 16 | (buf[2] as usize) << 8 | buf[3] as usize
+        ((buf[1] as usize) << 16) | ((buf[2] as usize) << 8) | buf[3] as usize
     } else {
         debug_assert!(buf.len() >= 2);
         ((buf[1] >> 1) + (buf[1] & 1)) as usize
@@ -847,7 +847,7 @@ pub(crate) fn cell_data_len(buf: &[u8]) -> usize {
 pub(crate) fn bit_len(buf: &[u8]) -> usize {
     if is_big_cell(buf) {
         debug_assert!(buf.len() >= 4);
-        let bytes = (buf[1] as usize) << 16 | (buf[2] as usize) << 8 | buf[3] as usize;
+        let bytes = ((buf[1] as usize) << 16) | ((buf[2] as usize) << 8) | buf[3] as usize;
         bytes * 8
     } else {
         debug_assert!(buf.len() >= 2);
