@@ -29,8 +29,10 @@ use crate::net::NetworkConfig;
 
 pub const BOC_VERSION: &str = "2";
 
+#[derive(Debug)]
 pub(crate) struct Endpoint {
     pub query_url: String,
+    pub send_message_url: String,
     pub subscription_url: String,
     pub ip_address: Option<String>,
     pub server_version: AtomicU32,
@@ -44,6 +46,7 @@ impl Clone for Endpoint {
     fn clone(&self) -> Self {
         Self {
             query_url: self.query_url.clone(),
+            send_message_url: self.send_message_url.clone(),
             subscription_url: self.subscription_url.clone(),
             ip_address: self.ip_address.clone(),
             server_version: AtomicU32::new(self.server_version.load(Ordering::Relaxed)),
@@ -95,6 +98,23 @@ impl Endpoint {
         if base_url.ends_with("/graphql") { base_url } else { format!("{}/graphql", base_url) }
     }
 
+    fn construct_send_messages_url(original: &str, use_https: bool) -> ClientResult<String> {
+        let original = if original.contains("://") {
+            original.to_string()
+        } else {
+            format!("http://{}", original)
+        };
+
+        let mut url = reqwest::Url::parse(&original).map_err(Error::parse_url_failed)?;
+
+        let scheme = if use_https { "https" } else { "http" };
+        url.set_scheme(scheme).map_err(|_| Error::modify_url_failed("Failed to set scheme"))?;
+        url.set_port(Some(8700)).map_err(|_| Error::modify_url_failed("Failed to set port"))?;
+        url.set_path("/bm/v2/messages");
+
+        Ok(url.to_string())
+    }
+
     async fn fetch_info_with_url(
         client_env: &ClientEnv,
         query_url: &str,
@@ -129,6 +149,7 @@ impl Endpoint {
         config: &NetworkConfig,
         address: &str,
     ) -> ClientResult<Self> {
+        let send_message_url = Self::construct_send_messages_url(address, false)?;
         let address = Self::expand_address(address);
         let info_request_time = client_env.now_ms();
         let (info, query_url, ip_address) = Self::fetch_info_with_url(
@@ -142,6 +163,7 @@ impl Endpoint {
         let subscription_url = query_url.replace("https://", "wss://").replace("http://", "ws://");
         let endpoint = Self {
             query_url,
+            send_message_url,
             subscription_url,
             ip_address,
             server_time_delta: AtomicI64::default(),
@@ -233,27 +255,40 @@ fn test_expand_address() {
     assert_eq!(Endpoint::expand_address("https://localhost"), "https://localhost/graphql");
 
     assert_eq!(
-        Endpoint::expand_address("devnet.evercloud.dev"),
-        "https://devnet.evercloud.dev/graphql"
+        Endpoint::expand_address("shellnet.ackinacki.org"),
+        "https://shellnet.ackinacki.org/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("devnet.evercloud.dev:8033"),
-        "https://devnet.evercloud.dev:8033/graphql"
+        Endpoint::expand_address("shellnet.ackinacki.org:8033"),
+        "https://shellnet.ackinacki.org:8033/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("devnet.evercloud.dev:8033/graphql"),
-        "https://devnet.evercloud.dev:8033/graphql"
+        Endpoint::expand_address("shellnet.ackinacki.org:8033/graphql"),
+        "https://shellnet.ackinacki.org:8033/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("devnet.evercloud.dev/graphql"),
-        "https://devnet.evercloud.dev/graphql"
+        Endpoint::expand_address("shellnet.ackinacki.org/graphql"),
+        "https://shellnet.ackinacki.org/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("http://devnet.evercloud.dev/graphql"),
-        "http://devnet.evercloud.dev/graphql"
+        Endpoint::expand_address("http://shellnet.ackinacki.org/graphql"),
+        "http://shellnet.ackinacki.org/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("https://devnet.evercloud.dev"),
-        "https://devnet.evercloud.dev/graphql"
+        Endpoint::expand_address("https://shellnet.ackinacki.org"),
+        "https://shellnet.ackinacki.org/graphql"
+    );
+}
+
+#[test]
+fn test_construct_send_messages_url() {
+    assert_eq!(
+        Endpoint::construct_send_messages_url("localhost", false),
+        Ok("http://localhost:8700/bm/v2/messages".to_string())
+    );
+
+    assert_eq!(
+        Endpoint::construct_send_messages_url("http://shellnet0.ackinacki.org/graphql", true),
+        Ok("https://shellnet0.ackinacki.org:8700/bm/v2/messages".to_string())
     );
 }

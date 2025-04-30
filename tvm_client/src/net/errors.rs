@@ -26,6 +26,9 @@ pub enum ErrorCode {
     QueryTransactionTreeTimeout = 616,
     GraphqlConnectionError = 617,
     WrongWebscoketProtocolSequence = 618,
+    ParseUrlFailed = 619,
+    ModifyUrlFailed = 620,
+    SendMessageFailed = 621,
 }
 
 pub struct Error;
@@ -56,6 +59,16 @@ impl Error {
         if let Some(errors) = errors {
             if let Some(errors) = errors.as_array() {
                 return Some(Self::graphql_server_error(None, errors));
+            }
+        }
+
+        None
+    }
+
+    pub fn try_extract_send_messages_error(value: &Value) -> Option<ClientError> {
+        if let Some(error) = value.get("error") {
+            if !error.is_null() {
+                return Some(Self::send_message_server_error(error));
             }
         }
 
@@ -124,6 +137,27 @@ impl Error {
             }
         }
         (None, None, None)
+    }
+
+    pub fn send_message_server_error(orig_error: &Value) -> ClientError {
+        let message = if let Some(message) = orig_error["message"].as_str() {
+            message.to_string()
+        } else {
+            "Unknown error".to_string()
+        };
+
+        let mut err = error(ErrorCode::SendMessageFailed, message.clone());
+        if let Some(code) = orig_error.get("code") {
+            err.data["node_error"]["extensions"]["code"] = code.clone();
+        }
+        if let Some(message) = orig_error.get("message") {
+            err.data["node_error"]["extensions"]["message"] = message.clone();
+        }
+        if let Some(data) = orig_error.get("data") {
+            err.data["node_error"]["extensions"]["details"] = data.clone();
+        }
+
+        err
     }
 
     pub fn graphql_server_error(operation: Option<&str>, errors: &[Value]) -> ClientError {
@@ -209,5 +243,13 @@ impl Error {
             ErrorCode::WrongWebscoketProtocolSequence,
             format!("Wrong webscoket protocol sequence: {}", err),
         )
+    }
+
+    pub fn parse_url_failed<E: Display>(err: E) -> ClientError {
+        error(ErrorCode::ParseUrlFailed, format!("Failed to parse url: {}", err))
+    }
+
+    pub fn modify_url_failed(err: &str) -> ClientError {
+        error(ErrorCode::ParseUrlFailed, format!("Failed to modify url: {}", err))
     }
 }

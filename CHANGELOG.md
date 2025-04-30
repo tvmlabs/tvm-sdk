@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.12.0] - 2025-04-30
+
+### Improvement
+
+- Message is sent to the `bk/v2/messages` or `bm/v2/messages` endpoints
+
 ## [2.11.0] - 2025-04-22
 
 ### New
