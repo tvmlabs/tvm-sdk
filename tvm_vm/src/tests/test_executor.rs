@@ -295,13 +295,16 @@ fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
         // Convert slice to Vec<u8> and pass to omnom function
         let chunk_vec = chunk.to_vec();
         cell_vec.push(chunk_vec);
-        println!(
-            "chunk: {:?}, cell: {:?}, size: {:?}",
-            chunk.len(),
-            cell_vec.last().expect("msg").len(),
-            cellsize
+        // println!(
+        //     "chunk: {:?}, cell: {:?}, size: {:?}",
+        //     chunk.len(),
+        //     cell_vec.last().expect("msg").len(),
+        //     cellsize
+        // );
+        assert!(
+            cell_vec.last().expect("error in split_to_chain_of_cells function").len() == cellsize
+                || i + cellsize > len
         );
-        assert!(cell_vec.last().expect("msg").len() == cellsize || i + cellsize > len);
     }
     let mut cell = BuilderData::with_raw(
         cell_vec[cell_vec.len() - 1].clone(),
@@ -315,7 +318,8 @@ fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
             BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8).unwrap();
         let builder = builder.checked_append_reference(cell).unwrap();
         cell = builder.clone().into_cell().unwrap();
-        println!("data: {:?}, vec: {:?}, i: {:?}", cell.data().len(), cell_vec[i].len(), i);
+        // println!("data: {:?}, vec: {:?}, i: {:?}", cell.data().len(),
+        // cell_vec[i].len(), i);
     }
     cell // return first cell
 }
