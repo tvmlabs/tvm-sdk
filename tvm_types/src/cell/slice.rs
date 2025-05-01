@@ -430,7 +430,7 @@ impl SliceData {
             let index = self.data_window.start + offset;
             let q = index / 8;
             let r = index % 8;
-            Some((self.storage()[q] >> (7 - r)) & 1 != 0)
+            Some(((self.storage()[q] >> (7 - r)) & 1) != 0)
         }
     }
 

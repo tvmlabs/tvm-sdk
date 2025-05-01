@@ -25,7 +25,6 @@ use std::sync::Arc;
 
 use smallvec::SmallVec;
 
-use crate::ByteOrderRead;
 use crate::CellImpl;
 use crate::CellType;
 use crate::Crc32;
@@ -45,11 +44,17 @@ use crate::crc32_digest;
 use crate::error;
 use crate::fail;
 use crate::full_len;
+use crate::{ByteOrderRead, read_boc3_bytes};
 
 const BOC_INDEXED_TAG: u32 = 0x68ff65f3; // deprecated, is used only for read
 const BOC_INDEXED_CRC32_TAG: u32 = 0xacc3a728; // deprecated, is used only for read
 const BOC_GENERIC_TAG: u32 = 0xb5ee9c72;
 const BOC_GENERIC_V2_TAG: u32 = 0xb6ff9a73; // with big cells
+
+// v3:
+// - includes hashes, tree stats;
+// - uses child offsets instead of indexes.
+pub(crate) const BOC_V3_TAG: u32 = 0xacc3a728;
 
 const MAX_ROOTS_COUNT: usize = 1024;
 
@@ -542,7 +547,9 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
 
         // has index | has CRC | has cache bits | flags   | ref_size
         // 7         | 6       | 5              | 4 3     | 2 1 0
-        dest.write_all(&[((include_index as u8) << 7) | ((include_crc as u8) << 6) | ref_size as u8])?;
+        dest.write_all(&[((include_index as u8) << 7)
+            | ((include_crc as u8) << 6)
+            | ref_size as u8])?;
 
         dest.write_all(&[offset_size as u8])?; // off_bytes:(## 8) { off_bytes <= 8 }
         dest.write_all(&(self.cells_count as u64).to_be_bytes()[(8 - ref_size)..8])?;
@@ -813,6 +820,12 @@ impl<'a> BocReader<'a> {
         let mut src = IoCrcFilter::new_reader(src);
 
         let header = Self::read_header(&mut src)?;
+        if header.magic == BOC_V3_TAG {
+            let mut buf = Vec::new();
+            buf.extend_from_slice(&header.magic.to_be_bytes());
+            src.read_to_end(&mut buf)?;
+            return Ok(BocReaderResult { header, roots: read_boc3_bytes(Arc::new(buf), 0)? });
+        }
         let header_len = src.stream_position()? - position;
 
         check_abort(self.abort)?;
@@ -858,8 +871,8 @@ impl<'a> BocReader<'a> {
             for i in 0..cell::refs_count(&raw_cell.data) {
                 refs.push(self.done_cells.get(raw_cell.refs[i])?)
             }
-            let cell = DataCell::with_raw_data(refs, raw_cell.data, Some(self.max_depth))?;
-            self.done_cells.insert(cell_index as u32, Cell::with_cell_impl(cell))?;
+            let cell = DataCell::with_raw_data(refs, raw_cell.data, Some(self.max_depth), true)?;
+            self.done_cells.insert(cell_index as u32, Cell::with_data(cell))?;
         }
         #[cfg(not(target_family = "wasm"))]
         let constructing_time = now1.elapsed().as_millis();
@@ -911,6 +924,9 @@ impl<'a> BocReader<'a> {
         let mut src = Cursor::new(data.deref());
 
         let header = Self::read_header(&mut src)?;
+        if header.magic == BOC_V3_TAG {
+            return Ok(BocReaderResult { header, roots: read_boc3_bytes(data, 0)? });
+        }
 
         Self::precheck_cells_tree_len(&header, src.position(), data.len() as u64, false)?;
 
@@ -970,14 +986,15 @@ impl<'a> BocReader<'a> {
                 refs.push(child.clone());
             }
 
-            let cell = DataCell::with_external_data(refs, &data, offset, Some(self.max_depth))?;
+            let cell =
+                DataCell::with_external_data(refs, &data, offset, Some(self.max_depth), true)?;
             if cell.cell_type() == CellType::Big {
                 if remaining_big_cells == 0 {
                     fail!("Big cell is not allowed");
                 }
                 remaining_big_cells -= 1;
             }
-            self.done_cells.insert(cell_index as u32, Cell::with_cell_impl(cell))?;
+            self.done_cells.insert(cell_index as u32, Cell::with_data(cell))?;
         }
         #[cfg(not(target_family = "wasm"))]
         let constructing_time = now1.elapsed().as_millis();
@@ -1031,6 +1048,22 @@ impl<'a> BocReader<'a> {
         T: Read,
     {
         let magic = src.read_be_u32()?;
+        if magic == BOC_V3_TAG {
+            return Ok(BocHeader {
+                magic,
+                roots_count: 0,
+                ref_size: 0,
+                index_included: false,
+                cells_count: 0,
+                offset_size: 0,
+                has_crc: false,
+                has_cache_bits: false,
+                roots_indexes: Vec::default(),
+                tot_cells_size: 0,
+                big_cells_count: 0,
+                big_cells_size: 0,
+            });
+        }
         let first_byte = src.read_byte()?;
         let index_included;
         let mut has_crc = false;
