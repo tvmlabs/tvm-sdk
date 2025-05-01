@@ -153,8 +153,8 @@ impl ClientError {
                     .iter()
                     .filter_map(|v| {
                         v.as_str().map(|s| {
-                            if let Some(pos) = s.find(':') {
-                                format!("http://{}:8600/bk/v2/messages", &s[..pos])
+                            if let Some(_) = s.find(':') {
+                                format!("http://{}/bk/v2/messages", s)
                             } else {
                                 format!("http://{}:8600/bk/v2/messages", s)
                             }
