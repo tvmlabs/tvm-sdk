@@ -798,15 +798,15 @@ impl ServerLink {
     // Sends message to node
     pub async fn send_message(
         &self,
-        key: &[u8],
-        value: &[u8],
+        msg_id: &str,
+        msg_body: &[u8],
         endpoint: Option<&Endpoint>,
         thread_id: ThreadIdentifier,
     ) -> ClientResult<(ClientResult<Value>, Option<Endpoint>)> {
         let mut attempts = 0;
         let mut message = ExtMessage {
-            id: base64_encode(key),
-            body: base64_encode(value),
+            id: msg_id.to_string(),
+            body: base64_encode(msg_body),
             expire_at: None,
             thread_id: Some(thread_id.to_string()),
         };
