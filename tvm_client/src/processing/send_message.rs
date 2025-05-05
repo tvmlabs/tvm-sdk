@@ -25,7 +25,6 @@ use crate::boc::internal::DeserializedObject;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
 use crate::encoding::base64_decode;
-use crate::encoding::hex_decode;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 use crate::processing::Error;
@@ -145,7 +144,7 @@ impl SendingMessage {
         let net = context.get_server_link()?;
         let endpoint = net.state().get_query_endpoint().await?;
         let (result, _updated_endpoint) = net
-            .send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), self.thread_id)
+            .send_message(&self.id, &self.body, Some(&endpoint), self.thread_id)
             .await?;
 
         result

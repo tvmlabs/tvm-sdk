@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.13.0] - 2025-05-01
+
+### Improvement
+
+- While sending external messages, using the port provided in the redirection response
+
 ## [2.12.0] - 2025-04-30
 
 ### Improvement
