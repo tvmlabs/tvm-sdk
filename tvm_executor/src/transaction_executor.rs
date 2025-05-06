@@ -888,7 +888,7 @@ pub trait TransactionExecutor {
                         RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
                 }
-                OutAction::RunWasm { value } => value as i32,
+                // OutAction::RunWasm { value } => value as i32,
                 OutAction::ExchangeShell { value } => {
                     let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
