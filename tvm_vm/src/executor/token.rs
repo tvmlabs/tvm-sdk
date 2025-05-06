@@ -120,7 +120,7 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
 // execute wasm binary
 pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
-    fetch_stack(engine, 3)?; //TODO match the stack depth change elsewhere
+    fetch_stack(engine, 4)?; //TODO match the stack depth change elsewhere
 
     // load or access engine
     let mut wasm_config = wasmtime::Config::new();
@@ -202,18 +202,23 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     };
 
     let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+    let wasm_instance_name = unpack_data_from_cell(s, engine)?;
+    let wasm_instance_name = String::from_utf8(wasm_instance_name)?;
+
+    let s = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
     let wasm_func_name = unpack_data_from_cell(s, engine)?;
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
-    // println!("{:?}", );
-    let instance_index = wasm_instance.get_export(&mut wasm_store, None, "docs:adder/add@0.1.0");
+
+    let instance_index = wasm_instance.get_export(&mut wasm_store, None, &wasm_instance_name);
     println!("Instance Index {:?}", instance_index);
-    let func_index = match wasm_instance.get_export(&mut wasm_store, instance_index.as_ref(), "add")
-    {
-        Some(index) => index,
-        None => {
-            err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
-        }
-    };
+    let func_index =
+        match wasm_instance.get_export(&mut wasm_store, instance_index.as_ref(), &wasm_func_name) {
+            Some(index) => index,
+            None => err!(
+                ExceptionCode::WasmLoadFail,
+                "Failed to find WASM exported function or component",
+            )?,
+        };
     println!("Func Index {:?}", func_index);
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
@@ -226,7 +231,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // execute wasm binary
     // collect result
     // let result = wasm_function.call(&mut wasm_store, ());
-    let s = engine.cmd.var(2).as_cell()?;
+    let s = engine.cmd.var(3).as_cell()?;
     let wasm_func_args = rejoin_chain_of_cells(s)?;
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
