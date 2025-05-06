@@ -27,6 +27,7 @@ use zstd::dict::from_files;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
+use crate::executor::gas::gas_state::Gas;
 use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
 use crate::executor::token::execute_run_wasm;
@@ -429,7 +430,7 @@ fn test_execution_timeout() {
         SliceData::load_cell_ref(&elector_code).unwrap(),
         Some(ctrls.clone()),
         Some(stack.clone()),
-        None,
+        Some(Gas::test_with_credit(1013)),
         vec![],
     );
     let from_start = Instant::now();
@@ -473,10 +474,6 @@ fn test_run_wasm_fortytwo() {
     ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
 
     let mut stack = Stack::new();
-    stack.push(StackItem::int(1000000000));
-    stack.push(StackItem::int(0));
-    stack.push(StackItem::int(0));
-    stack.push(StackItem::int(-2));
 
     let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
         SliceData::load_cell_ref(&elector_code).unwrap(),
@@ -485,20 +482,18 @@ fn test_run_wasm_fortytwo() {
         None,
         vec![],
     );
-    let cell = pack_data_to_cell(&(Vec::<u8>::from([0u8])), &mut engine).unwrap();
+    let cell = split_to_chain_of_cells((Vec::<u8>::from([1u8, 2u8])));
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let wasm_func = "add";
+    let wasm_func = "docs:adder/add@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/wasm/adder.wasm";
+    let filename =
+        "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/add.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = split_to_chain_of_cells(wasm_dict);
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let from_start = Instant::now();
-    // usually this execution requires 250-300 ms
-    // engine.set_execution_timeout(Some(Duration::from_millis(50)));
     let status = execute_run_wasm(&mut engine).unwrap();
     println!("Wasm Return Status: {:?}", status);
     // let err = engine.execute();
