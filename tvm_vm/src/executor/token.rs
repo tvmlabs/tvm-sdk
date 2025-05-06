@@ -1,7 +1,7 @@
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
 use tvm_block::ACTION_MINTECC;
-use tvm_block::ACTION_RUNWASM;
+// use tvm_block::ACTION_RUNWASM;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
@@ -296,6 +296,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // let mut cell = BuilderData::new();
     // a.write_to(&mut cell)?;
     // add_action(engine, ACTION_RUNWASM, None, cell) // todo change to OK
+
     Ok(())
 }
 
