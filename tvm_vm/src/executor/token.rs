@@ -12,7 +12,6 @@ use tvm_types::SliceData;
 use tvm_types::error;
 use wasmtime::component;
 use wasmtime::component::ResourceTable;
-use wasmtime::component::bindgen;
 use wasmtime_wasi::IoView;
 use wasmtime_wasi::WasiCtx;
 use wasmtime_wasi::WasiCtxBuilder;
@@ -49,9 +48,6 @@ pub const KRBK: f64 = 0.675_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub const WASM_FUEL_MULTIPLIER: u64 = 8u64;
-
-bindgen!(in "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/add.wit");
-
 struct MyState {
     ctx: WasiCtx,
     table: ResourceTable,
@@ -67,32 +63,73 @@ impl WasiView for MyState {
     }
 }
 
-// Generate all possible ASCII printable strings (length 1-6)
-fn generate_strings(current: String, component: &wasmtime::component::Component) {
-    if current.len() >= 6 {
-        match component.export_index(None, &current) {
-            Some(c) => println!("{:?}: {:?}", current, c),
-            None => {}
-        };
-        return;
-    }
+// // Generate all possible ASCII printable strings (length 1-6)
+// fn generate_strings(current: String, component:
+// &wasmtime::component::Component) {     if current.len() >= 6 {
+//         match component.export_index(None, &current) {
+//             Some(c) => println!("{:?}: {:?}", current, c),
+//             None => {}
+//         };
+//         return;
+//     }
 
-    // Iterate through all printable ASCII characters (32 to 126)
-    for i in 32u8..=126u8 {
-        let mut new_string = current.clone();
-        new_string.push(i as char);
+//     // Iterate through all printable ASCII characters (32 to 126)
+//     for i in 32u8..=126u8 {
+//         let mut new_string = current.clone();
+//         new_string.push(i as char);
 
-        if new_string.len() <= 6 {
-            match component.export_index(None, &new_string) {
-                Some(c) => println!("{:?}: {:?}", new_string, c),
-                None => {}
-            };
-            generate_strings(new_string, component);
-        }
+//         if new_string.len() <= 6 {
+//             match component.export_index(None, &new_string) {
+//                 Some(c) => println!("{:?}: {:?}", new_string, c),
+//                 None => {}
+//             };
+//             generate_strings(new_string, component);
+//         }
+//     }
+// }
+
+pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
+    let cellsize = 120usize;
+    let len = input.len();
+    let mut cell_vec = Vec::<Vec<u8>>::new();
+    // Process the input in 1024-byte chunks
+    for i in (0..len).step_by(cellsize) {
+        let end = std::cmp::min(i + cellsize, len);
+        let chunk = &input[i..end];
+
+        // Convert slice to Vec<u8> and pass to omnom function
+        let chunk_vec = chunk.to_vec();
+        cell_vec.push(chunk_vec);
+        // println!(
+        //     "chunk: {:?}, cell: {:?}, size: {:?}",
+        //     chunk.len(),
+        //     cell_vec.last().expect("msg").len(),
+        //     cellsize
+        // );
+        assert!(
+            cell_vec.last().expect("error in split_to_chain_of_cells function").len() == cellsize
+                || i + cellsize > len
+        );
     }
+    let mut cell = BuilderData::with_raw(
+        cell_vec[cell_vec.len() - 1].clone(),
+        cell_vec[cell_vec.len() - 1].len() * 8,
+    )
+    .unwrap()
+    .into_cell()
+    .unwrap();
+    for i in (0..(cell_vec.len() - 1)).rev() {
+        let mut builder =
+            BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8).unwrap();
+        let builder = builder.checked_append_reference(cell).unwrap();
+        cell = builder.clone().into_cell().unwrap();
+        // println!("data: {:?}, vec: {:?}, i: {:?}", cell.data().len(),
+        // cell_vec[i].len(), i);
+    }
+    cell // return first cell
 }
 
-fn rejoin_chain_of_cells(mut input: &Cell) -> Result<Vec<u8>, failure::Error> {
+pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
     let mut data_vec = input.data().to_vec();
     let mut cur_cell: Cell = input.clone();
     while cur_cell.reference(0).is_ok() {
@@ -122,11 +159,11 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 4)?; //TODO match the stack depth change elsewhere
 
-    // load or access engine
+    // load or access WASM engine
     let mut wasm_config = wasmtime::Config::new();
     wasm_config.wasm_component_model(true);
     wasm_config.consume_fuel(true);
-    let mut wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+    let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
     };
@@ -135,6 +172,11 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         &wasm_engine,
         MyState { ctx: builder.build(), table: wasmtime::component::ResourceTable::new() },
     );
+    // set WASM fuel limit based on available gas
+    // TODO: Consider adding a constant offset to account for cell pack/unpack and
+    // other actions to be run after WASM instruction
+    // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
+    // instruction (or set to 0?)
     println!("Starting gas: {:?}", engine.gas_remaining());
     let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
         true => u64::try_from(engine.gas_remaining())? * WASM_FUEL_MULTIPLIER,
@@ -145,13 +187,10 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
     };
 
-    // load wasm binary
+    // load wasm component binary
     let s = engine.cmd.var(0).as_cell()?;
     let wasm_executable = rejoin_chain_of_cells(s)?;
-    // std::fs::write(
-    //     "/Users/elar/Code/Havok/AckiNacki/awnion/adder_after_boc.wasm",
-    //     wasm_executable.clone(),
-    // );
+
     let wasm_component =
         match wasmtime::component::Component::new(&wasm_engine, &wasm_executable.as_slice()) {
             Ok(module) => module,
@@ -162,8 +201,9 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
                 e
             )?,
         };
-    let binding = wasm_component.component_type();
-    let mut exports = binding.exports(&wasm_engine);
+    let component_type = wasm_component.component_type();
+    // TODO: Remove debug prints
+    let mut exports = component_type.exports(&wasm_engine);
     let arg = exports.next();
     println!("{:?}", arg);
     if let Some(arg) = arg {
@@ -173,42 +213,36 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             print!(" {:?}", arg);
         }
     }
-    // generate_strings(String::new(), &wasm_component);
-    // let wasm_component = match wasmtime::component::Component::from_file(
-    //     &wasm_engine,
-    //     "/Users/elar/Code/Havok/AckiNacki/awnion/adder.wasm",
-    // ) {
-    //     Ok(module) => module,
-    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM
-    // component {:?}", e)?, };
+
+    // Add wasi-cli libs to linker
     let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
     match wasmtime_wasi::add_to_linker_sync(&mut wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to linker {:?}", e)?,
     };
-    // Root::add_to_linker(&wasm_linker, ());
-    let wasm_instance = match Root::instantiate(&mut wasm_store, &wasm_component, &wasm_linker) {
-        Ok(instance) => instance,
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM instance {:?}", e)?,
-    };
+
+    // Instantiate WASM component. Will error if missing some wasm deps from linker
     let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
         Ok(instance) => instance,
         Err(e) => err!(
             ExceptionCode::WasmLoadFail,
-            "Failed to load WASM instance
+            "Failed to instantiate WASM instance
     {:?}",
             e
         )?,
     };
 
+    // get exported instance name to call
     let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let wasm_instance_name = unpack_data_from_cell(s, engine)?;
     let wasm_instance_name = String::from_utf8(wasm_instance_name)?;
 
+    // get exported func to call from within instance
     let s = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
     let wasm_func_name = unpack_data_from_cell(s, engine)?;
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
 
+    // get callable wasm func
     let instance_index = wasm_instance.get_export(&mut wasm_store, None, &wasm_instance_name);
     println!("Instance Index {:?}", instance_index);
     let func_index =
@@ -228,9 +262,9 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
     };
 
-    // execute wasm binary
+    // execute wasm func
     // collect result
-    // let result = wasm_function.call(&mut wasm_store, ());
+    // substract gas based on wasm fuel used
     let s = engine.cmd.var(3).as_cell()?;
     let wasm_func_args = rejoin_chain_of_cells(s)?;
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
@@ -255,7 +289,8 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     println!("EXEC Wasm execution result: {:?}", result);
     let res_vec = result.0;
     // let result = items_serialize(res_vec, engine);
-    let cell = pack_data_to_cell(&res_vec, engine)?;
+    let cell = split_to_chain_of_cells(res_vec);
+    // TODO: Is this stack push enough? do I need an action here?
     engine.cc.stack.push(StackItem::cell(cell));
     // let mut a: u64 = result as u64;
     // let mut cell = BuilderData::new();
