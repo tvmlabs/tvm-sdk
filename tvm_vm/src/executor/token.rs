@@ -10,6 +10,13 @@ use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
+use wasmtime::component;
+use wasmtime::component::ResourceTable;
+use wasmtime::component::bindgen;
+use wasmtime_wasi::IoView;
+use wasmtime_wasi::WasiCtx;
+use wasmtime_wasi::WasiCtxBuilder;
+use wasmtime_wasi::WasiView;
 
 use crate::error::TvmError;
 use crate::executor::blockchain::add_action;
@@ -42,6 +49,48 @@ pub const KRBK: f64 = 0.675_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub const WASM_FUEL_MULTIPLIER: u64 = 8u64;
+
+bindgen!(in "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/add.wit");
+
+struct MyState {
+    ctx: WasiCtx,
+    table: ResourceTable,
+}
+impl IoView for MyState {
+    fn table(&mut self) -> &mut ResourceTable {
+        &mut self.table
+    }
+}
+impl WasiView for MyState {
+    fn ctx(&mut self) -> &mut WasiCtx {
+        &mut self.ctx
+    }
+}
+
+// Generate all possible ASCII printable strings (length 1-6)
+fn generate_strings(current: String, component: &wasmtime::component::Component) {
+    if current.len() >= 6 {
+        match component.export_index(None, &current) {
+            Some(c) => println!("{:?}: {:?}", current, c),
+            None => {}
+        };
+        return;
+    }
+
+    // Iterate through all printable ASCII characters (32 to 126)
+    for i in 32u8..=126u8 {
+        let mut new_string = current.clone();
+        new_string.push(i as char);
+
+        if new_string.len() <= 6 {
+            match component.export_index(None, &new_string) {
+                Some(c) => println!("{:?}: {:?}", new_string, c),
+                None => {}
+            };
+            generate_strings(new_string, component);
+        }
+    }
+}
 
 fn rejoin_chain_of_cells(mut input: &Cell) -> Result<Vec<u8>, failure::Error> {
     let mut data_vec = input.data().to_vec();
@@ -77,11 +126,15 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let mut wasm_config = wasmtime::Config::new();
     wasm_config.wasm_component_model(true);
     wasm_config.consume_fuel(true);
-    let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+    let mut wasm_engine = match wasmtime::Engine::new(&wasm_config) {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
     };
-    let mut wasm_store = wasmtime::Store::new(&wasm_engine, ());
+    let mut builder = WasiCtxBuilder::new();
+    let mut wasm_store = wasmtime::Store::new(
+        &wasm_engine,
+        MyState { ctx: builder.build(), table: wasmtime::component::ResourceTable::new() },
+    );
     println!("Starting gas: {:?}", engine.gas_remaining());
     let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
         true => u64::try_from(engine.gas_remaining())? * WASM_FUEL_MULTIPLIER,
@@ -109,6 +162,18 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
                 e
             )?,
         };
+    let binding = wasm_component.component_type();
+    let mut exports = binding.exports(&wasm_engine);
+    let arg = exports.next();
+    println!("{:?}", arg);
+    if let Some(arg) = arg {
+        print!("{:?}", arg);
+
+        for arg in exports {
+            print!(" {:?}", arg);
+        }
+    }
+    // generate_strings(String::new(), &wasm_component);
     // let wasm_component = match wasmtime::component::Component::from_file(
     //     &wasm_engine,
     //     "/Users/elar/Code/Havok/AckiNacki/awnion/adder.wasm",
@@ -116,20 +181,44 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     //     Ok(module) => module,
     //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM
     // component {:?}", e)?, };
-    let mut wasm_linker = wasmtime::component::Linker::new(&wasm_engine);
-    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
+    let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
+    match wasmtime_wasi::add_to_linker_sync(&mut wasm_linker) {
+        Ok(_) => {}
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to linker {:?}", e)?,
+    };
+    // Root::add_to_linker(&wasm_linker, ());
+    let wasm_instance = match Root::instantiate(&mut wasm_store, &wasm_component, &wasm_linker) {
         Ok(instance) => instance,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to load WASM instance {:?}", e)?,
+    };
+    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
+        Ok(instance) => instance,
+        Err(e) => err!(
+            ExceptionCode::WasmLoadFail,
+            "Failed to load WASM instance
+    {:?}",
+            e
+        )?,
     };
 
     let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let wasm_func_name = unpack_data_from_cell(s, engine)?;
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
     // println!("{:?}", );
+    let instance_index = wasm_instance.get_export(&mut wasm_store, None, "docs:adder/add@0.1.0");
+    println!("Instance Index {:?}", instance_index);
+    let func_index = match wasm_instance.get_export(&mut wasm_store, instance_index.as_ref(), "add")
+    {
+        Some(index) => index,
+        None => {
+            err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
+        }
+    };
+    println!("Func Index {:?}", func_index);
     let wasm_function = wasm_instance
-        .get_func(&mut wasm_store, &wasm_func_name)
+        .get_func(&mut wasm_store, func_index)
         .expect(&format!("`{}` was not an exported function", wasm_func_name));
-    let wasm_function = match wasm_function.typed::<(i32, i32), (i32,)>(&wasm_store) {
+    let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
     };
@@ -137,9 +226,9 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // execute wasm binary
     // collect result
     // let result = wasm_function.call(&mut wasm_store, ());
-    let s = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
-    let wasm_func_args = unpack_data_from_cell(s, engine)?;
-    let result = match wasm_function.call(&mut wasm_store, (1i32, 2i32)) {
+    let s = engine.cmd.var(2).as_cell()?;
+    let wasm_func_args = rejoin_chain_of_cells(s)?;
+    let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
     };
@@ -159,8 +248,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     }
     // return result
     println!("EXEC Wasm execution result: {:?}", result);
-    let mut res_vec = Vec::<u8>::new();
-    res_vec.push(result.0 as u8);
+    let res_vec = result.0;
     // let result = items_serialize(res_vec, engine);
     let cell = pack_data_to_cell(&res_vec, engine)?;
     engine.cc.stack.push(StackItem::cell(cell));
