@@ -484,6 +484,10 @@ fn test_run_wasm_fortytwo() {
     );
     let cell = split_to_chain_of_cells((Vec::<u8>::from([1u8, 2u8])));
     engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "add";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
