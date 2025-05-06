@@ -31,6 +31,8 @@ use crate::executor::gas::gas_state::Gas;
 use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
 use crate::executor::token::execute_run_wasm;
+use crate::executor::token::rejoin_chain_of_cells;
+use crate::executor::token::split_to_chain_of_cells;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::stack::Stack;
@@ -284,56 +286,6 @@ fn load_boc(filename: &str) -> tvm_types::Cell {
     tvm_types::read_single_root_boc(bytes).unwrap()
 }
 
-fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
-    let cellsize = 120usize;
-    let len = input.len();
-    let mut cell_vec = Vec::<Vec<u8>>::new();
-    // Process the input in 1024-byte chunks
-    for i in (0..len).step_by(cellsize) {
-        let end = std::cmp::min(i + cellsize, len);
-        let chunk = &input[i..end];
-
-        // Convert slice to Vec<u8> and pass to omnom function
-        let chunk_vec = chunk.to_vec();
-        cell_vec.push(chunk_vec);
-        // println!(
-        //     "chunk: {:?}, cell: {:?}, size: {:?}",
-        //     chunk.len(),
-        //     cell_vec.last().expect("msg").len(),
-        //     cellsize
-        // );
-        assert!(
-            cell_vec.last().expect("error in split_to_chain_of_cells function").len() == cellsize
-                || i + cellsize > len
-        );
-    }
-    let mut cell = BuilderData::with_raw(
-        cell_vec[cell_vec.len() - 1].clone(),
-        cell_vec[cell_vec.len() - 1].len() * 8,
-    )
-    .unwrap()
-    .into_cell()
-    .unwrap();
-    for i in (0..(cell_vec.len() - 1)).rev() {
-        let mut builder =
-            BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8).unwrap();
-        let builder = builder.checked_append_reference(cell).unwrap();
-        cell = builder.clone().into_cell().unwrap();
-        // println!("data: {:?}, vec: {:?}, i: {:?}", cell.data().len(),
-        // cell_vec[i].len(), i);
-    }
-    cell // return first cell
-}
-
-fn rejoin_chain_of_cells(mut input: Cell) -> Vec<u8> {
-    let mut data_vec = input.data().to_vec();
-    while input.reference(0).is_ok() {
-        input = input.reference(0).unwrap();
-        data_vec.append(&mut input.data().to_vec());
-    }
-    data_vec
-}
-
 fn load_stateinit(filename: &str) -> StateInit {
     StateInit::construct_from_file(filename).unwrap()
 }
@@ -482,7 +434,7 @@ fn test_run_wasm_fortytwo() {
         None,
         vec![],
     );
-    let cell = split_to_chain_of_cells((Vec::<u8>::from([1u8, 2u8])));
+    let cell = split_to_chain_of_cells(Vec::<u8>::from([1u8, 2u8]));
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
@@ -502,13 +454,7 @@ fn test_run_wasm_fortytwo() {
     println!("Wasm Return Status: {:?}", status);
     // let err = engine.execute();
     assert!(
-        unpack_data_from_cell(
-            SliceData::load_cell_ref(engine.cc.stack.get(0).as_cell().unwrap()).unwrap(),
-            &mut engine
-        )
-        .unwrap()
-        .pop()
-        .unwrap()
+        rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
             == 3u8
     );
 
