@@ -58,7 +58,6 @@ use tvm_block::TrComputePhaseVm;
 use tvm_block::TrCreditPhase;
 use tvm_block::TrStoragePhase;
 use tvm_block::Transaction;
-use tvm_block::VarUInteger32;
 use tvm_block::WorkchainFormat;
 use tvm_types::AccountId;
 use tvm_types::Cell;
@@ -317,12 +316,12 @@ pub trait TransactionExecutor {
             if diff > 0 {
                 let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
                     Ok(Some(data)) => data,
-                    Ok(None) => VarUInteger32::default(),
-                    Err(_) => VarUInteger32::default(),
+                    Ok(None) => Grams::default(),
+                    Err(_) => Grams::default(),
                 };
-                if ecc_balance >= VarUInteger32::from(diff.as_u128()) {
+                if ecc_balance >= diff {
                     let mut sub_value = CurrencyCollection::new();
-                    sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
+                    sub_value.other.set(&ECC_SHELL_KEY, &diff)?;
                     acc_balance.grams.add(&diff)?;
                     acc_balance.sub(&sub_value)?;
                 }
@@ -892,14 +891,11 @@ pub trait TransactionExecutor {
                     let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
                     if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
-                        if a <= VarUInteger32::from(value as u128) {
+                        if a <= Grams::from(value) {
                             sub_value.other.set(&ECC_SHELL_KEY, &a)?;
-                            let digits = a.value().to_u64_digits();
-                            if !digits.1.is_empty() {
-                                exchange_value = digits.1[0];
-                            }
+                            exchange_value = a.as_u64_quiet();
                         } else {
-                            sub_value.set_other(ECC_SHELL_KEY, value as u128)?;
+                            sub_value.set_other(ECC_SHELL_KEY, value)?;
                             exchange_value = value;
                         }
                     }
@@ -1634,7 +1630,7 @@ fn outmsg_action_handler(
         _ => (),
     }
     let mut acc_balance_copy = ExtraCurrencyCollection::default();
-    let predicate = |key: u32, b: tvm_block::VarUInteger32| -> Result<bool> {
+    let predicate = |key: u32, b: tvm_block::Grams| -> Result<bool> {
         if !b.is_zero() {
             acc_balance_copy.set(&key, &b)?;
         }

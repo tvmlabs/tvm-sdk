@@ -204,7 +204,7 @@ pub async fn get_account(
                         balance
                             .other
                             .iterate_with_keys(|k: u32, v| {
-                                mapping.insert(k, v.value().to_string());
+                                mapping.insert(k, v.as_u128());
                                 Ok(true)
                             })
                             .unwrap();

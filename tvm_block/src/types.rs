@@ -702,7 +702,7 @@ define_NumberN_up32bit!(Number13, 13);
 define_NumberN_up32bit!(Number16, 16);
 define_NumberN_up32bit!(Number32, 32);
 
-define_HashmapE! {ExtraCurrencyCollection, 32, VarUInteger32}
+define_HashmapE! {ExtraCurrencyCollection, 32, Grams}
 
 impl From<HashmapE> for ExtraCurrencyCollection {
     fn from(other: HashmapE) -> Self {
@@ -823,16 +823,16 @@ impl CurrencyCollection {
         Self::from_grams(Grams::zero())
     }
 
-    pub fn get_other(&self, key: u32) -> Result<Option<VarUInteger32>> {
+    pub fn get_other(&self, key: u32) -> Result<Option<Grams>> {
         self.other.get(&key)
     }
 
-    pub fn set_other(&mut self, key: u32, other: u128) -> Result<()> {
-        self.set_other_ex(key, &VarUInteger32::from_two_u128(0, other)?)?;
+    pub fn set_other(&mut self, key: u32, other: u64) -> Result<()> {
+        self.set_other_ex(key, &Grams::from(other))?;
         Ok(())
     }
 
-    pub fn set_other_ex(&mut self, key: u32, other: &VarUInteger32) -> Result<()> {
+    pub fn set_other_ex(&mut self, key: u32, other: &Grams) -> Result<()> {
         self.other.set(&key, other)?;
         Ok(())
     }
@@ -895,7 +895,7 @@ impl AddSub for CurrencyCollection {
                     self.other.set(&key, &a)?;
                     return Ok(true);
                 }
-            } else if b == VarUInteger32::zero() {
+            } else if b == Grams::zero() {
                 return Ok(true);
             }
 

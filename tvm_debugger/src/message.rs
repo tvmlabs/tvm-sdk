@@ -14,7 +14,6 @@ use tvm_block::InternalMessageHeader;
 use tvm_block::Message;
 use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
-use tvm_block::VarUInteger32;
 use tvm_types::SliceData;
 use tvm_types::ed25519_create_private_key;
 
@@ -72,7 +71,7 @@ pub(crate) fn generate_internal_message(
         for (k, v) in ecc_map {
             let key = k.parse::<u32>()?;
             let value_str = v.as_str().ok_or(anyhow::format_err!("Failed to parse ecc value"))?;
-            let value = VarUInteger32::from_str(value_str)
+            let value = Grams::from_str(value_str)
                 .map_err(|e| anyhow::format_err!("Failed to decode ecc value: {e}"))?;
             ecc.set(&key, &value).map_err(|e| anyhow::format_err!("Failed to set ecc key: {e}"))?;
         }

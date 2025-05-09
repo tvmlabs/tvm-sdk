@@ -10,7 +10,7 @@
 // limitations under the License.
 
 use super::*;
-use crate::VarUInteger32;
+use crate::Grams;
 
 #[test]
 fn test_out_action_create() {
@@ -27,7 +27,7 @@ fn test_out_action_create_mint() {
     let mut value = ExtraCurrencyCollection::default();
     let action_send = OutAction::new_mint(value.clone());
     assert_eq!(action_send, OutAction::MintToken { value: value.clone() });
-    let _ = value.set(&1, &VarUInteger32::from(500_u64));
+    let _ = value.set(&1, &Grams::from(500_u64));
     let action_set = OutAction::new_mint(value.clone());
     assert_eq!(action_set, OutAction::MintToken { value: value.clone() });
 }
