@@ -179,7 +179,7 @@ impl DepthBalanceInfo {
 }
 
 impl Augmentable for DepthBalanceInfo {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
+    fn calc(&mut self, other: &Self) -> Result<()> {
         self.balance.calc(&other.balance)
         // TODO: do something with split_depth
     }

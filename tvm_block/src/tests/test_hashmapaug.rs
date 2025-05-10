@@ -53,8 +53,8 @@ impl Deserializable for GramStruct {
 }
 
 impl Augmentable for GramStruct {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
-        self.0.add(&other.0)
+    fn calc(&mut self, other: &Self) -> Result<()> {
+        if self.0.add(&other.0).is_ok() { Ok(()) } else { Err(failure::err_msg("Calc error")) }
     }
 }
 
@@ -745,11 +745,11 @@ impl Augmentation<u8> for u8 {
 
 // max
 impl Augmentable for u8 {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
+    fn calc(&mut self, other: &Self) -> Result<()> {
         if *self < *other {
             *self = *other
         }
-        Ok(true)
+        Ok(())
     }
 }
 

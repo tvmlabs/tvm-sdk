@@ -158,26 +158,26 @@ macro_rules! define_VarIntegerN {
         }
 
         impl AddSub for $varname {
-            fn add(&mut self, other: &Self) -> Result<bool> {
+            fn add(&mut self, other: &Self) -> Result<()> {
                 if let Some(result) = self.0.checked_add(&other.0) {
                     if let Err(err) = Self::check_overflow(&result) {
                         log::warn!("{} + {} overflow: {:?}", self, other, err);
-                        Ok(false)
+                        return Err(err);
                     } else {
                         self.0 = result;
-                        Ok(true)
+                        Ok(())
                     }
                 } else {
-                    Ok(false)
+                    Err(failure::err_msg("Add error"))
                 }
             }
 
-            fn sub(&mut self, other: &Self) -> Result<bool> {
+            fn sub(&mut self, other: &Self) -> Result<()> {
                 if let Some(result) = self.0.checked_sub(&other.0) {
                     self.0 = result;
-                    Ok(true)
+                    Ok(())
                 } else {
-                    Ok(false)
+                    Err(failure::err_msg("Sub error"))
                 }
             }
         }
@@ -332,12 +332,12 @@ macro_rules! define_VarIntegerN {
         }
 
         impl AddSub for $varname {
-            fn add(&mut self, other: &Self) -> Result<bool> {
-                Ok(self.add_checked(other.0))
+            fn add(&mut self, other: &Self) -> Result<()> {
+                if self.add_checked(other.0) { Ok(()) } else { Err(failure::err_msg("Add error")) }
             }
 
-            fn sub(&mut self, other: &Self) -> Result<bool> {
-                Ok(self.sub_checked(other.0))
+            fn sub(&mut self, other: &Self) -> Result<()> {
+                if self.sub_checked(other.0) { Ok(()) } else { Err(failure::err_msg("Sub error")) }
             }
         }
 
@@ -543,8 +543,11 @@ define_VarIntegerN!(VarUInteger3, 3, u32);
 define_VarIntegerN!(VarUInteger7, 7, u64);
 
 impl Augmentable for Grams {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
-        self.add(other)
+    fn calc(&mut self, other: &Self) -> Result<()> {
+        if self.add(other).is_ok() {
+            return Ok(());
+        }
+        Err(failure::err_msg("Calc error"))
     }
 }
 
@@ -809,8 +812,11 @@ pub struct CurrencyCollection {
 }
 
 impl Augmentable for CurrencyCollection {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
-        self.add(other)
+    fn calc(&mut self, other: &Self) -> Result<()> {
+        if self.add(other).is_ok() {
+            return Ok(());
+        }
+        Err(failure::err_msg("Calc error"))
     }
 }
 
@@ -879,16 +885,16 @@ impl Deserializable for CurrencyCollection {
 }
 
 pub trait AddSub {
-    fn sub(&mut self, other: &Self) -> Result<bool>;
-    fn add(&mut self, other: &Self) -> Result<bool>;
+    fn sub(&mut self, other: &Self) -> Result<()>;
+    fn add(&mut self, other: &Self) -> Result<()>;
 }
 
 impl AddSub for CurrencyCollection {
-    fn sub(&mut self, other: &Self) -> Result<bool> {
-        if !self.grams.sub(&other.grams)? {
-            return Ok(false);
+    fn sub(&mut self, other: &Self) -> Result<()> {
+        if self.grams.sub(&other.grams).is_err() {
+            return Err(failure::err_msg("Sub error"));
         }
-        other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
+        let res = other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
             if let Some(mut a) = self.other.get(&key)? {
                 if a >= b {
                     a.sub(&b)?;
@@ -901,18 +907,24 @@ impl AddSub for CurrencyCollection {
 
             Ok(false) // coin not found in mine or amount is smaller - cannot
             // subtract
-        })
+        });
+        if let Ok(data) = res {
+            if data {
+                return Ok(());
+            }
+        }
+        Err(failure::err_msg("Sub error"))
     }
 
-    fn add(&mut self, other: &Self) -> Result<bool> {
-        if !self.grams.add(&other.grams)? {
-            return Ok(false);
+    fn add(&mut self, other: &Self) -> Result<()> {
+        if self.grams.add(&other.grams).is_err() {
+            return Err(failure::err_msg("Add error"));
         }
         let mut result = self.other.clone();
-        other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
+        let data = other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
             match self.other.get(&key)? {
                 Some(mut a) => {
-                    if !a.add(&b)? {
+                    if a.add(&b).is_err() {
                         return Ok(false);
                     }
                     result.set(&key, &a)?;
@@ -923,8 +935,12 @@ impl AddSub for CurrencyCollection {
             }
             Ok(true)
         })?;
-        self.other = result;
-        Ok(true)
+        if data {
+            self.other = result;
+            Ok(())
+        } else {
+            Err(failure::err_msg("Add error"))
+        }
     }
 }
 

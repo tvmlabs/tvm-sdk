@@ -1048,7 +1048,7 @@ impl Account {
     /// subtraction funds from account (for example, rollback transaction)
     pub fn sub_funds(&mut self, funds_to_sub: &CurrencyCollection) -> Result<bool> {
         if let Some(stuff) = self.stuff_mut() {
-            stuff.storage.balance.sub(funds_to_sub)
+            if stuff.storage.balance.sub(funds_to_sub).is_ok() { Ok(true) } else { Ok(false) }
         } else {
             Ok(false)
         }

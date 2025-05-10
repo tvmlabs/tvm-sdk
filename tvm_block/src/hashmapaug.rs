@@ -30,7 +30,7 @@ use crate::error::BlockError;
 
 /// trait for types used as Augment to calc aug on forks
 pub trait Augmentable: Clone + Default + Serializable + Deserializable {
-    fn calc(&mut self, other: &Self) -> Result<bool>;
+    fn calc(&mut self, other: &Self) -> Result<()>;
 }
 /// trait for objects in hashmap to help get augmentation from object
 pub trait Augmentation<Y: Augmentable> {

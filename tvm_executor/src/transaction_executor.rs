@@ -517,7 +517,7 @@ pub trait TransactionExecutor {
                     true => Grams::zero(),
                 };
 
-                if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
+                if acc_balance.grams.sub(&vm_phase.gas_fees).is_err() {
                     log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
                     fail!("can't sub funds: from acc_balance")
                 }
@@ -634,7 +634,7 @@ pub trait TransactionExecutor {
         vm_phase.vm_steps = vm.steps();
         // TODO: vm_final_state_hash
         log::debug!(target: "executor", "acc_balance: {}, gas fees: {}", acc_balance.grams, vm_phase.gas_fees);
-        if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
+        if acc_balance.grams.sub(&vm_phase.gas_fees).is_err() {
             log::error!(target: "executor", "This situation is unreachable: can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
             fail!("can't sub funds: from acc_balance")
         }
@@ -900,12 +900,8 @@ pub trait TransactionExecutor {
                         }
                     }
                     match acc_remaining_balance.grams.add(&Grams::from(exchange_value)) {
-                        Ok(true) => {
+                        Ok(_) => {
                             acc_remaining_balance.sub(&sub_value)?;
-                            phase.spec_actions += 1;
-                            0
-                        }
-                        Ok(false) => {
                             phase.spec_actions += 1;
                             0
                         }
@@ -922,13 +918,12 @@ pub trait TransactionExecutor {
                         }
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
-                        Ok(true) => {
+                        Ok(_) => {
                             *minted_shell += value as u128;
                             phase.spec_actions += 1;
                             0
                         }
-                        Ok(false) => RESULT_CODE_OVERFLOW,
-                        Err(_) => RESULT_CODE_UNSUPPORTED,
+                        Err(_) => RESULT_CODE_OVERFLOW,
                     }
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
@@ -1620,7 +1615,7 @@ fn outmsg_action_handler(
         return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
     }
     match acc_balance.sub(&result_value) {
-        Ok(false) | Err(_) => {
+        Err(_) => {
             log::warn!(
                 target: "executor",
                 "account balance {} is too small, cannot send {}", acc_balance, result_value
@@ -1704,8 +1699,7 @@ fn reserve_action_handler(
     if mode & RESERVE_ALL_BUT == 0 {
         if *need_to_reserve != 0 {
             match val.grams.add(&Grams::from(*need_to_reserve)) {
-                Ok(true) => (),
-                Ok(false) => return Err(RESULT_CODE_UNSUPPORTED),
+                Ok(_) => (),
                 Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
             }
             *need_to_reserve = 0;
@@ -1727,9 +1721,8 @@ fn reserve_action_handler(
     }
     let result = remaining.sub(&reserved);
     match result {
-        Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
-        Ok(false) => return Err(RESULT_CODE_NOT_ENOUGH_EXTRA),
-        Ok(true) => (),
+        Err(_) => return Err(RESULT_CODE_NOT_ENOUGH_EXTRA),
+        Ok(_) => (),
     }
     std::mem::swap(&mut remaining, acc_remaining_balance);
 

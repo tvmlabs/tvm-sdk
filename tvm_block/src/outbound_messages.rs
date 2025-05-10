@@ -205,11 +205,11 @@ impl HashmapSubtree for OutMsgQueue {}
 pub type MsgTime = u64;
 
 impl Augmentable for MsgTime {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
+    fn calc(&mut self, other: &Self) -> Result<()> {
         if *self > *other {
             *self = *other;
         }
-        Ok(true)
+        Ok(())
     }
 }
 

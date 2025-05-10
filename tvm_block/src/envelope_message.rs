@@ -459,7 +459,7 @@ impl MsgEnvelope {
 
     /// Collect transfer fee from envelope
     pub fn collect_fee(&mut self, fee: Grams) -> bool {
-        self.fwd_fee_remaining.sub(&fee).unwrap() // no excpetion here
+        self.fwd_fee_remaining.sub(&fee).is_ok()
     }
 
     /// Set current address of envelope

@@ -71,10 +71,13 @@ pub struct ImportFees {
 }
 
 impl Augmentable for ImportFees {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
-        let mut result = self.fees_collected.calc(&other.fees_collected)?;
-        result |= self.value_imported.calc(&other.value_imported)?;
-        Ok(result)
+    fn calc(&mut self, other: &Self) -> Result<()> {
+        let mut result = self.fees_collected.calc(&other.fees_collected).is_ok();
+        result |= self.value_imported.calc(&other.value_imported).is_ok();
+        if result {
+            return Ok(());
+        }
+        Err(failure::err_msg("Calc error"))
     }
 }
 

@@ -199,7 +199,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             acc_balance.grams += credit;
 
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
-            if !acc_balance.grams.sub(&in_fwd_fee)? {
+            if acc_balance.grams.sub(&in_fwd_fee).is_err() {
                 fail!(ExecutorError::NoFundsToImportMsg)
             }
             tr.add_fee_grams(&in_fwd_fee)?;

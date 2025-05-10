@@ -1,4 +1,9 @@
-use crate::{fail, Cell, CellImpl, CellType, LevelMask, UInt256};
+use crate::Cell;
+use crate::CellImpl;
+use crate::CellType;
+use crate::LevelMask;
+use crate::UInt256;
+use crate::fail;
 
 #[derive(Clone)]
 pub struct VirtualCell {

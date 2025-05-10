@@ -700,14 +700,14 @@ impl Serializable for KeyMaxLt {
 }
 
 impl Augmentable for KeyMaxLt {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
+    fn calc(&mut self, other: &Self) -> Result<()> {
         if other.key {
             self.key = true
         }
         if self.max_end_lt < other.max_end_lt {
             self.max_end_lt = other.max_end_lt
         }
-        Ok(true)
+        Ok(())
     }
 }
 
@@ -922,10 +922,13 @@ impl ShardFeeCreated {
 }
 
 impl Augmentable for ShardFeeCreated {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
-        let mut result = self.fees.calc(&other.fees)?;
-        result |= self.create.calc(&other.create)?;
-        Ok(result)
+    fn calc(&mut self, other: &Self) -> Result<()> {
+        let mut result = self.fees.calc(&other.fees).is_ok();
+        result |= self.create.calc(&other.create).is_ok();
+        if result {
+            return Ok(());
+        }
+        Err(failure::err_msg("Calc error"))
     }
 }
 

@@ -1370,7 +1370,11 @@ impl Transaction {
 
     /// add fee
     pub fn add_fee_grams(&mut self, fee: &Grams) -> Result<bool> {
-        crate::types::AddSub::add(&mut self.total_fees.grams, fee)
+        if crate::types::AddSub::add(&mut self.total_fees.grams, fee).is_ok() {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     /// set total fees
