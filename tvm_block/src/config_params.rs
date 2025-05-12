@@ -388,8 +388,6 @@ pub enum GlobalCapabilities {
     #[cfg(feature = "signature_with_id")]
     CapSignatureWithId = 0x0000_0400_0000, // use some predefined id during signature check
     CapBounceAfterFailedAction = 0x0000_0800_0000,
-    #[cfg(feature = "groth")]
-    CapGroth16 = 0x0000_1000_0000,
     CapFeeInGasUnits = 0x0000_2000_0000, // all fees in config are in gas units
     CapBigCells = 0x0000_4000_0000,
     CapSuspendedList = 0x0000_8000_0000,

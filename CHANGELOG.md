@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.14.0] - 2025-05-12
+
+### New
+
+- `gosh` feature made default
+
+
 ## [2.13.0] - 2025-05-01
 
 ### Improvement
