@@ -1104,7 +1104,7 @@ pub trait TransactionExecutor {
             return Ok((TrBouncePhase::no_funds(storage, fwd_full_fees), None));
         }
 
-        acc_balance.sub(&remaining_msg_balance)?;
+    //    acc_balance.sub(&remaining_msg_balance)?;
         remaining_msg_balance.grams.sub(&fwd_full_fees)?;
         remaining_msg_balance.grams.sub(compute_phase_fees)?;
         match bounce_msg.header_mut() {
