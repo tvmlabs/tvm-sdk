@@ -79,7 +79,6 @@ use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
 
-use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 use crate::blockchain_config::BlockchainConfig;
 use crate::blockchain_config::CalcMsgFwdFees;
 use crate::error::ExecutorError;
@@ -314,17 +313,18 @@ pub trait TransactionExecutor {
                 }
             }
             if diff > 0 {
-                let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
+                let mut value = match acc_balance.other.get(&ECC_SHELL_KEY) {
                     Ok(Some(data)) => data,
                     Ok(None) => Grams::default(),
                     Err(_) => Grams::default(),
-                };
-                if ecc_balance >= diff {
-                    let mut sub_value = CurrencyCollection::new();
-                    sub_value.other.set(&ECC_SHELL_KEY, &diff)?;
-                    acc_balance.grams.add(&diff)?;
-                    acc_balance.sub(&sub_value)?;
+                }; 
+                if value >= diff {
+                    value = diff;
                 }
+                let mut sub_value = CurrencyCollection::new();
+                sub_value.other.set(&ECC_SHELL_KEY, &value)?;
+                acc_balance.grams.add(&value)?;
+                acc_balance.sub(&sub_value)?;
             }
         }
         if acc_balance.grams >= fee {
@@ -1039,7 +1039,6 @@ pub trait TransactionExecutor {
         msg: &Message,
         tr: &mut Transaction,
         my_addr: &MsgAddressInt,
-        block_version: u32,
     ) -> Result<(TrBouncePhase, Option<Message>)> {
         let header = msg.int_header().ok_or_else(|| error!("Not found msg internal header"))?;
         if !header.bounce {
@@ -1087,17 +1086,7 @@ pub trait TransactionExecutor {
         }
 
         // calculated storage for bounced message is empty
-        let serialized_message = bounce_msg.serialize()?;
-        let (storage, fwd_full_fees) = if block_version
-            >= VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE
-        {
-            let mut storage = StorageUsedShort::default();
-            storage.append(&serialized_message);
-            let storage_bits = storage.bits() - serialized_message.bit_length() as u64;
-            let storage_cells = storage.cells() - 1;
-            let fwd_full_fees = self.config().calc_fwd_fee(is_masterchain, &serialized_message)?;
-            (StorageUsedShort::with_values_checked(storage_cells, storage_bits)?, fwd_full_fees)
-        } else {
+        let (storage, fwd_full_fees) = {
             let fwd_full_fees = self.config().calc_fwd_fee(is_masterchain, &Cell::default())?;
             (StorageUsedShort::with_values_checked(0, 0)?, fwd_full_fees)
         };
@@ -1705,7 +1694,7 @@ fn reserve_action_handler(
             *need_to_reserve = 0;
         }
     } else {
-        if acc_remaining_balance.grams - val.grams < Grams::from(*need_to_reserve) {
+        if acc_remaining_balance.grams < Grams::from(*need_to_reserve) + val.grams {
             return Err(RESULT_CODE_INVALID_BALANCE);
         }
         if *need_to_reserve != 0 {
