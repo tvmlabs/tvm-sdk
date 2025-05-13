@@ -1034,7 +1034,7 @@ pub trait TransactionExecutor {
     fn bounce_phase(
         &self,
         mut remaining_msg_balance: CurrencyCollection,
-        acc_balance: &mut CurrencyCollection,
+//        acc_balance: &mut CurrencyCollection,
         compute_phase_fees: &Grams,
         msg: &Message,
         tr: &mut Transaction,

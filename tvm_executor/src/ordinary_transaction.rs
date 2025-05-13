@@ -457,7 +457,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 msg_balance.grams += burned;
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
-                    &mut acc_balance,
+//                    &mut acc_balance,
                     &compute_phase_gas_fees,
                     in_msg,
                     &mut tr,
