@@ -1,6 +1,7 @@
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
 use tvm_block::ACTION_MINTECC;
+use tvm_block::ACTION_BURNECC;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Grams;
 use tvm_block::Serializable;
@@ -40,6 +41,18 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     let mut cell = BuilderData::new();
     data.write_to(&mut cell)?;
     add_action(engine, ACTION_MINTECC, None, cell)
+}
+
+pub(super) fn execute_ecc_burn(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("BURNECC"))?;
+    fetch_stack(engine, 2)?;
+    let x: u32 = engine.cmd.var(0).as_integer()?.into(0..=255)?;
+    let y: Grams = Grams::from(engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?);
+    let mut data = ExtraCurrencyCollection::new();
+    data.set(&x, &y)?;
+    let mut cell = BuilderData::new();
+    data.write_to(&mut cell)?;
+    add_action(engine, ACTION_BURNECC, None, cell)
 }
 
 pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {

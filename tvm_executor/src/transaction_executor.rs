@@ -886,7 +886,22 @@ pub trait TransactionExecutor {
                     } else {
                         RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
-                }
+                },
+                OutAction::BurnToken { value } => {
+                    let mut sub_value = CurrencyCollection::new();
+                    if is_special {
+                        sub_value.other = value;
+                        match acc_remaining_balance.sub(&sub_value) {
+                            Ok(_) => {
+                                phase.spec_actions += 1;
+                                0
+                            }
+                            Err(_) => RESULT_CODE_UNSUPPORTED,
+                        }
+                    } else {
+                        RESULT_CODE_NOT_SPECIAL_CONTRACT
+                    }
+                },
                 OutAction::ExchangeShell { value } => {
                     let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
