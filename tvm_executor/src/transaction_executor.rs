@@ -889,17 +889,16 @@ pub trait TransactionExecutor {
                 },
                 OutAction::BurnToken { value } => {
                     let mut sub_value = CurrencyCollection::new();
-                    if is_special {
-                        sub_value.other = value;
-                        match acc_remaining_balance.sub(&sub_value) {
-                            Ok(_) => {
-                                phase.spec_actions += 1;
-                                0
-                            }
-                            Err(_) => RESULT_CODE_UNSUPPORTED,
+                    sub_value.other = value;
+                    match acc_remaining_balance.sub(&sub_value) {
+                        Ok(_) => {
+                            phase.spec_actions += 1;
+                            0
                         }
-                    } else {
-                        RESULT_CODE_NOT_SPECIAL_CONTRACT
+                        Err(_) => {
+                            phase.spec_actions += 1;
+                            0
+                        },
                     }
                 },
                 OutAction::ExchangeShell { value } => {
