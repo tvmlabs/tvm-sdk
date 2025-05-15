@@ -891,14 +891,15 @@ pub trait AddSub {
 
 impl AddSub for CurrencyCollection {
     fn sub(&mut self, other: &Self) -> Result<()> {
-        if self.grams.sub(&other.grams).is_err() {
+        let mut copy = self.clone();
+        if copy.grams.sub(&other.grams).is_err() {
             return Err(failure::err_msg("Sub error"));
         }
         let res = other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
-            if let Some(mut a) = self.other.get(&key)? {
+            if let Some(mut a) = copy.other.get(&key)? {
                 if a >= b {
                     a.sub(&b)?;
-                    self.other.set(&key, &a)?;
+                    copy.other.set(&key, &a)?;
                     return Ok(true);
                 }
             } else if b == Grams::zero() {
@@ -910,6 +911,7 @@ impl AddSub for CurrencyCollection {
         });
         if let Ok(data) = res {
             if data {
+                *self = copy;
                 return Ok(());
             }
         }
@@ -917,26 +919,26 @@ impl AddSub for CurrencyCollection {
     }
 
     fn add(&mut self, other: &Self) -> Result<()> {
-        if self.grams.add(&other.grams).is_err() {
+        let mut copy = self.clone();
+        if copy.grams.add(&other.grams).is_err() {
             return Err(failure::err_msg("Add error"));
         }
-        let mut result = self.other.clone();
         let data = other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
-            match self.other.get(&key)? {
+            match copy.other.get(&key)? {
                 Some(mut a) => {
                     if a.add(&b).is_err() {
                         return Ok(false);
                     }
-                    result.set(&key, &a)?;
+                    copy.other.set(&key, &a)?;
                 }
                 None => {
-                    result.set(&key, &b)?;
+                    copy.other.set(&key, &b)?;
                 }
             }
             Ok(true)
         })?;
         if data {
-            self.other = result;
+            *self = copy;
             Ok(())
         } else {
             Err(failure::err_msg("Add error"))
