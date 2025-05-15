@@ -108,7 +108,7 @@ pub enum OutAction {
     MintToken { value: ExtraCurrencyCollection },
 
     /// Action for burn some token into account
-    BurnToken { value: ExtraCurrencyCollection },
+    BurnToken { value: u64, key: u32 },
 
     /// Action for exchange some token into shell in account
     ExchangeShell { value: u64 },
@@ -170,8 +170,8 @@ impl OutAction {
     }
 
     /// Create new instance OutAction::MintToken
-    pub fn new_burn(value: ExtraCurrencyCollection) -> Self {
-        OutAction::BurnToken { value }
+    pub fn new_burn(value: u64, key: u32) -> Self {
+        OutAction::BurnToken { value, key }
     }
 
     /// Create new instance OutAction::ExchangeShell
@@ -222,9 +222,10 @@ impl Serializable for OutAction {
                 ACTION_MINTECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
             }
-            OutAction::BurnToken { ref value } => {
+            OutAction::BurnToken { ref value , ref key} => {
                 ACTION_BURNECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
+                key.write_to(cell)?;
             }
             OutAction::ExchangeShell { ref value } => {
                 ACTION_CNVRTSHELLQ.write_to(cell)?;
@@ -281,9 +282,11 @@ impl Deserializable for OutAction {
                 *self = OutAction::new_mint(value);
             }
             ACTION_BURNECC => {
-                let mut value = ExtraCurrencyCollection::default();
+                let mut value: u64 = 0;
+                let mut key: u32 = 0;
                 value.read_from(cell)?;
-                *self = OutAction::new_burn(value);
+                key.read_from(cell)?;
+                *self = OutAction::new_burn(value, key);
             }
             ACTION_CNVRTSHELLQ => {
                 let mut value = u64::default();

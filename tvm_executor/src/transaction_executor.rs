@@ -887,9 +887,15 @@ pub trait TransactionExecutor {
                         RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
                 },
-                OutAction::BurnToken { value } => {
+                OutAction::BurnToken { value , key} => {
                     let mut sub_value = CurrencyCollection::new();
-                    sub_value.other = value;
+                    let mut value_grams = Grams::from(value);
+                    if let Ok(Some(data)) =  acc_remaining_balance.get_other(key) {
+                        if data < value_grams {
+                            value_grams = data;
+                        }
+                        let _ = sub_value.other.set(&key, &value_grams);
+                    }
                     match acc_remaining_balance.sub(&sub_value) {
                         Ok(_) => {
                             phase.spec_actions += 1;
