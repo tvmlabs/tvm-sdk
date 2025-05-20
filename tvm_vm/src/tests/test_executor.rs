@@ -15,6 +15,8 @@ use std::time::Duration;
 use std::time::Instant;
 
 use ark_std::iterable::Iterable;
+use tvm_abi::TokenValue;
+use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_types::BuilderData;
@@ -434,7 +436,9 @@ fn test_run_wasm_fortytwo() {
         None,
         vec![],
     );
-    let cell = split_to_chain_of_cells(Vec::<u8>::from([1u8, 2u8]));
+    // let cell = TokenValue::write_bytes(&[1u8, 2u8],
+    // &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
@@ -445,9 +449,11 @@ fn test_run_wasm_fortytwo() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let filename =
         "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/add.wasm";
+    //"/Users/elar/Code/Havok/AckiNacki/ackinacki-game/target/wasm32-wasip2/release/popitgame_tvm.2.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
-    let cell = split_to_chain_of_cells(wasm_dict);
+    let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let status = execute_run_wasm(&mut engine).unwrap();
