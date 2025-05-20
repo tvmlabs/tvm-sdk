@@ -396,7 +396,8 @@ impl Handlers {
                 .set(0x32, execute_poseidon_zk_login)
                 .set(0x33, execute_calculate_adjustment_reward)
                 .set(0x34, execute_calculate_repcoef)
-                .set(0x35, execute_calculate_block_manager_reward);
+                .set(0x35, execute_calculate_block_manager_reward)
+                .set(0x36, execute_calculate_adjustment_reward_bm);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
