@@ -139,7 +139,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMREWARD"))?;
-    fetch_stack(engine, 7)?;
+    fetch_stack(engine, 4)?;
     let radj = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; 
     let depoch = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; 
     let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;  
