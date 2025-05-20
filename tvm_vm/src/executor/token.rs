@@ -212,6 +212,25 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     Ok(())
 }
 
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_min_stake_bm(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("CALCMINSTAKEBM"))?;
+    fetch_stack(engine, 2)?;
+    let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start 
+    let mbkav = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token without slash tokens
+    let fstk;
+    if tstk > TTMT {
+        fstk = MAX_FREE_FLOAT_FRAC;
+    } else {
+        let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
+        fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
+    }
+    let sbkmin = mbkav * (1_f64 - fstk);
+    engine.cc.stack.push(int!(sbkmin as u128));
+    Ok(())
+}
+
 pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("MINTSHELL"))?;

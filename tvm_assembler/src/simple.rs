@@ -848,6 +848,7 @@ impl Engine {
         CALCREPCOEF                          => 0xC7, 0x34
         CALCBMREWARD                         => 0xC7, 0x35
         CALCBMREWARDADJ                      => 0xC7, 0x36
+        CALCMINSTAKEBM                       => 0xC7, 0x37
     }
 
     fn add_commands<'a>(
