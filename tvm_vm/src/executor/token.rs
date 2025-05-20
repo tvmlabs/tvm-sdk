@@ -1,5 +1,3 @@
-use tvm_abi::Param;
-use tvm_abi::ParamType;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_CNVRTSHELLQ;
@@ -14,7 +12,6 @@ use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
-use wasmtime::component;
 use wasmtime::component::ResourceTable;
 use wasmtime_wasi::IoView;
 use wasmtime_wasi::WasiCtx;
@@ -28,11 +25,8 @@ use crate::executor::engine::storage::fetch_stack;
 use crate::executor::types::Instruction;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
-use crate::stack::items_serialize;
 use crate::types::Exception;
-use crate::types::ResultRef;
 use crate::types::Status;
-use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
 
 pub const ECC_NACKL_KEY: u32 = 1;
@@ -309,7 +303,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     println!("EXEC Wasm execution result: {:?}", result);
     let res_vec = result.0;
     // let result = items_serialize(res_vec, engine);
-    let cell = split_to_chain_of_cells(res_vec);
+    let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
     // TODO: Is this stack push enough? do I need an action here?
     engine.cc.stack.push(StackItem::cell(cell));
     // let mut a: u64 = result as u64;
