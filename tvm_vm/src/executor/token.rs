@@ -1,3 +1,7 @@
+use tvm_abi::Param;
+use tvm_abi::ParamType;
+use tvm_abi::TokenValue;
+use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
 use tvm_block::ACTION_MINTECC;
@@ -189,7 +193,18 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
 
     // load wasm component binary
     let s = engine.cmd.var(0).as_cell()?;
-    let wasm_executable = rejoin_chain_of_cells(s)?;
+    let wasm_executable =
+        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+        };
+    // std::fs::write(
+    //     "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/
+    // add.fromchain.wasm",     wasm_executable.as_slice(),
+    // )?;
+
+    // let s = engine.cmd.var(0).as_cell()?;
+    // let wasm_executable = rejoin_chain_of_cells(s)?;
 
     let wasm_component =
         match wasmtime::component::Component::new(&wasm_engine, &wasm_executable.as_slice()) {
@@ -220,6 +235,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Ok(_) => {}
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to linker {:?}", e)?,
     };
+    // let wasm_component_0 = wasmtime::component::Linker::
 
     // Instantiate WASM component. Will error if missing some wasm deps from linker
     let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
@@ -266,7 +282,11 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // collect result
     // substract gas based on wasm fuel used
     let s = engine.cmd.var(3).as_cell()?;
-    let wasm_func_args = rejoin_chain_of_cells(s)?;
+    let wasm_func_args =
+        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+        };
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,

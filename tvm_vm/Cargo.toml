@@ -27,6 +27,7 @@ zstd = { default-features = false, optional = true, workspace = true }
 
 tvm_block.workspace = true
 tvm_types.workspace = true
+tvm_abi.workspace = true
 serde_json.workspace = true
 num-bigint.workspace = true
 serde.workspace = true
