@@ -17,6 +17,7 @@ use wasmtime_wasi::p2::IoView;
 use wasmtime_wasi::p2::WasiCtx;
 use wasmtime_wasi::p2::WasiCtxBuilder;
 use wasmtime_wasi::p2::WasiView;
+use wasmtime_wasi::runtime::with_ambient_tokio_runtime;
 
 use crate::error::TvmError;
 use crate::executor::blockchain::add_action;
@@ -287,10 +288,16 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             TokenValue::Bytes(items) => items,
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
-    let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
-        Ok(result) => result,
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
-    };
+    let result =
+        match with_ambient_tokio_runtime(|| wasm_function.call(&mut wasm_store, (wasm_func_args,)))
+        {
+            Ok(result) => result,
+            Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
+        };
+    // let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
+    //     Ok(result) => result,
+    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM
+    // function {:?}", e)?, };
     let gas_used: i64 = match wasm_store.get_fuel() {
         Ok(new_fuel) => i64::try_from((wasm_fuel - new_fuel).div_ceil(WASM_FUEL_MULTIPLIER))?,
         Err(e) => err!(
@@ -309,6 +316,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     println!("EXEC Wasm execution result: {:?}", result);
     let res_vec = result.0;
     // let result = items_serialize(res_vec, engine);
+
     let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
     // TODO: Is this stack push enough? do I need an action here?
     engine.cc.stack.push(StackItem::cell(cell));
