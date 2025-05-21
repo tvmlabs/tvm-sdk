@@ -13,10 +13,10 @@ use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
 use wasmtime::component::ResourceTable;
-use wasmtime_wasi::IoView;
-use wasmtime_wasi::WasiCtx;
-use wasmtime_wasi::WasiCtxBuilder;
-use wasmtime_wasi::WasiView;
+use wasmtime_wasi::p2::IoView;
+use wasmtime_wasi::p2::WasiCtx;
+use wasmtime_wasi::p2::WasiCtxBuilder;
+use wasmtime_wasi::p2::WasiView;
 
 use crate::error::TvmError;
 use crate::executor::blockchain::add_action;
@@ -225,7 +225,11 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
 
     // Add wasi-cli libs to linker
     let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
-    match wasmtime_wasi::add_to_linker_sync(&mut wasm_linker) {
+    // match wasmtime_wasi::add_to_linker_sync(&mut wasm_linker) {
+    //     Ok(_) => {}
+    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to
+    // linker {:?}", e)?, };
+    match wasmtime_wasi::p2::add_to_linker_sync(&mut wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to linker {:?}", e)?,
     };
@@ -253,16 +257,18 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
 
     // get callable wasm func
-    let instance_index = wasm_instance.get_export(&mut wasm_store, None, &wasm_instance_name);
+    let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
     println!("Instance Index {:?}", instance_index);
-    let func_index =
-        match wasm_instance.get_export(&mut wasm_store, instance_index.as_ref(), &wasm_func_name) {
-            Some(index) => index,
-            None => err!(
-                ExceptionCode::WasmLoadFail,
-                "Failed to find WASM exported function or component",
-            )?,
-        };
+    let func_index = match wasm_instance.get_export_index(
+        &mut wasm_store,
+        instance_index.as_ref(),
+        &wasm_func_name,
+    ) {
+        Some(index) => index,
+        None => {
+            err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
+        }
+    };
     println!("Func Index {:?}", func_index);
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
