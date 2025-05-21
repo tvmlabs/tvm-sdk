@@ -28,6 +28,7 @@ pub const KF: f64 = 0.01_f64;
 pub const KS: f64 = 0.001_f64;
 pub const KM: f64 = 0.00001_f64;
 pub const KRBK: f64 = 0.675_f64;
+pub const KRBM: f64 = 0.1_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
@@ -94,13 +95,37 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     } else {
         rbkmin = 0_f64;
     }
-    let rbk = (((calc_mbk(t + drbkavg) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
+    let rbk = (((calc_mbk(t + drbkavg, KRBK) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
 }
 
 #[allow(clippy::excessive_precision)]
-fn calc_mbk(t: f64) -> f64 {
+pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCBMREWARDADJ"))?;
+    fetch_stack(engine, 4)?;
+    let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
+    let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
+    let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mbkt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
+    let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
+    let rbkmin;
+    if t <= TTMT - 1_f64 {
+        rbkmin = TOTALSUPPLY
+            * 0.1_f64
+            * (1_f64 + KM)
+            * ((-1_f64 * um * t).exp() - (-1_f64 * um * (t + 1_f64)).exp())
+            / 3.5_f64;
+    } else {
+        rbkmin = 0_f64;
+    }
+    let rbk = (((calc_mbk(t + drbkavg, KRBM) - mbkt) / drbkavg).max(rbkmin)).min(rbkprev);
+    engine.cc.stack.push(int!(rbk as u128));
+    Ok(())
+}
+
+#[allow(clippy::excessive_precision)]
+fn calc_mbk(t: f64, krk: f64) -> f64 {
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let mt;
     if t > TTMT {
@@ -108,7 +133,7 @@ fn calc_mbk(t: f64) -> f64 {
     } else {
         mt = TOTALSUPPLY * (1_f64 + KM) * (1_f64 - (-1_f64 * um * t).exp());
     }
-    let mbk = KRBK * mt;
+    let mbk = krk * mt;
     return mbk;
 }
 
@@ -131,6 +156,24 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
         reward = rbk * t * repcoef * bkstake / totalbkstake;
     } else {
         reward = 0_f64;
+    }
+    engine.cc.stack.push(int!(reward as u128));
+    Ok(())
+}
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCBMREWARD"))?;
+    fetch_stack(engine, 4)?;
+    let radj = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; 
+    let depoch = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; 
+    let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;  
+    let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; 
+    let reward;
+    if mbm >= TOTALSUPPLY * 0.1_f64 {
+        reward = 0_f64;
+    } else {
+        reward = radj * depoch / count_bm;
     }
     engine.cc.stack.push(int!(reward as u128));
     Ok(())
@@ -166,6 +209,25 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
         let unbk = 2_f64 * nbkreq - nbk;
         sbkmin = sbkbase * (2_f64 - (1_f64 + KS) * (1_f64 - (-1_f64 * us * unbk).exp()));
     }
+    engine.cc.stack.push(int!(sbkmin as u128));
+    Ok(())
+}
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_min_stake_bm(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("CALCMINSTAKEBM"))?;
+    fetch_stack(engine, 2)?;
+    let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start 
+    let mbkav = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token without slash tokens
+    let fstk;
+    if tstk > TTMT {
+        fstk = MAX_FREE_FLOAT_FRAC;
+    } else {
+        let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
+        fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
+    }
+    let sbkmin = mbkav * (1_f64 - fstk);
     engine.cc.stack.push(int!(sbkmin as u128));
     Ok(())
 }
