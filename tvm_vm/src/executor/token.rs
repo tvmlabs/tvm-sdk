@@ -28,6 +28,7 @@ pub const KF: f64 = 0.01_f64;
 pub const KS: f64 = 0.001_f64;
 pub const KM: f64 = 0.00001_f64;
 pub const KRBK: f64 = 0.675_f64;
+pub const KRBM: f64 = 0.1_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
@@ -94,7 +95,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     } else {
         rbkmin = 0_f64;
     }
-    let rbk = (((calc_mbk(t + drbkavg) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
+    let rbk = (((calc_mbk(t + drbkavg, KRBK) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
 }
@@ -118,13 +119,13 @@ pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Sta
     } else {
         rbkmin = 0_f64;
     }
-    let rbk = (((calc_mbk(t + drbkavg) - mbkt) / drbkavg).max(rbkmin)).min(rbkprev);
+    let rbk = (((calc_mbk(t + drbkavg, KRBM) - mbkt) / drbkavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
 }
 
 #[allow(clippy::excessive_precision)]
-fn calc_mbk(t: f64) -> f64 {
+fn calc_mbk(t: f64, krk: f64) -> f64 {
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let mt;
     if t > TTMT {
@@ -132,7 +133,7 @@ fn calc_mbk(t: f64) -> f64 {
     } else {
         mt = TOTALSUPPLY * (1_f64 + KM) * (1_f64 - (-1_f64 * um * t).exp());
     }
-    let mbk = KRBK * mt;
+    let mbk = krk * mt;
     return mbk;
 }
 
