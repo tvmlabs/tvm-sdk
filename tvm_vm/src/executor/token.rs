@@ -283,17 +283,20 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // collect result
     // substract gas based on wasm fuel used
     let s = engine.cmd.var(3).as_cell()?;
+    println!("Loading WASM Args");
     let wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
+    println!("WASM Args loaded {:?}", wasm_func_args);
     let result =
         match with_ambient_tokio_runtime(|| wasm_function.call(&mut wasm_store, (wasm_func_args,)))
         {
             Ok(result) => result,
             Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
         };
+    println!("WASM Execution result: {:?}", result);
     // let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
     //     Ok(result) => result,
     //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM
