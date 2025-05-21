@@ -846,7 +846,10 @@ impl Engine {
         POSEIDON                             => 0xC7, 0x32
         CALCBKREWARDADJ                      => 0xC7, 0x33
         CALCREPCOEF                          => 0xC7, 0x34
-        BURNECC                              => 0xC7, 0x35
+        CALCBMREWARD                         => 0xC7, 0x35
+        CALCBMREWARDADJ                      => 0xC7, 0x36
+        CALCMINSTAKEBM                       => 0xC7, 0x37
+        BURNECC                              => 0xC7, 0x38
     }
 
     fn add_commands<'a>(
