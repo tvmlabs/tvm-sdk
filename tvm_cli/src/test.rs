@@ -11,10 +11,9 @@
 
 use std::path::PathBuf;
 
-use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde_json::json;
 use tvm_block::Account;
 use tvm_block::ConfigParams;
@@ -55,77 +54,77 @@ use crate::helpers::load_params;
 use crate::helpers::now_ms;
 use crate::helpers::unpack_alternative_params;
 
-pub fn create_test_sign_command<'b>() -> App<'b> {
-    SubCommand::with_name("sign")
+pub fn create_test_sign_command() -> Command {
+    Command::new("sign")
         .about("Generates the ED25519 signature for bytestring.")
         .arg(
-            Arg::with_name("DATA")
+            Arg::new("DATA")
                 .long("--data")
                 .short('d')
-                .takes_value(true)
+                .num_args(1)
                 .help("Bytestring for signing base64 or hex encoded."),
         )
         .arg(
-            Arg::with_name("CELL")
+            Arg::new("CELL")
                 .long("--cell")
                 .short('c')
-                .takes_value(true)
+                .num_args(1)
                 .help("Serialized TOC for signing base64 or hex encoded."),
         )
 }
 
-pub fn create_test_command<'b>() -> App<'b> {
-    let output_arg = Arg::with_name("LOG_PATH")
+pub fn create_test_command() -> Command {
+    let output_arg = Arg::new("LOG_PATH")
         .help("Path where to store the trace. Default path is \"./trace.log\". Note: old file will be removed.")
-        .takes_value(true)
+        .num_args(0..=1)
         .long("--output")
         .short('o');
 
-    let dbg_info_arg = Arg::with_name("DBG_INFO")
+    let dbg_info_arg = Arg::new("DBG_INFO")
         .help("Path to the file with debug info.")
-        .takes_value(true)
+        .num_args(1)
         .long("--dbg_info")
         .short('d');
 
-    let boc_path_arg = Arg::with_name("PATH")
+    let boc_path_arg = Arg::new("PATH")
         .required(true)
         .help("Contract path to the file with saved contract state.");
 
-    let params_arg = Arg::with_name("PARAMS")
+    let params_arg = Arg::new("PARAMS")
         .long("--params")
         .short('p')
-        .takes_value(true)
+        .num_args(1)
         .help("Constructor arguments. Must be a json string with all arguments or path to the file with parameters.");
 
-    let keys_arg = Arg::with_name("KEYS")
+    let keys_arg = Arg::new("KEYS")
         .long("--keys")
-        .takes_value(true)
+        .num_args(1)
         .help("Secret key used to sign the message.");
 
-    let abi_arg = Arg::with_name("ABI")
+    let abi_arg = Arg::new("ABI")
         .long("--abi")
-        .takes_value(true)
+        .num_args(1)
         .required(true)
         .help("Path to the contract ABI file.");
 
-    let full_trace_arg = Arg::with_name("FULL_TRACE")
+    let full_trace_arg = Arg::new("FULL_TRACE")
         .long("--full_trace")
         .short('f')
         .help("Flag that changes trace to full version.");
 
-    let config_boc_arg = Arg::with_name("CONFIG_BOC")
+    let config_boc_arg = Arg::new("CONFIG_BOC")
         .long("--bc_config")
         .short('c')
-        .takes_value(true)
+        .num_args(1)
         .help("Path to the config contract boc.");
 
-    let now_arg = Arg::with_name("NOW")
+    let now_arg = Arg::new("NOW")
         .long("--now")
         .short('n')
-        .takes_value(true)
+        .num_args(0..=1)
         .help("Now timestamp (in milliseconds) for execution. If not set it is equal to the current timestamp.");
 
-    let deploy_cmd = SubCommand::with_name("deploy")
+    let deploy_cmd = Command::new("deploy")
         .about("Deploy contract locally with trace. It uses TVC file on input and produced BOC file on output.")
         .alias("td")
         .arg(boc_path_arg.clone())
@@ -138,37 +137,35 @@ pub fn create_test_command<'b>() -> App<'b> {
         .arg(now_arg.clone())
         .arg(config_boc_arg.clone())
         .arg(
-            Arg::with_name("ACCOUNT_ADDRESS")
+            Arg::new("ACCOUNT_ADDRESS")
                 .long("--address")
-                .takes_value(true)
                 .required(true)
                 .allow_hyphen_values(true)
                 .help("--address Address for account which will override automatically calculated one."),
         )
         .arg(
-            Arg::with_name("EXTERNAL")
+            Arg::new("EXTERNAL")
                 .long("--external")
                 .help("use external message to deploy contract instead of internal."),
         )
         // .arg(
-        //     Arg::with_name("IS_TICK")
+        //     Arg::new("IS_TICK")
         //         .long("--tick")
         //         .help("add tick mark for account."),
         // )
         // .arg(
-        //     Arg::with_name("IS_TOCK")
+        //     Arg::new("IS_TOCK")
         //         .long("--tock")
         //         .help("add tock mark for account."),
         // )
         .arg(
-            Arg::with_name("INITIAL_BALANCE")
+            Arg::new("INITIAL_BALANCE")
                 .long("--initial_balance")
-                .takes_value(true)
                 .required(true)
                 .help("Initial balance in nanovmshells."),
         );
 
-    let ticktock_cmd = SubCommand::with_name("ticktock")
+    let ticktock_cmd = Command::new("ticktock")
         .about("Make ticktock transaction")
         .alias("tt")
         .arg(boc_path_arg.clone())
@@ -177,32 +174,32 @@ pub fn create_test_command<'b>() -> App<'b> {
         .arg(full_trace_arg.clone())
         .arg(now_arg.clone())
         .arg(config_boc_arg.clone())
-        .arg(Arg::with_name("IS_TOCK").long("--tock").help("make tock transaction."));
+        .arg(Arg::new("IS_TOCK").long("--tock").help("make tock transaction."));
 
-    let config_cmd = SubCommand::with_name("config")
+    let config_cmd = Command::new("config")
         .about("Encode or decode config params")
         .alias("tc")
-        .arg(Arg::with_name("ENCODE")
+        .arg(Arg::new("ENCODE")
             .long("--encode")
-            .takes_value(true)
+            .num_args(0..=1)
             .conflicts_with("DECODE")
             .help("Encode single config param or all config params to TvmCell. JSON format of path to the file.")
         )
-        .arg(Arg::with_name("DECODE")
+        .arg(Arg::new("DECODE")
             .alias("tcd")
             .long("--decode")
             .conflicts_with("ENCODE")
-            .takes_value(true)
+            .num_args(0..=1)
             .help("Decode single config param or all config params to TvmCell.")
         )
-        .arg(Arg::with_name("INDEX")
+        .arg(Arg::new("INDEX")
             .long("--index")
             .requires("DECODE")
-            .takes_value(true)
+            .num_args(1)
             .help("Index of config parameter to decode.")
         );
 
-    SubCommand::with_name("test")
+    Command::new("test")
         .about("Test commands.")
         .subcommand(deploy_cmd)
         .subcommand(ticktock_cmd)
@@ -228,17 +225,17 @@ pub async fn test_command(matches: &ArgMatches, full_config: &FullConfig) -> Res
 }
 
 async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String> {
-    let input = matches.value_of("PATH").unwrap();
-    let abi_path = matches.value_of("ABI").unwrap();
+    let input = matches.get_one::<String>("PATH").unwrap();
+    let abi_path = matches.get_one::<String>("ABI").unwrap();
     let function_name = "constructor".to_string();
     let params = unpack_alternative_params(matches, abi_path, &function_name, config).await?;
-    let bc_config = matches.value_of("CONFIG_BOC");
-    let keys = matches.value_of("KEYS").map(load_keypair).transpose()?;
-    let address_opt = matches.value_of("ACCOUNT_ADDRESS");
-    let balance = matches.value_of("INITIAL_BALANCE").unwrap();
-    let workchain_id = matches.value_of("WC").and_then(|wc| wc.parse().ok());
-    let now = matches.value_of("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
-    let trace_path = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
+    let bc_config = matches.get_one::<String>("CONFIG_BOC").map(|s| s.as_str());
+    let keys = matches.get_one::<String>("KEYS").map(|s| load_keypair(s)).transpose()?;
+    let address_opt = matches.get_one::<String>("ACCOUNT_ADDRESS");
+    let balance = matches.get_one::<String>("INITIAL_BALANCE").unwrap();
+    let workchain_id = matches.get_one::<String>("WC").and_then(|wc| wc.parse().ok());
+    let now = matches.get_one::<String>("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
+    let trace_path = matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH);
 
     let tvc_bytes =
         std::fs::read(input).map_err(|e| format!("Failed to read TVC file {input}: {e}"))?;
@@ -263,7 +260,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         Some(CallSet { function_name, input: Some(params), header, ..Default::default() });
     let mut account;
     let mut message;
-    let is_external = matches.is_present("EXTERNAL");
+    let is_external = matches.contains_id("EXTERNAL");
     if is_external {
         let msg_params =
             ParamsOfEncodeMessage { abi, deploy_set, call_set, signer, ..Default::default() };
@@ -336,11 +333,11 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
 }
 
 async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), String> {
-    let input = matches.value_of("PATH").unwrap();
-    let bc_config = matches.value_of("CONFIG_BOC");
-    let now = matches.value_of("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
-    let trace_path = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
-    let is_tock = matches.is_present("IS_TOCK");
+    let input = matches.get_one::<String>("PATH").unwrap();
+    let bc_config = matches.get_one::<String>("CONFIG_BOC").map(|s| s.as_str());
+    let now = matches.get_one::<String>("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
+    let trace_path = matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH);
+    let is_tock = matches.contains_id("IS_TOCK");
 
     let mut account = Account::construct_from_file(input)
         .map_err(|e| format!("Failed to load Account from the file {input}: {e}"))?;
@@ -383,9 +380,9 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
 }
 
 pub fn test_sign_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
-    let data = if let Some(data) = matches.value_of("DATA") {
+    let data = if let Some(data) = matches.get_one::<String>("DATA") {
         decode_data(data, "data")?
-    } else if let Some(data) = matches.value_of("CELL") {
+    } else if let Some(data) = matches.get_one::<String>("CELL") {
         let data = decode_data(data, "cell")?;
         let cell = read_single_root_boc(data)
             .map_err(|err| format!("Cannot deserialize tree of cells {}", err))?;
@@ -398,7 +395,7 @@ pub fn test_sign_command(matches: &ArgMatches, config: &Config) -> Result<(), St
     } else {
         return Err("nor data neither cell parameter".to_string());
     };
-    let pair = match matches.value_of("KEYS") {
+    let pair = match matches.get_one::<String>("KEYS") {
         Some(keys) => crypto::load_keypair(keys)?,
         None => match &config.keys_path {
             Some(keys) => crypto::load_keypair(keys)?,
@@ -424,7 +421,7 @@ pub fn test_sign_command(matches: &ArgMatches, config: &Config) -> Result<(), St
 }
 
 pub fn test_config_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
-    if let Some(encode) = matches.value_of("ENCODE") {
+    if let Some(encode) = matches.get_one::<String>("ENCODE") {
         let (cell, index) = serialize_config_param(&load_params(encode)?)?;
         let result = write_boc(&cell);
         let cell = match result {
@@ -436,11 +433,11 @@ pub fn test_config_command(matches: &ArgMatches, config: &Config) -> Result<(), 
         } else {
             println!("Cell: \"{}\"", cell);
         }
-    } else if let Some(decode) = matches.value_of("DECODE") {
+    } else if let Some(decode) = matches.get_one::<String>("DECODE") {
         let bytes = std::fs::read(decode).unwrap();
         let cell = read_single_root_boc(bytes)
             .map_err(|e| format!("Failed to deserialize tree of cells {e}"))?;
-        let result = if let Some(index) = matches.value_of("INDEX") {
+        let result = if let Some(index) = matches.get_one::<String>("INDEX") {
             let index =
                 index.parse::<u32>().map_err(|e| format!("Failed to parse index {index}: {e}"))?;
             let mut params = ConfigParams::default();

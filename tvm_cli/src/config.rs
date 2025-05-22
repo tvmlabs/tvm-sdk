@@ -369,72 +369,72 @@ pub fn clear_config(
 ) -> Result<(), String> {
     let config = &mut full_config.config;
     let is_json = config.is_json || is_json;
-    if matches.is_present("URL") {
+    if matches.contains_id("URL") {
         let url = default_url();
         config.endpoints = FullConfig::default_map()[&url].clone();
         config.url = url;
     }
-    if matches.is_present("ADDR") {
+    if matches.contains_id("ADDR") {
         config.addr = None;
     }
-    if matches.is_present("WALLET") {
+    if matches.contains_id("WALLET") {
         config.wallet = None;
     }
-    if matches.is_present("ABI") {
+    if matches.contains_id("ABI") {
         config.abi_path = None;
     }
-    if matches.is_present("KEYS") {
+    if matches.contains_id("KEYS") {
         config.keys_path = None;
     }
-    if matches.is_present("METHOD") {
+    if matches.contains_id("METHOD") {
         config.method = None;
     }
-    if matches.is_present("PARAMETERS") {
+    if matches.contains_id("PARAMETERS") {
         config.parameters = None;
     }
-    if matches.is_present("PUBKEY") {
+    if matches.contains_id("PUBKEY") {
         config.pubkey = None;
     }
-    if matches.is_present("RETRIES") {
+    if matches.contains_id("RETRIES") {
         config.retries = default_retries();
     }
-    if matches.is_present("LIFETIME") {
+    if matches.contains_id("LIFETIME") {
         config.lifetime = default_lifetime();
     }
-    if matches.is_present("TIMEOUT") {
+    if matches.contains_id("TIMEOUT") {
         config.timeout = default_timeout();
     }
-    if matches.is_present("MSG_TIMEOUT") {
+    if matches.contains_id("MSG_TIMEOUT") {
         config.timeout = default_timeout();
     }
-    if matches.is_present("WC") {
+    if matches.contains_id("WC") {
         config.wc = default_wc();
     }
-    if matches.is_present("DEPOOL_FEE") {
+    if matches.contains_id("DEPOOL_FEE") {
         config.depool_fee = default_depool_fee();
     }
-    if matches.is_present("NO_ANSWER") {
+    if matches.contains_id("NO_ANSWER") {
         config.no_answer = default_true();
     }
-    if matches.is_present("BALANCE_IN_VMSHELLS") {
+    if matches.contains_id("BALANCE_IN_VMSHELLS") {
         config.balance_in_vmshells = default_false();
     }
-    if matches.is_present("LOCAL_RUN") {
+    if matches.contains_id("LOCAL_RUN") {
         config.local_run = default_false();
     }
-    if matches.is_present("ASYNC_CALL") {
+    if matches.contains_id("ASYNC_CALL") {
         config.async_call = default_false();
     }
-    if matches.is_present("DEBUG_FAIL") {
+    if matches.contains_id("DEBUG_FAIL") {
         config.debug_fail = default_trace();
     }
-    if matches.is_present("OUT_OF_SYNC") {
+    if matches.contains_id("OUT_OF_SYNC") {
         config.out_of_sync_threshold = default_out_of_sync();
     }
-    if matches.is_present("IS_JSON") {
+    if matches.contains_id("IS_JSON") {
         config.is_json = default_false();
     }
-    if matches.is_present("PROJECT_ID") {
+    if matches.contains_id("PROJECT_ID") {
         config.project_id = None;
         if config.access_key.is_some() && !config.is_json {
             println!(
@@ -442,7 +442,7 @@ pub fn clear_config(
             );
         }
     }
-    if matches.is_present("ACCESS_KEY") {
+    if matches.contains_id("ACCESS_KEY") {
         config.access_key = None;
     }
 
@@ -463,57 +463,57 @@ pub fn set_config(
     is_json: bool,
 ) -> Result<(), String> {
     let config = &mut full_config.config;
-    if let Some(s) = matches.value_of("URL") {
+    if let Some(s) = matches.get_one::<String>("URL") {
         let resolved_url = resolve_net_name(s).unwrap_or(s.to_owned());
         let empty: Vec<String> = Vec::new();
         config.endpoints = full_config.endpoints_map.get(&resolved_url).unwrap_or(&empty).clone();
         config.url = resolved_url;
     }
-    if let Some(s) = matches.value_of("ADDR") {
+    if let Some(s) = matches.get_one::<String>("ADDR") {
         config.addr = Some(s.to_string());
     }
-    if let Some(method) = matches.value_of("METHOD") {
+    if let Some(method) = matches.get_one::<String>("METHOD") {
         config.method = Some(method.to_string());
     }
-    if let Some(parameters) = matches.value_of("PARAMETERS") {
+    if let Some(parameters) = matches.get_one::<String>("PARAMETERS") {
         config.parameters = Some(parameters.to_string());
     }
-    if let Some(s) = matches.value_of("WALLET") {
+    if let Some(s) = matches.get_one::<String>("WALLET") {
         config.wallet = Some(s.to_string());
     }
-    if let Some(s) = matches.value_of("PUBKEY") {
+    if let Some(s) = matches.get_one::<String>("PUBKEY") {
         config.pubkey = Some(s.to_string());
     }
-    if let Some(s) = matches.value_of("ABI") {
+    if let Some(s) = matches.get_one::<String>("ABI") {
         config.abi_path = Some(s.to_string());
     }
-    if let Some(s) = matches.value_of("KEYS") {
+    if let Some(s) = matches.get_one::<String>("KEYS") {
         config.keys_path = Some(s.to_string());
     }
-    if let Some(retries) = matches.value_of("RETRIES") {
+    if let Some(retries) = matches.get_one::<String>("RETRIES") {
         config.retries = u8::from_str_radix(retries, 10)
             .map_err(|e| format!(r#"failed to parse "retries": {}"#, e))?;
     }
-    if let Some(lifetime) = matches.value_of("LIFETIME") {
+    if let Some(lifetime) = matches.get_one::<String>("LIFETIME") {
         config.lifetime = u32::from_str_radix(lifetime, 10)
             .map_err(|e| format!(r#"failed to parse "lifetime": {}"#, e))?;
         if config.lifetime < 2 * config.out_of_sync_threshold {
             config.out_of_sync_threshold = config.lifetime >> 1;
         }
     }
-    if let Some(timeout) = matches.value_of("TIMEOUT") {
+    if let Some(timeout) = matches.get_one::<String>("TIMEOUT") {
         config.timeout = u32::from_str_radix(timeout, 10)
             .map_err(|e| format!(r#"failed to parse "timeout": {}"#, e))?;
     }
-    if let Some(message_processing_timeout) = matches.value_of("MSG_TIMEOUT") {
+    if let Some(message_processing_timeout) = matches.get_one::<String>("MSG_TIMEOUT") {
         config.message_processing_timeout = u32::from_str_radix(message_processing_timeout, 10)
             .map_err(|e| format!(r#"failed to parse "message_processing_timeout": {}"#, e))?;
     }
-    if let Some(wc) = matches.value_of("WC") {
+    if let Some(wc) = matches.get_one::<String>("WC") {
         config.wc = i32::from_str_radix(wc, 10)
             .map_err(|e| format!(r#"failed to parse "workchain id": {}"#, e))?;
     }
-    if let Some(depool_fee) = matches.value_of("DEPOOL_FEE") {
+    if let Some(depool_fee) = matches.get_one::<String>("DEPOOL_FEE") {
         config.depool_fee = depool_fee
             .parse::<f32>()
             .map_err(|e| format!(r#"failed to parse "depool_fee": {}"#, e))?;
@@ -521,27 +521,27 @@ pub fn set_config(
             return Err("Minimal value for depool fee is 0.5".to_string());
         }
     }
-    if let Some(no_answer) = matches.value_of("NO_ANSWER") {
+    if let Some(no_answer) = matches.get_one::<String>("NO_ANSWER") {
         config.no_answer = no_answer
             .parse::<bool>()
             .map_err(|e| format!(r#"failed to parse "no_answer": {}"#, e))?;
     }
-    if let Some(balance_in_vmshells) = matches.value_of("BALANCE_IN_VMSHELLS") {
+    if let Some(balance_in_vmshells) = matches.get_one::<String>("BALANCE_IN_VMSHELLS") {
         config.balance_in_vmshells = balance_in_vmshells
             .parse::<bool>()
             .map_err(|e| format!(r#"failed to parse "balance_in_vmshells": {}"#, e))?;
     }
-    if let Some(local_run) = matches.value_of("LOCAL_RUN") {
+    if let Some(local_run) = matches.get_one::<String>("LOCAL_RUN") {
         config.local_run = local_run
             .parse::<bool>()
             .map_err(|e| format!(r#"failed to parse "local_run": {}"#, e))?;
     }
-    if let Some(async_call) = matches.value_of("ASYNC_CALL") {
+    if let Some(async_call) = matches.get_one::<String>("ASYNC_CALL") {
         config.async_call = async_call
             .parse::<bool>()
             .map_err(|e| format!(r#"failed to parse "async_call": {}"#, e))?;
     }
-    if let Some(out_of_sync_threshold) = matches.value_of("OUT_OF_SYNC") {
+    if let Some(out_of_sync_threshold) = matches.get_one::<String>("OUT_OF_SYNC") {
         let time = u32::from_str_radix(out_of_sync_threshold, 10)
             .map_err(|e| format!(r#"failed to parse "out_of_sync_threshold": {}"#, e))?;
         if time * 2 > config.lifetime {
@@ -549,7 +549,7 @@ pub fn set_config(
         }
         config.out_of_sync_threshold = time;
     }
-    if let Some(debug_fail) = matches.value_of("DEBUG_FAIL") {
+    if let Some(debug_fail) = matches.get_one::<String>("DEBUG_FAIL") {
         let debug_fail = debug_fail.to_lowercase();
         config.debug_fail = if debug_fail == "full" {
             "Full".to_string()
@@ -561,14 +561,14 @@ pub fn set_config(
             return Err(r#"Wrong value for "debug_fail" config."#.to_string());
         };
     }
-    if let Some(is_json) = matches.value_of("IS_JSON") {
+    if let Some(is_json) = matches.get_one::<String>("IS_JSON") {
         config.is_json =
             is_json.parse::<bool>().map_err(|e| format!(r#"failed to parse "is_json": {}"#, e))?;
     }
-    if let Some(s) = matches.value_of("PROJECT_ID") {
+    if let Some(s) = matches.get_one::<String>("PROJECT_ID") {
         config.project_id = Some(s.to_string());
     }
-    if let Some(s) = matches.value_of("ACCESS_KEY") {
+    if let Some(s) = matches.get_one::<String>("ACCESS_KEY") {
         config.access_key = Some(s.to_string());
         if config.project_id.is_none() && !(config.is_json || is_json) {
             println!(

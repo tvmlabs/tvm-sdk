@@ -707,8 +707,8 @@ struct BlockAccountDescr {
 pub async fn fetch_block_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     fetch_block(
         config,
-        m.value_of("BLOCKID").ok_or("Missing block id")?,
-        m.value_of("OUTPUT").ok_or("Missing output filename")?,
+        m.get_one::<String>("BLOCKID").ok_or("Missing block id")?,
+        m.get_one::<String>("OUTPUT").ok_or("Missing output filename")?,
     )
     .await
     .map_err(|e| e.to_string())?;
@@ -718,8 +718,8 @@ pub async fn fetch_block_command(m: &ArgMatches, config: &Config) -> Result<(), 
 pub async fn fetch_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     fetch(
         config,
-        m.value_of("ADDRESS").ok_or("Missing account address")?,
-        m.value_of("OUTPUT").ok_or("Missing output filename")?,
+        m.get_one::<String>("ADDRESS").ok_or("Missing account address")?,
+        m.get_one::<String>("OUTPUT").ok_or("Missing output filename")?,
         None,
         true,
     )
@@ -733,15 +733,15 @@ pub async fn fetch_command(m: &ArgMatches, config: &Config) -> Result<(), String
 }
 
 pub async fn replay_command(m: &ArgMatches, cli_config: &Config) -> Result<(), String> {
-    let (config_txns, bc_config) = if m.is_present("DEFAULT_CONFIG") {
+    let (config_txns, bc_config) = if m.contains_id("DEFAULT_CONFIG") {
         ("", Some(get_blockchain_config(cli_config, None).await?))
     } else {
-        (m.value_of("CONFIG_TXNS").ok_or("Missing config txns filename")?, None)
+        (m.get_one::<String>("CONFIG_TXNS").map(|s| s.as_str()).ok_or("Missing config txns filename")?, None)
     };
     let _ = replay(
-        m.value_of("INPUT_TXNS").ok_or("Missing input txns filename")?,
+        m.get_one::<String>("INPUT_TXNS").ok_or("Missing input txns filename")?,
         config_txns,
-        m.value_of("TXNID").ok_or("Missing final txn id")?,
+        m.get_one::<String>("TXNID").ok_or("Missing final txn id")?,
         None,
         || Ok(()),
         DUMP_ALL,
