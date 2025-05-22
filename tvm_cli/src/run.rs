@@ -57,13 +57,13 @@ pub async fn run_command(
         (address.unwrap(), abi.unwrap())
     } else {
         (
-            matches.value_of("ADDRESS").unwrap().to_string(),
+            matches.get_one::<String>("ADDRESS").unwrap().to_string(),
             abi_from_matches_or_config(matches, config)?,
         )
     };
-    let account_source = if matches.is_present("TVC") {
+    let account_source = if matches.contains_id("TVC") {
         AccountSource::TVC
-    } else if matches.is_present("BOC") {
+    } else if matches.contains_id("BOC") {
         AccountSource::BOC
     } else {
         AccountSource::NETWORK
@@ -71,11 +71,12 @@ pub async fn run_command(
 
     let method = if is_alternative {
         matches
-            .value_of("METHOD")
+            .get_one::<String>("METHOD")
+            .map(|s| s.as_str())
             .or(config.method.as_deref())
             .ok_or("Method is not defined. Supply it in the config file or command line.")?
     } else {
-        matches.value_of("METHOD").unwrap()
+        matches.get_one::<String>("METHOD").unwrap()
     };
     let trace_path;
     let ton_client = if account_source == AccountSource::NETWORK {
@@ -118,13 +119,14 @@ async fn run(
 ) -> Result<(), String> {
     let method = if is_alternative {
         matches
-            .value_of("METHOD")
+            .get_one::<String>("METHOD")
+            .map(|s| s.as_str())
             .or(config.method.as_deref())
             .ok_or("Method is not defined. Supply it in the config file or command line.")?
     } else {
-        matches.value_of("METHOD").unwrap()
+        matches.get_one::<String>("METHOD").unwrap()
     };
-    let bc_config = matches.value_of("BCCONFIG");
+    let bc_config = matches.get_one::<String>("BCCONFIG").map(|s| s.as_str());
 
     if !config.is_json {
         println!("Running get-method...");
@@ -138,7 +140,7 @@ async fn run(
     let params = if is_alternative {
         unpack_alternative_params(matches, &abi_path, method, config).await?
     } else {
-        matches.value_of("PARAMS").unwrap().to_string()
+        matches.get_one::<String>("PARAMS").unwrap().to_string()
     };
 
     let params = load_params(&params)?;

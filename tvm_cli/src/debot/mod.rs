@@ -17,11 +17,9 @@ mod term_encryption_box;
 mod term_signing_box;
 
 use callbacks::Callbacks;
-use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 pub use interfaces::dinterface::SupportedInterfaces;
 use pipechain::ApproveKind;
 use pipechain::ChainLink;
@@ -37,43 +35,43 @@ use term_browser::terminal_input;
 use crate::config::Config;
 use crate::helpers::load_ton_address;
 
-pub fn create_debot_command<'a, 'b>() -> App<'a> {
-    SubCommand::with_name("debot")
+pub fn create_debot_command<'b>() -> Command {
+    Command::new("debot")
         .about("Debot commands.")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
-        .arg(Arg::with_name("DEBUG").long("--debug").short('d'))
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
+        .arg(Arg::new("DEBUG").long("--debug").short('d'))
         .subcommand(
-            SubCommand::with_name("fetch")
-                .setting(AppSettings::AllowLeadingHyphen)
-                .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address.")),
+            Command::new("fetch")
+                .allow_hyphen_values(true)
+                .arg(Arg::new("ADDRESS").required(true).help("DeBot TON address.")),
         )
         .subcommand(
-            SubCommand::with_name("start")
-                .setting(AppSettings::AllowLeadingHyphen)
-                .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address."))
+            Command::new("start")
+                .allow_hyphen_values(true)
+                .arg(Arg::new("ADDRESS").required(true).help("DeBot TON address."))
                 .arg(
-                    Arg::with_name("PIPECHAIN")
+                    Arg::new("PIPECHAIN")
                         .short('m')
                         .long("pipechain")
-                        .takes_value(true)
+                        .num_args(1)
                         .help("Path to the DeBot Manifest."),
                 )
                 .arg(
-                    Arg::with_name("SIGNKEY")
+                    Arg::new("SIGNKEY")
                         .short('s')
                         .long("signkey")
-                        .takes_value(true)
+                        .num_args(1)
                         .help("Define keypair to auto sign transactions."),
                 ),
         )
         .subcommand(
-            SubCommand::with_name("invoke")
-                .setting(AppSettings::AllowLeadingHyphen)
-                .arg(Arg::with_name("ADDRESS").required(true).help("Debot TON address."))
+            Command::new("invoke")
+                .allow_hyphen_values(true)
+                .arg(Arg::new("ADDRESS").required(true).help("Debot TON address."))
                 .arg(
-                    Arg::with_name("MESSAGE")
+                    Arg::new("MESSAGE")
                         .required(true)
                         .help("Message to DeBot encoded as base64/base64url."),
                 ),
@@ -81,7 +79,7 @@ pub fn create_debot_command<'a, 'b>() -> App<'a> {
 }
 
 pub async fn debot_command(m: &ArgMatches, config: Config) -> Result<(), String> {
-    let debug = m.is_present("DEBUG");
+    let debug = m.contains_id("DEBUG");
     let log_conf = ConfigBuilder::new()
         .add_filter_ignore_str("executor")
         .add_filter_ignore_str("hyper")
@@ -117,9 +115,9 @@ pub async fn debot_command(m: &ArgMatches, config: Config) -> Result<(), String>
 }
 
 async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
-    let addr = m.value_of("ADDRESS");
-    let pipechain = m.value_of("PIPECHAIN");
-    let signkey_path = m.value_of("SIGNKEY").map(|x| x.to_owned()).or(config.keys_path.clone());
+    let addr = m.get_one::<String>("ADDRESS");
+    let pipechain = m.get_one::<String>("PIPECHAIN");
+    let signkey_path = m.get_one::<String>("SIGNKEY").map(|x| x.to_owned()).or(config.keys_path.clone());
     let is_json = config.is_json;
     let pipechain = if let Some(filename) = pipechain {
         let manifest_raw = std::fs::read_to_string(filename)
@@ -145,8 +143,8 @@ async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
 }
 
 fn invoke_command(m: &ArgMatches, config: Config) -> Result<(), String> {
-    let addr = m.value_of("ADDRESS");
+    let addr = m.get_one::<String>("ADDRESS");
     load_ton_address(addr.unwrap(), &config)?;
-    let _ = m.value_of("MESSAGE").unwrap().to_owned();
+    let _ = m.get_one::<String>("MESSAGE").unwrap().to_owned();
     Ok(())
 }

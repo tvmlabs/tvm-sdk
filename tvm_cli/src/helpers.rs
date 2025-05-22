@@ -675,7 +675,7 @@ pub fn check_file_exists(path: &str, trim: &[&str], ending: &[&str]) -> Option<S
 
 pub fn abi_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<String, String> {
     matches
-        .value_of("ABI")
+        .get_one::<String>("ABI")
         .map(|s| s.to_string())
         .or(config.abi_path.clone())
         .ok_or("ABI file is not defined. Supply it in the config file or command line.".to_string())
@@ -720,8 +720,8 @@ pub async fn unpack_alternative_params(
     method: &str,
     config: &Config,
 ) -> Result<String, String> {
-    if let Some(params) = matches.values_of("PARAMS") {
-        let params = params.collect();
+    if let Some(params) = matches.get_many::<String>("PARAMS") {
+        let params: Vec<&str> = params.map(|s| s.as_ref()).collect();
         parse_params(params, abi_path, method, config).await
     } else {
         Ok(config.parameters.clone().unwrap_or("{}".to_string()))
@@ -730,7 +730,7 @@ pub async fn unpack_alternative_params(
 
 pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<i32, String> {
     Ok(matches
-        .value_of("WC")
+        .get_one::<String>("WC")
         .map(|v| i32::from_str_radix(v, 10))
         .transpose()
         .map_err(|e| format!("failed to parse workchain id: {}", e))?
@@ -742,7 +742,7 @@ pub fn contract_data_from_matches_or_config_alias(
     full_config: &FullConfig,
 ) -> Result<(Option<String>, Option<String>, Option<String>), String> {
     let address = matches
-        .value_of("ADDRESS")
+        .get_one::<String>("ADDRESS")
         .map(|s| s.to_string())
         .or(full_config.config.addr.clone())
         .ok_or(
@@ -755,7 +755,7 @@ pub fn contract_data_from_matches_or_config_alias(
         (Some(address), None, None)
     };
     let abi = matches
-        .value_of("ABI")
+        .get_one::<String>("ABI")
         .map(|s| s.to_string())
         .or(full_config.config.abi_path.clone())
         .or(abi)
@@ -763,7 +763,7 @@ pub fn contract_data_from_matches_or_config_alias(
             "ABI file is not defined. Supply it in the config file or command line.".to_string(),
         )?;
     let keys = matches
-        .value_of("KEYS")
+        .get_one::<String>("KEYS")
         .map(|s| s.to_string())
         .or(full_config.config.keys_path.clone())
         .or(keys);

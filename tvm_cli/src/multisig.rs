@@ -9,11 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 extern crate reqwest;
-use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde_json::json;
 use tvm_client::abi::Abi;
 use tvm_client::abi::AbiContract;
@@ -206,13 +204,13 @@ pub struct CallArgs {
 impl CallArgs {
     pub async fn submit(matches: &ArgMatches) -> Result<Self, String> {
         let dest = matches
-            .value_of("DEST")
+            .get_one::<String>("DEST")
             .map(|s| s.to_owned())
             .ok_or("--dst parameter is not defined".to_string())?;
         let value =
-            matches.value_of("VALUE").ok_or("--value parameter is not defined".to_string())?;
+            matches.get_one::<String>("VALUE").ok_or("--value parameter is not defined".to_string())?;
         let value = convert::convert_token(value)?;
-        let comment = matches.value_of("PURPOSE").map(|s| s.to_owned());
+        let comment = matches.get_one::<String>("PURPOSE").map(|s| s.to_owned());
         let body = if let Some(ref txt) = comment {
             encode_transfer_body(txt).await?
         } else {
@@ -228,7 +226,7 @@ impl CallArgs {
         bounce: bool,
         payload: String,
     ) -> Result<Self, String> {
-        let v2 = matches.is_present("V2");
+        let v2 = matches.contains_id("V2");
         if v2 {
             // TODO parse stateinit arg
         }
@@ -244,8 +242,8 @@ impl CallArgs {
     }
 
     pub async fn deploy(matches: &ArgMatches) -> Result<Self, String> {
-        let is_setcode = matches.is_present("SETCODE");
-        let v2 = matches.is_present("V2");
+        let is_setcode = matches.contains_id("SETCODE");
+        let v2 = matches.contains_id("V2");
 
         let target = if v2 {
             if is_setcode { SETCODEMULTISIG_V2_LINK } else { SAFEMULTISIG_V2_LINK }
@@ -257,7 +255,7 @@ impl CallArgs {
 
         let image = load_file_with_url(target, 30000).await?;
 
-        let owners = matches.value_of("OWNERS").map(|owners| {
+        let owners = matches.get_one::<String>("OWNERS").map(|owners| {
             owners
                 .replace(['[', ']', '\"', '\''], "")
                 .replace("0x", "")
@@ -268,12 +266,12 @@ impl CallArgs {
 
         let mut params = json!({
             "owners": owners,
-            "reqConfirms": matches.value_of("CONFIRMS").unwrap_or("1"),
+            "reqConfirms": matches.get_one::<String>("CONFIRMS").unwrap_or(&"1".to_string()).as_str(),
         });
 
         if v2 {
             let lifetime = matches
-                .value_of("LIFETIME")
+                .get_one::<String>("LIFETIME")
                 .map(|s| s.parse::<u64>())
                 .unwrap_or(Ok(0))
                 .map_err(|e| e.to_string())?;
@@ -294,17 +292,17 @@ pub struct MultisigArgs {
 impl MultisigArgs {
     pub fn new(matches: &ArgMatches, config: &Config, call_args: CallArgs) -> Result<Self, String> {
         let address = matches
-            .value_of("MSIG")
+            .get_one::<String>("MSIG")
             .map(|s| s.to_owned())
             .or_else(|| config.wallet.clone())
             .ok_or("multisig address is not defined".to_string())?;
         let keys = matches
-            .value_of("SIGN")
-            .or_else(|| matches.value_of("KEYS"))
+            .get_one::<String>("SIGN")
+            .or_else(|| matches.get_one::<String>("KEYS"))
             .map(|s| s.to_owned())
             .or_else(|| config.keys_path.clone())
             .ok_or("sign key is not defined".to_string())?;
-        let v2 = matches.is_present("V2");
+        let v2 = matches.contains_id("V2");
 
         let addr = load_ton_address(&address, config)?;
         let mut abi = serde_json::from_str::<AbiContract>(MSIG_ABI).unwrap_or_default();
@@ -378,70 +376,70 @@ impl MultisigArgs {
     }
 }
 
-pub fn create_multisig_command<'b>() -> App<'b> {
-    let v2_arg = Arg::with_name("V2")
+pub fn create_multisig_command() -> Command {
+    let v2_arg = Arg::new("V2")
         .long("--v2")
         .help("Force to interact with wallet account as multisig v2.");
-    let bounce_arg = Arg::with_name("BOUNCE")
+    let bounce_arg = Arg::new("BOUNCE")
         .long("--bounce")
         .short('b')
         .help("Send bounce message to destination account.");
 
-    let keys_arg = Arg::with_name("KEYS")
+    let keys_arg = Arg::new("KEYS")
         .long("--keys")
         .short('k')
-        .takes_value(true)
+        .num_args(1)
         .help("Path to the file with a keypair.");
 
-    SubCommand::with_name("multisig")
+    Command::new("multisig")
         .about("Multisignature wallet commands.")
-        .setting(AppSettings::AllowNegativeNumbers)
-        .setting(AppSettings::DontCollapseArgsInUsage)
-        .subcommand(SubCommand::with_name("send")
-            .setting(AppSettings::AllowLeadingHyphen)
+        .allow_negative_numbers(true)
+        .dont_collapse_args_in_usage(true)
+        .subcommand(Command::new("send")
+            .allow_hyphen_values(true)
             .about("Transfer funds from the wallet to the recipient.")
-            .arg(Arg::with_name("MSIG")
+            .arg(Arg::new("MSIG")
                 .long("--addr")
-                .takes_value(true)
+                .num_args(1)
                 .help("Wallet address. If undefined then config.wallet is used."))
-            .arg(Arg::with_name("DEST")
+            .arg(Arg::new("DEST")
                 .long("--dest")
-                .takes_value(true)
+                .num_args(1)
                 .help("Recipient address."))
-            .arg(Arg::with_name("VALUE")
+            .arg(Arg::new("VALUE")
                 .long("--value")
-                .takes_value(true)
+                .num_args(1)
                 .help("Amount of funds to transfer (in evers)."))
-            .arg(Arg::with_name("PURPOSE")
+            .arg(Arg::new("PURPOSE")
                 .long("--purpose")
-                .takes_value(true)
+                .num_args(1)
                 .help("Optional, comment attached to transfer."))
-            .arg(Arg::with_name("SIGN")
+            .arg(Arg::new("SIGN")
                 .long("--sign")
-                .takes_value(true)
+                .num_args(1)
                 .help("Seed phrase or path to file with keypair."))
             .arg(bounce_arg)
             .arg(v2_arg.clone()))
-        .subcommand(SubCommand::with_name("deploy")
-            .setting(AppSettings::AllowLeadingHyphen)
+        .subcommand(Command::new("deploy")
+            .allow_hyphen_values(true)
             .about("Deploys a wallet with a given public key. By default, deploys a SafeMultisig with one custodian, which can be tuned with flags.")
             .arg(keys_arg)
-            .arg(Arg::with_name("SETCODE")
+            .arg(Arg::new("SETCODE")
                 .long("--setcode")
                 .help("Deploy SetcodeMultisig instead of SafeMultisig."))
-            .arg(Arg::with_name("VALUE")
+            .arg(Arg::new("VALUE")
                 .long("--local")
-                .takes_value(true)
+                .num_args(1)
                 .short('l')
                 .help("Perform a preliminary call of local giver to initialize contract with given value."))
-            .arg(Arg::with_name("OWNERS")
+            .arg(Arg::new("OWNERS")
                 .long("--owners")
-                .takes_value(true)
+                .num_args(1)
                 .short('o')
                 .help("Array of wallet owners public keys. Note: deployer could be not included in this case. If not specified the only owner is contract deployer."))
-            .arg(Arg::with_name("CONFIRMS")
+            .arg(Arg::new("CONFIRMS")
                 .long("--confirms")
-                .takes_value(true)
+                .num_args(1)
                 .short('c')
                 .help("Number of confirmations required for executing transaction. Default value is 1."))
             .arg(v2_arg))
@@ -518,7 +516,7 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
 
     let ton = create_client_verbose(config)?;
 
-    if let Some(value) = matches.value_of("VALUE") {
+    if let Some(value) = matches.get_one::<String>("VALUE") {
         let params = format!(r#"{{"dest":"{}","amount":"{}"}}"#, address, value);
         call::call_contract_with_client(
             ton.clone(),
