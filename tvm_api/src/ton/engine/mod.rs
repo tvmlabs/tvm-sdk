@@ -9,63 +9,63 @@ pub enum Addr {
 impl Addr {
     pub fn categories(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
         match self {
-            Addr::Engine_Addr(ref x) => &x.categories,
-            Addr::Engine_AddrProxy(ref x) => &x.categories,
+            Addr::Engine_Addr(x) => &x.categories,
+            Addr::Engine_AddrProxy(x) => &x.categories,
         }
     }
 
     pub fn in_ip(&self) -> Option<&crate::ton::int> {
         match self {
-            Addr::Engine_AddrProxy(ref x) => Some(&x.in_ip),
+            Addr::Engine_AddrProxy(x) => Some(&x.in_ip),
             _ => None,
         }
     }
 
     pub fn in_port(&self) -> Option<&crate::ton::int> {
         match self {
-            Addr::Engine_AddrProxy(ref x) => Some(&x.in_port),
+            Addr::Engine_AddrProxy(x) => Some(&x.in_port),
             _ => None,
         }
     }
 
     pub fn ip(&self) -> Option<&crate::ton::int> {
         match self {
-            Addr::Engine_Addr(ref x) => Some(&x.ip),
+            Addr::Engine_Addr(x) => Some(&x.ip),
             _ => None,
         }
     }
 
     pub fn out_ip(&self) -> Option<&crate::ton::int> {
         match self {
-            Addr::Engine_AddrProxy(ref x) => Some(&x.out_ip),
+            Addr::Engine_AddrProxy(x) => Some(&x.out_ip),
             _ => None,
         }
     }
 
     pub fn out_port(&self) -> Option<&crate::ton::int> {
         match self {
-            Addr::Engine_AddrProxy(ref x) => Some(&x.out_port),
+            Addr::Engine_AddrProxy(x) => Some(&x.out_port),
             _ => None,
         }
     }
 
     pub fn port(&self) -> Option<&crate::ton::int> {
         match self {
-            Addr::Engine_Addr(ref x) => Some(&x.port),
+            Addr::Engine_Addr(x) => Some(&x.port),
             _ => None,
         }
     }
 
     pub fn priority_categories(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
         match self {
-            Addr::Engine_Addr(ref x) => &x.priority_categories,
-            Addr::Engine_AddrProxy(ref x) => &x.priority_categories,
+            Addr::Engine_Addr(x) => &x.priority_categories,
+            Addr::Engine_AddrProxy(x) => &x.priority_categories,
         }
     }
 
     pub fn proxy_type(&self) -> Option<&crate::ton::adnl::Proxy> {
         match self {
-            Addr::Engine_AddrProxy(ref x) => Some(&x.proxy_type),
+            Addr::Engine_AddrProxy(x) => Some(&x.proxy_type),
             _ => None,
         }
     }
@@ -112,13 +112,13 @@ pub enum Adnl {
 impl Adnl {
     pub fn category(&self) -> &crate::ton::int {
         match self {
-            Adnl::Engine_Adnl(ref x) => &x.category,
+            Adnl::Engine_Adnl(x) => &x.category,
         }
     }
 
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            Adnl::Engine_Adnl(ref x) => &x.id,
+            Adnl::Engine_Adnl(x) => &x.id,
         }
     }
 
@@ -169,19 +169,19 @@ impl ControlInterface {
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::controlprocess::ControlProcess>
     {
         match self {
-            ControlInterface::Engine_ControlInterface(ref x) => &x.allowed,
+            ControlInterface::Engine_ControlInterface(x) => &x.allowed,
         }
     }
 
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            ControlInterface::Engine_ControlInterface(ref x) => &x.id,
+            ControlInterface::Engine_ControlInterface(x) => &x.id,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            ControlInterface::Engine_ControlInterface(ref x) => &x.port,
+            ControlInterface::Engine_ControlInterface(x) => &x.port,
         }
     }
 
@@ -233,13 +233,13 @@ pub enum ControlProcess {
 impl ControlProcess {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            ControlProcess::Engine_ControlProcess(ref x) => &x.id,
+            ControlProcess::Engine_ControlProcess(x) => &x.id,
         }
     }
 
     pub fn permissions(&self) -> &crate::ton::int {
         match self {
-            ControlProcess::Engine_ControlProcess(ref x) => &x.permissions,
+            ControlProcess::Engine_ControlProcess(x) => &x.permissions,
         }
     }
 
@@ -289,7 +289,7 @@ pub enum Dht {
 impl Dht {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            Dht::Engine_Dht(ref x) => &x.id,
+            Dht::Engine_Dht(x) => &x.id,
         }
     }
 
@@ -337,7 +337,7 @@ pub enum Gc {
 impl Gc {
     pub fn ids(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int256> {
         match self {
-            Gc::Engine_Gc(ref x) => &x.ids,
+            Gc::Engine_Gc(x) => &x.ids,
         }
     }
 
@@ -385,13 +385,13 @@ pub enum LiteServer {
 impl LiteServer {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            LiteServer::Engine_LiteServer(ref x) => &x.id,
+            LiteServer::Engine_LiteServer(x) => &x.id,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            LiteServer::Engine_LiteServer(ref x) => &x.port,
+            LiteServer::Engine_LiteServer(x) => &x.port,
         }
     }
 
@@ -439,7 +439,7 @@ pub enum OneSessionStat {
 impl OneSessionStat {
     pub fn session_id(&self) -> &crate::ton::string {
         match self {
-            OneSessionStat::Engine_Validator_OneSessionStat(ref x) => &x.session_id,
+            OneSessionStat::Engine_Validator_OneSessionStat(x) => &x.session_id,
         }
     }
 
@@ -448,7 +448,7 @@ impl OneSessionStat {
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::onestat::OneStat>
     {
         match self {
-            OneSessionStat::Engine_Validator_OneSessionStat(ref x) => &x.stats,
+            OneSessionStat::Engine_Validator_OneSessionStat(x) => &x.stats,
         }
     }
 
@@ -508,25 +508,25 @@ impl Validator {
         crate::ton::engine::validatoradnladdress::ValidatorAdnlAddress,
     > {
         match self {
-            Validator::Engine_Validator(ref x) => &x.adnl_addrs,
+            Validator::Engine_Validator(x) => &x.adnl_addrs,
         }
     }
 
     pub fn election_date(&self) -> &crate::ton::int {
         match self {
-            Validator::Engine_Validator(ref x) => &x.election_date,
+            Validator::Engine_Validator(x) => &x.election_date,
         }
     }
 
     pub fn expire_at(&self) -> &crate::ton::int {
         match self {
-            Validator::Engine_Validator(ref x) => &x.expire_at,
+            Validator::Engine_Validator(x) => &x.expire_at,
         }
     }
 
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            Validator::Engine_Validator(ref x) => &x.id,
+            Validator::Engine_Validator(x) => &x.id,
         }
     }
 
@@ -535,7 +535,7 @@ impl Validator {
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validatortempkey::ValidatorTempKey>
     {
         match self {
-            Validator::Engine_Validator(ref x) => &x.temp_keys,
+            Validator::Engine_Validator(x) => &x.temp_keys,
         }
     }
 
@@ -583,13 +583,13 @@ pub enum ValidatorAdnlAddress {
 impl ValidatorAdnlAddress {
     pub fn expire_at(&self) -> &crate::ton::int {
         match self {
-            ValidatorAdnlAddress::Engine_ValidatorAdnlAddress(ref x) => &x.expire_at,
+            ValidatorAdnlAddress::Engine_ValidatorAdnlAddress(x) => &x.expire_at,
         }
     }
 
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            ValidatorAdnlAddress::Engine_ValidatorAdnlAddress(ref x) => &x.id,
+            ValidatorAdnlAddress::Engine_ValidatorAdnlAddress(x) => &x.id,
         }
     }
 
@@ -636,13 +636,13 @@ pub enum ValidatorTempKey {
 impl ValidatorTempKey {
     pub fn expire_at(&self) -> &crate::ton::int {
         match self {
-            ValidatorTempKey::Engine_ValidatorTempKey(ref x) => &x.expire_at,
+            ValidatorTempKey::Engine_ValidatorTempKey(x) => &x.expire_at,
         }
     }
 
     pub fn key(&self) -> &crate::ton::int256 {
         match self {
-            ValidatorTempKey::Engine_ValidatorTempKey(ref x) => &x.key,
+            ValidatorTempKey::Engine_ValidatorTempKey(x) => &x.key,
         }
     }
 

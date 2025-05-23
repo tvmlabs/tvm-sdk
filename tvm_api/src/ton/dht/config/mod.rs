@@ -8,19 +8,19 @@ pub enum Global {
 impl Global {
     pub fn a(&self) -> &crate::ton::int {
         match self {
-            Global::Dht_Config_Global(ref x) => &x.a,
+            Global::Dht_Config_Global(x) => &x.a,
         }
     }
 
     pub fn k(&self) -> &crate::ton::int {
         match self {
-            Global::Dht_Config_Global(ref x) => &x.k,
+            Global::Dht_Config_Global(x) => &x.k,
         }
     }
 
     pub fn static_nodes(&self) -> &crate::ton::dht::nodes::Nodes {
         match self {
-            Global::Dht_Config_Global(ref x) => &x.static_nodes,
+            Global::Dht_Config_Global(x) => &x.static_nodes,
         }
     }
 
@@ -69,14 +69,14 @@ pub enum Local {
 impl Local {
     pub fn cnt(&self) -> Option<&crate::ton::int> {
         match self {
-            Local::Dht_Config_Random_Local(ref x) => Some(&x.cnt),
+            Local::Dht_Config_Random_Local(x) => Some(&x.cnt),
             _ => None,
         }
     }
 
     pub fn id(&self) -> Option<&crate::ton::adnl::id::short::Short> {
         match self {
-            Local::Dht_Config_Local(ref x) => Some(&x.id),
+            Local::Dht_Config_Local(x) => Some(&x.id),
             _ => None,
         }
     }

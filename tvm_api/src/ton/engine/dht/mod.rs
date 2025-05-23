@@ -8,13 +8,13 @@ pub enum Config {
 impl Config {
     pub fn dht(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::dht::Dht> {
         match self {
-            Config::Engine_Dht_Config(ref x) => &x.dht,
+            Config::Engine_Dht_Config(x) => &x.dht,
         }
     }
 
     pub fn gc(&self) -> &crate::ton::engine::gc::Gc {
         match self {
-            Config::Engine_Dht_Config(ref x) => &x.gc,
+            Config::Engine_Dht_Config(x) => &x.gc,
         }
     }
 

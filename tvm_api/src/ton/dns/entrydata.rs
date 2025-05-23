@@ -140,7 +140,7 @@ impl crate::BareSerialize for EntryDataUnknown {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let EntryDataUnknown { bytes: ref bytes_ } = self;
+        let EntryDataUnknown { bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
         Ok(())
     }

@@ -26,11 +26,11 @@ members = [
 [workspace.package]
 version = "2.15.0"
 
-rust-version = "1.76.0"
+rust-version = "1.87.0"
 
 authors = ["TVM Labs <hello@tvmlabs.io>"]
 repository = "https://github.com/tvmlabs/tvm-sdk"
-edition = "2021"
+edition = "2024"
 license = "GPL-3.0"
 
 [workspace.lints.rust]
@@ -60,7 +60,6 @@ strip = true      # Automatically strip symbols from the binary.
 
 [profile.test]
 # IMPORTANT! because with "abort" it will complain https://github.com/rust-lang/cargo/issues/6313
-panic = "unwind"
 
 [workspace.dependencies]
 anyhow = "1.0.79"
@@ -104,7 +103,7 @@ similar = "2.4.0"
 smallvec = "1.13.1"
 thiserror = "1.0.56"
 tokio = { default-features = false, version = "1.36.0" }
-zstd = "0.13.0"
+zstd = { version = "0.13.0", default-features = false }
 #
 tvm_abi = { path = "./tvm_abi" }
 tvm_api = { path = "./tvm_api" }

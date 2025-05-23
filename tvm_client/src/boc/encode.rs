@@ -162,7 +162,7 @@ impl<'a> Builder<'a> {
                         )
                         .map_err(|err| Error::serialization_error(err, "encode_boc"))?;
                 }
-                BuilderOp::Cell { ref builder } => {
+                BuilderOp::Cell { builder } => {
                     return Ok(BuildResult::Nested {
                         nested: Box::new(Self::new(builder)),
                         prev: Box::new(self),

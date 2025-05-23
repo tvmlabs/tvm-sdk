@@ -10,21 +10,21 @@ pub enum Action {
 impl Action {
     pub fn category(&self) -> Option<&crate::ton::int32> {
         match self {
-            Action::Dns_ActionDelete(ref x) => Some(&x.category),
+            Action::Dns_ActionDelete(x) => Some(&x.category),
             _ => None,
         }
     }
 
     pub fn entry(&self) -> Option<&crate::ton::dns::entry::Entry> {
         match self {
-            Action::Dns_ActionSet(ref x) => Some(&x.entry),
+            Action::Dns_ActionSet(x) => Some(&x.entry),
             _ => None,
         }
     }
 
     pub fn name(&self) -> Option<&crate::ton::string> {
         match self {
-            Action::Dns_ActionDelete(ref x) => Some(&x.name),
+            Action::Dns_ActionDelete(x) => Some(&x.name),
             _ => None,
         }
     }
@@ -77,19 +77,19 @@ pub enum Entry {
 impl Entry {
     pub fn category(&self) -> &crate::ton::int32 {
         match self {
-            Entry::Dns_Entry(ref x) => &x.category,
+            Entry::Dns_Entry(x) => &x.category,
         }
     }
 
     pub fn entry(&self) -> &crate::ton::dns::EntryData {
         match self {
-            Entry::Dns_Entry(ref x) => &x.entry,
+            Entry::Dns_Entry(x) => &x.entry,
         }
     }
 
     pub fn name(&self) -> &crate::ton::string {
         match self {
-            Entry::Dns_Entry(ref x) => &x.name,
+            Entry::Dns_Entry(x) => &x.name,
         }
     }
 
@@ -141,35 +141,35 @@ pub enum EntryData {
 impl EntryData {
     pub fn adnl_address(&self) -> Option<&crate::ton::AdnlAddress> {
         match self {
-            EntryData::Dns_EntryDataAdnlAddress(ref x) => Some(&x.adnl_address),
+            EntryData::Dns_EntryDataAdnlAddress(x) => Some(&x.adnl_address),
             _ => None,
         }
     }
 
     pub fn bytes(&self) -> Option<&crate::ton::bytes> {
         match self {
-            EntryData::Dns_EntryDataUnknown(ref x) => Some(&x.bytes),
+            EntryData::Dns_EntryDataUnknown(x) => Some(&x.bytes),
             _ => None,
         }
     }
 
     pub fn resolver(&self) -> Option<&crate::ton::AccountAddress> {
         match self {
-            EntryData::Dns_EntryDataNextResolver(ref x) => Some(&x.resolver),
+            EntryData::Dns_EntryDataNextResolver(x) => Some(&x.resolver),
             _ => None,
         }
     }
 
     pub fn smc_address(&self) -> Option<&crate::ton::AccountAddress> {
         match self {
-            EntryData::Dns_EntryDataSmcAddress(ref x) => Some(&x.smc_address),
+            EntryData::Dns_EntryDataSmcAddress(x) => Some(&x.smc_address),
             _ => None,
         }
     }
 
     pub fn text(&self) -> Option<&crate::ton::string> {
         match self {
-            EntryData::Dns_EntryDataText(ref x) => Some(&x.text),
+            EntryData::Dns_EntryDataText(x) => Some(&x.text),
             _ => None,
         }
     }
@@ -236,7 +236,7 @@ pub enum Resolved {
 impl Resolved {
     pub fn entries(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::dns::entry::Entry> {
         match self {
-            Resolved::Dns_Resolved(ref x) => &x.entries,
+            Resolved::Dns_Resolved(x) => &x.entries,
         }
     }
 

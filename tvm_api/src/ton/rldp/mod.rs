@@ -10,37 +10,37 @@ pub enum Message {
 impl Message {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            Message::Rldp_Answer(ref x) => &x.data,
-            Message::Rldp_Message(ref x) => &x.data,
-            Message::Rldp_Query(ref x) => &x.data,
+            Message::Rldp_Answer(x) => &x.data,
+            Message::Rldp_Message(x) => &x.data,
+            Message::Rldp_Query(x) => &x.data,
         }
     }
 
     pub fn id(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::Rldp_Message(ref x) => Some(&x.id),
+            Message::Rldp_Message(x) => Some(&x.id),
             _ => None,
         }
     }
 
     pub fn max_answer_size(&self) -> Option<&crate::ton::long> {
         match self {
-            Message::Rldp_Query(ref x) => Some(&x.max_answer_size),
+            Message::Rldp_Query(x) => Some(&x.max_answer_size),
             _ => None,
         }
     }
 
     pub fn query_id(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::Rldp_Answer(ref x) => Some(&x.query_id),
-            Message::Rldp_Query(ref x) => Some(&x.query_id),
+            Message::Rldp_Answer(x) => Some(&x.query_id),
+            Message::Rldp_Query(x) => Some(&x.query_id),
             _ => None,
         }
     }
 
     pub fn timeout(&self) -> Option<&crate::ton::int> {
         match self {
-            Message::Rldp_Query(ref x) => Some(&x.timeout),
+            Message::Rldp_Query(x) => Some(&x.timeout),
             _ => None,
         }
     }
@@ -97,46 +97,46 @@ pub enum MessagePart {
 impl MessagePart {
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            MessagePart::Rldp_MessagePart(ref x) => Some(&x.data),
+            MessagePart::Rldp_MessagePart(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn fec_type(&self) -> Option<&crate::ton::fec::Type> {
         match self {
-            MessagePart::Rldp_MessagePart(ref x) => Some(&x.fec_type),
+            MessagePart::Rldp_MessagePart(x) => Some(&x.fec_type),
             _ => None,
         }
     }
 
     pub fn part(&self) -> &crate::ton::int {
         match self {
-            MessagePart::Rldp_Complete(ref x) => &x.part,
-            MessagePart::Rldp_Confirm(ref x) => &x.part,
-            MessagePart::Rldp_MessagePart(ref x) => &x.part,
+            MessagePart::Rldp_Complete(x) => &x.part,
+            MessagePart::Rldp_Confirm(x) => &x.part,
+            MessagePart::Rldp_MessagePart(x) => &x.part,
         }
     }
 
     pub fn seqno(&self) -> Option<&crate::ton::int> {
         match self {
-            MessagePart::Rldp_Confirm(ref x) => Some(&x.seqno),
-            MessagePart::Rldp_MessagePart(ref x) => Some(&x.seqno),
+            MessagePart::Rldp_Confirm(x) => Some(&x.seqno),
+            MessagePart::Rldp_MessagePart(x) => Some(&x.seqno),
             _ => None,
         }
     }
 
     pub fn total_size(&self) -> Option<&crate::ton::long> {
         match self {
-            MessagePart::Rldp_MessagePart(ref x) => Some(&x.total_size),
+            MessagePart::Rldp_MessagePart(x) => Some(&x.total_size),
             _ => None,
         }
     }
 
     pub fn transfer_id(&self) -> &crate::ton::int256 {
         match self {
-            MessagePart::Rldp_Complete(ref x) => &x.transfer_id,
-            MessagePart::Rldp_Confirm(ref x) => &x.transfer_id,
-            MessagePart::Rldp_MessagePart(ref x) => &x.transfer_id,
+            MessagePart::Rldp_Complete(x) => &x.transfer_id,
+            MessagePart::Rldp_Confirm(x) => &x.transfer_id,
+            MessagePart::Rldp_MessagePart(x) => &x.transfer_id,
         }
     }
 }

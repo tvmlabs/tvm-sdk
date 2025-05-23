@@ -8,19 +8,19 @@ pub enum Key {
 impl Key {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            Key::Dht_Key(ref x) => &x.id,
+            Key::Dht_Key(x) => &x.id,
         }
     }
 
     pub fn idx(&self) -> &crate::ton::int {
         match self {
-            Key::Dht_Key(ref x) => &x.idx,
+            Key::Dht_Key(x) => &x.idx,
         }
     }
 
     pub fn name(&self) -> &crate::ton::bytes {
         match self {
-            Key::Dht_Key(ref x) => &x.name,
+            Key::Dht_Key(x) => &x.name,
         }
     }
 
@@ -68,25 +68,25 @@ pub enum KeyDescription {
 impl KeyDescription {
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
-            KeyDescription::Dht_KeyDescription(ref x) => &x.id,
+            KeyDescription::Dht_KeyDescription(x) => &x.id,
         }
     }
 
     pub fn key(&self) -> &crate::ton::dht::key::Key {
         match self {
-            KeyDescription::Dht_KeyDescription(ref x) => &x.key,
+            KeyDescription::Dht_KeyDescription(x) => &x.key,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            KeyDescription::Dht_KeyDescription(ref x) => &x.signature,
+            KeyDescription::Dht_KeyDescription(x) => &x.signature,
         }
     }
 
     pub fn update_rule(&self) -> &crate::ton::dht::UpdateRule {
         match self {
-            KeyDescription::Dht_KeyDescription(ref x) => &x.update_rule,
+            KeyDescription::Dht_KeyDescription(x) => &x.update_rule,
         }
     }
 
@@ -136,7 +136,7 @@ pub enum Message {
 impl Message {
     pub fn node(&self) -> &crate::ton::dht::node::Node {
         match self {
-            Message::Dht_Message(ref x) => &x.node,
+            Message::Dht_Message(x) => &x.node,
         }
     }
 
@@ -184,25 +184,25 @@ pub enum Node {
 impl Node {
     pub fn addr_list(&self) -> &crate::ton::adnl::addresslist::AddressList {
         match self {
-            Node::Dht_Node(ref x) => &x.addr_list,
+            Node::Dht_Node(x) => &x.addr_list,
         }
     }
 
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
-            Node::Dht_Node(ref x) => &x.id,
+            Node::Dht_Node(x) => &x.id,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            Node::Dht_Node(ref x) => &x.signature,
+            Node::Dht_Node(x) => &x.signature,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            Node::Dht_Node(ref x) => &x.version,
+            Node::Dht_Node(x) => &x.version,
         }
     }
 
@@ -250,7 +250,7 @@ pub enum Nodes {
 impl Nodes {
     pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::dht::node::Node> {
         match self {
-            Nodes::Dht_Nodes(ref x) => &x.nodes,
+            Nodes::Dht_Nodes(x) => &x.nodes,
         }
     }
 
@@ -298,7 +298,7 @@ pub enum Pong {
 impl Pong {
     pub fn random_id(&self) -> &crate::ton::long {
         match self {
-            Pong::Dht_Pong(ref x) => &x.random_id,
+            Pong::Dht_Pong(x) => &x.random_id,
         }
     }
 
@@ -414,25 +414,25 @@ pub enum Value {
 impl Value {
     pub fn key(&self) -> &crate::ton::dht::keydescription::KeyDescription {
         match self {
-            Value::Dht_Value(ref x) => &x.key,
+            Value::Dht_Value(x) => &x.key,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            Value::Dht_Value(ref x) => &x.signature,
+            Value::Dht_Value(x) => &x.signature,
         }
     }
 
     pub fn ttl(&self) -> &crate::ton::int {
         match self {
-            Value::Dht_Value(ref x) => &x.ttl,
+            Value::Dht_Value(x) => &x.ttl,
         }
     }
 
     pub fn value(&self) -> &crate::ton::bytes {
         match self {
-            Value::Dht_Value(ref x) => &x.value,
+            Value::Dht_Value(x) => &x.value,
         }
     }
 
@@ -481,14 +481,14 @@ pub enum ValueResult {
 impl ValueResult {
     pub fn nodes(&self) -> Option<&crate::ton::dht::nodes::Nodes> {
         match self {
-            ValueResult::Dht_ValueNotFound(ref x) => Some(&x.nodes),
+            ValueResult::Dht_ValueNotFound(x) => Some(&x.nodes),
             _ => None,
         }
     }
 
     pub fn value(&self) -> Option<&crate::ton::dht::Value> {
         match self {
-            ValueResult::Dht_ValueFound(ref x) => Some(&x.value),
+            ValueResult::Dht_ValueFound(x) => Some(&x.value),
             _ => None,
         }
     }

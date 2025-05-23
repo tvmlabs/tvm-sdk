@@ -8,25 +8,25 @@ pub enum Candidate {
 impl Candidate {
     pub fn collated_data(&self) -> &crate::ton::bytes {
         match self {
-            Candidate::Db_Candidate(ref x) => &x.collated_data,
+            Candidate::Db_Candidate(x) => &x.collated_data,
         }
     }
 
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            Candidate::Db_Candidate(ref x) => &x.data,
+            Candidate::Db_Candidate(x) => &x.data,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Candidate::Db_Candidate(ref x) => &x.id,
+            Candidate::Db_Candidate(x) => &x.id,
         }
     }
 
     pub fn source(&self) -> &crate::ton::PublicKey {
         match self {
-            Candidate::Db_Candidate(ref x) => &x.source,
+            Candidate::Db_Candidate(x) => &x.source,
         }
     }
 

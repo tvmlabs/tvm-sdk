@@ -12,7 +12,7 @@ impl crate::BareSerialize for Builder {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let Builder { bytes: ref bytes_ } = self;
+        let Builder { bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
         Ok(())
     }

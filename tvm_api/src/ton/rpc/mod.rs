@@ -1367,7 +1367,7 @@ impl crate::BareSerialize for OnLiteServerQueryResult {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let OnLiteServerQueryResult { id, bytes: ref bytes_ } = self;
+        let OnLiteServerQueryResult { id, bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::int64>(id)?;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
         Ok(())

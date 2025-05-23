@@ -36,7 +36,7 @@ macro_rules! param_ref {
     ($self:ident, $id:ident) => {{
         debug_assert!($self.params.len() < 3);
         for p in &$self.params {
-            if let InstructionParameter::$id(ref x) = p {
+            if let InstructionParameter::$id(x) = p {
                 return Some(x);
             }
         }
@@ -48,7 +48,7 @@ macro_rules! param_ref_mut {
     ($self:ident, $id:ident) => {{
         debug_assert!($self.params.len() < 3);
         for p in &mut $self.params {
-            if let InstructionParameter::$id(ref mut x) = p {
+            if let InstructionParameter::$id(x) = p {
                 return Some(x);
             }
         }

@@ -9,15 +9,15 @@ pub enum Local {
 impl Local {
     pub fn id(&self) -> Option<&crate::ton::PrivateKey> {
         match self {
-            Local::Liteserver_Config_Local(ref x) => Some(&x.id),
+            Local::Liteserver_Config_Local(x) => Some(&x.id),
             _ => None,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            Local::Liteserver_Config_Local(ref x) => &x.port,
-            Local::Liteserver_Config_Random_Local(ref x) => &x.port,
+            Local::Liteserver_Config_Local(x) => &x.port,
+            Local::Liteserver_Config_Random_Local(x) => &x.port,
         }
     }
 }

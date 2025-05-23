@@ -10,22 +10,22 @@ pub enum Address {
 impl Address {
     pub fn port(&self) -> Option<&crate::ton::int> {
         match self {
-            Address::Adnl_Address_Udp(ref x) => Some(&x.port),
-            Address::Adnl_Address_Udp6(ref x) => Some(&x.port),
+            Address::Adnl_Address_Udp(x) => Some(&x.port),
+            Address::Adnl_Address_Udp6(x) => Some(&x.port),
             _ => None,
         }
     }
 
     pub fn pubkey(&self) -> Option<&crate::ton::PublicKey> {
         match self {
-            Address::Adnl_Address_Tunnel(ref x) => Some(&x.pubkey),
+            Address::Adnl_Address_Tunnel(x) => Some(&x.pubkey),
             _ => None,
         }
     }
 
     pub fn to(&self) -> Option<&crate::ton::int256> {
         match self {
-            Address::Adnl_Address_Tunnel(ref x) => Some(&x.to),
+            Address::Adnl_Address_Tunnel(x) => Some(&x.to),
             _ => None,
         }
     }
@@ -80,31 +80,31 @@ pub enum AddressList {
 impl AddressList {
     pub fn addrs(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Address> {
         match self {
-            AddressList::Adnl_AddressList(ref x) => &x.addrs,
+            AddressList::Adnl_AddressList(x) => &x.addrs,
         }
     }
 
     pub fn expire_at(&self) -> &crate::ton::int {
         match self {
-            AddressList::Adnl_AddressList(ref x) => &x.expire_at,
+            AddressList::Adnl_AddressList(x) => &x.expire_at,
         }
     }
 
     pub fn priority(&self) -> &crate::ton::int {
         match self {
-            AddressList::Adnl_AddressList(ref x) => &x.priority,
+            AddressList::Adnl_AddressList(x) => &x.priority,
         }
     }
 
     pub fn reinit_date(&self) -> &crate::ton::int {
         match self {
-            AddressList::Adnl_AddressList(ref x) => &x.reinit_date,
+            AddressList::Adnl_AddressList(x) => &x.reinit_date,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            AddressList::Adnl_AddressList(ref x) => &x.version,
+            AddressList::Adnl_AddressList(x) => &x.version,
         }
     }
 
@@ -159,75 +159,75 @@ pub enum Message {
 impl Message {
     pub fn answer(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Message::Adnl_Message_Answer(ref x) => Some(&x.answer),
+            Message::Adnl_Message_Answer(x) => Some(&x.answer),
             _ => None,
         }
     }
 
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Message::Adnl_Message_Custom(ref x) => Some(&x.data),
-            Message::Adnl_Message_Part(ref x) => Some(&x.data),
+            Message::Adnl_Message_Custom(x) => Some(&x.data),
+            Message::Adnl_Message_Part(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn date(&self) -> Option<&crate::ton::int> {
         match self {
-            Message::Adnl_Message_ConfirmChannel(ref x) => Some(&x.date),
-            Message::Adnl_Message_CreateChannel(ref x) => Some(&x.date),
-            Message::Adnl_Message_Reinit(ref x) => Some(&x.date),
+            Message::Adnl_Message_ConfirmChannel(x) => Some(&x.date),
+            Message::Adnl_Message_CreateChannel(x) => Some(&x.date),
+            Message::Adnl_Message_Reinit(x) => Some(&x.date),
             _ => None,
         }
     }
 
     pub fn hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::Adnl_Message_Part(ref x) => Some(&x.hash),
+            Message::Adnl_Message_Part(x) => Some(&x.hash),
             _ => None,
         }
     }
 
     pub fn key(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::Adnl_Message_ConfirmChannel(ref x) => Some(&x.key),
-            Message::Adnl_Message_CreateChannel(ref x) => Some(&x.key),
+            Message::Adnl_Message_ConfirmChannel(x) => Some(&x.key),
+            Message::Adnl_Message_CreateChannel(x) => Some(&x.key),
             _ => None,
         }
     }
 
     pub fn offset(&self) -> Option<&crate::ton::int> {
         match self {
-            Message::Adnl_Message_Part(ref x) => Some(&x.offset),
+            Message::Adnl_Message_Part(x) => Some(&x.offset),
             _ => None,
         }
     }
 
     pub fn peer_key(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::Adnl_Message_ConfirmChannel(ref x) => Some(&x.peer_key),
+            Message::Adnl_Message_ConfirmChannel(x) => Some(&x.peer_key),
             _ => None,
         }
     }
 
     pub fn query(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Message::Adnl_Message_Query(ref x) => Some(&x.query),
+            Message::Adnl_Message_Query(x) => Some(&x.query),
             _ => None,
         }
     }
 
     pub fn query_id(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::Adnl_Message_Answer(ref x) => Some(&x.query_id),
-            Message::Adnl_Message_Query(ref x) => Some(&x.query_id),
+            Message::Adnl_Message_Answer(x) => Some(&x.query_id),
+            Message::Adnl_Message_Query(x) => Some(&x.query_id),
             _ => None,
         }
     }
 
     pub fn total_size(&self) -> Option<&crate::ton::int> {
         match self {
-            Message::Adnl_Message_Part(ref x) => Some(&x.total_size),
+            Message::Adnl_Message_Part(x) => Some(&x.total_size),
             _ => None,
         }
     }
@@ -305,13 +305,13 @@ pub enum Node {
 impl Node {
     pub fn addr_list(&self) -> &crate::ton::adnl::addresslist::AddressList {
         match self {
-            Node::Adnl_Node(ref x) => &x.addr_list,
+            Node::Adnl_Node(x) => &x.addr_list,
         }
     }
 
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
-            Node::Adnl_Node(ref x) => &x.id,
+            Node::Adnl_Node(x) => &x.id,
         }
     }
 
@@ -359,7 +359,7 @@ pub enum Nodes {
 impl Nodes {
     pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::adnl::node::Node> {
         match self {
-            Nodes::Adnl_Nodes(ref x) => &x.nodes,
+            Nodes::Adnl_Nodes(x) => &x.nodes,
         }
     }
 
@@ -407,37 +407,37 @@ pub enum PacketContents {
 impl PacketContents {
     pub fn address(&self) -> Option<&crate::ton::adnl::addresslist::AddressList> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.address.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.address.as_ref(),
         }
     }
 
     pub fn confirm_seqno(&self) -> Option<&crate::ton::long> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.confirm_seqno.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.confirm_seqno.as_ref(),
         }
     }
 
     pub fn dst_reinit_date(&self) -> Option<&crate::ton::int> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.dst_reinit_date.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.dst_reinit_date.as_ref(),
         }
     }
 
     pub fn from(&self) -> Option<&crate::ton::PublicKey> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.from.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.from.as_ref(),
         }
     }
 
     pub fn from_short(&self) -> Option<&crate::ton::adnl::id::short::Short> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.from_short.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.from_short.as_ref(),
         }
     }
 
     pub fn message(&self) -> Option<&crate::ton::adnl::Message> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.message.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.message.as_ref(),
         }
     }
 
@@ -445,37 +445,37 @@ impl PacketContents {
         &self,
     ) -> Option<&crate::ton::vector<crate::ton::Boxed, crate::ton::adnl::Message>> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.messages.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.messages.as_ref(),
         }
     }
 
     pub fn priority_address(&self) -> Option<&crate::ton::adnl::addresslist::AddressList> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.priority_address.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.priority_address.as_ref(),
         }
     }
 
     pub fn rand1(&self) -> &crate::ton::bytes {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => &x.rand1,
+            PacketContents::Adnl_PacketContents(x) => &x.rand1,
         }
     }
 
     pub fn rand2(&self) -> &crate::ton::bytes {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => &x.rand2,
+            PacketContents::Adnl_PacketContents(x) => &x.rand2,
         }
     }
 
     pub fn recv_addr_list_version(&self) -> Option<&crate::ton::int> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.recv_addr_list_version.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.recv_addr_list_version.as_ref(),
         }
     }
 
     pub fn recv_priority_addr_list_version(&self) -> Option<&crate::ton::int> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => {
+            PacketContents::Adnl_PacketContents(x) => {
                 x.recv_priority_addr_list_version.as_ref()
             }
         }
@@ -483,19 +483,19 @@ impl PacketContents {
 
     pub fn reinit_date(&self) -> Option<&crate::ton::int> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.reinit_date.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.reinit_date.as_ref(),
         }
     }
 
     pub fn seqno(&self) -> Option<&crate::ton::long> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.seqno.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.seqno.as_ref(),
         }
     }
 
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
-            PacketContents::Adnl_PacketContents(ref x) => x.signature.as_ref(),
+            PacketContents::Adnl_PacketContents(x) => x.signature.as_ref(),
         }
     }
 
@@ -545,7 +545,7 @@ pub enum Pong {
 impl Pong {
     pub fn value(&self) -> &crate::ton::long {
         match self {
-            Pong::Adnl_Pong(ref x) => &x.value,
+            Pong::Adnl_Pong(x) => &x.value,
         }
     }
 
@@ -594,14 +594,14 @@ pub enum Proxy {
 impl Proxy {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            Proxy::Adnl_Proxy_Fast(ref x) => &x.id,
-            Proxy::Adnl_Proxy_None(ref x) => &x.id,
+            Proxy::Adnl_Proxy_Fast(x) => &x.id,
+            Proxy::Adnl_Proxy_None(x) => &x.id,
         }
     }
 
     pub fn shared_secret(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Proxy::Adnl_Proxy_Fast(ref x) => Some(&x.shared_secret),
+            Proxy::Adnl_Proxy_Fast(x) => Some(&x.shared_secret),
             _ => None,
         }
     }
@@ -652,22 +652,22 @@ pub enum ProxyControlPacket {
 impl ProxyControlPacket {
     pub fn id(&self) -> Option<&crate::ton::int256> {
         match self {
-            ProxyControlPacket::Adnl_ProxyControlPacketPing(ref x) => Some(&x.id),
-            ProxyControlPacket::Adnl_ProxyControlPacketPong(ref x) => Some(&x.id),
+            ProxyControlPacket::Adnl_ProxyControlPacketPing(x) => Some(&x.id),
+            ProxyControlPacket::Adnl_ProxyControlPacketPong(x) => Some(&x.id),
             _ => None,
         }
     }
 
     pub fn ip(&self) -> Option<&crate::ton::int> {
         match self {
-            ProxyControlPacket::Adnl_ProxyControlPacketRegister(ref x) => Some(&x.ip),
+            ProxyControlPacket::Adnl_ProxyControlPacketRegister(x) => Some(&x.ip),
             _ => None,
         }
     }
 
     pub fn port(&self) -> Option<&crate::ton::int> {
         match self {
-            ProxyControlPacket::Adnl_ProxyControlPacketRegister(ref x) => Some(&x.port),
+            ProxyControlPacket::Adnl_ProxyControlPacketRegister(x) => Some(&x.port),
             _ => None,
         }
     }
@@ -719,43 +719,43 @@ pub enum ProxyPacketHeader {
 impl ProxyPacketHeader {
     pub fn adnl_start_time(&self) -> Option<&crate::ton::int> {
         match self {
-            ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.adnl_start_time.as_ref(),
+            ProxyPacketHeader::Adnl_ProxyPacketHeader(x) => x.adnl_start_time.as_ref(),
         }
     }
 
     pub fn date(&self) -> Option<&crate::ton::int> {
         match self {
-            ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.date.as_ref(),
+            ProxyPacketHeader::Adnl_ProxyPacketHeader(x) => x.date.as_ref(),
         }
     }
 
     pub fn ip(&self) -> Option<&crate::ton::int> {
         match self {
-            ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.ip.as_ref(),
+            ProxyPacketHeader::Adnl_ProxyPacketHeader(x) => x.ip.as_ref(),
         }
     }
 
     pub fn port(&self) -> Option<&crate::ton::int> {
         match self {
-            ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.port.as_ref(),
+            ProxyPacketHeader::Adnl_ProxyPacketHeader(x) => x.port.as_ref(),
         }
     }
 
     pub fn proxy_id(&self) -> &crate::ton::int256 {
         match self {
-            ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => &x.proxy_id,
+            ProxyPacketHeader::Adnl_ProxyPacketHeader(x) => &x.proxy_id,
         }
     }
 
     pub fn seqno(&self) -> Option<&crate::ton::long> {
         match self {
-            ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => x.seqno.as_ref(),
+            ProxyPacketHeader::Adnl_ProxyPacketHeader(x) => x.seqno.as_ref(),
         }
     }
 
     pub fn signature(&self) -> &crate::ton::int256 {
         match self {
-            ProxyPacketHeader::Adnl_ProxyPacketHeader(ref x) => &x.signature,
+            ProxyPacketHeader::Adnl_ProxyPacketHeader(x) => &x.signature,
         }
     }
 
@@ -807,31 +807,31 @@ pub enum ProxyTo {
 impl ProxyTo {
     pub fn data_hash(&self) -> &crate::ton::int256 {
         match self {
-            ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.data_hash,
+            ProxyTo::Adnl_ProxyToFastHash(x) => &x.data_hash,
         }
     }
 
     pub fn date(&self) -> &crate::ton::int {
         match self {
-            ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.date,
+            ProxyTo::Adnl_ProxyToFastHash(x) => &x.date,
         }
     }
 
     pub fn ip(&self) -> &crate::ton::int {
         match self {
-            ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.ip,
+            ProxyTo::Adnl_ProxyToFastHash(x) => &x.ip,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.port,
+            ProxyTo::Adnl_ProxyToFastHash(x) => &x.port,
         }
     }
 
     pub fn shared_secret(&self) -> &crate::ton::int256 {
         match self {
-            ProxyTo::Adnl_ProxyToFastHash(ref x) => &x.shared_secret,
+            ProxyTo::Adnl_ProxyToFastHash(x) => &x.shared_secret,
         }
     }
 
@@ -879,25 +879,25 @@ pub enum ProxyToSign {
 impl ProxyToSign {
     pub fn date(&self) -> &crate::ton::int {
         match self {
-            ProxyToSign::Adnl_ProxyToFast(ref x) => &x.date,
+            ProxyToSign::Adnl_ProxyToFast(x) => &x.date,
         }
     }
 
     pub fn ip(&self) -> &crate::ton::int {
         match self {
-            ProxyToSign::Adnl_ProxyToFast(ref x) => &x.ip,
+            ProxyToSign::Adnl_ProxyToFast(x) => &x.ip,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            ProxyToSign::Adnl_ProxyToFast(ref x) => &x.port,
+            ProxyToSign::Adnl_ProxyToFast(x) => &x.port,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::int256 {
         match self {
-            ProxyToSign::Adnl_ProxyToFast(ref x) => &x.signature,
+            ProxyToSign::Adnl_ProxyToFast(x) => &x.signature,
         }
     }
 
@@ -945,43 +945,43 @@ pub enum TunnelPacketContents {
 impl TunnelPacketContents {
     pub fn from_ip(&self) -> Option<&crate::ton::int> {
         match self {
-            TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.from_ip.as_ref(),
+            TunnelPacketContents::Adnl_TunnelPacketContents(x) => x.from_ip.as_ref(),
         }
     }
 
     pub fn from_port(&self) -> Option<&crate::ton::int> {
         match self {
-            TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.from_port.as_ref(),
+            TunnelPacketContents::Adnl_TunnelPacketContents(x) => x.from_port.as_ref(),
         }
     }
 
     pub fn message(&self) -> Option<&crate::ton::bytes> {
         match self {
-            TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.message.as_ref(),
+            TunnelPacketContents::Adnl_TunnelPacketContents(x) => x.message.as_ref(),
         }
     }
 
     pub fn payment(&self) -> Option<&crate::ton::bytes> {
         match self {
-            TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.payment.as_ref(),
+            TunnelPacketContents::Adnl_TunnelPacketContents(x) => x.payment.as_ref(),
         }
     }
 
     pub fn rand1(&self) -> &crate::ton::bytes {
         match self {
-            TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => &x.rand1,
+            TunnelPacketContents::Adnl_TunnelPacketContents(x) => &x.rand1,
         }
     }
 
     pub fn rand2(&self) -> &crate::ton::bytes {
         match self {
-            TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => &x.rand2,
+            TunnelPacketContents::Adnl_TunnelPacketContents(x) => &x.rand2,
         }
     }
 
     pub fn statistics(&self) -> Option<&crate::ton::bytes> {
         match self {
-            TunnelPacketContents::Adnl_TunnelPacketContents(ref x) => x.statistics.as_ref(),
+            TunnelPacketContents::Adnl_TunnelPacketContents(x) => x.statistics.as_ref(),
         }
     }
 

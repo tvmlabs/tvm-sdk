@@ -8,13 +8,13 @@ pub enum Global {
 impl Global {
     pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::PublicKey> {
         match self {
-            Global::Catchain_Config_Global(ref x) => &x.nodes,
+            Global::Catchain_Config_Global(x) => &x.nodes,
         }
     }
 
     pub fn tag(&self) -> &crate::ton::int256 {
         match self {
-            Global::Catchain_Config_Global(ref x) => &x.tag,
+            Global::Catchain_Config_Global(x) => &x.tag,
         }
     }
 

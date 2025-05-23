@@ -50,7 +50,7 @@ fn function_from(meta: Option<Meta>, func: ItemFn) -> api_info::Function {
 }
 
 fn field_from_fn_arg(a: &FnArg) -> api_info::Field {
-    if let FnArg::Typed(ref a) = a {
+    if let FnArg::Typed(a) = a {
         if let Pat::Ident(i) = a.pat.as_ref() {
             return field_from(Some(&i.ident), &a.attrs, type_from(&a.ty));
         }
@@ -60,7 +60,7 @@ fn field_from_fn_arg(a: &FnArg) -> api_info::Field {
 
 fn type_from_return_type(return_type: &ReturnType) -> api_info::Type {
     match return_type {
-        ReturnType::Type(_, ref ty) => type_from(ty),
+        ReturnType::Type(_, ty) => type_from(ty),
         _ => api_info::Type::None {},
     }
 }

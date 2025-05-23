@@ -10,13 +10,13 @@ impl Global {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::liteserver::desc::Desc> {
         match self {
-            Global::Liteclient_Config_Global(ref x) => &x.liteservers,
+            Global::Liteclient_Config_Global(x) => &x.liteservers,
         }
     }
 
     pub fn validator(&self) -> &crate::ton::validator::config::global::Global {
         match self {
-            Global::Liteclient_Config_Global(ref x) => &x.validator,
+            Global::Liteclient_Config_Global(x) => &x.validator,
         }
     }
 

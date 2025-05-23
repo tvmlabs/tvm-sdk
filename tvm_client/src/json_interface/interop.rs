@@ -103,13 +103,13 @@ pub fn request_sync(context: ContextHandle, function_name: String, params_json: 
 // C-style interface
 
 /// # Safety
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tc_create_context(config: StringData) -> *const String {
     Box::into_raw(Box::new(create_context(config.to_string())))
 }
 
 /// # Safety
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tc_destroy_context(context: ContextHandle) {
     destroy_context(context)
 }
@@ -118,7 +118,7 @@ pub type CResponseHandler =
     extern "C" fn(request_id: u32, params_json: StringData, response_type: u32, finished: bool);
 
 /// # Safety
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tc_request(
     context: ContextHandle,
     function_name: StringData,
@@ -142,7 +142,7 @@ pub type CResponseHandlerPtr = extern "C" fn(
 );
 
 /// # Safety
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tc_request_ptr(
     context: ContextHandle,
     function_name: StringData,
@@ -159,7 +159,7 @@ pub unsafe extern "C" fn tc_request_ptr(
 }
 
 /// # Safety
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tc_request_sync(
     context: ContextHandle,
     function_name: StringData,
@@ -173,19 +173,21 @@ pub unsafe extern "C" fn tc_request_sync(
 }
 
 /// # Safety
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tc_destroy_string(string: *const String) {
     if string.is_null() {
         return;
     }
-    let string = Box::from_raw(string as *mut String);
-    drop(string);
+    unsafe {
+        let string = Box::from_raw(string as *mut String);
+        drop(string);
+    }
 }
 
 /// # Safety
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tc_read_string(string: *const String) -> StringData {
-    if string.is_null() { StringData::default() } else { StringData::new(&*string) }
+    if string.is_null() { StringData::default() } else { unsafe { StringData::new(&*string) } }
 }
 
 #[repr(C)]

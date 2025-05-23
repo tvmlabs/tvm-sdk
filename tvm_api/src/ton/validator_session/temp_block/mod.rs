@@ -10,13 +10,13 @@ pub enum Id {
 impl Id {
     pub fn block_hash(&self) -> &crate::ton::int256 {
         match self {
-            Id::ValidatorSession_Candidate_Id(ref x) => &x.block_hash,
+            Id::ValidatorSession_Candidate_Id(x) => &x.block_hash,
         }
     }
 
     pub fn round(&self) -> &crate::ton::int256 {
         match self {
-            Id::ValidatorSession_Candidate_Id(ref x) => &x.round,
+            Id::ValidatorSession_Candidate_Id(x) => &x.round,
         }
     }
 

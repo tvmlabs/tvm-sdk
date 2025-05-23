@@ -8,25 +8,25 @@ pub enum Value {
 impl Value {
     pub fn block_id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Value::Db_Celldb_Value(ref x) => &x.block_id,
+            Value::Db_Celldb_Value(x) => &x.block_id,
         }
     }
 
     pub fn next(&self) -> &crate::ton::int256 {
         match self {
-            Value::Db_Celldb_Value(ref x) => &x.next,
+            Value::Db_Celldb_Value(x) => &x.next,
         }
     }
 
     pub fn prev(&self) -> &crate::ton::int256 {
         match self {
-            Value::Db_Celldb_Value(ref x) => &x.prev,
+            Value::Db_Celldb_Value(x) => &x.prev,
         }
     }
 
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
-            Value::Db_Celldb_Value(ref x) => &x.root_hash,
+            Value::Db_Celldb_Value(x) => &x.root_hash,
         }
     }
 

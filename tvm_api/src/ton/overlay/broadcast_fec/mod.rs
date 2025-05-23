@@ -8,31 +8,31 @@ pub enum Id {
 impl Id {
     pub fn data_hash(&self) -> &crate::ton::int256 {
         match self {
-            Id::Overlay_BroadcastFec_Id(ref x) => &x.data_hash,
+            Id::Overlay_BroadcastFec_Id(x) => &x.data_hash,
         }
     }
 
     pub fn flags(&self) -> &crate::ton::int {
         match self {
-            Id::Overlay_BroadcastFec_Id(ref x) => &x.flags,
+            Id::Overlay_BroadcastFec_Id(x) => &x.flags,
         }
     }
 
     pub fn size(&self) -> &crate::ton::int {
         match self {
-            Id::Overlay_BroadcastFec_Id(ref x) => &x.size,
+            Id::Overlay_BroadcastFec_Id(x) => &x.size,
         }
     }
 
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
-            Id::Overlay_BroadcastFec_Id(ref x) => &x.src,
+            Id::Overlay_BroadcastFec_Id(x) => &x.src,
         }
     }
 
     pub fn type_(&self) -> &crate::ton::int256 {
         match self {
-            Id::Overlay_BroadcastFec_Id(ref x) => &x.type_,
+            Id::Overlay_BroadcastFec_Id(x) => &x.type_,
         }
     }
 
@@ -80,19 +80,19 @@ pub enum PartId {
 impl PartId {
     pub fn broadcast_hash(&self) -> &crate::ton::int256 {
         match self {
-            PartId::Overlay_BroadcastFec_PartId(ref x) => &x.broadcast_hash,
+            PartId::Overlay_BroadcastFec_PartId(x) => &x.broadcast_hash,
         }
     }
 
     pub fn data_hash(&self) -> &crate::ton::int256 {
         match self {
-            PartId::Overlay_BroadcastFec_PartId(ref x) => &x.data_hash,
+            PartId::Overlay_BroadcastFec_PartId(x) => &x.data_hash,
         }
     }
 
     pub fn seqno(&self) -> &crate::ton::int {
         match self {
-            PartId::Overlay_BroadcastFec_PartId(ref x) => &x.seqno,
+            PartId::Overlay_BroadcastFec_PartId(x) => &x.seqno,
         }
     }
 

@@ -93,8 +93,8 @@ impl ParamType {
                 signature.replace_range(..1, "(");
                 signature + ")"
             }
-            ParamType::Array(ref param_type) => format!("{}[]", param_type.type_signature()),
-            ParamType::FixedArray(ref param_type, size) => {
+            ParamType::Array(param_type) => format!("{}[]", param_type.type_signature()),
+            ParamType::FixedArray(param_type, size) => {
                 format!("{}[{}]", param_type.type_signature(), size)
             }
             ParamType::Cell => "cell".to_owned(),
@@ -109,10 +109,10 @@ impl ParamType {
             ParamType::Time => "time".to_string(),
             ParamType::Expire => "expire".to_string(),
             ParamType::PublicKey => "pubkey".to_string(),
-            ParamType::Optional(ref param_type) => {
+            ParamType::Optional(param_type) => {
                 format!("optional({})", param_type.type_signature())
             }
-            ParamType::Ref(ref param_type) => format!("ref({})", param_type.type_signature()),
+            ParamType::Ref(param_type) => format!("ref({})", param_type.type_signature()),
         }
     }
 

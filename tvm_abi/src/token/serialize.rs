@@ -146,17 +146,17 @@ impl TokenValue {
             TokenValue::VarUint(size, uint) => Self::write_varuint(uint, *size),
             TokenValue::VarInt(size, int) => Self::write_varint(int, *size),
             TokenValue::Bool(b) => Self::write_bool(b),
-            TokenValue::Tuple(ref tokens) => {
+            TokenValue::Tuple(tokens) => {
                 let mut vec = vec![];
                 for token in tokens.iter() {
                     vec.append(&mut token.value.write_to_cells(abi_version)?);
                 }
                 return Ok(vec);
             }
-            TokenValue::Array(param_type, ref tokens) => {
+            TokenValue::Array(param_type, tokens) => {
                 Self::write_array(param_type, tokens, abi_version)
             }
-            TokenValue::FixedArray(param_type, ref tokens) => {
+            TokenValue::FixedArray(param_type, tokens) => {
                 Self::write_fixed_array(param_type, tokens, abi_version)
             }
             TokenValue::Cell(cell) => Self::write_cell(cell),
@@ -164,9 +164,9 @@ impl TokenValue {
                 Self::write_map(key_type, value_type, value, abi_version)
             }
             TokenValue::Address(address) => Ok(address.write_to_new_cell()?),
-            TokenValue::Bytes(ref arr) => Self::write_bytes(arr, abi_version),
-            TokenValue::FixedBytes(ref arr) => Self::write_fixed_bytes(arr, abi_version),
-            TokenValue::String(ref string) => Self::write_bytes(string.as_bytes(), abi_version),
+            TokenValue::Bytes(arr) => Self::write_bytes(arr, abi_version),
+            TokenValue::FixedBytes(arr) => Self::write_fixed_bytes(arr, abi_version),
+            TokenValue::String(string) => Self::write_bytes(string.as_bytes(), abi_version),
             TokenValue::Token(gram) => Ok(gram.write_to_new_cell()?),
             TokenValue::Time(time) => Ok(time.write_to_new_cell()?),
             TokenValue::Expire(expire) => Ok(expire.write_to_new_cell()?),

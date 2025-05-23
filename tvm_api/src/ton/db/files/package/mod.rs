@@ -8,31 +8,31 @@ pub enum FirstBlock {
 impl FirstBlock {
     pub fn lt(&self) -> &crate::ton::long {
         match self {
-            FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.lt,
+            FirstBlock::Db_Files_Package_FirstBlock(x) => &x.lt,
         }
     }
 
     pub fn seqno(&self) -> &crate::ton::int {
         match self {
-            FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.seqno,
+            FirstBlock::Db_Files_Package_FirstBlock(x) => &x.seqno,
         }
     }
 
     pub fn shard(&self) -> &crate::ton::long {
         match self {
-            FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.shard,
+            FirstBlock::Db_Files_Package_FirstBlock(x) => &x.shard,
         }
     }
 
     pub fn unixtime(&self) -> &crate::ton::int {
         match self {
-            FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.unixtime,
+            FirstBlock::Db_Files_Package_FirstBlock(x) => &x.unixtime,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            FirstBlock::Db_Files_Package_FirstBlock(ref x) => &x.workchain,
+            FirstBlock::Db_Files_Package_FirstBlock(x) => &x.workchain,
         }
     }
 
@@ -82,7 +82,7 @@ pub enum Value {
 impl Value {
     pub fn deleted(&self) -> &crate::ton::Bool {
         match self {
-            Value::Db_Files_Package_Value(ref x) => &x.deleted,
+            Value::Db_Files_Package_Value(x) => &x.deleted,
         }
     }
 
@@ -91,25 +91,25 @@ impl Value {
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::db::files::package::firstblock::FirstBlock>
     {
         match self {
-            Value::Db_Files_Package_Value(ref x) => &x.firstblocks,
+            Value::Db_Files_Package_Value(x) => &x.firstblocks,
         }
     }
 
     pub fn key(&self) -> &crate::ton::Bool {
         match self {
-            Value::Db_Files_Package_Value(ref x) => &x.key,
+            Value::Db_Files_Package_Value(x) => &x.key,
         }
     }
 
     pub fn package_id(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Files_Package_Value(ref x) => &x.package_id,
+            Value::Db_Files_Package_Value(x) => &x.package_id,
         }
     }
 
     pub fn temp(&self) -> &crate::ton::Bool {
         match self {
-            Value::Db_Files_Package_Value(ref x) => &x.temp,
+            Value::Db_Files_Package_Value(x) => &x.temp,
         }
     }
 

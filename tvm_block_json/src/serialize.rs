@@ -2248,7 +2248,7 @@ pub fn db_serialize_message_ex(
 
     serialize_slice(&mut map, "body", set.message.body().as_ref(), true)?;
     match set.message.header() {
-        CommonMsgInfo::IntMsgInfo(ref header) => {
+        CommonMsgInfo::IntMsgInfo(header) => {
             serialize_field(&mut map, "msg_type", 0);
             if mode.is_q_server() {
                 serialize_field(&mut map, "msg_type_name", "internal");
@@ -2268,7 +2268,7 @@ pub fn db_serialize_message_ex(
             serialize_lt(&mut map, "created_lt", &header.created_lt, mode);
             serialize_field(&mut map, "created_at", header.created_at.as_u32());
         }
-        CommonMsgInfo::ExtInMsgInfo(ref header) => {
+        CommonMsgInfo::ExtInMsgInfo(header) => {
             serialize_field(&mut map, "msg_type", 1);
             if mode.is_q_server() {
                 serialize_field(&mut map, "msg_type_name", "extIn");
@@ -2281,7 +2281,7 @@ pub fn db_serialize_message_ex(
                 serialize_field(&mut map, "created_at", now);
             }
         }
-        CommonMsgInfo::ExtOutMsgInfo(ref header) => {
+        CommonMsgInfo::ExtOutMsgInfo(header) => {
             serialize_field(&mut map, "msg_type", 2);
             if mode.is_q_server() {
                 serialize_field(&mut map, "msg_type_name", "extOut");

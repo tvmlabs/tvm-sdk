@@ -665,7 +665,7 @@ fn filter_items(config: &Option<Config>, iv: &mut Vec<Matched<Item>>) {
     .cloned()
     .collect();
 
-    iv.retain(|Matched(ref i, _)| {
+    iv.retain(|Matched(i, _)| {
         let c = match i {
             Item::Constructor(c) => c,
             _ => return true,
@@ -928,7 +928,7 @@ impl WireKind {
 
     fn become_container_for(&mut self, include_determiner: bool, contained: Self) {
         let ty_loc = match self {
-            WireKind::Bare(ref mut t) | WireKind::Boxed(ref mut t) => t,
+            WireKind::Bare(t) | WireKind::Boxed(t) => t,
             _ => unimplemented!(),
         };
         let contained = if include_determiner {

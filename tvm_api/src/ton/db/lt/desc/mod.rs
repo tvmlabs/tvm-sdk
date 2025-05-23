@@ -8,31 +8,31 @@ pub enum Value {
 impl Value {
     pub fn first_idx(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_Desc_Value(ref x) => &x.first_idx,
+            Value::Db_Lt_Desc_Value(x) => &x.first_idx,
         }
     }
 
     pub fn last_idx(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_Desc_Value(ref x) => &x.last_idx,
+            Value::Db_Lt_Desc_Value(x) => &x.last_idx,
         }
     }
 
     pub fn last_lt(&self) -> &crate::ton::long {
         match self {
-            Value::Db_Lt_Desc_Value(ref x) => &x.last_lt,
+            Value::Db_Lt_Desc_Value(x) => &x.last_lt,
         }
     }
 
     pub fn last_seqno(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_Desc_Value(ref x) => &x.last_seqno,
+            Value::Db_Lt_Desc_Value(x) => &x.last_seqno,
         }
     }
 
     pub fn last_ts(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_Desc_Value(ref x) => &x.last_ts,
+            Value::Db_Lt_Desc_Value(x) => &x.last_ts,
         }
     }
 

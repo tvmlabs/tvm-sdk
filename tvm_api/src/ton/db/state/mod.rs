@@ -8,19 +8,19 @@ pub enum AsyncSerializer {
 impl AsyncSerializer {
     pub fn block(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            AsyncSerializer::Db_State_AsyncSerializer(ref x) => &x.block,
+            AsyncSerializer::Db_State_AsyncSerializer(x) => &x.block,
         }
     }
 
     pub fn last(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            AsyncSerializer::Db_State_AsyncSerializer(ref x) => &x.last,
+            AsyncSerializer::Db_State_AsyncSerializer(x) => &x.last,
         }
     }
 
     pub fn last_ts(&self) -> &crate::ton::int {
         match self {
-            AsyncSerializer::Db_State_AsyncSerializer(ref x) => &x.last_ts,
+            AsyncSerializer::Db_State_AsyncSerializer(x) => &x.last_ts,
         }
     }
 
@@ -72,7 +72,7 @@ pub enum DbVersion {
 impl DbVersion {
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            DbVersion::Db_State_DbVersion(ref x) => &x.version,
+            DbVersion::Db_State_DbVersion(x) => &x.version,
         }
     }
 
@@ -120,7 +120,7 @@ pub enum DestroyedSessions {
 impl DestroyedSessions {
     pub fn sessions(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int256> {
         match self {
-            DestroyedSessions::Db_State_DestroyedSessions(ref x) => &x.sessions,
+            DestroyedSessions::Db_State_DestroyedSessions(x) => &x.sessions,
         }
     }
 
@@ -174,7 +174,7 @@ pub enum GcBlockId {
 impl GcBlockId {
     pub fn block(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            GcBlockId::Db_State_GcBlockId(ref x) => &x.block,
+            GcBlockId::Db_State_GcBlockId(x) => &x.block,
         }
     }
 
@@ -224,7 +224,7 @@ impl Hardforks {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Hardforks::Db_State_Hardforks(ref x) => &x.blocks,
+            Hardforks::Db_State_Hardforks(x) => &x.blocks,
         }
     }
 
@@ -272,7 +272,7 @@ pub enum InitBlockId {
 impl InitBlockId {
     pub fn block(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            InitBlockId::Db_State_InitBlockId(ref x) => &x.block,
+            InitBlockId::Db_State_InitBlockId(x) => &x.block,
         }
     }
 
@@ -375,7 +375,7 @@ pub enum ShardClient {
 impl ShardClient {
     pub fn block(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            ShardClient::Db_State_ShardClient(ref x) => &x.block,
+            ShardClient::Db_State_ShardClient(x) => &x.block,
         }
     }
 

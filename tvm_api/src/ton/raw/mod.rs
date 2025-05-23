@@ -10,7 +10,7 @@ impl AppliedShardsInfo {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            AppliedShardsInfo::Raw_AppliedShardsInfo(ref x) => &x.shards,
+            AppliedShardsInfo::Raw_AppliedShardsInfo(x) => &x.shards,
         }
     }
 
@@ -62,43 +62,43 @@ pub enum FullAccountState {
 impl FullAccountState {
     pub fn balance(&self) -> &crate::ton::int64 {
         match self {
-            FullAccountState::Raw_FullAccountState(ref x) => &x.balance,
+            FullAccountState::Raw_FullAccountState(x) => &x.balance,
         }
     }
 
     pub fn block_id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            FullAccountState::Raw_FullAccountState(ref x) => &x.block_id,
+            FullAccountState::Raw_FullAccountState(x) => &x.block_id,
         }
     }
 
     pub fn code(&self) -> &crate::ton::bytes {
         match self {
-            FullAccountState::Raw_FullAccountState(ref x) => &x.code,
+            FullAccountState::Raw_FullAccountState(x) => &x.code,
         }
     }
 
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            FullAccountState::Raw_FullAccountState(ref x) => &x.data,
+            FullAccountState::Raw_FullAccountState(x) => &x.data,
         }
     }
 
     pub fn frozen_hash(&self) -> &crate::ton::bytes {
         match self {
-            FullAccountState::Raw_FullAccountState(ref x) => &x.frozen_hash,
+            FullAccountState::Raw_FullAccountState(x) => &x.frozen_hash,
         }
     }
 
     pub fn last_transaction_id(&self) -> &crate::ton::internal::transactionid::TransactionId {
         match self {
-            FullAccountState::Raw_FullAccountState(ref x) => &x.last_transaction_id,
+            FullAccountState::Raw_FullAccountState(x) => &x.last_transaction_id,
         }
     }
 
     pub fn sync_utime(&self) -> &crate::ton::int53 {
         match self {
-            FullAccountState::Raw_FullAccountState(ref x) => &x.sync_utime,
+            FullAccountState::Raw_FullAccountState(x) => &x.sync_utime,
         }
     }
 
@@ -148,49 +148,49 @@ pub enum Message {
 impl Message {
     pub fn body_hash(&self) -> &crate::ton::bytes {
         match self {
-            Message::Raw_Message(ref x) => &x.body_hash,
+            Message::Raw_Message(x) => &x.body_hash,
         }
     }
 
     pub fn created_lt(&self) -> &crate::ton::int64 {
         match self {
-            Message::Raw_Message(ref x) => &x.created_lt,
+            Message::Raw_Message(x) => &x.created_lt,
         }
     }
 
     pub fn destination(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
-            Message::Raw_Message(ref x) => &x.destination,
+            Message::Raw_Message(x) => &x.destination,
         }
     }
 
     pub fn fwd_fee(&self) -> &crate::ton::int64 {
         match self {
-            Message::Raw_Message(ref x) => &x.fwd_fee,
+            Message::Raw_Message(x) => &x.fwd_fee,
         }
     }
 
     pub fn ihr_fee(&self) -> &crate::ton::int64 {
         match self {
-            Message::Raw_Message(ref x) => &x.ihr_fee,
+            Message::Raw_Message(x) => &x.ihr_fee,
         }
     }
 
     pub fn msg_data(&self) -> &crate::ton::msg::Data {
         match self {
-            Message::Raw_Message(ref x) => &x.msg_data,
+            Message::Raw_Message(x) => &x.msg_data,
         }
     }
 
     pub fn source(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
-            Message::Raw_Message(ref x) => &x.source,
+            Message::Raw_Message(x) => &x.source,
         }
     }
 
     pub fn value(&self) -> &crate::ton::int64 {
         match self {
-            Message::Raw_Message(ref x) => &x.value,
+            Message::Raw_Message(x) => &x.value,
         }
     }
 
@@ -239,7 +239,7 @@ pub enum ShardAccountMeta {
 impl ShardAccountMeta {
     pub fn shard_account_meta(&self) -> Option<&crate::ton::bytes> {
         match self {
-            ShardAccountMeta::Raw_ShardAccountMeta(ref x) => Some(&x.shard_account_meta),
+            ShardAccountMeta::Raw_ShardAccountMeta(x) => Some(&x.shard_account_meta),
             _ => None,
         }
     }
@@ -316,7 +316,7 @@ pub enum ShardAccountState {
 impl ShardAccountState {
     pub fn shard_account(&self) -> Option<&crate::ton::bytes> {
         match self {
-            ShardAccountState::Raw_ShardAccountState(ref x) => Some(&x.shard_account),
+            ShardAccountState::Raw_ShardAccountState(x) => Some(&x.shard_account),
             _ => None,
         }
     }
@@ -384,25 +384,25 @@ pub enum Transaction {
 impl Transaction {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            Transaction::Raw_Transaction(ref x) => &x.data,
+            Transaction::Raw_Transaction(x) => &x.data,
         }
     }
 
     pub fn fee(&self) -> &crate::ton::int64 {
         match self {
-            Transaction::Raw_Transaction(ref x) => &x.fee,
+            Transaction::Raw_Transaction(x) => &x.fee,
         }
     }
 
     pub fn in_msg(&self) -> &crate::ton::raw::message::Message {
         match self {
-            Transaction::Raw_Transaction(ref x) => &x.in_msg,
+            Transaction::Raw_Transaction(x) => &x.in_msg,
         }
     }
 
     pub fn other_fee(&self) -> &crate::ton::int64 {
         match self {
-            Transaction::Raw_Transaction(ref x) => &x.other_fee,
+            Transaction::Raw_Transaction(x) => &x.other_fee,
         }
     }
 
@@ -410,25 +410,25 @@ impl Transaction {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::raw::message::Message> {
         match self {
-            Transaction::Raw_Transaction(ref x) => &x.out_msgs,
+            Transaction::Raw_Transaction(x) => &x.out_msgs,
         }
     }
 
     pub fn storage_fee(&self) -> &crate::ton::int64 {
         match self {
-            Transaction::Raw_Transaction(ref x) => &x.storage_fee,
+            Transaction::Raw_Transaction(x) => &x.storage_fee,
         }
     }
 
     pub fn transaction_id(&self) -> &crate::ton::internal::transactionid::TransactionId {
         match self {
-            Transaction::Raw_Transaction(ref x) => &x.transaction_id,
+            Transaction::Raw_Transaction(x) => &x.transaction_id,
         }
     }
 
     pub fn utime(&self) -> &crate::ton::int53 {
         match self {
-            Transaction::Raw_Transaction(ref x) => &x.utime,
+            Transaction::Raw_Transaction(x) => &x.utime,
         }
     }
 
@@ -476,7 +476,7 @@ pub enum Transactions {
 impl Transactions {
     pub fn previous_transaction_id(&self) -> &crate::ton::internal::transactionid::TransactionId {
         match self {
-            Transactions::Raw_Transactions(ref x) => &x.previous_transaction_id,
+            Transactions::Raw_Transactions(x) => &x.previous_transaction_id,
         }
     }
 
@@ -484,7 +484,7 @@ impl Transactions {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::raw::transaction::Transaction> {
         match self {
-            Transactions::Raw_Transactions(ref x) => &x.transactions,
+            Transactions::Raw_Transactions(x) => &x.transactions,
         }
     }
 

@@ -8,13 +8,13 @@ pub enum Config {
 impl Config {
     pub fn addrs(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::engine::Addr> {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.addrs,
+            Config::Engine_Validator_Config(x) => &x.addrs,
         }
     }
 
     pub fn adnl(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::adnl::Adnl> {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.adnl,
+            Config::Engine_Validator_Config(x) => &x.adnl,
         }
     }
 
@@ -23,19 +23,19 @@ impl Config {
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::controlinterface::ControlInterface>
     {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.control,
+            Config::Engine_Validator_Config(x) => &x.control,
         }
     }
 
     pub fn dht(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::dht::Dht> {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.dht,
+            Config::Engine_Validator_Config(x) => &x.dht,
         }
     }
 
     pub fn fullnode(&self) -> &crate::ton::int256 {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.fullnode,
+            Config::Engine_Validator_Config(x) => &x.fullnode,
         }
     }
 
@@ -46,7 +46,7 @@ impl Config {
         crate::ton::engine::validator::fullnodemaster::FullNodeMaster,
     > {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.fullnodemasters,
+            Config::Engine_Validator_Config(x) => &x.fullnodemasters,
         }
     }
 
@@ -57,13 +57,13 @@ impl Config {
         crate::ton::engine::validator::fullnodeslave::FullNodeSlave,
     > {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.fullnodeslaves,
+            Config::Engine_Validator_Config(x) => &x.fullnodeslaves,
         }
     }
 
     pub fn gc(&self) -> &crate::ton::engine::gc::Gc {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.gc,
+            Config::Engine_Validator_Config(x) => &x.gc,
         }
     }
 
@@ -71,13 +71,13 @@ impl Config {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::liteserver::LiteServer> {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.liteservers,
+            Config::Engine_Validator_Config(x) => &x.liteservers,
         }
     }
 
     pub fn out_port(&self) -> &crate::ton::int {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.out_port,
+            Config::Engine_Validator_Config(x) => &x.out_port,
         }
     }
 
@@ -85,7 +85,7 @@ impl Config {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::Validator> {
         match self {
-            Config::Engine_Validator_Config(ref x) => &x.validators,
+            Config::Engine_Validator_Config(x) => &x.validators,
         }
     }
 
@@ -135,13 +135,13 @@ pub enum ControlQueryError {
 impl ControlQueryError {
     pub fn code(&self) -> &crate::ton::int {
         match self {
-            ControlQueryError::Engine_Validator_ControlQueryError(ref x) => &x.code,
+            ControlQueryError::Engine_Validator_ControlQueryError(x) => &x.code,
         }
     }
 
     pub fn message(&self) -> &crate::ton::string {
         match self {
-            ControlQueryError::Engine_Validator_ControlQueryError(ref x) => &x.message,
+            ControlQueryError::Engine_Validator_ControlQueryError(x) => &x.message,
         }
     }
 
@@ -190,13 +190,13 @@ pub enum DhtServerStatus {
 impl DhtServerStatus {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            DhtServerStatus::Engine_Validator_DhtServerStatus(ref x) => &x.id,
+            DhtServerStatus::Engine_Validator_DhtServerStatus(x) => &x.id,
         }
     }
 
     pub fn status(&self) -> &crate::ton::int {
         match self {
-            DhtServerStatus::Engine_Validator_DhtServerStatus(ref x) => &x.status,
+            DhtServerStatus::Engine_Validator_DhtServerStatus(x) => &x.status,
         }
     }
 
@@ -250,7 +250,7 @@ impl DhtServersStatus {
         crate::ton::engine::validator::dhtserverstatus::DhtServerStatus,
     > {
         match self {
-            DhtServersStatus::Engine_Validator_DhtServersStatus(ref x) => &x.servers,
+            DhtServersStatus::Engine_Validator_DhtServersStatus(x) => &x.servers,
         }
     }
 
@@ -297,25 +297,25 @@ pub enum ElectionBid {
 impl ElectionBid {
     pub fn adnl_addr(&self) -> &crate::ton::int256 {
         match self {
-            ElectionBid::Engine_Validator_ElectionBid(ref x) => &x.adnl_addr,
+            ElectionBid::Engine_Validator_ElectionBid(x) => &x.adnl_addr,
         }
     }
 
     pub fn election_date(&self) -> &crate::ton::int {
         match self {
-            ElectionBid::Engine_Validator_ElectionBid(ref x) => &x.election_date,
+            ElectionBid::Engine_Validator_ElectionBid(x) => &x.election_date,
         }
     }
 
     pub fn perm_key(&self) -> &crate::ton::int256 {
         match self {
-            ElectionBid::Engine_Validator_ElectionBid(ref x) => &x.perm_key,
+            ElectionBid::Engine_Validator_ElectionBid(x) => &x.perm_key,
         }
     }
 
     pub fn to_send_payload(&self) -> &crate::ton::bytes {
         match self {
-            ElectionBid::Engine_Validator_ElectionBid(ref x) => &x.to_send_payload,
+            ElectionBid::Engine_Validator_ElectionBid(x) => &x.to_send_payload,
         }
     }
 
@@ -367,13 +367,13 @@ pub enum FullNodeMaster {
 impl FullNodeMaster {
     pub fn adnl(&self) -> &crate::ton::int256 {
         match self {
-            FullNodeMaster::Engine_Validator_FullNodeMaster(ref x) => &x.adnl,
+            FullNodeMaster::Engine_Validator_FullNodeMaster(x) => &x.adnl,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            FullNodeMaster::Engine_Validator_FullNodeMaster(ref x) => &x.port,
+            FullNodeMaster::Engine_Validator_FullNodeMaster(x) => &x.port,
         }
     }
 
@@ -428,19 +428,19 @@ pub enum FullNodeSlave {
 impl FullNodeSlave {
     pub fn adnl(&self) -> &crate::ton::PublicKey {
         match self {
-            FullNodeSlave::Engine_Validator_FullNodeSlave(ref x) => &x.adnl,
+            FullNodeSlave::Engine_Validator_FullNodeSlave(x) => &x.adnl,
         }
     }
 
     pub fn ip(&self) -> &crate::ton::int {
         match self {
-            FullNodeSlave::Engine_Validator_FullNodeSlave(ref x) => &x.ip,
+            FullNodeSlave::Engine_Validator_FullNodeSlave(x) => &x.ip,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            FullNodeSlave::Engine_Validator_FullNodeSlave(ref x) => &x.port,
+            FullNodeSlave::Engine_Validator_FullNodeSlave(x) => &x.port,
         }
     }
 
@@ -494,19 +494,19 @@ pub enum GroupMember {
 impl GroupMember {
     pub fn adnl(&self) -> &crate::ton::int256 {
         match self {
-            GroupMember::Validator_GroupMember(ref x) => &x.adnl,
+            GroupMember::Validator_GroupMember(x) => &x.adnl,
         }
     }
 
     pub fn public_key_hash(&self) -> &crate::ton::int256 {
         match self {
-            GroupMember::Validator_GroupMember(ref x) => &x.public_key_hash,
+            GroupMember::Validator_GroupMember(x) => &x.public_key_hash,
         }
     }
 
     pub fn weight(&self) -> &crate::ton::long {
         match self {
-            GroupMember::Validator_GroupMember(ref x) => &x.weight,
+            GroupMember::Validator_GroupMember(x) => &x.weight,
         }
     }
 
@@ -551,7 +551,7 @@ pub enum JsonConfig {
 impl JsonConfig {
     pub fn data(&self) -> &crate::ton::string {
         match self {
-            JsonConfig::Engine_Validator_JsonConfig(ref x) => &x.data,
+            JsonConfig::Engine_Validator_JsonConfig(x) => &x.data,
         }
     }
 
@@ -601,7 +601,7 @@ pub enum KeyHash {
 impl KeyHash {
     pub fn key_hash(&self) -> &crate::ton::int256 {
         match self {
-            KeyHash::Engine_Validator_KeyHash(ref x) => &x.key_hash,
+            KeyHash::Engine_Validator_KeyHash(x) => &x.key_hash,
         }
     }
 
@@ -649,13 +649,13 @@ pub enum OneStat {
 impl OneStat {
     pub fn key(&self) -> &crate::ton::string {
         match self {
-            OneStat::Engine_Validator_OneStat(ref x) => &x.key,
+            OneStat::Engine_Validator_OneStat(x) => &x.key,
         }
     }
 
     pub fn value(&self) -> &crate::ton::string {
         match self {
-            OneStat::Engine_Validator_OneStat(ref x) => &x.value,
+            OneStat::Engine_Validator_OneStat(x) => &x.value,
         }
     }
 
@@ -703,13 +703,13 @@ pub enum ProposalVote {
 impl ProposalVote {
     pub fn perm_key(&self) -> &crate::ton::int256 {
         match self {
-            ProposalVote::Engine_Validator_ProposalVote(ref x) => &x.perm_key,
+            ProposalVote::Engine_Validator_ProposalVote(x) => &x.perm_key,
         }
     }
 
     pub fn to_send(&self) -> &crate::ton::bytes {
         match self {
-            ProposalVote::Engine_Validator_ProposalVote(ref x) => &x.to_send,
+            ProposalVote::Engine_Validator_ProposalVote(x) => &x.to_send,
         }
     }
 
@@ -768,7 +768,7 @@ impl SessionStats {
         crate::ton::engine::validator::onesessionstat::OneSessionStat,
     > {
         match self {
-            SessionStats::Engine_Validator_SessionStats(ref x) => &x.stats,
+            SessionStats::Engine_Validator_SessionStats(x) => &x.stats,
         }
     }
 
@@ -822,7 +822,7 @@ pub enum Signature {
 impl Signature {
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            Signature::Engine_Validator_Signature(ref x) => &x.signature,
+            Signature::Engine_Validator_Signature(x) => &x.signature,
         }
     }
 
@@ -875,7 +875,7 @@ impl Stats {
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::validator::onestat::OneStat>
     {
         match self {
-            Stats::Engine_Validator_Stats(ref x) => &x.stats,
+            Stats::Engine_Validator_Stats(x) => &x.stats,
         }
     }
 
@@ -952,7 +952,7 @@ pub enum Time {
 impl Time {
     pub fn time(&self) -> &crate::ton::int {
         match self {
-            Time::Engine_Validator_Time(ref x) => &x.time,
+            Time::Engine_Validator_Time(x) => &x.time,
         }
     }
 

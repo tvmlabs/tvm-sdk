@@ -205,19 +205,19 @@ pub enum Id {
 impl Id {
     pub fn data_hash(&self) -> &crate::ton::int256 {
         match self {
-            Id::Overlay_Broadcast_Id(ref x) => &x.data_hash,
+            Id::Overlay_Broadcast_Id(x) => &x.data_hash,
         }
     }
 
     pub fn flags(&self) -> &crate::ton::int {
         match self {
-            Id::Overlay_Broadcast_Id(ref x) => &x.flags,
+            Id::Overlay_Broadcast_Id(x) => &x.flags,
         }
     }
 
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
-            Id::Overlay_Broadcast_Id(ref x) => &x.src,
+            Id::Overlay_Broadcast_Id(x) => &x.src,
         }
     }
 
@@ -265,13 +265,13 @@ pub enum ToSign {
 impl ToSign {
     pub fn date(&self) -> &crate::ton::int {
         match self {
-            ToSign::Overlay_Broadcast_ToSign(ref x) => &x.date,
+            ToSign::Overlay_Broadcast_ToSign(x) => &x.date,
         }
     }
 
     pub fn hash(&self) -> &crate::ton::int256 {
         match self {
-            ToSign::Overlay_Broadcast_ToSign(ref x) => &x.hash,
+            ToSign::Overlay_Broadcast_ToSign(x) => &x.hash,
         }
     }
 

@@ -8,13 +8,13 @@ pub enum Header {
 impl Header {
     pub fn name(&self) -> &crate::ton::string {
         match self {
-            Header::Http_Header(ref x) => &x.name,
+            Header::Http_Header(x) => &x.name,
         }
     }
 
     pub fn value(&self) -> &crate::ton::string {
         match self {
-            Header::Http_Header(ref x) => &x.value,
+            Header::Http_Header(x) => &x.value,
         }
     }
 
@@ -62,13 +62,13 @@ pub enum PayloadPart {
 impl PayloadPart {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            PayloadPart::Http_PayloadPart(ref x) => &x.data,
+            PayloadPart::Http_PayloadPart(x) => &x.data,
         }
     }
 
     pub fn last(&self) -> &crate::ton::Bool {
         match self {
-            PayloadPart::Http_PayloadPart(ref x) => &x.last,
+            PayloadPart::Http_PayloadPart(x) => &x.last,
         }
     }
 
@@ -76,7 +76,7 @@ impl PayloadPart {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::header::Header> {
         match self {
-            PayloadPart::Http_PayloadPart(ref x) => &x.trailer,
+            PayloadPart::Http_PayloadPart(x) => &x.trailer,
         }
     }
 
@@ -126,25 +126,25 @@ impl Response {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::header::Header> {
         match self {
-            Response::Http_Response(ref x) => &x.headers,
+            Response::Http_Response(x) => &x.headers,
         }
     }
 
     pub fn http_version(&self) -> &crate::ton::string {
         match self {
-            Response::Http_Response(ref x) => &x.http_version,
+            Response::Http_Response(x) => &x.http_version,
         }
     }
 
     pub fn reason(&self) -> &crate::ton::string {
         match self {
-            Response::Http_Response(ref x) => &x.reason,
+            Response::Http_Response(x) => &x.reason,
         }
     }
 
     pub fn status_code(&self) -> &crate::ton::int {
         match self {
-            Response::Http_Response(ref x) => &x.status_code,
+            Response::Http_Response(x) => &x.status_code,
         }
     }
 

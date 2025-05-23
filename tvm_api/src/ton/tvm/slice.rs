@@ -12,7 +12,7 @@ impl crate::BareSerialize for Slice {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let Slice { bytes: ref bytes_ } = self;
+        let Slice { bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
         Ok(())
     }

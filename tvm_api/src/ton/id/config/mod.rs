@@ -8,7 +8,7 @@ pub enum Local {
 impl Local {
     pub fn id(&self) -> &crate::ton::PrivateKey {
         match self {
-            Local::Id_Config_Local(ref x) => &x.id,
+            Local::Id_Config_Local(x) => &x.id,
         }
     }
 

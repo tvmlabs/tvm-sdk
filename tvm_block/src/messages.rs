@@ -440,7 +440,7 @@ impl MsgAddressInt {
             }
         };
 
-        if let Some(ref anycast) = anycast_opt {
+        if let Some(anycast) = anycast_opt {
             if do_rewrite {
                 account_id.overwrite_prefix(&anycast.rewrite_pfx)?;
             }
@@ -1179,13 +1179,13 @@ impl Message {
     /// Get reference to source internal address.
     pub fn src_ref(&self) -> Option<&MsgAddressInt> {
         let addr1 = match self.header() {
-            CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
-            CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
+            CommonMsgInfo::IntMsgInfo(imi) => &imi.src,
+            CommonMsgInfo::ExtOutMsgInfo(eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
         };
         match addr1 {
             MsgAddressIntOrNone::None => None,
-            MsgAddressIntOrNone::Some(ref addr) => Some(addr),
+            MsgAddressIntOrNone::Some(addr) => Some(addr),
         }
     }
 
@@ -1314,8 +1314,8 @@ impl Message {
     /// Get destination workchain of message
     pub fn dst_workchain_id(&self) -> Option<i32> {
         match &self.header {
-            CommonMsgInfo::IntMsgInfo(ref imi) => Some(imi.dst.get_workchain_id()),
-            CommonMsgInfo::ExtInMsgInfo(ref eimi) => Some(eimi.dst.get_workchain_id()),
+            CommonMsgInfo::IntMsgInfo(imi) => Some(imi.dst.get_workchain_id()),
+            CommonMsgInfo::ExtInMsgInfo(eimi) => Some(eimi.dst.get_workchain_id()),
             CommonMsgInfo::ExtOutMsgInfo(_) => None,
         }
     }
@@ -1328,13 +1328,13 @@ impl Message {
     /// Get source workchain of message
     pub fn src_workchain_id(&self) -> Option<i32> {
         let addr1 = match self.header() {
-            CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
-            CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
+            CommonMsgInfo::IntMsgInfo(imi) => &imi.src,
+            CommonMsgInfo::ExtOutMsgInfo(eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
         };
         match addr1 {
             MsgAddressIntOrNone::None => None,
-            MsgAddressIntOrNone::Some(ref addr) => Some(addr.get_workchain_id()),
+            MsgAddressIntOrNone::Some(addr) => Some(addr.get_workchain_id()),
         }
     }
 

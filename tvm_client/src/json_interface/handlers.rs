@@ -138,7 +138,7 @@ fn check_type(
 ) {
     match field_type {
         Type::Array { item } => {
-            if let Value::Array(ref vec) = value {
+            if let Value::Array(vec) = value {
                 for (index, val) in vec.iter().enumerate() {
                     check_type(
                         &path.append(&format!("{}[{}]", path.resolve_field_name(), index)),
@@ -157,7 +157,7 @@ fn check_type(
                 ));
             }
         }
-        Type::Struct { ref fields } => {
+        Type::Struct { fields } => {
             if let Value::Object(map) = value {
                 for struct_field in fields {
                     check_params_for_known_errors(
