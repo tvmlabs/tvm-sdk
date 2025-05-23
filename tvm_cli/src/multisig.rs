@@ -207,8 +207,9 @@ impl CallArgs {
             .get_one::<String>("DEST")
             .map(|s| s.to_owned())
             .ok_or("--dst parameter is not defined".to_string())?;
-        let value =
-            matches.get_one::<String>("VALUE").ok_or("--value parameter is not defined".to_string())?;
+        let value = matches
+            .get_one::<String>("VALUE")
+            .ok_or("--value parameter is not defined".to_string())?;
         let value = convert::convert_token(value)?;
         let comment = matches.get_one::<String>("PURPOSE").map(|s| s.to_owned());
         let body = if let Some(ref txt) = comment {
@@ -377,9 +378,8 @@ impl MultisigArgs {
 }
 
 pub fn create_multisig_command() -> Command {
-    let v2_arg = Arg::new("V2")
-        .long("--v2")
-        .help("Force to interact with wallet account as multisig v2.");
+    let v2_arg =
+        Arg::new("V2").long("--v2").help("Force to interact with wallet account as multisig v2.");
     let bounce_arg = Arg::new("BOUNCE")
         .long("--bounce")
         .short('b')

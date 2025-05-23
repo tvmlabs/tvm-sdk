@@ -455,7 +455,9 @@ async fn debug_transaction_command(
     config: &Config,
     is_account: bool,
 ) -> Result<(), String> {
-    let trace_path = Some(matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH));
+    let trace_path = Some(
+        matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH),
+    );
     let config_path = matches.get_one::<String>("CONFIG_PATH");
     let contract_path = matches.get_one::<String>("CONTRACT_PATH");
     let is_default_config = matches.contains_id("DEFAULT_CONFIG");
@@ -469,9 +471,14 @@ async fn debug_transaction_command(
         (tx_id.unwrap().to_string(), address)
     } else {
         let address = Some(
-            matches.get_one::<String>("ADDRESS").map(|s| s.to_string()).or(config.addr.clone()).ok_or(
-                "ADDRESS is not defined. Supply it in the config file or command line.".to_string(),
-            )?,
+            matches
+                .get_one::<String>("ADDRESS")
+                .map(|s| s.to_string())
+                .or(config.addr.clone())
+                .ok_or(
+                    "ADDRESS is not defined. Supply it in the config file or command line."
+                        .to_string(),
+                )?,
         );
         if !config.is_json {
             print_args!(address, trace_path, config_path, contract_path);
@@ -548,7 +555,9 @@ async fn debug_transaction_command(
 async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let tx_id = matches.get_one::<String>("TX_ID");
     let config_path = matches.get_one::<String>("CONFIG_PATH").map(|s| s.as_str());
-    let output = Some(matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH));
+    let output = Some(
+        matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH),
+    );
     let input = matches.get_one::<String>("INPUT");
     let do_update = matches.contains_id("UPDATE_STATE");
 
@@ -680,7 +689,9 @@ async fn debug_call_command(
 ) -> Result<(), String> {
     let (input, opt_abi, sign) = contract_data_from_matches_or_config_alias(matches, full_config)?;
     let input = input.as_ref();
-    let output = Some(matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH));
+    let output = Some(
+        matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH),
+    );
     let method = Some(
         matches
             .get_one::<String>("METHOD")
@@ -709,7 +720,11 @@ async fn debug_call_command(
     let tvm_client;
     let mut account = if is_tvc {
         tvm_client = create_client_local()?;
-        construct_account_from_tvc(input, matches.get_one::<String>("ACCOUNT_ADDRESS").map(|s| s.as_str()), Some(u64::MAX))?
+        construct_account_from_tvc(
+            input,
+            matches.get_one::<String>("ACCOUNT_ADDRESS").map(|s| s.as_str()),
+            Some(u64::MAX),
+        )?
     } else if is_boc {
         tvm_client = create_client_local()?;
         Account::construct_from_file(input)
@@ -782,8 +797,11 @@ async fn debug_call_command(
     let trace_path = output.unwrap();
     init_debug_logger(trace_path)?;
 
-    let bc_config =
-        get_blockchain_config(&full_config.config, matches.get_one::<String>("CONFIG_PATH").map(|s| s.as_str())).await?;
+    let bc_config = get_blockchain_config(
+        &full_config.config,
+        matches.get_one::<String>("CONFIG_PATH").map(|s| s.as_str()),
+    )
+    .await?;
     let trans = execute_debug(
         bc_config,
         &mut acc_root,
@@ -846,7 +864,9 @@ async fn debug_call_command(
 
 async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let input = matches.get_one::<String>("ADDRESS");
-    let output = Some(matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH));
+    let output = Some(
+        matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH),
+    );
     let debug_info = matches.get_one::<String>("DBG_INFO").map(|s| s.to_string());
     let is_boc = matches.contains_id("BOC");
     let message = matches.get_one::<String>("MESSAGE");
@@ -881,7 +901,8 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
 
     let now = parse_now(matches)?;
     let result = execute_debug(
-        get_blockchain_config(config, matches.get_one::<String>("CONFIG_PATH").map(|s| s.as_str())).await?,
+        get_blockchain_config(config, matches.get_one::<String>("CONFIG_PATH").map(|s| s.as_str()))
+            .await?,
         &mut acc_root,
         Some(&message),
         Some(matches),
@@ -924,13 +945,16 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
 
 async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let tvc = matches.get_one::<String>("TVC");
-    let output = Some(matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH));
+    let output = Some(
+        matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH),
+    );
     let opt_abi = Some(abi_from_matches_or_config(matches, config)?);
     let debug_info = matches
         .get_one::<String>("DBG_INFO")
         .map(|s| s.to_string())
         .or(load_debug_info(opt_abi.as_ref().unwrap()));
-    let sign = matches.get_one::<String>("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
+    let sign =
+        matches.get_one::<String>("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
     let params = Some(
         unpack_alternative_params(matches, opt_abi.as_ref().unwrap(), "constructor", config)
             .await?,
@@ -949,13 +973,14 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
         config,
     )
     .await?;
-    let initial_balance_opt = if let Some(initial_balance) = matches.get_one::<String>("INITIAL_BALANCE") {
-        initial_balance.parse().ok()
-    } else if matches.contains_id("INIT_BALANCE") {
-        Some(u64::MAX)
-    } else {
-        None
-    };
+    let initial_balance_opt =
+        if let Some(initial_balance) = matches.get_one::<String>("INITIAL_BALANCE") {
+            initial_balance.parse().ok()
+        } else if matches.contains_id("INIT_BALANCE") {
+            Some(u64::MAX)
+        } else {
+            None
+        };
     let ton_client = create_client(config)?;
     let enc_msg = encode_message(ton_client.clone(), msg.clone())
         .await
@@ -986,7 +1011,8 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
     let now = parse_now(matches)?;
 
     let trans = execute_debug(
-        get_blockchain_config(config, matches.get_one::<String>("CONFIG_PATH").map(|s| s.as_str())).await?,
+        get_blockchain_config(config, matches.get_one::<String>("CONFIG_PATH").map(|s| s.as_str()))
+            .await?,
         &mut acc_root,
         Some(&message),
         Some(matches),
