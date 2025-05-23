@@ -231,8 +231,8 @@ impl<'a, 'b> JsonPath<'a, 'b> {
     fn gen_display_str(&self) -> String {
         match self {
             JsonPath::InitialEntity(name) => name.to_string(),
-            JsonPath::Field { parent, field_name } => format!("{}.{}", parent, field_name),
-            JsonPath::Index { parent, index } => format!("{}[{}]", parent, index),
+            JsonPath::Field { parent, field_name } => format!("{parent}.{field_name}"),
+            JsonPath::Index { parent, index } => format!("{parent}[{index}]"),
         }
     }
 }
@@ -289,9 +289,6 @@ pub(crate) fn compare_values(
 
     Err(Error::data_differs_from_proven(format!(
         "field `{path}`: expected {expected:?}, actual {actual:?}",
-        path = path,
-        actual = actual,
-        expected = expected,
     )))
 }
 
@@ -358,7 +355,7 @@ fn get_string(value: &Value, is_numeric: bool) -> Cow<str> {
             if value < 0 {
                 return Cow::Owned(format!("-0x{:x}", value.abs()));
             }
-            return Cow::Owned(format!("0x{:x}", value));
+            return Cow::Owned(format!("0x{value:x}"));
         }
     }
 
@@ -394,7 +391,7 @@ fn add_time_strings(value: &mut Value, paths: &HashSet<&'static str>, path: Json
                     _ => continue,
                 };
 
-                map.insert(format!("{}_string", key), unix_time_to_string(unix_time).into());
+                map.insert(format!("{key}_string"), unix_time_to_string(unix_time).into());
             }
             for (key, value) in map.iter_mut() {
                 add_time_strings(value, paths, path.join_field(key));

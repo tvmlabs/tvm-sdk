@@ -382,10 +382,10 @@ impl QueryOperationBuilder {
         self.add_header(if self.param_count == 0 { "(" } else { "," });
         self.param_count += 1;
         let param_name = format!("p{}", self.param_count);
-        self.add_header(&format!("${}: {}", param_name, type_decl));
+        self.add_header(&format!("${param_name}: {type_decl}"));
         self.add_body(if self.op_param_count == 0 { "(" } else { "," });
         self.op_param_count += 1;
-        self.add_body(&format!("{}: ${}", name, param_name));
+        self.add_body(&format!("{name}: ${param_name}"));
         if let Some(ref mut variables) = self.variables {
             variables[param_name] = value.clone();
         } else {
@@ -444,8 +444,7 @@ impl GraphQLQuery {
         let mut result_data = &result["data"][result_name.as_str()];
         if result_data.is_null() {
             return Err(crate::net::Error::invalid_server_response(format!(
-                "Missing data.{} in: {}",
-                result_name, result
+                "Missing data.{result_name} in: {result}"
             )));
         }
         if let Some(ParamsOfQueryOperation::WaitForCollection(_)) = param {
@@ -493,10 +492,7 @@ impl GraphQLQuery {
     pub fn with_collection_subscription(table: &str, filter: &Value, fields: &str) -> Self {
         let filter_type = Self::filter_type_for_collection(table);
 
-        let query = format!("subscription {table}($filter: {type}) {{ {table}(filter: $filter) {{ {fields} }} }}",
-            type=filter_type,
-            table=table,
-            fields=fields);
+        let query = format!("subscription {table}($filter: {filter_type}) {{ {table}(filter: $filter) {{ {fields} }} }}");
         let query = query.split_whitespace().collect::<Vec<&str>>().join(" ");
         let variables = Some(json!({
             "filter" : filter,
@@ -513,7 +509,7 @@ impl GraphQLQuery {
 
     pub fn filter_type_for_collection(collection: &str) -> String {
         let mut filter_type = if let Some(prefix) = collection.strip_suffix("ies") {
-            format!("{}yFilter", prefix)
+            format!("{prefix}yFilter")
         } else {
             format!("{}Filter", &collection[0..collection.len() - 1])
         };

@@ -279,7 +279,7 @@ pub trait GetRepresentationHash: Serializable + std::fmt::Debug {
     fn hash(&self) -> Result<UInt256> {
         match self.serialize() {
             Err(err) => {
-                log::error!("err: {}, wrong hash calculation for {:?}", err, self);
+                log::error!("err: {err}, wrong hash calculation for {self:?}");
                 Err(err)
             }
             Ok(cell) => Ok(cell.repr_hash()),

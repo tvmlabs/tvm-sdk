@@ -50,7 +50,7 @@ impl DebotInterface for InputInterface {
                 let res = self.inner_interface.call(func, args).await?;
                 Ok(res)
             }
-            Err(e) => return Err(format!("{:?}", e)),
+            Err(e) => return Err(format!("{e:?}")),
             Ok(params) => {
                 let prompt = decode_prompt(args);
                 let title = decode_string_arg(args, "title");

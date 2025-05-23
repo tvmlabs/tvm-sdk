@@ -91,7 +91,7 @@ impl SaveList {
 
     pub fn put_opt(&mut self, index: usize, value: &mut StackItem) -> Option<StackItem> {
         debug_assert!(Self::can_put(index, value));
-        std::mem::replace(&mut self.storage[Self::adjust(index)], Some(value.withdraw()))
+        self.storage[Self::adjust(index)].replace(value.withdraw())
     }
 
     pub fn apply(&mut self, other: &mut Self) {
@@ -161,7 +161,7 @@ impl fmt::Display for SaveList {
         writeln!(f, "--- Control registers ------------------")?;
         for i in 0..Self::NUMREGS {
             if let Some(item) = &self.storage[i] {
-                writeln!(f, "{}: {}", i, item)?
+                writeln!(f, "{i}: {item}")?
             }
         }
         writeln!(f, "{:-<40}", "")

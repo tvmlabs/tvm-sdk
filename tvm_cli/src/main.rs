@@ -142,7 +142,7 @@ fn main() {
     let result = runtime.block_on(async move { main_internal().await });
     if let Err(err_str) = result {
         if !err_str.is_empty() {
-            println!("{}", err_str);
+            println!("{err_str}");
         }
         exit(1)
     }
@@ -626,7 +626,7 @@ async fn main_internal() -> Result<(), String> {
             .help("Network message processing timeout in ms."))
         .arg(Arg::new("LIST")
             .long("--list")
-            .conflicts_with_all(&["OUT_OF_SYNC", "NO_ANSWER","DEBUG_FAIL", "ASYNC_CALL", "LOCAL_RUN", "BALANCE_IN_VMSHELLS", "LIFETIME", "DEPOOL_FEE", "PUBKEY", "URL", "ABI", "KEYS", "ADDR", "RETRIES", "TIMEOUT", "WC", "WALLET"])
+            .conflicts_with_all(["OUT_OF_SYNC", "NO_ANSWER","DEBUG_FAIL", "ASYNC_CALL", "LOCAL_RUN", "BALANCE_IN_VMSHELLS", "LIFETIME", "DEPOOL_FEE", "PUBKEY", "URL", "ABI", "KEYS", "ADDR", "RETRIES", "TIMEOUT", "WC", "WALLET"])
             .help("Prints all config parameters."))
         .arg(Arg::new("DEPOOL_FEE")
             .long("--depool_fee")
@@ -940,11 +940,11 @@ async fn main_internal() -> Result<(), String> {
             exit(0);
         }
         ErrorKind::DisplayHelp => {
-            println!("{}", e);
+            println!("{e}");
             exit(0);
         }
         _ => {
-            eprintln!("{}", e);
+            eprintln!("{e}");
             format!("{:#}", json!({"Error": e.to_string()}))
         }
     })?;
@@ -1177,7 +1177,7 @@ async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
     }
 
     let params = serde_json::from_str(&params.unwrap())
-        .map_err(|e| format!("arguments are not in json format: {}", e))?;
+        .map_err(|e| format!("arguments are not in json format: {e}"))?;
 
     let client = create_client_local()?;
     let body = tvm_client::abi::encode_message_body(
@@ -1191,14 +1191,14 @@ async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
         },
     )
     .await
-    .map_err(|e| format!("failed to encode body: {}", e))
+    .map_err(|e| format!("failed to encode body: {e}"))
     .map(|r| r.body)?;
 
     if !config.is_json {
-        println!("Message body: {}", body);
+        println!("Message body: {body}");
     } else {
         println!("{{");
-        println!("  \"Message\": \"{}\"", body);
+        println!("  \"Message\": \"{body}\"");
         println!("}}");
     }
 
@@ -1355,7 +1355,7 @@ async fn deploy_command(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
     if !config.is_json {
-        let opt_wc = Some(format!("{}", wc));
+        let opt_wc = Some(format!("{wc}"));
         print_args!(tvc, params, abi, keys, opt_wc, alias);
     }
     match deploy_type {
@@ -1414,7 +1414,7 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
 
     let alias = matches.get_one::<String>("ALIAS").map(|s| s.as_str());
     if !config.is_json {
-        let opt_wc = Some(format!("{}", wc));
+        let opt_wc = Some(format!("{wc}"));
         print_args!(tvc, params, abi, keys, opt_wc, alias);
     }
     deploy_contract(
@@ -1484,7 +1484,7 @@ fn config_command(
     println!(
         "{}",
         serde_json::to_string_pretty(&full_config.config)
-            .map_err(|e| format!("failed to print config parameters: {}", e))?
+            .map_err(|e| format!("failed to print config parameters: {e}"))?
     );
     result
 }
@@ -1537,7 +1537,7 @@ async fn account_command(matches: &ArgMatches, config: &Config) -> Result<(), St
             formatted_list.push(formatted);
         } else {
             if !std::path::Path::new(address).exists() {
-                return Err(format!("File {} doesn't exist.", address));
+                return Err(format!("File {address} doesn't exist."));
             }
             formatted_list.push(address.to_string());
         }
@@ -1574,7 +1574,7 @@ async fn account_wait_command(matches: &ArgMatches, config: &Config) -> Result<(
         .map(|s| s.as_str())
         .unwrap_or("30")
         .parse::<u64>()
-        .map_err(|e| format!("failed to parse timeout: {}", e))?;
+        .map_err(|e| format!("failed to parse timeout: {e}"))?;
     wait_for_change(config, &address, timeout).await
 }
 
@@ -1596,7 +1596,7 @@ async fn storage_command(matches: &ArgMatches, config: &Config) -> Result<(), St
     let address = load_ton_address(address.unwrap(), config)?;
     let period = period
         .map(|val| {
-            u32::from_str_radix(val, 10).map_err(|e| format!("failed to parse period: {}", e))
+            u32::from_str_radix(val, 10).map_err(|e| format!("failed to parse period: {e}"))
         })
         .transpose()?
         .unwrap_or(DEF_STORAGE_PERIOD);
@@ -1696,22 +1696,22 @@ fn nodeid_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
         print_args!(key, keypair);
     }
     let nodeid = if let Some(key) = key {
-        let vec = hex::decode(key).map_err(|e| format!("failed to decode public key: {}", e))?;
+        let vec = hex::decode(key).map_err(|e| format!("failed to decode public key: {e}"))?;
         convert::nodeid_from_pubkey(&vec)?
     } else if let Some(pair) = keypair {
         let pair = crypto::load_keypair(pair)?;
         convert::nodeid_from_pubkey(
             &hex::decode(&pair.public)
-                .map_err(|e| format!("failed to decode public key: {}", e))?,
+                .map_err(|e| format!("failed to decode public key: {e}"))?,
         )?
     } else {
         return Err("Either public key or key pair parameter should be provided".to_owned());
     };
     if !config.is_json {
-        println!("{}", nodeid);
+        println!("{nodeid}");
     } else {
         println!("{{");
-        println!("  \"nodeid\": \"{}\"", nodeid);
+        println!("  \"nodeid\": \"{nodeid}\"");
         println!("}}");
     }
     Ok(())

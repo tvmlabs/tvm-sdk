@@ -64,10 +64,10 @@ impl NumberInput {
         let prompt = decode_prompt(args)?;
         let min = decode_int256(args, "min")?;
         let max = decode_int256(args, "max")?;
-        let prompt = format!("{}\n(>= {} and <= {})", prompt, min, max);
+        let prompt = format!("{prompt}\n(>= {min} and <= {max})");
         let value = terminal_input(&prompt, |val| {
             let number = decode_abi_bigint(val.as_str())
-                .map_err(|e| format!("input is not a valid number: {}", e))?;
+                .map_err(|e| format!("input is not a valid number: {e}"))?;
             if number < min || number > max {
                 return Err("number is out of range".to_string());
             }
@@ -90,7 +90,7 @@ impl DebotInterface for NumberInput {
     async fn call(&self, func: &str, args: &Value) -> InterfaceResult {
         match func {
             "get" => self.get(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

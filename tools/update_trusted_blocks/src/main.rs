@@ -18,9 +18,9 @@ fn with_project(endpoint: &str) -> String {
     match env::var(key) {
         Ok(project) => {
             if endpoint.ends_with('/') {
-                format!("{}{}", endpoint, project)
+                format!("{endpoint}{project}")
             } else {
-                format!("{}/{}", endpoint, project)
+                format!("{endpoint}/{project}")
             }
         }
         Err(_) => endpoint.to_string(),
@@ -32,7 +32,7 @@ async fn query_network_keyblocks(
     zs_root_hash: UInt256,
     trusted_blocks: Option<Vec<(u32, [u8; 32])>>,
 ) -> Result<Vec<(u32, [u8; 32])>> {
-    println!("*** [{}] ***", endpoint);
+    println!("*** [{endpoint}] ***");
     let context = Arc::new(ClientContext::new(serde_json::from_value(json!({
         "network": {
             "endpoints": [endpoint],
@@ -76,14 +76,14 @@ async fn query_network_keyblocks(
         .result;
 
         if key_blocks.is_empty() {
-            println!("*** [{} done] ***", endpoint);
+            println!("*** [{endpoint} done] ***");
             return Ok(result);
         }
 
         for key_block in key_blocks {
             let seq_no =
                 key_block["seq_no"].as_u64().expect("Field `seq_no` must be an integer") as u32;
-            print!("Proof for key_block #{}...", seq_no);
+            print!("Proof for key_block #{seq_no}...");
             proof_block_data(
                 Arc::clone(&context),
                 ParamsOfProofBlockData { block: key_block.clone() },

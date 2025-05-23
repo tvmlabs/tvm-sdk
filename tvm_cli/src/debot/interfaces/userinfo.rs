@@ -116,7 +116,7 @@ impl DebotInterface for UserInfo {
             "getAccount" => self.get_account(args),
             "getPublicKey" => self.get_public_key(args),
             "getSigningBox" => self.get_signing_box(args).await,
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

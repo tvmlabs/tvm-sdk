@@ -142,7 +142,7 @@ impl ToString for OIDCProvider {
             Self::KarrierOne => "KarrierOne".to_string(),
             Self::Credenza3 => "Credenza3".to_string(),
             Self::AwsTenant((region, tenant_id)) => {
-                format!("AwsTenant-region:{}-tenant_id:{}", region, tenant_id)
+                format!("AwsTenant-region:{region}-tenant_id:{tenant_id}")
             }
         }
     }
@@ -180,10 +180,9 @@ impl OIDCProvider {
                 "https://login.microsoftonline.com/common/discovery/v2.0/keys",
             ),
             OIDCProvider::AwsTenant((region, tenant_id)) => ProviderConfig::new(
-                &format!("https://cognito-idp.{}.amazonaws.com/{}", region, tenant_id),
+                &format!("https://cognito-idp.{region}.amazonaws.com/{tenant_id}"),
                 &format!(
-                    "https://cognito-idp.{}.amazonaws.com/{}/.well-known/jwks.json",
-                    region, tenant_id
+                    "https://cognito-idp.{region}.amazonaws.com/{tenant_id}/.well-known/jwks.json"
                 ),
             ),
             OIDCProvider::KarrierOne => ProviderConfig::new(

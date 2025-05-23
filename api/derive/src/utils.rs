@@ -88,7 +88,7 @@ pub(crate) fn module_to_tokens(m: &api_info::Module) -> TokenStream {
 
 pub(crate) fn const_value_to_tokens(v: &api_info::ConstValue) -> TokenStream {
     match v {
-        api_info::ConstValue::None {} => quote! { api_info::ConstValue::None {} },
+        api_info::ConstValue::None => quote! { api_info::ConstValue::None {} },
         api_info::ConstValue::Bool(repr) => quote! { api_info::ConstValue::Bool(#repr.into()) },
         api_info::ConstValue::String(repr) => {
             quote! { api_info::ConstValue::String(#repr.into()) }
@@ -140,9 +140,9 @@ fn number_type_to_tokens(number_type: &NumberType) -> TokenStream {
 
 fn type_to_tokens(t: &api_info::Type) -> TokenStream {
     match t {
-        api_info::Type::None {} => quote! { api_info::Type::None {} },
-        api_info::Type::Any {} => quote! { api_info::Type::Any {} },
-        api_info::Type::Boolean {} => quote! { api_info::Type::Boolean {} },
+        api_info::Type::None => quote! { api_info::Type::None {} },
+        api_info::Type::Any => quote! { api_info::Type::Any {} },
+        api_info::Type::Boolean => quote! { api_info::Type::Boolean {} },
         api_info::Type::Number { number_type, number_size: size } => {
             let number_type_tokens = number_type_to_tokens(number_type);
             quote! { api_info::Type::Number { number_type: #number_type_tokens, number_size: #size } }
@@ -151,7 +151,7 @@ fn type_to_tokens(t: &api_info::Type) -> TokenStream {
             let number_type_tokens = number_type_to_tokens(number_type);
             quote! { api_info::Type::BigInt { number_type: #number_type_tokens, number_size: #size } }
         }
-        api_info::Type::String {} => quote! { api_info::Type::String {} },
+        api_info::Type::String => quote! { api_info::Type::String {} },
         api_info::Type::Ref { name } => {
             quote! { api_info::Type::Ref { name: #name.into() } }
         }

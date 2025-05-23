@@ -97,7 +97,7 @@ async fn query_by_url(
     timeout: u32,
 ) -> ClientResult<Value> {
     let response = client_env
-        .fetch(&format!("{}?query={}", address, query), FetchMethod::Get, None, None, timeout)
+        .fetch(&format!("{address}?query={query}"), FetchMethod::Get, None, None, timeout)
         .await?;
 
     response.body_as_json()
@@ -177,7 +177,7 @@ impl NetworkState {
         self.suspend(&regulation.sender).await;
 
         let timeout = self.next_resume_timeout();
-        log::debug!("Internal resume timeout {}", timeout);
+        log::debug!("Internal resume timeout {timeout}");
 
         let env = self.client_env.clone();
         let regulation = self.suspend_regulation.clone();
@@ -435,7 +435,7 @@ impl ServerLink {
     ) -> ClientResult<Subscription> {
         self.subscribe_operation(
             GraphQLQuery::with_collection_subscription(table, filter, fields),
-            format!("/{}", table),
+            format!("/{table}"),
         )
         .await
     }
@@ -655,15 +655,14 @@ impl ServerLink {
             };
 
             if let Err(err) = &result {
-                if crate::client::Error::is_network_error(err) {
-                    if self.state.can_retry_network_error(start) {
+                if crate::client::Error::is_network_error(err)
+                    && self.state.can_retry_network_error(start) {
                         let _ = self
                             .client_env
                             .set_timer(self.state.next_resume_timeout() as u64)
                             .await;
                         continue;
                     }
-                }
             }
 
             return result;
@@ -894,8 +893,7 @@ impl ServerLink {
 
         serde_json::from_value(result["data"]["info"]["endpoints"].clone()).map_err(|_| {
             Error::invalid_server_response(format!(
-                "Can not parse endpoints from response: {}",
-                result
+                "Can not parse endpoints from response: {result}"
             ))
         })
     }

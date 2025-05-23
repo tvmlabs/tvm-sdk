@@ -406,7 +406,7 @@ impl SdkInterface {
         let code_hash_str = match &res {
             Ok(acc) => acc["code_hash"].as_str().unwrap_or("0"),
             Err(e) => {
-                debug!("get_account_code_hash failed: {}", e);
+                debug!("get_account_code_hash failed: {e}");
                 "0"
             }
         };
@@ -417,7 +417,7 @@ impl SdkInterface {
         let answer_id = decode_answer_id(args)?;
         let rnd = routines::generate_random(self.ton.clone(), args)?;
         let buf = base64_decode(rnd)
-            .map_err(|e| format!("failed to decode random buffer to byte array: {}", e))?;
+            .map_err(|e| format!("failed to decode random buffer to byte array: {e}"))?;
         Ok((answer_id, json!({ "buffer": hex::encode(buf) })))
     }
 
@@ -427,7 +427,7 @@ impl SdkInterface {
         let nonce = get_arg(args, "nonce")?;
         let key = get_arg(args, "key")?;
         let result = chacha20(self.ton.clone(), ParamsOfChaCha20 { data, key, nonce })
-            .map_err(|e| format!("{}", e))?;
+            .map_err(|e| format!("{e}"))?;
         Ok((answer_id, json!({ "output": hex::encode(base64_decode(result.data).unwrap()) })))
     }
 
@@ -441,7 +441,7 @@ impl SdkInterface {
             self.ton.clone(),
             ParamsOfMnemonicFromRandom { dictionary: Some(dict), word_count: Some(word_count) },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((answer_id, json!({ "phrase": result.phrase })))
     }
 
@@ -458,7 +458,7 @@ impl SdkInterface {
                 word_count: None,
             },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
 
         Ok((
             answer_id,
@@ -476,7 +476,7 @@ impl SdkInterface {
             self.ton.clone(),
             ParamsOfMnemonicVerify { phrase, dictionary: None, word_count: None },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((answer_id, json!({ "valid": result.valid })))
     }
 
@@ -487,7 +487,7 @@ impl SdkInterface {
             self.ton.clone(),
             ParamsOfHDKeyXPrvFromMnemonic { phrase, dictionary: None, word_count: None },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((answer_id, json!({ "xprv": result.xprv })))
     }
 
@@ -495,7 +495,7 @@ impl SdkInterface {
         let answer_id = decode_answer_id(args)?;
         let xprv = get_arg(args, "xprv")?;
         let result = hdkey_public_from_xprv(self.ton.clone(), ParamsOfHDKeyPublicFromXPrv { xprv })
-            .map_err(|e| format!("{}", e))?;
+            .map_err(|e| format!("{e}"))?;
         Ok((answer_id, json!({ "pub": format!("0x{}", result.public) })))
     }
 
@@ -508,7 +508,7 @@ impl SdkInterface {
             self.ton.clone(),
             ParamsOfHDKeyDeriveFromXPrv { xprv, child_index, hardened },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((answer_id, json!({ "xprv": result.xprv })))
     }
 
@@ -520,7 +520,7 @@ impl SdkInterface {
             self.ton.clone(),
             ParamsOfHDKeyDeriveFromXPrvPath { xprv, path },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((answer_id, json!({ "xprv": result.xprv })))
     }
 
@@ -528,18 +528,18 @@ impl SdkInterface {
         let answer_id = decode_answer_id(args)?;
         let xprv = get_arg(args, "xprv")?;
         let result = hdkey_secret_from_xprv(self.ton.clone(), ParamsOfHDKeySecretFromXPrv { xprv })
-            .map_err(|e| format!("{}", e))?;
+            .map_err(|e| format!("{e}"))?;
         Ok((answer_id, json!({ "sec": format!("0x{}", result.secret) })))
     }
 
     fn nacl_sign_keypair_from_secret_key(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
-        let secret = decode_abi_bigint(&get_arg(args, "secret")?).map_err(|e| format!("{}", e))?;
+        let secret = decode_abi_bigint(&get_arg(args, "secret")?).map_err(|e| format!("{e}"))?;
         let result = nacl_sign_keypair_from_secret_key(
             self.ton.clone(),
-            ParamsOfNaclSignKeyPairFromSecret { secret: format!("{:064x}", secret) },
+            ParamsOfNaclSignKeyPairFromSecret { secret: format!("{secret:064x}") },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((
             answer_id,
             json!({
@@ -571,7 +571,7 @@ impl SdkInterface {
     fn nacl_box(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let decrypted =
-            base64_encode(hex::decode(get_arg(args, "decrypted")?).map_err(|e| format!("{}", e))?);
+            base64_encode(hex::decode(get_arg(args, "decrypted")?).map_err(|e| format!("{e}"))?);
         let nonce = get_arg(args, "nonce")?;
         let public = decode_abi_bigint(&get_arg(args, "publicKey")?).map_err(|e| e.to_string())?;
         let secret = decode_abi_bigint(&get_arg(args, "secretKey")?).map_err(|e| e.to_string())?;
@@ -580,21 +580,21 @@ impl SdkInterface {
             ParamsOfNaclBox {
                 decrypted,
                 nonce,
-                their_public: format!("{:064x}", public),
-                secret: format!("{:064x}", secret),
+                their_public: format!("{public:064x}"),
+                secret: format!("{secret:064x}"),
             },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((
             answer_id,
-            json!({ "encrypted": hex::encode(base64_decode(result.encrypted).map_err(|e| format!("{}", e))?) }),
+            json!({ "encrypted": hex::encode(base64_decode(result.encrypted).map_err(|e| format!("{e}"))?) }),
         ))
     }
 
     fn nacl_box_open(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let encrypted =
-            base64_encode(hex::decode(get_arg(args, "encrypted")?).map_err(|e| format!("{}", e))?);
+            base64_encode(hex::decode(get_arg(args, "encrypted")?).map_err(|e| format!("{e}"))?);
         let nonce = get_arg(args, "nonce")?;
         let public = decode_abi_bigint(&get_arg(args, "publicKey")?).map_err(|e| e.to_string())?;
         let secret = decode_abi_bigint(&get_arg(args, "secretKey")?).map_err(|e| e.to_string())?;
@@ -603,25 +603,25 @@ impl SdkInterface {
             ParamsOfNaclBoxOpen {
                 encrypted,
                 nonce,
-                their_public: format!("{:064x}", public),
-                secret: format!("{:064x}", secret),
+                their_public: format!("{public:064x}"),
+                secret: format!("{secret:064x}"),
             },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((
             answer_id,
-            json!({ "decrypted": hex::encode(base64_decode(result.decrypted).map_err(|e| format!("{}", e))?) }),
+            json!({ "decrypted": hex::encode(base64_decode(result.decrypted).map_err(|e| format!("{e}"))?) }),
         ))
     }
 
     fn nacl_box_keypair_from_secret_key(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
-        let secret = decode_abi_bigint(&get_arg(args, "secret")?).map_err(|e| format!("{}", e))?;
+        let secret = decode_abi_bigint(&get_arg(args, "secret")?).map_err(|e| format!("{e}"))?;
         let result = nacl_box_keypair_from_secret_key(
             self.ton.clone(),
-            ParamsOfNaclBoxKeyPairFromSecret { secret: format!("{:064x}", secret) },
+            ParamsOfNaclBoxKeyPairFromSecret { secret: format!("{secret:064x}") },
         )
-        .map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
         Ok((
             answer_id,
             json!({
@@ -664,7 +664,7 @@ impl SdkInterface {
         let answer_id = decode_answer_id(args)?;
         let encryption_box = EncryptionBoxHandle(get_num_arg::<u32>(args, "boxHandle")?);
         let data =
-            base64_encode(hex::decode(get_arg(args, "data")?).map_err(|e| format!("{}", e))?);
+            base64_encode(hex::decode(get_arg(args, "data")?).map_err(|e| format!("{e}"))?);
         let result = if encrypt {
             encryption_box_encrypt(
                 self.ton.clone(),
@@ -687,7 +687,7 @@ impl SdkInterface {
             Ok(data) => {
                 let data = base64_decode(data)
                     .map(hex::encode)
-                    .map_err(|e| format!("failed to decode base64: {}", e))?;
+                    .map_err(|e| format!("failed to decode base64: {e}"))?;
                 (0, data)
             }
             Err(code) => (code, "".to_owned()),
@@ -706,7 +706,7 @@ impl SdkInterface {
         let code_hash = get_arg(args, "codeHash")?;
         let gt_addr = get_arg(args, "gt")?;
         let code_hash = decode_abi_bigint(&code_hash)
-            .map_err(|e| format!("failed to parse integer \"{}\": {}", code_hash, e))?;
+            .map_err(|e| format!("failed to parse integer \"{code_hash}\": {e}"))?;
 
         let accounts = query_collection(
             self.ton.clone(),
@@ -722,7 +722,7 @@ impl SdkInterface {
             },
         )
         .await
-        .map_err(|e| format!("account query failed: {}", e))?
+        .map_err(|e| format!("account query failed: {e}"))?
         .result;
 
         Ok((answer_id, json!({ "accounts": accounts })))
@@ -732,7 +732,7 @@ impl SdkInterface {
         let res = self
             .query_accounts(args, "id data")
             .await
-            .map_err(|e| format!("query account failed: {}", e))?;
+            .map_err(|e| format!("query account failed: {e}"))?;
         Ok(res)
     }
 
@@ -756,7 +756,7 @@ impl SdkInterface {
         let answer_id = decode_answer_id(args)?;
         let box_handle = get_num_arg::<u32>(args, "boxHandle")?;
         let sign_int = decode_abi_bigint(&get_arg(args, "hash")?).map_err(|e| e.to_string())?;
-        let sign_hash = hex::decode(format!("{:064x}", sign_int)).map_err(|e| e.to_string())?;
+        let sign_hash = hex::decode(format!("{sign_int:064x}")).map_err(|e| e.to_string())?;
 
         let signature = signing_box_sign(
             self.ton.clone(),
@@ -766,7 +766,7 @@ impl SdkInterface {
             },
         )
         .await
-        .map_err(|e| format!("{}", e))?
+        .map_err(|e| format!("{e}"))?
         .signature;
 
         Ok((answer_id, json!({ "signature": signature })))
@@ -816,7 +816,7 @@ impl DebotInterface for SdkInterface {
 
             "getAccountsDataByHash" => self.get_accounts_data_by_hash(args).await,
 
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

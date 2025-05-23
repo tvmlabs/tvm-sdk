@@ -156,7 +156,7 @@ pub fn command(args: &[String]) -> Result<(), CliError> {
     if let Some(out_dir) = out_dir {
         write_text_to_out_dir(text, out_dir)
     } else {
-        println!("{}", text);
+        println!("{text}");
         Ok(())
     }
 }

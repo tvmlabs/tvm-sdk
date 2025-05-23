@@ -87,7 +87,7 @@ impl Error {
     pub fn fetch_first_block_failed<E: std::fmt::Display>(err: E, message_id: &str) -> ClientError {
         Self::processing_error(
             ErrorCode::FetchBlockFailed,
-            format!("Fetch first block failed: {}", err),
+            format!("Fetch first block failed: {err}"),
             message_id,
             None,
         )
@@ -100,7 +100,7 @@ impl Error {
     ) -> ClientError {
         Self::processing_error(
             ErrorCode::FetchBlockFailed,
-            format!("Fetch block failed: {}", err),
+            format!("Fetch block failed: {err}"),
             message_id,
             Some(shard_block_id),
         )
@@ -113,18 +113,18 @@ impl Error {
     ) -> ClientError {
         Self::processing_error(
             ErrorCode::SendMessageFailed,
-            format!("Send message failed: {}", err),
+            format!("Send message failed: {err}"),
             message_id,
             Some(shard_block_id),
         )
     }
 
     pub fn invalid_message_boc<E: std::fmt::Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidMessageBoc, format!("Invalid message BOC: {}", err))
+        error(ErrorCode::InvalidMessageBoc, format!("Invalid message BOC: {err}"))
     }
 
     pub fn can_not_build_message_cell<E: std::fmt::Display>(err: E) -> ClientError {
-        error(ErrorCode::CanNotBuildMessageCell, format!("Can't build message cell: {}", err))
+        error(ErrorCode::CanNotBuildMessageCell, format!("Can't build message cell: {err}"))
     }
 
     pub fn invalid_block_received<E: std::fmt::Display>(
@@ -134,7 +134,7 @@ impl Error {
     ) -> ClientError {
         Self::processing_error(
             ErrorCode::InvalidBlockReceived,
-            format!("Invalid block received: {}", err),
+            format!("Invalid block received: {err}"),
             message_id,
             Some(shard_block_id),
         )
@@ -198,7 +198,7 @@ impl Error {
     }
 
     pub fn can_not_check_block_shard<E: std::fmt::Display>(err: E) -> ClientError {
-        error(ErrorCode::CanNotCheckBlockShard, format!("Can't check block shard: {}", err))
+        error(ErrorCode::CanNotCheckBlockShard, format!("Can't check block shard: {err}"))
     }
 
     pub fn block_not_found(message: String) -> ClientError {
@@ -206,20 +206,20 @@ impl Error {
     }
 
     pub fn invalid_data<E: std::fmt::Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidData, format!("Invalid data: {}", err))
+        error(ErrorCode::InvalidData, format!("Invalid data: {err}"))
     }
 
     pub fn message_rejected(message_id: &str, err: &str) -> ClientError {
         Self::processing_error(
             ErrorCode::MessageRejected,
-            format!("message has been rejected: {}", err),
+            format!("message has been rejected: {err}"),
             message_id,
             None,
         )
     }
 
     pub fn invalid_remp_status<E: std::fmt::Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidRempStatus, format!("Invalid REMP status: {}", err))
+        error(ErrorCode::InvalidRempStatus, format!("Invalid REMP status: {err}"))
     }
 
     pub fn next_remp_status_timeout() -> ClientError {

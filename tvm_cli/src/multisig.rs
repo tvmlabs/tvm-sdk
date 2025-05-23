@@ -261,7 +261,7 @@ impl CallArgs {
                 .replace(['[', ']', '\"', '\''], "")
                 .replace("0x", "")
                 .split(',')
-                .map(|o| format!("0x{}", o))
+                .map(|o| format!("0x{o}"))
                 .collect::<Vec<String>>()
         });
 
@@ -478,7 +478,7 @@ pub async fn encode_transfer_body(text: &str) -> Result<String, String> {
         },
     )
     .await
-    .map_err(|e| format!("failed to encode transfer body: {}", e))
+    .map_err(|e| format!("failed to encode transfer body: {e}"))
     .map(|r| r.body)
 }
 
@@ -511,13 +511,13 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
     .await?;
 
     if !config.is_json {
-        println!("Wallet address: {}", address);
+        println!("Wallet address: {address}");
     }
 
     let ton = create_client_verbose(config)?;
 
     if let Some(value) = matches.get_one::<String>("VALUE") {
-        let params = format!(r#"{{"dest":"{}","amount":"{}"}}"#, address, value);
+        let params = format!(r#"{{"dest":"{address}","amount":"{value}"}}"#);
         call::call_contract_with_client(
             ton.clone(),
             config,
@@ -532,7 +532,7 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
         .await?;
     }
 
-    let res = call::process_message(ton.clone(), msg, config).await.map_err(|e| format!("{:#}", e));
+    let res = call::process_message(ton.clone(), msg, config).await.map_err(|e| format!("{e:#}"));
 
     if res.is_err() {
         if res.clone().err().unwrap().contains("Account does not exist.") {
@@ -545,7 +545,7 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
                 println!(
                     "  \"Error\": \"Your account should have initial balance for deployment. Please transfer some value to your wallet address before deploy.\","
                 );
-                println!("  \"Address\": \"{}\"", address);
+                println!("  \"Address\": \"{address}\"");
                 println!("}}");
             }
             return Ok(());
@@ -555,10 +555,10 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
 
     if !config.is_json {
         println!("Wallet successfully deployed");
-        println!("Wallet address: {}", address);
+        println!("Wallet address: {address}");
     } else {
         println!("{{");
-        println!("  \"Address\": \"{}\"", address);
+        println!("  \"Address\": \"{address}\"");
         println!("}}");
     }
 

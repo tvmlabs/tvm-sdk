@@ -50,7 +50,7 @@ Example:
 "#;
 
 fn print_usage_and_exit() {
-    println!("{}", USAGE);
+    println!("{USAGE}");
     std::process::exit(1)
 }
 

@@ -187,8 +187,7 @@ pub(crate) async fn query_by_ids(
             for item in portion {
                 let id = item["id"].as_str().ok_or_else(|| {
                     crate::net::Error::invalid_server_response(format!(
-                        "required `{}.id` field is missing",
-                        collection
+                        "required `{collection}.id` field is missing"
                     ))
                 })?;
                 query_queue.remove(id);
@@ -198,8 +197,7 @@ pub(crate) async fn query_by_ids(
         for id in &head_ids {
             items.push(head_by_id.remove(id).ok_or_else(|| {
                 crate::net::Error::invalid_server_response(format!(
-                    "missing required {}[{}]",
-                    collection, id
+                    "missing required {collection}[{id}]"
                 ))
             })?);
         }

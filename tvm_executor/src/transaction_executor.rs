@@ -202,7 +202,7 @@ pub trait TransactionExecutor {
         let minted_shell: &mut u128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
         let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
+            Some(AccountState::AccountUninit) => false,
             None => false,
             _ => true,
         };
@@ -297,22 +297,20 @@ pub trait TransactionExecutor {
             fee = Grams::zero();
         }
         if acc_balance.grams < fee {
-            let mut diff = fee.clone();
+            let mut diff = fee;
             diff.sub(&acc_balance.grams)?; //Calculate number of Grams that need to be added to the balance to cover the Storage Fee.
             if available_credit == INFINITY_CREDIT {
                 acc_balance.grams.add(&diff)?;
                 *minted_shell += diff.as_u128();
                 diff = Grams::zero();
+            } else if Grams::from(available_credit as u64) > diff {
+                acc_balance.grams.add(&diff)?;
+                *minted_shell += diff.as_u128();
+                diff = Grams::zero();
             } else {
-                if Grams::from(available_credit as u64) > diff {
-                    acc_balance.grams.add(&diff)?;
-                    *minted_shell += diff.as_u128();
-                    diff = Grams::zero();
-                } else {
-                    acc_balance.grams.add(&Grams::from(available_credit as u64))?;
-                    *minted_shell += available_credit as u128;
-                    diff.sub(&Grams::from(available_credit as u64))?;
-                }
+                acc_balance.grams.add(&Grams::from(available_credit as u64))?;
+                *minted_shell += available_credit as u128;
+                diff.sub(&Grams::from(available_credit as u64))?;
             }
             if diff > 0 {
                 let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
@@ -464,7 +462,7 @@ pub trait TransactionExecutor {
             debug_assert!(!result_acc.is_none());
             false
         };
-        log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
+        log::debug!(target: "executor", "acc balance: {acc_balance:#?}");
         log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
         let is_ordinary = self.ordinary_transaction();
         if acc_balance.grams.is_zero() && !params.is_same_thread_id {
@@ -570,11 +568,11 @@ pub trait TransactionExecutor {
         }
 
         let result = vm.execute();
-        log::trace!(target: "executor", "execute result: {:?}", result);
+        log::trace!(target: "executor", "execute result: {result:?}");
         let mut raw_exit_arg = None;
         match result {
             Err(err) => {
-                log::debug!(target: "executor", "VM terminated with exception: {}", err);
+                log::debug!(target: "executor", "VM terminated with exception: {err}");
                 if let Some(TvmError::TerminationDeadlineReached) = err.downcast_ref() {
                     fail!(ExecutorError::TerminationDeadlineReached);
                 }
@@ -721,7 +719,7 @@ pub trait TransactionExecutor {
         need_to_burn: u64,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
-        let mut need_to_reserve = need_to_burn.clone();
+        let mut need_to_reserve = need_to_burn;
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
@@ -732,8 +730,7 @@ pub trait TransactionExecutor {
             Err(err) => {
                 log::debug!(
                     target: "executor",
-                    "cannot parse action list: format is invalid, err: {}",
-                    err
+                    "cannot parse action list: format is invalid, err: {err}"
                 );
                 // Here you can select only one of 2 error codes:
                 // RESULT_CODE_UNKNOWN_OR_INVALID_ACTION or RESULT_CODE_ACTIONLIST_INVALID
@@ -749,8 +746,7 @@ pub trait TransactionExecutor {
             return Ok(ActionPhaseResult::from_phase(phase));
         }
         phase.tot_actions = actions.len() as i16;
-        log::debug!(target: "executor", "\nActions {:#?}",
-                actions
+        log::debug!(target: "executor", "\nActions {actions:#?}"
         );
 
         let process_err_code =
@@ -759,7 +755,7 @@ pub trait TransactionExecutor {
                     err_code = RESULT_CODE_UNKNOWN_OR_INVALID_ACTION;
                 }
                 if err_code != 0 {
-                    log::debug!(target: "executor", "action failed: error_code={}", err_code);
+                    log::debug!(target: "executor", "action failed: error_code={err_code}");
                     phase.valid = true;
                     phase.result_code = err_code;
                     if i != 0 {
@@ -834,7 +830,7 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::ReserveCurrency { mode, mut value } => {
-                    log::debug!(target: "executor", "RESERVE: mode {:?}, value {:?}, acc_remaining {:?}, original_acc_balance {:?}, need_to_reserve {:?}", mode, value, acc_remaining_balance, original_acc_balance, need_to_reserve);
+                    log::debug!(target: "executor", "RESERVE: mode {mode:?}, value {value:?}, acc_remaining {acc_remaining_balance:?}, original_acc_balance {original_acc_balance:?}, need_to_reserve {need_to_reserve:?}");
                     match reserve_action_handler(
                         mode,
                         &mut value,
@@ -920,11 +916,10 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellToken { mut value } => {
-                    if available_credit != INFINITY_CREDIT {
-                        if value as i128 + minted_shell.clone() as i128 > available_credit {
-                            value = available_credit.clone().try_into()?;
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + *minted_shell as i128 > available_credit {
+                            value = available_credit.try_into()?;
                         }
-                    }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
                             *minted_shell += value as u128;
@@ -996,10 +991,8 @@ pub trait TransactionExecutor {
                 if process_err_code(err_code, i, &mut phase)? {
                     return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
                 }
-            } else {
-                if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
-                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
-                }
+            } else if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
 
@@ -1009,14 +1002,14 @@ pub trait TransactionExecutor {
             balance_to_string(&total_reserved_value)
         );
         if let Err(err) = acc_remaining_balance.add(&total_reserved_value) {
-            log::debug!(target: "executor", "failed to add account balance with reserved value {}", err);
+            log::debug!(target: "executor", "failed to add account balance with reserved value {err}");
             fail!("failed to add account balance with reserved value {}", err)
         }
 
         log::debug!(target: "executor", "Final:    {}", balance_to_string(&acc_remaining_balance));
 
         let fee = phase.total_action_fees();
-        log::debug!(target: "executor", "Total action fees: {}", fee);
+        log::debug!(target: "executor", "Total action fees: {fee}");
         tr.add_fee_grams(&fee)?;
 
         if account_deleted {
@@ -1114,12 +1107,11 @@ pub trait TransactionExecutor {
         let fwd_mine_fees = fwd_prices.mine_fee_checked(&fwd_full_fees)?;
         let fwd_fees = fwd_full_fees - fwd_mine_fees;
 
-        log::debug!(target: "executor", "get fee {} from bounce msg {}", fwd_full_fees, remaining_msg_balance);
+        log::debug!(target: "executor", "get fee {fwd_full_fees} from bounce msg {remaining_msg_balance}");
 
         if remaining_msg_balance.grams < fwd_full_fees + *compute_phase_fees {
             log::debug!(
-                target: "executor", "bounce phase - not enough grams {} to get fwd fee {}",
-                remaining_msg_balance, fwd_full_fees
+                target: "executor", "bounce phase - not enough grams {remaining_msg_balance} to get fwd fee {fwd_full_fees}"
             );
             return Ok((TrBouncePhase::no_funds(storage, fwd_full_fees), None));
         }
@@ -1171,14 +1163,13 @@ pub trait TransactionExecutor {
                     }
                     log::debug!(
                         target: "executor",
-                        "Found copyleft action: license: {}, address: {}",
-                        license, address
+                        "Found copyleft action: license: {license}, address: {address}"
                     );
                     copyleft_reward = (*compute_phase_fees * copyleft_percent as u128) / 100;
                     copyleft_address = address.clone();
                     was_copyleft_instruction = true;
                 } else {
-                    log::debug!(target: "executor", "Not found license {} in config", license);
+                    log::debug!(target: "executor", "Not found license {license} in config");
                     phase.result_code = RESULT_CODE_NOT_FOUND_LICENSE;
                     phase.result_arg = Some(i as i32);
                     return Ok(None);
@@ -1265,7 +1256,7 @@ fn compute_new_state(
                 }
                 match acc.try_activate_by_init_code_hash(state_init, init_code_hash) {
                     Err(err) => {
-                        log::debug!(target: "executor", "reason: {}", err);
+                        log::debug!(target: "executor", "reason: {err}");
                         Ok(Some(ComputeSkipReason::BadState))
                     }
                     Ok(_) => Ok(None),
@@ -1290,7 +1281,7 @@ fn compute_new_state(
                     log::debug!(target: "executor", "message for frozen: activated");
                     return match acc.try_activate_by_init_code_hash(state_init, init_code_hash) {
                         Err(err) => {
-                            log::debug!(target: "executor", "reason: {}", err);
+                            log::debug!(target: "executor", "reason: {err}");
                             Ok(Some(ComputeSkipReason::BadState))
                         }
                         Ok(_) => Ok(None),
@@ -1370,8 +1361,7 @@ fn check_rewrite_dest_addr(
         {
             log::debug!(
                 target: "executor",
-                "cannot send message from {} to {} it doesn't allow yet",
-                my_addr, dst
+                "cannot send message from {my_addr} to {dst} it doesn't allow yet"
             );
             return Err(IncorrectCheckRewrite::Other);
         }
@@ -1380,8 +1370,7 @@ fn check_rewrite_dest_addr(
             if !wc.accept_msgs {
                 log::debug!(
                     target: "executor",
-                    "destination address belongs to workchain {} not accepting new messages",
-                    workchain_id
+                    "destination address belongs to workchain {workchain_id} not accepting new messages"
                 );
                 return Err(IncorrectCheckRewrite::Other);
             }
@@ -1394,16 +1383,14 @@ fn check_rewrite_dest_addr(
             if !is_valid_addr_len(addr_len, min_addr_len, max_addr_len, addr_len_step) {
                 log::debug!(
                     target: "executor",
-                    "destination address has length {} invalid for destination workchain {}",
-                    addr_len, workchain_id
+                    "destination address has length {addr_len} invalid for destination workchain {workchain_id}"
                 );
                 return Err(IncorrectCheckRewrite::Other);
             }
         } else {
             log::debug!(
                 target: "executor",
-                "destination address contains unknown workchain_id {}",
-                workchain_id
+                "destination address contains unknown workchain_id {workchain_id}"
             );
             return Err(IncorrectCheckRewrite::Other);
         }
@@ -1422,8 +1409,7 @@ fn check_rewrite_dest_addr(
         if addr_len != 256 {
             log::debug!(
                 target: "executor",
-                "destination address has length {} invalid for destination workchain {}",
-                addr_len, workchain_id
+                "destination address has length {addr_len} invalid for destination workchain {workchain_id}"
             );
             return Err(IncorrectCheckRewrite::Other);
         }
@@ -1515,7 +1501,7 @@ fn outmsg_action_handler(
             .serialize()
             .and_then(|cell| config.calc_fwd_fee(msg.is_masterchain(), &cell))
             .map_err(|err| {
-                log::error!(target: "executor", "cannot serialize message in action phase : {}", err);
+                log::error!(target: "executor", "cannot serialize message in action phase : {err}");
                 RESULT_CODE_ACTIONLIST_INVALID
             })?
     };
@@ -1627,7 +1613,7 @@ fn outmsg_action_handler(
         Ok(false) | Err(_) => {
             log::warn!(
                 target: "executor",
-                "account balance {} is too small, cannot send {}", acc_balance, result_value
+                "account balance {acc_balance} is too small, cannot send {result_value}"
             );
             return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_EXTRA).unwrap_or_default());
         }
@@ -1664,7 +1650,7 @@ fn outmsg_action_handler(
     phase.add_action_fees(fwd_mine_fee);
 
     let msg_cell = msg.serialize().map_err(|err| {
-        log::error!(target: "executor", "cannot serialize message in action phase : {}", err);
+        log::error!(target: "executor", "cannot serialize message in action phase : {err}");
         RESULT_CODE_ACTIONLIST_INVALID
     })?;
     phase.tot_msg_size.append(&msg_cell);
@@ -1764,7 +1750,7 @@ fn change_library_action_handler(
 ) -> Option<i32> {
     let result = match (code, hash) {
         (Some(code), None) => {
-            log::debug!(target: "executor", "OutAction::ChangeLibrary mode: {}, code: {}", mode, code);
+            log::debug!(target: "executor", "OutAction::ChangeLibrary mode: {mode}, code: {code}");
             if mode == 0 {
                 // TODO: Wrong codes. Look tvm_block/out_actions::SET_LIB_CODE_REMOVE
                 acc.delete_library(&code.repr_hash())
@@ -1773,7 +1759,7 @@ fn change_library_action_handler(
             }
         }
         (None, Some(hash)) => {
-            log::debug!(target: "executor", "OutAction::ChangeLibrary mode: {}, hash: {:x}", mode, hash);
+            log::debug!(target: "executor", "OutAction::ChangeLibrary mode: {mode}, hash: {hash:x}");
             if mode == 0 {
                 acc.delete_library(&hash)
             } else {

@@ -41,7 +41,7 @@ impl Stdout {
     pub fn print(&self, args: &Value) -> InterfaceResult {
         let text_vec = hex::decode(args["message"].as_str().unwrap()).unwrap();
         let text = std::str::from_utf8(&text_vec).unwrap();
-        println!("{}", text);
+        println!("{text}");
         Ok((0, json!({})))
     }
 }
@@ -59,7 +59,7 @@ impl DebotInterface for Stdout {
     async fn call(&self, func: &str, args: &Value) -> InterfaceResult {
         match func {
             "print" => self.print(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

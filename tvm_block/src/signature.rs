@@ -71,10 +71,10 @@ impl CryptoSignature {
     pub fn from_r_s_str(r: &str, s: &str) -> Result<Self> {
         let mut bytes = [0; ed25519_dalek::SIGNATURE_LENGTH];
         hex::decode_to_slice(r, &mut bytes[..ed25519_dalek::SIGNATURE_LENGTH / 2]).map_err(
-            |err| BlockError::InvalidData(format!("error parsing `r` hex string: {}", err)),
+            |err| BlockError::InvalidData(format!("error parsing `r` hex string: {err}")),
         )?;
         hex::decode_to_slice(s, &mut bytes[ed25519_dalek::SIGNATURE_LENGTH / 2..]).map_err(
-            |err| BlockError::InvalidData(format!("error parsing `s` hex string: {}", err)),
+            |err| BlockError::InvalidData(format!("error parsing `s` hex string: {err}")),
         )?;
         Self::from_bytes(&bytes)
     }
@@ -111,7 +111,7 @@ impl FromStr for CryptoSignature {
 
     fn from_str(s: &str) -> Result<Self> {
         let key_buf = hex::decode(s).map_err(|err| {
-            BlockError::InvalidData(format!("error parsing hex string {} : {}", s, err))
+            BlockError::InvalidData(format!("error parsing hex string {s} : {err}"))
         })?;
         Self::from_bytes(&key_buf)
     }

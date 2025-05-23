@@ -19,7 +19,7 @@ pub struct ExecutionResult {
 
 impl ExecutionResult {
     pub(crate) fn new(is_json: bool) -> ExecutionResult {
-        return ExecutionResult {
+        ExecutionResult {
             is_json,
             log: vec![],
             messages: vec![],
@@ -27,17 +27,17 @@ impl ExecutionResult {
             response_code: -1,
             is_vm_success: false,
             gas_used: 0,
-        };
+        }
     }
 
     pub fn exit_code(&mut self, code: i32) {
         self.response_code = code;
-        self.log(format!("TVM terminated with exit code {}", code));
+        self.log(format!("TVM terminated with exit code {code}"));
     }
 
     pub fn vm_success(&mut self, is_vm_success: bool) {
         self.is_vm_success = is_vm_success;
-        self.log(format!("Computing phase is success: {}", is_vm_success));
+        self.log(format!("Computing phase is success: {is_vm_success}"));
     }
 
     pub fn gas_used(&mut self, gas: i64) {
@@ -54,10 +54,7 @@ impl ExecutionResult {
     pub fn add_out_message(&mut self, message: Message) {
         match message.header() {
             CommonMsgInfo::IntMsgInfo(_) => {
-                let state_init = match message.state_init() {
-                    None => None,
-                    Some(state_init) => Some(base64_encode(state_init.write_to_bytes().unwrap())),
-                };
+                let state_init = message.state_init().map(|state_init| base64_encode(state_init.write_to_bytes().unwrap()));
                 let destination =
                     message.header().get_dst_address().unwrap_or_default().to_string();
                 let body =
@@ -90,6 +87,6 @@ impl ExecutionResult {
     }
 
     pub fn output(&mut self) -> String {
-        return if self.is_json { self.to_json().to_string() } else { self.log.join("\n") };
+        if self.is_json { self.to_json().to_string() } else { self.log.join("\n") }
     }
 }

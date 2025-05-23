@@ -118,15 +118,15 @@ pub fn decode_answer_id(args: &Value) -> Result<u32, String> {
         args["answerId"].as_str().ok_or("answer id not found in argument list".to_string())?,
         10,
     )
-    .map_err(|e| format!("{}", e))
+    .map_err(|e| format!("{e}"))
 }
 
 pub fn decode_arg(args: &Value, name: &str) -> Result<String, String> {
-    args[name].as_str().ok_or(format!("\"{}\" not found", name)).map(|x| x.to_string())
+    args[name].as_str().ok_or(format!("\"{name}\" not found")).map(|x| x.to_string())
 }
 
 pub fn decode_bool_arg(args: &Value, name: &str) -> Result<bool, String> {
-    args[name].as_bool().ok_or(format!("\"{}\" not found", name))
+    args[name].as_bool().ok_or(format!("\"{name}\" not found"))
 }
 
 pub fn decode_string_arg(args: &Value, name: &str) -> Result<String, String> {
@@ -147,20 +147,20 @@ where
 {
     let num_str = decode_arg(args, name)?;
     decode_abi_number::<T>(&num_str)
-        .map_err(|e| format!("failed to parse integer \"{}\": {}", num_str, e))
+        .map_err(|e| format!("failed to parse integer \"{num_str}\": {e}"))
 }
 
 pub fn decode_int256(args: &Value, name: &str) -> Result<BigInt, String> {
     let num_str = decode_arg(args, name)?;
     decode_abi_bigint(&num_str)
-        .map_err(|e| format!("failed to decode integer \"{}\": {}", num_str, e))
+        .map_err(|e| format!("failed to decode integer \"{num_str}\": {e}"))
 }
 
 pub fn decode_array<F, T>(args: &Value, name: &str, validator: F) -> Result<Vec<T>, String>
 where
     F: Fn(&Value) -> Option<T>,
 {
-    let array = args[name].as_array().ok_or(format!("\"{}\" is invalid: must be array", name))?;
+    let array = args[name].as_array().ok_or(format!("\"{name}\" is invalid: must be array"))?;
     let mut strings = vec![];
     for elem in array {
         strings.push(validator(elem).ok_or("invalid array element type".to_string())?);

@@ -141,9 +141,9 @@ impl BrowserCallbacks for DebotBrowserAdapter {
         match response {
             Ok(r) => match r {
                 ResultOfAppDebotBrowser::Input { value: v } => *value = v,
-                _ => error!("unexpected debot browser response: {:?}", r),
+                _ => error!("unexpected debot browser response: {r:?}"),
             },
-            Err(e) => error!("debot browser failed to show action: {}", e),
+            Err(e) => error!("debot browser failed to show action: {e}"),
         }
     }
 
@@ -152,7 +152,7 @@ impl BrowserCallbacks for DebotBrowserAdapter {
             .app_object
             .call(ParamsOfAppDebotBrowser::GetSigningBox)
             .await
-            .map_err(|err| format!("debot browser failed to load keys: {}", err))?;
+            .map_err(|err| format!("debot browser failed to load keys: {err}"))?;
 
         match response {
             ResultOfAppDebotBrowser::GetSigningBox { signing_box } => Ok(signing_box),
@@ -166,13 +166,13 @@ impl BrowserCallbacks for DebotBrowserAdapter {
             .app_object
             .call(ParamsOfAppDebotBrowser::InvokeDebot { debot_addr: debot, action: action.into() })
             .await
-            .map_err(|e| format!("debot browser failed to invoke debot: {}", e))?;
+            .map_err(|e| format!("debot browser failed to invoke debot: {e}"))?;
 
         match response {
             ResultOfAppDebotBrowser::InvokeDebot => Ok(()),
             _ => {
-                error!("unexpected debot browser response: {:?}", response);
-                Err(format!("unexpected debot browser response: {:?}", response))
+                error!("unexpected debot browser response: {response:?}");
+                Err(format!("unexpected debot browser response: {response:?}"))
             }
         }
     }

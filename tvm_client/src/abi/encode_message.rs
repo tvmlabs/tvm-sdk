@@ -176,13 +176,13 @@ fn resolve_header(
 fn header_to_string(header: &FunctionHeader) -> String {
     let mut values = Vec::<String>::new();
     if let Some(time) = header.time {
-        values.push(format!("\"time\": {}", time));
+        values.push(format!("\"time\": {time}"));
     }
     if let Some(expire) = header.expire {
-        values.push(format!("\"expire\": {}", expire));
+        values.push(format!("\"expire\": {expire}"));
     }
     if let Some(pubkey) = &header.pubkey {
-        values.push(format!("\"pubkey\": \"{}\"", pubkey));
+        values.push(format!("\"pubkey\": \"{pubkey}\""));
     }
     format!("{{{}}}", values.join(","))
 }

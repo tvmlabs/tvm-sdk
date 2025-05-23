@@ -52,7 +52,7 @@ pub(crate) fn call_tvm(
     let mut ctrls = SaveList::new();
     ctrls
         .put(4, &mut StackItem::Cell(data))
-        .map_err(|err| Error::internal_error(format!("can not put data to registers: {}", err)))?;
+        .map_err(|err| Error::internal_error(format!("can not put data to registers: {err}")))?;
 
     let mut sci = build_contract_info(
         options.blockchain_config.raw_config(),
@@ -67,7 +67,7 @@ pub(crate) fn call_tvm(
     sci.capabilities = options.blockchain_config.capabilites();
     ctrls
         .put(7, &mut sci.into_temp_data_item())
-        .map_err(|err| Error::internal_error(format!("can not put SCI to registers: {}", err)))?;
+        .map_err(|err| Error::internal_error(format!("can not put SCI to registers: {err}")))?;
 
     let gas_limit = 1_000_000_000;
     let gas = Gas::new(gas_limit, 0, gas_limit, 10);
@@ -120,7 +120,7 @@ pub(crate) fn call_tvm_msg(
 ) -> ClientResult<Vec<Message>> {
     let msg_cell = msg
         .serialize()
-        .map_err(|err| Error::internal_error(format!("can not serialize message: {}", err)))?;
+        .map_err(|err| Error::internal_error(format!("can not serialize message: {err}")))?;
 
     let mut stack = Stack::new();
     let balance = account.balance().map_or(0, |cc| cc.grams.as_u128());
@@ -142,10 +142,10 @@ pub(crate) fn call_tvm_msg(
     let actions_cell = engine
         .get_actions()
         .as_cell()
-        .map_err(|err| Error::internal_error(format!("can not get actions: {}", err)))?
+        .map_err(|err| Error::internal_error(format!("can not get actions: {err}")))?
         .clone();
     let mut actions = OutActions::construct_from_cell(actions_cell)
-        .map_err(|err| Error::internal_error(format!("can not parse actions: {}", err)))?;
+        .map_err(|err| Error::internal_error(format!("can not parse actions: {err}")))?;
 
     let mut msgs = vec![];
     for action in actions.iter_mut() {

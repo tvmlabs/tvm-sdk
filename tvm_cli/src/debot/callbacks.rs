@@ -99,7 +99,7 @@ impl BrowserCallbacks for Callbacks {
 
     /// Debot is switched to another context.
     async fn switch(&self, ctx_id: u8) {
-        log::debug!("switched to ctx {}", ctx_id);
+        log::debug!("switched to ctx {ctx_id}");
         let mut state = self.state.write().unwrap();
         state.state_id = ctx_id;
         if ctx_id == STATE_EXIT {
@@ -133,7 +133,7 @@ impl BrowserCallbacks for Callbacks {
             Err(ProcessorError::InterfaceCallNeeded) => {
                 TerminalSigningBox::new::<&[u8]>(self.client.clone(), vec![], None).await?.leak().0
             }
-            Err(e) => return Err(format!("{:?}", e)),
+            Err(e) => return Err(format!("{e:?}")),
             Ok(handle) => handle,
         };
         Ok(SigningBoxHandle(handle))
@@ -168,7 +168,7 @@ impl BrowserCallbacks for Callbacks {
             } => {
                 info += "DeBot is going to create an onchain transaction.\n";
                 info += "Details:\n";
-                info += &format!("  account: {}\n", dst);
+                info += &format!("  account: {dst}\n");
                 info += &format!("  Transaction fees: {} tokens\n", convert_u64_to_tokens(fee));
                 if !out.is_empty() {
                     info += "  Outgoing transfers from the account:\n";
@@ -182,7 +182,7 @@ impl BrowserCallbacks for Callbacks {
                 } else {
                     info += "  No outgoing transfers from the account.\n";
                 }
-                info += &format!("  Message signer public key: {}\n", signkey);
+                info += &format!("  Message signer public key: {signkey}\n");
                 if setcode {
                     info += "  Warning: the transaction will change the account's code\n";
                 }

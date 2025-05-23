@@ -1354,9 +1354,8 @@ impl<'a, T: HashmapType + ?Sized> HashmapInserter<'a, T> {
                 error @ (_, _, _) => {
                     log::error!(
                         target: "tvm",
-                        "If we hit this, there's certainly a bug. {:?}. \
-                        Passed: label: {}, key: {} ",
-                        error, label, key
+                        "If we hit this, there's certainly a bug. {error:?}. \
+                        Passed: label: {label}, key: {key} "
                     );
                     fail!(ExceptionCode::FatalError)
                 }

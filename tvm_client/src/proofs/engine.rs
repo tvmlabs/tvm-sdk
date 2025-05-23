@@ -116,15 +116,15 @@ impl ProofHelperEngineImpl {
     }
 
     fn mc_proof_key(mc_seq_no: u32) -> String {
-        format!("proof_mc_{}", mc_seq_no)
+        format!("proof_mc_{mc_seq_no}")
     }
 
     fn block_key(root_hash: &str) -> String {
-        format!("temp_block_{}", root_hash)
+        format!("temp_block_{root_hash}")
     }
 
     fn trusted_block_right_bound_key(seq_no: u32) -> String {
-        format!("trusted_{}_right_boundary_seq_no", seq_no)
+        format!("trusted_{seq_no}_right_boundary_seq_no")
     }
 
     fn filter_for_block(root_hash: &str) -> Value {
@@ -613,7 +613,7 @@ impl ProofHelperEngineImpl {
         }
 
         result.ok_or_else(|| {
-            failure::err_msg(format!("Top block for the given shard ({}) not found", shard))
+            failure::err_msg(format!("Top block for the given shard ({shard}) not found"))
         })
     }
 

@@ -1124,10 +1124,10 @@ impl CopyleftRewards {
     pub fn debug(&self) -> Result<String> {
         let mut str = "".to_string();
         self.iterate_with_keys(|key: AccountId, value| {
-            str = format!("{} key: {:?}, value: {}; ", str, key, value);
+            str = format!("{str} key: {key:?}, value: {value}; ");
             Ok(true)
         })?;
-        str = format!("{}.", str);
+        str = format!("{str}.");
         Ok(str)
     }
 }
@@ -1492,8 +1492,7 @@ impl Deserializable for ProofChain {
         let len = slice.get_next_int(8)? as usize;
         if !(1..=MAX_PROOF_CHAIN_LEN).contains(&len) {
             fail!(BlockError::InvalidData(format!(
-                "Failed check: `{} >= 1 && {} <= {}`",
-                len, len, MAX_PROOF_CHAIN_LEN
+                "Failed check: `{len} >= 1 && {len} <= {MAX_PROOF_CHAIN_LEN}`"
             )))
         }
 
