@@ -42,13 +42,9 @@ use crate::multisig::MultisigArgs;
 use crate::print_args;
 
 pub fn create_depool_command() -> Command {
-    let wallet_arg = Arg::new("MSIG")
-        .num_args(1)
-        .long("--wallet")
-        .short('w')
-        .help("Multisig wallet address.");
-    let value_arg =
-        Arg::new("VALUE").num_args(1).long("--value").short('v').help("Value in tons.");
+    let wallet_arg =
+        Arg::new("MSIG").num_args(1).long("--wallet").short('w').help("Multisig wallet address.");
+    let value_arg = Arg::new("VALUE").num_args(1).long("--value").short('v').help("Value in tons.");
     let keys_arg = Arg::new("SIGN")
         .num_args(1)
         .long("--sign")
@@ -259,8 +255,9 @@ impl<'a> DepoolCmd<'a> {
         with_lock: bool,
     ) -> Result<DepoolCmd<'a>, String> {
         let mut value = parse_value(m)?;
-        let withdrawal_period =
-            m.get_one::<String>("WPERIOD").ok_or("withdrawal period is not defined.".to_string())?;
+        let withdrawal_period = m
+            .get_one::<String>("WPERIOD")
+            .ok_or("withdrawal period is not defined.".to_string())?;
         let total_period =
             m.get_one::<String>("TPERIOD").ok_or("total period is not defined.".to_string())?;
         let beneficiary =
@@ -319,7 +316,8 @@ impl<'a> DepoolCmd<'a> {
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
-        let dest = m.get_one::<String>("DEST").ok_or("destination address is not defined.".to_owned())?;
+        let dest =
+            m.get_one::<String>("DEST").ok_or("destination address is not defined.".to_owned())?;
         let dest = load_ton_address(dest, config)?;
         let stake = parse_value(m)?;
         let body = encode_transfer_stake(&dest, stake).await?;

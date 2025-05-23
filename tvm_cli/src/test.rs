@@ -96,10 +96,8 @@ pub fn create_test_command() -> Command {
         .num_args(1)
         .help("Constructor arguments. Must be a json string with all arguments or path to the file with parameters.");
 
-    let keys_arg = Arg::new("KEYS")
-        .long("--keys")
-        .num_args(1)
-        .help("Secret key used to sign the message.");
+    let keys_arg =
+        Arg::new("KEYS").long("--keys").num_args(1).help("Secret key used to sign the message.");
 
     let abi_arg = Arg::new("ABI")
         .long("--abi")
@@ -235,7 +233,8 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
     let balance = matches.get_one::<String>("INITIAL_BALANCE").unwrap();
     let workchain_id = matches.get_one::<String>("WC").and_then(|wc| wc.parse().ok());
     let now = matches.get_one::<String>("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
-    let trace_path = matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH);
+    let trace_path =
+        matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH);
 
     let tvc_bytes =
         std::fs::read(input).map_err(|e| format!("Failed to read TVC file {input}: {e}"))?;
@@ -336,7 +335,8 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
     let input = matches.get_one::<String>("PATH").unwrap();
     let bc_config = matches.get_one::<String>("CONFIG_BOC").map(|s| s.as_str());
     let now = matches.get_one::<String>("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
-    let trace_path = matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH);
+    let trace_path =
+        matches.get_one::<String>("LOG_PATH").map(|s| s.as_str()).unwrap_or(DEFAULT_TRACE_PATH);
     let is_tock = matches.contains_id("IS_TOCK");
 
     let mut account = Account::construct_from_file(input)

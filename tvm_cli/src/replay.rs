@@ -736,7 +736,12 @@ pub async fn replay_command(m: &ArgMatches, cli_config: &Config) -> Result<(), S
     let (config_txns, bc_config) = if m.contains_id("DEFAULT_CONFIG") {
         ("", Some(get_blockchain_config(cli_config, None).await?))
     } else {
-        (m.get_one::<String>("CONFIG_TXNS").map(|s| s.as_str()).ok_or("Missing config txns filename")?, None)
+        (
+            m.get_one::<String>("CONFIG_TXNS")
+                .map(|s| s.as_str())
+                .ok_or("Missing config txns filename")?,
+            None,
+        )
     };
     let _ = replay(
         m.get_one::<String>("INPUT_TXNS").ok_or("Missing input txns filename")?,

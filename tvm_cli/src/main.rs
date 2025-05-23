@@ -236,10 +236,8 @@ async fn main_internal() -> Result<(), String> {
         "Contract address or path to the saved account state if --boc or --tvc flag is specified.",
     );
 
-    let method_arg = Arg::new("METHOD")
-        .required(true)
-        .num_args(1)
-        .help("Name of the function being called.");
+    let method_arg =
+        Arg::new("METHOD").required(true).num_args(1).help("Name of the function being called.");
 
     let boc_flag = Arg::new("BOC")
         .long("--boc")
@@ -385,8 +383,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(output_arg.clone())
         .arg(raw_arg.clone());
 
-    let address_arg =
-        Arg::new("ADDRESS").required(true).help("Contract address.");
+    let address_arg = Arg::new("ADDRESS").required(true).help("Contract address.");
 
     let params_arg = Arg::new("PARAMS")
         .required(true)
@@ -545,12 +542,7 @@ async fn main_internal() -> Result<(), String> {
             Command::new("add")
                 .about("Add alias to the aliases map.")
                 .arg(alias_arg.clone())
-                .arg(
-                    Arg::new("ADDRESS")
-                        .long("--addr")
-                        .num_args(0..=1)
-                        .help("Contract address."),
-                )
+                .arg(Arg::new("ADDRESS").long("--addr").num_args(0..=1).help("Contract address."))
                 .arg(keys_arg.clone())
                 .arg(
                     Arg::new("ABI")
@@ -567,22 +559,16 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(Command::new("print").about("Print the aliases map."))
         .subcommand(Command::new("reset").about("Clear the aliases map."));
 
-    let url_arg =
-        Arg::new("URL").required(true).help("Url of the endpoints list.");
-    let config_endpoint_cmd = Command::new("endpoint")
-        .about("Commands to work with the endpoints map.")
-        .subcommand(
-            Command::new("add").about("Add endpoints list.").arg(url_arg.clone()).arg(
-                Arg::new("ENDPOINTS")
-                    .required(true)
-                    .help("List of endpoints (comma separated)."),
-            ),
-        )
-        .subcommand(
-            Command::new("remove").about("Remove endpoints list.").arg(url_arg.clone()),
-        )
-        .subcommand(Command::new("reset").about("Reset the endpoints map."))
-        .subcommand(Command::new("print").about("Print current endpoints map."));
+    let url_arg = Arg::new("URL").required(true).help("Url of the endpoints list.");
+    let config_endpoint_cmd =
+        Command::new("endpoint")
+            .about("Commands to work with the endpoints map.")
+            .subcommand(Command::new("add").about("Add endpoints list.").arg(url_arg.clone()).arg(
+                Arg::new("ENDPOINTS").required(true).help("List of endpoints (comma separated)."),
+            ))
+            .subcommand(Command::new("remove").about("Remove endpoints list.").arg(url_arg.clone()))
+            .subcommand(Command::new("reset").about("Reset the endpoints map."))
+            .subcommand(Command::new("print").about("Print current endpoints map."));
 
     let config_cmd = Command::new("config")
         .allow_hyphen_values(true)
@@ -731,34 +717,11 @@ async fn main_internal() -> Result<(), String> {
         .about("Executes a raw GraphQL query.")
         .version(version_string)
         .author(author)
-        .arg(
-            Arg::new("COLLECTION")
-                .required(true)
-                .help("Collection to query."),
-        )
-        .arg(
-            Arg::new("RESULT")
-                .required(true)
-                .help("Result fields to print."),
-        )
-        .arg(
-            Arg::new("FILTER")
-                .long("--filter")
-                .num_args(0..=1)
-                .help("Query filter parameter."),
-        )
-        .arg(
-            Arg::new("LIMIT")
-                .long("--limit")
-                .num_args(0..=1)
-                .help("Query limit parameter."),
-        )
-        .arg(
-            Arg::new("ORDER")
-                .long("--order")
-                .num_args(0..=1)
-                .help("Query order parameter."),
-        );
+        .arg(Arg::new("COLLECTION").required(true).help("Collection to query."))
+        .arg(Arg::new("RESULT").required(true).help("Result fields to print."))
+        .arg(Arg::new("FILTER").long("--filter").num_args(0..=1).help("Query filter parameter."))
+        .arg(Arg::new("LIMIT").long("--limit").num_args(0..=1).help("Query limit parameter."))
+        .arg(Arg::new("ORDER").long("--order").num_args(0..=1).help("Query order parameter."));
 
     let fee_cmd = Command::new("fee")
         .about("Calculates fees for executing message or account storage fee.")
@@ -842,11 +805,7 @@ async fn main_internal() -> Result<(), String> {
         .about("Generates message with update of config params.")
         .arg(abi_arg.clone())
         .arg(Arg::new("SEQNO").num_args(0..=1).help("Current seqno from config contract"))
-        .arg(
-            Arg::new("CONFIG_MASTER_KEY_FILE")
-                .num_args(0..=1)
-                .help("path to config-master files"),
-        )
+        .arg(Arg::new("CONFIG_MASTER_KEY_FILE").num_args(0..=1).help("path to config-master files"))
         .arg(Arg::new("NEW_PARAM_FILE").num_args(0..=1).help("New config param value"));
 
     let bcconfig_cmd = Command::new("dump")
@@ -866,12 +825,7 @@ async fn main_internal() -> Result<(), String> {
             Command::new("account")
                 .about("Dumps state of given accounts.")
                 .allow_hyphen_values(true)
-                .arg(
-                    Arg::new("ADDRESS")
-                        .required(true)
-                        .help("List of addresses.")
-                        .num_args(1..),
-                )
+                .arg(Arg::new("ADDRESS").required(true).help("List of addresses.").num_args(1..))
                 .arg(Arg::new("PATH").num_args(0..=1).long("--path").short('p').help(
                     "Path to folder where to store the dumped accounts. Default value is \".\".",
                 )),
@@ -940,12 +894,7 @@ async fn main_internal() -> Result<(), String> {
                 .long("--config")
                 .num_args(0..=1),
         )
-        .arg(
-            Arg::new("JSON")
-                .help("Cli prints output in json format.")
-                .short('j')
-                .long("--json"),
-        )
+        .arg(Arg::new("JSON").help("Cli prints output in json format.").short('j').long("--json"))
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
         .subcommand(genpubkey_cmd)
@@ -1460,7 +1409,8 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
-    let keys = matches.get_one::<String>("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
+    let keys =
+        matches.get_one::<String>("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
 
     let alias = matches.get_one::<String>("ALIAS").map(|s| s.as_str());
     if !config.is_json {
@@ -1514,7 +1464,9 @@ fn config_command(
                     alias_matches.get_one::<String>("KEYS").map(String::from),
                 )?
             } else if let Some(alias_matches) = alias_matches.subcommand_matches("remove") {
-                full_config.remove_alias(alias_matches.get_one::<String>("ALIAS").map(|s| s.as_str()).unwrap())?
+                full_config.remove_alias(
+                    alias_matches.get_one::<String>("ALIAS").map(|s| s.as_str()).unwrap(),
+                )?
             } else if alias_matches.subcommand_matches("reset").is_some() {
                 full_config.aliases = BTreeMap::new();
                 full_config.to_file(&full_config.path)?;
@@ -1540,7 +1492,10 @@ fn config_command(
 async fn genaddr_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let tvc = matches.get_one::<String>("TVC");
     let wc = matches.get_one::<String>("WC").map(|s| s.as_str());
-    let keys = matches.get_one::<String>("GENKEY").map(|s| s.as_str()).or(matches.get_one::<String>("SETKEY").map(|s| s.as_str()));
+    let keys = matches
+        .get_one::<String>("GENKEY")
+        .map(|s| s.as_str())
+        .or(matches.get_one::<String>("SETKEY").map(|s| s.as_str()));
     let new_keys = matches.contains_id("GENKEY");
     let init_data = matches.get_one::<String>("DATA").map(|s| s.as_str());
     let update_tvc = matches.contains_id("SAVE");
@@ -1568,7 +1523,8 @@ async fn account_command(matches: &ArgMatches, config: &Config) -> Result<(), St
             "Address was not found. It must be specified as option or in the config file."
                 .to_string(),
         )?;
-    if addresses_list.len() > 1 && (matches.contains_id("DUMPTVC") || matches.contains_id("DUMPTVC"))
+    if addresses_list.len() > 1
+        && (matches.contains_id("DUMPTVC") || matches.contains_id("DUMPTVC"))
     {
         return Err("`DUMPTVC` and `DUMPBOC` options are not applicable to a list of addresses."
             .to_string());

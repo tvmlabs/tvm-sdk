@@ -117,7 +117,8 @@ pub async fn debot_command(m: &ArgMatches, config: Config) -> Result<(), String>
 async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     let addr = m.get_one::<String>("ADDRESS");
     let pipechain = m.get_one::<String>("PIPECHAIN");
-    let signkey_path = m.get_one::<String>("SIGNKEY").map(|x| x.to_owned()).or(config.keys_path.clone());
+    let signkey_path =
+        m.get_one::<String>("SIGNKEY").map(|x| x.to_owned()).or(config.keys_path.clone());
     let is_json = config.is_json;
     let pipechain = if let Some(filename) = pipechain {
         let manifest_raw = std::fs::read_to_string(filename)
