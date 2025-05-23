@@ -475,9 +475,7 @@ impl PacketContents {
 
     pub fn recv_priority_addr_list_version(&self) -> Option<&crate::ton::int> {
         match self {
-            PacketContents::Adnl_PacketContents(x) => {
-                x.recv_priority_addr_list_version.as_ref()
-            }
+            PacketContents::Adnl_PacketContents(x) => x.recv_priority_addr_list_version.as_ref(),
         }
     }
 
