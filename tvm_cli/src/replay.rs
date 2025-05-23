@@ -387,8 +387,11 @@ pub async fn replay(
         }
         if tr.id == txnid {
             if dump_mask & DUMP_ACCOUNT != 0 {
-                let path =
-                    format!("{}-{}.boc", account_address.split(':').next_back().unwrap_or(""), txnid);
+                let path = format!(
+                    "{}-{}.boc",
+                    account_address.split(':').next_back().unwrap_or(""),
+                    txnid
+                );
                 account_root
                     .write_to_file(&path)
                     .map_err(|e| format!("Failed to write account: {e}"))?;
@@ -517,10 +520,8 @@ pub async fn replay(
             let local_desc = tr_local
                 .read_description()
                 .map_err(|e| format!("failed to read description: {e}"))?;
-            let remote_desc = tr
-                .tr
-                .read_description()
-                .map_err(|e| format!("failed to read description: {e}"))?;
+            let remote_desc =
+                tr.tr.read_description().map_err(|e| format!("failed to read description: {e}"))?;
             assert_eq!(remote_desc, local_desc);
             exit(2);
         }

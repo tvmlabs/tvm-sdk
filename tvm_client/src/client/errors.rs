@@ -83,10 +83,7 @@ impl Error {
     }
 
     pub fn invalid_base64<E: Display>(s: &str, err: E) -> ClientError {
-        error(
-            ErrorCode::InvalidBase64,
-            format!("Invalid base64 string: {err}\r\nbase64: [{s}]"),
-        )
+        error(ErrorCode::InvalidBase64, format!("Invalid base64 string: {err}\r\nbase64: [{s}]"))
     }
 
     pub fn invalid_address<E: Display>(err: E, address: &str) -> ClientError {
@@ -217,17 +214,12 @@ impl Error {
     pub fn unexpected_callback_response(expected: &str, received: impl Debug) -> ClientError {
         error(
             ErrorCode::UnexpectedCallbackResponse,
-            format!(
-                "Unexpected callback response. Expected {expected}, received {received:#?}"
-            ),
+            format!("Unexpected callback response. Expected {expected}, received {received:#?}"),
         )
     }
 
     pub fn can_not_parse_number(string: &str) -> ClientError {
-        error(
-            ErrorCode::CanNotParseNumber,
-            format!("Can not parse integer from string `{string}`"),
-        )
+        error(ErrorCode::CanNotParseNumber, format!("Can not parse integer from string `{string}`"))
     }
 
     pub fn cannot_convert_jsvalue_to_json(value: impl Debug) -> ClientError {

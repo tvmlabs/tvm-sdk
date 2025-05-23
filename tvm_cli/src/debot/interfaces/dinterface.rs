@@ -152,8 +152,7 @@ where
 
 pub fn decode_int256(args: &Value, name: &str) -> Result<BigInt, String> {
     let num_str = decode_arg(args, name)?;
-    decode_abi_bigint(&num_str)
-        .map_err(|e| format!("failed to decode integer \"{num_str}\": {e}"))
+    decode_abi_bigint(&num_str).map_err(|e| format!("failed to decode integer \"{num_str}\": {e}"))
 }
 
 pub fn decode_array<F, T>(args: &Value, name: &str, validator: F) -> Result<Vec<T>, String>

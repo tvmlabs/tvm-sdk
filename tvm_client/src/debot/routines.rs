@@ -75,8 +75,7 @@ pub async fn call_routine(
             let args = if arg_json.is_err() { json!({ "addr": arg }) } else { arg_json? };
             debug!("getAccountState({args})");
             let acc = get_account_state(ton, &args).await;
-            serde_json::to_value(acc)
-                .map_err(|e| format!("failed to serialize account state: {e}"))
+            serde_json::to_value(acc).map_err(|e| format!("failed to serialize account state: {e}"))
         }
         "loadBocFromFile" => {
             debug!("loadBocFromFile({arg})");
@@ -188,8 +187,7 @@ pub(super) fn format_arg(params: &serde_json::Value, i: usize) -> String {
 }
 
 pub(super) fn load_boc_from_file(_ton: TonClient, arg: &str) -> Result<String, String> {
-    let boc =
-        std::fs::read(arg).map_err(|e| format!(r#"failed to read boc file "{arg}": {e}"#))?;
+    let boc = std::fs::read(arg).map_err(|e| format!(r#"failed to read boc file "{arg}": {e}"#))?;
     Ok(base64_encode(boc))
 }
 

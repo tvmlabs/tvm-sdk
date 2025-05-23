@@ -98,9 +98,7 @@ impl Terminal {
             } else {
                 println!("(Ctrl+D to exit)");
             }
-            std::io::stdin()
-                .read_to_string(&mut value)
-                .map_err(|e| format!("input error: {e}"))?;
+            std::io::stdin().read_to_string(&mut value).map_err(|e| format!("input error: {e}"))?;
             println!();
         } else {
             value = terminal_input(&prompt, |_val| Ok(()));

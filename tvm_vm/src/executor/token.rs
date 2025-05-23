@@ -59,8 +59,7 @@ pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
     let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let mut repcoef = if bkrt < MAXRT {
         MINRC
-            + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
-                * (1_f64 - (-ARFC.ln() * bkrt / MAXRT).exp())
+            + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC) * (1_f64 - (-ARFC.ln() * bkrt / MAXRT).exp())
     } else {
         MAXRC
     };
@@ -87,11 +86,9 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let repavg = repavgbig / 1e9_f64;
     let rbkmin;
     if t <= TTMT - 1_f64 {
-        rbkmin = TOTALSUPPLY
-            * 0.675_f64
-            * (1_f64 + KM)
-            * ((-um * t).exp() - (-um * (t + 1_f64)).exp())
-            / 3.5_f64;
+        rbkmin =
+            TOTALSUPPLY * 0.675_f64 * (1_f64 + KM) * ((-um * t).exp() - (-um * (t + 1_f64)).exp())
+                / 3.5_f64;
     } else {
         rbkmin = 0_f64;
     }
@@ -111,11 +108,9 @@ pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Sta
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let rbkmin;
     if t <= TTMT - 1_f64 {
-        rbkmin = TOTALSUPPLY
-            * 0.1_f64
-            * (1_f64 + KM)
-            * ((-um * t).exp() - (-um * (t + 1_f64)).exp())
-            / 3.5_f64;
+        rbkmin =
+            TOTALSUPPLY * 0.1_f64 * (1_f64 + KM) * ((-um * t).exp() - (-um * (t + 1_f64)).exp())
+                / 3.5_f64;
     } else {
         rbkmin = 0_f64;
     }

@@ -109,9 +109,8 @@ pub fn read_keys(filename: &str) -> Result<KeyPair, String> {
 pub fn load_ton_address(addr: &str, config: &Config) -> Result<String, String> {
     let addr =
         if addr.find(':').is_none() { format!("{}:{}", config.wc, addr) } else { addr.to_owned() };
-    let _ = MsgAddressInt::from_str(&addr).map_err(|e| {
-        format!("Address is specified in the wrong format. Error description: {e}")
-    })?;
+    let _ = MsgAddressInt::from_str(&addr)
+        .map_err(|e| format!("Address is specified in the wrong format. Error description: {e}"))?;
     Ok(addr)
 }
 
@@ -601,8 +600,7 @@ pub fn construct_account_from_tvc(
 
 pub fn check_dir(path: &str) -> Result<(), String> {
     if !path.is_empty() && !std::path::Path::new(path).exists() {
-        std::fs::create_dir(path)
-            .map_err(|e| format!("Failed to create folder {path}: {e}"))?;
+        std::fs::create_dir(path).map_err(|e| format!("Failed to create folder {path}: {e}"))?;
     }
     Ok(())
 }
@@ -635,9 +633,8 @@ pub async fn load_account(
         }
         _ => {
             let account = if source_type == &AccountSource::BOC {
-                Account::construct_from_file(source).map_err(|e| {
-                    format!(" failed to load account from the file {source}: {e}")
-                })?
+                Account::construct_from_file(source)
+                    .map_err(|e| format!(" failed to load account from the file {source}: {e}"))?
             } else {
                 construct_account_from_tvc(source, None, None)?
             };
@@ -707,8 +704,7 @@ macro_rules! print_args {
 
 pub fn load_params(params: &str) -> Result<String, String> {
     if params.find('{').is_none() {
-        std::fs::read_to_string(params)
-            .map_err(|e| format!("failed to load params from file: {e}"))
+        std::fs::read_to_string(params).map_err(|e| format!("failed to load params from file: {e}"))
     } else {
         Ok(params.to_string())
     }
