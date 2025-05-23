@@ -11,23 +11,23 @@ pub enum Data {
 impl Data {
     pub fn body(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Data::Msg_DataRaw(ref x) => Some(&x.body),
+            Data::Msg_DataRaw(x) => Some(&x.body),
             _ => None,
         }
     }
 
     pub fn init_state(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Data::Msg_DataRaw(ref x) => Some(&x.init_state),
+            Data::Msg_DataRaw(x) => Some(&x.init_state),
             _ => None,
         }
     }
 
     pub fn text(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Data::Msg_DataDecryptedText(ref x) => Some(&x.text),
-            Data::Msg_DataEncryptedText(ref x) => Some(&x.text),
-            Data::Msg_DataText(ref x) => Some(&x.text),
+            Data::Msg_DataDecryptedText(x) => Some(&x.text),
+            Data::Msg_DataEncryptedText(x) => Some(&x.text),
+            Data::Msg_DataText(x) => Some(&x.text),
             _ => None,
         }
     }
@@ -87,13 +87,13 @@ pub enum DataDecrypted {
 impl DataDecrypted {
     pub fn data(&self) -> &crate::ton::msg::Data {
         match self {
-            DataDecrypted::Msg_DataDecrypted(ref x) => &x.data,
+            DataDecrypted::Msg_DataDecrypted(x) => &x.data,
         }
     }
 
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
-            DataDecrypted::Msg_DataDecrypted(ref x) => &x.proof,
+            DataDecrypted::Msg_DataDecrypted(x) => &x.proof,
         }
     }
 
@@ -143,7 +143,7 @@ impl DataDecryptedArray {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::msg::datadecrypted::DataDecrypted> {
         match self {
-            DataDecryptedArray::Msg_DataDecryptedArray(ref x) => &x.elements,
+            DataDecryptedArray::Msg_DataDecryptedArray(x) => &x.elements,
         }
     }
 
@@ -195,13 +195,13 @@ pub enum DataEncrypted {
 impl DataEncrypted {
     pub fn data(&self) -> &crate::ton::msg::Data {
         match self {
-            DataEncrypted::Msg_DataEncrypted(ref x) => &x.data,
+            DataEncrypted::Msg_DataEncrypted(x) => &x.data,
         }
     }
 
     pub fn source(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
-            DataEncrypted::Msg_DataEncrypted(ref x) => &x.source,
+            DataEncrypted::Msg_DataEncrypted(x) => &x.source,
         }
     }
 
@@ -251,7 +251,7 @@ impl DataEncryptedArray {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::msg::dataencrypted::DataEncrypted> {
         match self {
-            DataEncryptedArray::Msg_DataEncryptedArray(ref x) => &x.elements,
+            DataEncryptedArray::Msg_DataEncryptedArray(x) => &x.elements,
         }
     }
 
@@ -303,25 +303,25 @@ pub enum Message {
 impl Message {
     pub fn amount(&self) -> &crate::ton::int64 {
         match self {
-            Message::Msg_Message(ref x) => &x.amount,
+            Message::Msg_Message(x) => &x.amount,
         }
     }
 
     pub fn data(&self) -> &crate::ton::msg::Data {
         match self {
-            Message::Msg_Message(ref x) => &x.data,
+            Message::Msg_Message(x) => &x.data,
         }
     }
 
     pub fn destination(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
-            Message::Msg_Message(ref x) => &x.destination,
+            Message::Msg_Message(x) => &x.destination,
         }
     }
 
     pub fn public_key(&self) -> &crate::ton::string {
         match self {
-            Message::Msg_Message(ref x) => &x.public_key,
+            Message::Msg_Message(x) => &x.public_key,
         }
     }
 

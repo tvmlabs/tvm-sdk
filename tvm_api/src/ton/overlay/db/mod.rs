@@ -8,13 +8,13 @@ pub enum Key {
 impl Key {
     pub fn local_id(&self) -> &crate::ton::int256 {
         match self {
-            Key::Overlay_Db_Key_Nodes(ref x) => &x.local_id,
+            Key::Overlay_Db_Key_Nodes(x) => &x.local_id,
         }
     }
 
     pub fn overlay(&self) -> &crate::ton::int256 {
         match self {
-            Key::Overlay_Db_Key_Nodes(ref x) => &x.overlay,
+            Key::Overlay_Db_Key_Nodes(x) => &x.overlay,
         }
     }
 
@@ -62,7 +62,7 @@ pub enum Nodes {
 impl Nodes {
     pub fn nodes(&self) -> &crate::ton::overlay::nodes::Nodes {
         match self {
-            Nodes::Overlay_Db_Nodes(ref x) => &x.nodes,
+            Nodes::Overlay_Db_Nodes(x) => &x.nodes,
         }
     }
 

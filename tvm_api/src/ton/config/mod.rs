@@ -49,19 +49,19 @@ pub enum Global {
 impl Global {
     pub fn adnl(&self) -> &crate::ton::adnl::config::global::Global {
         match self {
-            Global::Config_Global(ref x) => &x.adnl,
+            Global::Config_Global(x) => &x.adnl,
         }
     }
 
     pub fn dht(&self) -> &crate::ton::dht::config::global::Global {
         match self {
-            Global::Config_Global(ref x) => &x.dht,
+            Global::Config_Global(x) => &x.dht,
         }
     }
 
     pub fn validator(&self) -> &crate::ton::validator::config::global::Global {
         match self {
-            Global::Config_Global(ref x) => &x.validator,
+            Global::Config_Global(x) => &x.validator,
         }
     }
 
@@ -111,13 +111,13 @@ impl Local {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::control::config::local::Local> {
         match self {
-            Local::Config_Local(ref x) => &x.control,
+            Local::Config_Local(x) => &x.control,
         }
     }
 
     pub fn dht(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::dht::config::Local> {
         match self {
-            Local::Config_Local(ref x) => &x.dht,
+            Local::Config_Local(x) => &x.dht,
         }
     }
 
@@ -125,7 +125,7 @@ impl Local {
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::liteserver::config::Local> {
         match self {
-            Local::Config_Local(ref x) => &x.liteservers,
+            Local::Config_Local(x) => &x.liteservers,
         }
     }
 
@@ -133,7 +133,7 @@ impl Local {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::id::config::local::Local> {
         match self {
-            Local::Config_Local(ref x) => &x.local_ids,
+            Local::Config_Local(x) => &x.local_ids,
         }
     }
 
@@ -141,7 +141,7 @@ impl Local {
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::validator::config::Local> {
         match self {
-            Local::Config_Local(ref x) => &x.validators,
+            Local::Config_Local(x) => &x.validators,
         }
     }
 

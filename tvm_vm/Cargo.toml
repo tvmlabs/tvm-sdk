@@ -23,7 +23,7 @@ num-traits.workspace = true
 rand.workspace = true
 similar = { features = ["bytes"], optional = true, workspace = true }
 thiserror.workspace = true
-zstd = { default-features = false, optional = true, workspace = true }
+zstd = { optional = true, workspace = true }
 
 tvm_block.workspace = true
 tvm_types.workspace = true

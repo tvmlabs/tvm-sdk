@@ -940,7 +940,7 @@ fn test_sendfile() -> Result<(), Box<dyn std::error::Error>> {
 #[ignore] // old version boc
 #[test]
 fn test_account_command() -> Result<(), Box<dyn std::error::Error>> {
-    env::set_var("RUST_LOG", "debug");
+    unsafe { env::set_var("RUST_LOG", "debug") };
     let config_path = "devnet.config";
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;

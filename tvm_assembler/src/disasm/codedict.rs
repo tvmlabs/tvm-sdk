@@ -53,7 +53,7 @@ impl Code {
             process(code);
             for insn in code.iter_mut() {
                 for param in insn.params_mut() {
-                    if let InstructionParameter::Code { code: ref mut inner, cell: _ } = param {
+                    if let InstructionParameter::Code { code: inner, cell: _ } = param {
                         stack.push(inner)
                     }
                 }

@@ -54,19 +54,19 @@ pub enum ToSign {
 impl ToSign {
     pub fn id(&self) -> &crate::ton::adnl::id::short::Short {
         match self {
-            ToSign::Overlay_Node_ToSign(ref x) => &x.id,
+            ToSign::Overlay_Node_ToSign(x) => &x.id,
         }
     }
 
     pub fn overlay(&self) -> &crate::ton::int256 {
         match self {
-            ToSign::Overlay_Node_ToSign(ref x) => &x.overlay,
+            ToSign::Overlay_Node_ToSign(x) => &x.overlay,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            ToSign::Overlay_Node_ToSign(ref x) => &x.version,
+            ToSign::Overlay_Node_ToSign(x) => &x.version,
         }
     }
 

@@ -10,23 +10,23 @@ pub enum Group {
 impl Group {
     pub fn catchain_seqno(&self) -> &crate::ton::int {
         match self {
-            Group::Validator_Group(ref x) => &x.catchain_seqno,
-            Group::Validator_GroupEx(ref x) => &x.catchain_seqno,
-            Group::Validator_GroupNew(ref x) => &x.catchain_seqno,
+            Group::Validator_Group(x) => &x.catchain_seqno,
+            Group::Validator_GroupEx(x) => &x.catchain_seqno,
+            Group::Validator_GroupNew(x) => &x.catchain_seqno,
         }
     }
 
     pub fn config_hash(&self) -> &crate::ton::int256 {
         match self {
-            Group::Validator_Group(ref x) => &x.config_hash,
-            Group::Validator_GroupEx(ref x) => &x.config_hash,
-            Group::Validator_GroupNew(ref x) => &x.config_hash,
+            Group::Validator_Group(x) => &x.config_hash,
+            Group::Validator_GroupEx(x) => &x.config_hash,
+            Group::Validator_GroupNew(x) => &x.config_hash,
         }
     }
 
     pub fn last_key_block_seqno(&self) -> Option<&crate::ton::int> {
         match self {
-            Group::Validator_GroupNew(ref x) => Some(&x.last_key_block_seqno),
+            Group::Validator_GroupNew(x) => Some(&x.last_key_block_seqno),
             _ => None,
         }
     }
@@ -38,33 +38,33 @@ impl Group {
         crate::ton::engine::validator::validator::groupmember::GroupMember,
     > {
         match self {
-            Group::Validator_Group(ref x) => &x.members,
-            Group::Validator_GroupEx(ref x) => &x.members,
-            Group::Validator_GroupNew(ref x) => &x.members,
+            Group::Validator_Group(x) => &x.members,
+            Group::Validator_GroupEx(x) => &x.members,
+            Group::Validator_GroupNew(x) => &x.members,
         }
     }
 
     pub fn shard(&self) -> &crate::ton::long {
         match self {
-            Group::Validator_Group(ref x) => &x.shard,
-            Group::Validator_GroupEx(ref x) => &x.shard,
-            Group::Validator_GroupNew(ref x) => &x.shard,
+            Group::Validator_Group(x) => &x.shard,
+            Group::Validator_GroupEx(x) => &x.shard,
+            Group::Validator_GroupNew(x) => &x.shard,
         }
     }
 
     pub fn vertical_seqno(&self) -> Option<&crate::ton::int> {
         match self {
-            Group::Validator_GroupEx(ref x) => Some(&x.vertical_seqno),
-            Group::Validator_GroupNew(ref x) => Some(&x.vertical_seqno),
+            Group::Validator_GroupEx(x) => Some(&x.vertical_seqno),
+            Group::Validator_GroupNew(x) => Some(&x.vertical_seqno),
             _ => None,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            Group::Validator_Group(ref x) => &x.workchain,
-            Group::Validator_GroupEx(ref x) => &x.workchain,
-            Group::Validator_GroupNew(ref x) => &x.workchain,
+            Group::Validator_Group(x) => &x.workchain,
+            Group::Validator_GroupEx(x) => &x.workchain,
+            Group::Validator_GroupNew(x) => &x.workchain,
         }
     }
 }

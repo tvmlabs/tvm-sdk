@@ -106,7 +106,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         );
         let (bounce, is_ext_msg) = match in_msg.header() {
             CommonMsgInfo::ExtOutMsgInfo(_) => fail!(ExecutorError::InvalidExtMessage),
-            CommonMsgInfo::IntMsgInfo(ref hdr) => (hdr.bounce, false),
+            CommonMsgInfo::IntMsgInfo(hdr) => (hdr.bounce, false),
             CommonMsgInfo::ExtInMsgInfo(_) => (false, true),
         };
 

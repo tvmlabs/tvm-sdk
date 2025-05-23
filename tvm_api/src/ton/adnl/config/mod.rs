@@ -8,7 +8,7 @@ pub enum Global {
 impl Global {
     pub fn static_nodes(&self) -> &crate::ton::adnl::nodes::Nodes {
         match self {
-            Global::Adnl_Config_Global(ref x) => &x.static_nodes,
+            Global::Adnl_Config_Global(x) => &x.static_nodes,
         }
     }
 

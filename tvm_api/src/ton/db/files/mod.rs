@@ -10,21 +10,21 @@ pub enum Key {
 impl Key {
     pub fn key(&self) -> Option<&crate::ton::Bool> {
         match self {
-            Key::Db_Files_Package_Key(ref x) => Some(&x.key),
+            Key::Db_Files_Package_Key(x) => Some(&x.key),
             _ => None,
         }
     }
 
     pub fn package_id(&self) -> Option<&crate::ton::int> {
         match self {
-            Key::Db_Files_Package_Key(ref x) => Some(&x.package_id),
+            Key::Db_Files_Package_Key(x) => Some(&x.package_id),
             _ => None,
         }
     }
 
     pub fn temp(&self) -> Option<&crate::ton::Bool> {
         match self {
-            Key::Db_Files_Package_Key(ref x) => Some(&x.temp),
+            Key::Db_Files_Package_Key(x) => Some(&x.temp),
             _ => None,
         }
     }

@@ -114,7 +114,7 @@ fn test_shard_descr_with_copyleft() {
 
 #[test]
 fn test_shard_descr_fast_finality() {
-    std::env::set_var("RUST_BACKTRACE", "full");
+    unsafe { std::env::set_var("RUST_BACKTRACE", "full") };
 
     let mut descr_none =
         ShardDescr::with_params(42, 17, 25, UInt256::from([70; 32]), FutureSplitMerge::None);
@@ -232,7 +232,7 @@ fn test_mc_state_extra() {
 
 #[test]
 fn test_mc_block_extra() {
-    std::env::set_var("RUST_BACKTRACE", "full");
+    unsafe { std::env::set_var("RUST_BACKTRACE", "full") };
 
     let mut extra = McBlockExtra::default();
     let shard1 =
@@ -656,7 +656,7 @@ impl RefShardBlocks {
 
 #[test]
 fn test_shard_descr_ref_shard_blocks_err() {
-    std::env::set_var("RUST_BACKTRACE", "full");
+    unsafe { std::env::set_var("RUST_BACKTRACE", "full") };
 
     let mut ids = HashSet::new();
     ids.insert((

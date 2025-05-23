@@ -8,7 +8,7 @@ pub enum Info {
 impl Info {
     pub fn id(&self) -> &crate::ton::int53 {
         match self {
-            Info::Smc_Info(ref x) => &x.id,
+            Info::Smc_Info(x) => &x.id,
         }
     }
 
@@ -57,14 +57,14 @@ pub enum MethodId {
 impl MethodId {
     pub fn name(&self) -> Option<&crate::ton::string> {
         match self {
-            MethodId::Smc_MethodIdName(ref x) => Some(&x.name),
+            MethodId::Smc_MethodIdName(x) => Some(&x.name),
             _ => None,
         }
     }
 
     pub fn number(&self) -> Option<&crate::ton::int32> {
         match self {
-            MethodId::Smc_MethodIdNumber(ref x) => Some(&x.number),
+            MethodId::Smc_MethodIdNumber(x) => Some(&x.number),
             _ => None,
         }
     }
@@ -111,19 +111,19 @@ pub enum RunResult {
 impl RunResult {
     pub fn exit_code(&self) -> &crate::ton::int32 {
         match self {
-            RunResult::Smc_RunResult(ref x) => &x.exit_code,
+            RunResult::Smc_RunResult(x) => &x.exit_code,
         }
     }
 
     pub fn gas_used(&self) -> &crate::ton::int53 {
         match self {
-            RunResult::Smc_RunResult(ref x) => &x.gas_used,
+            RunResult::Smc_RunResult(x) => &x.gas_used,
         }
     }
 
     pub fn stack(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry> {
         match self {
-            RunResult::Smc_RunResult(ref x) => &x.stack,
+            RunResult::Smc_RunResult(x) => &x.stack,
         }
     }
 
@@ -172,56 +172,56 @@ pub enum RunTvmResult {
 impl RunTvmResult {
     pub fn block_root_hash(&self) -> &crate::ton::int256 {
         match self {
-            RunTvmResult::Smc_RunTvmResultException(ref x) => &x.block_root_hash,
-            RunTvmResult::Smc_RunTvmResultOk(ref x) => &x.block_root_hash,
+            RunTvmResult::Smc_RunTvmResultException(x) => &x.block_root_hash,
+            RunTvmResult::Smc_RunTvmResultOk(x) => &x.block_root_hash,
         }
     }
 
     pub fn code(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RunTvmResult::Smc_RunTvmResultOk(ref x) => x.code.as_ref(),
+            RunTvmResult::Smc_RunTvmResultOk(x) => x.code.as_ref(),
             _ => None,
         }
     }
 
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RunTvmResult::Smc_RunTvmResultOk(ref x) => x.data.as_ref(),
+            RunTvmResult::Smc_RunTvmResultOk(x) => x.data.as_ref(),
             _ => None,
         }
     }
 
     pub fn exit_arg(&self) -> Option<&crate::ton::tvm::StackEntry> {
         match self {
-            RunTvmResult::Smc_RunTvmResultException(ref x) => Some(&x.exit_arg),
+            RunTvmResult::Smc_RunTvmResultException(x) => Some(&x.exit_arg),
             _ => None,
         }
     }
 
     pub fn exit_code(&self) -> &crate::ton::int {
         match self {
-            RunTvmResult::Smc_RunTvmResultException(ref x) => &x.exit_code,
-            RunTvmResult::Smc_RunTvmResultOk(ref x) => &x.exit_code,
+            RunTvmResult::Smc_RunTvmResultException(x) => &x.exit_code,
+            RunTvmResult::Smc_RunTvmResultOk(x) => &x.exit_code,
         }
     }
 
     pub fn init_c7(&self) -> Option<&crate::ton::tvm::StackEntry> {
         match self {
-            RunTvmResult::Smc_RunTvmResultOk(ref x) => x.init_c7.as_ref(),
+            RunTvmResult::Smc_RunTvmResultOk(x) => x.init_c7.as_ref(),
             _ => None,
         }
     }
 
     pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::bytes>> {
         match self {
-            RunTvmResult::Smc_RunTvmResultOk(ref x) => x.messages.as_ref(),
+            RunTvmResult::Smc_RunTvmResultOk(x) => x.messages.as_ref(),
             _ => None,
         }
     }
 
     pub fn mode(&self) -> Option<&crate::ton::int> {
         match self {
-            RunTvmResult::Smc_RunTvmResultOk(ref x) => Some(&x.mode),
+            RunTvmResult::Smc_RunTvmResultOk(x) => Some(&x.mode),
             _ => None,
         }
     }
@@ -230,7 +230,7 @@ impl RunTvmResult {
         &self,
     ) -> Option<&crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry>> {
         match self {
-            RunTvmResult::Smc_RunTvmResultOk(ref x) => x.stack.as_ref(),
+            RunTvmResult::Smc_RunTvmResultOk(x) => x.stack.as_ref(),
             _ => None,
         }
     }

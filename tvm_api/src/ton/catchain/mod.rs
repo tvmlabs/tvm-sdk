@@ -8,31 +8,31 @@ pub enum Block {
 impl Block {
     pub fn data(&self) -> &crate::ton::catchain::block::data::Data {
         match self {
-            Block::Catchain_Block(ref x) => &x.data,
+            Block::Catchain_Block(x) => &x.data,
         }
     }
 
     pub fn height(&self) -> &crate::ton::int {
         match self {
-            Block::Catchain_Block(ref x) => &x.height,
+            Block::Catchain_Block(x) => &x.height,
         }
     }
 
     pub fn incarnation(&self) -> &crate::ton::int256 {
         match self {
-            Block::Catchain_Block(ref x) => &x.incarnation,
+            Block::Catchain_Block(x) => &x.incarnation,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            Block::Catchain_Block(ref x) => &x.signature,
+            Block::Catchain_Block(x) => &x.signature,
         }
     }
 
     pub fn src(&self) -> &crate::ton::int {
         match self {
-            Block::Catchain_Block(ref x) => &x.src,
+            Block::Catchain_Block(x) => &x.src,
         }
     }
 
@@ -82,7 +82,7 @@ pub enum BlockResult {
 impl BlockResult {
     pub fn block(&self) -> Option<&crate::ton::catchain::block::Block> {
         match self {
-            BlockResult::Catchain_BlockResult(ref x) => Some(&x.block),
+            BlockResult::Catchain_BlockResult(x) => Some(&x.block),
             _ => None,
         }
     }
@@ -150,7 +150,7 @@ impl Blocks {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::catchain::block::Block> {
         match self {
-            Blocks::Catchain_Blocks(ref x) => &x.blocks,
+            Blocks::Catchain_Blocks(x) => &x.blocks,
         }
     }
 
@@ -199,21 +199,21 @@ pub enum Difference {
 impl Difference {
     pub fn left(&self) -> Option<&crate::ton::catchain::block::dep::Dep> {
         match self {
-            Difference::Catchain_DifferenceFork(ref x) => Some(&x.left),
+            Difference::Catchain_DifferenceFork(x) => Some(&x.left),
             _ => None,
         }
     }
 
     pub fn right(&self) -> Option<&crate::ton::catchain::block::dep::Dep> {
         match self {
-            Difference::Catchain_DifferenceFork(ref x) => Some(&x.right),
+            Difference::Catchain_DifferenceFork(x) => Some(&x.right),
             _ => None,
         }
     }
 
     pub fn sent_upto(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::int>> {
         match self {
-            Difference::Catchain_Difference(ref x) => Some(&x.sent_upto),
+            Difference::Catchain_Difference(x) => Some(&x.sent_upto),
             _ => None,
         }
     }
@@ -260,13 +260,13 @@ pub enum FirstBlock {
 impl FirstBlock {
     pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int256> {
         match self {
-            FirstBlock::Catchain_Firstblock(ref x) => &x.nodes,
+            FirstBlock::Catchain_Firstblock(x) => &x.nodes,
         }
     }
 
     pub fn unique_hash(&self) -> &crate::ton::int256 {
         match self {
-            FirstBlock::Catchain_Firstblock(ref x) => &x.unique_hash,
+            FirstBlock::Catchain_Firstblock(x) => &x.unique_hash,
         }
     }
 
@@ -314,7 +314,7 @@ pub enum Sent {
 impl Sent {
     pub fn cnt(&self) -> &crate::ton::int {
         match self {
-            Sent::Catchain_Sent(ref x) => &x.cnt,
+            Sent::Catchain_Sent(x) => &x.cnt,
         }
     }
 
@@ -362,7 +362,7 @@ pub enum Update {
 impl Update {
     pub fn block(&self) -> &crate::ton::catchain::block::Block {
         match self {
-            Update::Catchain_BlockUpdate(ref x) => &x.block,
+            Update::Catchain_BlockUpdate(x) => &x.block,
         }
     }
 

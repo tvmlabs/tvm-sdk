@@ -10,7 +10,7 @@ pub enum AccountAddress {
 impl AccountAddress {
     pub fn account_address(&self) -> &crate::ton::string {
         match self {
-            AccountAddress::AccountAddress(ref x) => &x.account_address,
+            AccountAddress::AccountAddress(x) => &x.account_address,
         }
     }
 
@@ -60,7 +60,7 @@ impl AccountList {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::fullaccountstate::FullAccountState> {
         match self {
-            AccountList::AccountList(ref x) => &x.accounts,
+            AccountList::AccountList(x) => &x.accounts,
         }
     }
 
@@ -110,7 +110,7 @@ impl AccountRevisionList {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::fullaccountstate::FullAccountState> {
         match self {
-            AccountRevisionList::AccountRevisionList(ref x) => &x.revisions,
+            AccountRevisionList::AccountRevisionList(x) => &x.revisions,
         }
     }
 
@@ -172,66 +172,66 @@ pub enum AccountState {
 impl AccountState {
     pub fn code(&self) -> Option<&crate::ton::bytes> {
         match self {
-            AccountState::Raw_AccountState(ref x) => Some(&x.code),
+            AccountState::Raw_AccountState(x) => Some(&x.code),
             _ => None,
         }
     }
 
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            AccountState::Raw_AccountState(ref x) => Some(&x.data),
+            AccountState::Raw_AccountState(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn description(&self) -> Option<&crate::ton::string> {
         match self {
-            AccountState::Pchan_AccountState(ref x) => Some(&x.description),
+            AccountState::Pchan_AccountState(x) => Some(&x.description),
             _ => None,
         }
     }
 
     pub fn frozen_hash(&self) -> Option<&crate::ton::bytes> {
         match self {
-            AccountState::Raw_AccountState(ref x) => Some(&x.frozen_hash),
-            AccountState::Uninited_AccountState(ref x) => Some(&x.frozen_hash),
+            AccountState::Raw_AccountState(x) => Some(&x.frozen_hash),
+            AccountState::Uninited_AccountState(x) => Some(&x.frozen_hash),
             _ => None,
         }
     }
 
     pub fn seqno(&self) -> Option<&crate::ton::int32> {
         match self {
-            AccountState::Rwallet_AccountState(ref x) => Some(&x.seqno),
-            AccountState::TestGiver_AccountState(ref x) => Some(&x.seqno),
-            AccountState::TestWallet_AccountState(ref x) => Some(&x.seqno),
-            AccountState::Wallet_AccountState(ref x) => Some(&x.seqno),
-            AccountState::Wallet_Highload_V1_AccountState(ref x) => Some(&x.seqno),
-            AccountState::Wallet_V3_AccountState(ref x) => Some(&x.seqno),
+            AccountState::Rwallet_AccountState(x) => Some(&x.seqno),
+            AccountState::TestGiver_AccountState(x) => Some(&x.seqno),
+            AccountState::TestWallet_AccountState(x) => Some(&x.seqno),
+            AccountState::Wallet_AccountState(x) => Some(&x.seqno),
+            AccountState::Wallet_Highload_V1_AccountState(x) => Some(&x.seqno),
+            AccountState::Wallet_V3_AccountState(x) => Some(&x.seqno),
             _ => None,
         }
     }
 
     pub fn state(&self) -> Option<&crate::ton::pchan::State> {
         match self {
-            AccountState::Pchan_AccountState(ref x) => Some(&x.state),
+            AccountState::Pchan_AccountState(x) => Some(&x.state),
             _ => None,
         }
     }
 
     pub fn unlocked_balance(&self) -> Option<&crate::ton::int64> {
         match self {
-            AccountState::Rwallet_AccountState(ref x) => Some(&x.unlocked_balance),
+            AccountState::Rwallet_AccountState(x) => Some(&x.unlocked_balance),
             _ => None,
         }
     }
 
     pub fn wallet_id(&self) -> Option<&crate::ton::int64> {
         match self {
-            AccountState::Dns_AccountState(ref x) => Some(&x.wallet_id),
-            AccountState::Rwallet_AccountState(ref x) => Some(&x.wallet_id),
-            AccountState::Wallet_Highload_V1_AccountState(ref x) => Some(&x.wallet_id),
-            AccountState::Wallet_Highload_V2_AccountState(ref x) => Some(&x.wallet_id),
-            AccountState::Wallet_V3_AccountState(ref x) => Some(&x.wallet_id),
+            AccountState::Dns_AccountState(x) => Some(&x.wallet_id),
+            AccountState::Rwallet_AccountState(x) => Some(&x.wallet_id),
+            AccountState::Wallet_Highload_V1_AccountState(x) => Some(&x.wallet_id),
+            AccountState::Wallet_Highload_V2_AccountState(x) => Some(&x.wallet_id),
+            AccountState::Wallet_V3_AccountState(x) => Some(&x.wallet_id),
             _ => None,
         }
     }
@@ -342,14 +342,14 @@ impl Action {
         &self,
     ) -> Option<&crate::ton::vector<crate::ton::Boxed, crate::ton::dns::Action>> {
         match self {
-            Action::ActionDns(ref x) => Some(&x.actions),
+            Action::ActionDns(x) => Some(&x.actions),
             _ => None,
         }
     }
 
     pub fn allow_send_to_uninited(&self) -> Option<&crate::ton::Bool> {
         match self {
-            Action::ActionMsg(ref x) => Some(&x.allow_send_to_uninited),
+            Action::ActionMsg(x) => Some(&x.allow_send_to_uninited),
             _ => None,
         }
     }
@@ -358,7 +358,7 @@ impl Action {
         &self,
     ) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::msg::message::Message>> {
         match self {
-            Action::ActionMsg(ref x) => Some(&x.messages),
+            Action::ActionMsg(x) => Some(&x.messages),
             _ => None,
         }
     }
@@ -421,7 +421,7 @@ pub enum AdnlAddress {
 impl AdnlAddress {
     pub fn adnl_address(&self) -> &crate::ton::string {
         match self {
-            AdnlAddress::AdnlAddress(ref x) => &x.adnl_address,
+            AdnlAddress::AdnlAddress(x) => &x.adnl_address,
         }
     }
 
@@ -469,7 +469,7 @@ pub enum Bip39Hints {
 impl Bip39Hints {
     pub fn words(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::string> {
         match self {
-            Bip39Hints::Bip39Hints(ref x) => &x.words,
+            Bip39Hints::Bip39Hints(x) => &x.words,
         }
     }
 
@@ -549,25 +549,25 @@ pub enum Config {
 impl Config {
     pub fn blockchain_name(&self) -> &crate::ton::string {
         match self {
-            Config::Config(ref x) => &x.blockchain_name,
+            Config::Config(x) => &x.blockchain_name,
         }
     }
 
     pub fn config(&self) -> &crate::ton::string {
         match self {
-            Config::Config(ref x) => &x.config,
+            Config::Config(x) => &x.config,
         }
     }
 
     pub fn ignore_cache(&self) -> &crate::ton::Bool {
         match self {
-            Config::Config(ref x) => &x.ignore_cache,
+            Config::Config(x) => &x.ignore_cache,
         }
     }
 
     pub fn use_callbacks_for_network(&self) -> &crate::ton::Bool {
         match self {
-            Config::Config(ref x) => &x.use_callbacks_for_network,
+            Config::Config(x) => &x.use_callbacks_for_network,
         }
     }
 
@@ -615,7 +615,7 @@ pub enum Data {
 impl Data {
     pub fn bytes(&self) -> &crate::ton::secureBytes {
         match self {
-            Data::Data(ref x) => &x.bytes,
+            Data::Data(x) => &x.bytes,
         }
     }
 
@@ -663,13 +663,13 @@ pub enum Error {
 impl Error {
     pub fn code(&self) -> &crate::ton::int32 {
         match self {
-            Error::Error(ref x) => &x.code,
+            Error::Error(x) => &x.code,
         }
     }
 
     pub fn message(&self) -> &crate::ton::string {
         match self {
-            Error::Error(ref x) => &x.message,
+            Error::Error(x) => &x.message,
         }
     }
 
@@ -717,7 +717,7 @@ pub enum ExportedEncryptedKey {
 impl ExportedEncryptedKey {
     pub fn data(&self) -> &crate::ton::secureBytes {
         match self {
-            ExportedEncryptedKey::ExportedEncryptedKey(ref x) => &x.data,
+            ExportedEncryptedKey::ExportedEncryptedKey(x) => &x.data,
         }
     }
 
@@ -769,7 +769,7 @@ pub enum ExportedKey {
 impl ExportedKey {
     pub fn word_list(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::secureString> {
         match self {
-            ExportedKey::ExportedKey(ref x) => &x.word_list,
+            ExportedKey::ExportedKey(x) => &x.word_list,
         }
     }
 
@@ -817,7 +817,7 @@ pub enum ExportedPemKey {
 impl ExportedPemKey {
     pub fn pem(&self) -> &crate::ton::secureString {
         match self {
-            ExportedPemKey::ExportedPemKey(ref x) => &x.pem,
+            ExportedPemKey::ExportedPemKey(x) => &x.pem,
         }
     }
 
@@ -865,7 +865,7 @@ pub enum ExportedUnencryptedKey {
 impl ExportedUnencryptedKey {
     pub fn data(&self) -> &crate::ton::secureBytes {
         match self {
-            ExportedUnencryptedKey::ExportedUnencryptedKey(ref x) => &x.data,
+            ExportedUnencryptedKey::ExportedUnencryptedKey(x) => &x.data,
         }
     }
 
@@ -919,25 +919,25 @@ pub enum Fees {
 impl Fees {
     pub fn fwd_fee(&self) -> &crate::ton::int53 {
         match self {
-            Fees::Fees(ref x) => &x.fwd_fee,
+            Fees::Fees(x) => &x.fwd_fee,
         }
     }
 
     pub fn gas_fee(&self) -> &crate::ton::int53 {
         match self {
-            Fees::Fees(ref x) => &x.gas_fee,
+            Fees::Fees(x) => &x.gas_fee,
         }
     }
 
     pub fn in_fwd_fee(&self) -> &crate::ton::int53 {
         match self {
-            Fees::Fees(ref x) => &x.in_fwd_fee,
+            Fees::Fees(x) => &x.in_fwd_fee,
         }
     }
 
     pub fn storage_fee(&self) -> &crate::ton::int53 {
         match self {
-            Fees::Fees(ref x) => &x.storage_fee,
+            Fees::Fees(x) => &x.storage_fee,
         }
     }
 
@@ -985,43 +985,43 @@ pub enum FullAccountState {
 impl FullAccountState {
     pub fn account_state(&self) -> &crate::ton::AccountState {
         match self {
-            FullAccountState::FullAccountState(ref x) => &x.account_state,
+            FullAccountState::FullAccountState(x) => &x.account_state,
         }
     }
 
     pub fn address(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
-            FullAccountState::FullAccountState(ref x) => &x.address,
+            FullAccountState::FullAccountState(x) => &x.address,
         }
     }
 
     pub fn balance(&self) -> &crate::ton::int64 {
         match self {
-            FullAccountState::FullAccountState(ref x) => &x.balance,
+            FullAccountState::FullAccountState(x) => &x.balance,
         }
     }
 
     pub fn block_id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            FullAccountState::FullAccountState(ref x) => &x.block_id,
+            FullAccountState::FullAccountState(x) => &x.block_id,
         }
     }
 
     pub fn last_transaction_id(&self) -> &crate::ton::internal::transactionid::TransactionId {
         match self {
-            FullAccountState::FullAccountState(ref x) => &x.last_transaction_id,
+            FullAccountState::FullAccountState(x) => &x.last_transaction_id,
         }
     }
 
     pub fn revision(&self) -> &crate::ton::int32 {
         match self {
-            FullAccountState::FullAccountState(ref x) => &x.revision,
+            FullAccountState::FullAccountState(x) => &x.revision,
         }
     }
 
     pub fn sync_utime(&self) -> &crate::ton::int53 {
         match self {
-            FullAccountState::FullAccountState(ref x) => &x.sync_utime,
+            FullAccountState::FullAccountState(x) => &x.sync_utime,
         }
     }
 
@@ -1090,185 +1090,185 @@ pub enum Hashable {
 impl Hashable {
     pub fn approve_signatures(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionOldRound(ref x) => Some(&x.approve_signatures),
+            Hashable::Hashable_ValidatorSessionOldRound(x) => Some(&x.approve_signatures),
             _ => None,
         }
     }
 
     pub fn approved(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_BlockCandidate(ref x) => Some(&x.approved),
-            Hashable::Hashable_BlockVoteCandidate(ref x) => Some(&x.approved),
+            Hashable::Hashable_BlockCandidate(x) => Some(&x.approved),
+            Hashable::Hashable_BlockVoteCandidate(x) => Some(&x.approved),
             _ => None,
         }
     }
 
     pub fn approved_blocks(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.approved_blocks),
+            Hashable::Hashable_ValidatorSessionRound(x) => Some(&x.approved_blocks),
             _ => None,
         }
     }
 
     pub fn attempts(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.attempts),
+            Hashable::Hashable_ValidatorSessionRound(x) => Some(&x.attempts),
             _ => None,
         }
     }
 
     pub fn block(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_BlockCandidate(ref x) => Some(&x.block),
-            Hashable::Hashable_BlockCandidateAttempt(ref x) => Some(&x.block),
-            Hashable::Hashable_BlockVoteCandidate(ref x) => Some(&x.block),
-            Hashable::Hashable_ValidatorSessionOldRound(ref x) => Some(&x.block),
-            Hashable::Hashable_Vote(ref x) => Some(&x.block),
+            Hashable::Hashable_BlockCandidate(x) => Some(&x.block),
+            Hashable::Hashable_BlockCandidateAttempt(x) => Some(&x.block),
+            Hashable::Hashable_BlockVoteCandidate(x) => Some(&x.block),
+            Hashable::Hashable_ValidatorSessionOldRound(x) => Some(&x.block),
+            Hashable::Hashable_Vote(x) => Some(&x.block),
             _ => None,
         }
     }
 
     pub fn collated_data_file_hash(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_SentBlock(ref x) => Some(&x.collated_data_file_hash),
+            Hashable::Hashable_SentBlock(x) => Some(&x.collated_data_file_hash),
             _ => None,
         }
     }
 
     pub fn cur_round(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSession(ref x) => Some(&x.cur_round),
+            Hashable::Hashable_ValidatorSession(x) => Some(&x.cur_round),
             _ => None,
         }
     }
 
     pub fn data(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_CntSortedVector(ref x) => Some(&x.data),
-            Hashable::Hashable_CntVector(ref x) => Some(&x.data),
+            Hashable::Hashable_CntSortedVector(x) => Some(&x.data),
+            Hashable::Hashable_CntVector(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn file_hash(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_SentBlock(ref x) => Some(&x.file_hash),
+            Hashable::Hashable_SentBlock(x) => Some(&x.file_hash),
             _ => None,
         }
     }
 
     pub fn first_attempt(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.first_attempt),
+            Hashable::Hashable_ValidatorSessionRound(x) => Some(&x.first_attempt),
             _ => None,
         }
     }
 
     pub fn left(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_Pair(ref x) => Some(&x.left),
+            Hashable::Hashable_Pair(x) => Some(&x.left),
             _ => None,
         }
     }
 
     pub fn locked_block(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.locked_block),
+            Hashable::Hashable_ValidatorSessionRound(x) => Some(&x.locked_block),
             _ => None,
         }
     }
 
     pub fn locked_round(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.locked_round),
+            Hashable::Hashable_ValidatorSessionRound(x) => Some(&x.locked_round),
             _ => None,
         }
     }
 
     pub fn node(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_Vote(ref x) => Some(&x.node),
+            Hashable::Hashable_Vote(x) => Some(&x.node),
             _ => None,
         }
     }
 
     pub fn old_rounds(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSession(ref x) => Some(&x.old_rounds),
+            Hashable::Hashable_ValidatorSession(x) => Some(&x.old_rounds),
             _ => None,
         }
     }
 
     pub fn right(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_Pair(ref x) => Some(&x.right),
+            Hashable::Hashable_Pair(x) => Some(&x.right),
             _ => None,
         }
     }
 
     pub fn root_hash(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_SentBlock(ref x) => Some(&x.root_hash),
+            Hashable::Hashable_SentBlock(x) => Some(&x.root_hash),
             _ => None,
         }
     }
 
     pub fn seqno(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionOldRound(ref x) => Some(&x.seqno),
-            Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.seqno),
-            Hashable::Hashable_ValidatorSessionRoundAttempt(ref x) => Some(&x.seqno),
+            Hashable::Hashable_ValidatorSessionOldRound(x) => Some(&x.seqno),
+            Hashable::Hashable_ValidatorSessionRound(x) => Some(&x.seqno),
+            Hashable::Hashable_ValidatorSessionRoundAttempt(x) => Some(&x.seqno),
             _ => None,
         }
     }
 
     pub fn signature(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_BlockSignature(ref x) => Some(&x.signature),
+            Hashable::Hashable_BlockSignature(x) => Some(&x.signature),
             _ => None,
         }
     }
 
     pub fn signatures(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionOldRound(ref x) => Some(&x.signatures),
-            Hashable::Hashable_ValidatorSessionRound(ref x) => Some(&x.signatures),
+            Hashable::Hashable_ValidatorSessionOldRound(x) => Some(&x.signatures),
+            Hashable::Hashable_ValidatorSessionRound(x) => Some(&x.signatures),
             _ => None,
         }
     }
 
     pub fn src(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_SentBlock(ref x) => Some(&x.src),
+            Hashable::Hashable_SentBlock(x) => Some(&x.src),
             _ => None,
         }
     }
 
     pub fn ts(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSession(ref x) => Some(&x.ts),
+            Hashable::Hashable_ValidatorSession(x) => Some(&x.ts),
             _ => None,
         }
     }
 
     pub fn vote_for(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionRoundAttempt(ref x) => Some(&x.vote_for),
+            Hashable::Hashable_ValidatorSessionRoundAttempt(x) => Some(&x.vote_for),
             _ => None,
         }
     }
 
     pub fn vote_for_inited(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_ValidatorSessionRoundAttempt(ref x) => Some(&x.vote_for_inited),
+            Hashable::Hashable_ValidatorSessionRoundAttempt(x) => Some(&x.vote_for_inited),
             _ => None,
         }
     }
 
     pub fn votes(&self) -> Option<&crate::ton::int> {
         match self {
-            Hashable::Hashable_BlockCandidateAttempt(ref x) => Some(&x.votes),
-            Hashable::Hashable_ValidatorSessionRoundAttempt(ref x) => Some(&x.votes),
+            Hashable::Hashable_BlockCandidateAttempt(x) => Some(&x.votes),
+            Hashable::Hashable_ValidatorSessionRoundAttempt(x) => Some(&x.votes),
             _ => None,
         }
     }
@@ -1434,60 +1434,52 @@ pub enum InitialAccountState {
 impl InitialAccountState {
     pub fn code(&self) -> Option<&crate::ton::bytes> {
         match self {
-            InitialAccountState::Raw_InitialAccountState(ref x) => Some(&x.code),
+            InitialAccountState::Raw_InitialAccountState(x) => Some(&x.code),
             _ => None,
         }
     }
 
     pub fn config(&self) -> Option<&crate::ton::pchan::config::Config> {
         match self {
-            InitialAccountState::Pchan_InitialAccountState(ref x) => Some(&x.config),
+            InitialAccountState::Pchan_InitialAccountState(x) => Some(&x.config),
             _ => None,
         }
     }
 
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            InitialAccountState::Raw_InitialAccountState(ref x) => Some(&x.data),
+            InitialAccountState::Raw_InitialAccountState(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn init_public_key(&self) -> Option<&crate::ton::string> {
         match self {
-            InitialAccountState::Rwallet_InitialAccountState(ref x) => Some(&x.init_public_key),
+            InitialAccountState::Rwallet_InitialAccountState(x) => Some(&x.init_public_key),
             _ => None,
         }
     }
 
     pub fn public_key(&self) -> Option<&crate::ton::string> {
         match self {
-            InitialAccountState::Dns_InitialAccountState(ref x) => Some(&x.public_key),
-            InitialAccountState::Rwallet_InitialAccountState(ref x) => Some(&x.public_key),
-            InitialAccountState::TestWallet_InitialAccountState(ref x) => Some(&x.public_key),
-            InitialAccountState::Wallet_Highload_V1_InitialAccountState(ref x) => {
-                Some(&x.public_key)
-            }
-            InitialAccountState::Wallet_Highload_V2_InitialAccountState(ref x) => {
-                Some(&x.public_key)
-            }
-            InitialAccountState::Wallet_InitialAccountState(ref x) => Some(&x.public_key),
-            InitialAccountState::Wallet_V3_InitialAccountState(ref x) => Some(&x.public_key),
+            InitialAccountState::Dns_InitialAccountState(x) => Some(&x.public_key),
+            InitialAccountState::Rwallet_InitialAccountState(x) => Some(&x.public_key),
+            InitialAccountState::TestWallet_InitialAccountState(x) => Some(&x.public_key),
+            InitialAccountState::Wallet_Highload_V1_InitialAccountState(x) => Some(&x.public_key),
+            InitialAccountState::Wallet_Highload_V2_InitialAccountState(x) => Some(&x.public_key),
+            InitialAccountState::Wallet_InitialAccountState(x) => Some(&x.public_key),
+            InitialAccountState::Wallet_V3_InitialAccountState(x) => Some(&x.public_key),
             _ => None,
         }
     }
 
     pub fn wallet_id(&self) -> Option<&crate::ton::int64> {
         match self {
-            InitialAccountState::Dns_InitialAccountState(ref x) => Some(&x.wallet_id),
-            InitialAccountState::Rwallet_InitialAccountState(ref x) => Some(&x.wallet_id),
-            InitialAccountState::Wallet_Highload_V1_InitialAccountState(ref x) => {
-                Some(&x.wallet_id)
-            }
-            InitialAccountState::Wallet_Highload_V2_InitialAccountState(ref x) => {
-                Some(&x.wallet_id)
-            }
-            InitialAccountState::Wallet_V3_InitialAccountState(ref x) => Some(&x.wallet_id),
+            InitialAccountState::Dns_InitialAccountState(x) => Some(&x.wallet_id),
+            InitialAccountState::Rwallet_InitialAccountState(x) => Some(&x.wallet_id),
+            InitialAccountState::Wallet_Highload_V1_InitialAccountState(x) => Some(&x.wallet_id),
+            InitialAccountState::Wallet_Highload_V2_InitialAccountState(x) => Some(&x.wallet_id),
+            InitialAccountState::Wallet_V3_InitialAccountState(x) => Some(&x.wallet_id),
             _ => None,
         }
     }
@@ -1569,14 +1561,14 @@ pub enum InputKey {
 impl InputKey {
     pub fn key(&self) -> Option<&crate::ton::key::Key> {
         match self {
-            InputKey::InputKeyRegular(ref x) => Some(&x.key),
+            InputKey::InputKeyRegular(x) => Some(&x.key),
             _ => None,
         }
     }
 
     pub fn local_password(&self) -> Option<&crate::ton::secureBytes> {
         match self {
-            InputKey::InputKeyRegular(ref x) => Some(&x.local_password),
+            InputKey::InputKeyRegular(x) => Some(&x.local_password),
             _ => None,
         }
     }
@@ -1671,13 +1663,13 @@ pub enum Key {
 impl Key {
     pub fn public_key(&self) -> &crate::ton::string {
         match self {
-            Key::Key(ref x) => &x.public_key,
+            Key::Key(x) => &x.public_key,
         }
     }
 
     pub fn secret(&self) -> &crate::ton::secureBytes {
         match self {
-            Key::Key(ref x) => &x.secret,
+            Key::Key(x) => &x.secret,
         }
     }
 
@@ -1726,7 +1718,7 @@ pub enum KeyStoreType {
 impl KeyStoreType {
     pub fn directory(&self) -> Option<&crate::ton::string> {
         match self {
-            KeyStoreType::KeyStoreTypeDirectory(ref x) => Some(&x.directory),
+            KeyStoreType::KeyStoreTypeDirectory(x) => Some(&x.directory),
             _ => None,
         }
     }
@@ -1802,14 +1794,14 @@ pub enum LogStream {
 impl LogStream {
     pub fn max_file_size(&self) -> Option<&crate::ton::int53> {
         match self {
-            LogStream::LogStreamFile(ref x) => Some(&x.max_file_size),
+            LogStream::LogStreamFile(x) => Some(&x.max_file_size),
             _ => None,
         }
     }
 
     pub fn path(&self) -> Option<&crate::ton::string> {
         match self {
-            LogStream::LogStreamFile(ref x) => Some(&x.path),
+            LogStream::LogStreamFile(x) => Some(&x.path),
             _ => None,
         }
     }
@@ -1855,7 +1847,7 @@ pub enum LogTags {
 impl LogTags {
     pub fn tags(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::string> {
         match self {
-            LogTags::LogTags(ref x) => &x.tags,
+            LogTags::LogTags(x) => &x.tags,
         }
     }
 
@@ -1903,7 +1895,7 @@ pub enum LogVerbosityLevel {
 impl LogVerbosityLevel {
     pub fn verbosity_level(&self) -> &crate::ton::int32 {
         match self {
-            LogVerbosityLevel::LogVerbosityLevel(ref x) => &x.verbosity_level,
+            LogVerbosityLevel::LogVerbosityLevel(x) => &x.verbosity_level,
         }
     }
 
@@ -1982,13 +1974,13 @@ pub enum Options {
 impl Options {
     pub fn config(&self) -> &crate::ton::config::Config {
         match self {
-            Options::Options(ref x) => &x.config,
+            Options::Options(x) => &x.config,
         }
     }
 
     pub fn keystore_type(&self) -> &crate::ton::KeyStoreType {
         match self {
-            Options::Options(ref x) => &x.keystore_type,
+            Options::Options(x) => &x.keystore_type,
         }
     }
 
@@ -2039,22 +2031,22 @@ pub enum PrivateKey {
 impl PrivateKey {
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            PrivateKey::Pk_Unenc(ref x) => Some(&x.data),
+            PrivateKey::Pk_Unenc(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn key(&self) -> Option<&crate::ton::int256> {
         match self {
-            PrivateKey::Pk_Aes(ref x) => Some(&x.key),
-            PrivateKey::Pk_Ed25519(ref x) => Some(&x.key),
+            PrivateKey::Pk_Aes(x) => Some(&x.key),
+            PrivateKey::Pk_Ed25519(x) => Some(&x.key),
             _ => None,
         }
     }
 
     pub fn name(&self) -> Option<&crate::ton::bytes> {
         match self {
-            PrivateKey::Pk_Overlay(ref x) => Some(&x.name),
+            PrivateKey::Pk_Overlay(x) => Some(&x.name),
             _ => None,
         }
     }
@@ -2118,29 +2110,29 @@ pub enum PublicKey {
 impl PublicKey {
     pub fn bls_key(&self) -> Option<&crate::ton::bytes> {
         match self {
-            PublicKey::Pub_Bls(ref x) => Some(&x.bls_key),
+            PublicKey::Pub_Bls(x) => Some(&x.bls_key),
             _ => None,
         }
     }
 
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            PublicKey::Pub_Unenc(ref x) => Some(&x.data),
+            PublicKey::Pub_Unenc(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn key(&self) -> Option<&crate::ton::int256> {
         match self {
-            PublicKey::Pub_Aes(ref x) => Some(&x.key),
-            PublicKey::Pub_Ed25519(ref x) => Some(&x.key),
+            PublicKey::Pub_Aes(x) => Some(&x.key),
+            PublicKey::Pub_Ed25519(x) => Some(&x.key),
             _ => None,
         }
     }
 
     pub fn name(&self) -> Option<&crate::ton::bytes> {
         match self {
-            PublicKey::Pub_Overlay(ref x) => Some(&x.name),
+            PublicKey::Pub_Overlay(x) => Some(&x.name),
             _ => None,
         }
     }
@@ -2207,21 +2199,21 @@ pub enum SyncState {
 impl SyncState {
     pub fn current_seqno(&self) -> Option<&crate::ton::int32> {
         match self {
-            SyncState::SyncStateInProgress(ref x) => Some(&x.current_seqno),
+            SyncState::SyncStateInProgress(x) => Some(&x.current_seqno),
             _ => None,
         }
     }
 
     pub fn from_seqno(&self) -> Option<&crate::ton::int32> {
         match self {
-            SyncState::SyncStateInProgress(ref x) => Some(&x.from_seqno),
+            SyncState::SyncStateInProgress(x) => Some(&x.from_seqno),
             _ => None,
         }
     }
 
     pub fn to_seqno(&self) -> Option<&crate::ton::int32> {
         match self {
-            SyncState::SyncStateInProgress(ref x) => Some(&x.to_seqno),
+            SyncState::SyncStateInProgress(x) => Some(&x.to_seqno),
             _ => None,
         }
     }
@@ -2287,25 +2279,25 @@ pub enum UnpackedAccountAddress {
 impl UnpackedAccountAddress {
     pub fn addr(&self) -> &crate::ton::bytes {
         match self {
-            UnpackedAccountAddress::UnpackedAccountAddress(ref x) => &x.addr,
+            UnpackedAccountAddress::UnpackedAccountAddress(x) => &x.addr,
         }
     }
 
     pub fn bounceable(&self) -> &crate::ton::Bool {
         match self {
-            UnpackedAccountAddress::UnpackedAccountAddress(ref x) => &x.bounceable,
+            UnpackedAccountAddress::UnpackedAccountAddress(x) => &x.bounceable,
         }
     }
 
     pub fn testnet(&self) -> &crate::ton::Bool {
         match self {
-            UnpackedAccountAddress::UnpackedAccountAddress(ref x) => &x.testnet,
+            UnpackedAccountAddress::UnpackedAccountAddress(x) => &x.testnet,
         }
     }
 
     pub fn workchain_id(&self) -> &crate::ton::int32 {
         match self {
-            UnpackedAccountAddress::UnpackedAccountAddress(ref x) => &x.workchain_id,
+            UnpackedAccountAddress::UnpackedAccountAddress(x) => &x.workchain_id,
         }
     }
 
@@ -2360,21 +2352,21 @@ pub enum Update {
 impl Update {
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Update::UpdateSendLiteServerQuery(ref x) => Some(&x.data),
+            Update::UpdateSendLiteServerQuery(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn id(&self) -> Option<&crate::ton::int64> {
         match self {
-            Update::UpdateSendLiteServerQuery(ref x) => Some(&x.id),
+            Update::UpdateSendLiteServerQuery(x) => Some(&x.id),
             _ => None,
         }
     }
 
     pub fn sync_state(&self) -> Option<&crate::ton::SyncState> {
         match self {
-            Update::UpdateSyncState(ref x) => Some(&x.sync_state),
+            Update::UpdateSyncState(x) => Some(&x.sync_state),
             _ => None,
         }
     }

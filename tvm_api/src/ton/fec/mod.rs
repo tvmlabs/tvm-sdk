@@ -10,25 +10,25 @@ pub enum Type {
 impl Type {
     pub fn data_size(&self) -> &crate::ton::int {
         match self {
-            Type::Fec_Online(ref x) => &x.data_size,
-            Type::Fec_RaptorQ(ref x) => &x.data_size,
-            Type::Fec_RoundRobin(ref x) => &x.data_size,
+            Type::Fec_Online(x) => &x.data_size,
+            Type::Fec_RaptorQ(x) => &x.data_size,
+            Type::Fec_RoundRobin(x) => &x.data_size,
         }
     }
 
     pub fn symbol_size(&self) -> &crate::ton::int {
         match self {
-            Type::Fec_Online(ref x) => &x.symbol_size,
-            Type::Fec_RaptorQ(ref x) => &x.symbol_size,
-            Type::Fec_RoundRobin(ref x) => &x.symbol_size,
+            Type::Fec_Online(x) => &x.symbol_size,
+            Type::Fec_RaptorQ(x) => &x.symbol_size,
+            Type::Fec_RoundRobin(x) => &x.symbol_size,
         }
     }
 
     pub fn symbols_count(&self) -> &crate::ton::int {
         match self {
-            Type::Fec_Online(ref x) => &x.symbols_count,
-            Type::Fec_RaptorQ(ref x) => &x.symbols_count,
-            Type::Fec_RoundRobin(ref x) => &x.symbols_count,
+            Type::Fec_Online(x) => &x.symbols_count,
+            Type::Fec_RaptorQ(x) => &x.symbols_count,
+            Type::Fec_RoundRobin(x) => &x.symbols_count,
         }
     }
 }

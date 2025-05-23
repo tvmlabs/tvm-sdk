@@ -8,13 +8,13 @@ pub enum Value {
 impl Value {
     pub fn shard(&self) -> &crate::ton::long {
         match self {
-            Value::Db_Lt_Shard_Value(ref x) => &x.shard,
+            Value::Db_Lt_Shard_Value(x) => &x.shard,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_Shard_Value(ref x) => &x.workchain,
+            Value::Db_Lt_Shard_Value(x) => &x.workchain,
         }
     }
 

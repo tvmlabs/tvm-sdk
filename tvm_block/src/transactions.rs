@@ -203,7 +203,7 @@ impl TrComputePhase {
 
     pub fn get_vmphase_mut(&mut self) -> Option<&mut TrComputePhaseVm> {
         match self {
-            TrComputePhase::Vm(ref mut vm_ref) => Some(vm_ref),
+            TrComputePhase::Vm(vm_ref) => Some(vm_ref),
             _ => None,
         }
     }
@@ -995,38 +995,38 @@ impl Default for TransactionDescr {
 impl TransactionDescr {
     pub fn is_aborted(&self) -> bool {
         match self {
-            TransactionDescr::Ordinary(ref desc) => desc.aborted,
-            TransactionDescr::TickTock(ref desc) => desc.aborted,
-            TransactionDescr::SplitPrepare(ref desc) => desc.aborted,
-            TransactionDescr::MergePrepare(ref desc) => desc.aborted,
-            TransactionDescr::MergeInstall(ref desc) => desc.aborted,
+            TransactionDescr::Ordinary(desc) => desc.aborted,
+            TransactionDescr::TickTock(desc) => desc.aborted,
+            TransactionDescr::SplitPrepare(desc) => desc.aborted,
+            TransactionDescr::MergePrepare(desc) => desc.aborted,
+            TransactionDescr::MergeInstall(desc) => desc.aborted,
             _ => false,
         }
     }
 
     pub fn compute_phase_ref(&self) -> Option<&TrComputePhase> {
         match self {
-            TransactionDescr::Ordinary(ref desc) => Some(&desc.compute_ph),
-            TransactionDescr::TickTock(ref desc) => Some(&desc.compute_ph),
-            TransactionDescr::SplitPrepare(ref desc) => Some(&desc.compute_ph),
-            TransactionDescr::MergeInstall(ref desc) => Some(&desc.compute_ph),
+            TransactionDescr::Ordinary(desc) => Some(&desc.compute_ph),
+            TransactionDescr::TickTock(desc) => Some(&desc.compute_ph),
+            TransactionDescr::SplitPrepare(desc) => Some(&desc.compute_ph),
+            TransactionDescr::MergeInstall(desc) => Some(&desc.compute_ph),
             _ => None,
         }
     }
 
     pub fn action_phase_ref(&self) -> Option<&TrActionPhase> {
         match self {
-            TransactionDescr::Ordinary(ref desc) => desc.action.as_ref(),
-            TransactionDescr::TickTock(ref desc) => desc.action.as_ref(),
-            TransactionDescr::SplitPrepare(ref desc) => desc.action.as_ref(),
-            TransactionDescr::MergeInstall(ref desc) => desc.action.as_ref(),
+            TransactionDescr::Ordinary(desc) => desc.action.as_ref(),
+            TransactionDescr::TickTock(desc) => desc.action.as_ref(),
+            TransactionDescr::SplitPrepare(desc) => desc.action.as_ref(),
+            TransactionDescr::MergeInstall(desc) => desc.action.as_ref(),
             _ => None,
         }
     }
 
     pub fn is_credit_first(&self) -> Option<bool> {
         match self {
-            TransactionDescr::Ordinary(ref tr) => Some(tr.credit_first),
+            TransactionDescr::Ordinary(tr) => Some(tr.credit_first),
             _ => None,
         }
     }
@@ -1041,13 +1041,13 @@ impl TransactionDescr {
 
     fn append_to_storage_used(&mut self, cell: &Cell) {
         match self {
-            TransactionDescr::Ordinary(ref mut desc) => {
-                if let Some(ref mut bounce) = desc.bounce {
+            TransactionDescr::Ordinary(desc) => {
+                if let Some(bounce) = &mut desc.bounce {
                     match bounce {
-                        TrBouncePhase::Nofunds(ref mut no_funds) => {
+                        TrBouncePhase::Nofunds(no_funds) => {
                             no_funds.msg_size.append(cell);
                         }
-                        TrBouncePhase::Ok(ref mut ok) => {
+                        TrBouncePhase::Ok(ok) => {
                             ok.msg_size.append(cell);
                         }
                         _ => (),
@@ -1057,17 +1057,17 @@ impl TransactionDescr {
                     action.tot_msg_size.append(cell);
                 }
             }
-            TransactionDescr::TickTock(ref mut desc) => {
+            TransactionDescr::TickTock(desc) => {
                 if let Some(ref mut action) = desc.action {
                     action.tot_msg_size.append(cell);
                 }
             }
-            TransactionDescr::SplitPrepare(ref mut desc) => {
+            TransactionDescr::SplitPrepare(desc) => {
                 if let Some(ref mut action) = desc.action {
                     action.tot_msg_size.append(cell);
                 }
             }
-            TransactionDescr::MergeInstall(ref mut desc) => {
+            TransactionDescr::MergeInstall(desc) => {
                 if let Some(ref mut action) = desc.action {
                     action.tot_msg_size.append(cell);
                 }
@@ -1079,19 +1079,19 @@ impl TransactionDescr {
     /// mark the transaction as aborted
     pub fn mark_as_aborted(&mut self) {
         match self {
-            TransactionDescr::Ordinary(ref mut desc) => {
+            TransactionDescr::Ordinary(desc) => {
                 desc.aborted = true;
             }
-            TransactionDescr::TickTock(ref mut desc) => {
+            TransactionDescr::TickTock(desc) => {
                 desc.aborted = true;
             }
-            TransactionDescr::SplitPrepare(ref mut desc) => {
+            TransactionDescr::SplitPrepare(desc) => {
                 desc.aborted = true;
             }
-            TransactionDescr::MergePrepare(ref mut desc) => {
+            TransactionDescr::MergePrepare(desc) => {
                 desc.aborted = true;
             }
-            TransactionDescr::MergeInstall(ref mut desc) => {
+            TransactionDescr::MergeInstall(desc) => {
                 desc.aborted = true;
             }
             _ => (),

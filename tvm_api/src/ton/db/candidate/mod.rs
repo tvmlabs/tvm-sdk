@@ -49,19 +49,19 @@ pub enum Id {
 impl Id {
     pub fn collated_data_file_hash(&self) -> &crate::ton::int256 {
         match self {
-            Id::Db_Candidate_Id(ref x) => &x.collated_data_file_hash,
+            Id::Db_Candidate_Id(x) => &x.collated_data_file_hash,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Id::Db_Candidate_Id(ref x) => &x.id,
+            Id::Db_Candidate_Id(x) => &x.id,
         }
     }
 
     pub fn source(&self) -> &crate::ton::PublicKey {
         match self {
-            Id::Db_Candidate_Id(ref x) => &x.source,
+            Id::Db_Candidate_Id(x) => &x.source,
         }
     }
 

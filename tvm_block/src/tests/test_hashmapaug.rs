@@ -829,17 +829,17 @@ fn test_hahsmap_rand_fill_and_filter() {
     let mut remove = vec![];
     for _ in 0..max {
         loop {
-            let key = rand::Rng::gen::<u8>(&mut rng);
+            let key = rand::Rng::r#gen::<u8>(&mut rng);
             if !keys.contains(&key) {
                 keys.push(key);
-                if rand::Rng::gen::<bool>(&mut rng) {
+                if rand::Rng::r#gen::<bool>(&mut rng) {
                     remove.push(key);
                 }
                 break;
             }
         }
     }
-    let stop = rand::Rng::gen::<usize>(&mut rng) % keys.len();
+    let stop = rand::Rng::r#gen::<usize>(&mut rng) % keys.len();
     let cancel = keys.len(); // rand::Rng::gen::<usize>(&mut rng) % keys.len();
     println!("{:#?}", keys);
     println!("{:#?}", remove);

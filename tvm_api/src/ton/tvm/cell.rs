@@ -12,7 +12,7 @@ impl crate::BareSerialize for Cell {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let Cell { bytes: ref bytes_ } = self;
+        let Cell { bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
         Ok(())
     }

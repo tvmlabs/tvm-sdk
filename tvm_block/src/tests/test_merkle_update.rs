@@ -154,7 +154,7 @@ fn test_merkle_update_for_other_bags() {
 #[test]
 fn test_merkle_update_with_hasmaps() {
     define_HashmapE! {MerkleUpdates, 32, MerkleUpdate}
-    let gen = |a: u32| {
+    let generate_merkle_update = |a: u32| {
         let mut acc = generate_test_account_by_init_code_hash(false);
 
         let old_cell = acc.serialize().unwrap();
@@ -185,7 +185,7 @@ fn test_merkle_update_with_hasmaps() {
     let _rng = rand::thread_rng();
     let mut map = MerkleUpdates::default();
     for _ in 0..100 {
-        map.set(&rand::random::<u32>(), &gen(rand::random::<u32>())).unwrap();
+        map.set(&rand::random::<u32>(), &generate_merkle_update(rand::random::<u32>())).unwrap();
     }
 
     let map_cell = map.serialize().unwrap();
@@ -396,7 +396,9 @@ fn test_merkle_update4() {
 
 #[test]
 fn test_merkle_update5() {
-    std::env::set_var("RUST_BACKTRACE", "full");
+    unsafe {
+        std::env::set_var("RUST_BACKTRACE", "full");
+    }
 
     fn create_cell(bytes: &[u8], refs: &[&Cell]) -> Cell {
         let mut c = BuilderData::new();
@@ -547,7 +549,9 @@ fn get_message(val: u8) -> MsgEnvelope {
 
 #[test]
 fn test_out_msg_queue_updates() -> Result<()> {
-    std::env::set_var("RUST_BACKTRACE", "full");
+    unsafe {
+        std::env::set_var("RUST_BACKTRACE", "full");
+    }
 
     // generate "old" shard state with out messages
 
@@ -700,7 +704,9 @@ fn test_out_msg_queue_updates() -> Result<()> {
 
 #[test]
 fn test_prepare_empty_update_for_wc() -> Result<()> {
-    std::env::set_var("RUST_BACKTRACE", "full");
+    unsafe {
+        std::env::set_var("RUST_BACKTRACE", "full");
+    }
 
     let mut old_state = ShardStateUnsplit::construct_from_file(
         "src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
@@ -771,7 +777,9 @@ fn test_prepare_empty_update_for_wc() -> Result<()> {
 
 #[test]
 fn test_out_msg_queue_merge_updates() -> Result<()> {
-    std::env::set_var("RUST_BACKTRACE", "full");
+    unsafe {
+        std::env::set_var("RUST_BACKTRACE", "full");
+    }
 
     // generate "old left" shard state with out messages
 
@@ -868,7 +876,9 @@ fn test_out_msg_queue_merge_updates() -> Result<()> {
 
 #[test]
 fn test_prepare_first_update_for_wc() -> Result<()> {
-    std::env::set_var("RUST_BACKTRACE", "full");
+    unsafe {
+        std::env::set_var("RUST_BACKTRACE", "full");
+    }
 
     let zerostate = ShardStateUnsplit::construct_from_file(
         "src/tests/data/969b6b42350754c691dfce198e7f1419d57815fd92bfdf44f3afc17d30ae1911.boc",

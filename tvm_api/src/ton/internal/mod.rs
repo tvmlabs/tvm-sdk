@@ -8,19 +8,19 @@ pub enum BlockId {
 impl BlockId {
     pub fn seqno(&self) -> &crate::ton::int32 {
         match self {
-            BlockId::Ton_BlockId(ref x) => &x.seqno,
+            BlockId::Ton_BlockId(x) => &x.seqno,
         }
     }
 
     pub fn shard(&self) -> &crate::ton::int64 {
         match self {
-            BlockId::Ton_BlockId(ref x) => &x.shard,
+            BlockId::Ton_BlockId(x) => &x.shard,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int32 {
         match self {
-            BlockId::Ton_BlockId(ref x) => &x.workchain,
+            BlockId::Ton_BlockId(x) => &x.workchain,
         }
     }
 
@@ -68,13 +68,13 @@ pub enum TransactionId {
 impl TransactionId {
     pub fn hash(&self) -> &crate::ton::bytes {
         match self {
-            TransactionId::Internal_TransactionId(ref x) => &x.hash,
+            TransactionId::Internal_TransactionId(x) => &x.hash,
         }
     }
 
     pub fn lt(&self) -> &crate::ton::int64 {
         match self {
-            TransactionId::Internal_TransactionId(ref x) => &x.lt,
+            TransactionId::Internal_TransactionId(x) => &x.lt,
         }
     }
 

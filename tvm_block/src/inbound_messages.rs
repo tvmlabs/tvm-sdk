@@ -253,13 +253,13 @@ impl InMsg {
     /// messages. For other messages function returned None
     pub fn read_transaction(&self) -> Result<Option<Transaction>> {
         Ok(match self {
-            InMsg::External(ref x) => Some(x.read_transaction()?),
-            InMsg::IHR(ref x) => Some(x.read_transaction()?),
-            InMsg::Immediate(ref x) => Some(x.read_transaction()?),
-            InMsg::Final(ref x) => Some(x.read_transaction()?),
-            InMsg::Transit(ref _x) => None,
-            InMsg::DiscardedFinal(ref _x) => None,
-            InMsg::DiscardedTransit(ref _x) => None,
+            InMsg::External(x) => Some(x.read_transaction()?),
+            InMsg::IHR(x) => Some(x.read_transaction()?),
+            InMsg::Immediate(x) => Some(x.read_transaction()?),
+            InMsg::Final(x) => Some(x.read_transaction()?),
+            InMsg::Transit(_x) => None,
+            InMsg::DiscardedFinal(_x) => None,
+            InMsg::DiscardedTransit(_x) => None,
             InMsg::None => fail!("wrong message type"),
         })
     }
@@ -269,13 +269,13 @@ impl InMsg {
     /// messages. For other messages function returned None
     pub fn transaction_cell(&self) -> Option<Cell> {
         match self {
-            InMsg::External(ref x) => Some(x.transaction_cell()),
-            InMsg::IHR(ref x) => Some(x.transaction_cell()),
-            InMsg::Immediate(ref x) => Some(x.transaction_cell()),
-            InMsg::Final(ref x) => Some(x.transaction_cell()),
-            InMsg::Transit(ref _x) => None,
-            InMsg::DiscardedFinal(ref _x) => None,
-            InMsg::DiscardedTransit(ref _x) => None,
+            InMsg::External(x) => Some(x.transaction_cell()),
+            InMsg::IHR(x) => Some(x.transaction_cell()),
+            InMsg::Immediate(x) => Some(x.transaction_cell()),
+            InMsg::Final(x) => Some(x.transaction_cell()),
+            InMsg::Transit(_x) => None,
+            InMsg::DiscardedFinal(_x) => None,
+            InMsg::DiscardedTransit(_x) => None,
             InMsg::None => None,
         }
     }
@@ -283,13 +283,13 @@ impl InMsg {
     /// Get message
     pub fn read_message(&self) -> Result<Message> {
         match self {
-            InMsg::External(ref x) => x.read_message(),
-            InMsg::IHR(ref x) => x.read_message(),
-            InMsg::Immediate(ref x) => x.read_envelope_message()?.read_message(),
-            InMsg::Final(ref x) => x.read_envelope_message()?.read_message(),
-            InMsg::Transit(ref x) => x.read_in_message()?.read_message(),
-            InMsg::DiscardedFinal(ref x) => x.read_envelope_message()?.read_message(),
-            InMsg::DiscardedTransit(ref x) => x.read_envelope_message()?.read_message(),
+            InMsg::External(x) => x.read_message(),
+            InMsg::IHR(x) => x.read_message(),
+            InMsg::Immediate(x) => x.read_envelope_message()?.read_message(),
+            InMsg::Final(x) => x.read_envelope_message()?.read_message(),
+            InMsg::Transit(x) => x.read_in_message()?.read_message(),
+            InMsg::DiscardedFinal(x) => x.read_envelope_message()?.read_message(),
+            InMsg::DiscardedTransit(x) => x.read_envelope_message()?.read_message(),
             InMsg::None => fail!("wrong msg type"),
         }
     }
@@ -297,13 +297,13 @@ impl InMsg {
     /// Get message cell
     pub fn message_cell(&self) -> Result<Cell> {
         Ok(match self {
-            InMsg::External(ref x) => x.message_cell(),
-            InMsg::IHR(ref x) => x.message_cell(),
-            InMsg::Immediate(ref x) => x.read_envelope_message()?.message_cell(),
-            InMsg::Final(ref x) => x.read_envelope_message()?.message_cell(),
-            InMsg::Transit(ref x) => x.read_in_message()?.message_cell(),
-            InMsg::DiscardedFinal(ref x) => x.read_envelope_message()?.message_cell(),
-            InMsg::DiscardedTransit(ref x) => x.read_envelope_message()?.message_cell(),
+            InMsg::External(x) => x.message_cell(),
+            InMsg::IHR(x) => x.message_cell(),
+            InMsg::Immediate(x) => x.read_envelope_message()?.message_cell(),
+            InMsg::Final(x) => x.read_envelope_message()?.message_cell(),
+            InMsg::Transit(x) => x.read_in_message()?.message_cell(),
+            InMsg::DiscardedFinal(x) => x.read_envelope_message()?.message_cell(),
+            InMsg::DiscardedTransit(x) => x.read_envelope_message()?.message_cell(),
             InMsg::None => fail!("wrong message type"),
         })
     }
@@ -313,11 +313,11 @@ impl InMsg {
         match self {
             InMsg::External(_) => None,
             InMsg::IHR(_) => None,
-            InMsg::Immediate(ref x) => Some(x.envelope_message_cell()),
-            InMsg::Final(ref x) => Some(x.envelope_message_cell()),
-            InMsg::Transit(ref x) => Some(x.in_msg.cell()),
-            InMsg::DiscardedFinal(ref x) => Some(x.envelope_message_cell()),
-            InMsg::DiscardedTransit(ref x) => Some(x.in_msg.cell()),
+            InMsg::Immediate(x) => Some(x.envelope_message_cell()),
+            InMsg::Final(x) => Some(x.envelope_message_cell()),
+            InMsg::Transit(x) => Some(x.in_msg.cell()),
+            InMsg::DiscardedFinal(x) => Some(x.envelope_message_cell()),
+            InMsg::DiscardedTransit(x) => Some(x.in_msg.cell()),
             InMsg::None => None,
         }
     }
@@ -327,11 +327,11 @@ impl InMsg {
         Ok(match self {
             InMsg::External(_) => None,
             InMsg::IHR(_) => None,
-            InMsg::Immediate(ref x) => Some(x.read_envelope_message()?),
-            InMsg::Final(ref x) => Some(x.read_envelope_message()?),
-            InMsg::Transit(ref x) => Some(x.read_in_message()?),
-            InMsg::DiscardedFinal(ref x) => Some(x.read_envelope_message()?),
-            InMsg::DiscardedTransit(ref x) => Some(x.read_envelope_message()?),
+            InMsg::Immediate(x) => Some(x.read_envelope_message()?),
+            InMsg::Final(x) => Some(x.read_envelope_message()?),
+            InMsg::Transit(x) => Some(x.read_in_message()?),
+            InMsg::DiscardedFinal(x) => Some(x.read_envelope_message()?),
+            InMsg::DiscardedTransit(x) => Some(x.read_envelope_message()?),
             InMsg::None => fail!("wrong message type"),
         })
     }
@@ -343,7 +343,7 @@ impl InMsg {
             InMsg::IHR(_) => None,
             InMsg::Immediate(_) => None,
             InMsg::Final(_) => None,
-            InMsg::Transit(ref x) => Some(x.out_msg.cell()),
+            InMsg::Transit(x) => Some(x.out_msg.cell()),
             InMsg::DiscardedFinal(_) => None,
             InMsg::DiscardedTransit(_) => None,
             InMsg::None => None,
@@ -357,7 +357,7 @@ impl InMsg {
             InMsg::IHR(_) => Ok(None),
             InMsg::Immediate(_) => Ok(None),
             InMsg::Final(_) => Ok(None),
-            InMsg::Transit(ref x) => Some(x.read_out_message()).transpose(),
+            InMsg::Transit(x) => Some(x.read_out_message()).transpose(),
             InMsg::DiscardedFinal(_) => Ok(None),
             InMsg::DiscardedTransit(_) => Ok(None),
             InMsg::None => fail!("wrong message type"),
@@ -392,7 +392,7 @@ impl Augmentation<ImportFees> for InMsg {
                 // println!("InMsg::Immediate");
                 fees.fees_collected = header.fwd_fee;
             }
-            InMsg::Final(ref x) => {
+            InMsg::Final(x) => {
                 // println!("InMsg::Final");
                 let env = x.read_envelope_message()?;
                 if env.fwd_fee_remaining() != x.fwd_fee() {
@@ -404,7 +404,7 @@ impl Augmentation<ImportFees> for InMsg {
                 fees.value_imported.grams.add(env.fwd_fee_remaining())?;
                 fees.value_imported.grams.add(&header.ihr_fee)?;
             }
-            InMsg::Transit(ref x) => {
+            InMsg::Transit(x) => {
                 // println!("InMsg::Transit");
                 let env = x.read_in_message()?;
                 if env.fwd_fee_remaining() < x.transit_fee() {
@@ -438,13 +438,13 @@ impl Augmentation<ImportFees> for InMsg {
 impl Serializable for InMsg {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
-            InMsg::External(ref x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_EXT)),
-            InMsg::IHR(ref x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_IHR)),
-            InMsg::Immediate(ref x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_IMM)),
-            InMsg::Final(ref x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_FIN)),
-            InMsg::Transit(ref x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_TR)),
-            InMsg::DiscardedFinal(ref x) => x.write_to(write_ctor_tag!(cell, MSG_DISCARD_FIN)),
-            InMsg::DiscardedTransit(ref x) => x.write_to(write_ctor_tag!(cell, MSG_DISCARD_TR)),
+            InMsg::External(x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_EXT)),
+            InMsg::IHR(x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_IHR)),
+            InMsg::Immediate(x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_IMM)),
+            InMsg::Final(x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_FIN)),
+            InMsg::Transit(x) => x.write_to(write_ctor_tag!(cell, MSG_IMPORT_TR)),
+            InMsg::DiscardedFinal(x) => x.write_to(write_ctor_tag!(cell, MSG_DISCARD_FIN)),
+            InMsg::DiscardedTransit(x) => x.write_to(write_ctor_tag!(cell, MSG_DISCARD_TR)),
             InMsg::None => Ok(()), /* Due to ChildCell it is need sometimes to serialize default
                                     * InMsg */
         }

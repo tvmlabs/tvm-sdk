@@ -195,29 +195,29 @@ impl OutAction {
 impl Serializable for OutAction {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
-            OutAction::SendMsg { ref mode, ref out_msg } => {
+            OutAction::SendMsg { mode, out_msg } => {
                 ACTION_SEND_MSG.write_to(cell)?; // tag
                 mode.write_to(cell)?;
                 cell.checked_append_reference(out_msg.serialize()?)?;
             }
-            OutAction::SetCode { ref new_code } => {
+            OutAction::SetCode { new_code } => {
                 ACTION_SET_CODE.write_to(cell)?; // tag
                 cell.checked_append_reference(new_code.clone())?;
             }
-            OutAction::ReserveCurrency { ref mode, ref value } => {
+            OutAction::ReserveCurrency { mode, value } => {
                 ACTION_RESERVE.write_to(cell)?; // tag
                 mode.write_to(cell)?;
                 value.write_to(cell)?;
             }
-            OutAction::MintToken { ref value } => {
+            OutAction::MintToken { value } => {
                 ACTION_MINTECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
             }
-            OutAction::ExchangeShell { ref value } => {
+            OutAction::ExchangeShell { value } => {
                 ACTION_CNVRTSHELLQ.write_to(cell)?;
                 value.write_to(cell)?;
             }
-            OutAction::ChangeLibrary { ref mode, ref code, ref hash } => {
+            OutAction::ChangeLibrary { mode, code, hash } => {
                 ACTION_CHANGE_LIB.write_to(cell)?; // tag
                 mode.write_to(cell)?;
                 if let Some(value) = hash {
@@ -227,11 +227,11 @@ impl Serializable for OutAction {
                     cell.checked_append_reference(value.clone())?;
                 }
             }
-            OutAction::MintShellToken { ref value } => {
+            OutAction::MintShellToken { value } => {
                 ACTION_MINT_SHELL_TOKEN.write_to(cell)?;
                 value.write_to(cell)?;
             }
-            OutAction::CopyLeft { ref license, ref address } => {
+            OutAction::CopyLeft { license, address } => {
                 ACTION_COPYLEFT.write_to(cell)?; // tag
                 license.write_to(cell)?;
                 address.write_to(cell)?;

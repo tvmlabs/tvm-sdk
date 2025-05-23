@@ -8,7 +8,7 @@ pub enum Value {
 impl Value {
     pub fn hash(&self) -> &crate::ton::int256 {
         match self {
-            Value::Db_Celldb_Key_Value(ref x) => &x.hash,
+            Value::Db_Celldb_Key_Value(x) => &x.hash,
         }
     }
 

@@ -10,22 +10,22 @@ pub enum Message {
 impl Message {
     pub fn key(&self) -> Option<&crate::ton::PublicKey> {
         match self {
-            Message::Tcp_AuthentificationComplete(ref x) => Some(&x.key),
+            Message::Tcp_AuthentificationComplete(x) => Some(&x.key),
             _ => None,
         }
     }
 
     pub fn nonce(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Message::Tcp_Authentificate(ref x) => Some(&x.nonce),
-            Message::Tcp_AuthentificationNonce(ref x) => Some(&x.nonce),
+            Message::Tcp_Authentificate(x) => Some(&x.nonce),
+            Message::Tcp_AuthentificationNonce(x) => Some(&x.nonce),
             _ => None,
         }
     }
 
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Message::Tcp_AuthentificationComplete(ref x) => Some(&x.signature),
+            Message::Tcp_AuthentificationComplete(x) => Some(&x.signature),
             _ => None,
         }
     }
@@ -80,7 +80,7 @@ pub enum Pong {
 impl Pong {
     pub fn random_id(&self) -> &crate::ton::long {
         match self {
-            Pong::Tcp_Pong(ref x) => &x.random_id,
+            Pong::Tcp_Pong(x) => &x.random_id,
         }
     }
 

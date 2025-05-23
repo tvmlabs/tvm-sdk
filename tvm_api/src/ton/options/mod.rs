@@ -8,13 +8,13 @@ pub enum ConfigInfo {
 impl ConfigInfo {
     pub fn default_rwallet_init_public_key(&self) -> &crate::ton::string {
         match self {
-            ConfigInfo::Options_ConfigInfo(ref x) => &x.default_rwallet_init_public_key,
+            ConfigInfo::Options_ConfigInfo(x) => &x.default_rwallet_init_public_key,
         }
     }
 
     pub fn default_wallet_id(&self) -> &crate::ton::int64 {
         match self {
-            ConfigInfo::Options_ConfigInfo(ref x) => &x.default_wallet_id,
+            ConfigInfo::Options_ConfigInfo(x) => &x.default_wallet_id,
         }
     }
 
@@ -62,7 +62,7 @@ pub enum Info {
 impl Info {
     pub fn config_info(&self) -> &crate::ton::options::configinfo::ConfigInfo {
         match self {
-            Info::Options_Info(ref x) => &x.config_info,
+            Info::Options_Info(x) => &x.config_info,
         }
     }
 

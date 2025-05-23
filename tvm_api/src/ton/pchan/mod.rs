@@ -10,49 +10,49 @@ pub enum Action {
 impl Action {
     pub fn extra_A(&self) -> Option<&crate::ton::int64> {
         match self {
-            Action::Pchan_ActionClose(ref x) => Some(&x.extra_A),
+            Action::Pchan_ActionClose(x) => Some(&x.extra_A),
             _ => None,
         }
     }
 
     pub fn extra_B(&self) -> Option<&crate::ton::int64> {
         match self {
-            Action::Pchan_ActionClose(ref x) => Some(&x.extra_B),
+            Action::Pchan_ActionClose(x) => Some(&x.extra_B),
             _ => None,
         }
     }
 
     pub fn inc_A(&self) -> Option<&crate::ton::int64> {
         match self {
-            Action::Pchan_ActionInit(ref x) => Some(&x.inc_A),
+            Action::Pchan_ActionInit(x) => Some(&x.inc_A),
             _ => None,
         }
     }
 
     pub fn inc_B(&self) -> Option<&crate::ton::int64> {
         match self {
-            Action::Pchan_ActionInit(ref x) => Some(&x.inc_B),
+            Action::Pchan_ActionInit(x) => Some(&x.inc_B),
             _ => None,
         }
     }
 
     pub fn min_A(&self) -> Option<&crate::ton::int64> {
         match self {
-            Action::Pchan_ActionInit(ref x) => Some(&x.min_A),
+            Action::Pchan_ActionInit(x) => Some(&x.min_A),
             _ => None,
         }
     }
 
     pub fn min_B(&self) -> Option<&crate::ton::int64> {
         match self {
-            Action::Pchan_ActionInit(ref x) => Some(&x.min_B),
+            Action::Pchan_ActionInit(x) => Some(&x.min_B),
             _ => None,
         }
     }
 
     pub fn promise(&self) -> Option<&crate::ton::pchan::promise::Promise> {
         match self {
-            Action::Pchan_ActionClose(ref x) => Some(&x.promise),
+            Action::Pchan_ActionClose(x) => Some(&x.promise),
             _ => None,
         }
     }
@@ -105,43 +105,43 @@ pub enum Config {
 impl Config {
     pub fn alice_address(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
-            Config::Pchan_Config(ref x) => &x.alice_address,
+            Config::Pchan_Config(x) => &x.alice_address,
         }
     }
 
     pub fn alice_public_key(&self) -> &crate::ton::string {
         match self {
-            Config::Pchan_Config(ref x) => &x.alice_public_key,
+            Config::Pchan_Config(x) => &x.alice_public_key,
         }
     }
 
     pub fn bob_address(&self) -> &crate::ton::accountaddress::AccountAddress {
         match self {
-            Config::Pchan_Config(ref x) => &x.bob_address,
+            Config::Pchan_Config(x) => &x.bob_address,
         }
     }
 
     pub fn bob_public_key(&self) -> &crate::ton::string {
         match self {
-            Config::Pchan_Config(ref x) => &x.bob_public_key,
+            Config::Pchan_Config(x) => &x.bob_public_key,
         }
     }
 
     pub fn channel_id(&self) -> &crate::ton::int64 {
         match self {
-            Config::Pchan_Config(ref x) => &x.channel_id,
+            Config::Pchan_Config(x) => &x.channel_id,
         }
     }
 
     pub fn close_timeout(&self) -> &crate::ton::int32 {
         match self {
-            Config::Pchan_Config(ref x) => &x.close_timeout,
+            Config::Pchan_Config(x) => &x.close_timeout,
         }
     }
 
     pub fn init_timeout(&self) -> &crate::ton::int32 {
         match self {
-            Config::Pchan_Config(ref x) => &x.init_timeout,
+            Config::Pchan_Config(x) => &x.init_timeout,
         }
     }
 
@@ -189,25 +189,25 @@ pub enum Promise {
 impl Promise {
     pub fn channel_id(&self) -> &crate::ton::int64 {
         match self {
-            Promise::Pchan_Promise(ref x) => &x.channel_id,
+            Promise::Pchan_Promise(x) => &x.channel_id,
         }
     }
 
     pub fn promise_A(&self) -> &crate::ton::int64 {
         match self {
-            Promise::Pchan_Promise(ref x) => &x.promise_A,
+            Promise::Pchan_Promise(x) => &x.promise_A,
         }
     }
 
     pub fn promise_B(&self) -> &crate::ton::int64 {
         match self {
-            Promise::Pchan_Promise(ref x) => &x.promise_B,
+            Promise::Pchan_Promise(x) => &x.promise_B,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            Promise::Pchan_Promise(ref x) => &x.signature,
+            Promise::Pchan_Promise(x) => &x.signature,
         }
     }
 
@@ -257,56 +257,56 @@ pub enum State {
 impl State {
     pub fn A(&self) -> &crate::ton::int64 {
         match self {
-            State::Pchan_StateClose(ref x) => &x.A,
-            State::Pchan_StateInit(ref x) => &x.A,
-            State::Pchan_StatePayout(ref x) => &x.A,
+            State::Pchan_StateClose(x) => &x.A,
+            State::Pchan_StateInit(x) => &x.A,
+            State::Pchan_StatePayout(x) => &x.A,
         }
     }
 
     pub fn B(&self) -> &crate::ton::int64 {
         match self {
-            State::Pchan_StateClose(ref x) => &x.B,
-            State::Pchan_StateInit(ref x) => &x.B,
-            State::Pchan_StatePayout(ref x) => &x.B,
+            State::Pchan_StateClose(x) => &x.B,
+            State::Pchan_StateInit(x) => &x.B,
+            State::Pchan_StatePayout(x) => &x.B,
         }
     }
 
     pub fn expire_at(&self) -> Option<&crate::ton::int53> {
         match self {
-            State::Pchan_StateClose(ref x) => Some(&x.expire_at),
-            State::Pchan_StateInit(ref x) => Some(&x.expire_at),
+            State::Pchan_StateClose(x) => Some(&x.expire_at),
+            State::Pchan_StateInit(x) => Some(&x.expire_at),
             _ => None,
         }
     }
 
     pub fn min_A(&self) -> Option<&crate::ton::int64> {
         match self {
-            State::Pchan_StateClose(ref x) => Some(&x.min_A),
-            State::Pchan_StateInit(ref x) => Some(&x.min_A),
+            State::Pchan_StateClose(x) => Some(&x.min_A),
+            State::Pchan_StateInit(x) => Some(&x.min_A),
             _ => None,
         }
     }
 
     pub fn min_B(&self) -> Option<&crate::ton::int64> {
         match self {
-            State::Pchan_StateClose(ref x) => Some(&x.min_B),
-            State::Pchan_StateInit(ref x) => Some(&x.min_B),
+            State::Pchan_StateClose(x) => Some(&x.min_B),
+            State::Pchan_StateInit(x) => Some(&x.min_B),
             _ => None,
         }
     }
 
     pub fn signed_A(&self) -> Option<&crate::ton::Bool> {
         match self {
-            State::Pchan_StateClose(ref x) => Some(&x.signed_A),
-            State::Pchan_StateInit(ref x) => Some(&x.signed_A),
+            State::Pchan_StateClose(x) => Some(&x.signed_A),
+            State::Pchan_StateInit(x) => Some(&x.signed_A),
             _ => None,
         }
     }
 
     pub fn signed_B(&self) -> Option<&crate::ton::Bool> {
         match self {
-            State::Pchan_StateClose(ref x) => Some(&x.signed_B),
-            State::Pchan_StateInit(ref x) => Some(&x.signed_B),
+            State::Pchan_StateClose(x) => Some(&x.signed_B),
+            State::Pchan_StateInit(x) => Some(&x.signed_B),
             _ => None,
         }
     }

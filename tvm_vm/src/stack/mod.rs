@@ -457,7 +457,7 @@ impl StackItem {
 
     pub fn as_continuation(&self) -> ResultRef<ContinuationData> {
         match self {
-            StackItem::Continuation(ref data) => Ok(data),
+            StackItem::Continuation(data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item {} is not a continuation", self),
         }
     }
@@ -473,14 +473,14 @@ impl StackItem {
     pub fn as_dict(&self) -> ResultOpt<&Cell> {
         match self {
             StackItem::None => Ok(None),
-            StackItem::Cell(ref data) => Ok(Some(data)),
+            StackItem::Cell(data) => Ok(Some(data)),
             _ => err!(ExceptionCode::TypeCheckError, "item is not a dictionary"),
         }
     }
 
     pub fn as_integer(&self) -> ResultRef<IntegerData> {
         match self {
-            StackItem::Integer(ref data) => Ok(data),
+            StackItem::Integer(data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item is not an integer"),
         }
     }

@@ -236,7 +236,7 @@ impl fmt::Display for OperationError {
                 write!(f, "Operation parameter {name} has the following problem: {error}")
             }
             TooManyParameters => write!(f, "Operation has too many parameters."),
-            LogicErrorInParameters(ref error) => write!(f, "Logic error {error}"),
+            LogicErrorInParameters(error) => write!(f, "Logic error {error}"),
             MissingRequiredParameters => {
                 write!(f, "Operation requires more parameters.")
             }

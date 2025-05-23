@@ -14,103 +14,103 @@ pub enum Broadcast {
 impl Broadcast {
     pub fn broadcast_hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Broadcast::Overlay_BroadcastFecShort(ref x) => Some(&x.broadcast_hash),
+            Broadcast::Overlay_BroadcastFecShort(x) => Some(&x.broadcast_hash),
             _ => None,
         }
     }
 
     pub fn certificate(&self) -> Option<&crate::ton::overlay::Certificate> {
         match self {
-            Broadcast::Overlay_Broadcast(ref x) => Some(&x.certificate),
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.certificate),
-            Broadcast::Overlay_BroadcastFecShort(ref x) => Some(&x.certificate),
+            Broadcast::Overlay_Broadcast(x) => Some(&x.certificate),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.certificate),
+            Broadcast::Overlay_BroadcastFecShort(x) => Some(&x.certificate),
             _ => None,
         }
     }
 
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Broadcast::Overlay_Broadcast(ref x) => Some(&x.data),
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.data),
-            Broadcast::Overlay_Unicast(ref x) => Some(&x.data),
+            Broadcast::Overlay_Broadcast(x) => Some(&x.data),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.data),
+            Broadcast::Overlay_Unicast(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn data_hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.data_hash),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.data_hash),
             _ => None,
         }
     }
 
     pub fn data_size(&self) -> Option<&crate::ton::int> {
         match self {
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.data_size),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.data_size),
             _ => None,
         }
     }
 
     pub fn date(&self) -> Option<&crate::ton::int> {
         match self {
-            Broadcast::Overlay_Broadcast(ref x) => Some(&x.date),
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.date),
+            Broadcast::Overlay_Broadcast(x) => Some(&x.date),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.date),
             _ => None,
         }
     }
 
     pub fn fec(&self) -> Option<&crate::ton::fec::Type> {
         match self {
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.fec),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.fec),
             _ => None,
         }
     }
 
     pub fn flags(&self) -> Option<&crate::ton::int> {
         match self {
-            Broadcast::Overlay_Broadcast(ref x) => Some(&x.flags),
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.flags),
+            Broadcast::Overlay_Broadcast(x) => Some(&x.flags),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.flags),
             _ => None,
         }
     }
 
     pub fn hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Broadcast::Overlay_Fec_Completed(ref x) => Some(&x.hash),
-            Broadcast::Overlay_Fec_Received(ref x) => Some(&x.hash),
+            Broadcast::Overlay_Fec_Completed(x) => Some(&x.hash),
+            Broadcast::Overlay_Fec_Received(x) => Some(&x.hash),
             _ => None,
         }
     }
 
     pub fn part_data_hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Broadcast::Overlay_BroadcastFecShort(ref x) => Some(&x.part_data_hash),
+            Broadcast::Overlay_BroadcastFecShort(x) => Some(&x.part_data_hash),
             _ => None,
         }
     }
 
     pub fn seqno(&self) -> Option<&crate::ton::int> {
         match self {
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.seqno),
-            Broadcast::Overlay_BroadcastFecShort(ref x) => Some(&x.seqno),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.seqno),
+            Broadcast::Overlay_BroadcastFecShort(x) => Some(&x.seqno),
             _ => None,
         }
     }
 
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Broadcast::Overlay_Broadcast(ref x) => Some(&x.signature),
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.signature),
-            Broadcast::Overlay_BroadcastFecShort(ref x) => Some(&x.signature),
+            Broadcast::Overlay_Broadcast(x) => Some(&x.signature),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.signature),
+            Broadcast::Overlay_BroadcastFecShort(x) => Some(&x.signature),
             _ => None,
         }
     }
 
     pub fn src(&self) -> Option<&crate::ton::PublicKey> {
         match self {
-            Broadcast::Overlay_Broadcast(ref x) => Some(&x.src),
-            Broadcast::Overlay_BroadcastFec(ref x) => Some(&x.src),
-            Broadcast::Overlay_BroadcastFecShort(ref x) => Some(&x.src),
+            Broadcast::Overlay_Broadcast(x) => Some(&x.src),
+            Broadcast::Overlay_BroadcastFec(x) => Some(&x.src),
+            Broadcast::Overlay_BroadcastFecShort(x) => Some(&x.src),
             _ => None,
         }
     }
@@ -183,7 +183,7 @@ pub enum BroadcastList {
 impl BroadcastList {
     pub fn hashes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int256> {
         match self {
-            BroadcastList::Overlay_BroadcastList(ref x) => &x.hashes,
+            BroadcastList::Overlay_BroadcastList(x) => &x.hashes,
         }
     }
 
@@ -234,28 +234,28 @@ pub enum Certificate {
 impl Certificate {
     pub fn expire_at(&self) -> Option<&crate::ton::int> {
         match self {
-            Certificate::Overlay_Certificate(ref x) => Some(&x.expire_at),
+            Certificate::Overlay_Certificate(x) => Some(&x.expire_at),
             _ => None,
         }
     }
 
     pub fn issued_by(&self) -> Option<&crate::ton::PublicKey> {
         match self {
-            Certificate::Overlay_Certificate(ref x) => Some(&x.issued_by),
+            Certificate::Overlay_Certificate(x) => Some(&x.issued_by),
             _ => None,
         }
     }
 
     pub fn max_size(&self) -> Option<&crate::ton::int> {
         match self {
-            Certificate::Overlay_Certificate(ref x) => Some(&x.max_size),
+            Certificate::Overlay_Certificate(x) => Some(&x.max_size),
             _ => None,
         }
     }
 
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Certificate::Overlay_Certificate(ref x) => Some(&x.signature),
+            Certificate::Overlay_Certificate(x) => Some(&x.signature),
             _ => None,
         }
     }
@@ -326,25 +326,25 @@ pub enum CertificateId {
 impl CertificateId {
     pub fn expire_at(&self) -> &crate::ton::int {
         match self {
-            CertificateId::Overlay_CertificateId(ref x) => &x.expire_at,
+            CertificateId::Overlay_CertificateId(x) => &x.expire_at,
         }
     }
 
     pub fn max_size(&self) -> &crate::ton::int {
         match self {
-            CertificateId::Overlay_CertificateId(ref x) => &x.max_size,
+            CertificateId::Overlay_CertificateId(x) => &x.max_size,
         }
     }
 
     pub fn node(&self) -> &crate::ton::int256 {
         match self {
-            CertificateId::Overlay_CertificateId(ref x) => &x.node,
+            CertificateId::Overlay_CertificateId(x) => &x.node,
         }
     }
 
     pub fn overlay_id(&self) -> &crate::ton::int256 {
         match self {
-            CertificateId::Overlay_CertificateId(ref x) => &x.overlay_id,
+            CertificateId::Overlay_CertificateId(x) => &x.overlay_id,
         }
     }
 
@@ -394,7 +394,7 @@ pub enum Message {
 impl Message {
     pub fn overlay(&self) -> &crate::ton::int256 {
         match self {
-            Message::Overlay_Message(ref x) => &x.overlay,
+            Message::Overlay_Message(x) => &x.overlay,
         }
     }
 
@@ -442,25 +442,25 @@ pub enum Node {
 impl Node {
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
-            Node::Overlay_Node(ref x) => &x.id,
+            Node::Overlay_Node(x) => &x.id,
         }
     }
 
     pub fn overlay(&self) -> &crate::ton::int256 {
         match self {
-            Node::Overlay_Node(ref x) => &x.overlay,
+            Node::Overlay_Node(x) => &x.overlay,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            Node::Overlay_Node(ref x) => &x.signature,
+            Node::Overlay_Node(x) => &x.signature,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            Node::Overlay_Node(ref x) => &x.version,
+            Node::Overlay_Node(x) => &x.version,
         }
     }
 
@@ -508,7 +508,7 @@ pub enum Nodes {
 impl Nodes {
     pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::overlay::node::Node> {
         match self {
-            Nodes::Overlay_Nodes(ref x) => &x.nodes,
+            Nodes::Overlay_Nodes(x) => &x.nodes,
         }
     }
 

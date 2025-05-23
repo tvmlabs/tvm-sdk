@@ -8,7 +8,7 @@ pub enum Value {
 impl Value {
     pub fn total_shards(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_Status_Value(ref x) => &x.total_shards,
+            Value::Db_Lt_Status_Value(x) => &x.total_shards,
         }
     }
 

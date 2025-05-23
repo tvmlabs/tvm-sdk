@@ -128,7 +128,7 @@ impl IntegerData {
     pub fn is_neg(&self) -> bool {
         match &self.value {
             IntegerValue::NaN => false,
-            IntegerValue::Value(ref value) => value.is_negative(),
+            IntegerValue::Value(value) => value.is_negative(),
         }
     }
 
@@ -150,7 +150,7 @@ impl IntegerData {
     pub fn is_zero(&self) -> bool {
         match &self.value {
             IntegerValue::NaN => false,
-            IntegerValue::Value(ref value) => value.is_zero(),
+            IntegerValue::Value(value) => value.is_zero(),
         }
     }
 

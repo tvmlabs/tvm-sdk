@@ -8,13 +8,13 @@ pub enum Key {
 impl Key {
     pub fn local_id(&self) -> &crate::ton::int256 {
         match self {
-            Key::Adnl_Db_Node_Key(ref x) => &x.local_id,
+            Key::Adnl_Db_Node_Key(x) => &x.local_id,
         }
     }
 
     pub fn peer_id(&self) -> &crate::ton::int256 {
         match self {
-            Key::Adnl_Db_Node_Key(ref x) => &x.peer_id,
+            Key::Adnl_Db_Node_Key(x) => &x.peer_id,
         }
     }
 

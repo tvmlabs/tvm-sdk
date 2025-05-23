@@ -8,19 +8,19 @@ pub enum Local {
 impl Local {
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            Local::Control_Config_Local(ref x) => &x.port,
+            Local::Control_Config_Local(x) => &x.port,
         }
     }
 
     pub fn priv_(&self) -> &crate::ton::PrivateKey {
         match self {
-            Local::Control_Config_Local(ref x) => &x.priv_,
+            Local::Control_Config_Local(x) => &x.priv_,
         }
     }
 
     pub fn pub_(&self) -> &crate::ton::int256 {
         match self {
-            Local::Control_Config_Local(ref x) => &x.pub_,
+            Local::Control_Config_Local(x) => &x.pub_,
         }
     }
 

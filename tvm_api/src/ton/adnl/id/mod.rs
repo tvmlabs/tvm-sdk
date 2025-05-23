@@ -8,7 +8,7 @@ pub enum Short {
 impl Short {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            Short::Adnl_Id_Short(ref x) => &x.id,
+            Short::Adnl_Id_Short(x) => &x.id,
         }
     }
 

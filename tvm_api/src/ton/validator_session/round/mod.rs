@@ -8,25 +8,25 @@ pub enum Id {
 impl Id {
     pub fn height(&self) -> &crate::ton::long {
         match self {
-            Id::ValidatorSession_Round_Id(ref x) => &x.height,
+            Id::ValidatorSession_Round_Id(x) => &x.height,
         }
     }
 
     pub fn prev_block(&self) -> &crate::ton::int256 {
         match self {
-            Id::ValidatorSession_Round_Id(ref x) => &x.prev_block,
+            Id::ValidatorSession_Round_Id(x) => &x.prev_block,
         }
     }
 
     pub fn seqno(&self) -> &crate::ton::int {
         match self {
-            Id::ValidatorSession_Round_Id(ref x) => &x.seqno,
+            Id::ValidatorSession_Round_Id(x) => &x.seqno,
         }
     }
 
     pub fn session(&self) -> &crate::ton::int256 {
         match self {
-            Id::ValidatorSession_Round_Id(ref x) => &x.session,
+            Id::ValidatorSession_Round_Id(x) => &x.session,
         }
     }
 
@@ -97,73 +97,71 @@ pub enum Message {
 impl Message {
     pub fn attempt(&self) -> Option<&crate::ton::int> {
         match self {
-            Message::ValidatorSession_Message_Empty(ref x) => Some(&x.attempt),
-            Message::ValidatorSession_Message_Precommit(ref x) => Some(&x.attempt),
-            Message::ValidatorSession_Message_Vote(ref x) => Some(&x.attempt),
-            Message::ValidatorSession_Message_VoteFor(ref x) => Some(&x.attempt),
+            Message::ValidatorSession_Message_Empty(x) => Some(&x.attempt),
+            Message::ValidatorSession_Message_Precommit(x) => Some(&x.attempt),
+            Message::ValidatorSession_Message_Vote(x) => Some(&x.attempt),
+            Message::ValidatorSession_Message_VoteFor(x) => Some(&x.attempt),
             _ => None,
         }
     }
 
     pub fn candidate(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::ValidatorSession_Message_ApprovedBlock(ref x) => Some(&x.candidate),
-            Message::ValidatorSession_Message_Commit(ref x) => Some(&x.candidate),
-            Message::ValidatorSession_Message_Precommit(ref x) => Some(&x.candidate),
-            Message::ValidatorSession_Message_RejectedBlock(ref x) => Some(&x.candidate),
-            Message::ValidatorSession_Message_Vote(ref x) => Some(&x.candidate),
-            Message::ValidatorSession_Message_VoteFor(ref x) => Some(&x.candidate),
+            Message::ValidatorSession_Message_ApprovedBlock(x) => Some(&x.candidate),
+            Message::ValidatorSession_Message_Commit(x) => Some(&x.candidate),
+            Message::ValidatorSession_Message_Precommit(x) => Some(&x.candidate),
+            Message::ValidatorSession_Message_RejectedBlock(x) => Some(&x.candidate),
+            Message::ValidatorSession_Message_Vote(x) => Some(&x.candidate),
+            Message::ValidatorSession_Message_VoteFor(x) => Some(&x.candidate),
             _ => None,
         }
     }
 
     pub fn collated_data_file_hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::ValidatorSession_Message_SubmittedBlock(ref x) => {
-                Some(&x.collated_data_file_hash)
-            }
+            Message::ValidatorSession_Message_SubmittedBlock(x) => Some(&x.collated_data_file_hash),
             _ => None,
         }
     }
 
     pub fn file_hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::ValidatorSession_Message_SubmittedBlock(ref x) => Some(&x.file_hash),
+            Message::ValidatorSession_Message_SubmittedBlock(x) => Some(&x.file_hash),
             _ => None,
         }
     }
 
     pub fn reason(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Message::ValidatorSession_Message_RejectedBlock(ref x) => Some(&x.reason),
+            Message::ValidatorSession_Message_RejectedBlock(x) => Some(&x.reason),
             _ => None,
         }
     }
 
     pub fn root_hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Message::ValidatorSession_Message_SubmittedBlock(ref x) => Some(&x.root_hash),
+            Message::ValidatorSession_Message_SubmittedBlock(x) => Some(&x.root_hash),
             _ => None,
         }
     }
 
     pub fn round(&self) -> &crate::ton::int {
         match self {
-            Message::ValidatorSession_Message_ApprovedBlock(ref x) => &x.round,
-            Message::ValidatorSession_Message_Commit(ref x) => &x.round,
-            Message::ValidatorSession_Message_Empty(ref x) => &x.round,
-            Message::ValidatorSession_Message_Precommit(ref x) => &x.round,
-            Message::ValidatorSession_Message_RejectedBlock(ref x) => &x.round,
-            Message::ValidatorSession_Message_SubmittedBlock(ref x) => &x.round,
-            Message::ValidatorSession_Message_Vote(ref x) => &x.round,
-            Message::ValidatorSession_Message_VoteFor(ref x) => &x.round,
+            Message::ValidatorSession_Message_ApprovedBlock(x) => &x.round,
+            Message::ValidatorSession_Message_Commit(x) => &x.round,
+            Message::ValidatorSession_Message_Empty(x) => &x.round,
+            Message::ValidatorSession_Message_Precommit(x) => &x.round,
+            Message::ValidatorSession_Message_RejectedBlock(x) => &x.round,
+            Message::ValidatorSession_Message_SubmittedBlock(x) => &x.round,
+            Message::ValidatorSession_Message_Vote(x) => &x.round,
+            Message::ValidatorSession_Message_VoteFor(x) => &x.round,
         }
     }
 
     pub fn signature(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Message::ValidatorSession_Message_ApprovedBlock(ref x) => Some(&x.signature),
-            Message::ValidatorSession_Message_Commit(ref x) => Some(&x.signature),
+            Message::ValidatorSession_Message_ApprovedBlock(x) => Some(&x.signature),
+            Message::ValidatorSession_Message_Commit(x) => Some(&x.signature),
             _ => None,
         }
     }

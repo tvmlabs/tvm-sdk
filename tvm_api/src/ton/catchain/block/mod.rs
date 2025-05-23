@@ -59,13 +59,13 @@ impl Data {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::catchain::block::dep::Dep> {
         match self {
-            Data::Catchain_Block_Data(ref x) => &x.deps,
+            Data::Catchain_Block_Data(x) => &x.deps,
         }
     }
 
     pub fn prev(&self) -> &crate::ton::catchain::block::dep::Dep {
         match self {
-            Data::Catchain_Block_Data(ref x) => &x.prev,
+            Data::Catchain_Block_Data(x) => &x.prev,
         }
     }
 
@@ -113,25 +113,25 @@ pub enum Dep {
 impl Dep {
     pub fn data_hash(&self) -> &crate::ton::int256 {
         match self {
-            Dep::Catchain_Block_Dep(ref x) => &x.data_hash,
+            Dep::Catchain_Block_Dep(x) => &x.data_hash,
         }
     }
 
     pub fn height(&self) -> &crate::ton::int {
         match self {
-            Dep::Catchain_Block_Dep(ref x) => &x.height,
+            Dep::Catchain_Block_Dep(x) => &x.height,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            Dep::Catchain_Block_Dep(ref x) => &x.signature,
+            Dep::Catchain_Block_Dep(x) => &x.signature,
         }
     }
 
     pub fn src(&self) -> &crate::ton::int {
         match self {
-            Dep::Catchain_Block_Dep(ref x) => &x.src,
+            Dep::Catchain_Block_Dep(x) => &x.src,
         }
     }
 
@@ -179,25 +179,25 @@ pub enum Id {
 impl Id {
     pub fn data_hash(&self) -> &crate::ton::int256 {
         match self {
-            Id::Catchain_Block_Id(ref x) => &x.data_hash,
+            Id::Catchain_Block_Id(x) => &x.data_hash,
         }
     }
 
     pub fn height(&self) -> &crate::ton::int {
         match self {
-            Id::Catchain_Block_Id(ref x) => &x.height,
+            Id::Catchain_Block_Id(x) => &x.height,
         }
     }
 
     pub fn incarnation(&self) -> &crate::ton::int256 {
         match self {
-            Id::Catchain_Block_Id(ref x) => &x.incarnation,
+            Id::Catchain_Block_Id(x) => &x.incarnation,
         }
     }
 
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
-            Id::Catchain_Block_Id(ref x) => &x.src,
+            Id::Catchain_Block_Id(x) => &x.src,
         }
     }
 

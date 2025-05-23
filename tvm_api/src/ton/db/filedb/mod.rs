@@ -16,27 +16,27 @@ pub enum Key {
 impl Key {
     pub fn block_id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Key::Db_Filedb_Key_BlockFile(ref x) => Some(&x.block_id),
-            Key::Db_Filedb_Key_BlockInfo(ref x) => Some(&x.block_id),
-            Key::Db_Filedb_Key_PersistentStateFile(ref x) => Some(&x.block_id),
-            Key::Db_Filedb_Key_Proof(ref x) => Some(&x.block_id),
-            Key::Db_Filedb_Key_ProofLink(ref x) => Some(&x.block_id),
-            Key::Db_Filedb_Key_Signatures(ref x) => Some(&x.block_id),
-            Key::Db_Filedb_Key_ZeroStateFile(ref x) => Some(&x.block_id),
+            Key::Db_Filedb_Key_BlockFile(x) => Some(&x.block_id),
+            Key::Db_Filedb_Key_BlockInfo(x) => Some(&x.block_id),
+            Key::Db_Filedb_Key_PersistentStateFile(x) => Some(&x.block_id),
+            Key::Db_Filedb_Key_Proof(x) => Some(&x.block_id),
+            Key::Db_Filedb_Key_ProofLink(x) => Some(&x.block_id),
+            Key::Db_Filedb_Key_Signatures(x) => Some(&x.block_id),
+            Key::Db_Filedb_Key_ZeroStateFile(x) => Some(&x.block_id),
             _ => None,
         }
     }
 
     pub fn id(&self) -> Option<&crate::ton::db::candidate::id::Id> {
         match self {
-            Key::Db_Filedb_Key_Candidate(ref x) => Some(&x.id),
+            Key::Db_Filedb_Key_Candidate(x) => Some(&x.id),
             _ => None,
         }
     }
 
     pub fn masterchain_block_id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Key::Db_Filedb_Key_PersistentStateFile(ref x) => Some(&x.masterchain_block_id),
+            Key::Db_Filedb_Key_PersistentStateFile(x) => Some(&x.masterchain_block_id),
             _ => None,
         }
     }
@@ -119,25 +119,25 @@ pub enum Value {
 impl Value {
     pub fn file_hash(&self) -> &crate::ton::int256 {
         match self {
-            Value::Db_Filedb_Value(ref x) => &x.file_hash,
+            Value::Db_Filedb_Value(x) => &x.file_hash,
         }
     }
 
     pub fn key(&self) -> &crate::ton::db::filedb::Key {
         match self {
-            Value::Db_Filedb_Value(ref x) => &x.key,
+            Value::Db_Filedb_Value(x) => &x.key,
         }
     }
 
     pub fn next(&self) -> &crate::ton::int256 {
         match self {
-            Value::Db_Filedb_Value(ref x) => &x.next,
+            Value::Db_Filedb_Value(x) => &x.next,
         }
     }
 
     pub fn prev(&self) -> &crate::ton::int256 {
         match self {
-            Value::Db_Filedb_Value(ref x) => &x.prev,
+            Value::Db_Filedb_Value(x) => &x.prev,
         }
     }
 

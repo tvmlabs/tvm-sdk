@@ -8,19 +8,19 @@ pub enum Desc {
 impl Desc {
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
-            Desc::Liteserver_Desc(ref x) => &x.id,
+            Desc::Liteserver_Desc(x) => &x.id,
         }
     }
 
     pub fn ip(&self) -> &crate::ton::int {
         match self {
-            Desc::Liteserver_Desc(ref x) => &x.ip,
+            Desc::Liteserver_Desc(x) => &x.ip,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            Desc::Liteserver_Desc(ref x) => &x.port,
+            Desc::Liteserver_Desc(x) => &x.port,
         }
     }
 

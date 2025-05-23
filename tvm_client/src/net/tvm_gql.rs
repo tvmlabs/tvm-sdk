@@ -285,13 +285,13 @@ impl QueryOperationBuilder {
         self.start_op(&op.query_name());
         let filter_type = op.doc_type() + "Filter";
         match op {
-            ParamsOfQueryOperation::AggregateCollection(ref p) => {
+            ParamsOfQueryOperation::AggregateCollection(p) => {
                 self.add_agg_op_params(&filter_type, &p.filter, &p.fields);
             }
-            ParamsOfQueryOperation::QueryCollection(ref p) => {
+            ParamsOfQueryOperation::QueryCollection(p) => {
                 self.add_query_op_params(&filter_type, &p.filter, &p.order, p.limit, None);
             }
-            ParamsOfQueryOperation::WaitForCollection(ref p) => {
+            ParamsOfQueryOperation::WaitForCollection(p) => {
                 self.add_query_op_params(
                     &filter_type,
                     &p.filter,
@@ -305,7 +305,7 @@ impl QueryOperationBuilder {
                     _ => self.timeout,
                 };
             }
-            ParamsOfQueryOperation::QueryCounterparties(ref p) => {
+            ParamsOfQueryOperation::QueryCounterparties(p) => {
                 self.add_query_counterparties_op_params(&p.account, &p.first, &p.after);
             }
         }
@@ -323,10 +323,10 @@ impl QueryOperationBuilder {
         filter: &Option<Value>,
         fields: &Option<Vec<FieldAggregation>>,
     ) {
-        if let Some(ref filter) = filter {
+        if let Some(filter) = filter {
             self.add_op_param("filter", filter_type, filter);
         }
-        if let Some(ref fields) = fields {
+        if let Some(fields) = fields {
             if !fields.is_empty() {
                 self.add_op_param(
                     "fields",
@@ -345,7 +345,7 @@ impl QueryOperationBuilder {
         limit: Option<u32>,
         timeout: Option<u32>,
     ) {
-        if let Some(ref filter) = filter {
+        if let Some(filter) = filter {
             self.add_op_param("filter", filter_type, filter);
         }
         if let Some(order_by) = order_by {

@@ -8,7 +8,7 @@ pub enum Verbosity {
 impl Verbosity {
     pub fn value(&self) -> &crate::ton::int {
         match self {
-            Verbosity::LiteServer_Debug_Verbosity(ref x) => &x.value,
+            Verbosity::LiteServer_Debug_Verbosity(x) => &x.value,
         }
     }
 

@@ -8,19 +8,19 @@ pub enum Value {
 impl Value {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Value::Db_Lt_El_Value(ref x) => &x.id,
+            Value::Db_Lt_El_Value(x) => &x.id,
         }
     }
 
     pub fn lt(&self) -> &crate::ton::long {
         match self {
-            Value::Db_Lt_El_Value(ref x) => &x.lt,
+            Value::Db_Lt_El_Value(x) => &x.lt,
         }
     }
 
     pub fn ts(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_El_Value(ref x) => &x.ts,
+            Value::Db_Lt_El_Value(x) => &x.ts,
         }
     }
 

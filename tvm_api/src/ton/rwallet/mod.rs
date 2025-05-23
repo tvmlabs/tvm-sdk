@@ -8,7 +8,7 @@ pub enum Action {
 impl Action {
     pub fn config(&self) -> &crate::ton::rwallet::config::Config {
         match self {
-            Action::Rwallet_ActionInit(ref x) => &x.config,
+            Action::Rwallet_ActionInit(x) => &x.config,
         }
     }
 
@@ -58,13 +58,13 @@ impl Config {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::rwallet::limit::Limit> {
         match self {
-            Config::Rwallet_Config(ref x) => &x.limits,
+            Config::Rwallet_Config(x) => &x.limits,
         }
     }
 
     pub fn start_at(&self) -> &crate::ton::int53 {
         match self {
-            Config::Rwallet_Config(ref x) => &x.start_at,
+            Config::Rwallet_Config(x) => &x.start_at,
         }
     }
 
@@ -112,13 +112,13 @@ pub enum Limit {
 impl Limit {
     pub fn seconds(&self) -> &crate::ton::int32 {
         match self {
-            Limit::Rwallet_Limit(ref x) => &x.seconds,
+            Limit::Rwallet_Limit(x) => &x.seconds,
         }
     }
 
     pub fn value(&self) -> &crate::ton::int64 {
         match self {
-            Limit::Rwallet_Limit(ref x) => &x.value,
+            Limit::Rwallet_Limit(x) => &x.value,
         }
     }
 

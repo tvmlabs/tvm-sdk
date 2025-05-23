@@ -10,19 +10,19 @@ impl BlockUpdate {
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::validator_session::round::Message> {
         match self {
-            BlockUpdate::ValidatorSession_BlockUpdate(ref x) => &x.actions,
+            BlockUpdate::ValidatorSession_BlockUpdate(x) => &x.actions,
         }
     }
 
     pub fn state(&self) -> &crate::ton::int {
         match self {
-            BlockUpdate::ValidatorSession_BlockUpdate(ref x) => &x.state,
+            BlockUpdate::ValidatorSession_BlockUpdate(x) => &x.state,
         }
     }
 
     pub fn ts(&self) -> &crate::ton::long {
         match self {
-            BlockUpdate::ValidatorSession_BlockUpdate(ref x) => &x.ts,
+            BlockUpdate::ValidatorSession_BlockUpdate(x) => &x.ts,
         }
     }
 
@@ -74,31 +74,31 @@ pub enum Candidate {
 impl Candidate {
     pub fn collated_data(&self) -> &crate::ton::bytes {
         match self {
-            Candidate::ValidatorSession_Candidate(ref x) => &x.collated_data,
+            Candidate::ValidatorSession_Candidate(x) => &x.collated_data,
         }
     }
 
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            Candidate::ValidatorSession_Candidate(ref x) => &x.data,
+            Candidate::ValidatorSession_Candidate(x) => &x.data,
         }
     }
 
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
-            Candidate::ValidatorSession_Candidate(ref x) => &x.root_hash,
+            Candidate::ValidatorSession_Candidate(x) => &x.root_hash,
         }
     }
 
     pub fn round(&self) -> &crate::ton::int {
         match self {
-            Candidate::ValidatorSession_Candidate(ref x) => &x.round,
+            Candidate::ValidatorSession_Candidate(x) => &x.round,
         }
     }
 
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
-            Candidate::ValidatorSession_Candidate(ref x) => &x.src,
+            Candidate::ValidatorSession_Candidate(x) => &x.src,
         }
     }
 
@@ -148,25 +148,25 @@ pub enum CandidateId {
 impl CandidateId {
     pub fn collated_data_file_hash(&self) -> &crate::ton::int256 {
         match self {
-            CandidateId::ValidatorSession_CandidateId(ref x) => &x.collated_data_file_hash,
+            CandidateId::ValidatorSession_CandidateId(x) => &x.collated_data_file_hash,
         }
     }
 
     pub fn file_hash(&self) -> &crate::ton::int256 {
         match self {
-            CandidateId::ValidatorSession_CandidateId(ref x) => &x.file_hash,
+            CandidateId::ValidatorSession_CandidateId(x) => &x.file_hash,
         }
     }
 
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
-            CandidateId::ValidatorSession_CandidateId(ref x) => &x.root_hash,
+            CandidateId::ValidatorSession_CandidateId(x) => &x.root_hash,
         }
     }
 
     pub fn src(&self) -> &crate::ton::int256 {
         match self {
-            CandidateId::ValidatorSession_CandidateId(ref x) => &x.src,
+            CandidateId::ValidatorSession_CandidateId(x) => &x.src,
         }
     }
 
@@ -219,64 +219,64 @@ pub enum Config {
 impl Config {
     pub fn catchain_idle_timeout(&self) -> &crate::ton::double {
         match self {
-            Config::ValidatorSession_Config(ref x) => &x.catchain_idle_timeout,
-            Config::ValidatorSession_ConfigNew(ref x) => &x.catchain_idle_timeout,
+            Config::ValidatorSession_Config(x) => &x.catchain_idle_timeout,
+            Config::ValidatorSession_ConfigNew(x) => &x.catchain_idle_timeout,
         }
     }
 
     pub fn catchain_max_deps(&self) -> &crate::ton::int {
         match self {
-            Config::ValidatorSession_Config(ref x) => &x.catchain_max_deps,
-            Config::ValidatorSession_ConfigNew(ref x) => &x.catchain_max_deps,
+            Config::ValidatorSession_Config(x) => &x.catchain_max_deps,
+            Config::ValidatorSession_ConfigNew(x) => &x.catchain_max_deps,
         }
     }
 
     pub fn max_block_size(&self) -> &crate::ton::int {
         match self {
-            Config::ValidatorSession_Config(ref x) => &x.max_block_size,
-            Config::ValidatorSession_ConfigNew(ref x) => &x.max_block_size,
+            Config::ValidatorSession_Config(x) => &x.max_block_size,
+            Config::ValidatorSession_ConfigNew(x) => &x.max_block_size,
         }
     }
 
     pub fn max_collated_data_size(&self) -> &crate::ton::int {
         match self {
-            Config::ValidatorSession_Config(ref x) => &x.max_collated_data_size,
-            Config::ValidatorSession_ConfigNew(ref x) => &x.max_collated_data_size,
+            Config::ValidatorSession_Config(x) => &x.max_collated_data_size,
+            Config::ValidatorSession_ConfigNew(x) => &x.max_collated_data_size,
         }
     }
 
     pub fn max_round_attempts(&self) -> &crate::ton::int {
         match self {
-            Config::ValidatorSession_Config(ref x) => &x.max_round_attempts,
-            Config::ValidatorSession_ConfigNew(ref x) => &x.max_round_attempts,
+            Config::ValidatorSession_Config(x) => &x.max_round_attempts,
+            Config::ValidatorSession_ConfigNew(x) => &x.max_round_attempts,
         }
     }
 
     pub fn new_catchain_ids(&self) -> Option<&crate::ton::Bool> {
         match self {
-            Config::ValidatorSession_ConfigNew(ref x) => Some(&x.new_catchain_ids),
+            Config::ValidatorSession_ConfigNew(x) => Some(&x.new_catchain_ids),
             _ => None,
         }
     }
 
     pub fn next_candidate_delay(&self) -> &crate::ton::double {
         match self {
-            Config::ValidatorSession_Config(ref x) => &x.next_candidate_delay,
-            Config::ValidatorSession_ConfigNew(ref x) => &x.next_candidate_delay,
+            Config::ValidatorSession_Config(x) => &x.next_candidate_delay,
+            Config::ValidatorSession_ConfigNew(x) => &x.next_candidate_delay,
         }
     }
 
     pub fn round_attempt_duration(&self) -> &crate::ton::int {
         match self {
-            Config::ValidatorSession_Config(ref x) => &x.round_attempt_duration,
-            Config::ValidatorSession_ConfigNew(ref x) => &x.round_attempt_duration,
+            Config::ValidatorSession_Config(x) => &x.round_attempt_duration,
+            Config::ValidatorSession_ConfigNew(x) => &x.round_attempt_duration,
         }
     }
 
     pub fn round_candidates(&self) -> &crate::ton::int {
         match self {
-            Config::ValidatorSession_Config(ref x) => &x.round_candidates,
-            Config::ValidatorSession_ConfigNew(ref x) => &x.round_candidates,
+            Config::ValidatorSession_Config(x) => &x.round_candidates,
+            Config::ValidatorSession_ConfigNew(x) => &x.round_candidates,
         }
     }
 }
@@ -362,7 +362,7 @@ pub enum Pong {
 impl Pong {
     pub fn hash(&self) -> &crate::ton::long {
         match self {
-            Pong::ValidatorSession_Pong(ref x) => &x.hash,
+            Pong::ValidatorSession_Pong(x) => &x.hash,
         }
     }
 

@@ -8,7 +8,7 @@ pub enum Builder {
 impl Builder {
     pub fn bytes(&self) -> &crate::ton::bytes {
         match self {
-            Builder::Tvm_Builder(ref x) => &x.bytes,
+            Builder::Tvm_Builder(x) => &x.bytes,
         }
     }
 
@@ -56,7 +56,7 @@ pub enum Cell {
 impl Cell {
     pub fn bytes(&self) -> &crate::ton::bytes {
         match self {
-            Cell::Tvm_Cell(ref x) => &x.bytes,
+            Cell::Tvm_Cell(x) => &x.bytes,
         }
     }
 
@@ -104,7 +104,7 @@ pub enum List {
 impl List {
     pub fn elements(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry> {
         match self {
-            List::Tvm_List(ref x) => &x.elements,
+            List::Tvm_List(x) => &x.elements,
         }
     }
 
@@ -152,7 +152,7 @@ pub enum Number {
 impl Number {
     pub fn number(&self) -> &crate::ton::string {
         match self {
-            Number::Tvm_NumberDecimal(ref x) => &x.number,
+            Number::Tvm_NumberDecimal(x) => &x.number,
         }
     }
 
@@ -200,7 +200,7 @@ pub enum Slice {
 impl Slice {
     pub fn bytes(&self) -> &crate::ton::bytes {
         match self {
-            Slice::Tvm_Slice(ref x) => &x.bytes,
+            Slice::Tvm_Slice(x) => &x.bytes,
         }
     }
 
@@ -255,42 +255,42 @@ pub enum StackEntry {
 impl StackEntry {
     pub fn builder(&self) -> Option<&crate::ton::tvm::builder::Builder> {
         match self {
-            StackEntry::Tvm_StackEntryBuilder(ref x) => Some(&x.builder),
+            StackEntry::Tvm_StackEntryBuilder(x) => Some(&x.builder),
             _ => None,
         }
     }
 
     pub fn cell(&self) -> Option<&crate::ton::tvm::cell::Cell> {
         match self {
-            StackEntry::Tvm_StackEntryCell(ref x) => Some(&x.cell),
+            StackEntry::Tvm_StackEntryCell(x) => Some(&x.cell),
             _ => None,
         }
     }
 
     pub fn list(&self) -> Option<&crate::ton::tvm::List> {
         match self {
-            StackEntry::Tvm_StackEntryList(ref x) => Some(&x.list),
+            StackEntry::Tvm_StackEntryList(x) => Some(&x.list),
             _ => None,
         }
     }
 
     pub fn number(&self) -> Option<&crate::ton::tvm::Number> {
         match self {
-            StackEntry::Tvm_StackEntryNumber(ref x) => Some(&x.number),
+            StackEntry::Tvm_StackEntryNumber(x) => Some(&x.number),
             _ => None,
         }
     }
 
     pub fn slice(&self) -> Option<&crate::ton::tvm::slice::Slice> {
         match self {
-            StackEntry::Tvm_StackEntrySlice(ref x) => Some(&x.slice),
+            StackEntry::Tvm_StackEntrySlice(x) => Some(&x.slice),
             _ => None,
         }
     }
 
     pub fn tuple(&self) -> Option<&crate::ton::tvm::Tuple> {
         match self {
-            StackEntry::Tvm_StackEntryTuple(ref x) => Some(&x.tuple),
+            StackEntry::Tvm_StackEntryTuple(x) => Some(&x.tuple),
             _ => None,
         }
     }
@@ -366,7 +366,7 @@ pub enum Tuple {
 impl Tuple {
     pub fn elements(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::tvm::StackEntry> {
         match self {
-            Tuple::Tvm_Tuple(ref x) => &x.elements,
+            Tuple::Tvm_Tuple(x) => &x.elements,
         }
     }
 

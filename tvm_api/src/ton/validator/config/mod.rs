@@ -10,19 +10,19 @@ impl Global {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Global::Validator_Config_Global(ref x) => &x.hardforks,
+            Global::Validator_Config_Global(x) => &x.hardforks,
         }
     }
 
     pub fn init_block(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Global::Validator_Config_Global(ref x) => &x.init_block,
+            Global::Validator_Config_Global(x) => &x.init_block,
         }
     }
 
     pub fn zero_state(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Global::Validator_Config_Global(ref x) => &x.zero_state,
+            Global::Validator_Config_Global(x) => &x.zero_state,
         }
     }
 
@@ -71,14 +71,14 @@ pub enum Local {
 impl Local {
     pub fn addr_list(&self) -> Option<&crate::ton::adnl::addresslist::AddressList> {
         match self {
-            Local::Validator_Config_Random_Local(ref x) => Some(&x.addr_list),
+            Local::Validator_Config_Random_Local(x) => Some(&x.addr_list),
             _ => None,
         }
     }
 
     pub fn id(&self) -> Option<&crate::ton::adnl::id::short::Short> {
         match self {
-            Local::Validator_Config_Local(ref x) => Some(&x.id),
+            Local::Validator_Config_Local(x) => Some(&x.id),
             _ => None,
         }
     }

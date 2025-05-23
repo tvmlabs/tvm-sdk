@@ -8,13 +8,13 @@ pub enum AccountId {
 impl AccountId {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            AccountId::LiteServer_AccountId(ref x) => &x.id,
+            AccountId::LiteServer_AccountId(x) => &x.id,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            AccountId::LiteServer_AccountId(ref x) => &x.workchain,
+            AccountId::LiteServer_AccountId(x) => &x.workchain,
         }
     }
 
@@ -62,31 +62,31 @@ pub enum AccountState {
 impl AccountState {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            AccountState::LiteServer_AccountState(ref x) => &x.id,
+            AccountState::LiteServer_AccountState(x) => &x.id,
         }
     }
 
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
-            AccountState::LiteServer_AccountState(ref x) => &x.proof,
+            AccountState::LiteServer_AccountState(x) => &x.proof,
         }
     }
 
     pub fn shard_proof(&self) -> &crate::ton::bytes {
         match self {
-            AccountState::LiteServer_AccountState(ref x) => &x.shard_proof,
+            AccountState::LiteServer_AccountState(x) => &x.shard_proof,
         }
     }
 
     pub fn shardblk(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            AccountState::LiteServer_AccountState(ref x) => &x.shardblk,
+            AccountState::LiteServer_AccountState(x) => &x.shardblk,
         }
     }
 
     pub fn state(&self) -> &crate::ton::bytes {
         match self {
-            AccountState::LiteServer_AccountState(ref x) => &x.state,
+            AccountState::LiteServer_AccountState(x) => &x.state,
         }
     }
 
@@ -136,19 +136,19 @@ pub enum AllShardsInfo {
 impl AllShardsInfo {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            AllShardsInfo::LiteServer_AllShardsInfo(ref x) => &x.data,
+            AllShardsInfo::LiteServer_AllShardsInfo(x) => &x.data,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            AllShardsInfo::LiteServer_AllShardsInfo(ref x) => &x.id,
+            AllShardsInfo::LiteServer_AllShardsInfo(x) => &x.id,
         }
     }
 
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
-            AllShardsInfo::LiteServer_AllShardsInfo(ref x) => &x.proof,
+            AllShardsInfo::LiteServer_AllShardsInfo(x) => &x.proof,
         }
     }
 
@@ -198,13 +198,13 @@ pub enum BlockData {
 impl BlockData {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            BlockData::LiteServer_BlockData(ref x) => &x.data,
+            BlockData::LiteServer_BlockData(x) => &x.data,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            BlockData::LiteServer_BlockData(ref x) => &x.id,
+            BlockData::LiteServer_BlockData(x) => &x.id,
         }
     }
 
@@ -252,19 +252,19 @@ pub enum BlockHeader {
 impl BlockHeader {
     pub fn header_proof(&self) -> &crate::ton::bytes {
         match self {
-            BlockHeader::LiteServer_BlockHeader(ref x) => &x.header_proof,
+            BlockHeader::LiteServer_BlockHeader(x) => &x.header_proof,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            BlockHeader::LiteServer_BlockHeader(ref x) => &x.id,
+            BlockHeader::LiteServer_BlockHeader(x) => &x.id,
         }
     }
 
     pub fn mode(&self) -> &crate::ton::int {
         match self {
-            BlockHeader::LiteServer_BlockHeader(ref x) => &x.mode,
+            BlockHeader::LiteServer_BlockHeader(x) => &x.mode,
         }
     }
 
@@ -315,57 +315,57 @@ pub enum BlockLink {
 impl BlockLink {
     pub fn config_proof(&self) -> Option<&crate::ton::bytes> {
         match self {
-            BlockLink::LiteServer_BlockLinkForward(ref x) => Some(&x.config_proof),
+            BlockLink::LiteServer_BlockLinkForward(x) => Some(&x.config_proof),
             _ => None,
         }
     }
 
     pub fn dest_proof(&self) -> &crate::ton::bytes {
         match self {
-            BlockLink::LiteServer_BlockLinkBack(ref x) => &x.dest_proof,
-            BlockLink::LiteServer_BlockLinkForward(ref x) => &x.dest_proof,
+            BlockLink::LiteServer_BlockLinkBack(x) => &x.dest_proof,
+            BlockLink::LiteServer_BlockLinkForward(x) => &x.dest_proof,
         }
     }
 
     pub fn from(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            BlockLink::LiteServer_BlockLinkBack(ref x) => &x.from,
-            BlockLink::LiteServer_BlockLinkForward(ref x) => &x.from,
+            BlockLink::LiteServer_BlockLinkBack(x) => &x.from,
+            BlockLink::LiteServer_BlockLinkForward(x) => &x.from,
         }
     }
 
     pub fn proof(&self) -> Option<&crate::ton::bytes> {
         match self {
-            BlockLink::LiteServer_BlockLinkBack(ref x) => Some(&x.proof),
+            BlockLink::LiteServer_BlockLinkBack(x) => Some(&x.proof),
             _ => None,
         }
     }
 
     pub fn signatures(&self) -> Option<&crate::ton::lite_server::SignatureSet> {
         match self {
-            BlockLink::LiteServer_BlockLinkForward(ref x) => Some(&x.signatures),
+            BlockLink::LiteServer_BlockLinkForward(x) => Some(&x.signatures),
             _ => None,
         }
     }
 
     pub fn state_proof(&self) -> Option<&crate::ton::bytes> {
         match self {
-            BlockLink::LiteServer_BlockLinkBack(ref x) => Some(&x.state_proof),
+            BlockLink::LiteServer_BlockLinkBack(x) => Some(&x.state_proof),
             _ => None,
         }
     }
 
     pub fn to(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            BlockLink::LiteServer_BlockLinkBack(ref x) => &x.to,
-            BlockLink::LiteServer_BlockLinkForward(ref x) => &x.to,
+            BlockLink::LiteServer_BlockLinkBack(x) => &x.to,
+            BlockLink::LiteServer_BlockLinkForward(x) => &x.to,
         }
     }
 
     pub fn to_key_block(&self) -> &crate::ton::Bool {
         match self {
-            BlockLink::LiteServer_BlockLinkBack(ref x) => &x.to_key_block,
-            BlockLink::LiteServer_BlockLinkForward(ref x) => &x.to_key_block,
+            BlockLink::LiteServer_BlockLinkBack(x) => &x.to_key_block,
+            BlockLink::LiteServer_BlockLinkForward(x) => &x.to_key_block,
         }
     }
 }
@@ -413,25 +413,25 @@ pub enum BlockState {
 impl BlockState {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            BlockState::LiteServer_BlockState(ref x) => &x.data,
+            BlockState::LiteServer_BlockState(x) => &x.data,
         }
     }
 
     pub fn file_hash(&self) -> &crate::ton::int256 {
         match self {
-            BlockState::LiteServer_BlockState(ref x) => &x.file_hash,
+            BlockState::LiteServer_BlockState(x) => &x.file_hash,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            BlockState::LiteServer_BlockState(ref x) => &x.id,
+            BlockState::LiteServer_BlockState(x) => &x.id,
         }
     }
 
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
-            BlockState::LiteServer_BlockState(ref x) => &x.root_hash,
+            BlockState::LiteServer_BlockState(x) => &x.root_hash,
         }
     }
 
@@ -479,7 +479,7 @@ pub enum BlockTransactions {
 impl BlockTransactions {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.id,
+            BlockTransactions::LiteServer_BlockTransactions(x) => &x.id,
         }
     }
 
@@ -488,25 +488,25 @@ impl BlockTransactions {
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::lite_server::transactionid::TransactionId>
     {
         match self {
-            BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.ids,
+            BlockTransactions::LiteServer_BlockTransactions(x) => &x.ids,
         }
     }
 
     pub fn incomplete(&self) -> &crate::ton::Bool {
         match self {
-            BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.incomplete,
+            BlockTransactions::LiteServer_BlockTransactions(x) => &x.incomplete,
         }
     }
 
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
-            BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.proof,
+            BlockTransactions::LiteServer_BlockTransactions(x) => &x.proof,
         }
     }
 
     pub fn req_count(&self) -> &crate::ton::int {
         match self {
-            BlockTransactions::LiteServer_BlockTransactions(ref x) => &x.req_count,
+            BlockTransactions::LiteServer_BlockTransactions(x) => &x.req_count,
         }
     }
 
@@ -561,25 +561,25 @@ pub enum ConfigInfo {
 impl ConfigInfo {
     pub fn config_proof(&self) -> &crate::ton::bytes {
         match self {
-            ConfigInfo::LiteServer_ConfigInfo(ref x) => &x.config_proof,
+            ConfigInfo::LiteServer_ConfigInfo(x) => &x.config_proof,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            ConfigInfo::LiteServer_ConfigInfo(ref x) => &x.id,
+            ConfigInfo::LiteServer_ConfigInfo(x) => &x.id,
         }
     }
 
     pub fn mode(&self) -> &crate::ton::int {
         match self {
-            ConfigInfo::LiteServer_ConfigInfo(ref x) => &x.mode,
+            ConfigInfo::LiteServer_ConfigInfo(x) => &x.mode,
         }
     }
 
     pub fn state_proof(&self) -> &crate::ton::bytes {
         match self {
-            ConfigInfo::LiteServer_ConfigInfo(ref x) => &x.state_proof,
+            ConfigInfo::LiteServer_ConfigInfo(x) => &x.state_proof,
         }
     }
 
@@ -627,7 +627,7 @@ pub enum CurrentTime {
 impl CurrentTime {
     pub fn now(&self) -> &crate::ton::int {
         match self {
-            CurrentTime::LiteServer_CurrentTime(ref x) => &x.now,
+            CurrentTime::LiteServer_CurrentTime(x) => &x.now,
         }
     }
 
@@ -677,13 +677,13 @@ pub enum Error {
 impl Error {
     pub fn code(&self) -> &crate::ton::int {
         match self {
-            Error::LiteServer_Error(ref x) => &x.code,
+            Error::LiteServer_Error(x) => &x.code,
         }
     }
 
     pub fn message(&self) -> &crate::ton::string {
         match self {
-            Error::LiteServer_Error(ref x) => &x.message,
+            Error::LiteServer_Error(x) => &x.message,
         }
     }
 
@@ -731,19 +731,19 @@ pub enum Info {
 impl Info {
     pub fn capabilities(&self) -> &crate::ton::int64 {
         match self {
-            Info::LiteServer_Info(ref x) => &x.capabilities,
+            Info::LiteServer_Info(x) => &x.capabilities,
         }
     }
 
     pub fn now(&self) -> &crate::ton::int53 {
         match self {
-            Info::LiteServer_Info(ref x) => &x.now,
+            Info::LiteServer_Info(x) => &x.now,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int32 {
         match self {
-            Info::LiteServer_Info(ref x) => &x.version,
+            Info::LiteServer_Info(x) => &x.version,
         }
     }
 
@@ -791,19 +791,19 @@ pub enum MasterchainInfo {
 impl MasterchainInfo {
     pub fn init(&self) -> &crate::ton::ton_node::zerostateidext::ZeroStateIdExt {
         match self {
-            MasterchainInfo::LiteServer_MasterchainInfo(ref x) => &x.init,
+            MasterchainInfo::LiteServer_MasterchainInfo(x) => &x.init,
         }
     }
 
     pub fn last(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            MasterchainInfo::LiteServer_MasterchainInfo(ref x) => &x.last,
+            MasterchainInfo::LiteServer_MasterchainInfo(x) => &x.last,
         }
     }
 
     pub fn state_root_hash(&self) -> &crate::ton::int256 {
         match self {
-            MasterchainInfo::LiteServer_MasterchainInfo(ref x) => &x.state_root_hash,
+            MasterchainInfo::LiteServer_MasterchainInfo(x) => &x.state_root_hash,
         }
     }
 
@@ -857,49 +857,49 @@ pub enum MasterchainInfoExt {
 impl MasterchainInfoExt {
     pub fn capabilities(&self) -> &crate::ton::long {
         match self {
-            MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.capabilities,
+            MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => &x.capabilities,
         }
     }
 
     pub fn init(&self) -> &crate::ton::ton_node::zerostateidext::ZeroStateIdExt {
         match self {
-            MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.init,
+            MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => &x.init,
         }
     }
 
     pub fn last(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.last,
+            MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => &x.last,
         }
     }
 
     pub fn last_utime(&self) -> &crate::ton::int {
         match self {
-            MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.last_utime,
+            MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => &x.last_utime,
         }
     }
 
     pub fn mode(&self) -> &crate::ton::int {
         match self {
-            MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.mode,
+            MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => &x.mode,
         }
     }
 
     pub fn now(&self) -> &crate::ton::int {
         match self {
-            MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.now,
+            MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => &x.now,
         }
     }
 
     pub fn state_root_hash(&self) -> &crate::ton::int256 {
         match self {
-            MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.state_root_hash,
+            MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => &x.state_root_hash,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            MasterchainInfoExt::LiteServer_MasterchainInfoExt(ref x) => &x.version,
+            MasterchainInfoExt::LiteServer_MasterchainInfoExt(x) => &x.version,
         }
     }
 
@@ -946,13 +946,13 @@ pub enum PartialBlockProof {
 impl PartialBlockProof {
     pub fn complete(&self) -> &crate::ton::Bool {
         match self {
-            PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.complete,
+            PartialBlockProof::LiteServer_PartialBlockProof(x) => &x.complete,
         }
     }
 
     pub fn from(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.from,
+            PartialBlockProof::LiteServer_PartialBlockProof(x) => &x.from,
         }
     }
 
@@ -960,13 +960,13 @@ impl PartialBlockProof {
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::lite_server::BlockLink> {
         match self {
-            PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.steps,
+            PartialBlockProof::LiteServer_PartialBlockProof(x) => &x.steps,
         }
     }
 
     pub fn to(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            PartialBlockProof::LiteServer_PartialBlockProof(ref x) => &x.to,
+            PartialBlockProof::LiteServer_PartialBlockProof(x) => &x.to,
         }
     }
 
@@ -1021,61 +1021,61 @@ pub enum RunMethodResult {
 impl RunMethodResult {
     pub fn exit_code(&self) -> &crate::ton::int {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => &x.exit_code,
+            RunMethodResult::LiteServer_RunMethodResult(x) => &x.exit_code,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => &x.id,
+            RunMethodResult::LiteServer_RunMethodResult(x) => &x.id,
         }
     }
 
     pub fn init_c7(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => x.init_c7.as_ref(),
+            RunMethodResult::LiteServer_RunMethodResult(x) => x.init_c7.as_ref(),
         }
     }
 
     pub fn lib_extras(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => x.lib_extras.as_ref(),
+            RunMethodResult::LiteServer_RunMethodResult(x) => x.lib_extras.as_ref(),
         }
     }
 
     pub fn mode(&self) -> &crate::ton::int {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => &x.mode,
+            RunMethodResult::LiteServer_RunMethodResult(x) => &x.mode,
         }
     }
 
     pub fn proof(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => x.proof.as_ref(),
+            RunMethodResult::LiteServer_RunMethodResult(x) => x.proof.as_ref(),
         }
     }
 
     pub fn result(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => x.result.as_ref(),
+            RunMethodResult::LiteServer_RunMethodResult(x) => x.result.as_ref(),
         }
     }
 
     pub fn shard_proof(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => x.shard_proof.as_ref(),
+            RunMethodResult::LiteServer_RunMethodResult(x) => x.shard_proof.as_ref(),
         }
     }
 
     pub fn shardblk(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => &x.shardblk,
+            RunMethodResult::LiteServer_RunMethodResult(x) => &x.shardblk,
         }
     }
 
     pub fn state_proof(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RunMethodResult::LiteServer_RunMethodResult(ref x) => x.state_proof.as_ref(),
+            RunMethodResult::LiteServer_RunMethodResult(x) => x.state_proof.as_ref(),
         }
     }
 
@@ -1129,7 +1129,7 @@ pub enum SendMsgStatus {
 impl SendMsgStatus {
     pub fn status(&self) -> &crate::ton::int {
         match self {
-            SendMsgStatus::LiteServer_SendMsgStatus(ref x) => &x.status,
+            SendMsgStatus::LiteServer_SendMsgStatus(x) => &x.status,
         }
     }
 
@@ -1179,25 +1179,25 @@ pub enum ShardInfo {
 impl ShardInfo {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            ShardInfo::LiteServer_ShardInfo(ref x) => &x.id,
+            ShardInfo::LiteServer_ShardInfo(x) => &x.id,
         }
     }
 
     pub fn shard_descr(&self) -> &crate::ton::bytes {
         match self {
-            ShardInfo::LiteServer_ShardInfo(ref x) => &x.shard_descr,
+            ShardInfo::LiteServer_ShardInfo(x) => &x.shard_descr,
         }
     }
 
     pub fn shard_proof(&self) -> &crate::ton::bytes {
         match self {
-            ShardInfo::LiteServer_ShardInfo(ref x) => &x.shard_proof,
+            ShardInfo::LiteServer_ShardInfo(x) => &x.shard_proof,
         }
     }
 
     pub fn shardblk(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            ShardInfo::LiteServer_ShardInfo(ref x) => &x.shardblk,
+            ShardInfo::LiteServer_ShardInfo(x) => &x.shardblk,
         }
     }
 
@@ -1245,13 +1245,13 @@ pub enum Signature {
 impl Signature {
     pub fn node_id_short(&self) -> &crate::ton::int256 {
         match self {
-            Signature::LiteServer_Signature(ref x) => &x.node_id_short,
+            Signature::LiteServer_Signature(x) => &x.node_id_short,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            Signature::LiteServer_Signature(ref x) => &x.signature,
+            Signature::LiteServer_Signature(x) => &x.signature,
         }
     }
 
@@ -1299,7 +1299,7 @@ pub enum SignatureSet {
 impl SignatureSet {
     pub fn catchain_seqno(&self) -> &crate::ton::int {
         match self {
-            SignatureSet::LiteServer_SignatureSet(ref x) => &x.catchain_seqno,
+            SignatureSet::LiteServer_SignatureSet(x) => &x.catchain_seqno,
         }
     }
 
@@ -1307,13 +1307,13 @@ impl SignatureSet {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::lite_server::signature::Signature> {
         match self {
-            SignatureSet::LiteServer_SignatureSet(ref x) => &x.signatures,
+            SignatureSet::LiteServer_SignatureSet(x) => &x.signatures,
         }
     }
 
     pub fn validator_set_hash(&self) -> &crate::ton::int {
         match self {
-            SignatureSet::LiteServer_SignatureSet(ref x) => &x.validator_set_hash,
+            SignatureSet::LiteServer_SignatureSet(x) => &x.validator_set_hash,
         }
     }
 
@@ -1363,25 +1363,25 @@ pub enum TransactionId {
 impl TransactionId {
     pub fn account(&self) -> Option<&crate::ton::int256> {
         match self {
-            TransactionId::LiteServer_TransactionId(ref x) => x.account.as_ref(),
+            TransactionId::LiteServer_TransactionId(x) => x.account.as_ref(),
         }
     }
 
     pub fn hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            TransactionId::LiteServer_TransactionId(ref x) => x.hash.as_ref(),
+            TransactionId::LiteServer_TransactionId(x) => x.hash.as_ref(),
         }
     }
 
     pub fn lt(&self) -> Option<&crate::ton::long> {
         match self {
-            TransactionId::LiteServer_TransactionId(ref x) => x.lt.as_ref(),
+            TransactionId::LiteServer_TransactionId(x) => x.lt.as_ref(),
         }
     }
 
     pub fn mode(&self) -> &crate::ton::int {
         match self {
-            TransactionId::LiteServer_TransactionId(ref x) => &x.mode,
+            TransactionId::LiteServer_TransactionId(x) => &x.mode,
         }
     }
 
@@ -1431,13 +1431,13 @@ pub enum TransactionId3 {
 impl TransactionId3 {
     pub fn account(&self) -> &crate::ton::int256 {
         match self {
-            TransactionId3::LiteServer_TransactionId3(ref x) => &x.account,
+            TransactionId3::LiteServer_TransactionId3(x) => &x.account,
         }
     }
 
     pub fn lt(&self) -> &crate::ton::long {
         match self {
-            TransactionId3::LiteServer_TransactionId3(ref x) => &x.lt,
+            TransactionId3::LiteServer_TransactionId3(x) => &x.lt,
         }
     }
 
@@ -1489,19 +1489,19 @@ pub enum TransactionInfo {
 impl TransactionInfo {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            TransactionInfo::LiteServer_TransactionInfo(ref x) => &x.id,
+            TransactionInfo::LiteServer_TransactionInfo(x) => &x.id,
         }
     }
 
     pub fn proof(&self) -> &crate::ton::bytes {
         match self {
-            TransactionInfo::LiteServer_TransactionInfo(ref x) => &x.proof,
+            TransactionInfo::LiteServer_TransactionInfo(x) => &x.proof,
         }
     }
 
     pub fn transaction(&self) -> &crate::ton::bytes {
         match self {
-            TransactionInfo::LiteServer_TransactionInfo(ref x) => &x.transaction,
+            TransactionInfo::LiteServer_TransactionInfo(x) => &x.transaction,
         }
     }
 
@@ -1557,13 +1557,13 @@ impl TransactionList {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            TransactionList::LiteServer_TransactionList(ref x) => &x.ids,
+            TransactionList::LiteServer_TransactionList(x) => &x.ids,
         }
     }
 
     pub fn transactions(&self) -> &crate::ton::bytes {
         match self {
-            TransactionList::LiteServer_TransactionList(ref x) => &x.transactions,
+            TransactionList::LiteServer_TransactionList(x) => &x.transactions,
         }
     }
 
@@ -1617,37 +1617,37 @@ pub enum ValidatorStats {
 impl ValidatorStats {
     pub fn complete(&self) -> &crate::ton::Bool {
         match self {
-            ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.complete,
+            ValidatorStats::LiteServer_ValidatorStats(x) => &x.complete,
         }
     }
 
     pub fn count(&self) -> &crate::ton::int {
         match self {
-            ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.count,
+            ValidatorStats::LiteServer_ValidatorStats(x) => &x.count,
         }
     }
 
     pub fn data_proof(&self) -> &crate::ton::bytes {
         match self {
-            ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.data_proof,
+            ValidatorStats::LiteServer_ValidatorStats(x) => &x.data_proof,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.id,
+            ValidatorStats::LiteServer_ValidatorStats(x) => &x.id,
         }
     }
 
     pub fn mode(&self) -> &crate::ton::int {
         match self {
-            ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.mode,
+            ValidatorStats::LiteServer_ValidatorStats(x) => &x.mode,
         }
     }
 
     pub fn state_proof(&self) -> &crate::ton::bytes {
         match self {
-            ValidatorStats::LiteServer_ValidatorStats(ref x) => &x.state_proof,
+            ValidatorStats::LiteServer_ValidatorStats(x) => &x.state_proof,
         }
     }
 
@@ -1699,25 +1699,25 @@ pub enum Version {
 impl Version {
     pub fn capabilities(&self) -> &crate::ton::long {
         match self {
-            Version::LiteServer_Version(ref x) => &x.capabilities,
+            Version::LiteServer_Version(x) => &x.capabilities,
         }
     }
 
     pub fn mode(&self) -> &crate::ton::int {
         match self {
-            Version::LiteServer_Version(ref x) => &x.mode,
+            Version::LiteServer_Version(x) => &x.mode,
         }
     }
 
     pub fn now(&self) -> &crate::ton::int {
         match self {
-            Version::LiteServer_Version(ref x) => &x.now,
+            Version::LiteServer_Version(x) => &x.now,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            Version::LiteServer_Version(ref x) => &x.version,
+            Version::LiteServer_Version(x) => &x.version,
         }
     }
 

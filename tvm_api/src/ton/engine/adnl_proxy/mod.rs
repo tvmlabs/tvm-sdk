@@ -10,7 +10,7 @@ impl Config {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::adnl_proxy::port::Port> {
         match self {
-            Config::Engine_AdnlProxy_Config(ref x) => &x.ports,
+            Config::Engine_AdnlProxy_Config(x) => &x.ports,
         }
     }
 
@@ -58,31 +58,31 @@ pub enum Port {
 impl Port {
     pub fn dst_ip(&self) -> &crate::ton::int {
         match self {
-            Port::Engine_AdnlProxy_Port(ref x) => &x.dst_ip,
+            Port::Engine_AdnlProxy_Port(x) => &x.dst_ip,
         }
     }
 
     pub fn dst_port(&self) -> &crate::ton::int {
         match self {
-            Port::Engine_AdnlProxy_Port(ref x) => &x.dst_port,
+            Port::Engine_AdnlProxy_Port(x) => &x.dst_port,
         }
     }
 
     pub fn in_port(&self) -> &crate::ton::int {
         match self {
-            Port::Engine_AdnlProxy_Port(ref x) => &x.in_port,
+            Port::Engine_AdnlProxy_Port(x) => &x.in_port,
         }
     }
 
     pub fn out_port(&self) -> &crate::ton::int {
         match self {
-            Port::Engine_AdnlProxy_Port(ref x) => &x.out_port,
+            Port::Engine_AdnlProxy_Port(x) => &x.out_port,
         }
     }
 
     pub fn proxy_type(&self) -> &crate::ton::adnl::Proxy {
         match self {
-            Port::Engine_AdnlProxy_Port(ref x) => &x.proxy_type,
+            Port::Engine_AdnlProxy_Port(x) => &x.proxy_type,
         }
     }
 

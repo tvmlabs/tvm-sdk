@@ -10,7 +10,7 @@ impl Config {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::server::dnsentry::DnsEntry> {
         match self {
-            Config::Http_Server_Config(ref x) => &x.dhs,
+            Config::Http_Server_Config(x) => &x.dhs,
         }
     }
 
@@ -18,7 +18,7 @@ impl Config {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::http::server::host::Host> {
         match self {
-            Config::Http_Server_Config(ref x) => &x.local_hosts,
+            Config::Http_Server_Config(x) => &x.local_hosts,
         }
     }
 
@@ -66,13 +66,13 @@ pub enum DnsEntry {
 impl DnsEntry {
     pub fn addr(&self) -> &crate::ton::adnl::id::short::Short {
         match self {
-            DnsEntry::Http_Server_DnsEntry(ref x) => &x.addr,
+            DnsEntry::Http_Server_DnsEntry(x) => &x.addr,
         }
     }
 
     pub fn domain(&self) -> &crate::ton::string {
         match self {
-            DnsEntry::Http_Server_DnsEntry(ref x) => &x.domain,
+            DnsEntry::Http_Server_DnsEntry(x) => &x.domain,
         }
     }
 
@@ -120,25 +120,25 @@ pub enum Host {
 impl Host {
     pub fn adnl_id(&self) -> &crate::ton::adnl::id::short::Short {
         match self {
-            Host::Http_Server_Host(ref x) => &x.adnl_id,
+            Host::Http_Server_Host(x) => &x.adnl_id,
         }
     }
 
     pub fn domains(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::string> {
         match self {
-            Host::Http_Server_Host(ref x) => &x.domains,
+            Host::Http_Server_Host(x) => &x.domains,
         }
     }
 
     pub fn ip(&self) -> &crate::ton::int {
         match self {
-            Host::Http_Server_Host(ref x) => &x.ip,
+            Host::Http_Server_Host(x) => &x.ip,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            Host::Http_Server_Host(ref x) => &x.port,
+            Host::Http_Server_Host(x) => &x.port,
         }
     }
 

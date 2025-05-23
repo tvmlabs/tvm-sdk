@@ -9,7 +9,7 @@ pub enum ArchiveInfo {
 impl ArchiveInfo {
     pub fn id(&self) -> Option<&crate::ton::long> {
         match self {
-            ArchiveInfo::TonNode_ArchiveInfo(ref x) => Some(&x.id),
+            ArchiveInfo::TonNode_ArchiveInfo(x) => Some(&x.id),
             _ => None,
         }
     }
@@ -80,37 +80,37 @@ pub enum BlockCandidateStatus {
 impl BlockCandidateStatus {
     pub fn approvals_signature(&self) -> &crate::ton::bytes {
         match self {
-            BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.approvals_signature,
+            BlockCandidateStatus::TonNode_BlockCandidateStatus(x) => &x.approvals_signature,
         }
     }
 
     pub fn candidate_id(&self) -> &crate::ton::int256 {
         match self {
-            BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.candidate_id,
+            BlockCandidateStatus::TonNode_BlockCandidateStatus(x) => &x.candidate_id,
         }
     }
 
     pub fn created_timestamp(&self) -> &crate::ton::long {
         match self {
-            BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.created_timestamp,
+            BlockCandidateStatus::TonNode_BlockCandidateStatus(x) => &x.created_timestamp,
         }
     }
 
     pub fn deliveries_signature(&self) -> &crate::ton::bytes {
         match self {
-            BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.deliveries_signature,
+            BlockCandidateStatus::TonNode_BlockCandidateStatus(x) => &x.deliveries_signature,
         }
     }
 
     pub fn merges_cnt(&self) -> &crate::ton::int {
         match self {
-            BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.merges_cnt,
+            BlockCandidateStatus::TonNode_BlockCandidateStatus(x) => &x.merges_cnt,
         }
     }
 
     pub fn rejections_signature(&self) -> &crate::ton::bytes {
         match self {
-            BlockCandidateStatus::TonNode_BlockCandidateStatus(ref x) => &x.rejections_signature,
+            BlockCandidateStatus::TonNode_BlockCandidateStatus(x) => &x.rejections_signature,
         }
     }
 
@@ -158,7 +158,7 @@ pub enum BlockDescription {
 impl BlockDescription {
     pub fn id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            BlockDescription::TonNode_BlockDescription(ref x) => Some(&x.id),
+            BlockDescription::TonNode_BlockDescription(x) => Some(&x.id),
             _ => None,
         }
     }
@@ -237,19 +237,19 @@ pub enum BlockId {
 impl BlockId {
     pub fn seqno(&self) -> &crate::ton::int {
         match self {
-            BlockId::TonNode_BlockId(ref x) => &x.seqno,
+            BlockId::TonNode_BlockId(x) => &x.seqno,
         }
     }
 
     pub fn shard(&self) -> &crate::ton::long {
         match self {
-            BlockId::TonNode_BlockId(ref x) => &x.shard,
+            BlockId::TonNode_BlockId(x) => &x.shard,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            BlockId::TonNode_BlockId(ref x) => &x.workchain,
+            BlockId::TonNode_BlockId(x) => &x.workchain,
         }
     }
 
@@ -298,13 +298,13 @@ pub enum BlockSignature {
 impl BlockSignature {
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            BlockSignature::TonNode_BlockSignature(ref x) => &x.signature,
+            BlockSignature::TonNode_BlockSignature(x) => &x.signature,
         }
     }
 
     pub fn who(&self) -> &crate::ton::int256 {
         match self {
-            BlockSignature::TonNode_BlockSignature(ref x) => &x.who,
+            BlockSignature::TonNode_BlockSignature(x) => &x.who,
         }
     }
 
@@ -356,13 +356,13 @@ impl BlocksDescription {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            BlocksDescription::TonNode_BlocksDescription(ref x) => &x.ids,
+            BlocksDescription::TonNode_BlocksDescription(x) => &x.ids,
         }
     }
 
     pub fn incomplete(&self) -> &crate::ton::Bool {
         match self {
-            BlocksDescription::TonNode_BlocksDescription(ref x) => &x.incomplete,
+            BlocksDescription::TonNode_BlocksDescription(x) => &x.incomplete,
         }
     }
 
@@ -422,82 +422,82 @@ pub enum Broadcast {
 impl Broadcast {
     pub fn block(&self) -> Option<&crate::ton::ton_node::newshardblock::NewShardBlock> {
         match self {
-            Broadcast::TonNode_NewShardBlockBroadcast(ref x) => Some(&x.block),
+            Broadcast::TonNode_NewShardBlockBroadcast(x) => Some(&x.block),
             _ => None,
         }
     }
 
     pub fn catchain_seqno(&self) -> Option<&crate::ton::int> {
         match self {
-            Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.catchain_seqno),
-            Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.catchain_seqno),
+            Broadcast::TonNode_BlockBroadcast(x) => Some(&x.catchain_seqno),
+            Broadcast::TonNode_QueueUpdateBroadcast(x) => Some(&x.catchain_seqno),
             _ => None,
         }
     }
 
     pub fn collated_data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.collated_data),
+            Broadcast::TonNode_BlockCandidateBroadcast(x) => Some(&x.collated_data),
             _ => None,
         }
     }
 
     pub fn collated_data_file_hash(&self) -> Option<&crate::ton::int256> {
         match self {
-            Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.collated_data_file_hash),
+            Broadcast::TonNode_BlockCandidateBroadcast(x) => Some(&x.collated_data_file_hash),
             _ => None,
         }
     }
 
     pub fn created_by(&self) -> Option<&crate::ton::int256> {
         match self {
-            Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.created_by),
+            Broadcast::TonNode_BlockCandidateBroadcast(x) => Some(&x.created_by),
             _ => None,
         }
     }
 
     pub fn created_timestamp(&self) -> Option<&crate::ton::long> {
         match self {
-            Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.created_timestamp),
+            Broadcast::TonNode_BlockCandidateBroadcast(x) => Some(&x.created_timestamp),
             _ => None,
         }
     }
 
     pub fn data(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.data),
-            Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.data),
-            Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.data),
+            Broadcast::TonNode_BlockBroadcast(x) => Some(&x.data),
+            Broadcast::TonNode_BlockCandidateBroadcast(x) => Some(&x.data),
+            Broadcast::TonNode_QueueUpdateBroadcast(x) => Some(&x.data),
             _ => None,
         }
     }
 
     pub fn id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.id),
-            Broadcast::TonNode_BlockCandidateBroadcast(ref x) => Some(&x.id),
-            Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.id),
+            Broadcast::TonNode_BlockBroadcast(x) => Some(&x.id),
+            Broadcast::TonNode_BlockCandidateBroadcast(x) => Some(&x.id),
+            Broadcast::TonNode_QueueUpdateBroadcast(x) => Some(&x.id),
             _ => None,
         }
     }
 
     pub fn padding(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Broadcast::TonNode_ConnectivityCheckBroadcast(ref x) => Some(&x.padding),
+            Broadcast::TonNode_ConnectivityCheckBroadcast(x) => Some(&x.padding),
             _ => None,
         }
     }
 
     pub fn proof(&self) -> Option<&crate::ton::bytes> {
         match self {
-            Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.proof),
+            Broadcast::TonNode_BlockBroadcast(x) => Some(&x.proof),
             _ => None,
         }
     }
 
     pub fn pub_key(&self) -> Option<&crate::ton::int256> {
         match self {
-            Broadcast::TonNode_ConnectivityCheckBroadcast(ref x) => Some(&x.pub_key),
+            Broadcast::TonNode_ConnectivityCheckBroadcast(x) => Some(&x.pub_key),
             _ => None,
         }
     }
@@ -508,23 +508,23 @@ impl Broadcast {
         &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blocksignature::BlockSignature>,
     > {
         match self {
-            Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.signatures),
-            Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.signatures),
+            Broadcast::TonNode_BlockBroadcast(x) => Some(&x.signatures),
+            Broadcast::TonNode_QueueUpdateBroadcast(x) => Some(&x.signatures),
             _ => None,
         }
     }
 
     pub fn target_wc(&self) -> Option<&crate::ton::int> {
         match self {
-            Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.target_wc),
+            Broadcast::TonNode_QueueUpdateBroadcast(x) => Some(&x.target_wc),
             _ => None,
         }
     }
 
     pub fn validator_set_hash(&self) -> Option<&crate::ton::int> {
         match self {
-            Broadcast::TonNode_BlockBroadcast(ref x) => Some(&x.validator_set_hash),
-            Broadcast::TonNode_QueueUpdateBroadcast(ref x) => Some(&x.validator_set_hash),
+            Broadcast::TonNode_BlockBroadcast(x) => Some(&x.validator_set_hash),
+            Broadcast::TonNode_QueueUpdateBroadcast(x) => Some(&x.validator_set_hash),
             _ => None,
         }
     }
@@ -611,13 +611,13 @@ pub enum Capabilities {
 impl Capabilities {
     pub fn capabilities(&self) -> &crate::ton::long {
         match self {
-            Capabilities::TonNode_Capabilities(ref x) => &x.capabilities,
+            Capabilities::TonNode_Capabilities(x) => &x.capabilities,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            Capabilities::TonNode_Capabilities(ref x) => &x.version,
+            Capabilities::TonNode_Capabilities(x) => &x.version,
         }
     }
 
@@ -667,7 +667,7 @@ pub enum Data {
 impl Data {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            Data::TonNode_Data(ref x) => &x.data,
+            Data::TonNode_Data(x) => &x.data,
         }
     }
 
@@ -716,28 +716,28 @@ pub enum DataFull {
 impl DataFull {
     pub fn block(&self) -> Option<&crate::ton::bytes> {
         match self {
-            DataFull::TonNode_DataFull(ref x) => Some(&x.block),
+            DataFull::TonNode_DataFull(x) => Some(&x.block),
             _ => None,
         }
     }
 
     pub fn id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            DataFull::TonNode_DataFull(ref x) => Some(&x.id),
+            DataFull::TonNode_DataFull(x) => Some(&x.id),
             _ => None,
         }
     }
 
     pub fn is_link(&self) -> Option<&crate::ton::Bool> {
         match self {
-            DataFull::TonNode_DataFull(ref x) => Some(&x.is_link),
+            DataFull::TonNode_DataFull(x) => Some(&x.is_link),
             _ => None,
         }
     }
 
     pub fn proof(&self) -> Option<&crate::ton::bytes> {
         match self {
-            DataFull::TonNode_DataFull(ref x) => Some(&x.proof),
+            DataFull::TonNode_DataFull(x) => Some(&x.proof),
             _ => None,
         }
     }
@@ -808,7 +808,7 @@ pub enum DataList {
 impl DataList {
     pub fn data(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::bytes> {
         match self {
-            DataList::TonNode_DataList(ref x) => &x.data,
+            DataList::TonNode_DataList(x) => &x.data,
         }
     }
 
@@ -856,7 +856,7 @@ pub enum ExternalMessage {
 impl ExternalMessage {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            ExternalMessage::TonNode_ExternalMessage(ref x) => &x.data,
+            ExternalMessage::TonNode_ExternalMessage(x) => &x.data,
         }
     }
 
@@ -908,7 +908,7 @@ pub enum IhrMessage {
 impl IhrMessage {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            IhrMessage::TonNode_IhrMessage(ref x) => &x.data,
+            IhrMessage::TonNode_IhrMessage(x) => &x.data,
         }
     }
 
@@ -958,19 +958,19 @@ impl KeyBlocks {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            KeyBlocks::TonNode_KeyBlocks(ref x) => &x.blocks,
+            KeyBlocks::TonNode_KeyBlocks(x) => &x.blocks,
         }
     }
 
     pub fn error(&self) -> &crate::ton::Bool {
         match self {
-            KeyBlocks::TonNode_KeyBlocks(ref x) => &x.error,
+            KeyBlocks::TonNode_KeyBlocks(x) => &x.error,
         }
     }
 
     pub fn incomplete(&self) -> &crate::ton::Bool {
         match self {
-            KeyBlocks::TonNode_KeyBlocks(ref x) => &x.incomplete,
+            KeyBlocks::TonNode_KeyBlocks(x) => &x.incomplete,
         }
     }
 
@@ -1018,19 +1018,19 @@ pub enum NewShardBlock {
 impl NewShardBlock {
     pub fn block(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            NewShardBlock::TonNode_NewShardBlock(ref x) => &x.block,
+            NewShardBlock::TonNode_NewShardBlock(x) => &x.block,
         }
     }
 
     pub fn cc_seqno(&self) -> &crate::ton::int {
         match self {
-            NewShardBlock::TonNode_NewShardBlock(ref x) => &x.cc_seqno,
+            NewShardBlock::TonNode_NewShardBlock(x) => &x.cc_seqno,
         }
     }
 
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            NewShardBlock::TonNode_NewShardBlock(ref x) => &x.data,
+            NewShardBlock::TonNode_NewShardBlock(x) => &x.data,
         }
     }
 
@@ -1187,13 +1187,13 @@ pub enum RempCatchainMessageIds {
 impl RempCatchainMessageIds {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            RempCatchainMessageIds::TonNode_RempCatchainMessageIds(ref x) => &x.id,
+            RempCatchainMessageIds::TonNode_RempCatchainMessageIds(x) => &x.id,
         }
     }
 
     pub fn uid(&self) -> &crate::ton::int256 {
         match self {
-            RempCatchainMessageIds::TonNode_RempCatchainMessageIds(ref x) => &x.uid,
+            RempCatchainMessageIds::TonNode_RempCatchainMessageIds(x) => &x.uid,
         }
     }
 
@@ -1243,21 +1243,21 @@ pub enum RempCatchainRecord {
 impl RempCatchainRecord {
     pub fn masterchain_seqno(&self) -> &crate::ton::int {
         match self {
-            RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => &x.masterchain_seqno,
-            RempCatchainRecord::TonNode_RempCatchainMessageDigest(ref x) => &x.masterchain_seqno,
+            RempCatchainRecord::TonNode_RempCatchainMessage(x) => &x.masterchain_seqno,
+            RempCatchainRecord::TonNode_RempCatchainMessageDigest(x) => &x.masterchain_seqno,
         }
     }
 
     pub fn message(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => Some(&x.message),
+            RempCatchainRecord::TonNode_RempCatchainMessage(x) => Some(&x.message),
             _ => None,
         }
     }
 
     pub fn message_id(&self) -> Option<&crate::ton::int256> {
         match self {
-            RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => Some(&x.message_id),
+            RempCatchainRecord::TonNode_RempCatchainMessage(x) => Some(&x.message_id),
             _ => None,
         }
     }
@@ -1271,21 +1271,21 @@ impl RempCatchainRecord {
         >,
     > {
         match self {
-            RempCatchainRecord::TonNode_RempCatchainMessageDigest(ref x) => Some(&x.messages),
+            RempCatchainRecord::TonNode_RempCatchainMessageDigest(x) => Some(&x.messages),
             _ => None,
         }
     }
 
     pub fn source_idx(&self) -> Option<&crate::ton::int> {
         match self {
-            RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => Some(&x.source_idx),
+            RempCatchainRecord::TonNode_RempCatchainMessage(x) => Some(&x.source_idx),
             _ => None,
         }
     }
 
     pub fn source_key_id(&self) -> Option<&crate::ton::int256> {
         match self {
-            RempCatchainRecord::TonNode_RempCatchainMessage(ref x) => Some(&x.source_key_id),
+            RempCatchainRecord::TonNode_RempCatchainMessage(x) => Some(&x.source_key_id),
             _ => None,
         }
     }
@@ -1332,7 +1332,7 @@ impl RempCombinedReceipt {
         &self,
     ) -> &crate::ton::vector<crate::ton::Bare, crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            RempCombinedReceipt::TonNode_RempCombinedReceipt(ref x) => &x.ids,
+            RempCombinedReceipt::TonNode_RempCombinedReceipt(x) => &x.ids,
         }
     }
 
@@ -1340,13 +1340,13 @@ impl RempCombinedReceipt {
         &self,
     ) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::ton_node::RempReceiptCompact> {
         match self {
-            RempCombinedReceipt::TonNode_RempCombinedReceipt(ref x) => &x.receipts,
+            RempCombinedReceipt::TonNode_RempCombinedReceipt(x) => &x.receipts,
         }
     }
 
     pub fn source_id(&self) -> &crate::ton::int256 {
         match self {
-            RempCombinedReceipt::TonNode_RempCombinedReceipt(ref x) => &x.source_id,
+            RempCombinedReceipt::TonNode_RempCombinedReceipt(x) => &x.source_id,
         }
     }
 
@@ -1393,25 +1393,25 @@ pub enum RempMessage {
 impl RempMessage {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            RempMessage::TonNode_RempMessage(ref x) => &x.id,
+            RempMessage::TonNode_RempMessage(x) => &x.id,
         }
     }
 
     pub fn message(&self) -> &crate::ton::bytes {
         match self {
-            RempMessage::TonNode_RempMessage(ref x) => &x.message,
+            RempMessage::TonNode_RempMessage(x) => &x.message,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::bytes {
         match self {
-            RempMessage::TonNode_RempMessage(ref x) => &x.signature,
+            RempMessage::TonNode_RempMessage(x) => &x.signature,
         }
     }
 
     pub fn timestamp(&self) -> &crate::ton::long {
         match self {
-            RempMessage::TonNode_RempMessage(ref x) => &x.timestamp,
+            RempMessage::TonNode_RempMessage(x) => &x.timestamp,
         }
     }
 
@@ -1514,47 +1514,47 @@ pub enum RempMessageStatus {
 impl RempMessageStatus {
     pub fn block_id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            RempMessageStatus::TonNode_RempAccepted(ref x) => Some(&x.block_id),
-            RempMessageStatus::TonNode_RempDuplicate(ref x) => Some(&x.block_id),
-            RempMessageStatus::TonNode_RempIgnored(ref x) => Some(&x.block_id),
-            RempMessageStatus::TonNode_RempRejected(ref x) => Some(&x.block_id),
+            RempMessageStatus::TonNode_RempAccepted(x) => Some(&x.block_id),
+            RempMessageStatus::TonNode_RempDuplicate(x) => Some(&x.block_id),
+            RempMessageStatus::TonNode_RempIgnored(x) => Some(&x.block_id),
+            RempMessageStatus::TonNode_RempRejected(x) => Some(&x.block_id),
             _ => None,
         }
     }
 
     pub fn error(&self) -> Option<&crate::ton::string> {
         match self {
-            RempMessageStatus::TonNode_RempRejected(ref x) => Some(&x.error),
+            RempMessageStatus::TonNode_RempRejected(x) => Some(&x.error),
             _ => None,
         }
     }
 
     pub fn level(&self) -> Option<&crate::ton::ton_node::RempMessageLevel> {
         match self {
-            RempMessageStatus::TonNode_RempAccepted(ref x) => Some(&x.level),
-            RempMessageStatus::TonNode_RempIgnored(ref x) => Some(&x.level),
-            RempMessageStatus::TonNode_RempRejected(ref x) => Some(&x.level),
+            RempMessageStatus::TonNode_RempAccepted(x) => Some(&x.level),
+            RempMessageStatus::TonNode_RempIgnored(x) => Some(&x.level),
+            RempMessageStatus::TonNode_RempRejected(x) => Some(&x.level),
             _ => None,
         }
     }
 
     pub fn master_id(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            RempMessageStatus::TonNode_RempAccepted(ref x) => Some(&x.master_id),
+            RempMessageStatus::TonNode_RempAccepted(x) => Some(&x.master_id),
             _ => None,
         }
     }
 
     pub fn sent_to(&self) -> Option<&crate::ton::int> {
         match self {
-            RempMessageStatus::TonNode_RempSentToValidators(ref x) => Some(&x.sent_to),
+            RempMessageStatus::TonNode_RempSentToValidators(x) => Some(&x.sent_to),
             _ => None,
         }
     }
 
     pub fn total_validators(&self) -> Option<&crate::ton::int> {
         match self {
-            RempMessageStatus::TonNode_RempSentToValidators(ref x) => Some(&x.total_validators),
+            RempMessageStatus::TonNode_RempSentToValidators(x) => Some(&x.total_validators),
             _ => None,
         }
     }
@@ -1648,53 +1648,47 @@ pub enum RempMessageStatusCompact {
 impl RempMessageStatusCompact {
     pub fn block_id_index(&self) -> Option<&crate::ton::byte> {
         match self {
-            RempMessageStatusCompact::TonNode_RempAcceptedCompact(ref x) => Some(&x.block_id_index),
-            RempMessageStatusCompact::TonNode_RempDuplicateCompact(ref x) => {
-                Some(&x.block_id_index)
-            }
-            RempMessageStatusCompact::TonNode_RempIgnoredCompact(ref x) => Some(&x.block_id_index),
-            RempMessageStatusCompact::TonNode_RempRejectedCompact(ref x) => Some(&x.block_id_index),
+            RempMessageStatusCompact::TonNode_RempAcceptedCompact(x) => Some(&x.block_id_index),
+            RempMessageStatusCompact::TonNode_RempDuplicateCompact(x) => Some(&x.block_id_index),
+            RempMessageStatusCompact::TonNode_RempIgnoredCompact(x) => Some(&x.block_id_index),
+            RempMessageStatusCompact::TonNode_RempRejectedCompact(x) => Some(&x.block_id_index),
             _ => None,
         }
     }
 
     pub fn error(&self) -> Option<&crate::ton::string> {
         match self {
-            RempMessageStatusCompact::TonNode_RempRejectedCompact(ref x) => Some(&x.error),
+            RempMessageStatusCompact::TonNode_RempRejectedCompact(x) => Some(&x.error),
             _ => None,
         }
     }
 
     pub fn level(&self) -> Option<&crate::ton::byte> {
         match self {
-            RempMessageStatusCompact::TonNode_RempAcceptedCompact(ref x) => Some(&x.level),
-            RempMessageStatusCompact::TonNode_RempIgnoredCompact(ref x) => Some(&x.level),
-            RempMessageStatusCompact::TonNode_RempRejectedCompact(ref x) => Some(&x.level),
+            RempMessageStatusCompact::TonNode_RempAcceptedCompact(x) => Some(&x.level),
+            RempMessageStatusCompact::TonNode_RempIgnoredCompact(x) => Some(&x.level),
+            RempMessageStatusCompact::TonNode_RempRejectedCompact(x) => Some(&x.level),
             _ => None,
         }
     }
 
     pub fn master_id_index(&self) -> Option<&crate::ton::byte> {
         match self {
-            RempMessageStatusCompact::TonNode_RempAcceptedCompact(ref x) => {
-                Some(&x.master_id_index)
-            }
+            RempMessageStatusCompact::TonNode_RempAcceptedCompact(x) => Some(&x.master_id_index),
             _ => None,
         }
     }
 
     pub fn sent_to(&self) -> Option<&crate::ton::byte> {
         match self {
-            RempMessageStatusCompact::TonNode_RempSentToValidatorsCompact(ref x) => {
-                Some(&x.sent_to)
-            }
+            RempMessageStatusCompact::TonNode_RempSentToValidatorsCompact(x) => Some(&x.sent_to),
             _ => None,
         }
     }
 
     pub fn total_validators(&self) -> Option<&crate::ton::byte> {
         match self {
-            RempMessageStatusCompact::TonNode_RempSentToValidatorsCompact(ref x) => {
+            RempMessageStatusCompact::TonNode_RempSentToValidatorsCompact(x) => {
                 Some(&x.total_validators)
             }
             _ => None,
@@ -1764,25 +1758,25 @@ pub enum RempReceipt {
 impl RempReceipt {
     pub fn message_id(&self) -> &crate::ton::int256 {
         match self {
-            RempReceipt::TonNode_RempReceipt(ref x) => &x.message_id,
+            RempReceipt::TonNode_RempReceipt(x) => &x.message_id,
         }
     }
 
     pub fn source_id(&self) -> &crate::ton::int256 {
         match self {
-            RempReceipt::TonNode_RempReceipt(ref x) => &x.source_id,
+            RempReceipt::TonNode_RempReceipt(x) => &x.source_id,
         }
     }
 
     pub fn status(&self) -> &crate::ton::ton_node::RempMessageStatus {
         match self {
-            RempReceipt::TonNode_RempReceipt(ref x) => &x.status,
+            RempReceipt::TonNode_RempReceipt(x) => &x.status,
         }
     }
 
     pub fn timestamp(&self) -> &crate::ton::long {
         match self {
-            RempReceipt::TonNode_RempReceipt(ref x) => &x.timestamp,
+            RempReceipt::TonNode_RempReceipt(x) => &x.timestamp,
         }
     }
 
@@ -1830,19 +1824,19 @@ pub enum RempReceiptCompact {
 impl RempReceiptCompact {
     pub fn message_id(&self) -> &crate::ton::int256 {
         match self {
-            RempReceiptCompact::TonNode_RempReceiptCompact(ref x) => &x.message_id,
+            RempReceiptCompact::TonNode_RempReceiptCompact(x) => &x.message_id,
         }
     }
 
     pub fn receipt(&self) -> &crate::ton::ton_node::RempMessageStatusCompact {
         match self {
-            RempReceiptCompact::TonNode_RempReceiptCompact(ref x) => &x.receipt,
+            RempReceiptCompact::TonNode_RempReceiptCompact(x) => &x.receipt,
         }
     }
 
     pub fn timestamp(&self) -> &crate::ton::long {
         match self {
-            RempReceiptCompact::TonNode_RempReceiptCompact(ref x) => &x.timestamp,
+            RempReceiptCompact::TonNode_RempReceiptCompact(x) => &x.timestamp,
         }
     }
 
@@ -1926,19 +1920,19 @@ pub enum RempSessionInfo {
 impl RempSessionInfo {
     pub fn catchain_seqno(&self) -> &crate::ton::int {
         match self {
-            RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.catchain_seqno,
+            RempSessionInfo::TonNode_RempSessionInfo(x) => &x.catchain_seqno,
         }
     }
 
     pub fn config_hash(&self) -> &crate::ton::int256 {
         match self {
-            RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.config_hash,
+            RempSessionInfo::TonNode_RempSessionInfo(x) => &x.config_hash,
         }
     }
 
     pub fn last_key_block_seqno(&self) -> &crate::ton::int {
         match self {
-            RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.last_key_block_seqno,
+            RempSessionInfo::TonNode_RempSessionInfo(x) => &x.last_key_block_seqno,
         }
     }
 
@@ -1949,25 +1943,25 @@ impl RempSessionInfo {
         crate::ton::engine::validator::validator::groupmember::GroupMember,
     > {
         match self {
-            RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.members,
+            RempSessionInfo::TonNode_RempSessionInfo(x) => &x.members,
         }
     }
 
     pub fn shard(&self) -> &crate::ton::long {
         match self {
-            RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.shard,
+            RempSessionInfo::TonNode_RempSessionInfo(x) => &x.shard,
         }
     }
 
     pub fn vertical_seqno(&self) -> &crate::ton::int {
         match self {
-            RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.vertical_seqno,
+            RempSessionInfo::TonNode_RempSessionInfo(x) => &x.vertical_seqno,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            RempSessionInfo::TonNode_RempSessionInfo(ref x) => &x.workchain,
+            RempSessionInfo::TonNode_RempSessionInfo(x) => &x.workchain,
         }
     }
 
@@ -2019,13 +2013,13 @@ pub enum RempSignedReceipt {
 impl RempSignedReceipt {
     pub fn receipt(&self) -> &crate::ton::bytes {
         match self {
-            RempSignedReceipt::TonNode_RempSignedReceipt(ref x) => &x.receipt,
+            RempSignedReceipt::TonNode_RempSignedReceipt(x) => &x.receipt,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::int512 {
         match self {
-            RempSignedReceipt::TonNode_RempSignedReceipt(ref x) => &x.signature,
+            RempSignedReceipt::TonNode_RempSignedReceipt(x) => &x.signature,
         }
     }
 
@@ -2081,25 +2075,25 @@ pub enum RempSignedReceiptCompact {
 impl RempSignedReceiptCompact {
     pub fn message_id(&self) -> &crate::ton::int256 {
         match self {
-            RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(ref x) => &x.message_id,
+            RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(x) => &x.message_id,
         }
     }
 
     pub fn receipt(&self) -> &crate::ton::ton_node::RempMessageStatusCompact {
         match self {
-            RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(ref x) => &x.receipt,
+            RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(x) => &x.receipt,
         }
     }
 
     pub fn signature(&self) -> &crate::ton::int512 {
         match self {
-            RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(ref x) => &x.signature,
+            RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(x) => &x.signature,
         }
     }
 
     pub fn timestamp(&self) -> &crate::ton::long {
         match self {
-            RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(ref x) => &x.timestamp,
+            RempSignedReceiptCompact::TonNode_RempSignedReceiptCompact(x) => &x.timestamp,
         }
     }
 
@@ -2147,42 +2141,42 @@ pub enum RmqRecord {
 impl RmqRecord {
     pub fn masterchain_seqno(&self) -> &crate::ton::int {
         match self {
-            RmqRecord::TonNode_RmqMessage(ref x) => &x.masterchain_seqno,
-            RmqRecord::TonNode_RmqMessageDigest(ref x) => &x.masterchain_seqno,
+            RmqRecord::TonNode_RmqMessage(x) => &x.masterchain_seqno,
+            RmqRecord::TonNode_RmqMessageDigest(x) => &x.masterchain_seqno,
         }
     }
 
     pub fn message(&self) -> Option<&crate::ton::bytes> {
         match self {
-            RmqRecord::TonNode_RmqMessage(ref x) => Some(&x.message),
+            RmqRecord::TonNode_RmqMessage(x) => Some(&x.message),
             _ => None,
         }
     }
 
     pub fn message_id(&self) -> Option<&crate::ton::int256> {
         match self {
-            RmqRecord::TonNode_RmqMessage(ref x) => Some(&x.message_id),
+            RmqRecord::TonNode_RmqMessage(x) => Some(&x.message_id),
             _ => None,
         }
     }
 
     pub fn messages(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::int256>> {
         match self {
-            RmqRecord::TonNode_RmqMessageDigest(ref x) => Some(&x.messages),
+            RmqRecord::TonNode_RmqMessageDigest(x) => Some(&x.messages),
             _ => None,
         }
     }
 
     pub fn source_idx(&self) -> Option<&crate::ton::int> {
         match self {
-            RmqRecord::TonNode_RmqMessage(ref x) => Some(&x.source_idx),
+            RmqRecord::TonNode_RmqMessage(x) => Some(&x.source_idx),
             _ => None,
         }
     }
 
     pub fn source_key_id(&self) -> Option<&crate::ton::int256> {
         match self {
-            RmqRecord::TonNode_RmqMessage(ref x) => Some(&x.source_key_id),
+            RmqRecord::TonNode_RmqMessage(x) => Some(&x.source_key_id),
             _ => None,
         }
     }
@@ -2229,25 +2223,25 @@ pub enum SessionId {
 impl SessionId {
     pub fn cc_seqno(&self) -> &crate::ton::int {
         match self {
-            SessionId::TonNode_SessionId(ref x) => &x.cc_seqno,
+            SessionId::TonNode_SessionId(x) => &x.cc_seqno,
         }
     }
 
     pub fn opts_hash(&self) -> &crate::ton::int256 {
         match self {
-            SessionId::TonNode_SessionId(ref x) => &x.opts_hash,
+            SessionId::TonNode_SessionId(x) => &x.opts_hash,
         }
     }
 
     pub fn shard(&self) -> &crate::ton::long {
         match self {
-            SessionId::TonNode_SessionId(ref x) => &x.shard,
+            SessionId::TonNode_SessionId(x) => &x.shard,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            SessionId::TonNode_SessionId(ref x) => &x.workchain,
+            SessionId::TonNode_SessionId(x) => &x.workchain,
         }
     }
 
@@ -2295,19 +2289,19 @@ pub enum ShardPublicOverlayId {
 impl ShardPublicOverlayId {
     pub fn shard(&self) -> &crate::ton::long {
         match self {
-            ShardPublicOverlayId::TonNode_ShardPublicOverlayId(ref x) => &x.shard,
+            ShardPublicOverlayId::TonNode_ShardPublicOverlayId(x) => &x.shard,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            ShardPublicOverlayId::TonNode_ShardPublicOverlayId(ref x) => &x.workchain,
+            ShardPublicOverlayId::TonNode_ShardPublicOverlayId(x) => &x.workchain,
         }
     }
 
     pub fn zero_state_file_hash(&self) -> &crate::ton::int256 {
         match self {
-            ShardPublicOverlayId::TonNode_ShardPublicOverlayId(ref x) => &x.zero_state_file_hash,
+            ShardPublicOverlayId::TonNode_ShardPublicOverlayId(x) => &x.zero_state_file_hash,
         }
     }
 
@@ -2383,19 +2377,19 @@ pub enum ZeroStateIdExt {
 impl ZeroStateIdExt {
     pub fn file_hash(&self) -> &crate::ton::int256 {
         match self {
-            ZeroStateIdExt::TonNode_ZeroStateIdExt(ref x) => &x.file_hash,
+            ZeroStateIdExt::TonNode_ZeroStateIdExt(x) => &x.file_hash,
         }
     }
 
     pub fn root_hash(&self) -> &crate::ton::int256 {
         match self {
-            ZeroStateIdExt::TonNode_ZeroStateIdExt(ref x) => &x.root_hash,
+            ZeroStateIdExt::TonNode_ZeroStateIdExt(x) => &x.root_hash,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            ZeroStateIdExt::TonNode_ZeroStateIdExt(ref x) => &x.workchain,
+            ZeroStateIdExt::TonNode_ZeroStateIdExt(x) => &x.workchain,
         }
     }
 

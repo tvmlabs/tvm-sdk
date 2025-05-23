@@ -10,7 +10,7 @@ pub enum NewMcBlock {
 impl NewMcBlock {
     pub fn block(&self) -> Option<&crate::ton::ton_node::broadcast::BlockBroadcast> {
         match self {
-            NewMcBlock::Mbpp_NewMcBlockSome(ref x) => Some(&x.block),
+            NewMcBlock::Mbpp_NewMcBlockSome(x) => Some(&x.block),
             _ => None,
         }
     }
@@ -76,25 +76,25 @@ pub enum NewShardBlock {
 impl NewShardBlock {
     pub fn block(&self) -> &crate::ton::bytes {
         match self {
-            NewShardBlock::Mbpp_NewShardBlock(ref x) => &x.block,
+            NewShardBlock::Mbpp_NewShardBlock(x) => &x.block,
         }
     }
 
     pub fn cc_seqno(&self) -> &crate::ton::int {
         match self {
-            NewShardBlock::Mbpp_NewShardBlock(ref x) => &x.cc_seqno,
+            NewShardBlock::Mbpp_NewShardBlock(x) => &x.cc_seqno,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            NewShardBlock::Mbpp_NewShardBlock(ref x) => &x.id,
+            NewShardBlock::Mbpp_NewShardBlock(x) => &x.id,
         }
     }
 
     pub fn tbd(&self) -> &crate::ton::bytes {
         match self {
-            NewShardBlock::Mbpp_NewShardBlock(ref x) => &x.tbd,
+            NewShardBlock::Mbpp_NewShardBlock(x) => &x.tbd,
         }
     }
 
