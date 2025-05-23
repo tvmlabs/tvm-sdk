@@ -12,7 +12,6 @@ license.workspace = true
 api_derive = { path = "../derive" }
 api_info = { path = "../info" }
 serde.workspace = true
-# serde_derive.workspace = true
 serde_json.workspace = true
 
 [lib]
