@@ -1077,12 +1077,12 @@ async fn test_nacl_secret_encryption_box() {
 }
 
 fn password_provider(
-    client: &Arc<TestClient>,
-    password_hash: &Arc<String>,
+    client: Arc<TestClient>,
+    password_hash: Arc<String>,
     on_callback: impl Fn() + Send + Sync + 'static,
 ) -> impl Fn(ParamsOfAppRequest, u32) -> futures::future::Ready<()> {
-    let client = Arc::clone(client);
-    let password_hash = Arc::clone(password_hash);
+    let client = Arc::clone(&client);
+    let password_hash = Arc::clone(&password_hash);
     let on_callback = Arc::new(on_callback);
     move |request: ParamsOfAppRequest, _: u32| {
         let client = Arc::clone(&client);
@@ -1139,7 +1139,7 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
                     wordcount: 12,
                 },
             },
-            password_provider(&client, &password_hash, || ()),
+            password_provider(client.clone(), password_hash.clone(), || ()),
         )
         .await?;
 
@@ -1172,7 +1172,7 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
                     encrypted_secret: crypto_box_info.encrypted_secret.clone(),
                 },
             },
-            password_provider(&client, &password_hash, || ()),
+            password_provider(client.clone(), password_hash.clone(), || ()),
         )
         .await?;
 
@@ -1193,7 +1193,7 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
                     wordcount: 12,
                 },
             },
-            password_provider(&client, &password_hash, || ()),
+            password_provider(client.clone(), password_hash.clone(), || ()),
         )
         .await?;
 
@@ -1228,7 +1228,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
                     wordcount: 12,
                 },
             },
-            password_provider(&client, &password_hash, move || {
+            password_provider(client.clone(), password_hash.clone(), move || {
                 callback_calls_counter_copy.fetch_add(1, Ordering::Relaxed);
             }),
         )
@@ -1293,7 +1293,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     }
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "crypto.clear_crypto_box_secret_cache",
             RegisteredCryptoBox { handle: crypto_box.handle },
         )
@@ -1338,7 +1338,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
                     wordcount: 12,
                 },
             },
-            password_provider(&client, &password_hash, move || {
+            password_provider(client.clone(), password_hash.clone(), move || {
                 callback_calls_counter_copy.fetch_add(1, Ordering::Relaxed);
             }),
         )
@@ -1420,7 +1420,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     }
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "crypto.clear_crypto_box_secret_cache",
             RegisteredCryptoBox { handle: crypto_box.handle },
         )
@@ -1464,7 +1464,7 @@ async fn test_crypto_box_derive_key_cache() -> tvm_types::Result<()> {
                         phrase: phrase.into(),
                     },
                 },
-                password_provider(&client, &password_hash, || ()),
+                password_provider(client.clone(), password_hash.clone(), || ()),
             )
             .await?;
     }
@@ -1483,7 +1483,7 @@ async fn test_crypto_box_derive_key_cache() -> tvm_types::Result<()> {
                         phrase: phrase.into(),
                     },
                 },
-                password_provider(&client, &password_hash, || ()),
+                password_provider(client.clone(), password_hash.clone(), || ()),
             )
             .await?;
     }
