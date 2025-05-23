@@ -57,13 +57,13 @@ pub async fn run_command(
         (address.unwrap(), abi.unwrap())
     } else {
         (
-            matches.value_of("ADDRESS").unwrap().to_string(),
+            matches.get_one::<String>("ADDRESS").unwrap().to_string(),
             abi_from_matches_or_config(matches, config)?,
         )
     };
-    let account_source = if matches.is_present("TVC") {
+    let account_source = if matches.contains_id("TVC") {
         AccountSource::TVC
-    } else if matches.is_present("BOC") {
+    } else if matches.contains_id("BOC") {
         AccountSource::BOC
     } else {
         AccountSource::NETWORK
@@ -71,15 +71,16 @@ pub async fn run_command(
 
     let method = if is_alternative {
         matches
-            .value_of("METHOD")
+            .get_one::<String>("METHOD")
+            .map(|s| s.as_str())
             .or(config.method.as_deref())
             .ok_or("Method is not defined. Supply it in the config file or command line.")?
     } else {
-        matches.value_of("METHOD").unwrap()
+        matches.get_one::<String>("METHOD").unwrap()
     };
     let trace_path;
     let ton_client = if account_source == AccountSource::NETWORK {
-        trace_path = format!("run_{}_{}.log", address, method);
+        trace_path = format!("run_{address}_{method}.log");
         create_client(config)?
     } else {
         trace_path = "trace.log".to_string();
@@ -118,13 +119,14 @@ async fn run(
 ) -> Result<(), String> {
     let method = if is_alternative {
         matches
-            .value_of("METHOD")
+            .get_one::<String>("METHOD")
+            .map(|s| s.as_str())
             .or(config.method.as_deref())
             .ok_or("Method is not defined. Supply it in the config file or command line.")?
     } else {
-        matches.value_of("METHOD").unwrap()
+        matches.get_one::<String>("METHOD").unwrap()
     };
-    let bc_config = matches.value_of("BCCONFIG");
+    let bc_config = matches.get_one::<String>("BCCONFIG").map(|s| s.as_str());
 
     if !config.is_json {
         println!("Running get-method...");
@@ -138,7 +140,7 @@ async fn run(
     let params = if is_alternative {
         unpack_alternative_params(matches, &abi_path, method, config).await?
     } else {
-        matches.value_of("PARAMS").unwrap().to_string()
+        matches.get_one::<String>("PARAMS").unwrap().to_string()
     };
 
     let params = load_params(&params)?;
@@ -188,7 +190,7 @@ async fn run(
             };
             init_debug_logger(&trace_path)?;
             debug_error(&e, debug_params).await?;
-            return Err(format!("{:#}", e));
+            return Err(format!("{e:#}"));
         }
     };
     if !config.is_json {
@@ -248,7 +250,7 @@ pub async fn run_get_method(
     let params = params
         .map(|p| serde_json::from_str(&p))
         .transpose()
-        .map_err(|e| format!("arguments are not in json format: {}", e))?;
+        .map_err(|e| format!("arguments are not in json format: {e}"))?;
 
     if !config.is_json {
         println!("Running get-method...");
@@ -265,19 +267,19 @@ pub async fn run_get_method(
         },
     )
     .await
-    .map_err(|e| format!("run failed: {}", e))?
+    .map_err(|e| format!("run failed: {e}"))?
     .output;
 
     if !config.is_json {
         println!("Succeeded.");
-        println!("Result: {}", result);
+        println!("Result: {result}");
     } else {
         let mut res = Map::new();
         match result {
             Value::Array(array) => {
                 let mut i = 0;
                 for val in array.iter() {
-                    res.insert(format!("value{}", i), val.to_owned());
+                    res.insert(format!("value{i}"), val.to_owned());
                     i += 1;
                 }
             }
@@ -286,7 +288,7 @@ pub async fn run_get_method(
             }
         }
         let res = Value::Object(res);
-        println!("{:#}", res);
+        println!("{res:#}");
     }
     Ok(())
 }

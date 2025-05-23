@@ -145,7 +145,7 @@ impl ContinuationData {
     }
 
     pub fn withdraw(&mut self) -> Self {
-        mem::replace(self, ContinuationData::new_empty())
+        std::mem::take(self)
     }
 
     pub fn drain_reference(&mut self) -> Result<Cell> {
@@ -234,10 +234,7 @@ impl ContinuationData {
     ) -> Result<Self> {
         let mut list = Vec::new();
         ContinuationData::deserialize_internal(&mut list, slice, gas_consumer)?;
-        Ok(std::mem::replace(
-            items_deserialize(list, gas_consumer)?.remove(0).as_continuation_mut()?,
-            ContinuationData::new_empty(),
-        ))
+        Ok(std::mem::take(items_deserialize(list, gas_consumer)?.remove(0).as_continuation_mut()?))
     }
 
     pub(crate) fn deserialize_internal(
@@ -540,7 +537,7 @@ impl fmt::Display for ContinuationData {
         } else {
             writeln!(f)?;
             for x in self.stack.storage.iter() {
-                write!(f, "        {}", x)?;
+                write!(f, "        {x}")?;
                 writeln!(f)?;
             }
         }
@@ -551,7 +548,7 @@ impl fmt::Display for ContinuationData {
             writeln!(f)?;
             for i in SaveList::REGS {
                 if let Some(item) = self.savelist.get(i) {
-                    writeln!(f, "        {}: {}", i, item)?
+                    writeln!(f, "        {i}: {item}")?
                 }
             }
         }
@@ -573,6 +570,6 @@ impl fmt::Display for ContinuationType {
             ContinuationType::WhileLoopCondition(_, _) => "while",
             ContinuationType::ExcQuit => "exception-quit",
         };
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }

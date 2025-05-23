@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.root.dbDescription`\n\n```text\ndb.root.dbDescription version:int first_masterchain_block_id:tonNode.blockIdExt flags:int = db.root.DbDescription;\n```\n"]
 pub struct DbDescription {

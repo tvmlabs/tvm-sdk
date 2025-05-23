@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `query.info`\n\n```text\nquery.info id:int53 valid_until:int53 body_hash:bytes body:bytes init_state:bytes = query.Info;\n```\n"]
 pub struct Info {

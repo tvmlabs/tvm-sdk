@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
 use chrono::TimeZone;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::client::binding_config;
@@ -153,10 +155,10 @@ impl ClientError {
                     .iter()
                     .filter_map(|v| {
                         v.as_str().map(|s| {
-                            if let Some(_) = s.find(':') {
-                                format!("http://{}/bk/v2/messages", s)
+                            if s.find(':').is_some() {
+                                format!("http://{s}/bk/v2/messages")
                             } else {
-                                format!("http://{}:8600/bk/v2/messages", s)
+                                format!("http://{s}:8600/bk/v2/messages")
                             }
                         })
                     })

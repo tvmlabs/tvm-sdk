@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde_json::Value;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct Error {
     pub code: u32,
     pub message: String,
@@ -11,7 +11,7 @@ pub struct Error {
 
 impl Error {
     pub fn invalid_boc<E: Display>(err: E) -> Self {
-        Self::with_code_message(201, format!("Invalid BOC: {}", err))
+        Self::with_code_message(201, format!("Invalid BOC: {err}"))
     }
 }
 

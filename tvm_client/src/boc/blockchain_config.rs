@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_block::Serializable;
 use tvm_types::base64_encode;
 
@@ -62,11 +64,11 @@ pub(crate) fn extract_config_from_block(
 ) -> ClientResult<tvm_block::ConfigParams> {
     let extra = block
         .read_extra()
-        .map_err(|err| Error::invalid_boc(format!("can not read `extra` from block: {}", err)))?;
+        .map_err(|err| Error::invalid_boc(format!("can not read `extra` from block: {err}")))?;
 
     let master = extra
         .read_custom()
-        .map_err(|err| Error::invalid_boc(format!("can not read `master` from block: {}", err)))?
+        .map_err(|err| Error::invalid_boc(format!("can not read `master` from block: {err}")))?
         .ok_or(Error::inappropriate_block(
             "not a masterchain block. Only key block contains blockchain configuration",
         ))?;
@@ -84,9 +86,7 @@ pub(crate) fn extract_config_from_zerostate(
 ) -> ClientResult<tvm_block::ConfigParams> {
     let master = zerostate
         .read_custom()
-        .map_err(|err| {
-            Error::invalid_boc(format!("can not read `master` from zerostate: {}", err))
-        })?
+        .map_err(|err| Error::invalid_boc(format!("can not read `master` from zerostate: {err}")))?
         .ok_or(Error::inappropriate_block(
             "not a masterchain state. Only masterchain states contain blockchain configuration",
         ))?;

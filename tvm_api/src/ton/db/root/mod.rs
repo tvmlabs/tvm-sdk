@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.root.Config`\n\n```text\ndb.root.config celldb_version:int blockdb_version:int = db.root.Config;\n```\n"]
 pub enum Config {
@@ -8,13 +8,13 @@ pub enum Config {
 impl Config {
     pub fn blockdb_version(&self) -> &crate::ton::int {
         match self {
-            Config::Db_Root_Config(ref x) => &x.blockdb_version,
+            Config::Db_Root_Config(x) => &x.blockdb_version,
         }
     }
 
     pub fn celldb_version(&self) -> &crate::ton::int {
         match self {
-            Config::Db_Root_Config(ref x) => &x.celldb_version,
+            Config::Db_Root_Config(x) => &x.celldb_version,
         }
     }
 
@@ -62,19 +62,19 @@ pub enum DbDescription {
 impl DbDescription {
     pub fn first_masterchain_block_id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            DbDescription::Db_Root_DbDescription(ref x) => &x.first_masterchain_block_id,
+            DbDescription::Db_Root_DbDescription(x) => &x.first_masterchain_block_id,
         }
     }
 
     pub fn flags(&self) -> &crate::ton::int {
         match self {
-            DbDescription::Db_Root_DbDescription(ref x) => &x.flags,
+            DbDescription::Db_Root_DbDescription(x) => &x.flags,
         }
     }
 
     pub fn version(&self) -> &crate::ton::int {
         match self {
-            DbDescription::Db_Root_DbDescription(ref x) => &x.version,
+            DbDescription::Db_Root_DbDescription(x) => &x.version,
         }
     }
 
@@ -126,8 +126,8 @@ pub enum Key {
 impl Key {
     pub fn version(&self) -> Option<&crate::ton::int> {
         match self {
-            Key::Db_Root_Key_BlockDb(ref x) => Some(&x.version),
-            Key::Db_Root_Key_CellDb(ref x) => Some(&x.version),
+            Key::Db_Root_Key_BlockDb(x) => Some(&x.version),
+            Key::Db_Root_Key_CellDb(x) => Some(&x.version),
             _ => None,
         }
     }

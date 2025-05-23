@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.configInfo`\n\n```text\nliteServer.configInfo mode:# id:tonNode.blockIdExt state_proof:bytes config_proof:bytes = liteServer.ConfigInfo;\n```\n"]
 pub struct ConfigInfo {

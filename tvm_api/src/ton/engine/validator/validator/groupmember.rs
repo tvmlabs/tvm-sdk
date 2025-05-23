@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validator.groupMember`\n\n```text\nvalidator.groupMember public_key_hash:int256 adnl:int256 weight:long = engine.validator.GroupMember;\n```\n"]
 pub struct GroupMember {

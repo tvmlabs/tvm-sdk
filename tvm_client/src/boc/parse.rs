@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use tvm_block::Deserializable;
 
@@ -120,14 +122,12 @@ pub fn parse_account(
     let account = if cell.cell_type() == tvm_types::CellType::MerkleProof {
         let proof = tvm_block::MerkleProof::construct_from_cell(cell).map_err(|err| {
             Error::invalid_boc(format!(
-                "Can not deserialize Merkle proof from pruned account BOC: {}",
-                err
+                "Can not deserialize Merkle proof from pruned account BOC: {err}"
             ))
         })?;
         proof.virtualize().map_err(|err| {
             Error::invalid_boc(format!(
-                "Can not virtualize pruned account from Merkle proof: {}",
-                err
+                "Can not virtualize pruned account from Merkle proof: {err}"
             ))
         })?
     } else {

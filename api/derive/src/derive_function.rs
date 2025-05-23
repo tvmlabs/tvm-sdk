@@ -24,7 +24,7 @@ pub fn impl_api_function(attr: TokenStream, item: TokenStream) -> TokenStream {
     let syn_meta = syn::parse::<Meta>(attr).ok();
     let fn_impl_tokens = function_to_tokens(&function_from(syn_meta, syn_func));
 
-    let fn_ident = Ident::new(&format!("{}_api", name), Span::call_site().into());
+    let fn_ident = Ident::new(&format!("{name}_api"), Span::call_site().into());
     let fn_tokens = quote! {
         pub fn #fn_ident () -> api_info::Function {
             #fn_impl_tokens
@@ -50,7 +50,7 @@ fn function_from(meta: Option<Meta>, func: ItemFn) -> api_info::Function {
 }
 
 fn field_from_fn_arg(a: &FnArg) -> api_info::Field {
-    if let FnArg::Typed(ref a) = a {
+    if let FnArg::Typed(a) = a {
         if let Pat::Ident(i) = a.pat.as_ref() {
             return field_from(Some(&i.ident), &a.attrs, type_from(&a.ty));
         }
@@ -60,7 +60,7 @@ fn field_from_fn_arg(a: &FnArg) -> api_info::Field {
 
 fn type_from_return_type(return_type: &ReturnType) -> api_info::Type {
     match return_type {
-        ReturnType::Type(_, ref ty) => type_from(ty),
+        ReturnType::Type(_, ty) => type_from(ty),
         _ => api_info::Type::None {},
     }
 }

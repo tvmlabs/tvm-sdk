@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.filedb.value`\n\n```text\ndb.filedb.value key:db.filedb.Key prev:int256 next:int256 file_hash:int256 = db.filedb.Value;\n```\n"]
 pub struct Value {

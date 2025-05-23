@@ -31,7 +31,7 @@ struct MonitorState<Sdk: MessageMonitorSdkServices + Send + Sync + 'static> {
     active_subscriptions: Mutex<HashMap<usize, HashSet<String>>>,
 }
 
-#[derive(Deserialize, Serialize, ApiType, Default)]
+#[derive(serde::Deserialize, serde::Serialize, ApiType, Default)]
 pub struct MonitoringQueueInfo {
     /// Count of the unresolved messages.
     pub unresolved: u32,
@@ -39,7 +39,7 @@ pub struct MonitoringQueueInfo {
     pub resolved: u32,
 }
 
-#[derive(Deserialize, Serialize, ApiType, Copy, Clone)]
+#[derive(serde::Deserialize, serde::Serialize, ApiType, Copy, Clone)]
 pub enum MonitorFetchWaitMode {
     /// If there are no resolved results yet, then monitor awaits for the next
     /// resolved result.

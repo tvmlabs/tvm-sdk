@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.node`\n\n```text\ndht.node id:PublicKey addr_list:adnl.addressList version:int signature:bytes = dht.Node;\n```\n"]
 pub struct Node {

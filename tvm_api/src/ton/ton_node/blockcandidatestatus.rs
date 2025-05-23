@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.blockCandidateStatus`\n\n```text\ntonNode.blockCandidateStatus candidate_id:int256 deliveries_signature:bytes approvals_signature:bytes rejections_signature:bytes merges_cnt:int created_timestamp:long = tonNode.BlockCandidateStatus;\n```\n"]
 pub struct BlockCandidateStatus {

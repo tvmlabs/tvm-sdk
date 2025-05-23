@@ -1,10 +1,17 @@
-use crate::{BocReader, BocWriter, Cell, read_boc3_bytes, write_boc3_to_bytes};
 use std::collections::HashMap;
 use std::fs::read;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use std::time::Instant;
+
+use crate::BocReader;
+use crate::BocWriter;
+use crate::Cell;
+use crate::read_boc3_bytes;
+use crate::write_boc3_to_bytes;
 
 struct Stat {
     deser_time: Duration,

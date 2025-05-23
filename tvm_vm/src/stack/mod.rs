@@ -227,10 +227,10 @@ fn items_serialize(
                         let key = SliceData::load_bitstring(builder)?;
                         savelist.set_builder(key, &value)?; // TODO: gas here?
                     } else {
-                        panic!("savelist is None {}", index)
+                        panic!("savelist is None {index}")
                     }
                 } else {
-                    panic!("list is None {}", index)
+                    panic!("list is None {index}")
                 }
                 continue;
             }
@@ -457,7 +457,7 @@ impl StackItem {
 
     pub fn as_continuation(&self) -> ResultRef<ContinuationData> {
         match self {
-            StackItem::Continuation(ref data) => Ok(data),
+            StackItem::Continuation(data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item {} is not a continuation", self),
         }
     }
@@ -473,14 +473,14 @@ impl StackItem {
     pub fn as_dict(&self) -> ResultOpt<&Cell> {
         match self {
             StackItem::None => Ok(None),
-            StackItem::Cell(ref data) => Ok(Some(data)),
+            StackItem::Cell(data) => Ok(Some(data)),
             _ => err!(ExceptionCode::TypeCheckError, "item is not a dictionary"),
         }
     }
 
     pub fn as_integer(&self) -> ResultRef<IntegerData> {
         match self {
-            StackItem::Integer(ref data) => Ok(data),
+            StackItem::Integer(data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item is not an integer"),
         }
     }
@@ -886,13 +886,13 @@ impl fmt::Display for StackItem {
             StackItem::Cell(x)         => write!(f, "Cell x{:x} x{:x}", x.repr_hash(), x),
             StackItem::Continuation(x) => write!(f, "Continuation x{:x}", x.code().repr_hash()),
             StackItem::Integer(x)      => write!(f, "{}", Arc::as_ref(x)),
-            StackItem::Slice(x)        => write!(f, "Slice x{:x}", x),
+            StackItem::Slice(x)        => write!(f, "Slice x{x:x}"),
             StackItem::Tuple(x)        => {
                 if f.alternate() {
                     write!(f, "Tuple ({})", x.len())
                 } else {
                     write!(f, "Tuple ({})", x.len())?;
-                    f.debug_list().entries(x.iter().map(|v| format!("{:#}", v))).finish()
+                    f.debug_list().entries(x.iter().map(|v| format!("{v:#}"))).finish()
                 }
             }
         }
@@ -1169,9 +1169,7 @@ impl PartialEq for Stack {
 
 impl fmt::Display for Stack {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(
-            &self.storage.iter().fold(String::new(), |acc, item| format!("{}{}\n", acc, item)),
-        )
+        f.write_str(&self.storage.iter().fold(String::new(), |acc, item| format!("{acc}{item}\n")))
     }
 }
 

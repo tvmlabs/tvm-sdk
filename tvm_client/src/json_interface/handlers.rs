@@ -50,7 +50,7 @@ fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResul
                     &mut suggest_use_helper_for,
                 );
                 for error_message in errors.iter() {
-                    error.message.push_str(&format!("\nTip: {}", error_message));
+                    error.message.push_str(&format!("\nTip: {error_message}"));
                 }
                 if !suggest_use_helper_for.is_empty() {
                     error.data["suggest_use_helper_for"] = Value::Array(
@@ -138,7 +138,7 @@ fn check_type(
 ) {
     match field_type {
         Type::Array { item } => {
-            if let Value::Array(ref vec) = value {
+            if let Value::Array(vec) = value {
                 for (index, val) in vec.iter().enumerate() {
                     check_type(
                         &path.append(&format!("{}[{}]", path.resolve_field_name(), index)),
@@ -157,7 +157,7 @@ fn check_type(
                 ));
             }
         }
-        Type::Struct { ref fields } => {
+        Type::Struct { fields } => {
             if let Value::Object(map) = value {
                 for struct_field in fields {
                     check_params_for_known_errors(
@@ -183,8 +183,7 @@ fn check_type(
                         Some(type_name) => type_name,
                         None => {
                             errors.push(format!(
-                                "Field \"{}\" is expected to be `String`.",
-                                ENUM_TYPE_TAG
+                                "Field \"{ENUM_TYPE_TAG}\" is expected to be `String`."
                             ));
                             return;
                         }
@@ -232,14 +231,11 @@ fn get_incorrect_enum_errors(
     static SUGGEST_USE_HELPER_FOR_SORTED: &[&str] = &["Abi", "Signer"];
 
     errors.push(format!(
-        "Field \"{field}\" must be a structure:\n\
+        "Field \"{field_name}\" must be a structure:\n\
         {{\n    \
-            \"{type_tag}\": one of {types},\n    \
+            \"{ENUM_TYPE_TAG}\": one of {types_str},\n    \
             ... fields of a corresponding structure, or \"value\" in a case of scalar\n\
         }}.",
-        field = field_name,
-        type_tag = ENUM_TYPE_TAG,
-        types = types_str,
     ));
 
     let class_name = match *class_name {

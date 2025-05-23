@@ -25,6 +25,7 @@ use std::sync::Arc;
 
 use smallvec::SmallVec;
 
+use crate::ByteOrderRead;
 use crate::CellImpl;
 use crate::CellType;
 use crate::Crc32;
@@ -44,7 +45,7 @@ use crate::crc32_digest;
 use crate::error;
 use crate::fail;
 use crate::full_len;
-use crate::{ByteOrderRead, read_boc3_bytes};
+use crate::read_boc3_bytes;
 
 const BOC_INDEXED_TAG: u32 = 0x68ff65f3; // deprecated, is used only for read
 const BOC_INDEXED_CRC32_TAG: u32 = 0xacc3a728; // deprecated, is used only for read
@@ -905,13 +906,8 @@ impl<'a> BocReader<'a> {
         {
             let total_time = now.elapsed().as_millis();
             log::trace!(
-                "TIME read_cells_tree_ex: {}ms (read: {}, creating cells: {}, \
-                    indexed cells cleanup: {}, done cells cleanup: {})",
-                total_time,
-                read_time,
-                constructing_time,
-                drop_time_ic,
-                drop_time_dc
+                "TIME read_cells_tree_ex: {total_time}ms (read: {read_time}, creating cells: {constructing_time}, \
+                    indexed cells cleanup: {drop_time_ic}, done cells cleanup: {drop_time_dc})"
             );
         }
 
@@ -1031,12 +1027,7 @@ impl<'a> BocReader<'a> {
         {
             let total_time = now.elapsed().as_millis();
             log::trace!(
-                "TIME read_inmem: {}ms (index: {}, creating cells: {}, crc: {}, cleanup: {})",
-                total_time,
-                index_time,
-                constructing_time,
-                crc_time,
-                cleanup_time
+                "TIME read_inmem: {total_time}ms (index: {index_time}, creating cells: {constructing_time}, crc: {crc_time}, cleanup: {cleanup_time})"
             );
         }
 

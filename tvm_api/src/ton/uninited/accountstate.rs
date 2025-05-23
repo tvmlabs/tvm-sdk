@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `uninited.accountState`\n\n```text\nuninited.accountState frozen_hash:bytes = AccountState;\n```\n"]
 pub struct AccountState {

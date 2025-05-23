@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.tunnelPacketContents`\n\n```text\nadnl.tunnelPacketContents \n  rand1:bytes \n  flags:# \n  from_ip:flags.0?int\n  from_port:flags.0?int\n  message:flags.1?bytes \n  statistics:flags.2?bytes\n  payment:flags.3?bytes\n  rand2:bytes \n        = adnl.TunnelPacketContents;\n```\n"]
 pub struct TunnelPacketContents {

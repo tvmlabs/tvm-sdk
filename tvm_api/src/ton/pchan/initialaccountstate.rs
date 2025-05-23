@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `pchan.initialAccountState`\n\n```text\npchan.initialAccountState config:pchan.config = InitialAccountState;\n```\n"]
 pub struct InitialAccountState {

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.info`\n\n```text\nliteServer.info now:int53 version:int32 capabilities:int64 = liteServer.Info;\n```\n"]
 pub struct Info {

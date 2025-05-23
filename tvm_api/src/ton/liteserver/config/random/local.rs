@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteserver.config.random.local`\n\n```text\nliteserver.config.random.local port:int = liteserver.config.Local;\n```\n"]
 pub struct Local {

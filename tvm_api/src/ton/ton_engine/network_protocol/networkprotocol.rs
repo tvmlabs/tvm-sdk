@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonEngine.networkProtocol.confirmValidation`\n\n```text\ntonEngine.networkProtocol.confirmValidation \n    id:long \n    peer:int \n    result:long\n    block_seq_no:int\n    block_start_lt:long\n    block_end_lt:long\n    block_gen_utime:int\n= tonEngine.NetworkProtocol;\n```\n"]
 pub struct ConfirmValidation {

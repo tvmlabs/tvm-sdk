@@ -169,15 +169,15 @@ impl Serialize for TokenValue {
             TokenValue::VarInt(_, int) => Token::detokenize_big_int(int, serializer),
             TokenValue::Bool(b) => serializer.serialize_bool(*b),
             TokenValue::Tuple(tokens) => FunctionParams { params: tokens }.serialize(serializer),
-            TokenValue::Array(_, ref tokens) => tokens.serialize(serializer),
-            TokenValue::FixedArray(_, ref tokens) => tokens.serialize(serializer),
-            TokenValue::Cell(ref cell) => Token::detokenize_cell(cell, serializer),
-            TokenValue::Map(key_type, _, ref map) => {
+            TokenValue::Array(_, tokens) => tokens.serialize(serializer),
+            TokenValue::FixedArray(_, tokens) => tokens.serialize(serializer),
+            TokenValue::Cell(cell) => Token::detokenize_cell(cell, serializer),
+            TokenValue::Map(key_type, _, map) => {
                 Token::detokenize_hashmap(key_type, map, serializer)
             }
-            TokenValue::Address(ref address) => serializer.serialize_str(&address.to_string()),
-            TokenValue::Bytes(ref arr) => Token::detokenize_bytes(arr, serializer),
-            TokenValue::FixedBytes(ref arr) => Token::detokenize_bytes(arr, serializer),
+            TokenValue::Address(address) => serializer.serialize_str(&address.to_string()),
+            TokenValue::Bytes(arr) => Token::detokenize_bytes(arr, serializer),
+            TokenValue::FixedBytes(arr) => Token::detokenize_bytes(arr, serializer),
             TokenValue::String(string) => serializer.serialize_str(string),
             TokenValue::Token(gram) => Token::detokenize_grams(gram, serializer),
             TokenValue::Time(time) => {

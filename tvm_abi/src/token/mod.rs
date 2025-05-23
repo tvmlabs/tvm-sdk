@@ -143,20 +143,20 @@ impl fmt::Display for TokenValue {
         match self {
             TokenValue::Uint(u) => write!(f, "{}", u.number),
             TokenValue::Int(u) => write!(f, "{}", u.number),
-            TokenValue::VarUint(_, u) => write!(f, "{}", u),
-            TokenValue::VarInt(_, u) => write!(f, "{}", u),
-            TokenValue::Bool(b) => write!(f, "{}", b),
-            TokenValue::Tuple(ref arr) => {
-                let s = arr.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(",");
+            TokenValue::VarUint(_, u) => write!(f, "{u}"),
+            TokenValue::VarInt(_, u) => write!(f, "{u}"),
+            TokenValue::Bool(b) => write!(f, "{b}"),
+            TokenValue::Tuple(arr) => {
+                let s = arr.iter().map(|ref t| format!("{t}")).collect::<Vec<String>>().join(",");
 
-                write!(f, "({})", s)
+                write!(f, "({s})")
             }
-            TokenValue::Array(_, ref arr) | TokenValue::FixedArray(_, ref arr) => {
-                let s = arr.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(",");
+            TokenValue::Array(_, arr) | TokenValue::FixedArray(_, arr) => {
+                let s = arr.iter().map(|ref t| format!("{t}")).collect::<Vec<String>>().join(",");
 
-                write!(f, "[{}]", s)
+                write!(f, "[{s}]")
             }
-            TokenValue::Cell(c) => write!(f, "{:?}", c),
+            TokenValue::Cell(c) => write!(f, "{c:?}"),
             TokenValue::Map(_key_type, _value_type, map) => {
                 let s = map
                     .iter()
@@ -164,15 +164,15 @@ impl fmt::Display for TokenValue {
                     .collect::<Vec<String>>()
                     .join(",");
 
-                write!(f, "{{{}}}", s)
+                write!(f, "{{{s}}}")
             }
-            TokenValue::Address(a) => write!(f, "{}", a),
-            TokenValue::Bytes(ref arr) | TokenValue::FixedBytes(ref arr) => write!(f, "{:?}", arr),
-            TokenValue::String(string) => write!(f, "{}", string),
-            TokenValue::Token(g) => write!(f, "{}", g),
-            TokenValue::Time(time) => write!(f, "{}", time),
-            TokenValue::Expire(expire) => write!(f, "{}", expire),
-            TokenValue::Ref(value) => write!(f, "{}", value),
+            TokenValue::Address(a) => write!(f, "{a}"),
+            TokenValue::Bytes(arr) | TokenValue::FixedBytes(arr) => write!(f, "{arr:?}"),
+            TokenValue::String(string) => write!(f, "{string}"),
+            TokenValue::Token(g) => write!(f, "{g}"),
+            TokenValue::Time(time) => write!(f, "{time}"),
+            TokenValue::Expire(expire) => write!(f, "{expire}"),
+            TokenValue::Ref(value) => write!(f, "{value}"),
             TokenValue::PublicKey(key) => {
                 if let Some(key) = key {
                     write!(f, "{}", hex::encode(key))
@@ -182,7 +182,7 @@ impl fmt::Display for TokenValue {
             }
             TokenValue::Optional(_, value) => {
                 if let Some(value) = value {
-                    write!(f, "{}", value)
+                    write!(f, "{value}")
                 } else {
                     write!(f, "None")
                 }
@@ -203,14 +203,14 @@ impl TokenValue {
             TokenValue::VarUint(size, _) => *param_type == ParamType::VarUint(*size),
             TokenValue::VarInt(size, _) => *param_type == ParamType::VarInt(*size),
             TokenValue::Bool(_) => *param_type == ParamType::Bool,
-            TokenValue::Tuple(ref arr) => {
+            TokenValue::Tuple(arr) => {
                 if let ParamType::Tuple(params) = param_type {
                     Token::types_check(arr, params)
                 } else {
                     false
                 }
             }
-            TokenValue::Array(inner_type, ref tokens) => {
+            TokenValue::Array(inner_type, tokens) => {
                 if let ParamType::Array(ref param_type) = *param_type {
                     inner_type == param_type.as_ref()
                         && tokens.iter().all(|t| t.type_check(param_type))
@@ -218,7 +218,7 @@ impl TokenValue {
                     false
                 }
             }
-            TokenValue::FixedArray(inner_type, ref tokens) => {
+            TokenValue::FixedArray(inner_type, tokens) => {
                 if let ParamType::FixedArray(ref param_type, size) = *param_type {
                     size == tokens.len()
                         && inner_type == param_type.as_ref()
@@ -228,7 +228,7 @@ impl TokenValue {
                 }
             }
             TokenValue::Cell(_) => *param_type == ParamType::Cell,
-            TokenValue::Map(map_key_type, map_value_type, ref values) => {
+            TokenValue::Map(map_key_type, map_value_type, values) => {
                 if let ParamType::Map(ref key_type, ref value_type) = *param_type {
                     map_key_type == key_type.as_ref()
                         && map_value_type == value_type.as_ref()
@@ -239,7 +239,7 @@ impl TokenValue {
             }
             TokenValue::Address(_) => *param_type == ParamType::Address,
             TokenValue::Bytes(_) => *param_type == ParamType::Bytes,
-            TokenValue::FixedBytes(ref arr) => *param_type == ParamType::FixedBytes(arr.len()),
+            TokenValue::FixedBytes(arr) => *param_type == ParamType::FixedBytes(arr.len()),
             TokenValue::String(_) => *param_type == ParamType::String,
             TokenValue::Token(_) => *param_type == ParamType::Token,
             TokenValue::Time(_) => *param_type == ParamType::Time,
@@ -271,7 +271,7 @@ impl TokenValue {
             TokenValue::VarUint(size, _) => ParamType::VarUint(*size),
             TokenValue::VarInt(size, _) => ParamType::VarInt(*size),
             TokenValue::Bool(_) => ParamType::Bool,
-            TokenValue::Tuple(ref arr) => {
+            TokenValue::Tuple(arr) => {
                 ParamType::Tuple(arr.iter().map(|token| token.get_param()).collect())
             }
             TokenValue::Array(param_type, _) => ParamType::Array(Box::new(param_type.clone())),
@@ -284,13 +284,13 @@ impl TokenValue {
             }
             TokenValue::Address(_) => ParamType::Address,
             TokenValue::Bytes(_) => ParamType::Bytes,
-            TokenValue::FixedBytes(ref arr) => ParamType::FixedBytes(arr.len()),
+            TokenValue::FixedBytes(arr) => ParamType::FixedBytes(arr.len()),
             TokenValue::String(_) => ParamType::String,
             TokenValue::Token(_) => ParamType::Token,
             TokenValue::Time(_) => ParamType::Time,
             TokenValue::Expire(_) => ParamType::Expire,
             TokenValue::PublicKey(_) => ParamType::PublicKey,
-            TokenValue::Optional(ref param_type, _) => {
+            TokenValue::Optional(param_type, _) => {
                 ParamType::Optional(Box::new(param_type.clone()))
             }
             TokenValue::Ref(value) => ParamType::Ref(Box::new(value.get_param_type())),
@@ -304,8 +304,7 @@ impl TokenValue {
             ParamType::PublicKey => Ok(TokenValue::PublicKey(None)),
             any_type => Err(AbiError::InvalidInputData {
                 msg: format!(
-                    "Type {} doesn't have default value and must be explicitly defined",
-                    any_type
+                    "Type {any_type} doesn't have default value and must be explicitly defined"
                 ),
             }
             .into()),

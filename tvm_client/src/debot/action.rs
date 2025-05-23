@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
 use serde::Serializer;
 use serde::de;
 
@@ -156,5 +157,5 @@ where
         AcType::Unknown => 255,
     };
 
-    s.serialize_str(&format!("{:x}", num))
+    s.serialize_str(&format!("{num:x}"))
 }

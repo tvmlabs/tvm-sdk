@@ -1,6 +1,8 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use tvm_abi::Contract;
 use tvm_block::CurrencyCollection;
@@ -176,13 +178,13 @@ fn resolve_header(
 fn header_to_string(header: &FunctionHeader) -> String {
     let mut values = Vec::<String>::new();
     if let Some(time) = header.time {
-        values.push(format!("\"time\": {}", time));
+        values.push(format!("\"time\": {time}"));
     }
     if let Some(expire) = header.expire {
-        values.push(format!("\"expire\": {}", expire));
+        values.push(format!("\"expire\": {expire}"));
     }
     if let Some(pubkey) = &header.pubkey {
-        values.push(format!("\"pubkey\": \"{}\"", pubkey));
+        values.push(format!("\"pubkey\": \"{pubkey}\""));
     }
     format!("{{{}}}", values.join(","))
 }

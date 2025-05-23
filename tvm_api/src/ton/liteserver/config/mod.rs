@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `liteserver.config.Local`\n\n```text\nliteserver.config.local id:PrivateKey port:int = liteserver.config.Local;\n\nliteserver.config.random.local port:int = liteserver.config.Local;\n```\n"]
 pub enum Local {
@@ -9,15 +9,15 @@ pub enum Local {
 impl Local {
     pub fn id(&self) -> Option<&crate::ton::PrivateKey> {
         match self {
-            Local::Liteserver_Config_Local(ref x) => Some(&x.id),
+            Local::Liteserver_Config_Local(x) => Some(&x.id),
             _ => None,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            Local::Liteserver_Config_Local(ref x) => &x.port,
-            Local::Liteserver_Config_Random_Local(ref x) => &x.port,
+            Local::Liteserver_Config_Local(x) => &x.port,
+            Local::Liteserver_Config_Random_Local(x) => &x.port,
         }
     }
 }

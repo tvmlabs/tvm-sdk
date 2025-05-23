@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `pchan.promise`\n\n```text\npchan.promise signature:bytes promise_A:int64 promise_B:int64 channel_id:int64 = pchan.Promise;\n```\n"]
 pub struct Promise {

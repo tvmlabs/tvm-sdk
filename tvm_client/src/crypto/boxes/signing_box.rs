@@ -11,6 +11,9 @@
 
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use crate::client::ClientContext;
 use crate::crypto::CryptoBoxHandle;
 use crate::crypto::Error;

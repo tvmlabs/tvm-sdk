@@ -858,7 +858,7 @@ impl Engine {
         // Add automatic commands
         for (command, handler) in iter {
             if self.handlers.insert(command, *handler).is_some() {
-                panic!("Token {} was already registered.", command);
+                panic!("Token {command} was already registered.");
             }
         }
     }

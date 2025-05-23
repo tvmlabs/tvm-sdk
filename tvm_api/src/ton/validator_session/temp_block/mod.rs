@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.tempBlock.Id`\n\n```text\nvalidatorSession.candidate.id round:int256 block_hash:int256 = validatorSession.tempBlock.Id;\n```\n"]
 pub enum Id {
@@ -10,13 +10,13 @@ pub enum Id {
 impl Id {
     pub fn block_hash(&self) -> &crate::ton::int256 {
         match self {
-            Id::ValidatorSession_Candidate_Id(ref x) => &x.block_hash,
+            Id::ValidatorSession_Candidate_Id(x) => &x.block_hash,
         }
     }
 
     pub fn round(&self) -> &crate::ton::int256 {
         match self {
-            Id::ValidatorSession_Candidate_Id(ref x) => &x.round,
+            Id::ValidatorSession_Candidate_Id(x) => &x.round,
         }
     }
 

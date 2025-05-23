@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.block.Info`\n\n```text\ndb.block.archivedInfo id:tonNode.blockIdExt flags:# next:flags.0?tonNode.blockIdExt = db.block.Info;\n\ndb.block.info#4ac6e727 id:tonNode.blockIdExt flags:# prev_left:flags.1?tonNode.blockIdExt\n                                            prev_right:flags.2?tonNode.blockIdExt\n                                            next_left:flags.3?tonNode.blockIdExt\n                                            next_right:flags.4?tonNode.blockIdExt\n                                            lt:flags.13?long \n                                            ts:flags.14?int\n                                            state:flags.17?int256 \n                                            masterchain_ref_seqno:flags.23?int = db.block.Info;\n\ndb.block.packedInfo id:tonNode.blockIdExt unixtime:int offset:long = db.block.Info;\n```\n"]
 pub enum Info {
@@ -10,85 +10,85 @@ pub enum Info {
 impl Info {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Info::Db_Block_ArchivedInfo(ref x) => &x.id,
-            Info::Db_Block_Info(ref x) => &x.id,
-            Info::Db_Block_PackedInfo(ref x) => &x.id,
+            Info::Db_Block_ArchivedInfo(x) => &x.id,
+            Info::Db_Block_Info(x) => &x.id,
+            Info::Db_Block_PackedInfo(x) => &x.id,
         }
     }
 
     pub fn lt(&self) -> Option<&crate::ton::long> {
         match self {
-            Info::Db_Block_Info(ref x) => x.lt.as_ref(),
+            Info::Db_Block_Info(x) => x.lt.as_ref(),
             _ => None,
         }
     }
 
     pub fn masterchain_ref_seqno(&self) -> Option<&crate::ton::int> {
         match self {
-            Info::Db_Block_Info(ref x) => x.masterchain_ref_seqno.as_ref(),
+            Info::Db_Block_Info(x) => x.masterchain_ref_seqno.as_ref(),
             _ => None,
         }
     }
 
     pub fn next(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Info::Db_Block_ArchivedInfo(ref x) => x.next.as_ref(),
+            Info::Db_Block_ArchivedInfo(x) => x.next.as_ref(),
             _ => None,
         }
     }
 
     pub fn next_left(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Info::Db_Block_Info(ref x) => x.next_left.as_ref(),
+            Info::Db_Block_Info(x) => x.next_left.as_ref(),
             _ => None,
         }
     }
 
     pub fn next_right(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Info::Db_Block_Info(ref x) => x.next_right.as_ref(),
+            Info::Db_Block_Info(x) => x.next_right.as_ref(),
             _ => None,
         }
     }
 
     pub fn offset(&self) -> Option<&crate::ton::long> {
         match self {
-            Info::Db_Block_PackedInfo(ref x) => Some(&x.offset),
+            Info::Db_Block_PackedInfo(x) => Some(&x.offset),
             _ => None,
         }
     }
 
     pub fn prev_left(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Info::Db_Block_Info(ref x) => x.prev_left.as_ref(),
+            Info::Db_Block_Info(x) => x.prev_left.as_ref(),
             _ => None,
         }
     }
 
     pub fn prev_right(&self) -> Option<&crate::ton::ton_node::blockidext::BlockIdExt> {
         match self {
-            Info::Db_Block_Info(ref x) => x.prev_right.as_ref(),
+            Info::Db_Block_Info(x) => x.prev_right.as_ref(),
             _ => None,
         }
     }
 
     pub fn state(&self) -> Option<&crate::ton::int256> {
         match self {
-            Info::Db_Block_Info(ref x) => x.state.as_ref(),
+            Info::Db_Block_Info(x) => x.state.as_ref(),
             _ => None,
         }
     }
 
     pub fn ts(&self) -> Option<&crate::ton::int> {
         match self {
-            Info::Db_Block_Info(ref x) => x.ts.as_ref(),
+            Info::Db_Block_Info(x) => x.ts.as_ref(),
             _ => None,
         }
     }
 
     pub fn unixtime(&self) -> Option<&crate::ton::int> {
         match self {
-            Info::Db_Block_PackedInfo(ref x) => Some(&x.unixtime),
+            Info::Db_Block_PackedInfo(x) => Some(&x.unixtime),
             _ => None,
         }
     }

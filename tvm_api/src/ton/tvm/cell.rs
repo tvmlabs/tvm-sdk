@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.cell`\n\n```text\ntvm.cell bytes:bytes = tvm.Cell;\n```\n"]
 pub struct Cell {
@@ -12,7 +12,7 @@ impl crate::BareSerialize for Cell {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let Cell { bytes: ref bytes_ } = self;
+        let Cell { bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
         Ok(())
     }

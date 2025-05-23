@@ -13,6 +13,7 @@
 use std::sync::Arc;
 
 use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
@@ -143,9 +144,8 @@ impl SendingMessage {
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
         let net = context.get_server_link()?;
         let endpoint = net.state().get_query_endpoint().await?;
-        let (result, _updated_endpoint) = net
-            .send_message(&self.id, &self.body, Some(&endpoint), self.thread_id)
-            .await?;
+        let (result, _updated_endpoint) =
+            net.send_message(&self.id, &self.body, Some(&endpoint), self.thread_id).await?;
 
         result
     }

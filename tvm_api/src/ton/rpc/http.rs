@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `http.getNextPayloadPart`\n\n```text\nhttp.getNextPayloadPart id:int256 seqno:int max_chunk_size:int = http.PayloadPart;\n```\n"]
 pub struct GetNextPayloadPart {

@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use serde::Deserialize;
 use tvm_block::CommonMsgInfo;
 use tvm_block::GetRepresentationHash;
 use tvm_block::Message as TvmMessage;

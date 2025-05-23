@@ -33,7 +33,7 @@ pub fn print_tree_of_cells(toc: &Cell) {
             }
             println!("{}{}{}", prefix, if first { indent } else { indent_next }, hex);
         } else {
-            println!("{}{}8_", prefix, indent);
+            println!("{prefix}{indent}8_");
         }
 
         let prefix_child = if last { "  " } else { "│ " };
@@ -83,7 +83,7 @@ fn print_dictpushconst(insn: &Instruction, indent: &str) -> String {
 fn print_cell(cell: &Cell, indent: &str, dot_cell: bool) -> String {
     let mut text = String::new();
     if dot_cell {
-        text += &format!("{}.cell ", indent);
+        text += &format!("{indent}.cell ");
     }
     text += &format!("{{ ;; #{}\n", cell.repr_hash().to_hex_string());
     let inner_indent = String::from("  ") + indent;
@@ -94,7 +94,7 @@ fn print_cell(cell: &Cell, indent: &str, dot_cell: bool) -> String {
     for i in 0..refs {
         text += &print_cell(&cell.reference(i).unwrap(), &inner_indent, true);
     }
-    text += &format!("{}}}", indent);
+    text += &format!("{indent}}}");
     if dot_cell {
         text += "\n";
     }
@@ -115,11 +115,11 @@ fn print_bytecode(slice: Option<(&SliceData, usize)>, bytecode_width: usize) -> 
         if let Some((slice, refs)) = slice {
             let mut b = slice.to_hex_string();
             if refs > 0 {
-                b += &format!(" {{{}r}}", refs);
+                b += &format!(" {{{refs}r}}");
             }
             bytecode = truncate(b, bytecode_width);
         }
-        text += &format!("{:<bytecode_width$} │ ", bytecode);
+        text += &format!("{bytecode:<bytecode_width$} │ ");
     }
     text
 }
@@ -142,7 +142,7 @@ impl Code {
                             insn.params().first()
                         {
                             let hash = cell.as_ref().unwrap().repr_hash().to_hex_string();
-                            text += &format!(".cell {{ ;; #{}\n", hash);
+                            text += &format!(".cell {{ ;; #{hash}\n");
                             let inner_indent = String::from("  ") + indent;
                             text += &code.print(&inner_indent, full, bytecode_width);
                             text += indent;
@@ -161,7 +161,7 @@ impl Code {
             }
             text += &print_insn_params(insn.params(), indent, full, bytecode_width);
             if let Some(comment) = insn.comment() {
-                text += &format!(" ;; {}", comment);
+                text += &format!(" ;; {comment}");
             }
             text += "\n";
         }
@@ -187,28 +187,28 @@ fn print_insn_params(
         let mut curr_is_block = false;
         match param {
             BigInteger(i) => {
-                text += &format!("{}", i);
+                text += &format!("{i}");
             }
             ControlRegister(c) => {
-                text += &format!("c{}", c);
+                text += &format!("c{c}");
             }
             Integer(i) => {
-                text += &format!("{}", i);
+                text += &format!("{i}");
             }
             Length(l) => {
-                text += &format!("{}", l);
+                text += &format!("{l}");
             }
             LengthAndIndex(l, i) => {
-                text += &format!("{}, {}", l, i);
+                text += &format!("{l}, {i}");
             }
             Nargs(n) => {
-                text += &format!("{}", n);
+                text += &format!("{n}");
             }
             Pargs(p) => {
-                text += &format!("{}", p);
+                text += &format!("{p}");
             }
             Rargs(r) => {
-                text += &format!("{}", r);
+                text += &format!("{r}");
             }
             Slice(s) => {
                 // TODO slice may have references
@@ -216,13 +216,13 @@ fn print_insn_params(
                 text += &format!("x{}", s.to_hex_string());
             }
             StackRegister(r) => {
-                text += &format!("s{}", r);
+                text += &format!("s{r}");
             }
             StackRegisterPair(ra, rb) => {
-                text += &format!("s{}, s{}", ra, rb);
+                text += &format!("s{ra}, s{rb}");
             }
             StackRegisterTriple(ra, rb, rc) => {
-                text += &format!("s{}, s{}, s{}", ra, rb, rc);
+                text += &format!("s{ra}, s{rb}, s{rc}");
             }
             Code { code, cell } => {
                 if full {
@@ -248,7 +248,7 @@ fn print_insn_params(
                     } else {
                         text += "{\n";
                         text += &print_bytecode(None, bytecode_width);
-                        text += &format!("{}  ;; missing cell\n", indent);
+                        text += &format!("{indent}  ;; missing cell\n");
                         text += &print_bytecode(None, bytecode_width);
                         text += indent;
                         text += "}";

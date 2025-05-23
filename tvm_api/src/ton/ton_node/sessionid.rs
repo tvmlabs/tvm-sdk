@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.sessionId`\n\n```text\ntonNode.sessionId workchain:int shard:long cc_seqno:int opts_hash:int256 = tonNode.SessionId;\n```\n"]
 pub struct SessionId {

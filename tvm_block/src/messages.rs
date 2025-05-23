@@ -229,7 +229,7 @@ impl fmt::Display for MsgAddressExt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             MsgAddressExt::AddrNone => write!(f, ""),
-            MsgAddressExt::AddrExtern(addr) => write!(f, "{}", addr),
+            MsgAddressExt::AddrExtern(addr) => write!(f, "{addr}"),
         }
     }
 }
@@ -302,7 +302,7 @@ impl FromStr for MsgAddress {
             .map(|index| parts[index].parse::<i32>())
             .transpose()
             .map_err(|err| {
-                BlockError::InvalidArg(format!("workchain_id is not correct number: {}", err))
+                BlockError::InvalidArg(format!("workchain_id is not correct number: {err}"))
             })?
             .unwrap_or_default();
         let anycast = len
@@ -312,20 +312,19 @@ impl FromStr for MsgAddress {
                     Err(BlockError::InvalidArg("wrong format".to_string()))
                 } else {
                     SliceData::from_string(parts[index]).map_err(|err| {
-                        BlockError::InvalidArg(format!("anycast is not correct: {}", err))
+                        BlockError::InvalidArg(format!("anycast is not correct: {err}"))
                     })
                 }
             })
             .transpose()?
             .map(AnycastInfo::with_rewrite_pfx)
             .transpose()
-            .map_err(|err| BlockError::InvalidArg(format!("anycast is not correct: {}", err)))?;
+            .map_err(|err| BlockError::InvalidArg(format!("anycast is not correct: {err}")))?;
 
         if (-128..128).contains(&workchain_id) {
             if address.remaining_bits() != 256 {
                 fail!(BlockError::InvalidArg(format!(
-                    "account address should be 256 bits long in workchain {}",
-                    workchain_id
+                    "account address should be 256 bits long in workchain {workchain_id}"
                 )))
             }
             if parts[len - 1].len() == 64 {
@@ -343,9 +342,9 @@ impl fmt::Display for MsgAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             MsgAddress::AddrNone => write!(f, ""),
-            MsgAddress::AddrExt(addr) => write!(f, "{}", addr),
-            MsgAddress::AddrStd(addr) => write!(f, "{}", addr),
-            MsgAddress::AddrVar(addr) => write!(f, "{}", addr),
+            MsgAddress::AddrExt(addr) => write!(f, "{addr}"),
+            MsgAddress::AddrStd(addr) => write!(f, "{addr}"),
+            MsgAddress::AddrVar(addr) => write!(f, "{addr}"),
         }
     }
 }
@@ -441,7 +440,7 @@ impl MsgAddressInt {
             }
         };
 
-        if let Some(ref anycast) = anycast_opt {
+        if let Some(anycast) = anycast_opt {
             if do_rewrite {
                 account_id.overwrite_prefix(&anycast.rewrite_pfx)?;
             }
@@ -475,8 +474,8 @@ impl Serializable for MsgAddressInt {
 impl fmt::Display for MsgAddressInt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            MsgAddressInt::AddrStd(addr) => write!(f, "{}", addr),
-            MsgAddressInt::AddrVar(addr) => write!(f, "{}", addr),
+            MsgAddressInt::AddrStd(addr) => write!(f, "{addr}"),
+            MsgAddressInt::AddrVar(addr) => write!(f, "{addr}"),
         }
     }
 }
@@ -551,7 +550,7 @@ impl fmt::Display for MsgAddressIntOrNone {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             MsgAddressIntOrNone::None => write!(f, ""),
-            MsgAddressIntOrNone::Some(addr) => write!(f, "{}", addr),
+            MsgAddressIntOrNone::Some(addr) => write!(f, "{addr}"),
         }
     }
 }
@@ -850,9 +849,9 @@ impl Deserializable for ExtOutMessageHeader {
 impl fmt::Display for CommonMsgInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CommonMsgInfo::IntMsgInfo(hdr) => write!(f, "{}", hdr),
-            CommonMsgInfo::ExtInMsgInfo(hdr) => write!(f, "{}", hdr),
-            CommonMsgInfo::ExtOutMsgInfo(hdr) => write!(f, "{}", hdr),
+            CommonMsgInfo::IntMsgInfo(hdr) => write!(f, "{hdr}"),
+            CommonMsgInfo::ExtInMsgInfo(hdr) => write!(f, "{hdr}"),
+            CommonMsgInfo::ExtOutMsgInfo(hdr) => write!(f, "{hdr}"),
         }
     }
 }
@@ -985,11 +984,11 @@ impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Message {{header: {}", self.header)?;
         match &self.init {
-            Some(init) => write!(f, ", init: {:?}", init)?,
+            Some(init) => write!(f, ", init: {init:?}")?,
             None => write!(f, ", init: None")?,
         }
         match &self.body {
-            Some(body) => write!(f, ", body: {:x}", body)?,
+            Some(body) => write!(f, ", body: {body:x}")?,
             None => write!(f, ", body: None")?,
         }
         write!(f, "}}")
@@ -1180,13 +1179,13 @@ impl Message {
     /// Get reference to source internal address.
     pub fn src_ref(&self) -> Option<&MsgAddressInt> {
         let addr1 = match self.header() {
-            CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
-            CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
+            CommonMsgInfo::IntMsgInfo(imi) => &imi.src,
+            CommonMsgInfo::ExtOutMsgInfo(eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
         };
         match addr1 {
             MsgAddressIntOrNone::None => None,
-            MsgAddressIntOrNone::Some(ref addr) => Some(addr),
+            MsgAddressIntOrNone::Some(addr) => Some(addr),
         }
     }
 
@@ -1315,8 +1314,8 @@ impl Message {
     /// Get destination workchain of message
     pub fn dst_workchain_id(&self) -> Option<i32> {
         match &self.header {
-            CommonMsgInfo::IntMsgInfo(ref imi) => Some(imi.dst.get_workchain_id()),
-            CommonMsgInfo::ExtInMsgInfo(ref eimi) => Some(eimi.dst.get_workchain_id()),
+            CommonMsgInfo::IntMsgInfo(imi) => Some(imi.dst.get_workchain_id()),
+            CommonMsgInfo::ExtInMsgInfo(eimi) => Some(eimi.dst.get_workchain_id()),
             CommonMsgInfo::ExtOutMsgInfo(_) => None,
         }
     }
@@ -1329,13 +1328,13 @@ impl Message {
     /// Get source workchain of message
     pub fn src_workchain_id(&self) -> Option<i32> {
         let addr1 = match self.header() {
-            CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
-            CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
+            CommonMsgInfo::IntMsgInfo(imi) => &imi.src,
+            CommonMsgInfo::ExtOutMsgInfo(eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
         };
         match addr1 {
             MsgAddressIntOrNone::None => None,
-            MsgAddressIntOrNone::Some(ref addr) => Some(addr.get_workchain_id()),
+            MsgAddressIntOrNone::Some(addr) => Some(addr.get_workchain_id()),
         }
     }
 

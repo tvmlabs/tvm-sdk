@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validatorAdnlAddress`\n\n```text\nengine.validatorAdnlAddress id:int256 expire_at:int = engine.ValidatorAdnlAddress;\n```\n"]
 pub struct ValidatorAdnlAddress {

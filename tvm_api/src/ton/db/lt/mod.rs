@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.Key`\n\n```text\ndb.lt.desc.key workchain:int shard:long = db.lt.Key;\n\ndb.lt.el.key workchain:int shard:long idx:int = db.lt.Key;\n\ndb.lt.shard.key idx:int = db.lt.Key;\n\ndb.lt.status.key = db.lt.Key;\n```\n"]
 pub enum Key {
@@ -11,24 +11,24 @@ pub enum Key {
 impl Key {
     pub fn idx(&self) -> Option<&crate::ton::int> {
         match self {
-            Key::Db_Lt_El_Key(ref x) => Some(&x.idx),
-            Key::Db_Lt_Shard_Key(ref x) => Some(&x.idx),
+            Key::Db_Lt_El_Key(x) => Some(&x.idx),
+            Key::Db_Lt_Shard_Key(x) => Some(&x.idx),
             _ => None,
         }
     }
 
     pub fn shard(&self) -> Option<&crate::ton::long> {
         match self {
-            Key::Db_Lt_Desc_Key(ref x) => Some(&x.shard),
-            Key::Db_Lt_El_Key(ref x) => Some(&x.shard),
+            Key::Db_Lt_Desc_Key(x) => Some(&x.shard),
+            Key::Db_Lt_El_Key(x) => Some(&x.shard),
             _ => None,
         }
     }
 
     pub fn workchain(&self) -> Option<&crate::ton::int> {
         match self {
-            Key::Db_Lt_Desc_Key(ref x) => Some(&x.workchain),
-            Key::Db_Lt_El_Key(ref x) => Some(&x.workchain),
+            Key::Db_Lt_Desc_Key(x) => Some(&x.workchain),
+            Key::Db_Lt_El_Key(x) => Some(&x.workchain),
             _ => None,
         }
     }

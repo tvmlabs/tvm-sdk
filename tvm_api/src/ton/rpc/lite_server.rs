@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.getAccountState`\n\n```text\nliteServer.getAccountState id:tonNode.blockIdExt account:liteServer.accountId = liteServer.AccountState;\n```\n"]
 pub struct GetAccountState {

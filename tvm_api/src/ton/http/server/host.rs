@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `http.server.host`\n\n```text\nhttp.server.host domains:(vector string) ip:int port:int adnl_id:adnl.id.short = http.server.Host;\n```\n"]
 pub struct Host {

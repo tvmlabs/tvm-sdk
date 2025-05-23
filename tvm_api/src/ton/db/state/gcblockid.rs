@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.state.gcBlockId`\n\n```text\ndb.state.gcBlockId block:tonNode.blockIdExt = db.state.GcBlockId;\n```\n"]
 pub struct GcBlockId {

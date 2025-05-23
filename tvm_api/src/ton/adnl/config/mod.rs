@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.config.Global`\n\n```text\nadnl.config.global static_nodes:adnl.nodes = adnl.config.Global;\n```\n"]
 pub enum Global {
@@ -8,7 +8,7 @@ pub enum Global {
 impl Global {
     pub fn static_nodes(&self) -> &crate::ton::adnl::nodes::Nodes {
         match self {
-            Global::Adnl_Config_Global(ref x) => &x.static_nodes,
+            Global::Adnl_Config_Global(x) => &x.static_nodes,
         }
     }
 

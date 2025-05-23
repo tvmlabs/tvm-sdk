@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `pchan.actionClose`\n\n```text\npchan.actionClose extra_A:int64 extra_B:int64 promise:pchan.promise = pchan.Action;\n```\n"]
 pub struct ActionClose {

@@ -283,8 +283,7 @@ impl ShardIdent {
     ) -> Result<Self> {
         if shard_pfx_len > MAX_SPLIT_DEPTH {
             fail!(BlockError::InvalidArg(format!(
-                "Shard prefix length can't greater than {}",
-                MAX_SPLIT_DEPTH
+                "Shard prefix length can't greater than {MAX_SPLIT_DEPTH}"
             )))
         }
         Self::check_workchain_id(workchain_id)?;
@@ -294,8 +293,7 @@ impl ShardIdent {
     pub fn with_tagged_prefix(workchain_id: i32, shard_prefix_tagged: u64) -> Result<Self> {
         if (shard_prefix_tagged & (!0 >> (MAX_SPLIT_DEPTH + 1))) != 0 {
             fail!(BlockError::InvalidArg(format!(
-                "Shard prefix {:16X} cannot be longer than {}",
-                shard_prefix_tagged, MAX_SPLIT_DEPTH
+                "Shard prefix {shard_prefix_tagged:16X} cannot be longer than {MAX_SPLIT_DEPTH}"
             )))
         }
         Self::check_workchain_id(workchain_id)?;
@@ -311,8 +309,7 @@ impl ShardIdent {
         }
         if shard_pfx_bits > MAX_SPLIT_DEPTH {
             fail!(BlockError::InvalidArg(format!(
-                "Shard prefix length can't greater than {}",
-                MAX_SPLIT_DEPTH
+                "Shard prefix length can't greater than {MAX_SPLIT_DEPTH}"
             )))
         }
         Self::check_workchain_id(workchain_id)?;
@@ -327,8 +324,7 @@ impl ShardIdent {
     pub fn check_workchain_id(workchain_id: i32) -> Result<()> {
         if workchain_id == INVALID_WORKCHAIN_ID {
             fail!(BlockError::InvalidArg(format!(
-                "Workchain id 0x{:x} is invalid",
-                INVALID_WORKCHAIN_ID
+                "Workchain id 0x{INVALID_WORKCHAIN_ID:x} is invalid"
             )))
         }
         Ok(())
@@ -629,8 +625,7 @@ impl Deserializable for ShardIdent {
         let shard_pfx_bits = constructor_and_pfx & 0x3F;
         if shard_pfx_bits > MAX_SPLIT_DEPTH {
             fail!(BlockError::InvalidArg(format!(
-                "Shard prefix bits {} cannot be longer than {}",
-                shard_pfx_bits, MAX_SPLIT_DEPTH
+                "Shard prefix bits {shard_pfx_bits} cannot be longer than {MAX_SPLIT_DEPTH}"
             )))
         }
         let workchain_id = cell.get_next_u32()? as i32;

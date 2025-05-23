@@ -15,6 +15,8 @@ use std::str::FromStr;
 
 use num_bigint::BigInt;
 use num_traits::cast::NumCast;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_block::MsgAddressInt;
 use tvm_types::Cell;
 use tvm_types::SliceData;
@@ -127,7 +129,7 @@ pub(crate) fn base64_decode(base64: &str) -> ClientResult<Vec<u8>> {
 }
 
 pub(crate) fn long_num_to_json_string(num: u64) -> String {
-    format!("0x{:x}", num)
+    format!("0x{num:x}")
 }
 
 pub fn decode_abi_bigint(string: &str) -> ClientResult<BigInt> {

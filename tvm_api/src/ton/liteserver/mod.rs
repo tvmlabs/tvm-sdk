@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `liteserver.Desc`\n\n```text\nliteserver.desc id:PublicKey ip:int port:int = liteserver.Desc;\n```\n"]
 pub enum Desc {
@@ -8,19 +8,19 @@ pub enum Desc {
 impl Desc {
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
-            Desc::Liteserver_Desc(ref x) => &x.id,
+            Desc::Liteserver_Desc(x) => &x.id,
         }
     }
 
     pub fn ip(&self) -> &crate::ton::int {
         match self {
-            Desc::Liteserver_Desc(ref x) => &x.ip,
+            Desc::Liteserver_Desc(x) => &x.ip,
         }
     }
 
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            Desc::Liteserver_Desc(ref x) => &x.port,
+            Desc::Liteserver_Desc(x) => &x.port,
         }
     }
 

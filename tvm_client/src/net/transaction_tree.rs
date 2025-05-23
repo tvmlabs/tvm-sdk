@@ -13,6 +13,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::abi::Abi;
@@ -34,7 +36,7 @@ fn get_string(v: &Value, name: &str) -> Option<String> {
 
 fn required_string(v: &Value, name: &str) -> ClientResult<String> {
     v[name].as_str().map(|x| x.to_string()).ok_or_else(|| {
-        crate::net::Error::invalid_server_response(format!("Missing required field {}", name))
+        crate::net::Error::invalid_server_response(format!("Missing required field {name}"))
     })
 }
 

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validator.config.random.local`\n\n```text\nvalidator.config.random.local addr_list:adnl.addressList = validator.config.Local;\n```\n"]
 pub struct Local {

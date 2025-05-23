@@ -1,6 +1,12 @@
-use crate::{Cell, CellImpl, CellType, LevelMask, UInt256};
 use std::collections::HashSet;
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
+use std::sync::Weak;
+
+use crate::Cell;
+use crate::CellImpl;
+use crate::CellType;
+use crate::LevelMask;
+use crate::UInt256;
 
 #[derive(Clone)]
 pub struct UsageCell {

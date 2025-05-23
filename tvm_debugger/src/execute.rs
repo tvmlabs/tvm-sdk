@@ -57,7 +57,7 @@ pub(crate) fn execute(args: &RunArgs, res: &mut ExecutionResult) -> anyhow::Resu
 
     let exit_code = engine.execute().unwrap_or_else(|error| match tvm_exception(error) {
         Ok(exception) => {
-            res.log(format!("Unhandled exception: {}", exception));
+            res.log(format!("Unhandled exception: {exception}"));
             exception.exception_or_custom_code()
         }
         _ => -1,
@@ -66,8 +66,8 @@ pub(crate) fn execute(args: &RunArgs, res: &mut ExecutionResult) -> anyhow::Resu
     res.exit_code(exit_code);
     res.vm_success(engine.get_committed_state().is_committed());
     res.gas_used(engine.get_gas().get_gas_used());
-    res.log(format!("{}", engine.dump_stack("Post-execution stack state", false)));
-    res.log(format!("{}", engine.dump_ctrls(false)));
+    res.log(engine.dump_stack("Post-execution stack state", false).to_string());
+    res.log(engine.dump_ctrls(false).to_string());
 
     if res.is_vm_success {
         decode_actions(engine.get_actions(), &mut contract_state_init, args, res)?;

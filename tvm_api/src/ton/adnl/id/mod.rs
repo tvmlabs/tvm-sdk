@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.id.Short`\n\n```text\nadnl.id.short id:int256 = adnl.id.Short;\n```\n"]
 pub enum Short {
@@ -8,7 +8,7 @@ pub enum Short {
 impl Short {
     pub fn id(&self) -> &crate::ton::int256 {
         match self {
-            Short::Adnl_Id_Short(ref x) => &x.id,
+            Short::Adnl_Id_Short(x) => &x.id,
         }
     }
 

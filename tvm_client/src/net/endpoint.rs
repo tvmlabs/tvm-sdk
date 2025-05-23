@@ -93,16 +93,16 @@ impl Endpoint {
             } else {
                 HTTPS_PROTOCOL
             };
-            base_url = format!("{}{}", protocol, base_url);
+            base_url = format!("{protocol}{base_url}");
         };
-        if base_url.ends_with("/graphql") { base_url } else { format!("{}/graphql", base_url) }
+        if base_url.ends_with("/graphql") { base_url } else { format!("{base_url}/graphql") }
     }
 
     fn construct_send_messages_url(original: &str, use_https: bool) -> ClientResult<String> {
         let original = if original.contains("://") {
             original.to_string()
         } else {
-            format!("http://{}", original)
+            format!("http://{original}")
         };
 
         let mut url = reqwest::Url::parse(&original).map_err(Error::parse_url_failed)?;
@@ -128,13 +128,7 @@ impl Endpoint {
             headers.insert(name, value);
         }
         let response = client_env
-            .fetch(
-                &format!("{}{}", query_url, query),
-                FetchMethod::Get,
-                Some(headers),
-                None,
-                timeout,
-            )
+            .fetch(&format!("{query_url}{query}"), FetchMethod::Get, Some(headers), None, timeout)
             .await?;
         if response.status == 401 {
             return Err(Error::unauthorized(&response));
@@ -207,8 +201,7 @@ impl Endpoint {
             let parse_part = |i: usize| {
                 parts[i].parse::<u32>().map_err(|err| {
                     Error::invalid_server_response(format!(
-                        "Can not parse version {}: {}",
-                        version, err
+                        "Can not parse version {version}: {err}"
                     ))
                 })
             };

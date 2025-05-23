@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.signature`\n\n```text\nliteServer.signature node_id_short:int256 signature:bytes = liteServer.Signature;\n```\n"]
 pub struct Signature {

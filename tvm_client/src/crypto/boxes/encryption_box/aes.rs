@@ -21,6 +21,8 @@ use aes::NewBlockCipher;
 use base64::Engine;
 use block_modes::BlockMode;
 use block_modes::Cbc;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::base64_encode;
 use zeroize::ZeroizeOnDrop;
 
@@ -106,7 +108,7 @@ impl AesEncryptionBox {
     {
         Self::create_block_mode::<C, B>(key, iv)?
             .encrypt(data, size)
-            .map_err(|err| Error::encrypt_data_error(format!("{:#?}", err)))
+            .map_err(|err| Error::encrypt_data_error(format!("{err:#?}")))
     }
 
     fn decrypt_data<C, B>(key: &[u8], iv: &[u8], data: &mut [u8]) -> ClientResult<()>
@@ -116,7 +118,7 @@ impl AesEncryptionBox {
     {
         Self::create_block_mode::<C, B>(key, iv)?
             .decrypt(data)
-            .map_err(|err| Error::decrypt_data_error(format!("{:#?}", err)))
+            .map_err(|err| Error::decrypt_data_error(format!("{err:#?}")))
             .map(|_| ())
     }
 

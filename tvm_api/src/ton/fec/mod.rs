@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `fec.Type`\n\n```text\nfec.online data_size:int symbol_size:int symbols_count:int = fec.Type;\n\nfec.raptorQ data_size:int symbol_size:int symbols_count:int = fec.Type;\n\nfec.roundRobin data_size:int symbol_size:int symbols_count:int = fec.Type;\n```\n"]
 pub enum Type {
@@ -10,25 +10,25 @@ pub enum Type {
 impl Type {
     pub fn data_size(&self) -> &crate::ton::int {
         match self {
-            Type::Fec_Online(ref x) => &x.data_size,
-            Type::Fec_RaptorQ(ref x) => &x.data_size,
-            Type::Fec_RoundRobin(ref x) => &x.data_size,
+            Type::Fec_Online(x) => &x.data_size,
+            Type::Fec_RaptorQ(x) => &x.data_size,
+            Type::Fec_RoundRobin(x) => &x.data_size,
         }
     }
 
     pub fn symbol_size(&self) -> &crate::ton::int {
         match self {
-            Type::Fec_Online(ref x) => &x.symbol_size,
-            Type::Fec_RaptorQ(ref x) => &x.symbol_size,
-            Type::Fec_RoundRobin(ref x) => &x.symbol_size,
+            Type::Fec_Online(x) => &x.symbol_size,
+            Type::Fec_RaptorQ(x) => &x.symbol_size,
+            Type::Fec_RoundRobin(x) => &x.symbol_size,
         }
     }
 
     pub fn symbols_count(&self) -> &crate::ton::int {
         match self {
-            Type::Fec_Online(ref x) => &x.symbols_count,
-            Type::Fec_RaptorQ(ref x) => &x.symbols_count,
-            Type::Fec_RoundRobin(ref x) => &x.symbols_count,
+            Type::Fec_Online(x) => &x.symbols_count,
+            Type::Fec_RaptorQ(x) => &x.symbols_count,
+            Type::Fec_RoundRobin(x) => &x.symbols_count,
         }
     }
 }

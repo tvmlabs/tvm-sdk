@@ -4,6 +4,8 @@ use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 
 use async_trait::async_trait;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use tvm_client_processing::MessageMonitorSdkServices;
 use tvm_client_processing::MessageMonitoringParams;
@@ -13,7 +15,6 @@ use tvm_client_processing::MessageMonitoringTransaction;
 use tvm_client_processing::MessageMonitoringTransactionCompute;
 use tvm_client_processing::MonitoredMessage;
 use tvm_client_processing::NetSubscription;
-use tvm_types::Cell;
 
 use crate::boc::cache::Bocs;
 use crate::error::ClientError;
@@ -154,7 +155,11 @@ impl MessageMonitorSdkServices for SdkServices {
         self.net.env.now_ms()
     }
 
-    fn cell_from_boc(&self, boc: &str, name: &str) -> tvm_client_processing::Result<Cell> {
+    fn cell_from_boc(
+        &self,
+        boc: &str,
+        name: &str,
+    ) -> Result<tvm_types::cell::Cell, tvm_client_processing::Error> {
         let (_, cell) = self.bocs.deserialize_cell(boc, name)?;
         Ok(cell)
     }

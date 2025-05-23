@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.config.global`\n\n```text\ndht.config.global static_nodes:dht.nodes k:int a:int = dht.config.Global;\n```\n"]
 pub struct Global {

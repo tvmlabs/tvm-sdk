@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.status.Value`\n\n```text\ndb.lt.status.value total_shards:int = db.lt.status.Value;\n```\n"]
 pub enum Value {
@@ -8,7 +8,7 @@ pub enum Value {
 impl Value {
     pub fn total_shards(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_Status_Value(ref x) => &x.total_shards,
+            Value::Db_Lt_Status_Value(x) => &x.total_shards,
         }
     }
 

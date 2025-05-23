@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block.inner.Data`\n\n```text\ncatchain.block.data.badBlock block:catchain.block = catchain.block.inner.Data;\n\ncatchain.block.data.fork left:catchain.block.Dep right:catchain.block.Dep = catchain.block.inner.Data;\n\ncatchain.block.data.nop = catchain.block.inner.Data;\n\ncatchain.block.data.vector msgs:(vector bytes) = catchain.block.inner.Data;\n```\n"]
 pub enum Data {
@@ -15,28 +15,28 @@ pub enum Data {
 impl Data {
     pub fn block(&self) -> Option<&crate::ton::catchain::block::Block> {
         match self {
-            Data::Catchain_Block_Data_BadBlock(ref x) => Some(&x.block),
+            Data::Catchain_Block_Data_BadBlock(x) => Some(&x.block),
             _ => None,
         }
     }
 
     pub fn left(&self) -> Option<&crate::ton::catchain::block::Dep> {
         match self {
-            Data::Catchain_Block_Data_Fork(ref x) => Some(&x.left),
+            Data::Catchain_Block_Data_Fork(x) => Some(&x.left),
             _ => None,
         }
     }
 
     pub fn msgs(&self) -> Option<&crate::ton::vector<crate::ton::Bare, crate::ton::bytes>> {
         match self {
-            Data::Catchain_Block_Data_Vector(ref x) => Some(&x.msgs),
+            Data::Catchain_Block_Data_Vector(x) => Some(&x.msgs),
             _ => None,
         }
     }
 
     pub fn right(&self) -> Option<&crate::ton::catchain::block::Dep> {
         match self {
-            Data::Catchain_Block_Data_Fork(ref x) => Some(&x.right),
+            Data::Catchain_Block_Data_Fork(x) => Some(&x.right),
             _ => None,
         }
     }
