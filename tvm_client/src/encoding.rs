@@ -12,10 +12,11 @@
 #![allow(dead_code)]
 
 use std::str::FromStr;
-use serde::{Serialize, Deserialize};
 
 use num_bigint::BigInt;
 use num_traits::cast::NumCast;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_block::MsgAddressInt;
 use tvm_types::Cell;
 use tvm_types::SliceData;
