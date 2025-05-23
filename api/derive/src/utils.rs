@@ -306,10 +306,12 @@ fn reduce_lines(lines: Vec<String>) -> Vec<String> {
         }
         reduced.push(line);
     }
-    if min_leading_spaces.is_some() && min_leading_spaces.unwrap() > 0 {
-        for line in &mut reduced {
-            if !line.is_empty() {
-                *line = line[min_leading_spaces.unwrap()..].into();
+    if let Some(min_leading_spaces) = min_leading_spaces {
+        if min_leading_spaces > 0 {
+            for line in &mut reduced {
+                if !line.is_empty() {
+                    *line = line[min_leading_spaces..].into();
+                }
             }
         }
     }
