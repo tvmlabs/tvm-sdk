@@ -656,13 +656,12 @@ impl ServerLink {
 
             if let Err(err) = &result {
                 if crate::client::Error::is_network_error(err)
-                    && self.state.can_retry_network_error(start) {
-                        let _ = self
-                            .client_env
-                            .set_timer(self.state.next_resume_timeout() as u64)
-                            .await;
-                        continue;
-                    }
+                    && self.state.can_retry_network_error(start)
+                {
+                    let _ =
+                        self.client_env.set_timer(self.state.next_resume_timeout() as u64).await;
+                    continue;
+                }
             }
 
             return result;

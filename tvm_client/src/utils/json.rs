@@ -19,9 +19,9 @@ pub trait JsonHelper {
 
 impl JsonHelper for Value {
     fn get_u64(&self, field: &str) -> Result<u64> {
-        self[field].as_u64().ok_or_else(|| {
-            failure::err_msg(format!("`{field}` field must be an unsigned integer"))
-        })
+        self[field]
+            .as_u64()
+            .ok_or_else(|| failure::err_msg(format!("`{field}` field must be an unsigned integer")))
     }
 
     fn get_i64(&self, field: &str) -> Result<i64> {

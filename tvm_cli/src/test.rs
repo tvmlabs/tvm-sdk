@@ -322,9 +322,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         account.set_addr(addr);
     }
     let output = PathBuf::from(input).with_extension("boc");
-    account
-        .write_to_file(&output)
-        .map_err(|e| format!("Failed write to file {output:?}: {e}"))?;
+    account.write_to_file(&output).map_err(|e| format!("Failed write to file {output:?}: {e}"))?;
     if !config.is_json {
         println!("Account written to {output:?}");
     }

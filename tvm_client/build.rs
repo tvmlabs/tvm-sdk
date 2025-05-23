@@ -74,11 +74,8 @@ impl BuildInfo {
                 let name = x["name"].as_str().unwrap().to_string();
                 let version = x["version"].as_str().unwrap().to_string();
                 if build_number.is_empty() && name == "tvm_client" {
-                    build_number = version
-                        .split('.')
-                        .map(|x| format!("{x:0>3}"))
-                        .collect::<Vec<_>>()
-                        .join("");
+                    build_number =
+                        version.split('.').map(|x| format!("{x:0>3}")).collect::<Vec<_>>().join("");
                 }
                 let source = x["source"].as_str().unwrap_or("");
                 let git_commit = if !source.is_empty() {

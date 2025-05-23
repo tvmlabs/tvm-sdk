@@ -917,9 +917,10 @@ pub trait TransactionExecutor {
                 }
                 OutAction::MintShellToken { mut value } => {
                     if available_credit != INFINITY_CREDIT
-                        && value as i128 + *minted_shell as i128 > available_credit {
-                            value = available_credit.try_into()?;
-                        }
+                        && value as i128 + *minted_shell as i128 > available_credit
+                    {
+                        value = available_credit.try_into()?;
+                    }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
                             *minted_shell += value as u128;
@@ -1497,13 +1498,12 @@ fn outmsg_action_handler(
     let compute_fwd_fee = if is_special {
         Grams::default()
     } else {
-        msg
-            .serialize()
-            .and_then(|cell| config.calc_fwd_fee(msg.is_masterchain(), &cell))
-            .map_err(|err| {
+        msg.serialize().and_then(|cell| config.calc_fwd_fee(msg.is_masterchain(), &cell)).map_err(
+            |err| {
                 log::error!(target: "executor", "cannot serialize message in action phase : {err}");
                 RESULT_CODE_ACTIONLIST_INVALID
-            })?
+            },
+        )?
     };
 
     if let Some(int_header) = msg.int_header_mut() {

@@ -29,10 +29,12 @@ pub fn verify_groth16_in_bytes(
         return Err(ZkCryptoError::InputLengthWrong(SCALAR_SIZE));
     }
 
-    let pvk = PreparedVerifyingKey::deserialize(&[vk_gamma_abc_g1_bytes,
+    let pvk = PreparedVerifyingKey::deserialize(&[
+        vk_gamma_abc_g1_bytes,
         alpha_g1_beta_g2_bytes,
         gamma_g2_neg_pc_bytes,
-        delta_g2_neg_pc_bytes])?;
+        delta_g2_neg_pc_bytes,
+    ])?;
 
     verify_groth16(&pvk, proof_public_inputs_as_bytes, proof_points_as_bytes)
 }

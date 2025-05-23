@@ -111,8 +111,7 @@ impl MsgInterface {
         .map_err(|e| format!("failed to decode message: {e}"))?;
         let abi_str = self.debot_abi.json_string().unwrap();
         let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{e}"))?;
-        let answer_id =
-            contract.function(&result.name).map_err(|e| format!("{e}"))?.get_input_id();
+        let answer_id = contract.function(&result.name).map_err(|e| format!("{e}"))?.get_input_id();
         Ok((answer_id, result.value.unwrap_or_default()))
     }
 
@@ -149,8 +148,7 @@ impl MsgInterface {
         .map_err(|e| format!("failed to decode message: {e}"))?;
         let abi_str = self.debot_abi.json_string().unwrap();
         let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{e}"))?;
-        let answer_id =
-            contract.function(&result.name).map_err(|e| format!("{e}"))?.get_input_id();
+        let answer_id = contract.function(&result.name).map_err(|e| format!("{e}"))?.get_input_id();
         Ok((answer_id, result.value.unwrap_or_default()))
     }
 }

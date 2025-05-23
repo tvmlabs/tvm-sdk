@@ -504,9 +504,7 @@ fn reformat(filename: &Path) {
         Ok(status) => status,
         Err(err) => {
             if !WARNING_PRINTED.swap(true, Ordering::Relaxed) {
-                println!(
-                    "cargo:warning=rustfmt failed to start: {err:?}. {INSTALL_INSTRUCTIONS}"
-                );
+                println!("cargo:warning=rustfmt failed to start: {err:?}. {INSTALL_INSTRUCTIONS}");
             }
             return;
         }
@@ -535,9 +533,9 @@ impl Namespace {
                 .or_insert_with(|| NamespaceItem::AnotherNamespace(Default::default()))
             {
                 &mut NamespaceItem::AnotherNamespace(ref mut ns) => ns,
-                other => panic!(
-                    "descend_tree: duplicate namespace item {name} {other:?} {names:?}"
-                ),
+                other => {
+                    panic!("descend_tree: duplicate namespace item {name} {other:?} {names:?}")
+                }
             }
         })
     }

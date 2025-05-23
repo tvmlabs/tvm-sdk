@@ -663,8 +663,7 @@ impl SdkInterface {
     async fn encrypt_or_decrypt(&self, args: &Value, encrypt: bool) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let encryption_box = EncryptionBoxHandle(get_num_arg::<u32>(args, "boxHandle")?);
-        let data =
-            base64_encode(hex::decode(get_arg(args, "data")?).map_err(|e| format!("{e}"))?);
+        let data = base64_encode(hex::decode(get_arg(args, "data")?).map_err(|e| format!("{e}"))?);
         let result = if encrypt {
             encryption_box_encrypt(
                 self.ton.clone(),

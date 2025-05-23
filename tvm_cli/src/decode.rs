@@ -383,10 +383,8 @@ async fn decode_body(
     };
     let mut signature = None;
 
-    let cell =
-        read_single_root_boc(body_vec).map_err(|e| format!("Failed to create cell: {e}"))?;
-    let orig_slice =
-        SliceData::load_cell(cell).map_err(|e| format!("Failed to load cell: {e}"))?;
+    let cell = read_single_root_boc(body_vec).map_err(|e| format!("Failed to create cell: {e}"))?;
+    let orig_slice = SliceData::load_cell(cell).map_err(|e| format!("Failed to load cell: {e}"))?;
     if is_external {
         let mut slice = orig_slice.clone();
         let flag = slice.get_next_bit();

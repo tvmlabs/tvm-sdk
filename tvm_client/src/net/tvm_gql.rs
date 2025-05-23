@@ -492,7 +492,9 @@ impl GraphQLQuery {
     pub fn with_collection_subscription(table: &str, filter: &Value, fields: &str) -> Self {
         let filter_type = Self::filter_type_for_collection(table);
 
-        let query = format!("subscription {table}($filter: {filter_type}) {{ {table}(filter: $filter) {{ {fields} }} }}");
+        let query = format!(
+            "subscription {table}($filter: {filter_type}) {{ {table}(filter: $filter) {{ {fields} }} }}"
+        );
         let query = query.split_whitespace().collect::<Vec<&str>>().join(" ");
         let variables = Some(json!({
             "filter" : filter,

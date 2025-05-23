@@ -128,13 +128,7 @@ impl Endpoint {
             headers.insert(name, value);
         }
         let response = client_env
-            .fetch(
-                &format!("{query_url}{query}"),
-                FetchMethod::Get,
-                Some(headers),
-                None,
-                timeout,
-            )
+            .fetch(&format!("{query_url}{query}"), FetchMethod::Get, Some(headers), None, timeout)
             .await?;
         if response.status == 401 {
             return Err(Error::unauthorized(&response));
