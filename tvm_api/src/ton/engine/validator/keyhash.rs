@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.keyHash`\n\n```text\nengine.validator.keyHash key_hash:int256 = engine.validator.KeyHash;\n```\n"]
 pub struct KeyHash {

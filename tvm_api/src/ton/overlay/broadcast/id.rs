@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.broadcast.id`\n\n```text\noverlay.broadcast.id src:int256 data_hash:int256 flags:int = overlay.broadcast.Id;\n```\n"]
 pub struct Id {

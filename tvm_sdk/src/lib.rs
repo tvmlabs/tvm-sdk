@@ -9,9 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-#[macro_use]
-extern crate serde_derive;
-
 extern crate api_info;
 #[macro_use]
 extern crate api_derive;

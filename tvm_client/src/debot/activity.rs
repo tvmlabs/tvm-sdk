@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 /// [UNSTABLE](UNSTABLE.md) [DEPRECATED](DEPRECATED.md) Describes how much funds
 /// will be debited from the target  contract balance as a result of the
 /// transaction.

@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_block::ExternalInboundMessageHeader;
 use tvm_block::GetRepresentationHash;
 use tvm_block::MsgAddressExt;

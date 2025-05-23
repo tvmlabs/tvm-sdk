@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.message.approvedBlock`\n\n```text\nvalidatorSession.message.approvedBlock round:int candidate:int256 signature:bytes = validatorSession.round.Message;\n```\n"]
 pub struct ApprovedBlock {

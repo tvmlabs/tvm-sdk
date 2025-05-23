@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validatorTempKey`\n\n```text\nengine.validatorTempKey key:int256 expire_at:int = engine.ValidatorTempKey;\n```\n"]
 pub struct ValidatorTempKey {

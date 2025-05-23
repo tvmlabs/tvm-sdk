@@ -12,6 +12,8 @@
 use std::fmt;
 
 use num_traits::cast::ToPrimitive;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::Result;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;

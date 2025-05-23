@@ -81,6 +81,7 @@ pub use init_data::encode_initial_data;
 pub use init_data::update_initial_data;
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
 pub use signing::Signer;
 pub use types::Abi;
 pub use types::AbiContract;

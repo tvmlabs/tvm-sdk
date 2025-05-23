@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block.inner.Data`\n\n```text\ncatchain.block.data.badBlock block:catchain.block = catchain.block.inner.Data;\n\ncatchain.block.data.fork left:catchain.block.Dep right:catchain.block.Dep = catchain.block.inner.Data;\n\ncatchain.block.data.nop = catchain.block.inner.Data;\n\ncatchain.block.data.vector msgs:(vector bytes) = catchain.block.inner.Data;\n```\n"]
 pub enum Data {

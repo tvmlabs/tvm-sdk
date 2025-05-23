@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde_json::Value;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct Error {
     pub code: u32,
     pub message: String,

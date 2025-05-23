@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.filedb.Key`\n\n```text\ndb.filedb.key.blockFile block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.blockInfo block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.candidate id:db.candidate.id = db.filedb.Key;\n\ndb.filedb.key.empty = db.filedb.Key;\n\ndb.filedb.key.persistentStateFile block_id:tonNode.blockIdExt masterchain_block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.proof block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.proofLink block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.signatures block_id:tonNode.blockIdExt = db.filedb.Key;\n\ndb.filedb.key.zeroStateFile block_id:tonNode.blockIdExt = db.filedb.Key;\n```\n"]
 pub enum Key {

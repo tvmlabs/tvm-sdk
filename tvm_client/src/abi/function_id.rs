@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use super::Abi;
 use super::Error;
 use crate::client::ClientContext;

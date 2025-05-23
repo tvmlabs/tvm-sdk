@@ -1,6 +1,8 @@
 use ed25519_dalek::SigningKey;
 use ed25519_dalek::VerifyingKey;
 use hmac::*;
+use serde::Deserialize;
+use serde::Serialize;
 use sha2::Digest;
 use sha2::Sha512;
 use zeroize::Zeroize;

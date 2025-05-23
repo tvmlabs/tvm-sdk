@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.id.short`\n\n```text\nadnl.id.short id:int256 = adnl.id.Short;\n```\n"]
 pub struct Short {

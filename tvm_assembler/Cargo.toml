@@ -19,7 +19,6 @@ num-traits.workspace = true
 serde.workspace = true
 serde_repr.workspace = true
 serde_json.workspace = true
-serde_derive.workspace = true
 num-bigint.workspace = true
 
 ed25519-dalek.workspace = true

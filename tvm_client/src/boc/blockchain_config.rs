@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_block::Serializable;
 use tvm_types::base64_encode;
 

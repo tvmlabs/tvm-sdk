@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.db.key.bucket`\n\n```text\ndht.db.key.bucket id:int = dht.db.Key;\n```\n"]
 pub struct Bucket {

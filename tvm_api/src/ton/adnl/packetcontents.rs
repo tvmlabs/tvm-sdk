@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.packetContents`\n\n```text\nadnl.packetContents \n  rand1:bytes \n  flags:# \n  from:flags.0?PublicKey \n  from_short:flags.1?adnl.id.short\n  message:flags.2?adnl.Message \n  messages:flags.3?(vector adnl.Message)\n  address:flags.4?adnl.addressList \n  priority_address:flags.5?adnl.addressList\n  seqno:flags.6?long \n  confirm_seqno:flags.7?long \n  recv_addr_list_version:flags.8?int\n  recv_priority_addr_list_version:flags.9?int\n  reinit_date:flags.10?int \n  dst_reinit_date:flags.10?int\n  signature:flags.11?bytes \n  rand2:bytes \n        = adnl.PacketContents;\n```\n"]
 pub struct PacketContents {

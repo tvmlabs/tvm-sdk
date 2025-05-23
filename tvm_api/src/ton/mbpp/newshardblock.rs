@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `mbpp.newShardBlock`\n\n```text\nmbpp.newShardBlock id:tonNode.blockIdExt cc_seqno:int tbd:bytes block:bytes = mbpp.NewShardBlock;\n```\n"]
 pub struct NewShardBlock {

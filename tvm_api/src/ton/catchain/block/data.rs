@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block.data`\n\n```text\ncatchain.block.data prev:catchain.block.dep deps:(vector catchain.block.dep) = catchain.block.Data;\n```\n"]
 pub struct Data {

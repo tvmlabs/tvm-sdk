@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.value`\n\n```text\ndht.value key:dht.keyDescription value:bytes ttl:int signature:bytes = dht.Value;\n```\n"]
 pub struct Value {

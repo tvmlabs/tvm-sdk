@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.nodes`\n\n```text\ndht.nodes nodes:(vector dht.node) = dht.Nodes;\n```\n"]
 pub struct Nodes {

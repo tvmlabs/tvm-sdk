@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.liteServer`\n\n```text\nengine.liteServer id:int256 port:int = engine.LiteServer;\n```\n"]
 pub struct LiteServer {

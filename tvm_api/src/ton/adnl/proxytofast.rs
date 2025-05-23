@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.proxyToFast`\n\n```text\nadnl.proxyToFast ip:int port:int date:int signature:int256 = adnl.ProxyToSign;\n```\n"]
 pub struct ProxyToFast {

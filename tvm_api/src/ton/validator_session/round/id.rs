@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.round.id`\n\n```text\nvalidatorSession.round.id session:int256 height:long prev_block:int256 seqno:int = validatorSession.round.Id;\n```\n"]
 pub struct Id {

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `options.setConfig`\n\n```text\noptions.setConfig config:config = options.ConfigInfo;\n```\n"]
 pub struct SetConfig {

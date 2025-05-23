@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.block.data.badBlock`\n\n```text\ncatchain.block.data.badBlock block:catchain.block = catchain.block.inner.Data;\n```\n"]
 pub struct BadBlock {

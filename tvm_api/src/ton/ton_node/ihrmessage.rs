@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.ihrMessage`\n\n```text\ntonNode.ihrMessage data:bytes = tonNode.IhrMessage;\n```\n"]
 pub struct IhrMessage {

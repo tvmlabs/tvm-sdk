@@ -23,6 +23,8 @@ pub(crate) mod aes;
 pub(crate) mod chacha20;
 pub(crate) mod nacl_box;
 pub(crate) mod nacl_secret_box;
+use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Clone, Debug, ApiType, Default, PartialEq)]
 pub struct EncryptionBoxHandle(pub u32);

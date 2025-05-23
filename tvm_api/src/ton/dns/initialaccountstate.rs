@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.initialAccountState`\n\n```text\ndns.initialAccountState public_key:string wallet_id:int64 = InitialAccountState;\n```\n"]
 pub struct InitialAccountState {

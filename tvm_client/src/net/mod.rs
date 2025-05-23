@@ -42,6 +42,8 @@ pub use queries::query;
 pub use queries::query_collection;
 pub use queries::query_counterparties;
 pub use queries::wait_for_collection;
+use serde::Deserialize;
+use serde::Serialize;
 pub(crate) use server_link::EndpointStat;
 pub(crate) use server_link::MAX_TIMEOUT;
 pub(crate) use server_link::NetworkState;

@@ -36,6 +36,7 @@ mod tests;
 mod tests_interfaces;
 
 use std::sync::Arc;
+use serde::{Serialize, Deserialize};
 
 pub use action::DAction;
 pub use activity::DebotActivity;

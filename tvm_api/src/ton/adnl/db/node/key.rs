@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.db.node.key`\n\n```text\nadnl.db.node.key local_id:int256 peer_id:int256 = adnl.db.Key;\n```\n"]
 pub struct Key {

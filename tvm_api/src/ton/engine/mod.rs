@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.Addr`\n\n```text\nengine.addr ip:int port:int categories:(vector int) priority_categories:(vector int) = engine.Addr;\n\nengine.addrProxy in_ip:int in_port:int out_ip:int out_port:int \n          proxy_type:adnl.Proxy categories:(vector int) priority_categories:(vector int) = engine.Addr;\n```\n"]
 pub enum Addr {

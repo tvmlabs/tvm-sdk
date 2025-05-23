@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.config.Global`\n\n```text\ncatchain.config.global tag:int256 nodes:(vector PublicKey) = catchain.config.Global;\n```\n"]
 pub enum Global {

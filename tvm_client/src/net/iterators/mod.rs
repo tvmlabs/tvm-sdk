@@ -14,6 +14,9 @@ pub(crate) mod block_iterator;
 pub(crate) mod transaction;
 pub(crate) mod transaction_iterator;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 #[cfg(test)]
 mod tests;
 

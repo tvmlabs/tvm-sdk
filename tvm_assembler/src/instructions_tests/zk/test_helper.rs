@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use base64ct::Encoding as bEncoding;
 use serde::Deserialize;
-use serde_derive::Serialize;
+use serde::Serialize;
 use tvm_types::Cell;
 use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
 use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;

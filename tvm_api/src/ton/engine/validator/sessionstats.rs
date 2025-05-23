@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.sessionStats`\n\n```text\nengine.validator.sessionStats stats:(vector engine.validator.oneSessionStat) = engine.validator.SessionStats;\n```\n"]
 pub struct SessionStats {

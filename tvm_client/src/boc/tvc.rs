@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_struct::scheme::TVC;

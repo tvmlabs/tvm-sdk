@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `ton.blockId`\n\n```text\nton.blockId root_cell_hash:int256 file_hash:int256 = ton.BlockId;\n```\n"]
 pub struct BlockId {

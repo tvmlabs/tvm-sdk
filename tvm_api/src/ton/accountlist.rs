@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `accountList`\n\n```text\naccountList accounts:vector<fullAccountState> = AccountList;\n```\n"]
 pub struct AccountList {

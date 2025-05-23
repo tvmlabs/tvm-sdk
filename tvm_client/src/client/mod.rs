@@ -15,6 +15,8 @@ pub(crate) mod errors;
 #[cfg(not(feature = "wasm-base"))]
 mod std_client_env;
 pub(crate) mod storage;
+use serde::Deserialize;
+use serde::Serialize;
 #[cfg(not(feature = "wasm-base"))]
 pub(crate) use std_client_env::ClientEnv;
 #[cfg(not(feature = "wasm-base"))]

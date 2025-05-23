@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use ed25519_dalek::SigningKey;
 use lockfree::map::ReadGuard;
+use serde::Deserialize;
+use serde::Serialize;
 use tokio::sync::RwLock;
 use tvm_types::base64_encode;
 use zeroize::Zeroize;

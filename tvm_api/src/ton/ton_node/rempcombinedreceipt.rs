@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempCombinedReceipt`\n\n```text\ntonNode.rempCombinedReceipt source_id:int256 ids:(vector tonNode.blockIdExt) \n        receipts:(vector tonNode.RempReceiptCompact) = tonNode.RempCombinedReceipt;\n```\n"]
 pub struct RempCombinedReceipt {

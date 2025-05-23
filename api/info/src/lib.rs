@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct API {

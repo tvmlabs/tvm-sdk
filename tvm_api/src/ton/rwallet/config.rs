@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `rwallet.config`\n\n```text\nrwallet.config start_at:int53 limits:vector<rwallet.limit> = rwallet.Config;\n```\n"]
 pub struct Config {

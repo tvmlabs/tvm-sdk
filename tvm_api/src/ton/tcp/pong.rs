@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tcp.pong`\n\n```text\ntcp.pong random_id:long = tcp.Pong;\n```\n"]
 pub struct Pong {

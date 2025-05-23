@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq, Default)]
 #[doc = "TL-derived from `mbpp.NewMcBlock`\n\n```text\nmbpp.newMcBlockNone = mbpp.NewMcBlock;\n\nmbpp.newMcBlockSome block:tonNode.blockBroadcast = mbpp.NewMcBlock;\n```\n"]
 pub enum NewMcBlock {

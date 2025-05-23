@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `config`\n\n```text\nconfig config:string blockchain_name:string use_callbacks_for_network:Bool ignore_cache:Bool = Config;\n```\n"]
 pub struct Config {

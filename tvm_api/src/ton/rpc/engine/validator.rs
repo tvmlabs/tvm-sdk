@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.addAdnlId`\n\n```text\nengine.validator.addAdnlId key_hash:int256 category:int = engine.validator.Success;\n```\n"]
 pub struct AddAdnlId {

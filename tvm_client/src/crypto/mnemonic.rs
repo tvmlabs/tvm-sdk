@@ -14,6 +14,8 @@ use bip39::Mnemonic;
 use bip39::MnemonicType;
 use ed25519_dalek::SigningKey;
 use rand::RngCore;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_repr::Deserialize_repr;
 use serde_repr::Serialize_repr;
 use zeroize::Zeroize;

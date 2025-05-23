@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.Broadcast`\n\n```text\noverlay.broadcast src:PublicKey certificate:overlay.Certificate flags:int data:bytes date:int signature:bytes = overlay.Broadcast;\n\noverlay.broadcastFec src:PublicKey certificate:overlay.Certificate data_hash:int256 data_size:int flags:int\n          data:bytes seqno:int fec:fec.Type date:int signature:bytes = overlay.Broadcast;\n\noverlay.broadcastFecShort src:PublicKey certificate:overlay.Certificate broadcast_hash:int256 part_data_hash:int256 seqno:int signature:bytes = overlay.Broadcast;\n\noverlay.broadcastNotFound = overlay.Broadcast;\n\noverlay.fec.completed hash:int256 = overlay.Broadcast;\n\noverlay.fec.received hash:int256 = overlay.Broadcast;\n\noverlay.unicast data:bytes = overlay.Broadcast;\n```\n"]
 pub enum Broadcast {

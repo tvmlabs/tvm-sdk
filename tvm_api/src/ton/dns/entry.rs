@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.entry`\n\n```text\ndns.entry name:string category:int32 entry:dns.EntryData = dns.Entry;\n```\n"]
 pub struct Entry {

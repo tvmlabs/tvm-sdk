@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `rldp.Message`\n\n```text\nrldp.answer query_id:int256 data:bytes = rldp.Message;\n\nrldp.message id:int256 data:bytes = rldp.Message;\n\nrldp.query query_id:int256 max_answer_size:long timeout:int data:bytes = rldp.Message;\n```\n"]
 pub enum Message {

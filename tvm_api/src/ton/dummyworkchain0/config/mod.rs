@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `dummyworkchain0.config.Global`\n\n```text\ndummyworkchain0.config.global zero_state_hash:int256 = dummyworkchain0.config.Global;\n```\n"]
 pub enum Global {

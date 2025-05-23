@@ -40,7 +40,7 @@ use proc_macro2::TokenStream as Tokens;
 use proc_macro2::TokenStream;
 use quote::TokenStreamExt;
 use quote::quote;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 pub mod parser {
     use std::cmp::Ordering;
@@ -566,7 +566,7 @@ impl Namespace {
                 NamespaceItem::AnotherNamespace(ns) => {
                     let prelude = quote! {
                         // #![allow(clippy::large_enum_variant)]
-                        use serde_derive::{Serialize, Deserialize};
+                        use serde::{Serialize, Deserialize};
                     };
                     let (filename, _dir) = ns.print_rust(
                         config,
