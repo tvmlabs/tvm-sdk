@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.Config`\n\n```text\nengine.validator.config out_port:int addrs:(vector engine.Addr) adnl:(vector engine.adnl) \n        dht:(vector engine.dht)\n        validators:(vector engine.validator) fullnode:int256 fullnodeslaves:(vector engine.validator.fullNodeSlave)\n        fullnodemasters:(vector engine.validator.fullNodeMaster)\n        liteservers:(vector engine.liteServer) control:(vector engine.controlInterface)\n        gc:engine.gc = engine.validator.Config;\n```\n"]
 pub enum Config {

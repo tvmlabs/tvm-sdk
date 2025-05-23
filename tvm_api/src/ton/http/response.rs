@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `http.response`\n\n```text\nhttp.response http_version:string status_code:int reason:string headers:(vector http.header) = http.Response;\n```\n"]
 pub struct Response {

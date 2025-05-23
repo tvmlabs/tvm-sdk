@@ -17,6 +17,7 @@ use std::sync::Arc;
 use branch::Branch;
 use filter::Filter;
 use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use state::State;
 use tvm_block::ShardIdent;

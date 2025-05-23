@@ -10,6 +10,9 @@
 // limitations under the License.
 //
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use crate::client::AppObject;
 use crate::client::ClientContext;
 use crate::crypto::SigningBoxHandle;

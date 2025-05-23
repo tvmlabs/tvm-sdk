@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.debug.Verbosity`\n\n```text\nliteServer.debug.verbosity value:int = liteServer.debug.Verbosity;\n```\n"]
 pub enum Verbosity {

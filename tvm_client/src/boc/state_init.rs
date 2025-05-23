@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_block::Number5;
 use tvm_block::StateInit;
 use tvm_block::StateInitLib;

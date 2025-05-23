@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempSessionInfo`\n\n```text\ntonNode.rempSessionInfo workchain:int shard:long vertical_seqno:int last_key_block_seqno:int \n        catchain_seqno:int config_hash:int256\n        members:(vector validator.groupMember) = tonNode.RempSessionInfo;\n```\n"]
 pub struct RempSessionInfo {

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.transactionId3`\n\n```text\nliteServer.transactionId3 account:int256 lt:long = liteServer.TransactionId3;\n```\n"]
 pub struct TransactionId3 {

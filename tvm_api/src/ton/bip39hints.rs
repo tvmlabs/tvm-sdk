@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `bip39Hints`\n\n```text\nbip39Hints words:vector<string> = Bip39Hints;\n```\n"]
 pub struct Bip39Hints {

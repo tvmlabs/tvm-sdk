@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.proxyPacketHeader`\n\n```text\nadnl.proxyPacketHeader\n  proxy_id:int256\n  flags:# \n  ip:flags.0?int\n  port:flags.0?int\n  adnl_start_time:flags.1?int\n  seqno:flags.2?long\n  date:flags.3?int\n  signature:int256 = adnl.ProxyPacketHeader;\n```\n"]
 pub struct ProxyPacketHeader {

@@ -13,6 +13,8 @@
 use std::ops::Deref;
 use std::slice::Iter;
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use tvm_types::BuilderData;
 use tvm_vm::stack::StackItem;

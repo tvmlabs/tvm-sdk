@@ -11,6 +11,7 @@
 
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
 
 pub(crate) mod blockchain_config;
 pub(crate) mod cache;

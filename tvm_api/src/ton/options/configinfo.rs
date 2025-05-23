@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `options.configInfo`\n\n```text\noptions.configInfo default_wallet_id:int64 default_rwallet_init_public_key:string = options.ConfigInfo;\n```\n"]
 pub struct ConfigInfo {

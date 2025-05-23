@@ -12,6 +12,7 @@
 
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
 use serde::de::Error;
 use serde_json::Value;
 

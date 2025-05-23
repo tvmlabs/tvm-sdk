@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.shard.value`\n\n```text\ndb.lt.shard.value workchain:int shard:long = db.lt.shard.Value;\n```\n"]
 pub struct Value {

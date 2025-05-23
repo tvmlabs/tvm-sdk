@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `control.config.Local`\n\n```text\ncontrol.config.local priv:PrivateKey pub:int256 port:int = control.config.Local;\n```\n"]
 pub enum Local {

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.actionDelete`\n\n```text\ndns.actionDelete name:string category:int32 = dns.Action;\n```\n"]
 pub struct ActionDelete {

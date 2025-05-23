@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.appliedShardsInfo`\n\n```text\nraw.appliedShardsInfo shards:vector<tonNode.blockIdExt> = raw.appliedShardsInfo;\n```\n"]
 pub enum AppliedShardsInfo {

@@ -13,6 +13,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::abi::Abi;

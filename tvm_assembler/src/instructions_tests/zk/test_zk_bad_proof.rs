@@ -9,7 +9,7 @@ mod tests {
     use fastcrypto::traits::KeyPair;
     use fastcrypto::traits::ToFromBytes;
     use serde::Deserialize;
-    use serde_derive::Serialize;
+    use serde::Serialize;
     use tvm_types::Cell;
     use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
     use tvm_vm::executor::zk_stuff::utils::gen_address_seed;

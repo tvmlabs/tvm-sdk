@@ -1,3 +1,5 @@
+use serde::Deserialize;
+
 use super::ProcessingEvent;
 
 #[derive(Deserialize, Debug, Clone)]

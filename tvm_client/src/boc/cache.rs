@@ -18,6 +18,8 @@ use std::sync::Mutex;
 use std::sync::RwLock;
 
 use lru::LruCache;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::Cell;
 use tvm_types::UInt256;
 

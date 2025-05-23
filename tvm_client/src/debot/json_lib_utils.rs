@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use serde::{Serialize, Deserialize};
 use serde_json::Value as JsonValue;
 use serde_repr::Deserialize_repr;
 use serde_repr::Serialize_repr;

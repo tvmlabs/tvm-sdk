@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.state.hardforks`\n\n```text\ndb.state.hardforks blocks:(vector tonNode.blockIdExt) = db.state.Hardforks;\n```\n"]
 pub struct Hardforks {

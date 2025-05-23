@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `msg.dataEncryptedArray`\n\n```text\nmsg.dataEncryptedArray elements:vector<msg.dataEncrypted> = msg.DataEncryptedArray;\n```\n"]
 pub struct DataEncryptedArray {

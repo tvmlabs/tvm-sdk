@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.config.random.local`\n\n```text\ndht.config.random.local cnt:int = dht.config.Local;\n```\n"]
 pub struct Local {

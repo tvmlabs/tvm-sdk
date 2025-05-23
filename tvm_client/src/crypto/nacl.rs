@@ -10,6 +10,8 @@
 // limitations under the License.
 
 use ed25519_dalek::Verifier;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::base64_encode;
 use zeroize::Zeroize;
 use zeroize::ZeroizeOnDrop;

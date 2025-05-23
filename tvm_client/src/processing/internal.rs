@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use serde::Deserialize;
 use tvm_block::MsgAddressInt;
 use tvm_sdk::Block;
 use tvm_sdk::MessageId;

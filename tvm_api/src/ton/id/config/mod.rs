@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `id.config.Local`\n\n```text\nid.config.local id:PrivateKey = id.config.Local;\n```\n"]
 pub enum Local {

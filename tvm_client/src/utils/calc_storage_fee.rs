@@ -11,6 +11,9 @@
 
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
 use crate::error::ClientResult;

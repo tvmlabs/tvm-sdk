@@ -6,6 +6,7 @@ use std::sync::Arc;
 pub(crate) use errors::ErrorCode;
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
 use serde_json::Value;
 use tvm_block::Block;
 use tvm_block::BlockIdExt;

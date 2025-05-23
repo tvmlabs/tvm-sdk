@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.transactions`\n\n```text\nraw.transactions transactions:vector<raw.transaction> previous_transaction_id:internal.transactionId = raw.Transactions;\n```\n"]
 pub struct Transactions {

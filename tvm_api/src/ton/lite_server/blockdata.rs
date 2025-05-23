@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.blockData`\n\n```text\nliteServer.blockData id:tonNode.blockIdExt data:bytes = liteServer.BlockData;\n```\n"]
 pub struct BlockData {

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `logStreamFile`\n\n```text\nlogStreamFile path:string max_file_size:int53 = LogStream;\n```\n"]
 pub struct LogStreamFile {

@@ -16,6 +16,8 @@ use chacha20::Key;
 use chacha20::Nonce;
 use chacha20::cipher::NewStreamCipher;
 use chacha20::cipher::SyncStreamCipher;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::base64_encode;
 use zeroize::ZeroizeOnDrop;
 

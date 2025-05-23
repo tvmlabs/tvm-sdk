@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `internal.BlockId`\n\n```text\nton.blockId workchain:int32 shard:int64 seqno:int32 = internal.BlockId;\n```\n"]
 pub enum BlockId {

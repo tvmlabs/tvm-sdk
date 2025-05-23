@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.numberDecimal`\n\n```text\ntvm.numberDecimal number:string = tvm.Number;\n```\n"]
 pub struct NumberDecimal {

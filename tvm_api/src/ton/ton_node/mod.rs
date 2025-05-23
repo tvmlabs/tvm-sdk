@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.ArchiveInfo`\n\n```text\ntonNode.archiveInfo id:long = tonNode.ArchiveInfo;\n\ntonNode.archiveNotFound = tonNode.ArchiveInfo;\n```\n"]
 pub enum ArchiveInfo {

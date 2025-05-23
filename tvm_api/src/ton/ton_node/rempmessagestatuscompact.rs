@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempAcceptedCompact`\n\n```text\ntonNode.rempAcceptedCompact level:byte block_id_index:byte master_id_index:byte = tonNode.RempMessageStatusCompact;\n```\n"]
 pub struct RempAcceptedCompact {

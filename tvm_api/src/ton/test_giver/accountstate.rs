@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `testGiver.accountState`\n\n```text\ntestGiver.accountState seqno:int32 = AccountState;\n```\n"]
 pub struct AccountState {

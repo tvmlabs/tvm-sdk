@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.adnlProxy.Config`\n\n```text\nengine.adnlProxy.config ports:(vector engine.adnlProxy.port) = engine.adnlProxy.Config;\n```\n"]
 pub enum Config {

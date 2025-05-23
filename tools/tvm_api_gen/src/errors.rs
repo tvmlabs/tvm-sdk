@@ -10,6 +10,7 @@
 // limitations under the License.
 //
 
+use serde::Serialize;
 use serde_json::Value;
 use tvm_client::error::ClientError;
 

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `exportedUnencryptedKey`\n\n```text\nexportedUnencryptedKey data:secureBytes = ExportedUnencryptedKey;\n```\n"]
 pub struct ExportedUnencryptedKey {

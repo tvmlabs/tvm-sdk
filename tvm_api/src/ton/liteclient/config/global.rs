@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteclient.config.global`\n\n```text\nliteclient.config.global liteservers:(vector liteserver.desc) validator:validator.config.global = liteclient.config.Global;\n```\n"]
 pub struct Global {

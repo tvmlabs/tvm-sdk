@@ -18,6 +18,8 @@ use hmac::Mac;
 use libsecp256k1::PublicKey;
 use libsecp256k1::SecretKey;
 use pbkdf2::pbkdf2;
+use serde::Deserialize;
+use serde::Serialize;
 use sha2::Digest;
 use sha2::Sha512;
 use zeroize::ZeroizeOnDrop;

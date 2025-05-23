@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.difference`\n\n```text\ncatchain.difference sent_upto:(vector int) = catchain.Difference;\n```\n"]
 pub struct Difference {

@@ -10,6 +10,9 @@
 // limitations under the License.
 //
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use super::request::Request;
 use crate::client::ClientContext;
 use crate::error::ClientResult;

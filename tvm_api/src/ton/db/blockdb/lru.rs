@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.blockdb.lru`\n\n```text\ndb.blockdb.lru id:tonNode.blockIdExt prev:int256 next:int256 = db.blockdb.Lru;\n```\n"]
 pub struct Lru {

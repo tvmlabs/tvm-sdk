@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `exportedPemKey`\n\n```text\nexportedPemKey pem:secureString = ExportedPemKey;\n```\n"]
 pub struct ExportedPemKey {

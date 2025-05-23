@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.Action`\n\n```text\ndns.actionDelete name:string category:int32 = dns.Action;\n\ndns.actionDeleteAll = dns.Action;\n\ndns.actionSet entry:dns.entry = dns.Action;\n```\n"]
 pub enum Action {

@@ -24,8 +24,8 @@ use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
 use extfmt::Hexlify;
 use ordered_float::OrderedFloat;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::error;
 
 use crate::AnyBoxedSerialize;

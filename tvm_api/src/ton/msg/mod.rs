@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `msg.Data`\n\n```text\nmsg.dataDecryptedText text:bytes = msg.Data;\n\nmsg.dataEncryptedText text:bytes = msg.Data;\n\nmsg.dataRaw body:bytes init_state:bytes = msg.Data;\n\nmsg.dataText text:bytes = msg.Data;\n```\n"]
 pub enum Data {

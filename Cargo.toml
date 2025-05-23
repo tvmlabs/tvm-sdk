@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 exclude = ["examples/rust"]
 members = [
   "api/test",
@@ -94,8 +94,7 @@ regex = "1.10.3"
 reqwest = { version = "0.12.12", default-features = false, features = [
   "rustls-tls-webpki-roots",
 ] }
-serde = "1.0.197"
-serde_derive = "1.0.197"
+serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 serde_repr = "0.1.18"
 sha2 = "0.10.8"

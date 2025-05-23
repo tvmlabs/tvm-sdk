@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `fec.Type`\n\n```text\nfec.online data_size:int symbol_size:int symbols_count:int = fec.Type;\n\nfec.raptorQ data_size:int symbol_size:int symbols_count:int = fec.Type;\n\nfec.roundRobin data_size:int symbol_size:int symbols_count:int = fec.Type;\n```\n"]
 pub enum Type {

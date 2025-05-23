@@ -12,6 +12,8 @@
 use std::sync::Arc;
 
 use futures::Future;
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;

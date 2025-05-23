@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `tcp.Message`\n\n```text\ntcp.authentificate nonce:bytes = tcp.Message;\n\ntcp.authentificationComplete key:PublicKey signature:bytes = tcp.Message;\n\ntcp.authentificationNonce nonce:bytes = tcp.Message;\n```\n"]
 pub enum Message {

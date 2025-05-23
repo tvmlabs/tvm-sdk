@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `http.Header`\n\n```text\nhttp.header name:string value:string = http.Header;\n```\n"]
 pub enum Header {

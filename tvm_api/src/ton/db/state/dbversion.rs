@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.state.dbVersion`\n\n```text\ndb.state.dbVersion version:int = db.state.DbVersion;\n```\n"]
 pub struct DbVersion {

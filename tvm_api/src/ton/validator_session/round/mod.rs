@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `validatorSession.round.Id`\n\n```text\nvalidatorSession.round.id session:int256 height:long prev_block:int256 seqno:int = validatorSession.round.Id;\n```\n"]
 pub enum Id {

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.state.destroyedSessions`\n\n```text\ndb.state.destroyedSessions sessions:(vector int256) = db.state.DestroyedSessions;\n```\n"]
 pub struct DestroyedSessions {

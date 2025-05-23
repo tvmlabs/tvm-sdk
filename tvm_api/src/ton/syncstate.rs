@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `syncStateInProgress`\n\n```text\nsyncStateInProgress from_seqno:int32 to_seqno:int32 current_seqno:int32 = SyncState;\n```\n"]
 pub struct SyncStateInProgress {

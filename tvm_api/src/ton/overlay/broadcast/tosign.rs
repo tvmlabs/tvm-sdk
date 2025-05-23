@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.broadcast.toSign`\n\n```text\noverlay.broadcast.toSign hash:int256 date:int = overlay.broadcast.ToSign;\n```\n"]
 pub struct ToSign {

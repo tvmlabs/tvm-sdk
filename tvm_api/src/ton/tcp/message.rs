@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tcp.authentificate`\n\n```text\ntcp.authentificate nonce:bytes = tcp.Message;\n```\n"]
 pub struct Authentificate {

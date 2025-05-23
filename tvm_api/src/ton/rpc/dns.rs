@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.resolve`\n\n```text\ndns.resolve account_address:accountAddress name:string category:int32 ttl:int32 = dns.Resolved;\n```\n"]
 pub struct Resolve {

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq, Default)]
 #[doc = "TL-derived from `db.files.Key`\n\n```text\ndb.files.index.key = db.files.Key;\n\ndb.files.package.key package_id:int key:Bool temp:Bool = db.files.Key;\n```\n"]
 pub enum Key {

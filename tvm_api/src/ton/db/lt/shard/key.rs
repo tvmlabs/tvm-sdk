@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.shard.key`\n\n```text\ndb.lt.shard.key idx:int = db.lt.Key;\n```\n"]
 pub struct Key {

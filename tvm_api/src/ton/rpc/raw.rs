@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.createAndSendMessage`\n\n```text\nraw.createAndSendMessage destination:accountAddress initial_account_state:bytes data:bytes = Ok;\n```\n"]
 pub struct CreateAndSendMessage {

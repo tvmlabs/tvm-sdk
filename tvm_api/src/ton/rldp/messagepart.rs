@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `rldp.complete`\n\n```text\nrldp.complete transfer_id:int256 part:int = rldp.MessagePart;\n```\n"]
 pub struct Complete {

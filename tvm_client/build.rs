@@ -13,11 +13,10 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+use serde::Serialize;
 use serde_json::Value;
 
 extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
 
 #[derive(Serialize, Debug)]
 struct Dep {

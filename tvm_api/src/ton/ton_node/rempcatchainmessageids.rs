@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.rempCatchainMessageIds`\n\n```text\ntonNode.rempCatchainMessageIds id:int256 uid:int256 = tonNode.rempCatchainMessageIds;\n```\n"]
 pub struct RempCatchainMessageIds {

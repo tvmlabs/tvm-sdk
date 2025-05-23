@@ -13,6 +13,8 @@
 use std::ffi::c_void;
 use std::ptr::null;
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 use super::request::Request;

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tonNode.blockBroadcast`\n\n```text\ntonNode.blockBroadcast id:tonNode.blockIdExt catchain_seqno:int validator_set_hash:int \n              signatures:(vector tonNode.blockSignature) \n              proof:bytes data:bytes = tonNode.Broadcast;\n```\n"]
 pub struct BlockBroadcast {
