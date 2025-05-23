@@ -79,65 +79,65 @@ impl Error {
     }
 
     pub fn invalid_hex<E: Display>(s: &str, err: E) -> ClientError {
-        error(ErrorCode::InvalidHex, format!("Invalid hex string: {}\r\nhex: [{}]", err, s))
+        error(ErrorCode::InvalidHex, format!("Invalid hex string: {err}\r\nhex: [{s}]"))
     }
 
     pub fn invalid_base64<E: Display>(s: &str, err: E) -> ClientError {
         error(
             ErrorCode::InvalidBase64,
-            format!("Invalid base64 string: {}\r\nbase64: [{}]", err, s),
+            format!("Invalid base64 string: {err}\r\nbase64: [{s}]"),
         )
     }
 
     pub fn invalid_address<E: Display>(err: E, address: &str) -> ClientError {
-        error(ErrorCode::InvalidAddress, format!("Invalid address [{}]: {}", err, address))
+        error(ErrorCode::InvalidAddress, format!("Invalid address [{err}]: {address}"))
     }
 
     pub fn callback_params_cant_be_converted_to_json<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::CallbackParamsCantBeConvertedToJson,
-            format!("Callback params can't be converted to json: {}", err),
+            format!("Callback params can't be converted to json: {err}"),
         )
     }
 
     pub fn websocket_connect_error<E: Display>(address: &str, err: E) -> ClientError {
         error(
             ErrorCode::WebsocketConnectError,
-            format!("Can not connect to websocket URL {}: {}", address, err),
+            format!("Can not connect to websocket URL {address}: {err}"),
         )
     }
 
     pub fn websocket_receive_error<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::WebsocketReceiveError,
-            format!("Can not receive message from websocket: {}", err),
+            format!("Can not receive message from websocket: {err}"),
         )
     }
 
     pub fn websocket_send_error<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::WebsocketSendError, format!("Can not send message to websocket: {}", err))
+        error(ErrorCode::WebsocketSendError, format!("Can not send message to websocket: {err}"))
     }
 
     pub fn http_client_create_error<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::HttpClientCreateError, format!("Can not create http client: {}", err))
+        error(ErrorCode::HttpClientCreateError, format!("Can not create http client: {err}"))
     }
 
     pub fn http_request_create_error<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::HttpRequestCreateError, format!("Can not create http request: {}", err))
+        error(ErrorCode::HttpRequestCreateError, format!("Can not create http request: {err}"))
     }
 
     pub fn http_request_send_error<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::HttpRequestSendError, format!("Can not send http request: {}", err))
+        error(ErrorCode::HttpRequestSendError, format!("Can not send http request: {err}"))
     }
 
     pub fn http_request_parse_error<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::HttpRequestParseError, format!("Can not parse http request: {}", err))
+        error(ErrorCode::HttpRequestParseError, format!("Can not parse http request: {err}"))
     }
 
     pub fn callback_not_registered(callback_id: u32) -> ClientError {
         error(
             ErrorCode::CallbackNotRegistered,
-            format!("Callback with ID {} is not registered", callback_id),
+            format!("Callback with ID {callback_id} is not registered"),
         )
     }
 
@@ -150,15 +150,15 @@ impl Error {
     }
 
     pub fn cannot_create_runtime<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::CannotCreateRuntime, format!("Can not create runtime: {}", err))
+        error(ErrorCode::CannotCreateRuntime, format!("Can not create runtime: {err}"))
     }
 
     pub fn invalid_context_handle(context: u32) -> ClientError {
-        error(ErrorCode::InvalidContextHandle, format!("Invalid context handle: {}", context))
+        error(ErrorCode::InvalidContextHandle, format!("Invalid context handle: {context}"))
     }
 
     pub fn cannot_serialize_result(err: impl Display) -> ClientError {
-        error(ErrorCode::CannotSerializeResult, format!("Can't serialize result: {}", err))
+        error(ErrorCode::CannotSerializeResult, format!("Can't serialize result: {err}"))
     }
 
     pub fn invalid_params(params_json: &str, err: impl Display) -> ClientError {
@@ -171,35 +171,34 @@ impl Error {
 
         error(
             ErrorCode::InvalidParams,
-            format!("Invalid parameters: {}\nparams: {}", err, params_json_stripped),
+            format!("Invalid parameters: {err}\nparams: {params_json_stripped}"),
         )
     }
 
     pub fn contracts_address_conversion_failed(err: impl Display) -> ClientError {
         error(
             ErrorCode::ContractsAddressConversionFailed,
-            format!("Address conversion failed: {}", err),
+            format!("Address conversion failed: {err}"),
         )
     }
 
     pub fn unknown_function(name: &str) -> ClientError {
-        error(ErrorCode::UnknownFunction, format!("Unknown function: {}", name))
+        error(ErrorCode::UnknownFunction, format!("Unknown function: {name}"))
     }
 
     pub fn app_request_error(text: &str) -> ClientError {
-        error(ErrorCode::AppRequestError, format!("Application request returned error: {}", text))
+        error(ErrorCode::AppRequestError, format!("Application request returned error: {text}"))
     }
 
     pub fn no_such_request(id: u32) -> ClientError {
-        error(ErrorCode::NoSuchRequest, format!("No such request. ID {}", id))
+        error(ErrorCode::NoSuchRequest, format!("No such request. ID {id}"))
     }
 
     pub fn can_not_send_request_result(id: u32) -> ClientError {
         error(
             ErrorCode::CanNotSendRequestResult,
             format!(
-                "Can not send request result. Probably receiver is already dropped. Request ID {}",
-                id
+                "Can not send request result. Probably receiver is already dropped. Request ID {id}"
             ),
         )
     }
@@ -207,20 +206,19 @@ impl Error {
     pub fn can_not_receive_request_result(err: impl Display) -> ClientError {
         error(
             ErrorCode::CanNotReceiveRequestResult,
-            format!("Can not receive request result: {}", err),
+            format!("Can not receive request result: {err}"),
         )
     }
 
     pub fn can_not_parse_request_result(err: impl Display) -> ClientError {
-        error(ErrorCode::CanNotParseRequestResult, format!("Can not parse request result: {}", err))
+        error(ErrorCode::CanNotParseRequestResult, format!("Can not parse request result: {err}"))
     }
 
     pub fn unexpected_callback_response(expected: &str, received: impl Debug) -> ClientError {
         error(
             ErrorCode::UnexpectedCallbackResponse,
             format!(
-                "Unexpected callback response. Expected {}, received {:#?}",
-                expected, received
+                "Unexpected callback response. Expected {expected}, received {received:#?}"
             ),
         )
     }
@@ -228,47 +226,46 @@ impl Error {
     pub fn can_not_parse_number(string: &str) -> ClientError {
         error(
             ErrorCode::CanNotParseNumber,
-            format!("Can not parse integer from string `{}`", string),
+            format!("Can not parse integer from string `{string}`"),
         )
     }
 
     pub fn cannot_convert_jsvalue_to_json(value: impl Debug) -> ClientError {
         error(
             ErrorCode::CannotConvertJsValueToJson,
-            format!("Can not convert JS value to JSON: {:#?}", value),
+            format!("Can not convert JS value to JSON: {value:#?}"),
         )
     }
 
     pub fn can_not_receive_spawned_result(err: impl Display) -> ClientError {
         error(
             ErrorCode::CannotReceiveSpawnedResult,
-            format!("Can not receive result from spawned task: {}", err),
+            format!("Can not receive result from spawned task: {err}"),
         )
     }
 
     pub fn set_timer_error(err: impl Display) -> ClientError {
-        error(ErrorCode::SetTimerError, format!("Set timer error: {}", err))
+        error(ErrorCode::SetTimerError, format!("Set timer error: {err}"))
     }
 
     pub fn invalid_handle(handle: u32, name: &str) -> ClientError {
-        error(ErrorCode::InvalidHandle, format!("Invalid {} handle: {}", name, handle))
+        error(ErrorCode::InvalidHandle, format!("Invalid {name} handle: {handle}"))
     }
 
     pub fn invalid_storage_key(key: &str) -> ClientError {
         error(
             ErrorCode::LocalStorageError,
             format!(
-                "Invalid local storage key (allowed only symbols A-Z, a-z, 0-9, _, without spaces): {}",
-                key,
+                "Invalid local storage key (allowed only symbols A-Z, a-z, 0-9, _, without spaces): {key}",
             ),
         )
     }
 
     pub fn local_storage_error(err: impl Display) -> ClientError {
-        error(ErrorCode::LocalStorageError, format!("Local storage error: {}", err,))
+        error(ErrorCode::LocalStorageError, format!("Local storage error: {err}",))
     }
 
     pub fn invalid_data(err: impl Display) -> ClientError {
-        error(ErrorCode::InvalidData, format!("Invalid data: {}", err))
+        error(ErrorCode::InvalidData, format!("Invalid data: {err}"))
     }
 }

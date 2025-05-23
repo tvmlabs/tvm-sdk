@@ -35,7 +35,7 @@ pub struct PfxHashmapE {
 impl fmt::Display for PfxHashmapE {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.data() {
-            Some(cell) => write!(f, "PfxHashmap: {}", cell),
+            Some(cell) => write!(f, "PfxHashmap: {cell}"),
             None => write!(f, "Empty PfxHashmap"),
         }
     }

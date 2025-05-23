@@ -241,7 +241,7 @@ impl TokenValue {
 
         if vec.len() > size - 1 {
             fail!(AbiError::InvalidData {
-                msg: format!("Too long value for varint{}: {}", size, value)
+                msg: format!("Too long value for varint{size}: {value}")
             });
         }
         Self::write_varnumber(&vec, size)
@@ -252,7 +252,7 @@ impl TokenValue {
 
         if vec.len() > size - 1 {
             fail!(AbiError::InvalidData {
-                msg: format!("Too long value for varuint{}: {}", size, value)
+                msg: format!("Too long value for varuint{size}: {value}")
             });
         }
         Self::write_varnumber(&vec, size)

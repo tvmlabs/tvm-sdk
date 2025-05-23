@@ -284,7 +284,7 @@ impl DebotInterface for QueryInterface {
             "collection" => self.collection(args).await,
             "waitForCollection" => self.wait_for_collection(args).await,
             "query" => self.query(args).await,
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

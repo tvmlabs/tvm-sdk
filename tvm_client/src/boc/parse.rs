@@ -120,14 +120,12 @@ pub fn parse_account(
     let account = if cell.cell_type() == tvm_types::CellType::MerkleProof {
         let proof = tvm_block::MerkleProof::construct_from_cell(cell).map_err(|err| {
             Error::invalid_boc(format!(
-                "Can not deserialize Merkle proof from pruned account BOC: {}",
-                err
+                "Can not deserialize Merkle proof from pruned account BOC: {err}"
             ))
         })?;
         proof.virtualize().map_err(|err| {
             Error::invalid_boc(format!(
-                "Can not virtualize pruned account from Merkle proof: {}",
-                err
+                "Can not virtualize pruned account from Merkle proof: {err}"
             ))
         })?
     } else {

@@ -113,11 +113,11 @@ fn serialize_integer_data(data: &IntegerData) -> String {
     } else {
         // positive numbers between u128::MAX and u256::MAX are padded to 64 hex symbols
         if hex.len() <= 64 {
-            format!("0x{:0>64}", hex)
+            format!("0x{hex:0>64}")
         } else {
             // positive numbers between u256::MAX and u512::MAX are padded to 128 symbols
             // positive numbers above u512::MAX are not padded
-            format!("0x{:0>128}", hex)
+            format!("0x{hex:0>128}")
         }
     }
 }
@@ -136,7 +136,7 @@ fn process_item(item: &StackItem) -> ClientResult<ProcessingResult> {
         StackItem::Builder(value) => {
             ProcessingResult::Serialized(json!(ComplexType::Builder(serialize_cell_to_base64(
                 &value.deref().clone().into_cell().map_err(
-                    |err| Error::unknown_execution_error(format!("Can not parse object: {}", err))
+                    |err| Error::unknown_execution_error(format!("Can not parse object: {err}"))
                 )?,
                 "stack item `Builder`"
             )?)))
@@ -171,14 +171,14 @@ pub fn deserialize_item(value: &Value) -> ClientResult<StackItem> {
         Value::Array(array) => StackItem::tuple(deserialize_items(array.iter())?),
         Value::Object(_) => {
             let object = serde_json::from_value(value.clone()).map_err(|err| {
-                Error::invalid_input_stack(format!("Can not parse object: {}", err), value)
+                Error::invalid_input_stack(format!("Can not parse object: {err}"), value)
             })?;
             match object {
                 ComplexType::Builder(string) => {
                     let cell = deserialize_cell_from_base64(&string, "Builder")?.1;
                     StackItem::builder(BuilderData::from_cell(&cell).map_err(|err| {
                         Error::invalid_input_stack(
-                            format!("Can't create Builder from cell: {}", err),
+                            format!("Can't create Builder from cell: {err}"),
                             value,
                         )
                     })?)

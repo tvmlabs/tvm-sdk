@@ -96,7 +96,7 @@ impl TerminalBrowser {
         };
         let _ = browser.fetch_debot(addr, start, !interactive).await?;
         let abi =
-            browser.bots.get(addr).ok_or(format!("DeBot not found: address {}", addr))?.abi.clone();
+            browser.bots.get(addr).ok_or(format!("DeBot not found: address {addr}"))?.abi.clone();
 
         if !start && init_message.is_none() {
             init_message = Some(
@@ -105,13 +105,13 @@ impl TerminalBrowser {
                     ParamsOfEncodeInternalMessage {
                         abi: Some(abi),
                         address: Some(addr.to_owned()),
-                        src_address: Some(format!("{}:{}", DEBOT_WC, BROWSER_ID)),
+                        src_address: Some(format!("{DEBOT_WC}:{BROWSER_ID}")),
                         call_set,
                         value: "1000000000000000".to_owned(),
                         ..Default::default()
                     },
                 )
-                .map_err(|e| format!("{}", e))?
+                .map_err(|e| format!("{e}"))?
                 .message,
             );
         }
@@ -184,11 +184,11 @@ impl TerminalBrowser {
             self.interfaces.try_execute(&msg, &interface_id, &debot.info.dabi_version).await
         {
             let (func_id, return_args) = result?;
-            log::debug!("response: {} ({})", func_id, return_args);
+            log::debug!("response: {func_id} ({return_args})");
             let call_set = match func_id {
                 0 => None,
                 _ => {
-                    CallSet::some_with_function_and_input(&format!("0x{:x}", func_id), return_args)
+                    CallSet::some_with_function_and_input(&format!("0x{func_id:x}"), return_args)
                 }
             };
             let response_msg = encode_internal_message(
@@ -201,12 +201,12 @@ impl TerminalBrowser {
                     ..Default::default()
                 },
             )
-            .map_err(|e| format!("{}", e))?
+            .map_err(|e| format!("{e}"))?
             .message;
             let result = debot.dengine.send(response_msg).await;
             debot.callbacks.take_messages(&mut self.msg_queue);
             if let Err(e) = result {
-                println!("Debot error: {}", e);
+                println!("Debot error: {e}");
             }
         }
 
@@ -218,7 +218,7 @@ impl TerminalBrowser {
             self.fetch_debot(addr, false, !self.interactive).await?;
         }
         let debot = self.bots.get_mut(addr).ok_or("Internal error: debot not found")?;
-        debot.dengine.send(msg).await.map_err(|e| format!("Debot failed: {}", e))?;
+        debot.dengine.send(msg).await.map_err(|e| format!("Debot failed: {e}"))?;
         debot.callbacks.take_messages(&mut self.msg_queue);
         Ok(())
     }
@@ -244,7 +244,7 @@ impl TerminalBrowser {
                 self.client.clone(),
                 ParamsOfDecodeMessage { abi, message, ..Default::default() },
             )
-            .map_err(|e| format!("{}", e))?;
+            .map_err(|e| format!("{e}"))?;
             decoded.value.unwrap_or(json!({}))
         } else {
             json!({"message": message})
@@ -262,13 +262,13 @@ where
     let mut input_str = "".to_owned();
     let mut argc = 0;
     while argc == 0 {
-        println!("{}", prefix);
+        println!("{prefix}");
         if let Err(e) = writer.flush() {
-            println!("failed to flush: {}", e);
+            println!("failed to flush: {e}");
             return input_str;
         }
         if let Err(e) = reader.read_line(&mut input_str) {
-            println!("failed to read line: {}", e);
+            println!("failed to read line: {e}");
             return input_str;
         }
         argc = input_str.split_whitespace().count();
@@ -285,7 +285,7 @@ where
     let mut writer = io::stdout();
     let mut value = input(prompt, &mut reader, &mut writer);
     while let Err(e) = validator(&value) {
-        println!("{}. Try again.", e);
+        println!("{e}. Try again.");
         value = input(prompt, &mut reader, &mut writer);
     }
     value
@@ -298,7 +298,7 @@ pub fn action_input(max: usize) -> Result<(usize, usize, Vec<String>), String> {
     while argc == 0 {
         print!("debash$ ");
         let _ = io::stdout().flush();
-        io::stdin().read_line(&mut a_str).map_err(|e| format!("failed to read line: {}", e))?;
+        io::stdin().read_line(&mut a_str).map_err(|e| format!("failed to read line: {e}"))?;
         argv = a_str
             .split_whitespace()
             .map(|x| x.parse::<String>().expect("parse error"))
@@ -346,7 +346,7 @@ pub async fn run_debot_browser(
                 ton.clone(),
                 ParamsOfParse { boc: msg.clone(), ..Default::default() },
             )
-            .map_err(|e| format!("{}", e))?
+            .map_err(|e| format!("{e}"))?
             .parsed;
 
             let msg_dest = parsed["dst"]
@@ -359,7 +359,7 @@ pub async fn run_debot_browser(
 
             let wc_and_addr: Vec<_> = msg_dest.split(':').collect();
             let id = wc_and_addr[1].to_string();
-            let wc = i8::from_str_radix(wc_and_addr[0], 10).map_err(|e| format!("{}", e))?;
+            let wc = i8::from_str_radix(wc_and_addr[0], 10).map_err(|e| format!("{e}"))?;
 
             if wc == DEBOT_WC {
                 if id == BROWSER_ID {

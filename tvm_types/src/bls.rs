@@ -139,7 +139,7 @@ pub fn aggregate_public_keys_based_on_nodes_info(
     let result = aggregate_public_keys(&apk_pks_required_refs)?;
     let duration = now.elapsed();
 
-    println!("Time elapsed by !!!aggregate_public_keys is: {:?}", duration);
+    println!("Time elapsed by !!!aggregate_public_keys is: {duration:?}");
     Ok(result)
 }
 
@@ -263,7 +263,7 @@ impl BlsKeyPair {
         println!("Aggregated BLS public key");
         println!("--------------------------------------------------");
         println!("Public key bytes:");
-        println!("{:?}", bls_pk_bytes);
+        println!("{bls_pk_bytes:?}");
         println!("--------------------------------------------------");
     }
 
@@ -382,7 +382,7 @@ impl NodesInfo {
         println!("Total number of nodes: {}", &self.total_num_of_nodes);
         println!("Indexes -- occurrences: ");
         for (index, number_of_occurrence) in &self.map {
-            println!("{}: \"{}\"", index, number_of_occurrence);
+            println!("{index}: \"{number_of_occurrence}\"");
         }
         println!("--------------------------------------------------");
         println!("--------------------------------------------------");
@@ -615,7 +615,7 @@ impl BlsSignature {
         println!("--------------------------------------------------");
         println!("BLS Signature bytes:");
         println!("--------------------------------------------------");
-        println!("{:?}", sig_bytes);
+        println!("{sig_bytes:?}");
         println!("--------------------------------------------------");
     }
 

@@ -356,7 +356,7 @@ impl HDPrivateKey {
         Self::from_serialized(
             &string
                 .from_base58()
-                .map_err(|err| crypto::Error::bip32_invalid_key(format!("{:?}", err)))?,
+                .map_err(|err| crypto::Error::bip32_invalid_key(format!("{err:?}")))?,
         )
     }
 

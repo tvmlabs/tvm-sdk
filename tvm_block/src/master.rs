@@ -346,9 +346,9 @@ impl ShardHashes {
 impl ShardHashes {
     pub fn dump(&self, heading: &str) -> usize {
         let mut count = 0;
-        println!("dumping shard records for: {}", heading);
+        println!("dumping shard records for: {heading}");
         self.iterate_with_keys(|workchain_id: i32, InRefValue(bintree)| {
-            println!("workchain: {}", workchain_id);
+            println!("workchain: {workchain_id}");
             bintree.iterate(|prefix, descr| {
                 let shard = ShardIdent::with_prefix_slice(workchain_id, prefix)?;
                 println!(
@@ -1268,8 +1268,7 @@ impl Deserializable for McStateExtra {
         flags.read_from(cell1)?; // 16 + 0
         if flags > 3 {
             fail!(BlockError::InvalidData(format!(
-                "Invalid flags value ({}). Must be <= 3.",
-                flags
+                "Invalid flags value ({flags}). Must be <= 3."
             )))
         }
         self.validator_info.read_from(cell1)?; // 65 + 0
@@ -1433,14 +1432,14 @@ impl fmt::Display for ShardCollators {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "prev: {}", self.prev)?;
         if let Some(prev2) = &self.prev2 {
-            writeln!(f, "prev2: {}", prev2)?;
+            writeln!(f, "prev2: {prev2}")?;
         } else {
             writeln!(f, "prev2: none")?;
         }
         writeln!(f, "current: {}", self.current)?;
         writeln!(f, "next: {}", self.next)?;
         if let Some(next2) = &self.next2 {
-            write!(f, "next2: {}", next2)?;
+            write!(f, "next2: {next2}")?;
         } else {
             write!(f, "next2: none")?;
         }

@@ -125,14 +125,14 @@ fn comment_missing_bits_and_refs(insn: &mut Instruction, missing_bits: usize, mi
         let mut comment = String::from("missing");
         if missing_bits > 0 {
             let plural = if missing_bits > 1 { "s" } else { "" };
-            comment += &format!(" {} bit{}", missing_bits, plural);
+            comment += &format!(" {missing_bits} bit{plural}");
         }
         if missing_bits > 0 && missing_refs > 0 {
             comment += " and";
         }
         if missing_refs > 0 {
             let plural = if missing_refs > 1 { "s" } else { "" };
-            comment += &format!(" {} ref{}", missing_refs, plural);
+            comment += &format!(" {missing_refs} ref{plural}");
         }
         insn.set_comment(comment)
     }

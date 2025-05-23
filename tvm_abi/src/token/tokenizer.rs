@@ -107,7 +107,7 @@ impl Tokenizer {
                 let unknown =
                     map.iter().map(|(key, _)| key.as_ref()).collect::<Vec<&str>>().join(", ");
                 return Err(AbiError::InvalidInputData {
-                    msg: format!("Contract doesn't have following parameters: {}", unknown),
+                    msg: format!("Contract doesn't have following parameters: {unknown}"),
                 }
                 .into());
             }
@@ -150,7 +150,7 @@ impl Tokenizer {
             false => fail!(AbiError::InvalidParameterLength {
                 val: value.clone(),
                 name: name.to_string(),
-                expected: format!("array of {} elements", size),
+                expected: format!("array of {size} elements"),
             }),
         }
     }
@@ -358,12 +358,12 @@ impl Tokenizer {
         let data = base64_decode(string).map_err(|err| AbiError::InvalidParameterValue {
             val: value.clone(),
             name: name.to_string(),
-            err: format!("can not decode base64: {}", err),
+            err: format!("can not decode base64: {err}"),
         })?;
         let cell = read_single_root_boc(data).map_err(|err| AbiError::InvalidParameterValue {
             val: value.clone(),
             name: name.to_string(),
-            err: format!("can not deserialize cell: {}", err),
+            err: format!("can not deserialize cell: {err}"),
         })?;
         Ok(TokenValue::Cell(cell))
     }
@@ -399,7 +399,7 @@ impl Tokenizer {
         let mut data = hex::decode(string).map_err(|err| AbiError::InvalidParameterValue {
             val: value.clone(),
             name: name.to_string(),
-            err: format!("can not decode hex: {}", err),
+            err: format!("can not decode hex: {err}"),
         })?;
         match size {
             Some(size) => {
@@ -410,7 +410,7 @@ impl Tokenizer {
                     fail!(AbiError::InvalidParameterLength {
                         val: value.clone(),
                         name: name.to_string(),
-                        expected: format!("{} bytes", size),
+                        expected: format!("{size} bytes"),
                     })
                 }
             }
@@ -451,7 +451,7 @@ impl Tokenizer {
 
         let time = number.to_u64().ok_or_else(|| {
             error!(AbiError::InvalidInputData {
-                msg: format!("`{}` value {} should fit into u64", name, number)
+                msg: format!("`{name}` value {number} should fit into u64")
             })
         })?;
 
@@ -464,7 +464,7 @@ impl Tokenizer {
 
         let expire = number.to_u32().ok_or_else(|| {
             error!(AbiError::InvalidInputData {
-                msg: format!("`{}` value {} should fit into u32", name, number)
+                msg: format!("`{name}` value {number} should fit into u32")
             })
         })?;
 
@@ -484,12 +484,12 @@ impl Tokenizer {
             let data = hex::decode(string).map_err(|err| AbiError::InvalidParameterValue {
                 val: value.clone(),
                 name: name.to_string(),
-                err: format!("can not decode hex: {}", err),
+                err: format!("can not decode hex: {err}"),
             })?;
             let bytes = data.try_into().map_err(|_| AbiError::InvalidParameterLength {
                 val: value.clone(),
                 name: name.to_string(),
-                expected: format!("{} bytes", ED25519_PUBLIC_KEY_LENGTH),
+                expected: format!("{ED25519_PUBLIC_KEY_LENGTH} bytes"),
             })?;
             Ok(TokenValue::PublicKey(Some(bytes)))
         }
@@ -520,7 +520,7 @@ impl Tokenizer {
             .map_err(|err| AbiError::InvalidParameterValue {
                 val: value.clone(),
                 name: name.to_string(),
-                err: format!("can not parse address: {}", err),
+                err: format!("can not parse address: {err}"),
             })?;
         Ok(TokenValue::Address(address))
     }

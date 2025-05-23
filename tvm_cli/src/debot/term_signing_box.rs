@@ -91,11 +91,11 @@ where
     let enter_str = prompt.unwrap_or_default();
     let mut pair = Err("no keypair".to_string());
     let mut format_pubkeys = String::new();
-    possible_keys.iter().for_each(|x| format_pubkeys += &format!(" {},", x));
+    possible_keys.iter().for_each(|x| format_pubkeys += &format!(" {x},"));
     for _ in 0..tries {
         let value = input(enter_str, reader, writer);
         pair = load_keypair(&value).map_err(|e| {
-            println!("Invalid keys: {}. Try again.", e);
+            println!("Invalid keys: {e}. Try again.");
             e
         });
         if let Ok(ref keys) = pair {
@@ -103,8 +103,7 @@ where
                 if !possible_keys.iter().any(|x| x.get(2..).unwrap() == keys.public.as_str()) {
                     println!("Unexpected keys.");
                     println!(
-                        "Hint: enter keypair which contains one of the following public keys: {}",
-                        format_pubkeys
+                        "Hint: enter keypair which contains one of the following public keys: {format_pubkeys}"
                     );
                 } else {
                     break;

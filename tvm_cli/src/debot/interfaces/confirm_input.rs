@@ -59,7 +59,7 @@ impl ConfirmInput {
         let answer_id = decode_answer_id(args)?;
         let prompt = decode_prompt(args)?;
         let mut yes_no = false;
-        let _ = terminal_input(&format!("{} (y/n)", prompt), |val| {
+        let _ = terminal_input(&format!("{prompt} (y/n)"), |val| {
             yes_no = match val.as_str() {
                 "y" => true,
                 "n" => false,
@@ -84,7 +84,7 @@ impl DebotInterface for ConfirmInput {
     async fn call(&self, func: &str, args: &Value) -> InterfaceResult {
         match func {
             "get" => self.get(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

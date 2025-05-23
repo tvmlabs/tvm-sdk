@@ -87,7 +87,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut now = Instant::now();
 
         let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
+            Some(AccountState::AccountUninit) => false,
             None => false,
             _ => true,
         };
@@ -118,7 +118,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         })?;
         let account_id = match account.get_id() {
             Some(account_id) => {
-                log::debug!(target: "executor", "Account = {:x}", account_id);
+                log::debug!(target: "executor", "Account = {account_id:x}");
                 account_id
             }
             None => {
@@ -214,8 +214,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             ) {
                 Ok(credit_ph) => Some(credit_ph),
                 Err(e) => fail!(ExecutorError::TrExecutorError(format!(
-                    "cannot create credit phase of a new transaction for smart contract for reason {}",
-                    e
+                    "cannot create credit phase of a new transaction for smart contract for reason {e}"
                 ))),
             };
         }
@@ -243,8 +242,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 Some(storage_ph)
             }
             Err(e) => fail!(ExecutorError::TrExecutorError(format!(
-                "cannot create storage phase of a new transaction for smart contract for reason {}",
-                e
+                "cannot create storage phase of a new transaction for smart contract for reason {e}"
             ))),
         };
         if description.credit_first && msg_balance.grams > acc_balance.grams {
@@ -265,8 +263,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             ) {
                 Ok(credit_ph) => Some(credit_ph),
                 Err(e) => fail!(ExecutorError::TrExecutorError(format!(
-                    "cannot create credit phase of a new transaction for smart contract for reason {}",
-                    e
+                    "cannot create credit phase of a new transaction for smart contract for reason {e}"
                 ))),
             };
         }
@@ -322,7 +319,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         ) {
             Ok((compute_ph, actions, new_data)) => (compute_ph, actions, new_data),
             Err(e) => {
-                log::debug!(target: "executor", "compute_phase error: {}", e);
+                log::debug!(target: "executor", "compute_phase error: {e}");
                 match e.downcast_ref::<ExecutorError>() {
                     Some(ExecutorError::NoAcceptError(_, _))
                     | Some(ExecutorError::TerminationDeadlineReached) => return Err(e),
@@ -342,7 +339,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 tr.add_fee_grams(&phase.gas_fees)?;
                 if phase.success {
                     log::debug!(target: "executor", "compute_phase: success");
-                    log::debug!(target: "executor", "action_phase: lt={}", lt);
+                    log::debug!(target: "executor", "action_phase: lt={lt}");
                     action_phase_processed = true;
 
                     let message_src_dapp_id = if let Some(AccountState::AccountActive {
@@ -386,8 +383,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             Some(phase)
                         }
                         Err(e) => fail!(ExecutorError::TrExecutorError(format!(
-                            "cannot create action phase of a new transaction for smart contract for reason {}",
-                            e
+                            "cannot create action phase of a new transaction for smart contract for reason {e}"
                         ))),
                     }
                 } else {
@@ -429,7 +425,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 true
             }
         };
-        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_balance, need_to_burn);
+        log::debug!(target: "executor", "Balance and need_to_burn {acc_balance}, {need_to_burn}");
         if acc_balance.grams >= need_to_burn {
             acc_balance.grams -= need_to_burn;
         } else {
@@ -471,8 +467,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     }
                     Ok((bounce_ph, None)) => Some(bounce_ph),
                     Err(e) => fail!(ExecutorError::TrExecutorError(format!(
-                        "cannot create bounce phase of a new transaction for smart contract for reason {}",
-                        e
+                        "cannot create bounce phase of a new transaction for smart contract for reason {e}"
                     ))),
                 };
             }

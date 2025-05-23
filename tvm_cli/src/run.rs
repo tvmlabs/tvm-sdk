@@ -80,7 +80,7 @@ pub async fn run_command(
     };
     let trace_path;
     let ton_client = if account_source == AccountSource::NETWORK {
-        trace_path = format!("run_{}_{}.log", address, method);
+        trace_path = format!("run_{address}_{method}.log");
         create_client(config)?
     } else {
         trace_path = "trace.log".to_string();
@@ -190,7 +190,7 @@ async fn run(
             };
             init_debug_logger(&trace_path)?;
             debug_error(&e, debug_params).await?;
-            return Err(format!("{:#}", e));
+            return Err(format!("{e:#}"));
         }
     };
     if !config.is_json {
@@ -250,7 +250,7 @@ pub async fn run_get_method(
     let params = params
         .map(|p| serde_json::from_str(&p))
         .transpose()
-        .map_err(|e| format!("arguments are not in json format: {}", e))?;
+        .map_err(|e| format!("arguments are not in json format: {e}"))?;
 
     if !config.is_json {
         println!("Running get-method...");
@@ -267,19 +267,19 @@ pub async fn run_get_method(
         },
     )
     .await
-    .map_err(|e| format!("run failed: {}", e))?
+    .map_err(|e| format!("run failed: {e}"))?
     .output;
 
     if !config.is_json {
         println!("Succeeded.");
-        println!("Result: {}", result);
+        println!("Result: {result}");
     } else {
         let mut res = Map::new();
         match result {
             Value::Array(array) => {
                 let mut i = 0;
                 for val in array.iter() {
-                    res.insert(format!("value{}", i), val.to_owned());
+                    res.insert(format!("value{i}"), val.to_owned());
                     i += 1;
                 }
             }
@@ -288,7 +288,7 @@ pub async fn run_get_method(
             }
         }
         let res = Value::Object(res);
-        println!("{:#}", res);
+        println!("{res:#}");
     }
     Ok(())
 }

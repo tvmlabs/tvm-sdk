@@ -75,7 +75,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
             None => fail!("Account {:x} is not special account for tick tock", account_id),
         }
         let account_address = account.get_addr().cloned().unwrap_or_default();
-        log::debug!(target: "executor", "tick tock transation account {:x}", account_id);
+        log::debug!(target: "executor", "tick tock transation account {account_id:x}");
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
 
         let is_masterchain = true;
@@ -109,8 +109,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
             }
             Err(e) => fail!(ExecutorError::TrExecutorError(format!(
                 "cannot create storage phase of a new transaction for \
-                         smart contract for reason {}",
-                e
+                         smart contract for reason {e}"
             ))),
         };
         let mut description = TransactionDescrTickTock {
@@ -149,7 +148,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
             )))
             .push(boolean!(self.tt.is_tock()))
             .push(int!(-2));
-        log::debug!(target: "executor", "compute_phase {}", lt);
+        log::debug!(target: "executor", "compute_phase {lt}");
         let (compute_ph, actions, new_data) = match self.compute_phase(
             None,
             account,
@@ -164,7 +163,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
         ) {
             Ok((compute_ph, actions, new_data)) => (compute_ph, actions, new_data),
             Err(e) => {
-                log::debug!(target: "executor", "compute_phase error: {}", e);
+                log::debug!(target: "executor", "compute_phase error: {e}");
                 match e.downcast_ref::<ExecutorError>() {
                     Some(ExecutorError::NoAcceptError(_, _)) => return Err(e),
                     _ => fail!(ExecutorError::TrExecutorError(e.to_string())),
@@ -178,7 +177,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
                 tr.add_fee_grams(&phase.gas_fees)?;
                 if phase.success {
                     log::debug!(target: "executor", "compute_phase: TrComputePhase::Vm success");
-                    log::debug!(target: "executor", "action_phase {}", lt);
+                    log::debug!(target: "executor", "action_phase {lt}");
                     match self.action_phase_with_copyleft(
                         &mut tr,
                         account,
@@ -202,8 +201,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
                         }
                         Err(e) => fail!(ExecutorError::TrExecutorError(format!(
                             "cannot create action phase of a new transaction \
-                                     for smart contract for reason {}",
-                            e
+                                     for smart contract for reason {e}"
                         ))),
                     }
                 } else {
