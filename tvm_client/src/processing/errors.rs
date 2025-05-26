@@ -10,6 +10,9 @@
 // limitations under the License.
 //
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use serde_json::Value;
 use tvm_block::MsgAddressInt;
 
@@ -224,5 +227,9 @@ impl Error {
 
     pub fn next_remp_status_timeout() -> ClientError {
         error(ErrorCode::NextRempStatusTimeout, "Next REMP status awaiting timeout".to_string())
+    }
+
+    pub fn invalid_thread<E: std::fmt::Display>(err: E) -> ClientError {
+        error(ErrorCode::InvalidThread, format!("Invalid thread id: {}", err))
     }
 }
