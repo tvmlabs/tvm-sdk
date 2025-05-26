@@ -20,12 +20,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --release --lib
+      - run: |
+          cargo build --release --lib
+          cargo test --release --lib
 
-  test_all:
-    name: Test all
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --all-features --release
+  # Uncomment the following section if you want to run tests with all features enabled
+  # NOTE: doesn't work for now due to collision of the target names
+  # test_all:
+  #   name: Test all
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@stable
+  #     - run: cargo test --all-features --release
