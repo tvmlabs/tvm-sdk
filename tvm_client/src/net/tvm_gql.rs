@@ -15,6 +15,7 @@ use serde::Deserializer;
 use serde::Serialize;
 use serde::de::Error;
 use serde_json::Value;
+use serde_json::json;
 
 use crate::error::ClientError;
 use crate::error::ClientResult;

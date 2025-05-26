@@ -17,8 +17,8 @@ regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 
-api_info = { path = '../../api/info' }
-tvm_client = { path = '../../tvm_client' }
+api_info.workspace = true
+tvm_client.workspace = true
 
 [dev-dependencies]
 assert_cmd = "2.0.13"

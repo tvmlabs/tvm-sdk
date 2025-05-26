@@ -26,5 +26,5 @@ tvm_abi.workspace = true
 tvm_block.workspace = true
 tvm_types.workspace = true
 
-api_derive = { path = "../api/derive" }
-api_info = { path = "../api/info" }
+api_derive.workspace = true
+api_info.workspace = true

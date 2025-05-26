@@ -20,6 +20,7 @@ use futures::StreamExt;
 use futures::stream::Fuse;
 use futures::stream::FusedStream;
 use serde_json::Value;
+use serde_json::json;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::mpsc::channel;

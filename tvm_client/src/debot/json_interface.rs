@@ -1,4 +1,5 @@
 use serde_json::Value as JsonValue;
+use serde_json::json;
 use tvm_abi::Contract;
 use tvm_abi::ParamType;
 
@@ -125,6 +126,8 @@ impl DebotInterface for JsonInterface {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::JsonInterface;
 
     const ABI: &str = r#"

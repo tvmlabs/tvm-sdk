@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --release
+      - run: cargo test --release --lib
 
   test_all:
     name: Test all

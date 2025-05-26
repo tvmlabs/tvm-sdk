@@ -14,6 +14,7 @@ use std::str::FromStr;
 use internal::serialize_cell_to_base64;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
+use serde_json::json;
 use tvm_block::MsgAddrStd;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;

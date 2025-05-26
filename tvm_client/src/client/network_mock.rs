@@ -14,6 +14,7 @@ use std::collections::HashMap;
 
 use futures::SinkExt;
 use serde_json::Value;
+use serde_json::json;
 
 use crate::ClientContext;
 use crate::client::FetchResult;

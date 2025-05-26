@@ -1,4 +1,5 @@
 use serde_json::Value as JsonValue;
+use serde_json::json;
 
 use super::TonClient;
 use super::dinterface::DebotInterface;
@@ -291,6 +292,8 @@ impl DebotInterface for QueryInterface {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::pack;
 
     #[test]

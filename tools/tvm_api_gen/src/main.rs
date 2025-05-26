@@ -8,7 +8,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
-extern crate serde_json;
 
 mod api;
 mod command_line;

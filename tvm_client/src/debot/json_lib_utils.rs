@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value as JsonValue;
+use serde_json::json;
 use serde_repr::Deserialize_repr;
 use serde_repr::Serialize_repr;
 use sha2::Digest;

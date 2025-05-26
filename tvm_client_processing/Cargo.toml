@@ -9,8 +9,7 @@ edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "tvm_client_processing"
-crate-type = ["cdylib", "rlib", "staticlib"]
+crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 async-trait.workspace = true
@@ -26,15 +25,15 @@ tokio = { default-features = false, features = ["sync"], version = "1.4" }
 tvm_block.workspace = true
 tvm_types.workspace = true
 #
-api_derive = { path = "../api/derive" }
-api_info = { path = "../api/info" }
+api_derive.workspace = true
+api_info.workspace = true
 
 [dev-dependencies]
-tokio = { default-features = false, features = [
+tokio = { version = "*", default-features = false, features = [
   "sync",
   "rt-multi-thread",
   "macros",
   "time",
   "net",
   "fs",
-], version = "1.4" }
+]}
