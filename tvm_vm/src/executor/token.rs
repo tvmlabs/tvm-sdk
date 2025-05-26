@@ -13,11 +13,14 @@ use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
 use wasmtime::component::ResourceTable;
+use wasmtime_wasi::p2::IoImpl;
 use wasmtime_wasi::p2::IoView;
 use wasmtime_wasi::p2::WasiCtx;
 use wasmtime_wasi::p2::WasiCtxBuilder;
+use wasmtime_wasi::p2::WasiImpl;
 use wasmtime_wasi::p2::WasiView;
 use wasmtime_wasi::runtime::with_ambient_tokio_runtime;
+use wasmtime_wasi_io;
 
 use crate::error::TvmError;
 use crate::executor::blockchain::add_action;
@@ -60,6 +63,19 @@ impl WasiView for MyState {
     fn ctx(&mut self) -> &mut WasiCtx {
         &mut self.ctx
     }
+}
+
+fn io_type_annotate<T: IoView, F>(val: F) -> F
+where
+    F: Fn(&mut T) -> IoImpl<&mut T>,
+{
+    val
+}
+fn type_annotate<T: WasiView, F>(val: F) -> F
+where
+    F: Fn(&mut T) -> WasiImpl<&mut T>,
+{
+    val
 }
 
 // // Generate all possible ASCII printable strings (length 1-6)
@@ -153,6 +169,38 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_MINTECC, None, cell)
 }
 
+fn add_to_linker_gosh(
+    wasm_linker: &mut wasmtime::component::Linker<MyState>,
+) -> Result<(), wasmtime::Error> {
+    let l = wasm_linker;
+
+    let io_closure = io_type_annotate::<MyState, _>(|t| IoImpl(t));
+    wasmtime_wasi_io::bindings::wasi::io::error::add_to_linker_get_host(l, io_closure)?;
+    wasmtime_wasi::p2::bindings::sync::io::streams::add_to_linker_get_host(l, io_closure)?;
+
+    let closure = type_annotate(|t| WasiImpl(IoImpl(t)));
+    let options = wasmtime_wasi::p2::bindings::sync::LinkOptions::default();
+    wasmtime_wasi::p2::bindings::sync::filesystem::types::add_to_linker_get_host(l, closure)?;
+
+    wasmtime_wasi::p2::bindings::clocks::wall_clock::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::clocks::monotonic_clock::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::random::random::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::filesystem::preopens::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::random::insecure::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::random::insecure_seed::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::exit::add_to_linker_get_host(l, &options.into(), closure)?;
+    wasmtime_wasi::p2::bindings::cli::environment::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::stdin::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::stdout::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::stderr::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::terminal_input::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::terminal_output::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::terminal_stdin::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::terminal_stdout::add_to_linker_get_host(l, closure)?;
+    wasmtime_wasi::p2::bindings::cli::terminal_stderr::add_to_linker_get_host(l, closure)?;
+    Ok(())
+}
+
 // execute wasm binary
 pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
@@ -230,10 +278,18 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     //     Ok(_) => {}
     //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to
     // linker {:?}", e)?, };
-    match wasmtime_wasi::p2::add_to_linker_sync(&mut wasm_linker) {
+    match add_to_linker_gosh(&mut wasm_linker) {
         Ok(_) => {}
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to linker {:?}", e)?,
+        Err(e) => err!(
+            ExceptionCode::WasmLoadFail,
+            "Failed to instantiate WASM instance
+    {:?}"
+        )?,
     };
+    // match wasmtime_wasi::p2::add_to_linker_sync(&mut wasm_linker) {
+    //     Ok(_) => {}
+    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to
+    // linker {:?}", e)?, };
     // let wasm_component_0 = wasmtime::component::Linker::
 
     // Instantiate WASM component. Will error if missing some wasm deps from linker
