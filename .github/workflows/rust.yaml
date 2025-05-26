@@ -15,8 +15,8 @@ jobs:
       - run: cargo clippy -- -D warnings
 
 
-  test_nightly:
-    name: Test nightly
+  test_nightly_debug:
+    name: Test nightly debug
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +24,16 @@ jobs:
       - run: |
           cargo build --lib
           cargo test --lib
+
+  test_nightly_release:
+    name: Test nightly release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: |
+          cargo build --release --lib
+          cargo test --release --lib
 
   test_debug:
     name: Test debug
@@ -35,8 +45,8 @@ jobs:
           cargo build --lib
           cargo test --lib
 
-  test:
-    name: Test
+  test_release:
+    name: Test release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
