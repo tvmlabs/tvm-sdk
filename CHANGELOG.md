@@ -6,6 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### New
 
+- Add support for working with Block Producers that require external message authorization.
+
+### Fixed
+
+- Fixed redirection while sending external messages
+
+
+## [2.15.0] - 2025-05-12
+
+### New
+
 - Add `CALCBMREWARD`, `CALCBMREWARDADJ`, `CALCMINSTAKEBM` instructions.
 
 ## [2.14.0] - 2025-05-12
