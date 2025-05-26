@@ -16,8 +16,6 @@ use std::process::Command;
 use serde::Serialize;
 use serde_json::Value;
 
-extern crate serde_json;
-
 #[derive(Serialize, Debug)]
 struct Dep {
     name: String,

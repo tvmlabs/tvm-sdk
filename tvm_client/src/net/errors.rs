@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use serde_json::Value;
+use serde_json::json;
 
 use crate::client::FetchResult;
 use crate::error::ClientError;

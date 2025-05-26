@@ -16,6 +16,7 @@ use std::slice::Iter;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
+use serde_json::json;
 use tvm_types::BuilderData;
 use tvm_vm::stack::StackItem;
 use tvm_vm::stack::continuation::ContinuationData;

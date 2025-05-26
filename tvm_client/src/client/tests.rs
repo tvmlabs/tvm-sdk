@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use api_info::ApiModule;
 use serde_json::Value;
+use serde_json::json;
 
 use crate::ClientConfig;
 use crate::client::ResultOfGetApiReference;

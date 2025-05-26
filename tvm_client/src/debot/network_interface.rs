@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use serde_json::Value;
+use serde_json::json;
 
 use super::TonClient;
 use super::dinterface::DebotInterface;

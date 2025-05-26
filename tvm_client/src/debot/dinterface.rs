@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use num_traits::cast::NumCast;
 use serde_json::Value;
+use serde_json::json;
 
 use super::JsonValue;
 use super::base64_interface::Base64Interface;

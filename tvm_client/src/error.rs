@@ -4,6 +4,7 @@ use chrono::TimeZone;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
+use serde_json::json;
 
 use crate::client::binding_config;
 use crate::client::core_version;
