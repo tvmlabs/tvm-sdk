@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::pin::Pin;
@@ -88,6 +91,10 @@ pub(crate) struct NetworkState {
     resume_timeout: AtomicU32,
     query_endpoint: RwLock<Option<Arc<Endpoint>>>,
     resolved_endpoints: RwLock<HashMap<String, ResolvedEndpoint>>,
+    bm_send_message_endpoint: RwLock<String>,
+    bk_send_message_endpoint: RwLock<Option<String>>,
+    _bm_license_contract: RwLock<Option<String>>,
+    bm_token: RwLock<Option<Value>>,
 }
 
 async fn query_by_url(
@@ -108,6 +115,7 @@ impl NetworkState {
         client_env: Arc<ClientEnv>,
         config: NetworkConfig,
         endpoint_addresses: Vec<String>,
+        bm_send_message_endpoint: String,
     ) -> Self {
         let (sender, receiver) = watch::channel(false);
         let regulation =
@@ -124,6 +132,10 @@ impl NetworkState {
             resume_timeout: AtomicU32::new(0),
             query_endpoint: RwLock::new(None),
             resolved_endpoints: Default::default(),
+            bm_send_message_endpoint: RwLock::new(bm_send_message_endpoint),
+            bk_send_message_endpoint: RwLock::new(None),
+            _bm_license_contract: RwLock::new(None),
+            bm_token: RwLock::new(None),
         }
     }
 
@@ -352,6 +364,32 @@ impl NetworkState {
         })
     }
 
+    pub async fn select_send_message_endpoint(&self) -> String {
+        let guarded_bk_endpoint = self.bk_send_message_endpoint.read().await;
+        if let Some(bk_endpoint) = guarded_bk_endpoint.as_ref() {
+            bk_endpoint.clone()
+        } else {
+            let bm_endpoint = self.bm_send_message_endpoint.read().await;
+            bm_endpoint.clone()
+        }
+    }
+
+    pub async fn get_bm_send_message_endpoint(&self) -> String {
+        self.bm_send_message_endpoint.read().await.to_string()
+    }
+
+    pub async fn update_bk_send_message_endpoint(&self, endpoint: Option<String>) {
+        *self.bk_send_message_endpoint.write().await = endpoint
+    }
+
+    pub async fn get_bm_token(&self) -> Option<Value> {
+        self.bm_token.read().await.clone()
+    }
+
+    pub async fn update_bm_token(&self, token: &Value) {
+        *self.bm_token.write().await = Some(token.clone())
+    }
+
     pub fn can_retry_network_error(&self, start: u64) -> bool {
         self.client_env.now_ms() < start + self.config.max_reconnect_timeout as u64
     }
@@ -391,20 +429,71 @@ fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
     result
 }
 
+fn construct_bm_send_message_endpoint(original: &str, use_https: bool) -> ClientResult<String> {
+    let original = if original.contains("://") {
+        original.to_string()
+    } else {
+        format!("http://{}", original)
+    };
+
+    let mut url = reqwest::Url::parse(&original).map_err(Error::parse_url_failed)?;
+
+    let scheme = if use_https { "https" } else { "http" };
+    url.set_scheme(scheme).map_err(|_| Error::modify_url_failed("Failed to set scheme"))?;
+    url.set_port(Some(8700)).map_err(|_| Error::modify_url_failed("Failed to set port"))?;
+    url.set_path("/bm/v2/messages");
+
+    Ok(url.to_string())
+}
+
+fn get_redirection_data(data: &Value) -> (Option<String>, Option<String>) {
+    let producers_opt = data.get("result").and_then(|res| res.get("producers")).or_else(|| {
+        data.get("node_error")
+            .and_then(|ne| ne.get("extensions"))
+            .and_then(|ext| ext.get("details"))
+            .and_then(|details| details.get("producers"))
+    });
+
+    let redirection_url = producers_opt
+        .and_then(|val| val.as_array())
+        .and_then(|arr| arr.first())
+        .and_then(|v| v.as_str())
+        .map(|s| {
+            if s.contains(':') {
+                format!("http://{}/bk/v2/messages", s)
+            } else {
+                format!("http://{}:8600/bk/v2/messages", s)
+            }
+        });
+
+    let thread_id = data
+        .get("node_error")
+        .and_then(|ne| ne.get("extensions"))
+        .and_then(|ext| ext.get("details"))
+        .and_then(|details| details.get("thread_id"))
+        .and_then(Value::as_str)
+        .map(String::from);
+
+    (thread_id, redirection_url)
+}
+
 impl ServerLink {
     pub fn new(config: NetworkConfig, client_env: Arc<ClientEnv>) -> ClientResult<Self> {
-        let endpoint_addresses = config
-            .endpoints
-            .clone()
-            .or(config.server_address.clone().map(|address| vec![address]))
-            .ok_or(crate::client::Error::net_module_not_init())?;
+        let endpoint_addresses =
+            config.endpoints.clone().ok_or(crate::client::Error::net_module_not_init())?;
         if endpoint_addresses.is_empty() {
             return Err(crate::client::Error::net_module_not_init());
         }
         let endpoint_addresses = replace_endpoints(endpoint_addresses);
+        let bm_send_message_endpoint =
+            construct_bm_send_message_endpoint(&endpoint_addresses[0], false)?;
 
-        let state =
-            Arc::new(NetworkState::new(client_env.clone(), config.clone(), endpoint_addresses));
+        let state = Arc::new(NetworkState::new(
+            client_env.clone(),
+            config.clone(),
+            endpoint_addresses,
+            bm_send_message_endpoint,
+        ));
 
         Ok(ServerLink {
             config: config.clone(),
@@ -606,30 +695,22 @@ impl ServerLink {
         }
     }
 
-    pub(crate) async fn query_http(
-        &self,
-        request: String,
-        endpoint: Option<&Endpoint>,
-    ) -> ClientResult<Value> {
+    pub(crate) async fn query_http(&self, request: String, endpoint: &str) -> ClientResult<Value> {
         let mut headers = HashMap::new();
         headers.insert("content-type".to_owned(), "application/json".to_owned());
         for (name, value) in Endpoint::http_headers(&self.config) {
             headers.insert(name, value);
         }
 
-        let mut current_endpoint: Option<Arc<Endpoint>>;
         let start = self.client_env.now_ms();
-        loop {
-            let endpoint = if let Some(endpoint) = endpoint {
-                endpoint
-            } else {
-                current_endpoint = Some(self.state.get_query_endpoint().await?.clone());
-                current_endpoint.as_ref().unwrap()
-            };
+
+        let mut attempts = 0;
+        while attempts <= 10 {
+            attempts += 1;
             let result = self
                 .client_env
                 .fetch(
-                    &endpoint.send_message_url,
+                    endpoint,
                     FetchMethod::Post,
                     Some(headers.clone()),
                     Some(request.clone()),
@@ -642,6 +723,8 @@ impl ServerLink {
                     self.state.reset_resume_timeout();
                     if response.status == 401 {
                         Err(Error::unauthorized(&response))
+                    } else if response.status == 404 {
+                        Err(Error::not_found(&"The requested resource could not be found"))
                     } else {
                         match response.body_as_json() {
                             Err(err) => Err(err),
@@ -653,7 +736,6 @@ impl ServerLink {
                     }
                 }
             };
-
             if let Err(err) = &result {
                 if crate::client::Error::is_network_error(err) {
                     if self.state.can_retry_network_error(start) {
@@ -668,6 +750,7 @@ impl ServerLink {
 
             return result;
         }
+        Err(ClientError::default())
     }
 
     pub(crate) async fn query_ws(&self, query: &GraphQLQuery) -> ClientResult<Value> {
@@ -795,58 +878,81 @@ impl ServerLink {
             .remove(0))
     }
 
-    // Sends message to node
+    // Sends message to blockchain
     pub async fn send_message(
         &self,
         msg_id: &str,
         msg_body: &[u8],
-        endpoint: Option<&Endpoint>,
         thread_id: ThreadIdentifier,
-    ) -> ClientResult<(ClientResult<Value>, Option<Endpoint>)> {
+    ) -> ClientResult<Value> {
         let mut attempts = 0;
+
+        let network_state = self.state();
         let mut message = ExtMessage {
             id: msg_id.to_string(),
             body: base64_encode(msg_body),
             expire_at: None,
             thread_id: Some(thread_id.to_string()),
+            bm_token: network_state.get_bm_token().await,
         };
 
-        let mut endpoint = endpoint.cloned();
+        let mut endpoint = network_state.select_send_message_endpoint().await;
         let query = json!([message]).to_string();
-
-        let mut result = self.query_http(query, endpoint.as_ref()).await;
+        let mut result = self.query_http(query, &endpoint).await;
         while attempts < self.config.message_retries_count {
             attempts += 1;
-            let Err(ref err) = result else { return Ok((result, None)) };
+            if let Ok(ref data) = result {
+                let (_, bk_url) = get_redirection_data(data);
+                if bk_url.is_some() {
+                    network_state.update_bk_send_message_endpoint(bk_url).await;
+                }
+                if let Some(bm_data) = data.get("block_manager") {
+                    eprintln!("tvm_client::net::send_message()... got token: {bm_data:?}");
+                    if let Some(token) = bm_data.get("token") {
+                        network_state.update_bm_token(token).await;
+                    }
+                }
+            }
+
+            let Err(ref err) = result else { return result };
+
+            if let Some(token) = err.data.get("block_manager").and_then(|bm| bm.get("token")) {
+                network_state.update_bm_token(token).await;
+                message.bm_token = Some(token.clone());
+            }
 
             let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
-                return Ok((result, None));
+                return result;
             };
 
             let Some(code) = ext.get("code").and_then(Value::as_str) else {
-                return Ok((result, None));
+                return result;
             };
 
-            if !["WRONG_PRODUCER", "THREAD_MISMATCH"].contains(&code) {
-                return Ok((result, None));
+            if !["WRONG_PRODUCER", "THREAD_MISMATCH", "TOKEN_EXPIRED"].contains(&code) {
+                return result;
             }
 
-            let (real_thread_id, redirect_url) = err.get_redirection_data();
+            if code == "TOKEN_EXPIRED" {
+                endpoint = network_state.get_bm_send_message_endpoint().await;
+                network_state.update_bk_send_message_endpoint(None).await;
+            }
+
+            let (real_thread_id, redirect_url) = get_redirection_data(&err.data);
 
             if let Some(thread_id) = real_thread_id {
                 message.set_thread_id(Some(thread_id));
             }
 
-            if let Some(url) = redirect_url {
-                if let Some(ep) = endpoint.as_mut() {
-                    ep.send_message_url = url;
-                }
+            if let Some(ref bk_endpoint) = redirect_url {
+                endpoint = bk_endpoint.to_string();
+                network_state.update_bk_send_message_endpoint(redirect_url).await;
             }
 
-            result = self.query_http(json!([message]).to_string(), endpoint.as_ref()).await;
+            result = self.query_http(json!([message]).to_string(), &endpoint).await;
         }
 
-        Ok((result, endpoint))
+        result
     }
 
     pub async fn send_messages(
