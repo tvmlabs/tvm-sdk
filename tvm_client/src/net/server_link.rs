@@ -107,7 +107,7 @@ async fn query_by_url(
         .fetch(&format!("{}?query={}", address, query), FetchMethod::Get, None, None, timeout)
         .await?;
 
-    response.body_as_json()
+    response.body_as_json(false)
 }
 
 impl NetworkState {
@@ -660,7 +660,7 @@ impl ServerLink {
                     if response.status == 401 {
                         Err(Error::unauthorized(&response))
                     } else {
-                        match response.body_as_json() {
+                        match response.body_as_json(false) {
                             Err(err) => Err(err),
                             Ok(value) => match Error::try_extract_graphql_error(&value) {
                                 Some(err) => Err(err),
@@ -704,9 +704,7 @@ impl ServerLink {
 
         let start = self.client_env.now_ms();
 
-        let mut attempts = 0;
-        while attempts <= 10 {
-            attempts += 1;
+        for _ in 0..3 {
             let result = self
                 .client_env
                 .fetch(
@@ -726,7 +724,7 @@ impl ServerLink {
                     } else if response.status == 404 {
                         Err(Error::not_found(&"The requested resource could not be found"))
                     } else {
-                        match response.body_as_json() {
+                        match response.body_as_json(true) {
                             Err(err) => Err(err),
                             Ok(value) => match Error::try_extract_send_messages_error(&value) {
                                 Some(err) => Err(err),
@@ -750,7 +748,7 @@ impl ServerLink {
 
             return result;
         }
-        Err(ClientError::default())
+        Err(Error::all_attempts_failed())
     }
 
     pub(crate) async fn query_ws(&self, query: &GraphQLQuery) -> ClientResult<Value> {

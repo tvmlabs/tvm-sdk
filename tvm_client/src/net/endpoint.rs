@@ -124,7 +124,7 @@ impl Endpoint {
             return Err(Error::unauthorized(&response));
         }
         let query_url = response.url.trim_end_matches(query).to_owned();
-        let info = response.body_as_json()?["data"]["info"].to_owned();
+        let info = response.body_as_json(false)?["data"]["info"].to_owned();
         Ok((info, query_url, response.remote_address))
     }
 

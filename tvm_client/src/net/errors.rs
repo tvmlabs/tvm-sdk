@@ -33,6 +33,7 @@ pub enum ErrorCode {
     ModifyUrlFailed = 620,
     SendMessageFailed = 621,
     NotFound = 622,
+    AllAttemptsFailed = 623,
 }
 
 pub struct Error;
@@ -273,6 +274,10 @@ impl Error {
     pub fn not_found(err: &str) -> ClientError {
         error(ErrorCode::NotFound, format!("Not found: {}", err))
     }
+
+    pub fn all_attempts_failed() -> ClientError {
+        error(ErrorCode::AllAttemptsFailed, "All attempts failed".to_string())
+    }
 }
 
 #[cfg(test)]
@@ -282,7 +287,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_try_extract_send_messages_error() {
+    fn test_try_extract_send_messages_error_wrong_producer() {
         let input = json!({
             "result": null,
             "error": {
@@ -325,5 +330,33 @@ mod tests {
             extensions.unwrap().get("code").and_then(|v| v.as_str()),
             Some("WRONG_PRODUCER")
         );
+    }
+
+    #[test]
+    fn test_try_extract_send_messages_error_token_expired() {
+        let input = json!({
+            "result": null,
+            "error": {
+                "code": "TOKEN_EXPIRED",
+                "message": "BM token expired",
+                "data": null
+            }
+        });
+
+        let result = Error::try_extract_send_messages_error(&input);
+        assert!(result.is_some());
+
+        let client_error = result.unwrap();
+
+        assert_eq!(client_error.code, ErrorCode::SendMessageFailed as u32);
+        assert_eq!(client_error.message, "BM token expired");
+
+        let bm = client_error.data.get("block_manager");
+        assert!(bm.is_none());
+
+        let extensions = client_error.data.get("node_error").and_then(|v| v.get("extensions"));
+        assert!(extensions.is_some());
+
+        assert_eq!(extensions.unwrap().get("code").and_then(|v| v.as_str()), Some("TOKEN_EXPIRED"));
     }
 }
