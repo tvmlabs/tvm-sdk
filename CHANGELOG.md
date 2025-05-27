@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.15.1] - 2025-05-12
+
+### New
+
+- Add `BURNECC` instructions.
+
 ## [2.15.0] - 2025-05-12
 
 ### New

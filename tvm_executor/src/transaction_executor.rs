@@ -888,6 +888,27 @@ pub trait TransactionExecutor {
                         RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
                 }
+                OutAction::BurnToken { value , key} => {
+                    let mut sub_value = CurrencyCollection::new();
+                    sub_value.other.set(&key, &VarUInteger32::from_two_u128(0, value as u128)?)?;
+                    let data = acc_remaining_balance.clone();
+                    match acc_remaining_balance.sub(&sub_value) {
+                        Ok(true) => {
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Ok(false) => {
+                            acc_remaining_balance = data;
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Err(_) => {
+                            acc_remaining_balance = data;
+                            phase.spec_actions += 1;
+                            0
+                        },
+                    }
+                }
                 OutAction::ExchangeShell { value } => {
                     let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
