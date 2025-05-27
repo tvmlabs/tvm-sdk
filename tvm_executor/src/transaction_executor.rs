@@ -890,15 +890,21 @@ pub trait TransactionExecutor {
                 }
                 OutAction::BurnToken { value , key} => {
                     let mut sub_value = CurrencyCollection::new();
-                    sub_value.other.set(&key, &VarUInteger32::from_two_u128(0, value as u128)?)?;
+                    if value == 0 {
+                        let other = acc_remaining_balance.get_other(key)?;
+                        if let Some(acc_value) = other {
+                            sub_value.other.set(&key, &acc_value)?;
+                        }
+                    } else {
+                        sub_value.other.set(&key, &VarUInteger32::from_two_u128(0, value as u128)?)?;
+                    }
                     match acc_remaining_balance.sub(&sub_value) {
-                        Ok(_) => {
+                        Ok(true) => {
                             phase.spec_actions += 1;
                             0
                         }
-                        Err(_) => {
-                            phase.spec_actions += 1;
-                            0
+                        Ok(false) | Err(_) => {
+                            RESULT_CODE_NOT_ENOUGH_EXTRA
                         },
                     }
                 }
