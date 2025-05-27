@@ -54,7 +54,8 @@ opt-level = 1
 opt-level = 3
 
 [profile.release]
-opt-level = 3     # Optimize for speed
+# NOTE: "z" doesn't work due to LLVM 20 optimizes too aggressively. Maybe fixed in the future.
+opt-level = "s"   # Conservative size optimizations
 lto = true        # Enable Link Time Optimization
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = "abort"   # Abort on panic
