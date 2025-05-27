@@ -905,7 +905,6 @@ impl ServerLink {
                     network_state.update_bk_send_message_endpoint(bk_url).await;
                 }
                 if let Some(bm_data) = data.get("block_manager") {
-                    eprintln!("tvm_client::net::send_message()... got token: {bm_data:?}");
                     if let Some(token) = bm_data.get("token") {
                         network_state.update_bm_token(token).await;
                     }
