@@ -54,7 +54,7 @@ opt-level = 1
 opt-level = 3
 
 [profile.release]
-opt-level = "z"   # Optimize for size.
+opt-level = 3     # Optimize for speed
 lto = true        # Enable Link Time Optimization
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = "abort"   # Abort on panic
@@ -62,9 +62,6 @@ strip = true      # Automatically strip symbols from the binary.
 
 [profile.test]
 # IMPORTANT! because with "abort" it will complain https://github.com/rust-lang/cargo/issues/6313
-
-[profile.release.build-override]
-opt-level = 3
 
 [workspace.dependencies]
 anyhow = "1.0.79"
