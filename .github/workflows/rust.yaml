@@ -15,31 +15,16 @@ jobs:
       - run: cargo clippy -- -D warnings
 
 
-  test_nightly_debug:
-    name: Test nightly debug
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-      - run: |
-          cargo build --lib
-          cargo test --lib
-
-  test_nightly_release:
-    name: Test nightly release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-      - run: |
-          cargo build --release --lib
-          cargo test --release --lib
-
   test_debug:
     name: Test debug
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
       - uses: dtolnay/rust-toolchain@stable
       - run: |
           cargo build --lib
@@ -50,6 +35,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
       - uses: dtolnay/rust-toolchain@stable
       - run: |
           cargo build --release --lib
