@@ -10,6 +10,9 @@
 // limitations under the License.
 //
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::de::Error;
@@ -71,6 +74,7 @@ pub struct ExtMessage {
     pub body: String,
     pub expire_at: Option<f64>,
     pub thread_id: Option<String>,
+    pub bm_token: Option<Value>,
 }
 
 impl ExtMessage {

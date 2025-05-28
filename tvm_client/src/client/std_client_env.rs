@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -221,6 +224,7 @@ impl ClientEnv {
         if let Some(headers) = headers {
             request = request.headers(Self::string_map_to_header_map(headers)?);
         }
+
         if let Some(body) = body {
             request = request.body(body);
         }

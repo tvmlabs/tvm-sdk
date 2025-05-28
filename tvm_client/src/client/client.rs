@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU32;
@@ -118,12 +121,11 @@ impl ClientContext {
         update_binding_config(&config.binding);
         let env = Arc::new(ClientEnv::new()?);
 
-        let server_link =
-            if config.network.server_address.is_some() || config.network.endpoints.is_some() {
-                Some(ServerLink::new(config.network.clone(), env.clone())?)
-            } else {
-                None
-            };
+        let server_link = if config.network.endpoints.is_some() {
+            Some(ServerLink::new(config.network.clone(), env.clone())?)
+        } else {
+            None
+        };
 
         let bocs = Arc::new(Bocs::new(config.boc.cache_max_size));
         let net = Arc::new(NetworkContext {

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.16.0] - 2025-05-28
+
+### New
+
+- Add support of authorization on Block Producers 
+
+### Fixed
+
+- Fixed redirection while sending external messages
+
+
 ## [2.15.0] - 2025-05-12
 
 ### New
