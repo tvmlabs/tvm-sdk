@@ -105,22 +105,22 @@ pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Sta
     engine.load_instruction(Instruction::new("CALCBMREWARDADJ"))?;
     fetch_stack(engine, 4)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
-    let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
-    let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mbkt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
+    let rbmprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
+    let drbmavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mbmt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
-    let rbkmin;
+    let rbmmin;
     if t <= TTMT - 1_f64 {
-        rbkmin = TOTALSUPPLY
+        rbmmin = TOTALSUPPLY
             * 0.1_f64
             * (1_f64 + KM)
             * ((-1_f64 * um * t).exp() - (-1_f64 * um * (t + 1_f64)).exp())
             / 3.5_f64;
     } else {
-        rbkmin = 0_f64;
+        rbmmin = 0_f64;
     }
-    let rbk = (((calc_mbk(t + drbkavg, KRBM) - mbkt) / drbkavg).max(rbkmin)).min(rbkprev);
-    engine.cc.stack.push(int!(rbk as u128));
+    let rbm = (((calc_mbk(t + drbmavg, KRBM) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
+    engine.cc.stack.push(int!(rbm as u128));
     Ok(())
 }
 

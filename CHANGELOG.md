@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.16.1] - 2025-05-28
+
+### New
+
+- Add `BURNECC` instructions.
+
 ## [2.16.0] - 2025-05-28
 
 ### New
@@ -11,7 +17,6 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Fixed redirection while sending external messages
-
 
 ## [2.15.0] - 2025-05-12
 
