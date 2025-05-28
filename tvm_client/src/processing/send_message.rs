@@ -10,8 +10,12 @@
 // limitations under the License.
 //
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::sync::Arc;
 
+use serde::Deserialize;
 use serde_json::Value;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
@@ -24,7 +28,6 @@ use crate::boc::internal::DeserializedObject;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
 use crate::encoding::base64_decode;
-use crate::encoding::hex_decode;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 use crate::processing::Error;
@@ -134,16 +137,15 @@ impl SendingMessage {
         }
         let body = base64_decode(serialized)?;
         let thread_id = match thread_id {
-            Some(t) => ThreadIdentifier::try_from(t).unwrap_or_default(),
+            Some(t) => ThreadIdentifier::try_from(t).map_err(|e| Error::invalid_thread(e))?,
             None => ThreadIdentifier::default(),
         };
         Ok(Self { serialized: serialized.to_string(), deserialized, id, body, dst, thread_id })
     }
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
-        let net = context.get_server_link()?;
-        let endpoint = net.state().get_query_endpoint().await?;
-        net.send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), self.thread_id).await
+        let server_link: &crate::net::ServerLink = context.get_server_link()?;
+        server_link.send_message(&self.id, &self.body, self.thread_id).await
     }
 }
 
@@ -155,28 +157,36 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
     let message =
         SendingMessage::new(&context, &params.message, params.abi.as_ref(), params.thread_id)?;
 
-    let result = message.send(&context).await?;
+    let raw_result = message.send(&context).await?;
 
-    if let Some(data) = result.get("data").and_then(|d| d.get("sendMessage")) {
-        let mut res: ResultOfSendMessage =
-            serde_json::from_value(data.clone()).map_err(Error::invalid_data)?;
-        if let Some(abi) = params.abi {
-            if let Ok(ext_out_msgs) = data.get_array("ext_out_msgs") {
-                let msgs: Option<Vec<Value>> = ext_out_msgs
-                    .iter()
-                    .map(|body| decode_send_message_result(&context, abi.clone(), body))
-                    .filter(|v| v.is_some())
-                    .collect();
+    match raw_result.get("result") {
+        Some(result_value) if !result_value.is_null() => {
+            let mut res: ResultOfSendMessage =
+                serde_json::from_value(result_value.clone()).map_err(Error::invalid_data)?;
 
-                res.return_value = msgs.and_then(|v| v.into_iter().next());
+            if let Some(abi) = params.abi {
+                if let Ok(ext_out_msgs) = result_value.get_array("ext_out_msgs") {
+                    let msgs = ext_out_msgs
+                        .iter()
+                        .filter_map(|body| decode_send_message_result(&context, abi.clone(), body))
+                        .collect::<Vec<_>>();
+
+                    res.return_value = msgs.into_iter().next();
+                }
             }
-        }
 
-        Ok(res)
-    } else {
-        let err: ClientError =
-            serde_json::from_value(result["error"].clone()).map_err(Error::invalid_data)?;
-        Err(err)
+            Ok(res)
+        }
+        _ => {
+            let err: ClientError = serde_json::from_value(
+                raw_result
+                    .get("error")
+                    .cloned()
+                    .ok_or_else(|| Error::invalid_data("Missing `error` field"))?,
+            )
+            .map_err(Error::invalid_data)?;
+            Err(err)
+        }
     }
 }
 

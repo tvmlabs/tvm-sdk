@@ -29,6 +29,10 @@ pub mod wrappers;
 pub use self::wrappers::*;
 
 pub mod bls;
+
+#[cfg(test)]
+mod tests;
+
 pub use bls::*;
 
 pub trait Mask {

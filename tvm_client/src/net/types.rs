@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use serde::Deserialize;
 use serde::Deserializer;
 use tvm_types::base64_encode;
@@ -167,13 +170,8 @@ pub enum NetworkQueriesProtocol {
 
 #[derive(Serialize, Deserialize, Debug, Clone, ApiType)]
 pub struct NetworkConfig {
-    /// **This field is deprecated, but left for backward-compatibility.**
-    /// Evernode endpoint.
-    pub server_address: Option<String>,
-
     /// List of Evernode endpoints. Any correct URL format can be specified,
-    /// including IP addresses. This parameter is prevailing over
-    /// `server_address`. Check the full list of [supported network endpoints](https://docs.evercloud.dev/products/evercloud/networks-endpoints).
+    /// including IP addresses.
     pub endpoints: Option<Vec<String>>,
 
     /// Deprecated. You must use `network.max_reconnect_timeout` that allows to
@@ -341,7 +339,6 @@ impl NetworkConfig {
 impl Default for NetworkConfig {
     fn default() -> Self {
         Self {
-            server_address: None,
             endpoints: None,
             network_retries_count: default_network_retries_count(),
             max_reconnect_timeout: default_max_reconnect_timeout(),

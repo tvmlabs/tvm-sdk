@@ -87,7 +87,7 @@ async fn not_authorized_response_text() {
     let context = client.context().clone();
     let link = context.net.server_link.as_ref().unwrap();
     let result = link
-        .query_http(
+        .query_graphql(
             &GraphQLQuery {
                 query: "query { info { version } }".to_string(),
                 timeout: None,
@@ -120,7 +120,7 @@ async fn not_authorized() {
     let context = client.context().clone();
     let link = context.net.server_link.as_ref().unwrap();
     let result = link
-        .query_http(
+        .query_graphql(
             &GraphQLQuery {
                 query: "query { info { version } }".to_string(),
                 timeout: None,

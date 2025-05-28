@@ -10,6 +10,9 @@
 // limitations under the License.
 //
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicI64;
@@ -29,6 +32,7 @@ use crate::net::NetworkConfig;
 
 pub const BOC_VERSION: &str = "2";
 
+#[derive(Debug)]
 pub(crate) struct Endpoint {
     pub query_url: String,
     pub subscription_url: String,
@@ -65,12 +69,12 @@ const HTTPS_PROTOCOL: &str = "https://";
 impl Endpoint {
     pub fn http_headers(config: &NetworkConfig) -> Vec<(String, String)> {
         let mut headers = vec![
-            ("tonclient-core-version".to_string(), core_version()),
-            ("X-Evernode-Expected-Account-Boc-Version".to_string(), BOC_VERSION.to_owned()),
+            ("tvmclient-core-version".to_string(), core_version()),
+            ("X-AckiNacki-Expected-Account-Boc-Version".to_string(), BOC_VERSION.to_owned()),
         ];
         if let Some(binding) = binding_config() {
-            headers.push(("tonclient-binding-library".to_string(), binding.library));
-            headers.push(("tonclient-binding-version".to_string(), binding.version));
+            headers.push(("tvmclient-binding-library".to_string(), binding.library));
+            headers.push(("tvmclient-binding-version".to_string(), binding.version));
         }
         if let Some(auth) = config.get_auth_header() {
             headers.push(auth);
@@ -120,7 +124,7 @@ impl Endpoint {
             return Err(Error::unauthorized(&response));
         }
         let query_url = response.url.trim_end_matches(query).to_owned();
-        let info = response.body_as_json()?["data"]["info"].to_owned();
+        let info = response.body_as_json(false)?["data"]["info"].to_owned();
         Ok((info, query_url, response.remote_address))
     }
 
@@ -233,27 +237,27 @@ fn test_expand_address() {
     assert_eq!(Endpoint::expand_address("https://localhost"), "https://localhost/graphql");
 
     assert_eq!(
-        Endpoint::expand_address("devnet.evercloud.dev"),
-        "https://devnet.evercloud.dev/graphql"
+        Endpoint::expand_address("shellnet.ackinacki.org"),
+        "https://shellnet.ackinacki.org/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("devnet.evercloud.dev:8033"),
-        "https://devnet.evercloud.dev:8033/graphql"
+        Endpoint::expand_address("shellnet.ackinacki.org:8033"),
+        "https://shellnet.ackinacki.org:8033/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("devnet.evercloud.dev:8033/graphql"),
-        "https://devnet.evercloud.dev:8033/graphql"
+        Endpoint::expand_address("shellnet.ackinacki.org:8033/graphql"),
+        "https://shellnet.ackinacki.org:8033/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("devnet.evercloud.dev/graphql"),
-        "https://devnet.evercloud.dev/graphql"
+        Endpoint::expand_address("shellnet.ackinacki.org/graphql"),
+        "https://shellnet.ackinacki.org/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("http://devnet.evercloud.dev/graphql"),
-        "http://devnet.evercloud.dev/graphql"
+        Endpoint::expand_address("http://shellnet.ackinacki.org/graphql"),
+        "http://shellnet.ackinacki.org/graphql"
     );
     assert_eq!(
-        Endpoint::expand_address("https://devnet.evercloud.dev"),
-        "https://devnet.evercloud.dev/graphql"
+        Endpoint::expand_address("https://shellnet.ackinacki.org"),
+        "https://shellnet.ackinacki.org/graphql"
     );
 }

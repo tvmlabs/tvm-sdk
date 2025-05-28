@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
 use std::pin::Pin;
 
@@ -38,8 +41,10 @@ impl FetchResult {
         Ok(&self.body)
     }
 
-    pub fn body_as_json(&self) -> ClientResult<serde_json::Value> {
-        self.check_success()?;
+    pub fn body_as_json(&self, only_parse: bool) -> ClientResult<serde_json::Value> {
+        if !only_parse {
+            self.check_success()?;
+        }
         let text = self.body_as_text()?;
         serde_json::from_str(text).map_err(|err| {
             Error::http_request_parse_error(format!("Body is not a valid JSON: {}\n{}", err, text))

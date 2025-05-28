@@ -216,7 +216,7 @@ fn append_number(
     } else {
         number.to_bytes_be()
     };
-    let expected_len = (size + 7) / 8;
+    let expected_len = size.div_ceil(8);
     while bytes.len() < expected_len {
         bytes.insert(0, if negative { 0xFF } else { 0 });
     }
