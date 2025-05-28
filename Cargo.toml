@@ -24,11 +24,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-<<<<<<< HEAD
-version = "2.15.1"
-=======
-version = "2.16.0"
->>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+version = "2.16.1"
 
 rust-version = "1.76.0"
 
