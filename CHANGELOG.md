@@ -3,7 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ## [2.15.1] - 2025-05-12
+=======
+## [2.16.1] - 2025-05-28
+>>>>>>> aeec6c50 (update changelog)
 
 ### New
 

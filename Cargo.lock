@@ -201,10 +201,14 @@ checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 [[package]]
 name = "api_derive"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "api_info",
  "proc-macro2",
@@ -216,10 +220,14 @@ dependencies = [
 [[package]]
 name = "api_info"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "serde",
  "serde_derive",
@@ -229,10 +237,14 @@ dependencies = [
 [[package]]
 name = "api_test"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "api_derive",
  "api_info",
@@ -5200,10 +5212,14 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 [[package]]
 name = "tl_code_gen"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "serde_json",
  "tvm_tl_codegen",
@@ -5455,10 +5471,14 @@ dependencies = [
 [[package]]
 name = "tvm_abi"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "chrono",
@@ -5476,10 +5496,14 @@ dependencies = [
 [[package]]
 name = "tvm_api"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "byteorder",
@@ -5499,10 +5523,14 @@ dependencies = [
 [[package]]
 name = "tvm_assembler"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -5531,10 +5559,14 @@ dependencies = [
 [[package]]
 name = "tvm_block"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -5556,10 +5588,14 @@ dependencies = [
 [[package]]
 name = "tvm_block_json"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "failure",
@@ -5582,10 +5618,14 @@ dependencies = [
 [[package]]
 name = "tvm_cli"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -5628,10 +5668,14 @@ dependencies = [
 [[package]]
 name = "tvm_client"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "aes",
  "anyhow",
@@ -5704,10 +5748,14 @@ dependencies = [
 [[package]]
 name = "tvm_client_processing"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "api_derive",
  "api_info",
@@ -5728,10 +5776,14 @@ dependencies = [
 [[package]]
 name = "tvm_common"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "failure",
  "log",
@@ -5744,10 +5796,14 @@ dependencies = [
 [[package]]
 name = "tvm_debugger"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -5766,10 +5822,14 @@ dependencies = [
 [[package]]
 name = "tvm_executor"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "failure",
@@ -5784,10 +5844,14 @@ dependencies = [
 [[package]]
 name = "tvm_sdk"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "api_derive",
@@ -5813,10 +5877,14 @@ dependencies = [
 [[package]]
 name = "tvm_struct"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "failure",
  "hex-literal",
@@ -5828,10 +5896,14 @@ dependencies = [
 [[package]]
 name = "tvm_tl_codegen"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "crc 1.8.1",
  "failure",
@@ -5846,10 +5918,14 @@ dependencies = [
 [[package]]
 name = "tvm_types"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "aes-ctr",
  "base64 0.22.1",
@@ -5879,10 +5955,14 @@ dependencies = [
 [[package]]
 name = "tvm_vm"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -6012,10 +6092,14 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 [[package]]
 name = "update_trusted_blocks"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "2.15.1"
 =======
 version = "2.16.0"
 >>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
+=======
+version = "2.16.1"
+>>>>>>> aeec6c50 (update changelog)
 dependencies = [
  "bincode",
  "serde",
