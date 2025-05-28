@@ -2,11 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.15.0] - 2025-05-12
+## [2.16.0] - 2025-05-28
 
 ### New
 
-- Add support for working with Block Producers that require external message authorization.
+- Add support of authorization on Block Producers 
 
 ### Fixed
 
