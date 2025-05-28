@@ -336,7 +336,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
         .expect(&format!("`{}` was not an exported function", wasm_func_name));
-    let wasm_function = match wasm_function.typed::<(u32,), (u32,)>(&wasm_store) {
+    let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
     };
@@ -352,7 +352,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
     println!("WASM Args loaded {:?}", wasm_func_args);
-    let result = match wasm_function.call(&mut wasm_store, (4u32,)) {
+    let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
     };
@@ -380,9 +380,9 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let res_vec = result.0;
     // let result = items_serialize(res_vec, engine);
 
-    let mut res = [0u8; 4];
-    res[..4].copy_from_slice(&res_vec.to_le_bytes());
-    let cell = TokenValue::write_bytes(&res, &ABI_VERSION_2_4)?.into_cell()?;
+    // let mut res = [0u8; 4];
+    // res[..4].copy_from_slice(&res_vec.to_le_bytes());
+    let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
     // TODO: Is this stack push enough? do I need an action here?
     engine.cc.stack.push(StackItem::cell(cell));
     // let mut a: u64 = result as u64;
@@ -515,10 +515,10 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
 pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMREWARD"))?;
     fetch_stack(engine, 4)?;
-    let radj = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; 
-    let depoch = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; 
-    let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;  
-    let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; 
+    let radj = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let depoch = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
     let reward;
     if mbm >= TOTALSUPPLY * 0.1_f64 {
         reward = 0_f64;
