@@ -441,14 +441,15 @@ fn test_run_wasm_fortytwo() {
     let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
-    let wasm_func = "add";
+    let wasm_func = "answer";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let filename =
-        "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/add.wasm";
+    //    "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/add.wasm";
+    "/Users/elar/Code/Havok/AckiNacki/awnion/wasip2-minimal-wat/minimal.wat";
     //"/Users/elar/Code/Havok/AckiNacki/ackinacki-game/target/wasm32-wasip2/release/popitgame_tvm.2.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
