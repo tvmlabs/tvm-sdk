@@ -38,6 +38,7 @@ pub const ACTION_MINTECC: u32 = 0xc2bc6dd8;
 // maybe not needed
 pub const ACTION_CNVRTSHELLQ: u32 = 0x90d8ae28;
 pub const ACTION_MINT_SHELL_TOKEN: u32 = 0xcb9b9a2f;
+pub const ACTION_BURNECC: u32 = 0x130efdee;
 
 #[cfg(test)]
 #[path = "tests/test_out_actions.rs"]
@@ -108,8 +109,8 @@ pub enum OutAction {
     /// Action for mint some token into account
     MintToken { value: ExtraCurrencyCollection },
 
-    /// Probably not needed
-    // RunWasm { value: u64 },
+    /// Action for burn some token into account
+    BurnToken { value: u64, key: u32 },
 
     /// Action for exchange some token into shell in account
     ExchangeShell { value: u64 },
@@ -170,11 +171,10 @@ impl OutAction {
         OutAction::MintToken { value }
     }
 
-    // /// Create new instance OutAction::RunWasm
-    // pub fn new_run_wasm(value: u64) -> Self {
-    //     // TODO store reuslt in cell?
-    //     OutAction::RunWasm { value }
-    // }
+    /// Create new instance OutAction::MintToken
+    pub fn new_burn(value: u64, key: u32) -> Self {
+        OutAction::BurnToken { value, key }
+    }
 
     /// Create new instance OutAction::ExchangeShell
     pub fn new_exchange_shell(value: u64) -> Self {
@@ -224,10 +224,11 @@ impl Serializable for OutAction {
                 ACTION_MINTECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
             }
-            // OutAction::RunWasm { ref value } => {
-            //     ACTION_RUNWASM.write_to(cell)?; // tag
-            //     value.write_to(cell)?;
-            // }
+            OutAction::BurnToken { ref value, ref key } => {
+                ACTION_BURNECC.write_to(cell)?; // tag
+                value.write_to(cell)?;
+                key.write_to(cell)?;
+            }
             OutAction::ExchangeShell { ref value } => {
                 ACTION_CNVRTSHELLQ.write_to(cell)?;
                 value.write_to(cell)?;
@@ -282,11 +283,13 @@ impl Deserializable for OutAction {
                 value.read_from(cell)?;
                 *self = OutAction::new_mint(value);
             }
-            // ACTION_RUNWASM => {
-            //     let mut value = 0u64;
-            //     value.read_from(cell)?;
-            //     *self = OutAction::new_run_wasm(value); // TODO
-            // }
+            ACTION_BURNECC => {
+                let mut value: u64 = 0;
+                let mut key: u32 = 0;
+                value.read_from(cell)?;
+                key.read_from(cell)?;
+                *self = OutAction::new_burn(value, key);
+            }
             ACTION_CNVRTSHELLQ => {
                 let mut value = u64::default();
                 value.read_from(cell)?;

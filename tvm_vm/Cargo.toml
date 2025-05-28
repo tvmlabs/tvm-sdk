@@ -75,6 +75,7 @@ pprof = { features = ["criterion", "flamegraph"], version = "0.13.0" }
 pretty_assertions = "1.4.0"
 
 [features]
+default = ["gosh"]
 fift_check = []
 gosh = ["tvm_block/gosh", "diffy", "similar", "zstd"]
 log_file = []

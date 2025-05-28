@@ -26,7 +26,7 @@ members = [
 #, "wasm/wasm_test", "wasm/wasm_test_cmd", "wasm/add"
 ]
 [workspace.package]
-version = "2.10.0"
+version = "2.16.1"
 
 rust-version = "1.76.0"
 
@@ -65,7 +65,7 @@ strip = true      # Automatically strip symbols from the binary.
 panic = "unwind"
 
 [workspace.dependencies]
-getrandom = { version = "0.2", features = ["js"] }
+# getrandom = { version = "0.2", features = ["js"] }
 anyhow = "1.0.79"
 async-trait = "0.1.77"
 base64 = "0.22.1"
