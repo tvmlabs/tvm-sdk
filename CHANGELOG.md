@@ -18,8 +18,6 @@ All notable changes to this project will be documented in this file.
 
 - Fixed redirection while sending external messages
 
->>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
-
 ## [2.15.0] - 2025-05-12
 
 ### New
