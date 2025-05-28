@@ -10,6 +10,9 @@
 // limitations under the License.
 //
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::sync::Arc;
 
 use serde::Deserialize;
@@ -134,20 +137,15 @@ impl SendingMessage {
         }
         let body = base64_decode(serialized)?;
         let thread_id = match thread_id {
-            Some(t) => ThreadIdentifier::try_from(t).unwrap_or_default(),
+            Some(t) => ThreadIdentifier::try_from(t).map_err(|e| Error::invalid_thread(e))?,
             None => ThreadIdentifier::default(),
         };
         Ok(Self { serialized: serialized.to_string(), deserialized, id, body, dst, thread_id })
     }
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
-        let net = context.get_server_link()?;
-        let endpoint = net.state().get_query_endpoint().await?;
-        let (result, _updated_endpoint) = net
-            .send_message(&self.id, &self.body, Some(&endpoint), self.thread_id)
-            .await?;
-
-        result
+        let server_link: &crate::net::ServerLink = context.get_server_link()?;
+        server_link.send_message(&self.id, &self.body, self.thread_id).await
     }
 }
 
