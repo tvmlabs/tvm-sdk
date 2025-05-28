@@ -2,11 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+<<<<<<< HEAD
 ## [2.15.1] - 2025-05-12
 
 ### New
 
 - Add `BURNECC` instructions.
+=======
+## [2.16.0] - 2025-05-28
+
+### New
+
+- Add support of authorization on Block Producers 
+
+### Fixed
+
+- Fixed redirection while sending external messages
+
+>>>>>>> 9b9853e3 (Feature/node 1618 support bm token in sdk (#93))
 
 ## [2.15.0] - 2025-05-12
 

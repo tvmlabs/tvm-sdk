@@ -1,3 +1,6 @@
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::fmt::Display;
 
 use serde_json::Value;
@@ -29,6 +32,8 @@ pub enum ErrorCode {
     ParseUrlFailed = 619,
     ModifyUrlFailed = 620,
     SendMessageFailed = 621,
+    NotFound = 622,
+    AllAttemptsFailed = 623,
 }
 
 pub struct Error;
@@ -65,14 +70,27 @@ impl Error {
         None
     }
 
-    pub fn try_extract_send_messages_error(value: &Value) -> Option<ClientError> {
-        if let Some(error) = value.get("error") {
-            if !error.is_null() {
-                return Some(Self::send_message_server_error(error));
+    pub fn try_extract_send_messages_error(resp_body: &Value) -> Option<ClientError> {
+        let error = resp_body.get("error")?;
+        if error.is_null() {
+            return None;
+        }
+
+        let mut client_error = Self::send_message_server_error(error);
+
+        if let Some(bm_data) = resp_body.get("block_manager") {
+            client_error
+                .data
+                .as_object_mut()
+                .and_then(|obj| obj.get_mut("block_manager"))
+                .map(|entry| *entry = bm_data.clone());
+
+            if client_error.data.get("block_manager").is_none() {
+                client_error.data["block_manager"] = bm_data.clone();
             }
         }
 
-        None
+        Some(client_error)
     }
 
     pub fn queries_query_failed(mut err: ClientError) -> ClientError {
@@ -251,5 +269,94 @@ impl Error {
 
     pub fn modify_url_failed(err: &str) -> ClientError {
         error(ErrorCode::ParseUrlFailed, format!("Failed to modify url: {}", err))
+    }
+
+    pub fn not_found(err: &str) -> ClientError {
+        error(ErrorCode::NotFound, format!("Not found: {}", err))
+    }
+
+    pub fn all_attempts_failed() -> ClientError {
+        error(ErrorCode::AllAttemptsFailed, "All attempts failed".to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn test_try_extract_send_messages_error_wrong_producer() {
+        let input = json!({
+            "result": null,
+            "error": {
+                "code": "WRONG_PRODUCER",
+                "message": "Resend message to the active Block Producer",
+                "data": {
+                    "producers": ["15.204.30.84:8600"],
+                    "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
+                    "exit_code": null,
+                    "current_time": "1748084498461",
+                    "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000"
+                }
+            },
+            "block_manager": {
+                "license_address": "0:8e8dad0462a4d5c528e18251846f24bc5c04cd1871115fb1e9b00c9741f60800",
+                "token": {
+                    "unsigned": "1748084798476",
+                    "signature": "c0c4fc73a9bab0f9d648eb1c2402d21a44559bf2a4b24f735f55a384d3a3914cbe2c9d1ed403ef548dded51c62510581b0dad96891ac6fa16af8687c7586b901",
+                    "verifying_key": "e2c9d4be54d342d3f0e6394a7738fc39b93d4fe3fdba317aa699f7305566de2b"
+                }
+            }
+        });
+
+        let result = Error::try_extract_send_messages_error(&input);
+        assert!(result.is_some());
+
+        let client_error = result.unwrap();
+
+        assert_eq!(client_error.code, ErrorCode::SendMessageFailed as u32);
+        assert_eq!(client_error.message, "Resend message to the active Block Producer");
+
+        let bm = client_error.data.get("block_manager");
+        assert!(bm.is_some());
+        assert!(bm.unwrap().get("license_address").is_some());
+
+        let extensions = client_error.data.get("node_error").and_then(|v| v.get("extensions"));
+        assert!(extensions.is_some());
+
+        assert_eq!(
+            extensions.unwrap().get("code").and_then(|v| v.as_str()),
+            Some("WRONG_PRODUCER")
+        );
+    }
+
+    #[test]
+    fn test_try_extract_send_messages_error_token_expired() {
+        let input = json!({
+            "result": null,
+            "error": {
+                "code": "TOKEN_EXPIRED",
+                "message": "BM token expired",
+                "data": null
+            }
+        });
+
+        let result = Error::try_extract_send_messages_error(&input);
+        assert!(result.is_some());
+
+        let client_error = result.unwrap();
+
+        assert_eq!(client_error.code, ErrorCode::SendMessageFailed as u32);
+        assert_eq!(client_error.message, "BM token expired");
+
+        let bm = client_error.data.get("block_manager");
+        assert!(bm.is_none());
+
+        let extensions = client_error.data.get("node_error").and_then(|v| v.get("extensions"));
+        assert!(extensions.is_some());
+
+        assert_eq!(extensions.unwrap().get("code").and_then(|v| v.as_str()), Some("TOKEN_EXPIRED"));
     }
 }
