@@ -174,9 +174,11 @@ fn add_to_linker_gosh(
 ) -> Result<(), wasmtime::Error> {
     let l = wasm_linker;
 
-    let io_closure = io_type_annotate::<MyState, _>(|t| IoImpl(t));
-    wasmtime_wasi_io::bindings::wasi::io::error::add_to_linker_get_host(l, io_closure)?;
-    wasmtime_wasi::p2::bindings::sync::io::streams::add_to_linker_get_host(l, io_closure)?;
+    // let io_closure = io_type_annotate::<MyState, _>(|t| IoImpl(t));
+    // wasmtime_wasi_io::bindings::wasi::io::error::add_to_linker_get_host(l,
+    // io_closure)?;
+    // wasmtime_wasi::p2::bindings::sync::io::streams::add_to_linker_get_host(l,
+    // io_closure)?;
 
     let closure = type_annotate(|t| WasiImpl(IoImpl(t)));
     let options = wasmtime_wasi::p2::bindings::sync::LinkOptions::default();
@@ -314,6 +316,9 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
 
     // get callable wasm func
+    for export in wasm_component.component_type().exports(&wasm_engine) {
+        println!("{:?}", export.0);
+    }
     let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
     println!("Instance Index {:?}", instance_index);
     let func_index = match wasm_instance.get_export_index(
@@ -330,7 +335,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
         .expect(&format!("`{}` was not an exported function", wasm_func_name));
-    let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
+    let wasm_function = match wasm_function.typed::<(u32,), (u32,)>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
     };
@@ -346,12 +351,10 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
     println!("WASM Args loaded {:?}", wasm_func_args);
-    let result =
-        match with_ambient_tokio_runtime(|| wasm_function.call(&mut wasm_store, (wasm_func_args,)))
-        {
-            Ok(result) => result,
-            Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
-        };
+    let result = match wasm_function.call(&mut wasm_store, (4u32,)) {
+        Ok(result) => result,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
+    };
     println!("WASM Execution result: {:?}", result);
     // let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
     //     Ok(result) => result,
@@ -376,7 +379,9 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let res_vec = result.0;
     // let result = items_serialize(res_vec, engine);
 
-    let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
+    let mut res = [0u8; 4];
+    res[..4].copy_from_slice(&res_vec.to_le_bytes());
+    let cell = TokenValue::write_bytes(&res, &ABI_VERSION_2_4)?.into_cell()?;
     // TODO: Is this stack push enough? do I need an action here?
     engine.cc.stack.push(StackItem::cell(cell));
     // let mut a: u64 = result as u64;
