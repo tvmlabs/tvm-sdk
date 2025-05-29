@@ -48,13 +48,13 @@ pub fn create_decode_command() -> Command {
         .about("Decodes tvc data (including compiler version) from different sources.")
         .arg(
             Arg::new("TVC")
-                .long("--tvc")
+                .long("tvc")
                 .conflicts_with("BOC")
                 .help("Contract is passed via path to the TVC file."),
         )
         .arg(
             Arg::new("BOC")
-                .long("--boc")
+                .long("boc")
                 .conflicts_with("TVC")
                 .help("Contract is passed via path to the account BOC file."),
         )
@@ -74,7 +74,7 @@ pub fn create_decode_command() -> Command {
                 .required(true)
                 .help("Message body encoded as base64."))
             .arg(Arg::new("ABI")
-                .long("--abi")
+                .long("abi")
                 .num_args(1)
                 .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.")))
         .subcommand(Command::new("msg")
@@ -83,11 +83,11 @@ pub fn create_decode_command() -> Command {
                 .required(true)
                 .help("Path to the message boc file (with binary data), message in base64 or message id."))
             .arg(Arg::new("ABI")
-                .long("--abi")
+                .long("abi")
                 .num_args(1)
                 .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file."))
             .arg(Arg::new("BASE64")
-                .long("--base64")
+                .long("base64")
                 .help("Flag that changes behavior of the command to work with data in base64 (FLAG IS DEPRECATED).")))
         .subcommand(tvc_cmd)
         .subcommand(Command::new("account")
@@ -96,19 +96,19 @@ pub fn create_decode_command() -> Command {
                 .allow_hyphen_values(true)
                 .about("Decodes data fields from the contract state.")
                 .arg(Arg::new("TVC")
-                    .long("--tvc")
+                    .long("tvc")
                     .short('t')
                     .num_args(1)
                     .help("Path to the tvc file with contract state.")
                     .conflicts_with("ADDRESS"))
                 .arg(Arg::new("ADDRESS")
-                    .long("--addr")
+                    .long("addr")
                     .short('a')
                     .num_args(1)
                     .help("Contract address.")
                     .conflicts_with("TVC"))
                 .arg(Arg::new("ABI")
-                    .long("--abi")
+                    .long("abi")
                     .num_args(1)
                     .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.")))
             .subcommand(Command::new("boc")
@@ -117,7 +117,7 @@ pub fn create_decode_command() -> Command {
                     .required(true)
                     .help("Path to the account boc file."))
                 .arg(Arg::new("DUMPTVC")
-                    .long("--dumptvc")
+                    .long("dumptvc")
                     .short('d')
                     .num_args(1)
                     .help("Path to the TVC file where to save the dump."))))
@@ -673,7 +673,6 @@ pub mod msg_printer {
 mod tests {
     use super::*;
 
-    #[ignore]
     #[tokio::test]
     async fn test_decode_msg_json() {
         let msg_boc = std::fs::read("tests/samples/wallet.boc").unwrap();
