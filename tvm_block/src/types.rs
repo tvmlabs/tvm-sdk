@@ -885,10 +885,11 @@ pub trait AddSub {
 
 impl AddSub for CurrencyCollection {
     fn sub(&mut self, other: &Self) -> Result<bool> {
+        let data = self.clone();
         if !self.grams.sub(&other.grams)? {
             return Ok(false);
         }
-        other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
+        let res = other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
             if let Some(mut a) = self.other.get(&key)? {
                 if a >= b {
                     a.sub(&b)?;
@@ -901,7 +902,13 @@ impl AddSub for CurrencyCollection {
 
             Ok(false) // coin not found in mine or amount is smaller - cannot
             // subtract
-        })
+        });
+        if let Ok(true) = res {
+            return Ok(true);
+        } else {
+            *self = data;
+            return res;
+        }
     }
 
     fn add(&mut self, other: &Self) -> Result<bool> {
