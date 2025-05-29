@@ -200,7 +200,7 @@ checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
 name = "api_derive"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "api_info",
  "proc-macro2",
@@ -211,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "api_info"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -219,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "api_test"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "api_derive",
  "api_info",
@@ -1036,9 +1036,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.38"
+version = "4.5.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed93b9805f8ba930df42c2590f05453d5ec36cbb85d018868a5b24d31f6ac000"
+checksum = "fd60e63e9be68e5fb56422e397cf9baddded06dae1d2e523401542383bc72a9f"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1046,9 +1046,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.38"
+version = "4.5.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "379026ff283facf611b0ea629334361c4211d1b12ee01024eec1591133b04120"
+checksum = "89cc6392a1f72bbeb820d71f32108f61fdaf18bc526e1d23954168a67759ef51"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1180,9 +1180,9 @@ dependencies = [
 
 [[package]]
 name = "core-foundation"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b55271e5c8c478ad3f38ad24ef34923091e0548492a266d19b3c0b4d82574c63"
+checksum = "b2a6cd9ae233e7f62ba4e9353e81a88df7fc8a5987b8d445b4d90c879bd156f6"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -2438,22 +2438,28 @@ dependencies = [
 
 [[package]]
 name = "hyper-util"
-version = "0.1.12"
+version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf9f1e950e0d9d1d3c47184416723cf29c0d1f93bd8cccf37e4beb6b44f31710"
+checksum = "b1c293b6b3d21eca78250dc7dbebd6b9210ec5530e038cbfe0661b5c47ab06e8"
 dependencies = [
+ "base64 0.22.1",
  "bytes",
  "futures-channel",
+ "futures-core",
  "futures-util",
  "http",
  "http-body",
  "hyper",
+ "ipnet",
  "libc",
+ "percent-encoding",
  "pin-project-lite",
  "socket2",
+ "system-configuration",
  "tokio",
  "tower-service",
  "tracing",
+ "windows-registry",
 ]
 
 [[package]]
@@ -2685,6 +2691,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "469fb0b9cefa57e3ef31275ee7cacb78f2fdca44e4765491884a2b119d4eb130"
 
 [[package]]
+name = "iri-string"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbc5ebe9c3a1a7a5127f920a418f7585e9e758e911d0466ed004f393b0e380b2"
+dependencies = [
+ "memchr",
+ "serde",
+]
+
+[[package]]
 name = "is-terminal"
 version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2791,9 +2807,9 @@ checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
 
 [[package]]
 name = "libloading"
-version = "0.8.7"
+version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a793df0d7afeac54f95b471d3af7f0d4fb975699f972341a4b76988d49cdf0c"
+checksum = "07033963ba89ebaf1584d767badaa2e8fcec21aedea6b8c0346d487d49c28667"
 dependencies = [
  "cfg-if",
  "windows-targets 0.53.0",
@@ -4151,9 +4167,9 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "reqwest"
-version = "0.12.15"
+version = "0.12.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d19c46a6fdd48bc4dab94b6103fccc55d34c67cc0ad04653aad4ea2a07cd7bbb"
+checksum = "c3f27698fc5799d2a281528a908bd874973953ca2e7bc2311637e10c263c723b"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -4161,7 +4177,6 @@ dependencies = [
  "cookie_store",
  "encoding_rs",
  "futures-core",
- "futures-util",
  "h2",
  "http",
  "http-body",
@@ -4181,24 +4196,22 @@ dependencies = [
  "quinn",
  "rustls",
  "rustls-native-certs",
- "rustls-pemfile",
  "rustls-pki-types",
  "serde",
  "serde_json",
  "serde_urlencoded",
  "sync_wrapper",
- "system-configuration",
  "tokio",
  "tokio-native-tls",
  "tokio-rustls",
  "tower",
+ "tower-http",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "webpki-roots 0.26.11",
- "windows-registry",
+ "webpki-roots 1.0.0",
 ]
 
 [[package]]
@@ -4332,15 +4345,6 @@ dependencies = [
  "rustls-pki-types",
  "schannel",
  "security-framework 3.2.0",
-]
-
-[[package]]
-name = "rustls-pemfile"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dce314e5fee3f39953d46bb63bb8a46d40c2f8fb7cc5a3b6cab2bde9721d6e50"
-dependencies = [
- "rustls-pki-types",
 ]
 
 [[package]]
@@ -4507,7 +4511,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271720403f46ca04f7ba6f55d438f8bd878d6b8ca0a1046e8228c4145bcbb316"
 dependencies = [
  "bitflags 2.9.1",
- "core-foundation 0.10.0",
+ "core-foundation 0.10.1",
  "core-foundation-sys",
  "libc",
  "security-framework-sys",
@@ -4756,9 +4760,9 @@ checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
 
 [[package]]
 name = "socket2"
-version = "0.5.9"
+version = "0.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f5fd57c80058a56cf5c777ab8a126398ece8e442983605d280a44ce79d0edef"
+checksum = "e22376abed350d73dd1cd119b57ffccad95b4e585a7cda43e286245ce23c0678"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
@@ -5119,7 +5123,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tl_code_gen"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "serde_json",
  "tvm_tl_codegen",
@@ -5244,6 +5248,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "tower-http"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fdb0c213ca27a9f57ab69ddb290fd80d970922355b83ae380b395d3986b8a2e"
+dependencies = [
+ "bitflags 2.9.1",
+ "bytes",
+ "futures-util",
+ "http",
+ "http-body",
+ "iri-string",
+ "pin-project-lite",
+ "tower",
+ "tower-layer",
+ "tower-service",
+]
+
+[[package]]
 name = "tower-layer"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5351,7 +5373,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_abi"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5368,7 +5390,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_api"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -5386,7 +5408,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_assembler"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -5413,7 +5435,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -5434,7 +5456,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block_json"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "failure",
@@ -5455,7 +5477,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_cli"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -5496,7 +5518,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "aes",
  "anyhow",
@@ -5567,7 +5589,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client_processing"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "api_derive",
  "api_info",
@@ -5586,7 +5608,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_common"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "failure",
  "log",
@@ -5598,7 +5620,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_debugger"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -5616,7 +5638,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_executor"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "failure",
@@ -5630,7 +5652,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_sdk"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "api_derive",
@@ -5654,7 +5676,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_struct"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "failure",
  "hex-literal",
@@ -5665,7 +5687,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tl_codegen"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "crc 1.8.1",
  "failure",
@@ -5678,7 +5700,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_types"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "aes-ctr",
  "base64 0.22.1",
@@ -5707,7 +5729,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_vm"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -5836,7 +5858,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "update_trusted_blocks"
-version = "2.15.0"
+version = "2.16.1"
 dependencies = [
  "bincode",
  "serde",

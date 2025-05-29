@@ -8,6 +8,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -176,7 +180,6 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             hdkey_derivation_path: HD_PATH.to_string(),
         },
         network: NetworkConfig {
-            server_address: Some(config.url.to_owned()),
             sending_endpoint_count: endpoints_cnt,
             endpoints: if modified_endpoints.is_empty() { None } else { Some(modified_endpoints) },
             message_retries_count: config.retries as i8,
