@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.16.2] - 2025-05-29
+
+### New
+
+- Upgraded to Rust 2024 Edition
+- Upgraded clap to major version 4 (improving command-line interface usability)
+- Added `api/derive` and `api/info` as workspace members (enabling their use as external dependencies for better consistency)
+
+### Fixed
+
+- Multiple minor refactoring changes related to Rust 2024 Edition upgrade (no functional impact)
+
 ## [2.16.1] - 2025-05-28
 
 ### New
@@ -12,7 +24,7 @@ All notable changes to this project will be documented in this file.
 
 ### New
 
-- Add support of authorization on Block Producers 
+- Add support of authorization on Block Producers
 
 ### Fixed
 
@@ -47,12 +59,12 @@ All notable changes to this project will be documented in this file.
 
 ### New
 - `BOC v3` stores all hashes and cell stats (tree cell count, tree bits count).
-  It increases BOC size but speeds up deserialization time. It stores cell offsets instead of cell indexes, 
-  to avoid extra indirection level when resolving cell address inside boc. 
-  It also introduces new internal cell variant `Boc3Cell` that holds ref to entire boc and offset 
-  of raw cell data. So whe using boc3 and new cell variant, it is possible to avoid boc deserialization into 
-  cell tree structure. 
-- `Cell` now declared as ан enum instead of Arc<dyn CellImpl>. 
+  It increases BOC size but speeds up deserialization time. It stores cell offsets instead of cell indexes,
+  to avoid extra indirection level when resolving cell address inside boc.
+  It also introduces new internal cell variant `Boc3Cell` that holds ref to entire boc and offset
+  of raw cell data. So whe using boc3 and new cell variant, it is possible to avoid boc deserialization into
+  cell tree structure.
+- `Cell` now declared as ан enum instead of Arc<dyn CellImpl>.
 - `BocReader` parameter `force_cell_finalization` - forces cell verification and hash rebuilding when reading
   cell(s) from BOC. It is by default. Turning this parameter off will speed up deserialization time in case when
   BOC contains stored hashes.
@@ -66,13 +78,13 @@ All notable changes to this project will be documented in this file.
 ## [2.9.2] - 2025-03-18
 
 ### Fixed
-- Restored the utility  for generating `api.json`.  
+- Restored the utility  for generating `api.json`.
 - Changed the type of the `thread_id` field in the `ParamsOfSendMessage` structure.
 
 ## [2.9.0] – 2025-03-11
 
 ### New
-- Message delivery to the target thread has been made more reliable. 
+- Message delivery to the target thread has been made more reliable.
 
 ### Fixed
 - Issue with tvm_api formatting
@@ -102,10 +114,10 @@ All notable changes to this project will be documented in this file.
 - In case of "THREAD_MISMATCH" error message will be re-sent to the right thread.
 
 ### Fixed
-- In case of "WRONG_PRODUCER" error message was not re-sent to the right producer correctly. 
+- In case of "WRONG_PRODUCER" error message was not re-sent to the right producer correctly.
 
 ### Improvements
-- Removed some unused dependencies 
+- Removed some unused dependencies
 
 ## [2.7.0] – 2025-02-27
 ### New
@@ -143,7 +155,7 @@ All notable changes to this project will be documented in this file.
 ## [2.3.2] – 2024-12-18
 
 ### Fixed
-- Fix src dapp id for out messages 
+- Fix src dapp id for out messages
 
 ## [2.3.1] – 2024-12-16
 
@@ -156,7 +168,7 @@ All notable changes to this project will be documented in this file.
 
 ### New
 - Add support of VERGRTH16 and POSEIDON instructions for zk-login.
-- 
+-
 ## [2.2.12] – 2024-10-08
 
 ### Fixed
@@ -214,18 +226,18 @@ Improve RawReserve instruction
 ## [2.2.2] – 2024-09-10
 
 ### New
-- New instruction - CALCMINSTAKEREWARD. 
+- New instruction - CALCMINSTAKEREWARD.
 - Change CNVRTSHELLQ instruction.
 
 ## [2.2.1] – 2024-08-27
 
 ### New
-- New field in internal message - `src_dapp_id`. 
+- New field in internal message - `src_dapp_id`.
 
 ## [2.2.0] – 2024-08-23
 
 ### New
-- New field in account - `dapp_id`. 
+- New field in account - `dapp_id`.
 
 ## [2.1.1] – 2024-08-19
 
@@ -236,10 +248,10 @@ Validator reward formula updated.
 
 ### New
 
-- New VM instructions supported:    
-  MINTECC - mint ecc tokens for special contracts   
-  CNVRTSHELLQ - convert ecc shell tokens into shell 1:1   
-  CALCBKREWARD - calculate reward for validators after validator epoch    
+- New VM instructions supported:
+  MINTECC - mint ecc tokens for special contracts
+  CNVRTSHELLQ - convert ecc shell tokens into shell 1:1
+  CALCBKREWARD - calculate reward for validators after validator epoch
 
 ## [2.0.3] – 2024-08-15
 
@@ -250,10 +262,10 @@ Validator reward formula updated.
 ## [2.0.2] – 2024-07-25
 
 ### Fixed
-AccountActive Stack Overflow issue fixed 
+AccountActive Stack Overflow issue fixed
 
 ```
-account state: AccountActive    
+account state: AccountActive
 Stack Overflow:
    0: backtrace_on_stack_overflow::handle_sigsegv
    1: <unknown>
@@ -283,7 +295,7 @@ First release of SDK supporting Acki Nacki protocol.
 
 ### Breaking
 
-- For contracts with ABI version => 2.4 initial public key should be explicitly supplied 
+- For contracts with ABI version => 2.4 initial public key should be explicitly supplied
 inside `initial_data` in `abi` module functions. Signer public key and `initial_pubkey` parameter
 are not used in contract initial data encoding since ABI version 2.4.
 
@@ -320,7 +332,7 @@ State init should be finalized and ready to be used in message as is.
 
 - functions with callbacks (e.g. `processing.process_messages`) can be called as sync.
 - `send_event` parameter is now optional with default value `false`.
-  
+
 ### Deprecated
 - Debot module is [DEPRECATED](./docs/reference/types-and-methods/DEPRECATED.md)
 
@@ -331,7 +343,7 @@ State init should be finalized and ready to be used in message as is.
 - Ability to call async functions via `tc_request_sync`.
 - In rust API, the following functions become sync (slight breaking):
   `abi::encode_internal_message`, `abi::attach_signature_to_message_body`, `abi::attach_signature`,
-  `abi::decode_message`, `abi::decode_message_body`, `abi::decode_account_data`, 
+  `abi::decode_message`, `abi::decode_message_body`, `abi::decode_account_data`,
   `abi::update_initial_data`, `abi::encode_initial_data`, `abi::decode_initial_data`,
   `abi::decode_boc`, `abi::encode_boc`, `boc::decode_tvc`, `boc::parse_message`, `boc::parse_transaction`,
   `boc::parse_account`, `boc::parse_block`, `boc::parse_shardstate`, `boc::get_blockchain_config`,
@@ -374,7 +386,7 @@ State init should be finalized and ready to be used in message as is.
 - Version of `ton_types` upped to 2.0.0
 - Fixed code for changed dependencies api
 - Removed logic related to client-server clock sync
-- `boc.encode_tvc` and `boc.decode_tvc` are renamed to `boc.encode_state_init` 
+- `boc.encode_tvc` and `boc.decode_tvc` are renamed to `boc.encode_state_init`
   and `boc.decode_state_init`.
 - `boc.decode_tvc` decodes TVC BOC according to the TVC spec.
 - `DeploySet.tvc` supports new TVC file format (according to new TVC spec).
@@ -386,32 +398,32 @@ State init should be finalized and ready to be used in message as is.
 - `ProcessingEvent::MessageExpired` is sent to callback in case of retry in `processing.process_message`
 
 ### Client breaking changes
-- `boc.encode_tvc` and `boc.decode_tvc` are renamed to `boc.encode_state_init` 
+- `boc.encode_tvc` and `boc.decode_tvc` are renamed to `boc.encode_state_init`
   and `boc.decode_state_init`
 
 ## [1.42.1] – 2023-03-23
 
 ### Fixed
 
-- Client was notified about every REMP status timeout. Now it is notified only once when fallback 
+- Client was notified about every REMP status timeout. Now it is notified only once when fallback
 scenario is started
 
 ## [1.42.0] – 2023-03-22
 
 ### New
 
-- Added message monitoring functions to the `processing` module: `monitor_messages`, 
+- Added message monitoring functions to the `processing` module: `monitor_messages`,
     `fetch_next_monitor_results`, `get_monitor_info`, `cancel_monitor****`.
 - Added `processing.send_messages` function.
 - Improved error resolving for deleted accounts
-- `net.first_remp_status_timeout` config parameter default value set to 1 ms in order to start 
+- `net.first_remp_status_timeout` config parameter default value set to 1 ms in order to start
 fallback scenario together with REMP statuses processing while REMP is not properly tuned yet.
 - Network errors are returned on subscription creation if occured
 
 ### Fixed
 
 - `ParamsOfSubscribe` was not public.
-- `subscribe` did not trim subscription query text. It is required for some graphql servers 
+- `subscribe` did not trim subscription query text. It is required for some graphql servers
   expecting that query text starts from operation text.
 
 ## [1.41.1] – 2023-03-14
@@ -419,43 +431,43 @@ fallback scenario together with REMP statuses processing while REMP is not prope
 ### Fixed
 
 - `api_derive` compilation errors
-- 
+-
 
 ## [1.41.0] – 2023-01-18
 
 ### New
 
 - `CapSignatureWithId` capability is supported.
-  
+
     Network signature ID is used by VM in signature verifying instructions if capability
-    `CapSignatureWithId` is enabled in blockchain configuration parameters.     
-    
-    This parameter should be set to `global_id` field from any blockchain block if network can 
-    not be reached at the moment of message encoding and the message is aimed to be sent into 
-    network with `CapSignatureWithId` enabled. Otherwise signature ID is detected automatically 
-    inside message encoding functions.   
+    `CapSignatureWithId` is enabled in blockchain configuration parameters.
+
+    This parameter should be set to `global_id` field from any blockchain block if network can
+    not be reached at the moment of message encoding and the message is aimed to be sent into
+    network with `CapSignatureWithId` enabled. Otherwise signature ID is detected automatically
+    inside message encoding functions.
     ***Overwrite priority: ExecutionOptions.signature_id -> ClientConfig.network.signature_id -> last network block***
 
-    - `ClientConfig.network.signature_id` optional parameter is added. Specify it in case of offline work for all message signing operations to use. 
-    - `ExecutionOptions` is extended with `signature_id` optional parameter. Specify locally for a particular `run_tvm` or `run_executor` call. 
+    - `ClientConfig.network.signature_id` optional parameter is added. Specify it in case of offline work for all message signing operations to use.
+    - `ExecutionOptions` is extended with `signature_id` optional parameter. Specify locally for a particular `run_tvm` or `run_executor` call.
    - `net.get_signature_id` function returns `global_id` if `CapSignatureWithId` capability is enabled,
 
 - `message_id` and `message_dst` fields are added to all `ProcessingEvent` variants
-- Config parameter `binding: { library: string, version: string }`. Binding authors should define 
+- Config parameter `binding: { library: string, version: string }`. Binding authors should define
    this parameter at context initialization.
 - `tonclient-binding-library` and `tonclient-binding-version` GraphQL request headers. [Read more here](https://github.com/tonlabs/ever-sdk/blob/master/docs/for-binding-developers/json_interface.md#bindings)
 - `Error.data.binding_library` and `Error.data.binding_version` error data fields. [Read more here](https://github.com/tonlabs/ever-sdk/blob/master/docs/for-binding-developers/json_interface.md#bindings)
-  
+
 ### Client breaking changes
 - `abi.get_signature_data` function ouput parameter `hash` is renamed to `unsigned` for consistency with other crypto functions parameters
-  
+
 ### Possible breaking change on binding side
 - Changed type of the `dictionary` parameter or mnemonic crypto functions and crypto config.
-  Now it uses `MnemonicDictionary` enum type instead of `number`. `MnemonicDictionary` numeric 
-  constants are compatible with previous values. 
+  Now it uses `MnemonicDictionary` enum type instead of `number`. `MnemonicDictionary` numeric
+  constants are compatible with previous values.
 
 ### Deprecated
-- `debot` engine module is deprecated. Debot engine development has migrated to a separate repository (soon will be published). So, in order to reduce sdk binary size, we will remove `debot` engine module from sdk in the next releases. 
+- `debot` engine module is deprecated. Debot engine development has migrated to a separate repository (soon will be published). So, in order to reduce sdk binary size, we will remove `debot` engine module from sdk in the next releases.
 
 ## [1.40.0] – 2023-01-11
 
@@ -477,7 +489,7 @@ additional server request
 
 - Queries are retried in case of network errors when websocket connection is used
 
-- `WaitForTimeout` error code (607) is returned in case of `wait_for_transaction` function was 
+- `WaitForTimeout` error code (607) is returned in case of `wait_for_transaction` function was
 successfully executed but expected data did not appeared during the specified timeout
 
 - `timeout` parameter in `net.query_transaction_tree` behaviour changed. Now value 0 indicates that
@@ -488,7 +500,7 @@ no time limit should be used and function will wait for all transactions executi
 - `transaction_max_count` parameter in `net.query_transaction_tree` which controls the count of
 transaction to be awaited and returned
 
-- `data_layout` and `function_name` parameters in `abi.decode_message` and `abi.decode_message_body` 
+- `data_layout` and `function_name` parameters in `abi.decode_message` and `abi.decode_message_body`
 that can be used to decode responsible function output and optimize message decoding by strict layout check
 
 ### Fixed
