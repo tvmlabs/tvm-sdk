@@ -43,44 +43,44 @@ use crate::print_args;
 
 pub fn create_depool_command() -> Command {
     let wallet_arg =
-        Arg::new("MSIG").num_args(1).long("--wallet").short('w').help("Multisig wallet address.");
-    let value_arg = Arg::new("VALUE").num_args(1).long("--value").short('v').help("Value in tons.");
+        Arg::new("MSIG").num_args(1).long("wallet").short('w').help("Multisig wallet address.");
+    let value_arg = Arg::new("VALUE").num_args(1).long("value").short('v').help("Value in tons.");
     let keys_arg = Arg::new("SIGN")
         .num_args(1)
-        .long("--sign")
+        .long("sign")
         .short('s')
         .help("Seed phrase or path to file with keypair which must be used to sign message to multisig wallet.");
     let total_period_arg = Arg::new("TPERIOD")
         .num_args(1)
-        .long("--total")
+        .long("total")
         .short('t')
         .help("Total period of vesting stake (days).");
     let withdrawal_period_arg = Arg::new("WPERIOD")
         .num_args(1)
-        .long("--withdrawal")
+        .long("withdrawal")
         .short('i')
         .help("Payment period of vesting stake (days).");
     let beneficiary_arg = Arg::new("BENEFICIARY")
         .num_args(1)
-        .long("--beneficiary")
+        .long("beneficiary")
         .short('b')
         .help("Smart contract address which will own lock stake rewards.");
     let donor_arg = Arg::new("DONOR")
         .num_args(1)
-        .long("--donor")
+        .long("donor")
         .short('d')
         .help("Donor smart contract address.");
     let dest_arg = Arg::new("DEST")
         .num_args(1)
-        .long("--dest")
+        .long("dest")
         .short('d')
         .help("Address of the destination smart contract.");
     let wait_answer = Arg::new("WAIT_ANSWER")
-        .long("--wait-answer")
+        .long("wait-answer")
         .short('a')
         .help("Wait for depool answer when calling a depool function.");
     let v2_arg =
-        Arg::new("V2").long("--v2").help("Force to interpret wallet account as multisig v2.");
+        Arg::new("V2").long("v2").help("Force to interpret wallet account as multisig v2.");
 
     Command::new("depool")
         .about("DePool commands.")
@@ -88,7 +88,7 @@ pub fn create_depool_command() -> Command {
         .dont_collapse_args_in_usage(true)
         .arg(Arg::new("ADDRESS")
             .num_args(1)
-            .long("--addr")
+            .long("addr")
             .help("DePool contract address. If omitted, then config.addr is used."))
         .arg(wait_answer.clone())
         .subcommand(Command::new("donor")
@@ -115,7 +115,7 @@ pub fn create_depool_command() -> Command {
             .arg(wallet_arg.clone())
             .arg(Arg::new("SINCE")
                 .num_args(1)
-                .long("--since")
+                .long("since")
                 .short('s')
                 .help("Prints answers since this unixtime.")) )
         .subcommand(Command::new("stake")
@@ -208,11 +208,11 @@ pub fn create_depool_command() -> Command {
             .allow_hyphen_values(true)
             .arg(Arg::new("SINCE")
                 .num_args(1)
-                .long("--since")
+                .long("since")
                 .short('s')
                 .help("Prints events since this unixtime."))
             .arg(Arg::new("WAITONE")
-                .long("--wait-one")
+                .long("wait-one")
                 .short('w')
                 .help("Waits until new event will be emitted.")) )
 }

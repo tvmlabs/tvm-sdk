@@ -59,14 +59,14 @@ pub fn create_test_sign_command() -> Command {
         .about("Generates the ED25519 signature for bytestring.")
         .arg(
             Arg::new("DATA")
-                .long("--data")
+                .long("data")
                 .short('d')
                 .num_args(1)
                 .help("Bytestring for signing base64 or hex encoded."),
         )
         .arg(
             Arg::new("CELL")
-                .long("--cell")
+                .long("cell")
                 .short('c')
                 .num_args(1)
                 .help("Serialized TOC for signing base64 or hex encoded."),
@@ -77,13 +77,13 @@ pub fn create_test_command() -> Command {
     let output_arg = Arg::new("LOG_PATH")
         .help("Path where to store the trace. Default path is \"./trace.log\". Note: old file will be removed.")
         .num_args(0..=1)
-        .long("--output")
+        .long("output")
         .short('o');
 
     let dbg_info_arg = Arg::new("DBG_INFO")
         .help("Path to the file with debug info.")
         .num_args(1)
-        .long("--dbg_info")
+        .long("dbg_info")
         .short('d');
 
     let boc_path_arg = Arg::new("PATH")
@@ -91,33 +91,33 @@ pub fn create_test_command() -> Command {
         .help("Contract path to the file with saved contract state.");
 
     let params_arg = Arg::new("PARAMS")
-        .long("--params")
+        .long("params")
         .short('p')
         .num_args(1)
         .help("Constructor arguments. Must be a json string with all arguments or path to the file with parameters.");
 
     let keys_arg =
-        Arg::new("KEYS").long("--keys").num_args(1).help("Secret key used to sign the message.");
+        Arg::new("KEYS").long("keys").num_args(1).help("Secret key used to sign the message.");
 
     let abi_arg = Arg::new("ABI")
-        .long("--abi")
+        .long("abi")
         .num_args(1)
         .required(true)
         .help("Path to the contract ABI file.");
 
     let full_trace_arg = Arg::new("FULL_TRACE")
-        .long("--full_trace")
+        .long("full_trace")
         .short('f')
         .help("Flag that changes trace to full version.");
 
     let config_boc_arg = Arg::new("CONFIG_BOC")
-        .long("--bc_config")
+        .long("bc_config")
         .short('c')
         .num_args(1)
         .help("Path to the config contract boc.");
 
     let now_arg = Arg::new("NOW")
-        .long("--now")
+        .long("now")
         .short('n')
         .num_args(0..=1)
         .help("Now timestamp (in milliseconds) for execution. If not set it is equal to the current timestamp.");
@@ -136,29 +136,29 @@ pub fn create_test_command() -> Command {
         .arg(config_boc_arg.clone())
         .arg(
             Arg::new("ACCOUNT_ADDRESS")
-                .long("--address")
+                .long("address")
                 .required(true)
                 .allow_hyphen_values(true)
                 .help("--address Address for account which will override automatically calculated one."),
         )
         .arg(
             Arg::new("EXTERNAL")
-                .long("--external")
+                .long("external")
                 .help("use external message to deploy contract instead of internal."),
         )
         // .arg(
         //     Arg::new("IS_TICK")
-        //         .long("--tick")
+        //         .long("tick")
         //         .help("add tick mark for account."),
         // )
         // .arg(
         //     Arg::new("IS_TOCK")
-        //         .long("--tock")
+        //         .long("tock")
         //         .help("add tock mark for account."),
         // )
         .arg(
             Arg::new("INITIAL_BALANCE")
-                .long("--initial_balance")
+                .long("initial_balance")
                 .required(true)
                 .help("Initial balance in nanovmshells."),
         );
@@ -172,26 +172,26 @@ pub fn create_test_command() -> Command {
         .arg(full_trace_arg.clone())
         .arg(now_arg.clone())
         .arg(config_boc_arg.clone())
-        .arg(Arg::new("IS_TOCK").long("--tock").help("make tock transaction."));
+        .arg(Arg::new("IS_TOCK").long("tock").help("make tock transaction."));
 
     let config_cmd = Command::new("config")
         .about("Encode or decode config params")
         .alias("tc")
         .arg(Arg::new("ENCODE")
-            .long("--encode")
+            .long("encode")
             .num_args(0..=1)
             .conflicts_with("DECODE")
             .help("Encode single config param or all config params to TvmCell. JSON format of path to the file.")
         )
         .arg(Arg::new("DECODE")
             .alias("tcd")
-            .long("--decode")
+            .long("decode")
             .conflicts_with("ENCODE")
             .num_args(0..=1)
             .help("Decode single config param or all config params to TvmCell.")
         )
         .arg(Arg::new("INDEX")
-            .long("--index")
+            .long("index")
             .requires("DECODE")
             .num_args(1)
             .help("Index of config parameter to decode.")

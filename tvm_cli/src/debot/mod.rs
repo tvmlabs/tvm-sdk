@@ -41,7 +41,7 @@ pub fn create_debot_command<'b>() -> Command {
         .allow_hyphen_values(true)
         .trailing_var_arg(true)
         .dont_collapse_args_in_usage(true)
-        .arg(Arg::new("DEBUG").long("--debug").short('d'))
+        .arg(Arg::new("DEBUG").long("debug").short('d'))
         .subcommand(
             Command::new("fetch")
                 .allow_hyphen_values(true)
