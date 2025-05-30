@@ -48,7 +48,7 @@ pub(super) fn execute_ecc_burn(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("BURNECC"))?;
     fetch_stack(engine, 2)?;
     let x: u32 = engine.cmd.var(0).as_integer()?.into(0..=255)?;
-    let y: VarUInteger32 = VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?);
+    let y = engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?;
     let mut cell = BuilderData::new();
     y.write_to(&mut cell)?;
     x.write_to(&mut cell)?;
