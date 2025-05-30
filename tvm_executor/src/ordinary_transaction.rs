@@ -141,7 +141,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         .unwrap_or(true))
                 && !h.bounced
             {
-                log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id);
+                log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id.clone());
                 log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_limit * gas_config.gas_price / 65536));
                 burned = msg_balance.grams;
                 msg_balance.grams = min(
@@ -189,7 +189,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         // first check if contract can pay for importing external message
         if is_ext_msg && !is_special {
             // extranal message comes serialized
-            let in_fwd_fee = match params.is_same_thread_id {
+            let in_fwd_fee = match params.is_same_thread_id && params.is_same_dapp_id {
                 true => Grams::zero(),
                 false => self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?,
             };
@@ -254,7 +254,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         log::debug!(target: "executor",
             "storage_phase: {}", if description.storage_ph.is_some() {"present"} else {"none"});
         let mut original_acc_balance = account.balance().cloned().unwrap_or_default();
-        original_acc_balance.sub(tr.total_fees())?;
+
+        if !params.is_same_thread_id || !params.is_same_dapp_id {
+            original_acc_balance.sub(tr.total_fees())?;
+        };
 
         if !description.credit_first && !is_ext_msg {
             description.credit_ph = match self.credit_phase(
@@ -356,7 +359,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
                         } else {
-                            params.dapp_id
+                            params.dapp_id.clone()
                         }
                     } else {
                         None
@@ -463,7 +466,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     in_msg,
                     &mut tr,
                     account_address,
-                    params.block_version,
+                    &params
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
                         out_msgs.push(bounce_msg);
