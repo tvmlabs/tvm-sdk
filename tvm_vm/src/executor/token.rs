@@ -49,10 +49,9 @@ pub(super) fn execute_ecc_burn(engine: &mut Engine) -> Status {
     fetch_stack(engine, 2)?;
     let x: u32 = engine.cmd.var(0).as_integer()?.into(0..=255)?;
     let y: VarUInteger32 = VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?);
-    let mut data = ExtraCurrencyCollection::new();
-    data.set(&x, &y)?;
     let mut cell = BuilderData::new();
-    data.write_to(&mut cell)?;
+    y.write_to(&mut cell)?;
+    x.write_to(&mut cell)?;
     add_action(engine, ACTION_BURNECC, None, cell)
 }
 
