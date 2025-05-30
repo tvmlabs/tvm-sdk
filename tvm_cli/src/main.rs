@@ -241,11 +241,13 @@ async fn main_internal() -> Result<(), String> {
 
     let boc_flag = Arg::new("BOC")
         .long("boc")
+        .action(ArgAction::SetTrue)
         .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
     let tvc_flag = Arg::new("TVC")
         .long("tvc")
+        .action(ArgAction::SetTrue)
         .conflicts_with("BOC")
         .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC).");
 
@@ -351,6 +353,7 @@ async fn main_internal() -> Result<(), String> {
             .help("Initial data to insert into the contract. Should be specified in json format."))
         .arg(Arg::new("SAVE")
             .long("save")
+            .action(ArgAction::SetTrue)
             .help("If this flag is specified, modifies the tvc file with the keypair and initial data"));
 
     let deploy_cmd = Command::new("deploy")
@@ -374,7 +377,8 @@ async fn main_internal() -> Result<(), String> {
         .num_args(0..=1)
         .help("Path to the file where to store the message.");
 
-    let raw_arg = Arg::new("RAW").long("raw").help("Creates raw message boc.");
+    let raw_arg =
+        Arg::new("RAW").long("raw").action(ArgAction::SetTrue).help("Creates raw message boc.");
 
     let deploy_message_cmd = deploy_cmd
         .clone()
@@ -578,6 +582,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(Arg::new("GLOBAL")
             .long("global")
             .short('g')
+            .action(ArgAction::SetTrue)
             .help("Change parameters of the global config which contains default values for ordinary configs."))
         .arg(Arg::new("URL")
             .long("url")
@@ -626,6 +631,7 @@ async fn main_internal() -> Result<(), String> {
             .help("Network message processing timeout in ms."))
         .arg(Arg::new("LIST")
             .long("list")
+            .action(ArgAction::SetTrue)
             .conflicts_with_all(["OUT_OF_SYNC", "NO_ANSWER","DEBUG_FAIL", "ASYNC_CALL", "LOCAL_RUN", "BALANCE_IN_VMSHELLS", "LIFETIME", "DEPOOL_FEE", "PUBKEY", "URL", "ABI", "KEYS", "ADDR", "RETRIES", "TIMEOUT", "WC", "WALLET"])
             .help("Prints all config parameters."))
         .arg(Arg::new("DEPOOL_FEE")
@@ -763,6 +769,7 @@ async fn main_internal() -> Result<(), String> {
                 .arg(Arg::new("OFFLINE")
                     .short('f')
                     .long("offline")
+                    .action(ArgAction::SetTrue)
                     .help("Prints signed message to terminal instead of sending it."))
                 .arg(Arg::new("LIFETIME")
                     .short('l')
@@ -780,6 +787,7 @@ async fn main_internal() -> Result<(), String> {
                 .arg(Arg::new("OFFLINE")
                     .short('f')
                     .long("offline")
+                    .action(ArgAction::SetTrue)
                     .help("Prints signed message to terminal instead of sending it."))
                 .arg(Arg::new("LIFETIME")
                     .short('l')
