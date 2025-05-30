@@ -876,7 +876,7 @@ async fn main_internal() -> Result<(), String> {
             .short('e')
             .conflicts_with("CONFIG_TXNS"));
 
-    let matches = Command::new("tonos_cli")
+    let matches = Command::new("tvm-cli")
         .version(VERSION.as_str())
         .author(author)
         .about("TVMLabs console tool for TVM networks")
@@ -888,7 +888,13 @@ async fn main_internal() -> Result<(), String> {
                 .long("config")
                 .num_args(0..=1),
         )
-        .arg(Arg::new("JSON").help("Cli prints output in json format.").short('j').long("json"))
+        .arg(
+            Arg::new("JSON")
+                .help("Cli prints output in json format.")
+                .short('j')
+                .long("json")
+                .action(ArgAction::SetTrue),
+        )
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
         .subcommand(genpubkey_cmd)
