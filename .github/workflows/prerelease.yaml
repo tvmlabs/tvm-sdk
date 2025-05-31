@@ -25,35 +25,36 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        result:
-          - tvm-cli-darwin-arm64
-          - tvm-cli-darwin-amd64
-          - tvm-cli-linux-arm64
-          - tvm-cli-linux-amd64
-
         include:
-          # targets
+          # macOS ARM64
           - result: tvm-cli-darwin-arm64
             target: aarch64-apple-darwin
-            os: macos-13
+            os: macos-14
+            zigbuild: false
 
+          # macOS x86_64 (Intel or Rosetta on ARM)
           - result: tvm-cli-darwin-amd64
             target: x86_64-apple-darwin
             os: macos-13
+            zigbuild: false
 
+          # Linux ARM64 (native)
           - result: tvm-cli-linux-arm64
             target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
+            os: ubuntu-24.04-arm
+            zigbuild: true
 
+          # Linux x86_64 (native)
           - result: tvm-cli-linux-amd64
             target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
+            os: ubuntu-24.04
+            zigbuild: true
 
     name: Build ${{ matrix.target }}
 
     env:
       CARGO_TERM_COLOR: always
-      SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }} # Setting this env var enables the caching
+      SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }}
       RUSTC_WRAPPER: sccache
       CMAKE_C_COMPILER_LAUNCHER: sccache
       CMAKE_CXX_COMPILER_LAUNCHER: sccache
@@ -109,19 +110,17 @@ jobs:
 
       - name: Build Binary
         env:
-          CARGO_INCREMENTAL: 0  # important for cache size too
+          CARGO_INCREMENTAL: 0
           CARGO_NET_RETRY: 10
           RUST_BACKTRACE: full
           RUSTUP_MAX_RETRIES: 10
         run: |
           cargo update
-
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            cargo build -r --target ${{ matrix.target }} -p tvm_cli --bin tvm-cli
-          else
+          if [[ "${{ matrix.zigbuild }}" == "true" ]]; then
             cargo zigbuild -r --target ${{ matrix.target }} -p tvm_cli --bin tvm-cli
+          else
+            cargo build -r --target ${{ matrix.target }} -p tvm_cli --bin tvm-cli
           fi
-
           ls -lA target/${{ matrix.target }}/release
 
       - name: Upload artifact
