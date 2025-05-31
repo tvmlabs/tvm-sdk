@@ -10,6 +10,7 @@
 // limitations under the License.
 extern crate reqwest;
 use clap::Arg;
+use clap::ArgAction;
 use clap::ArgMatches;
 use clap::Command;
 use serde_json::json;
@@ -378,11 +379,14 @@ impl MultisigArgs {
 }
 
 pub fn create_multisig_command() -> Command {
-    let v2_arg =
-        Arg::new("V2").long("v2").help("Force to interact with wallet account as multisig v2.");
+    let v2_arg = Arg::new("V2")
+        .long("v2")
+        .action(ArgAction::SetTrue)
+        .help("Force to interact with wallet account as multisig v2.");
     let bounce_arg = Arg::new("BOUNCE")
         .long("bounce")
         .short('b')
+        .action(ArgAction::SetTrue)
         .help("Send bounce message to destination account.");
 
     let keys_arg = Arg::new("KEYS")
@@ -426,6 +430,7 @@ pub fn create_multisig_command() -> Command {
             .arg(keys_arg)
             .arg(Arg::new("SETCODE")
                 .long("setcode")
+                .action(ArgAction::SetTrue)
                 .help("Deploy SetcodeMultisig instead of SafeMultisig."))
             .arg(Arg::new("VALUE")
                 .long("local")

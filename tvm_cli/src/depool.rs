@@ -11,6 +11,7 @@
 use std::collections::HashMap;
 
 use clap::Arg;
+use clap::ArgAction;
 use clap::ArgMatches;
 use clap::Command;
 use serde_json::json;
@@ -78,9 +79,12 @@ pub fn create_depool_command() -> Command {
     let wait_answer = Arg::new("WAIT_ANSWER")
         .long("wait-answer")
         .short('a')
+        .action(ArgAction::SetTrue)
         .help("Wait for depool answer when calling a depool function.");
-    let v2_arg =
-        Arg::new("V2").long("v2").help("Force to interpret wallet account as multisig v2.");
+    let v2_arg = Arg::new("V2")
+        .long("v2")
+        .action(ArgAction::SetTrue)
+        .help("Force to interpret wallet account as multisig v2.");
 
     Command::new("depool")
         .about("DePool commands.")
@@ -214,6 +218,7 @@ pub fn create_depool_command() -> Command {
             .arg(Arg::new("WAITONE")
                 .long("wait-one")
                 .short('w')
+                .action(ArgAction::SetTrue)
                 .help("Waits until new event will be emitted.")) )
 }
 

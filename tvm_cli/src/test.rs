@@ -12,6 +12,7 @@
 use std::path::PathBuf;
 
 use clap::Arg;
+use clap::ArgAction;
 use clap::ArgMatches;
 use clap::Command;
 use serde_json::json;
@@ -108,6 +109,7 @@ pub fn create_test_command() -> Command {
     let full_trace_arg = Arg::new("FULL_TRACE")
         .long("full_trace")
         .short('f')
+        .action(ArgAction::SetTrue)
         .help("Flag that changes trace to full version.");
 
     let config_boc_arg = Arg::new("CONFIG_BOC")
@@ -144,16 +146,19 @@ pub fn create_test_command() -> Command {
         .arg(
             Arg::new("EXTERNAL")
                 .long("external")
+                .action(ArgAction::SetTrue)
                 .help("use external message to deploy contract instead of internal."),
         )
         // .arg(
         //     Arg::new("IS_TICK")
         //         .long("tick")
+        //         .action(ArgAction::SetTrue)
         //         .help("add tick mark for account."),
         // )
         // .arg(
         //     Arg::new("IS_TOCK")
         //         .long("tock")
+        //         .action(ArgAction::SetTrue)
         //         .help("add tock mark for account."),
         // )
         .arg(
@@ -172,7 +177,12 @@ pub fn create_test_command() -> Command {
         .arg(full_trace_arg.clone())
         .arg(now_arg.clone())
         .arg(config_boc_arg.clone())
-        .arg(Arg::new("IS_TOCK").long("tock").help("make tock transaction."));
+        .arg(
+            Arg::new("IS_TOCK")
+                .long("tock")
+                .action(ArgAction::SetTrue)
+                .help("make tock transaction."),
+        );
 
     let config_cmd = Command::new("config")
         .about("Encode or decode config params")

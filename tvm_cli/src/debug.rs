@@ -219,12 +219,15 @@ pub fn create_debug_command() -> Command {
         "Path to the ABI file used to decode output messages. Can be specified in the config file.",
     );
 
-    let full_trace_arg =
-        Arg::new("FULL_TRACE").long("full_trace").help("Flag that changes trace to full version.");
+    let full_trace_arg = Arg::new("FULL_TRACE")
+        .long("full_trace")
+        .action(ArgAction::SetTrue)
+        .help("Flag that changes trace to full version.");
 
     let boc_arg = Arg::new("BOC")
         .long("boc")
         .conflicts_with("TVC")
+        .action(ArgAction::SetTrue)
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
     let tx_id_arg = Arg::new("TX_ID")
@@ -242,6 +245,7 @@ pub fn create_debug_command() -> Command {
         .help("Execute debug with current blockchain config or default if it is not available.")
         .long("default_config")
         .short('e')
+        .action(ArgAction::SetTrue)
         .conflicts_with_all(["CONFIG_PATH", "CONFIG_BOC"]);
 
     let config_save_path_arg = Arg::new("CONFIG_PATH")
@@ -260,15 +264,18 @@ pub fn create_debug_command() -> Command {
     let dump_config_arg = Arg::new("DUMP_CONFIG")
         .help("Dump the replayed config contract account state.")
         .long("dump_config")
+        .action(ArgAction::SetTrue)
         .conflicts_with("CONFIG_BOC");
 
     let dump_contract_arg = Arg::new("DUMP_CONTRACT")
-        .help("Dump the replayed target contract account state.")
-        .long("dump_contract");
+        .long("dump_contract")
+        .action(ArgAction::SetTrue)
+        .help("Dump the replayed target contract account state.");
 
     let update_arg = Arg::new("UPDATE_BOC")
         .long("update")
         .short('u')
+        .action(ArgAction::SetTrue)
         .help("Update contract BOC after execution.");
 
     let now_arg = Arg::new("NOW")
@@ -306,6 +313,7 @@ pub fn create_debug_command() -> Command {
         .arg(boc_arg.clone())
         .arg(Arg::new("TVC")
             .long("tvc")
+            .action(ArgAction::SetTrue)
             .conflicts_with("BOC")
             .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC)."))
         .arg(Arg::new("ACCOUNT_ADDRESS")
@@ -347,7 +355,7 @@ pub fn create_debug_command() -> Command {
                 .num_args(1)
                 .help("Initial balance in nanovmshells."),
         )
-        .arg(Arg::new("INIT_BALANCE").long("init_balance").help(
+        .arg(Arg::new("INIT_BALANCE").long("init_balance").action(ArgAction::SetTrue).help(
             "Do not fetch account from the network, but create dummy account with big balance.",
         ));
 
@@ -403,7 +411,9 @@ pub fn create_debug_command() -> Command {
             .arg(Arg::new("UPDATE_STATE")
                 .help("Update state of the contract.")
                 .long("update")
-                .short('u'))
+                .short('u')
+                .action(ArgAction::SetTrue)
+            )
             .arg(Arg::new("INPUT")
                 .help("Path to the saved account state.")
                 .required(true)))
