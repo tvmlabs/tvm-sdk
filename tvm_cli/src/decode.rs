@@ -10,6 +10,7 @@
 // limitations under the License.
 
 use clap::Arg;
+use clap::ArgAction;
 use clap::ArgMatches;
 use clap::Command;
 use serde::Serialize;
@@ -49,12 +50,14 @@ pub fn create_decode_command() -> Command {
         .arg(
             Arg::new("TVC")
                 .long("tvc")
+                .action(ArgAction::SetTrue)
                 .conflicts_with("BOC")
                 .help("Contract is passed via path to the TVC file."),
         )
         .arg(
             Arg::new("BOC")
                 .long("boc")
+                .action(ArgAction::SetTrue)
                 .conflicts_with("TVC")
                 .help("Contract is passed via path to the account BOC file."),
         )
@@ -88,6 +91,7 @@ pub fn create_decode_command() -> Command {
                 .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file."))
             .arg(Arg::new("BASE64")
                 .long("base64")
+                .action(ArgAction::SetTrue)
                 .help("Flag that changes behavior of the command to work with data in base64 (FLAG IS DEPRECATED).")))
         .subcommand(tvc_cmd)
         .subcommand(Command::new("account")
