@@ -167,7 +167,7 @@ jobs:
           for file in *; do
             tar -czvf "$file"-"$tag_name"-${{ matrix.suffix }}.tar.gz $file
           done
-          ls -lA artifacts-${{ matrix.suffix }}
+          ls -lA
 
       - name: Upload Prerelease
         uses: softprops/action-gh-release@v1
