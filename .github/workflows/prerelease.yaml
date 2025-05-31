@@ -55,6 +55,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
       SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }}
+      SCCACHE_GHA_ENABLED: "true"
       RUSTC_WRAPPER: sccache
       CMAKE_C_COMPILER_LAUNCHER: sccache
       CMAKE_CXX_COMPILER_LAUNCHER: sccache
@@ -69,10 +70,10 @@ jobs:
           echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
 
       - name: Configure sccache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Setup cargo cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
