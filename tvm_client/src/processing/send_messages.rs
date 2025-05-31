@@ -12,6 +12,8 @@
 
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use tvm_client_processing::MessageMonitoringParams;
 use tvm_client_processing::MonitoredMessage;
@@ -45,7 +47,7 @@ pub struct ParamsOfSendMessages {
     pub monitor_queue: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, ApiType, Default, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, ApiType, Default, PartialEq, Debug)]
 pub struct ResultOfSendMessages {
     /// Messages that was sent to the blockchain for execution.
     pub messages: Vec<MessageMonitoringParams>,

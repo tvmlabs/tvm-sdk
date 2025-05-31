@@ -11,6 +11,9 @@
 
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
@@ -51,7 +54,7 @@ pub async fn calc_storage_fee(
     let fee = config
         .calc_storage_fee(storage, addr.is_masterchain(), storage.last_paid() + params.period)
         .map_err(|err| {
-            Error::invalid_account_boc(format!("can not calculate storage fee: {}", err))
+            Error::invalid_account_boc(format!("can not calculate storage fee: {err}"))
         })?;
 
     Ok(ResultOfCalcStorageFee { fee: format!("{}", fee.as_u128()) })

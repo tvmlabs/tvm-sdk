@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `rwallet.limit`\n\n```text\nrwallet.limit seconds:int32 value:int64 = rwallet.Limit;\n```\n"]
 pub struct Limit {

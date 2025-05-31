@@ -14,10 +14,33 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy -- -D warnings
 
-  test:
-    name: Test
+
+  test_debug:
+    name: Test debug
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --all-features
+      - run: |
+          cargo build --lib
+          cargo test --lib
+
+  test_release:
+    name: Test release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: |
+          cargo build --release --lib
+          cargo test --release --lib
+
+  # Uncomment the following section if you want to run tests with all features enabled
+  # NOTE: doesn't work for now due to collision of the target names
+  # test_all:
+  #   name: Test all
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@stable
+  #     - run: cargo test --all-features --release

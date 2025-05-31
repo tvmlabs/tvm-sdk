@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `ton.BlockId`\n\n```text\nton.blockId root_cell_hash:int256 file_hash:int256 = ton.BlockId;\n\nton.blockIdApprove root_cell_hash:int256 file_hash:int256 = ton.BlockId;\n```\n"]
 pub enum BlockId {
@@ -9,15 +9,15 @@ pub enum BlockId {
 impl BlockId {
     pub fn file_hash(&self) -> &crate::ton::int256 {
         match self {
-            BlockId::Ton_BlockId(ref x) => &x.file_hash,
-            BlockId::Ton_BlockIdApprove(ref x) => &x.file_hash,
+            BlockId::Ton_BlockId(x) => &x.file_hash,
+            BlockId::Ton_BlockIdApprove(x) => &x.file_hash,
         }
     }
 
     pub fn root_cell_hash(&self) -> &crate::ton::int256 {
         match self {
-            BlockId::Ton_BlockId(ref x) => &x.root_cell_hash,
-            BlockId::Ton_BlockIdApprove(ref x) => &x.root_cell_hash,
+            BlockId::Ton_BlockId(x) => &x.root_cell_hash,
+            BlockId::Ton_BlockIdApprove(x) => &x.root_cell_hash,
         }
     }
 }

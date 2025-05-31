@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.el.Value`\n\n```text\ndb.lt.el.value id:tonNode.blockIdExt lt:long ts:int = db.lt.el.Value;\n```\n"]
 pub enum Value {
@@ -8,19 +8,19 @@ pub enum Value {
 impl Value {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Value::Db_Lt_El_Value(ref x) => &x.id,
+            Value::Db_Lt_El_Value(x) => &x.id,
         }
     }
 
     pub fn lt(&self) -> &crate::ton::long {
         match self {
-            Value::Db_Lt_El_Value(ref x) => &x.lt,
+            Value::Db_Lt_El_Value(x) => &x.lt,
         }
     }
 
     pub fn ts(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_El_Value(ref x) => &x.ts,
+            Value::Db_Lt_El_Value(x) => &x.ts,
         }
     }
 

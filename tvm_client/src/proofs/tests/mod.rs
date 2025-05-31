@@ -7,6 +7,7 @@ use graphql_parser::schema::ObjectType;
 use graphql_parser::schema::Type;
 use graphql_parser::schema::TypeDefinition;
 use serde_json::Value;
+use serde_json::json;
 use tvm_block::BinTreeType;
 use tvm_block::Block;
 use tvm_block::BlockIdExt;
@@ -687,7 +688,7 @@ async fn query_message_data(context: Arc<ClientContext>, id: &str, result: &str)
 
 fn resolve_type_name(typ: &Type<String>) -> String {
     match typ {
-        Type::NamedType(ref name) => name.clone(),
+        Type::NamedType(name) => name.clone(),
         Type::ListType(typ) => resolve_type_name(typ.as_ref()),
         Type::NonNullType(typ) => resolve_type_name(typ.as_ref()),
     }
@@ -763,7 +764,7 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )
@@ -772,7 +773,7 @@ async fn test_proof_block_data() -> Result<()> {
     block_json["boc"] = Value::Null;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )
@@ -972,7 +973,7 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )
@@ -987,7 +988,7 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )

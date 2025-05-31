@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.config.Global`\n\n```text\ncatchain.config.global tag:int256 nodes:(vector PublicKey) = catchain.config.Global;\n```\n"]
 pub enum Global {
@@ -8,13 +8,13 @@ pub enum Global {
 impl Global {
     pub fn nodes(&self) -> &crate::ton::vector<crate::ton::Boxed, crate::ton::PublicKey> {
         match self {
-            Global::Catchain_Config_Global(ref x) => &x.nodes,
+            Global::Catchain_Config_Global(x) => &x.nodes,
         }
     }
 
     pub fn tag(&self) -> &crate::ton::int256 {
         match self {
-            Global::Catchain_Config_Global(ref x) => &x.tag,
+            Global::Catchain_Config_Global(x) => &x.tag,
         }
     }
 

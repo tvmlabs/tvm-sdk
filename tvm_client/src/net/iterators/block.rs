@@ -16,6 +16,7 @@ use std::sync::Arc;
 use serde::Serializer;
 use serde::de::Error;
 use serde_json::Value;
+use serde_json::json;
 use tvm_block::ShardIdent;
 
 use crate::ClientContext;
@@ -305,7 +306,7 @@ impl MasterBlock {
                 collection: "blocks".to_string(),
                 filter: Some(filter),
                 order: Some(vec![OrderBy { path: "gen_utime".to_string(), direction }]),
-                result: format!("{} {}", BLOCK_MASTER_FIELDS, fields),
+                result: format!("{BLOCK_MASTER_FIELDS} {fields}"),
                 limit: Some(limit),
             },
         )
@@ -395,5 +396,5 @@ where
 {
     let string = d.deserialize_str(StringVisitor)?;
     shard_ident_parse(&string)
-        .map_err(|err| Error::custom(format!("Error parsing shard ident: {}", err)))
+        .map_err(|err| Error::custom(format!("Error parsing shard ident: {err}")))
 }

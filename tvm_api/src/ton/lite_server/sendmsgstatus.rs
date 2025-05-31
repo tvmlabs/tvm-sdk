@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `liteServer.sendMsgStatus`\n\n```text\nliteServer.sendMsgStatus status:int = liteServer.SendMsgStatus;\n```\n"]
 pub struct SendMsgStatus {

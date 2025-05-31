@@ -1,4 +1,5 @@
 use api_info::ApiModule;
+use serde_json::json;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_struct::scheme::TVC;
@@ -777,6 +778,8 @@ fn test_process_message_sync() {
 #[allow(clippy::module_inception)]
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use crate::processing::send_message::decode_send_message_result;
     use crate::processing::tests::TestClient;
 

@@ -53,6 +53,8 @@ pub use dinterface::InterfaceResult;
 pub use errors::Error;
 pub use errors::ErrorCode;
 use info::DInfo;
+use serde::Deserialize;
+use serde::Serialize;
 use tokio::sync::Mutex;
 
 use crate::ClientContext;

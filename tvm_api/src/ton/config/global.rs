@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `config.global`\n\n```text\nconfig.global adnl:adnl.config.global dht:dht.config.global validator:validator.config.global = config.Global;\n```\n"]
 pub struct Global {

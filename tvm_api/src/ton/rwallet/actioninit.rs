@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `rwallet.actionInit`\n\n```text\nrwallet.actionInit config:rwallet.config = rwallet.Action;\n```\n"]
 pub struct ActionInit {

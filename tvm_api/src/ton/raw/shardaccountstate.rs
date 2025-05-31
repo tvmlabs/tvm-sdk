@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.shardAccountState`\n\n```text\nraw.shardAccountState shard_account:bytes = raw.ShardAccountState;\n```\n"]
 pub struct ShardAccountState {

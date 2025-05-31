@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `tvm.builder`\n\n```text\ntvm.builder bytes:bytes = tvm.Builder;\n```\n"]
 pub struct Builder {
@@ -12,7 +12,7 @@ impl crate::BareSerialize for Builder {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let Builder { bytes: ref bytes_ } = self;
+        let Builder { bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
         Ok(())
     }

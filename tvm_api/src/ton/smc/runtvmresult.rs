@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `smc.runTvmResultException`\n\n```text\nsmc.runTvmResultException block_root_hash:int256 exit_code:int exit_arg:tvm.StackEntry = smc.RunTvmResult;\n```\n"]
 pub struct RunTvmResultException {

@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::client::ClientContext;
 use crate::error::ClientResult;

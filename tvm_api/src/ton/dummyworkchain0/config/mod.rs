@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `dummyworkchain0.config.Global`\n\n```text\ndummyworkchain0.config.global zero_state_hash:int256 = dummyworkchain0.config.Global;\n```\n"]
 pub enum Global {
@@ -8,7 +8,7 @@ pub enum Global {
 impl Global {
     pub fn zero_state_hash(&self) -> &crate::ton::int256 {
         match self {
-            Global::Dummyworkchain0_Config_Global(ref x) => &x.zero_state_hash,
+            Global::Dummyworkchain0_Config_Global(x) => &x.zero_state_hash,
         }
     }
 

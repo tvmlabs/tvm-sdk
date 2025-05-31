@@ -31,6 +31,7 @@ pub use encryption::ResultOfChaCha20;
 pub use encryption::chacha20;
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
 
 pub use crate::crypto::boxes::crypto_box::AppPasswordProvider;
 pub use crate::crypto::boxes::crypto_box::BoxEncryptionAlgorithm;

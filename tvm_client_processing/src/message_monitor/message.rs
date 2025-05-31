@@ -1,10 +1,12 @@
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use tvm_types::Cell;
 
 use crate::MessageMonitorSdkServices;
 use crate::error;
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ApiType)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize, ApiType)]
 #[serde(tag = "type")]
 pub enum MonitoredMessage {
     /// BOC of the message.
@@ -42,7 +44,7 @@ impl MonitoredMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ApiType)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize, ApiType)]
 pub struct MessageMonitoringParams {
     /// Monitored message identification.
     /// Can be provided as a message's BOC or (hash, address) pair.
@@ -82,7 +84,7 @@ pub struct MessageMonitoringResult {
     pub user_data: Option<Value>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ApiType)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize, ApiType)]
 pub enum MessageMonitoringStatus {
     /// Returned when the messages was processed and included into finalized
     /// block before `wait_until` block time.

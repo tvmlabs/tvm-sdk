@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.candidate`\n\n```text\ndb.candidate source:PublicKey id:tonNode.blockIdExt data:bytes collated_data:bytes = db.Candidate;\n```\n"]
 pub struct Candidate {
@@ -49,19 +49,19 @@ pub enum Id {
 impl Id {
     pub fn collated_data_file_hash(&self) -> &crate::ton::int256 {
         match self {
-            Id::Db_Candidate_Id(ref x) => &x.collated_data_file_hash,
+            Id::Db_Candidate_Id(x) => &x.collated_data_file_hash,
         }
     }
 
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Id::Db_Candidate_Id(ref x) => &x.id,
+            Id::Db_Candidate_Id(x) => &x.id,
         }
     }
 
     pub fn source(&self) -> &crate::ton::PublicKey {
         match self {
-            Id::Db_Candidate_Id(ref x) => &x.source,
+            Id::Db_Candidate_Id(x) => &x.source,
         }
     }
 

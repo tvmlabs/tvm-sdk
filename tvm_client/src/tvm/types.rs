@@ -12,6 +12,8 @@
 
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_executor::BlockchainConfig;
 use tvm_vm::executor::BehaviorModifiers;
 

@@ -19,14 +19,13 @@ num-traits.workspace = true
 serde.workspace = true
 serde_repr.workspace = true
 serde_json.workspace = true
-serde_derive.workspace = true
 num-bigint.workspace = true
 
 ed25519-dalek.workspace = true
 rand.workspace = true
 
 tvm_types.workspace = true
-tvm_vm = { workspace = true}
+tvm_vm = { workspace = true }
 
 base64 = "0.13"
 log4rs = '1.2'

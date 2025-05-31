@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `dns.entryDataAdnlAddress`\n\n```text\ndns.entryDataAdnlAddress adnl_address:AdnlAddress = dns.EntryData;\n```\n"]
 pub struct EntryDataAdnlAddress {
@@ -140,7 +140,7 @@ impl crate::BareSerialize for EntryDataUnknown {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let EntryDataUnknown { bytes: ref bytes_ } = self;
+        let EntryDataUnknown { bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::bytes>(bytes_)?;
         Ok(())
     }

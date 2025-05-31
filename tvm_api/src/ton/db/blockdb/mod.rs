@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.blockdb.Key`\n\n```text\ndb.blockdb.key.lru id:tonNode.blockIdExt = db.blockdb.Key;\n\ndb.blockdb.key.value id:tonNode.blockIdExt = db.blockdb.Key;\n```\n"]
 pub enum Key {
@@ -9,8 +9,8 @@ pub enum Key {
 impl Key {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Key::Db_Blockdb_Key_Lru(ref x) => &x.id,
-            Key::Db_Blockdb_Key_Value(ref x) => &x.id,
+            Key::Db_Blockdb_Key_Lru(x) => &x.id,
+            Key::Db_Blockdb_Key_Value(x) => &x.id,
         }
     }
 }
@@ -56,19 +56,19 @@ pub enum Lru {
 impl Lru {
     pub fn id(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Lru::Db_Blockdb_Lru(ref x) => &x.id,
+            Lru::Db_Blockdb_Lru(x) => &x.id,
         }
     }
 
     pub fn next(&self) -> &crate::ton::int256 {
         match self {
-            Lru::Db_Blockdb_Lru(ref x) => &x.next,
+            Lru::Db_Blockdb_Lru(x) => &x.next,
         }
     }
 
     pub fn prev(&self) -> &crate::ton::int256 {
         match self {
-            Lru::Db_Blockdb_Lru(ref x) => &x.prev,
+            Lru::Db_Blockdb_Lru(x) => &x.prev,
         }
     }
 
@@ -116,13 +116,13 @@ pub enum Value {
 impl Value {
     pub fn data(&self) -> &crate::ton::bytes {
         match self {
-            Value::Db_Blockdb_Value(ref x) => &x.data,
+            Value::Db_Blockdb_Value(x) => &x.data,
         }
     }
 
     pub fn next(&self) -> &crate::ton::ton_node::blockidext::BlockIdExt {
         match self {
-            Value::Db_Blockdb_Value(ref x) => &x.next,
+            Value::Db_Blockdb_Value(x) => &x.next,
         }
     }
 

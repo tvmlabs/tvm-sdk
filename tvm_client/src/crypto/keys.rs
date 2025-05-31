@@ -14,6 +14,8 @@ use std::fmt::Formatter;
 
 use base64::Engine;
 use ed25519_dalek::SigningKey;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::base64_encode;
 
 use super::internal::SecretBufConst;
@@ -31,7 +33,7 @@ use crate::error::ClientResult;
 pub(crate) fn strip_secret(secret: &str) -> String {
     const SECRET_SHOW_LEN: usize = 8;
     if secret.len() <= SECRET_SHOW_LEN {
-        return format!(r#""{}""#, secret);
+        return format!(r#""{secret}""#);
     }
 
     format!(r#""{}..." ({} chars)"#, &secret[..SECRET_SHOW_LEN], secret.len(),)

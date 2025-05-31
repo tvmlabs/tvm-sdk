@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `id.config.Local`\n\n```text\nid.config.local id:PrivateKey = id.config.Local;\n```\n"]
 pub enum Local {
@@ -8,7 +8,7 @@ pub enum Local {
 impl Local {
     pub fn id(&self) -> &crate::ton::PrivateKey {
         match self {
-            Local::Id_Config_Local(ref x) => &x.id,
+            Local::Id_Config_Local(x) => &x.id,
         }
     }
 

@@ -604,13 +604,13 @@ impl OutMsg {
     pub fn read_out_message(&self) -> Result<Option<MsgEnvelope>> {
         Ok(match self {
             OutMsg::External(_) => None,
-            OutMsg::Immediate(ref x) => Some(x.read_out_message()?),
-            OutMsg::New(ref x) => Some(x.read_out_message()?),
-            OutMsg::Transit(ref x) => Some(x.read_out_message()?),
-            OutMsg::Dequeue(ref x) => Some(x.read_out_message()?),
+            OutMsg::Immediate(x) => Some(x.read_out_message()?),
+            OutMsg::New(x) => Some(x.read_out_message()?),
+            OutMsg::Transit(x) => Some(x.read_out_message()?),
+            OutMsg::Dequeue(x) => Some(x.read_out_message()?),
             OutMsg::DequeueShort(_) => None,
-            OutMsg::DequeueImmediate(ref x) => Some(x.read_out_message()?),
-            OutMsg::TransitRequeued(ref x) => Some(x.read_out_message()?),
+            OutMsg::DequeueImmediate(x) => Some(x.read_out_message()?),
+            OutMsg::TransitRequeued(x) => Some(x.read_out_message()?),
             OutMsg::None => fail!("wrong message type"),
         })
     }
@@ -619,13 +619,13 @@ impl OutMsg {
     pub fn out_message_cell(&self) -> Option<Cell> {
         match self {
             OutMsg::External(_) => None,
-            OutMsg::Immediate(ref x) => Some(x.out_message_cell()),
-            OutMsg::New(ref x) => Some(x.out_message_cell()),
-            OutMsg::Transit(ref x) => Some(x.out_message_cell()),
-            OutMsg::Dequeue(ref x) => Some(x.out_message_cell()),
+            OutMsg::Immediate(x) => Some(x.out_message_cell()),
+            OutMsg::New(x) => Some(x.out_message_cell()),
+            OutMsg::Transit(x) => Some(x.out_message_cell()),
+            OutMsg::Dequeue(x) => Some(x.out_message_cell()),
             OutMsg::DequeueShort(_) => None,
-            OutMsg::DequeueImmediate(ref x) => Some(x.out_message_cell()),
-            OutMsg::TransitRequeued(ref x) => Some(x.out_message_cell()),
+            OutMsg::DequeueImmediate(x) => Some(x.out_message_cell()),
+            OutMsg::TransitRequeued(x) => Some(x.out_message_cell()),
             OutMsg::None => None,
         }
     }
@@ -633,14 +633,14 @@ impl OutMsg {
     /// the function returns the message (if exists)
     pub fn read_message(&self) -> Result<Option<Message>> {
         Ok(match self {
-            OutMsg::External(ref x) => Some(x.read_message()?),
-            OutMsg::Immediate(ref x) => Some(x.read_out_message()?.read_message()?),
-            OutMsg::New(ref x) => Some(x.read_out_message()?.read_message()?),
-            OutMsg::Transit(ref x) => Some(x.read_out_message()?.read_message()?),
-            OutMsg::Dequeue(ref x) => Some(x.read_out_message()?.read_message()?),
+            OutMsg::External(x) => Some(x.read_message()?),
+            OutMsg::Immediate(x) => Some(x.read_out_message()?.read_message()?),
+            OutMsg::New(x) => Some(x.read_out_message()?.read_message()?),
+            OutMsg::Transit(x) => Some(x.read_out_message()?.read_message()?),
+            OutMsg::Dequeue(x) => Some(x.read_out_message()?.read_message()?),
             OutMsg::DequeueShort(_) => None,
-            OutMsg::DequeueImmediate(ref x) => Some(x.read_out_message()?.read_message()?),
-            OutMsg::TransitRequeued(ref x) => Some(x.read_out_message()?.read_message()?),
+            OutMsg::DequeueImmediate(x) => Some(x.read_out_message()?.read_message()?),
+            OutMsg::TransitRequeued(x) => Some(x.read_out_message()?.read_message()?),
             OutMsg::None => fail!("wrong message type"),
         })
     }
@@ -648,14 +648,14 @@ impl OutMsg {
     /// the function returns the messages hash
     pub fn read_message_hash(&self) -> Result<UInt256> {
         Ok(match self {
-            OutMsg::External(ref x) => x.message_cell().repr_hash(),
-            OutMsg::Immediate(ref x) => x.read_out_message()?.message_cell().repr_hash(),
-            OutMsg::New(ref x) => x.read_out_message()?.message_hash(),
-            OutMsg::Transit(ref x) => x.read_out_message()?.message_hash(),
-            OutMsg::Dequeue(ref x) => x.read_out_message()?.message_hash(),
+            OutMsg::External(x) => x.message_cell().repr_hash(),
+            OutMsg::Immediate(x) => x.read_out_message()?.message_cell().repr_hash(),
+            OutMsg::New(x) => x.read_out_message()?.message_hash(),
+            OutMsg::Transit(x) => x.read_out_message()?.message_hash(),
+            OutMsg::Dequeue(x) => x.read_out_message()?.message_hash(),
             OutMsg::DequeueShort(_) => fail!("dequeue short out msg doesn't have message hash"),
-            OutMsg::DequeueImmediate(ref x) => x.read_out_message()?.message_hash(),
-            OutMsg::TransitRequeued(ref x) => x.read_out_message()?.message_hash(),
+            OutMsg::DequeueImmediate(x) => x.read_out_message()?.message_hash(),
+            OutMsg::TransitRequeued(x) => x.read_out_message()?.message_hash(),
             OutMsg::None => fail!("wrong message type"),
         })
     }
@@ -663,14 +663,14 @@ impl OutMsg {
     /// the function returns the message cell (if exists)
     pub fn message_cell(&self) -> Result<Option<Cell>> {
         Ok(match self {
-            OutMsg::External(ref x) => Some(x.message_cell()),
-            OutMsg::Immediate(ref x) => Some(x.read_out_message()?.message_cell()),
-            OutMsg::New(ref x) => Some(x.read_out_message()?.message_cell()),
-            OutMsg::Transit(ref x) => Some(x.read_out_message()?.message_cell()),
-            OutMsg::Dequeue(ref x) => Some(x.read_out_message()?.message_cell()),
+            OutMsg::External(x) => Some(x.message_cell()),
+            OutMsg::Immediate(x) => Some(x.read_out_message()?.message_cell()),
+            OutMsg::New(x) => Some(x.read_out_message()?.message_cell()),
+            OutMsg::Transit(x) => Some(x.read_out_message()?.message_cell()),
+            OutMsg::Dequeue(x) => Some(x.read_out_message()?.message_cell()),
             OutMsg::DequeueShort(_) => None,
-            OutMsg::DequeueImmediate(ref x) => Some(x.read_out_message()?.message_cell()),
-            OutMsg::TransitRequeued(ref x) => Some(x.read_out_message()?.message_cell()),
+            OutMsg::DequeueImmediate(x) => Some(x.read_out_message()?.message_cell()),
+            OutMsg::TransitRequeued(x) => Some(x.read_out_message()?.message_cell()),
             OutMsg::None => fail!("wrong message type"),
         })
     }
@@ -679,27 +679,27 @@ impl OutMsg {
     pub fn envelope_message_hash(&self) -> Option<UInt256> {
         match self {
             OutMsg::External(_) => None,
-            OutMsg::Immediate(ref x) => Some(x.out_message_cell().repr_hash()),
-            OutMsg::New(ref x) => Some(x.out_message_cell().repr_hash()),
-            OutMsg::Transit(ref x) => Some(x.out_message_cell().repr_hash()),
-            OutMsg::Dequeue(ref x) => Some(x.out_message_cell().repr_hash()),
-            OutMsg::DequeueShort(ref x) => Some(x.msg_env_hash.clone()),
-            OutMsg::DequeueImmediate(ref x) => Some(x.out_message_cell().repr_hash()),
-            OutMsg::TransitRequeued(ref x) => Some(x.out_message_cell().repr_hash()),
+            OutMsg::Immediate(x) => Some(x.out_message_cell().repr_hash()),
+            OutMsg::New(x) => Some(x.out_message_cell().repr_hash()),
+            OutMsg::Transit(x) => Some(x.out_message_cell().repr_hash()),
+            OutMsg::Dequeue(x) => Some(x.out_message_cell().repr_hash()),
+            OutMsg::DequeueShort(x) => Some(x.msg_env_hash.clone()),
+            OutMsg::DequeueImmediate(x) => Some(x.out_message_cell().repr_hash()),
+            OutMsg::TransitRequeued(x) => Some(x.out_message_cell().repr_hash()),
             OutMsg::None => None,
         }
     }
 
     pub fn transaction_cell(&self) -> Option<Cell> {
         match self {
-            OutMsg::External(ref x) => Some(x.transaction_cell()),
-            OutMsg::Immediate(ref x) => Some(x.transaction_cell()),
-            OutMsg::New(ref x) => Some(x.transaction_cell()),
-            OutMsg::Transit(ref _x) => None,
-            OutMsg::Dequeue(ref _x) => None,
-            OutMsg::DequeueShort(ref _x) => None,
-            OutMsg::DequeueImmediate(ref _x) => None,
-            OutMsg::TransitRequeued(ref _x) => None,
+            OutMsg::External(x) => Some(x.transaction_cell()),
+            OutMsg::Immediate(x) => Some(x.transaction_cell()),
+            OutMsg::New(x) => Some(x.transaction_cell()),
+            OutMsg::Transit(_x) => None,
+            OutMsg::Dequeue(_x) => None,
+            OutMsg::DequeueShort(_x) => None,
+            OutMsg::DequeueImmediate(_x) => None,
+            OutMsg::TransitRequeued(_x) => None,
             OutMsg::None => None,
         }
     }
@@ -713,20 +713,20 @@ impl OutMsg {
 
     pub fn read_reimport_message(&self) -> Result<Option<InMsg>> {
         match self {
-            OutMsg::Immediate(ref x) => Some(x.read_reimport_message()).transpose(),
-            OutMsg::Transit(ref x) => Some(x.read_imported()).transpose(),
-            OutMsg::DequeueImmediate(ref x) => Some(x.read_reimport_message()).transpose(),
-            OutMsg::TransitRequeued(ref x) => Some(x.read_imported()).transpose(),
+            OutMsg::Immediate(x) => Some(x.read_reimport_message()).transpose(),
+            OutMsg::Transit(x) => Some(x.read_imported()).transpose(),
+            OutMsg::DequeueImmediate(x) => Some(x.read_reimport_message()).transpose(),
+            OutMsg::TransitRequeued(x) => Some(x.read_imported()).transpose(),
             _ => Ok(None),
         }
     }
 
     pub fn reimport_cell(&self) -> Option<Cell> {
         match self {
-            OutMsg::Immediate(ref x) => Some(x.reimport_message_cell()),
-            OutMsg::Transit(ref x) => Some(x.imported_cell()),
-            OutMsg::DequeueImmediate(ref x) => Some(x.reimport_message_cell()),
-            OutMsg::TransitRequeued(ref x) => Some(x.imported_cell()),
+            OutMsg::Immediate(x) => Some(x.reimport_message_cell()),
+            OutMsg::Transit(x) => Some(x.imported_cell()),
+            OutMsg::DequeueImmediate(x) => Some(x.reimport_message_cell()),
+            OutMsg::TransitRequeued(x) => Some(x.imported_cell()),
             _ => None,
         }
     }
@@ -744,7 +744,7 @@ impl Augmentation<CurrencyCollection> for OutMsg {
     fn aug(&self) -> Result<CurrencyCollection> {
         let mut exported = CurrencyCollection::new();
         match self {
-            OutMsg::New(ref x) => {
+            OutMsg::New(x) => {
                 let env = x.read_out_message()?;
                 let msg = env.read_message()?;
                 // exported value = msg.value + msg.ihr_fee + fwd_fee_remaining
@@ -754,7 +754,7 @@ impl Augmentation<CurrencyCollection> for OutMsg {
                 }
                 exported.grams.add(env.fwd_fee_remaining())?;
             }
-            OutMsg::Transit(ref x) => {
+            OutMsg::Transit(x) => {
                 let env = x.read_out_message()?;
                 let msg = env.read_message()?;
                 // exported value = msg.value + msg.ihr_fee + fwd_fee_remaining
@@ -764,7 +764,7 @@ impl Augmentation<CurrencyCollection> for OutMsg {
                 }
                 exported.grams.add(env.fwd_fee_remaining())?;
             }
-            OutMsg::TransitRequeued(ref x) => {
+            OutMsg::TransitRequeued(x) => {
                 let env = x.read_out_message()?;
                 let msg = env.read_message()?;
                 // exported value = msg.value + msg.ihr_fee + fwd_fee_remaining
@@ -805,20 +805,16 @@ macro_rules! write_out_ctor_tag {
 impl Serializable for OutMsg {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
-            OutMsg::External(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_EXT, 3)),
-            OutMsg::Immediate(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_IMM, 3)),
-            OutMsg::New(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_NEW, 3)),
-            OutMsg::Transit(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_TR, 3)),
-            OutMsg::Dequeue(ref x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_DEQ, 4)),
-            OutMsg::DequeueShort(ref x) => {
-                x.write_to(write_out_ctor_tag!(cell, OUT_MSG_DEQ_SHORT, 4))
-            }
-            OutMsg::DequeueImmediate(ref x) => {
+            OutMsg::External(x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_EXT, 3)),
+            OutMsg::Immediate(x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_IMM, 3)),
+            OutMsg::New(x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_NEW, 3)),
+            OutMsg::Transit(x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_TR, 3)),
+            OutMsg::Dequeue(x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_DEQ, 4)),
+            OutMsg::DequeueShort(x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_DEQ_SHORT, 4)),
+            OutMsg::DequeueImmediate(x) => {
                 x.write_to(write_out_ctor_tag!(cell, OUT_MSG_DEQ_IMM, 3))
             }
-            OutMsg::TransitRequeued(ref x) => {
-                x.write_to(write_out_ctor_tag!(cell, OUT_MSG_TRDEQ, 3))
-            }
+            OutMsg::TransitRequeued(x) => x.write_to(write_out_ctor_tag!(cell, OUT_MSG_TRDEQ, 3)),
             OutMsg::None => {
                 fail!(BlockError::InvalidOperation("OutMsg::None can't be serialized".to_string()))
             }

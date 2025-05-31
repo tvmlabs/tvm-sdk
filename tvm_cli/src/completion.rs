@@ -9,8 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-extern crate core;
-
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -119,7 +117,7 @@ fn main() {
     if prev_word == "--addr" {
         if word_being_completed.is_empty() {
             for alias in aliases.keys() {
-                println!("{}", alias);
+                println!("{alias}");
             }
         } else {
             for alias in aliases {

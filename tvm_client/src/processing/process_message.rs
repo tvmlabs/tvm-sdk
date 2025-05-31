@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use crate::abi::ParamsOfEncodeMessage;
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;

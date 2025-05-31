@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.db.key.nodes`\n\n```text\noverlay.db.key.nodes local_id:int256 overlay:int256 = overlay.db.Key;\n```\n"]
 pub struct Nodes {

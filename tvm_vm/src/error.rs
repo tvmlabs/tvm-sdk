@@ -94,7 +94,7 @@ pub fn update_error_description(
                 // TODO: it is wrong, need to modify current backtrace
                 err = TvmError::TvmExceptionFull(
                     Exception::from_code(*code, file!(), line!()),
-                    f(&format!("{:?}", err)),
+                    f(&format!("{err:?}")),
                 )
                 .into()
             }

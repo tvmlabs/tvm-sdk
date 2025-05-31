@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.shard.Value`\n\n```text\ndb.lt.shard.value workchain:int shard:long = db.lt.shard.Value;\n```\n"]
 pub enum Value {
@@ -8,13 +8,13 @@ pub enum Value {
 impl Value {
     pub fn shard(&self) -> &crate::ton::long {
         match self {
-            Value::Db_Lt_Shard_Value(ref x) => &x.shard,
+            Value::Db_Lt_Shard_Value(x) => &x.shard,
         }
     }
 
     pub fn workchain(&self) -> &crate::ton::int {
         match self {
-            Value::Db_Lt_Shard_Value(ref x) => &x.workchain,
+            Value::Db_Lt_Shard_Value(x) => &x.workchain,
         }
     }
 

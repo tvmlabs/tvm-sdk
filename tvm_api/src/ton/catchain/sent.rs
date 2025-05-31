@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `catchain.sent`\n\n```text\ncatchain.sent cnt:int = catchain.Sent;\n```\n"]
 pub struct Sent {

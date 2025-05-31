@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `query.estimateFees`\n\n```text\nquery.estimateFees id:int53 ignore_chksig:Bool = query.Fees;\n```\n"]
 pub struct EstimateFees {

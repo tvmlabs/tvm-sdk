@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `raw.shardAccountMeta`\n\n```text\nraw.shardAccountMeta shard_account_meta:bytes = raw.ShardAccountMeta;\n```\n"]
 pub struct ShardAccountMeta {

@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.db.node.Value`\n\n```text\nadnl.db.node.value date:int id:PublicKey addr_list:adnl.addressList priority_addr_list:adnl.addressList = adnl.db.node.Value;\n```\n"]
 pub enum Value {
@@ -8,25 +8,25 @@ pub enum Value {
 impl Value {
     pub fn addr_list(&self) -> &crate::ton::adnl::addresslist::AddressList {
         match self {
-            Value::Adnl_Db_Node_Value(ref x) => &x.addr_list,
+            Value::Adnl_Db_Node_Value(x) => &x.addr_list,
         }
     }
 
     pub fn date(&self) -> &crate::ton::int {
         match self {
-            Value::Adnl_Db_Node_Value(ref x) => &x.date,
+            Value::Adnl_Db_Node_Value(x) => &x.date,
         }
     }
 
     pub fn id(&self) -> &crate::ton::PublicKey {
         match self {
-            Value::Adnl_Db_Node_Value(ref x) => &x.id,
+            Value::Adnl_Db_Node_Value(x) => &x.id,
         }
     }
 
     pub fn priority_addr_list(&self) -> &crate::ton::adnl::addresslist::AddressList {
         match self {
-            Value::Adnl_Db_Node_Value(ref x) => &x.priority_addr_list,
+            Value::Adnl_Db_Node_Value(x) => &x.priority_addr_list,
         }
     }
 

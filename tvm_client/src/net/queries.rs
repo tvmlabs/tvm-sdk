@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 use super::Error;
@@ -46,7 +48,7 @@ where
     match result {
         Ok(result) => {
             T::deserialize(result.clone())
-                .map_err(|err| Error::invalid_server_response(format!("{}: {}.", err, result)))
+                .map_err(|err| Error::invalid_server_response(format!("{err}: {result}.")))
                 .add_network_url(server_link)
                 .await
         }

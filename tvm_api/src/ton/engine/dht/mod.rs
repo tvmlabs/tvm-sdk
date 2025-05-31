@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.dht.Config`\n\n```text\nengine.dht.config dht:(vector engine.dht) gc:engine.gc = engine.dht.Config;\n```\n"]
 pub enum Config {
@@ -8,13 +8,13 @@ pub enum Config {
 impl Config {
     pub fn dht(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::engine::dht::Dht> {
         match self {
-            Config::Engine_Dht_Config(ref x) => &x.dht,
+            Config::Engine_Dht_Config(x) => &x.dht,
         }
     }
 
     pub fn gc(&self) -> &crate::ton::engine::gc::Gc {
         match self {
-            Config::Engine_Dht_Config(ref x) => &x.gc,
+            Config::Engine_Dht_Config(x) => &x.gc,
         }
     }
 

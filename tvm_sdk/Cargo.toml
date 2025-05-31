@@ -19,7 +19,6 @@ log.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 serde.workspace = true
-serde_derive.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
@@ -27,5 +26,5 @@ tvm_abi.workspace = true
 tvm_block.workspace = true
 tvm_types.workspace = true
 
-api_derive = { path = "../api/derive" }
-api_info = { path = "../api/info" }
+api_derive.workspace = true
+api_info.workspace = true

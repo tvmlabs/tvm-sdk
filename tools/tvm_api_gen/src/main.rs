@@ -8,9 +8,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific EVERX DEV software governing permissions and
 // limitations under the License.
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
 
 mod api;
 mod command_line;
@@ -50,7 +47,7 @@ Example:
 "#;
 
 fn print_usage_and_exit() {
-    println!("{}", USAGE);
+    println!("{USAGE}");
     std::process::exit(1)
 }
 

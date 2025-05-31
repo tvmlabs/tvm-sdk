@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `inputKeyRegular`\n\n```text\ninputKeyRegular key:key local_password:secureBytes = InputKey;\n```\n"]
 pub struct InputKeyRegular {

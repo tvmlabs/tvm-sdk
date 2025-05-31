@@ -13,11 +13,8 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+use serde::Serialize;
 use serde_json::Value;
-
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
 
 #[derive(Serialize, Debug)]
 struct Dep {
@@ -74,11 +71,8 @@ impl BuildInfo {
                 let name = x["name"].as_str().unwrap().to_string();
                 let version = x["version"].as_str().unwrap().to_string();
                 if build_number.is_empty() && name == "tvm_client" {
-                    build_number = version
-                        .split('.')
-                        .map(|x| format!("{:0>3}", x))
-                        .collect::<Vec<_>>()
-                        .join("");
+                    build_number =
+                        version.split('.').map(|x| format!("{x:0>3}")).collect::<Vec<_>>().join("");
                 }
                 let source = x["source"].as_str().unwrap_or("");
                 let git_commit = if !source.is_empty() {
@@ -92,7 +86,7 @@ impl BuildInfo {
         Ok(Self {
             build_number: build_number
                 .parse::<u32>()
-                .unwrap_or_else(|_| panic!("Invalid build number [{}]", build_number)),
+                .unwrap_or_else(|_| panic!("Invalid build number [{build_number}]")),
             dependencies,
         })
     }
@@ -109,7 +103,7 @@ fn main() -> Result<(), String> {
             root().join("src").join("build_info.json").to_str().unwrap(),
             build_info_json,
         )
-        .map_err(|err| format!("{}", err))?;
+        .map_err(|err| format!("{err}"))?;
     }
     Ok(())
 }

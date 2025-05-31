@@ -4,6 +4,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use serde_json::Value;
+use serde_json::json;
 use tvm_block::BinTreeType;
 use tvm_block::Block;
 use tvm_block::Deserializable;
@@ -116,15 +117,15 @@ impl ProofHelperEngineImpl {
     }
 
     fn mc_proof_key(mc_seq_no: u32) -> String {
-        format!("proof_mc_{}", mc_seq_no)
+        format!("proof_mc_{mc_seq_no}")
     }
 
     fn block_key(root_hash: &str) -> String {
-        format!("temp_block_{}", root_hash)
+        format!("temp_block_{root_hash}")
     }
 
     fn trusted_block_right_bound_key(seq_no: u32) -> String {
-        format!("trusted_{}_right_boundary_seq_no", seq_no)
+        format!("trusted_{seq_no}_right_boundary_seq_no")
     }
 
     fn filter_for_block(root_hash: &str) -> Value {
@@ -474,7 +475,7 @@ impl ProofHelperEngineImpl {
         mut proofs_sorted: &mut [(u32, Value)],
     ) -> Result<()> {
         while !proofs_sorted.is_empty() {
-            let mut blocks = Self::preprocess_query_result(
+            let blocks = Self::preprocess_query_result(
                 query_collection(
                     Arc::clone(&self.context),
                     ParamsOfQueryCollection {
@@ -507,10 +508,8 @@ impl ProofHelperEngineImpl {
             }
 
             let (expected, remaining) = proofs_sorted.split_at_mut(blocks.len());
-            for i in 0..blocks.len() {
-                let (seq_no, mut block) = blocks.remove(0);
-
-                let expected_seq_no = expected[i].0 + 1;
+            for (expected_item, (seq_no, mut block)) in expected.iter_mut().zip(blocks) {
+                let expected_seq_no = expected_item.0 + 1;
                 if seq_no != expected_seq_no {
                     tvm_types::fail!(
                         "Block with seq_no: {} missed on DApp server (actual seq_no: {})",
@@ -519,7 +518,7 @@ impl ProofHelperEngineImpl {
                     );
                 }
 
-                expected[i].1["file_hash"] = block["prev_ref"]["file_hash"].take();
+                expected_item.1["file_hash"] = block["prev_ref"]["file_hash"].take();
             }
 
             proofs_sorted = remaining;
@@ -613,7 +612,7 @@ impl ProofHelperEngineImpl {
         }
 
         result.ok_or_else(|| {
-            failure::err_msg(format!("Top block for the given shard ({}) not found", shard))
+            failure::err_msg(format!("Top block for the given shard ({shard}) not found"))
         })
     }
 

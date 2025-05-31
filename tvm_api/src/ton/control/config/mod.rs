@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `control.config.Local`\n\n```text\ncontrol.config.local priv:PrivateKey pub:int256 port:int = control.config.Local;\n```\n"]
 pub enum Local {
@@ -8,19 +8,19 @@ pub enum Local {
 impl Local {
     pub fn port(&self) -> &crate::ton::int {
         match self {
-            Local::Control_Config_Local(ref x) => &x.port,
+            Local::Control_Config_Local(x) => &x.port,
         }
     }
 
     pub fn priv_(&self) -> &crate::ton::PrivateKey {
         match self {
-            Local::Control_Config_Local(ref x) => &x.priv_,
+            Local::Control_Config_Local(x) => &x.priv_,
         }
     }
 
     pub fn pub_(&self) -> &crate::ton::int256 {
         match self {
-            Local::Control_Config_Local(ref x) => &x.pub_,
+            Local::Control_Config_Local(x) => &x.pub_,
         }
     }
 

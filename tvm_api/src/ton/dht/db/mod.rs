@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `dht.db.Bucket`\n\n```text\ndht.db.bucket nodes:dht.nodes = dht.db.Bucket;\n```\n"]
 pub enum Bucket {
@@ -8,7 +8,7 @@ pub enum Bucket {
 impl Bucket {
     pub fn nodes(&self) -> &crate::ton::dht::nodes::Nodes {
         match self {
-            Bucket::Dht_Db_Bucket(ref x) => &x.nodes,
+            Bucket::Dht_Db_Bucket(x) => &x.nodes,
         }
     }
 
@@ -56,7 +56,7 @@ pub enum Key {
 impl Key {
     pub fn id(&self) -> &crate::ton::int {
         match self {
-            Key::Dht_Db_Key_Bucket(ref x) => &x.id,
+            Key::Dht_Db_Key_Bucket(x) => &x.id,
         }
     }
 

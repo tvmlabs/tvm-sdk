@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.proposalVote`\n\n```text\nengine.validator.proposalVote perm_key:int256 to_send:bytes = engine.validator.ProposalVote;\n```\n"]
 pub struct ProposalVote {

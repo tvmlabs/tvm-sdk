@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `overlay.certificateId`\n\n```text\noverlay.certificateId overlay_id:int256 node:int256 expire_at:int max_size:int = overlay.CertificateId;\n```\n"]
 pub struct CertificateId {

@@ -18,6 +18,8 @@ use hmac::Mac;
 use libsecp256k1::PublicKey;
 use libsecp256k1::SecretKey;
 use pbkdf2::pbkdf2;
+use serde::Deserialize;
+use serde::Serialize;
 use sha2::Digest;
 use sha2::Sha512;
 use zeroize::ZeroizeOnDrop;
@@ -356,7 +358,7 @@ impl HDPrivateKey {
         Self::from_serialized(
             &string
                 .from_base58()
-                .map_err(|err| crypto::Error::bip32_invalid_key(format!("{:?}", err)))?,
+                .map_err(|err| crypto::Error::bip32_invalid_key(format!("{err:?}")))?,
         )
     }
 

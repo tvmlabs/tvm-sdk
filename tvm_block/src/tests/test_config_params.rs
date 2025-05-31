@@ -67,11 +67,11 @@ fn test_config_param_17() {
 fn get_storage_prices() -> StoragePrices {
     let mut rng = rand::thread_rng();
     StoragePrices {
-        bit_price_ps: rng.gen(),
-        cell_price_ps: rng.gen(),
-        mc_bit_price_ps: rng.gen(),
-        mc_cell_price_ps: rng.gen(),
-        utime_since: rng.gen(),
+        bit_price_ps: rng.r#gen(),
+        cell_price_ps: rng.r#gen(),
+        mc_bit_price_ps: rng.r#gen(),
+        mc_cell_price_ps: rng.r#gen(),
+        utime_since: rng.r#gen(),
     }
 }
 
@@ -113,15 +113,15 @@ fn test_config_param_18() {
 fn get_gas_limit_prices() -> GasLimitsPrices {
     let mut rng = rand::thread_rng();
     let mut glp = GasLimitsPrices {
-        gas_price: rng.gen(),
-        gas_limit: rng.gen(),
-        gas_credit: rng.gen(),
-        block_gas_limit: rng.gen(),
-        freeze_due_limit: rng.gen(),
-        delete_due_limit: rng.gen(),
-        special_gas_limit: rng.gen(),
-        flat_gas_limit: rng.gen(),
-        flat_gas_price: rng.gen(),
+        gas_price: rng.r#gen(),
+        gas_limit: rng.r#gen(),
+        gas_credit: rng.r#gen(),
+        block_gas_limit: rng.r#gen(),
+        freeze_due_limit: rng.r#gen(),
+        delete_due_limit: rng.r#gen(),
+        special_gas_limit: rng.r#gen(),
+        flat_gas_limit: rng.r#gen(),
+        flat_gas_price: rng.r#gen(),
         max_gas_threshold: 0,
     };
     glp.max_gas_threshold = glp.calc_max_gas_threshold();
@@ -138,12 +138,12 @@ fn test_config_gas_limit_price() {
 fn get_msg_forward_prices() -> MsgForwardPrices {
     let mut rng = rand::thread_rng();
     MsgForwardPrices {
-        lump_price: rng.gen(),
-        bit_price: rng.gen(),
-        cell_price: rng.gen(),
-        ihr_price_factor: rng.gen(),
-        first_frac: rng.gen(),
-        next_frac: rng.gen(),
+        lump_price: rng.r#gen(),
+        bit_price: rng.r#gen(),
+        cell_price: rng.r#gen(),
+        ihr_price_factor: rng.r#gen(),
+        first_frac: rng.r#gen(),
+        next_frac: rng.r#gen(),
     }
 }
 
@@ -157,12 +157,12 @@ fn test_config_msg_forward_prices() {
 fn get_cat_chain_config() -> CatchainConfig {
     let mut rng = rand::thread_rng();
     let mut cc = CatchainConfig::default();
-    cc.shuffle_mc_validators = rng.gen();
-    cc.isolate_mc_validators = rng.gen();
-    cc.mc_catchain_lifetime = rng.gen();
-    cc.shard_catchain_lifetime = rng.gen();
-    cc.shard_validators_lifetime = rng.gen();
-    cc.shard_validators_num = rng.gen();
+    cc.shuffle_mc_validators = rng.r#gen();
+    cc.isolate_mc_validators = rng.r#gen();
+    cc.mc_catchain_lifetime = rng.r#gen();
+    cc.shard_catchain_lifetime = rng.r#gen();
+    cc.shard_validators_lifetime = rng.r#gen();
+    cc.shard_validators_num = rng.r#gen();
     cc
 }
 

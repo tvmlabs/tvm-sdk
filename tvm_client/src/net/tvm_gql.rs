@@ -15,8 +15,10 @@
 
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
 use serde::de::Error;
 use serde_json::Value;
+use serde_json::json;
 
 use crate::error::ClientError;
 use crate::error::ClientResult;
@@ -289,13 +291,13 @@ impl QueryOperationBuilder {
         self.start_op(&op.query_name());
         let filter_type = op.doc_type() + "Filter";
         match op {
-            ParamsOfQueryOperation::AggregateCollection(ref p) => {
+            ParamsOfQueryOperation::AggregateCollection(p) => {
                 self.add_agg_op_params(&filter_type, &p.filter, &p.fields);
             }
-            ParamsOfQueryOperation::QueryCollection(ref p) => {
+            ParamsOfQueryOperation::QueryCollection(p) => {
                 self.add_query_op_params(&filter_type, &p.filter, &p.order, p.limit, None);
             }
-            ParamsOfQueryOperation::WaitForCollection(ref p) => {
+            ParamsOfQueryOperation::WaitForCollection(p) => {
                 self.add_query_op_params(
                     &filter_type,
                     &p.filter,
@@ -309,7 +311,7 @@ impl QueryOperationBuilder {
                     _ => self.timeout,
                 };
             }
-            ParamsOfQueryOperation::QueryCounterparties(ref p) => {
+            ParamsOfQueryOperation::QueryCounterparties(p) => {
                 self.add_query_counterparties_op_params(&p.account, &p.first, &p.after);
             }
         }
@@ -327,10 +329,10 @@ impl QueryOperationBuilder {
         filter: &Option<Value>,
         fields: &Option<Vec<FieldAggregation>>,
     ) {
-        if let Some(ref filter) = filter {
+        if let Some(filter) = filter {
             self.add_op_param("filter", filter_type, filter);
         }
-        if let Some(ref fields) = fields {
+        if let Some(fields) = fields {
             if !fields.is_empty() {
                 self.add_op_param(
                     "fields",
@@ -349,7 +351,7 @@ impl QueryOperationBuilder {
         limit: Option<u32>,
         timeout: Option<u32>,
     ) {
-        if let Some(ref filter) = filter {
+        if let Some(filter) = filter {
             self.add_op_param("filter", filter_type, filter);
         }
         if let Some(order_by) = order_by {
@@ -386,10 +388,10 @@ impl QueryOperationBuilder {
         self.add_header(if self.param_count == 0 { "(" } else { "," });
         self.param_count += 1;
         let param_name = format!("p{}", self.param_count);
-        self.add_header(&format!("${}: {}", param_name, type_decl));
+        self.add_header(&format!("${param_name}: {type_decl}"));
         self.add_body(if self.op_param_count == 0 { "(" } else { "," });
         self.op_param_count += 1;
-        self.add_body(&format!("{}: ${}", name, param_name));
+        self.add_body(&format!("{name}: ${param_name}"));
         if let Some(ref mut variables) = self.variables {
             variables[param_name] = value.clone();
         } else {
@@ -448,8 +450,7 @@ impl GraphQLQuery {
         let mut result_data = &result["data"][result_name.as_str()];
         if result_data.is_null() {
             return Err(crate::net::Error::invalid_server_response(format!(
-                "Missing data.{} in: {}",
-                result_name, result
+                "Missing data.{result_name} in: {result}"
             )));
         }
         if let Some(ParamsOfQueryOperation::WaitForCollection(_)) = param {
@@ -497,10 +498,9 @@ impl GraphQLQuery {
     pub fn with_collection_subscription(table: &str, filter: &Value, fields: &str) -> Self {
         let filter_type = Self::filter_type_for_collection(table);
 
-        let query = format!("subscription {table}($filter: {type}) {{ {table}(filter: $filter) {{ {fields} }} }}",
-            type=filter_type,
-            table=table,
-            fields=fields);
+        let query = format!(
+            "subscription {table}($filter: {filter_type}) {{ {table}(filter: $filter) {{ {fields} }} }}"
+        );
         let query = query.split_whitespace().collect::<Vec<&str>>().join(" ");
         let variables = Some(json!({
             "filter" : filter,
@@ -517,7 +517,7 @@ impl GraphQLQuery {
 
     pub fn filter_type_for_collection(collection: &str) -> String {
         let mut filter_type = if let Some(prefix) = collection.strip_suffix("ies") {
-            format!("{}yFilter", prefix)
+            format!("{prefix}yFilter")
         } else {
             format!("{}Filter", &collection[0..collection.len() - 1])
         };

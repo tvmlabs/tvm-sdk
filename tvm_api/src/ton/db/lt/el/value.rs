@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `db.lt.el.value`\n\n```text\ndb.lt.el.value id:tonNode.blockIdExt lt:long ts:int = db.lt.el.Value;\n```\n"]
 pub struct Value {

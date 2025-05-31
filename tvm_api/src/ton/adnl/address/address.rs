@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `adnl.address.tunnel`\n\n```text\nadnl.address.tunnel to:int256 pubkey:PublicKey = adnl.Address;\n```\n"]
 pub struct Tunnel {

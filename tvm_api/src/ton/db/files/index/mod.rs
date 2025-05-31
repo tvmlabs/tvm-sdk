@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Clone, PartialEq)]
 #[doc = "TL-derived from `db.files.index.Value`\n\n```text\ndb.files.index.value packages:(vector int) key_packages:(vector int) temp_packages:(vector int) = db.files.index.Value;\n```\n"]
 pub enum Value {
@@ -8,19 +8,19 @@ pub enum Value {
 impl Value {
     pub fn key_packages(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
         match self {
-            Value::Db_Files_Index_Value(ref x) => &x.key_packages,
+            Value::Db_Files_Index_Value(x) => &x.key_packages,
         }
     }
 
     pub fn packages(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
         match self {
-            Value::Db_Files_Index_Value(ref x) => &x.packages,
+            Value::Db_Files_Index_Value(x) => &x.packages,
         }
     }
 
     pub fn temp_packages(&self) -> &crate::ton::vector<crate::ton::Bare, crate::ton::int> {
         match self {
-            Value::Db_Files_Index_Value(ref x) => &x.temp_packages,
+            Value::Db_Files_Index_Value(x) => &x.temp_packages,
         }
     }
 

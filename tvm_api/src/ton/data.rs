@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `data`\n\n```text\ndata bytes:secureBytes = Data;\n```\n"]
 pub struct Data {
@@ -12,7 +12,7 @@ impl crate::BareSerialize for Data {
     }
 
     fn serialize_bare(&self, _ser: &mut crate::Serializer) -> crate::Result<()> {
-        let Data { bytes: ref bytes_ } = self;
+        let Data { bytes: bytes_ } = self;
         _ser.write_bare::<crate::ton::secureBytes>(bytes_)?;
         Ok(())
     }

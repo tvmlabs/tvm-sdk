@@ -1,5 +1,5 @@
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Debug, Default, Clone, PartialEq)]
 #[doc = "TL-derived from `engine.validator.stats`\n\n```text\nengine.validator.stats stats:(vector engine.validator.oneStat) = engine.validator.Stats;\n```\n"]
 pub struct Stats {

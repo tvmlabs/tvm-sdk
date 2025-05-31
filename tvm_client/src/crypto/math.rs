@@ -13,6 +13,8 @@ use std::fmt::Display;
 
 use num_bigint::BigInt;
 use rand::RngCore;
+use serde::Deserialize;
+use serde::Serialize;
 use tvm_types::base64_encode;
 
 use crate::client::ClientContext;
@@ -154,7 +156,7 @@ pub fn factorize(
         if p1 > p2 {
             std::mem::swap(&mut p1, &mut p2);
         }
-        Ok(ResultOfFactorize { factors: [format!("{:X}", p1), format!("{:X}", p2)] })
+        Ok(ResultOfFactorize { factors: [format!("{p1:X}"), format!("{p2:X}")] })
     } else {
         Err(invalid_composite(&params.composite, "Composite number can't be factorized"))
     }

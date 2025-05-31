@@ -50,48 +50,48 @@ impl Error {
     pub fn invalid_input_stack<E: Display>(err: E, stack: &Value) -> ClientError {
         error(
             ErrorCode::InvalidInputStack,
-            format!("Invalid JSON value for stack item ({}): {}", stack, err),
+            format!("Invalid JSON value for stack item ({stack}): {err}"),
         )
     }
 
     pub fn invalid_account_boc<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidAccountBoc, format!("Invalid account BOC: {}", err))
+        error(ErrorCode::InvalidAccountBoc, format!("Invalid account BOC: {err}"))
     }
 
     pub fn can_not_read_transaction<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::CanNotReadTransaction, format!("Can not read transaction: {}", err))
+        error(ErrorCode::CanNotReadTransaction, format!("Can not read transaction: {err}"))
     }
 
     pub fn can_not_read_blockchain_config<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::CanNotReadBlockchainConfig,
-            format!("Can not read blockchain config: {}", err),
+            format!("Can not read blockchain config: {err}"),
         )
     }
 
     pub fn can_not_read_blockchain_config_from_file<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::CanNotReadBlockchainConfig,
-            format!("Can not read blockchain config from file: {}", err),
+            format!("Can not read blockchain config from file: {err}"),
         )
     }
 
     pub fn json_deserialization_failed<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::CanNotReadBlockchainConfig,
-            format!("Deserialization blockchain config was failed: {}", err),
+            format!("Deserialization blockchain config was failed: {err}"),
         )
     }
 
     pub fn can_not_parse_config<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::CanNotReadBlockchainConfig,
-            format!("Can not parse blockchain config: {}", err),
+            format!("Can not parse blockchain config: {err}"),
         )
     }
 
     pub fn can_not_convert_config<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::CanNotReadBlockchainConfig, format!("Can not convert config: {}", err))
+        error(ErrorCode::CanNotReadBlockchainConfig, format!("Can not convert config: {err}"))
     }
 
     pub fn transaction_aborted() -> ClientError {
@@ -133,14 +133,14 @@ impl Error {
         let mut error = error(
             ErrorCode::ContractExecutionError,
             if show_tips {
-                format!("Contract execution was terminated with error: {}", err)
+                format!("Contract execution was terminated with error: {err}")
             } else {
                 err.to_string()
             },
         );
 
         if show_tips && !error.message.to_lowercase().contains("exit code") {
-            error.message.push_str(&format!(", exit code: {}", exit_code));
+            error.message.push_str(&format!(", exit code: {exit_code}"));
 
             let tip = match exit_code {
                 0 => Some(
@@ -165,7 +165,7 @@ impl Error {
             };
 
             if let Some(tip) = tip {
-                error.message.push_str(&format!("\nTip: {}", tip));
+                error.message.push_str(&format!("\nTip: {tip}"));
             }
         }
 
@@ -180,7 +180,7 @@ impl Error {
         if let Some(error_code) = ExceptionCode::from_usize(exit_code as usize)
             .or(ExceptionCode::from_usize(!exit_code as usize))
         {
-            error.message.push_str(&format!(" ({})", error_code));
+            error.message.push_str(&format!(" ({error_code})"));
             error.data["description"] = error_code.to_string().into();
             if error_code == ExceptionCode::OutOfGas {
                 error.message.push_str(". Check account balance");
@@ -189,7 +189,7 @@ impl Error {
                 }
             }
         } else if let Some(code) = StdContractError::from_usize(exit_code as usize) {
-            error.message.push_str(&format!(" ({})", code));
+            error.message.push_str(&format!(" ({code})"));
             error.data["description"] = code.to_string().into();
             if let Some(tip) = code.tip() {
                 error.message.push_str(". ");
@@ -197,7 +197,7 @@ impl Error {
             }
         } else if let Some(ref exit_arg) = exit_arg {
             if let Some(error_message) = Self::read_error_message(exit_arg) {
-                error.message.push_str(&format!(", contract error: \"{}\"", error_message));
+                error.message.push_str(&format!(", contract error: \"{error_message}\""));
                 error.data["contract_error"] = error_message.into();
             }
         }
@@ -316,7 +316,7 @@ impl Error {
     pub fn unknown_execution_error<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::UnknownExecutionError,
-            format!("Transaction execution failed with unknown error: {}", err),
+            format!("Transaction execution failed with unknown error: {err}"),
         )
     }
 
@@ -329,7 +329,7 @@ impl Error {
     }
 
     pub fn internal_error<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InternalError, format!("TVM internal error: {}", err))
+        error(ErrorCode::InternalError, format!("TVM internal error: {err}"))
     }
 
     fn read_error_message(exit_arg: &Value) -> Option<String> {
