@@ -80,12 +80,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         &self,
         in_msg: Option<&Message>,
         account: &mut Account,
-        params: ExecuteParams,
+        mut params: ExecuteParams,
         minted_shell: &mut u128,
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
-
         let is_previous_state_active = match account.state() {
             Some(AccountState::AccountUninit {}) => false,
             None => false,
@@ -109,6 +108,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             CommonMsgInfo::IntMsgInfo(ref hdr) => (hdr.bounce, false),
             CommonMsgInfo::ExtInMsgInfo(_) => (false, true),
         };
+
+        if let Some(h) = in_msg.int_header() {
+            if Some(h.src_dapp_id()) == account.stuff().is_some().then_some(&params.dapp_id) {
+                params.is_same_dapp_id = true;
+            }
+        }
 
         let account_address = in_msg.dst_ref().ok_or_else(|| {
             ExecutorError::TrExecutorError(format!(
@@ -143,6 +148,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             {
                 log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id.clone());
                 log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_limit * gas_config.gas_price / 65536));
+                params.is_same_dapp_id = true;
                 burned = msg_balance.grams;
                 msg_balance.grams = min(
                     (gas_config.gas_limit * gas_config.gas_price / 65536).into(),
