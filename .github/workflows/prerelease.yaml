@@ -1,15 +1,11 @@
 name: Prerelease tvm-cli
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-      - 'rc-[0-9]+.[0-9]+'
-      - 'rc-[0-9]+.[0-9]+.[0-9]+'
     tags:
-      - '[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+.an'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.an'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -24,35 +20,43 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        result:
-          - tvm-cli-darwin-arm64
-          - tvm-cli-darwin-amd64
-          - tvm-cli-linux-arm64
-          - tvm-cli-linux-amd64
-
         include:
-          # targets
-          - result: tvm-cli-darwin-arm64
+          - suffix: macos-arm64
             target: aarch64-apple-darwin
-            os: macos-13
+            os: macos-14
+            zigbuild: false
 
-          - result: tvm-cli-darwin-amd64
+          - suffix: macos-amd64
             target: x86_64-apple-darwin
             os: macos-13
+            zigbuild: false
 
-          - result: tvm-cli-linux-arm64
+          - suffix: linux-arm64
             target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
+            os: ubuntu-24.04-arm
+            zigbuild: true
 
-          - result: tvm-cli-linux-amd64
+          - suffix: linux-amd64
             target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
+            os: ubuntu-24.04
+            zigbuild: true
+
+          - suffix: arm64
+            target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            zigbuild: false
+
+          - suffix: x86_64
+            target: x86_64-unknown-linux-gnu
+            os: ubuntu-24.04
+            zigbuild: false
 
     name: Build ${{ matrix.target }}
 
     env:
       CARGO_TERM_COLOR: always
-      SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }} # Setting this env var enables the caching
+      SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }}
+      SCCACHE_GHA_ENABLED: "true"
       RUSTC_WRAPPER: sccache
       CMAKE_C_COMPILER_LAUNCHER: sccache
       CMAKE_CXX_COMPILER_LAUNCHER: sccache
@@ -67,13 +71,12 @@ jobs:
           echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
 
       - name: Configure sccache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Setup cargo cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
@@ -91,6 +94,7 @@ jobs:
             build-essential
             cmake
             curl
+            jq
             clang
             librocksdb-dev
             protobuf-compiler
@@ -104,30 +108,36 @@ jobs:
       - name: Install MacOS tools
         if: startsWith(matrix.os, 'macos-')
         run: |
-          brew install protobuf
+          brew install protobuf jq
 
       - name: Build Binary
         env:
-          CARGO_INCREMENTAL: 0  # important for cache size too
+          CARGO_INCREMENTAL: 0
           CARGO_NET_RETRY: 10
           RUST_BACKTRACE: full
           RUSTUP_MAX_RETRIES: 10
         run: |
           cargo update
-
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            cargo build -r --target ${{ matrix.target }} -p tvm_cli --bin tvm-cli
+          if [[ "${{ matrix.zigbuild }}" == "true" ]]; then
+            cargo zigbuild -r --target ${{ matrix.target }}
           else
-            cargo zigbuild -r --target ${{ matrix.target }} -p tvm_cli --bin tvm-cli
+            cargo build -r --target ${{ matrix.target }}
           fi
-
           ls -lA target/${{ matrix.target }}/release
+      - name: List all binaries
+        run: |
+          mkdir artifacts-${{ matrix.suffix }}
+
+          for binary in `cargo metadata --no-deps --format-version 1 | jq -r '.packages[].targets[] | select(.kind[] == "bin") | .name' | sort | xargs`; do
+            mv target/${{ matrix.target }}/release/$binary artifacts-${{ matrix.suffix }}/$binary
+          done
+          ls -lA artifacts-${{ matrix.suffix }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          path: target/${{ matrix.target }}/release/tvm-cli
-          name: ${{ matrix.result }}
+          path: artifacts-${{ matrix.suffix }}/*
+          name: artifacts-${{ matrix.suffix }}
           if-no-files-found: error
           retention-days: 3
 
@@ -140,24 +150,24 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        result:
-          - tvm-cli-darwin-arm64
-          - tvm-cli-darwin-amd64
-          - tvm-cli-linux-arm64
-          - tvm-cli-linux-amd64
+        suffix: [macos-arm64, macos-amd64, linux-arm64, linux-amd64, arm64, x86_64]
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Display structure of downloaded files
         run: ls -R
 
       - name: Make archive
         run: |
-          chmod +x ${{ matrix.result }}/*
-          cd ${{ matrix.result }}
-          tar -czvf ../${{ matrix.result }}.tar.gz .
+          chmod +x artifacts-${{ matrix.suffix }}/*
+          tag_name=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          cd artifacts-${{ matrix.suffix }}
+          for file in *; do
+            tar -czvf "$file"-"$tag_name"-${{ matrix.suffix }}.tar.gz $file
+          done
+          ls -lA
 
       - name: Upload Prerelease
         uses: softprops/action-gh-release@v1
@@ -165,6 +175,6 @@ jobs:
           prerelease: true
           tag_name: ${{ github.ref_name }}
           files: |
-            ${{ matrix.result }}.tar.gz
+            artifacts-${{ matrix.suffix }}/*.tar.gz
           name: "Version: ${{ github.ref_name }}"
           body: ""
