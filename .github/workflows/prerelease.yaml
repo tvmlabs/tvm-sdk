@@ -118,17 +118,21 @@ jobs:
           RUSTUP_MAX_RETRIES: 10
         run: |
           cargo update
-          if [[ "${{ matrix.zigbuild }}" == "true" ]]; then
-            cargo zigbuild -r --target ${{ matrix.target }}
-          else
-            cargo build -r --target ${{ matrix.target }}
-          fi
+
+          for binary in tvm-cli tvm-debugger; do
+            if [[ "${{ matrix.zigbuild }}" == "true" ]]; then
+              cargo zigbuild -r --target ${{ matrix.target }} --bin "$binary"
+            else
+              cargo build -r --target ${{ matrix.target }} --bin "$binary"
+            fi
+          done
           ls -lA target/${{ matrix.target }}/release
+
       - name: List all binaries
         run: |
           mkdir artifacts-${{ matrix.suffix }}
 
-          for binary in `cargo metadata --no-deps --format-version 1 | jq -r '.packages[].targets[] | select(.kind[] == "bin") | .name' | sort | xargs`; do
+          for binary in tvm-cli tvm-debugger; do
             mv target/${{ matrix.target }}/release/$binary artifacts-${{ matrix.suffix }}/$binary
           done
           ls -lA artifacts-${{ matrix.suffix }}
