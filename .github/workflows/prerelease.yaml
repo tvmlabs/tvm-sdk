@@ -31,12 +31,12 @@ jobs:
             os: macos-13
             zigbuild: false
 
-          - suffix: linux-arm64
+          - suffix: linux-musl-arm64
             target: aarch64-unknown-linux-musl
             os: ubuntu-24.04-arm
             zigbuild: true
 
-          - suffix: linux-amd64
+          - suffix: linux-musl-amd64
             target: x86_64-unknown-linux-musl
             os: ubuntu-24.04
             zigbuild: true
