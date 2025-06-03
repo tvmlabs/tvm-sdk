@@ -154,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        suffix: [macos-arm64, macos-amd64, linux-arm64, linux-amd64, arm64, x86_64]
+        suffix: [macos-arm64, macos-amd64, linux-musl-arm64, linux-musl-amd64, arm64, x86_64]
 
     steps:
       - name: Download all artifacts
