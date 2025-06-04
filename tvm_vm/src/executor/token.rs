@@ -355,7 +355,10 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     println!("WASM Args loaded {:?}", wasm_func_args);
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?,
+        Err(e) => {
+            println!("Failed to execute WASM function {:?}", e);
+            err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?
+        }
     };
     println!("WASM Execution result: {:?}", result);
     // let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
@@ -384,12 +387,14 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // let mut res = [0u8; 4];
     // res[..4].copy_from_slice(&res_vec.to_le_bytes());
     let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
+    println!("Pushing cell");
     // TODO: Is this stack push enough? do I need an action here?
     engine.cc.stack.push(StackItem::cell(cell));
     // let mut a: u64 = result as u64;
     // let mut cell = BuilderData::new();
     // a.write_to(&mut cell)?;
     // add_action(engine, ACTION_RUNWASM, None, cell) // todo change to OK
+    println!("OK");
 
     Ok(())
 }
