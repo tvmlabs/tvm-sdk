@@ -447,13 +447,7 @@ fn test_run_wasm_fortytwo() {
     let wasm_func = "docs:adder/add@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename =
-    //    "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip2/release/add.wasm";
-    "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip2/release/add.wasm";
-    //"/Users/elar/Code/Havok/AckiNacki/ackinacki-game/target/wasm32-wasip2/release/popitgame_tvm.wasm";
-    //"/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip2/release/add.wasm";
-    //"/Users/elar/Code/Havok/AckiNacki/awnion/wasip2-minimal-wat/minimal.wat";
-    //"/Users/elar/Code/Havok/AckiNacki/ackinacki-game/target/wasm32-wasip2/release/popitgame_tvm.2.wasm";
+    let filename = "./src/tests/add.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
@@ -462,14 +456,9 @@ fn test_run_wasm_fortytwo() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let status = execute_run_wasm(&mut engine).unwrap();
     println!("Wasm Return Status: {:?}", status);
-    // let err = engine.execute();
+
     assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
             == 3u8
     );
-
-    // let TvmError::TvmExceptionFull(exc, _) =
-    // err.downcast_ref::<TvmError>().unwrap() else {     panic!("Should be
-    // TvmExceptionFull"); };
-    // assert_eq!(exc.exception_code(), Some(ExceptionCode::ExecutionTimeout));
 }

@@ -67,43 +67,20 @@ impl WasiView for MyState {
     }
 }
 
+// Async IO annotator for WASI. Do not use unless you know what you're doing.
 fn io_type_annotate<T: IoView, F>(val: F) -> F
 where
     F: Fn(&mut T) -> IoImpl<&mut T>,
 {
     val
 }
+// Sync annotator for WASI. Used in wasmtime linker
 fn type_annotate<T: WasiView, F>(val: F) -> F
 where
     F: Fn(&mut T) -> WasiImpl<&mut T>,
 {
     val
 }
-
-// // Generate all possible ASCII printable strings (length 1-6)
-// fn generate_strings(current: String, component:
-// &wasmtime::component::Component) {     if current.len() >= 6 {
-//         match component.export_index(None, &current) {
-//             Some(c) => println!("{:?}: {:?}", current, c),
-//             None => {}
-//         };
-//         return;
-//     }
-
-//     // Iterate through all printable ASCII characters (32 to 126)
-//     for i in 32u8..=126u8 {
-//         let mut new_string = current.clone();
-//         new_string.push(i as char);
-
-//         if new_string.len() <= 6 {
-//             match component.export_index(None, &new_string) {
-//                 Some(c) => println!("{:?}: {:?}", new_string, c),
-//                 None => {}
-//             };
-//             generate_strings(new_string, component);
-//         }
-//     }
-// }
 
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
     let cellsize = 120usize;
@@ -117,12 +94,7 @@ pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
         // Convert slice to Vec<u8> and pass to omnom function
         let chunk_vec = chunk.to_vec();
         cell_vec.push(chunk_vec);
-        // println!(
-        //     "chunk: {:?}, cell: {:?}, size: {:?}",
-        //     chunk.len(),
-        //     cell_vec.last().expect("msg").len(),
-        //     cellsize
-        // );
+
         assert!(
             cell_vec.last().expect("error in split_to_chain_of_cells function").len() == cellsize
                 || i + cellsize > len
@@ -140,8 +112,6 @@ pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
             BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8).unwrap();
         let builder = builder.checked_append_reference(cell).unwrap();
         cell = builder.clone().into_cell().unwrap();
-        // println!("data: {:?}, vec: {:?}, i: {:?}", cell.data().len(),
-        // cell_vec[i].len(), i);
     }
     cell // return first cell
 }
@@ -171,12 +141,17 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_MINTECC, None, cell)
 }
 
+// This is a custom linker method, adding only sync, non-io wasi dependencies.
+// If more deps are needed, add them in there!
 fn add_to_linker_gosh(
     wasm_linker: &mut wasmtime::component::Linker<MyState>,
 ) -> Result<(), wasmtime::Error> {
     let l = wasm_linker;
 
-    // let io_closure = io_type_annotate::<MyState, _>(|t| IoImpl(t));
+    // These are IO methods. DO NOT USE, I left them here as an example of what we
+    // shouldn't add to the linker.
+    // let io_closure = io_type_annotate::<MyState,
+    // _>(|t| IoImpl(t));
     // wasmtime_wasi_io::bindings::wasi::io::error::add_to_linker_get_host(l,
     // io_closure)?;
     // wasmtime_wasi::p2::bindings::sync::io::streams::add_to_linker_get_host(l,
@@ -208,7 +183,7 @@ fn add_to_linker_gosh(
 // execute wasm binary
 pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
-    fetch_stack(engine, 4)?; //TODO match the stack depth change elsewhere
+    fetch_stack(engine, 4)?;
 
     // load or access WASM engine
     let mut wasm_config = wasmtime::Config::new();
@@ -228,7 +203,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // other actions to be run after WASM instruction
     // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
     // instruction (or set to 0?)
-    println!("Starting gas: {:?}", engine.gas_remaining());
+    log::debug!("Starting gas: {:?}", engine.gas_remaining());
     let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
         true => u64::try_from(engine.gas_remaining())? * WASM_FUEL_MULTIPLIER,
         false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
@@ -245,10 +220,6 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             TokenValue::Bytes(items) => items,
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
-    // std::fs::write(
-    //     "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/
-    // add.fromchain.wasm",     wasm_executable.as_slice(),
-    // )?;
 
     // let s = engine.cmd.var(0).as_cell()?;
     // let wasm_executable = rejoin_chain_of_cells(s)?;
@@ -264,24 +235,23 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             )?,
         };
     let component_type = wasm_component.component_type();
-    // TODO: Remove debug prints
+
     let mut exports = component_type.exports(&wasm_engine);
     let arg = exports.next();
-    println!("{:?}", arg);
+    log::debug!("List of exports from WASM: {:?}", arg);
     if let Some(arg) = arg {
-        print!("{:?}", arg);
+        log::debug!("{:?}", arg);
 
         for arg in exports {
-            print!(" {:?}", arg);
+            log::debug!(" {:?}", arg);
         }
     }
 
     // Add wasi-cli libs to linker
     let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
-    // match wasmtime_wasi::add_to_linker_sync(&mut wasm_linker) {
-    //     Ok(_) => {}
-    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to
-    // linker {:?}", e)?, };
+
+    // This is a custom linker method, adding only sync, non-io wasi dependencies.
+    // If more deps are needed, add them in there!
     match add_to_linker_gosh(&mut wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(
@@ -290,11 +260,13 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     {:?}"
         )?,
     };
+
+    // This is the default add to linker method, we dont use it as it will add async
+    // calls for IO stuff, which fails inside out Tokio runtime
     // match wasmtime_wasi::p2::add_to_linker_sync(&mut wasm_linker) {
     //     Ok(_) => {}
     //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to
     // linker {:?}", e)?, };
-    // let wasm_component_0 = wasmtime::component::Linker::
 
     // Instantiate WASM component. Will error if missing some wasm deps from linker
     let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
@@ -318,11 +290,12 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
 
     // get callable wasm func
+    log::debug!("Callable funcs found:");
     for export in wasm_component.component_type().exports(&wasm_engine) {
-        println!("{:?}", export.0);
+        log::debug!("{:?}", export.0);
     }
     let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
-    println!("Instance Index {:?}", instance_index);
+    log::debug!("Instance Index {:?}", instance_index);
     let func_index = match wasm_instance.get_export_index(
         &mut wasm_store,
         instance_index.as_ref(),
@@ -333,7 +306,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
         }
     };
-    println!("Func Index {:?}", func_index);
+    log::debug!("Func Index {:?}", func_index);
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
         .expect(&format!("`{}` was not an exported function", wasm_func_name));
@@ -346,25 +319,22 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // collect result
     // substract gas based on wasm fuel used
     let s = engine.cmd.var(3).as_cell()?;
-    println!("Loading WASM Args");
+    log::debug!("Loading WASM Args");
     let wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
-    println!("WASM Args loaded {:?}", wasm_func_args);
+    log::debug!("WASM Args loaded {:?}", wasm_func_args);
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => {
-            println!("Failed to execute WASM function {:?}", e);
+            log::debug!("Failed to execute WASM function {:?}", e);
             err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?
         }
     };
-    println!("WASM Execution result: {:?}", result);
-    // let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
-    //     Ok(result) => result,
-    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM
-    // function {:?}", e)?, };
+    log::debug!("WASM Execution result: {:?}", result);
+
     let gas_used: i64 = match wasm_store.get_fuel() {
         Ok(new_fuel) => i64::try_from((wasm_fuel - new_fuel).div_ceil(WASM_FUEL_MULTIPLIER))?,
         Err(e) => err!(
@@ -374,27 +344,22 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         )?,
     };
     engine.use_gas(gas_used);
-    println!("Remaining gas: {:?}", engine.gas_remaining());
+    log::debug!("Remaining gas: {:?}", engine.gas_remaining());
     match engine.gas_remaining() > 0 {
         true => {}
         false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
     }
-    // return result
-    println!("EXEC Wasm execution result: {:?}", result);
-    let res_vec = result.0;
-    // let result = items_serialize(res_vec, engine);
 
-    // let mut res = [0u8; 4];
-    // res[..4].copy_from_slice(&res_vec.to_le_bytes());
+    // return result
+    log::debug!("EXEC Wasm execution result: {:?}", result);
+    let res_vec = result.0;
+
     let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
-    println!("Pushing cell");
-    // TODO: Is this stack push enough? do I need an action here?
+    log::debug!("Pushing cell");
+
     engine.cc.stack.push(StackItem::cell(cell));
-    // let mut a: u64 = result as u64;
-    // let mut cell = BuilderData::new();
-    // a.write_to(&mut cell)?;
-    // add_action(engine, ACTION_RUNWASM, None, cell) // todo change to OK
-    println!("OK");
+
+    log::debug!("OK");
 
     Ok(())
 }
