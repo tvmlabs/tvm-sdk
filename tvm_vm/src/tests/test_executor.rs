@@ -448,8 +448,10 @@ fn test_run_wasm_fortytwo() {
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let filename =
-    //    "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip1/release/add.wasm";
+    //    "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip2/release/add.wasm";
     "/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip2/release/add.wasm";
+    //"/Users/elar/Code/Havok/AckiNacki/ackinacki-game/target/wasm32-wasip2/release/popitgame_tvm.wasm";
+    //"/Users/elar/Code/Havok/AckiNacki/wasm/add/target/wasm32-wasip2/release/add.wasm";
     //"/Users/elar/Code/Havok/AckiNacki/awnion/wasip2-minimal-wat/minimal.wat";
     //"/Users/elar/Code/Havok/AckiNacki/ackinacki-game/target/wasm32-wasip2/release/popitgame_tvm.2.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
