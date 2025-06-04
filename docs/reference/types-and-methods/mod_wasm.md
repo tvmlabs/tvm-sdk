@@ -5,17 +5,13 @@ An instruction allowing for execution of arbitrary WASM code.
 The runwasm instruction allows arbitrary pre-compiled wasm code to be executed directly by the node.
 
 ## Argument Syntax
-2 arguments should be encoded as a series of bytes inside of separate bags of cells:
+* 2 arguments should be encoded as a series of bytes inside of separate bags of cells:
+    * wasmArgs: argument(s) for the wasm code to execute. Currently, it is up to the wasm binary deveoper to handle parsing raw bytes into more complex types; this must be done inside the wasm code.
+    * wasmBinary: compiled wasm executable. can be provided in .wasm binary or .wat text format
 
-wasmArgs: argument(s) for the wasm code to execute. Currently, it is up to the wasm binary deveoper to handle parsing raw bytes into more complex types; this must be done inside the wasm code.
-
-wasmBinary: compiled wasm executable. can be provided in .wasm binary or .wat text format
-
-2 arguments should be passed as cell-encoded strings:
-
-wasmFunction: name of the function to call from the wasm binary.
-
-wasmModule: name of the module containing wasmFunction. in case the target function is not inside a module, pass an empty or invalid string.
+* 2 arguments should be passed as cell-encoded strings:
+    * wasmFunction: name of the function to call from the wasm binary.
+    * wasmModule: name of the module containing wasmFunction. in case the target function is not inside a module, pass an empty or invalid string.
 
 ## Compiling the target wasm binary
 
@@ -68,16 +64,16 @@ As an aded bonus, this can greatly reduce the resulting binary size, along with 
 ## Example Solidity contract
 
 ```solidity
-    function runWasm (bytes wasmBinary, string wasmModule, string wasmFunction, bytes wasmArgs) public pure returns (bytes) {
-        
-        tvm.accept(); 
-        getTokens();
+function runWasm (bytes wasmBinary, string wasmModule, string wasmFunction, bytes wasmArgs) public pure returns (bytes) {
+    
+    tvm.accept(); 
+    getTokens();
 
-        TvmCell wasmResultCell = gosh.runwasm(abi.encode(wasmArgs), abi.encode(wasmFunction), abi.encode(wasmModule), abi.encode(wasmBinary));
+    TvmCell wasmResultCell = gosh.runwasm(abi.encode(wasmArgs), abi.encode(wasmFunction), abi.encode(wasmModule), abi.encode(wasmBinary));
 
 
-        bytes wasmResult = abi.decode(wasmResultCell, bytes);
+    bytes wasmResult = abi.decode(wasmResultCell, bytes);
 
-        return wasmResult;
-    }
+    return wasmResult;
+}
 ```
