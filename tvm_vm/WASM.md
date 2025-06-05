@@ -25,12 +25,13 @@ package docs:adder@0.1.0 {
 ```
 To execute the above function, we could set:
 
-wasmBinary = bytes of the wasm binary
+`wasmBinary = bytes of the wasm binary`
 
-wasmArgs = [u8, u8] or [u8, u8, u8, u8, u8, u8, u8, u8] if adding 2 * i64 for exmaple 
-wasmFunction = "add"
+`wasmArgs = [u8, u8]` if adding 2 bytes or `[u8, u8, u8, u8, u8, u8, u8, u8]` if adding 2 * `i64` for exmaple. The details of how to parse args are up to the wasm binary developer. 
 
-wasmModule = "docs:adder/calculator@0.1.0" - note that the interface name needs to be included
+`wasmFunction = "add"`
+
+`wasmModule = "docs:adder/calculator@0.1.0"` - note that the interface name (`"calculator"`) needs to be included in this string
 
 The currently supported target is any `wasm32-wasip2` binary utilising the _component_ model only, with a set of WASI modules provided by the executing node. This is done to minimise the binary size while allowing the use of more complex language features.
 Make sure that your binary is compiled following the [WASM Component model](https://component-model.bytecodealliance.org/)
@@ -59,8 +60,10 @@ Currently provided [WASI interfaces/features](https://wasi.dev/interfaces) are:
 Some standard WASI features are not available, which is likely to cause errors with binaries containing complex error handlers and traceback info.
 
 To minimise extra WASI dependencies in your wasm binary, try to remove as much panic/crash handling logic as possible (it is not needed in this context anyway).
+
 For example with the Rust compiler:
 `cargo +nightly build -Zbuild-std=std,panic_abort -Zbuild-std-features=panic_immediate_abort --target wasm32-wasip2 --release` will replace all panic handlers with wasm's `unreachable` instruction. Some more info [here](https://github.com/rust-lang/rust/issues/133235).
+
 As an aded bonus, this can greatly reduce the resulting binary size, along with some [other compiler settings](https://github.com/johnthagen/min-sized-rust).
 
 
