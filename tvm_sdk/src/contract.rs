@@ -23,6 +23,7 @@ use tvm_block::ExternalInboundMessageHeader;
 use tvm_block::GetRepresentationHash;
 use tvm_block::InternalMessageHeader;
 use tvm_block::Message as TvmMessage;
+use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
 use tvm_block::ShardIdent;
@@ -312,6 +313,7 @@ impl Contract {
     // Returns message's bag of cells and identifier.
     pub fn construct_call_ext_in_message_json(
         address: MsgAddressInt,
+        src_address: MsgAddressExt,
         params: &FunctionCallSet,
         key_pair: Option<&Ed25519PrivateKey>,
     ) -> Result<SdkMessage> {
@@ -325,9 +327,10 @@ impl Contract {
             key_pair,
             Some(&address.to_string()),
         )?;
-
+        // eprintln!("construct_call_ext_in_message_json(): src_address={src_address:?}");
         let msg = Self::create_ext_in_message(
             address.clone(),
+            src_address,
             SliceData::load_cell(msg_body.into_cell()?)?,
         )?;
         let (body, id) = Self::serialize_message(&msg)?;
@@ -390,7 +393,8 @@ impl Contract {
     // to sign. Sign should be then added with `add_sign_to_message` function
     // Works with json representation of input and abi.
     pub fn get_call_message_bytes_for_signing(
-        address: MsgAddressInt,
+        dst_address: MsgAddressInt,
+        src_address: MsgAddressExt,
         params: &FunctionCallSet,
     ) -> Result<MessageToSign> {
         // pack params into bag of cells via ABI
@@ -399,11 +403,13 @@ impl Contract {
             &params.func,
             params.header.as_deref(),
             &params.input,
-            Some(&address.to_string()),
+            Some(&dst_address.to_string()),
         )?;
-
-        let msg =
-            Self::create_ext_in_message(address, SliceData::load_cell(msg_body.into_cell()?)?)?;
+        let msg = Self::create_ext_in_message(
+            dst_address,
+            src_address,
+            SliceData::load_cell(msg_body.into_cell()?)?,
+        )?;
 
         Self::serialize_message(&msg)
             .map(|(msg_data, _id)| MessageToSign { message: msg_data, data_to_sign })
@@ -419,6 +425,7 @@ impl Contract {
         image: ContractImage,
         key_pair: Option<&Ed25519PrivateKey>,
         workchain_id: i32,
+        src_address: MsgAddressExt,
     ) -> Result<SdkMessage> {
         let msg_body = tvm_abi::encode_function_call(
             &params.abi,
@@ -431,8 +438,7 @@ impl Contract {
         )?;
 
         let cell = SliceData::load_cell(msg_body.into_cell()?)?;
-        let msg = Self::create_ext_deploy_message(Some(cell), image, workchain_id)?;
-
+        let msg = Self::create_ext_deploy_message(Some(cell), image, workchain_id, src_address)?;
         let address = match msg.dst_ref() {
             Some(address) => address.clone(),
             None => fail!(SdkError::InternalError {
@@ -450,13 +456,14 @@ impl Contract {
         image: ContractImage,
         body: Option<&[u8]>,
         workchain_id: i32,
+        src_address: MsgAddressExt,
     ) -> Result<TvmMessage> {
         let body_cell = match body {
             None => None,
             Some(data) => Some(Self::deserialize_tree_to_slice(data)?),
         };
 
-        Self::create_ext_deploy_message(body_cell, image, workchain_id)
+        Self::create_ext_deploy_message(body_cell, image, workchain_id, src_address)
     }
 
     // Packs given image into an external inbound Message struct.
@@ -464,8 +471,9 @@ impl Contract {
     pub fn construct_deploy_message_no_constructor(
         image: ContractImage,
         workchain_id: i32,
+        src_address: MsgAddressExt,
     ) -> Result<TvmMessage> {
-        Self::create_ext_deploy_message(None, image, workchain_id)
+        Self::create_ext_deploy_message(None, image, workchain_id, src_address)
     }
 
     // Packs given image into an internal Message struct.
@@ -488,6 +496,7 @@ impl Contract {
         params: &FunctionCallSet,
         image: ContractImage,
         workchain_id: i32,
+        src_address: MsgAddressExt,
     ) -> Result<MessageToSign> {
         let (msg_body, data_to_sign) = tvm_abi::prepare_function_call_for_sign(
             &params.abi,
@@ -498,8 +507,7 @@ impl Contract {
         )?;
 
         let cell = SliceData::load_cell(msg_body.into_cell()?)?;
-        let msg = Self::create_ext_deploy_message(Some(cell), image, workchain_id)?;
-
+        let msg = Self::create_ext_deploy_message(Some(cell), image, workchain_id, src_address)?;
         Self::serialize_message(&msg)
             .map(|(msg_data, _id)| MessageToSign { message: msg_data, data_to_sign })
     }
@@ -610,8 +618,16 @@ impl Contract {
         Ok(SdkMessage { id, address, serialized_message: body, message })
     }
 
-    fn create_ext_in_message(address: MsgAddressInt, msg_body: SliceData) -> Result<TvmMessage> {
-        let msg_header = ExternalInboundMessageHeader { dst: address, ..Default::default() };
+    fn create_ext_in_message(
+        address: MsgAddressInt,
+        src: MsgAddressExt,
+        msg_body: SliceData,
+    ) -> Result<TvmMessage> {
+        let msg_header = ExternalInboundMessageHeader {
+            src,
+            dst: address,
+            ..Default::default()
+        };
         // let mut msg_header = ExternalInboundMessageHeader::default();
         // msg_header.dst = address;
 
@@ -649,12 +665,13 @@ impl Contract {
         msg_body: Option<SliceData>,
         image: ContractImage,
         workchain_id: i32,
+        src: MsgAddressExt,
     ) -> Result<TvmMessage> {
         let msg_header = ExternalInboundMessageHeader {
             dst: image.msg_address(workchain_id),
+            src,
             ..Default::default()
         };
-
         let mut msg = TvmMessage::with_ext_in_header(msg_header);
         msg.set_state_init(image.state_init());
         if let Some(body) = msg_body {
