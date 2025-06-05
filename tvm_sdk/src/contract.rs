@@ -327,7 +327,6 @@ impl Contract {
             key_pair,
             Some(&address.to_string()),
         )?;
-        // eprintln!("construct_call_ext_in_message_json(): src_address={src_address:?}");
         let msg = Self::create_ext_in_message(
             address.clone(),
             src_address,
@@ -623,11 +622,7 @@ impl Contract {
         src: MsgAddressExt,
         msg_body: SliceData,
     ) -> Result<TvmMessage> {
-        let msg_header = ExternalInboundMessageHeader {
-            src,
-            dst: address,
-            ..Default::default()
-        };
+        let msg_header = ExternalInboundMessageHeader { src, dst: address, ..Default::default() };
         // let mut msg_header = ExternalInboundMessageHeader::default();
         // msg_header.dst = address;
 

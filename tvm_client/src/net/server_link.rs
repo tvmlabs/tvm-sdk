@@ -497,8 +497,7 @@ fn get_redirection_data(data: &Value) -> (Option<String>, Option<String>) {
 
 impl ServerLink {
     pub fn new(config: NetworkConfig, client_env: Arc<ClientEnv>) -> ClientResult<Self> {
-        let endpoint_addresses =
-            config.endpoints.clone().unwrap_or(vec!["localhost".to_string()]);
+        let endpoint_addresses = config.endpoints.clone().unwrap_or(vec!["localhost".to_string()]);
         if endpoint_addresses.is_empty() {
             return Err(crate::client::Error::net_module_not_init());
         }
