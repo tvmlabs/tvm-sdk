@@ -523,7 +523,7 @@ pub async fn encode_message(
                 })
                 .unwrap_or_default()
         }
-        Err(_) => MsgAddressExt::AddrNone
+        Err(_) => MsgAddressExt::AddrNone,
     };
 
     let abi_contract = params.abi.abi()?;
