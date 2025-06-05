@@ -24,12 +24,15 @@ package docs:adder@0.1.0 {
 }
 ```
 To execute the above function, we could set:
-wasmBinary = <bytes of the wasm binary>
+
+wasmBinary = bytes of the wasm binary
+
 wasmArgs = [u8, u8] or [u8, u8, u8, u8, u8, u8, u8, u8] if adding 2 * i64 for exmaple 
 wasmFunction = "add"
+
 wasmModule = "docs:adder/calculator@0.1.0" - note that the interface name needs to be included
 
-The supported target as of June 2025 is any `wasm32-wasip2` binary utilising the _component_ model only, with a set of WASI modules provided by the executing node. This is done to minimise the binary size while allowing the use of more complex language features.
+The currently supported target is any `wasm32-wasip2` binary utilising the _component_ model only, with a set of WASI modules provided by the executing node. This is done to minimise the binary size while allowing the use of more complex language features.
 Make sure that your binary is compiled following the [WASM Component model](https://component-model.bytecodealliance.org/)
 
 Currently provided [WASI interfaces/features](https://wasi.dev/interfaces) are:

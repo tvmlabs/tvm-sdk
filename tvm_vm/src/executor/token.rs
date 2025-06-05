@@ -82,7 +82,8 @@ where
     val
 }
 
-pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
+pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
+    // TODO: Cell size can maybe be increased up to 128?
     let cellsize = 120usize;
     let len = input.len();
     let mut cell_vec = Vec::<Vec<u8>>::new();
@@ -103,17 +104,14 @@ pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Cell {
     let mut cell = BuilderData::with_raw(
         cell_vec[cell_vec.len() - 1].clone(),
         cell_vec[cell_vec.len() - 1].len() * 8,
-    )
-    .unwrap()
-    .into_cell()
-    .unwrap();
+    )?
+    .into_cell()?;
     for i in (0..(cell_vec.len() - 1)).rev() {
-        let mut builder =
-            BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8).unwrap();
-        let builder = builder.checked_append_reference(cell).unwrap();
-        cell = builder.clone().into_cell().unwrap();
+        let mut builder = BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8)?;
+        let builder = builder.checked_append_reference(cell)?;
+        cell = builder.clone().into_cell()?;
     }
-    cell // return first cell
+    Ok(cell) // return first cell
 }
 
 pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
@@ -205,7 +203,10 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // instruction (or set to 0?)
     log::debug!("Starting gas: {:?}", engine.gas_remaining());
     let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
-        true => u64::try_from(engine.gas_remaining())? * WASM_FUEL_MULTIPLIER,
+        true => match u64::try_from(engine.gas_remaining())?.checked_mul(WASM_FUEL_MULTIPLIER) {
+            Some(k) => k,
+            None => err!(ExceptionCode::IntegerOverflow, "Overflow when calculating WASM fuel")?,
+        },
         false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
     };
     match wasm_store.set_fuel(wasm_fuel) {
