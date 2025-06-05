@@ -80,7 +80,6 @@ use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
 
-use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 use crate::blockchain_config::BlockchainConfig;
 use crate::blockchain_config::CalcMsgFwdFees;
 use crate::error::ExecutorError;
@@ -322,12 +321,26 @@ pub trait TransactionExecutor {
                     Ok(None) => VarUInteger32::default(),
                     Err(_) => VarUInteger32::default(),
                 };
-                if ecc_balance >= VarUInteger32::from(diff.as_u128()) {
-                    let mut sub_value = CurrencyCollection::new();
-                    sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
-                    acc_balance.grams.add(&diff)?;
-                    acc_balance.sub(&sub_value)?;
+                let mut value = 0u128;
+                let mut grams_value = Grams::zero();
+                let (_, digits) = ecc_balance.value().to_u64_digits();
+                if digits.len() < 4 {
+                    for (i, &digit) in digits.iter().enumerate() {
+                        let shift = 32 * i; 
+                        value = value.checked_add((digit as u128) << shift).unwrap();
+                        grams_value = grams_value + (Grams::from(digit)) << shift as u8;
+                    }
+                } else {
+                    value = diff.as_u128();
+                    grams_value = diff;
                 }
+                if value >= diff.as_u128() {
+                    value = diff.as_u128();
+                }
+                let mut sub_value = CurrencyCollection::new();
+                sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(value))?;
+                acc_balance.grams.add(&grams_value)?;
+                acc_balance.sub(&sub_value)?;
             }
         }
         if acc_balance.grams >= fee {
@@ -1121,17 +1134,7 @@ pub trait TransactionExecutor {
         }
 
         // calculated storage for bounced message is empty
-        let serialized_message = bounce_msg.serialize()?;
-        let (storage, fwd_full_fees) = if params.block_version
-            >= VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE
-        {
-            let mut storage = StorageUsedShort::default();
-            storage.append(&serialized_message);
-            let storage_bits = storage.bits() - serialized_message.bit_length() as u64;
-            let storage_cells = storage.cells() - 1;
-            let fwd_full_fees = self.config().calc_fwd_fee(is_masterchain, &serialized_message)?;
-            (StorageUsedShort::with_values_checked(storage_cells, storage_bits)?, fwd_full_fees)
-        } else {
+        let (storage, fwd_full_fees) = {
             let fwd_full_fees = self.config().calc_fwd_fee(is_masterchain, &Cell::default())?;
             (StorageUsedShort::with_values_checked(0, 0)?, fwd_full_fees)
         };
@@ -1742,7 +1745,7 @@ fn reserve_action_handler(
             *need_to_reserve = 0;
         }
     } else {
-        if acc_remaining_balance.grams - val.grams < Grams::from(*need_to_reserve) {
+        if acc_remaining_balance.grams < Grams::from(*need_to_reserve) + val.grams {
             return Err(RESULT_CODE_INVALID_BALANCE);
         }
         if *need_to_reserve != 0 {
