@@ -358,6 +358,8 @@ pub enum ExceptionCode {
     BigCellAccess = 16,
     #[error("execution timeout")]
     ExecutionTimeout = 17,
+    #[error("wasm failed to load")]
+    WasmLoadFail = 18,
 }
 
 // impl fmt::Display for ExceptionCode {
