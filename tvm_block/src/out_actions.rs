@@ -34,8 +34,6 @@ pub const ACTION_RESERVE: u32 = 0x36e6b809;
 pub const ACTION_CHANGE_LIB: u32 = 0x26fa1dd4;
 pub const ACTION_COPYLEFT: u32 = 0x24486f7a;
 pub const ACTION_MINTECC: u32 = 0xc2bc6dd8;
-// pub const ACTION_RUNWASM: u32 = 0x92bc6dd8; // TODO added arbitrary address,
-// maybe not needed
 pub const ACTION_CNVRTSHELLQ: u32 = 0x90d8ae28;
 pub const ACTION_MINT_SHELL_TOKEN: u32 = 0xcb9b9a2f;
 pub const ACTION_BURNECC: u32 = 0x130efdee;
@@ -224,7 +222,7 @@ impl Serializable for OutAction {
                 ACTION_MINTECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
             }
-            OutAction::BurnToken { ref value, ref key } => {
+            OutAction::BurnToken { ref value , ref key} => {
                 ACTION_BURNECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
                 key.write_to(cell)?;
