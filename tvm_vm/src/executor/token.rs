@@ -1,6 +1,5 @@
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
-// use tvm_block::ACTION_RUNWASM;
 use tvm_block::ACTION_BURNECC;
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
