@@ -1,10 +1,22 @@
-use crate::{
-    ByteOrderRead, CellType, DEPTH_SIZE, LevelMask, SHA256_SIZE, UInt256, cell, error, fail,
-};
-use num_traits::{FromPrimitive, ToPrimitive};
-use std::io::{ErrorKind, Read, Write};
+use std::debug_assert;
+use std::io::ErrorKind;
+use std::io::Read;
+use std::io::Write;
 use std::sync::Arc;
-use std::{debug_assert, vec};
+use std::vec;
+
+use num_traits::FromPrimitive;
+use num_traits::ToPrimitive;
+
+use crate::ByteOrderRead;
+use crate::CellType;
+use crate::DEPTH_SIZE;
+use crate::LevelMask;
+use crate::SHA256_SIZE;
+use crate::UInt256;
+use crate::cell;
+use crate::error;
+use crate::fail;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum CellBuffer {

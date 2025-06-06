@@ -1,12 +1,29 @@
-use crate::cell::cell_data::CellData;
-use crate::cell::{EXTERNAL_CELL_MAX_SIZE, EXTERNAL_CELL_MIN_SIZE};
-use crate::{
-    ByteOrderRead, Cell, CellImpl, CellType, DEPTH_SIZE, ExceptionCode, LevelMask, MAX_DATA_BITS,
-    MAX_DEPTH, MAX_LEVEL, MAX_REFERENCES_COUNT, SHA256_SIZE, Sha256, UInt256, cell, error, fail,
-};
 use std::cmp::max;
-use std::io::{Cursor, Read, Write};
+use std::io::Cursor;
+use std::io::Read;
+use std::io::Write;
 use std::sync::Arc;
+
+use crate::ByteOrderRead;
+use crate::Cell;
+use crate::CellImpl;
+use crate::CellType;
+use crate::DEPTH_SIZE;
+use crate::ExceptionCode;
+use crate::LevelMask;
+use crate::MAX_DATA_BITS;
+use crate::MAX_DEPTH;
+use crate::MAX_LEVEL;
+use crate::MAX_REFERENCES_COUNT;
+use crate::SHA256_SIZE;
+use crate::Sha256;
+use crate::UInt256;
+use crate::cell;
+use crate::cell::EXTERNAL_CELL_MAX_SIZE;
+use crate::cell::EXTERNAL_CELL_MIN_SIZE;
+use crate::cell::cell_data::CellData;
+use crate::error;
+use crate::fail;
 
 #[derive(Clone, Debug)]
 pub struct DataCell {
