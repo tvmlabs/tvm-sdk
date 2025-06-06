@@ -336,7 +336,7 @@ impl TokenValue {
         }
     }
 
-    fn write_bytes(data: &[u8], abi_version: &AbiVersion) -> Result<BuilderData> {
+    pub fn write_bytes(data: &[u8], abi_version: &AbiVersion) -> Result<BuilderData> {
         let cell_len = BuilderData::bits_capacity() / 8;
         let mut len = data.len();
         let mut cell_capacity = if abi_version == &ABI_VERSION_1_0 {
