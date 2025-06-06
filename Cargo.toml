@@ -24,7 +24,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "2.17.2"
+version = "2.17.0"
 
 rust-version = "1.76.0"
 
@@ -52,7 +52,7 @@ opt-level = 1
 opt-level = 3
 
 [profile.release]
-opt-level = "z"   # Optimize for size.
+opt-level = "s"   # Optimize for size.
 lto = true        # Enable Link Time Optimization
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = "abort"   # Abort on panic
