@@ -63,7 +63,7 @@ itertools = "0.12.0"
 typenum = "1.13.0"
 ff = { version = "0.13.0", features = ["derive"] }
 
-wasmtime = "33.0.0" # TODO consolidate and format deps
+wasmtime = "33.0.0"
 wasmtime-wasi = "33.0.0"
 wasmtime-wasi-io = "33.0.0"
 
