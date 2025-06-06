@@ -202,7 +202,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 
             let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
             need_to_burn += credit;
-            acc_balance.grams += credit;
+            msg_balance.grams += credit;
 
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
