@@ -115,6 +115,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
         }
 
+        if let Some(_) = in_msg.ext_in_header() {
+            if in_msg.have_state_init() && !is_previous_state_active {
+                params.is_same_dapp_id = true;
+            }
+        }
+
         let account_address = in_msg.dst_ref().ok_or_else(|| {
             ExecutorError::TrExecutorError(format!(
                 "Input message {:x} has no dst address",
