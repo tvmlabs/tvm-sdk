@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.17.0] - 2025-06-06
+
+### New
+
+- Added `RUNWASM` instruction, allowing execution of WASM Component Binaries. [Details and examples in WASM instruction docs.](tvm_vm/WASM.md)
+
 ## [2.16.2] - 2025-06-05
 
 ### New
