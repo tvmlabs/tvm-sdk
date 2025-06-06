@@ -888,7 +888,7 @@ pub trait TransactionExecutor {
                         RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
                 }
-                OutAction::BurnToken { value, key } => {
+                OutAction::BurnToken { value , key} => {
                     let mut sub_value = CurrencyCollection::new();
                     if value == 0 {
                         let other = acc_remaining_balance.get_other(key)?;
@@ -896,16 +896,16 @@ pub trait TransactionExecutor {
                             sub_value.other.set(&key, &acc_value)?;
                         }
                     } else {
-                        sub_value
-                            .other
-                            .set(&key, &VarUInteger32::from_two_u128(0, value as u128)?)?;
+                        sub_value.other.set(&key, &VarUInteger32::from_two_u128(0, value as u128)?)?;
                     }
                     match acc_remaining_balance.sub(&sub_value) {
                         Ok(true) => {
                             phase.spec_actions += 1;
                             0
                         }
-                        Ok(false) | Err(_) => RESULT_CODE_NOT_ENOUGH_EXTRA,
+                        Ok(false) | Err(_) => {
+                            RESULT_CODE_NOT_ENOUGH_EXTRA
+                        },
                     }
                 }
                 OutAction::ExchangeShell { value } => {
@@ -1595,21 +1595,21 @@ fn outmsg_action_handler(
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
-        /*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
-                    // send all remainig balance of inbound message
-                    result_value.add(msg_balance).ok();
-                    if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
-                        if &result_value.grams < compute_phase_fees {
-                            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
-                        }
-                        result_value.grams.sub(compute_phase_fees).map_err(|err| {
-                            log::error!(target: "executor", "cannot subtract msg balance : {}", err);
-                            RESULT_CODE_ACTIONLIST_INVALID
-                        })?;
-                    }
-                    int_header.value = result_value.clone();
+/*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+            // send all remainig balance of inbound message
+            result_value.add(msg_balance).ok();
+            if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                if &result_value.grams < compute_phase_fees {
+                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
                 }
-        */
+                result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                    log::error!(target: "executor", "cannot subtract msg balance : {}", err);
+                    RESULT_CODE_ACTIONLIST_INVALID
+                })?;
+            }
+            int_header.value = result_value.clone();
+        }
+*/
         if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
             // we must pay the fees, sum them with msg value
             result_value.grams += total_fwd_fees;

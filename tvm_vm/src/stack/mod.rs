@@ -175,7 +175,7 @@ pub fn slice_deserialize(slice: &mut SliceData) -> Result<SliceData> {
     Ok(res)
 }
 
-pub(crate) fn items_serialize(
+fn items_serialize(
     mut items: Vec<SerializeItem>,
     gas_consumer: &mut dyn GasConsumer,
 ) -> Result<BuilderData> {

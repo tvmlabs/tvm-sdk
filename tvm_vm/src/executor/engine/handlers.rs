@@ -399,8 +399,7 @@ impl Handlers {
                 .set(0x35, execute_calculate_block_manager_reward)
                 .set(0x36, execute_calculate_adjustment_reward_bm)
                 .set(0x37, execute_calculate_min_stake_bm)
-                .set(0x38, execute_ecc_burn)
-                .set(0x39, execute_run_wasm);
+                .set(0x38, execute_ecc_burn);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
