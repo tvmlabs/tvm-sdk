@@ -115,10 +115,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
         }
 
-        if let Some(_) = in_msg.ext_in_header() {
+        if let Some(h) = in_msg.ext_in_header() {
             if in_msg.have_state_init() && !is_previous_state_active {
                 params.is_same_dapp_id = true;
-                account.uninit_account();
             }
         }
 
