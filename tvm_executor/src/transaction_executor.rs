@@ -473,21 +473,9 @@ pub trait TransactionExecutor {
                 false
             } else {
                 log::debug!(target: "executor", "msg external");
-                if result_acc.is_none() {
-                    if let Some(new_acc) =
-                        account_from_message(msg, msg_balance, true, init_code_hash, libs_disabled)
-                    {
-                        result_acc = new_acc;
-                        result_acc.set_last_paid(if !is_special {
-                            smc_info.unix_time()
-                        } else {
-                            0
-                        });
-
-                        // if there was a balance in message (not bounce), then account state at
-                        // least become uninit
-                        *acc = result_acc.clone();
-                        acc.uninit_account();
+                if let Some(_) = msg.state_init() {
+                    if let Some(hdr) = msg.ext_in_header() {
+                        *acc = Account::uninit(hdr.dst.clone(), 0, 0, msg_balance.clone());
                     }
                 }
                 true
