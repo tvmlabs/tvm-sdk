@@ -1298,6 +1298,7 @@ fn compute_new_state(
                 log::debug!(target: "executor", "message for uninitialized: activated");
                 let text = "Cannot construct account from message with hash";
                 if !check_libraries(state_init, disable_set_lib, text, in_msg) {
+                    log::debug!(target: "executor", "bad state");
                     return Ok(Some(ComputeSkipReason::BadState));
                 }
                 match acc.try_activate_by_init_code_hash(state_init, init_code_hash) {
@@ -1305,7 +1306,10 @@ fn compute_new_state(
                         log::debug!(target: "executor", "reason: {}", err);
                         Ok(Some(ComputeSkipReason::BadState))
                     }
-                    Ok(_) => Ok(None),
+                    Ok(_) => {
+                        log::debug!(target: "executor", "fail activate");
+                        Ok(None)
+                    },
                 }
             } else {
                 log::debug!(target: "executor", "message for uninitialized: skip computing phase");
