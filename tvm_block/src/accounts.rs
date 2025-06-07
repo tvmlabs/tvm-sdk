@@ -939,6 +939,7 @@ impl Account {
             let new_state = match &stuff.storage.state {
                 AccountState::AccountUninit => {
                     if state_init.hash()? == stuff.addr.get_address() {
+                        log::debug!(target: "executor", "try_activate_by_init_code_hash {init_code_hash}");
                         init_code_hash_opt = match init_code_hash {
                             true => state_init.code().map(|code| code.repr_hash()),
                             false => None,
