@@ -209,6 +209,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
             need_to_burn += credit;
             msg_balance.grams += credit;
+            need_to_burn += credit;
+            acc_balance.grams += credit;
 
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
@@ -341,6 +343,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
             }
         };
+        if params.is_same_dapp_id && params.is_same_thread_id {
+            acc_balance = original_acc_balance.clone();
+        }
         let mut out_msgs = vec![];
         let mut action_phase_processed = false;
         let mut compute_phase_gas_fees = Grams::zero();

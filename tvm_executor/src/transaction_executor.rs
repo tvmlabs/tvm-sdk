@@ -1307,7 +1307,6 @@ fn compute_new_state(
                         Ok(Some(ComputeSkipReason::BadState))
                     }
                     Ok(_) => {
-                        log::debug!(target: "executor", "fail activate");
                         Ok(None)
                     },
                 }
