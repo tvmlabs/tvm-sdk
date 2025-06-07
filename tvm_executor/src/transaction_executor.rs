@@ -474,7 +474,9 @@ pub trait TransactionExecutor {
             } else {
                 log::debug!(target: "executor", "msg external");
                 if let Some(_) = msg.state_init() {
+                    log::debug!(target: "executor", "msg external state_init");
                     if let Some(hdr) = msg.ext_in_header() {
+                        log::debug!(target: "executor", "msg external state_init header");
                         *acc = Account::uninit(hdr.dst.clone(), 0, 0, msg_balance.clone());
                     }
                 }
