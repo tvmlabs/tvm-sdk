@@ -116,9 +116,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         }
 
         if let Some(_) = in_msg.ext_in_header() {
-            if in_msg.have_state_init() && !is_previous_state_active {
-                params.is_same_dapp_id = true;
-            }
+            params.is_same_dapp_id = true;
         }
 
         let account_address = in_msg.dst_ref().ok_or_else(|| {
@@ -210,7 +208,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             need_to_burn += credit;
             acc_balance.grams += credit;
 
-            log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
+            log::debug!(target: "executor", "import message fee: {}, acc_balance: {}, same_thread_id {}, same_dapp_id {}", in_fwd_fee, acc_balance.grams, params.is_same_thread_id, params.is_same_dapp_id);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
                 fail!(ExecutorError::NoFundsToImportMsg)
             }
