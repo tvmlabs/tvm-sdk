@@ -194,6 +194,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
                         minted_shell,
                         0,
                         None,
+                        &params
                     ) {
                         Ok(ActionPhaseResult { phase, messages, .. }) => {
                             out_msgs = messages;

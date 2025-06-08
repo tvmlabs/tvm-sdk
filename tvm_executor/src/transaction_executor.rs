@@ -709,6 +709,7 @@ pub trait TransactionExecutor {
         available_credit: i128,
         minted_shell: &mut u128,
         need_to_burn: u64,
+        params: &ExecuteParams
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -725,6 +726,7 @@ pub trait TransactionExecutor {
             minted_shell,
             need_to_burn,
             None,
+            params
         )?;
         Ok((result.phase, result.messages))
     }
@@ -745,6 +747,7 @@ pub trait TransactionExecutor {
         minted_shell: &mut u128,
         need_to_burn: u64,
         message_src_dapp_id: Option<UInt256>,
+        params: &ExecuteParams
     ) -> Result<ActionPhaseResult> {
         let mut need_to_reserve = need_to_burn.clone();
         let mut out_msgs = vec![];
@@ -848,6 +851,7 @@ pub trait TransactionExecutor {
                         my_addr,
                         &total_reserved_value,
                         &mut account_deleted,
+                        params
                     );
                     match result {
                         Ok(_) => {
@@ -1024,6 +1028,7 @@ pub trait TransactionExecutor {
                     my_addr,
                     &total_reserved_value,
                     &mut account_deleted,
+                    params
                 );
                 if need_to_reserve != 0 {
                     free_to_send.grams.add(&Grams::from(need_to_reserve))?;
@@ -1523,6 +1528,7 @@ fn outmsg_action_handler(
     my_addr: &MsgAddressInt,
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
+    params: &ExecuteParams
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
     let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE
@@ -1592,10 +1598,19 @@ fn outmsg_action_handler(
         } else {
             int_header.ihr_fee = Grams::zero();
         }
-        let fwd_fee = *std::cmp::max(&int_header.fwd_fee, &compute_fwd_fee);
-        fwd_mine_fee =
-            fwd_prices.mine_fee_checked(&fwd_fee).map_err(|_| RESULT_CODE_UNSUPPORTED)?;
-        total_fwd_fees = fwd_fee + int_header.ihr_fee;
+        let fwd_fee;
+        if params.is_same_dapp_id && params.is_same_thread_id {
+            total_fwd_fees = Grams::zero();
+            fwd_fee = Grams::zero();
+            fwd_mine_fee = Grams::zero();
+            int_header.ihr_fee = Grams::zero();
+        } else {
+            fwd_fee = *std::cmp::max(&int_header.fwd_fee, &compute_fwd_fee);
+            fwd_mine_fee =
+                fwd_prices.mine_fee_checked(&fwd_fee).map_err(|_| RESULT_CODE_UNSUPPORTED)?;
+            total_fwd_fees = fwd_fee + int_header.ihr_fee;
+
+        }
 
         let fwd_remain_fee = fwd_fee - fwd_mine_fee;
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
