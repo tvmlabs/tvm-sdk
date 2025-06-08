@@ -112,6 +112,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if let Some(h) = in_msg.int_header() {
             if Some(h.src_dapp_id()) == account.stuff().is_some().then_some(&params.dapp_id) {
                 params.is_same_dapp_id = true;
+            } else {
+                if !is_previous_state_active && in_msg.have_state_init() {
+                    params.is_same_dapp_id = true;
+                }
             }
         }
 
@@ -161,6 +165,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 burned -= msg_balance.grams;
                 need_to_burn = msg_balance.grams;
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
+            } else {
+                if params.is_same_dapp_id && params.is_same_thread_id {
+                    let credit = min(
+                        (gas_config.gas_limit * gas_config.gas_price / 65536).into(),
+                        msg_balance.grams,
+                    );
+                    need_to_burn += credit;
+                    msg_balance.grams += credit;
+                }
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
