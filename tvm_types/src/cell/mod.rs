@@ -26,7 +26,10 @@ use crate::types::UInt256;
 
 mod boc3_cell;
 mod usage_cell;
-pub use boc3_cell::{Boc3Cell, read_boc3_bytes, write_boc3, write_boc3_to_bytes};
+pub use boc3_cell::Boc3Cell;
+pub use boc3_cell::read_boc3_bytes;
+pub use boc3_cell::write_boc3;
+pub use boc3_cell::write_boc3_to_bytes;
 pub use data_cell::DataCell;
 pub use usage_cell::UsageTree;
 
@@ -1391,10 +1394,11 @@ mod cell_data;
 mod data_cell;
 mod virtual_cell;
 
-pub use self::builder_operations::*;
-use crate::cell::usage_cell::UsageCell;
 use smallvec::SmallVec;
 use virtual_cell::VirtualCell;
+
+pub use self::builder_operations::*;
+use crate::cell::usage_cell::UsageCell;
 
 pub(crate) fn to_hex_string(data: impl AsRef<[u8]>, len: usize, lower: bool) -> String {
     if len == 0 {

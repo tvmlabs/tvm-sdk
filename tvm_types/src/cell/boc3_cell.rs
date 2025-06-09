@@ -1,8 +1,17 @@
-use crate::{Cell, CellImpl, CellType, DEPTH_SIZE, LevelMask, SHA256_SIZE, UInt256};
-use crate::{cell, fail};
-use std::io::{Seek, Write};
+use std::io::Seek;
+use std::io::Write;
 use std::sync::Arc;
+
+use crate::Cell;
+use crate::CellImpl;
+use crate::CellType;
+use crate::DEPTH_SIZE;
+use crate::LevelMask;
+use crate::SHA256_SIZE;
+use crate::UInt256;
 use crate::boc::BOC_V3_TAG;
+use crate::cell;
+use crate::fail;
 
 type Offset = u32;
 const OFFSET_SIZE: usize = 4;

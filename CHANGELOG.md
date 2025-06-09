@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.16.3] - 2025-06-09
+
+### New
+
+- Add the ability to fill in the source address for external messages if it is provided by the Block
+  Manager (required for Block Keepers with authentication enabled)
+
 ## [2.16.2] - 2025-06-05
 
 ### New

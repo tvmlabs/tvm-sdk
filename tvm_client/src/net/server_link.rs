@@ -93,7 +93,7 @@ pub(crate) struct NetworkState {
     resolved_endpoints: RwLock<HashMap<String, ResolvedEndpoint>>,
     bm_send_message_endpoint: RwLock<String>,
     bk_send_message_endpoint: RwLock<Option<String>>,
-    _bm_license_contract: RwLock<Option<String>>,
+    bm_license_contract: RwLock<Option<String>>,
     bm_token: RwLock<Option<Value>>,
 }
 
@@ -134,7 +134,7 @@ impl NetworkState {
             resolved_endpoints: Default::default(),
             bm_send_message_endpoint: RwLock::new(bm_send_message_endpoint),
             bk_send_message_endpoint: RwLock::new(None),
-            _bm_license_contract: RwLock::new(None),
+            bm_license_contract: RwLock::new(None),
             bm_token: RwLock::new(None),
         }
     }
@@ -382,12 +382,30 @@ impl NetworkState {
         *self.bk_send_message_endpoint.write().await = endpoint
     }
 
+    pub async fn get_bm_license_address(&self) -> Option<String> {
+        self.bm_license_contract.read().await.clone()
+    }
+
+    pub async fn update_bm_license_address(&self, address: Option<String>) {
+        *self.bm_license_contract.write().await = address
+    }
+
     pub async fn get_bm_token(&self) -> Option<Value> {
         self.bm_token.read().await.clone()
     }
 
     pub async fn update_bm_token(&self, token: &Value) {
         *self.bm_token.write().await = Some(token.clone())
+    }
+
+    pub async fn update_bm_data(&self, bm_data: &Value) {
+        if let Some(Value::String(address)) = bm_data.get("license_address") {
+            self.update_bm_license_address(Some(address.to_string())).await;
+        }
+
+        if let Some(token) = bm_data.get("token") {
+            self.update_bm_token(token).await;
+        }
     }
 
     pub fn can_retry_network_error(&self, start: u64) -> bool {
@@ -479,8 +497,7 @@ fn get_redirection_data(data: &Value) -> (Option<String>, Option<String>) {
 
 impl ServerLink {
     pub fn new(config: NetworkConfig, client_env: Arc<ClientEnv>) -> ClientResult<Self> {
-        let endpoint_addresses =
-            config.endpoints.clone().ok_or(crate::client::Error::net_module_not_init())?;
+        let endpoint_addresses = config.endpoints.clone().unwrap_or(vec!["localhost".to_string()]);
         if endpoint_addresses.is_empty() {
             return Err(crate::client::Error::net_module_not_init());
         }
@@ -722,7 +739,7 @@ impl ServerLink {
                     if response.status == 401 {
                         Err(Error::unauthorized(&response))
                     } else if response.status == 404 {
-                        Err(Error::not_found(&"The requested resource could not be found"))
+                        Err(Error::not_found("The requested resource could not be found"))
                     } else {
                         match response.body_as_json(true) {
                             Err(err) => Err(err),
@@ -735,14 +752,12 @@ impl ServerLink {
                 }
             };
             if let Err(err) = &result {
-                if crate::client::Error::is_network_error(err) {
-                    if self.state.can_retry_network_error(start) {
-                        let _ = self
-                            .client_env
-                            .set_timer(self.state.next_resume_timeout() as u64)
-                            .await;
-                        continue;
-                    }
+                if crate::client::Error::is_network_error(err) && self.state.can_retry_network_error(start) {
+                    let _ = self
+                        .client_env
+                        .set_timer(self.state.next_resume_timeout() as u64)
+                        .await;
+                    continue;
                 }
             }
 
@@ -891,6 +906,7 @@ impl ServerLink {
             body: base64_encode(msg_body),
             expire_at: None,
             thread_id: Some(thread_id.to_string()),
+            bm_license: network_state.get_bm_license_address().await,
             bm_token: network_state.get_bm_token().await,
         };
 
@@ -905,17 +921,16 @@ impl ServerLink {
                     network_state.update_bk_send_message_endpoint(bk_url).await;
                 }
                 if let Some(bm_data) = data.get("block_manager") {
-                    if let Some(token) = bm_data.get("token") {
-                        network_state.update_bm_token(token).await;
-                    }
+                    network_state.update_bm_data(bm_data).await;
                 }
             }
 
             let Err(ref err) = result else { return result };
 
-            if let Some(token) = err.data.get("block_manager").and_then(|bm| bm.get("token")) {
-                network_state.update_bm_token(token).await;
-                message.bm_token = Some(token.clone());
+            if let Some(bm_data) = err.data.get("block_manager") {
+                network_state.update_bm_data(bm_data).await;
+                message.bm_license = network_state.get_bm_license_address().await;
+                message.bm_token = network_state.get_bm_token().await;
             }
 
             let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {

@@ -222,7 +222,7 @@ impl Serializable for OutAction {
                 ACTION_MINTECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
             }
-            OutAction::BurnToken { ref value , ref key} => {
+            OutAction::BurnToken { ref value, ref key } => {
                 ACTION_BURNECC.write_to(cell)?; // tag
                 value.write_to(cell)?;
                 key.write_to(cell)?;
