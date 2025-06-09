@@ -739,7 +739,7 @@ impl ServerLink {
                     if response.status == 401 {
                         Err(Error::unauthorized(&response))
                     } else if response.status == 404 {
-                        Err(Error::not_found(&"The requested resource could not be found"))
+                        Err(Error::not_found("The requested resource could not be found"))
                     } else {
                         match response.body_as_json(true) {
                             Err(err) => Err(err),
@@ -752,14 +752,12 @@ impl ServerLink {
                 }
             };
             if let Err(err) = &result {
-                if crate::client::Error::is_network_error(err) {
-                    if self.state.can_retry_network_error(start) {
-                        let _ = self
-                            .client_env
-                            .set_timer(self.state.next_resume_timeout() as u64)
-                            .await;
-                        continue;
-                    }
+                if crate::client::Error::is_network_error(err) && self.state.can_retry_network_error(start) {
+                    let _ = self
+                        .client_env
+                        .set_timer(self.state.next_resume_timeout() as u64)
+                        .await;
+                    continue;
                 }
             }
 
