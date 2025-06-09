@@ -172,8 +172,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
                     need_to_burn += credit;
                     acc_balance.grams += credit;
-                    need_to_burn += credit;
-                    msg_balance.grams += credit;
                     log::debug!(target: "executor", "final balances {} {}", msg_balance.grams, acc_balance.grams);
                 }
             }
