@@ -122,6 +122,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if let Some(_) = in_msg.ext_in_header() {
             params.is_same_dapp_id = true;
         }
+        log::debug!(target: "executor", "same_thread_id {}, same_dapp_id {}", params.is_same_thread_id, params.is_same_dapp_id);
+
 
         let account_address = in_msg.dst_ref().ok_or_else(|| {
             ExecutorError::TrExecutorError(format!(
@@ -173,6 +175,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     );
                     need_to_burn += credit;
                     acc_balance.grams += credit;
+                    log::debug!(target: "executor", "final balances {} {}", msg_balance.grams, acc_balance.grams);
                 }
             }
         }
