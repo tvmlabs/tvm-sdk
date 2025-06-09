@@ -169,10 +169,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             } else {
                 if params.is_same_dapp_id && params.is_same_thread_id {
-                    let credit = min(
-                        (gas_config.gas_limit * gas_config.gas_price / 65536).into(),
-                        msg_balance.grams,
-                    );
+                    let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
                     need_to_burn += credit;
                     acc_balance.grams += credit;
                     log::debug!(target: "executor", "final balances {} {}", msg_balance.grams, acc_balance.grams);
