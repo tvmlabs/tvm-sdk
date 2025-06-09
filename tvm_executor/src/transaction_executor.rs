@@ -888,7 +888,7 @@ pub trait TransactionExecutor {
                         RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
                 }
-                OutAction::BurnToken { value , key} => {
+                OutAction::BurnToken { value, key } => {
                     let mut sub_value = CurrencyCollection::new();
                     if value == 0 {
                         let other = acc_remaining_balance.get_other(key)?;
@@ -896,16 +896,16 @@ pub trait TransactionExecutor {
                             sub_value.other.set(&key, &acc_value)?;
                         }
                     } else {
-                        sub_value.other.set(&key, &VarUInteger32::from_two_u128(0, value as u128)?)?;
+                        sub_value
+                            .other
+                            .set(&key, &VarUInteger32::from_two_u128(0, value as u128)?)?;
                     }
                     match acc_remaining_balance.sub(&sub_value) {
                         Ok(true) => {
                             phase.spec_actions += 1;
                             0
                         }
-                        Ok(false) | Err(_) => {
-                            RESULT_CODE_NOT_ENOUGH_EXTRA
-                        },
+                        Ok(false) | Err(_) => RESULT_CODE_NOT_ENOUGH_EXTRA,
                     }
                 }
                 OutAction::ExchangeShell { value } => {
