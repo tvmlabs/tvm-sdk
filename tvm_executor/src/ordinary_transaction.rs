@@ -144,6 +144,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut need_to_burn = Grams::zero();
         let mut burned = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
+        let mut original_msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
@@ -172,6 +173,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
                     need_to_burn += credit;
                     acc_balance.grams += credit;
+                    need_to_burn += credit;
+                    msg_balance.grams += credit;
                     log::debug!(target: "executor", "final balances {} {}", msg_balance.grams, acc_balance.grams);
                 }
             }
@@ -481,7 +484,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
                 log::debug!(target: "executor", "bounce_phase");
-                msg_balance.grams += burned;
+                msg_balance.grams = original_msg_balance;
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,
