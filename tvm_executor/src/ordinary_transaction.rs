@@ -172,7 +172,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         msg_balance.grams,
                     );
                     need_to_burn += credit;
-                    msg_balance.grams += credit;
+                    acc_balance.grams += credit;
                 }
             }
         }
