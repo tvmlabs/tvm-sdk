@@ -144,7 +144,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut need_to_burn = Grams::zero();
         let mut burned = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
-        let mut original_msg_balance = in_msg.get_value().cloned().unwrap_or_default();
+        let original_msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
@@ -357,6 +357,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         };
         if params.is_same_dapp_id && params.is_same_thread_id {
             acc_balance = original_acc_balance.clone();
+            acc_balance.add(&msg_balance)?;
         }
         let mut out_msgs = vec![];
         let mut action_phase_processed = false;
