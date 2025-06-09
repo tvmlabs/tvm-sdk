@@ -484,7 +484,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
                 log::debug!(target: "executor", "bounce_phase");
-                msg_balance.grams = original_msg_balance;
+                msg_balance.grams = original_msg_balance.grams;
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,
