@@ -8,6 +8,13 @@ All notable changes to this project will be documented in this file.
 
 - Added `RUNWASM` instruction, allowing execution of WASM Component Binaries. [Details and examples in WASM instruction docs.](tvm_vm/WASM.md)
 
+## [2.16.3] - 2025-06-09
+
+### New
+
+- Add the ability to fill in the source address for external messages if it is provided by the Block
+  Manager (required for Block Keepers with authentication enabled)
+
 ## [2.16.2] - 2025-06-05
 
 ### New

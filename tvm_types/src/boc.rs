@@ -25,6 +25,7 @@ use std::sync::Arc;
 
 use smallvec::SmallVec;
 
+use crate::ByteOrderRead;
 use crate::CellImpl;
 use crate::CellType;
 use crate::Crc32;
@@ -44,7 +45,7 @@ use crate::crc32_digest;
 use crate::error;
 use crate::fail;
 use crate::full_len;
-use crate::{ByteOrderRead, read_boc3_bytes};
+use crate::read_boc3_bytes;
 
 const BOC_INDEXED_TAG: u32 = 0x68ff65f3; // deprecated, is used only for read
 const BOC_INDEXED_CRC32_TAG: u32 = 0xacc3a728; // deprecated, is used only for read
