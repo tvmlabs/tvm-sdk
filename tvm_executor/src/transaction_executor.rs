@@ -444,8 +444,7 @@ pub trait TransactionExecutor {
         storage_fee: u128,
         is_masterchain: bool,
         is_special: bool,
-        params: &ExecuteParams,
-        is_previous_state_active: bool
+        params: &ExecuteParams
     ) -> Result<(TrComputePhase, Option<Cell>, Option<Cell>)> {
         let mut result_acc = acc.clone();
         let mut vm_phase = TrComputePhaseVm::default();
@@ -474,7 +473,7 @@ pub trait TransactionExecutor {
                 false
             } else {
                 log::debug!(target: "executor", "msg external");
-                if !is_previous_state_active {
+                if acc.state().is_none() {
                     if let Some(_) = msg.state_init() {
                         log::debug!(target: "executor", "msg external state_init");
                         if let Some(hdr) = msg.ext_in_header() {

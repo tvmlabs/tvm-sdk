@@ -160,8 +160,7 @@ impl TransactionExecutor for TickTockTransactionExecutor {
             storage_fee,
             is_masterchain,
             is_special,
-            &params,
-            true
+            &params
         ) {
             Ok((compute_ph, actions, new_data)) => (compute_ph, actions, new_data),
             Err(e) => {

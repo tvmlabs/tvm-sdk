@@ -343,7 +343,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             is_masterchain,
             is_special,
             &params,
-            is_previous_state_active
         ) {
             Ok((compute_ph, actions, new_data)) => (compute_ph, actions, new_data),
             Err(e) => {
