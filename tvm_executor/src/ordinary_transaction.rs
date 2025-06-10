@@ -212,7 +212,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         }
 
         // first check if contract can pay for importing external message
-        if is_ext_msg && !is_special {
+        if is_ext_msg {
             // extranal message comes serialized
             let in_fwd_fee = match params.is_same_thread_id && params.is_same_dapp_id {
                 true => Grams::zero(),
@@ -343,6 +343,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             is_masterchain,
             is_special,
             &params,
+            is_previous_state_active
         ) {
             Ok((compute_ph, actions, new_data)) => (compute_ph, actions, new_data),
             Err(e) => {
