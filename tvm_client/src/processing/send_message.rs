@@ -137,7 +137,7 @@ impl SendingMessage {
         }
         let body = base64_decode(serialized)?;
         let thread_id = match thread_id {
-            Some(t) => ThreadIdentifier::try_from(t).map_err(|e| Error::invalid_thread(e))?,
+            Some(t) => ThreadIdentifier::try_from(t).map_err(Error::invalid_thread)?,
             None => ThreadIdentifier::default(),
         };
         Ok(Self { serialized: serialized.to_string(), deserialized, id, body, dst, thread_id })
