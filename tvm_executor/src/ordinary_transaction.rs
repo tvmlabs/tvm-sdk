@@ -158,7 +158,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             {
                 log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id.clone());
                 log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_limit * gas_config.gas_price / 65536));
-                params.is_same_dapp_id = true;
                 let burned = msg_balance.grams;
                 msg_balance.grams = min(
                     (gas_config.gas_limit * gas_config.gas_price / 65536).into(),
