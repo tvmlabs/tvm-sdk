@@ -353,10 +353,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
             }
         };
-        if params.is_same_dapp_id && params.is_same_thread_id {
-            acc_balance = original_acc_balance.clone();
-            acc_balance.add(&msg_balance)?;
-        }
         let mut out_msgs = vec![];
         let mut action_phase_processed = false;
         let mut compute_phase_gas_fees = Grams::zero();

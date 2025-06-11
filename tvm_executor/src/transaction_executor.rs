@@ -404,7 +404,7 @@ pub trait TransactionExecutor {
         acc: &mut Account,
         tr: &mut Transaction,
         msg_balance: &mut CurrencyCollection,
-        acc_balance: &mut CurrencyCollection,
+        acc_balance: &mut CurrencyCollection
     ) -> Result<TrCreditPhase> {
         let collected = if let Some(due_payment) = acc.due_payment() {
             let collected = *min(due_payment, &msg_balance.grams);
