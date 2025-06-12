@@ -850,6 +850,7 @@ impl Engine {
         CALCBMREWARDADJ                      => 0xC7, 0x36
         CALCMINSTAKEBM                       => 0xC7, 0x37
         BURNECC                              => 0xC7, 0x38
+        RUNWASM                              => 0xC7, 0x39
     }
 
     fn add_commands<'a>(
