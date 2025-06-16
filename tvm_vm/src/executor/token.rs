@@ -8,7 +8,6 @@ use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
-use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
@@ -19,8 +18,6 @@ use wasmtime_wasi::p2::WasiCtx;
 use wasmtime_wasi::p2::WasiCtxBuilder;
 use wasmtime_wasi::p2::WasiImpl;
 use wasmtime_wasi::p2::WasiView;
-use wasmtime_wasi::runtime::with_ambient_tokio_runtime;
-use wasmtime_wasi_io;
 
 use crate::error::TvmError;
 use crate::executor::blockchain::add_action;
@@ -48,6 +45,7 @@ pub const KS: f64 = 0.001_f64;
 pub const KM: f64 = 0.00001_f64;
 pub const KRBK: f64 = 0.675_f64;
 pub const KRBM: f64 = 0.1_f64;
+pub const KRMV: f64 = 0.225_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub const WASM_FUEL_MULTIPLIER: u64 = 8u64;
@@ -66,64 +64,12 @@ impl WasiView for MyState {
     }
 }
 
-// Async IO annotator for WASI. Do not use unless you know what you're doing.
-fn io_type_annotate<T: IoView, F>(val: F) -> F
-where
-    F: Fn(&mut T) -> IoImpl<&mut T>,
-{
-    val
-}
 // Sync annotator for WASI. Used in wasmtime linker
 fn type_annotate<T: WasiView, F>(val: F) -> F
 where
     F: Fn(&mut T) -> WasiImpl<&mut T>,
 {
     val
-}
-
-pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
-    // TODO: Cell size can maybe be increased up to 128?
-    let cellsize = 120usize;
-    let len = input.len();
-    let mut cell_vec = Vec::<Vec<u8>>::new();
-    // Process the input in 1024-byte chunks
-    for i in (0..len).step_by(cellsize) {
-        let end = std::cmp::min(i + cellsize, len);
-        let chunk = &input[i..end];
-
-        // Convert slice to Vec<u8> and pass to omnom function
-        let chunk_vec = chunk.to_vec();
-        cell_vec.push(chunk_vec);
-
-        assert!(
-            cell_vec.last().expect("error in split_to_chain_of_cells function").len() == cellsize
-                || i + cellsize > len
-        );
-    }
-    let mut cell = BuilderData::with_raw(
-        cell_vec[cell_vec.len() - 1].clone(),
-        cell_vec[cell_vec.len() - 1].len() * 8,
-    )?
-    .into_cell()?;
-    for i in (0..(cell_vec.len() - 1)).rev() {
-        let mut builder = BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8)?;
-        let builder = builder.checked_append_reference(cell)?;
-        cell = builder.clone().into_cell()?;
-    }
-    Ok(cell) // return first cell
-}
-
-pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
-    let mut data_vec = input.data().to_vec();
-    let mut cur_cell: Cell = input.clone();
-    while cur_cell.reference(0).is_ok() {
-        let old_len = data_vec.len();
-        cur_cell = cur_cell.reference(0)?;
-        data_vec.append(&mut cur_cell.data().to_vec());
-
-        assert!(data_vec.len() - old_len == cur_cell.data().len());
-    }
-    Ok(data_vec)
 }
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
@@ -254,7 +200,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // If more deps are needed, add them in there!
     match add_to_linker_gosh(&mut wasm_linker) {
         Ok(_) => {}
-        Err(e) => err!(
+        Err(_) => err!(
             ExceptionCode::WasmLoadFail,
             "Failed to instantiate WASM instance
     {:?}"
@@ -368,11 +314,10 @@ pub(super) fn execute_ecc_burn(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("BURNECC"))?;
     fetch_stack(engine, 2)?;
     let x: u32 = engine.cmd.var(0).as_integer()?.into(0..=255)?;
-    let y: VarUInteger32 = VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?);
-    let mut data = ExtraCurrencyCollection::new();
-    data.set(&x, &y)?;
+    let y = engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?;
     let mut cell = BuilderData::new();
-    data.write_to(&mut cell)?;
+    y.write_to(&mut cell)?;
+    x.write_to(&mut cell)?;
     add_action(engine, ACTION_BURNECC, None, cell)
 }
 
@@ -435,12 +380,13 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
 
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("CALCBMREWARDADJ"))?;
-    fetch_stack(engine, 4)?;
-    let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
-    let rbmprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
-    let drbmavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mbmt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
+    engine.load_instruction(Instruction::new("CALCBMMVREWARDADJ"))?;
+    fetch_stack(engine, 5)?;
+    let is_bm = engine.cmd.var(0).as_bool()?; //time from network start
+    let t = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
+    let rbmprev = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
+    let drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let rbmmin;
     if t <= TTMT - 1_f64 {
@@ -452,7 +398,12 @@ pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Sta
     } else {
         rbmmin = 0_f64;
     }
-    let rbm = (((calc_mbk(t + drbmavg, KRBM) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
+    let rbm;
+    if is_bm {
+        rbm = (((calc_mbk(t + drbmavg, KRBM) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
+    } else {
+        rbm = (((calc_mbk(t + drbmavg, KRMV) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
+    }
     engine.cc.stack.push(int!(rbm as u128));
     Ok(())
 }
@@ -573,4 +524,136 @@ pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
     let mut cell = BuilderData::new();
     x.write_to(&mut cell)?;
     add_action(engine, ACTION_MINT_SHELL_TOKEN, None, cell)
+}
+
+fn boost_coef_integral_calculation(bl: f64, br: f64, xl: f64, xr: f64, yd: f64, yu: f64, k: f64) -> f64 {
+    let dx = xr - xl;
+    let expk = k.exp();
+    ((yu - yd) * dx * ((k * (br - xl) / dx).exp() - (k * (bl - xl) / dx).exp())
+        + k * (br - bl) * (yd * expk - yu))
+        / (k * (expk - 1_f64))
+}
+
+
+fn boost_coef_calculation(dl: f64, dr: f64, x1: f64, x2: f64, x3: f64, x4: f64, y1: f64, y2: f64, y3: f64, y4: f64, k1: f64, k2: f64, k3: f64) -> f64 {
+    let mut bc = 0_f64;
+    if x1 <= dl && dl <= x2 {
+        if x1 <= dr && dr <= x2 {
+            bc = boost_coef_integral_calculation(dl, dr, x1, x2, y1, y2, k1);
+        } else if x2 < dr && dr <= x3 {
+            bc = boost_coef_integral_calculation(dl, x2, x1, x2, y1, y2, k1)
+                + boost_coef_integral_calculation(x2, dr, x2, x3, y2, y3, k2);
+        } else if x3 < dr && dr <= x4 {
+            bc = boost_coef_integral_calculation(dl, x2, x1, x2, y1, y2, k1)
+                + boost_coef_integral_calculation(x2, x3, x2, x3, y2, y3, k2)
+                + boost_coef_integral_calculation(x3, dr, x3, x4, y3, y4, k3);
+        }
+    } else if x2 < dl && dl <= x3 {
+        if x2 < dr && dr <= x3 {
+            bc = boost_coef_integral_calculation(dl, dr, x2, x3, y2, y3, k2);
+        } else if x3 < dr && dr <= x4 {
+            bc = boost_coef_integral_calculation(dl, x3, x2, x3, y2, y3, k2)
+                + boost_coef_integral_calculation(x3, dr, x3, x4, y3, y4, k3);
+        }
+    } else if x3 < dl && dl <= x4 {
+        if x3 < dr && dr <= x4 {
+            bc = boost_coef_integral_calculation(dl, dr, x3, x4, y3, y4, k3);
+        }
+    }
+    bc
+}
+
+
+fn calculate_sum_boost_coefficients(
+    lst: &[f64], x1: f64, x2: f64, x3: f64, x4: f64,
+    y1: f64, y2: f64, y3: f64, y4: f64,
+    k1: f64, k2: f64, k3: f64
+) -> Vec<f64> {
+    let total_lst: f64 = lst.iter().sum();
+    let mut cumulative_sum = 0_f64;
+    lst
+        .iter()
+        .map(|&value| {
+            let left_border = cumulative_sum / total_lst;
+            cumulative_sum += value;
+            let right_border = cumulative_sum / total_lst;
+            boost_coef_calculation(left_border, right_border, x1, x2, x3, x4, y1, y2, y3, y4, k1, k2, k3)
+        })
+        .collect()
+}
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCBOOSTCOEF"))?;
+    fetch_stack(engine, 2)?;
+    let x1 = 0_f64;
+    let x2 = 0.3_f64;
+    let x3 = 0.7_f64;
+    let x4 = 1_f64;
+    let y1 = 0_f64;
+    let y2 = 0.066696948409_f64;
+    let y3 = 2_f64;
+    let y4 = 8_f64;
+    let k1 = 10_f64;
+    let k2 = 1.894163612445_f64;
+    let k3 = 17.999995065464_f64;     
+    let s = engine.cmd.var(0).as_cell()?;
+    let s1 = engine.cmd.var(1).as_cell()?;
+    let transformed_users_per_item =
+        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            _ => err!(ExceptionCode::TypeCheckError, "Failed to unpack transformed_users_per_item")?,
+        };
+
+    let bytes = transformed_users_per_item.as_slice();
+    if bytes.len() % 8 != 0 && bytes.len() <= 8000 {
+        err!(ExceptionCode::TypeCheckError, "Invalid bytes length for u64 array")?;
+    }
+        
+    let vec_u64: Vec<u64> = bytes
+        .chunks_exact(8)
+        .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
+        .collect();
+
+    let mbnlst: Vec<f64> = vec_u64.iter().map(|&x| x as f64).collect();
+    let mbnlst_orig = vec_u64.clone();
+
+    let glst_bytes =
+    match TokenValue::read_bytes(SliceData::load_cell(s1.clone())?, true, &ABI_VERSION_2_4)?.0 {
+        TokenValue::Bytes(items) => items,
+        _ => err!(ExceptionCode::TypeCheckError, "Failed to unpack transformed_users_per_item")?,
+    };
+
+    let bytes = glst_bytes.as_slice();
+    if bytes.len() % 8 != 0 && bytes.len() <= 8000 {
+        return err!(
+            ExceptionCode::TypeCheckError,
+            "Invalid bytes length for u64 array"
+        ).into();
+    }
+        
+    let glst: Vec<u64> = bytes
+        .chunks_exact(8)
+        .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
+        .collect();
+
+    
+    let total_boost_coef_list = calculate_sum_boost_coefficients(
+        &mbnlst, x1, x2, x3, x4,
+        y1, y2, y3, y4,
+        k1, k2, k3
+    );
+
+    let total_boost_coef_list_bytes: Vec<u8> = total_boost_coef_list.iter()
+        .flat_map(|val| val.to_le_bytes())
+        .collect();
+
+    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;   
+    let total = mbnlst_orig.iter()
+        .zip(glst)
+        .map(|(&x, y)| u128::from(x) * u128::from(y))
+        .fold(0u128, |acc, val| acc.saturating_add(val));
+    engine.cc.stack.push(StackItem::cell(cell));
+    engine.cc.stack.push(int!(total));
+    Ok(())
 }
