@@ -51,6 +51,8 @@ pub const KRBM: f64 = 0.1_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub const WASM_FUEL_MULTIPLIER: u64 = 8u64;
+pub const WASM_200MS_FUEL: u64 = 2220000000u64;
+pub const RUNWASM_GAS_PRICE: u64 = WASM_200MS_FUEL / WASM_FUEL_MULTIPLIER;
 struct MyState {
     ctx: WasiCtx,
     table: ResourceTable,
@@ -201,13 +203,17 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
     // instruction (or set to 0?)
     log::debug!("Starting gas: {:?}", engine.gas_remaining());
-    let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
-        true => match u64::try_from(engine.gas_remaining())?.checked_mul(WASM_FUEL_MULTIPLIER) {
-            Some(k) => k,
-            None => err!(ExceptionCode::IntegerOverflow, "Overflow when calculating WASM fuel")?,
-        },
-        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
-    };
+    let wasm_fuel: u64 = WASM_200MS_FUEL;
+
+    // TODO: If switching to dunamic fuel limit, use this code:
+    // let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
+    //     true => match
+    // u64::try_from(engine.gas_remaining())?.checked_mul(WASM_FUEL_MULTIPLIER) {
+    //         Some(k) => k,
+    //         None => err!(ExceptionCode::IntegerOverflow, "Overflow when
+    // calculating WASM fuel")?,     },
+    //     false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    // };
     match wasm_store.set_fuel(wasm_fuel) {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
@@ -335,14 +341,16 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     };
     log::debug!("WASM Execution result: {:?}", result);
 
-    let gas_used: i64 = match wasm_store.get_fuel() {
-        Ok(new_fuel) => i64::try_from((wasm_fuel - new_fuel).div_ceil(WASM_FUEL_MULTIPLIER))?,
-        Err(e) => err!(
-            ExceptionCode::WasmLoadFail,
-            "Failed to get WASM engine fuel after execution {:?}",
-            e
-        )?,
-    };
+    let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
+    // TODO: If we switch to dynamic gas usage, reenable this code
+    // let gas_used: i64 = match wasm_store.get_fuel() {
+    //     Ok(new_fuel) => i64::try_from((wasm_fuel -
+    // new_fuel).div_ceil(WASM_FUEL_MULTIPLIER))?,     Err(e) => err!(
+    //         ExceptionCode::WasmLoadFail,
+    //         "Failed to get WASM engine fuel after execution {:?}",
+    //         e
+    //     )?,
+    // };
     engine.use_gas(gas_used);
     log::debug!("Remaining gas: {:?}", engine.gas_remaining());
     match engine.gas_remaining() > 0 {
