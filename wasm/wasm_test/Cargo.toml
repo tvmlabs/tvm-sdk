@@ -1,0 +1,22 @@
+[package]
+name = "wasm_test"
+version.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+wit-bindgen-rt = { version = "0.41.0", features = ["bitflags"] }
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[package.metadata.component]
+package = "component:wasm-test"
+
+[package.metadata.component.dependencies]

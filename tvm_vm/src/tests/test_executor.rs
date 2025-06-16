@@ -8,7 +8,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-
 use std::cell;
 use std::collections::HashSet;
 use std::time::Duration;
@@ -24,6 +23,7 @@ use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
+use tvm_types::error;
 use tvm_types::read_single_root_boc;
 use zstd::dict::from_files;
 
@@ -32,6 +32,9 @@ use crate::executor::engine::Engine;
 use crate::executor::gas::gas_state::Gas;
 use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
+use crate::executor::token::MyState;
+use crate::executor::token::WASM_FUEL_MULTIPLIER;
+use crate::executor::token::add_to_linker_gosh;
 use crate::executor::token::execute_run_wasm;
 use crate::executor::token::rejoin_chain_of_cells;
 use crate::executor::token::split_to_chain_of_cells;
@@ -44,6 +47,7 @@ use crate::stack::integer::behavior::OperationBehavior;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
+use crate::types::Exception;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
@@ -438,7 +442,8 @@ fn test_run_wasm_fortytwo() {
     );
     // let cell = TokenValue::write_bytes(&[1u8, 2u8],
     // &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
-    let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell =
+        TokenValue::write_bytes(&[1u8, 100u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
@@ -447,7 +452,8 @@ fn test_run_wasm_fortytwo() {
     let wasm_func = "docs:adder/add@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "./src/tests/add.wasm";
+    let filename =
+        "/Users/elar/Code/Havok/AckiNacki/wasm/calc_pi/target/wasm32-wasip2/release/add.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
@@ -461,4 +467,202 @@ fn test_run_wasm_fortytwo() {
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
             == 3u8
     );
+}
+
+use wasmtime::component::ResourceTable;
+use wasmtime_wasi::p2::IoImpl;
+use wasmtime_wasi::p2::IoView;
+use wasmtime_wasi::p2::WasiCtx;
+use wasmtime_wasi::p2::WasiCtxBuilder;
+use wasmtime_wasi::p2::WasiImpl;
+use wasmtime_wasi::p2::WasiView;
+// struct MyState {
+//     ctx: WasiCtx,
+//     table: ResourceTable,
+// }
+// impl IoView for MyState {
+//     fn table(&mut self) -> &mut ResourceTable {
+//         &mut self.table
+//     }
+// }
+// impl WasiView for MyState {
+//     fn ctx(&mut self) -> &mut WasiCtx {
+//         &mut self.ctx
+//     }
+// }
+
+#[test]
+fn test_run_wasm_generic() -> Result<(), wasmtime::Error> {
+    let start = Instant::now();
+    // load or access WASM engine
+    let mut wasm_config = wasmtime::Config::new();
+    wasm_config.wasm_component_model(true);
+    wasm_config.consume_fuel(true);
+    let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+        Ok(module) => module,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e).unwrap(),
+    };
+    let mut builder = WasiCtxBuilder::new();
+    let mut wasm_store = wasmtime::Store::new(
+        &wasm_engine,
+        MyState { ctx: builder.build(), table: wasmtime::component::ResourceTable::new() },
+    );
+    // set WASM fuel limit based on available gas
+    // TODO: Consider adding a constant offset to account for cell pack/unpack and
+    // other actions to be run after WASM instruction
+    // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
+    // instruction (or set to 0?)
+    // println!("Starting gas: {:?}", engine.gas_remaining());
+    let wasm_fuel: u64 = 999998990u64 * WASM_FUEL_MULTIPLIER;
+    match wasm_store.set_fuel(wasm_fuel) {
+        Ok(module) => module,
+        Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e).unwrap(),
+    };
+
+    // load wasm component binary
+    let filename =
+        "/Users/elar/Code/Havok/AckiNacki/wasm/calc_pi/target/wasm32-wasip2/release/add.wasm";
+    let wasm_instance_name = "docs:adder/add@0.1.0";
+    let wasm_func_name = "add";
+    let wasm_func_args = [1u8, 100u8].to_vec();
+
+    let wasm_executable = std::fs::read(filename).unwrap();
+
+    // let s = engine.cmd.var(0).as_cell()?;
+    // let wasm_executable = rejoin_chain_of_cells(s)?;
+
+    let wasm_component =
+        match wasmtime::component::Component::new(&wasm_engine, &wasm_executable.as_slice()) {
+            Ok(module) => module,
+            Err(e) => err!(
+                ExceptionCode::WasmLoadFail,
+                "Failed to load WASM
+    component {:?}",
+                e
+            )
+            .unwrap(),
+        };
+    let component_type = wasm_component.component_type();
+
+    let mut exports = component_type.exports(&wasm_engine);
+    let arg = exports.next();
+    println!("List of exports from WASM: {:?}", arg);
+    if let Some(arg) = arg {
+        println!("{:?}", arg);
+
+        for arg in exports {
+            println!(" {:?}", arg);
+        }
+    }
+
+    // Add wasi-cli libs to linker
+    let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
+
+    // This is a custom linker method, adding only sync, non-io wasi dependencies.
+    // If more deps are needed, add them in there!
+    match add_to_linker_gosh(&mut wasm_linker) {
+        Ok(_) => {}
+        Err(e) => err!(
+            ExceptionCode::WasmLoadFail,
+            "Failed to instantiate WASM instance
+    {:?}"
+        )
+        .unwrap(),
+    };
+
+    // This is the default add to linker method, we dont use it as it will add async
+    // calls for IO stuff, which fails inside out Tokio runtime
+    // match wasmtime_wasi::p2::add_to_linker_sync(&mut wasm_linker) {
+    //     Ok(_) => {}
+    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to
+    // linker {:?}", e)?, };
+
+    // Instantiate WASM component. Will error if missing some wasm deps from linker
+    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
+        Ok(instance) => instance,
+        Err(e) => err!(
+            ExceptionCode::WasmLoadFail,
+            "Failed to instantiate WASM instance
+    {:?}",
+            e
+        )
+        .unwrap(),
+    };
+
+    // get callable wasm func
+    println!("Callable funcs found:");
+    for export in wasm_component.component_type().exports(&wasm_engine) {
+        println!("{:?}", export.0);
+    }
+    let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
+    println!("Instance Index {:?}", instance_index);
+    let func_index = match wasm_instance.get_export_index(
+        &mut wasm_store,
+        instance_index.as_ref(),
+        &wasm_func_name,
+    ) {
+        Some(index) => index,
+        None => {
+            err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)
+                .unwrap()
+        }
+    };
+    println!("Func Index {:?}", func_index);
+    let wasm_function = wasm_instance
+        .get_func(&mut wasm_store, func_index)
+        .expect(&format!("`{}` was not an exported function", wasm_func_name));
+    let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
+        Ok(answer) => answer,
+        Err(e) => {
+            err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e).unwrap()
+        }
+    };
+
+    // execute wasm func
+    // collect result
+    // substract gas based on wasm fuel used
+    println!("Loading WASM Args");
+    println!("WASM Args loaded {:?}", wasm_func_args);
+    let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
+        Ok(result) => result,
+        Err(e) => {
+            println!("Failed to execute WASM function {:?}", e);
+            err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e).unwrap()
+        }
+    };
+    println!("WASM Execution result: {:?}", result);
+
+    let gas_used: i64 = match wasm_store.get_fuel() {
+        Ok(new_fuel) => {
+            i64::try_from((wasm_fuel - new_fuel).div_ceil(WASM_FUEL_MULTIPLIER)).unwrap()
+        }
+        Err(e) => err!(
+            ExceptionCode::WasmLoadFail,
+            "Failed to get WASM engine fuel after execution {:?}",
+            e
+        )
+        .unwrap(),
+    };
+    // engine.use_gas(gas_used);
+    // println!("Remaining gas: {:?}", engine.gas_remaining());
+    // match engine.gas_remaining() > 0 {
+    //     true => {}
+    //     false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    // }
+
+    // return result
+    println!("EXEC Wasm execution result: {:?}", result);
+    let res_vec = result.0;
+
+    // let cell =
+    //     TokenValue::write_bytes(res_vec.as_slice(),
+    // &ABI_VERSION_2_4).unwrap().into_cell().unwrap(); println!("Pushing
+    // cell");
+
+    // engine.cc.stack.push(StackItem::cell(cell));
+
+    println!("OK");
+    println!("Duration: {:?}", Instant::now().duration_since(start));
+
+    Ok(())
 }
