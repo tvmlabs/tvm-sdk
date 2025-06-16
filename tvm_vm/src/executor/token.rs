@@ -336,7 +336,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Ok(result) => result,
         Err(e) => {
             log::debug!("Failed to execute WASM function {:?}", e);
-            err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?
+            err!(ExceptionCode::WasmExecFail, "Failed to execute WASM function {:?}", e)?
         }
     };
     log::debug!("WASM Execution result: {:?}", result);
