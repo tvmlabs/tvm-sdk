@@ -24,6 +24,7 @@ use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
+use tvm_types::error;
 use tvm_types::read_single_root_boc;
 use zstd::dict::from_files;
 
@@ -461,4 +462,68 @@ fn test_run_wasm_fortytwo() {
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
             == 3u8
     );
+}
+
+#[test]
+fn test_run_wasm_fuel_error() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let mut stack = Stack::new();
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+    // let cell = TokenValue::write_bytes(&[1u8, 2u8],
+    // &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell =
+        TokenValue::write_bytes(&[100u8, 0u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "add";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_func = "docs:adder/add@0.1.0";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let filename = "./src/tests/calc_pi.wasm";
+    let wasm_dict = std::fs::read(filename).unwrap();
+
+    let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let result = execute_run_wasm(&mut engine);
+
+    println!("Wasm Return Status: {:?}", result);
+
+    let res_error = result.expect_err("Test didn't error on fuel use");
 }
