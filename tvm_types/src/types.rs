@@ -360,6 +360,8 @@ pub enum ExceptionCode {
     ExecutionTimeout = 17,
     #[error("wasm failed to load")]
     WasmLoadFail = 18,
+    #[error("wasm failed to execute")]
+    WasmExecFail = 19,
 }
 
 // impl fmt::Display for ExceptionCode {
