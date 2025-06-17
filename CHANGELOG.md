@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.17.1] - 2025-06-06
+
+### New
+
+- Added fixed gas metering and wasm fuel limiting to `runwasm` instruction
+
 ## [2.17.0] - 2025-06-06
 
 ### New
