@@ -15,8 +15,7 @@ use std::time::Instant;
 
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
-use tvm_block::Deserializable;
-use tvm_block::StateInit;
+use tvm_types::Cell;
 use tvm_types::BuilderData;
 use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
@@ -28,7 +27,6 @@ use crate::executor::gas::gas_state::Gas;
 use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
 use crate::executor::token::execute_run_wasm;
-use crate::executor::token::rejoin_chain_of_cells;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::stack::Stack;
@@ -40,6 +38,52 @@ use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
+
+#[allow(dead_code)]
+pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
+    // TODO: Cell size can maybe be increased up to 128?
+    let cellsize = 120usize;
+    let len = input.len();
+    let mut cell_vec = Vec::<Vec<u8>>::new();
+    // Process the input in 1024-byte chunks
+    for i in (0..len).step_by(cellsize) {
+        let end = std::cmp::min(i + cellsize, len);
+        let chunk = &input[i..end];
+
+        // Convert slice to Vec<u8> and pass to omnom function
+        let chunk_vec = chunk.to_vec();
+        cell_vec.push(chunk_vec);
+
+        assert!(
+            cell_vec.last().expect("error in split_to_chain_of_cells function").len() == cellsize
+                || i + cellsize > len
+        );
+    }
+    let mut cell = BuilderData::with_raw(
+        cell_vec[cell_vec.len() - 1].clone(),
+        cell_vec[cell_vec.len() - 1].len() * 8,
+    )?
+    .into_cell()?;
+    for i in (0..(cell_vec.len() - 1)).rev() {
+        let mut builder = BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8)?;
+        let builder = builder.checked_append_reference(cell)?;
+        cell = builder.clone().into_cell()?;
+    }
+    Ok(cell) // return first cell
+}
+
+pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
+    let mut data_vec = input.data().to_vec();
+    let mut cur_cell: Cell = input.clone();
+    while cur_cell.reference(0).is_ok() {
+        let old_len = data_vec.len();
+        cur_cell = cur_cell.reference(0)?;
+        data_vec.append(&mut cur_cell.data().to_vec());
+
+        assert!(data_vec.len() - old_len == cur_cell.data().len());
+    }
+    Ok(data_vec)
+}
 
 #[test]
 fn test_assert_stack() {
@@ -281,10 +325,6 @@ fn load_boc(filename: &str) -> tvm_types::Cell {
     tvm_types::read_single_root_boc(bytes).unwrap()
 }
 
-fn load_stateinit(filename: &str) -> StateInit {
-    StateInit::construct_from_file(filename).unwrap()
-}
-
 #[test]
 fn test_termination_deadline() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -420,7 +460,7 @@ fn test_run_wasm_fortytwo() {
     ];
     ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
 
-    let mut stack = Stack::new();
+    let stack = Stack::new();
 
     let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
         SliceData::load_cell_ref(&elector_code).unwrap(),
@@ -486,7 +526,7 @@ fn test_run_wasm_fuel_error() {
     ];
     ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
 
-    let mut stack = Stack::new();
+    let stack = Stack::new();
 
     let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
         SliceData::load_cell_ref(&elector_code).unwrap(),
@@ -518,5 +558,5 @@ fn test_run_wasm_fuel_error() {
 
     println!("Wasm Return Status: {:?}", result);
 
-    let res_error = result.expect_err("Test didn't error on fuel use");
+    let _res_error = result.expect_err("Test didn't error on fuel use");
 }
