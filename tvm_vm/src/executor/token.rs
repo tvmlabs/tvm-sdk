@@ -3,6 +3,8 @@ use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_BURNECC;
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
+use tvm_block::ACTION_MINT_SHELLQ_TOKEN;
+use tvm_block::ACTION_SEND_TO_DAPP_CONFIG;
 use tvm_block::ACTION_MINTECC;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
@@ -581,6 +583,26 @@ pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
     let mut cell = BuilderData::new();
     x.write_to(&mut cell)?;
     add_action(engine, ACTION_MINT_SHELL_TOKEN, None, cell)
+}
+
+pub(super) fn execute_mint_shellq(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("MINTSHELLQ"))?;
+    fetch_stack(engine, 1)?;
+    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
+    let mut cell = BuilderData::new();
+    x.write_to(&mut cell)?;
+    add_action(engine, ACTION_MINT_SHELLQ_TOKEN, None, cell)
+}
+
+pub(super) fn execute_send_to_dapp_config(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("SENDTODAPPCONFIG"))?;
+    fetch_stack(engine, 1)?;
+    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
+    let mut cell = BuilderData::new();
+    x.write_to(&mut cell)?;
+    add_action(engine, ACTION_SEND_TO_DAPP_CONFIG, None, cell)
 }
 
 #[allow(clippy::excessive_precision)]

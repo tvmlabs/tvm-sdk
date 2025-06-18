@@ -189,7 +189,7 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
-        minted_shell: &mut u128,
+        minted_shell: &mut i128,
     ) -> Result<Transaction>;
 
     fn execute_with_libs_and_params(
@@ -197,9 +197,9 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account_root: &mut Cell,
         params: ExecuteParams,
-    ) -> Result<(Transaction, u128)> {
+    ) -> Result<(Transaction, i128)> {
         let old_hash = account_root.repr_hash();
-        let minted_shell: &mut u128 = &mut 0;
+        let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
         let is_previous_state_active = match account.state() {
             Some(AccountState::AccountUninit {}) => false,
@@ -264,7 +264,7 @@ pub trait TransactionExecutor {
         is_masterchain: bool,
         is_special: bool,
         available_credit: i128,
-        minted_shell: &mut u128,
+        minted_shell: &mut i128,
         is_due: bool,
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
@@ -301,16 +301,16 @@ pub trait TransactionExecutor {
             diff.sub(&acc_balance.grams)?; //Calculate number of Grams that need to be added to the balance to cover the Storage Fee.
             if available_credit == INFINITY_CREDIT {
                 acc_balance.grams.add(&diff)?;
-                *minted_shell += diff.as_u128();
+                *minted_shell += diff.as_u128() as i128;
                 diff = Grams::zero();
             } else {
                 if Grams::from(available_credit as u64) > diff {
                     acc_balance.grams.add(&diff)?;
-                    *minted_shell += diff.as_u128();
+                    *minted_shell += diff.as_u128() as i128;
                     diff = Grams::zero();
                 } else {
                     acc_balance.grams.add(&Grams::from(available_credit as u64))?;
-                    *minted_shell += available_credit as u128;
+                    *minted_shell += available_credit as i128;
                     diff.sub(&Grams::from(available_credit as u64))?;
                 }
             }
@@ -683,7 +683,7 @@ pub trait TransactionExecutor {
         my_addr: &MsgAddressInt,
         is_special: bool,
         available_credit: i128,
-        minted_shell: &mut u128,
+        minted_shell: &mut i128,
         need_to_burn: u64,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
@@ -718,7 +718,7 @@ pub trait TransactionExecutor {
         my_addr: &MsgAddressInt,
         is_special: bool,
         available_credit: i128,
-        minted_shell: &mut u128,
+        minted_shell: &mut i128,
         need_to_burn: u64,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
@@ -940,7 +940,22 @@ pub trait TransactionExecutor {
                         }
                     }
                 }
-                OutAction::MintShellToken { mut value } => {
+                OutAction::MintShellToken { value } => {
+                    if available_credit != INFINITY_CREDIT && value as i128 + minted_shell.clone() as i128 > available_credit { 
+                        RESULT_CODE_NOT_ENOUGH_GRAMS
+                    } else {
+                        match acc_remaining_balance.grams.add(&(Grams::from(value))) {
+                            Ok(true) => {
+                                *minted_shell += value as i128;
+                                phase.spec_actions += 1;
+                                0
+                            }
+                            Ok(false) => RESULT_CODE_OVERFLOW,
+                            Err(_) => RESULT_CODE_UNSUPPORTED,
+                        }
+                    }
+                }
+                OutAction::MintShellQToken { mut value } => {
                     if available_credit != INFINITY_CREDIT {
                         if value as i128 + minted_shell.clone() as i128 > available_credit {
                             value = available_credit.clone().try_into()?;
@@ -948,12 +963,28 @@ pub trait TransactionExecutor {
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
-                            *minted_shell += value as u128;
+                            *minted_shell += value as i128;
                             phase.spec_actions += 1;
                             0
                         }
                         Ok(false) => RESULT_CODE_OVERFLOW,
                         Err(_) => RESULT_CODE_UNSUPPORTED,
+                    }
+                }
+                OutAction::SendToDappConfigToken { value } => {
+                    let value_gram = Grams::from(value);
+                    if value_gram > acc_remaining_balance.grams { 
+                        RESULT_CODE_NOT_ENOUGH_GRAMS
+                    } else {
+                        match acc_remaining_balance.grams.sub(&value_gram) {
+                            Ok(true) => {
+                                *minted_shell -= value as i128;
+                                phase.spec_actions += 1;
+                                0
+                            }
+                            Ok(false) => RESULT_CODE_OVERFLOW,
+                            Err(_) => RESULT_CODE_UNSUPPORTED,
+                        }
                     }
                 }
                 OutAction::None => RESULT_CODE_UNKNOWN_OR_INVALID_ACTION,
