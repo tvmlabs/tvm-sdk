@@ -127,6 +127,8 @@ where
 //     Ok(data_vec)
 // }
 
+fn get_wasm_binary_by_hash(wasm_hash: Vec<u8>, engine: &mut Engine) {}
+
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
     fetch_stack(engine, 2)?;
@@ -181,7 +183,7 @@ fn add_to_linker_gosh(
 // execute wasm binary
 pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
-    fetch_stack(engine, 4)?;
+    fetch_stack(engine, 5)?;
 
     // load or access WASM engine
     let mut wasm_config = wasmtime::Config::new();
@@ -225,7 +227,20 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             TokenValue::Bytes(items) => items,
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
-
+    let wasm_hash_mode = wasm_executable.is_empty();
+    let wasm_executable: Vec<u8> = if wasm_hash_mode {
+        let s = engine.cmd.var(0).as_cell()?;
+        let wasm_hash =
+            match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?
+                .0
+            {
+                TokenValue::Bytes(items) => items,
+                _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+            };
+        todo!("Add hash lookup here from hash {:?}", wasm_hash);
+    } else {
+        wasm_executable
+    };
     // let s = engine.cmd.var(0).as_cell()?;
     // let wasm_executable = rejoin_chain_of_cells(s)?;
 

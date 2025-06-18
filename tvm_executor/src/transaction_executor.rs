@@ -135,6 +135,8 @@ pub struct ExecuteParams {
     pub is_same_thread_id: bool,
     pub termination_deadline: Option<Instant>,
     pub execution_timeout: Option<Duration>,
+    pub wasm_binary_root_path: String,
+    pub wasm_binary_hash_whitelist: String,
 }
 
 pub struct ActionPhaseResult {
