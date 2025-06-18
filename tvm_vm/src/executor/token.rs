@@ -582,3 +582,12 @@ pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
     x.write_to(&mut cell)?;
     add_action(engine, ACTION_MINT_SHELL_TOKEN, None, cell)
 }
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("GETAVAILABLEBALANCE"))?;
+    let balance = engine.get_available_credit();
+    engine.cc.stack.push(int!(balance));
+    Ok(())
+}
