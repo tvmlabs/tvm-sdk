@@ -852,6 +852,7 @@ impl Engine {
         BURNECC                              => 0xC7, 0x38
         RUNWASM                              => 0xC7, 0x39
         CALCBOOSTCOEF                        => 0xC7, 0x40
+        CALCMVREWARD                         => 0xC7, 0x41
     }
 
     fn add_commands<'a>(

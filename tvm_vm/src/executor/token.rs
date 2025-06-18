@@ -644,7 +644,9 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
         k1, k2, k3
     );
 
-    let total_boost_coef_list_bytes: Vec<u8> = total_boost_coef_list.iter()
+    let total_boost_coef_list_u64: Vec<u64> = total_boost_coef_list.iter().map(|&x| (x * 1e9_f64) as u64).collect();
+
+    let total_boost_coef_list_bytes: Vec<u8> = total_boost_coef_list_u64.iter()
         .flat_map(|val| val.to_le_bytes())
         .collect();
 
@@ -657,3 +659,24 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     engine.cc.stack.push(int!(total));
     Ok(())
 }
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
+    fetch_stack(engine, 4)?;
+    let mbn = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let g = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let sum = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let radj = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let depoch = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
+    let u = mbn * g / sum;
+    let reward;
+    if sum >= TOTALSUPPLY * KRMV {
+        reward = 0_f64;
+    } else {
+        reward = radj * depoch * u * 1e9_f64;
+    }
+    engine.cc.stack.push(int!(reward as u128));
+    Ok(())
+}
+
