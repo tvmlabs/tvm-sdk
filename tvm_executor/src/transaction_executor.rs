@@ -561,6 +561,7 @@ pub trait TransactionExecutor {
             params.vm_execution_is_block_related.clone(),
             params.block_collation_was_finished.clone(),
         )
+        .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {

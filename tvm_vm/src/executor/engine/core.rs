@@ -420,6 +420,10 @@ impl Engine {
         self.step
     }
 
+    pub fn set_wasm_root_path(&mut self, wasm_binary_root_path: String) {
+        self.wasm_binary_root_path = wasm_binary_root_path;
+    }
+
     pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
         println!("{}", std::env::current_dir()?.display());

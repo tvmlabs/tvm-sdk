@@ -525,7 +525,6 @@ fn test_run_wasm_from_hash() {
     let wasm_func = "docs:adder/add-interface@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "./src/tests/add.wasm";
     let wasm_dict = Vec::<u8>::new();
 
     let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
