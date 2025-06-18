@@ -663,7 +663,7 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
-    fetch_stack(engine, 4)?;
+    fetch_stack(engine, 5)?;
     let mbn = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let g = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let sum = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
