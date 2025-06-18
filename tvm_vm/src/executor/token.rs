@@ -382,7 +382,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
 pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMMVREWARDADJ"))?;
     fetch_stack(engine, 5)?;
-    let is_bm = engine.cmd.var(0).as_bool()?; //time from network start
+    let is_bm = engine.cmd.var(0).as_bool()?; 
     let t = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
     let rbmprev = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
     let drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
