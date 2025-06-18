@@ -122,6 +122,8 @@ pub struct Engine {
     block_collation_was_finished: Arc<Mutex<bool>>,
     termination_deadline: Option<Instant>,
     execution_timeout: Option<Duration>,
+
+    wasm_binary_root_path: String,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -415,6 +417,8 @@ impl Engine {
     pub fn steps(&self) -> u32 {
         self.step
     }
+
+    pub fn get_wasm_binary_by_hash(&self) -> Vec<u8> {}
 
     fn is_trace_enabled(&self) -> bool {
         self.trace_callback.is_some()
