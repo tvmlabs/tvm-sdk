@@ -839,7 +839,7 @@ impl Engine {
         DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
         MINTECC                              => 0xC7, 0x26
         CNVRTSHELLQ                          => 0xC7, 0x27
-        MINTSHELL                            => 0xC7, 0x28
+        MINTSHELLQ                           => 0xC7, 0x28
         CALCBKREWARD                         => 0xC7, 0x29
         CALCMINSTAKE                         => 0xC7, 0x30
         VERGRTH16                            => 0xC7, 0x31
@@ -852,6 +852,8 @@ impl Engine {
         BURNECC                              => 0xC7, 0x38
         RUNWASM                              => 0xC7, 0x39
         GETAVAILABLEBALANCE                  => 0xC7, 0x42
+        MINTSHELL                            => 0xC7, 0x43
+        SENDTODAPPCONFIGQ                    => 0xC7, 0x44
     }
 
     fn add_commands<'a>(

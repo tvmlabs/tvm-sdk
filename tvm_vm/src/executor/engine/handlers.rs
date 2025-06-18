@@ -387,7 +387,7 @@ impl Handlers {
                 .set(0x23, execute_diff_patch_binary_zip_not_quiet)
                 .set(0x24, execute_diff_patch_binary_quiet)
                 .set(0x25, execute_diff_patch_binary_zip_quiet)
-                .set(0x28, execute_mint_shell)
+                .set(0x28, execute_mint_shellq)
                 .set(0x26, execute_ecc_mint)
                 .set(0x27, execute_exchange_shell)
                 .set(0x29, execute_calculate_validator_reward)
@@ -401,7 +401,9 @@ impl Handlers {
                 .set(0x37, execute_calculate_min_stake_bm)
                 .set(0x38, execute_ecc_burn)
                 .set(0x39, execute_run_wasm)
-                .set(0x42, execute_get_available_balance);
+                .set(0x42, execute_get_available_balance)
+                .set(0x43, execute_mint_shell)
+                .set(0x44, execute_send_to_dapp_config);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }

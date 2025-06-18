@@ -81,7 +81,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
-        minted_shell: &mut u128,
+        minted_shell: &mut i128,
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
