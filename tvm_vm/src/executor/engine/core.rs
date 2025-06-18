@@ -284,6 +284,7 @@ impl Engine {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
             execution_timeout: None,
+            wasm_binary_root_path: "../acki-nacki/config/wasm".to_owned(),
         }
     }
 
@@ -418,7 +419,11 @@ impl Engine {
         self.step
     }
 
-    pub fn get_wasm_binary_by_hash(&self) -> Vec<u8> {}
+    pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
+        let filename = format!("{}/{:#?}", self.wasm_binary_root_path, wasm_hash.as_slice());
+        // TODO: Add some hash checking of the file
+        Ok(std::fs::read(filename)?)
+    }
 
     fn is_trace_enabled(&self) -> bool {
         self.trace_callback.is_some()
