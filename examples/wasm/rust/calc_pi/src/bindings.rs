@@ -5,9 +5,9 @@
 #[allow(dead_code, clippy::all)]
 pub mod exports {
     pub mod docs {
-        pub mod adder {
+        pub mod calc_pi {
             #[allow(dead_code, async_fn_in_trait, unused_imports, clippy::all)]
-            pub mod add_interface {
+            pub mod calc_interface {
                 #[used]
                 #[doc(hidden)]
                 static __FORCE_SECTION_REF: fn() = super::super::super::super::__link_custom_section_describing_imports;
@@ -43,65 +43,24 @@ pub mod exports {
                     let len2 = l1;
                     _rt::cabi_dealloc(base2, len2 * 1, 1);
                 }
-                #[doc(hidden)]
-                #[allow(non_snake_case)]
-                pub unsafe fn _export_substract_cabi<T: Guest>(
-                    arg0: *mut u8,
-                    arg1: usize,
-                ) -> *mut u8 {
-                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
-                    let len0 = arg1;
-                    let result1 = T::substract(
-                        _rt::Vec::from_raw_parts(arg0.cast(), len0, len0),
-                    );
-                    let ptr2 = (&raw mut _RET_AREA.0).cast::<u8>();
-                    let vec3 = (result1).into_boxed_slice();
-                    let ptr3 = vec3.as_ptr().cast::<u8>();
-                    let len3 = vec3.len();
-                    ::core::mem::forget(vec3);
-                    *ptr2.add(::core::mem::size_of::<*const u8>()).cast::<usize>() = len3;
-                    *ptr2.add(0).cast::<*mut u8>() = ptr3.cast_mut();
-                    ptr2
-                }
-                #[doc(hidden)]
-                #[allow(non_snake_case)]
-                pub unsafe fn __post_return_substract<T: Guest>(arg0: *mut u8) {
-                    let l0 = *arg0.add(0).cast::<*mut u8>();
-                    let l1 = *arg0
-                        .add(::core::mem::size_of::<*const u8>())
-                        .cast::<usize>();
-                    let base2 = l0;
-                    let len2 = l1;
-                    _rt::cabi_dealloc(base2, len2 * 1, 1);
-                }
                 pub trait Guest {
                     fn add(kwargs: _rt::Vec<u8>) -> _rt::Vec<u8>;
-                    fn substract(kwargs: _rt::Vec<u8>) -> _rt::Vec<u8>;
                 }
                 #[doc(hidden)]
-                macro_rules! __export_docs_adder_add_interface_0_1_0_cabi {
+                macro_rules! __export_docs_calc_pi_calc_interface_0_1_0_cabi {
                     ($ty:ident with_types_in $($path_to_types:tt)*) => {
                         const _ : () = { #[unsafe (export_name =
-                        "docs:adder/add-interface@0.1.0#add")] unsafe extern "C" fn
+                        "docs:calc-pi/calc-interface@0.1.0#add")] unsafe extern "C" fn
                         export_add(arg0 : * mut u8, arg1 : usize,) -> * mut u8 { unsafe {
                         $($path_to_types)*:: _export_add_cabi::<$ty > (arg0, arg1) } }
                         #[unsafe (export_name =
-                        "cabi_post_docs:adder/add-interface@0.1.0#add")] unsafe extern
+                        "cabi_post_docs:calc-pi/calc-interface@0.1.0#add")] unsafe extern
                         "C" fn _post_return_add(arg0 : * mut u8,) { unsafe {
-                        $($path_to_types)*:: __post_return_add::<$ty > (arg0) } }
-                        #[unsafe (export_name =
-                        "docs:adder/add-interface@0.1.0#substract")] unsafe extern "C" fn
-                        export_substract(arg0 : * mut u8, arg1 : usize,) -> * mut u8 {
-                        unsafe { $($path_to_types)*:: _export_substract_cabi::<$ty >
-                        (arg0, arg1) } } #[unsafe (export_name =
-                        "cabi_post_docs:adder/add-interface@0.1.0#substract")] unsafe
-                        extern "C" fn _post_return_substract(arg0 : * mut u8,) { unsafe {
-                        $($path_to_types)*:: __post_return_substract::<$ty > (arg0) } }
-                        };
+                        $($path_to_types)*:: __post_return_add::<$ty > (arg0) } } };
                     };
                 }
                 #[doc(hidden)]
-                pub(crate) use __export_docs_adder_add_interface_0_1_0_cabi;
+                pub(crate) use __export_docs_calc_pi_calc_interface_0_1_0_cabi;
                 #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
                 #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
                 struct _RetArea(
@@ -159,24 +118,24 @@ macro_rules! __export_adder_impl {
     };
     ($ty:ident with_types_in $($path_to_types_root:tt)*) => {
         $($path_to_types_root)*::
-        exports::docs::adder::add_interface::__export_docs_adder_add_interface_0_1_0_cabi!($ty
-        with_types_in $($path_to_types_root)*:: exports::docs::adder::add_interface);
+        exports::docs::calc_pi::calc_interface::__export_docs_calc_pi_calc_interface_0_1_0_cabi!($ty
+        with_types_in $($path_to_types_root)*:: exports::docs::calc_pi::calc_interface);
     };
 }
 #[doc(inline)]
 pub(crate) use __export_adder_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[unsafe(
-    link_section = "component-type:wit-bindgen:0.41.0:docs:adder@0.1.0:adder:encoded world"
+    link_section = "component-type:wit-bindgen:0.41.0:docs:calc-pi@0.1.0:adder:encoded world"
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 232] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07m\x01A\x02\x01A\x02\x01\
-B\x04\x01p}\x01@\x01\x06kwargs\0\0\0\x04\0\x03add\x01\x01\x04\0\x09substract\x01\
-\x01\x04\0\x1edocs:adder/add-interface@0.1.0\x05\0\x04\0\x16docs:adder/adder@0.1\
-.0\x04\0\x0b\x0b\x01\0\x05adder\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0d\
-wit-component\x070.227.1\x10wit-bindgen-rust\x060.41.0";
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 223] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07d\x01A\x02\x01A\x02\x01\
+B\x03\x01p}\x01@\x01\x06kwargs\0\0\0\x04\0\x03add\x01\x01\x04\0!docs:calc-pi/cal\
+c-interface@0.1.0\x05\0\x04\0\x18docs:calc-pi/adder@0.1.0\x04\0\x0b\x0b\x01\0\x05\
+adder\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.\
+1\x10wit-bindgen-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

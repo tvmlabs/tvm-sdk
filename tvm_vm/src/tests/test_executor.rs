@@ -9,24 +9,18 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::cell;
 use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
 
-use ark_std::iterable::Iterable;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_types::BuilderData;
-use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
-use tvm_types::error;
-use tvm_types::read_single_root_boc;
-use zstd::dict::from_files;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
@@ -35,7 +29,6 @@ use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
 use crate::executor::token::execute_run_wasm;
 use crate::executor::token::rejoin_chain_of_cells;
-use crate::executor::token::split_to_chain_of_cells;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::stack::Stack;
@@ -47,7 +40,6 @@ use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
-use crate::utils::unpack_data_from_cell;
 
 #[test]
 fn test_assert_stack() {
@@ -440,6 +432,7 @@ fn test_run_wasm_fortytwo() {
     // let cell = TokenValue::write_bytes(&[1u8, 2u8],
     // &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";

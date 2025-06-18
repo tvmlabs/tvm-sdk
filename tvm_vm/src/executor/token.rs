@@ -8,6 +8,7 @@ use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
+use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
@@ -80,52 +81,50 @@ where
     val
 }
 
-// Method to manually encode bytes as bag of cells
-// pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell,
-// failure::Error> {     // TODO: Cell size can maybe be increased up to 128?
-//     let cellsize = 120usize;
-//     let len = input.len();
-//     let mut cell_vec = Vec::<Vec<u8>>::new();
-//     // Process the input in 1024-byte chunks
-//     for i in (0..len).step_by(cellsize) {
-//         let end = std::cmp::min(i + cellsize, len);
-//         let chunk = &input[i..end];
+pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
+    // TODO: Cell size can maybe be increased up to 128?
+    let cellsize = 120usize;
+    let len = input.len();
+    let mut cell_vec = Vec::<Vec<u8>>::new();
+    // Process the input in 1024-byte chunks
+    for i in (0..len).step_by(cellsize) {
+        let end = std::cmp::min(i + cellsize, len);
+        let chunk = &input[i..end];
 
-//         // Convert slice to Vec<u8> and pass to omnom function
-//         let chunk_vec = chunk.to_vec();
-//         cell_vec.push(chunk_vec);
+        // Convert slice to Vec<u8> and pass to omnom function
+        let chunk_vec = chunk.to_vec();
+        cell_vec.push(chunk_vec);
 
-//         assert!(
-//             cell_vec.last().expect("error in split_to_chain_of_cells
-// function").len() == cellsize                 || i + cellsize > len
-//         );
-//     }
-//     let mut cell = BuilderData::with_raw(
-//         cell_vec[cell_vec.len() - 1].clone(),
-//         cell_vec[cell_vec.len() - 1].len() * 8,
-//     )?
-//     .into_cell()?;
-//     for i in (0..(cell_vec.len() - 1)).rev() {
-//         let mut builder = BuilderData::with_raw(cell_vec[i].clone(),
-// cell_vec[i].len() * 8)?;         let builder =
-// builder.checked_append_reference(cell)?;         cell =
-// builder.clone().into_cell()?;     }
-//     Ok(cell) // return first cell
-// }
+        assert!(
+            cell_vec.last().expect("error in split_to_chain_of_cells function").len() == cellsize
+                || i + cellsize > len
+        );
+    }
+    let mut cell = BuilderData::with_raw(
+        cell_vec[cell_vec.len() - 1].clone(),
+        cell_vec[cell_vec.len() - 1].len() * 8,
+    )?
+    .into_cell()?;
+    for i in (0..(cell_vec.len() - 1)).rev() {
+        let mut builder = BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8)?;
+        let builder = builder.checked_append_reference(cell)?;
+        cell = builder.clone().into_cell()?;
+    }
+    Ok(cell) // return first cell
+}
 
-// Method to manually decode bytes from bag of cells
-// pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>,
-// failure::Error> {     let mut data_vec = input.data().to_vec();
-//     let mut cur_cell: Cell = input.clone();
-//     while cur_cell.reference(0).is_ok() {
-//         let old_len = data_vec.len();
-//         cur_cell = cur_cell.reference(0)?;
-//         data_vec.append(&mut cur_cell.data().to_vec());
+pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
+    let mut data_vec = input.data().to_vec();
+    let mut cur_cell: Cell = input.clone();
+    while cur_cell.reference(0).is_ok() {
+        let old_len = data_vec.len();
+        cur_cell = cur_cell.reference(0)?;
+        data_vec.append(&mut cur_cell.data().to_vec());
 
-//         assert!(data_vec.len() - old_len == cur_cell.data().len());
-//     }
-//     Ok(data_vec)
-// }
+        assert!(data_vec.len() - old_len == cur_cell.data().len());
+    }
+    Ok(data_vec)
+}
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
@@ -213,6 +212,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // calculating WASM fuel")?,     },
     //     false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
     // };
+
     match wasm_store.set_fuel(wasm_fuel) {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
@@ -259,12 +259,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // If more deps are needed, add them in there!
     match add_to_linker_gosh(&mut wasm_linker) {
         Ok(_) => {}
-        Err(e) => err!(
-            ExceptionCode::WasmLoadFail,
-            "Failed to instantiate WASM instance
-    {:?}",
-            e
-        )?,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM instance {:?}", e)?,
     };
 
     // This is the default add to linker method, we dont use it as it will add async
