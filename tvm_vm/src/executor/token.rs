@@ -247,6 +247,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
                 TokenValue::Bytes(items) => items,
                 _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
             };
+        println!("Using WASM Hash {:?}", wasm_hash);
         engine.get_wasm_binary_by_hash(wasm_hash)?
         // todo!("Add hash lookup here from hash {:?}", wasm_hash);
     } else {

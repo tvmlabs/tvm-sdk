@@ -11,6 +11,7 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt::Write;
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -284,7 +285,7 @@ impl Engine {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
             execution_timeout: None,
-            wasm_binary_root_path: "../acki-nacki/config/wasm".to_owned(),
+            wasm_binary_root_path: "../../acki-nacki/config/wasm".to_owned(),
         }
     }
 
@@ -420,7 +421,13 @@ impl Engine {
     }
 
     pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
-        let filename = format!("{}/{:#?}", self.wasm_binary_root_path, wasm_hash.as_slice());
+        let mut s = String::with_capacity(wasm_hash.len() * 2);
+        println!("{}", std::env::current_dir()?.display());
+        for &b in wasm_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        let filename = format!("{}/{}", self.wasm_binary_root_path, s);
+        println!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
         Ok(std::fs::read(filename)?)
     }
