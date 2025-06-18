@@ -122,6 +122,7 @@ pub struct Engine {
     block_collation_was_finished: Arc<Mutex<bool>>,
     termination_deadline: Option<Instant>,
     execution_timeout: Option<Duration>,
+    available_credit: i128
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -282,7 +283,16 @@ impl Engine {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
             execution_timeout: None,
+            available_credit: 0,
         }
+    }
+
+    pub fn set_available_credit(&mut self, credit: i128) {
+        self.available_credit = credit;
+    }
+
+    pub fn get_available_credit(&mut self) -> i128 {
+        self.available_credit
     }
 
     pub fn set_block_related_flags(
