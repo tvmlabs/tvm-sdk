@@ -449,11 +449,10 @@ fn test_run_wasm_fortytwo() {
     let wasm_func = "add";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let wasm_func = "docs:adder/add@0.1.0";
+    let wasm_func = "docs:calc-pi/calc-interface@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename =
-        "/Users/elar/Code/Havok/AckiNacki/wasm/calc_pi/target/wasm32-wasip2/release/add.wasm";
+    let filename = "../examples/wasm/rust/calc_pi/target/wasm32-wasip2/release/calc_pi.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
@@ -520,9 +519,8 @@ fn test_run_wasm_generic() -> Result<(), wasmtime::Error> {
     };
 
     // load wasm component binary
-    let filename =
-        "/Users/elar/Code/Havok/AckiNacki/wasm/calc_pi/target/wasm32-wasip2/release/add.wasm";
-    let wasm_instance_name = "docs:adder/add@0.1.0";
+    let filename = "../examples/wasm/rust/calc_pi/target/wasm32-wasip2/release/calc_pi.wasm";
+    let wasm_instance_name = "docs:calc-pi/calc-interface@0.1.0";
     let wasm_func_name = "add";
     let wasm_func_args = [1u8, 100u8].to_vec();
 
