@@ -8,6 +8,7 @@ use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
+#[cfg(test)]
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
@@ -81,6 +82,7 @@ where
     val
 }
 
+#[cfg(test)]
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
     // TODO: Cell size can maybe be increased up to 128?
     let cellsize = 120usize;
@@ -113,6 +115,7 @@ pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::E
     Ok(cell) // return first cell
 }
 
+#[cfg(test)]
 pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
     let mut data_vec = input.data().to_vec();
     let mut cur_cell: Cell = input.clone();
@@ -371,11 +374,10 @@ pub(super) fn execute_ecc_burn(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("BURNECC"))?;
     fetch_stack(engine, 2)?;
     let x: u32 = engine.cmd.var(0).as_integer()?.into(0..=255)?;
-    let y: VarUInteger32 = VarUInteger32::from(engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?);
-    let mut data = ExtraCurrencyCollection::new();
-    data.set(&x, &y)?;
+    let y = engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?;
     let mut cell = BuilderData::new();
-    data.write_to(&mut cell)?;
+    y.write_to(&mut cell)?;
+    x.write_to(&mut cell)?;
     add_action(engine, ACTION_BURNECC, None, cell)
 }
 
