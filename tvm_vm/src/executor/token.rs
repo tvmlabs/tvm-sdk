@@ -609,7 +609,10 @@ pub(super) fn execute_send_to_dapp_config(engine: &mut Engine) -> Status {
 pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("GETAVAILABLEBALANCE"))?;
-    let balance = engine.get_available_credit();
-    engine.cc.stack.push(int!(balance));
+    let mut balance = engine.get_available_credit();  
+    if balance < 0 {
+        balance = 0;
+    }
+    engine.cc.stack.push(int!(balance as u128));
     Ok(())
 }
