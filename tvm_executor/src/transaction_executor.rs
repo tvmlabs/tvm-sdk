@@ -181,7 +181,7 @@ impl Default for ExecuteParams {
             is_same_thread_id: false,
             termination_deadline: None,
             execution_timeout: None,
-            wasm_binary_root_path: "../acki-nacki/config/wasm".to_owned(),
+            wasm_binary_root_path: "./config/wasm".to_owned(),
             wasm_binary_hash_whitelist: "".to_owned(),
         }
     }
