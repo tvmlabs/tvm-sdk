@@ -22,7 +22,7 @@ extern crate lazy_static;
 extern crate log;
 
 pub mod abi;
-mod account;
+pub mod account;
 pub mod boc;
 pub mod client;
 pub mod crypto;
