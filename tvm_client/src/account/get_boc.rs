@@ -22,7 +22,8 @@ pub async fn get_account(
     let server_link = context.get_server_link()?;
     let mut url = server_link.state().get_rest_api_endpoint().await;
 
-    url.set_path("v2/account");
+    //  url.set_path("v2/account"); ZZZ
+    url.set_path("bk/account");
     url.set_query(Some(&format!("address={}", params.address)));
 
     let value = server_link.http_get(url).await?;
