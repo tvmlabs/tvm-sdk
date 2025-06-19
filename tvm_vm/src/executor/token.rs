@@ -8,7 +8,6 @@ use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
-use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
@@ -19,8 +18,6 @@ use wasmtime_wasi::p2::WasiCtx;
 use wasmtime_wasi::p2::WasiCtxBuilder;
 use wasmtime_wasi::p2::WasiImpl;
 use wasmtime_wasi::p2::WasiView;
-use wasmtime_wasi::runtime::with_ambient_tokio_runtime;
-use wasmtime_wasi_io;
 
 use crate::error::TvmError;
 use crate::executor::blockchain::add_action;
@@ -51,6 +48,8 @@ pub const KRBM: f64 = 0.1_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub const WASM_FUEL_MULTIPLIER: u64 = 8u64;
+pub const WASM_200MS_FUEL: u64 = 2220000000u64;
+pub const RUNWASM_GAS_PRICE: u64 = WASM_200MS_FUEL / WASM_FUEL_MULTIPLIER;
 struct MyState {
     ctx: WasiCtx,
     table: ResourceTable,
@@ -67,12 +66,12 @@ impl WasiView for MyState {
 }
 
 // Async IO annotator for WASI. Do not use unless you know what you're doing.
-fn io_type_annotate<T: IoView, F>(val: F) -> F
-where
-    F: Fn(&mut T) -> IoImpl<&mut T>,
-{
-    val
-}
+// fn io_type_annotate<T: IoView, F>(val: F) -> F
+// where
+//     F: Fn(&mut T) -> IoImpl<&mut T>,
+// {
+//     val
+// }
 // Sync annotator for WASI. Used in wasmtime linker
 fn type_annotate<T: WasiView, F>(val: F) -> F
 where
@@ -81,50 +80,52 @@ where
     val
 }
 
-pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
-    // TODO: Cell size can maybe be increased up to 128?
-    let cellsize = 120usize;
-    let len = input.len();
-    let mut cell_vec = Vec::<Vec<u8>>::new();
-    // Process the input in 1024-byte chunks
-    for i in (0..len).step_by(cellsize) {
-        let end = std::cmp::min(i + cellsize, len);
-        let chunk = &input[i..end];
+// Method to manually encode bytes as bag of cells
+// pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell,
+// failure::Error> {     // TODO: Cell size can maybe be increased up to 128?
+//     let cellsize = 120usize;
+//     let len = input.len();
+//     let mut cell_vec = Vec::<Vec<u8>>::new();
+//     // Process the input in 1024-byte chunks
+//     for i in (0..len).step_by(cellsize) {
+//         let end = std::cmp::min(i + cellsize, len);
+//         let chunk = &input[i..end];
 
-        // Convert slice to Vec<u8> and pass to omnom function
-        let chunk_vec = chunk.to_vec();
-        cell_vec.push(chunk_vec);
+//         // Convert slice to Vec<u8> and pass to omnom function
+//         let chunk_vec = chunk.to_vec();
+//         cell_vec.push(chunk_vec);
 
-        assert!(
-            cell_vec.last().expect("error in split_to_chain_of_cells function").len() == cellsize
-                || i + cellsize > len
-        );
-    }
-    let mut cell = BuilderData::with_raw(
-        cell_vec[cell_vec.len() - 1].clone(),
-        cell_vec[cell_vec.len() - 1].len() * 8,
-    )?
-    .into_cell()?;
-    for i in (0..(cell_vec.len() - 1)).rev() {
-        let mut builder = BuilderData::with_raw(cell_vec[i].clone(), cell_vec[i].len() * 8)?;
-        let builder = builder.checked_append_reference(cell)?;
-        cell = builder.clone().into_cell()?;
-    }
-    Ok(cell) // return first cell
-}
+//         assert!(
+//             cell_vec.last().expect("error in split_to_chain_of_cells
+// function").len() == cellsize                 || i + cellsize > len
+//         );
+//     }
+//     let mut cell = BuilderData::with_raw(
+//         cell_vec[cell_vec.len() - 1].clone(),
+//         cell_vec[cell_vec.len() - 1].len() * 8,
+//     )?
+//     .into_cell()?;
+//     for i in (0..(cell_vec.len() - 1)).rev() {
+//         let mut builder = BuilderData::with_raw(cell_vec[i].clone(),
+// cell_vec[i].len() * 8)?;         let builder =
+// builder.checked_append_reference(cell)?;         cell =
+// builder.clone().into_cell()?;     }
+//     Ok(cell) // return first cell
+// }
 
-pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
-    let mut data_vec = input.data().to_vec();
-    let mut cur_cell: Cell = input.clone();
-    while cur_cell.reference(0).is_ok() {
-        let old_len = data_vec.len();
-        cur_cell = cur_cell.reference(0)?;
-        data_vec.append(&mut cur_cell.data().to_vec());
+// Method to manually decode bytes from bag of cells
+// pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>,
+// failure::Error> {     let mut data_vec = input.data().to_vec();
+//     let mut cur_cell: Cell = input.clone();
+//     while cur_cell.reference(0).is_ok() {
+//         let old_len = data_vec.len();
+//         cur_cell = cur_cell.reference(0)?;
+//         data_vec.append(&mut cur_cell.data().to_vec());
 
-        assert!(data_vec.len() - old_len == cur_cell.data().len());
-    }
-    Ok(data_vec)
-}
+//         assert!(data_vec.len() - old_len == cur_cell.data().len());
+//     }
+//     Ok(data_vec)
+// }
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
@@ -201,13 +202,17 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
     // instruction (or set to 0?)
     log::debug!("Starting gas: {:?}", engine.gas_remaining());
-    let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
-        true => match u64::try_from(engine.gas_remaining())?.checked_mul(WASM_FUEL_MULTIPLIER) {
-            Some(k) => k,
-            None => err!(ExceptionCode::IntegerOverflow, "Overflow when calculating WASM fuel")?,
-        },
-        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
-    };
+    let wasm_fuel: u64 = WASM_200MS_FUEL;
+
+    // TODO: If switching to dunamic fuel limit, use this code:
+    // let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
+    //     true => match
+    // u64::try_from(engine.gas_remaining())?.checked_mul(WASM_FUEL_MULTIPLIER) {
+    //         Some(k) => k,
+    //         None => err!(ExceptionCode::IntegerOverflow, "Overflow when
+    // calculating WASM fuel")?,     },
+    //     false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    // };
     match wasm_store.set_fuel(wasm_fuel) {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
@@ -257,7 +262,8 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Err(e) => err!(
             ExceptionCode::WasmLoadFail,
             "Failed to instantiate WASM instance
-    {:?}"
+    {:?}",
+            e
         )?,
     };
 
@@ -330,19 +336,21 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Ok(result) => result,
         Err(e) => {
             log::debug!("Failed to execute WASM function {:?}", e);
-            err!(ExceptionCode::WasmLoadFail, "Failed to execute WASM function {:?}", e)?
+            err!(ExceptionCode::WasmExecFail, "Failed to execute WASM function {:?}", e)?
         }
     };
     log::debug!("WASM Execution result: {:?}", result);
 
-    let gas_used: i64 = match wasm_store.get_fuel() {
-        Ok(new_fuel) => i64::try_from((wasm_fuel - new_fuel).div_ceil(WASM_FUEL_MULTIPLIER))?,
-        Err(e) => err!(
-            ExceptionCode::WasmLoadFail,
-            "Failed to get WASM engine fuel after execution {:?}",
-            e
-        )?,
-    };
+    let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
+    // TODO: If we switch to dynamic gas usage, reenable this code
+    // let gas_used: i64 = match wasm_store.get_fuel() {
+    //     Ok(new_fuel) => i64::try_from((wasm_fuel -
+    // new_fuel).div_ceil(WASM_FUEL_MULTIPLIER))?,     Err(e) => err!(
+    //         ExceptionCode::WasmLoadFail,
+    //         "Failed to get WASM engine fuel after execution {:?}",
+    //         e
+    //     )?,
+    // };
     engine.use_gas(gas_used);
     log::debug!("Remaining gas: {:?}", engine.gas_remaining());
     match engine.gas_remaining() > 0 {
