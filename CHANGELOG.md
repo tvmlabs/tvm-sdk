@@ -2,13 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.17.1] - 2025-06-06
+## [2.17.2] - 2025-06-19
+
+### New
+
+- Changed `runwasm` instruction to accept local wasm binaries, selected by hash.
+
+## [2.17.1] - 2025-06-16
 
 ### New
 
 - Added fixed gas metering and wasm fuel limiting to `runwasm` instruction
 
-## [2.17.0] - 2025-06-06
+## [2.17.0] - 2025-06-12
 
 ### New
 
