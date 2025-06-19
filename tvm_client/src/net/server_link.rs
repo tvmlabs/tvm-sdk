@@ -95,7 +95,6 @@ pub(crate) struct NetworkState {
     bm_send_message_endpoint: RwLock<String>,
     bk_send_message_endpoint: RwLock<Option<String>>,
     rest_api_endpoint: RwLock<Url>,
-    // rest_api_token: RwLock<Option<String>>, ZZZ
     bm_license_contract: RwLock<Option<String>>,
     bm_token: RwLock<Option<Value>>,
 }
@@ -139,7 +138,6 @@ impl NetworkState {
             bm_send_message_endpoint: RwLock::new(bm_send_message_endpoint),
             bk_send_message_endpoint: RwLock::new(None),
             rest_api_endpoint: RwLock::new(rest_api_endpoint),
-            // rest_api_token: RwLock::new(None), // ZZZ
             bm_license_contract: RwLock::new(None),
             bm_token: RwLock::new(None),
         }
@@ -479,12 +477,10 @@ fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<
     } else {
         format!("http://{}", original)
     };
-
     let mut url = reqwest::Url::parse(&original).map_err(Error::parse_url_failed)?;
 
     let scheme = if use_https { "https" } else { "http" };
     url.set_scheme(scheme).map_err(|_| Error::modify_url_failed("Failed to set scheme"))?;
-    url.set_port(Some(8700)).map_err(|_| Error::modify_url_failed("Failed to set port"))?;
     Ok(url)
 }
 
@@ -818,7 +814,7 @@ impl ServerLink {
                 } else if response.status == 401 {
                     Err(Error::unauthorized(&response))
                 } else if response.status == 404 {
-                    Err(Error::not_found("The requested resource could not be found"))
+                    Err(Error::not_found(&format!("Resource not found: {url}")))
                 } else {
                     // HTTP_CODE 500 and any other unhandled codes
                     Err(Error::invalid_server_response(response.body))
