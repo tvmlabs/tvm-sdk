@@ -471,18 +471,6 @@ fn construct_bm_send_message_endpoint(original: &str, use_https: bool) -> Client
 
     Ok(url.to_string())
 }
-fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<reqwest::Url> {
-    let original = if original.contains("://") {
-        original.to_string()
-    } else {
-        format!("http://{}", original)
-    };
-    let mut url = reqwest::Url::parse(&original).map_err(Error::parse_url_failed)?;
-
-    let scheme = if use_https { "https" } else { "http" };
-    url.set_scheme(scheme).map_err(|_| Error::modify_url_failed("Failed to set scheme"))?;
-    Ok(url)
-}
 
 fn get_redirection_data(data: &Value) -> (Option<String>, Option<String>) {
     let producers_opt = data.get("result").and_then(|res| res.get("producers")).or_else(|| {
@@ -525,7 +513,8 @@ impl ServerLink {
         let bm_send_message_endpoint =
             construct_bm_send_message_endpoint(&endpoint_addresses[0], false)?;
 
-        let rest_api_endpoint = construct_rest_api_endpoint(&endpoint_addresses[0], false)?;
+        let rest_api_endpoint =
+            Url::parse(&endpoint_addresses[0]).map_err(Error::parse_url_failed)?;
 
         let state = Arc::new(NetworkState::new(
             client_env.clone(),
