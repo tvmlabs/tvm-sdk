@@ -235,9 +235,9 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_executable =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
         };
-    let wasm_hash_mode = wasm_executable.is_empty();
+    let wasm_hash_mode = wasm_executable.is_empty() || wasm_executable.as_slice() == [0u8];
     let wasm_executable: Vec<u8> = if wasm_hash_mode {
         let s = engine.cmd.var(4).as_cell()?;
         let wasm_hash =
@@ -245,7 +245,9 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
                 .0
             {
                 TokenValue::Bytes(items) => items,
-                _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+                e => {
+                    err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
+                }
             };
         println!("Using WASM Hash {:?}", wasm_hash);
         engine.get_wasm_binary_by_hash(wasm_hash)?
@@ -286,12 +288,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // If more deps are needed, add them in there!
     match add_to_linker_gosh(&mut wasm_linker) {
         Ok(_) => {}
-        Err(e) => err!(
-            ExceptionCode::WasmLoadFail,
-            "Failed to instantiate WASM instance
-    {:?}",
-            e
-        )?,
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM instance {:?}", e)?,
     };
 
     // This is the default add to linker method, we dont use it as it will add async
