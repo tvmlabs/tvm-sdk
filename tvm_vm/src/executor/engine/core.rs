@@ -285,7 +285,7 @@ impl Engine {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
             execution_timeout: None,
-            wasm_binary_root_path: "../../acki-nacki/config/wasm".to_owned(),
+            wasm_binary_root_path: "./config/wasm".to_owned(),
         }
     }
 
