@@ -237,7 +237,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             TokenValue::Bytes(items) => items,
             e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
         };
-    let wasm_hash_mode = wasm_executable.is_empty() || wasm_executable.as_slice() == [0u8];
+    let wasm_hash_mode = wasm_executable.is_empty();
     let wasm_executable: Vec<u8> = if wasm_hash_mode {
         let s = engine.cmd.var(4).as_cell()?;
         let wasm_hash =
