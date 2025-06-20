@@ -24,6 +24,7 @@ use futures::Future;
 use futures::Stream;
 use futures::StreamExt;
 use rand::seq::SliceRandom;
+use reqwest::Url;
 use serde_json::Value;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
@@ -93,6 +94,7 @@ pub(crate) struct NetworkState {
     resolved_endpoints: RwLock<HashMap<String, ResolvedEndpoint>>,
     bm_send_message_endpoint: RwLock<String>,
     bk_send_message_endpoint: RwLock<Option<String>>,
+    rest_api_endpoint: RwLock<Url>,
     bm_license_contract: RwLock<Option<String>>,
     bm_token: RwLock<Option<Value>>,
 }
@@ -116,6 +118,7 @@ impl NetworkState {
         config: NetworkConfig,
         endpoint_addresses: Vec<String>,
         bm_send_message_endpoint: String,
+        rest_api_endpoint: Url,
     ) -> Self {
         let (sender, receiver) = watch::channel(false);
         let regulation =
@@ -134,6 +137,7 @@ impl NetworkState {
             resolved_endpoints: Default::default(),
             bm_send_message_endpoint: RwLock::new(bm_send_message_endpoint),
             bk_send_message_endpoint: RwLock::new(None),
+            rest_api_endpoint: RwLock::new(rest_api_endpoint),
             bm_license_contract: RwLock::new(None),
             bm_token: RwLock::new(None),
         }
@@ -378,6 +382,10 @@ impl NetworkState {
         self.bm_send_message_endpoint.read().await.to_string()
     }
 
+    pub async fn get_rest_api_endpoint(&self) -> Url {
+        self.rest_api_endpoint.read().await.clone()
+    }
+
     pub async fn update_bk_send_message_endpoint(&self, endpoint: Option<String>) {
         *self.bk_send_message_endpoint.write().await = endpoint
     }
@@ -505,11 +513,15 @@ impl ServerLink {
         let bm_send_message_endpoint =
             construct_bm_send_message_endpoint(&endpoint_addresses[0], false)?;
 
+        let rest_api_endpoint =
+            Url::parse(&endpoint_addresses[0]).map_err(Error::parse_url_failed)?;
+
         let state = Arc::new(NetworkState::new(
             client_env.clone(),
             config.clone(),
             endpoint_addresses,
             bm_send_message_endpoint,
+            rest_api_endpoint,
         ));
 
         Ok(ServerLink {
@@ -764,6 +776,39 @@ impl ServerLink {
             return result;
         }
         Err(Error::all_attempts_failed())
+    }
+
+    pub(crate) async fn http_get(&self, url: Url) -> ClientResult<Value> {
+        let mut headers = HashMap::new();
+        for (name, value) in Endpoint::http_headers(&self.config) {
+            headers.insert(name, value);
+        }
+        let result = self
+            .client_env
+            .fetch(
+                &url.to_string(),
+                FetchMethod::Get,
+                Some(headers),
+                None,
+                self.config.query_timeout,
+            )
+            .await;
+
+        match result {
+            Err(err) => Err(err),
+            Ok(response) => {
+                if response.status == 200 {
+                    response.body_as_json(true)
+                } else if response.status == 401 {
+                    Err(Error::unauthorized(&response))
+                } else if response.status == 404 {
+                    Err(Error::not_found(&format!("Resource not found: {url}")))
+                } else {
+                    // HTTP_CODE 500 and any other unhandled codes
+                    Err(Error::invalid_server_response(response.body))
+                }
+            }
+        }
     }
 
     pub(crate) async fn query_ws(&self, query: &GraphQLQuery) -> ClientResult<Value> {
