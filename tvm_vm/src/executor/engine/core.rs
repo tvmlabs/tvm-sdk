@@ -426,12 +426,12 @@ impl Engine {
 
     pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
-        println!("{}", std::env::current_dir()?.display());
+        log::debug!("{}", std::env::current_dir()?.display());
         for &b in wasm_hash.as_slice() {
             write!(&mut s, "{:02x}", b)?;
         }
         let filename = format!("{}/{}", self.wasm_binary_root_path, s);
-        println!("Getting file {:?}", filename);
+        log::debug!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
         Ok(std::fs::read(filename)?)
     }
