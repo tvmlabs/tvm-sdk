@@ -16,6 +16,7 @@ use serde_json::json;
 use tvm_block::Account;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
+use tvm_client::account;
 use tvm_client::error::ClientError;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::ParamsOfSubscribeCollection;
@@ -58,6 +59,15 @@ async fn query_accounts(
         println!("Processing...");
     }
 
+    // check if filter contains "boc" field and if so, remove it
+    // This algoritm works correctly only if the "id" field is present in the query
+    let mut fields = fields.to_string();
+    assert!(fields.contains("id"), "The 'id' field must be present in the query fields");
+    let boc_requested = fields.contains("boc");
+    if boc_requested {
+        fields = fields.replace("boc", "");
+    }
+
     let mut res = vec![];
     let mut it = 0;
     loop {
@@ -78,7 +88,7 @@ async fn query_accounts(
             ParamsOfQueryCollection {
                 collection: "accounts".to_owned(),
                 filter: Some(filter),
-                result: fields.to_string(),
+                result: fields.clone(),
                 limit: Some(cnt as u32),
                 ..Default::default()
             },
@@ -87,6 +97,29 @@ async fn query_accounts(
         .map_err(|e| format!("failed to query account info: {}", e))?;
         res.append(query_result.result.as_mut());
     }
+    // Enrich the result with the BOC of the account
+    if boc_requested {
+        let client = crate::helpers::create_client_spec(config)?;
+        for elem in &mut res {
+            let address = elem["id"]
+                .as_str()
+                .ok_or("Failed to parse address in the query result".to_owned())?
+                .to_owned();
+            println!("Fetching account BOC for address {}...", address);
+
+            if let Some(obj) = elem.as_object_mut() {
+                let params = account::ParamsOfGetAccount { address };
+                let account = account::get_account(client.clone(), params)
+                    .await
+                    .map_err(|e| format!("failed to get account: {e}"))?;
+
+                obj.insert("boc".to_string(), json!(account.boc));
+            } else {
+                return Err("Failed to parse query result".to_owned());
+            }
+        }
+    }
+
     Ok(res)
 }
 
@@ -123,6 +156,7 @@ pub async fn get_account(
         for acc in accounts.iter() {
             let address = acc["id"].as_str().unwrap_or("Undefined").to_owned();
             found_addresses.push(address.clone());
+
             let acc_type = acc["acc_type_name"].as_str().unwrap_or("Undefined").to_owned();
             if acc_type != "NonExist" {
                 let bal = acc["balance"].as_str();
@@ -192,10 +226,13 @@ pub async fn get_account(
                         None,
                     );
                 }
+
                 let boc =
                     acc["boc"].as_str().ok_or("failed to get boc of the account".to_owned())?;
+
                 let account = Account::construct_from_base64(boc)
                     .map_err(|e| format!("failed to load account from the boc: {}", e))?;
+
                 let dapp_id = acc["dapp_id"].as_str().unwrap_or("None").to_owned();
                 let ecc_balance = account
                     .balance()

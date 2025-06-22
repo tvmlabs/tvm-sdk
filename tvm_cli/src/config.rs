@@ -82,6 +82,10 @@ fn default_config() -> Config {
 pub struct Config {
     #[serde(default = "default_url")]
     pub url: String,
+    #[serde(default = "default_url")]
+    pub rest_api_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rest_api_token: Option<String>,
     #[serde(default = "default_wc")]
     pub wc: i32,
     pub addr: Option<String>,
@@ -147,6 +151,8 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             url: default_url(),
+            rest_api_url: default_url(),
+            rest_api_token: None,
             wc: default_wc(),
             addr: None,
             method: None,
@@ -191,6 +197,8 @@ impl Config {
         let endpoints = FullConfig::default_map()[&url].clone();
         Config {
             url,
+            rest_api_url: default_url(),
+            rest_api_token: None,
             wc: default_wc(),
             addr: None,
             method: None,

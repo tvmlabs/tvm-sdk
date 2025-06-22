@@ -38,6 +38,7 @@ use tvm_client::abi::DeploySet;
 use tvm_client::abi::ParamsOfDecodeMessageBody;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
+use tvm_client::account;
 use tvm_client::crypto::CryptoConfig;
 use tvm_client::crypto::KeyPair;
 use tvm_client::crypto::MnemonicDictionary;
@@ -188,10 +189,24 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             wait_for_timeout: config.timeout,
             out_of_sync_threshold: Some(config.out_of_sync_threshold * 1000),
             access_key: config.access_key.clone(),
+            rest_api_token: None,
             ..Default::default()
         },
         ..Default::default()
     };
+    let cli =
+        ClientContext::new(cli_conf).map_err(|e| format!("failed to create tonclient: {}", e))?;
+    Ok(Arc::new(cli))
+}
+
+pub fn create_client_spec(config: &Config) -> Result<TonClient, String> {
+    let mut cli_conf = ClientConfig::default();
+    cli_conf.network = NetworkConfig {
+        endpoints: Some(vec![config.rest_api_url.clone()]),
+        rest_api_token: config.rest_api_token.clone(),
+        ..Default::default()
+    };
+
     let cli =
         ClientContext::new(cli_conf).map_err(|e| format!("failed to create tonclient: {}", e))?;
     Ok(Arc::new(cli))
@@ -295,6 +310,15 @@ pub async fn query_account_field(
     address: &str,
     field: &str,
 ) -> Result<String, String> {
+    if field == "boc" {
+        println!("Fetching account BOC for address {}...", address);
+        let params = account::ParamsOfGetAccount { address: address.to_owned() };
+        let account = account::get_account(ton, params)
+            .await
+            .map_err(|e| format!("failed to get account: {e}"))?;
+        return Ok(account.boc);
+    }
+
     let accounts = query_with_limit(
         ton.clone(),
         "accounts",
