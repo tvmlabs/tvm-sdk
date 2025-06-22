@@ -36,7 +36,7 @@ pub const ACTION_COPYLEFT: u32 = 0x24486f7a;
 pub const ACTION_MINTECC: u32 = 0xc2bc6dd8;
 pub const ACTION_CNVRTSHELLQ: u32 = 0x90d8ae28;
 pub const ACTION_MINT_SHELL_TOKEN: u32 = 0xcb9b9a2f;
-pub const ACTION_MINT_SHELLQ_TOKEN: u32 = 0x044a733e;
+pub const ACTION_MINT_SHELLQ_TOKEN: u32 = 0x144a733e;
 pub const ACTION_SEND_TO_DAPP_CONFIG: u32 = 0xe6eb9feb;
 pub const ACTION_BURNECC: u32 = 0x130efdee;
 
