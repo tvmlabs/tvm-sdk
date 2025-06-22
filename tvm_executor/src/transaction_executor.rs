@@ -1983,6 +1983,10 @@ fn action_type(action: &OutAction) -> String {
         OutAction::SetCode { new_code: _ } => "SetCode".to_string(),
         OutAction::ReserveCurrency { mode: _, value: _ } => "ReserveCurrency".to_string(),
         OutAction::ChangeLibrary { mode: _, code: _, hash: _ } => "ChangeLibrary".to_string(),
+        OutAction::MintShellToken { value: _} => "MintShellToken".to_string(),
+        OutAction::MintShellQToken { value: _} => "MintShellQToken".to_string(),
+        OutAction::SendToDappConfigToken { value: _} => "SendToDappConfigToken".to_string(),
+        OutAction::ExchangeShell { value: _} => "ExchangeShell".to_string(),
         _ => "Unknown".to_string(),
     }
 }
