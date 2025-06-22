@@ -374,7 +374,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         is_special,
                         params.available_credit,
                         minted_shell,
-                        need_to_burn.as_u64_quiet(),
+                        need_to_burn,
                         message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
@@ -429,15 +429,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 true
             }
         };
-        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_balance, need_to_burn);
-        if acc_balance.grams >= need_to_burn {
-            acc_balance.grams -= need_to_burn;
-        } else {
-            description.aborted = true;
-            out_msgs = Vec::new();
-            copyleft = None;
-            acc_balance.grams = Grams::zero();
-        }
         // log::debug!(target: "executor", "Desciption.aborted {}",
         // description.aborted); if description.aborted && is_ext_msg {
         // log::debug!(target: "executor", "restore balance {} => {}",

@@ -684,7 +684,7 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut i128,
-        need_to_burn: u64,
+        need_to_burn: Grams,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -719,10 +719,10 @@ pub trait TransactionExecutor {
         is_special: bool,
         available_credit: i128,
         minted_shell: &mut i128,
-        need_to_burn: u64,
+        need_to_burn: Grams,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
-        let mut need_to_reserve = need_to_burn.clone();
+        let mut need_to_reserve = need_to_burn.as_u64_quiet().clone();
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
@@ -1081,6 +1081,15 @@ pub trait TransactionExecutor {
         *acc = acc_copy;
         if let Some(new_data) = new_data {
             acc.set_data(new_data);
+        }
+        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_balance, need_to_burn);
+        if acc_balance.grams >= need_to_burn {
+            acc_balance.grams -= need_to_burn;
+        } else {
+            acc_balance.grams = Grams::zero();
+            if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, 0, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+            }
         }
         Ok(ActionPhaseResult::new(phase, out_msgs, copyleft_reward))
     }
