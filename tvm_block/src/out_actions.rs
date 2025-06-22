@@ -335,6 +335,16 @@ impl Deserializable for OutAction {
                 value.read_from(cell)?;
                 *self = OutAction::new_mint_shell(value);
             }
+            ACTION_MINT_SHELLQ_TOKEN => {
+                let mut value = u64::default();
+                value.read_from(cell)?;
+                *self = OutAction::new_mint_shellq(value);
+            }
+            ACTION_SEND_TO_DAPP_CONFIG => {
+                let mut value = u64::default();
+                value.read_from(cell)?;
+                *self = OutAction::send_to_dapp_config(value);
+            }
             ACTION_COPYLEFT => {
                 let license = cell.get_next_byte()?;
                 let mut address = AccountId::default();
