@@ -1,7 +1,13 @@
 
+//#![no_std]
+#[allow(warnings)]
 mod bindings;
 
 mod tls_session;
+
+//pub mod format;
+
+use bindings::exports::docs::tls_check::tls_check_interface::Guest;
 
 struct Component;
 
