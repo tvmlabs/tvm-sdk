@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{self, BufRead, Read};
+//use std::io::{self, BufRead, Read};
 //use std::path::Path;
 use std::error::Error;
 
@@ -751,7 +751,7 @@ fn base64_decode(data: &mut Vec<u8>, len: &mut usize) {
     *len = write;
 }
 
-
+/*
 fn read_key(filename: &str, key: &mut [u8; 32]) -> Result<(), Box<dyn Error>> {
     let file = File::open(filename)?;
     let reader = io::BufReader::new(file);
@@ -785,7 +785,7 @@ fn read_key(filename: &str, key: &mut [u8; 32]) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
-}
+}*/
 /*
 #[test]
 fn cc_test_with_files(){

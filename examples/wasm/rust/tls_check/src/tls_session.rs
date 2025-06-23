@@ -14,9 +14,9 @@ use format::*;
 use hkdf_sha256::*;
 use certs::check_certs;
 
-use std::io::{self, Write, Read};
+/*use std::io::{self, Write, Read};
 use std::net::TcpStream;
-use std::ops::Mul;
+use std::ops::Mul;*/
 
 //use base64::decode;
 use base64url::decode;
