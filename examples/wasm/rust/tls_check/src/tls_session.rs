@@ -4,9 +4,13 @@ mod certs;
 mod hkdf_sha256;
 mod x25519;
 
+
+mod format;
+//use crate::format::*;
+
 use x25519::curve25519_donna;
 use format::*;
-use network::send;
+//use network::send;
 use hkdf_sha256::*;
 use certs::check_certs;
 
@@ -19,7 +23,7 @@ use base64url::decode;
 use hex::FromHex;
 
 use rand::{RngCore, thread_rng};
-use crate::{network, format}; // Для генерации случайных данных
+//use crate::{network, format}; // Для генерации случайных данных
 
 pub fn get_root_cert_from_online() -> [u8;1382] {
     certs::ROOT_CERT_FROM_ONLINE
@@ -134,7 +138,7 @@ pub fn derive_secret(secret: &[u8;32], label: &str, transcript_messages: &[u8]) 
     secret.try_into().unwrap()
 
 }
-
+/*
 pub struct Session {
     domain_name:        String,
     conn:               TcpStream,
@@ -641,7 +645,7 @@ impl Session {
         return true;
     }
 
-}
+}*/
 
 pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let kid = &raw[..20];
