@@ -24,6 +24,7 @@ use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
+use tvm_block::VarUInteger32;
 use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::Serializable;
@@ -133,6 +134,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
+            if h.is_exchange {
+                if let Ok(Some(mut value)) = msg_balance.get_other(2) {
+                    if value > VarUInteger32::from(u64::MAX) {
+                        value = VarUInteger32::from(u64::MAX);
+                    }
+                    msg_balance.grams += Grams::from(value.value().iter_u64_digits().collect::<Vec<u64>>()[0]);
+                    msg_balance.set_other(2, 0)?;
+                }
+            } 
             if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
                     && account
@@ -188,16 +198,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 
         // first check if contract can pay for importing external message
         if is_ext_msg && !is_special {
-            // extranal message comes serialized
-            let in_fwd_fee = match params.is_same_thread_id {
-                true => Grams::zero(),
-                false => self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?,
-            };
-
-            let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
-            need_to_burn += credit;
-            acc_balance.grams += credit;
-
+            let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
                 fail!(ExecutorError::NoFundsToImportMsg)
@@ -228,8 +229,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             &mut tr,
             is_masterchain,
             is_special,
-            params.available_credit,
-            minted_shell,
             is_due,
         ) {
             Ok(storage_ph) => {
@@ -429,18 +428,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 true
             }
         };
-        // log::debug!(target: "executor", "Desciption.aborted {}",
-        // description.aborted); if description.aborted && is_ext_msg {
-        // log::debug!(target: "executor", "restore balance {} => {}",
-        // acc_balance.grams, original_acc_balance.grams); acc_balance =
-        // original_acc_balance.clone(); if !is_special {
-        // let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
-        // log::debug!(target: "executor", "import message fee: {}, acc_balance: {}",
-        // in_fwd_fee, acc_balance.grams); if !acc_balance.grams.sub(&
-        // in_fwd_fee)? { acc_balance.grams = Grams::zero();
-        // }
-        // }
-        // }
+        
         if description.aborted && !is_ext_msg && bounce {
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)

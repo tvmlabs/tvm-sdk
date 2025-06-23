@@ -137,6 +137,7 @@ pub enum OutAction {
 pub const SENDMSG_ORDINARY: u8 = 0;
 pub const SENDMSG_PAY_FEE_SEPARATELY: u8 = 1;
 pub const SENDMSG_IGNORE_ERROR: u8 = 2;
+pub const SENDMSG_EXCHANGE_ECC: u8 = 16;
 pub const SENDMSG_DELETE_IF_EMPTY: u8 = 32;
 pub const SENDMSG_REMAINING_MSG_BALANCE: u8 = 64;
 pub const SENDMSG_ALL_BALANCE: u8 = 128;

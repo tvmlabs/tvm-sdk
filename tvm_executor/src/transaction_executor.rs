@@ -44,6 +44,7 @@ use tvm_block::OutActions;
 use tvm_block::RESERVE_ALL_BUT;
 use tvm_block::SENDMSG_ALL_BALANCE;
 use tvm_block::SENDMSG_DELETE_IF_EMPTY;
+use tvm_block::SENDMSG_EXCHANGE_ECC;
 use tvm_block::SENDMSG_IGNORE_ERROR;
 use tvm_block::SENDMSG_PAY_FEE_SEPARATELY;
 use tvm_block::SENDMSG_REMAINING_MSG_BALANCE;
@@ -94,6 +95,7 @@ const RESULT_CODE_INCORRECT_SRC_ADDRESS: i32 = 35;
 const RESULT_CODE_INCORRECT_DST_ADDRESS: i32 = 36;
 const RESULT_CODE_NOT_ENOUGH_GRAMS: i32 = 37;
 const RESULT_CODE_NOT_ENOUGH_EXTRA: i32 = 38;
+const RESULT_CODE_TOO_BIG_EXTRA: i32 = 39;
 const RESULT_CODE_INVALID_BALANCE: i32 = 40;
 const RESULT_CODE_BAD_ACCOUNT_STATE: i32 = 41;
 const RESULT_CODE_ANYCAST: i32 = 50;
@@ -132,7 +134,6 @@ pub struct ExecuteParams {
     pub block_collation_was_finished: Arc<Mutex<bool>>,
     pub dapp_id: Option<UInt256>,
     pub available_credit: i128,
-    pub is_same_thread_id: bool,
     pub termination_deadline: Option<Instant>,
     pub execution_timeout: Option<Duration>,
 }
@@ -176,7 +177,6 @@ impl Default for ExecuteParams {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             dapp_id: None,
             available_credit: 0,
-            is_same_thread_id: false,
             termination_deadline: None,
             execution_timeout: None,
         }
@@ -263,8 +263,6 @@ pub trait TransactionExecutor {
         tr: &mut Transaction,
         is_masterchain: bool,
         is_special: bool,
-        available_credit: i128,
-        minted_shell: &mut i128,
         is_due: bool,
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
@@ -295,38 +293,6 @@ pub trait TransactionExecutor {
         }
         if tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME && !is_due {
             fee = Grams::zero();
-        }
-        if acc_balance.grams < fee {
-            let mut diff = fee.clone();
-            diff.sub(&acc_balance.grams)?; //Calculate number of Grams that need to be added to the balance to cover the Storage Fee.
-            if available_credit == INFINITY_CREDIT {
-                acc_balance.grams.add(&diff)?;
-                *minted_shell += diff.as_u128() as i128;
-                diff = Grams::zero();
-            } else {
-                if Grams::from(available_credit as u64) > diff {
-                    acc_balance.grams.add(&diff)?;
-                    *minted_shell += diff.as_u128() as i128;
-                    diff = Grams::zero();
-                } else {
-                    acc_balance.grams.add(&Grams::from(available_credit as u64))?;
-                    *minted_shell += available_credit as i128;
-                    diff.sub(&Grams::from(available_credit as u64))?;
-                }
-            }
-            if diff > 0 {
-                let ecc_balance = match acc_balance.other.get(&ECC_SHELL_KEY) {
-                    Ok(Some(data)) => data,
-                    Ok(None) => VarUInteger32::default(),
-                    Err(_) => VarUInteger32::default(),
-                };
-                if ecc_balance >= VarUInteger32::from(diff.as_u128()) {
-                    let mut sub_value = CurrencyCollection::new();
-                    sub_value.other.set(&ECC_SHELL_KEY, &VarUInteger32::from(diff.as_u128()))?;
-                    acc_balance.grams.add(&diff)?;
-                    acc_balance.sub(&sub_value)?;
-                }
-            }
         }
         if acc_balance.grams >= fee {
             log::debug!(target: "executor", "acc_balance: {}, storage fee: {}", acc_balance.grams, fee);
@@ -467,7 +433,7 @@ pub trait TransactionExecutor {
         log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
         log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
         let is_ordinary = self.ordinary_transaction();
-        if acc_balance.grams.is_zero() && !params.is_same_thread_id {
+        if acc_balance.grams.is_zero()  {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
@@ -480,7 +446,7 @@ pub trait TransactionExecutor {
             is_ordinary,
             gas_config,
         );
-        if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0 && !params.is_same_thread_id {
+        if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0  {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
@@ -513,10 +479,7 @@ pub trait TransactionExecutor {
             } else {
                 vm_phase.exit_arg = None;
                 vm_phase.success = false;
-                vm_phase.gas_fees = match params.is_same_thread_id {
-                    false => Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?,
-                    true => Grams::zero(),
-                };
+                vm_phase.gas_fees = Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?;
 
                 if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
                     log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
@@ -619,10 +582,7 @@ pub trait TransactionExecutor {
         } else {
             // credit == 0 means contract accepted
             let gas_fees = if is_special { 0 } else { gas_config.calc_gas_fee(used) };
-            vm_phase.gas_fees = match params.is_same_thread_id {
-                false => gas_fees.try_into()?,
-                true => Grams::zero(),
-            };
+            vm_phase.gas_fees = gas_fees.try_into()?;
         };
 
         log::debug!(
@@ -1619,6 +1579,21 @@ fn outmsg_action_handler(
         total_fwd_fees = fwd_fee + int_header.ihr_fee;
 
         let fwd_remain_fee = fwd_fee - fwd_mine_fee;
+        
+        if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
+            int_header.set_exchange(true);
+            if let Ok(Some(data)) = int_header.value.get_other(2) {
+                if data > VarUInteger32::from(u64::MAX) {
+                    log::warn!(
+                        target: "executor",
+                        "msg balance {} is too big for exchange",
+                        int_header.value.grams
+                    );
+                    return Err(skip.map(|_| RESULT_CODE_TOO_BIG_EXTRA).unwrap_or_default());
+                }
+            }
+        }
+
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
             // send all remaining account balance
             result_value = acc_balance.clone();
