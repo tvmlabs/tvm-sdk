@@ -189,7 +189,6 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             wait_for_timeout: config.timeout,
             out_of_sync_threshold: Some(config.out_of_sync_threshold * 1000),
             access_key: config.access_key.clone(),
-            rest_api_token: None,
             ..Default::default()
         },
         ..Default::default()
@@ -199,7 +198,7 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
     Ok(Arc::new(cli))
 }
 
-pub fn create_client_spec(config: &Config) -> Result<TonClient, String> {
+pub fn create_rest_api_client(config: &Config) -> Result<TonClient, String> {
     let mut cli_conf = ClientConfig::default();
     cli_conf.network = NetworkConfig {
         endpoints: Some(vec![config.rest_api_url.clone()]),
