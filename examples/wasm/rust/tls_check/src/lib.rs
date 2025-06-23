@@ -7,7 +7,7 @@ mod tls_session;
 
 //pub mod format;
 
-use bindings::exports::docs::tls_check::tls_check_interface::Guest;
+use bindings::exports::docs::tlschecker::tls_check_interface::Guest;
 
 struct Component;
 

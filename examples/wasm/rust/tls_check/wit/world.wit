@@ -1,4 +1,4 @@
-package docs:tls-check@0.1.0;
+package docs:tlschecker@0.1.0;
 
 interface tls-check-interface {
     tlscheck: func(kwargs: list<u8>) -> list<u8>;

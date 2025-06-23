@@ -5,7 +5,7 @@
 #[allow(dead_code, clippy::all)]
 pub mod exports {
     pub mod docs {
-        pub mod tls_check {
+        pub mod tlschecker {
             #[allow(dead_code, async_fn_in_trait, unused_imports, clippy::all)]
             pub mod tls_check_interface {
                 #[used]
@@ -47,22 +47,22 @@ pub mod exports {
                     fn tlscheck(kwargs: _rt::Vec<u8>) -> _rt::Vec<u8>;
                 }
                 #[doc(hidden)]
-                macro_rules! __export_docs_tls_check_tls_check_interface_0_1_0_cabi {
+                macro_rules! __export_docs_tlschecker_tls_check_interface_0_1_0_cabi {
                     ($ty:ident with_types_in $($path_to_types:tt)*) => {
                         const _ : () = { #[unsafe (export_name =
-                        "docs:tls-check/tls-check-interface@0.1.0#tlscheck")] unsafe
+                        "docs:tlschecker/tls-check-interface@0.1.0#tlscheck")] unsafe
                         extern "C" fn export_tlscheck(arg0 : * mut u8, arg1 : usize,) ->
                         * mut u8 { unsafe { $($path_to_types)*::
                         _export_tlscheck_cabi::<$ty > (arg0, arg1) } } #[unsafe
                         (export_name =
-                        "cabi_post_docs:tls-check/tls-check-interface@0.1.0#tlscheck")]
+                        "cabi_post_docs:tlschecker/tls-check-interface@0.1.0#tlscheck")]
                         unsafe extern "C" fn _post_return_tlscheck(arg0 : * mut u8,) {
                         unsafe { $($path_to_types)*:: __post_return_tlscheck::<$ty >
                         (arg0) } } };
                     };
                 }
                 #[doc(hidden)]
-                pub(crate) use __export_docs_tls_check_tls_check_interface_0_1_0_cabi;
+                pub(crate) use __export_docs_tlschecker_tls_check_interface_0_1_0_cabi;
                 #[cfg_attr(target_pointer_width = "64", repr(align(8)))]
                 #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
                 struct _RetArea(
@@ -120,25 +120,25 @@ macro_rules! __export_checker_impl {
     };
     ($ty:ident with_types_in $($path_to_types_root:tt)*) => {
         $($path_to_types_root)*::
-        exports::docs::tls_check::tls_check_interface::__export_docs_tls_check_tls_check_interface_0_1_0_cabi!($ty
+        exports::docs::tlschecker::tls_check_interface::__export_docs_tlschecker_tls_check_interface_0_1_0_cabi!($ty
         with_types_in $($path_to_types_root)*::
-        exports::docs::tls_check::tls_check_interface);
+        exports::docs::tlschecker::tls_check_interface);
     };
 }
 #[doc(inline)]
 pub(crate) use __export_checker_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[unsafe(
-    link_section = "component-type:wit-bindgen:0.41.0:docs:tls-check@0.1.0:checker:encoded world"
+    link_section = "component-type:wit-bindgen:0.41.0:docs:tlschecker@0.1.0:checker:encoded world"
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 241] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07t\x01A\x02\x01A\x02\x01\
-B\x03\x01p}\x01@\x01\x06kwargs\0\0\0\x04\0\x08tlscheck\x01\x01\x04\0(docs:tls-ch\
-eck/tls-check-interface@0.1.0\x05\0\x04\0\x1cdocs:tls-check/checker@0.1.0\x04\0\x0b\
-\x0d\x01\0\x07checker\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-com\
-ponent\x070.227.1\x10wit-bindgen-rust\x060.41.0";
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 243] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07v\x01A\x02\x01A\x02\x01\
+B\x03\x01p}\x01@\x01\x06kwargs\0\0\0\x04\0\x08tlscheck\x01\x01\x04\0)docs:tlsche\
+cker/tls-check-interface@0.1.0\x05\0\x04\0\x1ddocs:tlschecker/checker@0.1.0\x04\0\
+\x0b\x0d\x01\0\x07checker\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit\
+-component\x070.227.1\x10wit-bindgen-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {
