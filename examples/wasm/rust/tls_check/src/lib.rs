@@ -21,3 +21,5 @@ impl Guest for Component {
         //[kwargs[0] + kwargs[1]].to_vec()
     }
 }
+
+bindings::export!(Component with_types_in bindings);
