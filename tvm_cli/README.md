@@ -118,7 +118,8 @@ tvm-cli <subcommand> -h
       - [11.8. Render UML sequence diagram](#118-render-uml-sequence-diagram)
       - [Caveat](#caveat)
     - [12. Alias functionality](#12-alias-functionality)
-    - [13. Sold](#13-sold)
+    - [13. Evercloud authentication](#13-evercloud-authentication)
+    - [14. Sold](#14-sold)
 
 ## 1. Installation
 
