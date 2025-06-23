@@ -1,7 +1,7 @@
 package docs:tls-check@0.1.0;
 
 interface tls-check-interface {
-    add: func(kwargs: list<u8>) -> list<u8>;
+    tlscheck: func(kwargs: list<u8>) -> list<u8>;
 }
 
 world checker {
