@@ -189,23 +189,11 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             wait_for_timeout: config.timeout,
             out_of_sync_threshold: Some(config.out_of_sync_threshold * 1000),
             access_key: config.access_key.clone(),
+            api_token: config.api_token.clone(),
             ..Default::default()
         },
         ..Default::default()
     };
-    let cli =
-        ClientContext::new(cli_conf).map_err(|e| format!("failed to create tonclient: {}", e))?;
-    Ok(Arc::new(cli))
-}
-
-pub fn create_rest_api_client(config: &Config) -> Result<TonClient, String> {
-    let mut cli_conf = ClientConfig::default();
-    cli_conf.network = NetworkConfig {
-        endpoints: Some(vec![config.rest_api_url.clone()]),
-        rest_api_token: config.rest_api_token.clone(),
-        ..Default::default()
-    };
-
     let cli =
         ClientContext::new(cli_conf).map_err(|e| format!("failed to create tonclient: {}", e))?;
     Ok(Arc::new(cli))
@@ -309,33 +297,33 @@ pub async fn query_account_field(
     address: &str,
     field: &str,
 ) -> Result<String, String> {
+    println!("Fetching account BOC for address {}...", address);
+    let params = account::ParamsOfGetAccount { address: address.to_owned() };
+    let result_of_get_acc = account::get_account(ton, params)
+        .await
+        .map_err(|e| format!("failed to get account: {e}"))?;
+
     if field == "boc" {
-        println!("Fetching account BOC for address {}...", address);
-        let params = account::ParamsOfGetAccount { address: address.to_owned() };
-        let account = account::get_account(ton, params)
-            .await
-            .map_err(|e| format!("failed to get account: {e}"))?;
-        return Ok(account.boc);
+        return Ok(result_of_get_acc.boc);
     }
 
-    let accounts = query_with_limit(
-        ton.clone(),
-        "accounts",
-        json!({ "id": { "eq": address } }),
-        field,
-        None,
-        Some(1),
-    )
-    .await
-    .map_err(|e| format!("failed to query account data: {}", e))?;
-    if accounts.is_empty() {
-        return Err(format!("account with address {} not found", address));
+    if field != "data" {
+        return Err("Only boc and data field are supported".to_string());
     }
-    let data = accounts[0][field].as_str();
-    if data.is_none() {
-        return Err(format!("account doesn't contain {}", field));
+
+    let account = Account::construct_from_base64(&result_of_get_acc.boc)
+        .map_err(|e| format!("failed to construct account from boc: {e}"))?;
+
+    let state_init = account.state_init();
+
+    if state_init.is_none() {
+        return Err(format!("account doesn't contain state_init"));
     }
-    Ok(data.unwrap().to_string())
+    let data = state_init.unwrap().clone().data;
+    match data {
+        Some(data) => Ok(data.to_string()),
+        None => Err(format!("State init doesn't contain field data")),
+    }
 }
 
 pub async fn decode_msg_body(

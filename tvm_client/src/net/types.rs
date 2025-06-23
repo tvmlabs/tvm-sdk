@@ -319,7 +319,7 @@ pub struct NetworkConfig {
     /// Access key to GraphQL API (Project secret)
     pub access_key: Option<String>,
     /// Access token to the Node REST API
-    pub rest_api_token: Option<String>,
+    pub api_token: Option<String>,
 }
 
 impl NetworkConfig {
@@ -338,7 +338,7 @@ impl NetworkConfig {
     }
 
     pub fn get_rest_api_header(&self) -> Option<(String, String)> {
-        if let Some(token) = &self.rest_api_token {
+        if let Some(token) = &self.api_token {
             Some(("Authorization".into(), format!("Bearer {token}")))
         } else {
             None
@@ -366,7 +366,7 @@ impl Default for NetworkConfig {
             next_remp_status_timeout: default_next_remp_status_timeout(),
             signature_id: None,
             access_key: None,
-            rest_api_token: None,
+            api_token: None,
         }
     }
 }

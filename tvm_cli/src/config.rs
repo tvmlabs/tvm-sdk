@@ -82,8 +82,6 @@ fn default_config() -> Config {
 pub struct Config {
     #[serde(default = "default_url")]
     pub url: String,
-    #[serde(default = "default_url")]
-    pub rest_api_url: String,
     #[serde(default = "default_wc")]
     pub wc: i32,
     pub addr: Option<String>,
@@ -121,7 +119,7 @@ pub struct Config {
     // SDK authentication parameters
     pub project_id: Option<String>,
     pub access_key: Option<String>,
-    pub rest_api_token: Option<String>,
+    pub api_token: Option<String>,
     ////////////////////////////////
     #[serde(default = "default_endpoints")]
     pub endpoints: Vec<String>,
@@ -150,8 +148,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             url: default_url(),
-            rest_api_url: default_url(),
-            rest_api_token: None,
+            api_token: None,
             wc: default_wc(),
             addr: None,
             method: None,
@@ -196,8 +193,7 @@ impl Config {
         let endpoints = FullConfig::default_map()[&url].clone();
         Config {
             url,
-            rest_api_url: default_url(),
-            rest_api_token: None,
+            api_token: None,
             wc: default_wc(),
             addr: None,
             method: None,
@@ -381,11 +377,8 @@ pub fn clear_config(
         config.endpoints = FullConfig::default_map()[&url].clone();
         config.url = url;
     }
-    if matches.is_present("REST_API_URL") {
-        config.rest_api_url = default_url();
-    }
-    if matches.is_present("REST_API_TOKEN") {
-        config.rest_api_token = None;
+    if matches.is_present("API_TOKEN") {
+        config.api_token = None;
     }
     if matches.is_present("ADDR") {
         config.addr = None;
@@ -589,11 +582,8 @@ pub fn set_config(
             );
         }
     }
-    if let Some(s) = matches.value_of("REST_API_URL") {
-        config.rest_api_url = s.to_string();
-    }
-    if let Some(s) = matches.value_of("REST_API_TOKEN") {
-        config.rest_api_token = Some(s.to_string());
+    if let Some(s) = matches.value_of("API_TOKEN") {
+        config.api_token = Some(s.to_string());
     }
     full_config.to_file(&full_config.path)?;
     if !(full_config.config.is_json || is_json) {
