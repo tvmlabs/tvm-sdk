@@ -134,15 +134,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
-            if h.is_exchange {
-                if let Ok(Some(mut value)) = msg_balance.get_other(2) {
-                    if value > VarUInteger32::from(u64::MAX) {
-                        value = VarUInteger32::from(u64::MAX);
-                    }
-                    msg_balance.grams += Grams::from(value.value().iter_u64_digits().collect::<Vec<u64>>()[0]);
-                    msg_balance.set_other(2, 0)?;
-                }
-            } 
             if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
                     && account
@@ -162,6 +153,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 need_to_burn = msg_balance.grams;
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
+            if h.is_exchange {
+                if let Ok(Some(mut value)) = msg_balance.get_other(2) {
+                    if value > VarUInteger32::from(u64::MAX) {
+                        value = VarUInteger32::from(u64::MAX);
+                    }
+                    msg_balance.grams += Grams::from(value.value().iter_u64_digits().collect::<Vec<u64>>()[0]);
+                    msg_balance.set_other(2, 0)?;
+                }
+            } 
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
         if !ihr_delivered {
