@@ -156,7 +156,6 @@ pub async fn get_account(
         for acc in accounts.iter() {
             let address = acc["id"].as_str().unwrap_or("Undefined").to_owned();
             found_addresses.push(address.clone());
-
             let acc_type = acc["acc_type_name"].as_str().unwrap_or("Undefined").to_owned();
             if acc_type != "NonExist" {
                 let bal = acc["balance"].as_str();
@@ -226,13 +225,10 @@ pub async fn get_account(
                         None,
                     );
                 }
-
                 let boc =
                     acc["boc"].as_str().ok_or("failed to get boc of the account".to_owned())?;
-
                 let account = Account::construct_from_base64(boc)
                     .map_err(|e| format!("failed to load account from the boc: {}", e))?;
-
                 let dapp_id = acc["dapp_id"].as_str().unwrap_or("None").to_owned();
                 let ecc_balance = account
                     .balance()

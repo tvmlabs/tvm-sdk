@@ -318,7 +318,6 @@ pub struct NetworkConfig {
 
     /// Access key to GraphQL API (Project secret)
     pub access_key: Option<String>,
-
     /// Access token to the Node REST API
     pub rest_api_token: Option<String>,
 }
