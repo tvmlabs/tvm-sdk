@@ -1,5 +1,5 @@
 use std::io::{self, Read};
-use std::net::TcpStream;
+//use std::net::TcpStream;
 
 use chrono::{DateTime, FixedOffset, TimeZone};
 
@@ -236,7 +236,7 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
     hello
 }
 
-pub fn read_record(reader: &mut TcpStream) -> Record { // pub fn read_record<R: Read>(reader: &mut R) -> Record {
+/*pub fn read_record(reader: &mut TcpStream) -> Record { // pub fn read_record<R: Read>(reader: &mut R) -> Record {
     let mut buf = [0u8; 5];
     reader.read_exact(&mut buf).expect("Failed to read 5 bytes");
 
@@ -249,7 +249,7 @@ pub fn read_record(reader: &mut TcpStream) -> Record { // pub fn read_record<R: 
 
     Record{0:record}
 }
-
+*/
 
 //pub fn read_record<R: Read>(reader: &mut R) -> Record {
     //let mut buf = vec![0; 5];
