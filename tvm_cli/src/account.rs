@@ -99,7 +99,7 @@ async fn query_accounts(
     }
     // Enrich the result with the BOC of the account
     if boc_requested {
-        let client = crate::helpers::create_client_spec(config)?;
+        let client = crate::helpers::create_rest_api_client(config)?;
         for elem in &mut res {
             let address = elem["id"]
                 .as_str()
