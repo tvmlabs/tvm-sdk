@@ -51,7 +51,7 @@ async fn test_get_account() -> ClientResult<()> {
     let mut config = ClientConfig {
         network: NetworkConfig {
             endpoints: Some(vec![server.url("/")]),
-            rest_api_token: Some("secret".to_string()),
+            api_token: Some("my_secret_token".to_string()),
             ..Default::default()
         },
         ..Default::default()
@@ -84,7 +84,7 @@ async fn test_get_account() -> ClientResult<()> {
     mock_500.assert();
 
     // Request without authorization
-    config.network.rest_api_token = None;
+    config.network.api_token = None;
     let client = Arc::new(ClientContext::new(config).unwrap());
     let params = ParamsOfGetAccount { address: contract_addr.to_string() };
     let response: Result<ResultOfGetAccount, crate::error::ClientError> =
