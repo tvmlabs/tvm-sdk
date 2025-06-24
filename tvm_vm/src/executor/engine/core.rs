@@ -11,6 +11,7 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt::Write;
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -122,6 +123,8 @@ pub struct Engine {
     block_collation_was_finished: Arc<Mutex<bool>>,
     termination_deadline: Option<Instant>,
     execution_timeout: Option<Duration>,
+
+    wasm_binary_root_path: String,
     available_credit: i128
 }
 
@@ -283,6 +286,7 @@ impl Engine {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
             execution_timeout: None,
+            wasm_binary_root_path: "./config/wasm".to_owned(),
             available_credit: 0,
         }
     }
@@ -424,6 +428,22 @@ impl Engine {
 
     pub fn steps(&self) -> u32 {
         self.step
+    }
+
+    pub fn set_wasm_root_path(&mut self, wasm_binary_root_path: String) {
+        self.wasm_binary_root_path = wasm_binary_root_path;
+    }
+
+    pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
+        let mut s = String::with_capacity(wasm_hash.len() * 2);
+        log::debug!("{}", std::env::current_dir()?.display());
+        for &b in wasm_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        let filename = format!("{}/{}", self.wasm_binary_root_path, s);
+        log::debug!("Getting file {:?}", filename);
+        // TODO: Add some hash checking of the file
+        Ok(std::fs::read(filename)?)
     }
 
     fn is_trace_enabled(&self) -> bool {

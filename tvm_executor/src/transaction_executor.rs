@@ -135,6 +135,8 @@ pub struct ExecuteParams {
     pub available_credit: i128,
     pub termination_deadline: Option<Instant>,
     pub execution_timeout: Option<Duration>,
+    pub wasm_binary_root_path: String,
+    pub wasm_binary_hash_whitelist: String,
 }
 
 pub struct ActionPhaseResult {
@@ -178,6 +180,8 @@ impl Default for ExecuteParams {
             available_credit: 0,
             termination_deadline: None,
             execution_timeout: None,
+            wasm_binary_root_path: "./config/wasm".to_owned(),
+            wasm_binary_hash_whitelist: "".to_owned(),
         }
     }
 }
@@ -519,6 +523,7 @@ pub trait TransactionExecutor {
             params.vm_execution_is_block_related.clone(),
             params.block_collation_was_finished.clone(),
         )
+        .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_engine_available_credit(params.available_credit)
         .create();
 
