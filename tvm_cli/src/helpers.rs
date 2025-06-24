@@ -297,7 +297,6 @@ pub async fn query_account_field(
     address: &str,
     field: &str,
 ) -> Result<String, String> {
-    println!("Fetching account BOC for address {}...", address);
     let params = account::ParamsOfGetAccount { address: address.to_owned() };
     let result_of_get_acc = account::get_account(ton, params)
         .await

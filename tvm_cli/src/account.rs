@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 // Copyright 2018-2023 EverX.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
@@ -13,6 +14,7 @@ use std::sync::Arc;
 use serde_json::Value;
 use serde_json::json;
 use tvm_block::Account;
+use tvm_block::AccountStatus;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
 use tvm_client::account;
@@ -23,11 +25,15 @@ use tvm_client::net::ResultOfSubscription;
 use tvm_client::net::query_collection;
 use tvm_client::utils::ParamsOfCalcStorageFee;
 use tvm_client::utils::calc_storage_fee;
+use tvm_types::base64_decode;
 
 use crate::config::Config;
+use crate::decode::msg_printer::tree_of_cells_into_base64;
 use crate::decode::print_account_data;
 use crate::helpers::check_dir;
 use crate::helpers::create_client_verbose;
+use crate::helpers::json_account;
+use crate::helpers::print_account;
 use crate::helpers::query_account_field;
 
 const DEFAULT_PATH: &str = ".";
@@ -104,9 +110,8 @@ pub async fn get_account(
 
     let mut accounts = vec![];
     let client = crate::helpers::create_client(config)?;
-    for address in addresses {
-        println!("Fetching account BOC for address {}...", address);
-        let params = account::ParamsOfGetAccount { address };
+    for address in addresses.iter() {
+        let params = account::ParamsOfGetAccount { address: address.to_string() };
         let boc_base64 = account::get_account(client.clone(), params)
             .await
             .map_err(|e| format!("failed to get account: {e}"))?
@@ -119,163 +124,173 @@ pub async fn get_account(
     if !config.is_json {
         println!("Succeeded.");
     }
-    for account in accounts.iter() {
-        print_account_data(account, dumptvc, config, false).await?;
-    }
-
-    // let mut found_addresses = vec![];
-    // if !accounts.is_empty() {
-    //     let mut json_res = json!({});
-    //     for acc in accounts.iter() {
-    //         let address = acc["id"].as_str().unwrap_or("Undefined").to_owned();
-    //         found_addresses.push(address.clone());
-    //         let acc_type =
-    // acc["acc_type_name"].as_str().unwrap_or("Undefined").to_owned();
-    //         if acc_type != "NonExist" {
-    //             let bal = acc["balance"].as_str();
-    //             let balance = if bal.is_some() {
-    //                 let bal = bal.unwrap();
-    //                 if config.balance_in_vmshells {
-    //                     let bal = u64::from_str_radix(bal, 10)
-    //                         .map_err(|e| format!("failed to decode balance: {}",
-    // e))?;                     let int_bal = bal as f64 / 1e9;
-    //                     let frac_balance = (bal as f64 / 1e6 + 0.5) as u64 %
-    // 1000;                     let balance_str = format!("{}", int_bal as
-    // u64);                     format!(
-    //                         "{}.{}{}",
-    //                         balance_str
-    //                             .chars()
-    //                             .collect::<Vec<char>>()
-    //                             .rchunks(3)
-    //                             .map(|c| c.iter().collect::<String>())
-    //                             .rev()
-    //                             .collect::<Vec<String>>()
-    //                             .join(" "),
-    //                         frac_balance,
-    //                         if config.is_json { "" } else { " vmshell" }
-    //                     )
-    //                 } else {
-    //                     format!("{}{}", bal, if config.is_json { "" } else { "
-    // nanovmshell" })                 }
-    //             } else {
-    //                 "Undefined".to_owned()
-    //             };
-    //             let last_paid = format!(
-    //                 "{}",
-    //                 acc["last_paid"].as_u64().ok_or("failed to decode
-    // last_paid".to_owned())?             );
-    //             let last_trans_id =
-    // acc["last_trans_lt"].as_str().unwrap_or("Undefined").to_owned();
-    //             let data = acc["data"].as_str();
-    //             let data_boc = if data.is_some() {
-    //                 hex::encode(
-    //                     base64_decode(data.unwrap())
-    //                         .map_err(|e| format!("failed to decode account data:
-    // {}", e))?,                 )
-    //             } else {
-    //                 "null".to_owned()
-    //             };
-    //             let code_hash =
-    // acc["code_hash"].as_str().unwrap_or("null").to_owned();             if
-    // config.is_json {                 json_res = json_account(
-    //                     Some(acc_type),
-    //                     Some(address.clone()),
-    //                     Some(balance),
-    //                     Some(last_paid),
-    //                     Some(last_trans_id),
-    //                     Some(data_boc),
-    //                     Some(code_hash),
-    //                     None,
-    //                 );
-    //             } else {
-    //                 print_account(
-    //                     config,
-    //                     Some(acc_type),
-    //                     Some(address.clone()),
-    //                     Some(balance),
-    //                     Some(last_paid),
-    //                     Some(last_trans_id),
-    //                     Some(data_boc),
-    //                     Some(code_hash),
-    //                     None,
-    //                 );
-    //             }
-    //             let boc =
-    //                 acc["boc"].as_str().ok_or("failed to get boc of the
-    // account".to_owned())?;             let account =
-    // Account::construct_from_base64(boc)                 .map_err(|e|
-    // format!("failed to load account from the boc: {}", e))?;             let
-    // dapp_id = acc["dapp_id"].as_str().unwrap_or("None").to_owned();
-    //             let ecc_balance = account
-    //                 .balance()
-    //                 .map(|balance| {
-    //                     let mut mapping = BTreeMap::new();
-    //                     balance
-    //                         .other
-    //                         .iterate_with_keys(|k: u32, v| {
-    //                             mapping.insert(k, v.value().to_string());
-    //                             Ok(true)
-    //                         })
-    //                         .unwrap();
-    //                     json!(mapping)
-    //                 })
-    //                 .unwrap_or(serde_json::Value::Null);
-    //             if config.is_json {
-    //                 json_res["dapp_id"] = json!(dapp_id);
-    //                 json_res["ecc_balance"] = ecc_balance;
-    //             } else {
-    //                 println!("dapp_id:       {}", dapp_id);
-    //                 println!("ecc:           {}",
-    // serde_json::to_string(&ecc_balance).unwrap());             }
-    //         } else if config.is_json {
-    //             json_res = json_account(
-    //                 Some(acc_type),
-    //                 Some(address.clone()),
-    //                 None,
-    //                 None,
-    //                 None,
-    //                 None,
-    //                 None,
-    //                 None,
-    //             );
-    //         } else {
-    //             print_account(
-    //                 config,
-    //                 Some(acc_type),
-    //                 Some(address.clone()),
-    //                 None,
-    //                 None,
-    //                 None,
-    //                 None,
-    //                 None,
-    //                 None,
-    //             );
-    //         }
-    //         if !config.is_json {
-    //             println!();
-    //         }
-    //     }
-    //     for address in addresses.iter() {
-    //         if !found_addresses.contains(address) {
-    //             if config.is_json {
-    //                 json_res = json!({
-    //                    "address": address.clone(),
-    //                    "acc_type": "NonExist"
-    //                 });
-    //             } else {
-    //                 println!("{} not found", address);
-    //                 println!();
-    //             }
-    //         }
-    //     }
-    //     if config.is_json {
-    //         println!("{:#}", json_res);
-    //     }
-    // } else if config.is_json {
-    //     println!("{{\n}}");
-    // } else {
-    //     println!("Account not found.");
+    // for account in accounts.iter() {
+    //     print_account_data(account, dumptvc, config, false).await?;
     // }
+    let mut found_addresses = vec![];
+
+    if !accounts.is_empty() {
+        let mut json_res = json!({});
+        for acc in accounts.iter() {
+            let address = acc.get_id().unwrap().as_hex_string();
+            found_addresses.push(format!("0:{address}"));
+
+            let acc_type = match acc.status() {
+                AccountStatus::AccStateUninit => "Uninit".to_owned(),
+                AccountStatus::AccStateFrozen => "Frozen".to_owned(),
+                AccountStatus::AccStateActive => "Active".to_owned(),
+                AccountStatus::AccStateNonexist => "NonExist".to_owned(),
+            };
+
+            if acc_type != "NonExist" {
+                let bal = acc.balance();
+                let balance = if bal.is_some() {
+                    let bal = bal.unwrap().grams.clone().to_string();
+                    if config.balance_in_vmshells {
+                        let bal = u64::from_str_radix(&bal, 10)
+                            .map_err(|e| format!("failed to decode balance: {}", e))?;
+                        let int_bal = bal as f64 / 1e9;
+                        let frac_balance = (bal as f64 / 1e6 + 0.5) as u64 % 1000;
+                        let balance_str = format!("{}", int_bal as u64);
+                        format!(
+                            "{}.{}{}",
+                            balance_str
+                                .chars()
+                                .collect::<Vec<char>>()
+                                .rchunks(3)
+                                .map(|c| c.iter().collect::<String>())
+                                .rev()
+                                .collect::<Vec<String>>()
+                                .join(" "),
+                            frac_balance,
+                            if config.is_json { "" } else { " vmshell" }
+                        )
+                    } else {
+                        format!("{}{}", bal, if config.is_json { "" } else { " nanovmshell" })
+                    }
+                } else {
+                    "Undefined".to_owned()
+                };
+
+                let last_paid = format!("{}", acc.last_paid());
+
+                let trans_lt =
+                    acc.last_tr_time().map_or("Undefined".to_owned(), |v| format!("{:#x}", v));
+
+                let data = tree_of_cells_into_base64(acc.get_data().as_ref());
+
+                let data_boc = if data.is_ok() {
+                    hex::encode(
+                        base64_decode(&data.unwrap())
+                            .map_err(|e| format!("Failed to decode base64: {}", e))?,
+                    )
+                } else {
+                    "null".to_owned()
+                };
+
+                let code_hash = match acc.get_code_hash() {
+                    Some(hash) => hash.as_hex_string(),
+                    None => "null".to_owned(),
+                };
+
+                if config.is_json {
+                    json_res = json_account(
+                        Some(acc_type),
+                        Some(address.clone()),
+                        Some(balance),
+                        Some(last_paid),
+                        Some(trans_lt),
+                        Some(data_boc),
+                        Some(code_hash),
+                        None,
+                    );
+                } else {
+                    print_account(
+                        config,
+                        Some(acc_type),
+                        Some(address.clone()),
+                        Some(balance),
+                        Some(last_paid),
+                        Some(trans_lt),
+                        Some(data_boc),
+                        Some(code_hash),
+                        None,
+                    );
+                }
+
+                // ZZZ TODO  let dapp_id = acc["dapp_id"].as_str().unwrap_or("None").to_owned();
+                let dapp_id = "None".to_owned();
+
+                let ecc_balance = acc
+                    .balance()
+                    .map(|balance| {
+                        let mut mapping = BTreeMap::new();
+                        balance
+                            .other
+                            .iterate_with_keys(|k: u32, v| {
+                                mapping.insert(k, v.value().to_string());
+                                Ok(true)
+                            })
+                            .unwrap();
+                        json!(mapping)
+                    })
+                    .unwrap_or(serde_json::Value::Null);
+                if config.is_json {
+                    json_res["dapp_id"] = json!(dapp_id);
+                    json_res["ecc_balance"] = ecc_balance;
+                } else {
+                    println!("dapp_id:       {}", dapp_id);
+                    println!("ecc:           {}", serde_json::to_string(&ecc_balance).unwrap());
+                }
+            } else if config.is_json {
+                json_res = json_account(
+                    Some(acc_type),
+                    Some(address.clone()),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                );
+            } else {
+                print_account(
+                    config,
+                    Some(acc_type),
+                    Some(address.clone()),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                );
+            }
+            if !config.is_json {
+                println!();
+            }
+        }
+        for address in addresses.iter() {
+            if !found_addresses.contains(address) {
+                if config.is_json {
+                    json_res = json!({
+                       "address": address.clone(),
+                       "acc_type": "NonExist"
+                    });
+                } else {
+                    println!("{} not found", address);
+                    println!();
+                }
+            }
+        }
+        if config.is_json {
+            println!("{:#}", json_res);
+        }
+    } else if config.is_json {
+        println!("{{\n}}");
+    } else {
+        println!("Account not found.");
+    }
 
     if dumptvc.is_some() || dumpboc.is_some() && accounts.len() == 1 {
         let account = accounts[0].clone();

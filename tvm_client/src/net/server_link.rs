@@ -59,6 +59,8 @@ pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
 pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
 
+pub const REST_API_PORT: u16 = 8600;
+
 pub(crate) struct Subscription {
     pub unsubscribe: Pin<Box<dyn Future<Output = ()> + Send>>,
     pub data_stream: Pin<Box<dyn Stream<Item = ClientResult<Value>> + Send>>,
@@ -455,6 +457,25 @@ fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
     result
 }
 
+fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<Url> {
+    let original = if original.contains("://") {
+        original.to_string()
+    } else {
+        format!("http://{}", original)
+    };
+    let mut rest_api_endpoint = Url::parse(&original).map_err(Error::parse_url_failed)?;
+
+    let scheme = if use_https { "https" } else { "http" };
+    rest_api_endpoint
+        .set_scheme(scheme)
+        .map_err(|_| Error::modify_url_failed("Failed to set scheme"))?;
+
+    rest_api_endpoint
+        .set_port(Some(REST_API_PORT))
+        .map_err(|_| Error::modify_url_failed("Failed to set port for REST API endpoint"))?;
+    Ok(rest_api_endpoint)
+}
+
 fn construct_bm_send_message_endpoint(original: &str, use_https: bool) -> ClientResult<String> {
     let original = if original.contains("://") {
         original.to_string()
@@ -513,8 +534,7 @@ impl ServerLink {
         let bm_send_message_endpoint =
             construct_bm_send_message_endpoint(&endpoint_addresses[0], false)?;
 
-        let rest_api_endpoint =
-            Url::parse(&endpoint_addresses[0]).map_err(Error::parse_url_failed)?;
+        let rest_api_endpoint = construct_rest_api_endpoint(&endpoint_addresses[0], false)?;
 
         let state = Arc::new(NetworkState::new(
             client_env.clone(),
