@@ -135,6 +135,8 @@ pub struct ExecuteParams {
     pub is_same_thread_id: bool,
     pub termination_deadline: Option<Instant>,
     pub execution_timeout: Option<Duration>,
+    pub wasm_binary_root_path: String,
+    pub wasm_binary_hash_whitelist: String,
 }
 
 pub struct ActionPhaseResult {
@@ -179,6 +181,8 @@ impl Default for ExecuteParams {
             is_same_thread_id: false,
             termination_deadline: None,
             execution_timeout: None,
+            wasm_binary_root_path: "./config/wasm".to_owned(),
+            wasm_binary_hash_whitelist: "".to_owned(),
         }
     }
 }
@@ -557,6 +561,7 @@ pub trait TransactionExecutor {
             params.vm_execution_is_block_related.clone(),
             params.block_collation_was_finished.clone(),
         )
+        .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {
