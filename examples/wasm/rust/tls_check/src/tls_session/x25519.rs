@@ -1,7 +1,7 @@
-use std::fs::File;
+//use std::fs::File;
 //use std::io::{self, BufRead, Read};
 //use std::path::Path;
-use std::error::Error;
+//use std::error::Error;
 
 const BASE_POINT:[u8;32] = [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -14,14 +14,6 @@ const BASE_POINT:[u8;32] = [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
  * i.e. the limbs are 26, 25, 26, 25, ... bits wide.
  */
 
-fn print_array19(input: &[i64; 19]){
-    print!(" {{");
-    for i in 0..19 {
-        print!("{}", input[i] );
-        print!(" ");
-    }
-    println!(" }}");
-}
 
 // Sum two numbers: output += in
 fn fsum(in1: &[i64; 19], in2: &[i64; 19]) -> [i64; 19]{ // fn fsum(output: &mut [i64; 10], input: &[i64; 10]) {
@@ -443,10 +435,7 @@ fn fmonty(x2: &mut [i64; 19], z2: &mut [i64; 19], // output 2Q
     freduce_degree(&mut zzprime);
     freduce_coefficients(&mut zzprime);
 
-    //println!("xxxprime is : ");
-    //print_array19(&xxxprime);
-    //println!("zzprime is : ");
-    //print_array19(&zzprime);
+ 
     x3.copy_from_slice(&xxxprime); // Копируем xxxprime в x3
     z3.copy_from_slice(&zzprime); // Копируем zzprime в z3
 
@@ -475,7 +464,7 @@ fn swap_conditional(a: &mut [i64; 19], b: &mut [i64; 19], iswap: i64) {
         let x = swap & ((a[i] as i32) ^ (b[i] as i32));
         //let aias = (a[i] as i32);
         //let bias = (b[i] as i32);
-        //println!("(a[i] as i32) is {aias}, (b[i] as i32) is {bias},  x is : {x}");
+
         a[i] = (a[i] as i32 ^ x) as i64;
         b[i] = (b[i] as i32 ^ x) as i64;
     }
@@ -513,31 +502,12 @@ fn cmult(resultx: &mut [i64; 19], resultz: &mut [i64; 19], n: &[u8; 32], q: &[i6
             let bit = (byte >> 7) as i64;
 
             swap_conditional(nqx, nqpqx, bit);
-            //println!("bit is : {bit},");
+    
             swap_conditional(nqz, nqpqz, bit);
 
 
             fmonty(nqx2, nqz2, nqpqx2, nqpqz2, nqx, nqz, nqpqx, nqpqz, q);
-            /*println!("nqx2 is : ");
-            print_array19(&nqx2);
-            println!("nqz2 is : ");
-            print_array19(&nqz2);
-            println!("nqpqx2 is : ");
-            print_array19(&nqpqx2);
-            println!("nqpqz2 is : ");
-            print_array19(&nqpqz2);
-            println!("nqx is : ");
-            print_array19(&nqx);
-            println!("nqz is : ");
-            print_array19(&nqz);
-            println!("nqpqx is : ");
-            print_array19(&nqpqx);
-            println!("nqpqz is : ");
-            print_array19(&nqpqz);
-            println!("q is : ");
-            print_array19(&q);*/
-
-            //println!("Press Enter to continue...");
+           
             //let _ = io::stdin().read_line(&mut String::new());
 
             swap_conditional(nqx2, nqpqx2, bit);
@@ -676,21 +646,15 @@ pub fn curve25519_donna(secret: &[u8; 32], basepoint: &[u8; 32]) -> [u8; 32] {
 
     let mut mypublic: [u8; 32] = [0u8; 32];
     fexpand(&mut bp, basepoint);
-    //println!("bp is : ");
-    //print_array19(&bp);
-    //println!("e is : {:?}", e);
+
 
     cmult(&mut x, &mut z, &e, &bp);
     crecip(&mut zmone, &z);
-    //println!("zmone is : ");
-    //print_array19(&zmone);
-
+    
     fmul(&mut z, &x, &zmone);
     freduce_coefficients(&mut z);
-    //println!("z is : ");
-    //print_array19(&z);
+    
     fcontract(&mut mypublic, &mut z);
-    //println!("mypublic is : {:?}", mypublic);
     mypublic
 }
 
@@ -786,57 +750,7 @@ fn read_key(filename: &str, key: &mut [u8; 32]) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }*/
-/*
-#[test]
-fn cc_test_with_files(){
-    let mut privkey = [0u8; 32];
-    let mut pubkey = [0u8; 32];
 
-    let etalon_result = [0xdf, 0x4a, 0x29, 0x1b, 0xaa, 0x1e, 0xb7, 0xcf, 0xa6, 0x93, 0x4b, 0x29, 0xb4, 0x74, 0xba, 0xad, 0x26, 0x97, 0xe2, 0x9f, 0x1f, 0x92, 0x0d, 0xcc, 0x77, 0xc8, 0xa0, 0xa0, 0x88, 0x44, 0x76, 0x24];
-    println!("result is : {:?}", etalon_result);
-
-    read_key("server-ephemeral-private.key", &mut privkey);
-	read_key("client-ephemeral-public.key", &mut pubkey);
-    println!("server ephemeral private key is : {:?}", privkey);
-    println!("client ephemeral public key is : {:?}", pubkey);
-    let result = curve25519_donna(&privkey, &pubkey);
-
-    assert_eq!(result, etalon_result);
-
-}
-
-#[test]
-fn cc_test_with_go_keys(){
-    let privkey:[u8;32] = [38, 143, 232, 151, 143, 228, 234, 190, 126, 190, 203, 41, 153, 183, 166, 201, 39, 4, 115, 133, 223, 115, 71, 58, 230, 96, 102, 16, 192, 201, 24, 116];
-    let pubkey:[u8;32]  = [12, 106, 148, 243, 85, 217, 32, 138, 202, 206, 92, 154, 12, 46, 214, 91, 241, 151, 20, 125, 91, 62, 118, 171, 32, 206, 128, 221, 121, 109, 161, 45];
-
-    let etalon_result = [85, 225, 237, 153, 24, 108, 11, 255, 168, 156, 159, 13, 113, 39, 106, 127, 231, 189, 227, 111, 85, 129, 173, 178, 138, 223, 75, 109, 115, 193, 83, 5];
-    //println!("etalon_result is : {:?}", etalon_result);
-
-    println!("server ephemeral private key is : {:?}", &privkey);
-    println!("client ephemeral public key is : {:?}", &pubkey);
-    let result = curve25519_donna(&privkey, &pubkey);
-    println!("result is : {:?}", result);
-
-    assert_eq!(result, etalon_result);
-
-}
-
-#[test]
-fn cc_test_with_go_basepoint(){
-    let privkey:[u8;32] = [231, 226, 189, 128, 175, 192, 46, 233, 160, 243, 227, 168, 186, 174, 207, 111, 124, 21, 6, 220, 18, 155, 18, 17, 39, 165, 203, 108, 109, 3, 40, 186];
-
-    let etalon_result = [192, 66, 56, 95, 6, 86, 129, 217, 28, 232, 5, 177, 109, 189, 139, 154, 6, 3, 215, 62, 202, 195, 214, 238, 231, 82, 157, 198, 107, 200, 81, 16];
-    //println!("etalon_result is : {:?}", etalon_result);
-
-    println!("private key is : {:?}", &privkey);
-    println!("basepoint is : {:?}", &BASE_POINT);
-    let result = curve25519_donna(&privkey, &BASE_POINT);
-    println!("result is : {:?}", result);
-
-    assert_eq!(result, etalon_result);
-
-}*/
 
 //
 //$ cc -o curve25519-mult curve25519-mult.c
