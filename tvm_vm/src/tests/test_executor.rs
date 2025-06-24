@@ -38,6 +38,7 @@ use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
+use crate::utils::unpack_data_from_cell;
 
 #[allow(dead_code)]
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
@@ -762,7 +763,7 @@ fn test_run_wasm_from_hash_tls() {
         vec![],
     );
 
-    let hash_str = "9cc3368235c28c51e4afe08c0ae0e35a9f6ec20260f56810adfe0fbe0c98aa03";
+    let hash_str = "2a04c15e6f6f2667ce19f4519232bcea3ff1cb1273a6c9f92c1ba9a48acf6a50";
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -797,7 +798,11 @@ fn test_run_wasm_from_hash_tls() {
 
     let status = execute_run_wasm(&mut engine).unwrap();
     println!("Wasm Return Status: {:?}", status);
-    println!("res: {:?}", rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap());
+    let res = engine.cc.stack.get(0).as_cell().unwrap();//engine.cc.stack.get(0).as_slice().unwrap().clone();
+    let slice = SliceData::load_cell(res.clone()).unwrap();
+    let ress = unpack_data_from_cell(slice, &mut engine).unwrap();
+    println!("ress: {:?}", ress);
+    //println!("res: {:?}", rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap());
 
     /*assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()

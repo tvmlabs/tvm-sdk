@@ -1,5 +1,5 @@
 
-use std::error::Error;
+//use std::error::Error;
 //use std::io::{self, Read};
 //use std::marker::PhantomData;
 
@@ -143,11 +143,9 @@ impl Digest {
         }
 
         b.extend_from_slice(&self.x[..self.nx]);
-        //println!("from marshal_binary b is : {:?}", b);
         //b.truncate(b.len() + self.x.len() - self.nx); // уже нулевой
         b.resize(b.len() + self.x.len() - self.nx, 0); // // уже нулевой
         append_uint64(&mut b, self.len);
-        //println!("from marshal_binary 2 b is : {:?}", b);
 
         Ok(b)
     }
@@ -178,10 +176,7 @@ impl Digest {
         self.x[..copied].copy_from_slice(&b[..copied]);
         b = &b[copied..];
 
-        println!("unmarshaled b is : {:?}", &b);
         self.len = consume_uint64(&mut b); // self.len = consume_uint64(&mut b)?;
-        println!("unmarshaled self.len is : {:?}", &self.len);
-        println!("unmarshaled b is : {:?}", &b);
         self.nx = (self.len % (CHUNK as u64)) as usize;
 
         //Ok(())
@@ -231,7 +226,6 @@ impl Digest {
     pub fn write(&mut self, p: &[u8]) -> usize {
         let nn = p.len();
         self.len += nn as u64;
-        //println!("p is : {:?}", &p);
 
         let mut remaining = p;// Оставшиеся данные для записи
 
@@ -244,8 +238,6 @@ impl Digest {
                 //let selfx = &self.x.clone();//[0u8;CHUNK];
                 // Обработка полного блока
                 block(self, &self.x.clone()); // block(self, &self.x);
-                //println!("self.x is : {:?}", &self.x);
-                //println!("self.h is : {:?}", &self.h);
                 self.nx = 0;
             }
             remaining = &remaining[n..];
@@ -253,16 +245,13 @@ impl Digest {
 
         if remaining.len() >= CHUNK {
             let n = remaining.len() & ! (CHUNK - 1);
-            //println!("n is : {:?}", n);
             block(self, &remaining[..n]);
-            //println!("remaining[..n] is : {:?}", &remaining[..n]);
             remaining = &remaining[n..];
         }
 
         if !remaining.is_empty() {
             self.nx = remaining.len();
             self.x[..self.nx].copy_from_slice(remaining);
-            //println!("куьфштштп self.x is : {:?}", &self.x);
         }
 
         nn // (nn, None)
@@ -272,7 +261,6 @@ impl Digest {
         // Сделаем копию self, чтобы вызывающая сторона могла продолжать писать и суммировать.
         let mut d0 = self.clone();
         let hash = d0.check_sum(); // Важно: вам нужно реализовать метод check_sum
-        //println!("hash sum is : {:?}", hash);
         //if d0.is224 {
             //[in_bytes, &hash[..SIZE_224]].concat()
         //} else {
@@ -294,7 +282,6 @@ impl Digest {
         };
 
         let len_in_bits = len << 3;
-        //println!("check_sum 2 len is : {:?}", len_in_bits);
         let padlen = &mut tmp[..(t as usize) + 8];
 
         put_uint64(&mut padlen[(t as usize)..], len_in_bits);
@@ -306,7 +293,6 @@ impl Digest {
 
         let mut digest = [0u8; SIZE];
 
-        //println!("self.h[0] is : {:?}", self.h[0]);
         put_uint32(&mut digest[0..4], self.h[0]);
         put_uint32(&mut digest[4..8], self.h[1]);
         put_uint32(&mut digest[8..12], self.h[2]);
@@ -456,8 +442,7 @@ impl Hmac {
             *byte ^= 0x5c;
         }
         hmac.inner.write(&hmac.ipad);
-        //println!("hmac.ipad : {:?}", &hmac.ipad);
-        //println!("hmac.opad : {:?}", &hmac.opad);
+
 
         hmac
     }
@@ -468,8 +453,6 @@ impl Hmac {
         result.extend_from_slice(&self.inner.sum(input));
 
         if self.marshaled {
-            println!("self.marshaled ");
-            println!("self.opad is : {:?}", self.opad);
             self.outer.unmarshal_binary(&self.opad); // self.outer = self.outer.unmarshal_binary(&self.opad);
         } else {
             self.outer.reset();
@@ -478,7 +461,6 @@ impl Hmac {
 
         self.outer.write(&result[orig_len..]);
         let result = self.outer.sum(&result[..orig_len]);
-        //println!("result 2 is : {:?}", result);
         result
     }
 
@@ -497,8 +479,6 @@ impl Hmac {
 
     pub fn reset(&mut self) {
 
-        println!("before reset self.ipad is : {:?}", &self.ipad);
-        println!("before reset self.opad is : {:?}", &self.opad);
 
         if self.marshaled {
             //if let Err(err) = self.inner.unmarshal_binary(&self.ipad) {
@@ -522,8 +502,6 @@ impl Hmac {
                 self.marshaled = true;
             }
         }
-        println!("after reset self.ipad is : {:?}", &self.ipad);
-        println!("after reset self.opad is : {:?}", &self.opad);
     }
 
     // Функция для сравнения двух HMAC
@@ -597,9 +575,7 @@ impl Hkdf {
             self.expander.write(&self.info);//self.expander.update(&self.info);
             self.expander.write(&[self.counter]);//self.expander.update(&[self.counter]);
 
-            println!("&self.prev is : {:?}", &self.prev[..]);
             self.prev = self.expander.sum(&self.prev[..]);//self.prev = self.expander.finalize_reset().into_bytes().to_vec();
-            println!("&self.prev[..] is : {:?}", &self.prev[..]);
             self.counter += 1;
 
             // Copy the new batch into p
@@ -639,42 +615,4 @@ pub fn expand(pseudorandom_key: &[u8], info: &[u8]) -> Hkdf {
 fn new(secret: &[u8], salt: &[u8], info: &[u8]) -> Hkdf {
     let prk = extract(&secret.try_into(), &salt.try_into()); // let prk = extract(hash, secret, salt);
     expand(&prk, info) // expand(hash, &prk, info)
-}*/
-
-/*
-#[test]
-fn test_hkdf_with_go_data_1(){
-    //
-    let hkdf_label = [0, 16, 9, 116, 108, 115, 49, 51, 32, 107, 101, 121, 0];
-    println!("hkdf_label is : {:?}", hkdf_label);
-    let secret:[u8;32] = [59, 61, 41, 36, 200, 156, 165, 163, 21, 137, 135, 142, 118, 165, 190, 112, 253, 73, 249, 79, 73, 155, 102, 96, 54, 170, 38, 140, 122, 98, 162, 169];
-    println!("secret is : {:?}", &secret);
-    let etalon_result = [196, 202, 165, 198, 49, 40, 206, 178, 195, 20, 150, 155, 126, 121, 8, 240];
-    println!("etalon_result is : {:?}", &etalon_result);
-
-    // Expand using HKDF
-    let mut reader = expand(&secret, &hkdf_label);//let hkdf = Hkdf::<Sha256>::new(Some(secret), &hkdf_label);
-    let length = 16;
-    let buf = reader.read(length as usize);
-    println!("hkdf expand result is is : {:?}", &buf);
-
-    assert_eq!(buf[..], etalon_result);
-}
-
-#[test]
-fn test_sha256_sum256(){
-    //
-    let transcript_messages = [1, 0, 0, 157, 3, 3, 27, 126, 189, 42, 117, 227, 85, 44, 186, 155, 29, 86, 176, 221, 181, 209, 227, 24, 67, 227, 112, 232, 244, 106, 59, 250, 1, 175, 102, 253, 52, 236, 0, 0, 2, 19,
-        1, 1, 0, 0, 114, 0, 0, 0, 23, 0, 21, 0, 0, 18, 119, 119, 119, 46, 103, 111, 111, 103, 108, 101, 97, 112, 105, 115, 46, 99, 111, 109, 0, 10, 0,
-        4, 0, 2, 0, 29, 0, 13, 0, 20, 0, 18, 4, 3, 8, 4, 4, 1, 5, 3, 8, 5, 5, 1, 8, 6, 6, 1, 2, 1, 0, 51, 0, 38, 0, 36, 0, 29, 0, 32, 192, 66, 56, 95,
-        6, 86, 129, 217, 28, 232, 5, 177, 109, 189, 139, 154, 6, 3, 215, 62, 202, 195, 214, 238, 231, 82, 157, 198, 107, 200, 81, 16, 0, 45, 0, 2, 1, 1,
-        0, 43, 0, 3, 2, 3, 4, 2, 0, 0, 86, 3, 3, 8, 215, 19, 207, 58, 155, 125, 3, 157, 121, 43, 159, 152, 229, 77, 159, 41, 50, 150, 5, 171, 174, 144,
-        47, 121, 11, 241, 132, 255, 77, 16, 244, 0, 19, 1, 0, 0, 46, 0, 51, 0, 36, 0, 29, 0, 32, 246, 48, 130, 234, 125, 96, 179, 219, 52, 226, 168, 235,
-        57, 47, 53, 103, 96, 246, 129, 101, 202, 83, 142, 117, 64, 20, 47, 242, 241, 212, 56, 30, 0, 43, 0, 2, 3, 4];
-
-    let etalon_result:[u8;32] = [162, 167, 100, 226, 203, 243, 188, 175, 210, 16, 93, 167, 119, 3, 240, 28, 125, 253, 213, 165, 137, 64, 175, 170, 4, 35, 61, 221, 215, 13, 98, 64];
-    let hash = sum256( &transcript_messages);
-    println!("derive_secret hash is : {:?}", &hash);
-    assert_eq!(hash, etalon_result);
-
 }*/

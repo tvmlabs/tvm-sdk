@@ -1,6 +1,4 @@
-use std::io::{self, Read};
-//use std::net::TcpStream;
-
+//use std::io::{self, Read};
 use chrono::{DateTime, FixedOffset, TimeZone};
 
 pub struct Messages {
@@ -225,12 +223,10 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
                     let extension_len = u16::from_be_bytes(buf[current_pos..current_pos+2].try_into().unwrap());
                     current_pos = current_pos + 2;
                     current_pos = current_pos + (extension_len as usize);
-                    eprintln!("unknown extension");
                 }
             }
         }
     } else {
-        println!("not enough len of random bytes")
     }
 
     hello
@@ -260,7 +256,7 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
         //concatenate(buf, contents)
 //}
 
-pub fn read(length: usize, reader: &mut dyn Read) -> Vec<u8> {
+/*pub fn read(length: usize, reader: &mut dyn Read) -> Vec<u8> {
     let mut buf = Vec::new();
     while buf.len() < length {
         buf.extend(read_upto(length - buf.len(), reader));
@@ -273,7 +269,7 @@ pub fn read_upto(length: usize, reader: &mut dyn Read) -> Vec<u8> {
     let n = reader.read(&mut buf).expect("Failed to read data");
     buf.truncate(n); // Обрезаем буфер до фактически прочитанного размера
     buf
-}
+}*/
 
 // pub fn concatenate(bufs: Vec<&[u8]>) -> Vec<u8> {
 pub fn concatenate(bufs: &[&[u8]]) -> Vec<u8> {
@@ -325,10 +321,8 @@ pub fn extract_expires(data: &str) -> i64 {
     let end = data[start_pos..].find('\n').unwrap();
     let end_pos = start_pos + end; // Конечная позиция
     let expires_time_string = data[start_pos..end_pos].to_string();
-    println!("expires_time_string is : {:?}", &expires_time_string.trim());
 
     let dt: DateTime<FixedOffset> = DateTime::parse_from_rfc2822(&expires_time_string.trim()).unwrap();
     let timestamp = dt.timestamp();
-    println!("UTC timestamp: {}", timestamp);
     return timestamp;
 }
