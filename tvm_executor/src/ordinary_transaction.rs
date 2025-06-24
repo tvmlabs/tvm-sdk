@@ -396,6 +396,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
             TrComputePhase::Skipped(skipped) => {
                 log::debug!(target: "executor", "compute_phase: skipped reason {:?}", skipped.reason);
+                if acc_balance.grams >= need_to_burn {
+                    acc_balance.grams -= need_to_burn;
+                } else {
+                    acc_balance.grams = Grams::zero();
+                }
                 if is_ext_msg {
                     fail!(ExecutorError::ExtMsgComputeSkipped(skipped.reason.clone()))
                 }

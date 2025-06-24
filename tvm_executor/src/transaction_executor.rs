@@ -95,7 +95,6 @@ const RESULT_CODE_INCORRECT_SRC_ADDRESS: i32 = 35;
 const RESULT_CODE_INCORRECT_DST_ADDRESS: i32 = 36;
 const RESULT_CODE_NOT_ENOUGH_GRAMS: i32 = 37;
 const RESULT_CODE_NOT_ENOUGH_EXTRA: i32 = 38;
-const RESULT_CODE_TOO_BIG_EXTRA: i32 = 39;
 const RESULT_CODE_INVALID_BALANCE: i32 = 40;
 const RESULT_CODE_BAD_ACCOUNT_STATE: i32 = 41;
 const RESULT_CODE_ANYCAST: i32 = 50;
@@ -1582,16 +1581,6 @@ fn outmsg_action_handler(
         
         if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
             int_header.set_exchange(true);
-            if let Ok(Some(data)) = int_header.value.get_other(2) {
-                if data > VarUInteger32::from(u64::MAX) {
-                    log::warn!(
-                        target: "executor",
-                        "msg balance {} is too big for exchange",
-                        int_header.value.grams
-                    );
-                    return Err(skip.map(|_| RESULT_CODE_TOO_BIG_EXTRA).unwrap_or_default());
-                }
-            }
         }
 
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
