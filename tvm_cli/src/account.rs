@@ -80,7 +80,6 @@ async fn query_accounts(
         .map_err(|e| format!("failed to query account info: {}", e))?;
         res.append(query_result.result.as_mut());
     }
-
     Ok(res)
 }
 
@@ -124,9 +123,7 @@ pub async fn get_account(
     if !config.is_json {
         println!("Succeeded.");
     }
-    // for account in accounts.iter() {
-    //     print_account_data(account, dumptvc, config, false).await?;
-    // }
+
     let mut found_addresses = vec![];
 
     if !accounts.is_empty() {
@@ -218,7 +215,6 @@ pub async fn get_account(
                     );
                 }
 
-                // ZZZ TODO  let dapp_id = acc["dapp_id"].as_str().unwrap_or("None").to_owned();
                 let dapp_id = "None".to_owned();
 
                 let ecc_balance = acc
@@ -345,7 +341,6 @@ pub async fn calc_storage(config: &Config, addr: &str, period: u32) -> Result<()
     Ok(())
 }
 
-// ZZZ TBD
 pub async fn dump_accounts(
     config: &Config,
     addresses: Vec<String>,

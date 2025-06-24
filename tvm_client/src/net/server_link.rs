@@ -58,7 +58,6 @@ pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
 pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
-
 pub const REST_API_PORT: u16 = 8600;
 
 pub(crate) struct Subscription {
