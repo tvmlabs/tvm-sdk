@@ -162,6 +162,12 @@ impl VMSetup {
         self
     }
 
+    /// Sets local wasm library root path
+    pub fn set_wasm_root_path(mut self, path: String) -> VMSetup {
+        self.vm.set_wasm_root_path(path);
+        self
+    }
+
     /// Creates new instance of TVM with defined stack, registers and code.
     pub fn create(self) -> Engine {
         if cfg!(debug_assertions) {
