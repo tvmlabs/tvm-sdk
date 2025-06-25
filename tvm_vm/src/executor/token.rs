@@ -76,15 +76,55 @@ wasmtime::component::bindgen!({
             }
         }
 
+        package wasi:cli@0.2.3{ 
+        interface stdin {
+            use wasi:io/streams@0.2.3.{input-stream};
+
+            get-stdin: func() -> input-stream;
+        }
+        interface stdout {
+            use wasi:io/streams@0.2.3.{output-stream};
+
+            get-stdout: func() -> output-stream;
+        }
+        interface stderr {
+            use wasi:io/streams@0.2.3.{output-stream};
+
+            get-stderr: func() -> output-stream;
+        }
+}
         world ioer {
             import error;
             import streams;
+            import wasi:cli@0.2.3;
         }
     "#,
-    with: {
-        "wasi:io/error/error": MyWasiIoError,
-    },
 });
+// wasmtime::component::bindgen!({
+//     inline: r#"
+//         package wasi:cli@0.2.3;
+//         interface stdin {
+//             use wasi:io/streams@0.2.3.{input-stream};
+
+//             get-stdin: func() -> input-stream;
+//         }
+//         interface stdout {
+//             use wasi:io/streams@0.2.3.{output-stream};
+
+//             get-stdout: func() -> output-stream;
+//         }
+//         interface stderr {
+//             use wasi:io/streams@0.2.3.{output-stream};
+
+//             get-stderr: func() -> output-stream;
+//         }
+//         world clier {
+//             import stdin;
+//             import stdout;
+//             import stderr;
+//         }
+//     "#,
+// });
 struct MyState {
     ctx: WasiCtx,
     table: ResourceTable,
@@ -229,7 +269,6 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     cli::terminal_stdin::add_to_linker::<T, HasWasi<T>>(l, f)?;
     cli::terminal_stdout::add_to_linker::<T, HasWasi<T>>(l, f)?;
     cli::terminal_stderr::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    // Ioer::add_to_linker::<T, HasWasi<T>>(l, f)?;
     Ok(())
 }
 
@@ -256,7 +295,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // other actions to be run after WASM instruction
     // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
     // instruction (or set to 0?)
-    log::debug!("Starting gas: {:?}", engine.gas_remaining());
+    println!("Starting gas: {:?}", engine.gas_remaining());
     let wasm_fuel: u64 = WASM_200MS_FUEL;
 
     // TODO: If switching to dunamic fuel limit, use this code:
@@ -292,7 +331,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
                     err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
                 }
             };
-        log::debug!("Using WASM Hash {:?}", wasm_hash);
+        println!("Using WASM Hash {:?}", wasm_hash);
         engine.get_wasm_binary_by_hash(wasm_hash)?
         // todo!("Add hash lookup here from hash {:?}", wasm_hash);
     } else {
@@ -315,23 +354,40 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
 
     let mut exports = component_type.exports(&wasm_engine);
     let arg = exports.next();
-    log::debug!("List of exports from WASM: {:?}", arg);
+    println!("List of exports from WASM: {:?}", arg);
     if let Some(arg) = arg {
-        log::debug!("{:?}", arg);
+        println!("{:?}", arg);
 
         for arg in exports {
-            log::debug!(" {:?}", arg);
+            println!(" {:?}", arg);
         }
     }
 
     // Add wasi-cli libs to linker
     let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
-
+    let mut wasm_linker = wasm_linker.allow_shadowing(true);
     // This is a custom linker method, adding only sync, non-io wasi dependencies.
     // If more deps are needed, add them in there!
+    // match wasm_linker.define_unknown_imports_as_traps(&wasm_component) {
+    //     Ok(_) => {}
+    //     Err(e) => {
+    //         err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM
+    // instance traps {:?}", e)?     }
+    // };
     match add_to_linker_gosh::<MyState>(&mut wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM instance {:?}", e)?,
+    };
+
+    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
+    match Ioer::add_to_linker::<_, wasmtime::component::HasSelf<_>>(&mut wasm_linker, |s| s) {
+        Ok(_) => {}
+        Err(e) => err!(
+            ExceptionCode::WasmLoadFail,
+            "Failed to instantiate WASM
+    instance {:?}",
+            e
+        )?,
     };
 
     // This is the default add to linker method, we dont use it as it will add async
@@ -363,12 +419,12 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
 
     // get callable wasm func
-    log::debug!("Callable funcs found:");
+    println!("Callable funcs found:");
     for export in wasm_component.component_type().exports(&wasm_engine) {
-        log::debug!("{:?}", export.0);
+        println!("{:?}", export.0);
     }
     let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
-    log::debug!("Instance Index {:?}", instance_index);
+    println!("Instance Index {:?}", instance_index);
     let func_index = match wasm_instance.get_export_index(
         &mut wasm_store,
         instance_index.as_ref(),
@@ -379,7 +435,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
         }
     };
-    log::debug!("Func Index {:?}", func_index);
+    println!("Func Index {:?}", func_index);
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
         .expect(&format!("`{}` was not an exported function", wasm_func_name));
@@ -392,21 +448,21 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // collect result
     // substract gas based on wasm fuel used
     let s = engine.cmd.var(3).as_cell()?;
-    log::debug!("Loading WASM Args");
+    println!("Loading WASM Args");
     let wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
-    log::debug!("WASM Args loaded {:?}", wasm_func_args);
+    println!("WASM Args loaded {:?}", wasm_func_args);
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => {
-            log::debug!("Failed to execute WASM function {:?}", e);
+            println!("Failed to execute WASM function {:?}", e);
             err!(ExceptionCode::WasmExecFail, "Failed to execute WASM function {:?}", e)?
         }
     };
-    log::debug!("WASM Execution result: {:?}", result);
+    println!("WASM Execution result: {:?}", result);
 
     let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
     // TODO: If we switch to dynamic gas usage, reenable this code
@@ -419,22 +475,22 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     //     )?,
     // };
     engine.use_gas(gas_used);
-    log::debug!("Remaining gas: {:?}", engine.gas_remaining());
+    println!("Remaining gas: {:?}", engine.gas_remaining());
     match engine.gas_remaining() > 0 {
         true => {}
         false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
     }
 
     // return result
-    log::debug!("EXEC Wasm execution result: {:?}", result);
+    println!("EXEC Wasm execution result: {:?}", result);
     let res_vec = result.0;
 
     let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
-    log::debug!("Pushing cell");
+    println!("Pushing cell");
 
     engine.cc.stack.push(StackItem::cell(cell));
 
-    log::debug!("OK");
+    println!("OK");
 
     Ok(())
 }
