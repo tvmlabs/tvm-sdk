@@ -853,7 +853,7 @@ impl Engine {
         RUNWASM                              => 0xC7, 0x39
         GETAVAILABLEBALANCE                  => 0xC7, 0x42
         MINTSHELL                            => 0xC7, 0x43
-        SENDTODAPPCONFIGQ                    => 0xC7, 0x44
+        SENDTODAPPCONFIG                     => 0xC7, 0x44
     }
 
     fn add_commands<'a>(
