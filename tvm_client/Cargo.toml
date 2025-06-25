@@ -111,9 +111,10 @@ version = "0.3.67"
 
 [dev-dependencies]
 async-std = { features = ["attributes"], version = "1.13" }
+axum = "0.8.4"
 dirs = "5.0.1"
 graphql-parser = "0.4.0"
-httpmock = { version = "0.7.0-rc.1" }
+hyper = "1.6.0"
 log4rs = "1.2.0"
 mockall = "0.13.1"
 pretty_assertions = "1.4.0"
