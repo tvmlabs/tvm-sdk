@@ -2,13 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.17.3] - 2025-06-19
+## [2.18.0] - 2025-06-19
 
 ### New
 
 - Add `getavailablecredit` `sendtodappconfig` `mintshellq` instructions 
 - Change `mintshell` instruction. 
 - Refactor fee in executor
+
+## [2.17.3] - 2025-06-25
+
+### Fixes:
+
+- Changed `runwasm` gas usage to match other instruction prices
 
 ## [2.17.2] - 2025-06-19
 

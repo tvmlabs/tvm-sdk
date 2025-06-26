@@ -49,7 +49,7 @@ pub const KRBK: f64 = 0.675_f64;
 pub const KRBM: f64 = 0.1_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
-pub const WASM_FUEL_MULTIPLIER: u64 = 8u64;
+pub const WASM_FUEL_MULTIPLIER: u64 = 2220000u64;
 pub const WASM_200MS_FUEL: u64 = 2220000000u64;
 pub const RUNWASM_GAS_PRICE: u64 = WASM_200MS_FUEL / WASM_FUEL_MULTIPLIER;
 struct MyState {
