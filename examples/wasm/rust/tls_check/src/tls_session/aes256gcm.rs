@@ -338,7 +338,7 @@ const TD3:[u32; 256] = [
 // The AES block size in bytes.
 const BlockSize: usize = 16;
 
-fn uint32(b: &[u8]) -> u32 { // BigEndian
+pub fn uint32(b: &[u8]) -> u32 { // BigEndian
     assert!(b.len() >= 4); // bounds check
     (b[3] as u32) | (b[2] as u32) << 8 | (b[1] as u32) << 16 | (b[0] as u32) << 24
 }
