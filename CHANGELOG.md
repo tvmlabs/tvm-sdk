@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.18.8] - 2025-06-26
+
+### New
+- `account` module with `get_account` function that requests account boc from BM or BK node
+- `api-token` added to `config.network`
+
 ## [2.17.3] - 2025-06-25
 
 ### Fixes:
