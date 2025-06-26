@@ -495,7 +495,7 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
-    let nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; // needNumberOfActiveBlockKeepers = 10000
+    let _nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; // needNumberOfActiveBlockKeepers = 10000
     let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepersAtBlockStart
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token without slash tokens
@@ -508,19 +508,11 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
             let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
             fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
         }
-        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq;
+        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbk;
     } else {
         sbkbase = 0_f64;
     }
-    let sbkmin;
-    let us = -1_f64 * (KS / (KS + 1_f64)).ln() / nbkreq;
-    if (nbk >= 0_f64) && (nbk <= nbkreq) {
-        sbkmin = sbkbase * (1_f64 + KS) * (1_f64 - (-1_f64 * us * nbk).exp());
-    } else {
-        let unbk = 2_f64 * nbkreq - nbk;
-        sbkmin = sbkbase * (2_f64 - (1_f64 + KS) * (1_f64 - (-1_f64 * us * unbk).exp()));
-    }
-    engine.cc.stack.push(int!(sbkmin as u128));
+    engine.cc.stack.push(int!(sbkbase as u128));
     Ok(())
 }
 
