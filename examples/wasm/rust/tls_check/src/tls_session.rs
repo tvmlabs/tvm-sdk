@@ -1,16 +1,22 @@
+mod format;
 mod aes256gcm;
-mod x25519;
 mod certs;
 mod hkdf_sha256;
-mod format;
+mod x25519;
 
 use x25519::curve25519_donna;
-use hkdf_sha256::*;
 use format::*;
+//use network::send;
+use hkdf_sha256::*;
 use certs::check_certs;
+
+//use std::io::{self, Write, Read};
+//use std::ops::Mul;
 
 use base64url::decode;
 use hex::FromHex;
+
+//use crate::{network, format};
 
 pub fn get_root_cert_from_online() -> [u8;1382] {
     certs::ROOT_CERT_FROM_ONLINE
@@ -18,7 +24,7 @@ pub fn get_root_cert_from_online() -> [u8;1382] {
 
 pub struct Keys {
     pub public: [u8; 32],
-    pub private: [u8; 32],//Vec<u8>,
+    pub private: [u8; 32],
     pub handshake_secret: [u8;32],
     pub client_handshake_secret: [u8;32],
     pub client_handshake_key: [u8;16],
@@ -31,15 +37,15 @@ pub struct Keys {
     pub server_application_iv: [u8;12],
 }
 
+
+
 pub fn key_pair() -> Keys {
-    //let private_key = random(32);
-    //let private_key = random32bytes();
     let private_key = [231, 226, 189, 128, 175, 192, 46, 233, 160, 243, 227, 168, 186, 174, 207, 111, 124, 21, 6, 220, 18, 155, 18, 17, 39, 165, 203, 108, 109, 3, 40, 186];
     let basepoint:[u8;32] = [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let public_key = curve25519_donna(&private_key, &basepoint);
 
     Keys {
-        public: public_key, // public_key.compress().to_bytes().to_vec(),
+        public: public_key,
         private: private_key,
         //server_public: Vec::new(),
         handshake_secret: [0u8;32],
@@ -55,7 +61,9 @@ pub fn key_pair() -> Keys {
     }
 }
 
-pub fn decrypt(key: &[u8;16], iv: &[u8;12], wrapper: &[u8]) -> Vec<u8> {
+// AEAD helper functions
+
+fn decrypt(key: &[u8;16], iv: &[u8;12], wrapper: &[u8]) -> Vec<u8> {
 
     let block = aes256gcm::new_cipher(key);
     let aes_gcm = aes256gcm::new_gcm(block);
@@ -64,10 +72,11 @@ pub fn decrypt(key: &[u8;16], iv: &[u8;12], wrapper: &[u8]) -> Vec<u8> {
     let ciphertext = &wrapper[5..];
 
     let plaintext = aes_gcm.open(&[], iv, ciphertext, additional);
+    //println!("plaintext is : {:?}", plaintext);
     return plaintext;
 }
 
-pub fn encrypt(key: &[u8;16], iv: &[u8;12], plaintext: &[u8], additional: &[u8]) -> Vec<u8> {
+fn encrypt(key: &[u8;16], iv: &[u8;12], plaintext: &[u8], additional: &[u8]) -> Vec<u8> {
     let block = aes256gcm::new_cipher(key);
     let aes_gcm = aes256gcm::new_gcm(block);
 
@@ -98,26 +107,32 @@ pub fn hkdf_expand_label(secret: &[u8;32], label: &str, context: &[u8], length: 
 }
 
 pub fn derive_secret(secret: &[u8;32], label: &str, transcript_messages: &[u8]) -> [u8; 32] {
+
     let hash = hkdf_sha256::sum256( transcript_messages);
     let secret = hkdf_expand_label(secret, label, &hash, 32);
     secret.try_into().unwrap()
 
 }
 
+
 pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
-    let kid = &raw[..20];
-    let certificate_len = (256*raw[20] as u16 + raw[21] as u16) as usize;
+    let timestamp_bytes = &raw[..4];
+    let kid = &raw[4..24];
+    let certificate_len = (256*raw[24] as u16 + raw[25] as u16) as usize;
 
-    let certificate = &raw[22..22+certificate_len];
-    let data = &raw[22+certificate_len..];
+    let external_root_cert = &raw[26..26+certificate_len];
+    let data = &raw[26+certificate_len..];
 
-  // the first output byte indicates the success of the process: if it equals to 1 then success
+    // the first output byte indicates the success of the process: if it equals to 1 then success
     // then follows the public keys from json
     // if the first bytes equals to 0 then unsuccess and the error code follows
+    let timestamp_shortened = aes256gcm::uint32(&timestamp_bytes);
+    let timestamp = timestamp_shortened as i64;
     let private_key:[u8;32] = data[0..32].try_into().unwrap();
     let records_send: u8 = data[32];
     let records_received: u8 = data[33];
     // check len of data
+
     if data.len()<6000{ // 6500
         return vec![0u8, 3u8, 33u8]; // "insufficient len" : 0x3, 0x21 = 801
     }
@@ -126,6 +141,7 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
         return vec![0u8, 3u8, 34u8]; // "client hello not found"
     }
     let server_hello:[u8;95] = data[200..295].try_into().unwrap(); // len is 95 bytes
+
     if server_hello[0] != 0x16 {
         return vec![0u8, 3u8, 35u8]; // "server hello not found"
     }
@@ -143,10 +159,9 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let basepoint:[u8;32] = [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let public_key = curve25519_donna(&private_key, &basepoint);
 
+    let server_hello_data = parse_server_hello(&server_hello[5..]);
 
-   let server_hello_data = parse_server_hello(&server_hello[5..]);
-
-     // ================== begin make handshake keys ===============================================================================================
+    // ================== begin make handshake keys ===============================================================================================
     let zeros = [0u8; 32];
     let psk = [0u8; 32]; // Предполагается, что psk инициализируется где-то
 
@@ -154,7 +169,6 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
 
     // Хэндшейк с использованием HKDF
     let early_secret = hkdf_sha256::extract(&zeros,&psk);
-
     let derived_secret = derive_secret(&early_secret, "derived", &[]);
 
     let handshake_secret = hkdf_sha256::extract(&shared_secret, &derived_secret);
@@ -169,8 +183,6 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let client_handshake_iv: [u8;12] = hkdf_expand_label(&c_hs_secret, "iv", &[], 12).try_into().unwrap();
 
     let s_hs_secret = derive_secret(&handshake_secret, "s hs traffic", &handshake_messages);
-    //let session_keys_server_handshake_key = hkdf_expand_label(&s_hs_secret, "key", &[], 16);
-
     let server_handshake_key: [u8;16] = hkdf_expand_label(&s_hs_secret, "key", &[], 16).try_into().unwrap();
     let server_handshake_iv: [u8;12] = hkdf_expand_label(&s_hs_secret, "iv", &[], 12).try_into().unwrap();
 
@@ -180,7 +192,7 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     }
 
     let server_handshake_message = decrypt(&server_handshake_key, &server_handshake_iv, &encrypted_server_handshake[..]);
-   let decrypted_server_handshake = DecryptedRecord{ 0: server_handshake_message};
+    let decrypted_server_handshake = DecryptedRecord{ 0: server_handshake_message};
 
     // ============= begin make application keys ===================================
     let handshake_messages = format::concatenate( &[
@@ -205,21 +217,34 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let certs_chain = &handshake_data[7..];
 
     //next three bytes is the length of certs chain
-    let certs_chain_len = (certs_chain[0] as usize)*65536 + (certs_chain[1] as usize)*256 + (certs_chain[2] as usize);
+    let certs_chain_len = (certs_chain[0] as usize)*65536 + (certs_chain[1] as usize)*256 + (certs_chain[2] as usize);  // must be 4205 = 4096 + 109
 
-    if !check_certs(&certs_chain[4..certs_chain_len+1]) {
+    if !check_certs(timestamp, &certs_chain[4..certs_chain_len+1], &external_root_cert) {
         return vec![0u8, 3u8, 37u8]; // "error in certificates chain !"
     }
 
     // =================== begin check application request ===================
     let domain = "www.googleapis.com";
-    let req = format!("GET /oauth2/v3/certs HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n", domain);
-    // req.as_bytes()
+    let etalon_req = format!("GET /oauth2/v3/certs HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n", domain);
+    let etalon_req_bytes = etalon_req.as_bytes();
+    //encrypt etalon application request
+    let mut data_vec = etalon_req_bytes.to_vec();
+    data_vec.push(0x17);
+    let additional_length = (data_vec.len() + 16) as u16;
+    let additional = format::concatenate(&[
+        &[0x17, 0x03, 0x03], &format::u16_to_bytes(additional_length)
+    ]);
+    let etalon_encrypted = encrypt(&client_application_key, &client_application_iv, &data_vec[..], &additional[..]);
     // match with application_request
+    if application_request.to_vec() != etalon_encrypted {
+        return vec![0u8, 3u8, 38u8]; // "incorrect application request !"
+    }
 
     // =================== begin decryption ticket and check =========================
 
+    // =================== begin decryption application response =====================
     
+
     let len_of_first_packet = (http_response[3] as usize)*256 + (http_response[4] as usize) + 5;
 
     let mut iv = server_application_iv.clone();
@@ -232,11 +257,14 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     records_received += 1;
 
     //let ciphertext2 = &http_response[len_of_first_packet..];
+    //println!("ciphertext2 is : {:?}", &ciphertext2);
     let mut iv2 = server_application_iv.clone();
     iv2[11] ^= records_received;
     let mut plaintext2 = decrypt(&server_application_key, &iv2.try_into().unwrap(), &http_response[len_of_first_packet..]);
 
     plaintext.append(&mut plaintext2);
+    //println!("decrypted app plaintext2 is : {:?}", &plaintext2);
+    //println!("{}", String::from_utf8_lossy(&plaintext));
 
     let plaintext_as_string = String::from_utf8_lossy(&plaintext).to_string();
 
@@ -252,13 +280,14 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
 
         //let mut current = substring.as_bytes().to_vec();
         let mut current_decoded_kid = Vec::from_hex(substring).unwrap();
+        //println!("current_decoded_kid is : {:?}", &current_decoded_kid);
 
         if current_decoded_kid.eq(&kid.to_vec()){
+            //println!("current n is : {:?}", &strings_n[counter]);
             let mut current_decoded_n = decode(&strings_n[counter]).unwrap();
+            //println!("current_decoded_n is : {:?}", &current_decoded_n);
             let mut result = vec![1u8];
-
             append_uint64(&mut result, expires_timestamp as u64);
-
             result.append(&mut current_decoded_n.to_vec());
 
             return result;
@@ -279,7 +308,5 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
 
 
     return vec![0u8, 3u8, 43u8]; // "kid not found "
-    
-    
 }
 
