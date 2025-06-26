@@ -636,6 +636,10 @@ fn test_tls_wasm_from_hash() {
     let cell =
         TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let cell = TokenValue::write_bytes(&[4u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let cell = TokenValue::write_bytes(&[3u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
     let cell = TokenValue::write_bytes(&[2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let cell = TokenValue::write_bytes(&[1u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();

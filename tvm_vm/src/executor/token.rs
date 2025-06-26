@@ -137,7 +137,7 @@ fn add_to_linker_gosh(
 
 pub(super) fn execute_tls_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
-    fetch_stack(engine, 6)?;
+    fetch_stack(engine, 8)?;
 
     // load or access WASM engine
     let mut wasm_config = wasmtime::Config::new();
@@ -183,7 +183,7 @@ pub(super) fn execute_tls_wasm(engine: &mut Engine) -> Status {
         };
     let wasm_hash_mode = wasm_executable.is_empty();
     let wasm_executable: Vec<u8> = if wasm_hash_mode {
-        let s = engine.cmd.var(5).as_cell()?;
+        let s = engine.cmd.var(7).as_cell()?;
         let wasm_hash =
             match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?
                 .0
@@ -300,6 +300,20 @@ pub(super) fn execute_tls_wasm(engine: &mut Engine) -> Status {
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
     let s = engine.cmd.var(4).as_cell()?;
+    let mut wasm_args_tail =
+        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+        };
+    wasm_func_args.append(&mut wasm_args_tail);
+    let s = engine.cmd.var(5).as_cell()?;
+    let mut wasm_args_tail =
+        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+        };
+    wasm_func_args.append(&mut wasm_args_tail);
+    let s = engine.cmd.var(6).as_cell()?;
     let mut wasm_args_tail =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
