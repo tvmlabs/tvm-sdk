@@ -318,6 +318,8 @@ pub struct NetworkConfig {
 
     /// Access key to GraphQL API (Project secret)
     pub access_key: Option<String>,
+    /// Access token to the Node REST API
+    pub api_token: Option<String>,
 }
 
 impl NetworkConfig {
@@ -330,6 +332,14 @@ impl NetworkConfig {
                 format!("Basic {}", base64_encode(format!(":{}", key).as_bytes()))
             };
             Some(("Authorization".into(), auth))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_rest_api_header(&self) -> Option<(String, String)> {
+        if let Some(token) = &self.api_token {
+            Some(("Authorization".into(), format!("Bearer {token}")))
         } else {
             None
         }
@@ -356,6 +366,7 @@ impl Default for NetworkConfig {
             next_remp_status_timeout: default_next_remp_status_timeout(),
             signature_id: None,
             access_key: None,
+            api_token: None,
         }
     }
 }
