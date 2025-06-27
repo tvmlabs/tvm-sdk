@@ -135,7 +135,7 @@ fn add_to_linker_gosh(
     Ok(())
 }
 
-pub(super) fn execute_tls_wasm(engine: &mut Engine) -> Status {
+pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 8)?;
 
