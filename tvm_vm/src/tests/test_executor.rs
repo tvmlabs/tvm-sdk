@@ -13,7 +13,6 @@ use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
 
-use hex::*;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_types::BuilderData;
@@ -578,17 +577,6 @@ fn test_run_wasm_from_hash() {
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
             == 3u8
     );
-}
-
-fn split_vec(vec: Vec<u8>) -> (Vec<u8>, Vec<u8>) {
-    let len = vec.len();
-
-    if len == 0 {
-        return (vec, Vec::new());
-    }
-
-    let mid = len / 2;
-    (vec[..mid].to_vec(), vec[mid..].to_vec())
 }
 
 #[test]
