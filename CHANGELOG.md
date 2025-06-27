@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.18.0] - 2025-06-26
+## [2.18.0] - 2025-06-27
 
 ### New
 - `account` module with `get_account` function that requests account boc from BM or BK node
