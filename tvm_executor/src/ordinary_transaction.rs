@@ -391,6 +391,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     }
                 } else {
                     log::debug!(target: "executor", "compute_phase: failed");
+                    if acc_balance.grams >= need_to_burn {
+                        acc_balance.grams -= need_to_burn;
+                    } else {
+                        acc_balance.grams = Grams::zero();
+                    }
                     None
                 }
             }
