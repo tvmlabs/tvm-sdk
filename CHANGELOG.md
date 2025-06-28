@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.18.1] - 2025-06-28
+
+### New
+- Added `runwasmconcatmultiarg` instruction that allows multiple arguments to be concatenated then passed to `runwasm`
+
 ## [2.18.0] - 2025-06-27
 
 ### New

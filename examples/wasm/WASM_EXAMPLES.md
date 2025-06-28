@@ -3,5 +3,7 @@ With the need to run more and more compute-intensive operations within a contrac
 
 This example project provides all the pieces necessary to build, deploy and run a Wasm executable from within a solidity contract. Work In Progress documentation for the `runwasm` instruction can be found [here](../../tvm_vm/WASM.md)
 
+FOR GOSH DEVS, USE THE ADVANCED EXAMPLE HERE -> (./rust/calc_pi/README.md)
+
 * [Rust projects that can be compiled into compatible wasm binaries](rust)
 * [Solidity contract to run the `runwasm` instruction](contracts)
