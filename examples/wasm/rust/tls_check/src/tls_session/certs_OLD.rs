@@ -2,7 +2,6 @@
 use std::net;
 use std::ops::AddAssign;
 //use std::time::SystemTime;
-use chrono::{DateTime, Utc, TimeZone, ParseError};
 use std::ops::Neg;
 
 use num_bigint::{BigInt, ToBigInt, Sign};
@@ -142,13 +141,13 @@ const OID_SIGNATURE_SHA256_WITH_RSA: [i32; 7]   = [1, 2, 840, 113549, 1, 1, 11];
 const OID_SIGNATURE_SHA384_WITH_RSA: [i32; 7]   = [1, 2, 840, 113549, 1, 1, 12];
 const OID_SIGNATURE_SHA512_WITH_RSA: [i32; 7]   = [1, 2, 840, 113549, 1, 1, 13];
 const OID_SIGNATURE_RSA_PSS: [i32; 7]          = [1, 2, 840, 113549, 1, 1, 10];
-const OID_SIGNATURE_DSA_WITH_SHA1: [i32; 6]     = [1, 2, 840, 10040, 4, 3];
-const OID_SIGNATURE_DSA_WITH_SHA256: [i32; 9]   = [2, 16, 840, 1, 101, 3, 4, 3, 2];
-const OID_SIGNATURE_ECDSA_WITH_SHA1: [i32; 6]   = [1, 2, 840, 10045, 4, 1];
-const OID_SIGNATURE_ECDSA_WITH_SHA256: [i32; 7] = [1, 2, 840, 10045, 4, 3, 2];
-const OID_SIGNATURE_ECDSA_WITH_SHA384: [i32; 7] = [1, 2, 840, 10045, 4, 3, 3];
-const OID_SIGNATURE_ECDSA_WITH_SHA512: [i32; 7] = [1, 2, 840, 10045, 4, 3, 4];
-const OID_SIGNATURE_ED25519: [i32; 4] = [1, 3, 101, 112];
+const oidSignatureDSAWithSHA1: [i32; 6]     = [1, 2, 840, 10040, 4, 3];
+const oidSignatureDSAWithSHA256: [i32; 9]   = [2, 16, 840, 1, 101, 3, 4, 3, 2];
+const oidSignatureECDSAWithSHA1: [i32; 6]   = [1, 2, 840, 10045, 4, 1];
+const oidSignatureECDSAWithSHA256: [i32; 7] = [1, 2, 840, 10045, 4, 3, 2];
+const oidSignatureECDSAWithSHA384: [i32; 7] = [1, 2, 840, 10045, 4, 3, 3];
+const oidSignatureECDSAWithSHA512: [i32; 7] = [1, 2, 840, 10045, 4, 3, 4];
+const oidSignatureEd25519: [i32; 4] = [1, 3, 101, 112];
 
 
 
@@ -271,14 +270,12 @@ pub const ENUM: u8 = 10u8;
 pub const UTF8_STRING: u8 = 12u8;
 pub const SEQUENCE: u8 = 16u8 | CLASS_CONSTRUCTED;
 pub const SET: u8 = 17u8 | CLASS_CONSTRUCTED;
-pub const NUMERIC_STRING: u8 = 18u8;
 pub const PRINTABLE_STRING: u8 = 19u8;
 pub const T61_STRING: u8 = 20u8;
 pub const IA5_STRING: u8 = 22u8;
 pub const UTC_TIME: u8 = 23u8;
 pub const GENERALIZED_TIME: u8 = 24u8;
 pub const GENERAL_STRING: u8 = 27u8;
-pub const BMP_STRING: u8 = 30u8;
 
 // Предполагается, что String - это структура, которая обрабатывает данные ASN.1
 #[derive(Debug, Clone)]
@@ -583,25 +580,20 @@ impl ASN1String {
         // ITU-T X.690 section 8.1.3
         let (length, header_len) = if len_byte & 0x80 == 0 {
             // Короткая длина (section 8.1.3.4), закодированная в битах 1-7.
-            //println!("read_asn1_impl short len ");
             (u32::from(len_byte) + 2, 2)
         } else {
             // Длинная длина (section 8.1.3.5).
             let len_len = len_byte & 0x7f;
 
             if len_len == 0 || len_len > 4 || self.0.len() < (2 + len_len as usize) {
-                //println!("read_asn1_impl long len false");
                 return false;
             }
 
             let mut len_bytes = ASN1String(self.0[2..2 + len_len as usize].to_vec());
             let mut len32 = 0u32;
-            //println!("read_asn1_impl len_bytes before is : {:?}", &len_bytes);
             if !len_bytes.read_unsigned(&mut len32, len_len as usize) {
                 return false;
             }
-            //println!("read_asn1_impl len_bytes after is : {:?}", &len_bytes);
-            //println!("read_asn1_impl len32 is : {:?}", &len32);
 
             // ITU-T X.690 section 10.1 (DER length forms) требует кодирования длины
             // с минимальным числом октетов.
@@ -618,60 +610,16 @@ impl ASN1String {
             }
             (header_len + len32, header_len)
         };
-        //println!("read_asn1_impl length is : {:?}", &length);
-        //println!("read_asn1_impl header_len is : {:?}", &header_len);
 
-        //println!("self.0 before !self.read_bytes(out, length as usize) is : {:?}", &self.0);
         if length as usize > self.0.len() || !self.read_bytes(out, length as usize) {
             return false;
         }
-        //println!("read_asn1_impl out is : {:?}", &out);
+
         if skip_header && !out.skip(header_len as usize) {
             panic!("cryptobyte: internal error");
         }
-        //println!("out (not panic) is : {:?}", &out);
-        //println!("self.0 (not panic) is : {:?}", &self.0);
 
         true
-    }
-
-    // fn read_asn1_utc_time(&mut self) -> Result<DateTime<Utc>, String> {
-    fn read_asn1_utc_time(&mut self) -> Option<DateTime<Utc>> {
-        let mut bytes = ASN1String{ 0: Vec::new()};
-        if !self.read_asn1(&mut bytes, TagUTCTime) {
-            return None;//return Err("Malformed UTCTime".to_string());
-        }
-
-        let t = String::from_utf8_lossy(&bytes.0).into_owned();
-        let format_str = "%y%m%d%H%M%SZ"; // Стандартный формат UTCTime
-        match Utc.datetime_from_str(&t, format_str) {
-            Ok(res) => {
-                // Применение дополнительной логики для 2050 года
-                //if res.year() >= 2050 {
-                    //let res = res - chrono::Duration::days(36525); // -100 лет
-                    //Ok(res)
-                //} else {
-                    //Ok(res)
-                //}
-                Some(res)
-            }
-            Err(_) => None,//Err("Failed to parse UTCTime".to_string()),
-        }
-    }
-
-    // fn read_asn1_generalized_time(&mut self) -> Result<DateTime<Utc>, String> {
-    fn read_asn1_generalized_time(&mut self) -> Option<DateTime<Utc>> {
-        let mut bytes = ASN1String{ 0: Vec::new()};
-        if !self.read_asn1(&mut bytes, TagGeneralizedTime) {
-            return None;//Err("Malformed GeneralizedTime".to_string());
-        }
-
-        let t = String::from_utf8_lossy(&bytes.0).into_owned();
-        let format_str = "%Y%m%d%H%M%S%.fZ"; // Стандартный формат GeneralizedTime
-        match Utc.datetime_from_str(&t, format_str) {
-            Ok(res) => Some(res),//Ok(res),
-            Err(_) => None,//Err("Failed to parse GeneralizedTime".to_string()),
-        }
     }
 
 
@@ -811,8 +759,8 @@ pub struct Name {
     pub postal_code: Vec<String>,
     pub serial_number: String,
     pub common_name: String,
-    pub names: Vec<AttributeTypeAndValue>, // Все разобранные атрибуты
-    pub extra_names: Vec<AttributeTypeAndValue>, // Атрибуты, копируемые в любые сериализованные имена
+    //pub names: Vec<AttributeTypeAndValue>, // Все разобранные атрибуты
+    //pub extra_names: Vec<AttributeTypeAndValue>, // Атрибуты, копируемые в любые сериализованные имена
 }
 
 impl Name {
@@ -827,43 +775,6 @@ impl Name {
             postal_code: Vec::new(),
             serial_number: String::new(),
             common_name: String::new(),
-            names: Vec::new(),
-            extra_names: Vec::new(),
-        }
-    }
-
-    // FillFromRDNSequence populates Name from the provided [RDNSequence].
-    // Multi-entry RDNs are flattened, all entries are added to the
-    // relevant Name's fields, and the grouping is not preserved.
-    pub fn fill_from_rdn_sequence(&mut self, rdns: &Vec<Vec<AttributeTypeAndValue>>) {
-        for rdn in rdns {
-            if rdn.is_empty() {
-                continue;
-            }
-
-            for atv in rdn {
-                self.names.push(atv.clone()); // Сохраняем атрибут
-
-                // Проверяем значение
-                let value = &atv.value;
-
-                let t = &atv.atype;
-                if t.len() == 4 && t[0] == 2 && t[1] == 5 && t[2] == 4 {
-                    match t[3] {
-                        3 => self.common_name = value.clone(),
-                        5 => self.serial_number = value.clone(),
-                        6 => self.country.push(value.clone()),
-                        7 => self.locality.push(value.clone()),
-                        8 => self.province.push(value.clone()),
-                        9 => self.street_address.push(value.clone()),
-                        10 => self.organization.push(value.clone()),
-                        11 => self.organizational_unit.push(value.clone()),
-                        17 => self.postal_code.push(value.clone()),
-                        _ => {}
-                    }
-                }
-
-            }
         }
     }
 }
@@ -885,8 +796,8 @@ struct Certificate {
     serial_number: BigInt,     // serial_number: Option<BigInt>,          // Type for big integers
     issuer: Name,
     subject: Name,
-    not_before: DateTime<Utc>,//i64,//SystemTime,                    // Using SystemTime for time representation
-    not_after: DateTime<Utc>,//i64,//SystemTime,
+    not_before: i64,//SystemTime,                    // Using SystemTime for time representation
+    not_after: i64,//SystemTime,
     //key_usage: KeyUsage,
 
     extensions: Vec<Extension>,          // Raw X.509 extensions
@@ -944,8 +855,8 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
         serial_number: BigInt::default(),
         issuer: Name::default(), // Assuming a default implementation
         subject: Name::default(),
-        not_before: DateTime::<Utc>::MIN_UTC, //0i64,//SystemTime::now(),
-        not_after: DateTime::<Utc>::MAX_UTC,//SystemTime::now(),
+        not_before: 0i64,//SystemTime::now(),
+        not_after: 0,//SystemTime::now(),
         //key_usage: KeyUsage::default(), // Default value
         extensions: Vec::new(),
         extra_extensions: Vec::new(),
@@ -986,13 +897,10 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
     // Чтение ASN.1 элемента
     let mut input1 = input.clone();
 
-    //println!("parseCertificate input before read_asn1_element is : {:?}", &input);
-
     if !input.read_asn1_element(&mut input1, SEQUENCE) {
         //return Err("x509: malformed certificate".into());
         panic!("x509: malformed certificate");
     }
-    //println!("parseCertificate input after read_asn1_element is : {:?}", &input1);
     cert.raw = input1.0.clone();
 
     // Чтение основного элемента ASN.1
@@ -1000,7 +908,6 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
         //return Err("x509: malformed certificate".into());
         panic!("x509: malformed certificate");
     }
-    //println!("parseCertificate input after read_asn1 is : {:?}", &input);
 
     let mut tbs = ASN1String{ 0: Vec::new()}; // Подходящий тип для tbs
 
@@ -1008,7 +915,6 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
         //return Err("x509: malformed tbs certificate".into());
         panic!("x509: malformed tbs certificate");
     }
-    //println!("parseCertificate tbs after read_asn1 is : {:?}", &tbs);
     cert.raw_tbs_certificate = tbs.0.clone();
 
     let mut tbs1 = tbs.clone();
@@ -1016,8 +922,6 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
         //return Err("x509: malformed version".into());
         panic!("x509: malformed tbs certificate");
     }
-
-    //println!("parseCertificate tbs1 after read_asn1 is : {:?}", &tbs1);
 
 
     // Чтение версии
@@ -1033,7 +937,6 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
     }
 
     cert.version += 1;
-    //println!("parseCertificate cert.version is : {:?}", &cert.version);
     if cert.version > 3 {
         //return Err("x509: invalid version".into());
         panic!("x509: invalid version");
@@ -1066,8 +969,7 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
         //return Err("x509: malformed algorithm identifier".into());
         panic!("x509: malformed algorithm identifier");
     }
-    //println!("parseCertificate sig_ai_seq.0 is : {:?}", &sig_ai_seq.0);
-    //println!("parseCertificate outer_sig_ai_seq.0 is : {:?}", &outer_sig_ai_seq.0);
+
     if outer_sig_ai_seq.0 != sig_ai_seq.0 { // if outer_sig_ai_seq != sig_ai_seq {
         //return Err("x509: inner and outer signature algorithm identifiers don't match".into());
         panic!("x509: inner and outer signature algorithm identifiers don't match");
@@ -1075,45 +977,37 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
 
     let sig_ai = parse_ai(&mut sig_ai_seq); // Обработка идентификатора алгоритма
     cert.signature_algorithm = get_signature_algorithm_from_ai(sig_ai);
-    //println!("parseCertificate cert.signature_algorithm is : {:?}", &cert.signature_algorithm);
 
     // Чтение секвенции издателя
-    let mut issuer_seq = ASN1String{ 0: Vec::new()};
-    if !tbs1.read_asn1_element(&mut issuer_seq, SEQUENCE) {
+    let mut issuer_seq = ASN1String{ 0: Vec::new()};/*
+    if !tbs.read_asn1_element(&mut issuer_seq, SEQUENCE) {
         //return Err("x509: malformed issuer".into());
         panic!("x509: malformed issuer");
     }
-    //println!("parseCertificate issuer_seq.0 is : {:?}", &issuer_seq.0);
     cert.raw_issuer = issuer_seq.0.clone();
-    let issuer_rdns = parse_name(&mut issuer_seq);
-    cert.issuer.fill_from_rdn_sequence(&issuer_rdns);
+    let issuer_rdns = parse_name(&mut issuer_seq)?;
+    cert.issuer.fill_from_rdn_sequence(issuer_rdns); // Предполагая, что эта функция существует
 
     let mut validity = ASN1String{ 0: Vec::new()};
-	if !tbs1.read_asn1(&mut validity, SEQUENCE) {
-		panic!("x509: malformed validity");
+	if !tbs.read_asn1(&mut validity, SEQUENCE) {
+		oanic!("x509: malformed validity");
 	}
-
-    (cert.not_before, cert.not_after) = parse_validity(& mut validity).unwrap();
-
-    //println!("parseCertificate cert.not_before is : {:?}", &cert.not_before);
-    //println!("parseCertificate cert.not_after is : {:?}", &cert.not_after);
 	//cert.not_before, cert.not_after, err = parseValidity(validity);
 	//if err != nil {
 		//return nil, err
 	//}
 
     let mut subject_seq = ASN1String{ 0: Vec::new()};
-	if !tbs1.read_asn1_element(&mut subject_seq, SEQUENCE) {
+	if !tbs.read_asn1_element(&mut subject_seq, SEQUENCE) {
 		panic!("x509: malformed issuer");
 	}
 	cert.raw_subject = subject_seq.0;
-    //println!("parseCertificate cert.raw_subject is : {:?}", &cert.raw_subject);
 	//subjectRDNs, err := parse_name(subject_seq);
 	//if err != nil {
 		//return nil, err
 	//}
 	//cert.subject.FillFromRDNSequence(subjectRDNs);
-/*
+
     let mut spki = ASN1String{ 0: Vec::new()};
 	if !tbs.read_asn1_element(&mut spki, SEQUENCE) {
 		panic!("x509: malformed spki");
@@ -1221,34 +1115,25 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
     //true // Обязательно замените на реальную логику
 //}
 
-#[derive(Debug, Clone)]
-struct AttributeTypeAndValue {
-    atype: Vec<i32>,
-    value: String,
-}
+/*
+struct RDN_sequence {
 
+};// []RelativeDistinguishedNameSET
 
-//struct RDN_sequence {
-
-//};// []RelativeDistinguishedNameSET
-
-//struct RelativeDistinguishedNameSET (
-    //Vec<AttributeTypeAndValue>,
-//);
-
+//type RelativeDistinguishedNameSET []AttributeTypeAndValue
 
 // parseName parses a DER encoded Name as defined in RFC 5280. We may
 // want to export this function in the future for use in crypto/tls.
-pub fn parse_name(raw: &mut ASN1String) -> Vec<Vec<AttributeTypeAndValue>> { // pub fn parse_name(raw: &mut ASN1String) -> RDN_sequence {
+pub fn parse_name(raw: &mut ASN1String) -> RDN_sequence {
     //
     let mut der = ASN1String{ 0: Vec::new()};
     if !raw.read_asn1(&mut der, SEQUENCE) {
         panic!("x509: invalid RDNSequence");
     }
 
-    let mut rdn_seq: Vec<Vec<AttributeTypeAndValue>> = Vec::new(); // let mut rdn_seq: RDNSequence;
+    let mut rdn_seq: RDNSequence;
     if !raw.0.is_empty(){
-        let mut rdn_set: Vec<AttributeTypeAndValue> = Vec::new(); // let mut rdn_set: RelativeDistinguishedNameSET;
+        let mut rdn_set: RelativeDistinguishedNameSET;
         let mut set = ASN1String{ 0: Vec::new()};
         if !raw.read_asn1(&mut set, SET) {
 			//return nil, errors.New("x509: invalid RDNSequence")
@@ -1257,18 +1142,18 @@ pub fn parse_name(raw: &mut ASN1String) -> Vec<Vec<AttributeTypeAndValue>> { // 
 
         while !set.0.is_empty() {
             let mut atav = ASN1String{ 0: Vec::new()};
-            if !set.read_asn1(&mut atav, SEQUENCE) {
+            if !set.read_asn1(&atav, SEQUENCE) {
                 panic!("x509: invalid RDNSequence: invalid attribute");
             }
 
-            let mut attr: AttributeTypeAndValue = AttributeTypeAndValue{atype: Vec::new(), value: String::new()};
-            if !atav.read_asn1_object_identifier(&mut attr.atype) {
+            let mut attr: AttributeTypeAndValue;
+            if !atav.read_asn1_object_identifier(&attr.type) {
                 panic!("x509: invalid RDNSequence: invalid attribute type");
             }
 
             let mut raw_value = ASN1String{ 0: Vec::new()};
 			let mut value_tag = 0u8;
-            if !atav.read_any_asn1(&mut raw_value, &mut value_tag) {
+            if !atav.read_any_asn1(&raw_value, &value_tag) {
                 panic!("x509: invalid RDNSequence: invalid attribute value");
             }
 
@@ -1276,114 +1161,16 @@ pub fn parse_name(raw: &mut ASN1String) -> Vec<Vec<AttributeTypeAndValue>> { // 
             //if err != nil {
 				//panic!("x509: invalid RDNSequence: invalid attribute value: %s", err);
 			//}
-            attr.value = parse_asn1_string(value_tag, &raw_value.0).expect("x509: invalid RDNSequence: invalid attribute value: %s");
 
-            rdn_set.push(attr);
+            rdn_seq.append(&mut rdn_set);
 
         }
-        rdn_seq.push(rdn_set);
+        rdn_seq.append(&mut rdn_set);
     }
 
     return rdn_seq;
-}
+}*/
 
-// pub fn parse_asn1_string(tag: u8, value: &[u8]) -> Result<String, ASN1Error> {
-pub fn parse_asn1_string(tag: u8, value: &[u8]) -> Option<String> {
-    match tag {
-        T61_STRING => Some(String::from_utf8_lossy(value).to_string()),//Ok(String::from_utf8_lossy(value).to_string()),
-        PRINTABLE_STRING => {
-            for &b in value {
-                if !is_printable(b) {
-                    return None; //return Err(ASN1Error::InvalidPrintableString);
-                }
-            }
-            Some(String::from_utf8_lossy(value).to_string()) // Ok(String::from_utf8_lossy(value).to_string())
-        }
-        UTF8_STRING => {
-            if !is_valid_utf8(&value) {
-                return None; //return Err(ASN1Error::InvalidUTF8String);
-            }
-            Some(String::from_utf8_lossy(value).to_string()) // Ok(String::from_utf8_lossy(value).to_string())
-        }
-        BMP_STRING => {
-            if value.len() % 2 != 0 {
-                return None; // return Err(ASN1Error::InvalidBMPString);
-            }
-
-            let mut decoded = Vec::new();
-            let mut iter = value.chunks_exact(2);
-            for chunk in iter {
-                let code_unit = ((chunk[0] as u16) << 8) | (chunk[1] as u16);
-                decoded.push(code_unit);
-            }
-
-            // Strip terminator if present.
-            if decoded.len() >= 2 && decoded[decoded.len() - 1] == 0 && decoded[decoded.len() - 2] == 0 {
-                decoded.pop();
-                decoded.pop();
-            }
-
-            // Convert u16 vector to String
-            match String::from_utf16(&decoded) {
-                Ok(string) => return Some(string),
-                Err(_) => return None,
-            }
-
-            //return Some(String::from_utf16(&decoded)?); // return Ok(String::from_utf16(&decoded).map_err(|_| ASN1Error::InvalidBMPString)?);
-        }
-        IA5_STRING => {
-            let s = String::from_utf8_lossy(value).to_string();
-            if is_ia5_string(&s) {
-                return None; //return Err(ASN1Error::InvalidIA5String);
-            }
-            Some(s) //Ok(s)
-        }
-        NUMERIC_STRING => {
-            for &b in value {
-                if !('0' as u8 <= b && b <= '9' as u8 || b == ' ' as u8) {
-                    return None; // return Err(ASN1Error::InvalidNumericString);
-                }
-            }
-            Some(String::from_utf8_lossy(value).to_string()) // Ok(String::from_utf8_lossy(value).to_string())
-        }
-        _ => None,//Err(ASN1Error::UnsupportedStringType),
-    }
-}
-
-// Helper functions to validate characters and UTF-8
-fn is_printable(b: u8) -> bool {
-    (b'b' >= b'a' && b <= b'z') || (b >= b'A' && b <= b'Z') ||
-    (b >= b'0' && b <= b'9') || (b >= b'\'' && b <= b')') ||
-    (b >= b'+' && b <= b'/') || b == b' ' ||
-    b == b':' || b == b'=' || b == b'?' ||
-    b == b'*' || b == b'&'
-}
-
-fn is_valid_utf8(value: &[u8]) -> bool {
-    // Fast path for ASCII
-    for &byte in value {
-        if byte >= 0x80 {
-            return false;
-        }
-    }
-    true
-}
-
-//const MAX_ASCII: char = 'u{007F}';
-
-fn is_ia5_string(s: &str) -> bool {
-    for r in s.chars() {
-        // Per RFC5280 "IA5String is limited to the set of ASCII characters"
-        if r > 127 as char { // if r > MAX_ASCII {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-
-// ASN.1 types
 
 #[derive(Debug, Clone)]
 pub struct RawValue {
@@ -1433,7 +1220,7 @@ pub fn parse_ai(der: &mut ASN1String) -> AlgorithmIdentifier {
 }
 
 fn get_signature_algorithm_from_ai(ai: AlgorithmIdentifier) -> SignatureAlgorithm {
-    if ai.algorithm == OID_SIGNATURE_ED25519.to_vec() {
+    if ai.algorithm == oidSignatureEd25519.to_vec() {
         // RFC 8410, Section 3
 		// > For all of the OIDs, the parameters MUST be absent.
         if ai.parameters.unwrap().full_bytes.len() != 0 {
@@ -1490,69 +1277,6 @@ fn get_signature_algorithm_from_ai(ai: AlgorithmIdentifier) -> SignatureAlgorith
             oid: OID_SIGNATURE_RSA_PSS.to_vec(),
             pub_key_algo: PublicKeyAlgorithm::RSA,
             hash: Some(String::from("SHA256")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::SHA384WithRSAPSS,
-            name: String::from("SHA384-RSAPSS"),
-            oid: OID_SIGNATURE_RSA_PSS.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::RSA,
-            hash: Some(String::from("SHA384")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::SHA512WithRSAPSS,
-            name: String::from("SHA512-RSAPSS"),
-            oid: OID_SIGNATURE_RSA_PSS.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::RSA,
-            hash: Some(String::from("SHA512")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::DSAWithSHA1,
-            name: String::from("DSA-SHA1"),
-            oid: OID_SIGNATURE_DSA_WITH_SHA1.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::DSA,
-            hash: Some(String::from("SHA1")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::DSAWithSHA256,
-            name: String::from("DSA-SHA256"),
-            oid: OID_SIGNATURE_DSA_WITH_SHA256.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::DSA,
-            hash: Some(String::from("SHA256")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::ECDSAWithSHA1,
-            name: String::from("ECDSA-SHA1"),
-            oid: OID_SIGNATURE_ECDSA_WITH_SHA1.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::ECDSA,
-            hash: Some(String::from("SHA1")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::ECDSAWithSHA256,
-            name: String::from("ECDSA-SHA256"),
-            oid: OID_SIGNATURE_ECDSA_WITH_SHA256.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::ECDSA,
-            hash: Some(String::from("SHA256")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::ECDSAWithSHA384,
-            name: String::from("ECDSA-SHA384"),
-            oid: OID_SIGNATURE_ECDSA_WITH_SHA384.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::ECDSA,
-            hash: Some(String::from("SHA384")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::ECDSAWithSHA512,
-            name: String::from("ECDSA-SHA512"),
-            oid: OID_SIGNATURE_ECDSA_WITH_SHA512.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::ECDSA,
-            hash: Some(String::from("SHA512")),
-        },
-        AlgorithmDetails {
-            algo: SignatureAlgorithm::PureEd25519,
-            name: String::from("Ed25519"),
-            oid: OID_SIGNATURE_ED25519.to_vec(),
-            pub_key_algo: PublicKeyAlgorithm::Ed25519,
-            hash: Some(String::from("")),
         },
     ];
 
@@ -1668,48 +1392,18 @@ fn parse_field(v: &mut dyn std::any::Any, bytes: &[u8], init_offset: usize, para
     Some((offset, bytes))
 }*/
 
-// fn parse_validity(der: &mut ASN1String) -> Option<(u64, u64)> {
-fn parse_validity(der: &mut ASN1String) -> Option<(DateTime<Utc>, DateTime<Utc>)> {
-	let not_before = parse_time(der);
-	if not_before.is_none() {
-		return None
-	}
-	let not_after = parse_time(der);
-	if not_after.is_none() {
-		return None;
-	}
-
-	return Some((not_before.unwrap(), not_after.unwrap()));
-}
-
-fn parse_time(der: &mut ASN1String) -> Option<DateTime<Utc> > {
-    if der.peek_asn1_tag(TagUTCTime) {
-        der.read_asn1_utc_time()
-    } else if der.peek_asn1_tag(TagGeneralizedTime) {
-        der.read_asn1_generalized_time()
-    } else {
-        None//Err("Unsupported time format".to_string())
-    }
-}
-
 pub fn check_certs(current_time: i64, certs_chain: &[u8], root_cert: &[u8]) -> bool {
     // extract
     // divide input string into three slices
-    //println!("check_certs certs_chain is : {:?}", &certs_chain);
 
     let len_of_certs_chain = (certs_chain[0] as usize)*65536 + (certs_chain[1] as usize)*256 + (certs_chain[2] as usize);
-    //println!("check_certs len_of_certs_chain is : {:?}", len_of_certs_chain);
-    //println!("check_certs certs_chain.len() is : {:?}", certs_chain.len());
 
     if len_of_certs_chain+1 != certs_chain.len() {
         return false;
     }
 
     let len_of_leaf_cert = (certs_chain[3] as usize)*65536 + (certs_chain[4] as usize)*256 + (certs_chain[5] as usize);
-    //println!("check_certs len_of_leaf_cert is : {:?}", len_of_leaf_cert);
-
     let leaf_cert_slice = &certs_chain[6..len_of_leaf_cert+6];
-    //println!("check_certs leaf_cert_slice is : {:?}", leaf_cert_slice);
 
     let leaf_cert = parse_certificate(leaf_cert_slice); // leafCert, err := x509.ParseCertificate(leafCertSlice)
     //if leaf_cert.not_after.Before(time.Now()) || leaf_cert.not_before.After(time.Now()) {
@@ -1719,14 +1413,10 @@ pub fn check_certs(current_time: i64, certs_chain: &[u8], root_cert: &[u8]) -> b
 
     let start_index = len_of_leaf_cert + 8;
     let len_of_internal_cert = (certs_chain[start_index] as usize)*65536 + (certs_chain[start_index+1] as usize)*256 + (certs_chain[start_index+2] as usize);
-    //println!("check_certs len_of_internal_cert is : {:?}", len_of_internal_cert);
 
     let internal_cert_slice = &certs_chain[start_index + 3..start_index + len_of_internal_cert + 3];
-    //println!("check_certs internal_cert_slice is : {:?}", internal_cert_slice);
-
     let internal_cert = parse_certificate(internal_cert_slice); // internalCert, err := x509.ParseCertificate(internalCertSlice)
 
-    //println!("check_certs internal_cert.serial_number is : {:?}", internal_cert.serial_number.to_string());
 
     //if err != nil {
         //fmt.Printf("ParseCertificate (internalCertSlice) err is : %v\n", err.Error())
@@ -1739,9 +1429,8 @@ pub fn check_certs(current_time: i64, certs_chain: &[u8], root_cert: &[u8]) -> b
     let start_index = start_index + 3 + len_of_internal_cert + 2;
 
     let len_of_root_cert = (certs_chain[start_index] as usize)*65536 + (certs_chain[start_index+1] as usize)*256 + (certs_chain[start_index+2] as usize);
-    //println!("check_certs len_of_root_cert is : {:?}", len_of_root_cert);
     let root_cert_slice = &certs_chain[start_index + 3..start_index + len_of_root_cert+3];
-    //println!("check_certs root_cert_slice is : {:?}", root_cert_slice);
+
 
     //rootCert, err := x509.ParseCertificate(rootCertSlice)
     // if err != nil {
@@ -1751,136 +1440,3 @@ pub fn check_certs(current_time: i64, certs_chain: &[u8], root_cert: &[u8]) -> b
 
     return true;
 }
-
-/*
-#[test]
-fn test_parsing_leaf_cert(){
-
-    // lenOfRootCert is : 1507
-    let cert_bytes = [48, 130, 5, 223, 48, 130, 4, 199, 160, 3, 2, 1, 2, 2, 16, 29, 52, 231, 130, 196, 125, 97, 31, 9, 217, 200, 245, 205,
-        198, 186, 21, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0, 48, 59, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 85, 83, 49, 30, 48,
-        28, 6, 3, 85, 4, 10, 19, 21, 71, 111, 111, 103, 108, 101, 32, 84, 114, 117, 115, 116, 32, 83, 101, 114, 118, 105, 99, 101, 115, 49, 12,
-        48, 10, 6, 3, 85, 4, 3, 19, 3, 87, 82, 50, 48, 30, 23, 13, 50, 53, 48, 54, 48, 50, 48, 56, 51, 54, 51, 55, 90, 23, 13, 50, 53, 48, 56, 50,
-        53, 48, 56, 51, 54, 51, 54, 90, 48, 34, 49, 32, 48, 30, 6, 3, 85, 4, 3, 19, 23, 117, 112, 108, 111, 97, 100, 46, 118, 105, 100, 101, 111,
-        46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 48, 89, 48, 19, 6, 7, 42, 134, 72, 206, 61, 2, 1, 6, 8, 42, 134, 72, 206, 61, 3, 1, 7,
-        3, 66, 0, 4, 248, 83, 162, 122, 174, 15, 224, 170, 61, 240, 158, 237, 156, 11, 182, 110, 127, 239, 209, 74, 120, 97, 236, 65, 243, 24, 27,
-        36, 129, 74, 199, 81, 187, 0, 174, 91, 146, 116, 246, 216, 103, 159, 198, 205, 143, 254, 100, 152, 123, 224, 77, 174, 122, 94, 243, 213,
-        158, 167, 195, 80, 59, 62, 51, 87, 163, 130, 3, 193, 48, 130, 3, 189, 48, 14, 6, 3, 85, 29, 15, 1, 1, 255, 4, 4, 3, 2, 7, 128, 48, 19, 6,
-        3, 85, 29, 37, 4, 12, 48, 10, 6, 8, 43, 6, 1, 5, 5, 7, 3, 1, 48, 12, 6, 3, 85, 29, 19, 1, 1, 255, 4, 2, 48, 0, 48, 29, 6, 3, 85, 29, 14,
-        4, 22, 4, 20, 116, 64, 113, 233, 144, 151, 116, 8, 12, 37, 102, 162, 200, 138, 133, 220, 67, 196, 64, 182, 48, 31, 6, 3, 85, 29, 35, 4,
-        24, 48, 22, 128, 20, 222, 27, 30, 237, 121, 21, 212, 62, 55, 36, 195, 33, 187, 236, 52, 57, 109, 66, 178, 48, 48, 88, 6, 8, 43, 6, 1, 5,
-        5, 7, 1, 1, 4, 76, 48, 74, 48, 33, 6, 8, 43, 6, 1, 5, 5, 7, 48, 1, 134, 21, 104, 116, 116, 112, 58, 47, 47, 111, 46, 112, 107, 105, 46,
-        103, 111, 111, 103, 47, 119, 114, 50, 48, 37, 6, 8, 43, 6, 1, 5, 5, 7, 48, 2, 134, 25, 104, 116, 116, 112, 58, 47, 47, 105, 46, 112, 107,
-        105, 46, 103, 111, 111, 103, 47, 119, 114, 50, 46, 99, 114, 116, 48, 130, 1, 152, 6, 3, 85, 29, 17, 4, 130, 1, 143, 48, 130, 1, 139, 130,
-        23, 117, 112, 108, 111, 97, 100, 46, 118, 105, 100, 101, 111, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 130, 20, 42, 46, 99, 108,
-        105, 101, 110, 116, 115, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 130, 17, 42, 46, 100, 111, 99, 115, 46, 103, 111, 111, 103,
-        108, 101, 46, 99, 111, 109, 130, 18, 42, 46, 100, 114, 105, 118, 101, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 130, 19, 42, 46,
-        103, 100, 97, 116, 97, 46, 121, 111, 117, 116, 117, 98, 101, 46, 99, 111, 109, 130, 16, 42, 46, 103, 111, 111, 103, 108, 101, 97, 112, 105,
-        115, 46, 99, 111, 109, 130, 19, 42, 46, 112, 104, 111, 116, 111, 115, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 130, 23, 42, 46,
-        121, 111, 117, 116, 117, 98, 101, 45, 51, 114, 100, 45, 112, 97, 114, 116, 121, 46, 99, 111, 109, 130, 17, 117, 112, 108, 111, 97, 100, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 130, 19, 42, 46, 117, 112, 108, 111, 97, 100, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 130, 18, 117, 112, 108, 111, 97, 100, 46, 121, 111, 117, 116, 117, 98, 101, 46, 99, 111, 109, 130, 20, 42, 46, 117, 112, 108, 111, 97, 100, 46, 121, 111, 117, 116, 117, 98, 101, 46, 99, 111, 109, 130, 31, 117, 112, 108, 111, 97, 100, 115, 46, 115, 116, 97, 103, 101, 46, 103, 100, 97, 116, 97, 46, 121, 111, 117, 116, 117, 98, 101, 46, 99, 111, 109, 130, 21, 98, 103, 45, 99, 97, 108, 108, 45, 100, 111, 110, 97, 116, 105, 111, 110, 46, 103, 111, 111, 103, 130, 27, 98, 103, 45, 99, 97, 108, 108, 45, 100, 111, 110, 97, 116, 105, 111, 110, 45, 97, 108, 112, 104, 97, 46, 103, 111, 111, 103, 130, 28, 98, 103, 45, 99, 97, 108, 108, 45, 100, 111, 110, 97, 116, 105, 111, 110, 45, 99, 97, 110, 97, 114, 121, 46, 103, 111, 111, 103, 130, 25, 98, 103, 45, 99, 97, 108, 108, 45, 100, 111, 110, 97, 116, 105, 111, 110, 45, 100, 101, 118, 46, 103, 111, 111, 103, 48, 19, 6, 3, 85, 29, 32, 4, 12, 48, 10, 48, 8, 6, 6, 103, 129, 12, 1, 2, 1, 48, 54, 6, 3, 85, 29, 31, 4, 47, 48, 45, 48, 43, 160, 41, 160, 39, 134, 37, 104, 116, 116, 112, 58, 47, 47, 99, 46, 112, 107, 105, 46, 103, 111, 111, 103, 47, 119, 114, 50, 47, 71, 83, 121, 84, 49, 78, 52, 80, 66, 114, 103, 46, 99, 114, 108, 48, 130, 1, 3, 6, 10, 43, 6, 1, 4, 1, 214, 121, 2, 4, 2, 4, 129, 244, 4, 129, 241, 0, 239, 0, 118, 0, 221, 220, 202, 52, 149, 215, 225, 22, 5, 231, 149, 50, 250, 199, 159, 248, 61, 28, 80, 223, 219, 0, 58, 20, 18, 118, 10, 44, 172, 187, 200, 42, 0, 0, 1, 151, 48, 0, 13, 18, 0, 0, 4, 3, 0, 71, 48, 69, 2, 32, 25, 141, 105, 240, 199, 112, 242, 232, 208, 105, 216, 166, 198, 180, 16, 170, 174, 162, 33, 83, 140, 69, 155, 81, 15, 88, 241, 55, 220, 71, 137, 236, 2, 33, 0, 147, 92, 188, 175, 12, 195, 251, 3, 208, 216, 50, 217, 185, 244, 35, 53, 6, 13, 224, 137, 152, 132, 209, 23, 99, 2, 209, 204, 104, 39, 35, 72, 0, 117, 0, 125, 89, 30, 18, 225, 120, 42, 123, 28, 97, 103, 124, 94, 253, 248, 208, 135, 92, 20, 160, 78, 149, 158, 185, 3, 47, 217, 14, 140, 46, 121, 184, 0, 0, 1, 151, 48, 0, 16, 208, 0, 0, 4, 3, 0, 70, 48, 68, 2, 32, 86, 158, 142, 171, 240, 161, 218, 234, 10, 163, 215, 135, 65, 120, 205, 47, 143, 227, 51, 230, 77, 112, 48, 136, 100, 237, 136, 188, 205, 109, 90, 253, 2, 32, 64, 92, 213, 9, 82, 102, 85, 218, 69, 87, 96, 98, 122, 235, 105, 165, 218, 55, 81, 91, 232, 94, 251, 46, 21, 135, 147, 229, 162, 244, 208, 58, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0, 3, 130, 1, 1, 0, 78, 0, 2, 76, 206, 91, 50, 221, 129, 45, 231, 23, 12, 75, 193, 40, 29, 199, 204, 67, 202, 92, 143, 89, 184, 88, 188, 239, 123, 103, 60, 53, 75, 157, 164, 31, 47, 122, 150, 158, 92, 128, 110, 61, 15, 220, 150, 132, 113, 219, 92, 116, 154, 234, 58, 38, 210, 108, 74, 177, 255, 177, 152, 61, 36, 192, 169, 80, 82, 91, 174, 92, 201, 41, 89, 43, 103, 144, 144, 141, 191, 186, 29, 253, 77, 180, 173, 116, 43, 88, 139, 127, 214, 211, 240, 132, 208, 45, 252, 194, 174, 69, 3, 83, 195, 72, 47, 229, 107, 147, 192, 243, 235, 38, 50, 49, 111, 223, 217, 56, 39, 245, 192, 31, 88, 16, 138, 91, 44, 252, 121, 222, 6, 179, 251, 251, 214, 111, 49, 175, 194, 228, 200, 23, 9, 38, 95, 236, 34, 197, 88, 45, 64, 131, 118, 113, 226, 28, 131, 166, 230, 217, 43, 255, 107, 115, 114, 16, 82, 65, 121, 193, 19, 2, 155, 87, 24, 247, 182, 59, 114, 227, 162, 2, 132, 33, 187, 102, 100, 232, 115, 252, 113, 200, 214, 124, 228, 193, 234, 91, 243, 88, 161, 61, 122, 11, 148, 173, 161, 5, 175, 21, 238, 25, 239, 41, 152, 162, 7, 9, 184, 180, 18, 16, 182, 105, 24, 130, 170, 97, 140, 247, 142, 68, 65, 138, 182, 235, 17, 241, 151, 219, 137, 204, 70, 183, 131, 65, 70, 186, 107, 234, 22, 172, 179, 255];
-    let certificate = parse_certificate(&cert_bytes);
-
-    println!("the certificate.version is : {:?}", &certificate.version);
-    println!("the certificate.serial_number is : {:?}", &certificate.serial_number);
-
-    let certificate_version: i64 = 2;
-    assert_eq!(certificate.version, certificate_version);
-
-    let cert_serial_number = BigInt::from(38822306911496578035668995664819698197);
-    assert_eq!(certificate.serial_number, cert_serial_number);
-}
-
-#[test]
-fn test_parsing_internal_cert(){
-    // len is 1295
-    let cert_bytes = [48, 130, 5, 11, 48, 130, 2, 243, 160, 3, 2, 1, 2, 2, 16, 127, 240, 5, 160, 124, 76, 222, 209, 0, 173, 157, 102, 165,
-        16, 123, 152, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0, 48, 71, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 85, 83, 49, 34, 48, 32,
-        6, 3, 85, 4, 10, 19, 25, 71, 111, 111, 103, 108, 101, 32, 84, 114, 117, 115, 116, 32, 83, 101, 114, 118, 105, 99, 101, 115, 32, 76, 76, 67,
-        49, 20, 48, 18, 6, 3, 85, 4, 3, 19, 11, 71, 84, 83, 32, 82, 111, 111, 116, 32, 82, 49, 48, 30, 23, 13, 50, 51, 49, 50, 49, 51, 48, 57, 48, 48, 48, 48, 90, 23, 13, 50, 57, 48, 50, 50, 48, 49, 52, 48, 48, 48, 48, 90, 48, 59, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 85, 83, 49, 30, 48, 28, 6, 3, 85, 4, 10, 19, 21, 71, 111, 111, 103, 108, 101, 32, 84, 114, 117, 115, 116, 32, 83, 101, 114, 118, 105, 99, 101, 115, 49, 12, 48, 10, 6, 3, 85, 4, 3, 19, 3, 87, 82, 50, 48, 130, 1, 34, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 1, 5, 0, 3, 130, 1, 15, 0, 48, 130, 1, 10, 2, 130, 1, 1, 0, 169, 255, 156, 127, 69, 30, 112, 168, 83, 159, 202, 217, 229, 13, 222, 70, 87, 87, 125, 188, 143, 154, 90, 172, 70, 241, 132, 154, 187, 145, 219, 201, 251, 47, 1, 251, 146, 9, 0, 22, 94, 160, 28, 248, 193, 171, 249, 120, 47, 74, 204, 216, 133, 162, 216, 89, 60, 14, 211, 24, 251, 177, 245, 36, 13, 38, 238, 182, 91, 100, 118, 124, 20, 199, 47, 122, 206, 168, 76, 183, 244, 217, 8, 252, 223, 135, 35, 53, 32, 168, 226, 105, 226, 140, 78, 63, 177, 89, 250, 96, 162, 30, 179, 201, 32, 83, 25, 130, 202, 54, 83, 109, 96, 77, 233, 0, 145, 252, 118, 141, 92, 8, 15, 10, 194, 220, 241, 115, 107, 197, 19, 110, 10, 79, 122, 194, 242, 2, 28, 46, 180, 99, 131, 218, 49, 246, 45, 117, 48, 178, 251, 171, 194, 110, 219, 169, 192, 14, 185, 249, 103, 212, 195, 37, 87, 116, 235, 5, 180, 233, 142, 181, 222, 40, 205, 204, 122, 20, 228, 113, 3, 203, 77, 97, 46, 97, 87, 197, 25, 169, 11, 152, 132, 26, 232, 121, 41, 217, 178, 141, 47, 255, 87, 106, 102, 224, 206, 171, 149, 168, 41, 150, 99, 112, 18, 103, 30, 58, 225, 219, 176, 33, 113, 215, 124, 158, 253, 170, 23, 110, 254, 43, 251, 56, 23, 20, 209, 102, 167, 175, 154, 181, 112, 204, 200, 99, 129, 58, 140, 192, 42, 169, 118, 55, 206, 227, 2, 3, 1, 0, 1, 163, 129, 254, 48, 129, 251, 48, 14, 6, 3, 85, 29, 15, 1, 1, 255, 4, 4, 3, 2, 1, 134, 48, 29, 6, 3, 85, 29, 37, 4, 22, 48, 20, 6, 8, 43, 6, 1, 5, 5, 7, 3, 1, 6, 8, 43, 6, 1, 5, 5, 7, 3, 2, 48, 18, 6, 3, 85, 29, 19, 1, 1, 255, 4, 8, 48, 6, 1, 1, 255, 2, 1, 0, 48, 29, 6, 3, 85, 29, 14, 4, 22, 4, 20, 222, 27, 30, 237, 121, 21, 212, 62, 55, 36, 195, 33, 187, 236, 52, 57, 109, 66, 178, 48, 48, 31, 6, 3, 85, 29, 35, 4, 24, 48, 22, 128, 20, 228, 175, 43, 38, 113, 26, 43, 72, 39, 133, 47, 82, 102, 44, 239, 240, 137, 19, 113, 62, 48, 52, 6, 8, 43, 6, 1, 5, 5, 7, 1, 1, 4, 40, 48, 38, 48, 36, 6, 8, 43, 6, 1, 5, 5, 7, 48, 2, 134, 24, 104, 116, 116, 112, 58, 47, 47, 105, 46, 112, 107, 105, 46, 103, 111, 111, 103, 47, 114, 49, 46, 99, 114, 116, 48, 43, 6, 3, 85, 29, 31, 4, 36, 48, 34, 48, 32, 160, 30, 160, 28, 134, 26, 104, 116, 116, 112, 58, 47, 47, 99, 46, 112, 107, 105, 46, 103, 111, 111, 103, 47, 114, 47, 114, 49, 46, 99, 114, 108, 48, 19, 6, 3, 85, 29, 32, 4, 12, 48, 10, 48, 8, 6, 6, 103, 129, 12, 1, 2, 1, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0, 3, 130, 2, 1, 0, 69, 117, 139, 229, 31, 59, 68, 19, 150, 26, 171, 88, 241, 53, 201, 111, 61, 210, 208, 51, 74, 134, 51, 186, 87, 81, 79, 238, 196, 52, 218, 22, 18, 76, 191, 19, 159, 13, 212, 84, 233, 72, 121, 192, 48, 60, 148, 37, 242, 26, 244, 186, 50, 148, 182, 51, 114, 11, 133, 238, 9, 17, 37, 52, 148, 225, 111, 66, 219, 130, 155, 123, 127, 42, 154, 169, 255, 127, 169, 210, 222, 74, 32, 203, 179, 251, 3, 3, 184, 248, 7, 5, 218, 89, 146, 47, 24, 70, 152, 206, 175, 114, 190, 36, 38, 177, 30, 0, 77, 189, 8, 173, 147, 65, 68, 10, 187, 199, 213, 1, 133, 191, 147, 87, 227, 223, 116, 18, 83, 14, 17, 37, 211, 155, 220, 222, 203, 39, 110, 179, 194, 185, 51, 98, 57, 194, 224, 53, 225, 91, 167, 9, 46, 25, 203, 145, 42, 118, 92, 241, 223, 202, 35, 132, 64, 165, 111, 255, 154, 65, 224, 181, 239, 50, 209, 133, 174, 175, 37, 9, 240, 98, 197, 110, 194, 200, 110, 50, 253, 184, 218, 226, 206, 74, 145, 74, 243, 133, 85, 78, 177, 117, 214, 72, 51, 47, 111, 132, 217, 18, 92, 159, 212, 113, 152, 99, 37, 141, 105, 92, 10, 107, 125, 242, 65, 189, 232, 187, 143, 228, 34, 215, 157, 101, 69, 232, 76, 10, 135, 218, 233, 96, 102, 136, 14, 31, 199, 225, 78, 86, 197, 118, 255, 180, 122, 87, 105, 242, 2, 34, 9, 38, 65, 29, 218, 116, 162, 229, 41, 243, 196, 154, 229, 93, 214, 170, 122, 253, 225, 183, 43, 102, 56, 251, 232, 41, 102, 186, 239, 160, 19, 47, 248, 115, 126, 240, 218, 64, 17, 28, 93, 221, 143, 166, 252, 190, 219, 190, 86, 248, 50, 156, 31, 65, 65, 109, 126, 182, 197, 235, 198, 139, 54, 183, 23, 140, 157, 207, 25, 122, 52, 159, 33, 147, 196, 126, 116, 53, 210, 170, 253, 76, 109, 20, 245, 201, 176, 121, 91, 73, 60, 243, 191, 23, 72, 232, 239, 154, 38, 19, 12, 135, 242, 115, 214, 156, 197, 82, 107, 99, 247, 50, 144, 120, 169, 107, 235, 94, 214, 147, 161, 191, 188, 24, 61, 139, 89, 246, 138, 198, 5, 94, 82, 24, 226, 102, 224, 218, 193, 220, 173, 90, 37, 170, 244, 69, 252, 241, 11, 120, 164, 175, 176, 242, 115, 164, 48, 168, 52, 193, 83, 127, 66, 150, 229, 72, 65, 235, 144, 70, 12, 6, 220, 203, 146, 198, 94, 243, 68, 68, 67, 70, 41, 70, 160, 166, 252, 185, 142, 57, 39, 57, 177, 90, 226, 177, 173, 252, 19, 255, 142, 252, 38, 225, 212, 254, 132, 241, 80, 90, 142, 151, 107, 45, 42, 121, 251, 64, 100, 234, 243, 61, 189, 91, 225, 160, 4, 176, 151, 72, 28, 66, 245, 234, 90, 28, 205, 38, 200, 81, 255, 20, 153, 103, 137, 114, 95, 29, 236, 173, 90, 221];
-    let certificate = parse_certificate(&cert_bytes);
-
-    println!("the certificate.version is : {:?}", &certificate.version);
-    println!("the certificate.serial_number is : {:?}", &certificate.serial_number);
-
-    // lenOfRootCert is : 1382
-    let certificate_version: i64 = 2;
-    assert_eq!(certificate.version, certificate_version);
-    let cert_serial_number = BigInt(170058220837755766831192027518741805976);
-    assert_eq!(certificate.serial_number, cert_serial_number);
-}*/
-
-
-#[test]
-fn test_parsing_root_cert_from_inet(){
-
-    let cert_bytes = [48, 130, 5, 98, 48, 130, 4, 74, 160, 3, 2, 1, 2, 2, 16, 119, 189, 13, 108, 219, 54, 249, 26, 234, 33, 15, 196, 240,
-        88, 211, 13, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0, 48, 87, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 66, 69, 49, 25, 48, 23,
-        6, 3, 85, 4, 10, 19, 16, 71, 108, 111, 98, 97, 108, 83, 105, 103, 110, 32, 110, 118, 45, 115, 97, 49, 16, 48, 14, 6, 3, 85, 4, 11, 19, 7,
-        82, 111, 111, 116, 32, 67, 65, 49, 27, 48, 25, 6, 3, 85, 4, 3, 19, 18, 71, 108, 111, 98, 97, 108, 83, 105, 103, 110, 32, 82, 111, 111, 116,
-        32, 67, 65, 48, 30, 23, 13, 50, 48, 48, 54, 49, 57, 48, 48, 48, 48, 52, 50, 90, 23, 13, 50, 56, 48, 49, 50, 56, 48, 48, 48, 48, 52, 50, 90,
-        48, 71, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 85, 83, 49, 34, 48, 32, 6, 3, 85, 4, 10, 19, 25, 71, 111, 111, 103, 108, 101, 32, 84, 114,
-        117, 115, 116, 32, 83, 101, 114, 118, 105, 99, 101, 115, 32, 76, 76, 67, 49, 20, 48, 18, 6, 3, 85, 4, 3, 19, 11, 71, 84, 83, 32, 82, 111,
-        111, 116, 32, 82, 49, 48, 130, 2, 34, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 1, 5, 0, 3, 130, 2, 15, 0, 48, 130, 2, 10, 2, 130, 2,
-        1, 0, 182, 17, 2, 139, 30, 227, 161, 119, 155, 59, 220, 191, 148, 62, 183, 149, 167, 64, 60, 161, 253, 130, 249, 125, 50, 6, 130, 113, 246,
-        246, 140, 127, 251, 232, 219, 188, 106, 46, 151, 151, 163, 140, 75, 249, 43, 246, 177, 249, 206, 132, 29, 177, 249, 197, 151, 222, 239, 185,
-        242, 163, 233, 188, 18, 137, 94, 167, 170, 82, 171, 248, 35, 39, 203, 164, 177, 156, 99, 219, 215, 153, 126, 240, 10, 94, 235, 104, 166, 244,
-        198, 90, 71, 13, 77, 16, 51, 227, 78, 177, 19, 163, 200, 24, 108, 75, 236, 252, 9, 144, 223, 157, 100, 41, 37, 35, 7, 161, 180, 210, 61, 46,
-        96, 224, 207, 210, 9, 135, 187, 205, 72, 240, 77, 194, 194, 122, 136, 138, 187, 186, 207, 89, 25, 214, 175, 143, 176, 7, 176, 158, 49, 241,
-        130, 193, 192, 223, 46, 166, 109, 108, 25, 14, 181, 216, 126, 38, 26, 69, 3, 61, 176, 121, 164, 148, 40, 173, 15, 127, 38, 229, 168, 8, 254,
-        150, 232, 60, 104, 148, 83, 238, 131, 58, 136, 43, 21, 150, 9, 178, 224, 122, 140, 46, 117, 214, 156, 235, 167, 86, 100, 143, 150, 79, 104,
-        174, 61, 151, 194, 132, 143, 192, 188, 64, 192, 11, 92, 189, 246, 135, 179, 53, 108, 172, 24, 80, 127, 132, 224, 76, 205, 146, 211, 32, 233,
-        51, 188, 82, 153, 175, 50, 181, 41, 179, 37, 42, 180, 72, 249, 114, 225, 202, 100, 247, 230, 130, 16, 141, 232, 157, 194, 138, 136, 250, 56,
-        102, 138, 252, 99, 249, 1, 249, 120, 253, 123, 92, 119, 250, 118, 135, 250, 236, 223, 177, 14, 121, 149, 87, 180, 189, 38, 239, 214, 1, 209,
-        235, 22, 10, 187, 142, 11, 181, 197, 197, 138, 85, 171, 211, 172, 234, 145, 75, 41, 204, 25, 164, 50, 37, 78, 42, 241, 101, 68, 208, 2, 206,
-        170, 206, 73, 180, 234, 159, 124, 131, 176, 64, 123, 231, 67, 171, 167, 108, 163, 143, 125, 137, 129, 250, 76, 165, 255, 213, 142, 195, 206,
-        75, 224, 181, 216, 179, 142, 69, 207, 118, 192, 237, 64, 43, 253, 83, 15, 176, 167, 213, 59, 13, 177, 138, 162, 3, 222, 49, 173, 204, 119,
-        234, 111, 123, 62, 214, 223, 145, 34, 18, 230, 190, 250, 216, 50, 252, 16, 99, 20, 81, 114, 222, 93, 214, 22, 147, 189, 41, 104, 51, 239,
-        58, 102, 236, 7, 138, 38, 223, 19, 215, 87, 101, 120, 39, 222, 94, 73, 20, 0, 162, 0, 127, 154, 168, 33, 182, 169, 177, 149, 176, 165, 185,
-        13, 22, 17, 218, 199, 108, 72, 60, 64, 224, 126, 13, 90, 205, 86, 60, 209, 151, 5, 185, 203, 75, 237, 57, 75, 156, 196, 63, 210, 85, 19,
-        110, 36, 176, 214, 113, 250, 244, 193, 186, 204, 237, 27, 245, 254, 129, 65, 216, 0, 152, 61, 58, 200, 174, 122, 152, 55, 24, 5, 149, 2,
-        3, 1, 0, 1, 163, 130, 1, 56, 48, 130, 1, 52, 48, 14, 6, 3, 85, 29, 15, 1, 1, 255, 4, 4, 3, 2, 1, 134, 48, 15, 6, 3, 85, 29, 19, 1, 1, 255,
-        4, 5, 48, 3, 1, 1, 255, 48, 29, 6, 3, 85, 29, 14, 4, 22, 4, 20, 228, 175, 43, 38, 113, 26, 43, 72, 39, 133, 47, 82, 102, 44, 239, 240, 137,
-        19, 113, 62, 48, 31, 6, 3, 85, 29, 35, 4, 24, 48, 22, 128, 20, 96, 123, 102, 26, 69, 13, 151, 202, 137, 80, 47, 125, 4, 205, 52, 168, 255,
-        252, 253, 75, 48, 96, 6, 8, 43, 6, 1, 5, 5, 7, 1, 1, 4, 84, 48, 82, 48, 37, 6, 8, 43, 6, 1, 5, 5, 7, 48, 1, 134, 25, 104, 116, 116, 112,
-        58, 47, 47, 111, 99, 115, 112, 46, 112, 107, 105, 46, 103, 111, 111, 103, 47, 103, 115, 114, 49, 48, 41, 6, 8, 43, 6, 1, 5, 5, 7, 48, 2,
-        134, 29, 104, 116, 116, 112, 58, 47, 47, 112, 107, 105, 46, 103, 111, 111, 103, 47, 103, 115, 114, 49, 47, 103, 115, 114, 49, 46, 99, 114,
-        116, 48, 50, 6, 3, 85, 29, 31, 4, 43, 48, 41, 48, 39, 160, 37, 160, 35, 134, 33, 104, 116, 116, 112, 58, 47, 47, 99, 114, 108, 46, 112,
-        107, 105, 46, 103, 111, 111, 103, 47, 103, 115, 114, 49, 47, 103, 115, 114, 49, 46, 99, 114, 108, 48, 59, 6, 3, 85, 29, 32, 4, 52, 48, 50,
-        48, 8, 6, 6, 103, 129, 12, 1, 2, 1, 48, 8, 6, 6, 103, 129, 12, 1, 2, 2, 48, 13, 6, 11, 43, 6, 1, 4, 1, 214, 121, 2, 5, 3, 2, 48, 13, 6, 11,
-        43, 6, 1, 4, 1, 214, 121, 2, 5, 3, 3, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0, 3, 130, 1, 1, 0, 52, 164, 30, 177, 40, 163,
-        208, 180, 118, 23, 166, 49, 122, 33, 233, 209, 82, 62, 200, 219, 116, 22, 65, 136, 184, 61, 53, 29, 237, 228, 255, 147, 225, 92, 95, 171,
-        187, 234, 124, 207, 219, 228, 13, 209, 139, 87, 242, 38, 111, 91, 190, 23, 70, 104, 148, 55, 111, 107, 122, 200, 192, 24, 55, 250, 37, 81,
-        172, 236, 104, 191, 178, 200, 73, 253, 90, 154, 202, 1, 35, 172, 132, 128, 43, 2, 140, 153, 151, 235, 73, 106, 140, 117, 215, 199, 222,
-        178, 201, 151, 159, 88, 72, 87, 14, 53, 161, 228, 26, 214, 253, 111, 131, 129, 111, 239, 140, 207, 151, 175, 192, 133, 42, 240, 245, 78,
-        105, 9, 145, 45, 225, 104, 184, 193, 43, 115, 233, 212, 217, 252, 34, 192, 55, 31, 11, 102, 29, 73, 237, 2, 85, 143, 103, 225, 50, 215,
-        211, 38, 191, 112, 227, 61, 244, 103, 109, 61, 124, 229, 52, 136, 227, 50, 250, 167, 110, 6, 106, 111, 189, 139, 145, 238, 22, 75, 232,
-        59, 169, 179, 55, 231, 195, 68, 164, 126, 216, 108, 215, 199, 70, 245, 146, 155, 231, 213, 33, 190, 102, 146, 25, 148, 85, 108, 212, 41,
-        178, 13, 193, 102, 91, 226, 119, 73, 72, 40, 237, 157, 215, 26, 51, 114, 83, 179, 130, 53, 207, 98, 139, 201, 36, 139, 165, 183, 57, 12,
-        187, 126, 42, 65, 191, 82, 207, 252, 162, 150, 182, 194, 130, 63];
-    let certificate = parse_certificate(&cert_bytes);
-
-    //println!("the certificate.version is : {:?}", &certificate.version);
-    //println!("the certificate.serial_number is : {:?}", &certificate.serial_number.to_string());
-
-    // lenOfRootCert is : 1382
-    let certificate_version: i64 = 3;
-    assert_eq!(certificate.version, certificate_version);
-    // let cert_serial_number = BigInt(159159747900478145820483398898491642637);
-    let cert_serial_number = BigInt::from_str("159159747900478145820483398898491642637").unwrap();
-    assert_eq!(certificate.serial_number, cert_serial_number);
-    //let cert_issuer = Name{}; // CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE
-    //certificate.issuer = CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE
-
-    //rootCert.PublicKeyAlgorithm is : RSA
-    // rootCert.PublicKey is : &{742766292573789461138430713106656498577482106105452767343211753017973550878861638590047246174848574634573720584492944669558785810905825702100325794803983120697401526210439826606874730300903862093323398754125584892080731234772626570955922576399434033022944334623029747454371697865218999618129768679013891932765999545116374192173968985738129135224425889467654431372779943313524100225335793262665132039441111162352797240438393795570253671786791600672076401253164614309929080014895216439462173458352253266568535919120175826866378039177020829725517356783703110010084715777806343235841345264684364598708732655710904078855499605447884872767583987312177520332134164321746982952420498393591583416464199126272682424674947720461866762624768163777784559646117979893432692133818266724658906066075396922419161138847526583266030290937955148683298741803605463007526904924936746018546134099068479370078440023459839544052468222048449819089106832452146002755336956394669648596035188293917750838002531358091511944112847917218550963597247358780879029417872466325821996717925086546502702016501643824750668459565101211439428003662613442032518886622942136328590823063627643918273848803884791311375697313014431195473178892344923166262358299334827234064598421 65537}
-}
-
-//#[test]
-//fn test_parsing_root_cert_from_alina(){
-    //parseCertificate cert.Version is : 2
-    // parseCertificate cert.SerialNumber is : 146587176229350439916519468929765261721
-    // etalonRootCert.Issuer is : CN=GTS Root R4,O=Google Trust Services LLC,C=US
-    // etalonRootCert.PublicKeyAlgorithm is : ECDSA
-    // etalonRootCert.PublicKey is : &{0x490850 37471137007972414188180584817005857701594611622436499579709175026540926241259029249891351931980308501383755467997302 9183005163897397881300021216631269301828759039006067320487338515525388614843808427732645382476107253937965649436042}
-    // etalonRootCert.Issuer is : CN=GTS Root R4,O=Google Trust Services LLC,C=US
-//}
