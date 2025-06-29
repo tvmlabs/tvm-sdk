@@ -3,6 +3,8 @@ use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_BURNECC;
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
+use tvm_block::ACTION_MINT_SHELLQ_TOKEN;
+use tvm_block::ACTION_SEND_TO_DAPP_CONFIG;
 use tvm_block::ACTION_MINTECC;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
@@ -47,7 +49,7 @@ pub const KRBK: f64 = 0.675_f64;
 pub const KRBM: f64 = 0.1_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
-pub const WASM_FUEL_MULTIPLIER: u64 = 8u64;
+pub const WASM_FUEL_MULTIPLIER: u64 = 2220000u64;
 pub const WASM_200MS_FUEL: u64 = 2220000000u64;
 pub const RUNWASM_GAS_PRICE: u64 = WASM_200MS_FUEL / WASM_FUEL_MULTIPLIER;
 struct MyState {
@@ -493,7 +495,7 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
-    let nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; // needNumberOfActiveBlockKeepers = 10000
+    let _nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; // needNumberOfActiveBlockKeepers = 10000
     let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepersAtBlockStart
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token without slash tokens
@@ -506,19 +508,11 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
             let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
             fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
         }
-        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq;
+        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbk;
     } else {
         sbkbase = 0_f64;
     }
-    let sbkmin;
-    let us = -1_f64 * (KS / (KS + 1_f64)).ln() / nbkreq;
-    if (nbk >= 0_f64) && (nbk <= nbkreq) {
-        sbkmin = sbkbase * (1_f64 + KS) * (1_f64 - (-1_f64 * us * nbk).exp());
-    } else {
-        let unbk = 2_f64 * nbkreq - nbk;
-        sbkmin = sbkbase * (2_f64 - (1_f64 + KS) * (1_f64 - (-1_f64 * us * unbk).exp()));
-    }
-    engine.cc.stack.push(int!(sbkmin as u128));
+    engine.cc.stack.push(int!(sbkbase as u128));
     Ok(())
 }
 
@@ -549,4 +543,36 @@ pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
     let mut cell = BuilderData::new();
     x.write_to(&mut cell)?;
     add_action(engine, ACTION_MINT_SHELL_TOKEN, None, cell)
+}
+
+pub(super) fn execute_mint_shellq(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("MINTSHELLQ"))?;
+    fetch_stack(engine, 1)?;
+    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
+    let mut cell = BuilderData::new();
+    x.write_to(&mut cell)?;
+    add_action(engine, ACTION_MINT_SHELLQ_TOKEN, None, cell)
+}
+
+pub(super) fn execute_send_to_dapp_config(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("SENDTODAPPCONFIG"))?;
+    fetch_stack(engine, 1)?;
+    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
+    let mut cell = BuilderData::new();
+    x.write_to(&mut cell)?;
+    add_action(engine, ACTION_SEND_TO_DAPP_CONFIG, None, cell)
+}
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("GETAVAILABLEBALANCE"))?;
+    let mut balance = engine.get_available_credit();  
+    if balance < 0 {
+        balance = 0;
+    }
+    engine.cc.stack.push(int!(balance as u128));
+    Ok(())
 }

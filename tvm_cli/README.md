@@ -118,8 +118,7 @@ tvm-cli <subcommand> -h
       - [11.8. Render UML sequence diagram](#118-render-uml-sequence-diagram)
       - [Caveat](#caveat)
     - [12. Alias functionality](#12-alias-functionality)
-    - [13. Evercloud authentication](#13-evercloud-authentication)
-    - [14. Sold](#14-sold)
+    - [13. Sold](#13-sold)
 
 ## 1. Installation
 
@@ -348,6 +347,7 @@ List of available options:
 --parameters <PARAMETERS>                     Function parameters that can be saved to be used by some commands (runx, callx).
 --project_id <PROJECT_ID>                     Project Id in Evercloud (dashboard.evercloud.dev).
 --pubkey <PUBKEY>                             User public key. Used by DeBot Browser.
+--api-token <API_TOKEN>                  Rest API token.
 --retries <RETRIES>                           Number of attempts to call smart contract function if previous attempt was unsuccessful.
 --timeout <TIMEOUT>                           Network `wait_for` timeout in ms. This value is also used as timeout for remote files (specified with link, e.g. ABI file) loading.
 --url <URL>                                   Url to connect.
