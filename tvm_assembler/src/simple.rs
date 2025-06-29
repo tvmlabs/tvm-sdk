@@ -851,6 +851,7 @@ impl Engine {
         CALCMINSTAKEBM                       => 0xC7, 0x37
         BURNECC                              => 0xC7, 0x38
         RUNWASM                              => 0xC7, 0x39
+        RUNWASMCONCATMULTIARG                => 0xC7, 0x3A
         GETAVAILABLEBALANCE                  => 0xC7, 0x42
         MINTSHELL                            => 0xC7, 0x43
         SENDTODAPPCONFIG                     => 0xC7, 0x44
