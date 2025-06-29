@@ -542,7 +542,7 @@ async fn debug_transaction_command(
 
     decode_messages(&tr, load_decode_abi(matches, config), config).await?;
     if !config.is_json {
-        println!("Log saved to {}.", trace_path);
+        println!("Log saved to {trace_path}.");
     }
     Ok(())
 }
@@ -575,7 +575,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
         },
     )
     .await
-    .map_err(|e| format!("Failed to query transaction: {}", e))?;
+    .map_err(|e| format!("Failed to query transaction: {e}"))?;
 
     if trans.result.is_empty() {
         return Err("Transaction with specified id was not found".to_string());
@@ -585,22 +585,22 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
     let block_lt =
         trans["block"]["start_lt"].as_str().ok_or("Failed to parse block_lt.".to_string())?;
     let block_lt = u64::from_str_radix(&block_lt[2..], 16)
-        .map_err(|e| format!("Failed to convert block_lt: {}", e))?;
+        .map_err(|e| format!("Failed to convert block_lt: {e}"))?;
     let boc = trans["boc"].as_str().ok_or("Failed to parse boc.".to_string())?;
 
     let trans = Transaction::construct_from_base64(boc)
-        .map_err(|e| format!("Failed to parse transaction: {}", e))?;
+        .map_err(|e| format!("Failed to parse transaction: {e}"))?;
 
     let mut account = Account::construct_from_file(input.unwrap())
-        .map_err(|e| format!("Failed to construct account from the file: {}", e))?
+        .map_err(|e| format!("Failed to construct account from the file: {e}"))?
         .serialize()
-        .map_err(|e| format!("Failed to serialize account: {}", e))?;
+        .map_err(|e| format!("Failed to serialize account: {e}"))?;
 
     let msg = trans
         .in_msg_cell()
         .map(|c| {
             Message::construct_from_cell(c)
-                .map_err(|e| format!("failed to construct message: {}", e))
+                .map_err(|e| format!("failed to construct message: {e}"))
         })
         .transpose()?;
 
@@ -622,9 +622,9 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
 
     if do_update && result_trans.is_ok() {
         Account::construct_from_cell(account.clone())
-            .map_err(|e| format!("Failed to construct account: {}", e))?
+            .map_err(|e| format!("Failed to construct account: {e}"))?
             .write_to_file(input.unwrap())
-            .map_err(|e| format!("Failed to save account state: {}", e))?;
+            .map_err(|e| format!("Failed to save account state: {e}"))?;
         if !config.is_json {
             println!("Contract state was updated.");
         }
@@ -639,7 +639,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
         }
         Err(e) => {
             if !config.is_json {
-                println!("Execution failed: {}", e);
+                println!("Execution failed: {e}");
             }
         }
     }
@@ -651,7 +651,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
 
 fn parse_now(matches: &ArgMatches) -> Result<u64, String> {
     Ok(match matches.value_of("NOW") {
-        Some(now) => now.parse().map_err(|e| format!("Failed to convert now to u64: {}", e))?,
+        Some(now) => now.parse().map_err(|e| format!("Failed to convert now to u64: {e}"))?,
         _ => now_ms(),
     })
 }
@@ -666,7 +666,7 @@ fn load_decode_abi(matches: &ArgMatches, config: &Config) -> Option<String> {
             Ok(res) => Some(res),
             Err(e) => {
                 if !config.is_json {
-                    println!("Failed to read abi: {}", e);
+                    println!("Failed to read abi: {e}");
                 }
                 None
             }
@@ -714,13 +714,13 @@ async fn debug_call_command(
     } else if is_boc {
         ton_client = create_client_local()?;
         Account::construct_from_file(input)
-            .map_err(|e| format!(" failed to load account from the file {}: {}", input, e))?
+            .map_err(|e| format!(" failed to load account from the file {input}: {e}"))?
     } else {
         ton_client = create_client(&full_config.config)?;
         let address = load_ton_address(input, &full_config.config)?;
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
         Account::construct_from_base64(&account)
-            .map_err(|e| format!("Failed to construct account: {}", e))?
+            .map_err(|e| format!("Failed to construct account: {e}"))?
     };
     let now = parse_now(matches)?;
 
@@ -767,18 +767,18 @@ async fn debug_call_command(
         };
         encode_message(ton_client, msg_params)
             .await
-            .map_err(|e| format!("Failed to encode message: {}", e))?
+            .map_err(|e| format!("Failed to encode message: {e}"))?
             .message
     };
 
     let message = Message::construct_from_base64(&message)
-        .map_err(|e| format!("Failed to construct message: {}", e))?;
+        .map_err(|e| format!("Failed to construct message: {e}"))?;
 
     if is_getter {
         account.set_balance(CurrencyCollection::with_grams(u64::MAX));
     }
     let mut acc_root =
-        account.serialize().map_err(|e| format!("Failed to serialize account: {}", e))?;
+        account.serialize().map_err(|e| format!("Failed to serialize account: {e}"))?;
 
     let trace_path = output.unwrap();
     init_debug_logger(trace_path)?;
@@ -814,7 +814,7 @@ async fn debug_call_command(
             if is_getter && e.contains("Contract did not accept message") {
                 "Execution finished.".to_string()
             } else if !full_config.config.is_json {
-                format!("Execution failed: {}", e)
+                format!("Execution failed: {e}")
             } else {
                 return Err(e);
             }
@@ -823,24 +823,24 @@ async fn debug_call_command(
 
     if matches.is_present("UPDATE_BOC") {
         Account::construct_from_cell(acc_root)
-            .map_err(|e| format!("Failed to construct account: {}", e))?
+            .map_err(|e| format!("Failed to construct account: {e}"))?
             .write_to_file(input)
-            .map_err(|e| format!("Failed to dump account: {}", e))?;
+            .map_err(|e| format!("Failed to dump account: {e}"))?;
         if !full_config.config.is_json {
-            println!("{} successfully updated", input);
+            println!("{input} successfully updated");
         }
     }
 
     if is_getter && !out_res.is_empty() && !full_config.config.is_json {
         print!("Output: ");
         for msg in out_res {
-            println!("{:#}", msg)
+            println!("{msg:#}")
         }
     }
 
     if !full_config.config.is_json {
-        println!("{}", msg_string);
-        println!("Log saved to {}", trace_path);
+        println!("{msg_string}");
+        println!("Log saved to {trace_path}");
     }
     Ok(())
 }
@@ -859,12 +859,12 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
     let input = input.unwrap();
     let account = if is_boc {
         Account::construct_from_file(input)
-            .map_err(|e| format!(" failed to load account from the file {}: {}", input, e))?
+            .map_err(|e| format!(" failed to load account from the file {input}: {e}"))?
     } else {
         let address = load_ton_address(input, config)?;
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
         Account::construct_from_base64(&account)
-            .map_err(|e| format!("Failed to construct account: {}", e))?
+            .map_err(|e| format!("Failed to construct account: {e}"))?
     };
 
     let message = message.unwrap();
@@ -873,9 +873,9 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
     } else {
         Message::construct_from_base64(message)
     }
-    .map_err(|e| format!("Failed to decode message: {}", e))?;
+    .map_err(|e| format!("Failed to decode message: {e}"))?;
     let mut acc_root =
-        account.serialize().map_err(|e| format!("Failed to serialize account: {}", e))?;
+        account.serialize().map_err(|e| format!("Failed to serialize account: {e}"))?;
 
     let trace_path = output.unwrap();
     init_debug_logger(trace_path)?;
@@ -900,22 +900,22 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
             decode_messages(&trans, load_decode_abi(matches, config), config).await?;
             ("Execution finished.".to_string(), None)
         }
-        Err(e) => (format!("Execution failed: {}", e), Some(e)),
+        Err(e) => (format!("Execution failed: {e}"), Some(e)),
     };
 
     if matches.is_present("UPDATE_BOC") {
         Account::construct_from_cell(acc_root)
-            .map_err(|e| format!("Failed to construct account: {}", e))?
+            .map_err(|e| format!("Failed to construct account: {e}"))?
             .write_to_file(input)
-            .map_err(|e| format!("Failed to dump account: {}", e))?;
+            .map_err(|e| format!("Failed to dump account: {e}"))?;
         if !config.is_json {
-            println!("{} successfully updated", input);
+            println!("{input} successfully updated");
         }
     }
 
     if !config.is_json {
-        println!("{}", msg_string);
-        println!("Log saved to {}", trace_path);
+        println!("{msg_string}");
+        println!("Log saved to {trace_path}");
     }
     match error {
         Some(e) => Err(e),
@@ -960,26 +960,26 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
     let ton_client = create_client(config)?;
     let enc_msg = encode_message(ton_client.clone(), msg.clone())
         .await
-        .map_err(|e| format!("failed to create inbound message: {}", e))?;
+        .map_err(|e| format!("failed to create inbound message: {e}"))?;
 
     let account = if let Some(initial_balance) = initial_balance_opt {
         let address = AccountId::from_string(address.split(':').collect::<Vec<&str>>()[1])
-            .map_err(|e| format!("{}", e))?;
+            .map_err(|e| format!("{e}"))?;
         let addr =
-            MsgAddressInt::with_standart(None, wc as i8, address).map_err(|e| format!("{}", e))?;
+            MsgAddressInt::with_standart(None, wc as i8, address).map_err(|e| format!("{e}"))?;
         let balance = CurrencyCollection::with_grams(initial_balance);
         Account::with_address_and_ballance(&addr, &balance)
     } else {
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
         Account::construct_from_base64(&account)
-            .map_err(|e| format!("Failed to construct account: {}", e))?
+            .map_err(|e| format!("Failed to construct account: {e}"))?
     };
 
     let message = Message::construct_from_base64(&enc_msg.message)
-        .map_err(|e| format!("Failed to construct message: {}", e))?;
+        .map_err(|e| format!("Failed to construct message: {e}"))?;
 
     let mut acc_root =
-        account.serialize().map_err(|e| format!("Failed to serialize account: {}", e))?;
+        account.serialize().map_err(|e| format!("Failed to serialize account: {e}"))?;
 
     let trace_path = output.unwrap();
     init_debug_logger(trace_path)?;
@@ -1007,19 +1007,19 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
                     .map_err(|e| format!("Failed to construct account after debug deploy: {e}"))?;
                 let output = std::path::PathBuf::from(tvc.unwrap()).with_extension("boc");
                 account.write_to_file(&output).map_err(|e| {
-                    format!("Failed to serialize account after debug deploy {:?}: {e}", output)
+                    format!("Failed to serialize account after debug deploy {output:?}: {e}")
                 })?;
             }
             decode_messages(&trans, load_decode_abi(matches, config), config).await?;
             "Execution finished.".to_string()
         }
         Err(e) => {
-            format!("Execution failed: {}", e)
+            format!("Execution failed: {e}")
         }
     };
     if !config.is_json {
-        println!("{}", msg_string);
-        println!("Log saved to {}", trace_path);
+        println!("{msg_string}");
+        println!("Log saved to {trace_path}");
     }
     Ok(())
 }
@@ -1033,16 +1033,16 @@ pub async fn decode_messages(
     if !msgs.is_empty() {
         log::debug!(target: "executor", "Output messages:\n----------------");
     }
-    let msgs = msgs.export_vector().map_err(|e| format!("Failed to parse out messages: {}", e))?;
+    let msgs = msgs.export_vector().map_err(|e| format!("Failed to parse out messages: {e}"))?;
 
     let mut res = vec![];
     let mut output = vec![];
     for InRefValue(msg) in msgs {
         let mut ser_msg = serialize_msg(&msg, abi.clone(), config)
             .await
-            .map_err(|e| format!("Failed to serialize message: {}", e))?;
+            .map_err(|e| format!("Failed to serialize message: {e}"))?;
         let msg_cell =
-            msg.serialize().map_err(|e| format!("Failed to serialize out message: {}", e))?;
+            msg.serialize().map_err(|e| format!("Failed to serialize out message: {e}"))?;
         ser_msg["id"] = msg_cell.repr_hash().as_hex_string().into();
         let msg_bytes = tvm_types::write_boc(&msg_cell)
             .map_err(|e| format!("failed to encode out message: {e}"))?;
@@ -1051,7 +1051,7 @@ pub async fn decode_messages(
         if body.is_object() {
             res.push(body.clone());
         }
-        log::debug!(target: "executor", "\n{:#}\n", ser_msg);
+        log::debug!(target: "executor", "\n{ser_msg:#}\n");
         output.push(ser_msg);
     }
     if config.is_json {
@@ -1080,7 +1080,7 @@ pub async fn decode_messages(
             "messages": output,
             // "transaction": _tr
         });
-        println!("{:#}", result);
+        println!("{result:#}");
     }
     Ok(res)
 }
@@ -1100,7 +1100,7 @@ async fn query_address(tr_id: &str, config: &Config) -> Result<String, String> {
         Some(1),
     )
     .await
-    .map_err(|e| format!("Failed to query address: {}", e))?;
+    .map_err(|e| format!("Failed to query address: {e}"))?;
     match query_result.len() {
         0 => Err("Transaction was not found".to_string()),
         _ => Ok(query_result[0]["account_addr"]
@@ -1143,7 +1143,7 @@ async fn query_transactions(address: &str, config: &Config) -> Result<Vec<TrDeta
         Some(TRANSACTION_QUANTITY),
     )
     .await
-    .map_err(|e| format!("Failed to query address: {}", e))?;
+    .map_err(|e| format!("Failed to query address: {e}"))?;
     match query_result.len() {
         0 => Err("Transaction list is empty.".to_string()),
         _ => Ok(query_result
@@ -1169,7 +1169,7 @@ fn choose_transaction(transactions: Vec<TrDetails>) -> Result<String, String> {
     let chosen: usize = input
         .trim()
         .parse()
-        .map_err(|e| format!("Failed to parse user input as integer: {}", e))?;
+        .map_err(|e| format!("Failed to parse user input as integer: {e}"))?;
     if !(1..=transactions.len()).contains(&chosen) {
         return Err("Wrong transaction number".to_string());
     }
@@ -1237,7 +1237,7 @@ pub async fn execute_debug(
         config.set_config(c20).unwrap();
         config.set_config(c21).unwrap();
         BlockchainConfig::with_config(config)
-            .map_err(|e| format!("Failed to construct config for getter: {}", e))?
+            .map_err(|e| format!("Failed to construct config for getter: {e}"))?
     } else {
         bc_config
     };
@@ -1262,13 +1262,13 @@ pub async fn execute_debug(
             Some(tvm_executor::ExecutorError::NoAcceptError(exit_code, _)) => *exit_code,
             Some(tvm_executor::ExecutorError::TvmExceptionCode(exit_code)) => *exit_code as i32,
             None => tvm_vm::error::tvm_exception_or_custom_code(&e),
-            _ => return format!("Debug failed: {}", e),
+            _ => return format!("Debug failed: {e}"),
         };
         let result = json!({
             "exit_code": exit_code,
             "message": e.to_string(),
         });
-        format!("{:#}", result)
+        format!("{result:#}")
     });
     match tr {
         Ok(data) => Ok(data.0),
@@ -1297,14 +1297,14 @@ fn trace_callback(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) {
     );
 
     if let Ok(position) = get_position(info, debug_info) {
-        log::info!(target: "tvm", "Position: {}", position);
+        log::info!(target: "tvm", "Position: {position}");
     } else {
         log::info!(target: "tvm", "Position: Undefined");
     }
 
     log::info!(target: "tvm", "\n--- Stack trace ------------------------");
     for item in info.stack.iter() {
-        log::info!(target: "tvm", "{}", item);
+        log::info!(target: "tvm", "{item}");
     }
     log::info!(target: "tvm", "----------------------------------------\n");
 }
@@ -1371,7 +1371,7 @@ const RENDER_GAS: u8 = 0x01;
 
 pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let filename = matches.value_of("ADDRESSES").unwrap();
-    let file = std::fs::File::open(filename).map_err(|e| format!("Failed to open file: {}", e))?;
+    let file = std::fs::File::open(filename).map_err(|e| format!("Failed to open file: {e}"))?;
 
     let mut addresses = vec![];
     let lines = std::io::BufReader::new(file).lines();
@@ -1385,17 +1385,17 @@ pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> 
     if addresses.iter().collect::<HashSet<_>>().len() < addresses.len() {
         return Err("Addresses are not unique".to_owned());
     }
-    let mut output = std::fs::File::create(format!("{}.plantuml", filename))
-        .map_err(|e| format!("Failed to create file: {}", e))?;
+    let mut output = std::fs::File::create(format!("{filename}.plantuml"))
+        .map_err(|e| format!("Failed to create file: {e}"))?;
     make_sequence_diagram(config, addresses, RENDER_NONE, &mut output).await.map(|res| {
-        println!("{}", res);
+        println!("{res}");
     })
 }
 
 fn infer_address_width(input: &Vec<String>, min_width: usize) -> Result<usize, String> {
     let max_width = input.iter().fold(0, |acc, item| std::cmp::max(acc, item.len()));
     let addresses =
-        input.iter().map(|address| format!("{:>max_width$}", address)).collect::<Vec<_>>();
+        input.iter().map(|address| format!("{address:>max_width$}")).collect::<Vec<_>>();
 
     let mut width = min_width;
     loop {
@@ -1454,7 +1454,7 @@ async fn fetch_transactions(
 
             let transactions = tokio_retry::Retry::spawn(retry_strategy.clone(), action)
                 .await
-                .map_err(|e| format!("Failed to fetch transactions: {}", e))?;
+                .map_err(|e| format!("Failed to fetch transactions: {e}"))?;
 
             if transactions.result.is_empty() {
                 break;
@@ -1465,7 +1465,7 @@ async fn fetch_transactions(
                 let id = txn["id"].as_str().unwrap();
                 let workchain_id = txn["workchain_id"].as_i64().unwrap();
                 let txn = Transaction::construct_from_base64(boc)
-                    .map_err(|e| format!("Failed to deserialize txn: {}", e))?;
+                    .map_err(|e| format!("Failed to deserialize txn: {e}"))?;
                 txns.push(TransactionExt {
                     id: id.to_owned(),
                     address: format!("{}:{}", workchain_id, txn.account_id().to_hex_string()),
@@ -1528,20 +1528,19 @@ async fn make_sequence_diagram(
 
     let mut url = config.url.replace(".dev", ".live");
     if !url.starts_with("https://") {
-        url = format!("https://{}", url);
+        url = format!("https://{url}");
     }
 
-    let url_account_prefix = format!("{}/accounts/accountDetails?id=", url);
-    let url_message_prefix = format!("{}/messages/messageDetails?id=", url);
-    let url_txn_prefix = format!("{}/transactions/transactionDetails?id=", url);
+    let url_account_prefix = format!("{url}/accounts/accountDetails?id=");
+    let url_message_prefix = format!("{url}/messages/messageDetails?id=");
+    let url_txn_prefix = format!("{url}/transactions/transactionDetails?id=");
 
     writeln!(output, "@startuml").unwrap();
     for address in addresses {
         let (index, name) = &name_map[&address];
         writeln!(
             output,
-            "participant \"[[{url_account_prefix}{} {}]]\" as {}",
-            address, name, index
+            "participant \"[[{url_account_prefix}{address} {name}]]\" as {index}"
         )
         .unwrap();
     }
@@ -1550,7 +1549,7 @@ async fn make_sequence_diagram(
     let mut last_tr_id: Option<String> = None;
     let mut rendered = HashSet::<UInt256>::default();
     for TransactionExt { id, address, tr } in txns {
-        writeln!(output, "' {}", id).unwrap();
+        writeln!(output, "' {id}").unwrap();
 
         let is_separate = last_tr_id.as_ref() != Some(&id);
         let tr_name = id.split_at(MESSAGE_WIDTH).0;
@@ -1568,16 +1567,14 @@ async fn make_sequence_diagram(
                     // message from an inner account
                     writeln!(
                         output,
-                        "{} ->> {} : m:[[{url_message_prefix}{} {}]]\\nt:[[{url_txn_prefix}{} {}]]",
-                        src_index, own_index, msg_id, msg_name, id, tr_name
+                        "{src_index} ->> {own_index} : m:[[{url_message_prefix}{msg_id} {msg_name}]]\\nt:[[{url_txn_prefix}{id} {tr_name}]]"
                     )
                     .unwrap();
                 } else {
                     // message from an out of the scope account
                     writeln!(
                         output,
-                        "[->> {} : m:[[{url_message_prefix}{} {}]]\\nt:[[{url_txn_prefix}{} {}]]",
-                        own_index, msg_id, msg_name, id, tr_name
+                        "[->> {own_index} : m:[[{url_message_prefix}{msg_id} {msg_name}]]\\nt:[[{url_txn_prefix}{id} {tr_name}]]"
                     )
                     .unwrap();
                 }
@@ -1586,17 +1583,16 @@ async fn make_sequence_diagram(
                 assert!(in_msg.is_inbound_external());
                 writeln!(
                     output,
-                    "[o->> {} : m:[[{url_message_prefix}{} {}]]\\nt:[[{url_txn_prefix}{} {}]]",
-                    own_index, msg_id, msg_name, id, tr_name
+                    "[o->> {own_index} : m:[[{url_message_prefix}{msg_id} {msg_name}]]\\nt:[[{url_txn_prefix}{id} {tr_name}]]"
                 )
                 .unwrap();
             }
         } else if last_own_index == Some(own_index) {
             // rendered, adjacent, and active participant stays unchanged
-            writeln!(output, "{} [hidden]-> {}", own_index, own_index).unwrap();
+            writeln!(output, "{own_index} [hidden]-> {own_index}").unwrap();
         }
 
-        let desc = tr.read_description().map_err(|e| format!("Failed to read tr desc: {}", e))?;
+        let desc = tr.read_description().map_err(|e| format!("Failed to read tr desc: {e}"))?;
         let (tr_color, tr_gas) = match desc.compute_phase_ref() {
             None | Some(tvm_block::TrComputePhase::Skipped(_)) => ("", None),
             Some(tvm_block::TrComputePhase::Vm(tr_compute_phase_vm)) => {
@@ -1609,7 +1605,7 @@ async fn make_sequence_diagram(
             }
         };
 
-        writeln!(output, "activate {} {}", own_index, tr_color).unwrap();
+        writeln!(output, "activate {own_index} {tr_color}").unwrap();
         last_tr_id = None;
         let out_msgs = sort_outbound_messages(&tr, &inbound_map)?;
         for out_msg in out_msgs {
@@ -1625,15 +1621,13 @@ async fn make_sequence_diagram(
                         // message spawns a known transaction
                         let tr_id = tr.serialize().unwrap().repr_hash().to_hex_string();
                         let tr_name = tr_id.split_at(MESSAGE_WIDTH).0;
-                        writeln!(output, "{} ->> {} : m:[[{url_message_prefix}{} {}]]\\nt:[[{url_txn_prefix}{} {}]]",
-                            own_index, out_index, out_id, out_name, tr_id, tr_name).unwrap();
+                        writeln!(output, "{own_index} ->> {out_index} : m:[[{url_message_prefix}{out_id} {out_name}]]\\nt:[[{url_txn_prefix}{tr_id} {tr_name}]]").unwrap();
                         last_tr_id = Some(tr_id);
                     } else {
                         // transaction spawned by the message is out of the scope
                         writeln!(
                             output,
-                            "{} ->> {} : m:[[{url_message_prefix}{} {}]]",
-                            own_index, out_index, out_id, out_name
+                            "{own_index} ->> {out_index} : m:[[{url_message_prefix}{out_id} {out_name}]]"
                         )
                         .unwrap();
                     }
@@ -1648,22 +1642,21 @@ async fn make_sequence_diagram(
                 assert!(out_msg.is_outbound_external());
                 writeln!(
                     output,
-                    "{} ->>o] : m:[[{url_message_prefix}{} {}]]",
-                    own_index, out_id, out_name
+                    "{own_index} ->>o] : m:[[{url_message_prefix}{out_id} {out_name}]]"
                 )
                 .unwrap();
             }
             rendered.insert(out_hash);
         }
         if tr.msg_count() == 0 {
-            writeln!(output, "{} [hidden]-> {}", own_index, own_index).unwrap();
+            writeln!(output, "{own_index} [hidden]-> {own_index}").unwrap();
         }
         if render_flags & RENDER_GAS != 0 {
             if let Some(tr_gas) = tr_gas {
-                writeln!(output, "note over {}: {}", own_index, tr_gas).unwrap();
+                writeln!(output, "note over {own_index}: {tr_gas}").unwrap();
             }
         }
-        writeln!(output, "deactivate {}", own_index).unwrap();
+        writeln!(output, "deactivate {own_index}").unwrap();
         last_own_index = Some(own_index);
     }
 
@@ -1706,14 +1699,14 @@ impl<'a> DebugParams<'a> {
 }
 
 pub async fn debug_error(e: &ClientError, debug_params: DebugParams<'_>) -> Result<(), String> {
-    let result = format!("{:#}", e);
+    let result = format!("{e:#}");
     if e.code != SDK_EXECUTION_ERROR_CODE || !debug_params.check_debug() {
         return Err(result);
     }
     if debug_params.config.is_json {
         println!("{:#}", json!({"Error": e}));
     } else {
-        println!("Error: {}", result);
+        println!("Error: {result}");
         println!("Execution failed. Starting debug...");
     }
     let _ = execute_debug_params(&debug_params).await;

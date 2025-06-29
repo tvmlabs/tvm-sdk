@@ -69,7 +69,7 @@ fn test_process_info() {
     write_read_and_assert(pi2.clone());
 
     pi2.iterate(|put| {
-        println!("{:?}", put);
+        println!("{put:?}");
         Ok(true)
     })
     .unwrap();
@@ -84,7 +84,7 @@ fn test_process_info() {
     write_read_and_assert(pi2.clone());
 
     pi2.iterate(|put| {
-        println!("{:?}", put);
+        println!("{put:?}");
         Ok(true)
     })
     .unwrap();
@@ -114,7 +114,7 @@ fn test_find_shards_by_routing_custom() {
     env.set_next_addr(IntermediateAddress::use_dest_bits(37).unwrap())
         .set_cur_addr(IntermediateAddress::use_dest_bits(32).unwrap());
     let (cur_prefix, next_prefix) = env.calc_cur_next_prefix().unwrap();
-    println!("cur: {}, next: {}", cur_prefix, next_prefix);
+    println!("cur: {cur_prefix}, next: {next_prefix}");
 
     assert_eq!(cur_prefix.prefix, 0xd78b3fd904191a09);
     assert_eq!(next_prefix.prefix, 0x9f8b3fd904191a09);

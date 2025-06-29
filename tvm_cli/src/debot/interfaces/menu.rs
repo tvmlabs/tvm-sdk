@@ -80,10 +80,10 @@ impl Menu {
         let title = decode_string_arg(args, "title")?;
         let description = decode_string_arg(args, "description")?;
         if !title.is_empty() {
-            println!("{}", title);
+            println!("{title}");
         }
         if !description.is_empty() {
-            println!("{}", description);
+            println!("{description}");
         }
         for (i, menu) in menu_items.iter().enumerate() {
             println!("{}) {}", i + 1, menu.title);
@@ -122,7 +122,7 @@ impl DebotInterface for Menu {
     async fn call(&self, func: &str, args: &Value) -> InterfaceResult {
         match func {
             "select" => self.select(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

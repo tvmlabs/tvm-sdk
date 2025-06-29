@@ -231,8 +231,8 @@ fn test_merkle_proof_hi_hashes() {
     // construct proof BOC
     let proof_root = block_proof.serialize().unwrap();
 
-    println!("{:#.222}", proof_root);
-    println!("{:#.2}", block_root);
+    println!("{proof_root:#.222}");
+    println!("{block_root:#.2}");
 
     // check block's repr hash is equal proof's higher hash
     assert_eq!(
@@ -288,8 +288,8 @@ fn test_merkle_proof_hi_hashes2() {
     // construct proof BOC
     let proof_root = block_proof.write_to_new_cell().unwrap().into_cell().unwrap();
 
-    println!("{:#.222}", proof_root);
-    println!("{:#.222}", block_root);
+    println!("{proof_root:#.222}");
+    println!("{block_root:#.222}");
 
     // check block's repr hash is equal proof's higher hash
     assert_eq!(
@@ -395,10 +395,10 @@ fn test_check_wrong_transaction_proof() {
     ];
 
     for block_file in block_files {
-        println!("check wrong proof for {}", block_file);
+        println!("check wrong proof for {block_file}");
         match test_check_transaction_proof(true, block_file) {
-            Result::Err(err) => println!("{}", err),
-            res => panic!("unexpected result: {:?}", res),
+            Result::Err(err) => println!("{err}"),
+            res => panic!("unexpected result: {res:?}"),
         }
     }
 }
@@ -412,10 +412,10 @@ fn test_check_correct_transaction_proof() {
     ];
 
     for block_file in block_files {
-        println!("check correct proof, block: {}", block_file);
+        println!("check correct proof, block: {block_file}");
         match test_check_transaction_proof(false, block_file) {
             Result::Ok(_) => println!("OK"),
-            res => panic!("unexpected result: {:?}", res),
+            res => panic!("unexpected result: {res:?}"),
         }
     }
 }
@@ -449,7 +449,7 @@ fn get_out_msg_from_block(block: &Block) -> (Option<Message>, Option<UInt256>) {
         .unwrap()
         .iterate_with_keys(|key, out_msg| {
             if let Some(msg1) = out_msg.read_message().unwrap() {
-                println!("{}", key);
+                println!("{key}");
                 println!("{}", msg1.hash().unwrap());
                 msg = Some(msg1);
                 tr = out_msg.transaction_cell().map(|c| c.repr_hash());
@@ -517,7 +517,7 @@ fn test_check_correct_account_proof() {
         vec!["src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
-        println!("state file: {}", state_file);
+        println!("state file: {state_file}");
 
         let (state, state_root) = get_real_tvm_state(state_file);
 
@@ -549,7 +549,7 @@ fn test_check_wrong_account_proof() {
         vec!["src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
-        println!("state file: {}", state_file);
+        println!("state file: {state_file}");
 
         let (state, state_root) = get_real_tvm_state(state_file);
 
@@ -562,8 +562,8 @@ fn test_check_wrong_account_proof() {
                 println!("account: {}", account.get_id().unwrap());
 
                 match test_check_account_proof(true, account, &state_root) {
-                    Result::Err(err) => println!("{}", err),
-                    res => panic!("unexpected result: {:?}", res),
+                    Result::Err(err) => println!("{err}"),
+                    res => panic!("unexpected result: {res:?}"),
                 }
 
                 Ok(true)

@@ -109,12 +109,11 @@ async fn wait_by_remp<F: futures::Future<Output = ()> + Send>(
             subscription: format!(
                 r#"
                 subscription {{
-                    rempReceipts(messageId: "{}") {{
+                    rempReceipts(messageId: "{message_id}") {{
                         messageId kind timestamp json
                     }}
                 }}
-                "#,
-                message_id
+                "#
             ),
             variables: None,
         },
@@ -209,7 +208,7 @@ async fn process_remp_message<F: futures::Future<Output = ()> + Send>(
 ) -> ClientResult<Option<ClientResult<ResultOfProcessMessage>>> {
     let remp_message = remp_message?;
     let status: RempStatus = serde_json::from_value(remp_message).map_err(|err| {
-        Error::invalid_remp_status(format!("can not parse REMP status message: {}", err))
+        Error::invalid_remp_status(format!("can not parse REMP status message: {err}"))
     })?;
 
     match status {
@@ -325,7 +324,7 @@ async fn wait_by_block_walking<F: futures::Future<Output = ()> + Send>(
         let now = context.env.now_ms();
         let timeout = std::cmp::max(max_block_time, now) - now + processing_timeout as u64;
         let fetch_block_timeout = timeout.try_into().unwrap_or(u32::MAX);
-        log::debug!("fetch_block_timeout {}", fetch_block_timeout);
+        log::debug!("fetch_block_timeout {fetch_block_timeout}");
 
         let block = fetching::fetch_next_shard_block(
             &context,

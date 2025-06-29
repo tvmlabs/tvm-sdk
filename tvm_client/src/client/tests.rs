@@ -76,9 +76,8 @@ fn test_invalid_params_error_secret_stripped() {
     let error = super::errors::Error::invalid_params(
         &format!(
             r#"{{"address":"0:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-            "public":"{}",
-            "secret":"{}"}}"#,
-            public, secret
+            "public":"{public}",
+            "secret":"{secret}"}}"#
         ),
         "error",
     );

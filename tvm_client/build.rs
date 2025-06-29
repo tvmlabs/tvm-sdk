@@ -76,7 +76,7 @@ impl BuildInfo {
                 if build_number.is_empty() && name == "tvm_client" {
                     build_number = version
                         .split('.')
-                        .map(|x| format!("{:0>3}", x))
+                        .map(|x| format!("{x:0>3}"))
                         .collect::<Vec<_>>()
                         .join("");
                 }
@@ -92,7 +92,7 @@ impl BuildInfo {
         Ok(Self {
             build_number: build_number
                 .parse::<u32>()
-                .unwrap_or_else(|_| panic!("Invalid build number [{}]", build_number)),
+                .unwrap_or_else(|_| panic!("Invalid build number [{build_number}]")),
             dependencies,
         })
     }
@@ -109,7 +109,7 @@ fn main() -> Result<(), String> {
             root().join("src").join("build_info.json").to_str().unwrap(),
             build_info_json,
         )
-        .map_err(|err| format!("{}", err))?;
+        .map_err(|err| format!("{err}"))?;
     }
     Ok(())
 }

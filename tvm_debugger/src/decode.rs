@@ -227,7 +227,7 @@ fn print_cc(cc: &CurrencyCollection) -> String {
         result += " other: {";
         cc.other
             .iterate_with_keys(|key: u32, value| {
-                result += &format!(" \"{}\": \"{}\",", key, value);
+                result += &format!(" \"{key}\": \"{value}\",");
                 Ok(true)
             })
             .ok();

@@ -97,7 +97,7 @@ impl Error {
         if err.code != ErrorCode::Unauthorized as u32 {
             err.code = ErrorCode::QueryFailed as u32;
         }
-        err.message = format!("Query failed: {}", err);
+        err.message = format!("Query failed: {err}");
         err
     }
 
@@ -105,7 +105,7 @@ impl Error {
         if err.code != ErrorCode::Unauthorized as u32 {
             err.code = ErrorCode::SubscribeFailed as u32;
         }
-        err.message = format!("Subscribe failed: {}", err);
+        err.message = format!("Subscribe failed: {err}");
         err
     }
 
@@ -119,7 +119,7 @@ impl Error {
         {
             err.code = ErrorCode::WaitForFailed as u32;
         }
-        err.message = format!("WaitFor failed: {}", err);
+        err.message = format!("WaitFor failed: {err}");
         err.data["filter"] = filter.into();
         err.data["timestamp"] = format_time(timestamp).into();
         err
@@ -128,12 +128,12 @@ impl Error {
     pub fn queries_get_subscription_result_failed<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::GetSubscriptionResultFailed,
-            format!("Receive subscription result failed: {}", err),
+            format!("Receive subscription result failed: {err}"),
         )
     }
 
     pub fn invalid_server_response<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidServerResponse, format!("Invalid server response: {}", err))
+        error(ErrorCode::InvalidServerResponse, format!("Invalid server response: {err}"))
     }
 
     pub fn wait_for_timeout() -> ClientError {
@@ -182,10 +182,10 @@ impl Error {
         let (message, code, details) = Self::try_get_error_details(errors);
         let message = match (operation, message) {
             (None, None) => "Graphql server returned error.".to_string(),
-            (None, Some(message)) => format!("Graphql server returned error: {}.", message),
-            (Some(operation), None) => format!("Graphql {} error.", operation),
+            (None, Some(message)) => format!("Graphql server returned error: {message}."),
+            (Some(operation), None) => format!("Graphql {operation} error."),
             (Some(operation), Some(message)) => {
-                format!("Graphql {} error: {}.", operation, message)
+                format!("Graphql {operation} error: {message}.")
             }
         };
         let mut err = error(ErrorCode::GraphqlError, message);
@@ -218,7 +218,7 @@ impl Error {
     pub fn websocket_disconnected<E: Display>(err: E) -> ClientError {
         error(
             ErrorCode::WebsocketDisconnected,
-            format!("Websocket unexpectedly disconnected: {}", err),
+            format!("Websocket unexpectedly disconnected: {err}"),
         )
     }
 
@@ -229,7 +229,7 @@ impl Error {
     pub fn not_supported(request: &str) -> ClientError {
         error(
             ErrorCode::NotSupported,
-            format!("Server does not support the following request: {}", request),
+            format!("Server does not support the following request: {request}"),
         )
     }
 
@@ -239,7 +239,7 @@ impl Error {
 
     pub fn graphql_websocket_init_error(mut err: ClientError) -> ClientError {
         err.code = ErrorCode::GraphqlWebsocketInitError as u32;
-        err.message = format!("GraphQL websocket init failed: {}", err);
+        err.message = format!("GraphQL websocket init failed: {err}");
         err
     }
 
@@ -259,20 +259,20 @@ impl Error {
     pub fn wrong_ws_protocol_sequence(err: &str) -> ClientError {
         error(
             ErrorCode::WrongWebscoketProtocolSequence,
-            format!("Wrong webscoket protocol sequence: {}", err),
+            format!("Wrong webscoket protocol sequence: {err}"),
         )
     }
 
     pub fn parse_url_failed<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::ParseUrlFailed, format!("Failed to parse url: {}", err))
+        error(ErrorCode::ParseUrlFailed, format!("Failed to parse url: {err}"))
     }
 
     pub fn modify_url_failed(err: &str) -> ClientError {
-        error(ErrorCode::ParseUrlFailed, format!("Failed to modify url: {}", err))
+        error(ErrorCode::ParseUrlFailed, format!("Failed to modify url: {err}"))
     }
 
     pub fn not_found(err: &str) -> ClientError {
-        error(ErrorCode::NotFound, format!("Not found: {}", err))
+        error(ErrorCode::NotFound, format!("Not found: {err}"))
     }
 
     pub fn all_attempts_failed() -> ClientError {

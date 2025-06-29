@@ -495,7 +495,7 @@ fn test_config_params() {
 
     let check_params = |old: &ConfigParams, new: &ConfigParams| {
         for i in 0..45 {
-            println!("Iteration {}", i);
+            println!("Iteration {i}");
             if old.config_present(i).unwrap() {
                 let old_conf = old.config(i).unwrap().unwrap();
                 let new_conf = new.config(i).unwrap().unwrap();
@@ -523,7 +523,7 @@ fn test_parse_config_params() {
 
     for index in 0..45 {
         if let Ok(param) = serialize_config_param(&cp, index) {
-            println!("{}: {}", index, param);
+            println!("{index}: {param}");
             let config = serde_json::from_str(&param).unwrap();
             let cp_new = parse_config_with_mandatory_params(&config, &[index]).unwrap();
             assert_eq!(cp.config(index).unwrap(), cp_new.config(index).unwrap());

@@ -46,7 +46,7 @@ impl ChainProcessor {
 
     pub fn print(&self, message: &str) {
         if self.interactive() {
-            println!("{}", message);
+            println!("{message}");
         }
     }
 

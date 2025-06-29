@@ -220,9 +220,9 @@ fn main() {
     };
 
     match output {
-        Ok(output) => println!("{}", output),
+        Ok(output) => println!("{output}"),
         Err(e) => {
-            eprintln!("{}", e);
+            eprintln!("{e}");
             std::process::exit(1);
         }
     }

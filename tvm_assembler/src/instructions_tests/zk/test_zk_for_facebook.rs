@@ -82,17 +82,17 @@ mod tests {
             let mut eph_pubkey = Vec::new(); // vec![0x00];
             eph_pubkey.extend(ephemeral_kp.public().as_ref());
 
-            println!("ephemeral secret_key is {:?}", eph_secret_key);
-            println!("ephemeral public_key is {:?}", eph_pubkey);
+            println!("ephemeral secret_key is {eph_secret_key:?}");
+            println!("ephemeral public_key is {eph_pubkey:?}");
 
             let eph_pubkey_len = eph_pubkey.clone().len();
-            println!("len eph_pubkey: {:?}", eph_pubkey_len);
+            println!("len eph_pubkey: {eph_pubkey_len:?}");
 
             let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
             let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
             let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
-            println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
+            println!("jwt_string_1 is {jwt_string_1:?}"); // jwt_string_1 is
 
             // JwtDataDecodedPart1
             let jwt_data_decoded1: JwtDataDecodedPart1 =
@@ -101,7 +101,7 @@ mod tests {
 
             let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
             let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
-            println!("jwt_string_2 is {:?}", jwt_string_2); // "{\"iss\":\"https://accounts.google.com\",\"azp\":\"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com\",\"aud\":\"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com\",\"sub\":\"112897468626716626103\",\"nonce\":\"bxmnJW31ruzKMGir01YPGYL0xDY\",\"nbf\":1715687036,\"iat\":1715687336,\"exp\":1715690936,\"jti\":\"9b601d25f003640c2889a2a047789382cb1cfe87\"}"
+            println!("jwt_string_2 is {jwt_string_2:?}"); // "{\"iss\":\"https://accounts.google.com\",\"azp\":\"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com\",\"aud\":\"232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com\",\"sub\":\"112897468626716626103\",\"nonce\":\"bxmnJW31ruzKMGir01YPGYL0xDY\",\"nbf\":1715687036,\"iat\":1715687336,\"exp\":1715690936,\"jti\":\"9b601d25f003640c2889a2a047789382cb1cfe87\"}"
 
             // JwtDataDecodedPart2
             let jwt_data_decoded2: JwtDataDecodedPart2 =

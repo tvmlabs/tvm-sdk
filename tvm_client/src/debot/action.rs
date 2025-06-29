@@ -156,5 +156,5 @@ where
         AcType::Unknown => 255,
     };
 
-    s.serialize_str(&format!("{:x}", num))
+    s.serialize_str(&format!("{num:x}"))
 }

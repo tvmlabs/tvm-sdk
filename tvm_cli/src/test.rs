@@ -257,7 +257,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         ..Default::default()
     });
     let params = serde_json::from_str(&load_params(&params)?)
-        .map_err(|e| format!("function arguments is not a json: {}", e))?;
+        .map_err(|e| format!("function arguments is not a json: {e}"))?;
     let header = Some(FunctionHeader { time: Some(now), ..Default::default() });
     let call_set =
         Some(CallSet { function_name, input: Some(params), header, ..Default::default() });
@@ -328,9 +328,9 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
     let output = PathBuf::from(input).with_extension("boc");
     account
         .write_to_file(&output)
-        .map_err(|e| format!("Failed write to file {:?}: {e}", output))?;
+        .map_err(|e| format!("Failed write to file {output:?}: {e}"))?;
     if !config.is_json {
-        println!("Account written to {:?}", output);
+        println!("Account written to {output:?}");
     }
     Ok(())
 }
@@ -375,9 +375,9 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
     }
     let account = Account::construct_from_cell(account_root)
         .map_err(|e| format!("Failed to construct Account after transaction: {e}"))?;
-    account.write_to_file(input).map_err(|e| format!("Failed write to file {:?}: {e}", input))?;
+    account.write_to_file(input).map_err(|e| format!("Failed write to file {input:?}: {e}"))?;
     if !config.is_json {
-        println!("Account written to {:?}", input);
+        println!("Account written to {input:?}");
     }
     Ok(())
 }
@@ -388,7 +388,7 @@ pub fn test_sign_command(matches: &ArgMatches, config: &Config) -> Result<(), St
     } else if let Some(data) = matches.value_of("CELL") {
         let data = decode_data(data, "cell")?;
         let cell = read_single_root_boc(data)
-            .map_err(|err| format!("Cannot deserialize tree of cells {}", err))?;
+            .map_err(|err| format!("Cannot deserialize tree of cells {err}"))?;
         if cell.references_count() == 0 && (cell.bit_length() % 8) == 0 {
             // sign data
             cell.data().to_vec()
@@ -405,7 +405,7 @@ pub fn test_sign_command(matches: &ArgMatches, config: &Config) -> Result<(), St
             None => return Err("nor signing keys in the params neither in the config".to_string()),
         },
     };
-    let key = pair.decode().map_err(|err| format!("cannot decode keypair {}", err))?;
+    let key = pair.decode().map_err(|err| format!("cannot decode keypair {err}"))?;
     let signature = ed25519_sign_with_secret(&key.to_bytes(), &data)
         .map_err(|e| format!("Failed to sign: {e}"))?;
     let signature = base64_encode(signature.as_ref());
@@ -415,9 +415,9 @@ pub fn test_sign_command(matches: &ArgMatches, config: &Config) -> Result<(), St
             "public": hex::encode(pair.public.as_bytes()),
             "Signature": signature
         });
-        println!("{:#}", result);
+        println!("{result:#}");
     } else {
-        println!("Signature: {}", signature);
+        println!("Signature: {signature}");
     }
 
     Ok(())
@@ -434,7 +434,7 @@ pub fn test_config_command(matches: &ArgMatches, config: &Config) -> Result<(), 
         if config.is_json {
             println!("{:#}", json!({ "Cell": cell, "index": index }));
         } else {
-            println!("Cell: \"{}\"", cell);
+            println!("Cell: \"{cell}\"");
         }
     } else if let Some(decode) = matches.value_of("DECODE") {
         let bytes = std::fs::read(decode).unwrap();
@@ -458,7 +458,7 @@ pub fn test_config_command(matches: &ArgMatches, config: &Config) -> Result<(), 
             tvm_block_json::serialize_config_param(&params, 0)
                 .map_err(|e| format!("Failed to serialize config params: {e}"))?
         };
-        println!("{}", result);
+        println!("{result}");
     }
     Ok(())
 }

@@ -66,7 +66,7 @@ impl AmountInput {
         let prompt = decode_prompt(args)?;
         let decimals = decode_num_arg::<usize>(args, "decimals")?;
         if decimals > 255 {
-            return Err(format!("too many decimals ({})", decimals));
+            return Err(format!("too many decimals ({decimals})"));
         }
         let min = decode_num_arg::<u128>(args, "min")?;
         let max = decode_num_arg::<u128>(args, "max")?;
@@ -81,7 +81,7 @@ impl AmountInput {
         let _ = terminal_input(&prompt, |val| {
             value = convert::convert_amount(val.as_str(), decimals)?;
             let number = decode_abi_number::<u128>(&value)
-                .map_err(|e| format!("input is not a valid amount: {}", e))?;
+                .map_err(|e| format!("input is not a valid amount: {e}"))?;
             if number < min || number > max {
                 return Err("amount is out of range".to_string());
             }
@@ -104,17 +104,17 @@ impl DebotInterface for AmountInput {
     async fn call(&self, func: &str, args: &Value) -> InterfaceResult {
         match func {
             "get" => self.get(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }
 
 fn format_amount(amount: u128, decimals: usize) -> String {
     if decimals == 0 {
-        format!("{}", amount)
+        format!("{amount}")
     } else {
         let integer = amount / 10u128.pow(decimals as u32);
         let float = amount - integer * 10u128.pow(decimals as u32);
-        format!("{}.{:0>width$}", integer, float, width = decimals)
+        format!("{integer}.{float:0>decimals$}")
     }
 }

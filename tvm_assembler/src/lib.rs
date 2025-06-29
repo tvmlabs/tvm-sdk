@@ -355,7 +355,7 @@ impl Engine {
             }
             // Token extracted
             let token = source[s0..s1].to_ascii_uppercase();
-            log::trace!(target: "tvm", "--> {}\n", token);
+            log::trace!(target: "tvm", "--> {token}\n");
             x -= token.chars().count();
             let rule = if was_dot_inline {
                 // Do not try matching the token if the previous one is .inline,

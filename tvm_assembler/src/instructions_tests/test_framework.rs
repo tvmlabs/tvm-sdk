@@ -90,12 +90,10 @@ impl TestCase {
                 let err = self.compilation_result.as_ref().unwrap_err();
                 match message {
                     Some(msg) => panic!(
-                        "{}No executor was created, because of bytecode compilation error {:?}",
-                        msg, err
+                        "{msg}No executor was created, because of bytecode compilation error {err:?}"
                     ),
                     None => panic!(
-                        "No executor was created, because of bytecode compilation error {:?}",
-                        err
+                        "No executor was created, because of bytecode compilation error {err:?}"
                     ),
                 }
             }
@@ -121,7 +119,7 @@ impl TestCase {
                     log::error!(target: "compile", "Cannot use 4 refs with long code");
                     bytecode.clone()
                 };
-                log::trace!(target: "compile", "code: {}\n", code);
+                log::trace!(target: "compile", "code: {code}\n");
                 let mut executor = Engine::with_capabilities(args.capabilities)
                     .setup_with_libraries(
                         code.clone(),
@@ -186,9 +184,9 @@ impl<T: Into<TestCase>> Expects for T {
             Ok(_) => {
                 if executor.eq_stack(stack) {
                     if let Some(msg) = message {
-                        log::info!("{}", msg)
+                        log::info!("{msg}")
                     }
-                    log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
+                    log::info!(target: "tvm", "\nExpected stack: \n{stack}");
                     log::info!(
                         target: "tvm",
                         "\n{}\n",
@@ -199,9 +197,9 @@ impl<T: Into<TestCase>> Expects for T {
             }
             // TODO this is not quite right: execution may fail but still produce a stack
             Err(ref e) => {
-                log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
+                log::info!(target: "tvm", "\nExpected stack: \n{stack}");
                 // print_failed_detail_extended(&test_case, e, message);
-                panic!("Execution error: {:?}", e)
+                panic!("Execution error: {e:?}")
             }
         }
         test_case
@@ -214,9 +212,9 @@ impl<T: Into<TestCase>> Expects for T {
             Ok(_) => {
                 if !executor.eq_stack(stack) {
                     if let Some(msg) = message {
-                        log::info!("{}", msg)
+                        log::info!("{msg}")
                     }
-                    log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
+                    log::info!(target: "tvm", "\nExpected stack: \n{stack}");
                     log::info!(
                         target: "tvm",
                         "\n{}\n",
@@ -227,9 +225,9 @@ impl<T: Into<TestCase>> Expects for T {
             }
             // TODO this is not quite right: execution may fail but still produce a stack
             Err(ref e) => {
-                log::info!(target: "tvm", "\nExpected stack: \n{}", stack);
+                log::info!(target: "tvm", "\nExpected stack: \n{stack}");
                 // print_failed_detail_extended(&test_case, e, message);
-                panic!("Execution error: {:?}", e)
+                panic!("Execution error: {e:?}")
             }
         }
         test_case
@@ -247,11 +245,11 @@ impl<T: Into<TestCase>> Expects for T {
             match message {
                 None => {
                     // print_failed_detail_extended(&test_case, e, message);
-                    panic!("Execution error: {:?}", e);
+                    panic!("Execution error: {e:?}");
                 }
                 Some(msg) => {
                     // print_failed_detail_extended(&test_case, e, message);
-                    panic!("{}\nExecution error: {:?}", msg, e);
+                    panic!("{msg}\nExecution error: {e:?}");
                 }
             }
         }
@@ -269,7 +267,7 @@ impl<T: Into<TestCase>> Expects for T {
     ) -> TestCase {
         self.expect_custom_failure_extended(
             |e| e.exception_code() != Some(exception_code),
-            &format!("{}", exception_code),
+            &format!("{exception_code}"),
             message,
         )
     }
@@ -286,15 +284,13 @@ impl<T: Into<TestCase>> Expects for T {
             Ok(_) => {
                 log::info!(
                     target: "tvm",
-                    "Expected failure: {}, however execution succeeded.",
-                    exc_name
+                    "Expected failure: {exc_name}, however execution succeeded."
                 );
                 print_stack(&test_case, executor);
                 match message {
-                    None => panic!("Expected failure: {}, however execution succeeded.", exc_name),
+                    None => panic!("Expected failure: {exc_name}, however execution succeeded."),
                     Some(msg) => panic!(
-                        "{}.\nExpected failure: {}, however execution succeeded.",
-                        msg, exc_name
+                        "{msg}.\nExpected failure: {exc_name}, however execution succeeded."
                     ),
                 }
             }
@@ -303,12 +299,10 @@ impl<T: Into<TestCase>> Expects for T {
                     if op(e) {
                         match message {
                             Some(msg) => panic!(
-                                "{} - {}\nNon expected exception: {}, expected: {}",
-                                msg2, msg, e, exc_name
+                                "{msg2} - {msg}\nNon expected exception: {e}, expected: {exc_name}"
                             ),
                             None => panic!(
-                                "{}\nNon expected exception: {}, expected: {}",
-                                msg2, e, exc_name
+                                "{msg2}\nNon expected exception: {e}, expected: {exc_name}"
                             ),
                         }
                     }
@@ -318,12 +312,12 @@ impl<T: Into<TestCase>> Expects for T {
                         Some(code) => {
                             let e = Exception::from(*code);
                             if op(&e) {
-                                panic!("Non expected exception: {}, expected: {}", e, exc_name)
+                                panic!("Non expected exception: {e}, expected: {exc_name}")
                             }
                         }
                         None => {
                             if op(&Exception::from(ExceptionCode::FatalError)) {
-                                panic!("Non expected exception: {}, expected: {}", e, exc_name)
+                                panic!("Non expected exception: {e}, expected: {exc_name}")
                             }
                         }
                     }

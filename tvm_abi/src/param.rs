@@ -77,8 +77,7 @@ impl<'a> Deserialize<'a> for Param {
                 | ParamType::FixedArray(_, _)
                 | ParamType::Map(_, _) => {
                     return Err(D::Error::custom(format!(
-                        "Invalid parameter specification: {}. Only simple types can be represented as strings",
-                        type_str
+                        "Invalid parameter specification: {type_str}. Only simple types can be represented as strings"
                     )));
                 }
                 _ => {}

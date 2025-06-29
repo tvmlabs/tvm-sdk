@@ -61,7 +61,7 @@ pub fn giver(addr: &str) {
         .arg(GIVER_ABI)
         .arg(GIVER_ADDR)
         .arg("sendGrams")
-        .arg(format!(r#"{{"dest":"{}","amount":1000000000}}"#, addr));
+        .arg(format!(r#"{{"dest":"{addr}","amount":1000000000}}"#));
     cmd.assert().success();
 }
 
@@ -75,7 +75,7 @@ pub fn giver_v2(addr: &str) {
         .arg("--sign")
         .arg(GIVER_V2_KEY)
         .arg("sendTransaction")
-        .arg(format!(r#"{{"dest":"{}","value":100000000000,"bounce":false}}"#, addr));
+        .arg(format!(r#"{{"dest":"{addr}","value":100000000000,"bounce":false}}"#));
     cmd.assert().success();
 }
 
@@ -89,7 +89,7 @@ pub fn giver_v3(addr: &str) {
         .arg("--sign")
         .arg(GIVER_V3_KEY)
         .arg("sendTransaction")
-        .arg(format!(r#"{{"dest":"{}","value":100000000000,"bounce":false}}"#, addr));
+        .arg(format!(r#"{{"dest":"{addr}","value":100000000000,"bounce":false}}"#));
     cmd.assert().success();
 }
 

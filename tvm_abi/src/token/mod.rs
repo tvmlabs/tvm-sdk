@@ -143,20 +143,20 @@ impl fmt::Display for TokenValue {
         match self {
             TokenValue::Uint(u) => write!(f, "{}", u.number),
             TokenValue::Int(u) => write!(f, "{}", u.number),
-            TokenValue::VarUint(_, u) => write!(f, "{}", u),
-            TokenValue::VarInt(_, u) => write!(f, "{}", u),
-            TokenValue::Bool(b) => write!(f, "{}", b),
+            TokenValue::VarUint(_, u) => write!(f, "{u}"),
+            TokenValue::VarInt(_, u) => write!(f, "{u}"),
+            TokenValue::Bool(b) => write!(f, "{b}"),
             TokenValue::Tuple(ref arr) => {
-                let s = arr.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(",");
+                let s = arr.iter().map(|ref t| format!("{t}")).collect::<Vec<String>>().join(",");
 
-                write!(f, "({})", s)
+                write!(f, "({s})")
             }
             TokenValue::Array(_, ref arr) | TokenValue::FixedArray(_, ref arr) => {
-                let s = arr.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(",");
+                let s = arr.iter().map(|ref t| format!("{t}")).collect::<Vec<String>>().join(",");
 
-                write!(f, "[{}]", s)
+                write!(f, "[{s}]")
             }
-            TokenValue::Cell(c) => write!(f, "{:?}", c),
+            TokenValue::Cell(c) => write!(f, "{c:?}"),
             TokenValue::Map(_key_type, _value_type, map) => {
                 let s = map
                     .iter()
@@ -164,15 +164,15 @@ impl fmt::Display for TokenValue {
                     .collect::<Vec<String>>()
                     .join(",");
 
-                write!(f, "{{{}}}", s)
+                write!(f, "{{{s}}}")
             }
-            TokenValue::Address(a) => write!(f, "{}", a),
-            TokenValue::Bytes(ref arr) | TokenValue::FixedBytes(ref arr) => write!(f, "{:?}", arr),
-            TokenValue::String(string) => write!(f, "{}", string),
-            TokenValue::Token(g) => write!(f, "{}", g),
-            TokenValue::Time(time) => write!(f, "{}", time),
-            TokenValue::Expire(expire) => write!(f, "{}", expire),
-            TokenValue::Ref(value) => write!(f, "{}", value),
+            TokenValue::Address(a) => write!(f, "{a}"),
+            TokenValue::Bytes(ref arr) | TokenValue::FixedBytes(ref arr) => write!(f, "{arr:?}"),
+            TokenValue::String(string) => write!(f, "{string}"),
+            TokenValue::Token(g) => write!(f, "{g}"),
+            TokenValue::Time(time) => write!(f, "{time}"),
+            TokenValue::Expire(expire) => write!(f, "{expire}"),
+            TokenValue::Ref(value) => write!(f, "{value}"),
             TokenValue::PublicKey(key) => {
                 if let Some(key) = key {
                     write!(f, "{}", hex::encode(key))
@@ -182,7 +182,7 @@ impl fmt::Display for TokenValue {
             }
             TokenValue::Optional(_, value) => {
                 if let Some(value) = value {
-                    write!(f, "{}", value)
+                    write!(f, "{value}")
                 } else {
                     write!(f, "None")
                 }
@@ -304,8 +304,7 @@ impl TokenValue {
             ParamType::PublicKey => Ok(TokenValue::PublicKey(None)),
             any_type => Err(AbiError::InvalidInputData {
                 msg: format!(
-                    "Type {} doesn't have default value and must be explicitly defined",
-                    any_type
+                    "Type {any_type} doesn't have default value and must be explicitly defined"
                 ),
             }
             .into()),

@@ -34,10 +34,10 @@ pub fn deserialize_cell_from_base64(
     name: &str,
 ) -> ClientResult<(Vec<u8>, tvm_types::Cell)> {
     let bytes = base64_decode(b64)
-        .map_err(|err| Error::invalid_boc(format!("error decode {} BOC base64: {}", name, err)))?;
+        .map_err(|err| Error::invalid_boc(format!("error decode {name} BOC base64: {err}")))?;
 
     let cell = tvm_types::boc::read_single_root_boc(&bytes).map_err(|err| {
-        Error::invalid_boc(format!("{} BOC deserialization error: {}", name, err))
+        Error::invalid_boc(format!("{name} BOC deserialization error: {err}"))
     })?;
 
     Ok((bytes, cell))
@@ -53,9 +53,9 @@ pub fn deserialize_object_from_cell<S: Deserializable>(
         }
         _ => "",
     };
-    let tip_full = if !tip.is_empty() { format!(".\nTip: {}", tip) } else { "".to_string() };
+    let tip_full = if !tip.is_empty() { format!(".\nTip: {tip}") } else { "".to_string() };
     S::construct_from_cell(cell).map_err(|err| {
-        Error::invalid_boc(format!("cannot deserialize {} from BOC: {}{}", name, err, tip_full))
+        Error::invalid_boc(format!("cannot deserialize {name} from BOC: {err}{tip_full}"))
     })
 }
 
@@ -148,7 +148,7 @@ pub fn serialize_cell_to_boc(
     boc_cache: Option<BocCacheType>,
 ) -> ClientResult<String> {
     if let Some(cache_type) = boc_cache {
-        context.bocs.add(cache_type, cell, None).map(|hash| format!("*{:x}", hash))
+        context.bocs.add(cache_type, cell, None).map(|hash| format!("*{hash:x}"))
     } else {
         serialize_cell_to_base64(&cell, name)
     }

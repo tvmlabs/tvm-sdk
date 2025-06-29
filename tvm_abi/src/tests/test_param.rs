@@ -237,7 +237,7 @@ fn test_empty_tuple_error() {
 
     assert_eq!(
         "Tuple description should contain non empty `components` field",
-        format!("{}", result)
+        format!("{result}")
     )
 }
 

@@ -281,7 +281,7 @@ const OPTIONAL_CONFIGS: [&str; 3] = [
 ];
 
 async fn query_config(ton: &TonClient, result: &str) -> Result<Option<Value>, String> {
-    let result = format!(r#"master {{ config {{ {} }} }}"#, result);
+    let result = format!(r#"master {{ config {{ {result} }} }}"#);
     match query_with_limit(
         ton.clone(),
         "blocks",
@@ -303,7 +303,7 @@ async fn query_config(ton: &TonClient, result: &str) -> Result<Option<Value>, St
             if e.message.contains("Server responded with code 400") {
                 Ok(None)
             } else {
-                Err(format!("failed to query master block config: {}", e))
+                Err(format!("failed to query master block config: {e}"))
             }
         }
     }
@@ -333,17 +333,17 @@ pub async fn query_global_config(config: &Config, index: Option<&str>) -> Result
             println!("{:#}", Value::from(config_value));
         }
         Some(index) => {
-            index.parse::<i32>().map_err(|e| format!(r#"failed to parse "index": {}"#, e))?;
-            let config_name = format!("p{}", index);
+            index.parse::<i32>().map_err(|e| format!(r#"failed to parse "index": {e}"#))?;
+            let config_name = format!("p{index}");
             let config_value = if let Some(v) = config_value.get(&config_name) {
                 v
             } else {
                 return Err("Config was not set".to_string());
             };
             if !config.is_json {
-                print!("Config {}: ", config_name);
+                print!("Config {config_name}: ");
             }
-            println!("{:#}", config_value);
+            println!("{config_value:#}");
         }
     }
     Ok(())
@@ -357,15 +357,15 @@ pub async fn gen_update_config_message(
     is_json: bool,
 ) -> Result<(), String> {
     let config_master_address = std::fs::read(&*(config_master_file.to_string() + ".addr"))
-        .map_err(|e| format!(r#"failed to read "config_master": {}"#, e))?;
+        .map_err(|e| format!(r#"failed to read "config_master": {e}"#))?;
     let config_account = tvm_types::AccountId::from_raw(config_master_address, 32 * 8);
 
     let private_key_of_config_account =
         std::fs::read(&*(config_master_file.to_string() + ".pk"))
-            .map_err(|e| format!(r#"failed to read "config_master": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to read "config_master": {e}"#))?;
 
     let config_str = std::fs::read_to_string(new_param_file)
-        .map_err(|e| format!(r#"failed to read "new_param_file": {}"#, e))?;
+        .map_err(|e| format!(r#"failed to read "new_param_file": {e}"#))?;
 
     let (config_cell, key_number) = serialize_config_param(&config_str)?;
     let message = if let Some(abi) = abi {
@@ -378,7 +378,7 @@ pub async fn gen_update_config_message(
         )?
     } else {
         let seqno =
-            seqno.unwrap().parse().map_err(|e| format!(r#"failed to parse "seqno": {}"#, e))?;
+            seqno.unwrap().parse().map_err(|e| format!(r#"failed to parse "seqno": {e}"#))?;
         prepare_message_new_config_param(
             config_cell,
             seqno,
@@ -389,13 +389,13 @@ pub async fn gen_update_config_message(
     };
 
     let msg_bytes =
-        message.write_to_bytes().map_err(|e| format!(r#"failed to serialize message": {}"#, e))?;
+        message.write_to_bytes().map_err(|e| format!(r#"failed to serialize message": {e}"#))?;
     let msg_hex = hex::encode(&msg_bytes);
 
     if is_json {
-        println!("{{\"Message\": \"{}\"}}", msg_hex);
+        println!("{{\"Message\": \"{msg_hex}\"}}");
     } else {
-        println!("Message: {}", msg_hex);
+        println!("Message: {msg_hex}");
     }
 
     Ok(())
@@ -403,7 +403,7 @@ pub async fn gen_update_config_message(
 
 pub fn serialize_config_param(config_str: &str) -> Result<(Cell, u32), String> {
     let config_json: serde_json::Value = serde_json::from_str(config_str)
-        .map_err(|e| format!(r#"failed to parse "new_param_file": {}"#, e))?;
+        .map_err(|e| format!(r#"failed to parse "new_param_file": {e}"#))?;
     let config_json =
         config_json.as_object().ok_or(r#""new_param_file" is not json object"#.to_string())?;
     if config_json.len() != 1 {
@@ -421,20 +421,20 @@ pub fn serialize_config_param(config_str: &str) -> Result<(Cell, u32), String> {
     let key_number = key_number
         .ok_or(r#""new_param_file" is not a valid json"#.to_string())?
         .parse::<u32>()
-        .map_err(|e| format!(r#""new_param_file" is not a valid json: {}"#, e))?;
+        .map_err(|e| format!(r#""new_param_file" is not a valid json: {e}"#))?;
 
     let config_params = tvm_block_json::parse_config(config_json)
-        .map_err(|e| format!(r#"failed to parse config params from "new_param_file": {}"#, e))?;
+        .map_err(|e| format!(r#"failed to parse config params from "new_param_file": {e}"#))?;
 
     let config_param = config_params
         .config(key_number)
-        .map_err(|e| format!(r#"failed to parse config params from "new_param_file": {}"#, e))?
-        .ok_or(format!(r#"Not found config number {} in parsed config_params"#, key_number))?;
+        .map_err(|e| format!(r#"failed to parse config params from "new_param_file": {e}"#))?
+        .ok_or(format!(r#"Not found config number {key_number} in parsed config_params"#))?;
 
     let mut cell = BuilderData::default();
     config_param
         .write_to_cell(&mut cell)
-        .map_err(|e| format!(r#"failed to serialize config param": {}"#, e))?;
+        .map_err(|e| format!(r#"failed to serialize config param": {e}"#))?;
     let config_cell = cell.references()[0].clone();
 
     Ok((config_cell, key_number))
@@ -501,7 +501,7 @@ fn prepare_message_new_config_param_solidity(
         Token::new("data", TokenValue::Cell(config_param)),
     ];
 
-    let abi = std::fs::read(abi).map_err(|err| format!("cannot read abi file {}: {}", abi, err))?;
+    let abi = std::fs::read(abi).map_err(|err| format!("cannot read abi file {abi}: {err}"))?;
     let contract = Contract::load(&*abi).map_err(|err| err.to_string())?;
     let function = contract.function("set_config_param").map_err(|err| err.to_string())?;
     let body = function
@@ -513,7 +513,7 @@ fn prepare_message_new_config_param_solidity(
             Some(config_contract_address.clone()),
         )
         .and_then(SliceData::load_builder)
-        .map_err(|err| format!("cannot prepare message body {}", err))?;
+        .map_err(|err| format!("cannot prepare message body {err}"))?;
 
     let hdr = ExternalInboundMessageHeader::new(MsgAddressExt::AddrNone, config_contract_address);
     Ok(Message::with_ext_in_header_and_body(hdr, body))
@@ -536,7 +536,7 @@ pub async fn dump_blockchain_config(config: &Config, path: &str) -> Result<(), S
         Some(1),
     )
     .await
-    .map_err(|e| format!("failed to query last key block: {}", e))?;
+    .map_err(|e| format!("failed to query last key block: {e}"))?;
 
     if last_key_block_query.is_empty() {
         return Err("Key block not found".to_string());
@@ -551,14 +551,14 @@ pub async fn dump_blockchain_config(config: &Config, path: &str) -> Result<(), S
         ton.clone(),
         ParamsOfGetBlockchainConfig { block_boc: block, ..Default::default() },
     )
-    .map_err(|e| format!("Failed to get blockchain config: {}", e))?;
+    .map_err(|e| format!("Failed to get blockchain config: {e}"))?;
 
     let bc_config =
-        base64_decode(&bc_config.config_boc).map_err(|e| format!("Failed to decode BOC: {}", e))?;
+        base64_decode(&bc_config.config_boc).map_err(|e| format!("Failed to decode BOC: {e}"))?;
     std::fs::write(path, bc_config)
-        .map_err(|e| format!("Failed to write data to the file {}: {}", path, e))?;
+        .map_err(|e| format!("Failed to write data to the file {path}: {e}"))?;
     if !config.is_json {
-        println!("Config successfully saved to {}", path);
+        println!("Config successfully saved to {path}");
     } else {
         println!("{{}}");
     }

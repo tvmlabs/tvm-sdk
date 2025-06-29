@@ -29,7 +29,7 @@ pub struct HashmapE {
 impl fmt::Display for HashmapE {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.data() {
-            Some(cell) => write!(f, "Hashmap: {}", cell),
+            Some(cell) => write!(f, "Hashmap: {cell}"),
             None => write!(f, "Empty Hashmap"),
         }
     }

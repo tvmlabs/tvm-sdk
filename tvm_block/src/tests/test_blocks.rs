@@ -275,7 +275,7 @@ fn test_value_flow() {
 
 fn read_file_de_and_serialise(filename: &Path) -> Cell {
     let boc =
-        read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename));
+        read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {filename:?}"));
     let mut cells =
         BocReader::new().read(&mut Cursor::new(&boc)).expect("Error deserializing BOC").roots;
     cells.remove(0)
@@ -294,7 +294,7 @@ fn test_real_tvm_boc() {
                 } {
                     continue;
                 }
-                println!("BOC file: {:?}", in_path);
+                println!("BOC file: {in_path:?}");
                 read_file_de_and_serialise(&in_path);
             }
         }
@@ -308,17 +308,17 @@ fn test_real_tvm_mgs() {
     // let in_path = Path::new("src/tests/data/send-to-query.boc");
     let in_path = Path::new("src/tests/data/int-msg-query.boc");
 
-    println!("MSG file: {:?}", in_path);
+    println!("MSG file: {in_path:?}");
     let root_cell = read_file_de_and_serialise(in_path);
 
-    println!("slice = {}", root_cell);
+    println!("slice = {root_cell}");
     let msg = Message::construct_from_cell(root_cell).unwrap();
-    println!("Message = {:?}", msg);
+    println!("Message = {msg:?}");
 }
 
 fn test_real_block(in_path: &Path) -> Block {
     println!();
-    println!("Block file: {:?}", in_path);
+    println!("Block file: {in_path:?}");
     let root_cell = read_file_de_and_serialise(in_path);
     // println!("slice = {}", root_cell);
 
@@ -374,7 +374,7 @@ fn test_real_block(in_path: &Path) -> Block {
         custom
             .fees()
             .iterate_with_keys(|key, shard_fees| {
-                println!("\n\nkey: {:?}, shard_fees: {:?}\n\n", key, shard_fees);
+                println!("\n\nkey: {key:?}, shard_fees: {shard_fees:?}\n\n");
                 Ok(true)
             })
             .unwrap();
@@ -385,7 +385,7 @@ fn test_real_block(in_path: &Path) -> Block {
         .unwrap()
         .iterate_objects(|in_msg| {
             println!();
-            println!("InMsg: {:?}", in_msg);
+            println!("InMsg: {in_msg:?}");
             Ok(true)
         })
         .unwrap();
@@ -395,7 +395,7 @@ fn test_real_block(in_path: &Path) -> Block {
         .unwrap()
         .iterate_objects(|out_msg| {
             println!();
-            println!("OutMsg: {:?}", out_msg);
+            println!("OutMsg: {out_msg:?}");
             Ok(true)
         })
         .unwrap();
@@ -408,7 +408,7 @@ fn test_real_block(in_path: &Path) -> Block {
             println!("AccountBlock ID: {:?}", account_block.account_id());
             account_block.transaction_iterate(|transaction| {
                 println!();
-                println!("\tTransaction: {:?}", transaction);
+                println!("\tTransaction: {transaction:?}");
                 Ok(true)
             })?;
             Ok(true)
@@ -462,9 +462,9 @@ fn test_all_real_tvm_block_with_transaction() {
 fn test_real_tvm_config() {
     // to get current config run lite_client with saveconfig config.boc
     let in_path = Path::new("src/tests/data/config.boc");
-    println!("Config file: {:?}", in_path);
+    println!("Config file: {in_path:?}");
     let root_cell = read_file_de_and_serialise(in_path);
-    println!("cell = {:#.2}", root_cell);
+    println!("cell = {root_cell:#.2}");
 
     crate::config_params::dump_config(&HashmapE::with_hashmap(32, Some(root_cell)));
 }
@@ -589,7 +589,7 @@ fn test_read_tob_block_descr() {
     let data = std::fs::read("src/tests/data/top_block_descr.boc").unwrap();
     let cell = read_single_root_boc(data).unwrap();
     let descr = TopBlockDescr::construct_from_cell(cell).unwrap();
-    println!("{:?}", descr);
+    println!("{descr:?}");
 }
 
 #[test]

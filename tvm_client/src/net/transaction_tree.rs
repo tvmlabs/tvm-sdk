@@ -34,7 +34,7 @@ fn get_string(v: &Value, name: &str) -> Option<String> {
 
 fn required_string(v: &Value, name: &str) -> ClientResult<String> {
     v[name].as_str().map(|x| x.to_string()).ok_or_else(|| {
-        crate::net::Error::invalid_server_response(format!("Missing required field {}", name))
+        crate::net::Error::invalid_server_response(format!("Missing required field {name}"))
     })
 }
 

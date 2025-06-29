@@ -73,7 +73,7 @@ fn execute_setcpx(engine: &mut Engine) -> Status {
 
 fn execute_unknown(engine: &mut Engine) -> Status {
     let code = engine.last_cmd();
-    log::trace!(target: "tvm", "Invalid code: {} ({:#X})\n", code, code);
+    log::trace!(target: "tvm", "Invalid code: {code} ({code:#X})\n");
     err!(ExceptionCode::InvalidOpcode)
 }
 
@@ -994,14 +994,14 @@ impl Handlers {
                     self.directs[code as usize] = Some(Handler::Subset(self.subsets.len()));
                     self.subsets.push(std::mem::replace(subset, Handlers::new()))
                 } else {
-                    panic!("Slot for subset {:02x} is already occupied", code)
+                    panic!("Slot for subset {code:02x} is already occupied")
                 }
             }
             None => {
                 self.directs[code as usize] = Some(Handler::Subset(self.subsets.len()));
                 self.subsets.push(std::mem::replace(subset, Handlers::new()))
             }
-            _ => panic!("Subset {:02x} is already registered", code),
+            _ => panic!("Subset {code:02x} is already registered"),
         }
         self
     }
@@ -1013,10 +1013,10 @@ impl Handlers {
                 if x as usize == execute_unknown as usize {
                     self.directs[code as usize] = Some(Handler::Direct(handler))
                 } else {
-                    panic!("Code {:02x} is already registered", code)
+                    panic!("Code {code:02x} is already registered")
                 }
             }
-            _ => panic!("Slot for code {:02x} is already occupied", code),
+            _ => panic!("Slot for code {code:02x} is already occupied"),
         }
     }
 
@@ -1040,8 +1040,8 @@ fn print_handlers(handlers: &Handlers, f: &mut fmt::Formatter, indent: String) -
                 writeln!(f, "{}{:02x}: 0x{:x}", indent, h, func as *const u8 as usize)?
             }
             Some(Handler::Subset(i)) => {
-                writeln!(f, "{}{:02x}: subset", indent, h)?;
-                print_handlers(&handlers.subsets[i], f, format!("  {}", indent))?;
+                writeln!(f, "{indent}{h:02x}: subset")?;
+                print_handlers(&handlers.subsets[i], f, format!("  {indent}"))?;
             }
             None => {}
         }

@@ -300,7 +300,7 @@ impl FullConfig {
         let conf_str = serde_json::to_string_pretty(self)
             .map_err(|_| "failed to serialize config object".to_string())?;
         std::fs::write(path, conf_str)
-            .map_err(|e| format!("failed to write config file {}: {}", path, e))?;
+            .map_err(|e| format!("failed to write config file {path}: {e}"))?;
         Ok(())
     }
 
@@ -498,31 +498,31 @@ pub fn set_config(
     }
     if let Some(retries) = matches.value_of("RETRIES") {
         config.retries = u8::from_str_radix(retries, 10)
-            .map_err(|e| format!(r#"failed to parse "retries": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "retries": {e}"#))?;
     }
     if let Some(lifetime) = matches.value_of("LIFETIME") {
         config.lifetime = u32::from_str_radix(lifetime, 10)
-            .map_err(|e| format!(r#"failed to parse "lifetime": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "lifetime": {e}"#))?;
         if config.lifetime < 2 * config.out_of_sync_threshold {
             config.out_of_sync_threshold = config.lifetime >> 1;
         }
     }
     if let Some(timeout) = matches.value_of("TIMEOUT") {
         config.timeout = u32::from_str_radix(timeout, 10)
-            .map_err(|e| format!(r#"failed to parse "timeout": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "timeout": {e}"#))?;
     }
     if let Some(message_processing_timeout) = matches.value_of("MSG_TIMEOUT") {
         config.message_processing_timeout = u32::from_str_radix(message_processing_timeout, 10)
-            .map_err(|e| format!(r#"failed to parse "message_processing_timeout": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "message_processing_timeout": {e}"#))?;
     }
     if let Some(wc) = matches.value_of("WC") {
         config.wc = i32::from_str_radix(wc, 10)
-            .map_err(|e| format!(r#"failed to parse "workchain id": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "workchain id": {e}"#))?;
     }
     if let Some(depool_fee) = matches.value_of("DEPOOL_FEE") {
         config.depool_fee = depool_fee
             .parse::<f32>()
-            .map_err(|e| format!(r#"failed to parse "depool_fee": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "depool_fee": {e}"#))?;
         if config.depool_fee < 0.5 {
             return Err("Minimal value for depool fee is 0.5".to_string());
         }
@@ -530,26 +530,26 @@ pub fn set_config(
     if let Some(no_answer) = matches.value_of("NO_ANSWER") {
         config.no_answer = no_answer
             .parse::<bool>()
-            .map_err(|e| format!(r#"failed to parse "no_answer": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "no_answer": {e}"#))?;
     }
     if let Some(balance_in_vmshells) = matches.value_of("BALANCE_IN_VMSHELLS") {
         config.balance_in_vmshells = balance_in_vmshells
             .parse::<bool>()
-            .map_err(|e| format!(r#"failed to parse "balance_in_vmshells": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "balance_in_vmshells": {e}"#))?;
     }
     if let Some(local_run) = matches.value_of("LOCAL_RUN") {
         config.local_run = local_run
             .parse::<bool>()
-            .map_err(|e| format!(r#"failed to parse "local_run": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "local_run": {e}"#))?;
     }
     if let Some(async_call) = matches.value_of("ASYNC_CALL") {
         config.async_call = async_call
             .parse::<bool>()
-            .map_err(|e| format!(r#"failed to parse "async_call": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "async_call": {e}"#))?;
     }
     if let Some(out_of_sync_threshold) = matches.value_of("OUT_OF_SYNC") {
         let time = u32::from_str_radix(out_of_sync_threshold, 10)
-            .map_err(|e| format!(r#"failed to parse "out_of_sync_threshold": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "out_of_sync_threshold": {e}"#))?;
         if time * 2 > config.lifetime {
             return Err("\"out_of_sync\" should not exceed 0.5 * \"lifetime\".".to_string());
         }
@@ -569,7 +569,7 @@ pub fn set_config(
     }
     if let Some(is_json) = matches.value_of("IS_JSON") {
         config.is_json =
-            is_json.parse::<bool>().map_err(|e| format!(r#"failed to parse "is_json": {}"#, e))?;
+            is_json.parse::<bool>().map_err(|e| format!(r#"failed to parse "is_json": {e}"#))?;
     }
     if let Some(s) = matches.value_of("PROJECT_ID") {
         config.project_id = Some(s.to_string());

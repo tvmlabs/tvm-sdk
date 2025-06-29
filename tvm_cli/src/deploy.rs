@@ -54,7 +54,7 @@ pub async fn deploy_contract(
 
     let encoded_msg = encode_message(tvm_client.clone(), msg_params.clone())
         .await
-        .map_err(|e| format!("failed to create inbound message: {}", e))?;
+        .map_err(|e| format!("failed to create inbound message: {e}"))?;
 
     let msg = encoded_msg.message;
 
@@ -82,7 +82,7 @@ pub async fn deploy_contract(
                 println!("{k}: {v}");
             }
         });
-        println!("Contract deployed at address: {}", addr);
+        println!("Contract deployed at address: {addr}");
     } else {
         map.insert("deployed_at".to_string(), serde_json::Value::String(addr.clone()));
         print_json_result(serde_json::Value::Object(map), config)?;
@@ -108,7 +108,7 @@ pub async fn generate_deploy_message(
     let (msg, addr) = prepare_deploy_message(tvc, abi, params, keys_file, wc, config).await?;
     let msg = encode_message(ton, msg)
         .await
-        .map_err(|e| format!("failed to create inbound message: {}", e))?;
+        .map_err(|e| format!("failed to create inbound message: {e}"))?;
 
     let msg = EncodedMessage {
         message: msg.message,
@@ -118,7 +118,7 @@ pub async fn generate_deploy_message(
     };
     display_generated_message(&msg, "constructor", is_raw, output, config.is_json)?;
     if !config.is_json {
-        println!("Contract's address: {}", addr);
+        println!("Contract's address: {addr}");
         println!("Succeeded.");
     }
     Ok(())
@@ -182,7 +182,7 @@ pub async fn prepare_deploy_message_params(
     let deploy_set =
         Some(DeploySet { tvc: Some(tvc), workchain_id: Some(wc), ..Default::default() });
     let params = serde_json::from_str(params)
-        .map_err(|e| format!("function arguments is not a json: {}", e))?;
+        .map_err(|e| format!("function arguments is not a json: {e}"))?;
     let call_set = Some(CallSet { function_name, input: Some(params), header });
     let signer = if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None };
     Ok((

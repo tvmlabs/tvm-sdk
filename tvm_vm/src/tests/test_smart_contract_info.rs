@@ -28,7 +28,7 @@ fn check_additional_fields(capabilities: u64, count: usize) {
         .as_tuple()
         .expect("SMCI list must be a tuple")
         .len();
-    assert_eq!(result, count, "wrong total count for capabilities {:X}", capabilities);
+    assert_eq!(result, count, "wrong total count for capabilities {capabilities:X}");
 }
 
 #[test]

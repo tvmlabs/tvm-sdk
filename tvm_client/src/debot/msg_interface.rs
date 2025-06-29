@@ -74,14 +74,14 @@ impl MsgInterface {
     async fn send_with_keypair(&self, args: &Value) -> InterfaceResult {
         let message = get_arg(args, "message")?;
         let public = get_arg(args, "pub")?;
-        let public = decode_abi_bigint(&public).map_err(|e| format!("{}", e))?;
+        let public = decode_abi_bigint(&public).map_err(|e| format!("{e}"))?;
         let secret = get_arg(args, "sec")?;
-        let secret = decode_abi_bigint(&secret).map_err(|e| format!("{}", e))?;
-        let kpair = KeyPair::new(format!("{:064x}", public), format!("{:064x}", secret));
+        let secret = decode_abi_bigint(&secret).map_err(|e| format!("{e}"))?;
+        let kpair = KeyPair::new(format!("{public:064x}"), format!("{secret:064x}"));
         let signing_box =
-            get_signing_box(self.ton.clone(), kpair).await.map_err(|e| format!("{}", e))?.handle;
+            get_signing_box(self.ton.clone(), kpair).await.map_err(|e| format!("{e}"))?.handle;
         let parsed_msg = parse_message(self.ton.clone(), ParamsOfParse { boc: message.clone() })
-            .map_err(|e| format!("{}", e))?
+            .map_err(|e| format!("{e}"))?
             .parsed;
         let dest =
             parsed_msg["dst"].as_str().ok_or("failed to parse dst address".to_string())?.to_owned();
@@ -97,8 +97,8 @@ impl MsgInterface {
             false,
         )
         .await
-        .map_err(|e| format!("{}", e))?;
-        let answer_msg = callobj.execute(true).await.map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
+        let answer_msg = callobj.execute(true).await.map_err(|e| format!("{e}"))?;
 
         let result = decode_message(
             self.ton.clone(),
@@ -108,18 +108,18 @@ impl MsgInterface {
                 ..Default::default()
             },
         )
-        .map_err(|e| format!("failed to decode message: {}", e))?;
+        .map_err(|e| format!("failed to decode message: {e}"))?;
         let abi_str = self.debot_abi.json_string().unwrap();
-        let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{}", e))?;
+        let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{e}"))?;
         let answer_id =
-            contract.function(&result.name).map_err(|e| format!("{}", e))?.get_input_id();
+            contract.function(&result.name).map_err(|e| format!("{e}"))?.get_input_id();
         Ok((answer_id, result.value.unwrap_or_default()))
     }
 
     async fn send_async(&self, args: &Value) -> InterfaceResult {
         let message = get_arg(args, "message")?;
         let parsed_msg = parse_message(self.ton.clone(), ParamsOfParse { boc: message.clone() })
-            .map_err(|e| format!("{}", e))?
+            .map_err(|e| format!("{e}"))?
             .parsed;
         let dest =
             parsed_msg["dst"].as_str().ok_or("failed to parse dst address".to_string())?.to_owned();
@@ -135,8 +135,8 @@ impl MsgInterface {
             false,
         )
         .await
-        .map_err(|e| format!("{}", e))?;
-        let answer_msg = callobj.execute(false).await.map_err(|e| format!("{}", e))?;
+        .map_err(|e| format!("{e}"))?;
+        let answer_msg = callobj.execute(false).await.map_err(|e| format!("{e}"))?;
 
         let result = decode_message(
             self.ton.clone(),
@@ -146,11 +146,11 @@ impl MsgInterface {
                 ..Default::default()
             },
         )
-        .map_err(|e| format!("failed to decode message: {}", e))?;
+        .map_err(|e| format!("failed to decode message: {e}"))?;
         let abi_str = self.debot_abi.json_string().unwrap();
-        let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{}", e))?;
+        let contract = Contract::load(abi_str.as_bytes()).map_err(|e| format!("{e}"))?;
         let answer_id =
-            contract.function(&result.name).map_err(|e| format!("{}", e))?.get_input_id();
+            contract.function(&result.name).map_err(|e| format!("{e}"))?.get_input_id();
         Ok((answer_id, result.value.unwrap_or_default()))
     }
 }
@@ -169,7 +169,7 @@ impl DebotInterface for MsgInterface {
         match func {
             "sendWithKeypair" => self.send_with_keypair(args).await,
             "sendAsync" => self.send_async(args).await,
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

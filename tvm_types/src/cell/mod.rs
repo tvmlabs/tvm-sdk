@@ -692,7 +692,7 @@ impl Cell {
             (false, true) => "   ",
             (false, false) => " │ ",
         };
-        write!(f, "{}{}", indent, build)
+        write!(f, "{indent}{build}")
     }
 
     pub fn format_without_refs(
@@ -709,7 +709,7 @@ impl Cell {
 
         if self.cell_type() == CellType::Big {
             let data_len = self.data().len();
-            write!(f, "Big   bytes: {}", data_len)?;
+            write!(f, "Big   bytes: {data_len}")?;
             if data_len > 100 {
                 writeln!(f)?;
                 if !root {
@@ -753,7 +753,7 @@ impl Cell {
                 }
                 write!(f, "hashes:")?;
                 for h in self.hashes().iter() {
-                    write!(f, " {:x}", h)?;
+                    write!(f, " {h:x}")?;
                 }
                 writeln!(f)?;
                 if !root {
@@ -761,7 +761,7 @@ impl Cell {
                 }
                 write!(f, "depths:")?;
                 for d in self.depths().iter() {
-                    write!(f, " {}", d)?;
+                    write!(f, " {d}")?;
                 }
             }
         }
@@ -952,7 +952,7 @@ impl fmt::Binary for Cell {
         } else {
             let data = self.data();
             for b in &data[..data.len() - 1] {
-                write!(f, "{:08b}", b)?;
+                write!(f, "{b:08b}")?;
             }
             for i in (8 - (bitlen % 8)..8).rev() {
                 write!(f, "{:b}", (data[data.len() - 1] >> i) & 1)?;

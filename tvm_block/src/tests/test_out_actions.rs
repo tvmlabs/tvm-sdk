@@ -97,7 +97,7 @@ fn test_outactions() {
     assert_eq!(oa.len(), 11);
 
     for a in oa.iter() {
-        println!("action {:?}", a);
+        println!("action {a:?}");
     }
 }
 
@@ -107,13 +107,13 @@ fn test_outactions_serialization() {
     let b = oa.serialize().unwrap();
     let mut s = SliceData::load_cell(b).unwrap();
 
-    println!("action send slice: {}", s);
+    println!("action send slice: {s}");
 
     let mut oa_restored = OutActions::new();
     oa_restored.read_from(&mut s).unwrap();
 
     for a in oa_restored.iter() {
-        println!("action {:?}", a);
+        println!("action {a:?}");
     }
     assert_eq!(oa, oa_restored);
 }

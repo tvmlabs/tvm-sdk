@@ -20,7 +20,7 @@ async fn query_ids_in_range(
                     filter: Some(json!({
                         time_field: { "eq": start_time },
                     })),
-                    result: format!("id {}", time_field),
+                    result: format!("id {time_field}"),
                     ..Default::default()
                 },
             )

@@ -372,7 +372,7 @@ impl Terminal {
     }
 
     fn print(&mut self, answer_id: u32, message: &str) -> (u32, Value) {
-        assert!(!self.messages.is_empty(), "Unexpected terminal message received: \"{}\"", message);
+        assert!(!self.messages.is_empty(), "Unexpected terminal message received: \"{message}\"");
         assert_eq!(self.messages.remove(0), message, "Terminal message assert failed");
         (answer_id, json!({}))
     }

@@ -63,7 +63,7 @@ impl DebotInterface for Echo {
     async fn call(&self, func: &str, args: &Value) -> InterfaceResult {
         match func {
             "echo" => self.echo(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

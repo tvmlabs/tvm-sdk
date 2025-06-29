@@ -305,7 +305,7 @@ impl MasterBlock {
                 collection: "blocks".to_string(),
                 filter: Some(filter),
                 order: Some(vec![OrderBy { path: "gen_utime".to_string(), direction }]),
-                result: format!("{} {}", BLOCK_MASTER_FIELDS, fields),
+                result: format!("{BLOCK_MASTER_FIELDS} {fields}"),
                 limit: Some(limit),
             },
         )
@@ -395,5 +395,5 @@ where
 {
     let string = d.deserialize_str(StringVisitor)?;
     shard_ident_parse(&string)
-        .map_err(|err| Error::custom(format!("Error parsing shard ident: {}", err)))
+        .map_err(|err| Error::custom(format!("Error parsing shard ident: {err}")))
 }

@@ -193,7 +193,7 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
                     err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
                 }
             };
-        log::debug!("Using WASM Hash {:?}", wasm_hash);
+        log::debug!("Using WASM Hash {wasm_hash:?}");
         engine.get_wasm_binary_by_hash(wasm_hash)?
         // todo!("Add hash lookup here from hash {:?}", wasm_hash);
     } else {
@@ -216,12 +216,12 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
 
     let mut exports = component_type.exports(&wasm_engine);
     let arg = exports.next();
-    log::debug!("List of exports from WASM: {:?}", arg);
+    log::debug!("List of exports from WASM: {arg:?}");
     if let Some(arg) = arg {
-        log::debug!("{:?}", arg);
+        log::debug!("{arg:?}");
 
         for arg in exports {
-            log::debug!(" {:?}", arg);
+            log::debug!(" {arg:?}");
         }
     }
 
@@ -269,7 +269,7 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
         log::debug!("{:?}", export.0);
     }
     let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
-    log::debug!("Instance Index {:?}", instance_index);
+    log::debug!("Instance Index {instance_index:?}");
     let func_index = match wasm_instance.get_export_index(
         &mut wasm_store,
         instance_index.as_ref(),
@@ -280,10 +280,10 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
             err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
         }
     };
-    log::debug!("Func Index {:?}", func_index);
+    log::debug!("Func Index {func_index:?}");
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
-        .expect(&format!("`{}` was not an exported function", wasm_func_name));
+        .expect(&format!("`{wasm_func_name}` was not an exported function"));
     let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
@@ -320,15 +320,15 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
             e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
-    log::debug!("WASM Args loaded {:?}", wasm_func_args);
+    log::debug!("WASM Args loaded {wasm_func_args:?}");
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => {
-            log::debug!("Failed to execute WASM function {:?}", e);
+            log::debug!("Failed to execute WASM function {e:?}");
             err!(ExceptionCode::WasmExecFail, "Failed to execute WASM function {:?}", e)?
         }
     };
-    log::debug!("WASM Execution result: {:?}", result);
+    log::debug!("WASM Execution result: {result:?}");
 
     let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
     // TODO: If we switch to dynamic gas usage, reenable this code
@@ -348,7 +348,7 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     }
 
     // return result
-    log::debug!("EXEC Wasm execution result: {:?}", result);
+    log::debug!("EXEC Wasm execution result: {result:?}");
     let res_vec = result.0;
 
     let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
@@ -420,7 +420,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
                     err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
                 }
             };
-        log::debug!("Using WASM Hash {:?}", wasm_hash);
+        log::debug!("Using WASM Hash {wasm_hash:?}");
         engine.get_wasm_binary_by_hash(wasm_hash)?
         // todo!("Add hash lookup here from hash {:?}", wasm_hash);
     } else {
@@ -443,12 +443,12 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
 
     let mut exports = component_type.exports(&wasm_engine);
     let arg = exports.next();
-    log::debug!("List of exports from WASM: {:?}", arg);
+    log::debug!("List of exports from WASM: {arg:?}");
     if let Some(arg) = arg {
-        log::debug!("{:?}", arg);
+        log::debug!("{arg:?}");
 
         for arg in exports {
-            log::debug!(" {:?}", arg);
+            log::debug!(" {arg:?}");
         }
     }
 
@@ -496,7 +496,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         log::debug!("{:?}", export.0);
     }
     let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
-    log::debug!("Instance Index {:?}", instance_index);
+    log::debug!("Instance Index {instance_index:?}");
     let func_index = match wasm_instance.get_export_index(
         &mut wasm_store,
         instance_index.as_ref(),
@@ -507,10 +507,10 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
         }
     };
-    log::debug!("Func Index {:?}", func_index);
+    log::debug!("Func Index {func_index:?}");
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
-        .expect(&format!("`{}` was not an exported function", wasm_func_name));
+        .expect(&format!("`{wasm_func_name}` was not an exported function"));
     let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
@@ -526,15 +526,15 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
             TokenValue::Bytes(items) => items,
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
-    log::debug!("WASM Args loaded {:?}", wasm_func_args);
+    log::debug!("WASM Args loaded {wasm_func_args:?}");
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => {
-            log::debug!("Failed to execute WASM function {:?}", e);
+            log::debug!("Failed to execute WASM function {e:?}");
             err!(ExceptionCode::WasmExecFail, "Failed to execute WASM function {:?}", e)?
         }
     };
-    log::debug!("WASM Execution result: {:?}", result);
+    log::debug!("WASM Execution result: {result:?}");
 
     let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
     // TODO: If we switch to dynamic gas usage, reenable this code
@@ -554,7 +554,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     }
 
     // return result
-    log::debug!("EXEC Wasm execution result: {:?}", result);
+    log::debug!("EXEC Wasm execution result: {result:?}");
     let res_vec = result.0;
 
     let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;

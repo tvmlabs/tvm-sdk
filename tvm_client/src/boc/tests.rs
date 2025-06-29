@@ -132,7 +132,7 @@ fn test_encode_boc() {
                 write_bitstring("123"),
                 write_bitstring("x2d9_"),
                 write_bitstring("80_"),
-                write_address(format!("-1:{}", burner_account_id)),
+                write_address(format!("-1:{burner_account_id}")),
                 write_cell(vec![
                     write_bitstring("n101100111000"),
                     write_bitstring("N100111000"),
@@ -163,7 +163,7 @@ fn test_encode_boc() {
                 write_bitstring("123"),
                 write_bitstring("x2d9_"),
                 write_bitstring("80_"),
-                write_address(format!("-1:{}", burner_account_id)),
+                write_address(format!("-1:{burner_account_id}")),
                 BuilderOp::CellBoc { boc: serialize_cell_to_base64(&inner_cell, "cell").unwrap() },
             ],
             boc_cache: None,

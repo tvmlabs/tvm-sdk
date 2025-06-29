@@ -886,10 +886,10 @@ impl Handlers {
                     self.directs[code as usize] = Handler::Subset(self.subsets.len());
                     self.subsets.push(std::mem::replace(subset, Handlers::new()))
                 } else {
-                    panic!("Slot for subset {:02x} is already occupied", code)
+                    panic!("Slot for subset {code:02x} is already occupied")
                 }
             }
-            _ => panic!("Subset {:02x} is already registered", code),
+            _ => panic!("Subset {code:02x} is already registered"),
         }
         self
     }
@@ -900,10 +900,10 @@ impl Handlers {
                 if x as usize == Loader::unknown as usize {
                     self.directs[code as usize] = Handler::Direct(handler)
                 } else {
-                    panic!("Code {:02x} is already registered", code)
+                    panic!("Code {code:02x} is already registered")
                 }
             }
-            _ => panic!("Slot for code {:02x} is already occupied", code),
+            _ => panic!("Slot for code {code:02x} is already occupied"),
         }
     }
 

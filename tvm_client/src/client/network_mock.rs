@@ -43,10 +43,10 @@ impl FetchMock {
             result.url = url.split('?').next().unwrap_or("").to_string();
         }
         let (text, find, replace_with) = match &result {
-            Ok(ok) => (format!("{:?}", ok), "FetchResult", "✅"),
-            Err(err) => (format!("{:?}", err), "ClientError", "❌"),
+            Ok(ok) => (format!("{ok:?}"), "FetchResult", "✅"),
+            Err(err) => (format!("{err:?}"), "ClientError", "❌"),
         };
-        println!("{}", text.replace(find, &format!("{}{}", replace_with, id)));
+        println!("{}", text.replace(find, &format!("{replace_with}{id}")));
         result
     }
 }
@@ -151,14 +151,14 @@ impl NetworkMock {
                 log.push_str(&format!(" {}", fetch.id));
             }
             if let Some(delay) = fetch.delay {
-                log.push_str(&format!(" {} ms ", delay));
+                log.push_str(&format!(" {delay} ms "));
             }
             log.push(' ');
             log.push_str(url);
             if let Some(body) = &body {
-                log.push_str(&format!("\n  ⤷ {}", body));
+                log.push_str(&format!("\n  ⤷ {body}"));
             }
-            println!("{}", log);
+            println!("{log}");
             Some(fetch)
         } else {
             None
@@ -177,7 +177,7 @@ impl NetworkMock {
         let mock = client.env.network_mock.read().await;
         if let Some(fetches) = &mock.fetches {
             if !fetches.is_empty() {
-                panic!("Mock fetches is not empty: {:?}", fetches);
+                panic!("Mock fetches is not empty: {fetches:?}");
             }
         }
     }

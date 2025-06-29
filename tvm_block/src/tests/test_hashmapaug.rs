@@ -74,14 +74,14 @@ fn test_hashmapaug() {
     let mut tree = GramHashmap7::default();
     assert_eq!(&GramStruct::with_value(0), tree.root_extra());
     assert!(tree.is_empty());
-    println!("empty {}", tree);
+    println!("empty {tree}");
 
     // add first
     let key1 = SliceData::new(vec![0xFF]);
     let value1 = key1.clone();
     let extra1 = GramStruct::with_value(1);
     tree.set_serialized(key1.clone(), &value1, &extra1).unwrap();
-    println!("first {}", tree);
+    println!("first {tree}");
     assert_eq!(&GramStruct::with_value(1), tree.root_extra());
     assert_eq!(tree.get_serialized_as_slice(key1.clone()).unwrap(), Some(value1.clone()));
 
@@ -89,7 +89,7 @@ fn test_hashmapaug() {
     let value1 = SliceData::new(vec![0xFB]);
     let extra1 = GramStruct::with_value(2);
     tree.set_serialized(key1.clone(), &value1, &extra1).unwrap();
-    println!("replaced {}", tree);
+    println!("replaced {tree}");
     assert!(!tree.is_empty());
     assert_eq!(&GramStruct::with_value(2), tree.root_extra());
     assert_eq!(tree.get_serialized_as_slice(key1.clone()).unwrap(), Some(value1.clone()));
@@ -99,7 +99,7 @@ fn test_hashmapaug() {
     let value2 = key2.clone();
     let extra2 = GramStruct::with_value(3);
     tree.set_serialized(key2.clone(), &value2, &extra2).unwrap();
-    println!("second {}", tree);
+    println!("second {tree}");
     assert!(!tree.is_empty());
     assert_eq!(&GramStruct::with_value(5), tree.root_extra());
     assert_eq!(tree.get_serialized_as_slice(key1.clone()).unwrap(), Some(value1.clone()));
@@ -109,7 +109,7 @@ fn test_hashmapaug() {
     let value2 = SliceData::new(vec![0xF2]);
     let extra2 = GramStruct::with_value(4);
     tree.set_serialized(key2.clone(), &value2, &extra2).unwrap();
-    println!("second replaced {}", tree);
+    println!("second replaced {tree}");
     assert!(!tree.is_empty());
     assert_eq!(&GramStruct::with_value(6), tree.root_extra());
     assert_eq!(tree.get_serialized_as_slice(key1.clone()).unwrap(), Some(value1.clone()));
@@ -120,7 +120,7 @@ fn test_hashmapaug() {
     let value3 = key3.clone();
     let extra3 = GramStruct::with_value(5);
     tree.set_serialized(key3.clone(), &value3, &extra3).unwrap();
-    println!("third added {}", tree);
+    println!("third added {tree}");
     assert!(!tree.is_empty());
     assert_eq!(&GramStruct::with_value(11), tree.root_extra());
     assert_eq!(tree.get_serialized_as_slice(key1.clone()).unwrap(), Some(value1.clone()));
@@ -131,7 +131,7 @@ fn test_hashmapaug() {
     let value3 = SliceData::new(vec![0x0F]);
     let extra3 = GramStruct::with_value(6);
     tree.set_serialized(key3.clone(), &value3, &extra3).unwrap();
-    println!("third replaced {}", tree);
+    println!("third replaced {tree}");
     assert!(!tree.is_empty());
     assert_eq!(&GramStruct::with_value(12), tree.root_extra());
     assert_eq!(tree.get_serialized_as_slice(key1.clone()).unwrap(), Some(value1.clone()));
@@ -143,7 +143,7 @@ fn test_hashmapaug() {
     let value4 = key4.clone();
     let extra4 = GramStruct::with_value(7);
     tree.set_serialized(key4.clone(), &value4, &extra4).unwrap();
-    println!("fourth added {}", tree);
+    println!("fourth added {tree}");
     assert!(!tree.is_empty());
     assert_eq!(&GramStruct::with_value(19), tree.root_extra());
     assert_eq!(tree.get_serialized_as_slice(key1).unwrap(), Some(value1));
@@ -810,7 +810,7 @@ fn check_hashmap_fill_and_filter(mut keys: Vec<u8>, remove: &[u8], stop: usize, 
     }
     for i in 0..res1.len() {
         if i % 7 == 0 {
-            println!("{}", i);
+            println!("{i}");
             pretty_assertions::assert_eq!(res1[i], res2[i]);
         }
     }
@@ -841,9 +841,9 @@ fn test_hahsmap_rand_fill_and_filter() {
     }
     let stop = rand::Rng::gen::<usize>(&mut rng) % keys.len();
     let cancel = keys.len(); // rand::Rng::gen::<usize>(&mut rng) % keys.len();
-    println!("{:#?}", keys);
-    println!("{:#?}", remove);
-    println!("{} {}", stop, cancel);
+    println!("{keys:#?}");
+    println!("{remove:#?}");
+    println!("{stop} {cancel}");
     check_hashmap_fill_and_filter(keys, &remove, stop, cancel);
 }
 

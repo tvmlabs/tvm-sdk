@@ -71,14 +71,14 @@ mod test_bintree {
 
         assert!(tree.split(SliceData::default(), &22, &CurrencyCollection::with_grams(2)).unwrap());
         let tree2 = tree.get_data();
-        println!("{}", tree2);
+        println!("{tree2}");
         assert_eq!(tree.get(prepare_key(0, 1)).unwrap(), Some(11));
         assert_eq!(tree.get(prepare_key(1, 1)).unwrap(), Some(22));
         assert_eq!(tree.root_extra(), &CurrencyCollection::with_grams(3));
 
         assert!(tree.split(prepare_key(0, 1), &33, &CurrencyCollection::with_grams(4)).unwrap());
         let tree3 = tree.get_data();
-        println!("{}", tree3);
+        println!("{tree3}");
         assert_eq!(tree.get(prepare_key(0, 1)).unwrap(), None);
         assert_eq!(tree.get(prepare_key(0, 2)).unwrap(), Some(11));
         assert_eq!(tree.get(prepare_key(1, 2)).unwrap(), Some(33));

@@ -228,7 +228,7 @@ fn print_function_singnatures() {
     for function in functions.values() {
         println!("{}", function.get_function_signature());
         let id = function.get_function_id();
-        println!("{:X?}\n", id);
+        println!("{id:X?}\n");
     }
 
     println!("Events\n");
@@ -238,6 +238,6 @@ fn print_function_singnatures() {
     for event in events.values() {
         println!("{}", event.get_function_signature());
         let id = event.get_function_id();
-        println!("{:X?}\n", id);
+        println!("{id:X?}\n");
     }
 }

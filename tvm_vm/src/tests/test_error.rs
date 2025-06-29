@@ -31,9 +31,9 @@ fn test_tvm_exception_code() {
 #[test]
 fn test_update_error() {
     let err = exception!(ExceptionCode::RangeCheckError, "description {}", 42);
-    println!("{:?}", err);
-    let err = update_error_description(err, |d| format!("additional: {}", d));
-    println!("{:?}", err);
+    println!("{err:?}");
+    let err = update_error_description(err, |d| format!("additional: {d}"));
+    println!("{err:?}");
     assert_eq!(tvm_exception_code(&err).unwrap(), ExceptionCode::RangeCheckError);
 
     let Ok(TvmError::TvmExceptionFull(_, ref description)) = err.downcast::<TvmError>() else {
@@ -52,9 +52,9 @@ fn test_update_error() {
 
     let err =
         || -> Result<()> { custom_err!(112, "text with format {} - {}", 123, 456) }().unwrap_err();
-    println!("{:?}", err);
-    let err = update_error_description(err, |d| format!("additional: {}", d));
-    println!("{:?}", err);
+    println!("{err:?}");
+    let err = update_error_description(err, |d| format!("additional: {d}"));
+    println!("{err:?}");
     assert_eq!(tvm_exception_code(&err), None);
     assert_eq!(tvm_exception_or_custom_code(&err), 112);
 }

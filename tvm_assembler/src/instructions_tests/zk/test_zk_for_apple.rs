@@ -56,7 +56,7 @@ mod tests {
             content,
         );
 
-        println!("all_jwk = {:?}", all_jwk);
+        println!("all_jwk = {all_jwk:?}");
 
         // let jwt_randomness = "100681567828351849884072155819400689117";
         // A dummy salt
@@ -72,13 +72,13 @@ mod tests {
         // "84029355920633174015103288781128426107680789454168570548782290541079926444544"
         // ;
 
-        println!("kp_bigint = {:?} ", kp_bigint);
+        println!("kp_bigint = {kp_bigint:?} ");
 
         let jwt_data_vector: Vec<&str> = parsed_token.split(".").collect();
         let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
         let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
-        println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
+        println!("jwt_string_1 is {jwt_string_1:?}"); // jwt_string_1 is
 
         // JwtDataDecodedPart1
         let jwt_data_decoded1: JwtDataDecodedPart1 = serde_json::from_str(&jwt_string_1).unwrap();
@@ -86,7 +86,7 @@ mod tests {
 
         let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
         let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
-        println!("jwt_string_2 is {:?}", jwt_string_2);
+        println!("jwt_string_2 is {jwt_string_2:?}");
 
         let jwt_data_decoded2: JwtDataDecodedPart2 = serde_json::from_str(&jwt_string_2).unwrap();
 

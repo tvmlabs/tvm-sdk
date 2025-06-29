@@ -52,14 +52,14 @@ fn include_json(json_ref: &str) -> Result<String, CliError> {
     let ref_path = if ref_parts.len() > 1 { ref_parts[1] } else { "" };
     if ref_file.ends_with(".json") {
         let ref_string = std::fs::read_to_string(&ref_file)
-            .map_err(|e| CliError::with_message(format!("Include [{}] failed: {}", ref_file, e)))?;
+            .map_err(|e| CliError::with_message(format!("Include [{ref_file}] failed: {e}")))?;
         let value: Value = serde_json::from_str(&ref_string)
-            .map_err(|e| CliError::with_message(format!("Include [{}] failed: {}", ref_file, e)))?;
+            .map_err(|e| CliError::with_message(format!("Include [{ref_file}] failed: {e}")))?;
         let value = resolve_json_path(&value, ref_path);
         Ok(value.to_string())
     } else {
         let ref_bytes = std::fs::read(&ref_file)
-            .map_err(|e| CliError::with_message(format!("Include [{}] failed: {}", ref_file, e)))?;
+            .map_err(|e| CliError::with_message(format!("Include [{ref_file}] failed: {e}")))?;
         Ok(format!("\"{}\"", base64::engine::general_purpose::STANDARD.encode(&ref_bytes)))
     }
 }
@@ -78,7 +78,7 @@ fn parse_sync_response<R: DeserializeOwned>(response: *const String) -> Result<R
                 Ok(serde_json::from_value(value["result"].clone()).unwrap())
             }
         }
-        Err(err) => Err(CliError::with_message(format!("Read core response failed: {}", err))),
+        Err(err) => Err(CliError::with_message(format!("Read core response failed: {err}"))),
     }
 }
 

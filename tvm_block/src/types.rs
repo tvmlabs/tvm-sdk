@@ -948,7 +948,7 @@ impl fmt::Display for CurrencyCollection {
                     Ok(true)
                 })
                 .ok();
-            write!(f, " count: {} }}", len)?;
+            write!(f, " count: {len} }}")?;
         }
         Ok(())
     }

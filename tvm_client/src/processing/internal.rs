@@ -98,7 +98,7 @@ async fn get_local_error(
     }
 
     let account: Account = serde_json::from_value(account).map_err(|err| {
-        Error::invalid_data(format!("Can not parse account for error resolving: {}", err))
+        Error::invalid_data(format!("Can not parse account for error resolving: {err}"))
     })?;
 
     if let Some(last_paid) = account.last_paid {
@@ -195,7 +195,7 @@ pub(crate) async fn resolve_error(
 /// original error
 fn remove_exit_code(exit_code: &Option<i64>, internal_error: &str) -> String {
     if let Some(exit_code) = exit_code {
-        regex::Regex::new(&format!(r#"(?i)([,\.]\s*)?exit\s+code(:\s*|\s+){}"#, exit_code))
+        regex::Regex::new(&format!(r#"(?i)([,\.]\s*)?exit\s+code(:\s*|\s+){exit_code}"#))
             .unwrap()
             .replace(internal_error, "")
             .to_string()

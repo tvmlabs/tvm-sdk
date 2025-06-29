@@ -79,10 +79,10 @@ impl ParamType {
     /// Returns type signature according to ABI specification
     pub fn type_signature(&self) -> String {
         match self {
-            ParamType::Uint(size) => format!("uint{}", size),
-            ParamType::Int(size) => format!("int{}", size),
-            ParamType::VarUint(size) => format!("varuint{}", size),
-            ParamType::VarInt(size) => format!("varint{}", size),
+            ParamType::Uint(size) => format!("uint{size}"),
+            ParamType::Int(size) => format!("int{size}"),
+            ParamType::VarUint(size) => format!("varuint{size}"),
+            ParamType::VarInt(size) => format!("varint{size}"),
             ParamType::Bool => "bool".to_owned(),
             ParamType::Tuple(params) => {
                 let mut signature = "".to_owned();
@@ -103,7 +103,7 @@ impl ParamType {
             }
             ParamType::Address => "address".to_string(),
             ParamType::Bytes => "bytes".to_string(),
-            ParamType::FixedBytes(size) => format!("fixedbytes{}", size),
+            ParamType::FixedBytes(size) => format!("fixedbytes{size}"),
             ParamType::String => "string".to_string(),
             ParamType::Token => "gram".to_string(),
             ParamType::Time => "time".to_string(),

@@ -41,7 +41,7 @@ pub fn compress_zstd(
     params: ParamsOfCompressZstd,
 ) -> ClientResult<ResultOfCompressZstd> {
     let uncompressed = base64_decode(&params.uncompressed).map_err(|err| {
-        crate::utils::Error::compression_error(format!("Unable to decode BASE64: {}", err))
+        crate::utils::Error::compression_error(format!("Unable to decode BASE64: {err}"))
     })?;
 
     let compressed =
@@ -69,7 +69,7 @@ pub fn decompress_zstd(
     params: ParamsOfDecompressZstd,
 ) -> ClientResult<ResultOfDecompressZstd> {
     let compressed = base64_decode(params.compressed).map_err(|err| {
-        crate::utils::Error::decompression_error(format!("Unable to decode BASE64: {}", err))
+        crate::utils::Error::decompression_error(format!("Unable to decode BASE64: {err}"))
     })?;
 
     let decompressed = crate::utils::compression::decompress_zstd(compressed.as_slice())?;

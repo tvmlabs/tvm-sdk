@@ -499,8 +499,8 @@ impl ConfigParams {
         // previously was not 9 parameter in config params
         for index in &MANDATORY_CONFIG_PARAMS {
             if self.config(*index)?.is_none() {
-                log::error!(target: "block", "configuration parameter #{} \
-                    (hardcoded as mandatory) is missing)", index);
+                log::error!(target: "block", "configuration parameter #{index} \
+                    (hardcoded as mandatory) is missing)");
                 return Ok(false);
             }
         }
@@ -522,8 +522,8 @@ impl ConfigParams {
             Some(params) => params.iterate_keys(|index: u32| match self.config(index) {
                 Ok(Some(_)) => Ok(true),
                 _ => {
-                    log::error!(target: "block", "configuration parameter #{} \
-                        (declared as mandatory in configuration parameter #9) is missing)", index);
+                    log::error!(target: "block", "configuration parameter #{index} \
+                        (declared as mandatory in configuration parameter #9) is missing)");
                     Ok(false)
                 }
             }),
@@ -2922,7 +2922,7 @@ impl ConfigParam39 {
     pub fn get(&self, key: &UInt256) -> Result<ValidatorSignedTempKey> {
         self.validator_keys
             .get(key)?
-            .ok_or_else(|| error!(BlockError::InvalidArg(format!("{:x}", key))))
+            .ok_or_else(|| error!(BlockError::InvalidArg(format!("{key:x}"))))
     }
 
     /// insert value
@@ -3339,17 +3339,17 @@ pub(crate) fn dump_config(params: &HashmapE) {
                 ConfigParamEnum::ConfigParam31(ref mut cfg) => {
                     println!("\tConfigParam31.fundamental_smc_addr");
                     cfg.fundamental_smc_addr.iterate_keys(|addr: UInt256| -> Result<bool> {
-                        println!("\t\t{}", addr);
+                        println!("\t\t{addr}");
                         Ok(true)
                     })?;
                 }
                 ConfigParamEnum::ConfigParam34(ref mut cfg) => {
                     println!("\tConfigParam34.cur_validators");
                     for validator in cfg.cur_validators.list() {
-                        println!("\t\t{:?}", validator);
+                        println!("\t\t{validator:?}");
                     }
                 }
-                x => println!("\t{:?}", x),
+                x => println!("\t{x:?}"),
             }
             Ok(true)
         })

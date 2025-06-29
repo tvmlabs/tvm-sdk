@@ -51,8 +51,7 @@ fn test_check_master_blocks_proof() -> Result<()> {
 
     for seq_no in 3082182..=3082200 {
         let block_proof = BlockProof::read_from_file(format!(
-            "src/proofs/tests/data/test_master_block_proof/proof__{}",
-            seq_no
+            "src/proofs/tests/data/test_master_block_proof/proof__{seq_no}"
         ))?;
         let (virt_block, virt_block_info) = block_proof.pre_check_block_proof()?;
         block_proof.check_with_prev_key_block_proof(
@@ -73,8 +72,7 @@ fn test_check_master_blocks_proof_shuffle() -> Result<()> {
 
     for seq_no in 3236531..=3236550 {
         let block_proof = BlockProof::read_from_file(format!(
-            "src/proofs/tests/data/test_master_block_proof_shuffle/proof__{}",
-            seq_no
+            "src/proofs/tests/data/test_master_block_proof_shuffle/proof__{seq_no}"
         ))?;
 
         let (virt_block, virt_block_info) = block_proof.pre_check_block_proof()?;
@@ -706,7 +704,7 @@ fn print_object_type(
         }
         let type_name = resolve_type_name(&field.field_type);
         let field_ident = format!("{}:{}", field.name, type_name);
-        if path.contains(&format!("/{}/", field_ident)) {
+        if path.contains(&format!("/{field_ident}/")) {
             continue;
         }
         if i != 0 {
@@ -715,7 +713,7 @@ fn print_object_type(
         output.push_str(&field.name);
         if let Some(typ) = known_types.get(&type_name) {
             output.push('{');
-            print_object_type(typ, known_types, format!("{}{}/", path, field_ident), output);
+            print_object_type(typ, known_types, format!("{path}{field_ident}/"), output);
             output.push('}');
         }
     }

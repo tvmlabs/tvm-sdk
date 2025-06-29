@@ -52,11 +52,11 @@ fn test_varuinteger_with_zero() {
 fn test_varuinteger7_from_into() {
     let mut b1: SliceData = SliceData::new(vec![0b00100000, 0b01010000]);
 
-    println!("b1 = {}", b1);
+    println!("b1 = {b1}");
 
     let mut vui7: VarUInteger7 = VarUInteger7::default();
     vui7.read_from(&mut b1).unwrap();
-    println!("vui7 = {}", vui7);
+    println!("vui7 = {vui7}");
 
     assert_eq!(VarUInteger7::from(2), vui7);
 
@@ -72,8 +72,8 @@ fn test_varuinteger7_from_into() {
 
     let mut s1: BuilderData = BuilderData::new();
     v2.write_to(&mut s1).unwrap();
-    println!("s1 = {}", s1);
-    println!("v2 = {}", v2);
+    println!("s1 = {s1}");
+    println!("v2 = {v2}");
 }
 
 #[test]

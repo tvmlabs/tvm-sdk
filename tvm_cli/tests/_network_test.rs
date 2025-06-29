@@ -37,7 +37,7 @@ fn test_network() -> Result<(), Box<dyn std::error::Error>> {
         .arg("--sign")
         .arg(GIVER_V2_KEY)
         .arg("sendTransaction")
-        .arg(format!(r#"{{"dest":"{}","value":10000000,"bounce":false}}"#, GIVER_V2_ADDR))
+        .arg(format!(r#"{{"dest":"{GIVER_V2_ADDR}","value":10000000,"bounce":false}}"#))
         .assert();
     let res = res.get_output().stdout.clone();
     let res = String::from_utf8(res);
