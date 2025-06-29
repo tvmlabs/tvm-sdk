@@ -72,7 +72,7 @@ impl<T: ParserTracer, R: JsonReducer> BlockParser<T, R> {
         } else {
             None
         };
-        log::trace!("block order for {}: {:#?}", block_id_str, block_order);
+        log::trace!("block order for {block_id_str}: {block_order:#?}");
 
         let block_info = block.block.read_info()?;
         let ut = block_info.gen_utime();

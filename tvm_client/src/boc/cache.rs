@@ -200,7 +200,7 @@ impl Bocs {
     ) -> ClientResult<(DeserializedBoc, Cell)> {
         if boc.starts_with('*') {
             let hash = UInt256::from_str(&boc[1..]).map_err(|err| {
-                Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {}", err))
+                Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {err}"))
             })?;
 
             let cell = self.get(&hash).ok_or(Error::boc_ref_not_found(boc))?;
@@ -253,7 +253,7 @@ impl Bocs {
         size: Option<usize>,
     ) -> ClientResult<UInt256> {
         let hash = cell.repr_hash();
-        log::debug!("Bocs::add {:x}", hash);
+        log::debug!("Bocs::add {hash:x}");
         match cache_type {
             BocCacheType::Pinned { pin } => self.add_new_pinned(hash.clone(), pin, cell),
             BocCacheType::Unpinned => {
@@ -277,7 +277,7 @@ fn parse_boc_ref(boc_ref: &str) -> ClientResult<UInt256> {
     }
 
     UInt256::from_str(&boc_ref[1..]).map_err(|err| {
-        Error::invalid_boc_ref(format!("reference contains invalid hash: {}", err), boc_ref)
+        Error::invalid_boc_ref(format!("reference contains invalid hash: {err}"), boc_ref)
     })
 }
 
@@ -309,7 +309,7 @@ pub fn cache_set(
     context
         .bocs
         .add(params.cache_type, cell, size)
-        .map(|hash| ResultOfBocCacheSet { boc_ref: format!("*{:x}", hash) })
+        .map(|hash| ResultOfBocCacheSet { boc_ref: format!("*{hash:x}") })
 }
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]

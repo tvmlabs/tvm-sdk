@@ -47,7 +47,7 @@ impl FetchResult {
         }
         let text = self.body_as_text()?;
         serde_json::from_str(text).map_err(|err| {
-            Error::http_request_parse_error(format!("Body is not a valid JSON: {}\n{}", err, text))
+            Error::http_request_parse_error(format!("Body is not a valid JSON: {err}\n{text}"))
         })
     }
 

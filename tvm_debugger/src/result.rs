@@ -32,12 +32,12 @@ impl ExecutionResult {
 
     pub fn exit_code(&mut self, code: i32) {
         self.response_code = code;
-        self.log(format!("TVM terminated with exit code {}", code));
+        self.log(format!("TVM terminated with exit code {code}"));
     }
 
     pub fn vm_success(&mut self, is_vm_success: bool) {
         self.is_vm_success = is_vm_success;
-        self.log(format!("Computing phase is success: {}", is_vm_success));
+        self.log(format!("Computing phase is success: {is_vm_success}"));
     }
 
     pub fn gas_used(&mut self, gas: i64) {

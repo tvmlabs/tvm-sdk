@@ -380,6 +380,6 @@ impl fmt::UpperHex for BuilderData {
 
 impl fmt::Binary for BuilderData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.data.iter().try_for_each(|x| write!(f, "{:08b}", x))
+        self.data.iter().try_for_each(|x| write!(f, "{x:08b}"))
     }
 }

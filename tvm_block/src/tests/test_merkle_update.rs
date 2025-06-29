@@ -231,9 +231,9 @@ const PATH_TO_SS: &str = "src/tests/data/block_with_ss/shard-states/";
 const PATH_TO_BLOCK: &str = "src/tests/data/block_with_ss/blocks/";
 
 fn check_one_mu(index: u64) {
-    let (block, _block_len) = block_from_file(&format!("{}{}", PATH_TO_BLOCK, index));
+    let (block, _block_len) = block_from_file(&format!("{PATH_TO_BLOCK}{index}"));
     let (shard_state, _ss_len) = ss_from_file(&format!("{}{}", PATH_TO_SS, index - 1));
-    let (new_shard_state, _new_ss_len) = ss_from_file(&format!("{}{}", PATH_TO_SS, index));
+    let (new_shard_state, _new_ss_len) = ss_from_file(&format!("{PATH_TO_SS}{index}"));
 
     // apply update from block and compare result with new state
     let updated_shard_state = block.read_state_update().unwrap().apply_for(&shard_state).unwrap();
@@ -248,7 +248,7 @@ fn check_one_mu(index: u64) {
 
 fn block_from_file(path: &str) -> (Block, usize) {
     let orig_bytes =
-        read(Path::new(path)).unwrap_or_else(|_| panic!("Error reading file {:?}", path));
+        read(Path::new(path)).unwrap_or_else(|_| panic!("Error reading file {path:?}"));
 
     let block = Block::construct_from_bytes(&orig_bytes).expect("Error deserializing Block");
 
@@ -257,7 +257,7 @@ fn block_from_file(path: &str) -> (Block, usize) {
 
 fn ss_from_file(path: &str) -> (Cell, usize) {
     let orig_bytes =
-        read(Path::new(path)).unwrap_or_else(|_| panic!("Error reading file {:?}", path));
+        read(Path::new(path)).unwrap_or_else(|_| panic!("Error reading file {path:?}"));
 
     let root_cell = read_single_root_boc(&orig_bytes).expect("Error deserializing ShardState");
     (root_cell, orig_bytes.len())
@@ -281,7 +281,7 @@ fn test_merkle_update_real_data() {
 fn test_merkle_update_create_fast() {
     for index in 2660..=2665 {
         let (shard_state, _ss_len) = ss_from_file(&format!("{}{}", PATH_TO_SS, index - 1));
-        let (new_shard_state, _new_ss_len) = ss_from_file(&format!("{}{}", PATH_TO_SS, index));
+        let (new_shard_state, _new_ss_len) = ss_from_file(&format!("{PATH_TO_SS}{index}"));
 
         let usage_tree = UsageTree::with_root(shard_state.clone());
 
@@ -303,10 +303,10 @@ fn prepare_data_for_bench(
     start_block: u32,
     blocks_count: u32,
 ) -> (Cell, Vec<MerkleUpdate>) {
-    let (ss, _) = ss_from_file(&format!("{}/states/{}/{}", root_path, shard, start_block));
+    let (ss, _) = ss_from_file(&format!("{root_path}/states/{shard}/{start_block}"));
     let mut updates = vec![];
     for seqno in start_block + 1..=start_block + blocks_count {
-        let (block, _) = block_from_file(&format!("{}/blocks/{}/{}", root_path, shard, seqno));
+        let (block, _) = block_from_file(&format!("{root_path}/blocks/{shard}/{seqno}"));
         updates.push(block.read_state_update().unwrap());
     }
     (ss, updates)
@@ -333,7 +333,7 @@ fn merkle_update_apply_benchmark() {
         }
 
         // Go
-        print!("\nmerkle_update_apply_benchmark {} thread(s): ", threads);
+        print!("\nmerkle_update_apply_benchmark {threads} thread(s): ");
         let mut handles = vec![];
         for _ in 0..threads {
             let (mut ss, updates) = data.pop().unwrap();
@@ -449,8 +449,8 @@ fn test_merkle_update5() {
         MerkleProof::create(&new_tree, |h| cells.contains(h)).unwrap().serialize().unwrap();
 
     for i in 0..2 {
-        println!("old_proof\n{:#.100}", old_proof);
-        println!("new_proof\n{:#.100}", new_proof);
+        println!("old_proof\n{old_proof:#.100}");
+        println!("new_proof\n{new_proof:#.100}");
 
         // merkle update old -> new proof
         let update = if i == 0 {
@@ -673,12 +673,12 @@ fn test_out_msg_queue_updates() -> Result<()> {
             Err(error) => {
                 match error.downcast_ref::<ExceptionCode>() {
                     Some(ExceptionCode::PrunedCellAccess) => return,
-                    Some(_) => panic!("Expected ExceptionCode::PrunedCellAccess, but {}", error),
+                    Some(_) => panic!("Expected ExceptionCode::PrunedCellAccess, but {error}"),
                     _ => (),
                 }
                 match error.downcast_ref::<BlockError>() {
                     Some(BlockError::PrunedCellAccess(_)) => (),
-                    _ => panic!("Expected BlockError::PrunedCellAccess, but {}", error),
+                    _ => panic!("Expected BlockError::PrunedCellAccess, but {error}"),
                 }
             }
         }

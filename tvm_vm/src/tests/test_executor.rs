@@ -207,7 +207,7 @@ where
         Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
 
     match engine.execute() {
-        Err(e) => panic!("Execute error: {}", e),
+        Err(e) => panic!("Execute error: {e}"),
         Ok(_) => {
             if mode.premultiply() {
                 value *= multiplier
@@ -265,7 +265,7 @@ fn test_slice(offset: usize, r: usize, x: usize) -> Status {
     builder.append_bits(0x34, 8)?; // remainder in code slice
 
     let mut code = SliceData::load_builder(builder).unwrap();
-    println!("offset: {}, r: {}, x: {}, code: {}", offset, r, x, code);
+    println!("offset: {offset}, r: {r}, x: {x}, code: {code}");
     let mut engine =
         Engine::with_capabilities(0).setup_with_libraries(code.clone(), None, None, None, vec![]);
     engine
@@ -496,7 +496,7 @@ fn test_run_wasm_basic_add() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let status = execute_run_wasm(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    println!("Wasm Return Status: {status:?}");
 
     assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
@@ -571,7 +571,7 @@ fn test_run_wasm_from_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let status = execute_run_wasm(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    println!("Wasm Return Status: {status:?}");
 
     assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
@@ -652,7 +652,7 @@ fn test_tls_wasm_from_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    println!("Wasm Return Status: {status:?}");
 
     assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
@@ -724,7 +724,7 @@ fn test_run_wasm_fuel_error() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let result = execute_run_wasm(&mut engine);
 
-    println!("Wasm Return Status: {:?}", result);
+    println!("Wasm Return Status: {result:?}");
 
     let _res_error = result.expect_err("Test didn't error on fuel use");
 }
@@ -1198,7 +1198,7 @@ fn test_tls_wasm_from_hash_for_4_args() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    println!("Wasm Return Status: {status:?}");
 
     let res = engine.cc.stack.get(0).as_cell().unwrap(); //engine.cc.stack.get(0).as_slice().unwrap().clone();
     let slice = SliceData::load_cell(res.clone()).unwrap();
