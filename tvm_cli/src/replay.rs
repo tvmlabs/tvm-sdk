@@ -517,10 +517,8 @@ pub async fn replay(
             let local_desc = tr_local
                 .read_description()
                 .map_err(|e| format!("failed to read description: {e}"))?;
-            let remote_desc = tr
-                .tr
-                .read_description()
-                .map_err(|e| format!("failed to read description: {e}"))?;
+            let remote_desc =
+                tr.tr.read_description().map_err(|e| format!("failed to read description: {e}"))?;
             assert_eq!(remote_desc, local_desc);
             exit(2);
         }

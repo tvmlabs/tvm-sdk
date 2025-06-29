@@ -127,8 +127,7 @@ pub fn pack_message(msg: &EncodedMessage, method: &str, is_raw: bool) -> Result<
 pub fn unpack_message(str_msg: &str) -> Result<(EncodedMessage, String), String> {
     let bytes = hex::decode(str_msg).map_err(|e| format!("couldn't unpack message: {e}"))?;
 
-    let str_msg =
-        std::str::from_utf8(&bytes).map_err(|e| format!("message is corrupted: {e}"))?;
+    let str_msg = std::str::from_utf8(&bytes).map_err(|e| format!("message is corrupted: {e}"))?;
 
     let json_msg: serde_json::Value =
         serde_json::from_str(str_msg).map_err(|e| format!("couldn't decode message: {e}"))?;

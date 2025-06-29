@@ -187,9 +187,7 @@ impl TerminalBrowser {
             log::debug!("response: {func_id} ({return_args})");
             let call_set = match func_id {
                 0 => None,
-                _ => {
-                    CallSet::some_with_function_and_input(&format!("0x{func_id:x}"), return_args)
-                }
+                _ => CallSet::some_with_function_and_input(&format!("0x{func_id:x}"), return_args),
             };
             let response_msg = encode_internal_message(
                 self.client.clone(),

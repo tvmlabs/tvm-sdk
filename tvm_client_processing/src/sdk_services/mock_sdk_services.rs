@@ -93,12 +93,11 @@ impl State {
     }
 
     fn cell_from_boc(boc: &str, name: &str) -> error::Result<Cell> {
-        let bytes = base64::engine::general_purpose::STANDARD.decode(boc).map_err(|err| {
-            Error::invalid_boc(format!("error decode {name} BOC base64: {err}"))
-        })?;
-        tvm_types::boc::read_single_root_boc(bytes).map_err(|err| {
-            Error::invalid_boc(format!("{name} BOC deserialization error: {err}"))
-        })
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(boc)
+            .map_err(|err| Error::invalid_boc(format!("error decode {name} BOC base64: {err}")))?;
+        tvm_types::boc::read_single_root_boc(bytes)
+            .map_err(|err| Error::invalid_boc(format!("{name} BOC deserialization error: {err}")))
     }
 }
 

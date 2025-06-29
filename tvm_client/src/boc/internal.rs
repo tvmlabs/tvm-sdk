@@ -36,9 +36,8 @@ pub fn deserialize_cell_from_base64(
     let bytes = base64_decode(b64)
         .map_err(|err| Error::invalid_boc(format!("error decode {name} BOC base64: {err}")))?;
 
-    let cell = tvm_types::boc::read_single_root_boc(&bytes).map_err(|err| {
-        Error::invalid_boc(format!("{name} BOC deserialization error: {err}"))
-    })?;
+    let cell = tvm_types::boc::read_single_root_boc(&bytes)
+        .map_err(|err| Error::invalid_boc(format!("{name} BOC deserialization error: {err}")))?;
 
     Ok((bytes, cell))
 }

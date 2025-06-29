@@ -1658,9 +1658,7 @@ async fn storage_command(matches: &ArgMatches, config: &Config) -> Result<(), St
     }
     let address = load_ton_address(address.unwrap(), config)?;
     let period = period
-        .map(|val| {
-            u32::from_str_radix(val, 10).map_err(|e| format!("failed to parse period: {e}"))
-        })
+        .map(|val| u32::from_str_radix(val, 10).map_err(|e| format!("failed to parse period: {e}")))
         .transpose()?
         .unwrap_or(DEF_STORAGE_PERIOD);
     calc_storage(config, address.as_str(), period).await
@@ -1764,8 +1762,7 @@ fn nodeid_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     } else if let Some(pair) = keypair {
         let pair = crypto::load_keypair(pair)?;
         convert::nodeid_from_pubkey(
-            &hex::decode(&pair.public)
-                .map_err(|e| format!("failed to decode public key: {e}"))?,
+            &hex::decode(&pair.public).map_err(|e| format!("failed to decode public key: {e}"))?,
         )?
     } else {
         return Err("Either public key or key pair parameter should be provided".to_owned());

@@ -146,10 +146,7 @@ impl Error {
     }
 
     pub fn signing_box_not_registered(id: u32) -> ClientError {
-        error(
-            ErrorCode::SigningBoxNotRegistered,
-            format!("Signing box is not registered. ID {id}"),
-        )
+        error(ErrorCode::SigningBoxNotRegistered, format!("Signing box is not registered. ID {id}"))
     }
 
     pub fn encryption_box_not_registered(id: u32) -> ClientError {
@@ -160,10 +157,7 @@ impl Error {
     }
 
     pub fn invalid_iv_size(actual: usize, expected: usize) -> ClientError {
-        error(
-            ErrorCode::InvalidIvSize,
-            format!("Invalid IV size {actual}. Expected {expected}."),
-        )
+        error(ErrorCode::InvalidIvSize, format!("Invalid IV size {actual}. Expected {expected}."))
     }
 
     pub fn unsupported_cipher_mode(mode: &str) -> ClientError {

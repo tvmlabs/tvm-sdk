@@ -1527,13 +1527,12 @@ fn outmsg_action_handler(
     let compute_fwd_fee = if is_special {
         Grams::default()
     } else {
-        msg
-            .serialize()
-            .and_then(|cell| config.calc_fwd_fee(msg.is_masterchain(), &cell))
-            .map_err(|err| {
+        msg.serialize().and_then(|cell| config.calc_fwd_fee(msg.is_masterchain(), &cell)).map_err(
+            |err| {
                 log::error!(target: "executor", "cannot serialize message in action phase : {err}");
                 RESULT_CODE_ACTIONLIST_INVALID
-            })?
+            },
+        )?
     };
 
     if let Some(int_header) = msg.int_header_mut() {
