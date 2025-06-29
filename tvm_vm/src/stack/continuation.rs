@@ -540,7 +540,7 @@ impl fmt::Display for ContinuationData {
         } else {
             writeln!(f)?;
             for x in self.stack.storage.iter() {
-                write!(f, "        {}", x)?;
+                write!(f, "        {x}")?;
                 writeln!(f)?;
             }
         }
@@ -551,7 +551,7 @@ impl fmt::Display for ContinuationData {
             writeln!(f)?;
             for i in SaveList::REGS {
                 if let Some(item) = self.savelist.get(i) {
-                    writeln!(f, "        {}: {}", i, item)?
+                    writeln!(f, "        {i}: {item}")?
                 }
             }
         }
@@ -573,6 +573,6 @@ impl fmt::Display for ContinuationType {
             ContinuationType::WhileLoopCondition(_, _) => "while",
             ContinuationType::ExcQuit => "exception-quit",
         };
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }

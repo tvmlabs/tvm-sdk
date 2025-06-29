@@ -19,8 +19,8 @@ fn test_formatting() {
     assert_eq!("abcde12", value.to_str_radix(16));
     assert_eq!("1010101111001101111000010010", value.to_str_radix(2));
 
-    assert_eq!(value.to_str(), format!("{}", value));
-    assert_eq!(value.to_str_radix(16), format!("{:x}", value));
-    assert_eq!(value.to_str_radix(16).to_uppercase(), format!("{:X}", value));
-    assert_eq!(value.to_str_radix(2), format!("{:b}", value));
+    assert_eq!(value.to_str(), format!("{value}"));
+    assert_eq!(value.to_str_radix(16), format!("{value:x}"));
+    assert_eq!(value.to_str_radix(16).to_uppercase(), format!("{value:X}"));
+    assert_eq!(value.to_str_radix(2), format!("{value:b}"));
 }

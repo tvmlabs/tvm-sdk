@@ -219,7 +219,7 @@ fn test_isolate_mc_validators() {
             )
             .unwrap();
 
-        println!("shard {} validators", shard);
+        println!("shard {shard} validators");
         for v in shard_validators.iter() {
             println!("{:x}", v.adnl_addr.as_ref().unwrap());
         }

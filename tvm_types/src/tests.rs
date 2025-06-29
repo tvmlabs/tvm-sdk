@@ -164,7 +164,7 @@ fn info(use_boc3: bool) -> String {
 
 fn test_boc_file(filename: &Path, stats: &mut Stats) -> Cell {
     let orig_bytes = Arc::new(
-        read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {:?}", filename)),
+        read(Path::new(filename)).unwrap_or_else(|_| panic!("Error reading file {filename:?}")),
     );
 
     let orig_cells = read_boc_ex(orig_bytes.clone(), false);

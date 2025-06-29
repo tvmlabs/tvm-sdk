@@ -150,11 +150,11 @@ pub(crate) fn g1_affine_from_str_projective(s: &CircomG1) -> Result<G1Affine, Zk
         return Err(ZkCryptoError::InvalidInput);
     }
 
-    println!("a s CircomG1: {:?}", s);
+    println!("a s CircomG1: {s:?}");
 
     let zz =
         G1Projective::new_unchecked((&s[0]).into(), (&s[1]).into(), (&s[2]).into()).into_affine();
-    println!("a zz CircomG1: {:?}", zz);
+    println!("a zz CircomG1: {zz:?}");
 
     let g1: G1Affine =
         G1Projective::new_unchecked((&s[0]).into(), (&s[1]).into(), (&s[2]).into()).into();

@@ -546,8 +546,7 @@ impl MerkleUpdate {
             fail!(BlockError::InvalidArg("depth".to_string()))
         } else if mask & (1 << depth) != 0 {
             fail!(BlockError::InvalidOperation(format!(
-                "attempt to add hash with depth {} into mask {:03b}",
-                depth, mask
+                "attempt to add hash with depth {depth} into mask {mask:03b}"
             )))
         }
         Ok(LevelMask::with_mask(mask | (1 << depth)))

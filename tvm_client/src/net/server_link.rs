@@ -107,7 +107,7 @@ async fn query_by_url(
     timeout: u32,
 ) -> ClientResult<Value> {
     let response = client_env
-        .fetch(&format!("{}?query={}", address, query), FetchMethod::Get, None, None, timeout)
+        .fetch(&format!("{address}?query={query}"), FetchMethod::Get, None, None, timeout)
         .await?;
 
     response.body_as_json(false)
@@ -194,7 +194,7 @@ impl NetworkState {
         self.suspend(&regulation.sender).await;
 
         let timeout = self.next_resume_timeout();
-        log::debug!("Internal resume timeout {}", timeout);
+        log::debug!("Internal resume timeout {timeout}");
 
         let env = self.client_env.clone();
         let regulation = self.suspend_regulation.clone();
@@ -460,7 +460,7 @@ fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<
     let original = if original.contains("://") {
         original.to_string()
     } else {
-        format!("http://{}", original)
+        format!("http://{original}")
     };
     let mut rest_api_endpoint = Url::parse(&original).map_err(Error::parse_url_failed)?;
 
@@ -479,7 +479,7 @@ fn construct_bm_send_message_endpoint(original: &str, use_https: bool) -> Client
     let original = if original.contains("://") {
         original.to_string()
     } else {
-        format!("http://{}", original)
+        format!("http://{original}")
     };
 
     let mut url = reqwest::Url::parse(&original).map_err(Error::parse_url_failed)?;
@@ -506,9 +506,9 @@ fn get_redirection_data(data: &Value) -> (Option<String>, Option<String>) {
         .and_then(|v| v.as_str())
         .map(|s| {
             if s.contains(':') {
-                format!("http://{}/bk/v2/messages", s)
+                format!("http://{s}/bk/v2/messages")
             } else {
-                format!("http://{}:8600/bk/v2/messages", s)
+                format!("http://{s}:8600/bk/v2/messages")
             }
         });
 
@@ -572,7 +572,7 @@ impl ServerLink {
     ) -> ClientResult<Subscription> {
         self.subscribe_operation(
             GraphQLQuery::with_collection_subscription(table, filter, fields),
-            format!("/{}", table),
+            format!("/{table}"),
         )
         .await
     }
@@ -1076,8 +1076,7 @@ impl ServerLink {
 
         serde_json::from_value(result["data"]["info"]["endpoints"].clone()).map_err(|_| {
             Error::invalid_server_response(format!(
-                "Can not parse endpoints from response: {}",
-                result
+                "Can not parse endpoints from response: {result}"
             ))
         })
     }

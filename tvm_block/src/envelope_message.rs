@@ -189,14 +189,14 @@ impl IntermediateAddressRegular {
 
     pub fn with_use_src_bits(use_src_bits: u8) -> Result<Self> {
         if use_src_bits > FULL_BITS {
-            fail!(BlockError::InvalidArg(format!("use_src_bits must be <= {}", FULL_BITS)))
+            fail!(BlockError::InvalidArg(format!("use_src_bits must be <= {FULL_BITS}")))
         }
         Ok(IntermediateAddressRegular { use_dest_bits: FULL_BITS - use_src_bits })
     }
 
     pub fn with_use_dest_bits(use_dest_bits: u8) -> Result<Self> {
         if use_dest_bits > FULL_BITS {
-            fail!(BlockError::InvalidArg(format!("use_dest_bits must be <= {}", FULL_BITS)))
+            fail!(BlockError::InvalidArg(format!("use_dest_bits must be <= {FULL_BITS}")))
         }
         Ok(IntermediateAddressRegular { use_dest_bits })
     }
@@ -211,7 +211,7 @@ impl IntermediateAddressRegular {
 
     pub fn set_use_src_bits(&mut self, use_src_bits: u8) -> Result<()> {
         if use_src_bits > FULL_BITS {
-            fail!(BlockError::InvalidArg(format!("use_src_bits must be <= {}", FULL_BITS)))
+            fail!(BlockError::InvalidArg(format!("use_src_bits must be <= {FULL_BITS}")))
         }
         self.use_dest_bits = FULL_BITS - use_src_bits;
         Ok(())
@@ -230,7 +230,7 @@ impl Deserializable for IntermediateAddressRegular {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         self.use_dest_bits = cell.get_next_bits(7)?[0] >> 1; // read 7 bit into use_dest_bits
         if self.use_dest_bits > FULL_BITS {
-            fail!(BlockError::InvalidArg(format!("use_dest_bits must be <= {}", FULL_BITS)))
+            fail!(BlockError::InvalidArg(format!("use_dest_bits must be <= {FULL_BITS}")))
         }
         Ok(())
     }

@@ -53,7 +53,7 @@ pub async fn prepare_message(
 
     let msg = encode_message(ton, msg_params)
         .await
-        .map_err(|e| format!("failed to create inbound message: {}", e))?;
+        .map_err(|e| format!("failed to create inbound message: {e}"))?;
 
     Ok(EncodedMessage {
         message: msg.message,
@@ -73,7 +73,7 @@ pub fn prepare_message_params(
 ) -> Result<ParamsOfEncodeMessage, String> {
     let keys = keys.map(|k| load_keypair(&k)).transpose()?;
     let params = serde_json::from_str(params)
-        .map_err(|e| format!("arguments are not in json format: {}", e))?;
+        .map_err(|e| format!("arguments are not in json format: {e}"))?;
 
     let call_set =
         Some(CallSet { function_name: method.into(), input: Some(params), header: header.clone() });
@@ -97,16 +97,16 @@ pub fn print_encoded_message(msg: &EncodedMessage, is_json: bool) {
     if !is_json {
         println!();
         println!("MessageId: {}", msg.message_id);
-        println!("Expire at: {}", expire);
+        println!("Expire at: {expire}");
     } else {
         println!("  \"MessageId\": \"{}\",", msg.message_id);
-        println!("  \"Expire at\": \"{}\",", expire);
+        println!("  \"Expire at\": \"{expire}\",");
     }
 }
 
 pub fn pack_message(msg: &EncodedMessage, method: &str, is_raw: bool) -> Result<Vec<u8>, String> {
     let res = if is_raw {
-        base64_decode(&msg.message).map_err(|e| format!("failed to decode message: {}", e))?
+        base64_decode(&msg.message).map_err(|e| format!("failed to decode message: {e}"))?
     } else {
         let json_msg = json!({
             "msg": {
@@ -118,20 +118,20 @@ pub fn pack_message(msg: &EncodedMessage, method: &str, is_raw: bool) -> Result<
             "method": method,
         });
         serde_json::to_string(&json_msg)
-            .map_err(|e| format!("failed to serialize message: {}", e))?
+            .map_err(|e| format!("failed to serialize message: {e}"))?
             .into_bytes()
     };
     Ok(res)
 }
 
 pub fn unpack_message(str_msg: &str) -> Result<(EncodedMessage, String), String> {
-    let bytes = hex::decode(str_msg).map_err(|e| format!("couldn't unpack message: {}", e))?;
+    let bytes = hex::decode(str_msg).map_err(|e| format!("couldn't unpack message: {e}"))?;
 
     let str_msg =
-        std::str::from_utf8(&bytes).map_err(|e| format!("message is corrupted: {}", e))?;
+        std::str::from_utf8(&bytes).map_err(|e| format!("message is corrupted: {e}"))?;
 
     let json_msg: serde_json::Value =
-        serde_json::from_str(str_msg).map_err(|e| format!("couldn't decode message: {}", e))?;
+        serde_json::from_str(str_msg).map_err(|e| format!("couldn't decode message: {e}"))?;
 
     let method =
         json_msg["method"].as_str().ok_or(r#"couldn't find "method" key in message"#)?.to_owned();
@@ -168,7 +168,7 @@ pub async fn generate_message(
     let ton = create_client_local()?;
 
     let ton_addr =
-        load_ton_address(addr, config).map_err(|e| format!("failed to parse address: {}", e))?;
+        load_ton_address(addr, config).map_err(|e| format!("failed to parse address: {e}"))?;
 
     let abi = load_abi(abi, config).await?;
 
@@ -208,21 +208,21 @@ pub fn display_generated_message(
     if output.is_some() {
         let out_file = output.unwrap();
         std::fs::write(out_file, msg_bytes)
-            .map_err(|e| format!("cannot write message to file: {}", e))?;
+            .map_err(|e| format!("cannot write message to file: {e}"))?;
         if !is_json {
-            println!("Message saved to file {}", out_file);
+            println!("Message saved to file {out_file}");
         } else {
-            println!("  \"Message\": \"saved to file {}\"", out_file);
+            println!("  \"Message\": \"saved to file {out_file}\"");
         }
     } else {
         let msg_hex = hex::encode(&msg_bytes);
         if !is_json {
-            println!("Message: {}", msg_hex);
+            println!("Message: {msg_hex}");
             println!();
-            qr2term::print_qr(msg_hex).map_err(|e| format!("failed to print QR code: {}", e))?;
+            qr2term::print_qr(msg_hex).map_err(|e| format!("failed to print QR code: {e}"))?;
             println!();
         } else {
-            println!("  \"Message\": \"{}\"", msg_hex);
+            println!("  \"Message\": \"{msg_hex}\"");
         }
     }
     if is_json {

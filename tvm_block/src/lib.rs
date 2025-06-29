@@ -279,7 +279,7 @@ pub trait GetRepresentationHash: Serializable + std::fmt::Debug {
     fn hash(&self) -> Result<UInt256> {
         match self.serialize() {
             Err(err) => {
-                log::error!("err: {}, wrong hash calculation for {:?}", err, self);
+                log::error!("err: {err}, wrong hash calculation for {self:?}");
                 Err(err)
             }
             Ok(cell) => Ok(cell.repr_hash()),
@@ -349,7 +349,7 @@ where
 {
     let cell = s.write_to_new_cell().unwrap();
     let mut slice = SliceData::load_builder(cell).unwrap();
-    println!("slice: {}", slice);
+    println!("slice: {slice}");
     let s2 = T::construct_from(&mut slice).unwrap();
     s2.serialize().unwrap();
     pretty_assertions::assert_eq!(s, s2);

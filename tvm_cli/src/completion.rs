@@ -119,7 +119,7 @@ fn main() {
     if prev_word == "--addr" {
         if word_being_completed.is_empty() {
             for alias in aliases.keys() {
-                println!("{}", alias);
+                println!("{alias}");
             }
         } else {
             for alias in aliases {

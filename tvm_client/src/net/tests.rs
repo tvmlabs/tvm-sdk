@@ -36,7 +36,7 @@ async fn bad_request() {
         .await;
 
     if let Err(err) = result {
-        println!("{:?}", err);
+        println!("{err:?}");
         assert_eq!(err.code, ErrorCode::QueryFailed as u32);
         assert_eq!(
             err.message,
@@ -131,7 +131,7 @@ async fn not_authorized() {
         )
         .await
         .unwrap();
-    println!("{:?}", result)
+    println!("{result:?}")
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -152,7 +152,7 @@ async fn auth_header() {
         }
     }));
     assert_eq!(
-        Some(("Authorization".to_string(), format!("Bearer {}", jwt))),
+        Some(("Authorization".to_string(), format!("Bearer {jwt}"))),
         client.context().config.network.get_auth_header()
     );
     let client = TestClient::new();
@@ -173,7 +173,7 @@ async fn endpoints_with_graphql_suffix() {
 
     assert_eq!(
         endpoint.query_url.trim_start_matches("http://").trim_start_matches("https://"),
-        format!("{}/graphql", url).trim_start_matches("http://").trim_start_matches("https://"),
+        format!("{url}/graphql").trim_start_matches("http://").trim_start_matches("https://"),
     );
 
     let client = TestClient::new_with_config(json!({
@@ -184,7 +184,7 @@ async fn endpoints_with_graphql_suffix() {
     let endpoint = client.context().get_server_link().unwrap().get_query_endpoint().await.unwrap();
     assert_eq!(
         endpoint.query_url.trim_start_matches("http://").trim_start_matches("https://"),
-        format!("{}/graphql", url).trim_start_matches("http://").trim_start_matches("https://"),
+        format!("{url}/graphql").trim_start_matches("http://").trim_start_matches("https://"),
     );
 }
 
@@ -450,7 +450,7 @@ async fn subscribe_for_transactions_with_addresses() {
     let notifications_copy2 = notifications.clone();
     let address1 = msg.address.clone();
     let address2 = msg.address.clone();
-    println!("Account address {}", address1);
+    println!("Account address {address1}");
 
     let callback1 = move |result: serde_json::Value, response_type: SubscriptionResponseType| {
         let result = match response_type {
@@ -472,7 +472,7 @@ async fn subscribe_for_transactions_with_addresses() {
                     transactions_copy.lock().await.push(result.result);
                 }
                 Err(err) => {
-                    println!(">>> {}", err);
+                    println!(">>> {err}");
                     notifications_copy.lock().await.push(err);
                 }
             }
@@ -529,7 +529,7 @@ async fn subscribe_for_transactions_with_addresses() {
                     transactions_copy.lock().await.push(result.result);
                 }
                 Err(err) => {
-                    println!(">>> {}", err);
+                    println!(">>> {err}");
                     notifications_copy.lock().await.push(err);
                 }
             }
@@ -1452,7 +1452,7 @@ async fn order_by_fallback() {
         )
         .await;
     if let Err(err) = &result {
-        println!("{:?}", err);
+        println!("{err:?}");
     }
     assert!(result.is_err());
 }

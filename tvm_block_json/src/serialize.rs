@@ -123,7 +123,7 @@ fn get_msg_fees(msg: &Message) -> Option<(&Grams, &Grams)> {
 }
 
 pub fn u64_to_string(value: u64) -> String {
-    let mut string = format!("{:x}", value);
+    let mut string = format!("{value:x}");
     string.insert_str(0, &format!("{:x}", string.len() - 1));
     string
 }
@@ -134,7 +134,7 @@ pub fn bigint_to_string(value: &BigInt) -> String {
         let string = hex::encode(bytes).trim_start_matches('f').to_owned();
         format!("-{:02x}{}", (string.len() - 1) ^ 0xFF, string)
     } else {
-        let mut string = format!("{:x}", value);
+        let mut string = format!("{value:x}");
         string.insert_str(0, &format!("{:02x}", string.len() - 1));
         string
     }
@@ -146,7 +146,7 @@ pub fn block_order(block: &Block, mc_seq_no: u32) -> Result<String> {
     if !info.shard().is_masterchain() {
         let mut workchain_order = u64_to_string(info.shard().workchain_id().unsigned_abs() as u64);
         if info.shard().workchain_id() < 0 {
-            workchain_order = format!("-{}", workchain_order);
+            workchain_order = format!("-{workchain_order}");
         }
         let seq_no_order = u64_to_string(info.seq_no() as u64);
         let shard_order = u64_to_string(info.shard().shard_prefix_with_tag().reverse_bits());
@@ -196,9 +196,9 @@ fn serialize_u64(
             u64_to_string(*value)
         }
         SerializationMode::QServer => {
-            format!("0x{:x}", value)
+            format!("0x{value:x}")
         }
-        SerializationMode::Debug => format!("{}", value),
+        SerializationMode::Debug => format!("{value}"),
     };
     serialize_field(map, id_str, string);
 }
@@ -215,7 +215,7 @@ fn serialize_lt(
             u64_to_string(*value)
         }
         SerializationMode::QServer => {
-            format!("0x{:x}", value)
+            format!("0x{value:x}")
         }
         SerializationMode::Debug => format!("{}_{}", value / 1_000_000, value % 1_000_000),
     };
@@ -235,10 +235,10 @@ fn serialize_bigint(
             if num::bigint::Sign::Minus == value.sign() {
                 format!("-0x{:x}", value.abs())
             } else {
-                format!("0x{:x}", value)
+                format!("0x{value:x}")
             }
         }
-        SerializationMode::Debug => format!("{}", value),
+        SerializationMode::Debug => format!("{value}"),
     };
 
     if let SerializationMode::Standart = mode {
@@ -248,7 +248,7 @@ fn serialize_bigint(
 }
 
 pub fn shard_to_string(value: u64) -> String {
-    format!("{:016x}", value)
+    format!("{value:016x}")
 }
 
 fn construct_address(workchain_id: i32, account_id: AccountId) -> Result<MsgAddressInt> {
@@ -504,7 +504,7 @@ fn serialize_cc(
     serialize_grams(map, prefix, &cc.grams, mode);
     let other = serialize_ecc(&cc.other, mode)?;
     if !other.is_empty() {
-        map.insert(format!("{}_other", prefix), other.into());
+        map.insert(format!("{prefix}_other"), other.into());
     }
     Ok(())
 }
@@ -539,7 +539,7 @@ fn serialize_scc(
         other.push(other_map);
     }
     if !other.is_empty() {
-        map.insert(format!("{}_other", prefix), other.into());
+        map.insert(format!("{prefix}_other"), other.into());
     }
 }
 
@@ -576,8 +576,8 @@ fn serialize_envelope_msg(env: &MsgEnvelope, mode: SerializationMode) -> Map<Str
                 map.insert("dst_prefix".to_string(), dst_prefix.to_string().into());
             }
         }
-        map.insert("cur_prefix".to_string(), format!("{}", cur_prefix).into());
-        map.insert("next_prefix".to_string(), format!("{}", next_prefix).into());
+        map.insert("cur_prefix".to_string(), format!("{cur_prefix}").into());
+        map.insert("next_prefix".to_string(), format!("{next_prefix}").into());
         serialize_lt(&mut map, "create_lt", &msg.lt().unwrap_or_default(), mode);
     }
     serialize_intermidiate_address(&mut map, "cur_addr", env.cur_addr());
@@ -1269,7 +1269,7 @@ pub fn serialize_config(
         let num = num.get_next_u32()?;
         let mut cp = SliceData::load_cell(cp_ref.checked_drain_reference()?)?;
         if let Some(cp) = serialize_known_config_param(num, &mut cp.clone(), mode)? {
-            known_cp_map.insert(format!("p{}", num), cp);
+            known_cp_map.insert(format!("p{num}"), cp);
         } else {
             unknown_cp_vec.push(serialize_unknown_config_param(num, &mut cp)?);
         }
@@ -1408,7 +1408,7 @@ fn serialize_out_msg_queue_info(
         let value = IhrPendingSince::construct_from(value)?;
         let mut ihr_map = Map::new();
         ihr_map.insert("dest_addr_prefix".to_string(), shard_to_string(key.get_next_u64()?).into());
-        ihr_map.insert("msg_id".to_string(), format!("{:x}", key).into());
+        ihr_map.insert("msg_id".to_string(), format!("{key:x}").into());
         serialize_lt(&mut ihr_map, "import_lt", &value.import_lt(), mode);
         ihr_pending.push(ihr_map);
         Ok(true)
@@ -2028,7 +2028,7 @@ fn serialize_account_status(
     );
 
     if mode.is_q_server() {
-        let name = format!("{}_name", name);
+        let name = format!("{name}_name");
         serialize_field(
             map,
             &name,

@@ -58,7 +58,7 @@ impl JsonInterface {
         let answer_id = decode_answer_id(args)?;
         let json_str = get_arg(args, "json")?;
         let mut json_obj: JsonValue = serde_json::from_str(&json_str)
-            .map_err(|e| format!("argument \"json\" is not a valid json: {}", e))?;
+            .map_err(|e| format!("argument \"json\" is not a valid json: {e}"))?;
         self.deserialize_json(&mut json_obj, answer_id)?;
         Ok((
             answer_id,
@@ -73,7 +73,7 @@ impl JsonInterface {
         let answer_id = decode_answer_id(args)?;
         let json_str = get_arg(args, "json")?;
         let json_obj: JsonValue = serde_json::from_str(&json_str)
-            .map_err(|e| format!("argument \"json\" is not a valid json: {}", e))?;
+            .map_err(|e| format!("argument \"json\" is not a valid json: {e}"))?;
         let result = pack(json_obj);
         Ok((
             answer_id,
@@ -85,10 +85,10 @@ impl JsonInterface {
     }
 
     fn deserialize_json(&self, json_obj: &mut JsonValue, answer_id: u32) -> Result<(), String> {
-        let contract = Contract::load(self.debot_abi.as_bytes()).map_err(|e| format!("{}", e))?;
+        let contract = Contract::load(self.debot_abi.as_bytes()).map_err(|e| format!("{e}"))?;
         let func = contract
             .function_by_id(answer_id, true)
-            .map_err(|_| format!("function with id {} not found", answer_id))?;
+            .map_err(|_| format!("function with id {answer_id} not found"))?;
         let obj = func
             .inputs
             .iter()
@@ -118,7 +118,7 @@ impl DebotInterface for JsonInterface {
         match func {
             "deserialize" => self.deserialize(args),
             "parse" => self.parse(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

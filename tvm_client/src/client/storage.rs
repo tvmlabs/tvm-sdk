@@ -51,7 +51,7 @@ impl InMemoryKeyValueStorage {
             })
             .count();
 
-        println!("Total records: {}", count);
+        println!("Total records: {count}");
     }
 }
 

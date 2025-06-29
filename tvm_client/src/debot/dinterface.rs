@@ -102,7 +102,7 @@ pub trait DebotInterfaceExecutor {
         abi_version: &str,
     ) -> InterfaceResult {
         let parsed = parse_message(client.clone(), ParamsOfParse { boc: msg.to_owned() })
-            .map_err(|e| format!("{}", e))?;
+            .map_err(|e| format!("{e}"))?;
 
         let body = parsed.parsed["body"]
             .as_str()
@@ -117,7 +117,7 @@ pub trait DebotInterfaceExecutor {
                 let (answer_id, mut ret_args) = object
                     .call(&func, &args)
                     .await
-                    .map_err(|e| format!("interface {}.{} failed: {}", interface_id, func, e))?;
+                    .map_err(|e| format!("interface {interface_id}.{func} failed: {e}"))?;
                 if abi_version == "2.0" {
                     if let Abi::Json(json_str) = abi {
                         let _ = convert_return_args(json_str.as_str(), &func, &mut ret_args)?;
@@ -126,7 +126,7 @@ pub trait DebotInterfaceExecutor {
                 Ok((answer_id, ret_args))
             }
             None => {
-                debug!("interface {} not implemented", interface_id);
+                debug!("interface {interface_id} not implemented");
                 Ok((0, json!({})))
             }
         }
@@ -134,10 +134,10 @@ pub trait DebotInterfaceExecutor {
 }
 
 fn convert_return_args(abi: &str, fname: &str, ret_args: &mut Value) -> Result<(), String> {
-    let contract = Contract::load(abi.as_bytes()).map_err(|e| format!("{}", e))?;
+    let contract = Contract::load(abi.as_bytes()).map_err(|e| format!("{e}"))?;
     let func = contract
         .function(fname)
-        .map_err(|_| format!("function with name '{}' not found", fname))?;
+        .map_err(|_| format!("function with name '{fname}' not found"))?;
     let output = func.outputs.iter();
     for val in output {
         let pointer = "";
@@ -196,11 +196,11 @@ pub fn decode_answer_id(args: &Value) -> Result<u32, String> {
     decode_abi_number::<u32>(
         args["answerId"].as_str().ok_or("answer id not found in argument list".to_string())?,
     )
-    .map_err(|e| format!("{}", e))
+    .map_err(|e| format!("{e}"))
 }
 
 pub fn get_arg(args: &Value, name: &str) -> Result<String, String> {
-    args[name].as_str().ok_or(format!("\"{}\" not found", name)).map(|v| v.to_string())
+    args[name].as_str().ok_or(format!("\"{name}\" not found")).map(|v| v.to_string())
 }
 
 pub fn get_num_arg<T>(args: &Value, name: &str) -> Result<T, String>
@@ -209,15 +209,15 @@ where
 {
     let num_str = get_arg(args, name)?;
     decode_abi_number::<T>(&num_str)
-        .map_err(|e| format!("failed to parse integer \"{}\": {}", num_str, e))
+        .map_err(|e| format!("failed to parse integer \"{num_str}\": {e}"))
 }
 
 pub fn get_bool_arg(args: &Value, name: &str) -> Result<bool, String> {
-    args[name].as_bool().ok_or(format!("\"{}\" not found", name))
+    args[name].as_bool().ok_or(format!("\"{name}\" not found"))
 }
 
 pub fn get_array_strings(args: &Value, name: &str) -> Result<Vec<String>, String> {
-    let array = args[name].as_array().ok_or(format!("\"{}\" is invalid: must be array", name))?;
+    let array = args[name].as_array().ok_or(format!("\"{name}\" is invalid: must be array"))?;
     let mut strings = vec![];
     for elem in array {
         let string =

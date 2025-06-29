@@ -655,7 +655,7 @@ async fn test_encode_internal_message() -> Result<()> {
     test_encode_internal_message_run(
         &client,
         Some(&abi),
-        Some(CallSet { function_name: format!("0x{:x}", func_id), header: None, input: None }),
+        Some(CallSet { function_name: format!("0x{func_id:x}"), header: None, input: None }),
         None,
         Some(address.clone()),
         Some(expected_boc),
@@ -665,7 +665,7 @@ async fn test_encode_internal_message() -> Result<()> {
     test_encode_internal_message_run(
         &client,
         Some(&abi),
-        Some(CallSet { function_name: format!("{}", func_id), header: None, input: None }),
+        Some(CallSet { function_name: format!("{func_id}"), header: None, input: None }),
         None,
         Some(address.clone()),
         Some(expected_boc),

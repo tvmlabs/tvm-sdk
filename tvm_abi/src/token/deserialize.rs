@@ -453,7 +453,7 @@ impl TokenValue {
         let (data, cursor) = Self::read_bytes_from_chain(cursor, last, abi_version)?;
 
         let string = String::from_utf8(data).map_err(|err| AbiError::InvalidData {
-            msg: format!("Can not deserialize string: {}", err),
+            msg: format!("Can not deserialize string: {err}"),
         })?;
         Ok((TokenValue::String(string), cursor))
     }

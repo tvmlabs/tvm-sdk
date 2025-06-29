@@ -62,11 +62,11 @@ pub(crate) fn extract_config_from_block(
 ) -> ClientResult<tvm_block::ConfigParams> {
     let extra = block
         .read_extra()
-        .map_err(|err| Error::invalid_boc(format!("can not read `extra` from block: {}", err)))?;
+        .map_err(|err| Error::invalid_boc(format!("can not read `extra` from block: {err}")))?;
 
     let master = extra
         .read_custom()
-        .map_err(|err| Error::invalid_boc(format!("can not read `master` from block: {}", err)))?
+        .map_err(|err| Error::invalid_boc(format!("can not read `master` from block: {err}")))?
         .ok_or(Error::inappropriate_block(
             "not a masterchain block. Only key block contains blockchain configuration",
         ))?;
@@ -85,7 +85,7 @@ pub(crate) fn extract_config_from_zerostate(
     let master = zerostate
         .read_custom()
         .map_err(|err| {
-            Error::invalid_boc(format!("can not read `master` from zerostate: {}", err))
+            Error::invalid_boc(format!("can not read `master` from zerostate: {err}"))
         })?
         .ok_or(Error::inappropriate_block(
             "not a masterchain state. Only masterchain states contain blockchain configuration",

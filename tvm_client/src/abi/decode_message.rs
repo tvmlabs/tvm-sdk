@@ -239,7 +239,7 @@ fn decode_unknown_function(
             is_internal,
         )
         .map_err(|err| {
-            Error::invalid_message_for_decode(format!("Can't decode function header: {}", err))
+            Error::invalid_message_for_decode(format!("Can't decode function header: {err}"))
         })?;
         DecodedMessageBody::new(MessageBodyType::Input, input, FunctionHeader::from(&header)?)
     };

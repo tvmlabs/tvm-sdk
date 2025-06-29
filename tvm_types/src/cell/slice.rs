@@ -684,7 +684,7 @@ impl SliceData {
                     true
                 }
                 (_, None, _) => {
-                    log::warn!(target: "tvm", "unreachable in erase_prefix {} {}", self, prefix);
+                    log::warn!(target: "tvm", "unreachable in erase_prefix {self} {prefix}");
                     self.shrink_data(0..0);
                     true
                 }
@@ -871,7 +871,7 @@ impl SliceData {
 
 impl fmt::Debug for SliceData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:x}", self)
+        write!(f, "{self:x}")
     }
 }
 
@@ -887,7 +887,7 @@ impl fmt::Display for SliceData {
         )?;
         match &self.data {
             InternalData::None => writeln!(f, "cell: empty"),
-            InternalData::Cell(cell) => writeln!(f, "cell: {}", cell),
+            InternalData::Cell(cell) => writeln!(f, "cell: {cell}"),
             InternalData::Data(data, length_in_bits, ) => writeln!(f, "cell: {} - {length_in_bits}", hex::encode(data)),
         }
     }

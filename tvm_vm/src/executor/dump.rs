@@ -52,9 +52,9 @@ fn dump_var_impl(item: &StackItem, how: u8, in_tuple: bool) -> String {
         match item {
             StackItem::None => String::new(),
             StackItem::Builder(x) => format!("BC<{:X}>", Arc::as_ref(x)),
-            StackItem::Cell(x) => format!("C<{:X}>", x),
+            StackItem::Cell(x) => format!("C<{x:X}>"),
             StackItem::Continuation(x) => {
-                x.code().cell_opt().map_or(String::new(), |cell| format!("R<{:X}>", cell))
+                x.code().cell_opt().map_or(String::new(), |cell| format!("R<{cell:X}>"))
             }
             StackItem::Integer(x) => format!("{:X}", Arc::as_ref(x)),
             StackItem::Slice(x) => {
@@ -66,9 +66,9 @@ fn dump_var_impl(item: &StackItem, how: u8, in_tuple: bool) -> String {
         match item {
             StackItem::None => String::new(),
             StackItem::Builder(x) => format!("BC<{:b}>", Arc::as_ref(x)),
-            StackItem::Cell(x) => format!("C<{:b}>", x),
+            StackItem::Cell(x) => format!("C<{x:b}>"),
             StackItem::Continuation(x) => {
-                x.code().cell_opt().map_or(String::new(), |cell| format!("R<{:b}>", cell))
+                x.code().cell_opt().map_or(String::new(), |cell| format!("R<{cell:b}>"))
             }
             StackItem::Integer(x) => format!("{:b}", Arc::as_ref(x)),
             StackItem::Slice(x) => x.cell_opt().map_or(String::new(), |cell| {
@@ -94,9 +94,9 @@ fn dump_var_impl(item: &StackItem, how: u8, in_tuple: bool) -> String {
         match item {
             StackItem::None => String::new(),
             StackItem::Builder(x) => format!("BC<{:X}>", Arc::as_ref(x)),
-            StackItem::Cell(x) => format!("C<{:X}>", x),
+            StackItem::Cell(x) => format!("C<{x:X}>"),
             StackItem::Continuation(x) => {
-                x.code().cell_opt().map_or(String::new(), |cell| format!("R<{:X}>", cell))
+                x.code().cell_opt().map_or(String::new(), |cell| format!("R<{cell:X}>"))
             }
             StackItem::Integer(x) => format!("{}", Arc::as_ref(x)),
             StackItem::Slice(x) => x.cell_opt().map_or(String::new(), |cell| {
@@ -113,7 +113,7 @@ fn dump_stack(engine: &mut Engine, depth: usize, print_depth: bool) -> Status {
         engine.dump(&dump);
     }
     if print_depth {
-        engine.dump(&format!("{}\n", depth));
+        engine.dump(&format!("{depth}\n"));
     }
     engine.flush();
     Ok(())

@@ -640,8 +640,7 @@ impl Deserializable for ValidatorSet {
             let mut val = validators.get(&i)?.ok_or_else(|| {
                 BlockError::InvalidData(format!(
                     "Validator's hash map doesn't \
-                    contain validator with index {}",
-                    i
+                    contain validator with index {i}"
                 ))
             })?;
             val.prev_weight_sum = total_weight;

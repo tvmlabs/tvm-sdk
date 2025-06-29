@@ -428,10 +428,10 @@ impl Engine {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
         log::debug!("{}", std::env::current_dir()?.display());
         for &b in wasm_hash.as_slice() {
-            write!(&mut s, "{:02x}", b)?;
+            write!(&mut s, "{b:02x}")?;
         }
         let filename = format!("{}/{}", self.wasm_binary_root_path, s);
-        log::debug!("Getting file {:?}", filename);
+        log::debug!("Getting file {filename:?}");
         // TODO: Add some hash checking of the file
         Ok(std::fs::read(filename)?)
     }
@@ -565,7 +565,7 @@ impl Engine {
                 StackItem::None => "N".to_string(),
                 StackItem::Integer(data) => match data.bitsize() {
                     Ok(0..=230) => data.to_string(),
-                    Ok(bitsize) => format!("I{}", bitsize),
+                    Ok(bitsize) => format!("I{bitsize}"),
                     Err(err) => err.to_string(),
                 },
                 StackItem::Cell(data) => {
@@ -580,7 +580,7 @@ impl Engine {
                 }
                 StackItem::Tuple(data) => match data.len() {
                     0 => "[]".to_string(),
-                    len => format!("[@{}]", len),
+                    len => format!("[@{len}]"),
                 },
             };
             result += &string;
@@ -1046,7 +1046,7 @@ impl Engine {
                 .filter_map(|i| {
                     self.ctrls.get(*i).map(|item| {
                         if !short {
-                            format!("{}: {}", i, item)
+                            format!("{i}: {item}")
                         } else if *i == 3 {
                             "3: copy of CC".to_string()
                         } else if *i == 7 {
@@ -1069,7 +1069,7 @@ impl Engine {
             self.cc
                 .stack
                 .iter()
-                .map(|item| if !short { format!("{}", item) } else { item.dump_as_fift() })
+                .map(|item| if !short { format!("{item}") } else { item.dump_as_fift() })
                 .collect::<Vec<_>>()
                 .join("\n"),
         )
@@ -1194,7 +1194,7 @@ impl Engine {
         if self.debug_on > 0 {
             let buffer = std::mem::take(&mut self.debug_buffer);
             if self.trace_callback.is_none() {
-                log::info!(target: "tvm", "{}", buffer);
+                log::info!(target: "tvm", "{buffer}");
             } else {
                 self.trace_info(EngineTraceInfoType::Dump, 0, Some(buffer));
             }
@@ -1580,7 +1580,7 @@ impl Engine {
             self.cmd.vars[n].as_continuation_mut()?.nargs = 1;
             switch(self, var!(n))?;
         } else {
-            let log_string = Some(format!("UNHANDLED EXCEPTION: {}", err));
+            let log_string = Some(format!("UNHANDLED EXCEPTION: {err}"));
             self.trace_info(EngineTraceInfoType::Exception, self.gas_used(), log_string);
             return Err(err);
         }

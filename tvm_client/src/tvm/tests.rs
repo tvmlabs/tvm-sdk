@@ -932,7 +932,7 @@ async fn test_my_code() {
         .await
         .unwrap();
 
-    println!("{:?}", get_my_code);
+    println!("{get_my_code:?}");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

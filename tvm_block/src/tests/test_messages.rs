@@ -328,7 +328,7 @@ fn test_check_json_address() {
 
     addresses.iter().for_each(|addr| {
         let err = MsgAddressInt::from_str(addr).err();
-        println!("{:?}", err);
+        println!("{err:?}");
         assert!(err.is_some());
     });
 
@@ -380,9 +380,9 @@ fn test_check_json_address() {
     ];
     addresses_int.iter().for_each(|(addr, check)| {
         let real = MsgAddressInt::from_str(addr).unwrap();
-        println!("{}", real);
+        println!("{real}");
         assert_eq!(&real, check);
-        assert_eq!(&format!("{}", real), addr);
+        assert_eq!(&format!("{real}"), addr);
     });
 
     let addresses_ext = [
@@ -395,9 +395,9 @@ fn test_check_json_address() {
     ];
     addresses_ext.iter().for_each(|(addr, check)| {
         let real = MsgAddressExt::from_str(addr).unwrap();
-        println!("{}", real);
+        println!("{real}");
         assert_eq!(&real, check);
-        assert_eq!(&format!("{}", real), addr);
+        assert_eq!(&format!("{real}"), addr);
     });
 }
 
@@ -424,7 +424,7 @@ fn test_msg_address_int_or_none() {
     addr2.write_to(&mut b).unwrap();
     addr3.write_to(&mut b).unwrap();
     let mut s = SliceData::load_builder(b).unwrap();
-    println!("{:x}", s);
+    println!("{s:x}");
     let mut addr1_ = MsgAddressIntOrNone::default();
     addr1_.read_from(&mut s).unwrap();
     assert_eq!(addr1, addr1_);
@@ -441,7 +441,7 @@ fn test_msg_address_int_invalid() {
     let addr1 = MsgAddressIntOrNone::default();
     let b = addr1.write_to_new_cell().unwrap();
     let mut s = SliceData::load_builder(b).unwrap();
-    println!("{:x}", s);
+    println!("{s:x}");
     MsgAddressInt::construct_from(&mut s)
         .expect_err("MsgAddressInt should not be deserialized from None");
 }

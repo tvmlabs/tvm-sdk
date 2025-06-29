@@ -57,7 +57,7 @@ enum HandlerAction {
 impl HandlerAction {
     async fn send(self, sender: &mut Sender<Self>) {
         if let Err(err) = sender.send(self).await {
-            log::error!("HandlerAction.send failed {}", err);
+            log::error!("HandlerAction.send failed {err}");
         }
     }
 }
@@ -463,7 +463,7 @@ impl LinkHandler {
     }
 
     fn start_keep_alive_timer(&mut self, timeout: u64) {
-        log::trace!("WS keep alive timer {}", timeout);
+        log::trace!("WS keep alive timer {timeout}");
         let sender = self.internal_action_sender.clone();
         self.keep_alive = KeepAlive::WaitNext { timeout };
         let env = self.client_env.clone();

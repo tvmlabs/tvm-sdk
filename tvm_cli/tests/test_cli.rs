@@ -40,7 +40,7 @@ const SAVED_CONFIG: &str = "tests/config_contract.saved";
 fn now_ms() -> u64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap_or_else(|e| panic!("failed to obtain system time: {}", e))
+        .unwrap_or_else(|e| panic!("failed to obtain system time: {e}"))
         .as_millis() as u64
 }
 
@@ -414,7 +414,7 @@ fn test_fee() -> Result<(), Box<dyn std::error::Error>> {
         .arg("--sign")
         .arg(GIVER_V2_KEY)
         .arg("sendTransaction")
-        .arg(format!(r#"{{"dest":"{}","value":100000000000,"bounce":false}}"#, GIVER_V2_ADDR))
+        .arg(format!(r#"{{"dest":"{GIVER_V2_ADDR}","value":100000000000,"bounce":false}}"#))
         .assert()
         .success()
         .stdout(predicate::str::contains(r#"  "in_msg_fwd_fee":"#))
@@ -677,7 +677,7 @@ fn test_deploy() -> Result<(), Box<dyn std::error::Error>> {
     let abi_path = DEPOOL_ABI;
 
     let time = now_ms();
-    let data_str = format!(r#"{{"m_seed":{}}}"#, time);
+    let data_str = format!(r#"{{"m_seed":{time}}}"#);
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     let out = cmd
@@ -1158,7 +1158,7 @@ fn test_decode_msg() -> Result<(), Box<dyn std::error::Error>> {
         .arg("--sign")
         .arg(GIVER_V2_KEY)
         .arg("sendTransaction")
-        .arg(format!(r#"{{"dest":"{}","value":100000000000,"bounce":false}}"#, GIVER_V2_ADDR))
+        .arg(format!(r#"{{"dest":"{GIVER_V2_ADDR}","value":100000000000,"bounce":false}}"#))
         .output()
         .expect("Failed to send message.");
 
@@ -1563,7 +1563,7 @@ fn test_depool_3() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains(format!(r#"sender": "{}"#, &wallet_addr)))
         .stdout(predicate::str::contains(r#"stake": "2000000000"#))
-        .stdout(predicate::str::contains(format!(r#"receiver": "{}"#, GIVER_V2_ADDR)))
+        .stdout(predicate::str::contains(format!(r#"receiver": "{GIVER_V2_ADDR}"#)))
         .stdout(predicate::str::contains(r#"withdrawal": "86400"#))
         .stdout(predicate::str::contains(r#"total": "86400"#));
 
@@ -1621,7 +1621,7 @@ fn test_depool_3() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains(format!(r#"sender": "{}"#, &wallet_addr)))
         .stdout(predicate::str::contains(r#"stake": "2000000000"#))
-        .stdout(predicate::str::contains(format!(r#"receiver": "{}"#, GIVER_V2_ADDR)));
+        .stdout(predicate::str::contains(format!(r#"receiver": "{GIVER_V2_ADDR}"#)));
 
     Ok(())
 }
@@ -2092,7 +2092,7 @@ fn test_run_async_call() -> Result<(), Box<dyn std::error::Error>> {
         .arg("--sign")
         .arg(GIVER_V2_KEY)
         .arg("sendTransaction")
-        .arg(format!(r#"{{"dest":"{}","value":100000000000,"bounce":false}}"#, GIVER_V2_ADDR))
+        .arg(format!(r#"{{"dest":"{GIVER_V2_ADDR}","value":100000000000,"bounce":false}}"#))
         .assert()
         .success()
         .stdout(predicate::str::contains("Local run succeeded"));
@@ -2193,7 +2193,7 @@ fn test_multisig() -> Result<(), Box<dyn std::error::Error>> {
     let seed = generate_phrase_and_key(key_path3)?;
     let key3 = generate_public_key(&seed)?;
 
-    let owners_string = format!(r#"["0x{}","0x{}","0x{}"]"#, key1, key2, key3);
+    let owners_string = format!(r#"["0x{key1}","0x{key2}","0x{key3}"]"#);
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     let out = cmd
@@ -2227,7 +2227,7 @@ fn test_multisig() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains("Wallet successfully deployed"));
 
-    let owners_string = format!(r#"{},{},{}"]"#, key1, key2, key3);
+    let owners_string = format!(r#"{key1},{key2},{key3}"]"#);
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("multisig")
@@ -2244,7 +2244,7 @@ fn test_multisig() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains("Wallet successfully deployed"));
 
-    let owners_string = format!(r#"0x{},"0x{}',"{}""]"#, key1, key2, key3);
+    let owners_string = format!(r#"0x{key1},"0x{key2}',"{key3}""]"#);
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("multisig")

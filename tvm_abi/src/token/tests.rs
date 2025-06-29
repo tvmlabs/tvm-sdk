@@ -75,7 +75,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -177,7 +177,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -200,7 +200,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -265,7 +265,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -376,7 +376,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -421,7 +421,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -537,7 +537,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -577,7 +577,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -612,7 +612,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -650,7 +650,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -713,7 +713,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),
@@ -768,7 +768,7 @@ mod tokenize_tests {
 
         // check that detokenizer gives the same result
         let input = Detokenizer::detokenize(&expected_tokens).unwrap();
-        println!("{}", input);
+        println!("{input}");
         assert_eq!(
             Tokenizer::tokenize_all_params(&params, &serde_json::from_str(&input).unwrap())
                 .unwrap(),

@@ -24,7 +24,7 @@ pub fn impl_api_function(attr: TokenStream, item: TokenStream) -> TokenStream {
     let syn_meta = syn::parse::<Meta>(attr).ok();
     let fn_impl_tokens = function_to_tokens(&function_from(syn_meta, syn_func));
 
-    let fn_ident = Ident::new(&format!("{}_api", name), Span::call_site().into());
+    let fn_ident = Ident::new(&format!("{name}_api"), Span::call_site().into());
     let fn_tokens = quote! {
         pub fn #fn_ident () -> api_info::Function {
             #fn_impl_tokens

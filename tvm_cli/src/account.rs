@@ -77,7 +77,7 @@ async fn query_accounts(
             },
         )
         .await
-        .map_err(|e| format!("failed to query account info: {}", e))?;
+        .map_err(|e| format!("failed to query account info: {e}"))?;
         res.append(query_result.result.as_mut());
     }
     Ok(res)
@@ -94,7 +94,7 @@ pub async fn get_account(
         let mut accounts = vec![];
         for path in addresses {
             let account = Account::construct_from_file(&path).map_err(|e| {
-                format!(" failed to load account from the boc file {}: {}", path, e)
+                format!(" failed to load account from the boc file {path}: {e}")
             })?;
             accounts.push(account);
         }
@@ -145,7 +145,7 @@ pub async fn get_account(
                     let bal = bal.unwrap().grams.clone().to_string();
                     if config.balance_in_vmshells {
                         let bal = u64::from_str_radix(&bal, 10)
-                            .map_err(|e| format!("failed to decode balance: {}", e))?;
+                            .map_err(|e| format!("failed to decode balance: {e}"))?;
                         let int_bal = bal as f64 / 1e9;
                         let frac_balance = (bal as f64 / 1e6 + 0.5) as u64 % 1000;
                         let balance_str = format!("{}", int_bal as u64);
@@ -172,14 +172,14 @@ pub async fn get_account(
                 let last_paid = format!("{}", acc.last_paid());
 
                 let trans_lt =
-                    acc.last_tr_time().map_or("Undefined".to_owned(), |v| format!("{:#x}", v));
+                    acc.last_tr_time().map_or("Undefined".to_owned(), |v| format!("{v:#x}"));
 
                 let data = tree_of_cells_into_base64(acc.get_data().as_ref());
 
                 let data_boc = if data.is_ok() {
                     hex::encode(
                         base64_decode(&data.unwrap())
-                            .map_err(|e| format!("Failed to decode base64: {}", e))?,
+                            .map_err(|e| format!("Failed to decode base64: {e}"))?,
                     )
                 } else {
                     "null".to_owned()
@@ -235,7 +235,7 @@ pub async fn get_account(
                     json_res["dapp_id"] = json!(dapp_id);
                     json_res["ecc_balance"] = ecc_balance;
                 } else {
-                    println!("dapp_id:       {}", dapp_id);
+                    println!("dapp_id:       {dapp_id}");
                     println!("ecc:           {}", serde_json::to_string(&ecc_balance).unwrap());
                 }
             } else if config.is_json {
@@ -274,13 +274,13 @@ pub async fn get_account(
                        "acc_type": "NonExist"
                     });
                 } else {
-                    println!("{} not found", address);
+                    println!("{address} not found");
                     println!();
                 }
             }
         }
         if config.is_json {
-            println!("{:#}", json_res);
+            println!("{json_res:#}");
         }
     } else if config.is_json {
         println!("{{\n}}");
@@ -328,14 +328,14 @@ pub async fn calc_storage(config: &Config, addr: &str, period: u32) -> Result<()
         ParamsOfCalcStorageFee { account: boc, period, ..Default::default() },
     )
     .await
-    .map_err(|e| format!("failed to calculate storage fee: {}", e))?;
+    .map_err(|e| format!("failed to calculate storage fee: {e}"))?;
 
     if !config.is_json {
         println!("Storage fee per {} seconds: {} nanovmshells", period, res.fee);
     } else {
         println!("{{");
         println!("  \"storage_fee\": \"{}\",", res.fee);
-        println!("  \"period\": \"{}\"", period);
+        println!("  \"period\": \"{period}\"");
         println!("}}");
     }
     Ok(())
@@ -366,18 +366,18 @@ pub async fn dump_accounts(
         let boc =
             account["boc"].as_str().ok_or("Failed to parse boc in the query result".to_owned())?;
         Account::construct_from_base64(boc)
-            .map_err(|e| format!("Failed to load account from the boc: {}", e))?
+            .map_err(|e| format!("Failed to load account from the boc: {e}"))?
             .write_to_file(path.clone())
             .map_err(|e| format!("Failed to write data to the file {}: {}", path.clone(), e))?;
         if !config.is_json {
-            println!("{} successfully dumped.", path);
+            println!("{path} successfully dumped.");
         }
     }
 
     if !config.is_json {
         if !addresses.is_empty() {
             for address in addresses.iter() {
-                println!("{} was not found.", address);
+                println!("{address} was not found.");
             }
         }
         println!("Succeeded.");
@@ -414,7 +414,7 @@ pub async fn wait_for_change(
         },
     )
     .await
-    .map_err(|e| format!("Failed to query the account: {}", e))?;
+    .map_err(|e| format!("Failed to query the account: {e}"))?;
 
     let last_trans_lt = extract_last_trans_lt(&query.result[0])
         .ok_or_else(|| format!("Failed to parse query result: {}", query.result[0]))?;
@@ -434,7 +434,7 @@ pub async fn wait_for_change(
                         Err(format!("Can't parse the result: {}", res.result))
                     }
                 }
-                Err(e) => Err(format!("Client error: {}", e)),
+                Err(e) => Err(format!("Client error: {e}")),
             };
             s.send(res).await.unwrap()
         }
@@ -458,7 +458,7 @@ pub async fn wait_for_change(
         callback,
     )
     .await
-    .map_err(|e| format!("Failed to subscribe: {}", e))?;
+    .map_err(|e| format!("Failed to subscribe: {e}"))?;
 
     tokio::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(wait_secs)).await;
@@ -468,7 +468,7 @@ pub async fn wait_for_change(
     let res = r.recv().await.ok_or_else(|| "Sender has dropped".to_owned())?;
     tvm_client::net::unsubscribe(context.clone(), subscription)
         .await
-        .map_err(|e| format!("Failed to unsubscribe: {}", e))?;
+        .map_err(|e| format!("Failed to unsubscribe: {e}"))?;
 
     if !config.is_json {
         if res.is_ok() {

@@ -135,7 +135,7 @@ pub async fn decode_proposal(config: &Config, addr: &str, proposal_id: &str) -> 
             let ton = create_client_local()?;
             let result = decode_msg_body(ton.clone(), TRANSFER_WITH_COMMENT, body, true, config)
                 .await
-                .map_err(|e| format!("failed to decode proposal payload: {}", e))?;
+                .map_err(|e| format!("failed to decode proposal payload: {e}"))?;
 
             let comment = String::from_utf8(
                 hex::decode(
@@ -143,25 +143,25 @@ pub async fn decode_proposal(config: &Config, addr: &str, proposal_id: &str) -> 
                         .as_str()
                         .ok_or("failed to obtain result comment")?,
                 )
-                .map_err(|e| format!("failed to parse comment from transaction payload: {}", e))?,
+                .map_err(|e| format!("failed to parse comment from transaction payload: {e}"))?,
             )
-            .map_err(|e| format!("failed to convert comment to string: {}", e))?;
+            .map_err(|e| format!("failed to convert comment to string: {e}"))?;
 
             if !config.is_json {
-                println!("Comment: {}", comment);
+                println!("Comment: {comment}");
             } else {
                 println!("{{");
-                println!("  \"Comment\": \"{}\"", comment);
+                println!("  \"Comment\": \"{comment}\"");
                 println!("}}");
             }
             return Ok(());
         }
     }
     if !config.is_json {
-        println!("Proposal with id {} not found", proposal_id);
+        println!("Proposal with id {proposal_id} not found");
     } else {
         println!("{{");
-        println!("  \"Error\": \"Proposal with id {} not found\"", proposal_id);
+        println!("  \"Error\": \"Proposal with id {proposal_id} not found\"");
         println!("}}");
     }
     Ok(())

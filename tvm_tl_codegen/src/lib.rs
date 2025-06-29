@@ -78,7 +78,7 @@ pub mod parser {
         fn get_repeated_name(repeat_count: Option<u32>, fields: &[Field]) -> String {
             let mut result = String::new();
             if let Some(value) = repeat_count {
-                result = format!("{} * ", value);
+                result = format!("{value} * ");
             }
             result += "[ ";
             for field in fields {
@@ -432,7 +432,7 @@ pub mod parser {
         }
 
         pub fn trim_common_prefix(&mut self, other: &Self) {
-            assert!(self.0.starts_with(&other.0), "{:?} not a prefix of {:?}", self, other);
+            assert!(self.0.starts_with(&other.0), "{self:?} not a prefix of {other:?}");
             self.0.drain(0..(other.0.len()));
         }
     }
@@ -505,8 +505,7 @@ fn reformat(filename: &Path) {
         Err(err) => {
             if !WARNING_PRINTED.swap(true, Ordering::Relaxed) {
                 println!(
-                    "cargo:warning=rustfmt failed to start: {:?}. {}",
-                    err, INSTALL_INSTRUCTIONS
+                    "cargo:warning=rustfmt failed to start: {err:?}. {INSTALL_INSTRUCTIONS}"
                 );
             }
             return;
@@ -537,8 +536,7 @@ impl Namespace {
             {
                 &mut NamespaceItem::AnotherNamespace(ref mut ns) => ns,
                 other => panic!(
-                    "descend_tree: duplicate namespace item {} {:?} {:?}",
-                    name, other, names
+                    "descend_tree: duplicate namespace item {name} {other:?} {names:?}"
                 ),
             }
         })
@@ -548,7 +546,7 @@ impl Namespace {
         let leaf = names.pop().unwrap();
         let namespace = self.descend_tree(&names);
         if namespace.0.contains_key(&leaf) {
-            println!("cargo:warning=insert: duplicate namespace item {:?}", names);
+            println!("cargo:warning=insert: duplicate namespace item {names:?}");
             return;
         }
         namespace.0.insert(leaf, item);
@@ -854,7 +852,7 @@ impl TypeName {
         F: FnOnce(&Tokens) -> Tokens,
     {
         let tokens = self.transformed_tokens(func);
-        let tokens_canon = format!("{}", tokens);
+        let tokens_canon = format!("{tokens}");
         TypeName { tokens, tokens_canon, idents: None }
     }
 }
@@ -894,7 +892,7 @@ where
         for ident in &idents {
             tokens = quote!(#tokens::#ident);
         }
-        let tokens_canon = format!("{}", tokens);
+        let tokens_canon = format!("{tokens}");
 
         TypeName { tokens, tokens_canon, idents: Some(idents) }
     }
@@ -1412,7 +1410,7 @@ impl Constructor<TypeIR, FieldIR> {
         match self.fields.iter().filter(|f| f.ty.is_flags()).count() {
             0 => return None,
             1 => (),
-            n => panic!("{} flags fields found on {:?}", n, self),
+            n => panic!("{n} flags fields found on {self:?}"),
         }
         let determination = {
             let fields = self.fields.iter().filter_map(|f| {
@@ -1729,7 +1727,7 @@ impl Constructor<TypeIR, FieldIR> {
 
     fn tl_id(&self) -> Option<Tokens> {
         self.tl_id.as_ref().map(|tl_id| {
-            let tl_id: syn::LitInt = syn::parse_str(&format!("0x{:08x}", tl_id)).unwrap();
+            let tl_id: syn::LitInt = syn::parse_str(&format!("0x{tl_id:08x}")).unwrap();
             quote!(crate::ConstructorNumber(#tl_id))
         })
     }

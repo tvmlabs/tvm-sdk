@@ -97,11 +97,11 @@ mod tests {
         // replace by Alina's data (ephemeral public key place to byte array ), depends
         // on iteration
         eph_pubkey.extend(ephemeral_kp.public().as_ref());
-        println!("eph_pubkey: {:?}", eph_pubkey);
+        println!("eph_pubkey: {eph_pubkey:?}");
         println!("len eph_pubkey: {:?}", eph_pubkey.len());
 
         let eph_pubkey_hex_number = "0x".to_owned() + &hex::encode(eph_pubkey.clone());
-        println!("eph_pubkey_hex_number: {:?}", eph_pubkey_hex_number);
+        println!("eph_pubkey_hex_number: {eph_pubkey_hex_number:?}");
 
         // Get the zklogin seed.
         // This stuff is a kind of bound between  smart contract and email (some
@@ -114,7 +114,7 @@ mod tests {
             "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", // Alina's data (fixed by app id ) from jwt
         ).unwrap();
 
-        println!("zk_seed = {:?}", zk_seed);
+        println!("zk_seed = {zk_seed:?}");
 
         let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"2352077003566407045854435506409565889408960755152253285189640818725808263237\",\
     \"9548308350778027075240385782578683112366097953461273569343148999989145049123\",\"1\"],\
@@ -127,13 +127,13 @@ mod tests {
     \"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\
     \"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
         let len = proof_and_jwt.bytes().len();
-        println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
+        println!(" proof_and_jwt_bytes len (in bytes) = {len:?}");
 
-        println!("proof_and_jwt: {}", proof_and_jwt);
+        println!("proof_and_jwt: {proof_and_jwt}");
 
         let iss_and_header_base64details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
 
-        println!("iss_and_header_base64details: {}", iss_and_header_base64details);
+        println!("iss_and_header_base64details: {iss_and_header_base64details}");
 
         let zk_login_inputs =
             ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
@@ -158,7 +158,7 @@ mod tests {
         let jwk = all_jwk
             .get(&JwkId::new(iss.clone(), kid.clone()))
             .ok_or_else(|| {
-                ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+                ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})"))
             })
             .unwrap();
 
@@ -176,7 +176,7 @@ mod tests {
 
         let mut public_inputs_as_bytes = vec![];
         public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
-        println!("HERE public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("HERE public_inputs_as_bytes : {public_inputs_as_bytes:?}");
         println!("HERE public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
 
         let proof = zk_login_inputs.get_proof();
@@ -192,7 +192,7 @@ mod tests {
         let mut proof_as_bytes = vec![];
         proof.serialize_compressed(&mut proof_as_bytes).unwrap();
 
-        println!("proof_as_bytes : {:?}", proof_as_bytes);
+        println!("proof_as_bytes : {proof_as_bytes:?}");
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
         let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
@@ -224,12 +224,12 @@ mod tests {
         let mut proof_as_bytes = vec![];
         proof.serialize_compressed(&mut proof_as_bytes).unwrap();
 
-        println!("proof_as_bytes : {:?}", proof_as_bytes);
+        println!("proof_as_bytes : {proof_as_bytes:?}");
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
         let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-        println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("public_inputs_as_bytes : {public_inputs_as_bytes:?}");
         println!("public_inputs_as_bytes len: {:?}", public_inputs_as_bytes.len());
 
         public_inputs_as_bytes.push(1);
@@ -261,17 +261,17 @@ mod tests {
         let mut proof_as_bytes = vec![];
         proof.serialize_compressed(&mut proof_as_bytes).unwrap();
 
-        println!("proof_as_bytes : {:?}", proof_as_bytes);
+        println!("proof_as_bytes : {proof_as_bytes:?}");
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
         let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-        println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("public_inputs_as_bytes : {public_inputs_as_bytes:?}");
         println!("public_inputs_as_bytes len: {:?}", public_inputs_as_bytes.len());
 
         public_inputs_as_bytes[0] = 0;
 
-        println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("public_inputs_as_bytes : {public_inputs_as_bytes:?}");
 
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
 
@@ -298,17 +298,17 @@ mod tests {
         let mut proof_as_bytes = vec![];
         proof.serialize_compressed(&mut proof_as_bytes).unwrap();
 
-        println!("proof_as_bytes : {:?}", proof_as_bytes);
+        println!("proof_as_bytes : {proof_as_bytes:?}");
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
         let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-        println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("public_inputs_as_bytes : {public_inputs_as_bytes:?}");
         println!("public_inputs_as_bytes len: {:?}", public_inputs_as_bytes.len());
 
         public_inputs_as_bytes[20] = 50;
 
-        println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("public_inputs_as_bytes : {public_inputs_as_bytes:?}");
 
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
 
@@ -335,12 +335,12 @@ mod tests {
         let mut proof_as_bytes = vec![];
         proof.serialize_compressed(&mut proof_as_bytes).unwrap();
 
-        println!("proof_as_bytes : {:?}", proof_as_bytes);
+        println!("proof_as_bytes : {proof_as_bytes:?}");
         println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
         let public_inputs_as_bytes = vec![0; 32];
 
-        println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("public_inputs_as_bytes : {public_inputs_as_bytes:?}");
 
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
 

@@ -68,7 +68,7 @@ pub const DUMP_ALL: u8 = 0xFF;
 
 pub fn construct_blockchain_config(config_account: &Account) -> Result<BlockchainConfig, String> {
     construct_blockchain_config_err(config_account)
-        .map_err(|e| format!("Failed to construct config: {}", e))
+        .map_err(|e| format!("Failed to construct config: {e}"))
 }
 
 fn construct_blockchain_config_err(
@@ -100,7 +100,7 @@ pub async fn fetch(
     let context = create_client(config)?;
 
     let filter = if let Some(lt_bound) = lt_bound {
-        let lt_bound = format!("0x{:x}", lt_bound);
+        let lt_bound = format!("0x{lt_bound:x}");
         serde_json::json!({
             "account_addr": {
                 "eq": account_address
@@ -128,7 +128,7 @@ pub async fn fetch(
         },
     )
     .await
-    .map_err(|e| format!("Failed to fetch txns count: {}", e))?;
+    .map_err(|e| format!("Failed to fetch txns count: {e}"))?;
     let tr_count = u64::from_str_radix(
         tr_count
             .values
@@ -140,9 +140,9 @@ pub async fn fetch(
             .ok_or("Failed to parse value".to_string())?,
         10,
     )
-    .map_err(|e| format!("Failed to parse decimal int: {}", e))?;
+    .map_err(|e| format!("Failed to parse decimal int: {e}"))?;
 
-    let file = File::create(filename).map_err(|e| format!("Failed to create file: {}", e))?;
+    let file = File::create(filename).map_err(|e| format!("Failed to create file: {e}"))?;
     let mut writer = std::io::LineWriter::new(file);
 
     let zerostates = query_collection(
@@ -165,10 +165,10 @@ pub async fn fetch(
             result[0]["accounts"].as_array().ok_or("Failed to parse value".to_string())?;
         for account in accounts {
             if account["id"] == account_address {
-                let data = format!("{}\n", account);
+                let data = format!("{account}\n");
                 writer
                     .write_all(data.as_bytes())
-                    .map_err(|e| format!("Failed to write to file: {}", e))?;
+                    .map_err(|e| format!("Failed to write to file: {e}"))?;
                 zerostate_found = true;
                 break;
             }
@@ -178,8 +178,7 @@ pub async fn fetch(
     if !zerostate_found {
         if !config.is_json {
             println!(
-                "account {}: zerostate not found, writing out default initial state",
-                account_address
+                "account {account_address}: zerostate not found, writing out default initial state"
             );
         }
         let data = format!(
@@ -188,10 +187,10 @@ pub async fn fetch(
             base64_encode(
                 &Account::default()
                     .write_to_bytes()
-                    .map_err(|e| format!("failed to serialize account: {}", e))?
+                    .map_err(|e| format!("failed to serialize account: {e}"))?
             )
         );
-        writer.write_all(data.as_bytes()).map_err(|e| format!("Failed to write to file: {}", e))?;
+        writer.write_all(data.as_bytes()).map_err(|e| format!("Failed to write to file: {e}"))?;
     }
     let retry_strategy = tokio_retry::strategy::ExponentialBackoff::from_millis(10).take(5);
 
@@ -201,7 +200,7 @@ pub async fn fetch(
     loop {
         let action = || async {
             let filter = if let Some(lt_bound) = lt_bound {
-                let lt_bound = format!("0x{:x}", lt_bound);
+                let lt_bound = format!("0x{lt_bound:x}");
                 serde_json::json!({
                     "account_addr": {
                         "eq": account_address
@@ -235,17 +234,17 @@ pub async fn fetch(
 
         let transactions = tokio_retry::Retry::spawn(retry_strategy.clone(), action)
             .await
-            .map_err(|e| format!("Failed to fetch transactions: {}", e))?;
+            .map_err(|e| format!("Failed to fetch transactions: {e}"))?;
 
         if transactions.result.is_empty() {
             break;
         }
 
         for txn in &transactions.result {
-            let data = format!("{}\n", txn);
+            let data = format!("{txn}\n");
             writer
                 .write_all(data.as_bytes())
-                .map_err(|e| format!("Failed to write to file: {}", e))?;
+                .map_err(|e| format!("Failed to write to file: {e}"))?;
         }
 
         let last = transactions.result.last().ok_or("Failed to get last txn".to_string())?;
@@ -278,18 +277,18 @@ impl Default for State {
 impl State {
     fn new(filename: &str) -> Result<Self, String> {
         let file =
-            File::open(filename).map_err(|e| format!("failed to open file {}: {}", filename, e))?;
+            File::open(filename).map_err(|e| format!("failed to open file {filename}: {e}"))?;
         let mut lines = io::BufReader::new(file).lines();
 
         let first_line = lines
             .next()
             .ok_or("file is empty")?
-            .map_err(|e| format!("failed to read first line: {}", e))?;
+            .map_err(|e| format!("failed to read first line: {e}"))?;
         let value = serde_json::from_str::<Value>(first_line.as_str())
-            .map_err(|e| format!("failed to deserialize value: {}", e))?;
+            .map_err(|e| format!("failed to deserialize value: {e}"))?;
         let boc = value["boc"].as_str().ok_or("failed to decode boc")?;
         let account = Account::construct_from_base64(boc)
-            .map_err(|e| format!("failed to load account from the boc: {}", e))?;
+            .map_err(|e| format!("failed to load account from the boc: {e}"))?;
         let account_addr =
             String::from(value["id"].as_str().ok_or("failed to load account address")?);
 
@@ -368,13 +367,13 @@ pub async fn replay(
         }
 
         let mut account_root =
-            state.account.serialize().map_err(|e| format!("Failed to serialize: {}", e))?;
+            state.account.serialize().map_err(|e| format!("Failed to serialize: {e}"))?;
 
         let account_old_hash_local = account_root.repr_hash();
         let account_old_hash_remote = tr
             .tr
             .read_state_update()
-            .map_err(|e| format!("failed to read state update: {}", e))?
+            .map_err(|e| format!("failed to read state update: {e}"))?
             .old_hash;
         if account_old_hash_local != account_old_hash_remote {
             if !cli_config.is_json {
@@ -392,48 +391,48 @@ pub async fn replay(
                     format!("{}-{}.boc", account_address.split(':').last().unwrap_or(""), txnid);
                 account_root
                     .write_to_file(&path)
-                    .map_err(|e| format!("Failed to write account: {}", e))?;
+                    .map_err(|e| format!("Failed to write account: {e}"))?;
                 if !cli_config.is_json {
-                    println!("Contract account was dumped to {}", path);
+                    println!("Contract account was dumped to {path}");
                 }
             }
             if dump_mask & DUMP_CONFIG != 0 {
-                let path = format!("config-{}.boc", txnid);
+                let path = format!("config-{txnid}.boc");
                 let account = config_account
                     .serialize()
-                    .map_err(|e| format!("Failed to serialize config account: {}", e))?;
+                    .map_err(|e| format!("Failed to serialize config account: {e}"))?;
                 account
                     .write_to_file(&path)
-                    .map_err(|e| format!("Failed to write config account: {}", e))?;
+                    .map_err(|e| format!("Failed to write config account: {e}"))?;
                 if !cli_config.is_json {
-                    println!("Config account was dumped to {}", path);
+                    println!("Config account was dumped to {path}");
                 }
             }
             if dump_mask & DUMP_EXECUTOR_CONFIG != 0 {
                 // config.boc suitable for creating ton-labs-executor tests
                 let cell = config_account.get_data().ok_or("Failed to get config data")?;
                 let mut config_data = SliceData::load_cell(cell)
-                    .map_err(|e| format!("Failed to load config data cell: {}", e))?;
+                    .map_err(|e| format!("Failed to load config data cell: {e}"))?;
                 let mut cfg = BuilderData::default();
                 cfg.append_raw(
                     &config_data
                         .get_next_bytes(32)
-                        .map_err(|e| format!("Failed to read config data: {}", e))?,
+                        .map_err(|e| format!("Failed to read config data: {e}"))?,
                     256,
                 )
-                .map_err(|e| format!("Failed to append config data: {}", e))?;
+                .map_err(|e| format!("Failed to append config data: {e}"))?;
                 let cell = config_data
                     .reference(0)
-                    .map_err(|e| format!("Failed to get config zero reference: {}", e))?;
+                    .map_err(|e| format!("Failed to get config zero reference: {e}"))?;
                 cfg.checked_append_reference(cell)
-                    .map_err(|e| format!("Failed to append config reference: {}", e))?;
-                let path = format!("config-{}-test.boc", txnid);
+                    .map_err(|e| format!("Failed to append config reference: {e}"))?;
+                let path = format!("config-{txnid}-test.boc");
                 cfg.into_cell()
-                    .map_err(|e| format!("Failed to finalize builder: {}", e))?
+                    .map_err(|e| format!("Failed to finalize builder: {e}"))?
                     .write_to_file(&path)
-                    .map_err(|e| format!("Failed to write config data: {}", e))?;
+                    .map_err(|e| format!("Failed to write config data: {e}"))?;
                 if !cli_config.is_json {
-                    println!("Config for executor was dumped to {}", path);
+                    println!("Config for executor was dumped to {path}");
                 }
             }
             if trace_callback.is_some() {
@@ -444,7 +443,7 @@ pub async fn replay(
                     .in_msg_cell()
                     .map(|c| {
                         Message::construct_from_cell(c)
-                            .map_err(|e| format!("failed to construct message: {}", e))
+                            .map_err(|e| format!("failed to construct message: {e}"))
                     })
                     .transpose()?;
                 let params = ExecuteParams {
@@ -456,14 +455,14 @@ pub async fn replay(
                 };
                 let (tr, _) = executor
                     .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params)
-                    .map_err(|e| format!("Failed to execute txn: {}", e))?;
+                    .map_err(|e| format!("Failed to execute txn: {e}"))?;
                 return Ok(tr);
             }
         }
         let executor: Box<dyn TransactionExecutor> = match tr
             .tr
             .read_description()
-            .map_err(|e| format!("failed to read transaction: {}", e))?
+            .map_err(|e| format!("failed to read transaction: {e}"))?
         {
             TransactionDescr::TickTock(desc) => {
                 Box::new(TickTockTransactionExecutor::new(config.clone(), desc.tt))
@@ -481,7 +480,7 @@ pub async fn replay(
             .in_msg_cell()
             .map(|c| {
                 Message::construct_from_cell(c)
-                    .map_err(|e| format!("failed to construct message: {}", e))
+                    .map_err(|e| format!("failed to construct message: {e}"))
             })
             .transpose()?;
 
@@ -493,18 +492,18 @@ pub async fn replay(
         };
         let (tr_local, _) = executor
             .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params)
-            .map_err(|e| format!("Failed to execute txn: {}", e))?;
+            .map_err(|e| format!("Failed to execute txn: {e}"))?;
         state.account = Account::construct_from_cell(account_root.clone())
-            .map_err(|e| format!("Failed to construct account: {}", e))?;
+            .map_err(|e| format!("Failed to construct account: {e}"))?;
 
         let account_new_hash_local = tr_local
             .read_state_update()
-            .map_err(|e| format!("failed to read state update: {}", e))?
+            .map_err(|e| format!("failed to read state update: {e}"))?
             .new_hash;
         let account_new_hash_remote = tr
             .tr
             .read_state_update()
-            .map_err(|e| format!("failed to read state update: {}", e))?
+            .map_err(|e| format!("failed to read state update: {e}"))?
             .new_hash;
         if account_new_hash_local != account_new_hash_remote {
             if !cli_config.is_json {
@@ -517,11 +516,11 @@ pub async fn replay(
             }
             let local_desc = tr_local
                 .read_description()
-                .map_err(|e| format!("failed to read description: {}", e))?;
+                .map_err(|e| format!("failed to read description: {e}"))?;
             let remote_desc = tr
                 .tr
                 .read_description()
-                .map_err(|e| format!("failed to read description: {}", e))?;
+                .map_err(|e| format!("failed to read description: {e}"))?;
             assert_eq!(remote_desc, local_desc);
             exit(2);
         }
@@ -541,7 +540,7 @@ pub async fn replay(
 
 pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm_types::Status {
     let context = create_client(config)
-        .map_err(|e| failure::err_msg(format!("Failed to create ctx: {}", e)))?;
+        .map_err(|e| failure::err_msg(format!("Failed to create ctx: {e}")))?;
 
     let block = query_collection(
         context.clone(),
@@ -594,15 +593,15 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     }
 
     for (account, _) in &accounts {
-        println!("Fetching transactions of {}", account);
-        fetch(config, account.as_str(), format!("{}.txns", account).as_str(), Some(end_lt), false)
+        println!("Fetching transactions of {account}");
+        fetch(config, account.as_str(), format!("{account}.txns").as_str(), Some(end_lt), false)
             .await
             .map_err(failure::err_msg)?;
     }
 
-    let config_txns_path = format!("{}.txns", CONFIG_ADDR);
+    let config_txns_path = format!("{CONFIG_ADDR}.txns");
     if !std::path::Path::new(config_txns_path.as_str()).exists() {
-        println!("Fetching transactions of {}", CONFIG_ADDR);
+        println!("Fetching transactions of {CONFIG_ADDR}");
         fetch(config, CONFIG_ADDR, config_txns_path.as_str(), Some(end_lt), false)
             .await
             .map_err(failure::err_msg)?;
@@ -611,11 +610,11 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     let acc = accounts[0].0.as_str();
     let txnid = accounts[0].1[0].0.as_str();
 
-    let config_path = format!("config-{}.boc", txnid);
+    let config_path = format!("config-{txnid}.boc");
     if !std::path::Path::new(config_path.as_str()).exists() {
-        println!("Computing config: replaying {} up to {}", acc, txnid);
+        println!("Computing config: replaying {acc} up to {txnid}");
         replay(
-            format!("{}.txns", acc).as_str(),
+            format!("{acc}.txns").as_str(),
             config_txns_path.as_str(),
             txnid,
             None,
@@ -627,7 +626,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         .await
         .map_err(failure::err_msg)?;
     } else {
-        println!("Using pre-computed config {}", config_path);
+        println!("Using pre-computed config {config_path}");
     }
 
     println!("Pre-replaying block accounts");
@@ -638,12 +637,12 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
             let _config = config.clone().to_owned();
             let txnid = txns[0].0.clone();
             tokio::spawn(async move {
-                if !std::path::Path::new(format!("{}-{}.boc", account_filename, txnid).as_str())
+                if !std::path::Path::new(format!("{account_filename}-{txnid}.boc").as_str())
                     .exists()
                 {
                     replay(
-                        format!("{}.txns", account_filename).as_str(),
-                        format!("{}.txns", CONFIG_ADDR).as_str(),
+                        format!("{account_filename}.txns").as_str(),
+                        format!("{CONFIG_ADDR}.txns").as_str(),
                         &txnid,
                         None,
                         || Ok(()),
@@ -662,7 +661,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
 
     println!("Writing block");
     let mut config_data = Vec::new();
-    let mut config_file = File::open(format!("config-{}.boc", txnid))?;
+    let mut config_file = File::open(format!("config-{txnid}.boc"))?;
     config_file.read_to_end(&mut config_data)?;
 
     let mut block = BlockDescr {
@@ -673,7 +672,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
 
     for (account, txns) in &accounts {
         let txnid = txns[0].0.as_str();
-        let mut account_file = File::open(format!("{}-{}.boc", account, txnid))?;
+        let mut account_file = File::open(format!("{account}-{txnid}.boc"))?;
         let mut account_data = Vec::new();
         account_file.read_to_end(&mut account_data)?;
         let mut transactions = vec![];
@@ -687,7 +686,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
 
     let writer = std::io::BufWriter::new(File::create(filename)?);
     serde_json::to_writer_pretty(writer, &block)?;
-    println!("Block written to {}", filename);
+    println!("Block written to {filename}");
     Ok(())
 }
 

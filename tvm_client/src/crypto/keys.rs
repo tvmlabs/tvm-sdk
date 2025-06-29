@@ -31,7 +31,7 @@ use crate::error::ClientResult;
 pub(crate) fn strip_secret(secret: &str) -> String {
     const SECRET_SHOW_LEN: usize = 8;
     if secret.len() <= SECRET_SHOW_LEN {
-        return format!(r#""{}""#, secret);
+        return format!(r#""{secret}""#);
     }
 
     format!(r#""{}..." ({} chars)"#, &secret[..SECRET_SHOW_LEN], secret.len(),)

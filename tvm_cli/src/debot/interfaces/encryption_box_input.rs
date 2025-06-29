@@ -118,7 +118,7 @@ impl EncryptionBoxInput {
         let prompt = decode_prompt(args)?;
         let nonce = decode_nonce(args)?;
         let their_pubkey = decode_arg(args, "theirPubkey")?;
-        println!("{}", prompt);
+        println!("{prompt}");
         let result = TerminalEncryptionBox::new(ParamsOfTerminalEncryptionBox {
             context: self.client.clone(),
             box_type: EncryptionBoxType::NaCl,
@@ -133,7 +133,7 @@ impl EncryptionBoxInput {
         let answer_id = decode_answer_id(args)?;
         let prompt = decode_prompt(args)?;
         let nonce = decode_nonce(args)?;
-        println!("{}", prompt);
+        println!("{prompt}");
         let result = TerminalEncryptionBox::new(ParamsOfTerminalEncryptionBox {
             context: self.client.clone(),
             box_type: EncryptionBoxType::SecretNaCl,
@@ -148,7 +148,7 @@ impl EncryptionBoxInput {
         let answer_id = decode_answer_id(args)?;
         let nonce = decode_nonce(args)?;
         let prompt = decode_prompt(args)?;
-        println!("{}", prompt);
+        println!("{prompt}");
         let result = TerminalEncryptionBox::new(ParamsOfTerminalEncryptionBox {
             context: self.client.clone(),
             box_type: EncryptionBoxType::ChaCha20,
@@ -216,7 +216,7 @@ impl DebotInterface for EncryptionBoxInput {
             "getChaCha20Box" => self.get_chacha20_box(args).await,
             "remove" => self.remove_handle(args).await,
             "getSupportedAlgorithms" => self.get_supported_algorithms(args).await,
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

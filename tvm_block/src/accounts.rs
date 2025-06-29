@@ -535,7 +535,7 @@ impl Deserializable for AccountState {
 
 impl fmt::Display for AccountState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "AccountStorage[{:?}]", self)
+        write!(f, "AccountStorage[{self:?}]")
     }
 }
 
@@ -1199,7 +1199,7 @@ impl Deserializable for Account {
                     Err(err) => fail!("cannot deserialize account with tag {}, err {}", tag, err),
                 },
                 t => {
-                    let s = format!("wrong tag {} deserializing account", tag);
+                    let s = format!("wrong tag {tag} deserializing account");
                     fail!(BlockError::InvalidConstructorTag { t, s })
                 }
             }
@@ -1209,7 +1209,7 @@ impl Deserializable for Account {
 
 impl fmt::Display for Account {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Account[{:?}]", self)
+        write!(f, "Account[{self:?}]")
     }
 }
 

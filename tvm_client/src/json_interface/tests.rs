@@ -122,15 +122,12 @@ fn check_client_error_msg(
         assert_eq!(
             actual_classes.len(),
             expected_helpers_suggestions.len(),
-            "Helpers suggestions mismatch. Expected: {:?}, actual: {:?}.",
-            expected_helpers_suggestions,
-            actual_classes,
+            "Helpers suggestions mismatch. Expected: {expected_helpers_suggestions:?}, actual: {actual_classes:?}.",
         );
         for i in 0..expected_helpers_suggestions.len() {
             assert_eq!(
                 actual_classes[i], expected_helpers_suggestions[i],
-                r#"Helpers' suggestions mismatch. Expected: {:?}, actual: {:?}."#,
-                expected_helpers_suggestions, actual_classes,
+                r#"Helpers' suggestions mismatch. Expected: {expected_helpers_suggestions:?}, actual: {actual_classes:?}."#,
             )
         }
     }

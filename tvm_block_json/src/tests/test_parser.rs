@@ -71,7 +71,7 @@ fn parse_block(
     options: Option<ParseOptions>,
 ) -> (Vec<u8>, UInt256, ParsedBlock) {
     let in_path = Path::new("src/tests/data").join(file_rel_path);
-    let boc = read(in_path.clone()).unwrap_or_else(|_| panic!("Error reading file {:?}", in_path));
+    let boc = read(in_path.clone()).unwrap_or_else(|_| panic!("Error reading file {in_path:?}"));
     let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
 
     let block = Block::construct_from_cell(cell.clone()).unwrap();
@@ -270,7 +270,7 @@ fn check_msg_chain_order(
     src_chain_order: Option<&str>,
     dst_chain_order: Option<&str>,
 ) {
-    println!("{:?}", body);
+    println!("{body:?}");
     assert_eq!(body["id"], Value::from(id));
     if let Some(order) = src_chain_order {
         assert_eq!(body["src_chain_order"], Value::from(order));

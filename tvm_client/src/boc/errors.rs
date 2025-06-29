@@ -35,15 +35,15 @@ impl Error {
     }
 
     pub fn invalid_boc<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InvalidBoc, format!("Invalid BOC: {}", err))
+        error(ErrorCode::InvalidBoc, format!("Invalid BOC: {err}"))
     }
 
     pub fn serialization_error<E: Display>(err: E, name: &str) -> ClientError {
-        error(ErrorCode::SerializationError, format!("Cannot serialize {}: {}", name, err))
+        error(ErrorCode::SerializationError, format!("Cannot serialize {name}: {err}"))
     }
 
     pub fn inappropriate_block<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::InappropriateBlock, format!("Inappropriate block: {}", err))
+        error(ErrorCode::InappropriateBlock, format!("Inappropriate block: {err}"))
     }
 
     pub fn insufficient_cache_size(max_cache_size: usize, boc_size: usize) -> ClientError {
@@ -64,7 +64,7 @@ impl Error {
     }
 
     pub fn invalid_boc_ref<E: Display>(err: E, boc_ref: &str) -> ClientError {
-        let mut error = error(ErrorCode::InvalidBocRef, format!("Invalid BOC reference: {}", err));
+        let mut error = error(ErrorCode::InvalidBocRef, format!("Invalid BOC reference: {err}"));
         error.data["boc_ref"] = boc_ref.into();
         error
     }

@@ -25,12 +25,12 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
         .unwrap()
         .out_queue()
         .iterate_objects(|message| {
-            println!("message: {:?}", message);
+            println!("message: {message:?}");
             len += 1;
             Ok(true)
         })
         .unwrap();
-    println!("count: {}", len);
+    println!("count: {len}");
 
     println!("accounts");
     let mut len = 0;
@@ -45,7 +45,7 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
             Ok(true)
         })
         .unwrap();
-    println!("count: {}", len);
+    println!("count: {len}");
     println!();
 
     if let Some(custom) = ss.read_custom().unwrap() {
@@ -58,7 +58,7 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
         custom
             .prev_blocks
             .iterate_with_keys(|seq_no, blkref| -> Result<bool> {
-                println!("\tblock seq_no: {} | {:?}", seq_no, blkref);
+                println!("\tblock seq_no: {seq_no} | {blkref:?}");
                 i += 1;
                 Ok(i <= 5)
             })
@@ -72,10 +72,10 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
 fn test_real_tvm_shardstate() {
     // getstate (-1,8000000000000000,0)
     let in_path = "src/tests/data/shard_state.boc";
-    println!("ShardState file: {:?}", in_path);
+    println!("ShardState file: {in_path:?}");
     let bytes = std::fs::read(in_path).unwrap();
     let root_cell = read_single_root_boc(bytes).unwrap();
-    println!("cell = {:#.2}", root_cell);
+    println!("cell = {root_cell:#.2}");
 
     let ss = ShardState::construct_from_cell(root_cell).unwrap();
 

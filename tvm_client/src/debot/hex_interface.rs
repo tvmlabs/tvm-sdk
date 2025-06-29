@@ -56,7 +56,7 @@ impl HexInterface {
     fn decode(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let str_to_decode = get_arg(args, "hexstr")?;
-        let decoded = hex::decode(str_to_decode).map_err(|e| format!("invalid hex: {}", e))?;
+        let decoded = hex::decode(str_to_decode).map_err(|e| format!("invalid hex: {e}"))?;
         Ok((answer_id, json!({ "data": hex::encode(decoded) })))
     }
 }
@@ -75,7 +75,7 @@ impl DebotInterface for HexInterface {
         match func {
             "encode" => self.encode(args),
             "decode" => self.decode(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

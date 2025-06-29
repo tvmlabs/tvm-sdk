@@ -215,7 +215,7 @@ pub fn check_transaction_proof(
     block_id: &UInt256,
 ) -> Result<()> {
     let block: Block = proof.virtualize().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting block from proof: {}", err))
+        BlockError::WrongMerkleProof(format!("Error extracting block from proof: {err}"))
     })?;
 
     // check if block id in transaction is corresponds to block in proof
@@ -240,11 +240,11 @@ pub fn check_transaction_proof(
     // read account block from block and check it
 
     let block_extra = block.read_extra().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting block extra from proof: {}", err))
+        BlockError::WrongMerkleProof(format!("Error extracting block extra from proof: {err}"))
     })?;
 
     let account_blocks = block_extra.read_account_blocks().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting account blocks from proof: {}", err))
+        BlockError::WrongMerkleProof(format!("Error extracting account blocks from proof: {err}"))
     })?;
 
     let account_block = account_blocks
@@ -255,8 +255,7 @@ pub fn check_transaction_proof(
     let tr_parent_slice_opt =
         account_block.transactions().get_as_slice(&tr.logical_time()).map_err(|err| {
             BlockError::WrongMerkleProof(format!(
-                "Error extracting transaction from dictionary in proof: {}",
-                err
+                "Error extracting transaction from dictionary in proof: {err}"
             ))
         })?;
     if let Some(mut tr_parent_slice) = tr_parent_slice_opt {
@@ -308,7 +307,7 @@ pub fn check_message_proof(
     tr_id: Option<UInt256>,
 ) -> Result<()> {
     let block: Block = proof.virtualize().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting block from proof: {}", err))
+        BlockError::WrongMerkleProof(format!("Error extracting block from proof: {err}"))
     })?;
 
     // check if block id in message is corresponds to block in proof
@@ -317,7 +316,7 @@ pub fn check_message_proof(
     // read message from block and check it
 
     let block_extra = block.read_extra().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting block extra from proof: {}", err))
+        BlockError::WrongMerkleProof(format!("Error extracting block extra from proof: {err}"))
     })?;
 
     let msg_hash = msg.hash()?;
@@ -344,7 +343,7 @@ pub fn check_message_proof(
     }
 
     let out_msg_descr = block_extra.read_out_msg_descr().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting out msg descr from proof: {}", err))
+        BlockError::WrongMerkleProof(format!("Error extracting out msg descr from proof: {err}"))
     })?;
     if let Ok(Some(out_msg)) = out_msg_descr.get(&msg_hash) {
         if let Ok(real_msg_hash) = out_msg.read_message_hash() {
@@ -376,7 +375,7 @@ pub fn check_account_proof(proof: &MerkleProof, acc: &Account) -> Result<BlockSe
     let ss: ShardStateUnsplit = proof.virtualize()?;
 
     let accounts = ss.read_accounts().map_err(|err| {
-        BlockError::WrongMerkleProof(format!("Error extracting accounts dict from proof: {}", err))
+        BlockError::WrongMerkleProof(format!("Error extracting accounts dict from proof: {err}"))
     })?;
 
     let shard_acc = accounts.account(&acc.get_addr().unwrap().get_address());

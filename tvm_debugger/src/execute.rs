@@ -57,7 +57,7 @@ pub(crate) fn execute(args: &RunArgs, res: &mut ExecutionResult) -> anyhow::Resu
 
     let exit_code = engine.execute().unwrap_or_else(|error| match tvm_exception(error) {
         Ok(exception) => {
-            res.log(format!("Unhandled exception: {}", exception));
+            res.log(format!("Unhandled exception: {exception}"));
             exception.exception_or_custom_code()
         }
         _ => -1,

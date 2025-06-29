@@ -30,7 +30,7 @@ pub fn convert_amount(amount: &str, decimals: usize) -> Result<String, String> {
             result += &"0".repeat(decimals);
         }
         let result = result.trim_start_matches('0').to_string();
-        u64::from_str_radix(&result, 10).map_err(|e| format!("failed to parse amount: {}", e))?;
+        u64::from_str_radix(&result, 10).map_err(|e| format!("failed to parse amount: {e}"))?;
 
         return Ok(result);
     }
@@ -40,7 +40,7 @@ pub fn convert_amount(amount: &str, decimals: usize) -> Result<String, String> {
 pub fn convert_u64_to_tokens(value: u64) -> String {
     let integer = value / 1_000_000_000;
     let float = value - integer * 1_000_000_000;
-    format!("{}.{:>09}", integer, float)
+    format!("{integer}.{float:>09}")
 }
 
 pub fn nodeid_from_pubkey(key: &[u8]) -> Result<String, String> {

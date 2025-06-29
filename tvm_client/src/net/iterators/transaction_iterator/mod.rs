@@ -87,8 +87,7 @@ impl TransactionIterator {
     pub fn get_resume_state_value(&self) -> ClientResult<Value> {
         serde_json::to_value(self.get_resume_state()).map_err(|e| {
             crate::client::Error::internal_error(format!(
-                "Can't serialize iterator resume state: {}",
-                e
+                "Can't serialize iterator resume state: {e}"
             ))
         })
     }
@@ -116,7 +115,7 @@ impl TransactionIterator {
         params: ParamsOfResumeTransactionIterator,
     ) -> ClientResult<Self> {
         let resume = ResumeState::deserialize(&params.resume_state).map_err(|e| {
-            crate::client::Error::internal_error(format!("Invalid iterator resume state: {}", e))
+            crate::client::Error::internal_error(format!("Invalid iterator resume state: {e}"))
         })?;
         Self::from_resume_state(context, resume, params.accounts_filter).await
     }
@@ -130,7 +129,7 @@ impl TransactionIterator {
             context,
             "transactions",
             transaction_ids,
-            &format!("{} {}", TRANSACTION_FIELDS, fields),
+            &format!("{TRANSACTION_FIELDS} {fields}"),
         )
         .await
     }

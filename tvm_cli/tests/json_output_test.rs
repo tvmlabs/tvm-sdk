@@ -26,7 +26,7 @@ fn _run_command_and_decode_json(
     local_node: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    println!("Command: {}", command);
+    println!("Command: {command}");
     cmd.arg("-j");
     if local_node {
         cmd.arg("--url").arg(&*NETWORK);
@@ -36,31 +36,28 @@ fn _run_command_and_decode_json(
         .output()
         .expect("Failed to execute command.");
 
-    println!("OUT: {:?}", out);
+    println!("OUT: {out:?}");
 
     let out = core::str::from_utf8(&out.stdout)
-        .map_err(|e| format!("Failed to decode command output: {}", e))?;
+        .map_err(|e| format!("Failed to decode command output: {e}"))?;
 
-    println!("OUT: {}", out);
+    println!("OUT: {out}");
     let _: Value =
-        serde_json::from_str(out).map_err(|e| format!("Failed to decode output as json: {}", e))?;
+        serde_json::from_str(out).map_err(|e| format!("Failed to decode output as json: {e}"))?;
     Ok(())
 }
 
 #[test]
 fn test_json_output_1() -> Result<(), Box<dyn std::error::Error>> {
-    run_command_and_decode_json(&format!("account {}", GIVER_V2_ADDR))?;
+    run_command_and_decode_json(&format!("account {GIVER_V2_ADDR}"))?;
     run_command_and_decode_json(&format!(
-        "body --abi {} addOrdinaryStake {{\"stake\":65535}}",
-        DEPOOL_ABI
+        "body --abi {DEPOOL_ABI} addOrdinaryStake {{\"stake\":65535}}"
     ))?;
     run_command_and_decode_json(&format!(
-        "call {} sendGrams {{\"dest\":\"{}\",\"amount\":1111111}} --abi {}",
-        GIVER_ADDR, GIVER_ADDR, GIVER_ABI
+        "call {GIVER_ADDR} sendGrams {{\"dest\":\"{GIVER_ADDR}\",\"amount\":1111111}} --abi {GIVER_ABI}"
     ))?;
     run_command_and_decode_json(&format!(
-        "callx --addr {} sendGrams --dest {} --amount 1111111 --abi {}",
-        GIVER_ADDR, GIVER_ADDR, GIVER_ABI
+        "callx --addr {GIVER_ADDR} sendGrams --dest {GIVER_ADDR} --amount 1111111 --abi {GIVER_ABI}"
     ))?;
     run_command_and_decode_json(r#"config endpoint add randomurl randomendpoint"#)?;
     run_command_and_decode_json(r#"config endpoint print"#)?;
@@ -81,36 +78,32 @@ fn test_json_output_2() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(
         r#"decode body te6ccgEBAQEARAAAgwAAALqUCTqWL8OX7JivfJrAAzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMQAAAAAAAAAAAAAAAEeGjADA== --abi tests/samples/wallet.abi.json"#,
     )?;
-    run_command_and_decode_json(&format!("decode stateinit {}", GIVER_ADDR))?;
+    run_command_and_decode_json(&format!("decode stateinit {GIVER_ADDR}"))?;
     run_command_and_decode_json(
         r#"decode account data --abi tests/test_abi_v2.1.abi.json --tvc tests/decode_fields.tvc"#,
     )?;
     run_command_and_decode_json(r#"decode account boc tests/account.boc"#)?;
     run_command_and_decode_json(&format!(
-        "fee deploy --abi {} --sign {} {} {{}}",
-        DEPOOL_ABI, key_path, DEPOOL_TVC
+        "fee deploy --abi {DEPOOL_ABI} --sign {key_path} {DEPOOL_TVC} {{}}"
     ))?;
     run_command_and_decode_json(&format!(
-        "deploy --abi {} --sign {} {} {{}}",
-        DEPOOL_ABI, key_path, DEPOOL_TVC
+        "deploy --abi {DEPOOL_ABI} --sign {key_path} {DEPOOL_TVC} {{}}"
     ))?;
 
     let depool_addr = generate_key_and_address(key_path, DEPOOL_TVC, DEPOOL_ABI)?;
     giver_v3(&depool_addr);
     run_command_and_decode_json(&format!(
-        "deployx --abi {} --keys {} {}",
-        DEPOOL_ABI, key_path, DEPOOL_TVC
+        "deployx --abi {DEPOOL_ABI} --keys {key_path} {DEPOOL_TVC}"
     ))?;
     run_command_and_decode_json(&format!(
-        "deploy_message --raw --abi {} -o fakeDepool.msg --sign {} {} {{}}",
-        DEPOOL_ABI, key_path, DEPOOL_TVC
+        "deploy_message --raw --abi {DEPOOL_ABI} -o fakeDepool.msg --sign {key_path} {DEPOOL_TVC} {{}}"
     ))?;
     run_command_and_decode_json(
         r#"dump account 841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94"#,
     )?;
-    let command = format!("run --abi {} {} getData {{}}", DEPOOL_ABI, depool_addr);
+    let command = format!("run --abi {DEPOOL_ABI} {depool_addr} getData {{}}");
     run_command_and_decode_json(&command)?;
-    let command = format!("runx --abi {} --addr {} getData ", DEPOOL_ABI, depool_addr);
+    let command = format!("runx --abi {DEPOOL_ABI} --addr {depool_addr} getData ");
     run_command_and_decode_json(&command)?;
 
     fs::remove_file(key_path)?;
@@ -130,10 +123,9 @@ fn test_json_output_3() -> Result<(), Box<dyn std::error::Error>> {
     _run_command_and_decode_json(r#"-c 123.conf --url net.ton.dev getconfig 1"#, false)?;
     _run_command_and_decode_json(r#"-c 123.conf --url net.ton.dev getconfig"#, false)?;
     fs::remove_file("123.conf")?;
-    run_command_and_decode_json(&format!("fee storage {}", GIVER_ADDR))?;
+    run_command_and_decode_json(&format!("fee storage {GIVER_ADDR}"))?;
     run_command_and_decode_json(&format!(
-        "fee call {} sendGrams {{\"dest\":\"{}\",\"amount\":1111111}} --abi {}",
-        GIVER_ADDR, GIVER_ADDR, GIVER_ABI
+        "fee call {GIVER_ADDR} sendGrams {{\"dest\":\"{GIVER_ADDR}\",\"amount\":1111111}} --abi {GIVER_ABI}"
     ))?;
     run_command_and_decode_json(
         r#"genaddr tests/samples/wallet.tvc --genkey tests/json_test1.key"#,
@@ -150,20 +142,18 @@ fn test_json_output_3() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(
         r#"message 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94 sendTransaction {"dest":"0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94","value":1000000000,"bounce":true} --abi tests/samples/wallet.abi.json --raw"#,
     )?;
-    run_command_and_decode_json(&format!("multisig deploy -k {} -l 1000000000", key_path))?;
+    run_command_and_decode_json(&format!("multisig deploy -k {key_path} -l 1000000000"))?;
     run_command_and_decode_json(
         r#"nodeid --pubkey cde8fbf86c44e4ed2095f83b6f3c97b7aec55a77e06e843f8b9ffeab66ad4b32"#,
     )?;
     run_command_and_decode_json(r#"nodeid --keypair tests/samples/exp.json"#)?;
     run_command_and_decode_json(&format!(
-        "proposal vote 0:28a3738f08f5b3410e92aab20f702d64160e2891aaaed881f27d59ff518078d1 12313 {}",
-        key_path
+        "proposal vote 0:28a3738f08f5b3410e92aab20f702d64160e2891aaaed881f27d59ff518078d1 12313 {key_path}"
     ))?;
     run_command_and_decode_json(r#"runget --boc tests/account_fift.boc past_election_ids"#)?;
     run_command_and_decode_json(r#"sendfile fakeDepool1.msg"#)?;
     run_command_and_decode_json(&format!(
-        "debug call {} sendGrams {{\"dest\":\"{}\",\"amount\":1111111}} --abi {} -c tests/config.boc",
-        GIVER_ADDR, GIVER_ADDR, GIVER_ABI
+        "debug call {GIVER_ADDR} sendGrams {{\"dest\":\"{GIVER_ADDR}\",\"amount\":1111111}} --abi {GIVER_ABI} -c tests/config.boc"
     ))?;
     run_command_and_decode_json("convert tokens 0.123456789")?;
     run_command_and_decode_json("version")?;
@@ -178,30 +168,24 @@ fn test_json_output_4() -> Result<(), Box<dyn std::error::Error>> {
         "account 841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a23",
     )?;
     run_command_and_decode_json(&format!(
-        "body --abi {} addOrdinaryStake {{\"stake1\":65535}}",
-        DEPOOL_ABI
+        "body --abi {DEPOOL_ABI} addOrdinaryStake {{\"stake1\":65535}}"
     ))?;
     run_command_and_decode_json("convert tokens 0.12345678a")?;
     run_command_and_decode_json(&format!(
-        "call 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a95 sendGrams {{\"dest\":\"0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94\",\"amount\":1111111}} --abi {}",
-        GIVER_ABI
+        "call 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a95 sendGrams {{\"dest\":\"0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94\",\"amount\":1111111}} --abi {GIVER_ABI}"
     ))?;
     run_command_and_decode_json(&format!(
-        "callx --addr 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a95 sendGrams --dest 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94 --amount 1111111 --abi {}",
-        GIVER_ABI
+        "callx --addr 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a95 sendGrams --dest 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94 --amount 1111111 --abi {GIVER_ABI}"
     ))?;
     run_command_and_decode_json(r#"config endpoint remove random"#)?;
     run_command_and_decode_json(&format!(
-        "decode msg tests/samples/wallet.boc --abi {}",
-        DEPOOL_ABI
+        "decode msg tests/samples/wallet.boc --abi {DEPOOL_ABI}"
     ))?;
     run_command_and_decode_json(&format!(
-        "decode msg tests/account_fift.tvc --abi {}",
-        DEPOOL_ABI
+        "decode msg tests/account_fift.tvc --abi {DEPOOL_ABI}"
     ))?;
     run_command_and_decode_json(&format!(
-        "decode body te6ccgEBAQEARAAAgwAAALqUCTqWL8OX7JivfJrAAzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMQAAAAAAAAAAAAAAAEeGjADA== --abi {}",
-        DEPOOL_ABI
+        "decode body te6ccgEBAQEARAAAgwAAALqUCTqWL8OX7JivfJrAAzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMQAAAAAAAAAAAAAAAEeGjADA== --abi {DEPOOL_ABI}"
     ))?;
     run_command_and_decode_json(
         r#"decode stateinit 841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a65"#,
@@ -218,20 +202,16 @@ fn test_json_output_4() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_json_output_5() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(&format!(
-        "fee deploy --abi tests/samples/fakeDepool.abi.json --sign {} tests/samples/fakeDepool.tvc {{}}",
-        GIVER_V2_KEY
+        "fee deploy --abi tests/samples/fakeDepool.abi.json --sign {GIVER_V2_KEY} tests/samples/fakeDepool.tvc {{}}"
     ))?;
     run_command_and_decode_json(&format!(
-        "deploy --abi tests/samples/fakeDepool.abi.json --sign {} tests/samples/fakeDepool.tvc {{}}",
-        GIVER_V2_KEY
+        "deploy --abi tests/samples/fakeDepool.abi.json --sign {GIVER_V2_KEY} tests/samples/fakeDepool.tvc {{}}"
     ))?;
     run_command_and_decode_json(&format!(
-        "deployx --abi tests/samples/fakeDepool.abi.json --keys {} tests/samples/fakeDepool.tvc ",
-        GIVER_V2_KEY
+        "deployx --abi tests/samples/fakeDepool.abi.json --keys {GIVER_V2_KEY} tests/samples/fakeDepool.tvc "
     ))?;
     run_command_and_decode_json(&format!(
-        "deploy_message --raw --abi tests/samples/fakeDepool.abi.json --sign {} tests/account.boc {{}}",
-        GIVER_V2_KEY
+        "deploy_message --raw --abi tests/samples/fakeDepool.abi.json --sign {GIVER_V2_KEY} tests/account.boc {{}}"
     ))?;
     run_command_and_decode_json(
         r#"dump config 841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94.boc"#,
@@ -243,8 +223,7 @@ fn test_json_output_5() -> Result<(), Box<dyn std::error::Error>> {
         r#"fee call 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a95 sendGrams {"dest":"0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94","amount":1111111} --abi tests/samples/giver.abi.json"#,
     )?;
     run_command_and_decode_json(&format!(
-        "genaddr tests/account.boc --abi tests/samples/wallet.abi.json --setkey {}",
-        GIVER_V2_KEY
+        "genaddr tests/account.boc --abi tests/samples/wallet.abi.json --setkey {GIVER_V2_KEY}"
     ))?;
     // run_command_and_decode_json(r#"genpubkey "jar denial ozone coil heart tattoo
     // science stay wire about act""#)?;
@@ -252,16 +231,16 @@ fn test_json_output_5() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(
         r#"message 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94 sendansaction {"dest":"0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94","value":1000000000,"bounce":true} --abi tests/samples/wallet.abi.json --raw"#,
     )?;
-    run_command_and_decode_json(&format!("multisig deploy -k {}", GIVER_V2_KEY))?;
-    run_command_and_decode_json(&format!("multisig deploy -k {} -l 1000000000", GIVER_V2_KEY))?;
+    run_command_and_decode_json(&format!("multisig deploy -k {GIVER_V2_KEY}"))?;
+    run_command_and_decode_json(&format!("multisig deploy -k {GIVER_V2_KEY} -l 1000000000"))?;
     run_command_and_decode_json(r#"nodeid --pubkey cde8fbf86c"#)?;
     run_command_and_decode_json(r#"nodeid --keypair tests/account.boc"#)?;
     // run_command_and_decode_json(&format!("proposal vote 0:28a3738f08f5b3410e92aab20f702d64160e2891aaaed881f27d59ff518078d1 12313 {}", GIVER_V2_KEY))?;
     // run_command_and_decode_json(r#"proposal decode 0:28a3738f08f5b3410e92aab20f702d64160e2891aaaed881f27d59ff518078d1 12313"#)?;
-    let command = format!("run --abi tests/samples/fakeDepool.abi.json {} getDat {{}}", GIVER_ADDR);
+    let command = format!("run --abi tests/samples/fakeDepool.abi.json {GIVER_ADDR} getDat {{}}");
     run_command_and_decode_json(&command)?;
     let command =
-        format!("runx --abi tests/samples/fakeDepool.abi.json --addr {} gtData ", GIVER_ADDR);
+        format!("runx --abi tests/samples/fakeDepool.abi.json --addr {GIVER_ADDR} gtData ");
     run_command_and_decode_json(&command)?;
     run_command_and_decode_json(r#"runget --boc tests/account_fift.boc past_election_is"#)?;
     run_command_and_decode_json(r#"send --abi tests/samples/fakeDepool.abi.json 65465"#)?;

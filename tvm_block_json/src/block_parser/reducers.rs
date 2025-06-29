@@ -22,7 +22,7 @@ impl ReduceConfig {
         let config = if config.starts_with('{') {
             config.trim_start_matches('{').to_string()
         } else {
-            format!("{}}}", config)
+            format!("{config}}}")
         };
         let spaced = config.replace('{', " { ").replace('}', " } ");
 
@@ -62,8 +62,7 @@ impl ReduceConfig {
                     .is_some()
                 {
                     return Err(BlockParsingError::InvalidData(format!(
-                        "invalid field name {}",
-                        field
+                        "invalid field name {field}"
                     ))
                     .into());
                 }
@@ -129,8 +128,7 @@ impl JsonFieldsReducer {
             Value::Null => value,
             Value::Object(map) => Value::Object(Self::reduce_fields(fields, map)?),
             _ => Err(BlockParsingError::InvalidData(format!(
-                "JSON object expected, received value: {}",
-                value
+                "JSON object expected, received value: {value}"
             )))?,
         })
     }

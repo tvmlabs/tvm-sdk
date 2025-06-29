@@ -47,7 +47,7 @@ pub fn gen_seed_phrase() -> Result<String, String> {
             ..Default::default()
         },
     )
-    .map_err(|e| format!("{}", e))
+    .map_err(|e| format!("{e}"))
     .map(|r| r.phrase)
 }
 
@@ -62,7 +62,7 @@ pub fn generate_keypair_from_mnemonic(mnemonic: &str) -> Result<KeyPair, String>
             ..Default::default()
         },
     )
-    .map_err(|e| format!("{}", e))?;
+    .map_err(|e| format!("{e}"))?;
 
     let hdk_root = hdkey_derive_from_xprv_path(
         client.clone(),
@@ -72,23 +72,23 @@ pub fn generate_keypair_from_mnemonic(mnemonic: &str) -> Result<KeyPair, String>
             ..Default::default()
         },
     )
-    .map_err(|e| format!("{}", e))?;
+    .map_err(|e| format!("{e}"))?;
 
     let secret = hdkey_secret_from_xprv(
         client.clone(),
         ParamsOfHDKeySecretFromXPrv { xprv: hdk_root.xprv.clone(), ..Default::default() },
     )
-    .map_err(|e| format!("{}", e))?;
+    .map_err(|e| format!("{e}"))?;
 
     let mut keypair: KeyPair = nacl_sign_keypair_from_secret_key(
         client,
         ParamsOfNaclSignKeyPairFromSecret { secret: secret.secret.clone(), ..Default::default() },
     )
-    .map_err(|e| format!("failed to get KeyPair from secret key: {}", e))?;
+    .map_err(|e| format!("failed to get KeyPair from secret key: {e}"))?;
 
     // special case if secret contains public key too.
     let secret =
-        hex::decode(&keypair.secret).map_err(|e| format!("failed to decode the keypair: {}", e))?;
+        hex::decode(&keypair.secret).map_err(|e| format!("failed to decode the keypair: {e}"))?;
     if secret.len() > 32 {
         keypair.secret = hex::encode(&secret[..32]);
     }
@@ -101,10 +101,10 @@ pub fn generate_keypair_from_secret(secret: String) -> Result<KeyPair, String> {
         client,
         ParamsOfNaclSignKeyPairFromSecret { secret, ..Default::default() },
     )
-    .map_err(|e| format!("failed to get KeyPair from secret key: {}", e))?;
+    .map_err(|e| format!("failed to get KeyPair from secret key: {e}"))?;
     // special case if secret contains public key too.
     let secret =
-        hex::decode(&keypair.secret).map_err(|e| format!("failed to decode the keypair: {}", e))?;
+        hex::decode(&keypair.secret).map_err(|e| format!("failed to decode the keypair: {e}"))?;
     if secret.len() > 32 {
         keypair.secret = hex::encode(&secret[..32]);
     }
@@ -115,16 +115,16 @@ pub fn generate_mnemonic(keypath: Option<&str>, config: &Config) -> Result<(), S
     let mnemonic = gen_seed_phrase()?;
     if !config.is_json {
         println!("Succeeded.");
-        println!(r#"Seed phrase: "{}""#, mnemonic);
+        println!(r#"Seed phrase: "{mnemonic}""#);
     } else {
         println!("{{");
-        println!("  \"phrase\": \"{}\"", mnemonic);
+        println!("  \"phrase\": \"{mnemonic}\"");
         println!("}}");
     }
     if let Some(path) = keypath {
         generate_keypair(Some(path), Some(&mnemonic), config)?;
         if !config.is_json {
-            println!("Keypair saved to {}", path);
+            println!("Keypair saved to {path}");
         }
     }
     Ok(())
@@ -137,7 +137,7 @@ pub fn extract_pubkey(mnemonic: &str, is_json: bool) -> Result<(), String> {
         println!("Public key: {}", keypair.public);
         println!();
         qr2term::print_qr(&keypair.public)
-            .map_err(|e| format!("failed to print the QR code: {}", e))?;
+            .map_err(|e| format!("failed to print the QR code: {e}"))?;
         println!();
     } else {
         println!("{{");
@@ -160,7 +160,7 @@ pub fn generate_keypair(
             }
             let phrase = gen_seed_phrase()?;
             if !config.is_json {
-                println!(r#"Seed phrase: "{}""#, phrase);
+                println!(r#"Seed phrase: "{phrase}""#);
             }
             phrase
         }
@@ -172,20 +172,20 @@ pub fn generate_keypair(
         generate_keypair_from_secret(mnemonic)?
     };
     let keys_json = serde_json::to_string_pretty(&keys)
-        .map_err(|e| format!("failed to serialize the keypair: {}", e))?;
+        .map_err(|e| format!("failed to serialize the keypair: {e}"))?;
     if let Some(keys_path) = keys_path {
         let folder_path = keys_path.trim_end_matches(|c| c != '/').trim_end_matches('/');
         check_dir(folder_path)?;
         std::fs::write(keys_path, &keys_json)
-            .map_err(|e| format!("failed to create file with keys: {}", e))?;
+            .map_err(|e| format!("failed to create file with keys: {e}"))?;
         if !config.is_json {
-            println!("Keypair successfully saved to {}.", keys_path);
+            println!("Keypair successfully saved to {keys_path}.");
         }
     } else {
         if !config.is_json {
             print!("Keypair: ");
         }
-        println!("{}", keys_json);
+        println!("{keys_json}");
     }
     if !config.is_json {
         println!("Succeeded.");

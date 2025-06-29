@@ -101,7 +101,7 @@ fn test_out_msg_external_serialization() {
 
     let mut s = SliceData::load_builder(b).unwrap();
 
-    println!("out_msg slice = {}", s);
+    println!("out_msg slice = {s}");
 
     let mut out_msg_restored = OutMsg::None;
     out_msg_restored.read_from(&mut s).unwrap();
@@ -123,7 +123,7 @@ fn test_out_msg_immediately_serialization() {
 
     let mut s = SliceData::load_builder(b).unwrap();
 
-    println!("out_msg slice = {}", s);
+    println!("out_msg slice = {s}");
 
     let mut out_msg_restored = OutMsg::None;
     out_msg_restored.read_from(&mut s).unwrap();
@@ -152,7 +152,7 @@ fn test_out_msg_transit_serialization() {
 
     let mut s = SliceData::load_builder(b).unwrap();
 
-    println!("out_msg slice = {}", s);
+    println!("out_msg slice = {s}");
 
     let mut out_msg_restored = OutMsg::None;
     out_msg_restored.read_from(&mut s).unwrap();
@@ -172,7 +172,7 @@ fn test_out_msg_dequeue_serialization() {
 
     let mut s = SliceData::load_builder(b).unwrap();
 
-    println!("out_msg slice = {}", s);
+    println!("out_msg slice = {s}");
 
     let mut out_msg_restored = OutMsg::None;
     out_msg_restored.read_from(&mut s).unwrap();
@@ -197,7 +197,7 @@ fn test_out_msg_dequeue_short_serialization() {
 
     let mut s = SliceData::load_builder(b).unwrap();
 
-    println!("out_msg slice = {}", s);
+    println!("out_msg slice = {s}");
 
     let mut out_msg_restored = OutMsg::None;
     out_msg_restored.read_from(&mut s).unwrap();
@@ -226,7 +226,7 @@ fn test_serialization_out_msg_queue() {
         queue.insert(0, n, &out_msg_env, 11).unwrap();
     }
 
-    println!("{:?}", queue);
+    println!("{queue:?}");
     write_read_and_assert(queue);
 }
 

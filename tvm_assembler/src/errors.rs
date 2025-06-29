@@ -233,10 +233,10 @@ impl fmt::Display for OperationError {
         use OperationError::*;
         match self {
             Parameter(name, error) => {
-                write!(f, "Operation parameter {} has the following problem: {}", name, error)
+                write!(f, "Operation parameter {name} has the following problem: {error}")
             }
             TooManyParameters => write!(f, "Operation has too many parameters."),
-            LogicErrorInParameters(ref error) => write!(f, "Logic error {}", error),
+            LogicErrorInParameters(ref error) => write!(f, "Logic error {error}"),
             MissingRequiredParameters => {
                 write!(f, "Operation requires more parameters.")
             }
@@ -250,10 +250,10 @@ impl fmt::Display for OperationError {
             }
             CellComputeNotACell => write!(f, "Top of the stack is not a cell"),
             CellComputeInternal => write!(f, "Failed to compute the cell"),
-            FragmentIsAlreadyDefined(name) => write!(f, "Fragment {} is already defined", name),
-            FragmentIsNotDefined(name) => write!(f, "Fragment {} is not defined", name),
+            FragmentIsAlreadyDefined(name) => write!(f, "Fragment {name} is already defined"),
+            FragmentIsNotDefined(name) => write!(f, "Fragment {name} is not defined"),
             CodeDictConstruction => write!(f, "Failed to construct code dictionary"),
-            Internal(message) => write!(f, "{}", message),
+            Internal(message) => write!(f, "{message}"),
         }
     }
 }
@@ -262,13 +262,13 @@ impl fmt::Display for CompileError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             CompileError::Syntax(position, explanation) => {
-                write!(f, "{} Syntax error: {}", position, explanation)
+                write!(f, "{position} Syntax error: {explanation}")
             }
             CompileError::UnknownOperation(position, name) => {
-                write!(f, "{} Unknown operation {}", position, name)
+                write!(f, "{position} Unknown operation {name}")
             }
             CompileError::Operation(position, name, error) => {
-                write!(f, "Instruction {} at {}: {}", name, position, error)
+                write!(f, "Instruction {name} at {position}: {error}")
             }
         }
     }

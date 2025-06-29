@@ -53,7 +53,7 @@ async fn decode_call_parameters(
         ton,
         ParamsOfDecodeMessage { abi, message: msg.message.clone(), ..Default::default() },
     )
-    .map_err(|e| format!("couldn't decode message: {}", e))?;
+    .map_err(|e| format!("couldn't decode message: {e}"))?;
 
     Ok((result.name, format!("{:#}", result.value.unwrap_or(json!({})))))
 }
@@ -112,7 +112,7 @@ async fn build_json_from_params(
         params_json[input.name.clone()] = value;
     }
 
-    serde_json::to_string(&params_json).map_err(|e| format!("{}", e))
+    serde_json::to_string(&params_json).map_err(|e| format!("{e}"))
 }
 
 pub async fn emulate_locally(
@@ -126,12 +126,12 @@ pub async fn emulate_locally(
     if state_boc.is_err() {
         if is_fee {
             let addr = tvm_block::MsgAddressInt::from_str(addr)
-                .map_err(|e| format!("couldn't decode address: {}", e))?;
+                .map_err(|e| format!("couldn't decode address: {e}"))?;
             state = base64_encode(
                 &tvm_types::write_boc(&Account::with_address(addr).serialize().map_err(|e| {
-                    format!("couldn't create dummy account for deploy emulation: {}", e)
+                    format!("couldn't create dummy account for deploy emulation: {e}")
                 })?)
-                .map_err(|e| format!("failed to serialize account cell: {}", e))?,
+                .map_err(|e| format!("failed to serialize account cell: {e}"))?,
             );
         } else {
             return Err(state_boc.err().unwrap());
@@ -189,7 +189,7 @@ pub async fn send_message_and_wait(
         callback,
     )
     .await
-    .map_err(|e| format!("{:#}", e))?;
+    .map_err(|e| format!("{e:#}"))?;
 
     let value = serde_json::to_value(result).map_err(|e| format!("{e:#}"))?;
     Ok(value)
@@ -218,7 +218,7 @@ pub async fn send_message(
         callback,
     )
     .await
-    .map_err(|e| format!("{:#}", e))?;
+    .map_err(|e| format!("{e:#}"))?;
 
     serde_json::to_value(result).map_err(|e| format!("{e:#}"))
 }
@@ -236,7 +236,7 @@ pub async fn process_message(
             message: _,
         } = event
         {
-            println!("MessageId: {}", message_id)
+            println!("MessageId: {message_id}")
         }
     };
     let res = if !config.is_json {
@@ -269,7 +269,7 @@ pub async fn call_contract_with_result(
     thread_id: Option<&str>,
 ) -> Result<Value, String> {
     let tvm_client = if config.debug_fail != *"None" {
-        init_debug_logger(&format!("call_{}_{}.log", addr, method))?;
+        init_debug_logger(&format!("call_{addr}_{method}.log"))?;
         create_client(config)?
     } else {
         create_client_verbose(config)?
@@ -297,7 +297,7 @@ pub async fn call_contract_with_client(
 
     let encoded_message = encode_message(tvm_client.clone(), msg_params.clone())
         .await
-        .map_err(|e| format!("failed to create inbound message: {}", e))?;
+        .map_err(|e| format!("failed to create inbound message: {e}"))?;
 
     if !config.is_json {
         println!("MessageId: {}", encoded_message.message_id);
@@ -317,9 +317,9 @@ pub async fn call_contract_with_client(
 pub fn print_json_result(result: Value, config: &Config) -> Result<(), String> {
     if !result.is_null() {
         if !config.is_json {
-            println!("Result: {:#}", result);
+            println!("Result: {result:#}");
         } else {
-            println!("{:#}", result);
+            println!("{result:#}");
         }
     }
     Ok(())
@@ -375,7 +375,7 @@ pub async fn call_contract_with_msg(
     if !config.is_json {
         println!("Succeeded.");
         if !result.is_null() {
-            println!("Result: {:#}", result);
+            println!("Result: {result:#}");
         }
     }
     Ok(())

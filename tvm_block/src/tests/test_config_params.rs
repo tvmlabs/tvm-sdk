@@ -97,7 +97,7 @@ fn test_config_param_18() {
     cp18.write_to_new_cell().expect_err("Empty ConfigParam18 can't be serialized");
 
     for i in 0..10 {
-        cp18.get(i).expect_err(&format!("param with index {} must not be present yet", i));
+        cp18.get(i).expect_err(&format!("param with index {i} must not be present yet"));
         cp18.insert(&get_storage_prices()).unwrap();
         cp18.get(i).unwrap();
         assert_eq!(cp18.len().unwrap(), i as usize + 1);

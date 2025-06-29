@@ -133,7 +133,7 @@ impl TransactionBoc {
     fn from(value: Value, message_id: &str, shard_block_id: &str) -> ClientResult<Self> {
         serde_json::from_value::<TransactionBoc>(value).map_err(|err| {
             Error::fetch_transaction_result_failed(
-                format!("Transaction can't be parsed: {}", err),
+                format!("Transaction can't be parsed: {err}"),
                 message_id,
                 shard_block_id,
             )
@@ -149,7 +149,7 @@ pub(crate) async fn fetch_account(
     let mut result = crate::net::query(
         context,
         crate::net::ParamsOfQuery {
-            query: format!("query account($address:String!){{blockchain{{account(address:$address){{info{{{}}}}}}}}}", result),
+            query: format!("query account($address:String!){{blockchain{{account(address:$address){{info{{{result}}}}}}}}}"),
             variables: Some(json!({
                 "address": address.to_string(),
             })),
@@ -177,7 +177,7 @@ async fn fetch_contract_balance(
     let account = fetch_account(context, address, "balance").await?;
 
     let balance: AccountBalance = serde_json::from_value(account)
-        .map_err(|err| Error::invalid_data(format!("can not parse account balance: {}", err)))?;
+        .map_err(|err| Error::invalid_data(format!("can not parse account balance: {err}")))?;
 
     Ok(balance.balance)
 }
