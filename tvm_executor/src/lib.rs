@@ -17,9 +17,6 @@ pub use transaction_executor::*;
 pub mod ordinary_transaction;
 pub use ordinary_transaction::OrdinaryTransactionExecutor;
 
-pub mod tick_tock_transaction;
-pub use tick_tock_transaction::TickTockTransactionExecutor;
-
 #[macro_use]
 pub mod error;
 pub use error::*;

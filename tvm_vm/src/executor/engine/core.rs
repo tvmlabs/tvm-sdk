@@ -125,6 +125,7 @@ pub struct Engine {
     execution_timeout: Option<Duration>,
 
     wasm_binary_root_path: String,
+    available_credit: i128
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -286,7 +287,16 @@ impl Engine {
             termination_deadline: None,
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
+            available_credit: 0,
         }
+    }
+
+    pub fn set_available_credit(&mut self, credit: i128) {
+        self.available_credit = credit;
+    }
+
+    pub fn get_available_credit(&mut self) -> i128 {
+        self.available_credit
     }
 
     pub fn set_block_related_flags(
