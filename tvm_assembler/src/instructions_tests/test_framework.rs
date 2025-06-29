@@ -289,9 +289,9 @@ impl<T: Into<TestCase>> Expects for T {
                 print_stack(&test_case, executor);
                 match message {
                     None => panic!("Expected failure: {exc_name}, however execution succeeded."),
-                    Some(msg) => panic!(
-                        "{msg}.\nExpected failure: {exc_name}, however execution succeeded."
-                    ),
+                    Some(msg) => {
+                        panic!("{msg}.\nExpected failure: {exc_name}, however execution succeeded.")
+                    }
                 }
             }
             Err(ref e) => {
@@ -301,9 +301,9 @@ impl<T: Into<TestCase>> Expects for T {
                             Some(msg) => panic!(
                                 "{msg2} - {msg}\nNon expected exception: {e}, expected: {exc_name}"
                             ),
-                            None => panic!(
-                                "{msg2}\nNon expected exception: {e}, expected: {exc_name}"
-                            ),
+                            None => {
+                                panic!("{msg2}\nNon expected exception: {e}, expected: {exc_name}")
+                            }
                         }
                     }
                 } else {

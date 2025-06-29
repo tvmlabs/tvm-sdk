@@ -1267,9 +1267,7 @@ impl Deserializable for McStateExtra {
         let mut flags = 0u16;
         flags.read_from(cell1)?; // 16 + 0
         if flags > 3 {
-            fail!(BlockError::InvalidData(format!(
-                "Invalid flags value ({flags}). Must be <= 3."
-            )))
+            fail!(BlockError::InvalidData(format!("Invalid flags value ({flags}). Must be <= 3.")))
         }
         self.validator_info.read_from(cell1)?; // 65 + 0
         self.prev_blocks.read_from(cell1)?; // 1 + 1

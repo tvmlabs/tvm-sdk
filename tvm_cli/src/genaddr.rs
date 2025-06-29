@@ -129,8 +129,7 @@ fn update_contract_state(
         .open(tvc_file)
         .map_err(|e| format!("unable to open contract file: {e}"))?;
 
-    let pubkey_object =
-        pubkey.try_into().map_err(|e| format!("unable to load public key: {e}"))?;
+    let pubkey_object = pubkey.try_into().map_err(|e| format!("unable to load public key: {e}"))?;
 
     let mut contract_image = if data_map_supported {
         ContractImage::from_state_init_and_key(&mut state_init, &pubkey_object)
@@ -161,9 +160,7 @@ fn update_contract_state(
     state_init
         .seek(std::io::SeekFrom::Start(0))
         .map_err(|e| format!("failed to access the tvc file: {e}"))?;
-    state_init
-        .write_all(&vec_bytes)
-        .map_err(|e| format!("failed to update the tvc file: {e}"))?;
+    state_init.write_all(&vec_bytes).map_err(|e| format!("failed to update the tvc file: {e}"))?;
 
     Ok(())
 }

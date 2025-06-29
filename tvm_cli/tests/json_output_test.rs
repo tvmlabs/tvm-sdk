@@ -181,9 +181,7 @@ fn test_json_output_4() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(&format!(
         "decode msg tests/samples/wallet.boc --abi {DEPOOL_ABI}"
     ))?;
-    run_command_and_decode_json(&format!(
-        "decode msg tests/account_fift.tvc --abi {DEPOOL_ABI}"
-    ))?;
+    run_command_and_decode_json(&format!("decode msg tests/account_fift.tvc --abi {DEPOOL_ABI}"))?;
     run_command_and_decode_json(&format!(
         "decode body te6ccgEBAQEARAAAgwAAALqUCTqWL8OX7JivfJrAAzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMQAAAAAAAAAAAAAAAEeGjADA== --abi {DEPOOL_ABI}"
     ))?;

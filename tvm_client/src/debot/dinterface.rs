@@ -135,9 +135,8 @@ pub trait DebotInterfaceExecutor {
 
 fn convert_return_args(abi: &str, fname: &str, ret_args: &mut Value) -> Result<(), String> {
     let contract = Contract::load(abi.as_bytes()).map_err(|e| format!("{e}"))?;
-    let func = contract
-        .function(fname)
-        .map_err(|_| format!("function with name '{fname}' not found"))?;
+    let func =
+        contract.function(fname).map_err(|_| format!("function with name '{fname}' not found"))?;
     let output = func.outputs.iter();
     for val in output {
         let pointer = "";

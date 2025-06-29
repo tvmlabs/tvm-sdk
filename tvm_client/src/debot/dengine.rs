@@ -229,9 +229,8 @@ impl DEngine {
         let result = self.run_debot_external("fetch", None).await;
         let mut context_vec: Vec<DContext> = if let Ok(res) = result {
             let mut output = res.return_value.unwrap_or(json!({}));
-            serde_json::from_value(output["contexts"].take()).map_err(|e| {
-                format!("failed to parse \"contexts\" returned from \"fetch\": {e}")
-            })?
+            serde_json::from_value(output["contexts"].take())
+                .map_err(|e| format!("failed to parse \"contexts\" returned from \"fetch\": {e}"))?
         } else {
             vec![]
         };

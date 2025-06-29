@@ -93,9 +93,8 @@ pub async fn get_account(
     if is_boc {
         let mut accounts = vec![];
         for path in addresses {
-            let account = Account::construct_from_file(&path).map_err(|e| {
-                format!(" failed to load account from the boc file {path}: {e}")
-            })?;
+            let account = Account::construct_from_file(&path)
+                .map_err(|e| format!(" failed to load account from the boc file {path}: {e}"))?;
             accounts.push(account);
         }
         if !config.is_json {

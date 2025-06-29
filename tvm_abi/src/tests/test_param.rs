@@ -235,10 +235,7 @@ fn test_empty_tuple_error() {
 
     let result = serde_json::from_str::<Param>(s).unwrap_err();
 
-    assert_eq!(
-        "Tuple description should contain non empty `components` field",
-        format!("{result}")
-    )
+    assert_eq!("Tuple description should contain non empty `components` field", format!("{result}"))
 }
 
 #[test]

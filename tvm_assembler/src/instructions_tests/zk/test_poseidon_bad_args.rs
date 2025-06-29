@@ -161,9 +161,7 @@ mod tests {
             (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
         let jwk = all_jwk
             .get(&JwkId::new(iss.clone(), kid.clone()))
-            .ok_or_else(|| {
-                ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})"))
-            })
+            .ok_or_else(|| ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})")))
             .unwrap();
 
         let max_epoch = 142; // data from the react test
@@ -358,9 +356,7 @@ mod tests {
             (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
         let jwk = all_jwk
             .get(&JwkId::new(iss.clone(), kid.clone()))
-            .ok_or_else(|| {
-                ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})"))
-            })
+            .ok_or_else(|| ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})")))
             .unwrap();
 
         let max_epoch = 142; // data from the react test
@@ -550,9 +546,7 @@ mod tests {
             (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
         let jwk = all_jwk
             .get(&JwkId::new(iss.clone(), kid.clone()))
-            .ok_or_else(|| {
-                ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})"))
-            })
+            .ok_or_else(|| ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})")))
             .unwrap();
 
         let max_epoch = 142; // data from the react test
@@ -741,9 +735,7 @@ mod tests {
             (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
         let jwk = all_jwk
             .get(&JwkId::new(iss.clone(), kid.clone()))
-            .ok_or_else(|| {
-                ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})"))
-            })
+            .ok_or_else(|| ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})")))
             .unwrap();
 
         let max_epoch = 142; // data from the react test
@@ -985,9 +977,7 @@ mod tests {
             (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
         let jwk = all_jwk
             .get(&JwkId::new(iss.clone(), kid.clone()))
-            .ok_or_else(|| {
-                ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})"))
-            })
+            .ok_or_else(|| ZkCryptoError::GeneralError(format!("JWK not found ({iss} - {kid})")))
             .unwrap();
 
         let max_epoch = 142; // data from the react test

@@ -1169,9 +1169,7 @@ impl PartialEq for Stack {
 
 impl fmt::Display for Stack {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(
-            &self.storage.iter().fold(String::new(), |acc, item| format!("{acc}{item}\n")),
-        )
+        f.write_str(&self.storage.iter().fold(String::new(), |acc, item| format!("{acc}{item}\n")))
     }
 }
 

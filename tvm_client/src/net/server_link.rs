@@ -457,11 +457,8 @@ fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
 }
 
 fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<Url> {
-    let original = if original.contains("://") {
-        original.to_string()
-    } else {
-        format!("http://{original}")
-    };
+    let original =
+        if original.contains("://") { original.to_string() } else { format!("http://{original}") };
     let mut rest_api_endpoint = Url::parse(&original).map_err(Error::parse_url_failed)?;
 
     let scheme = if use_https { "https" } else { "http" };
@@ -476,11 +473,8 @@ fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<
 }
 
 fn construct_bm_send_message_endpoint(original: &str, use_https: bool) -> ClientResult<String> {
-    let original = if original.contains("://") {
-        original.to_string()
-    } else {
-        format!("http://{original}")
-    };
+    let original =
+        if original.contains("://") { original.to_string() } else { format!("http://{original}") };
 
     let mut url = reqwest::Url::parse(&original).map_err(Error::parse_url_failed)?;
 

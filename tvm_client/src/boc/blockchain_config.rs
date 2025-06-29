@@ -84,9 +84,7 @@ pub(crate) fn extract_config_from_zerostate(
 ) -> ClientResult<tvm_block::ConfigParams> {
     let master = zerostate
         .read_custom()
-        .map_err(|err| {
-            Error::invalid_boc(format!("can not read `master` from zerostate: {err}"))
-        })?
+        .map_err(|err| Error::invalid_boc(format!("can not read `master` from zerostate: {err}")))?
         .ok_or(Error::inappropriate_block(
             "not a masterchain state. Only masterchain states contain blockchain configuration",
         ))?;

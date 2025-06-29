@@ -136,10 +136,8 @@ pub(crate) async fn find_last_shard_block(
                 .as_array()
                 .ok_or(Error::invalid_data("No `shard_hashes` field in masterchain block"))?;
 
-            let shard_block =
-                tvm_sdk::Contract::find_matching_shard(shards, address).map_err(|err| {
-                    Error::invalid_data(format!("find matching shard failed {err}"))
-                })?;
+            let shard_block = tvm_sdk::Contract::find_matching_shard(shards, address)
+                .map_err(|err| Error::invalid_data(format!("find matching shard failed {err}")))?;
             if shard_block.is_null() {
                 return Err(Error::invalid_data(format!(
                     "No matching shard for account {} in block {}",

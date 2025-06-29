@@ -599,8 +599,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
     let msg = trans
         .in_msg_cell()
         .map(|c| {
-            Message::construct_from_cell(c)
-                .map_err(|e| format!("failed to construct message: {e}"))
+            Message::construct_from_cell(c).map_err(|e| format!("failed to construct message: {e}"))
         })
         .transpose()?;
 
@@ -1166,10 +1165,8 @@ fn choose_transaction(transactions: Vec<TrDetails>) -> Result<String, String> {
     println!("\n\nEnter number of the chosen transaction (from 1 to {}):", transactions.len());
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
-    let chosen: usize = input
-        .trim()
-        .parse()
-        .map_err(|e| format!("Failed to parse user input as integer: {e}"))?;
+    let chosen: usize =
+        input.trim().parse().map_err(|e| format!("Failed to parse user input as integer: {e}"))?;
     if !(1..=transactions.len()).contains(&chosen) {
         return Err("Wrong transaction number".to_string());
     }
@@ -1538,11 +1535,8 @@ async fn make_sequence_diagram(
     writeln!(output, "@startuml").unwrap();
     for address in addresses {
         let (index, name) = &name_map[&address];
-        writeln!(
-            output,
-            "participant \"[[{url_account_prefix}{address} {name}]]\" as {index}"
-        )
-        .unwrap();
+        writeln!(output, "participant \"[[{url_account_prefix}{address} {name}]]\" as {index}")
+            .unwrap();
     }
 
     let mut last_own_index = None;

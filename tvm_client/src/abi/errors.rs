@@ -67,10 +67,7 @@ impl Error {
     }
 
     pub fn encode_deploy_message_failed<E: Display>(err: E) -> ClientError {
-        error(
-            ErrorCode::EncodeDeployMessageFailed,
-            format!("Encode deploy message failed: {err}"),
-        )
+        error(ErrorCode::EncodeDeployMessageFailed, format!("Encode deploy message failed: {err}"))
     }
 
     pub fn encode_run_message_failed<E: Display>(err: E, function: Option<&str>) -> ClientError {
@@ -79,10 +76,7 @@ impl Error {
     }
 
     pub fn attach_signature_failed<E: Display>(err: E) -> ClientError {
-        error(
-            ErrorCode::AttachSignatureFailed,
-            format!("Encoding message with sign failed: {err}"),
-        )
+        error(ErrorCode::AttachSignatureFailed, format!("Encoding message with sign failed: {err}"))
     }
 
     pub fn invalid_tvc_image<E: Display>(err: E) -> ClientError {

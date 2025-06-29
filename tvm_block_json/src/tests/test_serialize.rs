@@ -26,8 +26,7 @@ use super::*;
 include!("./test_common.rs");
 
 fn assert_json_eq_file(json: &str, name: &str) {
-    let expected =
-        std::fs::read_to_string(format!("src/tests/data/{name}-ethalon.json")).unwrap();
+    let expected = std::fs::read_to_string(format!("src/tests/data/{name}-ethalon.json")).unwrap();
     assert_json_eq(json, &expected, name);
 }
 
