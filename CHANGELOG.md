@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 - Change `mintshell` instruction. 
 - Refactor fee in executor
 
+### Update
+
+- Update CALCBMREWARDADJ. Rename into CALCBMMVREWARDADJ
+
 ## [2.18.1] - 2025-06-28
 
 ### New
