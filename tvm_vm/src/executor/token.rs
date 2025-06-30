@@ -639,7 +639,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
 }
 
 #[allow(clippy::excessive_precision)]
-pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Status {
+pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMMVREWARDADJ"))?;
     fetch_stack(engine, 5)?;
     let is_bm = engine.cmd.var(0).as_bool()?; 
