@@ -252,7 +252,7 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     iv[11] ^= records_received;
 
     let mut plaintext = decrypt(&server_application_key, &iv.try_into().unwrap(), &http_response[..len_of_first_packet]);
-
+    plaintext.pop();
     // Увеличиваем количество полученных записей
     records_received += 1;
 
