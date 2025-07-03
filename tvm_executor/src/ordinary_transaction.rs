@@ -132,6 +132,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let gas_config = self.config().get_gas_config(false);
+        let mut msg_balance_convert = 0;
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
             if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
@@ -159,7 +160,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         value = VarUInteger32::from(u64::MAX);
                     }
                     if value != VarUInteger32::from(0) {
-                        msg_balance.grams += Grams::from(value.value().iter_u64_digits().collect::<Vec<u64>>()[0]);
+                        msg_balance_convert = value.value().iter_u64_digits().collect::<Vec<u64>>()[0];
+                        msg_balance.grams += Grams::from(msg_balance_convert);
                         msg_balance.set_other(2, 0)?;
                     }
                 }
@@ -447,6 +449,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             {
                 log::debug!(target: "executor", "bounce_phase");
                 msg_balance.grams += burned;
+                if Grams::from(msg_balance_convert) > msg_balance.grams {
+                    msg_balance.grams = Grams::zero();
+                } else {
+                    msg_balance.grams -= Grams::from(msg_balance_convert);
+                }
+                msg_balance.set_other(2, msg_balance_convert.into())?;                
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,
