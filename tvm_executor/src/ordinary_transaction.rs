@@ -158,8 +158,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     if value > VarUInteger32::from(u64::MAX) {
                         value = VarUInteger32::from(u64::MAX);
                     }
-                    msg_balance.grams += Grams::from(value.value().iter_u64_digits().collect::<Vec<u64>>()[0]);
-                    msg_balance.set_other(2, 0)?;
+                    if value != VarUInteger32::from(0) {
+                        msg_balance.grams += Grams::from(value.value().iter_u64_digits().collect::<Vec<u64>>()[0]);
+                        msg_balance.set_other(2, 0)?;
+                    }
                 }
             } 
         }
