@@ -1745,7 +1745,7 @@ fn reserve_action_handler(
             *need_to_reserve = 0;
         }
     } else {
-        if acc_remaining_balance.grams - val.grams < Grams::from(*need_to_reserve) {
+        if acc_remaining_balance.grams < Grams::from(*need_to_reserve) + val.grams {
             return Err(RESULT_CODE_INVALID_BALANCE);
         }
         if *need_to_reserve != 0 {
