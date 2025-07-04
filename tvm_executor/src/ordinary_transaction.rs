@@ -444,17 +444,19 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         };
         
         if description.aborted && !is_ext_msg && bounce {
+            if Grams::from(msg_balance_convert) > msg_balance.grams {
+                msg_balance_convert -= msg_balance.grams.as_u64_quiet();
+                msg_balance.grams = Grams::zero();
+                msg_balance.set_other(2, msg_balance_convert.into())?;     
+            } else {
+                msg_balance.grams -= Grams::from(msg_balance_convert);
+                msg_balance.set_other(2, msg_balance_convert.into())?;     
+            }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
                 log::debug!(target: "executor", "bounce_phase");
-                msg_balance.grams += burned;
-                if Grams::from(msg_balance_convert) > msg_balance.grams {
-                    msg_balance.grams = Grams::zero();
-                } else {
-                    msg_balance.grams -= Grams::from(msg_balance_convert);
-                }
-                msg_balance.set_other(2, msg_balance_convert.into())?;                
+                msg_balance.grams += burned;           
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,
