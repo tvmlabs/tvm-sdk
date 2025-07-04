@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.18.2] - 2025-07-04
+
+### Fixes
+- Fixed `runwasm` and `runwasmconcatmultiarg` causing panic on using invalid hash.
+
 ## [2.18.1] - 2025-06-28
 
 ### New
