@@ -24,6 +24,7 @@ use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
+use tvm_block::VarUInteger32;
 use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::Serializable;
@@ -81,7 +82,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
-        minted_shell: &mut u128,
+        minted_shell: &mut i128,
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
@@ -131,6 +132,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let gas_config = self.config().get_gas_config(false);
+        let mut msg_balance_convert = 0;
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         if let Some(h) = in_msg.int_header() {
             if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
@@ -152,6 +154,18 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 need_to_burn = msg_balance.grams;
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
+            if h.is_exchange {
+                if let Ok(Some(mut value)) = msg_balance.get_other(2) {
+                    if value > VarUInteger32::from(u64::MAX) {
+                        value = VarUInteger32::from(u64::MAX);
+                    }
+                    if value != VarUInteger32::from(0) {
+                        msg_balance_convert = value.value().iter_u64_digits().collect::<Vec<u64>>()[0];
+                        msg_balance.grams += Grams::from(msg_balance_convert);
+                        msg_balance.set_other(2, 0)?;
+                    }
+                }
+            } 
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
         if !ihr_delivered {
@@ -188,16 +202,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 
         // first check if contract can pay for importing external message
         if is_ext_msg && !is_special {
-            // extranal message comes serialized
-            let in_fwd_fee = match params.is_same_thread_id {
-                true => Grams::zero(),
-                false => self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?,
-            };
-
-            let credit: Grams = (gas_config.gas_limit * gas_config.gas_price / 65536).into();
-            need_to_burn += credit;
-            acc_balance.grams += credit;
-
+            let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
                 fail!(ExecutorError::NoFundsToImportMsg)
@@ -228,8 +233,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             &mut tr,
             is_masterchain,
             is_special,
-            params.available_credit,
-            minted_shell,
             is_due,
         ) {
             Ok(storage_ph) => {
@@ -374,7 +377,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         is_special,
                         params.available_credit,
                         minted_shell,
-                        need_to_burn.as_u64_quiet(),
+                        need_to_burn,
                         message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
@@ -392,11 +395,21 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     }
                 } else {
                     log::debug!(target: "executor", "compute_phase: failed");
+                    if acc_balance.grams >= need_to_burn {
+                        acc_balance.grams -= need_to_burn;
+                    } else {
+                        acc_balance.grams = Grams::zero();
+                    }
                     None
                 }
             }
             TrComputePhase::Skipped(skipped) => {
                 log::debug!(target: "executor", "compute_phase: skipped reason {:?}", skipped.reason);
+                if acc_balance.grams >= need_to_burn {
+                    acc_balance.grams -= need_to_burn;
+                } else {
+                    acc_balance.grams = Grams::zero();
+                }
                 if is_ext_msg {
                     fail!(ExecutorError::ExtMsgComputeSkipped(skipped.reason.clone()))
                 }
@@ -429,33 +442,21 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 true
             }
         };
-        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_balance, need_to_burn);
-        if acc_balance.grams >= need_to_burn {
-            acc_balance.grams -= need_to_burn;
-        } else {
-            description.aborted = true;
-            out_msgs = Vec::new();
-            copyleft = None;
-            acc_balance.grams = Grams::zero();
-        }
-        // log::debug!(target: "executor", "Desciption.aborted {}",
-        // description.aborted); if description.aborted && is_ext_msg {
-        // log::debug!(target: "executor", "restore balance {} => {}",
-        // acc_balance.grams, original_acc_balance.grams); acc_balance =
-        // original_acc_balance.clone(); if !is_special {
-        // let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
-        // log::debug!(target: "executor", "import message fee: {}, acc_balance: {}",
-        // in_fwd_fee, acc_balance.grams); if !acc_balance.grams.sub(&
-        // in_fwd_fee)? { acc_balance.grams = Grams::zero();
-        // }
-        // }
-        // }
+        
         if description.aborted && !is_ext_msg && bounce {
+            if Grams::from(msg_balance_convert) > msg_balance.grams {
+                msg_balance_convert -= msg_balance.grams.as_u64_quiet();
+                msg_balance.grams = Grams::zero();
+                msg_balance.set_other(2, msg_balance_convert.into())?;     
+            } else {
+                msg_balance.grams -= Grams::from(msg_balance_convert);
+                msg_balance.set_other(2, msg_balance_convert.into())?;     
+            }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
                 log::debug!(target: "executor", "bounce_phase");
-                msg_balance.grams += burned;
+                msg_balance.grams += burned;           
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,
