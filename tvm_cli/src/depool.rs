@@ -277,10 +277,10 @@ impl<'a> DepoolCmd<'a> {
             }
         };
         let wperiod = u32::from_str_radix(withdrawal_period, 10)
-            .map_err(|e| format!("invalid withdrawal period: {}", e))
+            .map_err(|e| format!("invalid withdrawal period: {e}"))
             .and_then(period_checker)?;
         let tperiod = u32::from_str_radix(total_period, 10)
-            .map_err(|e| format!("invalid total period: {}", e))
+            .map_err(|e| format!("invalid total period: {e}"))
             .and_then(period_checker)?;
         let wp = wperiod * 86400;
         let tp = tperiod * 86400;
@@ -406,7 +406,7 @@ impl<'a> DepoolCmd<'a> {
             },
         )
         .await
-        .map_err(|e| println!("failed to query message: {}", e));
+        .map_err(|e| println!("failed to query message: {e}"));
 
         if message.is_err() {
             println!(
@@ -452,7 +452,7 @@ impl<'a> DepoolCmd<'a> {
                 },
             )
             .await
-            .map_err(|e| println!("failed to query answer: {}", e));
+            .map_err(|e| println!("failed to query answer: {e}"));
             if message.is_ok() {
                 let message = message.unwrap().result;
                 println!("\nAnswer: ");
@@ -460,18 +460,18 @@ impl<'a> DepoolCmd<'a> {
                     print_message(client.clone(), &message, PARTICIPANT_ABI, true).await?;
                 if name == "receiveAnswer" {
                     let args: serde_json::Value = serde_json::from_str(&args)
-                        .map_err(|e| format!("failed to deserialize args: {}", e))?;
+                        .map_err(|e| format!("failed to deserialize args: {e}"))?;
                     let status = args["errcode"]
                         .as_str()
                         .ok_or("failed to serialize the error code")?
                         .parse::<u32>()
-                        .map_err(|e| format!("failed to parse the error code: {}", e))?;
+                        .map_err(|e| format!("failed to parse the error code: {e}"))?;
                     let comment =
                         args["comment"].as_str().ok_or("failed to serialize the comment")?;
                     if statuses.contains_key(&status) {
                         println!("Answer status: {}\nComment: {}", statuses[&status], comment);
                     } else {
-                        println!("Answer status: Unknown({})\nComment: {}", status, comment);
+                        println!("Answer status: Unknown({status})\nComment: {comment}");
                     }
                 }
                 println!();
@@ -486,14 +486,14 @@ impl<'a> DepoolCmd<'a> {
     fn depool_fee(config: &Config) -> Result<u64, String> {
         let depool_fee = config.depool_fee.clone().to_string();
         u64::from_str_radix(&convert::convert_token(&depool_fee)?, 10)
-            .map_err(|e| format!(r#"failed to parse depool fee value: {}"#, e))
+            .map_err(|e| format!(r#"failed to parse depool fee value: {e}"#))
     }
 }
 
 fn parse_value(m: &ArgMatches) -> Result<u64, String> {
     let amount = m.value_of("VALUE").ok_or("value is not defined.".to_string())?;
     let amount = u64::from_str_radix(&convert::convert_token(amount)?, 10)
-        .map_err(|e| format!(r#"failed to parse stake value: {}"#, e))?;
+        .map_err(|e| format!(r#"failed to parse stake value: {e}"#))?;
     Ok(amount)
 }
 
@@ -503,7 +503,7 @@ pub async fn depool_command(m: &ArgMatches, config: &mut Config) -> Result<(), S
             .to_string(),
     )?;
     let depool =
-        load_ton_address(&depool, config).map_err(|e| format!("invalid depool address: {}", e))?;
+        load_ton_address(&depool, config).map_err(|e| format!("invalid depool address: {e}"))?;
 
     let mut set_wait_answer = |m: &ArgMatches| {
         if m.is_present("WAIT_ANSWER") {
@@ -578,14 +578,14 @@ async fn answer_command(m: &ArgMatches, config: &Config, depool: &str) -> Result
     let since = m
         .value_of("SINCE")
         .map(|s| {
-            u32::from_str_radix(s, 10).map_err(|e| format!(r#"cannot parse "since" option: {}"#, e))
+            u32::from_str_radix(s, 10).map_err(|e| format!(r#"cannot parse "since" option: {e}"#))
         })
         .transpose()?
         .unwrap_or(0);
 
     let ton = create_client_verbose(config)?;
     let wallet =
-        load_ton_address(&wallet, config).map_err(|e| format!("invalid depool address: {}", e))?;
+        load_ton_address(&wallet, config).map_err(|e| format!("invalid depool address: {e}"))?;
 
     let messages = tvm_client::net::query_collection(
         ton.clone(),
@@ -601,7 +601,7 @@ async fn answer_command(m: &ArgMatches, config: &Config, depool: &str) -> Result
         },
     )
     .await
-    .map_err(|e| format!("failed to query depool messages: {}", e))?;
+    .map_err(|e| format!("failed to query depool messages: {e}"))?;
     println!("{} answers found", messages.result.len());
     for messages in &messages.result {
         print_answer(ton.clone(), messages).await?;
@@ -627,7 +627,7 @@ async fn events_command(m: &ArgMatches, config: &Config, depool: &str) -> Result
         let since = since
             .map(|s| {
                 u32::from_str_radix(s, 10)
-                    .map_err(|e| format!(r#"cannot parse "since" option: {}"#, e))
+                    .map_err(|e| format!(r#"cannot parse "since" option: {e}"#))
             })
             .transpose()?
             .unwrap_or(0);
@@ -647,7 +647,7 @@ async fn print_event(ton: TonClient, event: &serde_json::Value) -> Result<(), St
         ParamsOfDecodeMessageBody {
             abi: load_abi(DEPOOL_ABI, &def_config)
                 .await
-                .map_err(|e| format!("failed to load depool abi: {}", e))?,
+                .map_err(|e| format!("failed to load depool abi: {e}"))?,
             body: body.to_owned(),
             is_internal: false,
             ..Default::default()
@@ -660,7 +660,7 @@ async fn print_event(ton: TonClient, event: &serde_json::Value) -> Result<(), St
         (
             result.name,
             serde_json::to_string(&result.value)
-                .map_err(|e| format!("failed to serialize the result: {}", e))?,
+                .map_err(|e| format!("failed to serialize the result: {e}"))?,
         )
     };
 
@@ -692,7 +692,7 @@ async fn get_events(config: &Config, depool: &str, since: u32) -> Result<(), Str
         },
     )
     .await
-    .map_err(|e| format!("failed to query depool events: {}", e))?;
+    .map_err(|e| format!("failed to query depool events: {e}"))?;
     println!("{} events found", events.result.len());
     for event in &events.result {
         print_event(ton.clone(), event).await?;
@@ -716,7 +716,7 @@ async fn wait_for_event(config: &Config, depool: &str) -> Result<(), String> {
         },
     )
     .await
-    .map_err(|e| println!("failed to query event: {}", e));
+    .map_err(|e| println!("failed to query event: {e}"));
     if event.is_ok() {
         print_event(ton.clone(), &event.unwrap().result).await?;
     }
@@ -737,7 +737,7 @@ async fn encode_body(func: &str, params: serde_json::Value) -> Result<String, St
         },
     )
     .await
-    .map_err(|e| format!("failed to encode body: {}", e))
+    .map_err(|e| format!("failed to encode body: {e}"))
     .map(|r| r.body)
 }
 

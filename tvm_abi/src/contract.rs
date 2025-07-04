@@ -59,21 +59,18 @@ impl AbiVersion {
         let parts: Vec<&str> = str_version.split('.').collect();
         if parts.len() < 2 {
             fail!(AbiError::InvalidVersion(format!(
-                "version must consist of two parts divided by `.` ({})",
-                str_version
+                "version must consist of two parts divided by `.` ({str_version})"
             )));
         }
 
         let major = parts[0].parse::<u8>().map_err(|err| {
             error!(AbiError::InvalidVersion(format!(
-                "can not parse version string: {} ({})",
-                err, str_version
+                "can not parse version string: {err} ({str_version})"
             )))
         })?;
         let minor = parts[1].parse::<u8>().map_err(|err| {
             error!(AbiError::InvalidVersion(format!(
-                "can not parse version string: {} ({})",
-                err, str_version
+                "can not parse version string: {err} ({str_version})"
             )))
         })?;
 
@@ -141,13 +138,12 @@ where
         Ok(string) => {
             if !string.starts_with("0x") {
                 return Err(D::Error::custom(format!(
-                    "Number parsing error: number must be prefixed with 0x ({})",
-                    string
+                    "Number parsing error: number must be prefixed with 0x ({string})"
                 )));
             }
 
             u32::from_str_radix(&string[2..], 16)
-                .map_err(|err| D::Error::custom(format!("Error parsing number: {}", err)))
+                .map_err(|err| D::Error::custom(format!("Error parsing number: {err}")))
                 .map(Some)
         }
     }
@@ -258,8 +254,7 @@ impl Contract {
 
         if !version.is_supported() {
             fail!(AbiError::InvalidVersion(format!(
-                "Provided ABI version is not supported ({})",
-                version
+                "Provided ABI version is not supported ({version})"
             )));
         }
 

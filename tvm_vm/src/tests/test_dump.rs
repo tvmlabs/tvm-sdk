@@ -66,11 +66,11 @@ fn test_dump_commands() {
         None,
         vec![],
     );
-    log::trace!("--- {} as str\n", int);
+    log::trace!("--- {int} as str\n");
     execute_dump_str(engine).unwrap();
-    log::trace!("--- {} as hex\n", int);
+    log::trace!("--- {int} as hex\n");
     execute_dump_hex(engine).unwrap();
-    log::trace!("--- {} as bin\n", int);
+    log::trace!("--- {int} as bin\n");
     execute_dump_bin(engine).unwrap();
     log::trace!("--- stack\n");
     execute_dump_stack(engine).unwrap();

@@ -28,8 +28,8 @@ fn main() {
         build_time = String::from_utf8(b_time.stdout).unwrap_or_else(|_| "Unknown".to_string());
     }
 
-    println!("cargo:rustc-env=BUILD_GIT_BRANCH={}", git_branch);
-    println!("cargo:rustc-env=BUILD_GIT_COMMIT={}", git_commit);
-    println!("cargo:rustc-env=BUILD_GIT_DATE={}", commit_date);
-    println!("cargo:rustc-env=BUILD_TIME={}", build_time);
+    println!("cargo:rustc-env=BUILD_GIT_BRANCH={git_branch}");
+    println!("cargo:rustc-env=BUILD_GIT_COMMIT={git_commit}");
+    println!("cargo:rustc-env=BUILD_GIT_DATE={commit_date}");
+    println!("cargo:rustc-env=BUILD_TIME={build_time}");
 }

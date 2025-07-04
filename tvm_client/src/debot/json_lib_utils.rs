@@ -158,7 +158,7 @@ fn try_replace_hyphens(obj: &mut JsonValue, pointer: &str, name: &str) -> Result
                     map.insert(name.to_owned(), value);
                 }
             }
-            None => Err(format!("key not found: \"{}\"", name))?,
+            None => Err(format!("key not found: \"{name}\""))?,
         }
     }
     Ok(())
@@ -198,7 +198,7 @@ pub(crate) fn bypass_json(
         ParamType::Array(ref elem_type) => {
             let elem_count = obj
                 .pointer(&pointer)
-                .ok_or_else(|| format!("\"{}\" not found", pointer))?
+                .ok_or_else(|| format!("\"{pointer}\" not found"))?
                 .as_array()
                 .ok_or_else(|| String::from("Failed to retrieve an array"))?
                 .len();
@@ -214,7 +214,7 @@ pub(crate) fn bypass_json(
         ParamType::Map(_, ref value) => {
             let keys: Vec<String> = obj
                 .pointer(&pointer)
-                .ok_or_else(|| format!("\"{}\" not found", pointer))?
+                .ok_or_else(|| format!("\"{pointer}\" not found"))?
                 .as_object()
                 .ok_or_else(|| String::from("Failed to retrieve an object"))?
                 .keys()

@@ -98,9 +98,7 @@ impl Terminal {
             } else {
                 println!("(Ctrl+D to exit)");
             }
-            std::io::stdin()
-                .read_to_string(&mut value)
-                .map_err(|e| format!("input error: {}", e))?;
+            std::io::stdin().read_to_string(&mut value).map_err(|e| format!("input error: {e}"))?;
             println!();
         } else {
             value = terminal_input(&prompt, |_val| Ok(()));
@@ -111,7 +109,7 @@ impl Terminal {
     fn input_int(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let value = terminal_input(&decode_prompt(args)?, |val| {
-            let _ = decode_abi_bigint(val).map_err(|e| format!("{}", e))?;
+            let _ = decode_abi_bigint(val).map_err(|e| format!("{e}"))?;
             Ok(())
         });
         Ok((answer_id, json!({ "value": value })))
@@ -120,7 +118,7 @@ impl Terminal {
     fn input_uint(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let value = terminal_input(&decode_prompt(args)?, |val| {
-            let _ = decode_abi_bigint(val).map_err(|e| format!("{}", e))?;
+            let _ = decode_abi_bigint(val).map_err(|e| format!("{e}"))?;
             Ok(())
         });
         Ok((answer_id, json!({ "value": value })))
@@ -178,7 +176,7 @@ impl DebotInterface for Terminal {
             "inputTons" => self.input_tokens(args),
             "inputBoolean" => self.input_boolean(args),
             "print" => self.print(args).await,
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

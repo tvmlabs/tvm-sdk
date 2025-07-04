@@ -154,9 +154,9 @@ impl ClientError {
                     .filter_map(|v| {
                         v.as_str().map(|s| {
                             if s.find(':').is_some() {
-                                format!("http://{}/bk/v2/messages", s)
+                                format!("http://{s}/bk/v2/messages")
                             } else {
-                                format!("http://{}:8600/bk/v2/messages", s)
+                                format!("http://{s}:8600/bk/v2/messages")
                             }
                         })
                     })

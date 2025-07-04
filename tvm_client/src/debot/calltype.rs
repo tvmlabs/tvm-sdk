@@ -81,8 +81,7 @@ impl TryFrom<MsgAddressExt> for Metadata {
                 let abi_ver = slice.get_next_byte().map_err(msg_err)?;
                 if (abi_ver & 0x0F) != SUPPORTED_ABI_VERSION {
                     return Err(msg_err(format!(
-                        "unsupported major ABI version in src address (must be {})",
-                        SUPPORTED_ABI_VERSION
+                        "unsupported major ABI version in src address (must be {SUPPORTED_ABI_VERSION})"
                     )));
                 }
                 let is_timestamp = slice.get_next_bit().map_err(msg_err)?;
@@ -139,7 +138,7 @@ pub fn prepare_ext_in_message(
 
     let result = tvm_client.env.block_on(future);
 
-    let (func_id, msg) = result.map_err(|e| format!("prepare_ext_in_message: {:?}", e))?;
+    let (func_id, msg) = result.map_err(|e| format!("prepare_ext_in_message: {e:?}"))?;
 
     Ok((func_id, meta.answer_id, meta.onerror_id, dst_addr, msg))
 }
@@ -357,7 +356,7 @@ impl ContractCall {
         }
         let browser = self.browser.clone();
         let callback = move |event| {
-            debug!("{:?}", event);
+            debug!("{event:?}");
             let browser = browser.clone();
             async move {
                 if let ProcessingEvent::WillSend {
@@ -379,7 +378,7 @@ impl ContractCall {
         )
         .await
         .map(|e| {
-            error!("{:?}", e);
+            error!("{e:?}");
             e
         })?;
         let msg_id =
@@ -431,7 +430,7 @@ impl ContractCall {
                     build_internal_message(&self.dest_addr, &self.debot_addr, new_body)
                 }
                 Err(e) => {
-                    debug!("Transaction failed: {:?}", e);
+                    debug!("Transaction failed: {e:?}");
                     self.build_error_answer_msg(e)
                 }
             }

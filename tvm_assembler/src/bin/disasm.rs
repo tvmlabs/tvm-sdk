@@ -70,7 +70,7 @@ enum Commands {
 
 fn main() -> ExitCode {
     if let Err(e) = main_impl() {
-        eprintln!("{}", e);
+        eprintln!("{e}");
         ExitCode::from(1)
     } else {
         ExitCode::from(0)
@@ -159,7 +159,7 @@ fn subcommand_fragment(fragment: String) -> Status {
     let code = loader.load(&mut slice, false)?;
     let text = code.print("", true, 12);
 
-    print!("{}", text);
+    print!("{text}");
     Ok(())
 }
 
@@ -173,7 +173,7 @@ fn subcommand_text(filename: String, stateinit: bool, full: bool) -> Status {
         println!("boc is empty");
         return Ok(());
     } else if roots_count > 1 {
-        println!("warning: boc contains {} roots, getting the first one", roots_count)
+        println!("warning: boc contains {roots_count} roots, getting the first one")
     }
 
     let root0 = roots.first().ok_or_else(|| tvm_types::error!("failed to get root 0"))?;

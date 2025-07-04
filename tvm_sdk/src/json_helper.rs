@@ -113,7 +113,7 @@ pub mod opt_cell {
     {
         if let Some(cell) = value {
             let str_value = base64_encode(tvm_types::boc::write_boc(cell).map_err(|err| {
-                serde::ser::Error::custom(format!("Cannot serialize BOC: {}", err))
+                serde::ser::Error::custom(format!("Cannot serialize BOC: {err}"))
             })?);
             serializer.serialize_some(&str_value)
         } else {
@@ -127,10 +127,10 @@ where
     D: serde::Deserializer<'de>,
 {
     let bytes = base64_decode(b64)
-        .map_err(|err| D::Error::custom(format!("error decode base64: {}", err)))?;
+        .map_err(|err| D::Error::custom(format!("error decode base64: {err}")))?;
 
     tvm_types::boc::read_single_root_boc(bytes)
-        .map_err(|err| D::Error::custom(format!("BOC read error: {}", err)))
+        .map_err(|err| D::Error::custom(format!("BOC read error: {err}")))
 }
 
 pub mod address {
@@ -143,7 +143,7 @@ pub mod address {
         let string = d.deserialize_string(StringVisitor)?;
 
         MsgAddressInt::from_str(&string)
-            .map_err(|err| D::Error::custom(format!("Address parsing error: {}", err)))
+            .map_err(|err| D::Error::custom(format!("Address parsing error: {err}")))
     }
 
     pub fn serialize<S>(value: &MsgAddressInt, serializer: S) -> Result<S::Ok, S::Error>
@@ -169,20 +169,19 @@ pub mod uint {
 
         if !string.starts_with("0x") {
             return Err(D::Error::custom(format!(
-                "Number parsing error: number must be prefixed with 0x ({})",
-                string
+                "Number parsing error: number must be prefixed with 0x ({string})"
             )));
         }
 
         u64::from_str_radix(&string[2..], 16)
-            .map_err(|err| D::Error::custom(format!("Error parsing number: {}", err)))
+            .map_err(|err| D::Error::custom(format!("Error parsing number: {err}")))
     }
 
     pub fn serialize<S>(value: &u64, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&format!("0x{:x}", value))
+        serializer.serialize_str(&format!("0x{value:x}"))
     }
 }
 
@@ -197,7 +196,7 @@ where
         Ok(2) => Ok(TransactionProcessingStatus::Proposed),
         Ok(3) => Ok(TransactionProcessingStatus::Finalized),
         Ok(4) => Ok(TransactionProcessingStatus::Refused),
-        Ok(num) => Err(D::Error::custom(format!("Invalid transaction state: {}", num))),
+        Ok(num) => Err(D::Error::custom(format!("Invalid transaction state: {num}"))),
     }
 }
 
@@ -221,7 +220,7 @@ where
         0 => Ok(AccStatusChange::Unchanged),
         1 => Ok(AccStatusChange::Frozen),
         2 => Ok(AccStatusChange::Deleted),
-        num => Err(D::Error::custom(format!("Invalid account change state: {}", num))),
+        num => Err(D::Error::custom(format!("Invalid account change state: {num}"))),
     }
 }
 
@@ -234,7 +233,7 @@ where
         Ok(0) => Ok(Some(ComputeSkipReason::NoState)),
         Ok(1) => Ok(Some(ComputeSkipReason::BadState)),
         Ok(2) => Ok(Some(ComputeSkipReason::NoGas)),
-        Ok(num) => Err(D::Error::custom(format!("Invalid skip reason: {}", num))),
+        Ok(num) => Err(D::Error::custom(format!("Invalid skip reason: {num}"))),
     }
 }
 
@@ -248,7 +247,7 @@ where
         0 => Ok(MessageType::Internal),
         1 => Ok(MessageType::ExternalInbound),
         2 => Ok(MessageType::ExternalOutbound),
-        num => Err(D::Error::custom(format!("Invalid message type: {}", num))),
+        num => Err(D::Error::custom(format!("Invalid message type: {num}"))),
     }
 }
 
@@ -266,7 +265,7 @@ pub mod account_status {
             1 => Ok(AccountStatus::AccStateActive),
             2 => Ok(AccountStatus::AccStateFrozen),
             3 => Ok(AccountStatus::AccStateNonexist),
-            num => Err(D::Error::custom(format!("Invalid account status: {}", num))),
+            num => Err(D::Error::custom(format!("Invalid account status: {num}"))),
         }
     }
 
@@ -299,5 +298,5 @@ where
     let string = d.deserialize_string(StringVisitor)?;
 
     u64::from_str_radix(&string, 16)
-        .map_err(|err| D::Error::custom(format!("Error parsing shard: {}", err)))
+        .map_err(|err| D::Error::custom(format!("Error parsing shard: {err}")))
 }

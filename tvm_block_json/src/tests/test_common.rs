@@ -22,7 +22,7 @@ fn assert_json_eq(json: &str, expected: &str, name: &str) {
         expected
     };
     if json != expected {
-        std::fs::write(format!("target/{}.json", name), json).unwrap();
+        std::fs::write(format!("target/{name}.json"), json).unwrap();
         panic!("json != expected")
     }
 }
