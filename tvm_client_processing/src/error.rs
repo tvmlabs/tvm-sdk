@@ -11,7 +11,7 @@ pub struct Error {
 
 impl Error {
     pub fn invalid_boc<E: Display>(err: E) -> Self {
-        Self::with_code_message(201, format!("Invalid BOC: {}", err))
+        Self::with_code_message(201, format!("Invalid BOC: {err}"))
     }
 }
 

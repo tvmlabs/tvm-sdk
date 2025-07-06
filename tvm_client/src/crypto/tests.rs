@@ -788,7 +788,7 @@ fn test_debug_keypair_secret_stripped() {
     );
 
     assert_eq!(
-        format!("{:?}", keypair),
+        format!("{keypair:?}"),
         "KeyPair { \
             public: \"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\", \
             secret: \"91234567...\" (64 chars) \
@@ -1476,7 +1476,7 @@ async fn test_crypto_box_derive_key_cache() -> tvm_types::Result<()> {
             .request_async_callback(
                 "crypto.create_crypto_box",
                 ParamsOfCreateCryptoBox {
-                    secret_encryption_salt: format!("{}{}", salt, i),
+                    secret_encryption_salt: format!("{salt}{i}"),
                     secret: CryptoBoxSecret::PredefinedSeedPhrase {
                         dictionary: MnemonicDictionary::English,
                         wordcount: 12,

@@ -20,8 +20,7 @@ pub fn compress_zstd(uncompressed: &[u8], level: Option<i32>) -> ClientResult<Ve
         Some(level) => {
             if !(1..=21).contains(&level) {
                 return Err(super::errors::Error::compression_error(format!(
-                    "Invalid compression level: {}",
-                    level
+                    "Invalid compression level: {level}"
                 )));
             }
             level

@@ -82,7 +82,7 @@ pub(crate) fn trace_callback(
     // }
     println!("\n--- Stack trace ------------------------");
     for item in info.stack.iter() {
-        println!("{}", item);
+        println!("{item}");
     }
     println!("----------------------------------------\n");
 }

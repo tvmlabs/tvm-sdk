@@ -14,9 +14,9 @@ use common::grep_address;
 
 fn get_debot_paths(name: &str) -> (String, String, String) {
     (
-        format!("tests/samples/{}.tvc", name),
-        format!("tests/samples/{}.abi.json", name),
-        format!("tests/{}.keys.json", name),
+        format!("tests/samples/{name}.tvc"),
+        format!("tests/samples/{name}.abi.json"),
+        format!("tests/{name}.keys.json"),
     )
 }
 
@@ -70,7 +70,7 @@ fn test_signing_box_interface() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.timeout(std::time::Duration::from_secs(2))
-        .write_stdin(format!("y\n{}", keys))
+        .write_stdin(format!("y\n{keys}"))
         .arg("debot")
         .arg("fetch")
         .arg(&addr);
@@ -104,7 +104,7 @@ fn test_userinfo() -> Result<(), Box<dyn std::error::Error>> {
         .arg(keys)
         .arg(&addr)
         .arg("setParams")
-        .arg(format!(r#"{{"wallet":"{}","key":"{}"}}"#, wallet, key));
+        .arg(format!(r#"{{"wallet":"{wallet}","key":"{key}"}}"#));
     cmd.assert().success();
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -162,7 +162,7 @@ fn test_encryptionboxes() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.timeout(std::time::Duration::from_secs(2))
-        .write_stdin(format!("y\n{}\n{}\n{}", keys, keys, keys))
+        .write_stdin(format!("y\n{keys}\n{keys}\n{keys}"))
         .arg("debot")
         .arg("fetch")
         .arg(&addr);

@@ -74,7 +74,7 @@ impl SigningBoxInput {
             decode_abi_bigint(elem.as_str()?).ok()?;
             Some(elem.as_str().unwrap().to_string())
         })?;
-        println!("{}", prompt);
+        println!("{prompt}");
         let result = self.processor.write().await.next_signing_box();
         match result {
             Err(ProcessorError::InterfaceCallNeeded) => {
@@ -85,7 +85,7 @@ impl SigningBoxInput {
                 self.handles.write().await.push(signing_box);
                 Ok((answer_id, json!({ "handle": handle.0})))
             }
-            Err(e) => Err(format!("{:?}", e)),
+            Err(e) => Err(format!("{e:?}")),
             Ok(handle) => Ok((answer_id, json!({ "handle": handle}))),
         }
     }
@@ -104,7 +104,7 @@ impl DebotInterface for SigningBoxInput {
     async fn call(&self, func: &str, args: &Value) -> InterfaceResult {
         match func {
             "get" => self.get(args).await,
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

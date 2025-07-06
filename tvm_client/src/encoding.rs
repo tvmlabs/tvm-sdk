@@ -127,7 +127,7 @@ pub(crate) fn base64_decode(base64: &str) -> ClientResult<Vec<u8>> {
 }
 
 pub(crate) fn long_num_to_json_string(num: u64) -> String {
-    format!("0x{:x}", num)
+    format!("0x{num:x}")
 }
 
 pub fn decode_abi_bigint(string: &str) -> ClientResult<BigInt> {

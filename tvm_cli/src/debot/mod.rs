@@ -123,9 +123,9 @@ async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     let is_json = config.is_json;
     let pipechain = if let Some(filename) = pipechain {
         let manifest_raw = std::fs::read_to_string(filename)
-            .map_err(|e| format!("failed to read pipechain: {}", e))?;
+            .map_err(|e| format!("failed to read pipechain: {e}"))?;
         serde_json::from_str(&manifest_raw)
-            .map_err(|e| format!("failed to parse pipechain: {}", e))?
+            .map_err(|e| format!("failed to parse pipechain: {e}"))?
     } else {
         PipeChain::new()
     };
@@ -136,7 +136,7 @@ async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
             if !is_json {
                 println!("Returned value:");
             }
-            println!("{:#}", arg);
+            println!("{arg:#}");
             Ok(())
         }
         Err(err) if err.contains("NoMoreChainlinks") => Ok(()),

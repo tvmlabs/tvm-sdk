@@ -351,9 +351,9 @@ impl TestClient {
         match Self::auth_project() {
             Some(project) => {
                 if endpoint.ends_with('/') {
-                    format!("{}{}", endpoint, project)
+                    format!("{endpoint}{project}")
                 } else {
-                    format!("{}/{}", endpoint, project)
+                    format!("{endpoint}/{project}")
                 }
             }
             None => endpoint.to_string(),
@@ -400,7 +400,7 @@ impl TestClient {
         let image_base64 = base64_encode(
             std::fs::read(format!("{}{}.png", Self::contracts_path(abi_version), name)).unwrap(),
         );
-        format!("data:image/png;base64,{}", image_base64)
+        format!("data:image/png;base64,{image_base64}")
     }
 
     pub fn package(name: &str, abi_version: Option<u8>) -> (Abi, Option<String>) {
@@ -510,7 +510,7 @@ impl TestClient {
         {
             (request.callback)(params_json, response_type).await
         } else {
-            panic!("Unsupported response type: {}", response_type);
+            panic!("Unsupported response type: {response_type}");
         }
 
         if finished {

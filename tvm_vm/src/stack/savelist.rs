@@ -161,7 +161,7 @@ impl fmt::Display for SaveList {
         writeln!(f, "--- Control registers ------------------")?;
         for i in 0..Self::NUMREGS {
             if let Some(item) = &self.storage[i] {
-                writeln!(f, "{}: {}", i, item)?
+                writeln!(f, "{i}: {item}")?
             }
         }
         writeln!(f, "{:-<40}", "")

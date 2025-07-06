@@ -35,7 +35,7 @@ struct Args {
 
 fn main() -> ExitCode {
     if let Err(e) = main_impl() {
-        eprintln!("{}", e);
+        eprintln!("{e}");
         ExitCode::from(1)
     } else {
         ExitCode::from(0)

@@ -111,7 +111,7 @@ impl TestBrowser {
         let state_copy = state.clone();
         let client_copy = client.clone();
         let callback = move |params, response_type| {
-            log::debug!("received from debot: {:#}", params);
+            log::debug!("received from debot: {params:#}");
             let client = client_copy.clone();
             let state = state_copy.clone();
             async move {
@@ -193,7 +193,7 @@ impl TestBrowser {
                 step.outputs.clear();
                 step.available_actions[step.step.choice as usize - 1].clone()
             };
-            log::info!("Executing action: {:#?}", action);
+            log::info!("Executing action: {action:#?}");
             let _: () = client
                 .request_async(
                     "debot.execute",
@@ -304,7 +304,7 @@ impl TestBrowser {
             ParamsOfAppDebotBrowser::Send { message } => {
                 state.msg_queue.lock().await.push_back(message);
             }
-            _ => panic!("invalid notification {:#?}", params),
+            _ => panic!("invalid notification {params:#?}"),
         }
     }
 
@@ -384,7 +384,7 @@ impl TestBrowser {
                 }
                 ResultOfAppDebotBrowser::Approve { approved }
             }
-            _ => panic!("invalid call {:#?}", params),
+            _ => panic!("invalid call {params:#?}"),
         }
     }
 
@@ -433,7 +433,7 @@ impl TestBrowser {
                     .await
                     .unwrap();
                 let (func, args) = (decoded.name, decoded.value.unwrap());
-                log::info!("request: {} ({})", func, args);
+                log::info!("request: {func} ({args})");
                 let (func_id, return_args) = if SUPPORTED_INTERFACES[0] == interface_id {
                     state.echo.call(&func, &args)
                 } else if SUPPORTED_INTERFACES[1] == interface_id {
@@ -443,12 +443,12 @@ impl TestBrowser {
                 } else {
                     state.encrypt_box_input.call(&func, &args).await
                 };
-                log::info!("response: {} ({})", func_id, return_args);
+                log::info!("response: {func_id} ({return_args})");
 
                 let call_set = match func_id {
                     0 => None,
                     _ => CallSet::some_with_function_and_input(
-                        &format!("0x{:x}", func_id),
+                        &format!("0x{func_id:x}"),
                         return_args,
                     ),
                 };
@@ -1739,7 +1739,7 @@ async fn test_debot_sign_hash() {
 }
 
 fn build_info(abi: String, n: u32, interfaces: Vec<String>) -> DebotInfo {
-    let name = format!("TestDeBot{}", n);
+    let name = format!("TestDeBot{n}");
     DebotInfo {
         name: Some(name.clone()),
         version: Some("0.1.0".to_owned()),
@@ -1759,7 +1759,7 @@ fn build_info(abi: String, n: u32, interfaces: Vec<String>) -> DebotInfo {
 }
 
 fn build_info_abi2_2(abi: String, n: u32, interfaces: Vec<String>) -> DebotInfo {
-    let name = format!("TestDeBot{}", n);
+    let name = format!("TestDeBot{n}");
     DebotInfo {
         name: Some(name.clone()),
         version: Some("0.1.0".to_owned()),

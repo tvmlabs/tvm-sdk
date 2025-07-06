@@ -154,10 +154,10 @@ impl fmt::Display for InMsg {
         let tr_hash = self.transaction_cell().unwrap_or_default().repr_hash();
         match self {
             InMsg::External(_x) => {
-                write!(f, "InMsg msg_import_ext$000 msg: {:x} tr: {:x}", msg_hash, tr_hash)
+                write!(f, "InMsg msg_import_ext$000 msg: {msg_hash:x} tr: {tr_hash:x}")
             }
             InMsg::IHR(_x) => {
-                write!(f, "InMsg msg_import_ihr$010 msg: {:x} tr: {:x}", msg_hash, tr_hash)
+                write!(f, "InMsg msg_import_ihr$010 msg: {msg_hash:x} tr: {tr_hash:x}")
             }
             InMsg::Immediate(x) => write!(
                 f,

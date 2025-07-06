@@ -151,14 +151,14 @@ impl DelimitedHashmapE {
 
     fn print_impl(&self, cell: &Cell, indent: &str, path: Vec<u8>) -> String {
         let mut text = String::new();
-        text += &format!("{}.cell ", indent);
+        text += &format!("{indent}.cell ");
         text += &format!("{{ ;; #{}\n", cell.repr_hash().to_hex_string());
         let inner_indent = String::from("  ") + indent;
         let mut slice = SliceData::load_cell_ref(cell).unwrap();
         if let Some((id, offset, code)) = self.map.get(&path) {
             let aux = slice.get_next_slice(*offset).unwrap();
             text += &format!("{}.blob x{}\n", inner_indent, aux.to_hex_string());
-            text += &format!("{};; method {}\n", inner_indent, id);
+            text += &format!("{inner_indent};; method {id}\n");
             text += &code.print(&inner_indent, true, 0);
         } else {
             if slice.remaining_bits() > 0 {
@@ -170,7 +170,7 @@ impl DelimitedHashmapE {
                 text += &self.print_impl(&cell.reference(i).unwrap(), inner_indent.as_str(), path);
             }
         }
-        text += &format!("{}}}\n", indent);
+        text += &format!("{indent}}}\n");
         text
     }
 
