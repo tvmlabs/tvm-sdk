@@ -134,6 +134,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let gas_config = self.config().get_gas_config(false);
         let mut msg_balance_convert = 0;
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
+        let mut exchanged = false;
         if let Some(h) = in_msg.int_header() {
             if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
@@ -164,6 +165,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         msg_balance.grams += Grams::from(msg_balance_convert);
                         msg_balance.set_other(2, 0)?;
                     }
+                    exchanged = true;
                 }
             } 
         }
@@ -444,13 +446,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         };
         
         if description.aborted && !is_ext_msg && bounce {
-            if Grams::from(msg_balance_convert) > msg_balance.grams {
-                msg_balance_convert -= msg_balance.grams.as_u64_quiet();
-                msg_balance.grams = Grams::zero();
-                msg_balance.set_other(2, msg_balance_convert.into())?;     
-            } else {
-                msg_balance.grams -= Grams::from(msg_balance_convert);
-                msg_balance.set_other(2, msg_balance_convert.into())?;     
+            if exchanged {
+                if Grams::from(msg_balance_convert) > msg_balance.grams {
+                    msg_balance_convert -= msg_balance.grams.as_u64_quiet();
+                    msg_balance.grams = Grams::zero();
+                    msg_balance.set_other(2, msg_balance_convert.into())?;     
+                } else {
+                    msg_balance.grams -= Grams::from(msg_balance_convert);
+                    msg_balance.set_other(2, msg_balance_convert.into())?;     
+                }
             }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
