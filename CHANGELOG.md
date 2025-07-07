@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.18.3] - 2025-07-08
+
+### Changed
+- Changed `api.json` file. Added properties related to module account.
+
+
 ## [2.18.2] - 2025-07-04
 
 ### Fixes
