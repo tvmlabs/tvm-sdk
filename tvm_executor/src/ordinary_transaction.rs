@@ -22,6 +22,7 @@ use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
+use tvm_block::CurrencyCollection;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
 use tvm_block::VarUInteger32;
@@ -134,6 +135,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let original_msg_balance = msg_balance.clone();
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
+        let mut msg_balance_convert = 0;
+        let mut exchanged = false;
         if let Some(h) = in_msg.int_header() {
             if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
@@ -160,10 +163,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         value = VarUInteger32::from(u64::MAX);
                     }
                     if value != VarUInteger32::from(0) {
-                        let msg_balance_convert = value.value().iter_u64_digits().collect::<Vec<u64>>()[0];
+                        msg_balance_convert = value.value().iter_u64_digits().collect::<Vec<u64>>()[0];
                         msg_balance.grams += Grams::from(msg_balance_convert);
                         msg_balance.set_other(2, 0)?;
                     }
+                    exchanged = true;
                 }
             } 
         }
@@ -444,7 +448,18 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         };
         
         if description.aborted && !is_ext_msg && bounce {
-            msg_balance = original_msg_balance.clone();
+            if exchanged {
+                msg_balance = original_msg_balance.clone();
+                let mut add_value = CurrencyCollection::new();
+                add_value.set_other(2, msg_balance_convert.into())?;
+                if Grams::from(msg_balance_convert) > acc_balance.grams {
+                    acc_balance.grams = Grams::zero();
+                    acc_balance.add(&add_value)?;     
+                } else {
+                    acc_balance.grams -= Grams::from(msg_balance_convert);
+                    acc_balance.add(&add_value)?;     
+                }
+            }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
