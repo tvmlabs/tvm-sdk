@@ -1163,7 +1163,7 @@ pub trait TransactionExecutor {
         log::debug!(
             target: "executor",
             "bounce fees: {} bounce value: {}",
-            fwd_mine_fees, bounce_msg.get_value().unwrap().grams
+            fwd_mine_fees, bounce_msg.get_value().unwrap()
         );
         tr.add_fee_grams(&fwd_mine_fees)?;
         Ok((TrBouncePhase::ok(storage, fwd_mine_fees, fwd_fees), Some(bounce_msg)))
