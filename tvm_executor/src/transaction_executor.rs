@@ -1081,6 +1081,7 @@ pub trait TransactionExecutor {
         }
         // create bounced message and swap src and dst addresses
         let mut header = header.clone();
+        header.set_exchange(false);
         let msg_src =
             header.src_ref().ok_or_else(|| error!("Not found src in message header"))?.clone();
         let msg_dst = std::mem::replace(&mut header.dst, msg_src);
