@@ -433,8 +433,8 @@ pub trait TransactionExecutor {
             debug_assert!(!result_acc.is_none());
             false
         };
-        log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
-        log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
+        log::debug!(target: "executor", "acc balance: {}", acc_balance);
+        log::debug!(target: "executor", "msg balance: {}", msg_balance);
         let is_ordinary = self.ordinary_transaction();
         if acc_balance.grams.is_zero()  {
             log::debug!(target: "executor", "skip computing phase no gas");

@@ -179,8 +179,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         }
 
         let is_special = self.config.is_special_account(account_address)?;
-        log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}, config: {:#?}",
-            acc_balance.grams, msg_balance.grams, !bounce, is_special, self.config().special_contracts);
+        log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}",
+            acc_balance.grams, msg_balance.grams, !bounce, is_special);
         let lt = std::cmp::max(
             account.last_tr_time().unwrap_or(0),
             std::cmp::max(params.last_tr_lt.load(Ordering::Relaxed), in_msg.lt().unwrap_or(0) + 1),
