@@ -448,7 +448,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if description.aborted && !is_ext_msg && bounce {
             if exchanged {
                 if Grams::from(msg_balance_convert) > msg_balance.grams {
-                    msg_balance_convert -= msg_balance.grams.as_u64_quiet();
                     msg_balance.grams = Grams::zero();
                     msg_balance.set_other(2, msg_balance_convert.into())?;     
                 } else {
