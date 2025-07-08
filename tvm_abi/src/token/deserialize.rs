@@ -246,6 +246,7 @@ impl TokenValue {
         if !allow_partial
             && (remaining.remaining_references() != 0 || remaining.remaining_bits() != 0)
         {
+            println!("Decode full");
             fail!(AbiError::IncompleteDeserializationError)
         } else {
             Ok(())
@@ -570,6 +571,7 @@ fn find_next_bits(mut cursor: SliceData, bits: usize) -> Result<SliceData> {
     let original = cursor.clone();
     if cursor.remaining_bits() == 0 {
         if cursor.reference(1).is_ok() {
+            println!("find next bits");
             fail!(AbiError::IncompleteDeserializationError)
         }
         cursor = SliceData::load_cell(cursor.reference(0)?)?;
