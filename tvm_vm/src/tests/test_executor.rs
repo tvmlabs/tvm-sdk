@@ -30,6 +30,8 @@ use crate::executor::token::execute_run_wasm;
 use crate::executor::token::execute_run_wasm_concat_multiarg;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+use crate::executor::zk::execute_poseidon_zk_login;
+use crate::executor::zk::execute_vergrth16;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
@@ -40,6 +42,30 @@ use crate::stack::savelist::SaveList;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
+
+use crate::utils::pack_string_to_cell;
+use crate::utils::unpack_string_from_cell;
+
+use crate::executor::zk_stuff::utils::gen_address_seed;
+use crate::executor::zk_stuff::utils::get_zk_login_address;
+
+use ed25519_dalek::Signer;
+use fastcrypto::ed25519::Ed25519KeyPair;
+use fastcrypto::traits::KeyPair;
+use fastcrypto::traits::ToFromBytes;
+
+use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
+use crate::executor::zk_stuff::zk_login::JWK;
+use crate::executor::zk_stuff::zk_login::JwkId;
+use crate::executor::zk_stuff::zk_login::OIDCProvider;
+use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
+use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
+use crate::executor::zk_stuff::error::ZkCryptoError;
+
+use std::collections::HashMap;
+
+//use base64::decode;
+use base64ct::Encoding as bEncoding;
 
 #[allow(dead_code)]
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
@@ -1282,4 +1308,193 @@ fn test_tls_wasm_from_hash_for_4_args() {
     // rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).
     // unwrap().pop().unwrap() == 3u8
     // );
+
+}
+
+/**** VERGRTH16 TEST */
+
+#[test]
+fn test_poseidon_and_vergrth16() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+    let stack = Stack::new();
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+
+ 
+     // password was 567890 in ascii 535455565748
+    let user_pass_salt = "535455565748";
+    let secret_key = [222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166, 87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14,
+    ];
+    let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // 
+    let mut eph_pubkey = Vec::new();
+    eph_pubkey.extend(ephemeral_kp.public().as_ref());
+    println!("eph_pubkey: {:?}", eph_pubkey);
+    println!("len eph_pubkey: {:?}", eph_pubkey.len());
+    let eph_pubkey_hex_number = "0x".to_owned() + &hex::encode(eph_pubkey.clone());
+    println!("eph_pubkey_hex_number: {:?}", eph_pubkey_hex_number);
+    let zk_seed = gen_address_seed(
+        user_pass_salt,
+        "sub",
+        "112897468626716626103",
+        "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com",
+    )
+    .unwrap();
+    println!("zk_seed = {:?}", zk_seed);
+    let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"2352077003566407045854435506409565889408960755152253285189640818725808263237\",\
+    \"9548308350778027075240385782578683112366097953461273569343148999989145049123\",\"1\"],\
+    \"b\":[[\"2172697685172701179756462481453772004245591587568555358926512547679273443868\",\
+    \"11300889616992175665271080883374830731684409375838395487979439153562369168807\"],\
+    [\"18769153619672444537277685186545610305405730219274884099876386487766026068190\",\
+    \"12892936063156115176399929981646174277274895601746717550262309650970826515227\"],[\"1\",\"0\"]],\
+    \"c\":[\"21276833037675249246843718004583052134371270695679878402069223253610209272159\",\
+    \"8637596258221986824049981569842218428861929142818091935707054543971817804456\",\"1\"]},\
+    \"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\
+    \"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
+    let len = proof_and_jwt.bytes().len();
+    println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
+
+    println!("proof_and_jwt: {}", proof_and_jwt);
+
+    let iss_and_header_base64details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
+
+    println!("iss_and_header_base64details: {}", iss_and_header_base64details);
+
+    let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
+    let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
+    
+
+    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let content: JWK = JWK {
+        kty: "RSA".to_string(),
+        e: "AQAB".to_string(),
+        n: "uBHF-esPKiNlFaAvpdpejD4vpONW9FL0rgLDg1z8Q-x_CiHCvJCpiSehD41zmDOhzXP_fbMMSGpGL7R3duiz01nK5r_YmRw3RXeB0kcS7Z9H8MN6IJcde9MWbqkMabCDduFgdr6gvH0QbTipLB1qJK_oI_IBfRgjk6G0bGrKz3PniQw5TZ92r0u1LM-1XdBIb3aTYTGDW9KlOsrTTuKq0nj-anW5TXhecuxqSveFM4Hwlw7pw34ydBunFjFWDx4VVJqGNSqWCfcERxOulizIFruZIHJGkgunZnB4DF7mCZOttx2dwT9j7s3GfLJf0xoGumqpOMvecuipfTPeIdAzcQ".to_string(), // Alina's data
+        alg: "RS256".to_string(),
+    };
+
+    let mut all_jwk = HashMap::new();
+     all_jwk.insert(
+        JwkId::new(
+            OIDCProvider::Google.get_config().iss,
+            "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(), 
+        ),
+        content,
+    );
+
+    let (iss, kid) =
+            (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+    let jwk = all_jwk.get(&JwkId::new(iss.clone(), kid.clone())).ok_or_else(|| {
+        ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+    }).unwrap();
+
+    let max_epoch = 142; 
+
+    let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n)
+        .map_err(|_| {
+            ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+        })
+    .unwrap();
+
+    let public_inputs = &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+
+    let mut public_inputs_as_bytes = vec![];
+    public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+    println!("HERE public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+    println!("HERE public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
+
+    println!("====== Start Poseidon ========");
+    
+    let index_mod_4 = 1;
+    engine.cc.stack.push(StackItem::int(index_mod_4));
+    engine.cc.stack.push(StackItem::int(max_epoch));
+    engine.cc.stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+
+    let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
+    println!("modulus_cell = {:?}", modulus_cell);
+    engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
+    
+    let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+    println!("iss_base_64_cell = {:?}", iss_base_64_cell);
+    engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
+
+    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    println!("header_base_64_cell = {:?}", header_base_64_cell);
+    engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
+
+    let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
+    println!("zk_seed_cell = {:?}", zk_seed_cell);
+    engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
+
+    let start: Instant = Instant::now();
+    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let poseidon_elapsed = start.elapsed().as_micros();
+
+    println!("poseidon_elapsed in microsecond: {:?}", poseidon_elapsed);  
+
+    let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
+    let slice = SliceData::load_cell(poseidon_res.clone()).unwrap();
+    let poseidon_res = unpack_data_from_cell(slice, &mut engine).unwrap();
+    println!("poseidon_res from stack: {:?}", hex::encode(poseidon_res.clone()));
+
+    println!("public_inputs hex (computed in test): {:?}", hex::encode(public_inputs_as_bytes.clone()));
+    assert!(poseidon_res == public_inputs_as_bytes);
+
+    println!("====== Start VERGRTH16 ========");
+    let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+    let mut proof_as_bytes = vec![];
+    proof.serialize_compressed(&mut proof_as_bytes).unwrap();
+    println!("proof_as_bytes : {:?}", proof_as_bytes);
+    println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
+
+    let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
+
+    let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
+
+    let verification_key_id: u32 = 0; // valid key id
+    //let verification_key_id: u32 = 1; //invalid key id
+    engine.cc.stack.push(StackItem::int(verification_key_id));
+
+    let start: Instant = Instant::now();
+    let status = execute_vergrth16(&mut engine).unwrap();
+    let vergrth16_elapsed = start.elapsed().as_micros();
+
+    println!("vergrth16_elapsed in microsecond: {:?}", vergrth16_elapsed); 
+
+    let res = engine.cc.stack.get(0).as_integer().unwrap();
+    println!("res: {:?}", res);
+    assert!(*res == IntegerData::minus_one());
+
+    
 }
