@@ -1,6 +1,4 @@
-# Gosh VM Instructions
-
-
+# Acki Nacki VM Instructions
 
 ## MINTECC (C726)
 
@@ -34,7 +32,7 @@ Mint some VMSHELL tokens, allowed by available credit in Dapp Config for this Da
 Input: amount of nanoVMSHELL to mint
 ```
 
-[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/a58e859e68e14a17a8acd2f142d260127a0a3f2d/tvm_assembler/src/simple.rs#L842)
+[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_assembler/src/simple.rs#L842)
 
 ## CALCBKREWARD (С729)
 
@@ -50,7 +48,7 @@ Input: params of bkroot state:
     uint128 epochDuration
 ```
 
-[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/a58e859e68e14a17a8acd2f142d260127a0a3f2d/tvm_assembler/src/simple.rs#L843)
+[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_assembler/src/simple.rs#L843)
 
 ## CALCMINSTAKE (С730)
 
@@ -64,7 +62,7 @@ Input: params of bkroot state:
     uint128 numberOfNeededActiveBlockKeeper
 ```
 
-[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/a58e859e68e14a17a8acd2f142d260127a0a3f2d/tvm_assembler/src/simple.rs#L844)
+[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_assembler/src/simple.rs#L844)
 
 ## VERGRTH16 (С731)
 
@@ -107,4 +105,21 @@ Outputs:
 ```
 
 Note: There is: zkaddr = Poseidon(JWT.stable\_id, JWT.iss, User salt password), where JWT.stable\_id and User salt password are secrets. ephimeral\_pub\_key is a temporary key that will be used sign transactions (i.e. the related secret key) till Unix timestamp max\_epoch (ephimeral\_pub\_key is embedded into JWT.nonce and JWT is a kind of TLS certificate for ephimeral\_pub\_key). modulus is RSA JWK public fresh modulus published by OpenId provider (the JWK is used to sign JWT tokens). iss\_base\_64, index\_mod\_4 is JWT public data describing OpenId provider. header\_base\_64 is JWT public data containing “kid” (key id) of JWK.\
-[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/vrgth_fixes_and_tests/tvm_assembler/src/simple.rs#L846)
+[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_assembler/src/simple.rs#L846)
+
+## RUNWASM
+
+Instruction allows arbitrary pre-compiled wasm code to be executed directly by the node.
+
+```
+Input:
+    wasmHash,
+    wasmArgs,
+    wasmFunction,
+    wasmModule,
+    wasmBinary
+```
+
+\
+You can find official documentation [here](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_vm/WASM.md) and example project [here](https://github.com/tvmlabs/tvm-sdk/blob/main/examples/wasm/WASM_EXAMPLES.md)\
+[link to the opcode](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_assembler/src/simple.rs#L853)
