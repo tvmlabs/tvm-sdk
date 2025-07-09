@@ -6,20 +6,7 @@ description: Create a Multisig wallet  with TVM CLI
 
 ## Prerequisites <a href="#create-a-wallet" id="create-a-wallet"></a>
 
-* latest Rust release&#x20;
-* cargo
-
-## **Build and install CLI tool** <a href="#create-a-wallet" id="create-a-wallet"></a>
-
-<pre><code>cd ~
-git clone https://github.com/tvmlabs/tvm-sdk
-<strong>cd tvm-sdk
-</strong>cargo install --path tvm_cli --force
-</code></pre>
-
-The path to the `tvm-cli` is now publicly accessible. You can also add it to your environment variables (ENVs).
-
-`export PATH=$PATH:~/tvm-sdk/target/release`
+* [tvm-cli](https://github.com/tvmlabs/tvm-sdk/releases)
 
 ## **Prepare wallet binary and ABI** <a href="#create-a-wallet" id="create-a-wallet"></a>
 
