@@ -96,7 +96,7 @@ pub(crate) struct NetworkState {
     resume_timeout: AtomicU32,
     query_endpoint: RwLock<Option<Arc<Endpoint>>>,
     resolved_endpoints: RwLock<HashMap<String, ResolvedEndpoint>>,
-    bk_send_message_endpoint: RwLock<Option<String>>,
+    bk_send_message_endpoint: RwLock<Option<Url>>,
     rest_api_endpoint: RwLock<Url>,
     bm_license_contract: RwLock<Option<String>>,
     bm_token: RwLock<Option<Value>>,
@@ -369,12 +369,12 @@ impl NetworkState {
         })
     }
 
-    pub async fn select_send_message_endpoint(&self) -> String {
+    pub async fn select_send_message_endpoint(&self) -> Url {
         let guarded_bk_endpoint = self.bk_send_message_endpoint.read().await;
         if let Some(bk_endpoint) = guarded_bk_endpoint.as_ref() {
             bk_endpoint.clone()
         } else {
-            self.rest_api_endpoint.read().await.clone().to_string()
+            self.rest_api_endpoint.read().await.clone()
         }
     }
 
@@ -382,7 +382,7 @@ impl NetworkState {
         self.rest_api_endpoint.read().await.clone()
     }
 
-    pub async fn update_bk_send_message_endpoint(&self, endpoint: Option<String>) {
+    pub async fn update_bk_send_message_endpoint(&self, endpoint: Option<Url>) {
         *self.bk_send_message_endpoint.write().await = endpoint
     }
 
@@ -459,22 +459,15 @@ fn construct_rest_api_endpoint(original: &str) -> ClientResult<Url> {
         format!("http://{}", original)
     };
 
-    let url = Url::parse(&original).map_err(Error::parse_url_failed)?;
-    let scheme = url.scheme();
-    let host = url.host().ok_or_else(|| Error::parse_url_failed("Missing host in URL"))?;
-    let mut port = url
+    let mut url = Url::parse(&original).map_err(Error::parse_url_failed)?;
+    let port = url
         .port_or_known_default()
         .ok_or_else(|| Error::parse_url_failed("Missing port in URL"))?;
 
     // Set the port for the REST API if no specific port is specified
-    if (scheme == "http" && port == 80) || (scheme == "https" && port == 443) {
-        port = REST_API_PORT
+    if (url.scheme() == "http" && port == 80) || (url.scheme() == "https" && port == 443) {
+        url.set_port(Some(REST_API_PORT)).map_err(|_| Error::parse_url_failed("Can't set port"))?;
     }
-    // Reconstruct the URL from scheme, host, and port.
-    // This way we remove any /path/something part from url if it is presented
-    let url_str = format!("{scheme}://{host}:{port}");
-    let mut url = Url::parse(&url_str).map_err(Error::parse_url_failed)?;
-
     url.set_path(&format!("{API_VERSION}/"));
     Ok(url)
 }
@@ -724,7 +717,7 @@ impl ServerLink {
         }
     }
 
-    pub(crate) async fn query_http(&self, request: String, endpoint: &str) -> ClientResult<Value> {
+    pub(crate) async fn query_http(&self, request: String, endpoint: &Url) -> ClientResult<Value> {
         let mut headers = HashMap::new();
         headers.insert("content-type".to_owned(), "application/json".to_owned());
         for (name, value) in Endpoint::http_headers(&self.config) {
@@ -737,7 +730,7 @@ impl ServerLink {
             let result = self
                 .client_env
                 .fetch(
-                    endpoint,
+                    &endpoint.to_string(),
                     FetchMethod::Post,
                     Some(headers.clone()),
                     Some(request.clone()),
@@ -944,9 +937,13 @@ impl ServerLink {
         thread_id: ThreadIdentifier,
     ) -> ClientResult<Value> {
         // This function adds "resource" part to the REST path
-        fn ensure_resource(path: &str) -> String {
+        fn ensure_resource(url: &Url) -> Url {
             let resource = ENDPOINT_MESSAGES;
-            if path.ends_with(resource) { path.to_string() } else { format!("{path}/{resource}") }
+            if url.path().ends_with(resource) {
+                url.clone()
+            } else {
+                url.join(ENDPOINT_MESSAGES).expect("Can't fail")
+            }
         }
         let mut attempts = 0;
 
@@ -971,9 +968,7 @@ impl ServerLink {
                 if let Some(res) = res {
                     match res {
                         Ok(bk_url) => {
-                            network_state
-                                .update_bk_send_message_endpoint(Some(bk_url.to_string()))
-                                .await;
+                            network_state.update_bk_send_message_endpoint(Some(bk_url)).await;
                         }
                         Err(err) => {
                             log::error!("{err}")
@@ -1006,7 +1001,7 @@ impl ServerLink {
             }
 
             if code == "TOKEN_EXPIRED" {
-                endpoint = network_state.get_rest_api_endpoint().await.clone().to_string(); // ZZZ
+                endpoint = network_state.get_rest_api_endpoint().await.clone();
                 network_state.update_bk_send_message_endpoint(None).await;
             }
 
@@ -1019,9 +1014,7 @@ impl ServerLink {
             if let Some(res) = res {
                 match res {
                     Ok(bk_url) => {
-                        network_state
-                            .update_bk_send_message_endpoint(Some(bk_url.to_string()))
-                            .await;
+                        network_state.update_bk_send_message_endpoint(Some(bk_url)).await;
                     }
                     Err(err) => {
                         log::error!("{err}")
