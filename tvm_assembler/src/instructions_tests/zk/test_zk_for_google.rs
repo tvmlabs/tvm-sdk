@@ -194,6 +194,7 @@ mod tests {
         let mut public_inputs_as_bytes = vec![];
         public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
         println!("HERE public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("HERE public_inputs_as_bytes : {:?}", hex::encode(public_inputs_as_bytes.clone()));
         println!("HERE public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
 
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
@@ -245,7 +246,7 @@ mod tests {
         code = code + "VERGRTH16";
 
         test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
-            .expect_success();
+        .expect_success();
     }
 
     #[test]
