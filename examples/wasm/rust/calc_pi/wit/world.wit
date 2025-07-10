@@ -1,0 +1,9 @@
+package docs:calc-pi@0.1.0;
+
+interface calc-interface {
+    add: func(kwargs: list<u8>) -> list<u8>;
+}
+
+world adder {
+    export calc-interface;
+}
