@@ -163,7 +163,9 @@ impl MerkleProof {
                 c.clone()
             } else if is_include_subtree(&child_repr_hash) {
                 child.clone()
-            } else if (child.references_count() == 0 || is_include(&child.repr_hash())) && cell.cell_type() != CellType::External {
+            } else if (child.references_count() == 0 || is_include(&child.repr_hash()))
+                && child.cell_type() != CellType::External
+            {
                 Self::create_raw(
                     &child,
                     is_include,
