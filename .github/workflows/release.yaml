@@ -1,7 +1,9 @@
-name: Prerelease tvm-cli
+name: Release tvm-cli
 
 on:
   push:
+    # NOTE: if tag has -rc in it, it will be considered a release candidate
+    # and will trigger prerelease true
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+.an'
@@ -152,9 +154,9 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        suffix: [macos-arm64, macos-amd64, linux-musl-arm64, linux-musl-amd64, arm64, x86_64]
+
+    env:
+      SUFFIXES: macos-arm64 macos-amd64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64
 
     steps:
       - name: Download all artifacts
@@ -163,22 +165,35 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R
 
-      - name: Make archive
+      - name: Make archives
         run: |
-          chmod +x artifacts-${{ matrix.suffix }}/*
+          set -e
           tag_name=$(echo "${{ github.ref_name }}" | sed 's/^v//')
-          cd artifacts-${{ matrix.suffix }}
-          for file in *; do
-            tar -czvf "$file"-"$tag_name"-${{ matrix.suffix }}.tar.gz $file
+          for suffix in $SUFFIXES; do
+            chmod +x artifacts-"$suffix"/*
+            cd artifacts-"$suffix"
+            for file in *; do
+              tar -czvf "$file"-"$tag_name"-"$suffix".tar.gz $file
+            done
+            cd ..
+            ls -lA artifacts-"$suffix"
           done
-          ls -lA
 
-      - name: Upload Prerelease
-        uses: softprops/action-gh-release@v1
+      - name: Set prerelease flag
+        id: prerelease
+        run: |
+          if [[ "${GITHUB_REF_NAME}" =~ -rc ]]; then
+            echo "PRERELEASE=true" >> $GITHUB_OUTPUT
+          else
+            echo "PRERELEASE=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          prerelease: true
-          tag_name: ${{ github.ref_name }}
+          prerelease: ${{ steps.prerelease.outputs.PRERELEASE }}
+          tag_name: ${{ github.ref_name }}-${{ github.run_number }}
           files: |
-            artifacts-${{ matrix.suffix }}/*.tar.gz
+            artifacts-*/**.tar.gz
           name: "Version: ${{ github.ref_name }}"
           body: ""

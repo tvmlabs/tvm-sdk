@@ -24,6 +24,7 @@ use futures::Future;
 use futures::Stream;
 use futures::StreamExt;
 use rand::seq::SliceRandom;
+use reqwest::Url;
 use serde_json::Value;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
@@ -57,6 +58,7 @@ pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
 pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
+pub const REST_API_PORT: u16 = 8600;
 
 pub(crate) struct Subscription {
     pub unsubscribe: Pin<Box<dyn Future<Output = ()> + Send>>,
@@ -93,6 +95,7 @@ pub(crate) struct NetworkState {
     resolved_endpoints: RwLock<HashMap<String, ResolvedEndpoint>>,
     bm_send_message_endpoint: RwLock<String>,
     bk_send_message_endpoint: RwLock<Option<String>>,
+    rest_api_endpoint: RwLock<Url>,
     bm_license_contract: RwLock<Option<String>>,
     bm_token: RwLock<Option<Value>>,
 }
@@ -116,6 +119,7 @@ impl NetworkState {
         config: NetworkConfig,
         endpoint_addresses: Vec<String>,
         bm_send_message_endpoint: String,
+        rest_api_endpoint: Url,
     ) -> Self {
         let (sender, receiver) = watch::channel(false);
         let regulation =
@@ -134,6 +138,7 @@ impl NetworkState {
             resolved_endpoints: Default::default(),
             bm_send_message_endpoint: RwLock::new(bm_send_message_endpoint),
             bk_send_message_endpoint: RwLock::new(None),
+            rest_api_endpoint: RwLock::new(rest_api_endpoint),
             bm_license_contract: RwLock::new(None),
             bm_token: RwLock::new(None),
         }
@@ -378,6 +383,10 @@ impl NetworkState {
         self.bm_send_message_endpoint.read().await.to_string()
     }
 
+    pub async fn get_rest_api_endpoint(&self) -> Url {
+        self.rest_api_endpoint.read().await.clone()
+    }
+
     pub async fn update_bk_send_message_endpoint(&self, endpoint: Option<String>) {
         *self.bk_send_message_endpoint.write().await = endpoint
     }
@@ -447,6 +456,25 @@ fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
     result
 }
 
+fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<Url> {
+    let original = if original.contains("://") {
+        original.to_string()
+    } else {
+        format!("http://{}", original)
+    };
+    let mut rest_api_endpoint = Url::parse(&original).map_err(Error::parse_url_failed)?;
+
+    let scheme = if use_https { "https" } else { "http" };
+    rest_api_endpoint
+        .set_scheme(scheme)
+        .map_err(|_| Error::modify_url_failed("Failed to set scheme"))?;
+
+    rest_api_endpoint
+        .set_port(Some(REST_API_PORT))
+        .map_err(|_| Error::modify_url_failed("Failed to set port for REST API endpoint"))?;
+    Ok(rest_api_endpoint)
+}
+
 fn construct_bm_send_message_endpoint(original: &str, use_https: bool) -> ClientResult<String> {
     let original = if original.contains("://") {
         original.to_string()
@@ -505,11 +533,14 @@ impl ServerLink {
         let bm_send_message_endpoint =
             construct_bm_send_message_endpoint(&endpoint_addresses[0], false)?;
 
+        let rest_api_endpoint = construct_rest_api_endpoint(&endpoint_addresses[0], false)?;
+
         let state = Arc::new(NetworkState::new(
             client_env.clone(),
             config.clone(),
             endpoint_addresses,
             bm_send_message_endpoint,
+            rest_api_endpoint,
         ));
 
         Ok(ServerLink {
@@ -752,11 +783,11 @@ impl ServerLink {
                 }
             };
             if let Err(err) = &result {
-                if crate::client::Error::is_network_error(err) && self.state.can_retry_network_error(start) {
-                    let _ = self
-                        .client_env
-                        .set_timer(self.state.next_resume_timeout() as u64)
-                        .await;
+                if crate::client::Error::is_network_error(err)
+                    && self.state.can_retry_network_error(start)
+                {
+                    let _ =
+                        self.client_env.set_timer(self.state.next_resume_timeout() as u64).await;
                     continue;
                 }
             }
@@ -764,6 +795,39 @@ impl ServerLink {
             return result;
         }
         Err(Error::all_attempts_failed())
+    }
+
+    pub(crate) async fn http_get(&self, url: Url) -> ClientResult<Value> {
+        let mut headers = HashMap::new();
+        for (name, value) in Endpoint::http_headers(&self.config) {
+            headers.insert(name, value);
+        }
+        let result = self
+            .client_env
+            .fetch(
+                &url.to_string(),
+                FetchMethod::Get,
+                Some(headers),
+                None,
+                self.config.query_timeout,
+            )
+            .await;
+
+        match result {
+            Err(err) => Err(err),
+            Ok(response) => {
+                if response.status == 200 {
+                    response.body_as_json(true)
+                } else if response.status == 401 {
+                    Err(Error::unauthorized(&response))
+                } else if response.status == 404 {
+                    Err(Error::not_found(&format!("Resource not found: {url}")))
+                } else {
+                    // HTTP_CODE 500 and any other unhandled codes
+                    Err(Error::invalid_server_response(response.body))
+                }
+            }
+        }
     }
 
     pub(crate) async fn query_ws(&self, query: &GraphQLQuery) -> ClientResult<Value> {

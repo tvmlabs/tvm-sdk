@@ -2,7 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.17.0] - 2025-06-06
+## [2.18.3] - 2025-07-08
+
+### Changed
+- Changed `api.json` file. Added properties related to module account.
+
+
+## [2.18.2] - 2025-07-04
+
+### Fixes
+- Fixed `runwasm` and `runwasmconcatmultiarg` causing panic on using invalid hash.
+
+## [2.18.1] - 2025-06-28
+
+### New
+- Added `runwasmconcatmultiarg` instruction that allows multiple arguments to be concatenated then passed to `runwasm`
+
+## [2.18.0] - 2025-06-27
+
+### New
+- `account` module with `get_account` function that requests account boc from BM or BK node
+- `api-token` added to `config.network`
+
+## [2.17.3] - 2025-06-25
+
+### Fixes:
+
+- Changed `runwasm` gas usage to match other instruction prices
+
+## [2.17.2] - 2025-06-19
+
+### New
+
+- Changed `runwasm` instruction to accept local wasm binaries, selected by hash.
+
+## [2.17.1] - 2025-06-16
+
+### New
+
+- Added fixed gas metering and wasm fuel limiting to `runwasm` instruction
+
+## [2.17.0] - 2025-06-12
 
 ### New
 
