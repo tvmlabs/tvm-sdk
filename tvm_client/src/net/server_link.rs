@@ -58,7 +58,6 @@ pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
 pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
-
 pub const API_VERSION: &str = "v2";
 pub const REST_API_PORT: u16 = 8600;
 pub const ENDPOINT_MESSAGES: &str = "messages";
@@ -472,7 +471,7 @@ pub fn construct_rest_api_endpoint(original: &str) -> ClientResult<Url> {
     Ok(url)
 }
 
-fn get_redirection_data(data: &Value) -> (Option<String>, Option<Result<Url, ClientError>>) {
+fn get_redirection_data(data: &Value) -> (Option<String>, Option<Url>) {
     // TODO: Add type RedirectionData
     let producers_opt = data.get("result").and_then(|res| res.get("producers")).or_else(|| {
         data.get("node_error")
@@ -485,7 +484,8 @@ fn get_redirection_data(data: &Value) -> (Option<String>, Option<Result<Url, Cli
         .and_then(|val| val.as_array())
         .and_then(|arr| arr.first())
         .and_then(|v| v.as_str())
-        .map(|s| construct_rest_api_endpoint(s));
+        .map(|s| construct_rest_api_endpoint(s).ok())
+        .flatten();
 
     let thread_id = data
         .get("node_error")
@@ -730,7 +730,7 @@ impl ServerLink {
             let result = self
                 .client_env
                 .fetch(
-                    &endpoint.to_string(),
+                    endpoint.as_str(),
                     FetchMethod::Post,
                     Some(headers.clone()),
                     Some(request.clone()),
@@ -965,16 +965,9 @@ impl ServerLink {
         while attempts < self.config.message_retries_count {
             attempts += 1;
             if let Ok(ref data) = result {
-                let (_, res) = get_redirection_data(data);
-                if let Some(res) = res {
-                    match res {
-                        Ok(bk_url) => {
-                            network_state.update_bk_send_message_endpoint(Some(bk_url)).await;
-                        }
-                        Err(err) => {
-                            log::error!("{err}")
-                        }
-                    }
+                let (_, bk_url) = get_redirection_data(data);
+                if bk_url.is_some() {
+                    network_state.update_bk_send_message_endpoint(bk_url).await;
                 }
                 if let Some(bm_data) = data.get("block_manager") {
                     network_state.update_bm_data(bm_data).await;
@@ -1006,22 +999,15 @@ impl ServerLink {
                 network_state.update_bk_send_message_endpoint(None).await;
             }
 
-            let (real_thread_id, res) = get_redirection_data(&err.data);
+            let (real_thread_id, redirect_url) = get_redirection_data(&err.data);
 
             if let Some(thread_id) = real_thread_id {
                 message.set_thread_id(Some(thread_id));
             }
 
-            if let Some(res) = res {
-                match res {
-                    Ok(bk_url) => {
-                        network_state.update_bk_send_message_endpoint(Some(bk_url)).await;
-                        endpoint = network_state.select_send_message_endpoint().await;
-                    }
-                    Err(err) => {
-                        log::error!("{err}")
-                    }
-                }
+            if let Some(bk_endpoint) = redirect_url {
+                network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
+                endpoint = network_state.select_send_message_endpoint().await;
             }
             result =
                 self.query_http(json!([message]).to_string(), &ensure_resource(&endpoint)).await;
