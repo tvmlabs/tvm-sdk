@@ -6,6 +6,7 @@ use serde_json::Value;
 use crate::client::binding_config;
 use crate::client::core_version;
 use crate::net;
+use crate::net::construct_rest_api_endpoint;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, ApiType)]
 pub struct ClientError {
@@ -147,23 +148,18 @@ impl ClientError {
             .and_then(|ne| ne.get("extensions"))
             .and_then(|e| e.get("details"));
 
-        let producers =
-            details.and_then(|d| d.get("producers")).and_then(Value::as_array).map(|producers| {
-                producers
-                    .iter()
-                    .filter_map(|v| {
-                        v.as_str().map(|s| {
-                            if s.find(':').is_some() {
-                                format!("http://{}/bk/v2/messages", s)
-                            } else {
-                                format!("http://{}:8600/bk/v2/messages", s)
-                            }
-                        })
-                    })
-                    .collect::<Vec<String>>()
-            });
+        let mut producers_vec: Vec<String> = vec![];
+        details.and_then(|d| d.get("producers")).and_then(Value::as_array).map(|producers| {
+            for producer in producers {
+                if let Some(s) = producer.as_str() {
+                    if let Ok(endpoint) = construct_rest_api_endpoint(s) {
+                        producers_vec.push(endpoint.to_string());
+                    }
+                }
+            }
+        });
 
-        let redirect_url = producers.as_ref().and_then(|p| p.first()).cloned();
+        let redirect_url = producers_vec.first().cloned();
 
         let thread_id =
             details.and_then(|d| d.get("thread_id")).and_then(Value::as_str).map(|s| s.to_string());
