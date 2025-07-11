@@ -451,7 +451,7 @@ fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
     result
 }
 
-fn construct_rest_api_endpoint(original: &str) -> ClientResult<Url> {
+pub fn construct_rest_api_endpoint(original: &str) -> ClientResult<Url> {
     // Set HTTP if scheme is not presented
     let original = if original.contains("://") {
         original.to_string()
@@ -737,6 +737,7 @@ impl ServerLink {
                     self.config.query_timeout,
                 )
                 .await;
+
             let result = match result {
                 Err(err) => Err(err),
                 Ok(response) => {
@@ -756,6 +757,7 @@ impl ServerLink {
                     }
                 }
             };
+
             if let Err(err) = &result {
                 if crate::client::Error::is_network_error(err)
                     && self.state.can_retry_network_error(start)
@@ -765,7 +767,6 @@ impl ServerLink {
                     continue;
                 }
             }
-
             return result;
         }
         Err(Error::all_attempts_failed())
@@ -936,13 +937,13 @@ impl ServerLink {
         msg_body: &[u8],
         thread_id: ThreadIdentifier,
     ) -> ClientResult<Value> {
-        // This function adds "resource" part to the REST path
+        // This helper function adds "resource" part to the URL
         fn ensure_resource(url: &Url) -> Url {
             let resource = ENDPOINT_MESSAGES;
             if url.path().ends_with(resource) {
                 url.clone()
             } else {
-                url.join(ENDPOINT_MESSAGES).expect("Can't fail")
+                url.join(ENDPOINT_MESSAGES).unwrap_or(url.clone())
             }
         }
         let mut attempts = 0;
@@ -1015,15 +1016,13 @@ impl ServerLink {
                 match res {
                     Ok(bk_url) => {
                         network_state.update_bk_send_message_endpoint(Some(bk_url)).await;
+                        endpoint = network_state.select_send_message_endpoint().await;
                     }
                     Err(err) => {
                         log::error!("{err}")
                     }
                 }
             }
-
-            // We leave `host`,`port` and all parts of the path untouched, except that we
-            // ensure that the path always ends with "ENDPOINT_MESSAGES"
             result =
                 self.query_http(json!([message]).to_string(), &ensure_resource(&endpoint)).await;
         }
