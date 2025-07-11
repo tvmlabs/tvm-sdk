@@ -3,10 +3,8 @@
 //use std::io::{self, Read};
 //use std::marker::PhantomData;
 
-// Размер контрольной суммы SHA256 в байтах.
 const SIZE: usize = 32;
 
-// Размер блока SHA256 и SHA224 в байтах.
 const BLOCK_SIZE: usize = 64;
 
 const CHUNK: usize = 64;
@@ -120,12 +118,12 @@ fn put_uint64(b: &mut [u8], v: u64) {
 }
 
 #[derive(Clone)]
-struct Digest {
+pub struct Digest {
     h: [u32; 8],
     x: [u8; CHUNK],
     nx: usize,
     len: u64,
-    //is224: bool, // пометка, если этот дайджест является SHA-224
+    //is224: bool, 
 }
 
 impl Digest {
@@ -196,7 +194,6 @@ impl Digest {
         self.len = 0;
     }
 
-    // Функция для создания нового объекта Digest
     pub fn new() -> Digest {
         let mut d = Digest {
             h: [0; 8],
@@ -327,9 +324,7 @@ const K: [u32; 64] = [
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ];
 
-// Функция RotateLeft32 возвращает значение x, повернутое влево на (k mod 32) бит.
-// Для поворота x вправо на k бит, вызовите RotateLeft32(x, -k).
-// Время выполнения этой функции не зависит от входных данных.
+
 fn rotate_left_32(x: u32, k: i32) -> u32 {
     const N: u32 = 32;
     let s = (k as u32) & (N - 1);
@@ -443,7 +438,6 @@ impl Hmac {
         }
         hmac.inner.write(&hmac.ipad);
 
-
         hmac
     }
 
@@ -479,7 +473,6 @@ impl Hmac {
 
     pub fn reset(&mut self) {
 
-
         if self.marshaled {
             //if let Err(err) = self.inner.unmarshal_binary(&self.ipad) {
                 //panic!("{}", err);
@@ -504,9 +497,7 @@ impl Hmac {
         }
     }
 
-    // Функция для сравнения двух HMAC
     pub fn equal(mac1: &[u8], mac2: &[u8]) -> bool {
-        // Выравнивание во времени не требуется, если длины различны
         mac1.len() == mac2.len() && mac1.iter().zip(mac2).all(|(a, b)| a == b)
     }
 }
@@ -514,10 +505,7 @@ impl Hmac {
 
 //========================================================
 
-// Тип для HMAC
 
-// Extract генерирует псевдослучайный ключ для использования с Expand
-// fn extract(hash: fn() -> HmacSha256, secret: &[u8], salt: Option<&[u8]>) -> Vec<u8> {
 pub fn extract(secret: &[u8; 32], salt: &[u8; 32]) -> [u8; 32] {
 
     //let salt = salt.unwrap_or(&vec![0; 32]);
@@ -528,11 +516,11 @@ pub fn extract(secret: &[u8; 32], salt: &[u8; 32]) -> [u8; 32] {
 
 pub struct Hkdf {
     expander: Hmac,// expander: HmacSha256,
-    size: usize, // размер выходных данных, которые будут сгенерированы
-    info: Vec<u8>, // дополнительная информация, которая может быть добавлена в выходные данные
-    counter: u8, // счетчик, который используется для генерации уникального значения на каждой итерации
-    prev: Vec<u8>, // предыдущее сгенерированное значение.
-    buf: Vec<u8>, // буфер, в который будут записываться сгенерированные данные
+    size: usize, 
+    info: Vec<u8>, 
+    counter: u8, 
+    prev: Vec<u8>, 
+    buf: Vec<u8>, 
 }
 
 impl Hkdf {
@@ -568,7 +556,6 @@ impl Hkdf {
         p[..n].copy_from_slice(&self.buf[..n]);
         self.buf = self.buf[n..].to_vec();
 
-        // Заполнение оставшегося буфера
         while p.len() > n {
             self.expander.reset();
             self.expander.write(&self.prev);//self.expander.update(&self.prev);
@@ -601,7 +588,7 @@ impl Hkdf {
     }
 }
 
-// Expand возвращает Reader, из которого можно считывать ключи
+
 // fn expand(hash: fn() -> HmacSha256, pseudorandom_key: &[u8], info: &[u8]) -> Hkdf<io::Empty> {
 pub fn expand(pseudorandom_key: &[u8], info: &[u8]) -> Hkdf {
     let mut expander = Hmac::new(pseudorandom_key);//let mut expander = hash();
@@ -609,10 +596,42 @@ pub fn expand(pseudorandom_key: &[u8], info: &[u8]) -> Hkdf {
     Hkdf::new(expander, info.to_vec())
 }
 
+
+
 /*
-// New возвращает Reader, из которого можно считывать ключи
-// fn new(hash: fn() -> HmacSha256, secret: &[u8], salt: Option<&[u8]>, info: &[u8]) -> Hkdf<io::Empty> {
-fn new(secret: &[u8], salt: &[u8], info: &[u8]) -> Hkdf {
-    let prk = extract(&secret.try_into(), &salt.try_into()); // let prk = extract(hash, secret, salt);
-    expand(&prk, info) // expand(hash, &prk, info)
+#[test]
+fn test_hkdf_with_go_data_1(){
+    //
+    let hkdf_label = [0, 16, 9, 116, 108, 115, 49, 51, 32, 107, 101, 121, 0];
+    println!("hkdf_label is : {:?}", hkdf_label);
+    let secret:[u8;32] = [59, 61, 41, 36, 200, 156, 165, 163, 21, 137, 135, 142, 118, 165, 190, 112, 253, 73, 249, 79, 73, 155, 102, 96, 54, 170, 38, 140, 122, 98, 162, 169];
+    println!("secret is : {:?}", &secret);
+    let etalon_result = [196, 202, 165, 198, 49, 40, 206, 178, 195, 20, 150, 155, 126, 121, 8, 240];
+    println!("etalon_result is : {:?}", &etalon_result);
+
+    // Expand using HKDF
+    let mut reader = expand(&secret, &hkdf_label);//let hkdf = Hkdf::<Sha256>::new(Some(secret), &hkdf_label);
+    let length = 16;
+    let buf = reader.read(length as usize);
+    println!("hkdf expand result is is : {:?}", &buf);
+
+    assert_eq!(buf[..], etalon_result);
+}
+
+#[test]
+fn test_sha256_sum256(){
+    //
+    let transcript_messages = [1, 0, 0, 157, 3, 3, 27, 126, 189, 42, 117, 227, 85, 44, 186, 155, 29, 86, 176, 221, 181, 209, 227, 24, 67, 227, 112, 232, 244, 106, 59, 250, 1, 175, 102, 253, 52, 236, 0, 0, 2, 19,
+        1, 1, 0, 0, 114, 0, 0, 0, 23, 0, 21, 0, 0, 18, 119, 119, 119, 46, 103, 111, 111, 103, 108, 101, 97, 112, 105, 115, 46, 99, 111, 109, 0, 10, 0,
+        4, 0, 2, 0, 29, 0, 13, 0, 20, 0, 18, 4, 3, 8, 4, 4, 1, 5, 3, 8, 5, 5, 1, 8, 6, 6, 1, 2, 1, 0, 51, 0, 38, 0, 36, 0, 29, 0, 32, 192, 66, 56, 95,
+        6, 86, 129, 217, 28, 232, 5, 177, 109, 189, 139, 154, 6, 3, 215, 62, 202, 195, 214, 238, 231, 82, 157, 198, 107, 200, 81, 16, 0, 45, 0, 2, 1, 1,
+        0, 43, 0, 3, 2, 3, 4, 2, 0, 0, 86, 3, 3, 8, 215, 19, 207, 58, 155, 125, 3, 157, 121, 43, 159, 152, 229, 77, 159, 41, 50, 150, 5, 171, 174, 144,
+        47, 121, 11, 241, 132, 255, 77, 16, 244, 0, 19, 1, 0, 0, 46, 0, 51, 0, 36, 0, 29, 0, 32, 246, 48, 130, 234, 125, 96, 179, 219, 52, 226, 168, 235,
+        57, 47, 53, 103, 96, 246, 129, 101, 202, 83, 142, 117, 64, 20, 47, 242, 241, 212, 56, 30, 0, 43, 0, 2, 3, 4];
+
+    let etalon_result:[u8;32] = [162, 167, 100, 226, 203, 243, 188, 175, 210, 16, 93, 167, 119, 3, 240, 28, 125, 253, 213, 165, 137, 64, 175, 170, 4, 35, 61, 221, 215, 13, 98, 64];
+    let hash = sum256( &transcript_messages);
+    println!("derive_secret hash is : {:?}", &hash);
+    assert_eq!(hash, etalon_result);
+
 }*/

@@ -100,68 +100,7 @@ pub fn key_share(public_key: &[u8]) -> Vec<u8> {
         &u16_to_bytes(public_key.len() as u16).as_slice(),
         &public_key]
     )
-}/*
-
-pub fn extension(id: u16, contents: &[u8]) -> Vec<u8> {
-    concatenate(
-        u16(id).as_slice(),
-        u16(contents.len() as u16).as_slice(),
-        contents,
-    )
 }
-
-pub fn parse_server_hello<R: Read>(buf: &mut R) -> ServerHello {
-    let mut hello = ServerHello {
-        random: vec![0; 32],
-        public_key: Vec::new(),
-    };
-
-    // Пропускаем handshake type & length
-    let _ = buf.take(4).bytes().collect::<Result<Vec<_>, _>>().unwrap();
-    // Пропускаем tls version
-    let _ = buf.take(2).bytes().collect::<Result<Vec<_>, _>>().unwrap();
-
-    buf.read_exact(&mut hello.random).unwrap();
-
-    let session_id_length = buf.read_u8().unwrap() as usize;
-    let mut session_id = vec![0; session_id_length];
-    buf.read_exact(&mut session_id).unwrap();
-
-    // Пропускаем cipher suite
-    let _ = buf.take(2).bytes().collect::<Result<Vec<_>, _>>().unwrap();
-    // Пропускаем compression
-    let _ = buf.take(1).bytes().collect::<Result<Vec<_>, _>>().unwrap();
-
-    let extensions_length = buf.read_u16::<BigEndian>().unwrap();
-    let mut extensions_buf = &mut buf.take(extensions_length.into()).bytes().collect::<Result<Vec<_>, _>>().unwrap();
-
-    while !extensions_buf.is_empty() {
-        let typ = BigEndian::read_u16(&mut extensions_buf).unwrap(); // let typ = BigEndian::read_u16(&mut extensions_buf).unwrap();
-        let contents_length = BigEndian::read_u16(&mut extensions_buf).unwrap() as usize;
-        let mut contents = &mut extensions_buf.take(contents_length.into()).bytes().collect::<Result<Vec<_>, _>>().unwrap();
-
-        match typ {
-            0x0033 => {
-                // key share
-                let _ = BigEndian::read_u16(&mut contents).unwrap(); // x25519
-                let public_key_length = BigEndian::read_u16(&mut contents).unwrap() as usize;
-                hello.public_key = contents.take(public_key_length.into()).bytes().collect::<Result<Vec<_>, _>>().unwrap();
-
-                if !contents.is_empty() {
-                    eprintln!("didn't read all of key share");
-                }
-            }
-            0x002b => {
-                // игнорируем версию TLS
-            }
-            _ => {
-                eprintln!("unknown extension");
-            }
-        }
-    }
-
-    hello
-}*/
 
 pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
     let mut hello = ServerHello {
@@ -170,13 +109,10 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
     };
     let mut current_pos: usize = 0;
 
-    // Пропускаем handshake type:
     current_pos = current_pos + 2; // 02 00 ("server hello") // buf.take(2);
 
-    // Пропускаем length_of_message:
     current_pos = current_pos + 2; // buf.take(2);
 
-    // Пропускаем tls type of message:
     current_pos = current_pos + 2; // 03 03 (client protocol version = "TLS 1.2") // buf.take(2);
 
     if &current_pos + 32 < buf.len() { // if let Some(random_bytes) = buf.take(32) {
@@ -201,13 +137,14 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
         while &current_pos+2<buf.len() { // !extensions.is_empty()
             //dst.clone_from_slice(&buf[&current_pos..&current_pos+2]);
             let typ =  u16::from_be_bytes(buf[current_pos..current_pos+2].try_into().unwrap() );//let typ = extensions.read_u16().expect("can t read type of extension");
-            current_pos = current_pos + 2;
+            //current_pos = current_pos + 2;
             //let extension_length = u16::from_be_bytes(buf[&current_pos..&current_pos+2]);// let extension_length = extensions.read_u16().expect("can t read len of extension");
-            current_pos = current_pos + 2;
+            //current_pos = current_pos + 2;
             //let content = &buf[&current_pos..&current_pos+&extension_length];
             //current_pos = current_pos + extension_length;
             match typ {
                 0x0033 => { // key share
+                    current_pos = current_pos + 4;
                     // bypass type of key
                     current_pos = current_pos + 2;//let _ = contents.read_u16().expect("can t read type of key"); // 00 1d means x25519
                     let public_key_length = u16::from_be_bytes(buf[current_pos..current_pos+2].try_into().unwrap());//let public_key_length = contents.read_u16().expect("can t read len of public key");
@@ -216,62 +153,25 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
                     hello.public_key = public_key_bytes.try_into().unwrap(); // hello.public_key = public_key_bytes.to_vec();
                 }
                 0x002b => {
-                    // игнорируем версию TLS (и ее длину, всегда равную 2)
-                    current_pos = current_pos + 4;
+                    current_pos = current_pos + 6;
                 }
                 _ => {
                     let extension_len = u16::from_be_bytes(buf[current_pos..current_pos+2].try_into().unwrap());
-                    current_pos = current_pos + 2;
+                    current_pos = current_pos + 4;
                     current_pos = current_pos + (extension_len as usize);
+                    //eprintln!("unknown extension");
                 }
             }
         }
     } else {
+        //println!("not enough len of random bytes")
     }
 
     hello
 }
 
-/*pub fn read_record(reader: &mut TcpStream) -> Record { // pub fn read_record<R: Read>(reader: &mut R) -> Record {
-    let mut buf = [0u8; 5];
-    reader.read_exact(&mut buf).expect("Failed to read 5 bytes");
 
-    let length = u16::from_be_bytes(buf[3..5].try_into().unwrap() ) as usize; // let length = BigEndian::read_u16(&buf[3..5]) as usize;
-    println!("length is : {:?}", length);
-    let contents = read(length, reader);
 
-    let mut record = buf.to_vec();
-    record.extend_from_slice(&contents);
-
-    Record{0:record}
-}
-*/
-
-//pub fn read_record<R: Read>(reader: &mut R) -> Record {
-    //let mut buf = vec![0; 5];
-    //reader.read_exact(&mut buf).unwrap();
-
-    //let length = BigEndian::read_u16(&buf[3..5]);
-    //let contents = read(length as usize
-        //concatenate(buf, contents)
-//}
-
-/*pub fn read(length: usize, reader: &mut dyn Read) -> Vec<u8> {
-    let mut buf = Vec::new();
-    while buf.len() < length {
-        buf.extend(read_upto(length - buf.len(), reader));
-    }
-    buf
-}
-
-pub fn read_upto(length: usize, reader: &mut dyn Read) -> Vec<u8> {
-    let mut buf = vec![0u8; length];
-    let n = reader.read(&mut buf).expect("Failed to read data");
-    buf.truncate(n); // Обрезаем буфер до фактически прочитанного размера
-    buf
-}*/
-
-// pub fn concatenate(bufs: Vec<&[u8]>) -> Vec<u8> {
 pub fn concatenate(bufs: &[&[u8]]) -> Vec<u8> {
     let mut buf = Vec::new();
     for b in bufs {

@@ -221,6 +221,8 @@ dependencies = [
  "chrono",
  "hex",
  "num-bigint",
+ "num-integer",
+ "num-traits",
  "wit-bindgen-rt",
 ]
 
