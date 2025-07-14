@@ -8,7 +8,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-
+use ark_std::rand::rngs::StdRng;
 use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
@@ -74,6 +74,11 @@ use base64::decode;
 use base64ct::Encoding as bEncoding;
 
 use rand::Rng;
+use rand::SeedableRng;
+use rand::thread_rng;
+
+use crate::executor::deserialization::execute_schkrefs;
+
 
 #[allow(dead_code)]
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
@@ -1913,7 +1918,92 @@ fn test_xor() {
     }
 
     let average_ =  average_ / num_iter;
-    println!("average_ in nanoseconds: {:?}", average_);
+    println!("average_ in nanoseconds: {:?}", average_);      
+}
 
-        
+#[test]
+fn test_schkrefs() {
+     let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+    let stack = Stack::new();
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+   
+    let num_iter = 10;
+    let mut average_: u128 = 0;
+    for i in 0..num_iter {
+        println!("======================");
+        println!("iter = {i}");
+        let mut arr_1: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_1);
+
+        let mut arr_2: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_2);
+
+        let mut arr_3: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_3);
+
+        let mut arr_4: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_4);
+
+        let mut arr_5: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_5);
+
+        let mut d = SliceData::new(arr_1.to_vec());
+        d.append_reference(SliceData::new(arr_2.to_vec()));
+        d.append_reference(SliceData::new(arr_3.to_vec()));
+        d.append_reference(SliceData::new(arr_4.to_vec()));
+        d.append_reference(SliceData::new(arr_5.to_vec()));
+        println!("{:?}", d);
+        println!("{:?}", d.remaining_references());
+        engine.cc.stack.push(StackItem::Slice(d));
+        engine.cc.stack.push(StackItem::int(0));
+
+        let start: Instant = Instant::now();
+        let status = execute_schkrefs(&mut engine).unwrap();
+        println!("status : {:?}", status);
+        let elapsed = start.elapsed().as_nanos();
+
+        average_ = average_ + elapsed;
+
+        println!("elapsed in nanoseconds: {:?}", elapsed);
+    }
+    
+
+    let average_ =  average_ / num_iter;
+    println!("average_ in nanoseconds: {:?}", average_);  
+    
 }
