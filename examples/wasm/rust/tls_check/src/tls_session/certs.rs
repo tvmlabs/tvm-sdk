@@ -1515,7 +1515,7 @@ pub fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(de
             }
 
             if present {
-                /*let mut seen_exts: HashMap<String, bool> = HashMap::new(); // seenExts := make(map[string]bool)
+                let mut seen_exts: HashMap<String, bool> = HashMap::new(); // seenExts := make(map[string]bool)
                 let mut extensions1 = ASN1String{ 0: Vec::new()};
                 if !extensions.read_asn1(&mut extensions1, SEQUENCE) {
                     panic!("x509: malformed extensions");
@@ -1540,7 +1540,7 @@ pub fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(de
 					//}
 					seen_exts.insert(oid_str, true); //seenExts[oidStr] = true
                     cert.extensions.push(ext);
-                }*/
+                }
 
 
             }
