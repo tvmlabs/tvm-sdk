@@ -78,7 +78,7 @@ use rand::SeedableRng;
 use rand::thread_rng;
 
 use crate::executor::deserialization::execute_schkrefs;
-
+use crate::executor::math::execute_divmod;
 
 #[allow(dead_code)]
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
@@ -176,6 +176,8 @@ fn test_division_primitives_execution() {
     }
     assert_eq!(45, count);
 }
+
+
 
 fn get_command_name<T>(name: &str) -> String
 where
@@ -2002,8 +2004,92 @@ fn test_schkrefs() {
         println!("elapsed in nanoseconds: {:?}", elapsed);
     }
     
-
     let average_ =  average_ / num_iter;
     println!("average_ in nanoseconds: {:?}", average_);  
     
 }
+
+
+#[test]
+fn test_divmodc() {
+    
+
+    let flags: u8 = 14;
+    let mode = DivMode::with_flags(flags);
+    println!("mode: {:?}", mode.command_name());
+    println!("flags: {:?}", flags);
+    
+    //test_div_primitive_execution::<Signaling>(&mode);
+    //test_div_primitive_execution::<Quiet>(&mode);
+
+    let command_name = command_name_from_mode::<Signaling>(&mode);
+    println!("Flags: {:#010b}, Cmd: {}", mode.flags, command_name);
+
+    let num_iter = 10;
+    let mut average_: u128 = 0;
+    for i in 0..num_iter {
+        println!("======================");
+        println!("iter = {i}");
+        let mut value = rand::thread_rng().next_u32();
+        println!("value = {value}");
+        let mul_shift = 3;
+        let div_shift = 1;
+
+        let multiplier: i32 = 1 << mul_shift;
+        let divisor: i32 = 1 << div_shift;
+        let mut stack = Stack::new();
+        let mut swap = 0;
+
+        stack.push(int!(value));
+
+        if mode.premultiply() && (!mode.mul_by_shift() || !mode.shift_parameter()) {
+            stack.push(int!(if mode.mul_by_shift() {
+                swap = 1;
+                mul_shift
+            } else {
+                multiplier
+            }));
+        }
+
+        if !(mode.div_by_shift() && mode.shift_parameter()) {
+            stack.push(int!(if mode.div_by_shift() {
+                div_shift
+            } else {
+                if swap == 1 {
+                    swap = 2
+                }
+                divisor
+            }));
+        }
+        if swap == 2 {
+            stack.swap(1, 0).unwrap()
+        }
+
+        let code = div_generate_bytecode::<Signaling>(&mode, mul_shift as u8, div_shift as u8);
+        let mut engine =
+        Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
+
+        let start: Instant = Instant::now();
+        let res = engine.execute(); 
+        let elapsed = start.elapsed().as_nanos();
+
+        average_ = average_ + elapsed;
+
+        println!("elapsed in nanoseconds: {:?}", elapsed);
+
+        match res {
+            Err(e) => panic!("Execute error: {}", e),
+            Ok(_) => {
+                println!("Ok!");
+            }
+        }
+
+    }
+    println!("======================");
+    let average_ =  average_ / num_iter;
+    println!("average_ in nanoseconds: {:?}", average_);  
+
+
+       
+}
+
