@@ -164,7 +164,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         msg_balance_convert = echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
                         msg_balance.grams += Grams::from(msg_balance_convert);
                         value.sub(&echng)?;
-                        let digits = echng.value().iter_u64_digits().collect::<Vec<u64>>();
+                        let digits = value.value().iter_u64_digits().collect::<Vec<u64>>();
                         let base = u64::MAX as u128 + 1;
                         let new_balance = if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
                             u128::MAX
