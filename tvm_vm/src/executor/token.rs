@@ -235,6 +235,14 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM instance {:?}", e)?,
     };
 
+    let mut wasm_linker = wasm_linker.allow_shadowing(true);
+    match wasm_linker.define_unknown_imports_as_traps(&wasm_component) {
+        Ok(_) => {}
+        Err(e) => {
+            err!(ExceptionCode::WasmLoadFail, "Failed to populate unsuported imports {:?}", e)?
+        }
+    };
+
     // This is the default add to linker method, we dont use it as it will add async
     // calls for IO stuff, which fails inside out Tokio runtime
     // match wasmtime_wasi::p2::add_to_linker_sync(&mut wasm_linker) {
