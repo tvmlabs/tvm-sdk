@@ -156,13 +156,24 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
             if h.is_exchange {
                 if let Ok(Some(mut value)) = msg_balance.get_other(2) {
-                    if value > VarUInteger32::from(u64::MAX) {
-                        value = VarUInteger32::from(u64::MAX);
+                    let mut echng = value.clone();
+                    if echng > VarUInteger32::from(u64::MAX) {
+                        echng = VarUInteger32::from(u64::MAX);
                     }
-                    if value != VarUInteger32::from(0) {
-                        msg_balance_convert = value.value().iter_u64_digits().collect::<Vec<u64>>()[0];
+                    if echng != VarUInteger32::from(0) {
+                        msg_balance_convert = echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
                         msg_balance.grams += Grams::from(msg_balance_convert);
-                        msg_balance.set_other(2, 0)?;
+                        value.sub(&echng)?;
+                        let digits = echng.value().iter_u64_digits().collect::<Vec<u64>>();
+                        let base = u64::MAX as u128 + 1;
+                        let new_balance = if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
+                            u128::MAX
+                        } else {
+                            let d0 = digits.first().copied().unwrap_or(0) as u128;
+                            let d1 = digits.get(1).copied().unwrap_or(0) as u128;
+                            d0 + d1 * base
+                        };
+                        msg_balance.set_other(2, new_balance)?;
                     }
                     exchanged = true;
                 }
