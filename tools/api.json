@@ -1,5 +1,5 @@
 {
-  "version": "2.9.2",
+  "version": "2.18.3",
   "modules": [
     {
       "name": "client",
@@ -377,15 +377,6 @@
           "type": "Struct",
           "struct_fields": [
             {
-              "name": "server_address",
-              "type": "Optional",
-              "optional_inner": {
-                "type": "String"
-              },
-              "summary": "**This field is deprecated, but left for backward-compatibility.** Evernode endpoint.",
-              "description": null
-            },
-            {
               "name": "endpoints",
               "type": "Optional",
               "optional_inner": {
@@ -395,7 +386,7 @@
                 }
               },
               "summary": "List of Evernode endpoints.",
-              "description": "Any correct URL format can be specified, including IP addresses. This parameter is prevailing over\n`server_address`. Check the full list of [supported network endpoints](https://docs.evercloud.dev/products/evercloud/networks-endpoints)."
+              "description": "Any correct URL format can be specified, including IP addresses."
             },
             {
               "name": "network_retries_count",
@@ -568,6 +559,15 @@
                 "type": "String"
               },
               "summary": "Access key to GraphQL API (Project secret)",
+              "description": null
+            },
+            {
+              "name": "api_token",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "Access token to the Node REST API",
               "description": null
             }
           ],
@@ -1051,6 +1051,341 @@
             "generic_args": [
               {
                 "type": "None"
+              }
+            ]
+          },
+          "errors": null
+        }
+      ]
+    },
+    {
+      "name": "account",
+      "summary": "Provides information about account.",
+      "description": null,
+      "types": [
+        {
+          "name": "AccountErrorCode",
+          "type": "EnumOfConsts",
+          "enum_consts": [
+            {
+              "name": "NotImplemented",
+              "type": "Number",
+              "value": "1",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InvalidHex",
+              "type": "Number",
+              "value": "2",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InvalidBase64",
+              "type": "Number",
+              "value": "3",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InvalidAddress",
+              "type": "Number",
+              "value": "4",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CallbackParamsCantBeConvertedToJson",
+              "type": "Number",
+              "value": "5",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "WebsocketConnectError",
+              "type": "Number",
+              "value": "6",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "WebsocketReceiveError",
+              "type": "Number",
+              "value": "7",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "WebsocketSendError",
+              "type": "Number",
+              "value": "8",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "HttpClientCreateError",
+              "type": "Number",
+              "value": "9",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "HttpRequestCreateError",
+              "type": "Number",
+              "value": "10",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "HttpRequestSendError",
+              "type": "Number",
+              "value": "11",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "HttpRequestParseError",
+              "type": "Number",
+              "value": "12",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CallbackNotRegistered",
+              "type": "Number",
+              "value": "13",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "NetModuleNotInit",
+              "type": "Number",
+              "value": "14",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InvalidConfig",
+              "type": "Number",
+              "value": "15",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CannotCreateRuntime",
+              "type": "Number",
+              "value": "16",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InvalidContextHandle",
+              "type": "Number",
+              "value": "17",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CannotSerializeResult",
+              "type": "Number",
+              "value": "18",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CannotSerializeError",
+              "type": "Number",
+              "value": "19",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CannotConvertJsValueToJson",
+              "type": "Number",
+              "value": "20",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CannotReceiveSpawnedResult",
+              "type": "Number",
+              "value": "21",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "SetTimerError",
+              "type": "Number",
+              "value": "22",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InvalidParams",
+              "type": "Number",
+              "value": "23",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "ContractsAddressConversionFailed",
+              "type": "Number",
+              "value": "24",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "UnknownFunction",
+              "type": "Number",
+              "value": "25",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "AppRequestError",
+              "type": "Number",
+              "value": "26",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "NoSuchRequest",
+              "type": "Number",
+              "value": "27",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CanNotSendRequestResult",
+              "type": "Number",
+              "value": "28",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CanNotReceiveRequestResult",
+              "type": "Number",
+              "value": "29",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CanNotParseRequestResult",
+              "type": "Number",
+              "value": "30",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "UnexpectedCallbackResponse",
+              "type": "Number",
+              "value": "31",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "CanNotParseNumber",
+              "type": "Number",
+              "value": "32",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InternalError",
+              "type": "Number",
+              "value": "33",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InvalidHandle",
+              "type": "Number",
+              "value": "34",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "LocalStorageError",
+              "type": "Number",
+              "value": "35",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "InvalidData",
+              "type": "Number",
+              "value": "36",
+              "summary": null,
+              "description": null
+            }
+          ],
+          "summary": null,
+          "description": null
+        },
+        {
+          "name": "ParamsOfGetAccount",
+          "type": "Struct",
+          "struct_fields": [
+            {
+              "name": "address",
+              "type": "String",
+              "summary": null,
+              "description": null
+            }
+          ],
+          "summary": null,
+          "description": null
+        },
+        {
+          "name": "ResultOfGetAccount",
+          "type": "Struct",
+          "struct_fields": [
+            {
+              "name": "boc",
+              "type": "String",
+              "summary": null,
+              "description": null
+            }
+          ],
+          "summary": null,
+          "description": null
+        }
+      ],
+      "functions": [
+        {
+          "name": "get_account",
+          "summary": null,
+          "description": null,
+          "params": [
+            {
+              "name": "context",
+              "type": "Generic",
+              "generic_name": "Arc",
+              "generic_args": [
+                {
+                  "type": "Ref",
+                  "ref_name": "ClientContext"
+                }
+              ],
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "params",
+              "type": "Ref",
+              "ref_name": "account.ParamsOfGetAccount",
+              "summary": null,
+              "description": null
+            }
+          ],
+          "result": {
+            "type": "Generic",
+            "generic_name": "ClientResult",
+            "generic_args": [
+              {
+                "type": "Ref",
+                "ref_name": "account.ResultOfGetAccount"
               }
             ]
           },
@@ -12426,6 +12761,41 @@
               "name": "WrongWebscoketProtocolSequence",
               "type": "Number",
               "value": "618",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "ParseUrlFailed",
+              "type": "Number",
+              "value": "619",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "ModifyUrlFailed",
+              "type": "Number",
+              "value": "620",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "SendMessageFailed",
+              "type": "Number",
+              "value": "621",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "NotFound",
+              "type": "Number",
+              "value": "622",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "AllAttemptsFailed",
+              "type": "Number",
+              "value": "623",
               "summary": null,
               "description": null
             }
