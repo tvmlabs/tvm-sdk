@@ -49,6 +49,20 @@ fn register_client(handlers: &mut RuntimeHandlers) {
     module.register();
 }
 
+/// Provides information about account.
+#[derive(ApiModule)]
+#[api_module(name = "account")]
+pub(crate) struct AccountModule;
+
+fn register_account(handlers: &mut RuntimeHandlers) {
+    let mut module = ModuleReg::new::<AccountModule>(handlers);
+    module.register_error_code::<crate::client::errors::ErrorCode>();
+    module.register_type::<crate::account::ParamsOfGetAccount>();
+    module.register_type::<crate::account::ResultOfGetAccount>();
+    module.register_async_fn(crate::account::get_account, crate::account::get_account_api);
+    module.register();
+}
+
 /// Crypto functions.
 #[derive(ApiModule)]
 #[api_module(name = "crypto")]
@@ -661,6 +675,7 @@ fn register_proofs(handlers: &mut RuntimeHandlers) {
 
 pub(crate) fn register_modules(handlers: &mut RuntimeHandlers) {
     register_client(handlers);
+    register_account(handlers);
     register_crypto(handlers);
     register_abi(handlers);
     register_boc(handlers);
