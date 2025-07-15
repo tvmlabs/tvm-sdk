@@ -111,6 +111,9 @@ impl TokenValue {
         }?;
 
         if last {
+            println!("allow_partial {}, slice {:?}", allow_partial, slice);
+            println!("Cursor {:x?}", cursor.slice.cell().data());
+            //let allow_partial = true;
             Self::check_full_decode(allow_partial, &slice)?;
         }
 
@@ -246,7 +249,8 @@ impl TokenValue {
         if !allow_partial
             && (remaining.remaining_references() != 0 || remaining.remaining_bits() != 0)
         {
-            println!("Decode full");
+            println!("Decode full remaining bits {:?}", remaining.remaining_bits());
+            println!("Decode full {:x?}", remaining.cell().data());
             fail!(AbiError::IncompleteDeserializationError)
         } else {
             Ok(())
@@ -550,8 +554,13 @@ impl TokenValue {
         for param in params {
             // println!("{:?}", param);
             let last = Some(param) == params.last() && last;
-            let (token_value, new_cursor) =
-                Self::read_from(&param.kind, cursor, last, abi_version, allow_partial)?;
+            let (token_value, new_cursor) = {
+                let res = Self::read_from(&param.kind, cursor, last, abi_version, allow_partial);
+                if res.is_err() {
+                    println!("Decode Params");
+                }
+                res?
+            };
 
             cursor = new_cursor;
             tokens.push(Token { name: param.name.clone(), value: token_value });
