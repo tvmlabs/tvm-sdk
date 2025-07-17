@@ -2,6 +2,10 @@ on: [push, pull_request]
 
 name: Lint and Test
 
+concurrency:
+  group: lint-and-test-${{ github.sha }}
+  cancel-in-progress: true
+
 jobs:
   clippy:
     name: Clippy
