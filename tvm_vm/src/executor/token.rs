@@ -3,6 +3,8 @@ use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_BURNECC;
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
+use tvm_block::ACTION_MINT_SHELLQ_TOKEN;
+use tvm_block::ACTION_SEND_TO_DAPP_CONFIG;
 use tvm_block::ACTION_MINTECC;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
@@ -45,6 +47,7 @@ pub const KS: f64 = 0.001_f64;
 pub const KM: f64 = 0.00001_f64;
 pub const KRBK: f64 = 0.675_f64;
 pub const KRBM: f64 = 0.1_f64;
+pub const KRMV: f64 = 0.225_f64;
 pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub const WASM_FUEL_MULTIPLIER: u64 = 2220000u64;
@@ -636,13 +639,14 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
 }
 
 #[allow(clippy::excessive_precision)]
-pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("CALCBMREWARDADJ"))?;
-    fetch_stack(engine, 4)?;
-    let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
-    let rbmprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
-    let drbmavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mbmt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
+pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCBMMVREWARDADJ"))?;
+    fetch_stack(engine, 5)?;
+    let is_bm = engine.cmd.var(0).as_bool()?; 
+    let t = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
+    let rbmprev = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
+    let drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let rbmmin;
     if t <= TTMT - 1_f64 {
@@ -654,7 +658,12 @@ pub(super) fn execute_calculate_adjustment_reward_bm(engine: &mut Engine) -> Sta
     } else {
         rbmmin = 0_f64;
     }
-    let rbm = (((calc_mbk(t + drbmavg, KRBM) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
+    let rbm;
+    if is_bm {
+        rbm = (((calc_mbk(t + drbmavg, KRBM) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
+    } else {
+        rbm = (((calc_mbk(t + drbmavg, KRMV) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
+    }
     engine.cc.stack.push(int!(rbm as u128));
     Ok(())
 }
@@ -699,11 +708,12 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMREWARD"))?;
-    fetch_stack(engine, 4)?;
+    fetch_stack(engine, 5)?;
     let radj = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
     let depoch = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
     let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let _pubkey_cell = engine.cmd.var(4).as_cell()?;
     let reward;
     if mbm >= TOTALSUPPLY * 0.1_f64 {
         reward = 0_f64;
@@ -719,7 +729,7 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
-    let nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; // needNumberOfActiveBlockKeepers = 10000
+    let _nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; // needNumberOfActiveBlockKeepers = 10000
     let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepersAtBlockStart
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token without slash tokens
@@ -732,19 +742,11 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
             let uf = (-1_f64 / TTMT) * (KF / (1_f64 + KF)).ln();
             fstk = MAX_FREE_FLOAT_FRAC * (1_f64 + KF) * (1_f64 - (-1_f64 * tstk * uf).exp());
         }
-        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbkreq;
+        sbkbase = (mbkav * (1_f64 - fstk) / 2_f64) / nbk;
     } else {
         sbkbase = 0_f64;
     }
-    let sbkmin;
-    let us = -1_f64 * (KS / (KS + 1_f64)).ln() / nbkreq;
-    if (nbk >= 0_f64) && (nbk <= nbkreq) {
-        sbkmin = sbkbase * (1_f64 + KS) * (1_f64 - (-1_f64 * us * nbk).exp());
-    } else {
-        let unbk = 2_f64 * nbkreq - nbk;
-        sbkmin = sbkbase * (2_f64 - (1_f64 + KS) * (1_f64 - (-1_f64 * us * unbk).exp()));
-    }
-    engine.cc.stack.push(int!(sbkmin as u128));
+    engine.cc.stack.push(int!(sbkbase as u128));
     Ok(())
 }
 
@@ -775,4 +777,201 @@ pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
     let mut cell = BuilderData::new();
     x.write_to(&mut cell)?;
     add_action(engine, ACTION_MINT_SHELL_TOKEN, None, cell)
+}
+
+fn boost_coef_integral_calculation(bl: f64, br: f64, xl: f64, xr: f64, yd: f64, yu: f64, k: f64) -> f64 {
+    let dx = xr - xl;
+    let expk = k.exp();
+    ((yu - yd) * dx * ((k * (br - xl) / dx).exp() - (k * (bl - xl) / dx).exp())
+        + k * (br - bl) * (yd * expk - yu))
+        / (k * (expk - 1_f64))
+}
+
+
+fn boost_coef_calculation(dl: f64, dr: f64, x1: f64, x2: f64, x3: f64, x4: f64, y1: f64, y2: f64, y3: f64, y4: f64, k1: f64, k2: f64, k3: f64) -> f64 {
+    let mut bc = 0_f64;
+    if x1 <= dl && dl <= x2 {
+        if x1 <= dr && dr <= x2 {
+            bc = boost_coef_integral_calculation(dl, dr, x1, x2, y1, y2, k1);
+        } else if x2 < dr && dr <= x3 {
+            bc = boost_coef_integral_calculation(dl, x2, x1, x2, y1, y2, k1)
+                + boost_coef_integral_calculation(x2, dr, x2, x3, y2, y3, k2);
+        } else if x3 < dr && dr <= x4 {
+            bc = boost_coef_integral_calculation(dl, x2, x1, x2, y1, y2, k1)
+                + boost_coef_integral_calculation(x2, x3, x2, x3, y2, y3, k2)
+                + boost_coef_integral_calculation(x3, dr, x3, x4, y3, y4, k3);
+        }
+    } else if x2 < dl && dl <= x3 {
+        if x2 < dr && dr <= x3 {
+            bc = boost_coef_integral_calculation(dl, dr, x2, x3, y2, y3, k2);
+        } else if x3 < dr && dr <= x4 {
+            bc = boost_coef_integral_calculation(dl, x3, x2, x3, y2, y3, k2)
+                + boost_coef_integral_calculation(x3, dr, x3, x4, y3, y4, k3);
+        }
+    } else if x3 < dl && dl <= x4 {
+        if x3 < dr && dr <= x4 {
+            bc = boost_coef_integral_calculation(dl, dr, x3, x4, y3, y4, k3);
+        }
+    }
+    bc
+}
+
+
+fn calculate_sum_boost_coefficients(
+    lst: &[f64], x1: f64, x2: f64, x3: f64, x4: f64,
+    y1: f64, y2: f64, y3: f64, y4: f64,
+    k1: f64, k2: f64, k3: f64
+) -> Vec<f64> {
+    let total_lst: f64 = lst.iter().sum();
+    let mut cumulative_sum = 0_f64;
+    lst
+        .iter()
+        .map(|&value| {
+            let left_border = cumulative_sum / total_lst;
+            cumulative_sum += value;
+            let right_border = cumulative_sum / total_lst;
+            boost_coef_calculation(left_border, right_border, x1, x2, x3, x4, y1, y2, y3, y4, k1, k2, k3)
+        })
+        .collect()
+}
+
+fn validate_byte_array(bytes: &[u8], name: &str) -> anyhow::Result<()> {
+    if bytes.len() % 8 != 0 {
+        anyhow::bail!(
+            "{}: byte length must be multiple of 8 (got {})", 
+            name, bytes.len()
+        );
+    } else if bytes.len() > 8000 {
+        anyhow::bail!(
+            "{}: byte length exceeds 8000 bytes (got {})", 
+            name, bytes.len()
+        );
+    }
+    Ok(())
+}
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCBOOSTCOEF"))?;
+    fetch_stack(engine, 2)?;
+    let x1 = 0_f64;
+    let x2 = 0.3_f64;
+    let x3 = 0.7_f64;
+    let x4 = 1_f64;
+    let y1 = 0_f64;
+    let y2 = 0.066696948409_f64;
+    let y3 = 2_f64;
+    let y4 = 8_f64;
+    let k1 = 10_f64;
+    let k2 = 1.894163612445_f64;    
+    let k3 = 17.999995065464_f64;     
+    let s = engine.cmd.var(0).as_cell()?;
+    let s1 = engine.cmd.var(1).as_cell()?;
+    let (token_value, _) = TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)
+        .map_err(|e| exception!(ExceptionCode::TypeCheckError, "Failed to read cell s: {}", e))?;
+    let transformed_users_per_item = match token_value {
+        TokenValue::Bytes(data) => data,
+        _ => return err!(ExceptionCode::TypeCheckError, "Expected Bytes in cell s"),
+    };
+    validate_byte_array(transformed_users_per_item.as_slice(), "s")
+        .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
+        
+    let vec_u64: Vec<u64> = transformed_users_per_item
+        .as_slice()
+        .chunks_exact(8)
+        .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
+        .collect();
+
+    let mbnlst: Vec<f64> = vec_u64.iter().map(|&x| x as f64).collect();
+    let mbnlst_orig = vec_u64.clone();
+
+    let (token_value, _) = TokenValue::read_bytes(SliceData::load_cell(s1.clone())?, true, &ABI_VERSION_2_4)
+        .map_err(|e| exception!(ExceptionCode::TypeCheckError, "Failed to read cell s1: {}", e))?;
+    let glst_bytes = match token_value {
+        TokenValue::Bytes(data) => data,
+        _ => return err!(ExceptionCode::TypeCheckError, "Expected Bytes in cell s1"),
+    };
+    validate_byte_array(glst_bytes.as_slice(), "s1")
+        .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
+        
+    let glst: Vec<u64> = glst_bytes
+        .as_slice()
+        .chunks_exact(8)
+        .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
+        .collect();
+
+    
+    let total_boost_coef_list = calculate_sum_boost_coefficients(
+        &mbnlst, x1, x2, x3, x4,
+        y1, y2, y3, y4,
+        k1, k2, k3
+    );
+
+    let total_boost_coef_list_u64: Vec<u64> = total_boost_coef_list.iter().map(|&x| (x * 1e9_f64) as u64).collect();
+
+    let total_boost_coef_list_bytes: Vec<u8> = total_boost_coef_list_u64.iter()
+        .flat_map(|val| val.to_le_bytes())
+        .collect();
+
+    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;   
+    let total = mbnlst_orig.iter()
+        .zip(glst)
+        .map(|(&x, y)| u128::from(x) * u128::from(y))
+        .fold(0u128, |acc, val| acc.saturating_add(val));
+    engine.cc.stack.push(StackItem::cell(cell));
+    engine.cc.stack.push(int!(total));
+    Ok(())
+}
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
+    fetch_stack(engine, 5)?;
+    let mbn = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
+    let g = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
+    let sum = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let radj = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let depoch = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
+    let u = mbn * g / sum;
+    let reward;
+    if sum >= TOTALSUPPLY * KRMV {
+        reward = 0_f64;
+    } else {
+        reward = radj * depoch * u * 1e9_f64;
+    }
+    engine.cc.stack.push(int!(reward as u128));
+    Ok(())
+}
+
+
+pub(super) fn execute_mint_shellq(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("MINTSHELLQ"))?;
+    fetch_stack(engine, 1)?;
+    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
+    let mut cell = BuilderData::new();
+    x.write_to(&mut cell)?;
+    add_action(engine, ACTION_MINT_SHELLQ_TOKEN, None, cell)
+}
+
+pub(super) fn execute_send_to_dapp_config(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("SENDTODAPPCONFIG"))?;
+    fetch_stack(engine, 1)?;
+    let x: u64 = engine.cmd.var(0).as_integer()?.into(0..=u64::MAX)?;
+    let mut cell = BuilderData::new();
+    x.write_to(&mut cell)?;
+    add_action(engine, ACTION_SEND_TO_DAPP_CONFIG, None, cell)
+}
+
+#[allow(clippy::excessive_precision)]
+pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("GETAVAILABLEBALANCE"))?;
+    let mut balance = engine.get_available_credit();  
+    if balance < 0 {
+        balance = 0;
+    }
+    engine.cc.stack.push(int!(balance as u128));
+    Ok(())
 }
