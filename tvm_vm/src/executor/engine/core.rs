@@ -433,7 +433,14 @@ impl Engine {
         let filename = format!("{}/{}", self.wasm_binary_root_path, s);
         log::debug!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
-        Ok(std::fs::read(filename)?)
+        match std::fs::read(filename) {
+            Ok(r) => Ok(r),
+            Err(e) => err!(
+                ExceptionCode::WasmLoadFail,
+                "Failed to find wasm instruction by hash {:?}",
+                e
+            )?,
+        }
     }
 
     fn is_trace_enabled(&self) -> bool {

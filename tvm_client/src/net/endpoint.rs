@@ -79,6 +79,11 @@ impl Endpoint {
         if let Some(auth) = config.get_auth_header() {
             headers.push(auth);
         }
+
+        if let Some(rest_api_auth) = config.get_rest_api_header() {
+            headers.push(rest_api_auth);
+        }
+
         headers
     }
 

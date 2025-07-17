@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.18.3] - 2025-07-08
+
+### Changed
+- Changed `api.json` file. Added properties related to module account.
+
+
+## [2.18.2] - 2025-07-04
+
+### Fixes
+- Fixed `runwasm` and `runwasmconcatmultiarg` causing panic on using invalid hash.
+
+## [2.18.1] - 2025-06-28
+
+### New
+- Added `runwasmconcatmultiarg` instruction that allows multiple arguments to be concatenated then passed to `runwasm`
+
+## [2.18.0] - 2025-06-27
+
+### New
+- `account` module with `get_account` function that requests account boc from BM or BK node
+- `api-token` added to `config.network`
+
 ## [2.17.3] - 2025-06-25
 
 ### Fixes:
