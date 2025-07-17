@@ -62,8 +62,8 @@ impl AddressInput {
         let answer_id = decode_answer_id(args)?;
         let prompt = decode_prompt(args)?;
         let value = terminal_input(&prompt, |val| {
-            let _ = load_ton_address(val, &self.config)
-                .map_err(|e| format!("Invalid address: {}", e))?;
+            let _ =
+                load_ton_address(val, &self.config).map_err(|e| format!("Invalid address: {e}"))?;
             Ok(())
         });
         Ok((answer_id, json!({ "value": value })))
@@ -72,8 +72,8 @@ impl AddressInput {
     fn select(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let value = terminal_input("", |val| {
-            let _ = load_ton_address(val, &self.config)
-                .map_err(|e| format!("Invalid address: {}", e))?;
+            let _ =
+                load_ton_address(val, &self.config).map_err(|e| format!("Invalid address: {e}"))?;
             Ok(())
         });
         Ok((answer_id, json!({ "value": value })))
@@ -94,7 +94,7 @@ impl DebotInterface for AddressInput {
         match func {
             "get" => self.get(args),
             "select" => self.select(args),
-            _ => Err(format!("function \"{}\" is not implemented", func)),
+            _ => Err(format!("function \"{func}\" is not implemented")),
         }
     }
 }

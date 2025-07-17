@@ -369,7 +369,7 @@ fn test_real_shard_hashes() {
     let extra = block.read_extra().unwrap().read_custom().unwrap().expect("need key block");
     let shards = extra.shards();
     let mut count = shards.dump("shards");
-    println!("total: {}", count);
+    println!("total: {count}");
 
     let mut result = vec![];
     println!("---- pairs ----");
@@ -524,7 +524,7 @@ fn test_get_next_prev_key_block() {
     prev_blocks
         .iterate_with_keys_and_aug(|seqno, id, aug| {
             if aug.key && seqno != 0 {
-                println!("{:?}", id);
+                println!("{id:?}");
                 all_key_blocks.insert(seqno, id);
             }
             Ok(true)
@@ -534,7 +534,7 @@ fn test_get_next_prev_key_block() {
     let mut seqno = 0;
     let mut key_blocks = vec![];
     while let Some(id) = prev_blocks.get_next_key_block(seqno + 1).unwrap() {
-        println!("{:?}", id);
+        println!("{id:?}");
         seqno = id.seq_no;
         key_blocks.push(id);
     }
@@ -550,7 +550,7 @@ fn test_get_next_prev_key_block() {
     let mut seqno = key_blocks[key_blocks.len() - 1].seq_no + 2;
     let mut key_blocks2 = vec![];
     while let Some(id) = prev_blocks.get_prev_key_block(seqno - 1).unwrap() {
-        println!("{:?}", id);
+        println!("{id:?}");
         seqno = id.seq_no;
         if seqno == 0 {
             break;

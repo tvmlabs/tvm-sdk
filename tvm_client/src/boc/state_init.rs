@@ -143,7 +143,7 @@ pub fn get_code_salt(
 pub(crate) fn builder_to_cell(builder: BuilderData) -> ClientResult<Cell> {
     builder
         .into_cell()
-        .map_err(|err| Error::invalid_boc(format!("can not convert builder to cell: {}", err)))
+        .map_err(|err| Error::invalid_boc(format!("can not convert builder to cell: {err}")))
 }
 
 fn set_salt(cell: Cell, salt: Cell, replace_last_ref: bool) -> ClientResult<Cell> {
@@ -265,7 +265,7 @@ pub fn get_compiler_version_from_cell(code: Cell) -> ClientResult<Option<String>
         .map(|cell| {
             let bytes = cell.data();
             String::from_utf8(bytes[..bytes.len()].to_vec()).map_err(|err| {
-                Error::invalid_boc(format!("can not convert version cell to string: {}", err))
+                Error::invalid_boc(format!("can not convert version cell to string: {err}"))
             })
         })
         .transpose()

@@ -358,7 +358,7 @@ impl StateParser {
         num: i32,
         f: impl FnOnce(&PathMap) -> Result<ConfigParamEnum>,
     ) -> Result<()> {
-        let p = format!("p{}", num);
+        let p = format!("p{num}");
         match config.get_obj(&p) {
             Ok(p) => self
                 .extra
@@ -378,7 +378,7 @@ impl StateParser {
         num: i32,
         f: impl FnOnce(&Vec<Value>) -> Result<ConfigParamEnum>,
     ) -> Result<()> {
-        let p = format!("p{}", num);
+        let p = format!("p{num}");
         match config.get_vec(&p) {
             Ok(v) => {
                 self.extra.config.set_config(f(v)?).map_err(|err| {
@@ -398,7 +398,7 @@ impl StateParser {
         num: i32,
         f: impl FnOnce(UInt256) -> Result<ConfigParamEnum>,
     ) -> Result<()> {
-        let p = format!("p{}", num);
+        let p = format!("p{num}");
         match config.get_uint256(&p) {
             Ok(p) => {
                 self.extra.config.set_config(f(p)?).map_err(|err| {
@@ -417,7 +417,7 @@ impl StateParser {
         config: &PathMap,
         num: i32,
     ) -> Result<Option<MandatoryParams>> {
-        let p = format!("p{}", num);
+        let p = format!("p{num}");
         match config.get_vec(&p) {
             Ok(vec) => {
                 let mut params = MandatoryParams::default();

@@ -99,8 +99,7 @@ pub(crate) async fn find_last_shard_block(
 
             if blocks[0].is_null() {
                 return Err(Error::block_not_found(format!(
-                    "No blocks for workchain {} found",
-                    workchain
+                    "No blocks for workchain {workchain} found"
                 )));
             }
             // if workchain is sharded, then it is not Evernode SE and masterchain blocks
@@ -137,10 +136,8 @@ pub(crate) async fn find_last_shard_block(
                 .as_array()
                 .ok_or(Error::invalid_data("No `shard_hashes` field in masterchain block"))?;
 
-            let shard_block =
-                tvm_sdk::Contract::find_matching_shard(shards, address).map_err(|err| {
-                    Error::invalid_data(format!("find matching shard failed {}", err))
-                })?;
+            let shard_block = tvm_sdk::Contract::find_matching_shard(shards, address)
+                .map_err(|err| Error::invalid_data(format!("find matching shard failed {err}")))?;
             if shard_block.is_null() {
                 return Err(Error::invalid_data(format!(
                     "No matching shard for account {} in block {}",
@@ -205,11 +202,11 @@ pub async fn wait_next_block(
             .await
             .and_then(|val| {
                 serde_json::from_value(val)
-                    .map_err(|err| Error::invalid_data(format!("Can not parse block: {}", err)))
+                    .map_err(|err| Error::invalid_data(format!("Can not parse block: {err}")))
             })
     } else {
         serde_json::from_value(block)
-            .map_err(|err| Error::invalid_data(format!("Can not parse block: {}", err)))
+            .map_err(|err| Error::invalid_data(format!("Can not parse block: {err}")))
     }
 }
 

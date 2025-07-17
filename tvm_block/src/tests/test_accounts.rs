@@ -489,14 +489,14 @@ fn test_account_account2() {
     let mut acc = Account::with_storage(&addr, &st_info, &acc_st);
     acc.update_storage_stat().unwrap();
 
-    println!("acc before update {}", acc);
+    println!("acc before update {acc}");
     let su1 = acc.get_storage_stat().unwrap();
-    println!("StorageUsed before {}", su1);
+    println!("StorageUsed before {su1}");
 
     let mut acc = write_read_and_assert(acc);
 
     let su2 = acc.get_storage_stat().unwrap();
-    println!("StorageUsed after {}", su2);
+    println!("StorageUsed after {su2}");
     assert_eq!(su1, su2);
 
     if let Some(acc_code) = acc.get_code() {
@@ -641,7 +641,7 @@ fn test_real_account_serde() {
         ["src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
-        println!("state file: {}", state_file);
+        println!("state file: {state_file}");
 
         let (state, _) = get_real_tvm_state(state_file);
 
@@ -655,8 +655,8 @@ fn test_real_account_serde() {
                 let cell = acc.serialize().unwrap();
                 let acc2 = Account::construct_from_cell(cell.clone()).unwrap();
 
-                println!("orig:\n{:#.1}\n\n", acc_cell);
-                println!("our:\n{:#.1}\n\n", cell);
+                println!("orig:\n{acc_cell:#.1}\n\n");
+                println!("our:\n{cell:#.1}\n\n");
 
                 assert_eq!(acc, acc2);
 

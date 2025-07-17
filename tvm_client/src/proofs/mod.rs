@@ -317,8 +317,7 @@ pub async fn proof_message_data(
         &Value::String(root_hash.as_hex_string()),
     ) {
         return Err(Error::proof_check_failed(format!(
-            "Message with `id` = {} not found in transaction with `id` = {}",
-            root_hash, transaction_id,
+            "Message with `id` = {root_hash} not found in transaction with `id` = {transaction_id}",
         )));
     }
 

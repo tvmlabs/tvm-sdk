@@ -16,13 +16,13 @@ use crate::helpers::create_client_verbose;
 
 pub async fn sendfile(config: &Config, msg_boc: &str) -> Result<(), String> {
     let ton = create_client_verbose(config)?;
-    let boc_vec = std::fs::read(msg_boc).map_err(|e| format!("failed to read boc file: {}", e))?;
+    let boc_vec = std::fs::read(msg_boc).map_err(|e| format!("failed to read boc file: {e}"))?;
     let tvm_msg = tvm_sdk::Contract::deserialize_message(&boc_vec[..])
-        .map_err(|e| format!("failed to parse message from boc: {}", e))?;
+        .map_err(|e| format!("failed to parse message from boc: {e}"))?;
     let dst = tvm_msg.dst().ok_or("failed to parse dst address".to_string())?;
 
     if !config.is_json {
-        println!("Sending message to account {}", dst);
+        println!("Sending message to account {dst}");
     }
     send_message_and_wait(ton, None, base64_encode(&boc_vec), config).await?;
     if !config.is_json {

@@ -53,7 +53,7 @@ impl ExceptionType {
     fn exception_message(&self) -> String {
         match self {
             ExceptionType::System(code) => format!("{}, code {}", code, *code as u8),
-            ExceptionType::Custom(code) => format!("code {}", code),
+            ExceptionType::Custom(code) => format!("code {code}"),
         }
     }
 }
