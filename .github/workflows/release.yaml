@@ -154,9 +154,9 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        suffix: [macos-arm64, macos-amd64, linux-musl-arm64, linux-musl-amd64, arm64, x86_64]
+
+    env:
+      SUFFIXES: macos-arm64 macos-amd64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64
 
     steps:
       - name: Download all artifacts
@@ -165,15 +165,19 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R
 
-      - name: Make archive
+      - name: Make archives
         run: |
-          chmod +x artifacts-${{ matrix.suffix }}/*
+          set -e
           tag_name=$(echo "${{ github.ref_name }}" | sed 's/^v//')
-          cd artifacts-${{ matrix.suffix }}
-          for file in *; do
-            tar -czvf "$file"-"$tag_name"-${{ matrix.suffix }}.tar.gz $file
+          for suffix in $SUFFIXES; do
+            chmod +x artifacts-"$suffix"/*
+            cd artifacts-"$suffix"
+            for file in *; do
+              tar -czvf "$file"-"$tag_name"-"$suffix".tar.gz $file
+            done
+            cd ..
+            ls -lA artifacts-"$suffix"
           done
-          ls -lA
 
       - name: Set prerelease flag
         id: prerelease
@@ -188,8 +192,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           prerelease: ${{ steps.prerelease.outputs.PRERELEASE }}
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}-${{ github.run_number }}
           files: |
-            artifacts-${{ matrix.suffix }}/*.tar.gz
+            artifacts-*/**.tar.gz
           name: "Version: ${{ github.ref_name }}"
           body: ""
