@@ -835,6 +835,21 @@ fn calculate_sum_boost_coefficients(
         .collect()
 }
 
+fn validate_byte_array(bytes: &[u8], name: &str) -> anyhow::Result<()> {
+    if bytes.len() % 8 != 0 {
+        anyhow::bail!(
+            "{}: byte length must be multiple of 8 (got {})", 
+            name, bytes.len()
+        );
+    } else if bytes.len() > 8000 {
+        anyhow::bail!(
+            "{}: byte length exceeds 8000 bytes (got {})", 
+            name, bytes.len()
+        );
+    }
+    Ok(())
+}
+
 #[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBOOSTCOEF"))?;
@@ -848,22 +863,21 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     let y3 = 2_f64;
     let y4 = 8_f64;
     let k1 = 10_f64;
-    let k2 = 1.894163612445_f64;
+    let k2 = 1.894163612445_f64;    
     let k3 = 17.999995065464_f64;     
     let s = engine.cmd.var(0).as_cell()?;
     let s1 = engine.cmd.var(1).as_cell()?;
-    let transformed_users_per_item =
-        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
-            TokenValue::Bytes(items) => items,
-            _ => err!(ExceptionCode::TypeCheckError, "Failed to unpack transformed_users_per_item")?,
-        };
-
-    let bytes = transformed_users_per_item.as_slice();
-    if bytes.len() % 8 != 0 && bytes.len() <= 8000 {
-        err!(ExceptionCode::TypeCheckError, "Invalid bytes length for u64 array")?;
-    }
+    let (token_value, _) = TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)
+        .map_err(|e| exception!(ExceptionCode::TypeCheckError, "Failed to read cell s: {}", e))?;
+    let transformed_users_per_item = match token_value {
+        TokenValue::Bytes(data) => data,
+        _ => return err!(ExceptionCode::TypeCheckError, "Expected Bytes in cell s"),
+    };
+    validate_byte_array(transformed_users_per_item.as_slice(), "s")
+        .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
         
-    let vec_u64: Vec<u64> = bytes
+    let vec_u64: Vec<u64> = transformed_users_per_item
+        .as_slice()
         .chunks_exact(8)
         .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
         .collect();
@@ -871,21 +885,17 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     let mbnlst: Vec<f64> = vec_u64.iter().map(|&x| x as f64).collect();
     let mbnlst_orig = vec_u64.clone();
 
-    let glst_bytes =
-    match TokenValue::read_bytes(SliceData::load_cell(s1.clone())?, true, &ABI_VERSION_2_4)?.0 {
-        TokenValue::Bytes(items) => items,
-        _ => err!(ExceptionCode::TypeCheckError, "Failed to unpack transformed_users_per_item")?,
+    let (token_value, _) = TokenValue::read_bytes(SliceData::load_cell(s1.clone())?, true, &ABI_VERSION_2_4)
+        .map_err(|e| exception!(ExceptionCode::TypeCheckError, "Failed to read cell s1: {}", e))?;
+    let glst_bytes = match token_value {
+        TokenValue::Bytes(data) => data,
+        _ => return err!(ExceptionCode::TypeCheckError, "Expected Bytes in cell s1"),
     };
-
-    let bytes = glst_bytes.as_slice();
-    if bytes.len() % 8 != 0 && bytes.len() <= 8000 {
-        return err!(
-            ExceptionCode::TypeCheckError,
-            "Invalid bytes length for u64 array"
-        ).into();
-    }
+    validate_byte_array(glst_bytes.as_slice(), "s1")
+        .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
         
-    let glst: Vec<u64> = bytes
+    let glst: Vec<u64> = glst_bytes
+        .as_slice()
         .chunks_exact(8)
         .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
         .collect();
