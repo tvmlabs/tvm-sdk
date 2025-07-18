@@ -33,20 +33,12 @@ pub fn deserialize_cell_from_base64(
     b64: &str,
     name: &str,
 ) -> ClientResult<(Vec<u8>, tvm_types::Cell)> {
-    println!("deserialize_cell_from_base64 1");
-
-    println!("b64: {}", b64);
-    println!("name: {}", name);
-
     let bytes = base64_decode(b64)
         .map_err(|err| Error::invalid_boc(format!("error decode {} BOC base64: {}", name, err)))?;
-    println!("deserialize_cell_from_base64 2");
 
     let cell = tvm_types::boc::read_single_root_boc(&bytes).map_err(|err| {
         Error::invalid_boc(format!("{} BOC deserialization error: {}", name, err))
     })?;
-    println!("deserialize_cell_from_base64 3");
-
     Ok((bytes, cell))
 }
 
