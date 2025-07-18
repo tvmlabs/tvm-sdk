@@ -336,12 +336,12 @@ async fn decode_account_fields(m: &ArgMatches, config: &Config) -> Result<(), St
     }
     let abi = load_abi(abi.as_ref().unwrap(), config).await?;
 
-    let ton = create_client_verbose(config)?;
+    let context = create_client_verbose(config)?;
     let address = load_ton_address(address.unwrap(), config)?;
-    let data = query_account_field(ton.clone(), &address, "data").await?;
+    let data = query_account_field(context.clone(), &address, "data").await?;
 
     let res = decode_account_data(
-        ton,
+        context,
         ParamsOfDecodeAccountData { abi, data, allow_partial: true, ..Default::default() },
     )
     .map_err(|e| format!("failed to decode data: {}", e))?;
