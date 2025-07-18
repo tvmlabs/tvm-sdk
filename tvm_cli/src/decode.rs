@@ -340,6 +340,8 @@ async fn decode_account_fields(m: &ArgMatches, config: &Config) -> Result<(), St
     let address = load_ton_address(address.unwrap(), config)?;
     let data = query_account_field(ton.clone(), &address, "data").await?;
 
+    println!("GOT NORMAL DATA {}", data);
+
     let res =
         decode_account_data(ton, ParamsOfDecodeAccountData { abi, data, ..Default::default() })
             .map_err(|e| format!("failed to decode data: {}", e))?;

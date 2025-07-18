@@ -38,17 +38,25 @@ pub struct ResultOfDecodeAccountData {
 /// Note: this feature requires ABI 2.1 or higher.
 #[api_function]
 pub fn decode_account_data(
+    // ZZZ
     context: Arc<ClientContext>,
     params: ParamsOfDecodeAccountData,
 ) -> ClientResult<ResultOfDecodeAccountData> {
+    println!(" decode_account_data! {:?}", params.data);
     let (_, data) = deserialize_cell_from_boc(&context, &params.data, "contract data")?;
+    println!(" decode_account_data 2!");
+
     let abi = params.abi.abi()?;
+    println!(" decode_account_data 3!");
 
     let tokens = abi
         .decode_storage_fields(slice_from_cell(data)?, params.allow_partial)
         .map_err(Error::invalid_data_for_decode)?;
+    println!(" decode_account_data 4!");
 
     let data =
         Detokenizer::detokenize_to_json_value(&tokens).map_err(Error::invalid_data_for_decode)?;
+    println!(" decode_account_data 5!");
+
     Ok(ResultOfDecodeAccountData { data })
 }
