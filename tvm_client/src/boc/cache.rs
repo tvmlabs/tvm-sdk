@@ -198,14 +198,24 @@ impl Bocs {
         boc: &str,
         name: &str,
     ) -> ClientResult<(DeserializedBoc, Cell)> {
+        println!("deserialize_cell");
+
         if boc.starts_with('*') {
+            println!("deserialize_cell if");
+
             let hash = UInt256::from_str(&boc[1..]).map_err(|err| {
                 Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {}", err))
             })?;
 
+            println!("deserialize_cell 2");
+
             let cell = self.get(&hash).ok_or(Error::boc_ref_not_found(boc))?;
+            println!("deserialize_cell 3");
+
             Ok((DeserializedBoc::Cell(cell.clone()), cell))
         } else {
+            println!("deserialize_cell else");
+
             deserialize_cell_from_base64(boc, name)
                 .map(|(bytes, cell)| (DeserializedBoc::Bytes(bytes), cell))
         }

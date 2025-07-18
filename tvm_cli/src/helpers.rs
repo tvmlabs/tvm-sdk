@@ -19,6 +19,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::time::SystemTime;
 
+use base64::Engine;
 use clap::ArgMatches;
 use serde_json::Value;
 use serde_json::json;
@@ -60,7 +61,6 @@ use crate::debug::debug_level_from_env;
 use crate::replay::CONFIG_ADDR;
 use crate::replay::construct_blockchain_config;
 use crate::resolve_net_name;
-
 pub const HD_PATH: &str = "m/44'/396'/0'/0/0";
 pub const WORD_COUNT: u8 = 12;
 
@@ -293,6 +293,7 @@ pub async fn query_message(ton: TonClient, message_id: &str) -> Result<String, S
 }
 
 pub async fn query_account_field(
+    // ZZZ 2
     ton: TonClient,
     address: &str,
     field: &str,
@@ -310,17 +311,25 @@ pub async fn query_account_field(
         return Err("Only boc and data field are supported".to_string());
     }
 
+    println!("HERE IS RESULT OF GET ACC {}", result_of_get_acc.boc);
     let account = Account::construct_from_base64(&result_of_get_acc.boc)
         .map_err(|e| format!("failed to construct account from boc: {e}"))?;
+
+    println!("HERE IS ACC   {:?}", account);
 
     let state_init = account.state_init();
 
     if state_init.is_none() {
         return Err(format!("account doesn't contain state_init"));
     }
-    let data = state_init.unwrap().clone().data;
-    match data {
-        Some(data) => Ok(data.to_string()),
+    let cell = state_init.unwrap().clone().data;
+    println!("HERE IS OPT DATA   {:?}", cell);
+
+    match cell {
+        Some(cell) => {
+            let b64 = base64::engine::general_purpose::STANDARD.encode(&cell.data());
+            Ok(b64)
+        }
         None => Err(format!("State init doesn't contain field data")),
     }
 }
