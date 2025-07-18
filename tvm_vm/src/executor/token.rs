@@ -195,12 +195,32 @@ pub enum StreamError {
     Default,
 }
 
+impl wasi::cli::stderr::Host for MyState {
+    fn get_stderr(&mut self) -> wasmtime::component::Resource<wasi::io::streams::OutputStream> {
+        wasmtime::component::Resource::<wasi::io::streams::OutputStream>::new_borrow(10000)
+    }
+}
+
+impl wasi::cli::stdout::Host for MyState {
+    fn get_stdout(&mut self) -> wasmtime::component::Resource<wasi::io::streams::OutputStream> {
+        wasmtime::component::Resource::<wasi::io::streams::OutputStream>::new_borrow(10000)
+    }
+}
+
+impl wasi::cli::stdin::Host for MyState {
+    fn get_stdin(&mut self) -> wasmtime::component::Resource<wasi::io::streams::InputStream> {
+        wasmtime::component::Resource::<wasi::io::streams::InputStream>::new_borrow(10000)
+    }
+}
+
+impl wasi::io::streams::OutputStream {}
+
 impl wasi::io::streams::HostOutputStream for MyState {
     fn check_write(
         &mut self,
         self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
     ) -> Result<u64, wasi::io::streams::StreamError> {
-        Err(wasi::io::streams::StreamError::Closed)
+        Ok(0) //Err(wasi::io::streams::StreamError::Closed)
     }
 
     fn write(
@@ -208,7 +228,7 @@ impl wasi::io::streams::HostOutputStream for MyState {
         self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
         contents: wasmtime::component::__internal::Vec<u8>,
     ) -> Result<(), wasi::io::streams::StreamError> {
-        Err(wasi::io::streams::StreamError::Closed)
+        Ok(()) //Err(wasi::io::streams::StreamError::Closed)
     }
 
     fn blocking_write_and_flush(
@@ -216,14 +236,14 @@ impl wasi::io::streams::HostOutputStream for MyState {
         self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
         contents: wasmtime::component::__internal::Vec<u8>,
     ) -> Result<(), wasi::io::streams::StreamError> {
-        Err(wasi::io::streams::StreamError::Closed)
+        Ok(()) //Err(wasi::io::streams::StreamError::Closed)
     }
 
     fn blocking_flush(
         &mut self,
         self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
     ) -> Result<(), wasi::io::streams::StreamError> {
-        Err(wasi::io::streams::StreamError::Closed)
+        Ok(()) //Err(wasi::io::streams::StreamError::Closed)
     }
 
     fn drop(
@@ -286,10 +306,22 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
 }
 
 use wasmtime::component::HasData;
+
+// struct MyLibrary;
+
+// impl HasData for MyLibrary {
+//     type Data<'a> = MyState<'a>;
+// }
 struct HasWasi<T>(T);
 
 impl<T: 'static> HasData for HasWasi<T> {
     type Data<'a> = WasiImpl<&'a mut T>;
+}
+
+struct MyLibrary;
+
+impl HasData for MyLibrary {
+    type Data<'a> = &'a mut MyState;
 }
 // This is a custom linker method, adding only sync, non-io wasi dependencies.
 // If more deps are needed, add them in there!
@@ -658,8 +690,12 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     };
 
     // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
-
-    match Localworld::add_to_linker::<_, wasmtime::component::HasSelf<_>>(&mut wasm_linker, |s| s) {
+    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
+    // let f: fn(&mut MyState) -> &mut WasiImpl<&mut MyState> = |t| &mut
+    // WasiImpl(IoImpl(t));
+    let f: fn(&mut MyState) -> &mut MyState = |s| s;
+    // let f: fn(&mut MyState) -> &mut WasiImpl<IoImpl<&mut MyState>> = |t| t;
+    match Localworld::add_to_linker::<MyState, MyLibrary>(&mut wasm_linker, f) {
         Ok(_) => {}
         Err(e) => err!(
             ExceptionCode::WasmLoadFail,
