@@ -19,7 +19,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::time::SystemTime;
 
-use base64::Engine;
 use clap::ArgMatches;
 use serde_json::Value;
 use serde_json::json;
@@ -40,6 +39,7 @@ use tvm_client::abi::ParamsOfDecodeMessageBody;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
 use tvm_client::account;
+use tvm_client::boc::internal::serialize_cell_to_base64;
 use tvm_client::crypto::CryptoConfig;
 use tvm_client::crypto::KeyPair;
 use tvm_client::crypto::MnemonicDictionary;
@@ -293,7 +293,6 @@ pub async fn query_message(ton: TonClient, message_id: &str) -> Result<String, S
 }
 
 pub async fn query_account_field(
-    // ZZZ 2
     ton: TonClient,
     address: &str,
     field: &str,
@@ -311,25 +310,19 @@ pub async fn query_account_field(
         return Err("Only boc and data field are supported".to_string());
     }
 
-    println!("HERE IS RESULT OF GET ACC {}", result_of_get_acc.boc);
     let account = Account::construct_from_base64(&result_of_get_acc.boc)
         .map_err(|e| format!("failed to construct account from boc: {e}"))?;
-
-    println!("HERE IS ACC   {:?}", account);
 
     let state_init = account.state_init();
 
     if state_init.is_none() {
         return Err(format!("account doesn't contain state_init"));
     }
-    let cell = state_init.unwrap().clone().data;
-    println!("HERE IS OPT DATA   {:?}", cell);
+
+    let cell: Option<tvm_types::Cell> = state_init.unwrap().clone().data;
 
     match cell {
-        Some(cell) => {
-            let b64 = base64::engine::general_purpose::STANDARD.encode(&cell.data());
-            Ok(b64)
-        }
+        Some(cell) => Ok(serialize_cell_to_base64(&cell, "account data").unwrap()),
         None => Err(format!("State init doesn't contain field data")),
     }
 }
