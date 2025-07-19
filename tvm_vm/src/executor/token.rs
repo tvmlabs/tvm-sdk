@@ -340,6 +340,7 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     clocks::wall_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
     clocks::monotonic_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
     filesystem::preopens::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // filesystem::types::add_to_linker::<T, HasWasi<T>>(l, f)?; // DONT USE, async
     random::random::add_to_linker::<T, HasWasi<T>>(l, f)?;
     random::insecure::add_to_linker::<T, HasWasi<T>>(l, f)?;
     random::insecure_seed::add_to_linker::<T, HasWasi<T>>(l, f)?;
@@ -448,12 +449,29 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
 
     // Add wasi-cli libs to linker
     let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
+    let mut wasm_linker = wasm_linker.allow_shadowing(true);
 
     // This is a custom linker method, adding only sync, non-io wasi dependencies.
     // If more deps are needed, add them in there!
     match add_to_linker_gosh(&mut wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM instance {:?}", e)?,
+    };
+
+    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
+    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
+    // let f: fn(&mut MyState) -> &mut WasiImpl<&mut MyState> = |t| &mut
+    // WasiImpl(IoImpl(t));
+    let f: fn(&mut MyState) -> &mut MyState = |s| s;
+    // let f: fn(&mut MyState) -> &mut WasiImpl<IoImpl<&mut MyState>> = |t| t;
+    match Localworld::add_to_linker::<MyState, MyLibrary>(&mut wasm_linker, f) {
+        Ok(_) => {}
+        Err(e) => err!(
+            ExceptionCode::WasmLoadFail,
+            "Failed to instantiate WASM
+    instance {:?}",
+            e
+        )?,
     };
 
     // This is the default add to linker method, we dont use it as it will add async
@@ -676,26 +694,34 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // Add wasi-cli libs to linker
     let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
     let mut wasm_linker = wasm_linker.allow_shadowing(true);
-    // This is a custom linker method, adding only sync, non-io wasi dependencies.
-    // If more deps are needed, add them in there!
     // match wasm_linker.define_unknown_imports_as_traps(&wasm_component) {
     //     Ok(_) => {}
     //     Err(e) => {
     //         err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM
-    // instance traps {:?}", e)?     }
+    // instance traps {:?}", e)?
+    //     }
     // };
-    match add_to_linker_gosh::<MyState>(&mut wasm_linker) {
-        Ok(_) => {}
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM instance {:?}", e)?,
-    };
 
     // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
     // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
     // let f: fn(&mut MyState) -> &mut WasiImpl<&mut MyState> = |t| &mut
     // WasiImpl(IoImpl(t));
-    let f: fn(&mut MyState) -> &mut MyState = |s| s;
-    // let f: fn(&mut MyState) -> &mut WasiImpl<IoImpl<&mut MyState>> = |t| t;
-    match Localworld::add_to_linker::<MyState, MyLibrary>(&mut wasm_linker, f) {
+
+    // This is a custom linker method, adding only sync, non-io wasi dependencies.
+    // If more deps are needed, add them in there!
+    let binding = wasm_component.component_type();
+    let mut imports = binding.imports(&wasm_engine);
+    let arg = imports.next();
+    println!("List of imports from WASM: {:?}", arg);
+    if let Some(arg) = arg {
+        println!("{:?}", arg);
+
+        for arg in imports {
+            println!(" {:?}", arg);
+        }
+    }
+
+    match add_to_linker_gosh::<MyState>(&mut wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(
             ExceptionCode::WasmLoadFail,
@@ -703,6 +729,13 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     instance {:?}",
             e
         )?,
+    };
+
+    let f: fn(&mut MyState) -> &mut MyState = |s| s;
+    // let f: fn(&mut MyState) -> &mut WasiImpl<IoImpl<&mut MyState>> = |t| t;
+    match Localworld::add_to_linker::<MyState, MyLibrary>(&mut wasm_linker, f) {
+        Ok(_) => {}
+        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to link IO Plugs {:?}", e)?,
     };
 
     // This is the default add to linker method, we dont use it as it will add async

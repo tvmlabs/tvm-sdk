@@ -484,10 +484,10 @@ fn test_run_wasm_basic_add() {
     let wasm_func = "add";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let wasm_func = "docs:adder/add@0.1.0";
+    let wasm_func = "docs:adder/add-interface@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "./src/tests/add.wasm";
+    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/examples/wasm/rust/add/target/wasm32-wasip2/release/add.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();

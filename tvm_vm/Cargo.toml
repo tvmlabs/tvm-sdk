@@ -63,9 +63,9 @@ itertools = "0.12.0"
 typenum = "1.13.0"
 ff = { version = "0.13.0", features = ["derive"] }
 
-wasmtime = "34.0.0"
-wasmtime-wasi = "34.0.0"
-wasmtime-wasi-io = "34.0.0"
+wasmtime = "34.0.1"
+wasmtime-wasi = "34.0.1"
+wasmtime-wasi-io = "34.0.1"
 
 [dev-dependencies]
 criterion = "0.5.1"
