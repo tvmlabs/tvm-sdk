@@ -484,10 +484,10 @@ fn test_run_wasm_basic_add() {
     let wasm_func = "add";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let wasm_func = "docs:adder/add@0.1.0";
+    let wasm_func = "docs:adder/add-interface@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "./src/tests/add.wasm";
+    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/examples/wasm/rust/add/target/wasm32-wasip2/release/add.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
@@ -543,7 +543,7 @@ fn test_run_wasm_from_hash() {
         vec![],
     );
 
-    let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
+    let hash_str = "9cc3368235c28c51e4afe08c0ae0e35a9f6ec20260f56810adfe0fbe0c98aa03";
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -554,10 +554,10 @@ fn test_run_wasm_from_hash() {
     let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
-    let wasm_func = "add";
+    let wasm_func = "tlscheck";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let wasm_func = "docs:adder/add-interface@0.1.0";
+    let wasm_func = "docs:tlschecker/tls-check-interface@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
