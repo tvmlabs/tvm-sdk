@@ -137,14 +137,119 @@ wasmtime::component::bindgen!({
             import wasi:io/streams@0.2.3;
         }
         }
+        package wasi:filesystem@0.2.3 {
+            interface types {
+                use wasi:io/streams@0.2.3.{error, output-stream};
+                use wasi:clocks/wall-clock@0.2.3.{datetime};
+
+                resource descriptor {
+                write-via-stream: func(offset: filesize) -> result<output-stream, error-code>;
+                append-via-stream: func() -> result<output-stream, error-code>;
+                get-type: func() -> result<descriptor-type, error-code>;
+                stat: func() -> result<descriptor-stat, error-code>;
+                }
+
+                enum error-code {
+                access,
+                would-block,
+                already,
+                bad-descriptor,
+                busy,
+                deadlock,
+                quota,
+                exist,
+                file-too-large,
+                illegal-byte-sequence,
+                in-progress,
+                interrupted,
+                invalid,
+                io,
+                is-directory,
+                loop,
+                too-many-links,
+                message-size,
+                name-too-long,
+                no-device,
+                no-entry,
+                no-lock,
+                insufficient-memory,
+                insufficient-space,
+                not-directory,
+                not-empty,
+                not-recoverable,
+                unsupported,
+                no-tty,
+                no-such-device,
+                overflow,
+                not-permitted,
+                pipe,
+                read-only,
+                invalid-seek,
+                text-file-busy,
+                cross-device,
+                }
+
+                type filesize = u64;
+
+                enum descriptor-type {
+                unknown,
+                block-device,
+                character-device,
+                directory,
+                fifo,
+                symbolic-link,
+                regular-file,
+                socket,
+                }
+
+                type link-count = u64;
+
+                record descriptor-stat {
+                %type: descriptor-type,
+                link-count: link-count,
+                size: filesize,
+                data-access-timestamp: option<datetime>,
+                data-modification-timestamp: option<datetime>,
+                status-change-timestamp: option<datetime>,
+                }
+
+                filesystem-error-code: func(err: borrow<error>) -> option<error-code>;
+            }
+            interface preopens {
+                use types.{descriptor};
+
+                get-directories: func() -> list<tuple<descriptor, string>>;
+            }
+
+            world filesystemtypes {
+                import types;
+                import preopens;
+            }
+        }
+
+        package wasi:clocks@0.2.3 {
+            interface wall-clock {
+                record datetime {
+                seconds: u64,
+                nanoseconds: u32,
+                }
+            }
+        }
+
         world localworld {
             import wasi:io/streams@0.2.3;
             import wasi:io/error@0.2.3;
             import wasi:cli/stdin@0.2.3;
             import wasi:cli/stdout@0.2.3;
             import wasi:cli/stderr@0.2.3;
-            }
+            import wasi:filesystem/types@0.2.3;
+            import wasi:filesystem/preopens@0.2.3;
+            import wasi:clocks/wall-clock@0.2.3;
+        }
     "#,
+    // with: {
+    //     "wasi:clocks/wall-clock@0.2.3" : wasmtime_wasi::p2::bindings::clocks::wall_clock,
+    // }
         // with: {
         // // Specify that our host resource is going to point to the `MyLogger`
         // // which is defined just below this macro.
@@ -195,21 +300,92 @@ pub enum StreamError {
     Default,
 }
 
+impl wasi::filesystem::preopens::Host for MyState {
+    fn get_directories(
+        &mut self,
+    ) -> wasmtime::component::__internal::Vec<(
+        wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        wasmtime::component::__internal::String,
+    )> {
+        Vec::<(
+            wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+            wasmtime::component::__internal::String,
+        )>::new()
+    }
+}
+
+impl wasi::clocks::wall_clock::Host for MyState {}
+
+impl wasi::filesystem::types::Host for MyState {
+    fn filesystem_error_code(
+        &mut self,
+        err: wasmtime::component::Resource<wasi::io::streams::Error>,
+    ) -> Option<wasi::filesystem::types::ErrorCode> {
+        match err {
+            _ => Some(wasi::filesystem::types::ErrorCode::Unsupported),
+        }
+    }
+}
+
+impl wasi::filesystem::types::HostDescriptor for MyState {
+    fn write_via_stream(
+        &mut self,
+        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        offset: wasi::filesystem::types::Filesize,
+    ) -> Result<
+        wasmtime::component::Resource<wasi::filesystem::types::OutputStream>,
+        wasi::filesystem::types::ErrorCode,
+    > {
+        Err(wasi::filesystem::types::ErrorCode::Unsupported)
+    }
+
+    fn append_via_stream(
+        &mut self,
+        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+    ) -> Result<
+        wasmtime::component::Resource<wasi::filesystem::types::OutputStream>,
+        wasi::filesystem::types::ErrorCode,
+    > {
+        Err(wasi::filesystem::types::ErrorCode::Unsupported)
+    }
+
+    fn get_type(
+        &mut self,
+        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+    ) -> Result<wasi::filesystem::types::DescriptorType, wasi::filesystem::types::ErrorCode> {
+        Ok(wasi::filesystem::types::DescriptorType::Unknown)
+    }
+
+    fn stat(
+        &mut self,
+        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+    ) -> Result<wasi::filesystem::types::DescriptorStat, wasi::filesystem::types::ErrorCode> {
+        Err(wasi::filesystem::types::ErrorCode::Unsupported)
+    }
+
+    fn drop(
+        &mut self,
+        rep: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+    ) -> wasmtime::Result<()> {
+        Ok(())
+    }
+}
+
 impl wasi::cli::stderr::Host for MyState {
     fn get_stderr(&mut self) -> wasmtime::component::Resource<wasi::io::streams::OutputStream> {
-        wasmtime::component::Resource::<wasi::io::streams::OutputStream>::new_borrow(10000)
+        wasmtime::component::Resource::<wasi::io::streams::OutputStream>::new_own(10000)
     }
 }
 
 impl wasi::cli::stdout::Host for MyState {
     fn get_stdout(&mut self) -> wasmtime::component::Resource<wasi::io::streams::OutputStream> {
-        wasmtime::component::Resource::<wasi::io::streams::OutputStream>::new_borrow(10000)
+        wasmtime::component::Resource::<wasi::io::streams::OutputStream>::new_own(10000)
     }
 }
 
 impl wasi::cli::stdin::Host for MyState {
     fn get_stdin(&mut self) -> wasmtime::component::Resource<wasi::io::streams::InputStream> {
-        wasmtime::component::Resource::<wasi::io::streams::InputStream>::new_borrow(10000)
+        wasmtime::component::Resource::<wasi::io::streams::InputStream>::new_own(10000)
     }
 }
 
