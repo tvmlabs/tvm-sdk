@@ -47,6 +47,8 @@ mod tests {
     use crate::instructions_tests::zk::test_helper::secret_key_from_integer_map;
     use crate::instructions_tests::zk::test_helper::single_vrgrth16;
 
+    pub const TEST_AUTH_DATA_FRESH: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImYxMDMzODYwNzE2ZTNhMmFhYjM4MGYwMGRiZTM5YTcxMTQ4NDZiYTEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6Iml6RW1FOEpLZjFOaWVHa1BVNndVQWR0cWJtbyIsIm5iZiI6MTc1MjYxMzE2MSwiaWF0IjoxNzUyNjEzNDYxLCJleHAiOjE3NTI2MTcwNjEsImp0aSI6IjFhZTQyMGMyOGExZjY4YTNhYjBjNDYyZDNjNTNlOTg3NGE5MzVkNDMifQ.mzmcsnVqkzjEydnxcdFab-lRA9B7yknqTUfaV2Vlmbrp2xpbs6PmMtaGkBGpZdr0Y0N8PawUpLYSiJch-KmVh4VbPiGVDnUKx2lZAERAtbDio4wWimlQnWUDiXVz5DhKM9Pfihydh6q1wIBbamiUmDVdTvXkCtv3zO_ArfIjtBLnYC_6KGa5IByDkUdlib9FbDQELDbcxLf8YcUSyMBazWOYPTjpA6EiO6Tcbe9SFHnoReKcA1Ek6K6UCndt9Zr1ADcL9drdI7ixK1c2SHGXXOUhbqOjsYyWmUropm2C8Rn1MWbZz9WWLYXxjOTlTC3gCfp6itnTOTEp-oVW2VAaJQ\",\"user_pass_to_int_format\":\"535455565748\",\"zk_addr\":\"0xa780f54b9c44308332c81d9910470e067380af96c2f494205e927c5f93386005\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":29,\"1\":23,\"2\":196,\"3\":190,\"4\":224,\"5\":168,\"6\":9,\"7\":252,\"8\":242,\"9\":112,\"10\":68,\"11\":4,\"12\":183,\"13\":44,\"14\":7,\"15\":22,\"16\":124,\"17\":230,\"18\":7,\"19\":43,\"20\":46,\"21\":177,\"22\":246,\"23\":62,\"24\":128,\"25\":11,\"26\":126,\"27\":8,\"28\":171,\"29\":226,\"30\":225,\"31\":236},\"secret_key\":{\"0\":58,\"1\":213,\"2\":168,\"3\":116,\"4\":197,\"5\":50,\"6\":206,\"7\":228,\"8\":106,\"9\":209,\"10\":14,\"11\":222,\"12\":254,\"13\":77,\"14\":191,\"15\":124,\"16\":142,\"17\":218,\"18\":217,\"19\":138,\"20\":67,\"21\":99,\"22\":26,\"23\":83,\"24\":45,\"25\":119,\"26\":3,\"27\":141,\"28\":235,\"29\":78,\"30\":99,\"31\":229,\"32\":29,\"33\":23,\"34\":196,\"35\":190,\"36\":224,\"37\":168,\"38\":9,\"39\":252,\"40\":242,\"41\":112,\"42\":68,\"43\":4,\"44\":183,\"45\":44,\"46\":7,\"47\":22,\"48\":124,\"49\":230,\"50\":7,\"51\":43,\"52\":46,\"53\":177,\"54\":246,\"55\":62,\"56\":128,\"57\":11,\"58\":126,\"59\":8,\"60\":171,\"61\":226,\"62\":225,\"63\":236}}},\"maxEpoch\":1837114018,\"extended_ephemeral_public_key\":\"AB0XxL7gqAn88nBEBLcsBxZ85gcrLrH2PoALfgir4uHs\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"8098501600751384607181957645677626866532764788942422666412343156192339990006\",\"10528383926009508904901560728659084063525809434312214815294299598511272252222\",\"1\"],\"b\":[[\"12273362542038333747074136237347628667941686059782692695276273693714075094673\",\"2749069376382143209930861303528393317873864398313230406407907981917555114272\"],[\"17109196682169777907568373999801323000639248111802898565368344964148009079205\",\"20352890122634867334039055397632120557786427784229577313094916831738514221399\"],[\"1\",\"0\"]],\"c\":[\"881201683053613832821423547970858663302376847569702386628102966219039283015\",\"2358963888410267814511637656505351097303584267645553588604891102365780883725\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImYxMDMzODYwNzE2ZTNhMmFhYjM4MGYwMGRiZTM5YTcxMTQ4NDZiYTEiLCJ0eXAiOiJKV1QifQ\"}}";
+
     pub const TEST_AUTH_DATA_1: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6ImJ4bW5KVzMxcnV6S01HaXIwMVlQR1lMMHhEWSIsIm5iZiI6MTcxNTY4NzAzNiwiaWF0IjoxNzE1Njg3MzM2LCJleHAiOjE3MTU2OTA5MzYsImp0aSI6IjliNjAxZDI1ZjAwMzY0MGMyODg5YTJhMDQ3Nzg5MzgyY2IxY2ZlODcifQ.rTa9KA9HoYm04Agj71D0kDkvsCZ35SeeihBGbABYckBRxaUlCy6LQ-sEaVOTgvnL_DgVn7hx8g3sSmnhJ9kHzj5e6gtUoxoWAe8PuGyK2bmqhmPrQMeEps9f6m2EToQCIA_Id4fGCjSCktjJBi47QHT_Dhe6isHdKk1pgSshOyvCF1VjIvyyeGY5iWQ4cIRBMQNlNBT11o6T01SY6B9DtiiFN_0-ok5taIjQgtMNG6Cwr3tCnqXftuGGQrHlx15y8VgCPODYi-wOtvUbzI2yfx53PmRD_L8O50cMNCrCRE3yYR5MNOu1LlQ_EACy5UFsCJR35xRz84nv-6Iyrufx1g\",\"user_pass_to_int_format\":\"981021191041055255531141165751\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":155,\"1\":147,\"2\":37,\"3\":82,\"4\":183,\"5\":109,\"6\":227,\"7\":144,\"8\":85,\"9\":248,\"10\":20,\"11\":45,\"12\":92,\"13\":103,\"14\":160,\"15\":221,\"16\":101,\"17\":44,\"18\":30,\"19\":86,\"20\":96,\"21\":85,\"22\":24,\"23\":224,\"24\":106,\"25\":63,\"26\":13,\"27\":130,\"28\":8,\"29\":119,\"30\":247,\"31\":67},\"secret_key\":{\"0\":192,\"1\":16,\"2\":35,\"3\":54,\"4\":100,\"5\":14,\"6\":88,\"7\":217,\"8\":164,\"9\":21,\"10\":154,\"11\":233,\"12\":248,\"13\":208,\"14\":188,\"15\":4,\"16\":52,\"17\":244,\"18\":125,\"19\":103,\"20\":99,\"21\":26,\"22\":225,\"23\":60,\"24\":140,\"25\":75,\"26\":228,\"27\":157,\"28\":137,\"29\":220,\"30\":1,\"31\":65,\"32\":155,\"33\":147,\"34\":37,\"35\":82,\"36\":183,\"37\":109,\"38\":227,\"39\":144,\"40\":85,\"41\":248,\"42\":20,\"43\":45,\"44\":92,\"45\":103,\"46\":160,\"47\":221,\"48\":101,\"49\":44,\"50\":30,\"51\":86,\"52\":96,\"53\":85,\"54\":24,\"55\":224,\"56\":106,\"57\":63,\"58\":13,\"59\":130,\"60\":8,\"61\":119,\"62\":247,\"63\":67}}},\"zk_addr\":\"0x290623ea2fe67e77502c931e015e910720b59cf99994bfe872da851245a6adb8\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"4240296169193969312736577528388333411353554120022978085193148043577551744781\",\"5805161066003598301896048908428560240907086333477483881772048922050706263054\",\"1\"],\"b\":[[\"12834391737669124973917765536412427456985620342194191639017091262766903638891\",\"17565396762846717347409742387259908749145765976354144805005547481529916658455\"],[\"10704310067924910937030159163683742097178285875135929496314190235513445131794\",\"5158907077493606386023392148737817037260820737072162547798816810512684527243\"],[\"1\",\"0\"]],\"c\":[\"1422540522119231707130773229384414857146368773886805969586218853559909475064\",\"8843079196273712399340537238369227864378150337693574970239878271571912585171\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extended_ephemeral_public_key\":\"AJuTJVK3beOQVfgULVxnoN1lLB5WYFUY4Go/DYIId/dD\"}";
     pub const TEST_AUTH_DATA_2: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6IjJKd0VMbjJfUV9Rd0VsTC1rWTFPRnFqdXZCMCIsIm5iZiI6MTcxNTY4NzAyOSwiaWF0IjoxNzE1Njg3MzI5LCJleHAiOjE3MTU2OTA5MjksImp0aSI6ImU2YjM1ZjJmNmFkNjIzOWEwMDAxMTJiMWI5YWI2MWQ0MjRkMGM1OTIifQ.QcrEDE9qmPZKX83nU3Tx2BN8fsinb_mmXkO1Qf7Uv1QTd0NjirSeu7C4Vn9WDNWDaIR-BgCfhOlkwMQPljcahqC4AN43N_66tvbEsXjtEdFejslXrGG4D_BEKvtmD7_WkW388LyU2PxKgtdDfpYFgmuT6wTM2TO5dTbrGrDyn88q3pkPfefC5a8Wi1V6zECfFdSV-pKQlxtPaImi7s3CKAUMDu1n-jcT-Ho2aTgrWKAzhXE56tgEWOpXQO06eJsWCSOqoZSLYtatTrZr4d38U7QRQiNlH-ydHv4zXt1tixLLJ0wvPx-dQaCnCl1kW1orYkJGFfHgjx6A9z5Ol4afuw\",\"user_pass_to_int_format\":\"101119106102103\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":194,\"1\":38,\"2\":203,\"3\":255,\"4\":219,\"5\":127,\"6\":105,\"7\":129,\"8\":234,\"9\":222,\"10\":71,\"11\":169,\"12\":108,\"13\":94,\"14\":28,\"15\":48,\"16\":111,\"17\":221,\"18\":113,\"19\":110,\"20\":5,\"21\":226,\"22\":19,\"23\":230,\"24\":232,\"25\":67,\"26\":255,\"27\":179,\"28\":6,\"29\":10,\"30\":209,\"31\":63},\"secret_key\":{\"0\":44,\"1\":32,\"2\":251,\"3\":184,\"4\":109,\"5\":252,\"6\":105,\"7\":67,\"8\":208,\"9\":111,\"10\":86,\"11\":214,\"12\":192,\"13\":135,\"14\":169,\"15\":48,\"16\":162,\"17\":36,\"18\":216,\"19\":145,\"20\":232,\"21\":64,\"22\":17,\"23\":14,\"24\":29,\"25\":56,\"26\":39,\"27\":118,\"28\":143,\"29\":250,\"30\":31,\"31\":66,\"32\":194,\"33\":38,\"34\":203,\"35\":255,\"36\":219,\"37\":127,\"38\":105,\"39\":129,\"40\":234,\"41\":222,\"42\":71,\"43\":169,\"44\":108,\"45\":94,\"46\":28,\"47\":48,\"48\":111,\"49\":221,\"50\":113,\"51\":110,\"52\":5,\"53\":226,\"54\":19,\"55\":230,\"56\":232,\"57\":67,\"58\":255,\"59\":179,\"60\":6,\"61\":10,\"62\":209,\"63\":63}}},\"zk_addr\":\"0x9d28c04a423b33d6901065b2e23440d80c963e2d8cf60619aed131cf302a3345\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"10113442204684515220664612836724727112601024759319365467272456423129044788607\",\"1622056145268645528934658046911045406324940175278473377024147189407527440953\",\"1\"],\"b\":[[\"16638441944380099215425740101953753038808466958852552979180365845498468757656\",\"15160836857346434734063515954042830497610079883703780011464867547889770445695\"],[\"18562910453341688699790780964434211467815845944672185772065803860963710445937\",\"8200691834141582017549140597895023392490964486044036655696113278873832146838\"],[\"1\",\"0\"]],\"c\":[\"4229037146526046139176767312447148765936834700862335953317784850097077554287\",\"14155516063621997063825085002662503289554536312724791903045026922766401869119\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extended_ephemeral_public_key\":\"AMImy//bf2mB6t5HqWxeHDBv3XFuBeIT5uhD/7MGCtE/\"}";
     pub const TEST_AUTH_DATA_3: &str = "{\"jwt\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6IkFadlVHUkI5MU5VZmdnYVV5bUdCQU9kSmM2ayIsIm5iZiI6MTcxNTY4NzAyMiwiaWF0IjoxNzE1Njg3MzIyLCJleHAiOjE3MTU2OTA5MjIsImp0aSI6ImZiNGNhMzdjOGE5MjEzOTFjZTE2ZDQwNmE2NmVmYjA1MTQxNTg5YjYifQ.C7zNP2sxRMF62irwNjO2y_JVMjYLqGk6sAWy0rKoXswa7SA6KhPrWocMAB2GKaQW-CeqUzMJdypgJz1RcMzmOWg30cv4diEgqBSM1I1ocOI5ivRE2Atj8g-Oj2uAm_DBvuJBLzTA6wfb34QTasOTZqLsMyoaQavxUprzPi-1z-MUE-darDjZ-IkWu7SctdEzNhSuUfQPJo_sbN5_38dQm300plXK-9iJgDxMWmT4NPO91hSQaGKbBm_euMI-fBAfYwARMnlaTETvSiCNSAyzphNrBi9kU49BFi5X04GoIkSW4zFwb74OeFbL49_14AZZ9Z2Mw7EPQ9sAAjzanxPUfA\",\"user_pass_to_int_format\":\"98118101102104106100\",\"ephemeral_key_pair\":{\"keypair\":{\"public_key\":{\"0\":219,\"1\":225,\"2\":68,\"3\":197,\"4\":249,\"5\":59,\"6\":249,\"7\":200,\"8\":218,\"9\":242,\"10\":184,\"11\":214,\"12\":247,\"13\":159,\"14\":9,\"15\":162,\"16\":60,\"17\":174,\"18\":162,\"19\":13,\"20\":111,\"21\":5,\"22\":61,\"23\":179,\"24\":155,\"25\":167,\"26\":207,\"27\":6,\"28\":174,\"29\":163,\"30\":23,\"31\":23},\"secret_key\":{\"0\":28,\"1\":117,\"2\":37,\"3\":14,\"4\":166,\"5\":188,\"6\":125,\"7\":36,\"8\":70,\"9\":193,\"10\":162,\"11\":142,\"12\":79,\"13\":218,\"14\":210,\"15\":131,\"16\":217,\"17\":32,\"18\":88,\"19\":246,\"20\":195,\"21\":214,\"22\":135,\"23\":80,\"24\":27,\"25\":198,\"26\":131,\"27\":31,\"28\":3,\"29\":240,\"30\":199,\"31\":129,\"32\":219,\"33\":225,\"34\":68,\"35\":197,\"36\":249,\"37\":59,\"38\":249,\"39\":200,\"40\":218,\"41\":242,\"42\":184,\"43\":214,\"44\":247,\"45\":159,\"46\":9,\"47\":162,\"48\":60,\"49\":174,\"50\":162,\"51\":13,\"52\":111,\"53\":5,\"54\":61,\"55\":179,\"56\":155,\"57\":167,\"58\":207,\"59\":6,\"60\":174,\"61\":163,\"62\":23,\"63\":23}}},\"zk_addr\":\"0xeccbb76b41c1fd5e19950f0c005e5d2a2596b9cc510e98b6f69bb3cf590b3cf8\",\"zk_proofs\":{\"proofPoints\":{\"a\":[\"11651445672013969095011012560101085321682180365624939394143647198080899422642\",\"1099774502834574451399947043208869188329872135932897351612210181871486714260\",\"1\"],\"b\":[[\"4095258550782358133185755302461547336434190495389756275789648565352453295275\",\"11290282088300413285686821769617771231670721476484846359206004074570380534935\"],[\"10130196410049440247754977520268298700433580296307256932070052957562923587210\",\"18578315450133100598244014262861961858129311260491371986249505812898194068790\"],[\"1\",\"0\"]],\"c\":[\"3621803486710965065098877836422521469652420656514094958857631583114966034063\",\"10775419351495516109888010278620848514990288696189982169937651175162131341248\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6IjMyM2IyMTRhZTY5NzVhMGYwMzRlYTc3MzU0ZGMwYzI1ZDAzNjQyZGMiLCJ0eXAiOiJKV1QifQ\"},\"extended_ephemeral_public_key\":\"ANvhRMX5O/nI2vK41vefCaI8rqINbwU9s5unzwauoxcX\"}";
@@ -89,6 +91,27 @@ mod tests {
         pub iat: u32,
         pub exp: u32,
         pub jti: String,
+    }
+
+      #[test]
+    fn test() {
+        let content: JWK = JWK {
+            kty: "RSA".to_string(),
+            e: "AQAB".to_string(),
+            n: "zg_Y5w8jd7O7P7nH7jPNIl4trbDDzwlpapY6OpOlPy0g9u2siZ5VH3fc33fwOg-2SMYtoOf_acb2Ic5SgwtrvCB5YDi9X_DZuM_4zT9RIA64KneIZU0Ld8IVND9qrBUq1Z9JOFUe8pVuFrtZjQye5fPr-VHX6EYbUPSoFeNClB6hDTCS1DeKP0itJpC7t7e2TeFt21laraTlsXgtzjwNNvtwI3J6smQUJud6N6QvyLnY01ys0Y-DdvfckBKXNK9d8rP1aP5hRuXkoUW2eNrHm61mI2mmyyeZhyTaPP7GdfvvuFW0uBEqe33HTf2gW4yaUdfY7kQVE4cn2V-Fl9GEUQ".to_string(), // Alina's data
+            alg: "RS256".to_string(),
+        };
+
+        /*let mut all_jwk = HashMap::new();
+        all_jwk.insert(
+            JwkId::new(
+                OIDCProvider::Facebook.get_config().iss,
+                "d87d2474896f213ee52e6069ae0dd1553340a08c".to_string(),
+            ),
+            content,
+        );*/
+        let modulus = base64ct::Base64UrlUnpadded::decode_vec(&content.n).unwrap();
+        println!("{:?}", hex::encode(modulus));
     }
 
     #[test]
@@ -1581,6 +1604,120 @@ mod tests {
         let average_ratio = sum_ratio / (data.len() as u128);
 
         println!("average ratio is {average_ratio}");
+    }
+
+
+    #[test]
+    //#[cfg(feature = "gosh")]
+    fn test_() {
+        let jwt_data: JwtData = serde_json::from_str(&TEST_AUTH_DATA_FRESH).unwrap();
+    }
+
+    #[test]
+    //#[cfg(feature = "gosh")]
+    fn test_NEW() {
+        let max_epoch = 1837114018;
+        let verification_key_id: u32 = 0;
+        let content: JWK = JWK {
+            kty: "RSA".to_string(),
+            e: "AQAB".to_string(),
+            n: "sdyhQG7zNcpPq1-s5ZmUP45pVcwpjjyhQVoXWe0g19iGLJOLTtwiwJUI_qJzEyIwCZkgjwcWoAIR6Anfox2c-vb2vP59B7530pOX28eIY-J_ppbeDIHogvAqhX9ahYhVQCzbbul1_Wxv9cLk_06w846kx0LrL7dXuCzBtyTGYXBzPS2PXoQOcjJi4JfqZI6lvIDSRVoN7hgfq9BUwcVp-UXW1Jf5EKyQmyAx0Ivixu5IaSiMsWEvDo7_uDEv9CDmwlKZsF9qut3wTII3yzCg69qu36bEEBRdx7M5g0dtsuRVTnAIJ82H7n4G9LOF5PP4bgXed1rf3oPt31fc_XXzLQ".to_string(),
+            alg: "RS256".to_string(),
+        };
+
+        let mut all_jwk = HashMap::new();
+        all_jwk.insert(
+            JwkId::new(
+                OIDCProvider::Facebook.get_config().iss,
+                "f1033860716e3a2aab380f00dbe39a7114846ba1".to_string(),
+            ),
+            content,
+        );
+
+
+        let data = [TEST_AUTH_DATA_FRESH];
+
+        for i in 0..data.len() {
+            println!("====================== Iter@ is {i} =========================");
+            // parse
+            let jwt_data: JwtData = serde_json::from_str(&data[i]).unwrap();
+            // println!("{:?}", jwt_data);
+
+            let user_pass_salt = jwt_data.user_pass_to_int_format.as_str();
+            println!("user_pass_salt is {user_pass_salt}");
+
+            let eph_secret_key =
+                secret_key_from_integer_map(jwt_data.ephemeral_key_pair.keypair.secret_key);
+
+            let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
+            let mut eph_pubkey = Vec::new(); // vec![0x00];
+            eph_pubkey.extend(ephemeral_kp.public().as_ref());
+
+            println!("ephemeral secret_key is {:?}", eph_secret_key);
+            println!("ephemeral public_key is {:?}", eph_pubkey);
+
+            let eph_pubkey_hex_number = "0x".to_owned() + &hex::encode(eph_pubkey.clone());
+            println!("eph_pubkey_hex_number: {:?}", eph_pubkey_hex_number);
+
+            let eph_pubkey_len = eph_pubkey.clone().len();
+            println!("len eph_pubkey: {:?}", eph_pubkey_len);
+
+            let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
+            println!("jwt_data_vector[0] {:?}", jwt_data_vector[0]);
+
+            let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
+
+            let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
+            println!("jwt_string_1 is {:?}", jwt_string_1);
+
+            // JwtDataDecodedPart1
+            let jwt_data_decoded1: JwtDataDecodedPart1 =
+                serde_json::from_str(&jwt_string_1).unwrap();
+            println!("kid: {:?}", jwt_data_decoded1.kid);
+
+            let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
+            let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
+            println!("jwt_string_2 is {:?}", jwt_string_2);
+
+            // JwtDataDecodedPart2
+            let jwt_data_decoded2: JwtDataDecodedPart2 =
+                serde_json::from_str(&jwt_string_2).unwrap();
+            println!("aud: {:?}", jwt_data_decoded2.aud);
+            println!("sub: {:?}", jwt_data_decoded2.sub);
+            println!("azp: {:?}", jwt_data_decoded2.azp);
+            println!("exp: {:?}", jwt_data_decoded2.exp);
+            println!("nonce: {:?}", jwt_data_decoded2.nonce);
+            println!("iss: {:?}", jwt_data_decoded2.iss);
+            println!("iat: {:?}", jwt_data_decoded2.iat);
+            println!("jti: {:?}", jwt_data_decoded2.jti);
+            println!("nbf: {:?}", jwt_data_decoded2.nbf);
+
+            let zk_seed = gen_address_seed(
+                user_pass_salt,
+                "sub",
+                jwt_data_decoded2.sub.as_str(),
+                jwt_data_decoded2.aud.as_str(),
+            )
+            .unwrap();
+
+            println!("jwt_data.zk_proofs = {:?}", jwt_data.zk_proofs);
+            let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
+
+            let zk_login_inputs =
+                ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string())
+                    .unwrap();
+
+            let time_for_vergrth16 = single_vrgrth16(
+                &eph_pubkey,
+                &zk_login_inputs,
+                &all_jwk,
+                verification_key_id,
+                max_epoch,
+            );
+            println!("time_for_vergrth16 is {time_for_vergrth16} micro seconds");
+
+            println!("==========================================");
+        }
     }
 
     fn single_chcksgns(

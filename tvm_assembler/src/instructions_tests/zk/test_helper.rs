@@ -1,7 +1,10 @@
 #[allow(dead_code)]
 use std::collections::HashMap;
 use std::time::Instant;
-
+use tvm_vm::stack::integer::IntegerData;
+use tvm_vm::stack::StackItem;
+use tvm_vm::stack::Stack;
+use tvm_vm::int;
 use base64ct::Encoding as bEncoding;
 use serde::Deserialize;
 use serde_derive::Serialize;
@@ -74,6 +77,7 @@ pub fn prepare_proof_and_public_key_cells_for_stack(
         .ok_or_else(|| ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid)))
         .unwrap();
 
+
     // Decode modulus to bytes.
     let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n)
         .map_err(|_| ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string()))
@@ -121,7 +125,7 @@ pub fn single_vrgrth16(
 
     let start: Instant = Instant::now();
     test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
-        .expect_success();
+    .expect_stack(Stack::new().push(int!(-1)));
     start.elapsed().as_micros()
 }
 
