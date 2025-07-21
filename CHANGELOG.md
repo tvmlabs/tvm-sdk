@@ -2,11 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.18.4] - 2025-07-21
+
+### Fixes
+- Fixed `runwasm` and `runwasmconcatmultiarg` to support wasm components dependent on, when no real io access is needed:
+```
+import wasi:io/streams@0.2.3;
+import wasi:io/error@0.2.3;
+import wasi:cli/stdin@0.2.3;
+import wasi:cli/stdout@0.2.3;
+import wasi:cli/stderr@0.2.3;
+import wasi:filesystem/types@0.2.3;
+import wasi:filesystem/preopens@0.2.3;
+```
+
 ## [2.18.3] - 2025-07-08
 
 ### Changed
 - Changed `api.json` file. Added properties related to module account.
-
 
 ## [2.18.2] - 2025-07-04
 
