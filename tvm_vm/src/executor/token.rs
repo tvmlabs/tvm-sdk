@@ -537,41 +537,6 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 8)?;
 
-    // load or access WASM engine
-    let mut wasm_config = wasmtime::Config::new();
-    wasm_config.wasm_component_model(true);
-    wasm_config.consume_fuel(true);
-    let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
-        Ok(module) => module,
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
-    };
-    let mut builder = WasiCtxBuilder::new();
-    let mut wasm_store = wasmtime::Store::new(
-        &wasm_engine,
-        MyState { ctx: builder.build(), table: wasmtime::component::ResourceTable::new() },
-    );
-    // set WASM fuel limit based on available gas
-    // TODO: Consider adding a constant offset to account for cell pack/unpack and
-    // other actions to be run after WASM instruction
-    // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
-    // instruction (or set to 0?)
-    log::debug!("Starting gas: {:?}", engine.gas_remaining());
-    let wasm_fuel: u64 = WASM_200MS_FUEL;
-
-    // TODO: If switching to dunamic fuel limit, use this code:
-    // let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
-    //     true => match
-    // u64::try_from(engine.gas_remaining())?.checked_mul(WASM_FUEL_MULTIPLIER) {
-    //         Some(k) => k,
-    //         None => err!(ExceptionCode::IntegerOverflow, "Overflow when
-    // calculating WASM fuel")?,     },
-    //     false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
-    // };
-    match wasm_store.set_fuel(wasm_fuel) {
-        Ok(module) => module,
-        Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
-    };
-
     // load wasm component binary
     let s = engine.cmd.var(0).as_cell()?;
     let wasm_executable =
@@ -600,74 +565,6 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     // let s = engine.cmd.var(0).as_cell()?;
     // let wasm_executable = rejoin_chain_of_cells(s)?;
 
-    let wasm_component =
-        match wasmtime::component::Component::new(&wasm_engine, &wasm_executable.as_slice()) {
-            Ok(module) => module,
-            Err(e) => err!(
-                ExceptionCode::WasmLoadFail,
-                "Failed to load WASM
-    component {:?}",
-                e
-            )?,
-        };
-    let component_type = wasm_component.component_type();
-
-    let mut exports = component_type.exports(&wasm_engine);
-    let arg = exports.next();
-    log::debug!("List of exports from WASM: {:?}", arg);
-    if let Some(arg) = arg {
-        log::debug!("{:?}", arg);
-
-        for arg in exports {
-            log::debug!(" {:?}", arg);
-        }
-    }
-
-    // Add wasi-cli libs to linker
-    let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
-    let mut wasm_linker = wasm_linker.allow_shadowing(true);
-
-    // This is a custom linker method, adding only sync, non-io wasi dependencies.
-    // If more deps are needed, add them in there!
-    match add_to_linker_gosh(&mut wasm_linker) {
-        Ok(_) => {}
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to instantiate WASM instance {:?}", e)?,
-    };
-
-    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
-    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
-    // let f: fn(&mut MyState) -> &mut WasiImpl<&mut MyState> = |t| &mut
-    // WasiImpl(IoImpl(t));
-    let f: fn(&mut MyState) -> &mut MyState = |s| s;
-    // let f: fn(&mut MyState) -> &mut WasiImpl<IoImpl<&mut MyState>> = |t| t;
-    match Localworld::add_to_linker::<MyState, MyLibrary>(&mut wasm_linker, f) {
-        Ok(_) => {}
-        Err(e) => err!(
-            ExceptionCode::WasmLoadFail,
-            "Failed to instantiate WASM
-    instance {:?}",
-            e
-        )?,
-    };
-
-    // This is the default add to linker method, we dont use it as it will add async
-    // calls for IO stuff, which fails inside out Tokio runtime
-    // match wasmtime_wasi::p2::add_to_linker_sync(&mut wasm_linker) {
-    //     Ok(_) => {}
-    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to
-    // linker {:?}", e)?, };
-
-    // Instantiate WASM component. Will error if missing some wasm deps from linker
-    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
-        Ok(instance) => instance,
-        Err(e) => err!(
-            ExceptionCode::WasmLoadFail,
-            "Failed to instantiate WASM instance
-    {:?}",
-            e
-        )?,
-    };
-
     // get exported instance name to call
     let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let wasm_instance_name = unpack_data_from_cell(s, engine)?;
@@ -677,32 +574,6 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     let s = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
     let wasm_func_name = unpack_data_from_cell(s, engine)?;
     let wasm_func_name = String::from_utf8(wasm_func_name)?;
-
-    // get callable wasm func
-    log::debug!("Callable funcs found:");
-    for export in wasm_component.component_type().exports(&wasm_engine) {
-        log::debug!("{:?}", export.0);
-    }
-    let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
-    log::debug!("Instance Index {:?}", instance_index);
-    let func_index = match wasm_instance.get_export_index(
-        &mut wasm_store,
-        instance_index.as_ref(),
-        &wasm_func_name,
-    ) {
-        Some(index) => index,
-        None => {
-            err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
-        }
-    };
-    log::debug!("Func Index {:?}", func_index);
-    let wasm_function = wasm_instance
-        .get_func(&mut wasm_store, func_index)
-        .expect(&format!("`{}` was not an exported function", wasm_func_name));
-    let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
-        Ok(answer) => answer,
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
-    };
 
     // execute wasm func
     // collect result
@@ -736,51 +607,17 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
         };
     wasm_func_args.append(&mut wasm_args_tail);
     log::debug!("WASM Args loaded {:?}", wasm_func_args);
-    let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
-        Ok(result) => result,
-        Err(e) => {
-            log::debug!("Failed to execute WASM function {:?}", e);
-            err!(ExceptionCode::WasmExecFail, "Failed to execute WASM function {:?}", e)?
-        }
-    };
-    log::debug!("WASM Execution result: {:?}", result);
 
-    let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
-    // TODO: If we switch to dynamic gas usage, reenable this code
-    // let gas_used: i64 = match wasm_store.get_fuel() {
-    //     Ok(new_fuel) => i64::try_from((wasm_fuel -
-    // new_fuel).div_ceil(WASM_FUEL_MULTIPLIER))?,     Err(e) => err!(
-    //         ExceptionCode::WasmLoadFail,
-    //         "Failed to get WASM engine fuel after execution {:?}",
-    //         e
-    //     )?,
-    // };
-    engine.use_gas(gas_used);
-    log::debug!("Remaining gas: {:?}", engine.gas_remaining());
-    match engine.gas_remaining() > 0 {
-        true => {}
-        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
-    }
-
-    // return result
-    log::debug!("EXEC Wasm execution result: {:?}", result);
-    let res_vec = result.0;
-
-    let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
-    log::debug!("Pushing cell");
-
-    engine.cc.stack.push(StackItem::cell(cell));
-
-    log::debug!("OK");
-
-    Ok(())
+    run_wasm_core(engine, wasm_executable, &wasm_func_name, &wasm_instance_name, wasm_func_args)
 }
 
-// execute wasm binary
-pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("RUNWASM"))?;
-    fetch_stack(engine, 5)?;
-
+fn run_wasm_core(
+    engine: &mut Engine,
+    wasm_executable: Vec<u8>,
+    wasm_func_name: &str,
+    wasm_instance_name: &str,
+    wasm_func_args: Vec<u8>,
+) -> Status {
     // load or access WASM engine
     let mut wasm_config = wasmtime::Config::new();
     wasm_config.wasm_component_model(true);
@@ -815,34 +652,6 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Ok(module) => module,
         Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
     };
-
-    // load wasm component binary
-    let s = engine.cmd.var(0).as_cell()?;
-    let wasm_executable =
-        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
-            TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
-        };
-    let wasm_hash_mode = wasm_executable.is_empty();
-    let wasm_executable: Vec<u8> = if wasm_hash_mode {
-        let s = engine.cmd.var(4).as_cell()?;
-        let wasm_hash =
-            match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?
-                .0
-            {
-                TokenValue::Bytes(items) => items,
-                e => {
-                    err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
-                }
-            };
-        println!("Using WASM Hash {:?}", wasm_hash);
-        engine.get_wasm_binary_by_hash(wasm_hash)?
-        // todo!("Add hash lookup here from hash {:?}", wasm_hash);
-    } else {
-        wasm_executable
-    };
-    // let s = engine.cmd.var(0).as_cell()?;
-    // let wasm_executable = rejoin_chain_of_cells(s)?;
 
     let wasm_component =
         match wasmtime::component::Component::new(&wasm_engine, &wasm_executable.as_slice()) {
@@ -932,16 +741,6 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         )?,
     };
 
-    // get exported instance name to call
-    let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
-    let wasm_instance_name = unpack_data_from_cell(s, engine)?;
-    let wasm_instance_name = String::from_utf8(wasm_instance_name)?;
-
-    // get exported func to call from within instance
-    let s = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
-    let wasm_func_name = unpack_data_from_cell(s, engine)?;
-    let wasm_func_name = String::from_utf8(wasm_func_name)?;
-
     // get callable wasm func
     println!("Callable funcs found:");
     for export in wasm_component.component_type().exports(&wasm_engine) {
@@ -968,17 +767,6 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
     };
 
-    // execute wasm func
-    // collect result
-    // substract gas based on wasm fuel used
-    let s = engine.cmd.var(3).as_cell()?;
-    println!("Loading WASM Args");
-    let wasm_func_args =
-        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
-            TokenValue::Bytes(items) => items,
-            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
-        };
-    println!("WASM Args loaded {:?}", wasm_func_args);
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => {
@@ -1017,6 +805,64 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     println!("OK");
 
     Ok(())
+}
+
+// execute wasm binary
+pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("RUNWASM"))?;
+    fetch_stack(engine, 5)?;
+
+    // load wasm component binary
+    let s = engine.cmd.var(0).as_cell()?;
+    let wasm_executable =
+        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+        };
+    let wasm_hash_mode = wasm_executable.is_empty();
+    let wasm_executable: Vec<u8> = if wasm_hash_mode {
+        let s = engine.cmd.var(4).as_cell()?;
+        let wasm_hash =
+            match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?
+                .0
+            {
+                TokenValue::Bytes(items) => items,
+                e => {
+                    err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
+                }
+            };
+        println!("Using WASM Hash {:?}", wasm_hash);
+        engine.get_wasm_binary_by_hash(wasm_hash)?
+        // todo!("Add hash lookup here from hash {:?}", wasm_hash);
+    } else {
+        wasm_executable
+    };
+    // let s = engine.cmd.var(0).as_cell()?;
+    // let wasm_executable = rejoin_chain_of_cells(s)?;
+
+    // get exported instance name to call
+    let s = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+    let wasm_instance_name = unpack_data_from_cell(s, engine)?;
+    let wasm_instance_name = String::from_utf8(wasm_instance_name)?;
+
+    // get exported func to call from within instance
+    let s = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
+    let wasm_func_name = unpack_data_from_cell(s, engine)?;
+    let wasm_func_name = String::from_utf8(wasm_func_name)?;
+
+    // execute wasm func
+    // collect result
+    // substract gas based on wasm fuel used
+    let s = engine.cmd.var(3).as_cell()?;
+    println!("Loading WASM Args");
+    let wasm_func_args =
+        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+        };
+    println!("WASM Args loaded {:?}", wasm_func_args);
+
+    run_wasm_core(engine, wasm_executable, &wasm_func_name, &wasm_instance_name, wasm_func_args)
 }
 
 pub(super) fn execute_ecc_burn(engine: &mut Engine) -> Status {
