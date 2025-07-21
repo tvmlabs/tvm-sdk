@@ -484,10 +484,10 @@ fn test_run_wasm_basic_add() {
     let wasm_func = "add";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let wasm_func = "docs:adder/add-interface@0.1.0";
+    let wasm_func = "docs:adder/add@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/examples/wasm/rust/add/target/wasm32-wasip2/release/add.wasm";
+    let filename = "./src/tests/add.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
@@ -501,6 +501,77 @@ fn test_run_wasm_basic_add() {
     assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
             == 3u8
+    );
+}
+
+#[test]
+fn test_run_wasm_io_plug_hashmap() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let stack = Stack::new();
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+
+    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "add";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_func = "docs:adder/add-interface@0.1.0";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let filename = "./src/tests/hashmap.wasm";
+    let wasm_dict = std::fs::read(filename).unwrap();
+
+    let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+    let status = execute_run_wasm(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", status);
+
+    assert!(
+        rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
+            == 11u8
     );
 }
 
@@ -543,7 +614,7 @@ fn test_run_wasm_from_hash() {
         vec![],
     );
 
-    let hash_str = "9cc3368235c28c51e4afe08c0ae0e35a9f6ec20260f56810adfe0fbe0c98aa03";
+    let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -554,10 +625,10 @@ fn test_run_wasm_from_hash() {
     let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
-    let wasm_func = "tlscheck";
+    let wasm_func = "add";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let wasm_func = "docs:tlschecker/tls-check-interface@0.1.0";
+    let wasm_func = "docs:adder/add-interface@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
