@@ -543,10 +543,13 @@ fn test_run_wasm_io_plug_hashmap() {
         vec![],
     );
 
-    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
-        .unwrap()
-        .into_cell()
-        .unwrap();
+    let hash_str = "e7adc782c05b67bcda5babaca1deabf80f30ca0e6cf668c89825286c3ce0e560";
+    let hash: Vec<u8> = (0..hash_str.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+        .collect::<Vec<u8>>();
+    let cell =
+        TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
 
@@ -559,7 +562,7 @@ fn test_run_wasm_io_plug_hashmap() {
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let filename = "./src/tests/hashmap.wasm";
-    let wasm_dict = std::fs::read(filename).unwrap();
+    let wasm_dict = []; //std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     // let cell = split_to_chain_of_cells(wasm_dict);
