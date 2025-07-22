@@ -93,7 +93,9 @@ impl From<&SliceData> for SliceProto {
 pub type TraceCallback = dyn Fn(&Engine, &EngineTraceInfo) + Send + Sync;
 
 pub struct Engine {
-    pub(in crate::executor) cc: ContinuationData,
+    //  pub(in crate::executor) cc: ContinuationData,
+    pub cc: ContinuationData,
+
     pub(in crate::executor) cmd: InstructionExt,
     pub(in crate::executor) ctrls: SaveList,
     pub(in crate::executor) libraries: Vec<HashmapE>, // 256 bit dictionaries
