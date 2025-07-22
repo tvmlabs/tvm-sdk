@@ -16,6 +16,7 @@ struct Component;
 
 impl Guest for Component {
     fn add(kwargs: Vec<u8>) -> Vec<u8> {
+        let mut fake_stdout: u64;
         let mut seen_exts: HashMap<String, bool> = HashMap::new();
         let z = 3;
         seen_exts.insert(z.to_string(), false);
@@ -34,7 +35,7 @@ impl Guest for Component {
 
         // Iterating over entries
         for (key, value) in entry_map.iter() {
-            println!("{}: {}", key, value);
+            fake_stdout = *value;
         }
 
         // Reserving space
@@ -42,13 +43,13 @@ impl Guest for Component {
 
         // Checking for presence
         if basic_map.contains_key("a") {
-            println!("Key 'a' exists");
+            fake_stdout = 0;
         }
 
         // Accessing values (Option handling)
         match basic_map.get("b") {
-            Some(value) => println!("Value b: {}", value),
-            None => println!("Key not found"),
+            Some(value) => fake_stdout = *value,
+            None => fake_stdout = 0,
         }
 
         // Updating values
