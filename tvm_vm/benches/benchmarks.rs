@@ -903,7 +903,6 @@ fn bench_tls_wasm_from_hash_for_4_args(c: &mut Criterion) {
                 engine.cc.stack.push(StackItem::cell(cell.clone()));
 
                 let start = std::time::Instant::now();
-                // Make sure that compiler do not skip it and run next line
                 let _status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
                 total_duration += start.elapsed();
 
