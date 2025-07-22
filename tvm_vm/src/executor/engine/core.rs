@@ -30,6 +30,7 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::error;
+use tvm_types::sha256_digest;
 
 use crate::error::TvmError;
 use crate::error::tvm_exception_full;
@@ -424,6 +425,24 @@ impl Engine {
         self.wasm_binary_root_path = wasm_binary_root_path;
     }
 
+    fn check_hash(&self, file: Vec<u8>, hash: String) -> Result<Vec<u8>> {
+        let new_hash = sha256_digest(file.clone());
+        let mut s = String::with_capacity(new_hash.len() * 2);
+        for &b in new_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        if s == hash {
+            Ok(file)
+        } else {
+            err!(
+                ExceptionCode::WasmLoadFail,
+                "Wasm hash mismatch: expected {:?}, got {:?}",
+                hash,
+                s
+            )?
+        }
+    }
+
     pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
         log::debug!("{}", std::env::current_dir()?.display());
@@ -434,7 +453,7 @@ impl Engine {
         log::debug!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
         match std::fs::read(filename) {
-            Ok(r) => Ok(r),
+            Ok(r) => self.check_hash(r, s),
             Err(e) => err!(
                 ExceptionCode::WasmLoadFail,
                 "Failed to find wasm instruction by hash {:?}",
