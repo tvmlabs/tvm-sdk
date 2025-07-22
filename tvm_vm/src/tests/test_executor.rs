@@ -735,7 +735,7 @@ fn test_tls_wasm_from_hash() {
 }
 
 #[test]
-fn test_wasm_from_invalid_hash() {
+fn test_wasm_from_nonexistent_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
     let config_data = load_boc("benches/config-data.boc");
@@ -804,7 +804,80 @@ fn test_wasm_from_invalid_hash() {
 
     println!("Wasm Return Status: {:?}", result);
 
-    let _res_error = result.expect_err("Test didn't error on fuel use");
+    let _res_error = result.expect_err("Test didn't error on unrecognised hash");
+}
+
+#[test]
+fn test_wasm_from_wrong_hash() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let stack = Stack::new();
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+
+    let hash_str = "0000000000000000000000000000000000000000000000000000000000000000";
+    let hash: Vec<u8> = (0..hash_str.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+        .collect::<Vec<u8>>();
+    let cell =
+        TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "add";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_func = "docs:adder/add-interface@0.1.0";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_dict = Vec::<u8>::new();
+
+    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+    let result = execute_run_wasm(&mut engine);
+
+    println!("Wasm Return Status: {:?}", result);
+
+    let _res_error = result.expect_err("Test didn't error on hash mismatch");
 }
 
 #[test]
