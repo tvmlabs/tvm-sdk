@@ -23,6 +23,7 @@ use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_types::SliceData;
 use tvm_vm::executor::Engine;
+use tvm_vm::executor::token::execute_run_wasm_concat_multiarg;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
 use tvm_vm::stack::continuation::ContinuationData;
@@ -369,10 +370,11 @@ fn bench_tls_wasm_from_hash_for_4_args(c: &mut Criterion) {
     let config_data = load_boc("benches/config-data.boc");
 
     c.bench_function("tls_wasm_from_hash_for_4_arg", |b| {
+        let mut total_duration = Duration::default();
         b.iter_custom(|iters| {
             // b.iter(|| {
             //+++++ Let's say I want to measure execution time from this point.
-            let start = std::time::Instant::now();
+
             for _i in 0..iters {
                 let mut ctrls = SaveList::default();
                 ctrls.put(4, &mut StackItem::Cell(elector_data.clone())).unwrap(); // .clone() added
@@ -900,14 +902,19 @@ fn bench_tls_wasm_from_hash_for_4_args(c: &mut Criterion) {
                 // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
                 engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-                // let status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
+                let start = std::time::Instant::now();
+                // Make sure that compiler do not skip it and run next line
+                let _status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
+                total_duration += start.elapsed();
+
                 // println!("Wasm Return Status: {:?}", status);
 
                 let res = engine.cc.stack.get(0).as_cell().unwrap(); //engine.cc.stack.get(0).as_slice().unwrap().clone();
                 let slice = SliceData::load_cell(res.clone()).unwrap();
                 let _ress = unpack_data_from_cell(slice, &mut engine).unwrap();
             }
-            start.elapsed()
+            total_duration
+
             // println!("ress: {:?}", hex::encode(ress));
         })
     });
