@@ -122,6 +122,7 @@ impl TestCase {
                     bytecode.clone()
                 };
                 log::trace!(target: "compile", "code: {}\n", code);
+                println!( "!!Code: {:?}\n", code);
                 let mut executor = Engine::with_capabilities(args.capabilities)
                     .setup_with_libraries(
                         code.clone(),
