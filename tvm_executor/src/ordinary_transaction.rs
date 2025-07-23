@@ -376,6 +376,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     } else {
                         None
                     };
+                    let minted_shell_orig = minted_shell.clone();
                     match self.action_phase_with_copyleft(
                         &mut tr,
                         account,
@@ -400,10 +401,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             copyleft = copyleft_reward;
                             Some(phase)
                         }
-                        Err(e) => fail!(ExecutorError::TrExecutorError(format!(
-                            "cannot create action phase of a new transaction for smart contract for reason {}",
-                            e
-                        ))),
+                        Err(e) => {
+                                *minted_shell = minted_shell_orig.clone();
+                                fail!(ExecutorError::TrExecutorError(format!(
+                                    "cannot create action phase of a new transaction for smart contract for reason {}",
+                                    e
+                                )))
+                        }
                     }
                 } else {
                     log::debug!(target: "executor", "compute_phase: failed");

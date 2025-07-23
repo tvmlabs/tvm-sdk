@@ -1039,13 +1039,6 @@ pub trait TransactionExecutor {
             log::debug!(target: "executor", "\nAccount deleted");
             phase.status_change = AccStatusChange::Deleted;
         }
-        phase.valid = true;
-        phase.success = true;
-        *acc_balance = acc_remaining_balance;
-        *acc = acc_copy;
-        if let Some(new_data) = new_data {
-            acc.set_data(new_data);
-        }
         log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_balance, need_to_burn);
         if acc_balance.grams >= need_to_burn {
             acc_balance.grams -= need_to_burn;
@@ -1054,6 +1047,13 @@ pub trait TransactionExecutor {
             if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, 0, &mut phase)? {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
+        }
+        phase.valid = true;
+        phase.success = true;
+        *acc_balance = acc_remaining_balance;
+        *acc = acc_copy;
+        if let Some(new_data) = new_data {
+            acc.set_data(new_data);
         }
         Ok(ActionPhaseResult::new(phase, out_msgs, copyleft_reward))
     }
