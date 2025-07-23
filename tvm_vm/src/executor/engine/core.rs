@@ -126,6 +126,7 @@ pub struct Engine {
     execution_timeout: Option<Duration>,
 
     wasm_binary_root_path: String,
+    wasm_hash_whitelist: HashSet<[u8; 32]>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -287,6 +288,7 @@ impl Engine {
             termination_deadline: None,
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
+            wasm_hash_whitelist: HashSet::new(),
         }
     }
 
@@ -425,6 +427,22 @@ impl Engine {
         self.wasm_binary_root_path = wasm_binary_root_path;
     }
 
+    pub fn set_wasm_hash_whitelist(&mut self, wasm_hash_whitelist: HashSet<[u8; 32]>) {
+        self.wasm_hash_whitelist = wasm_hash_whitelist;
+    }
+
+    pub fn add_wasm_hash_to_whitelist_by_str(&mut self, wasm_hash_str: String) -> Result<bool> {
+        let hash: Vec<u8> = (0..wasm_hash_str.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&wasm_hash_str[i..i + 2], 16).unwrap())
+            .collect::<Vec<u8>>();
+        let hash = match hash.try_into() {
+            Ok(h) => h,
+            Err(e) => err!(ExceptionCode::RangeCheckError, "This isn't a sha256 hash: {:?}", e)?,
+        };
+        Ok(self.wasm_hash_whitelist.insert(hash))
+    }
+
     fn check_hash(&self, file: Vec<u8>, hash: String) -> Result<Vec<u8>> {
         let new_hash = sha256_digest(file.clone());
         let mut s = String::with_capacity(new_hash.len() * 2);
@@ -432,7 +450,11 @@ impl Engine {
             write!(&mut s, "{:02x}", b)?;
         }
         if s == hash {
-            Ok(file)
+            if self.wasm_hash_whitelist.contains(&new_hash) {
+                Ok(file)
+            } else {
+                err!(ExceptionCode::WasmLoadFail, "Wasm hash not in whitelist: {:?}", s)?
+            }
         } else {
             err!(
                 ExceptionCode::WasmLoadFail,
