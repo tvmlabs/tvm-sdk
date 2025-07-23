@@ -394,6 +394,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
+                            if phase.success == false {
+                                *minted_shell = minted_shell_orig.clone();
+                            }
                             out_msgs = messages;
                             if let Some(copyleft_reward) = &copyleft_reward {
                                 tr.total_fees_mut().grams.sub(&copyleft_reward.reward)?;
