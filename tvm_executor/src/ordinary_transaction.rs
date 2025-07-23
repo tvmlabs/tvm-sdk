@@ -486,7 +486,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     in_msg,
                     &mut tr,
                     account_address,
-                    params.block_version,
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
                         log::debug!(target: "executor", "bounce_phase: out_msg value: {}", bounce_msg.get_value().unwrap());
