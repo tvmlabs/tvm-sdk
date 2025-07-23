@@ -11,6 +11,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use std::cmp::min;
+use std::collections::HashSet;
 use std::collections::LinkedList;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -136,7 +137,7 @@ pub struct ExecuteParams {
     pub termination_deadline: Option<Instant>,
     pub execution_timeout: Option<Duration>,
     pub wasm_binary_root_path: String,
-    pub wasm_binary_hash_whitelist: String,
+    pub wasm_hash_whitelist: HashSet<[u8; 32]>,
 }
 
 pub struct ActionPhaseResult {
@@ -182,7 +183,7 @@ impl Default for ExecuteParams {
             termination_deadline: None,
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
-            wasm_binary_hash_whitelist: "".to_owned(),
+            wasm_hash_whitelist: HashSet::new(),
         }
     }
 }
@@ -562,6 +563,7 @@ pub trait TransactionExecutor {
             params.block_collation_was_finished.clone(),
         )
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
+        .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
         .create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {

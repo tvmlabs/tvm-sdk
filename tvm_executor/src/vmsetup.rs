@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -160,6 +161,12 @@ impl VMSetup {
     /// Sets local wasm library root path
     pub fn set_wasm_root_path(mut self, path: String) -> VMSetup {
         self.vm.set_wasm_root_path(path);
+        self
+    }
+
+    /// Sets whitelist of hashes in local wasm library
+    pub fn set_wasm_hash_whitelist(mut self, whitelist: HashSet<[u8; 32]>) -> VMSetup {
+        self.vm.set_wasm_hash_whitelist(whitelist);
         self
     }
 
