@@ -81,7 +81,6 @@ use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
 
-use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 use crate::blockchain_config::BlockchainConfig;
 use crate::blockchain_config::CalcMsgFwdFees;
 use crate::error::ExecutorError;
@@ -1039,11 +1038,11 @@ pub trait TransactionExecutor {
             log::debug!(target: "executor", "\nAccount deleted");
             phase.status_change = AccStatusChange::Deleted;
         }
-        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_balance, need_to_burn);
-        if acc_balance.grams >= need_to_burn {
-            acc_balance.grams -= need_to_burn;
+        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_remaining_balance, need_to_burn);
+        if acc_remaining_balance.grams >= need_to_burn {
+            acc_remaining_balance.grams -= need_to_burn;
         } else {
-            acc_balance.grams = Grams::zero();
+            acc_remaining_balance.grams = Grams::zero();
             if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, 0, &mut phase)? {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
@@ -1073,7 +1072,6 @@ pub trait TransactionExecutor {
         msg: &Message,
         tr: &mut Transaction,
         my_addr: &MsgAddressInt,
-        block_version: u32,
     ) -> Result<(TrBouncePhase, Option<Message>)> {
         let header = msg.int_header().ok_or_else(|| error!("Not found msg internal header"))?;
         if !header.bounce {
@@ -1122,17 +1120,7 @@ pub trait TransactionExecutor {
         }
 
         // calculated storage for bounced message is empty
-        let serialized_message = bounce_msg.serialize()?;
-        let (storage, fwd_full_fees) = if block_version
-            >= VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE
-        {
-            let mut storage = StorageUsedShort::default();
-            storage.append(&serialized_message);
-            let storage_bits = storage.bits() - serialized_message.bit_length() as u64;
-            let storage_cells = storage.cells() - 1;
-            let fwd_full_fees = self.config().calc_fwd_fee(is_masterchain, &serialized_message)?;
-            (StorageUsedShort::with_values_checked(storage_cells, storage_bits)?, fwd_full_fees)
-        } else {
+        let (storage, fwd_full_fees) = {
             let fwd_full_fees = self.config().calc_fwd_fee(is_masterchain, &Cell::default())?;
             (StorageUsedShort::with_values_checked(0, 0)?, fwd_full_fees)
         };
