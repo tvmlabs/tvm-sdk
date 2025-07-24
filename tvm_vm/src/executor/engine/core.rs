@@ -492,6 +492,13 @@ impl Engine {
         Ok(self)
     }
 
+    pub fn get_precompiled_wasm_component(
+        &self,
+        hash: [u8; 32],
+    ) -> Option<&wasmtime::component::Component> {
+        self.wash_component_cache.get(&hash)
+    }
+
     pub fn create_single_use_wasm_component(
         &self,
         executable: Vec<u8>,
