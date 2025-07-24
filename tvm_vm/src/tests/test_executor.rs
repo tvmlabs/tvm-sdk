@@ -471,6 +471,7 @@ fn test_run_wasm_basic_add() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
         .unwrap()
@@ -542,6 +543,7 @@ fn test_run_wasm_io_plug_hashmap() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = "e7adc782c05b67bcda5babaca1deabf80f30ca0e6cf668c89825286c3ce0e560";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
@@ -617,6 +619,7 @@ fn test_run_wasm_from_hash() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
 
@@ -695,6 +698,7 @@ fn test_tls_wasm_from_hash() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
@@ -777,6 +781,7 @@ fn test_wasm_from_nonexistent_hash() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = "1234567890123456789012345678901234567890123456789012345678901234";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
@@ -851,6 +856,7 @@ fn test_wasm_from_wrong_hash() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = "0000000000000000000000000000000000000000000000000000000000000000";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
@@ -925,6 +931,7 @@ fn test_wasm_from_non_whitelist_hash() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
     let hash: Vec<u8> = (0..hash_str.len())
@@ -998,6 +1005,7 @@ fn test_run_wasm_fuel_error() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
         .unwrap()
@@ -1067,6 +1075,7 @@ fn test_tls_wasm_from_hash_for_4_args() {
         None,
         vec![],
     );
+    engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = "f17ce37afc4301d138ad797efadce65387c32b7bba65886fd2b5fc7a48a98e5c";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());

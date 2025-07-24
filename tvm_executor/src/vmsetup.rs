@@ -170,6 +170,18 @@ impl VMSetup {
         self
     }
 
+    /// Init wasmtime engine
+    pub fn wasm_engine_init_cached(mut self) -> Result<VMSetup> {
+        self.vm.wasm_engine_init_cached()?;
+        Ok(self)
+    }
+
+    /// Precompile local hash components
+    pub fn precompile_all_wasm_by_hash(mut self) -> Result<VMSetup> {
+        self.vm = self.vm.precompile_all_wasm_by_hash()?;
+        Ok(self)
+    }
+
     /// Creates new instance of TVM with defined stack, registers and code.
     pub fn create(self) -> Engine {
         if cfg!(debug_assertions) {
