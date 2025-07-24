@@ -39,6 +39,7 @@ use tvm_client::abi::ParamsOfDecodeMessageBody;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
 use tvm_client::account;
+use tvm_client::boc::internal::serialize_cell_to_base64;
 use tvm_client::crypto::CryptoConfig;
 use tvm_client::crypto::KeyPair;
 use tvm_client::crypto::MnemonicDictionary;
@@ -60,7 +61,6 @@ use crate::debug::debug_level_from_env;
 use crate::replay::CONFIG_ADDR;
 use crate::replay::construct_blockchain_config;
 use crate::resolve_net_name;
-
 pub const HD_PATH: &str = "m/44'/396'/0'/0/0";
 pub const WORD_COUNT: u8 = 12;
 
@@ -318,9 +318,11 @@ pub async fn query_account_field(
     if state_init.is_none() {
         return Err(format!("account doesn't contain state_init"));
     }
-    let data = state_init.unwrap().clone().data;
-    match data {
-        Some(data) => Ok(data.to_string()),
+
+    let cell: Option<tvm_types::Cell> = state_init.unwrap().clone().data;
+
+    match cell {
+        Some(cell) => Ok(serialize_cell_to_base64(&cell, "account data").unwrap()),
         None => Err(format!("State init doesn't contain field data")),
     }
 }
