@@ -888,7 +888,7 @@ fn test_decode_account_data() {
     let decoded = client
         .request::<_, ResultOfDecodeAccountData>(
             "abi.decode_account_data",
-            ParamsOfDecodeAccountData { data, abi, allow_partial: false },
+            ParamsOfDecodeAccountData { data, abi, allow_partial: true },
         )
         .unwrap()
         .data;
