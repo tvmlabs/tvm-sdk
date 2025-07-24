@@ -40,7 +40,7 @@ pub const ARFC: f64 = 1000_f64;
 pub const MINRC: f64 = 1_f64;
 pub const MAXRC: f64 = 3_f64;
 pub const TTMT: f64 = 2000000000_f64;
-pub const TOTALSUPPLY: f64 = 10400000000000000000_f64;
+pub const TOTALSUPPLY: u128 = 10400000000000000000;
 pub const MAXRT: f64 = 157766400_f64;
 pub const KF: f64 = 0.01_f64;
 pub const KS: f64 = 0.001_f64;
@@ -613,7 +613,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     fetch_stack(engine, 5)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
-    let drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mut drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     //_delta_reward = (_delta_reward * _calc_reward_num + (block.timestamp -
     //_delta_reward _reward_last_time)) / (_calc_reward_num + 1);
     //_delta_reward - average time between reward adj calculate
@@ -622,16 +622,22 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //Average ReputationCoef
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
-    let repavg = repavgbig / 1e9_f64;
+    let mut repavg = repavgbig / 1e9_f64;
     let rbkmin;
     if t <= TTMT - 1_f64 {
-        rbkmin = TOTALSUPPLY
+        rbkmin = TOTALSUPPLY as f64
             * 0.675_f64
             * (1_f64 + KM)
             * ((-1_f64 * um * t).exp() - (-1_f64 * um * (t + 1_f64)).exp())
             / 3.5_f64;
     } else {
         rbkmin = 0_f64;
+    }
+    if drbkavg == 0_f64 {
+        drbkavg = 1_f64;
+    }
+    if repavg == 0_f64 {
+        repavg = 1_f64;
     }
     let rbk = (((calc_mbk(t + drbkavg, KRBK) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
@@ -645,12 +651,12 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
     let is_bm = engine.cmd.var(0).as_bool()?; 
     let t = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //time from network start
     let rbmprev = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //previous value of rewardadjustment (not minimum)
-    let drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let mut drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
     let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let rbmmin;
     if t <= TTMT - 1_f64 {
-        rbmmin = TOTALSUPPLY
+        rbmmin = TOTALSUPPLY as f64
             * 0.1_f64
             * (1_f64 + KM)
             * ((-1_f64 * um * t).exp() - (-1_f64 * um * (t + 1_f64)).exp())
@@ -659,6 +665,9 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
         rbmmin = 0_f64;
     }
     let rbm;
+    if drbmavg == 0_f64 {
+        drbmavg = 1_f64;
+    }
     if is_bm {
         rbm = (((calc_mbk(t + drbmavg, KRBM) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
     } else {
@@ -673,9 +682,9 @@ fn calc_mbk(t: f64, krk: f64) -> f64 {
     let um = (-1_f64 / TTMT) * (KM / (KM + 1_f64)).ln();
     let mt;
     if t > TTMT {
-        mt = TOTALSUPPLY;
+        mt = TOTALSUPPLY as f64;
     } else {
-        mt = TOTALSUPPLY * (1_f64 + KM) * (1_f64 - (-1_f64 * um * t).exp());
+        mt = TOTALSUPPLY as f64 * (1_f64 + KM) * (1_f64 - (-1_f64 * um * t).exp());
     }
     let mbk = krk * mt;
     return mbk;
@@ -685,21 +694,25 @@ fn calc_mbk(t: f64, krk: f64) -> f64 {
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
     fetch_stack(engine, 7)?;
-    let mut repcoef = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64; //average reputation coef of licenses in one stake
-    let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64; //value of stake
-    let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64; //sum of stakes at start of epoch
-    let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64; //duration of epoch
-    let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64; //sum of reward token (minted, include slash token)
-    let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as f64; //numberOfActiveBlockKeepers
-    let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64; //last calculated reward_adjustment
-    repcoef = repcoef / 1e9_f64;
+    let mut repcoef = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //average reputation coef of licenses in one stake
+    let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //value of stake
+    let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //sum of stakes at start of epoch
+    let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //duration of epoch
+    let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
+    let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepers
+    let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)?; //last calculated reward_adjustment
+    repcoef = repcoef / 1000000000;
     let reward;
-    if totalbkstake == 0_f64 {
-        reward = rbk * t * repcoef / nbk;
+    if totalbkstake == 0 {
+        if nbk == 0 {
+            reward = 0;
+        } else {
+            reward = rbk * t * repcoef / nbk;
+        }
     } else if mbk < TOTALSUPPLY {
         reward = rbk * t * repcoef * bkstake / totalbkstake;
     } else {
-        reward = 0_f64;
+        reward = 0;
     }
     engine.cc.stack.push(int!(reward as u128));
     Ok(())
@@ -709,14 +722,14 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
 pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMREWARD"))?;
     fetch_stack(engine, 5)?;
-    let radj = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let depoch = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
+    let radj = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?;
+    let depoch = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?;
+    let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?;
+    let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let _pubkey_cell = engine.cmd.var(4).as_cell()?;
     let reward;
-    if mbm >= TOTALSUPPLY * 0.1_f64 {
-        reward = 0_f64;
+    if mbm >= TOTALSUPPLY / 10 || count_bm == 0 {
+        reward = 0;
     } else {
         reward = radj * depoch / count_bm;
     }
@@ -822,7 +835,10 @@ fn calculate_sum_boost_coefficients(
     y1: f64, y2: f64, y3: f64, y4: f64,
     k1: f64, k2: f64, k3: f64
 ) -> Vec<f64> {
-    let total_lst: f64 = lst.iter().sum();
+    let mut total_lst: f64 = lst.iter().sum();
+    if total_lst == 0_f64 {
+        total_lst = 1_f64;
+    }
     let mut cumulative_sum = 0_f64;
     lst
         .iter()
@@ -934,7 +950,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     let depoch = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
     let u = mbn * g / sum;
     let reward;
-    if sum >= TOTALSUPPLY * KRMV {
+    if sum >= TOTALSUPPLY as f64 * KRMV {
         reward = 0_f64;
     } else {
         reward = radj * depoch * u * 1e9_f64;
