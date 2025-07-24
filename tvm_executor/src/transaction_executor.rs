@@ -564,6 +564,8 @@ pub trait TransactionExecutor {
         )
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
+        .wasm_engine_init_cached()?
+        .precompile_all_wasm_by_hash()?
         .create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {

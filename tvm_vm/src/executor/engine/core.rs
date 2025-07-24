@@ -126,7 +126,9 @@ pub struct Engine {
     execution_timeout: Option<Duration>,
 
     wasm_binary_root_path: String,
-    wasm_hash_whitelist: HashSet<[u8; 32]>,
+    wasm_hash_whitelist: HashSet<[u8; 32]>, // store hashes of wasm binaries available locally
+    wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
+    wasm_engine_cache: Option<wasmtime::Engine>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -289,6 +291,8 @@ impl Engine {
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
             wasm_hash_whitelist: HashSet::new(),
+            wash_component_cache: HashMap::new(),
+            wasm_engine_cache: None,
         }
     }
 
@@ -429,6 +433,108 @@ impl Engine {
 
     pub fn set_wasm_hash_whitelist(&mut self, wasm_hash_whitelist: HashSet<[u8; 32]>) {
         self.wasm_hash_whitelist = wasm_hash_whitelist;
+    }
+
+    pub fn wasm_engine_init_cached(&mut self) -> Result<()> {
+        println!("INITING ENGINE");
+        // load or access WASM engine
+        let mut wasm_config = wasmtime::Config::new();
+        wasm_config.wasm_component_model(true);
+        wasm_config.consume_fuel(true);
+        // configs to assure determinism
+        wasm_config.cranelift_nan_canonicalization(true);
+        wasm_config.cranelift_pcc(true);
+        wasm_config.wasm_relaxed_simd(true);
+        wasm_config.relaxed_simd_deterministic(true);
+        let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+            Ok(module) => module,
+            Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
+        };
+        self.wasm_engine_cache = Some(wasm_engine);
+        Ok(())
+    }
+
+    pub fn get_wasm_engine(&self) -> Result<&wasmtime::Engine> {
+        match &self.wasm_engine_cache {
+            Some(engine) => Ok(engine),
+            None => err!(
+                ExceptionCode::WasmLoadFail,
+                "Wasm Engine was not created. This is probably a bug."
+            )?,
+        }
+    }
+
+    pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {
+        Ok(wasmtime::Store::new(self.get_wasm_engine()?, data))
+    }
+
+    pub fn precompile_all_wasm_by_hash(mut self) -> Result<Engine> {
+        let hashmap = self.wasm_hash_whitelist.clone();
+        // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+
+        for hash in hashmap {
+            let binary = self.get_wasm_binary_by_hash(hash.into())?;
+            let component = match wasmtime::component::Component::new(
+                self.get_wasm_engine()?,
+                &binary.as_slice(),
+            ) {
+                Ok(module) => module,
+                Err(e) => err!(
+                    ExceptionCode::WasmLoadFail,
+                    "Failed to load WASM
+    component {:?}",
+                    e
+                )?,
+            };
+            // let mut cache = &mut self.wash_component_cache;
+            self.wash_component_cache.insert(hash, component);
+        }
+        Ok(self)
+    }
+
+    pub fn create_single_use_wasm_component(
+        &self,
+        executable: Vec<u8>,
+    ) -> Result<wasmtime::component::Component> {
+        match wasmtime::component::Component::new(self.get_wasm_engine()?, &executable.as_slice()) {
+            Ok(module) => Ok(module),
+            Err(e) => err!(
+                ExceptionCode::WasmLoadFail,
+                "Failed to load WASM
+    component {:?}",
+                e
+            )?,
+        }
+    }
+
+    pub fn print_wasm_component_exports_and_imports(
+        &self,
+        component: &wasmtime::component::Component,
+    ) -> Result<()> {
+        let component_type = component.component_type();
+        let engine = self.get_wasm_engine()?;
+        let mut exports = component_type.exports(&engine);
+        let arg = exports.next();
+        println!("List of exports from WASM: {:?}", arg);
+        if let Some(arg) = arg {
+            println!("{:?}", arg);
+
+            for arg in exports {
+                println!(" {:?}", arg);
+            }
+        }
+        let binding = component.component_type();
+        let mut imports = binding.imports(&engine);
+        let arg = imports.next();
+        println!("List of imports from WASM: {:?}", arg);
+        if let Some(arg) = arg {
+            println!("{:?}", arg);
+
+            for arg in imports {
+                println!(" {:?}", arg);
+            }
+        }
+        Ok(())
     }
 
     pub fn add_wasm_hash_to_whitelist_by_str(&mut self, wasm_hash_str: String) -> Result<bool> {

@@ -281,7 +281,7 @@ wasmtime::component::bindgen!({
 //         }
 //     "#,
 // });
-struct MyState {
+pub(crate) struct MyState {
     ctx: WasiCtx,
     table: ResourceTable,
 }
@@ -677,24 +677,11 @@ fn run_wasm_core(
     wasm_instance_name: &str,
     wasm_func_args: Vec<u8>,
 ) -> Status {
-    // load or access WASM engine
-    let mut wasm_config = wasmtime::Config::new();
-    wasm_config.wasm_component_model(true);
-    wasm_config.consume_fuel(true);
-    // configs to assure determinism
-    wasm_config.cranelift_nan_canonicalization(true);
-    wasm_config.cranelift_pcc(true);
-    wasm_config.wasm_relaxed_simd(true);
-    wasm_config.relaxed_simd_deterministic(true);
-    let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
-        Ok(module) => module,
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
-    };
     let mut builder = WasiCtxBuilder::new();
-    let mut wasm_store = wasmtime::Store::new(
-        &wasm_engine,
-        MyState { ctx: builder.build(), table: wasmtime::component::ResourceTable::new() },
-    );
+    let mut wasm_store: wasmtime::Store<MyState> = engine.create_wasm_store(MyState {
+        ctx: builder.build(),
+        table: wasmtime::component::ResourceTable::new(),
+    })?;
     // set WASM fuel limit based on available gas
     // TODO: Consider adding a constant offset to account for cell pack/unpack and
     // other actions to be run after WASM instruction
@@ -717,31 +704,12 @@ fn run_wasm_core(
         Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
     };
 
-    let wasm_component =
-        match wasmtime::component::Component::new(&wasm_engine, &wasm_executable.as_slice()) {
-            Ok(module) => module,
-            Err(e) => err!(
-                ExceptionCode::WasmLoadFail,
-                "Failed to load WASM
-    component {:?}",
-                e
-            )?,
-        };
-    let component_type = wasm_component.component_type();
+    let wasm_component = engine.create_single_use_wasm_component(wasm_executable)?;
 
-    let mut exports = component_type.exports(&wasm_engine);
-    let arg = exports.next();
-    println!("List of exports from WASM: {:?}", arg);
-    if let Some(arg) = arg {
-        println!("{:?}", arg);
-
-        for arg in exports {
-            println!(" {:?}", arg);
-        }
-    }
+    engine.print_wasm_component_exports_and_imports(&wasm_component)?;
 
     // Add wasi-cli libs to linker
-    let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(&wasm_engine);
+    let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(engine.get_wasm_engine()?);
     let mut wasm_linker = wasm_linker.allow_shadowing(true);
     // match wasm_linker.define_unknown_imports_as_traps(&wasm_component) {
     //     Ok(_) => {}
@@ -758,18 +726,6 @@ fn run_wasm_core(
 
     // This is a custom linker method, adding only sync, non-io wasi dependencies.
     // If more deps are needed, add them in there!
-    let binding = wasm_component.component_type();
-    let mut imports = binding.imports(&wasm_engine);
-    let arg = imports.next();
-    println!("List of imports from WASM: {:?}", arg);
-    if let Some(arg) = arg {
-        println!("{:?}", arg);
-
-        for arg in imports {
-            println!(" {:?}", arg);
-        }
-    }
-
     match add_to_linker_gosh::<MyState>(&mut wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(
@@ -807,7 +763,7 @@ fn run_wasm_core(
 
     // get callable wasm func
     println!("Callable funcs found:");
-    for export in wasm_component.component_type().exports(&wasm_engine) {
+    for export in wasm_component.component_type().exports(engine.get_wasm_engine()?) {
         println!("{:?}", export.0);
     }
     let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
