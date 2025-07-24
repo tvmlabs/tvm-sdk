@@ -714,7 +714,13 @@ fn run_wasm_core(
         Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
     };
 
-    let wasm_component = engine.create_single_use_wasm_component(wasm_executable)?;
+    let wasm_component = match wasm_hash {
+        Some(h) => match engine.get_precompiled_wasm_component(h) {
+            Some(c) => c,
+            None => &engine.create_single_use_wasm_component(wasm_executable)?,
+        },
+        None => &engine.create_single_use_wasm_component(wasm_executable)?,
+    };
 
     engine.print_wasm_component_exports_and_imports(&wasm_component)?;
 
