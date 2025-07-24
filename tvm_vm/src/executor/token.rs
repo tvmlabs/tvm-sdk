@@ -694,7 +694,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as f64; //last calculated reward_adjustment
     repcoef = repcoef / 1e9_f64;
     let reward;
-    if mbk == 0_f64 {
+    if totalbkstake == 0_f64 {
         reward = rbk * t * repcoef / nbk;
     } else if mbk < TOTALSUPPLY {
         reward = rbk * t * repcoef * bkstake / totalbkstake;
