@@ -1079,6 +1079,7 @@ fn test_tls_wasm_from_hash_for_4_args() {
 
     let hash_str = "f17ce37afc4301d138ad797efadce65387c32b7bba65886fd2b5fc7a48a98e5c";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())

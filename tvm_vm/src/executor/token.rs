@@ -537,31 +537,8 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 8)?;
 
-    // load wasm component binary
-    let s = engine.cmd.var(0).as_cell()?;
-    let wasm_executable =
-        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
-            TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
-        };
-    let wasm_hash_mode = wasm_executable.is_empty();
-    let wasm_executable: Vec<u8> = if wasm_hash_mode {
-        let s = engine.cmd.var(7).as_cell()?;
-        let wasm_hash =
-            match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?
-                .0
-            {
-                TokenValue::Bytes(items) => items,
-                e => {
-                    err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
-                }
-            };
-        log::debug!("Using WASM Hash {:?}", wasm_hash);
-        engine.get_wasm_binary_by_hash(wasm_hash)?
-        // todo!("Add hash lookup here from hash {:?}", wasm_hash);
-    } else {
-        wasm_executable
-    };
+    let (wasm_executable, wasm_hash) = check_and_get_wasm_by_hash(engine, 0, 7)?;
+
     // let s = engine.cmd.var(0).as_cell()?;
     // let wasm_executable = rejoin_chain_of_cells(s)?;
 
@@ -608,7 +585,14 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     wasm_func_args.append(&mut wasm_args_tail);
     log::debug!("WASM Args loaded {:?}", wasm_func_args);
 
-    run_wasm_core(engine, wasm_executable, &wasm_func_name, &wasm_instance_name, wasm_func_args)
+    run_wasm_core(
+        engine,
+        wasm_executable,
+        &wasm_func_name,
+        &wasm_instance_name,
+        wasm_func_args,
+        wasm_hash,
+    )
 }
 
 // execute wasm binary
@@ -616,31 +600,7 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 5)?;
 
-    // load wasm component binary
-    let s = engine.cmd.var(0).as_cell()?;
-    let wasm_executable =
-        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
-            TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
-        };
-    let wasm_hash_mode = wasm_executable.is_empty();
-    let wasm_executable: Vec<u8> = if wasm_hash_mode {
-        let s = engine.cmd.var(4).as_cell()?;
-        let wasm_hash =
-            match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?
-                .0
-            {
-                TokenValue::Bytes(items) => items,
-                e => {
-                    err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
-                }
-            };
-        println!("Using WASM Hash {:?}", wasm_hash);
-        engine.get_wasm_binary_by_hash(wasm_hash)?
-        // todo!("Add hash lookup here from hash {:?}", wasm_hash);
-    } else {
-        wasm_executable
-    };
+    let (wasm_executable, wasm_hash) = check_and_get_wasm_by_hash(engine, 0, 4)?;
     // let s = engine.cmd.var(0).as_cell()?;
     // let wasm_executable = rejoin_chain_of_cells(s)?;
 
@@ -666,7 +626,56 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         };
     println!("WASM Args loaded {:?}", wasm_func_args);
 
-    run_wasm_core(engine, wasm_executable, &wasm_func_name, &wasm_instance_name, wasm_func_args)
+    run_wasm_core(
+        engine,
+        wasm_executable,
+        &wasm_func_name,
+        &wasm_instance_name,
+        wasm_func_args,
+        wasm_hash,
+    )
+}
+
+fn check_and_get_wasm_by_hash(
+    engine: &mut Engine,
+    exec_index: usize,
+    hash_index: usize,
+) -> Result<(Vec<u8>, Option<[u8; 32]>), failure::Error> {
+    // load wasm component binary
+    let s = engine.cmd.var(exec_index).as_cell()?;
+    let wasm_executable =
+        match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+        };
+    let wasm_hash_mode = wasm_executable.is_empty();
+    if wasm_hash_mode {
+        let s = engine.cmd.var(hash_index).as_cell()?;
+        let wasm_hash =
+            match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?
+                .0
+            {
+                TokenValue::Bytes(items) => items,
+                e => {
+                    err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
+                }
+            };
+        println!("Using WASM Hash {:?}", wasm_hash);
+        Ok((
+            engine.get_wasm_binary_by_hash(wasm_hash.clone())?,
+            Some(match wasm_hash.try_into() {
+                Ok(h) => h,
+                Err(e) => err!(
+                    ExceptionCode::WasmLoadFail,
+                    "Failed to turn valid hash into [u8; 32]. This is probably a bug. {:?}",
+                    e
+                )?,
+            }),
+        ))
+        // todo!("Add hash lookup here from hash {:?}", wasm_hash);
+    } else {
+        Ok((wasm_executable, None))
+    }
 }
 
 // Shared functionality for all wasm instructions
@@ -676,6 +685,7 @@ fn run_wasm_core(
     wasm_func_name: &str,
     wasm_instance_name: &str,
     wasm_func_args: Vec<u8>,
+    wasm_hash: Option<[u8; 32]>,
 ) -> Status {
     let mut builder = WasiCtxBuilder::new();
     let mut wasm_store: wasmtime::Store<MyState> = engine.create_wasm_store(MyState {
