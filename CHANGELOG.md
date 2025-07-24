@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file.
 
 - Update CALCBMREWARDADJ. Rename into CALCBMMVREWARDADJ
 
+## [2.18.4] - 2025-07-18
+### Fixes
+- Fixed an error decoding account data: `Invalid BOC: error decode contract data BOC base64`
+- 
 ## [2.18.3] - 2025-07-08
 
 ### Changed
