@@ -284,6 +284,7 @@ wasmtime::component::bindgen!({
 pub(crate) struct MyState {
     ctx: WasiCtx,
     table: ResourceTable,
+    limiter: wasmtime::StoreLimits,
 }
 impl IoView for MyState {
     fn table(&mut self) -> &mut ResourceTable {
@@ -691,7 +692,16 @@ fn run_wasm_core(
     let mut wasm_store: wasmtime::Store<MyState> = engine.create_wasm_store(MyState {
         ctx: builder.build(),
         table: wasmtime::component::ResourceTable::new(),
+        limiter: wasmtime::StoreLimitsBuilder::new()
+            .memory_size(1 << 25 /* 32 MB */)
+            .instances(50)
+            .memories(1000)
+            .tables(1000)
+            .table_elements(1000000)
+            .trap_on_grow_failure(true)
+            .build(),
     })?;
+    wasm_store.limiter(|state| &mut state.limiter);
     // set WASM fuel limit based on available gas
     // TODO: Consider adding a constant offset to account for cell pack/unpack and
     // other actions to be run after WASM instruction
