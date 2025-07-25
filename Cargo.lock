@@ -6393,6 +6393,7 @@ dependencies = [
  "tvm_block",
  "tvm_types",
  "tvm_vm",
+ "wasmtime",
 ]
 
 [[package]]

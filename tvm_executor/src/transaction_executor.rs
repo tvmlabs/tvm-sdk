@@ -11,6 +11,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use std::cmp::min;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::LinkedList;
 use std::sync::Arc;
@@ -138,6 +139,8 @@ pub struct ExecuteParams {
     pub execution_timeout: Option<Duration>,
     pub wasm_binary_root_path: String,
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
+    pub wasm_engine: Option<wasmtime::Engine>,
+    pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
 }
 
 pub struct ActionPhaseResult {
@@ -184,6 +187,8 @@ impl Default for ExecuteParams {
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
             wasm_hash_whitelist: HashSet::new(),
+            wasm_engine: None,
+            wasm_component_cache: HashMap::new(),
         }
     }
 }
@@ -564,8 +569,8 @@ pub trait TransactionExecutor {
         )
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
-        .wasm_engine_init_cached()?
-        .precompile_all_wasm_by_hash()?
+        .extern_insert_wasm_engine(params.wasm_engine.clone())
+        .extern_inset_wasm_component_cache(params.wasm_component_cache.clone())
         .create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {
