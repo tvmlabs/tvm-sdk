@@ -454,6 +454,17 @@ impl Engine {
         Ok(())
     }
 
+    pub fn extern_insert_wasm_engine(&mut self, engine: Option<wasmtime::Engine>) {
+        self.wasm_engine_cache = engine.clone();
+    }
+
+    pub fn extern_inset_wasm_component_cache(
+        &mut self,
+        cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    ) {
+        self.wash_component_cache = cache;
+    }
+
     pub fn get_wasm_engine(&self) -> Result<&wasmtime::Engine> {
         match &self.wasm_engine_cache {
             Some(engine) => Ok(engine),

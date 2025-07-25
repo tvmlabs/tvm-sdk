@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -174,6 +175,21 @@ impl VMSetup {
     pub fn wasm_engine_init_cached(mut self) -> Result<VMSetup> {
         self.vm.wasm_engine_init_cached()?;
         Ok(self)
+    }
+
+    /// Insert external wasmtime engine
+    pub fn extern_insert_wasm_engine(mut self, engine: Option<wasmtime::Engine>) -> VMSetup {
+        self.vm.extern_insert_wasm_engine(engine);
+        self
+    }
+
+    /// Insert external wasm component cache
+    pub fn extern_inset_wasm_component_cache(
+        mut self,
+        cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    ) -> VMSetup {
+        self.vm.extern_inset_wasm_component_cache(cache);
+        self
     }
 
     /// Precompile local hash components
