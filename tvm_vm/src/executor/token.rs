@@ -695,7 +695,7 @@ fn run_wasm_core(
         limiter: wasmtime::StoreLimitsBuilder::new()
             .memory_size(1 << 25 /* 32 MB */)
             .instances(50)
-            .memories(1000)
+            .memories(100)
             .tables(1000)
             .table_elements(1000000)
             .trap_on_grow_failure(true)
