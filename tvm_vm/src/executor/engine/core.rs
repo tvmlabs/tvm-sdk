@@ -435,6 +435,24 @@ impl Engine {
         self.wasm_hash_whitelist = wasm_hash_whitelist;
     }
 
+    pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
+        println!("INITING ENGINE");
+        // load or access WASM engine
+        let mut wasm_config = wasmtime::Config::new();
+        wasm_config.wasm_component_model(true);
+        wasm_config.consume_fuel(true);
+        // configs to assure determinism
+        wasm_config.cranelift_nan_canonicalization(true);
+        wasm_config.cranelift_pcc(true);
+        wasm_config.wasm_relaxed_simd(true);
+        wasm_config.relaxed_simd_deterministic(true);
+        let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+            Ok(module) => module,
+            Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
+        };
+        Ok(wasm_engine)
+    }
+
     pub fn wasm_engine_init_cached(&mut self) -> Result<()> {
         println!("INITING ENGINE");
         // load or access WASM engine
