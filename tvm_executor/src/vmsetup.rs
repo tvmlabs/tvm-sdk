@@ -184,11 +184,11 @@ impl VMSetup {
     }
 
     /// Insert external wasm component cache
-    pub fn extern_inset_wasm_component_cache(
+    pub fn extern_insert_wasm_component_cache(
         mut self,
         cache: HashMap<[u8; 32], wasmtime::component::Component>,
     ) -> VMSetup {
-        self.vm.extern_inset_wasm_component_cache(cache);
+        self.vm.extern_insert_wasm_component_cache(cache);
         self
     }
 
