@@ -570,7 +570,7 @@ pub trait TransactionExecutor {
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
         .extern_insert_wasm_engine(params.wasm_engine.clone())
-        .extern_inset_wasm_component_cache(params.wasm_component_cache.clone())
+        .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
         .create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {

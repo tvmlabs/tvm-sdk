@@ -476,7 +476,7 @@ impl Engine {
         self.wasm_engine_cache = engine.clone();
     }
 
-    pub fn extern_inset_wasm_component_cache(
+    pub fn extern_insert_wasm_component_cache(
         &mut self,
         cache: HashMap<[u8; 32], wasmtime::component::Component>,
     ) {
@@ -501,31 +501,41 @@ impl Engine {
         wasm_binary_root_path: String,
         wasm_engine: wasmtime::Engine,
         wasm_hash_whitelist: HashSet<[u8; 32]>,
-    ) -> Result<HashMap<[u8; 32], wasmtime::component::Component>> {
+    ) -> HashMap<[u8; 32], wasmtime::component::Component> {
         let hashmap = wasm_hash_whitelist.clone();
         let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
         // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
 
         for hash in hashmap {
-            let binary = Self::extern_get_wasm_binary_by_hash(
+            let res = match Self::extern_get_wasm_binary_by_hash(
                 wasm_binary_root_path.clone(),
                 wasm_hash_whitelist.clone(),
                 hash.into(),
-            )?;
-            let component =
-                match wasmtime::component::Component::new(&wasm_engine, &binary.as_slice()) {
-                    Ok(module) => module,
-                    Err(e) => err!(
-                        ExceptionCode::WasmLoadFail,
-                        "Failed to load WASM
-    component {:?}",
-                        e
-                    )?,
-                };
+            ) {
+                Ok(binary) => {
+                    match wasmtime::component::Component::new(&wasm_engine, &binary.as_slice()) {
+                        Ok(module) => Ok(module),
+                        Err(e) => err!(
+                            ExceptionCode::WasmLoadFail,
+                            "Failed to load WASM
+            component {:?}",
+                            e
+                        ),
+                    }
+                }
+
+                Err(e) => Err(e),
+            };
+            // We catch errors to allow a partial precompilation in case of missing files
+            match res {
+                Ok(comp) => {
+                    cache.insert(hash, comp);
+                }
+                Err(e) => println!("Failed to precompile hash: {:?} with error: {:?}", hash, e),
+            };
             // let mut cache = &mut self.wash_component_cache;
-            cache.insert(hash, component);
         }
-        Ok(cache)
+        cache
     }
 
     pub fn precompile_all_wasm_by_hash(mut self) -> Result<Engine> {
