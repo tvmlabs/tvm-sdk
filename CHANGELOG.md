@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.18.4] - 2025-07-21
+## [2.19] - 2025-07-25
 
 ### Fixes
 - Fixed `runwasm` and `runwasmconcatmultiarg` to support wasm components dependent on, when no real io access is needed:
@@ -16,6 +16,10 @@ import wasi:filesystem/types@0.2.3;
 import wasi:filesystem/preopens@0.2.3;
 ```
 
+## [2.18.4] - 2025-07-18
+### Fixes
+- Fixed an error decoding account data: `Invalid BOC: error decode contract data BOC base64`
+- 
 ## [2.18.3] - 2025-07-08
 
 ### Changed
