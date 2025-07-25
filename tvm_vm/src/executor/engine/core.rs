@@ -479,6 +479,37 @@ impl Engine {
         Ok(wasmtime::Store::new(self.get_wasm_engine()?, data))
     }
 
+    pub fn extern_precompile_all_wasm_from_hash_list(
+        wasm_binary_root_path: String,
+        wasm_engine: wasmtime::Engine,
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+    ) -> Result<HashMap<[u8; 32], wasmtime::component::Component>> {
+        let hashmap = wasm_hash_whitelist.clone();
+        let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+        // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+
+        for hash in hashmap {
+            let binary = Self::extern_get_wasm_binary_by_hash(
+                wasm_binary_root_path.clone(),
+                wasm_hash_whitelist.clone(),
+                hash.into(),
+            )?;
+            let component =
+                match wasmtime::component::Component::new(&wasm_engine, &binary.as_slice()) {
+                    Ok(module) => module,
+                    Err(e) => err!(
+                        ExceptionCode::WasmLoadFail,
+                        "Failed to load WASM
+    component {:?}",
+                        e
+                    )?,
+                };
+            // let mut cache = &mut self.wash_component_cache;
+            cache.insert(hash, component);
+        }
+        Ok(cache)
+    }
+
     pub fn precompile_all_wasm_by_hash(mut self) -> Result<Engine> {
         let hashmap = self.wasm_hash_whitelist.clone();
         // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
@@ -567,6 +598,32 @@ impl Engine {
         Ok(self.wasm_hash_whitelist.insert(hash))
     }
 
+    pub fn extern_check_hash(
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+        file: Vec<u8>,
+        hash: String,
+    ) -> Result<Vec<u8>> {
+        let new_hash = sha256_digest(file.clone());
+        let mut s = String::with_capacity(new_hash.len() * 2);
+        for &b in new_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        if s == hash {
+            if wasm_hash_whitelist.contains(&new_hash) {
+                Ok(file)
+            } else {
+                err!(ExceptionCode::WasmLoadFail, "Wasm hash not in whitelist: {:?}", s)?
+            }
+        } else {
+            err!(
+                ExceptionCode::WasmLoadFail,
+                "Wasm hash mismatch: expected {:?}, got {:?}",
+                hash,
+                s
+            )?
+        }
+    }
+
     fn check_hash(&self, file: Vec<u8>, hash: String) -> Result<Vec<u8>> {
         let new_hash = sha256_digest(file.clone());
         let mut s = String::with_capacity(new_hash.len() * 2);
@@ -586,6 +643,29 @@ impl Engine {
                 hash,
                 s
             )?
+        }
+    }
+
+    pub fn extern_get_wasm_binary_by_hash(
+        wasm_binary_root_path: String,
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+        wasm_hash: Vec<u8>,
+    ) -> Result<Vec<u8>> {
+        let mut s = String::with_capacity(wasm_hash.len() * 2);
+        log::debug!("{}", std::env::current_dir()?.display());
+        for &b in wasm_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        let filename = format!("{}/{}", wasm_binary_root_path, s);
+        log::debug!("Getting file {:?}", filename);
+        // TODO: Add some hash checking of the file
+        match std::fs::read(filename) {
+            Ok(r) => Self::extern_check_hash(wasm_hash_whitelist, r, s),
+            Err(e) => err!(
+                ExceptionCode::WasmLoadFail,
+                "Failed to find wasm instruction by hash {:?}",
+                e
+            )?,
         }
     }
 
