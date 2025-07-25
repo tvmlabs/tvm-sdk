@@ -472,6 +472,7 @@ fn test_run_wasm_basic_add() {
         vec![],
     );
     engine.wasm_engine_init_cached().unwrap();
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap(); // Should not error on empty hash list!
 
     let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
         .unwrap()
@@ -547,6 +548,7 @@ fn test_run_wasm_io_plug_hashmap() {
 
     let hash_str = "e7adc782c05b67bcda5babaca1deabf80f30ca0e6cf668c89825286c3ce0e560";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -624,6 +626,7 @@ fn test_run_wasm_from_hash() {
     let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
 
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
 
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
@@ -702,6 +705,7 @@ fn test_tls_wasm_from_hash() {
 
     let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -785,6 +789,8 @@ fn test_wasm_from_nonexistent_hash() {
 
     let hash_str = "1234567890123456789012345678901234567890123456789012345678901234";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    // we skip precompilation as it would check the hash and error early
+    // let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -860,6 +866,8 @@ fn test_wasm_from_wrong_hash() {
 
     let hash_str = "0000000000000000000000000000000000000000000000000000000000000000";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    // let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
+    // we skip precompilation as it would already check the hash and error early
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
