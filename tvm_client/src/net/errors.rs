@@ -275,8 +275,12 @@ impl Error {
         error(ErrorCode::NotFound, format!("Not found: {}", err))
     }
 
-    pub fn all_attempts_failed() -> ClientError {
-        error(ErrorCode::AllAttemptsFailed, "All attempts failed".to_string())
+    pub fn all_attempts_failed(err: Option<ClientError>) -> ClientError {
+        let err_msg = match err {
+            Some(e) => format!(" Last error: {}", e),
+            None => "".to_string(),
+        };
+        error(ErrorCode::AllAttemptsFailed, format!("All attempts failed.{}", err_msg))
     }
 }
 
