@@ -409,7 +409,7 @@ impl NetworkState {
 
     pub async fn update_bm_data(&self, token: &Value) {
         let issuer_pubkey = token.get("issuer")
-            .and_then(|issuer| issuer.get("bm"));
+            .and_then(|issuer| issuer.get("bm").or_else(|| issuer.get("bk")));
 
         if let Some(Value::String(pubkey)) = issuer_pubkey {
             self.update_bm_issuer_pubkey(Some(pubkey.to_string())).await;
@@ -987,15 +987,15 @@ impl ServerLink {
                 if bk_url.is_some() {
                     network_state.update_bk_send_message_endpoint(bk_url).await;
                 }
-                if let Some(ext_message_token) = data.get("ext_message_token") {
-                    network_state.update_bm_data(ext_message_token).await;
+                if let Some(Value::Object(_)) = data.get("ext_message_token") {
+                    network_state.update_bm_data(&data["ext_message_token"]).await;
                 }
             }
 
             let Err(ref err) = result else { return result };
 
-            if let Some(ext_message_token) = err.data.get("ext_message_token") {
-                network_state.update_bm_data(ext_message_token).await;
+            if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
+                network_state.update_bm_data(&err.data["ext_message_token"]).await;
                 message.bm_pubkey = network_state.get_bm_issuer_pubkey().await;
                 message.ext_message_token = network_state.get_bm_token().await;
             }
