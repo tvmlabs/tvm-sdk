@@ -1569,7 +1569,7 @@ mod tests {
                 jwt_data_decoded2.aud.as_str(), // Alina's data (fixed by app id ) from jwt
             )
             .unwrap();
-
+            println!("zk_seed = {:?}", zk_seed);
             println!("jwt_data.zk_proofs = {:?}", jwt_data.zk_proofs);
             let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
 
