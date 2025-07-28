@@ -6,6 +6,7 @@ use serde_json::Value;
 use crate::client::binding_config;
 use crate::client::core_version;
 use crate::net;
+use crate::net::construct_rest_api_endpoint;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, ApiType)]
 pub struct ClientError {
@@ -147,23 +148,13 @@ impl ClientError {
             .and_then(|ne| ne.get("extensions"))
             .and_then(|e| e.get("details"));
 
-        let producers =
-            details.and_then(|d| d.get("producers")).and_then(Value::as_array).map(|producers| {
-                producers
-                    .iter()
-                    .filter_map(|v| {
-                        v.as_str().map(|s| {
-                            if s.find(':').is_some() {
-                                format!("http://{}/bk/v2/messages", s)
-                            } else {
-                                format!("http://{}:8600/bk/v2/messages", s)
-                            }
-                        })
-                    })
-                    .collect::<Vec<String>>()
-            });
-
-        let redirect_url = producers.as_ref().and_then(|p| p.first()).cloned();
+        let redirect_url = details
+            .and_then(|d| d.get("producers"))
+            .and_then(Value::as_array)
+            .and_then(|arr| arr.get(0))
+            .and_then(Value::as_str)
+            .and_then(|url_str| construct_rest_api_endpoint(url_str).ok())
+            .map(|url| url.to_string());
 
         let thread_id =
             details.and_then(|d| d.get("thread_id")).and_then(Value::as_str).map(|s| s.to_string());
@@ -174,4 +165,76 @@ impl ClientError {
 
 pub(crate) fn format_time(time: u32) -> String {
     format!("{} ({})", chrono::Local.timestamp_opt(time as i64, 0).unwrap().to_rfc2822(), time)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mock_error(endpoints: Vec<&str>, thread_id: &str) -> ClientError {
+        ClientError {
+            code: 1,
+            message: "Test".to_string(),
+            data: json!({
+                "node_error": {
+                    "extensions": {
+                        "details": {
+                            "producers": endpoints,
+                            "thread_id": thread_id
+                        }
+                    }
+                }
+            }),
+        }
+    }
+
+    #[test]
+    fn test_get_redirection_data_with_valid_url() {
+        let error = mock_error(vec!["https://example.com"], "thread-123");
+        let (tid, url) = error.get_redirection_data();
+        assert_eq!(tid, Some("thread-123".to_string()));
+        assert_eq!(url, Some("https://example.com:8600/v2/".to_string()));
+    }
+    #[test]
+    fn test_get_redirection_data_with_valid_urls() {
+        let error = mock_error(
+            vec!["https://cool.com:1111", "https://google.com", "https://example.com"],
+            "thread-123",
+        );
+        let (tid, url) = error.get_redirection_data();
+        assert_eq!(tid, Some("thread-123".to_string()));
+        assert_eq!(url, Some("https://cool.com:1111/v2/".to_string()));
+    }
+
+    #[test]
+    fn test_get_redirection_data_with_missing_details() {
+        let error = ClientError {
+            code: 1,
+            message: "Test".to_string(),
+            data: json!({
+                "node_error": {
+                    "extensions": {}
+                }
+            }),
+        };
+        let (tid, url) = error.get_redirection_data();
+        assert_eq!(tid, None);
+        assert_eq!(url, None);
+    }
+
+    #[test]
+    fn test_get_redirection_data_with_invalid_producer_url() {
+        let error = mock_error(vec!["wrong_scheme://df"], "tid");
+        let (tid, url) = error.get_redirection_data();
+        assert_eq!(tid, Some("tid".to_string()));
+        assert_eq!(url, None);
+    }
+
+    #[test]
+    fn test_get_redirection_data_with_no_node_error() {
+        let error = ClientError { code: 1, message: "Test".to_string(), data: json!({}) };
+        let (tid, url) = error.get_redirection_data();
+        assert_eq!(tid, None);
+        assert_eq!(url, None);
+    }
 }
