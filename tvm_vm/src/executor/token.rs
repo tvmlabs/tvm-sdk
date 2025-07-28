@@ -557,7 +557,7 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     // collect result
     // substract gas based on wasm fuel used
     let s = engine.cmd.var(3).as_cell()?;
-    log::debug!("Loading WASM Args");
+    println!("Loading WASM Args");
     let mut wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
@@ -584,7 +584,7 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
             e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
-    log::debug!("WASM Args loaded {:?}", wasm_func_args);
+    println!("WASM Args loaded {:?}", wasm_func_args);
 
     run_wasm_core(
         engine,

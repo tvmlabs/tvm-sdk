@@ -680,12 +680,12 @@ impl Engine {
         wasm_hash: Vec<u8>,
     ) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
-        log::debug!("{}", std::env::current_dir()?.display());
+        println!("{}", std::env::current_dir()?.display());
         for &b in wasm_hash.as_slice() {
             write!(&mut s, "{:02x}", b)?;
         }
         let filename = format!("{}/{}", wasm_binary_root_path, s);
-        log::debug!("Getting file {:?}", filename);
+        println!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
         match std::fs::read(filename) {
             Ok(r) => Self::extern_check_hash(wasm_hash_whitelist, r, s),
@@ -699,12 +699,12 @@ impl Engine {
 
     pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
-        log::debug!("{}", std::env::current_dir()?.display());
+        println!("{}", std::env::current_dir()?.display());
         for &b in wasm_hash.as_slice() {
             write!(&mut s, "{:02x}", b)?;
         }
         let filename = format!("{}/{}", self.wasm_binary_root_path, s);
-        log::debug!("Getting file {:?}", filename);
+        println!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
         match std::fs::read(filename) {
             Ok(r) => self.check_hash(r, s),
