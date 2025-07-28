@@ -41,7 +41,7 @@ pub const MINRC: f64 = 1_f64;
 pub const MAXRC: f64 = 3_f64;
 pub const TTMT: f64 = 2000000000_f64;
 pub const TOTALSUPPLY: u128 = 10400000000000000000;
-pub const MAXRT: f64 = 157766400_f64;
+pub const MAXRT: u128 = 157_766_400;
 pub const KF: f64 = 0.01_f64;
 pub const KS: f64 = 0.001_f64;
 pub const KM: f64 = 0.00001_f64;
@@ -53,6 +53,21 @@ pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 pub const WASM_FUEL_MULTIPLIER: u64 = 2220000u64;
 pub const WASM_200MS_FUEL: u64 = 2220000000u64;
 pub const RUNWASM_GAS_PRICE: u64 = WASM_200MS_FUEL / WASM_FUEL_MULTIPLIER;
+
+const RC_ONE_Q32: i64 = 1i64 << 32;
+const RC_POW2_COEFF: [i64; 6] = [
+    4_294_967_296,  // 1 * 2^32
+    2_977_044_472,  // ln2 * 2^32
+    1_031_764_991,  // (ln2)^2/2 * 2^32
+      238_388_332,  // (ln2)^3/6  * 2^32
+       41_309_550,  // (ln2)^4/24 * 2^32
+        5_726_720,  // (ln2)^5/120 * 2^32
+];
+const RC_K1_Q32: i64 = 6_196_328_019; // 1 / ln 2 * 2^32
+const RC_K2_Q32:      i64 = 188; // ln(ARFC) / MAXRT * 2^32 = ln(1000) / 157766400 * 2^32
+const RC_K3_Q32:      i64 = 8_598_533_125; // (MAXRC - MINRC) / (1 - 1 / ARFC) * 2^32 = (3 - 1) / (1 − 1 / 1000) * 2^32
+const RCSCALE:  i128 = 1_000_000_000;
+
 struct MyState {
     ctx: WasiCtx,
     table: ResourceTable,
@@ -594,16 +609,9 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCREPCOEF"))?;
     fetch_stack(engine, 1)?;
-    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let mut repcoef = if bkrt < MAXRT {
-        MINRC
-            + (MAXRC - MINRC) / (1_f64 - 1_f64 / ARFC)
-                * (1_f64 - (-1_f64 * ARFC.ln() * bkrt / MAXRT).exp())
-    } else {
-        MAXRC
-    };
-    repcoef *= 1e9_f64;
-    engine.cc.stack.push(int!(repcoef as u128));
+    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u128;
+    let repcoef = repcoef_int(bkrt);
+    engine.cc.stack.push(int!(repcoef));
     Ok(())
 }
 
@@ -991,3 +999,31 @@ pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
     engine.cc.stack.push(int!(balance as u128));
     Ok(())
 }
+
+fn rep_coef_pow2_horner_q32(f: i64) -> i64 {
+    let mut acc = RC_POW2_COEFF[5];
+    for &c in RC_POW2_COEFF[..5].iter().rev() {
+        acc = (((acc as i128 * f as i128) >> 32) as i64) + c;
+    }
+    acc
+}
+
+fn rep_coef_exp_q32(x_q32: i64) -> i64 {
+    let y_q64 = x_q32 as i128 * RC_K1_Q32 as i128;
+    let y_q32 = (y_q64 >> 32) as i64;
+    let i = (y_q32 >> 32) as i32;
+    let f = y_q32 & (RC_ONE_Q32 - 1);
+    let pow2_i_q32 = RC_ONE_Q32 >> (-i as u32);
+    let pow2_f_q32 = rep_coef_pow2_horner_q32(f);
+    ((pow2_i_q32 as i128 * pow2_f_q32 as i128) >> 32) as i64
+}
+
+fn repcoef_int(bkrt: u128) -> u128 {
+    if bkrt == 0 { return 1_000_000_000; }
+    if bkrt >= MAXRT { return 3_000_000_000; }
+    let x_q32 = -(RC_K2_Q32 * bkrt as i64);
+    let diff_q32 = RC_ONE_Q32 - rep_coef_exp_q32(x_q32);
+    let rep_q32  = RC_ONE_Q32 + (((RC_K3_Q32 as i128 * diff_q32 as i128) >> 32) as i64);
+    ((rep_q32 as i128 * RCSCALE) >> 32) as u128
+}
+
