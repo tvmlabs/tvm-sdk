@@ -93,26 +93,7 @@ mod tests {
         pub jti: String,
     }
 
-      #[test]
-    fn test() {
-        let content: JWK = JWK {
-            kty: "RSA".to_string(),
-            e: "AQAB".to_string(),
-            n: "zg_Y5w8jd7O7P7nH7jPNIl4trbDDzwlpapY6OpOlPy0g9u2siZ5VH3fc33fwOg-2SMYtoOf_acb2Ic5SgwtrvCB5YDi9X_DZuM_4zT9RIA64KneIZU0Ld8IVND9qrBUq1Z9JOFUe8pVuFrtZjQye5fPr-VHX6EYbUPSoFeNClB6hDTCS1DeKP0itJpC7t7e2TeFt21laraTlsXgtzjwNNvtwI3J6smQUJud6N6QvyLnY01ys0Y-DdvfckBKXNK9d8rP1aP5hRuXkoUW2eNrHm61mI2mmyyeZhyTaPP7GdfvvuFW0uBEqe33HTf2gW4yaUdfY7kQVE4cn2V-Fl9GEUQ".to_string(), // Alina's data
-            alg: "RS256".to_string(),
-        };
-
-        /*let mut all_jwk = HashMap::new();
-        all_jwk.insert(
-            JwkId::new(
-                OIDCProvider::Facebook.get_config().iss,
-                "d87d2474896f213ee52e6069ae0dd1553340a08c".to_string(),
-            ),
-            content,
-        );*/
-        let modulus = base64ct::Base64UrlUnpadded::decode_vec(&content.n).unwrap();
-        println!("{:?}", hex::encode(modulus));
-    }
+    
 
     #[test]
     //#[cfg(feature = "gosh")]
