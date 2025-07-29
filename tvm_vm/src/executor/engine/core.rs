@@ -463,7 +463,7 @@ impl Engine {
         wasm_config.cranelift_nan_canonicalization(true);
         wasm_config.cranelift_pcc(true);
         wasm_config.wasm_relaxed_simd(true);
-        wasm_config.relaxed_simd_deterministic(true);
+        wasm_config.relaxed_simd_deterministic(false);
         let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
             Ok(module) => module,
             Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
