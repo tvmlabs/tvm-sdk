@@ -436,7 +436,7 @@ impl Engine {
     }
 
     pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
-        println!("INITING ENGINE");
+        log::debug!("Extern Initialising Wasm Engine");
         // load or access WASM engine
         let mut wasm_config = wasmtime::Config::new();
         wasm_config.wasm_component_model(true);
@@ -454,7 +454,7 @@ impl Engine {
     }
 
     pub fn wasm_engine_init_cached(&mut self) -> Result<()> {
-        println!("INITING ENGINE");
+        log::debug!("Internal Initialising Wasm Engine");
         // load or access WASM engine
         let mut wasm_config = wasmtime::Config::new();
         wasm_config.wasm_component_model(true);
@@ -531,7 +531,7 @@ impl Engine {
                 Ok(comp) => {
                     cache.insert(hash, comp);
                 }
-                Err(e) => println!("Failed to precompile hash: {:?} with error: {:?}", hash, e),
+                Err(e) => log::warn!("Failed to precompile hash: {:?} with error: {:?}", hash, e),
             };
             // let mut cache = &mut self.wash_component_cache;
         }
@@ -592,23 +592,23 @@ impl Engine {
         let engine = self.get_wasm_engine()?;
         let mut exports = component_type.exports(&engine);
         let arg = exports.next();
-        println!("List of exports from WASM: {:?}", arg);
+        log::debug!("List of exports from WASM: {:?}", arg);
         if let Some(arg) = arg {
-            println!("{:?}", arg);
+            log::debug!("{:?}", arg);
 
             for arg in exports {
-                println!(" {:?}", arg);
+                log::debug!(" {:?}", arg);
             }
         }
         let binding = component.component_type();
         let mut imports = binding.imports(&engine);
         let arg = imports.next();
-        println!("List of imports from WASM: {:?}", arg);
+        log::debug!("List of imports from WASM: {:?}", arg);
         if let Some(arg) = arg {
-            println!("{:?}", arg);
+            log::debug!("{:?}", arg);
 
             for arg in imports {
-                println!(" {:?}", arg);
+                log::debug!(" {:?}", arg);
             }
         }
         Ok(())
@@ -680,12 +680,12 @@ impl Engine {
         wasm_hash: Vec<u8>,
     ) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
-        println!("{}", std::env::current_dir()?.display());
+        log::debug!("{}", std::env::current_dir()?.display());
         for &b in wasm_hash.as_slice() {
             write!(&mut s, "{:02x}", b)?;
         }
         let filename = format!("{}/{}", wasm_binary_root_path, s);
-        println!("Getting file {:?}", filename);
+        log::debug!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
         match std::fs::read(filename) {
             Ok(r) => Self::extern_check_hash(wasm_hash_whitelist, r, s),
@@ -699,12 +699,12 @@ impl Engine {
 
     pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
-        println!("{}", std::env::current_dir()?.display());
+        log::debug!("{}", std::env::current_dir()?.display());
         for &b in wasm_hash.as_slice() {
             write!(&mut s, "{:02x}", b)?;
         }
         let filename = format!("{}/{}", self.wasm_binary_root_path, s);
-        println!("Getting file {:?}", filename);
+        log::debug!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
         match std::fs::read(filename) {
             Ok(r) => self.check_hash(r, s),

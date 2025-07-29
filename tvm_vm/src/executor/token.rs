@@ -557,7 +557,7 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     // collect result
     // substract gas based on wasm fuel used
     let s = engine.cmd.var(3).as_cell()?;
-    println!("Loading WASM Args");
+    log::debug!("Loading WASM Args");
     let mut wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
@@ -584,7 +584,7 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
             e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
-    println!("WASM Args loaded {:?}", wasm_func_args);
+    log::debug!("WASM Args loaded {:?}", wasm_func_args);
 
     run_wasm_core(
         engine,
@@ -619,13 +619,13 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     // collect result
     // substract gas based on wasm fuel used
     let s = engine.cmd.var(3).as_cell()?;
-    println!("Loading WASM Args");
+    log::debug!("Loading WASM Args");
     let wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
             _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
         };
-    println!("WASM Args loaded {:?}", wasm_func_args);
+    log::debug!("WASM Args loaded {:?}", wasm_func_args);
 
     run_wasm_core(
         engine,
@@ -661,7 +661,7 @@ fn check_and_get_wasm_by_hash(
                     err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
                 }
             };
-        println!("Using WASM Hash {:?}", wasm_hash);
+        log::debug!("Using WASM Hash {:?}", wasm_hash);
         Ok((
             engine.get_wasm_binary_by_hash(wasm_hash.clone())?,
             Some(match wasm_hash.try_into() {
@@ -707,7 +707,7 @@ fn run_wasm_core(
     // other actions to be run after WASM instruction
     // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
     // instruction (or set to 0?)
-    println!("Starting gas: {:?}", engine.gas_remaining());
+    log::debug!("Starting gas: {:?}", engine.gas_remaining());
     let wasm_fuel: u64 = WASM_200MS_FUEL;
 
     // TODO: If switching to dunamic fuel limit, use this code:
@@ -788,12 +788,12 @@ fn run_wasm_core(
     };
 
     // get callable wasm func
-    println!("Callable funcs found:");
+    log::debug!("Callable funcs found:");
     for export in wasm_component.component_type().exports(engine.get_wasm_engine()?) {
-        println!("{:?}", export.0);
+        log::debug!("{:?}", export.0);
     }
     let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
-    println!("Instance Index {:?}", instance_index);
+    log::debug!("Instance Index {:?}", instance_index);
     let func_index = match wasm_instance.get_export_index(
         &mut wasm_store,
         instance_index.as_ref(),
@@ -804,7 +804,7 @@ fn run_wasm_core(
             err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
         }
     };
-    println!("Func Index {:?}", func_index);
+    log::debug!("Func Index {:?}", func_index);
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
         .expect(&format!("`{}` was not an exported function", wasm_func_name));
@@ -816,11 +816,11 @@ fn run_wasm_core(
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
         Ok(result) => result,
         Err(e) => {
-            println!("Failed to execute WASM function {:?}", e);
+            log::debug!("Failed to execute WASM function {:?}", e);
             err!(ExceptionCode::WasmExecFail, "Failed to execute WASM function {:?}", e)?
         }
     };
-    println!("WASM Execution result: {:?}", result);
+    log::debug!("WASM Execution result: {:?}", result);
 
     let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
     // TODO: If we switch to dynamic gas usage, reenable this code
@@ -833,22 +833,22 @@ fn run_wasm_core(
     //     )?,
     // };
     engine.use_gas(gas_used);
-    println!("Remaining gas: {:?}", engine.gas_remaining());
+    log::debug!("Remaining gas: {:?}", engine.gas_remaining());
     match engine.gas_remaining() > 0 {
         true => {}
         false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
     }
 
     // return result
-    println!("EXEC Wasm execution result: {:?}", result);
+    log::debug!("EXEC Wasm execution result: {:?}", result);
     let res_vec = result.0;
 
     let cell = TokenValue::write_bytes(res_vec.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
-    println!("Pushing cell");
+    log::debug!("Pushing cell");
 
     engine.cc.stack.push(StackItem::cell(cell));
 
-    println!("OK");
+    log::debug!("OK");
 
     Ok(())
 }
