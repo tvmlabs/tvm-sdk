@@ -85,6 +85,10 @@ build_download_pattern() {
     local arch="$3"
     local binary_name="$4"
 
+    if [[ "$version" =~ -[0-9]+$ ]]; then
+        version="${version%-*}"
+    fi
+
     if [ "$os" = "linux" ]; then
         echo "${binary_name}-${version}-linux-musl-${arch}.tar.gz"
     else
