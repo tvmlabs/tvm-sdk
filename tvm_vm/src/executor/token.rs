@@ -331,8 +331,8 @@ impl wasi::filesystem::types::Host for MyState {
 impl wasi::filesystem::types::HostDescriptor for MyState {
     fn write_via_stream(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        offset: wasi::filesystem::types::Filesize,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _offset: wasi::filesystem::types::Filesize,
     ) -> Result<
         wasmtime::component::Resource<wasi::filesystem::types::OutputStream>,
         wasi::filesystem::types::ErrorCode,
@@ -342,7 +342,7 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
 
     fn append_via_stream(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> Result<
         wasmtime::component::Resource<wasi::filesystem::types::OutputStream>,
         wasi::filesystem::types::ErrorCode,
@@ -352,21 +352,21 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
 
     fn get_type(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> Result<wasi::filesystem::types::DescriptorType, wasi::filesystem::types::ErrorCode> {
         Ok(wasi::filesystem::types::DescriptorType::Unknown)
     }
 
     fn stat(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> Result<wasi::filesystem::types::DescriptorStat, wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Unsupported)
     }
 
     fn drop(
         &mut self,
-        rep: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _rep: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> wasmtime::Result<()> {
         Ok(())
     }
@@ -395,37 +395,37 @@ impl wasi::io::streams::OutputStream {}
 impl wasi::io::streams::HostOutputStream for MyState {
     fn check_write(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
     ) -> Result<u64, wasi::io::streams::StreamError> {
         Ok(0) //Err(wasi::io::streams::StreamError::Closed)
     }
 
     fn write(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
-        contents: wasmtime::component::__internal::Vec<u8>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _contents: wasmtime::component::__internal::Vec<u8>,
     ) -> Result<(), wasi::io::streams::StreamError> {
         Ok(()) //Err(wasi::io::streams::StreamError::Closed)
     }
 
     fn blocking_write_and_flush(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
-        contents: wasmtime::component::__internal::Vec<u8>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _contents: wasmtime::component::__internal::Vec<u8>,
     ) -> Result<(), wasi::io::streams::StreamError> {
         Ok(()) //Err(wasi::io::streams::StreamError::Closed)
     }
 
     fn blocking_flush(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
     ) -> Result<(), wasi::io::streams::StreamError> {
         Ok(()) //Err(wasi::io::streams::StreamError::Closed)
     }
 
     fn drop(
         &mut self,
-        rep: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _rep: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
     ) -> wasmtime::Result<()> {
         Ok(())
     }
@@ -434,7 +434,7 @@ impl wasi::io::streams::HostOutputStream for MyState {
 impl wasi::io::streams::HostInputStream for MyState {
     fn drop(
         &mut self,
-        rep: wasmtime::component::Resource<wasi::io::streams::InputStream>,
+        _rep: wasmtime::component::Resource<wasi::io::streams::InputStream>,
     ) -> wasmtime::Result<()> {
         Ok(())
     }
@@ -444,7 +444,7 @@ impl wasi::io::streams::Host for MyState {}
 impl wasi::io::error::HostError for MyState {
     fn drop(
         &mut self,
-        rep: wasmtime::component::Resource<wasi::io::error::Error>,
+        _rep: wasmtime::component::Resource<wasi::io::error::Error>,
     ) -> wasmtime::Result<()> {
         Ok(())
     }
@@ -459,12 +459,12 @@ impl wasi::io::error::Host for MyState {}
 //     val
 // }
 // Sync annotator for WASI. Used in wasmtime linker
-fn type_annotate<T: WasiView, F>(val: F) -> F
-where
-    F: Fn(&mut T) -> WasiImpl<&mut T>,
-{
-    val
-}
+// fn type_annotate<T: WasiView, F>(val: F) -> F
+// where
+//     F: Fn(&mut T) -> WasiImpl<&mut T>,
+// {
+//     val
+// }
 
 // fn get_wasm_binary_by_hash(wasm_hash: Vec<u8>, engine: &mut Engine) ->
 // Vec<u8> {     engine.get_wasm_binary_by_hash(wasm_hash)
