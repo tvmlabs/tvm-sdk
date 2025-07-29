@@ -36,15 +36,15 @@ pub const ECC_NACKL_KEY: u32 = 1;
 pub const ECC_SHELL_KEY: u32 = 2;
 pub const INFINITY_CREDIT: i128 = -1;
 
-pub const ARFC: f64 = 1000_f64;
-pub const MINRC: f64 = 1_f64;
-pub const MAXRC: f64 = 3_f64;
+//pub const ARFC: f64 = 1000_f64;
+//pub const MINRC: f64 = 1_f64;
+//pub const MAXRC: f64 = 3_f64;
 pub const MAXRT: u128 = 157_766_400;
-pub const KF: f64 = 0.01_f64;
-pub const KS: f64 = 0.001_f64;
-pub const KM: f64 = 0.00001_f64;
-pub const KRMV: f64 = 0.225_f64;
-pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
+//pub const KF: f64 = 0.01_f64;
+//pub const KS: f64 = 0.001_f64;
+//pub const KM: f64 = 0.00001_f64;
+//pub const KRMV: f64 = 0.225_f64;
+//pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
 pub const WASM_FUEL_MULTIPLIER: u64 = 2220000u64;
 pub const WASM_200MS_FUEL: u64 = 2220000000u64;
