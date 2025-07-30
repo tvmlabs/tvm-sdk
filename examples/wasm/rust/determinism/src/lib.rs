@@ -15,7 +15,12 @@ struct Component;
 
 impl Guest for Component {
     fn test(kwargs: Vec<u8>) -> Vec<u8> {
-        determinism()
+        determinism(
+            ((usize::from(kwargs[0]) * 256 + usize::from(kwargs[1])) * 256
+                + usize::from(kwargs[2]))
+                * 256
+                + usize::from(kwargs[3]),
+        )
     }
 }
 
@@ -25,8 +30,8 @@ impl Guest for Component {
 //     }
 // }
 
-fn determinism() -> Vec<u8> {
-    let iterations = 2000;
+fn determinism(its: usize) -> Vec<u8> {
+    let iterations = its.into();
     let mut results = Vec::with_capacity(iterations);
     let mut r = [1f64];
 
