@@ -502,8 +502,8 @@ fn test_run_wasm_basic_add() {
 
     let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
     let mut floats = Vec::new();
-    for float in res.chunks(8) {
-        floats.push(f64::from_le_bytes(float.try_into().unwrap()));
+    for float in res.chunks(4) {
+        floats.push(f32::from_le_bytes(float.try_into().unwrap()));
     }
 
     println!("Result {:?}", floats);
