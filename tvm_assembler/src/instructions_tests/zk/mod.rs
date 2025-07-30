@@ -5,7 +5,6 @@ pub mod test_zk_bad_public_input;
 pub mod test_zk_for_apple;
 pub mod test_zk_for_credenza3;
 pub mod test_zk_for_facebook;
-pub mod test_zk_for_google;
 pub mod test_zk_for_kakao;
 pub mod test_zk_for_karrier_one;
 pub mod test_zk_for_microsoft;
