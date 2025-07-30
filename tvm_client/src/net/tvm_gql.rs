@@ -74,8 +74,7 @@ pub struct ExtMessage {
     pub body: String,
     pub expire_at: Option<f64>,
     pub thread_id: Option<String>,
-    pub bm_license: Option<String>,
-    pub bm_token: Option<Value>,
+    pub ext_message_token: Option<Value>,
 }
 
 impl ExtMessage {

@@ -112,6 +112,7 @@ version = "0.3.67"
 [dev-dependencies]
 async-std = { features = ["attributes"], version = "1.13" }
 axum = "0.8.4"
+if-addrs = "0.14.0"
 dirs = "5.0.1"
 graphql-parser = "0.4.0"
 hyper = "1.6.0"
