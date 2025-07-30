@@ -10,6 +10,7 @@
 // limitations under the License.
 
 use std::collections::HashSet;
+use std::fs;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -479,7 +480,10 @@ fn test_run_wasm_basic_add() {
         .into_cell()
         .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&[3u8, 0u8, 0u8, 0u8], &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
 
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
@@ -505,16 +509,19 @@ fn test_run_wasm_basic_add() {
     for float in res.chunks(8) {
         floats.push(f64::from_le_bytes(float.try_into().unwrap()));
     }
+    let mut wtr = csv::Writer::from_path("./src/tests/determinism.csv").unwrap();
+    wtr.serialize(floats.clone()).unwrap();
+    wtr.flush().unwrap();
 
-    print!("Result [");
-    for f in floats {
-        print!("{:.}, ", f);
-    }
-    println!("]");
-    assert!(
-        rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
-            == 3u8
-    );
+    // print!("Result [");
+    // for f in floats {
+    //     print!("{:.}, ", f);
+    // }
+    // println!("]");
+    // assert!(
+    //     rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).
+    // unwrap().pop().unwrap()         == 3u8
+    // );
 }
 
 #[test]

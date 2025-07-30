@@ -72,6 +72,7 @@ libloading = "0.8.1"
 log4rs = "1.2.0"
 pprof = { features = ["criterion", "flamegraph"], version = "0.13.0" }
 pretty_assertions = "1.4.0"
+csv = "*"
 
 [features]
 default = ["gosh"]
