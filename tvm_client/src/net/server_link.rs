@@ -957,7 +957,6 @@ impl ServerLink {
             body: base64_encode(msg_body),
             expire_at: None,
             thread_id: Some(thread_id.to_string()),
-            bm_pubkey: network_state.get_bm_issuer_pubkey().await,
             ext_message_token: network_state.get_bm_token().await,
         };
 
@@ -981,7 +980,6 @@ impl ServerLink {
 
             if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
                 network_state.update_bm_data(&err.data["ext_message_token"]).await;
-                message.bm_pubkey = network_state.get_bm_issuer_pubkey().await;
                 message.ext_message_token = network_state.get_bm_token().await;
             }
 
