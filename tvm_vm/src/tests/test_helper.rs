@@ -200,6 +200,51 @@ pub struct JwtDataDecodedPart2Kakao {
     pub auth_time: u32,
 }
 
+ #[derive(Debug, Deserialize)]
+pub struct JwtDataDecodedPart2Microsoft {
+    pub iss: String,
+    pub aud: String,
+    pub sub: String,
+    pub nonce: String,
+    pub iat: u32,
+    pub nbf: u32,
+    pub exp: u32,
+    pub aio: String,
+    pub rh: String,
+    pub tid: String,
+    pub uti: String,
+    pub ver: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JwtDataDecodedPart2Slack {
+    pub iss: String,
+    pub aud: String,
+    pub sub: String,
+    pub nonce: String,
+    pub iat: u32,
+    pub exp: u32,
+    pub at_hash: String,
+    pub auth_time: u32,
+    pub nonce_supported: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JwtDataDecodedPart2KarrierOne {
+    pub iss: String,
+    pub aud: String,
+    pub sub: String,
+    pub email: String,
+    pub name: String,
+    pub nonce: String,
+    pub iat: u32,
+    pub exp: u32,
+    pub preferred_username: String,
+    pub oi_au_id: String,
+    pub azp: String,
+    pub oi_tkn_id: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct JwtDataDecodedPart2Common{
     pub aud: String,

@@ -94,6 +94,9 @@ const CREDENZA3: &str = "credenza3";
 const APPLE: &str = "apple";
 const TWITCH: &str = "twitch";
 const KAKAO: &str = "kakao";
+const SLACK: &str = "slack";
+const KARRIER_ONE: &str = "karrier_one";
+const MICROSOFT: &str = "microsoft";
 
 
 fn single_chcksgns(
@@ -207,9 +210,11 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
             TEST_AUTH_DATA_1_CREDENZA3,
             TEST_AUTH_DATA_1_APPLE,
             TEST_AUTH_DATA_1_TWITCH,
-            TEST_AUTH_DATA_1_KAKAO    
+            TEST_AUTH_DATA_1_KAKAO,
+            TEST_AUTH_DATA_1_SLACK,
+            TEST_AUTH_DATA_1_KARRIER_ONE,
+            TEST_AUTH_DATA_1_MICROSOFT  
     ];
-
 
     let mut average_poseidon: u128 = 0;
     let mut average_vergrth16: u128 = 0;
@@ -243,6 +248,9 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
                     APPLE => OIDCProvider::Apple.get_config().iss,
                     TWITCH => OIDCProvider::Twitch.get_config().iss,
                     KAKAO => OIDCProvider::Kakao.get_config().iss,
+                    SLACK => OIDCProvider::Slack.get_config().iss,
+                    KARRIER_ONE => OIDCProvider::KarrierOne.get_config().iss,
+                    MICROSOFT => OIDCProvider::Microsoft.get_config().iss,
                     _ => OIDCProvider::Google.get_config().iss
                 },
                 jwt_data.kid,
@@ -253,16 +261,8 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         let user_pass_salt = jwt_data.user_pass_to_int_format.as_str();
         println!("user_pass_salt is {user_pass_salt}");
 
-        println!("{:?}", jwt_data.ephemeral_key_pair.keypair.public_key);
-        /*let eph_secret_key = secret_key_from_integer_map(jwt_data.ephemeral_key_pair.keypair.secret_key);
-
-        let ephemeral_kp = Ed25519KeyPair::from_bytes(&eph_secret_key).unwrap();
-        let mut eph_pubkey: Vec<u8> = Vec::new(); // vec![0x00];
-        eph_pubkey.extend(ephemeral_kp.public().as_ref());
-        */
-
+    
         let eph_pubkey = secret_key_from_integer_map(jwt_data.ephemeral_key_pair.keypair.public_key);
-        let eph_pubkey_len = eph_pubkey.clone().len();
         println!("ephemeral public_key is {:?}", eph_pubkey);
         println!("ephemeral public_key len is {:?}", eph_pubkey.len());
         let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
