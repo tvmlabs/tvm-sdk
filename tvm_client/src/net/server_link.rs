@@ -97,7 +97,7 @@ pub(crate) struct NetworkState {
     resolved_endpoints: RwLock<HashMap<String, ResolvedEndpoint>>,
     bk_send_message_endpoint: RwLock<Option<Url>>,
     rest_api_endpoint: RwLock<Url>,
-    bm_license_contract: RwLock<Option<String>>,
+    bm_issuer_pubkey: RwLock<Option<String>>,
     bm_token: RwLock<Option<Value>>,
 }
 
@@ -138,7 +138,7 @@ impl NetworkState {
             resolved_endpoints: Default::default(),
             bk_send_message_endpoint: RwLock::new(None),
             rest_api_endpoint: RwLock::new(rest_api_endpoint),
-            bm_license_contract: RwLock::new(None),
+            bm_issuer_pubkey: RwLock::new(None),
             bm_token: RwLock::new(None),
         }
     }
@@ -385,12 +385,12 @@ impl NetworkState {
         *self.bk_send_message_endpoint.write().await = endpoint
     }
 
-    pub async fn get_bm_license_address(&self) -> Option<String> {
-        self.bm_license_contract.read().await.clone()
+    pub async fn get_bm_issuer_pubkey(&self) -> Option<String> {
+        self.bm_issuer_pubkey.read().await.clone()
     }
 
-    pub async fn update_bm_license_address(&self, address: Option<String>) {
-        *self.bm_license_contract.write().await = address
+    pub async fn update_bm_issuer_pubkey(&self, address: Option<String>) {
+        *self.bm_issuer_pubkey.write().await = address
     }
 
     pub async fn get_bm_token(&self) -> Option<Value> {
@@ -401,14 +401,15 @@ impl NetworkState {
         *self.bm_token.write().await = Some(token.clone())
     }
 
-    pub async fn update_bm_data(&self, bm_data: &Value) {
-        if let Some(Value::String(address)) = bm_data.get("license_address") {
-            self.update_bm_license_address(Some(address.to_string())).await;
+    pub async fn update_bm_data(&self, token: &Value) {
+        let issuer_pubkey = token.get("issuer")
+            .and_then(|issuer| issuer.get("bm").or_else(|| issuer.get("bk")));
+
+        if let Some(Value::String(pubkey)) = issuer_pubkey {
+            self.update_bm_issuer_pubkey(Some(pubkey.to_string())).await;
         }
 
-        if let Some(token) = bm_data.get("token") {
-            self.update_bm_token(token).await;
-        }
+        self.update_bm_token(token).await;
     }
 
     pub fn can_retry_network_error(&self, start: u64) -> bool {
@@ -726,7 +727,8 @@ impl ServerLink {
 
         let start = self.client_env.now_ms();
 
-        for _ in 0..3 {
+        let mut last_error = None;
+        for _ in 0..1 {
             let result = self
                 .client_env
                 .fetch(
@@ -764,12 +766,13 @@ impl ServerLink {
                 {
                     let _ =
                         self.client_env.set_timer(self.state.next_resume_timeout() as u64).await;
+                    last_error = Some(err.clone());
                     continue;
                 }
             }
             return result;
         }
-        Err(Error::all_attempts_failed())
+        Err(Error::all_attempts_failed(last_error))
     }
 
     pub(crate) async fn http_get(&self, url: Url) -> ClientResult<Value> {
@@ -954,8 +957,8 @@ impl ServerLink {
             body: base64_encode(msg_body),
             expire_at: None,
             thread_id: Some(thread_id.to_string()),
-            bm_license: network_state.get_bm_license_address().await,
-            bm_token: network_state.get_bm_token().await,
+            bm_pubkey: network_state.get_bm_issuer_pubkey().await,
+            ext_message_token: network_state.get_bm_token().await,
         };
 
         let mut endpoint = network_state.select_send_message_endpoint().await;
@@ -969,17 +972,17 @@ impl ServerLink {
                 if bk_url.is_some() {
                     network_state.update_bk_send_message_endpoint(bk_url).await;
                 }
-                if let Some(bm_data) = data.get("block_manager") {
-                    network_state.update_bm_data(bm_data).await;
+                if let Some(Value::Object(_)) = data.get("ext_message_token") {
+                    network_state.update_bm_data(&data["ext_message_token"]).await;
                 }
             }
 
             let Err(ref err) = result else { return result };
 
-            if let Some(bm_data) = err.data.get("block_manager") {
-                network_state.update_bm_data(bm_data).await;
-                message.bm_license = network_state.get_bm_license_address().await;
-                message.bm_token = network_state.get_bm_token().await;
+            if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
+                network_state.update_bm_data(&err.data["ext_message_token"]).await;
+                message.bm_pubkey = network_state.get_bm_issuer_pubkey().await;
+                message.ext_message_token = network_state.get_bm_token().await;
             }
 
             let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
