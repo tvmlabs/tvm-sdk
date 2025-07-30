@@ -435,13 +435,13 @@ fn test_execution_timeout() {
 }
 
 #[test]
-fn test_loop_wasm() {
-    for its in 1..3000u32 {
-        let its = its * 1000;
-        test_run_wasm_basic_add(its);
-    }
-}
-fn test_run_wasm_basic_add(its: u32) {
+// fn test_loop_wasm() {
+//     for its in 1..3000u32 {
+//         let its = its * 1000;
+//         test_run_wasm_basic_add(its);
+//     }
+// }
+fn test_run_wasm_basic_add() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
     let config_data = load_boc("benches/config-data.boc");
@@ -486,7 +486,7 @@ fn test_run_wasm_basic_add(its: u32) {
         .into_cell()
         .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let its = its.to_be_bytes();
+    let its = 30000u32.to_be_bytes();
     println!("Its {:?}", its);
     let cell = TokenValue::write_bytes(&its, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
 
@@ -510,14 +510,14 @@ fn test_run_wasm_basic_add(its: u32) {
     println!("Wasm Return Status: {:?}", status);
 
     let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
-    // let mut floats = Vec::new();
-    // for float in res.chunks(8) {
-    //     floats.push(f64::from_le_bytes(float.try_into().unwrap()));
-    // }
-    // let mut wtr =
-    // csv::Writer::from_path("./src/tests/determinism.csv").unwrap();
-    // wtr.serialize(floats.clone()).unwrap();
-    // wtr.flush().unwrap();
+    // println!("Determinism Res: {:?}", res)
+    let mut floats = Vec::new();
+    for float in res.chunks(8) {
+        floats.push(f64::from_le_bytes(float.try_into().unwrap()));
+    }
+    let mut wtr = csv::Writer::from_path("./src/tests/determinism.csv").unwrap();
+    wtr.serialize(floats.clone()).unwrap();
+    wtr.flush().unwrap();
 
     // print!("Result [");
     // for f in floats {
