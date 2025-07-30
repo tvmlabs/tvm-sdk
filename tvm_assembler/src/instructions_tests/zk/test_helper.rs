@@ -98,6 +98,8 @@ pub fn prepare_proof_and_public_key_cells_for_stack(
     public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
     println!("public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
     println!("public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+    println!("public_inputs hex (computed in test): {:?}", hex::encode(public_inputs_as_bytes.clone()));
+
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
 
@@ -111,6 +113,8 @@ pub fn single_vrgrth16(
     verification_key_id: u32,
     max_epoch: u64,
 ) -> u128 {
+    println!("eph_pubkey: {:?}", eph_pubkey);
+    println!("eph_pubkey: {:?}", eph_pubkey.len());
     let (proof_cell, public_inputs_cell) = prepare_proof_and_public_key_cells_for_stack(
         eph_pubkey,
         zk_login_inputs,

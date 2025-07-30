@@ -55,6 +55,12 @@ mod test_vergrth_poseidon_execution;
 #[path = "../tests/test_executor.rs"]
 mod tests;
 
+#[path = "../tests/test_data.rs"]
+mod test_data;
+
+#[path = "../tests/test_helper.rs"]
+mod test_helper;
+
 pub mod zk;
 
 pub trait Mask {
