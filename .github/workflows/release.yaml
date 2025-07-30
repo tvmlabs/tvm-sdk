@@ -2,6 +2,8 @@ name: Release tvm-cli
 
 on:
   push:
+    # NOTE: if tag has -rc or -rc<digit> in it, it will be considered a release candidate
+    # and will trigger prerelease true
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+.an'
       - 'v[0-9]+.[0-9]+.[0-9]+-rc.an'
