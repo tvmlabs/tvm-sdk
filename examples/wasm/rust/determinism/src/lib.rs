@@ -26,15 +26,17 @@ impl Guest for Component {
 // }
 
 fn determinism() -> Vec<u8> {
-    let mut results = Vec::with_capacity(1000);
-    let mut r = [1f32];
+    let iterations = 2000;
+    let mut results = Vec::with_capacity(iterations);
+    let mut r = [1f64];
 
-    for _ in 0..1000 {
+    for _ in 0..iterations {
         // Use floating point arithmetic with tiny imprecisions
-        let a = 0.1f32;
-        let b = 0.2f32;
-        let c = (a + b) * (std::f32::consts::PI / 3.0);
-        r[0] = ((c * a).sin() + (b * c).cos()) * r[0];
+        let a = 0.1f64;
+        let b = 0.2f64;
+        let c = (a + b) * (std::f64::consts::PI / 3.0);
+        let k = (c * a).sin() + (b * c).cos();
+        r[0] = (k * r[0]) + k;
 
         // Perform some non-deterministic arithmetic operations
         results.push(r[0].clone());
