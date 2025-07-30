@@ -25,13 +25,13 @@ jobs:
         include:
           - suffix: macos-arm64
             target: aarch64-apple-darwin
-            os: macos-14
+            os: macos-15
             zigbuild: false
 
-          - suffix: macos-amd64
-            target: x86_64-apple-darwin
-            os: macos-13
-            zigbuild: false
+          # - suffix: macos-amd64
+          #   target: x86_64-apple-darwin
+          #   os: macos-13
+          #   zigbuild: false
 
           - suffix: linux-musl-arm64
             target: aarch64-unknown-linux-musl
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SUFFIXES: macos-arm64 macos-amd64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64
+      SUFFIXES: macos-arm64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64
 
     steps:
       - uses: actions/checkout@v4
