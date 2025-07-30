@@ -50,7 +50,9 @@ fn determinism(its: usize) -> Vec<u8> {
     for r in results {
         result_vec.append(&mut r.to_le_bytes().to_vec());
     }
-    result_vec
+    let mut act_res = [result_vec[0]].to_vec();
+    act_res.push(*result_vec.last().unwrap());
+    act_res
 }
 
 bindings::export!(Component with_types_in bindings);
