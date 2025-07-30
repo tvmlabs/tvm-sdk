@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.19.0] - 2025-07-30
+
+### Breaking changes
+- `ExtMessage` structure changed: `bm_license`, `bm_token` fields removed, `ext_message_token` field added
+- `network.endpoints` initialization changed: 
+    - If port is specified in the endpoint URL then use this port for sending messages and getting account
+    - If port is not specified in the endoint URL then use 8600 for sending and getting account
+    - For graphql - always use  http(s)://hostname/graphql url
+    - Use the specified schema (protocol) (https/http) 
+  
 ## [2.18.4] - 2025-07-18
 ### Fixes
 - Fixed an error decoding account data: `Invalid BOC: error decode contract data BOC base64`
