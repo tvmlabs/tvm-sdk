@@ -2,12 +2,12 @@ name: Release tvm-cli
 
 on:
   push:
-    # NOTE: if tag has -rc in it, it will be considered a release candidate
+    # NOTE: if tag has -rc or -rc<digit> in it, it will be considered a release candidate
     # and will trigger prerelease true
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+.an'
       - 'v[0-9]+.[0-9]+.[0-9]+-rc.an'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+.an'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,13 +25,13 @@ jobs:
         include:
           - suffix: macos-arm64
             target: aarch64-apple-darwin
-            os: macos-14
+            os: macos-15
             zigbuild: false
 
-          - suffix: macos-amd64
-            target: x86_64-apple-darwin
-            os: macos-13
-            zigbuild: false
+          # - suffix: macos-amd64
+          #   target: x86_64-apple-darwin
+          #   os: macos-13
+          #   zigbuild: false
 
           - suffix: linux-musl-arm64
             target: aarch64-unknown-linux-musl
@@ -156,9 +156,13 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SUFFIXES: macos-arm64 macos-amd64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64
+      SUFFIXES: macos-arm64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
@@ -168,12 +172,12 @@ jobs:
       - name: Make archives
         run: |
           set -e
-          tag_name=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          version=$(echo "${{ github.ref_name }}" | sed 's/^v//')
           for suffix in $SUFFIXES; do
             chmod +x artifacts-"$suffix"/*
             cd artifacts-"$suffix"
             for file in *; do
-              tar -czvf "$file"-"$tag_name"-"$suffix".tar.gz $file
+              tar -czvf "$file"-"$version"-"$suffix".tar.gz $file
             done
             cd ..
             ls -lA artifacts-"$suffix"
@@ -182,18 +186,33 @@ jobs:
       - name: Set prerelease flag
         id: prerelease
         run: |
-          if [[ "${GITHUB_REF_NAME}" =~ -rc ]]; then
-            echo "PRERELEASE=true" >> $GITHUB_OUTPUT
-          else
+          if [[ "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.an$ ]]; then
             echo "PRERELEASE=false" >> $GITHUB_OUTPUT
+          else
+            echo "PRERELEASE=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          prerelease: ${{ steps.prerelease.outputs.PRERELEASE }}
-          tag_name: ${{ github.ref_name }}-${{ github.run_number }}
-          files: |
-            artifacts-*/**.tar.gz
-          name: "Version: ${{ github.ref_name }}"
-          body: ""
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: ${{ steps.prerelease.outputs.TITLE }}
+          PRERELEASE: ${{ steps.prerelease.outputs.PRERELEASE }}
+        run: |
+          TITLE="Version: ${{ github.ref_name }}"
+          EXISTS=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }} --silent && echo "true" || echo "false")
+
+          if [[ "$EXISTS" = "false" ]]; then
+            if [[ "$PRERELEASE" = "false" ]]; then
+              gh release create "${{ github.ref_name }}" --title "$TITLE"
+            else
+              gh release create "${{ github.ref_name }}" --title "$TITLE" --prerelease
+            fi
+          fi
+
+      - name: Upload to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            artifacts-*/**.tar.gz \
+            --clobber
