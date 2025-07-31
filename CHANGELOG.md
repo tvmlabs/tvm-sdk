@@ -2,19 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.19.1] - 2025-06-19
-
-### New
-
-- Add `getavailablecredit` `sendtodappconfig` `mintshellq` instructions 
-- Change `mintshell` instruction. 
-- Refactor fee in executor
-
-### Update
-
-- Update CALCBMREWARDADJ. Rename into CALCBMMVREWARDADJ
-
-## [2.19.0] - 2025-06-19
+## [2.20.0] - 2025-06-19
 
 ### New
 
