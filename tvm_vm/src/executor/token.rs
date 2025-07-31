@@ -639,7 +639,6 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_CNVRTSHELLQ, None, cell)
 }
 
-#[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCREPCOEF"))?;
     fetch_stack(engine, 1)?;
@@ -649,7 +648,6 @@ pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
     Ok(())
 }
 
-#[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
     fetch_stack(engine, 5)?;
@@ -730,7 +728,6 @@ fn calc_mbk(t: u128, krk_num: u128, krk_den: u128) -> u128 {
     (mbk * krk_num) / krk_den
 }
 
-#[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
     fetch_stack(engine, 7)?;
@@ -758,7 +755,6 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     Ok(())
 }
 
-#[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMREWARD"))?;
     fetch_stack(engine, 5)?;
@@ -905,7 +901,6 @@ fn _validate_byte_array(bytes: &[u8], name: &str) -> anyhow::Result<()> {
     Ok(())
 }*/
 
-#[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBOOSTCOEF"))?;
     fetch_stack(engine, 2)?;
@@ -988,7 +983,6 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
 }
 
 
-#[allow(clippy::excessive_precision)]
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
     fetch_stack(engine, 5)?;
@@ -1034,7 +1028,6 @@ pub(super) fn execute_send_to_dapp_config(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_SEND_TO_DAPP_CONFIG, None, cell)
 }
 
-#[allow(clippy::excessive_precision)]
 pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("GETAVAILABLEBALANCE"))?;
