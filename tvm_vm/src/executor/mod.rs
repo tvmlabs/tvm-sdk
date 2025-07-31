@@ -52,6 +52,14 @@ mod test_multifactor_tls_wasm_execution;
 mod test_vergrth_poseidon_execution;
 
 #[cfg(test)]
+#[path = "../tests/test_vergrth_bad_args.rs"]
+mod test_vergrth_bad_args;
+
+#[cfg(test)]
+#[path = "../tests/test_poseidon_bad_args.rs"]
+mod test_poseidon_bad_args;
+
+#[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
 
