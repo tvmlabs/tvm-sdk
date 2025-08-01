@@ -6525,6 +6525,7 @@ dependencies = [
  "num",
  "num-derive",
  "num-traits",
+ "parking_lot",
  "pprof 0.14.1",
  "rand 0.8.5",
  "serde",
