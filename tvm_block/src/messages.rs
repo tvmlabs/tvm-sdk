@@ -1348,8 +1348,8 @@ impl Message {
         // proof for message and block info in block
 
         let msg_hash = self.hash()?;
-        let usage_tree = UsageTree::with_root(block_root.clone());
-        let block = Block::construct_from_cell(usage_tree.root_cell()).unwrap();
+        let (usage_tree, usage_root) = UsageTree::with_root(block_root.clone());
+        let block = Block::construct_from_cell(usage_root).unwrap();
 
         block.read_info()?;
 
