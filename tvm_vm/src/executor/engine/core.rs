@@ -615,10 +615,21 @@ impl Engine {
     }
 
     pub fn add_wasm_hash_to_whitelist_by_str(&mut self, wasm_hash_str: String) -> Result<bool> {
-        let hash: Vec<u8> = (0..wasm_hash_str.len())
+        let hash: Result<Vec<u8>> = (0..wasm_hash_str.len())
             .step_by(2)
-            .map(|i| u8::from_str_radix(&wasm_hash_str[i..i + 2], 16).unwrap())
-            .collect::<Vec<u8>>();
+            .map(|i| match u8::from_str_radix(&wasm_hash_str[i..i + 2], 16) {
+                Ok(k) => Ok(k),
+                Err(e) => {
+                    err!(
+                        ExceptionCode::WasmLoadFail,
+                        "Error parsing wasm hash string: {:?}, original error: {:?}",
+                        i,
+                        e
+                    )
+                }
+            })
+            .collect();
+        let hash = hash?;
         let hash = match hash.try_into() {
             Ok(h) => h,
             Err(e) => err!(ExceptionCode::RangeCheckError, "This isn't a sha256 hash: {:?}", e)?,
