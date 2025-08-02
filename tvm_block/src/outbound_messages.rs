@@ -389,14 +389,14 @@ impl OutMsgQueueInfo {
             .build_visited_subtree(&|h| old_proof.root_hashes.contains(h))?;
 
         // Usage tree from state's root to subtree's root
-        let (usage_tree, usage_root) = UsageTree::with_root(old_proof.proof.proof.clone());
+        let usage_tree = UsageTree::with_root(old_proof.proof.proof.clone());
         let visit_state = |state: &ShardStateUnsplit| -> Result<()> {
             let out_msg_queue_info = state.read_out_msg_queue_info()?;
             let _queue_for_wc = out_msg_queue_info.out_queue().queue_for_wc(workchain_id)?;
             let _proc_info = out_msg_queue_info.proc_info().root();
             Ok(())
         };
-        match ShardState::construct_from_cell(usage_root)? {
+        match ShardState::construct_from_cell(usage_tree.root_cell())? {
             ShardState::UnsplitState(state) => {
                 visit_state(&state)?;
             }
@@ -434,7 +434,7 @@ impl OutMsgQueueInfo {
         shard_state_root: &Cell,
         workchain_id: i32,
     ) -> Result<ProofForWc> {
-        let (usage_tree, usage_root) = UsageTree::with_root(shard_state_root.clone());
+        let usage_tree = UsageTree::with_root(shard_state_root.clone());
         let mut result = ProofForWc::default();
 
         fn visit_state(state: &ShardStateUnsplit, workchain_id: i32) -> Result<(UInt256, UInt256)> {
@@ -449,7 +449,7 @@ impl OutMsgQueueInfo {
             Ok((sub_queue_root_hash, proc_info_root_hash))
         }
 
-        match ShardState::construct_from_cell(usage_root)? {
+        match ShardState::construct_from_cell(usage_tree.root_cell())? {
             ShardState::UnsplitState(state) => {
                 let (sq, pi) = visit_state(&state, workchain_id)?;
                 result.sub_queue_root_hash = sq.clone();

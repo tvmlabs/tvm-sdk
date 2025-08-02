@@ -1497,8 +1497,8 @@ impl Transaction {
     pub fn prepare_proof(&self, block_root: &Cell) -> Result<Cell> {
         // proof for transaction and block info in block
 
-        let (usage_tree, usage_root) = UsageTree::with_root(block_root.clone());
-        let block = Block::construct_from_cell(usage_root)?;
+        let usage_tree = UsageTree::with_root(block_root.clone());
+        let block = Block::construct_from_cell(usage_tree.root_cell())?;
 
         block.read_info()?;
 
