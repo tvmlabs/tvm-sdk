@@ -40,7 +40,7 @@ impl Hasher for UInt256Hasher {
 }
 
 type VisitedSet = Arc<parking_lot::Mutex<HashSet<UInt256, UInt256HashBuilder>>>;
-type VisitedMap = Arc<parking_lot::Mutex<HashMap<UInt256, Cell>>>;
+type VisitedMap = Arc<parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>>;
 
 #[derive(Clone)]
 enum Visited {
@@ -174,7 +174,7 @@ impl UsageTree {
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
-        let visited = Arc::new(parking_lot::Mutex::new(HashMap::new()));
+        let visited = Arc::new(parking_lot::Mutex::new(HashMap::<_, _, _>::default()));
         let root =
             Cell::with_usage(UsageCell::new(root, visit_on_load, Visited::Map(visited.clone())));
         Self { root, visited }
@@ -208,7 +208,7 @@ impl UsageTree {
     }
 
     fn build_visited_subtree_inner(
-        visited: &HashMap<UInt256, Cell>,
+        visited: &HashMap<UInt256, Cell, UInt256HashBuilder>,
         is_include: &impl Fn(&UInt256) -> bool,
     ) -> crate::Result<HashSet<UInt256>> {
         let mut subvisited = HashSet::new();
@@ -221,7 +221,7 @@ impl UsageTree {
     }
 
     fn visit_subtree(
-        visited: &HashMap<UInt256, Cell>,
+        visited: &HashMap<UInt256, Cell, UInt256HashBuilder>,
         cell: &Cell,
         subvisited: &mut HashSet<UInt256>,
     ) -> crate::Result<()> {
