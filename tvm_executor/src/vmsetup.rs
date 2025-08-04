@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -161,6 +163,39 @@ impl VMSetup {
     pub fn set_wasm_root_path(mut self, path: String) -> VMSetup {
         self.vm.set_wasm_root_path(path);
         self
+    }
+
+    /// Sets whitelist of hashes in local wasm library
+    pub fn set_wasm_hash_whitelist(mut self, whitelist: HashSet<[u8; 32]>) -> VMSetup {
+        self.vm.set_wasm_hash_whitelist(whitelist);
+        self
+    }
+
+    /// Init wasmtime engine
+    pub fn wasm_engine_init_cached(mut self) -> Result<VMSetup> {
+        self.vm.wasm_engine_init_cached()?;
+        Ok(self)
+    }
+
+    /// Insert external wasmtime engine
+    pub fn extern_insert_wasm_engine(mut self, engine: Option<wasmtime::Engine>) -> VMSetup {
+        self.vm.extern_insert_wasm_engine(engine);
+        self
+    }
+
+    /// Insert external wasm component cache
+    pub fn extern_insert_wasm_component_cache(
+        mut self,
+        cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    ) -> VMSetup {
+        self.vm.extern_insert_wasm_component_cache(cache);
+        self
+    }
+
+    /// Precompile local hash components
+    pub fn precompile_all_wasm_by_hash(mut self) -> Result<VMSetup> {
+        self.vm = self.vm.precompile_all_wasm_by_hash()?;
+        Ok(self)
     }
 
     /// Creates new instance of TVM with defined stack, registers and code.
