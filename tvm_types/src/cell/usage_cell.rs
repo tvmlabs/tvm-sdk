@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::hash::{BuildHasher, Hasher};
 use std::mem;
 use std::sync::Arc;
 
@@ -8,7 +9,37 @@ use crate::CellType;
 use crate::LevelMask;
 use crate::UInt256;
 
-type VisitedSet = Arc<parking_lot::Mutex<HashSet<UInt256>>>;
+#[derive(Default, Clone)]
+pub struct UInt256HashBuilder;
+
+impl BuildHasher for UInt256HashBuilder {
+    type Hasher = UInt256Hasher;
+
+    fn build_hasher(&self) -> UInt256Hasher {
+        UInt256Hasher { hash: 0 }
+    }
+}
+
+#[derive(Default)]
+pub struct UInt256Hasher {
+    hash: u64,
+}
+
+impl Hasher for UInt256Hasher {
+    fn finish(&self) -> u64 {
+        self.hash
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        self.hash = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
+    }
+
+    fn write_u64(&mut self, i: u64) {
+        self.hash = i;
+    }
+}
+
+type VisitedSet = Arc<parking_lot::Mutex<HashSet<UInt256, UInt256HashBuilder>>>;
 type VisitedMap = Arc<parking_lot::Mutex<HashMap<UInt256, Cell>>>;
 
 #[derive(Clone)]
@@ -226,7 +257,8 @@ impl UsageSet {
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
-        let visited = Arc::new(parking_lot::Mutex::new(HashSet::new()));
+        let visited =
+            Arc::new(parking_lot::Mutex::new(HashSet::<UInt256, UInt256HashBuilder>::default()));
         let root =
             Cell::with_usage(UsageCell::new(root, visit_on_load, Visited::Set(visited.clone())));
         Self { root, visited }
@@ -242,11 +274,11 @@ impl UsageSet {
         self.root.clone()
     }
 
-    pub fn build_visited_set(&self) -> HashSet<UInt256> {
+    pub fn build_visited_set(&self) -> HashSet<UInt256, UInt256HashBuilder> {
         self.visited.lock().clone()
     }
 
-    pub fn take_visited_set(&mut self) -> HashSet<UInt256> {
+    pub fn take_visited_set(&mut self) -> HashSet<UInt256, UInt256HashBuilder> {
         mem::take(&mut self.visited.lock())
     }
 }
