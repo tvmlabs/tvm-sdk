@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.19.1] - 2025-07-30
+
+### Fixes
+- Fixed `runwasm` and `runwasmconcatmultiarg` to support wasm components dependent on, when no real io access is needed:
+```
+import wasi:io/streams@0.2.3;
+import wasi:io/error@0.2.3;
+import wasi:cli/stdin@0.2.3;
+import wasi:cli/stdout@0.2.3;
+import wasi:cli/stderr@0.2.3;
+import wasi:filesystem/types@0.2.3;
+import wasi:filesystem/preopens@0.2.3;
+```
+- Local wasm execution by hash now enforces sha256sum checking of the local wasm binary against a whitelist.
+
+### Changed
+#### Determinism: 
+- added support for relaxed SIMD proposal with deterministic behaviour
+- added memory limiter support for dynamic table and linear memory allocation
+- enable other determinism settings via cranelift
+
+### New
+- Wasm Component Precompilation: Wasm Enginge gets preinitialised and Components get pre-compiled and passed into the Executor via the Executor Engine. There is support for initialising via the Executor Engine or passing pre-initialised from an external context.
+
 ## [2.19.0] - 2025-07-30
 
 ### Breaking changes
@@ -20,7 +44,6 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Changed `api.json` file. Added properties related to module account.
-
 
 ## [2.18.2] - 2025-07-04
 
