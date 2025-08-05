@@ -126,6 +126,7 @@ pub struct Engine {
     execution_timeout: Option<Duration>,
 
     wasm_binary_root_path: String,
+    available_credit: i128,
     wasm_hash_whitelist: HashSet<[u8; 32]>, // store hashes of wasm binaries available locally
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
     wasm_engine_cache: Option<wasmtime::Engine>,
@@ -290,10 +291,19 @@ impl Engine {
             termination_deadline: None,
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
+            available_credit: 0,
             wasm_hash_whitelist: HashSet::new(),
             wash_component_cache: HashMap::new(),
             wasm_engine_cache: None,
         }
+    }
+
+    pub fn set_available_credit(&mut self, credit: i128) {
+        self.available_credit = credit;
+    }
+
+    pub fn get_available_credit(&mut self) -> i128 {
+        self.available_credit
     }
 
     pub fn set_block_related_flags(
