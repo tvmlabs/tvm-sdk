@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.1] - 2025-08-06
+
+### Update
+
+- Passing wasm binaries as arguments to `runwasm` and `runwasmconcatmultiarg` now behind a feature flag. With default flags, those binaries will be ignored.
+
 ## [2.20.0] - 2025-08-05
 
 ### New
