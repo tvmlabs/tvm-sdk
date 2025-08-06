@@ -173,7 +173,7 @@ impl MerkleProof {
                     done_cells,
                 )?
             } else {
-                let pbc = MerkleUpdate::make_pruned_branch_cell(&child, child_merkle_depth)?;
+                let pbc = MerkleUpdate::build_pruned_branch(&child, child_merkle_depth)?;
                 if let Some(pruned_branches) = pruned_branches.as_mut() {
                     pruned_branches.insert(child_repr_hash);
                 }

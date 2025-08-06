@@ -1,10 +1,6 @@
 use std::cmp::max;
-use std::io::Cursor;
-use std::io::Read;
-use std::io::Write;
 use std::sync::Arc;
 
-use crate::ByteOrderRead;
 use crate::Cell;
 use crate::CellImpl;
 use crate::CellType;
@@ -13,14 +9,11 @@ use crate::ExceptionCode;
 use crate::LevelMask;
 use crate::MAX_DATA_BITS;
 use crate::MAX_DEPTH;
-use crate::MAX_LEVEL;
 use crate::MAX_REFERENCES_COUNT;
 use crate::SHA256_SIZE;
 use crate::Sha256;
 use crate::UInt256;
 use crate::cell;
-use crate::cell::EXTERNAL_CELL_MAX_SIZE;
-use crate::cell::EXTERNAL_CELL_MIN_SIZE;
 use crate::cell::cell_data::CellData;
 use crate::error;
 use crate::fail;
@@ -136,47 +129,49 @@ impl DataCell {
         // self.level_mask().mask());
 
         match cell_type {
-            CellType::PrunedBranch => {
+            CellType::PrunedBranch | CellType::External => {
+                let type_name =
+                    if cell_type == CellType::PrunedBranch { "pruned branch" } else { "external" };
                 // type + level_mask + level * (hashes + depths)
                 let expected = 8 * (1 + 1 + (self.level() as usize) * (SHA256_SIZE + DEPTH_SIZE));
                 if bit_len != expected {
-                    fail!("fail creating pruned branch cell: {} != {}", bit_len, expected)
+                    fail!("fail creating {type_name} branch cell: bitlen {} != {}", bit_len, expected)
                 }
                 if !self.references.is_empty() {
                     fail!(
-                        "fail creating pruned branch cell: references {} != 0",
+                        "fail creating {type_name} cell: references {} != 0",
                         self.references.len()
                     )
                 }
                 if self.data()[0] != u8::from(CellType::PrunedBranch) {
                     fail!(
-                        "fail creating pruned branch cell: data[0] {} != {}",
+                        "fail creating {type_name} cell: data[0] {} != {}",
                         self.data()[0],
                         u8::from(CellType::PrunedBranch)
                     )
                 }
                 if self.data()[1] != self.cell_data.level_mask().0 {
                     fail!(
-                        "fail creating pruned branch cell: data[1] {} != {}",
+                        "fail creating {type_name} cell: data[1] {} != {}",
                         self.data()[1],
                         self.cell_data.level_mask().0
                     )
                 }
                 let level = self.level() as usize;
                 if level == 0 {
-                    fail!("Pruned branch cell must have non zero level");
+                    fail!("{type_name} cell must have non zero level");
                 }
                 let data = self.data();
                 let mut offset = 1 + 1 + level * SHA256_SIZE;
                 for _ in 0..level {
                     let depth = ((data[offset] as u16) << 8) | (data[offset + 1] as u16);
                     if depth > MAX_DEPTH {
-                        fail!("Depth of pruned branch cell is too big");
+                        fail!("Depth of {type_name} cell is too big");
                     }
                     offset += DEPTH_SIZE;
                 }
                 if store_hashes {
-                    fail!("store_hashes flag is not supported for pruned branch cell");
+                    fail!("store_hashes flag is not supported for {type_name} cell");
                 }
             }
             CellType::MerkleProof => {
@@ -241,44 +236,6 @@ impl DataCell {
             CellType::Big => {
                 // all checks were performed before finalization
             }
-            CellType::External => {
-                // type + hash + depth + (tree cells count len | tree bits count len) + tree
-                // cells count + tree bits count
-                let min_required_len = 8 * (EXTERNAL_CELL_MIN_SIZE);
-                if bit_len < min_required_len {
-                    fail!("fail creating external cell: bit_len {} < {}", bit_len, min_required_len)
-                }
-                if !self.references.is_empty() {
-                    fail!("fail creating external cell: references {} != 0", self.references.len())
-                }
-                let lengths_offset = 1 + SHA256_SIZE + 2;
-                let mut reader = Cursor::new(&self.data()[lengths_offset..]);
-                let lengths = reader.read_byte()?;
-                let tree_cells_count_len = (lengths >> 4) as usize;
-                let tree_bits_count_len = (lengths & 0x0F) as usize;
-
-                if bit_len != 8 * (lengths_offset + 1 + tree_bits_count_len + tree_cells_count_len)
-                {
-                    fail!(
-                        "fail creating external cell: bit_len {} != {}",
-                        bit_len,
-                        8 * (lengths_offset + 1 + tree_bits_count_len + tree_cells_count_len)
-                    )
-                }
-
-                let mut buffer = [0u8; 8];
-                let _ = reader.read(&mut buffer[tree_cells_count_len..])?;
-                let tree_cell_count = u64::from_be_bytes(buffer);
-                let mut buffer = [0u8; 8];
-                let _ = reader.read(&mut buffer[tree_bits_count_len..])?;
-                let tree_bits_count = u64::from_be_bytes(buffer);
-
-                self.tree_bits_count = tree_bits_count;
-                self.tree_cell_count = tree_cell_count;
-
-                // hashes are not calculated for external cell
-                return Ok(());
-            }
             CellType::Unknown => {
                 fail!("fail creating unknown cell")
             }
@@ -292,12 +249,11 @@ impl DataCell {
         }
         let level_mask = match cell_type {
             CellType::Ordinary => children_mask,
-            CellType::PrunedBranch => self.level_mask(),
+            CellType::PrunedBranch | CellType::External => self.level_mask(),
             CellType::LibraryReference => LevelMask::with_mask(0),
             CellType::MerkleProof => LevelMask::for_merkle_cell(children_mask),
             CellType::MerkleUpdate => LevelMask::for_merkle_cell(children_mask),
             CellType::Big => LevelMask::with_mask(0),
-            CellType::External => LevelMask::with_mask(0),
             CellType::Unknown => fail!(ExceptionCode::RangeCheckError),
         };
         if self.cell_data.level_mask() != level_mask {
@@ -447,39 +403,5 @@ impl CellImpl for DataCell {
 
     fn tree_cell_count(&self) -> u64 {
         self.tree_cell_count
-    }
-
-    fn to_external(&self) -> crate::Result<Cell> {
-        if self.cell_type() != CellType::Ordinary && self.cell_type() != CellType::Big {
-            fail!("Only ordinary and big cells can be converted to external")
-        }
-
-        let mut data = [0u8; EXTERNAL_CELL_MAX_SIZE];
-        let mut cursor = Cursor::new(data.as_mut());
-        cursor.write_all(&[u8::from(CellType::External)])?;
-        cursor.write_all(self.hash(MAX_LEVEL).as_slice())?;
-        cursor.write_all(&self.depth(MAX_LEVEL).to_be_bytes())?;
-
-        let tree_cells_count = self.tree_cell_count.to_be_bytes();
-        let tree_cells_count_len = 8 - self.tree_cell_count.leading_zeros() as u8 / 8;
-        let tree_bits_count = self.tree_bits_count.to_be_bytes();
-        let tree_bits_count_len = 8 - self.tree_bits_count.leading_zeros() as u8 / 8;
-        cursor.write_all(&[(tree_cells_count_len << 4) | tree_bits_count_len])?;
-        cursor.write_all(&tree_cells_count[8 - tree_cells_count_len as usize..])?;
-        cursor.write_all(&tree_bits_count[8 - tree_bits_count_len as usize..])?;
-        cursor.write_all(&[0x80])?;
-        let size = cursor.position() as usize;
-
-        let cell = DataCell::with_params(
-            vec![],
-            &cursor.into_inner()[..size],
-            CellType::External,
-            0,
-            None,
-            None,
-            None,
-        )?;
-
-        Ok(Cell::with_data(cell))
     }
 }

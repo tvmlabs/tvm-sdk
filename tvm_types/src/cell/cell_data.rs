@@ -193,7 +193,7 @@ impl CellData {
 
     pub fn raw_hash(&self, mut index: usize) -> &[u8] {
         index = self.level_mask().calc_hash_index(index);
-        if self.cell_type() == CellType::PrunedBranch {
+        if self.cell_type() == CellType::PrunedBranch || self.cell_type() == CellType::External {
             // pruned cell stores all hashes (except representation) in data
             if index != self.level() as usize {
                 let offset = 1 + 1 + index * SHA256_SIZE;
@@ -201,11 +201,6 @@ impl CellData {
             } else {
                 index = 0;
             }
-        }
-        // external cell has only representation hash
-        if self.cell_type() == CellType::External {
-            let offset = 1;
-            return &self.data()[offset..offset + SHA256_SIZE];
         }
         if self.store_hashes() {
             cell::hash(self.buf.unbounded_data(), index)
@@ -216,7 +211,7 @@ impl CellData {
 
     pub fn depth(&self, mut index: usize) -> u16 {
         index = self.level_mask().calc_hash_index(index);
-        if self.cell_type() == CellType::PrunedBranch {
+        if self.cell_type() == CellType::PrunedBranch || self.cell_type() == CellType::External {
             // pruned cell stores all depth except "representation" in data
             if index != self.level() as usize {
                 // type + level_mask + level * (hashes + depths)
@@ -226,12 +221,6 @@ impl CellData {
             } else {
                 index = 0;
             }
-        }
-        // external cell stores only representation depth
-        if self.cell_type() == CellType::External {
-            let offset = 1 + SHA256_SIZE;
-            let data = self.data();
-            return ((data[offset] as u16) << 8) | (data[offset + 1] as u16);
         }
         if self.store_hashes() {
             cell::depth(self.buf.unbounded_data(), index)

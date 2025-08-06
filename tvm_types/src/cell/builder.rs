@@ -38,6 +38,9 @@ pub struct BuilderData {
     pub(super) cell_type: CellType,
 }
 
+const ENABLE_EXTERNAL: bool = true;
+const DISABLE_EXTERNAL: bool = true;
+
 impl BuilderData {
     pub const fn default() -> Self {
         Self::new()
@@ -106,6 +109,11 @@ impl BuilderData {
         self.finalize(MAX_SAFE_DEPTH)
     }
 
+    /// finalize external cell with default max depth
+    pub fn into_external_cell(self) -> Result<Cell> {
+        self.finalize_impl(MAX_SAFE_DEPTH, ENABLE_EXTERNAL)
+    }
+
     /// loads builder as bitstring to slice
     /// maximum length 1023 bits, type must be Ordinary, no references
     pub(super) fn into_bitstring(self) -> SliceData {
@@ -113,7 +121,15 @@ impl BuilderData {
     }
 
     /// use max_depth to limit depth
-    pub fn finalize(mut self, max_depth: u16) -> Result<Cell> {
+    pub fn finalize(self, max_depth: u16) -> Result<Cell> {
+        self.finalize_impl(max_depth, DISABLE_EXTERNAL)
+    }
+
+    /// use max_depth to limit depth
+    fn finalize_impl(mut self, max_depth: u16, enable_external: bool) -> Result<Cell> {
+        if self.cell_type == CellType::External && !enable_external {
+            fail!("External cell creation by builder is prohibited");
+        }
         let mut children_level_mask = LevelMask::with_level(0);
         for r in self.references.iter() {
             children_level_mask |= r.level_mask();
@@ -121,7 +137,7 @@ impl BuilderData {
         let level_mask = match self.cell_type {
             CellType::Unknown => fail!("failed to finalize a cell of unknown type"),
             CellType::Ordinary => children_level_mask,
-            CellType::PrunedBranch => {
+            CellType::PrunedBranch | CellType::External => {
                 if self.bits_used() < 16 {
                     fail!("failed to get level mask for pruned branch cell");
                 }
@@ -131,7 +147,6 @@ impl BuilderData {
             CellType::LibraryReference => LevelMask::with_level(0),
             CellType::MerkleProof | CellType::MerkleUpdate => children_level_mask.virtualize(1),
             CellType::Big => fail!("Big cell creation by builder is prohibited"),
-            CellType::External => fail!("External cell creation by builder is prohibited"),
         };
         append_tag(&mut self.data, self.length_in_bits);
 

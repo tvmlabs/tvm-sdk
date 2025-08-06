@@ -301,7 +301,7 @@ impl CellImpl for Boc3Cell {
         }
         let mut index = cell::level_mask(raw_data).calc_hash_index(index);
         let cell_type = cell::cell_type(raw_data);
-        if cell_type == CellType::PrunedBranch {
+        if cell_type == CellType::PrunedBranch || cell_type == CellType::External {
             // pruned cell stores all hashes (except representation) in data
             if index != cell::level(raw_data) as usize {
                 let offset = 1 + 1 + index * SHA256_SIZE;
@@ -309,11 +309,6 @@ impl CellImpl for Boc3Cell {
             } else {
                 index = 0;
             }
-        }
-        // external cell has only representation hash
-        if cell_type == CellType::External {
-            let offset = 1;
-            return cell::cell_data(raw_data)[offset..offset + SHA256_SIZE].into();
         }
         cell::hash(raw_data, index).into()
     }
@@ -325,7 +320,7 @@ impl CellImpl for Boc3Cell {
         }
         let mut index = cell::level_mask(cell_raw).calc_hash_index(index);
         let cell_type = cell::cell_type(cell_raw);
-        if cell_type == CellType::PrunedBranch {
+        if cell_type == CellType::PrunedBranch || cell_type == CellType::External {
             // pruned cell stores all hashes (except representation) in data
             if index != cell::level(cell_raw) as usize {
                 let offset =
@@ -335,12 +330,6 @@ impl CellImpl for Boc3Cell {
             } else {
                 index = 0;
             }
-        }
-        // external cell has only representation hash
-        if cell_type == CellType::External {
-            let offset = 1 + SHA256_SIZE;
-            let data = cell::cell_data(cell_raw);
-            return ((data[offset] as u16) << 8) | (data[offset + 1] as u16);
         }
         cell::depth(cell_raw, index)
     }

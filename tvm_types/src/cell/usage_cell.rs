@@ -152,14 +152,6 @@ impl CellImpl for UsageCell {
     fn downcast_usage(&self) -> Cell {
         self.cell.clone()
     }
-
-    fn to_external(&self) -> crate::Result<Cell> {
-        Ok(Cell::with_usage(UsageCell::new(
-            self.cell.to_external()?,
-            self.visit_on_load,
-            self.visited.clone(),
-        )))
-    }
 }
 
 #[derive(Clone, Default)]

@@ -43,13 +43,6 @@ pub const MAX_LEVEL: usize = 3;
 pub const MAX_LEVEL_MASK: u8 = 7;
 pub const MAX_DEPTH: u16 = u16::MAX - 1;
 
-// type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
-// len) (1) + max tree cells count (1) + max tree bits count (1)
-const EXTERNAL_CELL_MIN_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 2;
-// type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
-// len) (1) + max tree cells count (8) + max tree bits count (8)
-const EXTERNAL_CELL_MAX_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 8 * 2;
-
 // recommended maximum depth, this value is safe for stack. Use custom stack
 // size to use bigger depths (see `test_max_depth`).
 pub const MAX_SAFE_DEPTH: u16 = 2048;
@@ -275,10 +268,6 @@ pub trait CellImpl: Sync + Send {
 
     fn downcast_usage(&self) -> Cell {
         unreachable!("Function can be called only for UsageCell")
-    }
-
-    fn to_external(&self) -> Result<Cell> {
-        fail!("Cell can not be converted to external")
     }
 }
 
@@ -832,17 +821,21 @@ impl Cell {
     }
 
     pub fn to_external(&self) -> Result<Cell> {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.to_external()
+        if self.cell_type() != CellType::Ordinary && self.cell_type() != CellType::Big {
+            fail!("Only ordinary and big cells can be converted to external")
         }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Cell::Data(cell) => cell.to_external(),
-            Cell::Boc3(cell) => cell.to_external(),
-            Cell::Usage(cell) => cell.to_external(),
-            Cell::Virtual(cell) => cell.to_external(),
+
+        let mut result = BuilderData::new();
+        result.set_type(CellType::External);
+        result.append_u8(u8::from(CellType::External))?;
+        result.append_u8(self.level_mask().mask())?;
+        for hash in self.hashes() {
+            result.append_raw(hash.as_slice(), hash.as_slice().len() * 8)?;
         }
+        for depth in self.depths() {
+            result.append_u16(depth)?;
+        }
+        result.into_external_cell()
     }
 
     pub fn usage_level(&self) -> u64 {
