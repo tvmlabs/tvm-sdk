@@ -44,7 +44,7 @@ pub const MAX_LEVEL_MASK: u8 = 7;
 pub const MAX_DEPTH: u16 = u16::MAX - 1;
 
 // type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
-// len) (1) + max tree cells count (1) + max tree bits count (1)
+// len) (1) + min tree cells count (1) + min tree bits count (1)
 const EXTERNAL_CELL_MIN_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 2;
 // type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
 // len) (1) + max tree cells count (8) + max tree bits count (8)

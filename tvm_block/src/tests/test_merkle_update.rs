@@ -1252,8 +1252,8 @@ fn test_fast_merkle_update() {
         assert_eq!(verify_new, new_state);
 
         let update = MerkleUpdate::create(&old_state, &new_state).unwrap();
-        println!("slow old:\n{}", cell_to_string(&update.old));
-        println!("slow new:\n{}", cell_to_string(&update.new));
+        // println!("slow old:\n{}", cell_to_string(&update.old));
+        // println!("slow new:\n{}", cell_to_string(&update.new));
 
         let verify_new = update.apply_for(&old_state).unwrap();
         assert_eq!(verify_new, new_state);
