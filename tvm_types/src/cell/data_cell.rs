@@ -454,9 +454,9 @@ impl CellImpl for DataCell {
             fail!("Only ordinary and big cells can be converted to external")
         }
 
-        let mut data = [0u8; EXTERNAL_CELL_MAX_SIZE];
+        let mut data = [0u8; EXTERNAL_CELL_MAX_SIZE + 1]; // including tag byte
         let mut cursor = Cursor::new(data.as_mut());
-        cursor.write_all(&[u8::from(CellType::External)])?;
+        cursor.write_all(&[CellType::EXTERNAL])?;
         cursor.write_all(self.hash(MAX_LEVEL).as_slice())?;
         cursor.write_all(&self.depth(MAX_LEVEL).to_be_bytes())?;
 

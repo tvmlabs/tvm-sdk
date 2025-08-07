@@ -182,7 +182,9 @@ impl MerkleUpdate {
         done_cells: &mut HashMap<UInt256, Cell>,
     ) -> Result<Cell> {
         if cell.cell_type() == CellType::External {
-            fail!("External cell can not be included into Merkle update new");
+            pruned_branches.insert(cell.repr_hash());
+            return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
+            //todo: !!! fail!("External cell can not be included into Merkle update new");
         }
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
         let mut proof_cell_builder = BuilderData::from_cell(cell)?;
@@ -220,7 +222,8 @@ impl MerkleUpdate {
         done_cells: &mut HashMap<UInt256, Cell>,
     ) -> Result<Cell> {
         if cell.cell_type() == CellType::External {
-            fail!("External cell can not be included into Merkle update old");
+            return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
+            //todo: !!! fail!("External cell can not be included into Merkle update old");
         }
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
         let mut proof_cell_builder = BuilderData::from_cell(cell)?;
