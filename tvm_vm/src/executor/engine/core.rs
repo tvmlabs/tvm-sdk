@@ -126,6 +126,7 @@ pub struct Engine {
     execution_timeout: Option<Duration>,
 
     wasm_binary_root_path: String,
+    available_credit: i128,
     wasm_hash_whitelist: HashSet<[u8; 32]>, // store hashes of wasm binaries available locally
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
     wasm_engine_cache: Option<wasmtime::Engine>,
@@ -290,10 +291,19 @@ impl Engine {
             termination_deadline: None,
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
+            available_credit: 0,
             wasm_hash_whitelist: HashSet::new(),
             wash_component_cache: HashMap::new(),
             wasm_engine_cache: None,
         }
+    }
+
+    pub fn set_available_credit(&mut self, credit: i128) {
+        self.available_credit = credit;
+    }
+
+    pub fn get_available_credit(&mut self) -> i128 {
+        self.available_credit
     }
 
     pub fn set_block_related_flags(
@@ -463,7 +473,7 @@ impl Engine {
         wasm_config.cranelift_nan_canonicalization(true);
         wasm_config.cranelift_pcc(true);
         wasm_config.wasm_relaxed_simd(true);
-        wasm_config.relaxed_simd_deterministic(false);
+        wasm_config.relaxed_simd_deterministic(true);
         let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
             Ok(module) => module,
             Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
@@ -615,10 +625,21 @@ impl Engine {
     }
 
     pub fn add_wasm_hash_to_whitelist_by_str(&mut self, wasm_hash_str: String) -> Result<bool> {
-        let hash: Vec<u8> = (0..wasm_hash_str.len())
+        let hash: Result<Vec<u8>> = (0..wasm_hash_str.len())
             .step_by(2)
-            .map(|i| u8::from_str_radix(&wasm_hash_str[i..i + 2], 16).unwrap())
-            .collect::<Vec<u8>>();
+            .map(|i| match u8::from_str_radix(&wasm_hash_str[i..i + 2], 16) {
+                Ok(k) => Ok(k),
+                Err(e) => {
+                    err!(
+                        ExceptionCode::WasmLoadFail,
+                        "Error parsing wasm hash string: {:?}, original error: {:?}",
+                        i,
+                        e
+                    )
+                }
+            })
+            .collect();
+        let hash = hash?;
         let hash = match hash.try_into() {
             Ok(h) => h,
             Err(e) => err!(ExceptionCode::RangeCheckError, "This isn't a sha256 hash: {:?}", e)?,

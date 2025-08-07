@@ -435,12 +435,7 @@ fn test_execution_timeout() {
 }
 
 #[test]
-// fn test_loop_wasm() {
-//     for its in 1..3000u32 {
-//         let its = its * 1000;
-//         test_run_wasm_basic_add(its);
-//     }
-// }
+#[cfg(feature = "wasm_external")]
 fn test_run_wasm_basic_add() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
@@ -604,6 +599,79 @@ fn test_run_wasm_io_plug_hashmap() {
     assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
             == 11u8
+    );
+}
+
+#[test]
+#[cfg(not(feature = "wasm_external"))]
+fn test_run_wasm_fail_on_external() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let stack = Stack::new();
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+    engine.wasm_engine_init_cached().unwrap();
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap(); // Should not error on empty hash list!
+
+    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let cell = TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "add";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_func = "docs:adder/add@0.1.0";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let filename = "./src/tests/add.wasm";
+    let wasm_dict = std::fs::read(filename).unwrap();
+
+    let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+    let status = execute_run_wasm(&mut engine);
+    println!("Wasm Return Status: {:?}", status);
+
+    let _res_error = status.expect_err(
+        "Test didn't error on external wasm despite disabled feature \"wasm_external\"",
     );
 }
 
@@ -1000,6 +1068,7 @@ fn test_wasm_from_non_whitelist_hash() {
 }
 
 #[test]
+#[cfg(feature = "wasm_external")]
 fn test_run_wasm_fuel_error() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
@@ -1059,6 +1128,76 @@ fn test_run_wasm_fuel_error() {
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let result = execute_run_wasm(&mut engine);
+
+    println!("Wasm Return Status: {:?}", result);
+
+    let _res_error = result.expect_err("Test didn't error on fuel use");
+}
+
+#[test]
+fn test_run_wasm_fuel_error_from_hash() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let stack = Stack::new();
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+    engine.wasm_engine_init_cached().unwrap();
+
+    let hash = "38a68caa4a3d3665b33c361c073664d0284a487ef11589950738362ee9b734da";
+    let cell = pack_data_to_cell(&hash.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+    let cell =
+        TokenValue::write_bytes(&[100u8, 0u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "add";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_func = "docs:adder/add@0.1.0";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_dict = Vec::<u8>::new();
+
+    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     // let cell = split_to_chain_of_cells(wasm_dict);
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
