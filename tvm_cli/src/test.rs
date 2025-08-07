@@ -312,7 +312,6 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         0,
         0,
         false,
-        false,
         config,
     )
     .await?;
@@ -340,7 +339,6 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
     let bc_config = matches.value_of("CONFIG_BOC");
     let now = matches.value_of("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
     let trace_path = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
-    let is_tock = matches.is_present("IS_TOCK");
 
     let mut account = Account::construct_from_file(input)
         .map_err(|e| format!("Failed to load Account from the file {input}: {e}"))?;
@@ -360,7 +358,6 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
         0,
         0,
         false,
-        is_tock,
         config,
     )
     .await;

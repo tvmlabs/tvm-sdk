@@ -110,6 +110,7 @@ fn test_save_external_serialization_order() {
 fn test_serialize_msg_with_state_init_code_and_small_body() {
     let mut header = InternalMessageHeader::default();
     header.set_src_dapp_id(Some(UInt256::ZERO));
+    header.set_exchange(true);
     let mut msg = Message::with_int_header(header);
 
     let mut stinit = StateInit::default();

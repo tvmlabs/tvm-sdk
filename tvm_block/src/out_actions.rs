@@ -36,6 +36,8 @@ pub const ACTION_COPYLEFT: u32 = 0x24486f7a;
 pub const ACTION_MINTECC: u32 = 0xc2bc6dd8;
 pub const ACTION_CNVRTSHELLQ: u32 = 0x90d8ae28;
 pub const ACTION_MINT_SHELL_TOKEN: u32 = 0xcb9b9a2f;
+pub const ACTION_MINT_SHELLQ_TOKEN: u32 = 0x144a733e;
+pub const ACTION_SEND_TO_DAPP_CONFIG: u32 = 0xe6eb9feb;
 pub const ACTION_BURNECC: u32 = 0x130efdee;
 
 #[cfg(test)]
@@ -119,6 +121,11 @@ pub enum OutAction {
     /// Action for mint some shell token into account
     MintShellToken { value: u64 },
 
+    /// Action for mint some shell token into account
+    MintShellQToken { value: u64 },
+
+    SendToDappConfigToken { value: u64 },
+
     /// Action for revert reward for code to code creater.
     CopyLeft { license: u8, address: AccountId },
 
@@ -130,12 +137,13 @@ pub enum OutAction {
 pub const SENDMSG_ORDINARY: u8 = 0;
 pub const SENDMSG_PAY_FEE_SEPARATELY: u8 = 1;
 pub const SENDMSG_IGNORE_ERROR: u8 = 2;
+pub const SENDMSG_EXCHANGE_ECC: u8 = 16;
 pub const SENDMSG_DELETE_IF_EMPTY: u8 = 32;
 pub const SENDMSG_REMAINING_MSG_BALANCE: u8 = 64;
 pub const SENDMSG_ALL_BALANCE: u8 = 128;
 // mask for cheking valid flags
 pub const SENDMSG_VALID_FLAGS: u8 =
-    SENDMSG_ORDINARY | SENDMSG_PAY_FEE_SEPARATELY | SENDMSG_DELETE_IF_EMPTY | SENDMSG_ALL_BALANCE;
+    SENDMSG_ORDINARY | SENDMSG_PAY_FEE_SEPARATELY | SENDMSG_EXCHANGE_ECC | SENDMSG_DELETE_IF_EMPTY | SENDMSG_ALL_BALANCE;
 
 /// variants of reserve action
 pub const RESERVE_EXACTLY: u8 = 0;
@@ -195,6 +203,14 @@ impl OutAction {
         OutAction::MintShellToken { value }
     }
 
+    /// Create new instance OutAction::ExchangeShell
+    pub fn new_mint_shellq(value: u64) -> Self {
+        OutAction::MintShellQToken { value }
+    }
+    pub fn send_to_dapp_config(value: u64) -> Self {
+        OutAction::SendToDappConfigToken { value }
+    }
+
     /// Create new instance OutAction::Copyleft
     pub fn new_copyleft(license: u8, address: AccountId) -> Self {
         OutAction::CopyLeft { license, address }
@@ -243,6 +259,14 @@ impl Serializable for OutAction {
             }
             OutAction::MintShellToken { ref value } => {
                 ACTION_MINT_SHELL_TOKEN.write_to(cell)?;
+                value.write_to(cell)?;
+            }
+            OutAction::MintShellQToken { ref value } => {
+                ACTION_MINT_SHELLQ_TOKEN.write_to(cell)?;
+                value.write_to(cell)?;
+            }
+            OutAction::SendToDappConfigToken { ref value } => {
+                ACTION_SEND_TO_DAPP_CONFIG.write_to(cell)?;
                 value.write_to(cell)?;
             }
             OutAction::CopyLeft { ref license, ref address } => {
@@ -311,6 +335,16 @@ impl Deserializable for OutAction {
                 let mut value = u64::default();
                 value.read_from(cell)?;
                 *self = OutAction::new_mint_shell(value);
+            }
+            ACTION_MINT_SHELLQ_TOKEN => {
+                let mut value = u64::default();
+                value.read_from(cell)?;
+                *self = OutAction::new_mint_shellq(value);
+            }
+            ACTION_SEND_TO_DAPP_CONFIG => {
+                let mut value = u64::default();
+                value.read_from(cell)?;
+                *self = OutAction::send_to_dapp_config(value);
             }
             ACTION_COPYLEFT => {
                 let license = cell.get_next_byte()?;
