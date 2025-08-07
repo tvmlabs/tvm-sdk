@@ -184,7 +184,6 @@ impl MerkleUpdate {
         if cell.cell_type() == CellType::External {
             pruned_branches.insert(cell.repr_hash());
             return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
-            //todo: !!! fail!("External cell can not be included into Merkle update new");
         }
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
         let mut proof_cell_builder = BuilderData::from_cell(cell)?;
@@ -196,7 +195,7 @@ impl MerkleUpdate {
                 done.clone()
             } else if child.references_count() == 0 || !is_visited_old(&child_repr_hash) {
                 Self::create_new_cell_fast(
-                    &child,
+                    child,
                     is_visited_old,
                     child_merkle_depth,
                     pruned_branches,
@@ -223,7 +222,6 @@ impl MerkleUpdate {
     ) -> Result<Cell> {
         if cell.cell_type() == CellType::External {
             return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
-            //todo: !!! fail!("External cell can not be included into Merkle update old");
         }
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
         let mut proof_cell_builder = BuilderData::from_cell(cell)?;
@@ -235,7 +233,7 @@ impl MerkleUpdate {
                 done.clone()
             } else if child.references_count() == 0 || used_paths_cells.contains(&child_repr_hash) {
                 Self::create_old_cell_fast(
-                    &child,
+                    child,
                     used_paths_cells,
                     child_merkle_depth,
                     done_cells,
