@@ -311,8 +311,8 @@ impl DataCell {
 
         // calculate hashes and depths
 
-        let is_merkle_cell = self.is_merkle();
-        let is_pruned_cell = self.is_pruned();
+        let is_merkle_cell = cell_type.is_merkle();
+        let is_pruned_cell = cell_type.is_pruned();
 
         let mut d1d2: [u8; 2] = self.raw_data()?[..2].try_into()?;
 

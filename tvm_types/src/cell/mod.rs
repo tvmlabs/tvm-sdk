@@ -77,6 +77,25 @@ pub enum CellType {
     External,
 }
 
+impl CellType {
+    pub const UNKNOWN: u8 = 0;
+    pub const ORDINARY: u8 = 0xff;
+    pub const PRUNED_BRANCH: u8 = 1;
+    pub const LIBRARY_REFERENCE: u8 = 2;
+    pub const MERKLE_PROOF: u8 = 3;
+    pub const MERKLE_UPDATE: u8 = 4;
+    pub const BIG: u8 = 5;
+    pub const EXTERNAL: u8 = 6;
+
+    fn is_merkle(&self) -> bool {
+        *self == CellType::MerkleProof || *self == CellType::MerkleUpdate
+    }
+
+    fn is_pruned(&self) -> bool {
+        *self == CellType::PrunedBranch
+    }
+}
+
 #[derive(Debug, Default, Eq, PartialEq, Clone, Copy, Hash)]
 pub struct LevelMask(u8);
 
@@ -182,13 +201,13 @@ impl TryFrom<u8> for CellType {
 
     fn try_from(num: u8) -> Result<CellType> {
         let typ = match num {
-            1 => CellType::PrunedBranch,
-            2 => CellType::LibraryReference,
-            3 => CellType::MerkleProof,
-            4 => CellType::MerkleUpdate,
-            5 => CellType::Big,
-            6 => CellType::External,
-            0xff => CellType::Ordinary,
+            Self::PRUNED_BRANCH => Self::PrunedBranch,
+            Self::LIBRARY_REFERENCE => Self::LibraryReference,
+            Self::MERKLE_PROOF => Self::MerkleProof,
+            Self::MERKLE_UPDATE => Self::MerkleUpdate,
+            Self::BIG => Self::Big,
+            Self::EXTERNAL => Self::External,
+            Self::ORDINARY => Self::Ordinary,
             _ => fail!("unknown cell type {}", num),
         };
         Ok(typ)
@@ -198,14 +217,14 @@ impl TryFrom<u8> for CellType {
 impl From<CellType> for u8 {
     fn from(ct: CellType) -> u8 {
         match ct {
-            CellType::Unknown => 0,
-            CellType::Ordinary => 0xff,
-            CellType::PrunedBranch => 1,
-            CellType::LibraryReference => 2,
-            CellType::MerkleProof => 3,
-            CellType::MerkleUpdate => 4,
-            CellType::Big => 5,
-            CellType::External => 6,
+            CellType::Unknown => CellType::UNKNOWN,
+            CellType::Ordinary => CellType::ORDINARY,
+            CellType::PrunedBranch => CellType::PRUNED_BRANCH,
+            CellType::LibraryReference => CellType::LIBRARY_REFERENCE,
+            CellType::MerkleProof => CellType::MERKLE_PROOF,
+            CellType::MerkleUpdate => CellType::MERKLE_UPDATE,
+            CellType::Big => CellType::BIG,
+            CellType::External => CellType::EXTERNAL,
         }
     }
 }
@@ -243,14 +262,6 @@ pub trait CellImpl: Sync + Send {
 
     fn level(&self) -> u8 {
         self.level_mask().level()
-    }
-
-    fn is_merkle(&self) -> bool {
-        self.cell_type() == CellType::MerkleProof || self.cell_type() == CellType::MerkleUpdate
-    }
-
-    fn is_pruned(&self) -> bool {
-        self.cell_type() == CellType::PrunedBranch
     }
 
     fn tree_bits_count(&self) -> u64 {
@@ -643,32 +654,12 @@ impl Cell {
 
     #[allow(dead_code)]
     pub fn is_merkle(&self) -> bool {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.is_merkle()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Self::Boc3(cell) => cell.is_merkle(),
-            Self::Data(cell) => cell.is_merkle(),
-            Self::Usage(cell) => cell.is_merkle(),
-            Self::Virtual(cell) => cell.is_merkle(),
-        }
+        self.cell_type().is_merkle()
     }
 
     #[allow(dead_code)]
     pub fn is_pruned(&self) -> bool {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.is_pruned()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Self::Boc3(cell) => cell.is_pruned(),
-            Self::Data(cell) => cell.is_pruned(),
-            Self::Usage(cell) => cell.is_pruned(),
-            Self::Virtual(cell) => cell.is_pruned(),
-        }
+        self.cell_type().is_pruned()
     }
 
     pub fn to_hex_string(&self, lower: bool) -> String {
