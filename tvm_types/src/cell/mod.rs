@@ -70,6 +70,16 @@ pub enum CellType {
     External,
 }
 
+impl CellType {
+    fn is_merkle(&self) -> bool {
+        *self == CellType::MerkleProof || *self == CellType::MerkleUpdate
+    }
+
+    fn is_pruned_or_external(&self) -> bool {
+        *self == CellType::PrunedBranch || *self == CellType::External
+    }
+}
+
 #[derive(Debug, Default, Eq, PartialEq, Clone, Copy, Hash)]
 pub struct LevelMask(u8);
 
@@ -236,14 +246,6 @@ pub trait CellImpl: Sync + Send {
 
     fn level(&self) -> u8 {
         self.level_mask().level()
-    }
-
-    fn is_merkle(&self) -> bool {
-        self.cell_type() == CellType::MerkleProof || self.cell_type() == CellType::MerkleUpdate
-    }
-
-    fn is_pruned(&self) -> bool {
-        self.cell_type() == CellType::PrunedBranch
     }
 
     fn tree_bits_count(&self) -> u64 {
@@ -630,34 +632,12 @@ impl Cell {
         }
     }
 
-    #[allow(dead_code)]
     pub fn is_merkle(&self) -> bool {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.is_merkle()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Self::Boc3(cell) => cell.is_merkle(),
-            Self::Data(cell) => cell.is_merkle(),
-            Self::Usage(cell) => cell.is_merkle(),
-            Self::Virtual(cell) => cell.is_merkle(),
-        }
+        self.cell_type().is_merkle()
     }
 
-    #[allow(dead_code)]
-    pub fn is_pruned(&self) -> bool {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.is_pruned()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Self::Boc3(cell) => cell.is_pruned(),
-            Self::Data(cell) => cell.is_pruned(),
-            Self::Usage(cell) => cell.is_pruned(),
-            Self::Virtual(cell) => cell.is_pruned(),
-        }
+    pub fn is_pruned_or_external(&self) -> bool {
+        self.cell_type().is_pruned_or_external()
     }
 
     pub fn to_hex_string(&self, lower: bool) -> String {
@@ -826,9 +806,17 @@ impl Cell {
         }
 
         let mut result = BuilderData::new();
+
+        let mask = self.level_mask().mask();
+        if mask & 1 != 0 {
+            fail!("attempt to add hash with depth 0 into mask {:03b}", mask)
+        }
+        let level_mask = LevelMask::with_mask(mask | 1);
+
         result.set_type(CellType::External);
         result.append_u8(u8::from(CellType::External))?;
-        result.append_u8(self.level_mask().mask())?;
+
+        result.append_u8(level_mask.mask())?;
         for hash in self.hashes() {
             result.append_raw(hash.as_slice(), hash.as_slice().len() * 8)?;
         }
@@ -1133,14 +1121,14 @@ pub(crate) fn cell_data(buf: &[u8]) -> &[u8] {
 #[inline(always)]
 pub(crate) fn hashes_count(buf: &[u8]) -> usize {
     // Hashes count depends on cell's type and level
-    // - for pruned branch it's always 1
+    // - for pruned branch and external it's always 1
     // - for other types it's level + 1
     // To get cell type we need to calculate data's offset, but we can't do it
     // without hashes_count. So we will recognise pruned branch cell by some
     // indirect signs - 0 refs and level != 0
 
     if exotic(buf) && refs_count(buf) == 0 && level(buf) != 0 {
-        // pruned branch
+        // pruned branch or external
         1
     } else {
         level(buf) as usize + 1
@@ -1263,7 +1251,7 @@ fn build_cell_buf(
     let level_mask = LevelMask::with_mask(level_mask);
     let level = level_mask.level();
     let hashes_count = if store_hashes {
-        if cell_type == CellType::PrunedBranch { 1 } else { level as usize + 1 }
+        if cell_type.is_pruned_or_external() { 1 } else { level as usize + 1 }
     } else {
         0
     };

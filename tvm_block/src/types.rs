@@ -1473,7 +1473,7 @@ impl<T: Default + Serializable + Deserializable + Clone> ChildCell<T> {
     pub fn read_struct(&self) -> Result<T> {
         match self.cell.clone() {
             Some(cell) => {
-                if cell.cell_type() == CellType::PrunedBranch {
+                if cell.is_pruned_or_external() {
                     fail!(BlockError::PrunedCellAccess(std::any::type_name::<T>().into()))
                 }
                 T::construct_from_cell(cell)
@@ -1485,7 +1485,7 @@ impl<T: Default + Serializable + Deserializable + Clone> ChildCell<T> {
     pub fn read_struct_from_option(opt: Option<&Self>) -> Result<Option<T>> {
         if let Some(s) = opt {
             if let Some(cell) = s.cell.as_ref() {
-                if cell.cell_type() == CellType::PrunedBranch {
+                if cell.is_pruned_or_external() {
                     fail!(BlockError::PrunedCellAccess(std::any::type_name::<T>().into()))
                 }
                 return Ok(Some(T::construct_from_cell(cell.clone())?));

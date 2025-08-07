@@ -267,7 +267,7 @@ fn serialize_cell(
     write_hash: bool,
 ) -> Result<()> {
     if let Some(cell) = cell {
-        if !cell.is_pruned() {
+        if !cell.is_pruned_or_external() {
             let bytes = write_boc(cell)?;
             serialize_field(map, id_str, base64_encode(bytes));
         }

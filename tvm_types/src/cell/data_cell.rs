@@ -135,7 +135,11 @@ impl DataCell {
                 // type + level_mask + level * (hashes + depths)
                 let expected = 8 * (1 + 1 + (self.level() as usize) * (SHA256_SIZE + DEPTH_SIZE));
                 if bit_len != expected {
-                    fail!("fail creating {type_name} branch cell: bitlen {} != {}", bit_len, expected)
+                    fail!(
+                        "fail creating {type_name} branch cell: bitlen {} != {}",
+                        bit_len,
+                        expected
+                    )
                 }
                 if !self.references.is_empty() {
                     fail!(
@@ -143,11 +147,15 @@ impl DataCell {
                         self.references.len()
                     )
                 }
-                if self.data()[0] != u8::from(CellType::PrunedBranch) {
+                let pruned_u8 = u8::from(CellType::PrunedBranch);
+                let external_u8 = u8::from(CellType::External);
+                let cell_type_u8 = self.data()[0];
+                if !(cell_type_u8 == pruned_u8 || cell_type_u8 == external_u8) {
                     fail!(
-                        "fail creating {type_name} cell: data[0] {} != {}",
-                        self.data()[0],
-                        u8::from(CellType::PrunedBranch)
+                        "fail creating {type_name} cell: data[0] {} != {} or {}",
+                        cell_type_u8,
+                        pruned_u8,
+                        external_u8,
                     )
                 }
                 if self.data()[1] != self.cell_data.level_mask().0 {
@@ -267,8 +275,8 @@ impl DataCell {
 
         // calculate hashes and depths
 
-        let is_merkle_cell = self.is_merkle();
-        let is_pruned_cell = self.is_pruned();
+        let is_merkle_cell = cell_type.is_merkle();
+        let is_pruned_or_external_cell = cell_type.is_pruned_or_external();
 
         let mut d1d2: [u8; 2] = self.raw_data()?[..2].try_into()?;
 
@@ -282,7 +290,7 @@ impl DataCell {
             // For example if mask = 0b010 i = 0, 2
             // for example if mask = 0b001 i = 0, 1
             // for example if mask = 0b011 i = 0, 1, 2
-            if i != 0 && (is_pruned_cell || ((1 << (i - 1)) & level_mask.mask()) == 0) {
+            if i != 0 && (is_pruned_or_external_cell || ((1 << (i - 1)) & level_mask.mask()) == 0) {
                 continue;
             }
 
@@ -294,8 +302,11 @@ impl DataCell {
                 hasher.update(self.data());
             } else {
                 // descr bytes
-                let level_mask =
-                    if is_pruned_cell { self.level_mask() } else { LevelMask::with_level(i as u8) };
+                let level_mask = if is_pruned_or_external_cell {
+                    self.level_mask()
+                } else {
+                    LevelMask::with_level(i as u8)
+                };
                 d1d2[0] = cell::calc_d1(level_mask, false, cell_type, self.references.len());
                 hasher.update(d1d2);
 

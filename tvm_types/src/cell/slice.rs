@@ -124,7 +124,7 @@ impl SliceData {
     }
 
     pub fn load_cell(cell: Cell) -> Result<SliceData> {
-        if cell.is_pruned() {
+        if cell.is_pruned_or_external() {
             fail!(ExceptionCode::PrunedCellAccess)
         } else if cell.cell_type() == CellType::Big {
             fail!(ExceptionCode::BigCellAccess)

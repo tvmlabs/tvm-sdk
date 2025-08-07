@@ -172,7 +172,7 @@ fn write_with_hashes<W: Write>(
     writer.write_u8(raw_data[1])?;
 
     let hashes_count: usize;
-    if cell::cell_type(raw_data) == CellType::PrunedBranch {
+    if cell::cell_type(raw_data).is_pruned_or_external() {
         hashes_count = 1;
         writer.write_all(cell.repr_hash().as_slice())?;
         writer.write_all(&cell.repr_depth().to_be_bytes())?;
@@ -301,7 +301,7 @@ impl CellImpl for Boc3Cell {
         }
         let mut index = cell::level_mask(raw_data).calc_hash_index(index);
         let cell_type = cell::cell_type(raw_data);
-        if cell_type == CellType::PrunedBranch || cell_type == CellType::External {
+        if cell_type.is_pruned_or_external() {
             // pruned cell stores all hashes (except representation) in data
             if index != cell::level(raw_data) as usize {
                 let offset = 1 + 1 + index * SHA256_SIZE;
@@ -320,7 +320,7 @@ impl CellImpl for Boc3Cell {
         }
         let mut index = cell::level_mask(cell_raw).calc_hash_index(index);
         let cell_type = cell::cell_type(cell_raw);
-        if cell_type == CellType::PrunedBranch || cell_type == CellType::External {
+        if cell_type.is_pruned_or_external() {
             // pruned cell stores all hashes (except representation) in data
             if index != cell::level(cell_raw) as usize {
                 let offset =

@@ -95,12 +95,8 @@ impl CellData {
                 depths,
             )?
         };
-        let hashes_count = if cell_type == CellType::PrunedBranch || cell_type == CellType::External
-        {
-            1
-        } else {
-            cell::level(&buffer) as usize + 1
-        };
+        let hashes_count =
+            if cell_type.is_pruned_or_external() { 1 } else { cell::level(&buffer) as usize + 1 };
         let allocate_for_hashes = (!store_hashes) as usize * hashes_count;
         let mut hashes_depths = Vec::with_capacity(allocate_for_hashes);
         match (store_hashes, hashes, depths) {
@@ -193,7 +189,7 @@ impl CellData {
 
     pub fn raw_hash(&self, mut index: usize) -> &[u8] {
         index = self.level_mask().calc_hash_index(index);
-        if self.cell_type() == CellType::PrunedBranch || self.cell_type() == CellType::External {
+        if self.cell_type().is_pruned_or_external() {
             // pruned cell stores all hashes (except representation) in data
             if index != self.level() as usize {
                 let offset = 1 + 1 + index * SHA256_SIZE;
@@ -211,7 +207,7 @@ impl CellData {
 
     pub fn depth(&self, mut index: usize) -> u16 {
         index = self.level_mask().calc_hash_index(index);
-        if self.cell_type() == CellType::PrunedBranch || self.cell_type() == CellType::External {
+        if self.cell_type().is_pruned_or_external() {
             // pruned cell stores all depth except "representation" in data
             if index != self.level() as usize {
                 // type + level_mask + level * (hashes + depths)
