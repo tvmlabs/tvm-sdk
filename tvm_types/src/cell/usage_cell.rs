@@ -104,7 +104,7 @@ impl CellImpl for UsageCell {
     }
 
     fn reference(&self, index: usize) -> crate::Result<Cell> {
-        if self.visit_on_load && self.visit() {
+        if self.visit_on_load || self.visit() {
             let cell = self.cell.reference(index)?;
             let cell = if cell.is_usage_cell() { cell.downcast_usage() } else { cell };
             Ok(Cell::with_usage(UsageCell::new(cell, self.visit_on_load, self.visited.clone())))
