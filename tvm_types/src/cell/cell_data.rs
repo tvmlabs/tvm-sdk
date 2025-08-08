@@ -81,7 +81,7 @@ impl CellData {
                 level_mask,
                 refs as usize,
                 store_hashes,
-                hashes.clone(),
+                hashes,
                 depths,
             )?
         } else {
@@ -91,7 +91,7 @@ impl CellData {
                 level_mask,
                 refs as usize,
                 store_hashes,
-                hashes.clone(),
+                hashes,
                 depths,
             )?
         };
@@ -108,7 +108,7 @@ impl CellData {
             (_, None, None) => (),
             (false, Some(hashes), Some(depths)) => {
                 for i in 0..hashes_count {
-                    hashes_depths.push((hashes[i].clone(), depths[i]));
+                    hashes_depths.push((hashes[i], depths[i]));
                 }
             }
             _ => fail!("`hashes` and `depths` existence are not correspond each other"),

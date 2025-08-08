@@ -316,14 +316,14 @@ pub async fn query_account_field(
     let state_init = account.state_init();
 
     if state_init.is_none() {
-        return Err(format!("account doesn't contain state_init"));
+        return Err("account doesn't contain state_init".to_string());
     }
 
     let cell: Option<tvm_types::Cell> = state_init.unwrap().clone().data;
 
     match cell {
         Some(cell) => Ok(serialize_cell_to_base64(&cell, "account data").unwrap()),
-        None => Err(format!("State init doesn't contain field data")),
+        None => Err("State init doesn't contain field data".to_string()),
     }
 }
 

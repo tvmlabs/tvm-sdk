@@ -523,7 +523,7 @@ impl Engine {
                 hash.into(),
             ) {
                 Ok(binary) => {
-                    match wasmtime::component::Component::new(&wasm_engine, &binary.as_slice()) {
+                    match wasmtime::component::Component::new(&wasm_engine, binary.as_slice()) {
                         Ok(module) => Ok(module),
                         Err(e) => err!(
                             ExceptionCode::WasmLoadFail,
@@ -556,7 +556,7 @@ impl Engine {
             let binary = self.get_wasm_binary_by_hash(hash.into())?;
             let component = match wasmtime::component::Component::new(
                 self.get_wasm_engine()?,
-                &binary.as_slice(),
+                binary.as_slice(),
             ) {
                 Ok(module) => module,
                 Err(e) => err!(
@@ -583,7 +583,7 @@ impl Engine {
         &self,
         executable: Vec<u8>,
     ) -> Result<wasmtime::component::Component> {
-        match wasmtime::component::Component::new(self.get_wasm_engine()?, &executable.as_slice()) {
+        match wasmtime::component::Component::new(self.get_wasm_engine()?, executable.as_slice()) {
             Ok(module) => Ok(module),
             Err(e) => err!(
                 ExceptionCode::WasmLoadFail,
@@ -600,7 +600,7 @@ impl Engine {
     ) -> Result<()> {
         let component_type = component.component_type();
         let engine = self.get_wasm_engine()?;
-        let mut exports = component_type.exports(&engine);
+        let mut exports = component_type.exports(engine);
         let arg = exports.next();
         log::debug!("List of exports from WASM: {:?}", arg);
         if let Some(arg) = arg {
@@ -611,7 +611,7 @@ impl Engine {
             }
         }
         let binding = component.component_type();
-        let mut imports = binding.imports(&engine);
+        let mut imports = binding.imports(engine);
         let arg = imports.next();
         log::debug!("List of imports from WASM: {:?}", arg);
         if let Some(arg) = arg {
@@ -1315,13 +1315,13 @@ impl Engine {
         }
     }
 
-    pub fn ctrl(&self, index: usize) -> ResultRef<StackItem> {
+    pub fn ctrl(&self, index: usize) -> ResultRef<'_, StackItem> {
         self.ctrls
             .get(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
     }
 
-    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<StackItem> {
+    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<'_, StackItem> {
         self.ctrls
             .get_mut(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
@@ -1993,7 +1993,7 @@ impl Engine {
     }
 
     /// get smartcontract info param from ctrl(7) tuple index 0
-    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<StackItem> {
+    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<'_, StackItem> {
         let tuple = self.ctrl(7)?.as_tuple()?;
         let tuple = tuple
             .first()
@@ -2009,7 +2009,7 @@ impl Engine {
         })
     }
 
-    pub(in crate::executor) fn rand(&self) -> ResultRef<IntegerData> {
+    pub(in crate::executor) fn rand(&self) -> ResultRef<'_, IntegerData> {
         self.smci_param(6)?.as_integer()
     }
 

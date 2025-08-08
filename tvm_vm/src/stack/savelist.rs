@@ -91,7 +91,7 @@ impl SaveList {
 
     pub fn put_opt(&mut self, index: usize, value: &mut StackItem) -> Option<StackItem> {
         debug_assert!(Self::can_put(index, value));
-        std::mem::replace(&mut self.storage[Self::adjust(index)], Some(value.withdraw()))
+        self.storage[Self::adjust(index)].replace(value.withdraw())
     }
 
     pub fn apply(&mut self, other: &mut Self) {

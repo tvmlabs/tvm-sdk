@@ -151,7 +151,7 @@ impl ClientError {
         let redirect_url = details
             .and_then(|d| d.get("producers"))
             .and_then(Value::as_array)
-            .and_then(|arr| arr.get(0))
+            .and_then(|arr| arr.first())
             .and_then(Value::as_str)
             .and_then(|url_str| construct_rest_api_endpoint(url_str).ok())
             .map(|url| url.to_string());

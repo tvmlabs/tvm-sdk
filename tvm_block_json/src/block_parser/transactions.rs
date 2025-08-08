@@ -217,7 +217,7 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
         let set = crate::MessageSerializationSet {
             message,
             id: message_cell.repr_hash(),
-            block_id: Some(self.parsing.id.root_hash().clone()),
+            block_id: Some(*self.parsing.id.root_hash()),
             transaction_id: None,
             status: MessageProcessingStatus::Finalized,
             boc,
@@ -249,7 +249,7 @@ impl<'a, T: ParserTracer, R: JsonReducer> ParserTransactions<'a, T, R> {
             transaction,
             id: cell.repr_hash(),
             status: TransactionProcessingStatus::Finalized,
-            block_id: Some(self.parsing.id.root_hash().clone()),
+            block_id: Some(*self.parsing.id.root_hash()),
             workchain_id,
             boc,
             proof,

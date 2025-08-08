@@ -210,7 +210,7 @@ pub trait TransactionExecutor {
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
         let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
+            Some(AccountState::AccountUninit) => false,
             None => false,
             _ => true,
         };
@@ -505,7 +505,7 @@ pub trait TransactionExecutor {
         smc_info.set_mycode(code.clone());
         smc_info.set_storage_fee(storage_fee);
         if let Some(init_code_hash) = result_acc.init_code_hash() {
-            smc_info.set_init_code_hash(init_code_hash.clone());
+            smc_info.set_init_code_hash(*init_code_hash);
         }
         let mut vm = VMSetup::with_context(
             SliceData::load_cell(code)?,
@@ -694,7 +694,7 @@ pub trait TransactionExecutor {
         need_to_burn: Grams,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
-        let mut need_to_reserve = need_to_burn.as_u64_quiet().clone();
+        let mut need_to_reserve = need_to_burn.as_u64_quiet();
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
@@ -913,7 +913,7 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellToken { value } => {
-                    if available_credit != INFINITY_CREDIT && value as i128 + minted_shell.clone() as i128 > available_credit { 
+                    if available_credit != INFINITY_CREDIT && value as i128 + *minted_shell > available_credit {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {
                         match acc_remaining_balance.grams.add(&(Grams::from(value))) {
@@ -928,11 +928,10 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellQToken { mut value } => {
-                    if available_credit != INFINITY_CREDIT {
-                        if value as i128 + minted_shell.clone() as i128 > available_credit {
-                            value = available_credit.clone().try_into()?;
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + *minted_shell > available_credit {
+                            value = available_credit.try_into()?;
                         }
-                    }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
                             *minted_shell += value as i128;
@@ -945,7 +944,7 @@ pub trait TransactionExecutor {
                 }
                 OutAction::SendToDappConfigToken { value } => {
                     let value_gram = Grams::from(value);
-                    if value_gram > acc_remaining_balance.grams { 
+                    if value_gram > acc_remaining_balance.grams {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {
                         match acc_remaining_balance.grams.sub(&value_gram) {
@@ -978,7 +977,7 @@ pub trait TransactionExecutor {
         }
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
             if let Some(header) = out_msg.int_header_mut() {
-                header.set_src_dapp_id(message_src_dapp_id.clone());
+                header.set_src_dapp_id(message_src_dapp_id);
             }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
@@ -1020,10 +1019,8 @@ pub trait TransactionExecutor {
                 if process_err_code(err_code, i, &mut phase)? {
                     return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
                 }
-            } else {
-                if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
-                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
-                }
+            } else if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
 
@@ -1581,7 +1578,7 @@ fn outmsg_action_handler(
         total_fwd_fees = fwd_fee + int_header.ihr_fee;
 
         let fwd_remain_fee = fwd_fee - fwd_mine_fee;
-        
+
         if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
             int_header.set_exchange(true);
         }

@@ -117,7 +117,7 @@ impl ChainProcessor {
             DebotActivity::Transaction { .. } => ApproveKind::ApproveOnChainCall,
         };
         let auto_approve =
-            self.pipechain.auto_approve.as_ref().map(|vec| vec.iter().any(|x| *x == app_kind));
+            self.pipechain.auto_approve.as_ref().map(|vec| vec.contains(&app_kind));
 
         let chlink = self.chain_iter.next();
         if chlink.is_none() {

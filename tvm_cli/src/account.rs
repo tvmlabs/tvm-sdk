@@ -178,7 +178,7 @@ pub async fn get_account(
 
                 let data_boc = if data.is_ok() {
                     hex::encode(
-                        base64_decode(&data.unwrap())
+                        base64_decode(data.unwrap())
                             .map_err(|e| format!("Failed to decode base64: {}", e))?,
                     )
                 } else {

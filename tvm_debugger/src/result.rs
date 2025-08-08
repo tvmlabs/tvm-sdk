@@ -19,7 +19,7 @@ pub struct ExecutionResult {
 
 impl ExecutionResult {
     pub(crate) fn new(is_json: bool) -> ExecutionResult {
-        return ExecutionResult {
+        ExecutionResult {
             is_json,
             log: vec![],
             messages: vec![],
@@ -27,7 +27,7 @@ impl ExecutionResult {
             response_code: -1,
             is_vm_success: false,
             gas_used: 0,
-        };
+        }
     }
 
     pub fn exit_code(&mut self, code: i32) {
@@ -90,6 +90,6 @@ impl ExecutionResult {
     }
 
     pub fn output(&mut self) -> String {
-        return if self.is_json { self.to_json().to_string() } else { self.log.join("\n") };
+        if self.is_json { self.to_json().to_string() } else { self.log.join("\n") }
     }
 }

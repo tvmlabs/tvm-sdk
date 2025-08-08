@@ -131,7 +131,7 @@ impl MerkleUpdate {
             let hash = old.repr_hash();
             let pruned_branch_cell = Self::make_pruned_branch_cell(old, 0)?.into_cell()?;
             Ok(MerkleUpdate {
-                old_hash: hash.clone(),
+                old_hash: hash,
                 new_hash: hash,
                 old_depth: old.repr_depth(),
                 new_depth: old.repr_depth(),
@@ -172,7 +172,7 @@ impl MerkleUpdate {
             let hash = old.repr_hash();
             let pruned_branch_cell = Self::make_pruned_branch_cell(old, 0)?.into_cell()?;
             Ok(MerkleUpdate {
-                old_hash: hash.clone(),
+                old_hash: hash,
                 new_hash: hash,
                 old_depth: old.repr_depth(),
                 new_depth: old.repr_depth(),
@@ -265,7 +265,7 @@ impl MerkleUpdate {
         if visited.contains(&repr_hash) {
             return false;
         }
-        visited.insert(repr_hash.clone());
+        visited.insert(repr_hash);
 
         if used_paths_cells.contains(&repr_hash) {
             return false;
@@ -275,7 +275,7 @@ impl MerkleUpdate {
             if visited_pruned_branches.contains(&repr_hash) {
                 return false;
             }
-            visited_pruned_branches.insert(repr_hash.clone());
+            visited_pruned_branches.insert(repr_hash);
             true
         } else {
             false

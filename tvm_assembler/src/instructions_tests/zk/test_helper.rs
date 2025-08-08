@@ -81,7 +81,7 @@ pub fn prepare_proof_and_public_key_cells_for_stack(
 
     let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
     let public_inputs =
-        &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+        &[zk_login_inputs.calculate_all_inputs_hash(eph_pubkey, &modulus, max_epoch).unwrap()];
 
     let mut proof_as_bytes = vec![];
     proof.serialize_compressed(&mut proof_as_bytes).unwrap();
@@ -115,9 +115,9 @@ pub fn single_vrgrth16(
     );
 
     let mut code = "PUSHREF \n".to_string();
-    code = code + "PUSHREF \n";
+    code += "PUSHREF \n";
     code = code + "PUSHINT " + &*verification_key_id.to_string() + "\n";
-    code = code + "VERGRTH16";
+    code += "VERGRTH16";
 
     let start: Instant = Instant::now();
     test_case_with_refs(code.as_str(), vec![proof_cell.clone(), public_inputs_cell.clone()])
@@ -129,8 +129,8 @@ pub fn secret_key_from_integer_map(key_data: HashMap<String, u8>) -> Vec<u8> {
     let mut vec: Vec<u8> = Vec::new();
     for i in 0..=31 {
         if let Some(value) = key_data.get(&i.to_string()) {
-            vec.push(value.clone());
+            vec.push(*value);
         }
     }
-    return vec;
+    vec
 }
