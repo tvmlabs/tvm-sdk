@@ -12,6 +12,7 @@ use wasmtime_wasi::p2::WasiCtx;
 use wasmtime_wasi::p2::WasiCtxBuilder;
 use wasmtime_wasi::p2::WasiImpl;
 use wasmtime_wasi::p2::WasiView;
+use wasmtime_wasi::p2::bindings::clocks::wall_clock::Datetime;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
@@ -205,6 +206,10 @@ wasmtime::component::bindgen!({
                     seconds: u64,
                     nanoseconds: u32,
                 }
+
+                now: func() -> datetime;
+
+                resolution: func() -> datetime;
             }
         }
 
@@ -308,7 +313,15 @@ impl wasi::filesystem::preopens::Host for MyState {
     }
 }
 
-impl wasi::clocks::wall_clock::Host for MyState {}
+impl wasi::clocks::wall_clock::Host for MyState {
+    fn now(&mut self) -> wasi::clocks::wall_clock::Datetime {
+        wasi::clocks::wall_clock::Datetime { nanoseconds: 0, seconds: 0 }
+    }
+
+    fn resolution(&mut self) -> wasi::clocks::wall_clock::Datetime {
+        wasi::clocks::wall_clock::Datetime { nanoseconds: 0, seconds: 0 }
+    }
+}
 
 impl wasi::filesystem::types::Host for MyState {
     fn filesystem_error_code(
@@ -531,8 +544,8 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     let options = wasmtime_wasi::p2::bindings::sync::LinkOptions::default();
     let l = wasm_linker;
     let f: fn(&mut T) -> WasiImpl<&mut T> = |t| WasiImpl(IoImpl(t));
-    clocks::wall_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    clocks::monotonic_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // clocks::wall_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // clocks::monotonic_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
     filesystem::preopens::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // filesystem::types::add_to_linker::<T, HasWasi<T>>(l, f)?; // DONT USE, async
     // random::random::add_to_linker::<T, HasWasi<T>>(l, f)?;
