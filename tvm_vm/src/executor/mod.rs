@@ -35,6 +35,7 @@ mod stack;
 pub mod token;
 mod tuple;
 mod types;
+pub mod wasm;
 pub mod zk_stuff;
 
 pub use engine::*;
