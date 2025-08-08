@@ -1,3 +1,7 @@
+#![feature(core_float_math)]
+use core::f64::math::powi;
+use core::f64::math::sqrt;
+
 fn main() {
     let res = determinism(1000);
     let mut floats = Vec::new();
@@ -18,7 +22,10 @@ fn determinism(its: usize) -> Vec<u8> {
         let b = 0.2f64;
         let c = (a + b) * (std::f64::consts::PI / 3.0);
         let k = (c * a).sin() + (b * c).cos();
-        r[0] = (k * r[0]) + k;
+        r[0] = powi(k * r[0], 16) + k;
+        for _ in 0..16 {
+            r[0] = sqrt(r[0]);
+        }
 
         // Perform some non-deterministic arithmetic operations
         results.push(r[0].clone());
