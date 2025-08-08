@@ -4,8 +4,8 @@ use tvm_block::ACTION_BURNECC;
 use tvm_block::ACTION_CNVRTSHELLQ;
 use tvm_block::ACTION_MINT_SHELL_TOKEN;
 use tvm_block::ACTION_MINT_SHELLQ_TOKEN;
-use tvm_block::ACTION_SEND_TO_DAPP_CONFIG;
 use tvm_block::ACTION_MINTECC;
+use tvm_block::ACTION_SEND_TO_DAPP_CONFIG;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
@@ -52,56 +52,65 @@ pub const RUNWASM_GAS_PRICE: u64 = WASM_200MS_FUEL / WASM_FUEL_MULTIPLIER;
 
 const RC_ONE_Q32: i64 = 1i64 << 32;
 const RC_POW2_COEFF: [i64; 6] = [
-    4_294_967_296,  // 1 * 2^32
-    2_977_044_472,  // ln2 * 2^32
-    1_031_764_991,  // (ln2)^2/2 * 2^32
-      238_388_332,  // (ln2)^3/6  * 2^32
-       41_309_550,  // (ln2)^4/24 * 2^32
-        5_726_720,  // (ln2)^5/120 * 2^32
+    4_294_967_296, // 1 * 2^32
+    2_977_044_472, // ln2 * 2^32
+    1_031_764_991, // (ln2)^2/2 * 2^32
+    238_388_332,   // (ln2)^3/6  * 2^32
+    41_309_550,    // (ln2)^4/24 * 2^32
+    5_726_720,     // (ln2)^5/120 * 2^32
 ];
 const RC_K1_Q32: i64 = 6_196_328_019; // 1 / ln 2 * 2^32
-const RC_K2_Q32:      i64 = 188; // ln(ARFC) / MAXRT * 2^32 = ln(1000) / 157766400 * 2^32
-const RC_K3_Q32:      i64 = 8_598_533_125; // (MAXRC - MINRC) / (1 - 1 / ARFC) * 2^32 = (3 - 1) / (1 − 1 / 1000) * 2^32
-const RCSCALE:  i128 = 1_000_000_000;
+const RC_K2_Q32: i64 = 188; // ln(ARFC) / MAXRT * 2^32 = ln(1000) / 157766400 * 2^32
+const RC_K3_Q32: i64 = 8_598_533_125; // (MAXRC - MINRC) / (1 - 1 / ARFC) * 2^32 = (3 - 1) / (1 − 1 / 1000) * 2^32
+const RCSCALE: i128 = 1_000_000_000;
 
 const ONE_Q32: i64 = 1i64 << 32;
 const TOTALSUPPLY: u128 = 10_400_000_000_000_000_000;
-const TTMT:        u128  = 2_000_000_000;
-const KM_Q32:      i64  = 42_950;  // KM * 2 ^ 32 = 1e-5 * 2 ^ 32
-const ONE_PLUS_KM: i64  = ONE_Q32 + KM_Q32;
+const TTMT: u128 = 2_000_000_000;
+const KM_Q32: i64 = 42_950; // KM * 2 ^ 32 = 1e-5 * 2 ^ 32
+const ONE_PLUS_KM: i64 = ONE_Q32 + KM_Q32;
 const KRBK_NUM: u128 = 675; // 0.675 = 675 / 1000
 const KRBK_DEN: u128 = 1_000;
 const KRBM_NUM: u128 = 1;
 const KRBM_DEN: u128 = 10;
 const KRMV_NUM: u128 = 225;
 const KRMV_DEN: u128 = 1000;
-const UM_Q64: i64 = 106_188_087_029;  // -ln(KM / (KM + 1)) / TTMT * 2^64 = -ln(1e-5 / (1 + 1e-5)) / 2e9 * 2^64
+const UM_Q64: i64 = 106_188_087_029; // -ln(KM / (KM + 1)) / TTMT * 2^64 = -ln(1e-5 / (1 + 1e-5)) / 2e9 * 2^64
 
 // e^(−n), n = 0...12 in Q‑32
 const EXP_NEG_VAL_Q32: [i64; 13] = [
-    4_294_967_296, 1_580_030_169,   581_260_615, 213_833_830,  78_665_070,
-       28_939_262,    10_646_160,     3_916_503,    1_440_801,     530_041,
-          194_991,        71_733,        26_389,
+    4_294_967_296,
+    1_580_030_169,
+    581_260_615,
+    213_833_830,
+    78_665_070,
+    28_939_262,
+    10_646_160,
+    3_916_503,
+    1_440_801,
+    530_041,
+    194_991,
+    71_733,
+    26_389,
 ];
 
 // Maclaurin coeffs
 const MAC_EXP_NEG_COEFF_Q32: [i64; 9] = [
     4_294_967_296,  // 1 * 2^32
-    -4_294_967_296,  // -1 * 2^32
+    -4_294_967_296, // -1 * 2^32
     2_147_483_648,  // 1/2!  * 2^32
-    -715_827_883,  // -1/3! * 2^32
-    178_956_971,  // 1/4! * 2^32
-    -35_791_394,  // -1/5! 2^32
-    5_965_232,   // 1/6! * 2^32
-    -852_176,  // -1/7! * 2^32
-    106_522,   //1/8! * 2^32
+    -715_827_883,   // -1/3! * 2^32
+    178_956_971,    // 1/4! * 2^32
+    -35_791_394,    // -1/5! 2^32
+    5_965_232,      // 1/6! * 2^32
+    -852_176,       // -1/7! * 2^32
+    106_522,        //1/8! * 2^32
 ];
 
-const KF_Q32:  i64  = 42_949_673;  // KF * 2 ^ 32 = 1e-2 * 2 ^ 32
-const ONE_PLUS_KF_Q32: i64  = ONE_Q32 + KF_Q32;
-const MAX_FREE_FLOAT_FRAC_Q32: i64  = ONE_Q32 / 3;
-const UF_Q64: i64 = 42_566_973_522;  // -ln(KF / (KF + 1)) / TTMT * 2^64 = -ln(1e-2 / (1 + 1e-2)) / 2e9 * 2^64
-
+const KF_Q32: i64 = 42_949_673; // KF * 2 ^ 32 = 1e-2 * 2 ^ 32
+const ONE_PLUS_KF_Q32: i64 = ONE_Q32 + KF_Q32;
+const MAX_FREE_FLOAT_FRAC_Q32: i64 = ONE_Q32 / 3;
+const UF_Q64: i64 = 42_566_973_522; // -ln(KF / (KF + 1)) / TTMT * 2^64 = -ln(1e-2 / (1 + 1e-2)) / 2e9 * 2^64
 
 // wasmtime::component::bindgen!({
 //     inline: r#"
@@ -372,7 +381,7 @@ impl wasi::clocks::wall_clock::Host for MyState {}
 impl wasi::filesystem::types::Host for MyState {
     fn filesystem_error_code(
         &mut self,
-        err: wasmtime::component::Resource<wasi::io::streams::Error>,
+        _err: wasmtime::component::Resource<wasi::io::streams::Error>,
     ) -> Option<wasi::filesystem::types::ErrorCode> {
         Some(wasi::filesystem::types::ErrorCode::Unsupported)
     }
@@ -552,7 +561,7 @@ impl HasData for MyLibrary {
 }
 // This is a custom linker method, adding only sync, non-io wasi dependencies.
 // If more deps are needed, add them in there!
-fn add_to_linker_gosh<'a, T: WasiView + 'static>(
+fn add_to_linker_gosh<T: WasiView + 'static>(
     wasm_linker: &mut wasmtime::component::Linker<T>,
 ) -> Result<(), wasmtime::Error> {
     use wasmtime_wasi::p2::bindings::cli;
@@ -864,7 +873,7 @@ fn run_wasm_core(
     log::debug!("Func Index {:?}", func_index);
     let wasm_function = wasm_instance
         .get_func(&mut wasm_store, func_index)
-        .expect(&format!("`{}` was not an exported function", wasm_func_name));
+        .unwrap_or_else(|| panic!("`{}` was not an exported function", wasm_func_name));
     let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
@@ -954,18 +963,15 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let mut repavg = repavgbig / 1_000_000_000;
 
-    let rbkmin = if t <= TTMT - 1 {
-        rbkprev / 3 * 2
-    } else {
-        0
-    };
+    let rbkmin = if t < TTMT { rbkprev / 3 * 2 } else { 0 };
     if drbkavg == 0 {
         drbkavg = 1;
     }
     if repavg == 0 {
         repavg = 1;
     }
-    let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
+    let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg / repavg).max(rbkmin))
+        .min(rbkprev);
     engine.cc.stack.push(int!(rbk));
     Ok(())
 }
@@ -979,11 +985,7 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
     let mut drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
 
-    let rbmmin = if t <= TTMT - 1 {
-        rbmprev / 3 * 2
-    } else {
-        0
-    };
+    let rbmmin = if t < TTMT { rbmprev / 3 * 2 } else { 0 };
 
     if drbmavg == 0 {
         drbmavg = 1;
@@ -999,9 +1001,11 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
 
 fn exp_neg_q32(v_q32: i64) -> i64 {
     let n = (v_q32 >> 32) as usize;
-    if n >= EXP_NEG_VAL_Q32.len() { return 0; }
+    if n >= EXP_NEG_VAL_Q32.len() {
+        return 0;
+    }
     let f = v_q32 & (ONE_Q32 - 1);
-    let int_part  = EXP_NEG_VAL_Q32[n];
+    let int_part = EXP_NEG_VAL_Q32[n];
     let frac_part = horner_q32(f, &MAC_EXP_NEG_COEFF_Q32);
     ((int_part as i128 * frac_part as i128) >> 32) as i64
 }
@@ -1011,7 +1015,7 @@ fn calc_mbk(t: u128, krk_num: u128, krk_den: u128) -> u128 {
         TOTALSUPPLY
     } else {
         let v_q32 = ((UM_Q64 as i128 * t as i128 + (1 << 31)) >> 32) as i64;
-        let exp_q32  = exp_neg_q32(v_q32);
+        let exp_q32 = exp_neg_q32(v_q32);
         let diff_q32 = ONE_Q32 - exp_q32;
         let prod_q32 = ((ONE_PLUS_KM as i128 * diff_q32 as i128) >> 32) as i64;
         ((TOTALSUPPLY as i128 * prod_q32 as i128) >> 32) as u128
@@ -1055,11 +1059,8 @@ pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Sta
     let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let _pubkey_cell = engine.cmd.var(4).as_cell()?;
 
-    let reward = if mbm >= TOTALSUPPLY / 10 || count_bm == 0 {
-        0
-    } else {
-        radj * depoch / count_bm
-    };
+    let reward =
+        if mbm >= TOTALSUPPLY / 10 || count_bm == 0 { 0 } else { radj * depoch / count_bm };
     engine.cc.stack.push(int!(reward));
     Ok(())
 }
@@ -1102,7 +1103,7 @@ pub(super) fn execute_calculate_min_stake_bm(engine: &mut Engine) -> Status {
     let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start
     let mbkav = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-    let sbkmin = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32);
+    let sbkmin = (mbkav * one_minus_fstk_q32) >> 32;
     engine.cc.stack.push(int!(sbkmin));
     Ok(())
 }
@@ -1199,7 +1200,8 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     let _s1 = engine.cmd.var(1).as_cell()?;
 
     let total_boost_coef_list_bytes: Vec<u8> = Vec::new();
-    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
+    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?
+        .into_cell()?;
 
     engine.cc.stack.push(StackItem::cell(cell));
     engine.cc.stack.push(int!(0));
@@ -1273,7 +1275,6 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     */
 }
 
-
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
     fetch_stack(engine, 5)?;
@@ -1296,8 +1297,6 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     Ok(())
     */
 }
-
-
 
 pub(super) fn execute_mint_shellq(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
@@ -1357,11 +1356,14 @@ fn rep_coef_exp_q32(x_q32: i64) -> i64 {
 }
 
 fn repcoef_int(bkrt: u128) -> u128 {
-    if bkrt == 0 { return 1_000_000_000; }
-    if bkrt >= MAXRT { return 3_000_000_000; }
+    if bkrt == 0 {
+        return 1_000_000_000;
+    }
+    if bkrt >= MAXRT {
+        return 3_000_000_000;
+    }
     let x_q32 = -(RC_K2_Q32 * bkrt as i64);
     let diff_q32 = RC_ONE_Q32 - rep_coef_exp_q32(x_q32);
-    let rep_q32  = RC_ONE_Q32 + (((RC_K3_Q32 as i128 * diff_q32 as i128) >> 32) as i64);
+    let rep_q32 = RC_ONE_Q32 + (((RC_K3_Q32 as i128 * diff_q32 as i128) >> 32) as i64);
     ((rep_q32 as i128 * RCSCALE) >> 32) as u128
 }
-

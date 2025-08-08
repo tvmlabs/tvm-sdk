@@ -50,9 +50,12 @@ pub struct EncryptionBoxInfo {
 pub trait EncryptionBox: Send + Sync {
     /// Gets encryption box information
     async fn get_info(&self, context: Arc<ClientContext>) -> ClientResult<EncryptionBoxInfo>;
+
     /// Encrypts data
+    #[allow(clippy::ptr_arg)]
     async fn encrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String>;
     /// Decrypts data
+    #[allow(clippy::ptr_arg)]
     async fn decrypt(&self, context: Arc<ClientContext>, data: &String) -> ClientResult<String>;
     /// Zeroize all secret data
     async fn drop_secret(&self, _crypto_box_handle: CryptoBoxHandle) {

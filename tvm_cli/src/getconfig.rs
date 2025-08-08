@@ -549,7 +549,7 @@ pub async fn dump_blockchain_config(config: &Config, path: &str) -> Result<(), S
 
     let bc_config = get_blockchain_config(
         ton.clone(),
-        ParamsOfGetBlockchainConfig { block_boc: block, ..Default::default() },
+        ParamsOfGetBlockchainConfig { block_boc: block },
     )
     .map_err(|e| format!("Failed to get blockchain config: {}", e))?;
 

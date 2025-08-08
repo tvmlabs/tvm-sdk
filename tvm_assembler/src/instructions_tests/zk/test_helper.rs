@@ -60,7 +60,7 @@ pub struct IssBase64Details {
 }
 
 pub fn prepare_proof_and_public_key_cells_for_stack(
-    eph_pubkey: &Vec<u8>,
+    eph_pubkey: &[u8],
     zk_login_inputs: &ZkLoginInputs,
     all_jwk: &HashMap<JwkId, JWK>,
     max_epoch: u64,
@@ -101,7 +101,7 @@ pub fn prepare_proof_and_public_key_cells_for_stack(
 }
 
 pub fn single_vrgrth16(
-    eph_pubkey: &Vec<u8>,
+    eph_pubkey: &[u8],
     zk_login_inputs: &ZkLoginInputs,
     all_jwk: &HashMap<JwkId, JWK>,
     verification_key_id: u32,

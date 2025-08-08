@@ -238,7 +238,6 @@ pub async fn query_raw(
             limit,
             order,
             result: result.to_owned(),
-            ..Default::default()
         },
     )
     .await
@@ -264,7 +263,6 @@ pub async fn query_with_limit(
             result: result.to_owned(),
             order,
             limit,
-            ..Default::default()
         },
     )
     .await
@@ -468,9 +466,7 @@ pub async fn print_message(
         message["created_at_string"].as_str().unwrap_or("Undefined")
     );
 
-    let body = message["body"].as_str();
-    if body.is_some() {
-        let body = body.unwrap();
+    if let Some(body) = message["body"].as_str() {
         let def_config = Config::default();
         let result = tvm_client::abi::decode_message_body(
             ton.clone(),
@@ -481,16 +477,15 @@ pub async fn print_message(
                 ..Default::default()
             },
         );
-        let (name, args) = if result.is_err() {
-            ("unknown".to_owned(), "{}".to_owned())
-        } else {
-            let result = result.unwrap();
-            (
+        let (name, args) = match result {
+            Ok(result) => (
                 result.name,
                 serde_json::to_string(&result.value)
                     .map_err(|e| format!("failed to serialize the result: {}", e))?,
-            )
+            ),
+            Err(_) => ("unknown".to_owned(), "{}".to_owned()),
         };
+
         println!("Decoded body:\n{} {}\n", name, args);
         return Ok((name, args));
     }
@@ -622,6 +617,7 @@ pub fn check_dir(path: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(PartialEq)]
 pub enum AccountSource {
     NETWORK,
@@ -752,6 +748,7 @@ pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Resul
         .unwrap_or(config.wc))
 }
 
+#[allow(clippy::type_complexity)]
 pub fn contract_data_from_matches_or_config_alias(
     matches: &ArgMatches,
     full_config: &FullConfig,
