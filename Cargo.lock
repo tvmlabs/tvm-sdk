@@ -6575,6 +6575,7 @@ dependencies = [
  "pprof 0.13.0",
  "pretty_assertions",
  "rand 0.8.5",
+ "rand_chacha 0.2.2",
  "regex",
  "schemars 0.8.22",
  "serde",
