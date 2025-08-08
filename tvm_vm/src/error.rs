@@ -17,6 +17,7 @@ use tvm_types::fail;
 
 use crate::types::Exception;
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Error)]
 pub enum TvmError {
     /// Fatal error.

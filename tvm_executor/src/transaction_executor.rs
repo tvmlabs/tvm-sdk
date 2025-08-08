@@ -209,11 +209,8 @@ pub trait TransactionExecutor {
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active =
+            !matches!(account.state(), Some(AccountState::AccountUninit) | None);
         log::trace!(target: "executor", "previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
             self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
@@ -441,7 +438,7 @@ pub trait TransactionExecutor {
         log::debug!(target: "executor", "acc balance: {}", acc_balance);
         log::debug!(target: "executor", "msg balance: {}", msg_balance);
         let is_ordinary = self.ordinary_transaction();
-        if acc_balance.grams.is_zero()  {
+        if acc_balance.grams.is_zero() {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
@@ -454,7 +451,7 @@ pub trait TransactionExecutor {
             is_ordinary,
             gas_config,
         );
-        if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0  {
+        if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0 {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
@@ -487,7 +484,8 @@ pub trait TransactionExecutor {
             } else {
                 vm_phase.exit_arg = None;
                 vm_phase.success = false;
-                vm_phase.gas_fees = Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?;
+                vm_phase.gas_fees =
+                    Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?;
 
                 if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
                     log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
@@ -913,7 +911,9 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellToken { value } => {
-                    if available_credit != INFINITY_CREDIT && value as i128 + *minted_shell > available_credit {
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + *minted_shell > available_credit
+                    {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {
                         match acc_remaining_balance.grams.add(&(Grams::from(value))) {
@@ -929,9 +929,10 @@ pub trait TransactionExecutor {
                 }
                 OutAction::MintShellQToken { mut value } => {
                     if available_credit != INFINITY_CREDIT
-                        && value as i128 + *minted_shell > available_credit {
-                            value = available_credit.try_into()?;
-                        }
+                        && value as i128 + *minted_shell > available_credit
+                    {
+                        value = available_credit.try_into()?;
+                    }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
                         Ok(true) => {
                             *minted_shell += value as i128;
@@ -1947,10 +1948,10 @@ fn action_type(action: &OutAction) -> String {
         OutAction::SetCode { new_code: _ } => "SetCode".to_string(),
         OutAction::ReserveCurrency { mode: _, value: _ } => "ReserveCurrency".to_string(),
         OutAction::ChangeLibrary { mode: _, code: _, hash: _ } => "ChangeLibrary".to_string(),
-        OutAction::MintShellToken { value: _} => "MintShellToken".to_string(),
-        OutAction::MintShellQToken { value: _} => "MintShellQToken".to_string(),
-        OutAction::SendToDappConfigToken { value: _} => "SendToDappConfigToken".to_string(),
-        OutAction::ExchangeShell { value: _} => "ExchangeShell".to_string(),
+        OutAction::MintShellToken { value: _ } => "MintShellToken".to_string(),
+        OutAction::MintShellQToken { value: _ } => "MintShellQToken".to_string(),
+        OutAction::SendToDappConfigToken { value: _ } => "SendToDappConfigToken".to_string(),
+        OutAction::ExchangeShell { value: _ } => "ExchangeShell".to_string(),
         _ => "Unknown".to_string(),
     }
 }

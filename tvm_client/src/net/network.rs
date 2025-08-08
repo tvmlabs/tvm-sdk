@@ -35,6 +35,7 @@ pub struct NetworkContext {
     pub(crate) env: Arc<ClientEnv>,
     pub(crate) server_link: Option<ServerLink>,
     pub(crate) subscriptions: Mutex<HashMap<u32, mpsc::Sender<SubscriptionAction>>>,
+    #[allow(clippy::type_complexity)]
     pub(crate) iterators: Mutex<HashMap<u32, Arc<Mutex<Box<dyn ChainIterator + Send + Sync>>>>>,
     pub(crate) network_uid: RwLock<Option<Arc<NetworkUID>>>,
 }

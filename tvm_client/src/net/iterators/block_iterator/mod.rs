@@ -42,6 +42,7 @@ mod branch;
 mod filter;
 mod state;
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Deserialize, Serialize, Clone, PartialEq)]
 pub(crate) enum NextLink {
     ByBoth = 0,

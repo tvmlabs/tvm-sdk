@@ -374,8 +374,8 @@ fn unix_time_to_string(value: u64) -> String {
 fn add_time_strings(value: &mut Value, paths: &HashSet<&'static str>, path: JsonPath<'_, '_>) {
     match value {
         Value::Array(vec) => {
-            for i in 0..vec.len() {
-                add_time_strings(&mut vec[i], paths, path.join_index(i));
+            for (i, val) in vec.iter_mut().enumerate() {
+                add_time_strings(val, paths, path.join_index(i));
             }
         }
         Value::Object(map) => {

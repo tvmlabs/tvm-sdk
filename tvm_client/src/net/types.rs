@@ -147,15 +147,6 @@ fn deserialize_next_remp_status_timeout<'de, D: Deserializer<'de>>(
     Ok(Option::deserialize(deserializer)?.unwrap_or(default_next_remp_status_timeout()))
 }
 
-#[derive(Debug, Clone, PartialEq, ApiType)]
-pub struct TrustedMcBlockId {
-    /// Trusted key-block sequence number
-    pub seq_no: u32,
-
-    /// Trusted key-block root hash, encoded as HEX
-    pub root_hash: String,
-}
-
 /// Network protocol used to perform GraphQL queries.
 #[derive(Serialize, Deserialize, Debug, Clone, ApiType)]
 pub enum NetworkQueriesProtocol {
@@ -338,11 +329,7 @@ impl NetworkConfig {
     }
 
     pub fn get_rest_api_header(&self) -> Option<(String, String)> {
-        if let Some(token) = &self.api_token {
-            Some(("Authorization".into(), format!("Bearer {token}")))
-        } else {
-            None
-        }
+        self.api_token.as_ref().map(|token| ("Authorization".into(), format!("Bearer {token}")))
     }
 }
 

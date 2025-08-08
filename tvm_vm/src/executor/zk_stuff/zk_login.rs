@@ -1,6 +1,7 @@
 use std::cmp::Ordering::Equal;
 use std::cmp::Ordering::Greater;
 use std::cmp::Ordering::Less;
+use std::fmt::Display;
 use std::str::FromStr;
 
 pub use ark_bn254::Bn254;
@@ -129,9 +130,9 @@ impl FromStr for OIDCProvider {
     }
 }
 
-impl ToString for OIDCProvider {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for OIDCProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             Self::Google => "Google".to_string(),
             Self::Twitch => "Twitch".to_string(),
             Self::Facebook => "Facebook".to_string(),
@@ -144,7 +145,8 @@ impl ToString for OIDCProvider {
             Self::AwsTenant((region, tenant_id)) => {
                 format!("AwsTenant-region:{}-tenant_id:{}", region, tenant_id)
             }
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 

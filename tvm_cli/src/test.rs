@@ -260,7 +260,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         .map_err(|e| format!("function arguments is not a json: {}", e))?;
     let header = Some(FunctionHeader { time: Some(now), ..Default::default() });
     let call_set =
-        Some(CallSet { function_name, input: Some(params), header, ..Default::default() });
+        Some(CallSet { function_name, input: Some(params), header });
     let mut account;
     let mut message;
     let is_external = matches.is_present("EXTERNAL");

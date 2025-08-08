@@ -25,7 +25,6 @@ use tvm_block::CommonMsgInfo;
 use tvm_block::CurrencyCollection;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
-use tvm_block::VarUInteger32;
 use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::Serializable;
@@ -34,6 +33,7 @@ use tvm_block::TrComputePhase;
 use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionDescrOrdinary;
+use tvm_block::VarUInteger32;
 use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
@@ -88,11 +88,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
 
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active =
+            !matches!(account.state(), Some(AccountState::AccountUninit) | None);
 
         let revert_anycast =
             self.config.global_version() >= VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
@@ -161,18 +158,20 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         echng = VarUInteger32::from(u64::MAX);
                     }
                     if echng != VarUInteger32::from(0) {
-                        msg_balance_convert = echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
+                        msg_balance_convert =
+                            echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
                         msg_balance.grams += Grams::from(msg_balance_convert);
                         value.sub(&echng)?;
                         let digits = value.value().iter_u64_digits().collect::<Vec<u64>>();
                         let base = u64::MAX as u128 + 1;
-                        let new_balance = if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
-                            u128::MAX
-                        } else {
-                            let d0 = digits.first().copied().unwrap_or(0) as u128;
-                            let d1 = digits.get(1).copied().unwrap_or(0) as u128;
-                            d0 + d1 * base
-                        };
+                        let new_balance =
+                            if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
+                                u128::MAX
+                            } else {
+                                let d0 = digits.first().copied().unwrap_or(0) as u128;
+                                let d1 = digits.get(1).copied().unwrap_or(0) as u128;
+                                d0 + d1 * base
+                            };
                         msg_balance.set_other(2, new_balance)?;
                     }
                     exchanged = true;
@@ -311,10 +310,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             config_params,
             ..Default::default()
         };
-        smc_info.calc_rand_seed(
-            params.seed_block,
-            &account_address.address().get_bytestring(0),
-        );
+        smc_info.calc_rand_seed(params.seed_block, &account_address.address().get_bytestring(0));
         let mut stack = Stack::new();
         stack
             .push(int!(acc_balance.grams.as_u128()))
@@ -405,11 +401,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             Some(phase)
                         }
                         Err(e) => {
-                                *minted_shell = minted_shell_orig;
-                                fail!(ExecutorError::TrExecutorError(format!(
-                                    "cannot create action phase of a new transaction for smart contract for reason {}",
-                                    e
-                                )))
+                            *minted_shell = minted_shell_orig;
+                            fail!(ExecutorError::TrExecutorError(format!(
+                                "cannot create action phase of a new transaction for smart contract for reason {}",
+                                e
+                            )))
                         }
                     }
                 } else {

@@ -197,6 +197,7 @@ pub fn nacl_sign_detached_verify(
 
 // Box
 
+#[allow(clippy::type_complexity)]
 fn prepare_to_convert(
     input: &[u8],
     nonce: &[u8],

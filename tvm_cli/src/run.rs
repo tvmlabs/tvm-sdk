@@ -275,10 +275,8 @@ pub async fn run_get_method(
         let mut res = Map::new();
         match result {
             Value::Array(array) => {
-                let mut i = 0;
-                for val in array.iter() {
+                for (i, val) in array.iter().enumerate() {
                     res.insert(format!("value{}", i), val.to_owned());
-                    i += 1;
                 }
             }
             _ => {

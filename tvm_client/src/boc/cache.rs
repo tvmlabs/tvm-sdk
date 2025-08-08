@@ -53,11 +53,12 @@ fn calc_tree_cells(cell: &Cell, hashes: &mut HashSet<UInt256>) -> (usize, usize,
             0
         } + (bits / 8)
             + if bits % 8 != 0 { 1 } else { 0 };
+    let child_count = cell.references_count();
     let mut cell_count = 1;
-    let mut refs_count = cell.references_count();
+    let mut refs_count = child_count;
     hashes.insert(cell.repr_hash());
 
-    for i in 0..refs_count {
+    for i in 0..child_count {
         let cell = cell.reference(i).unwrap();
         if hashes.contains(&cell.repr_hash()) {
             continue;
@@ -198,8 +199,8 @@ impl Bocs {
         boc: &str,
         name: &str,
     ) -> ClientResult<(DeserializedBoc, Cell)> {
-        if boc.starts_with('*') {
-            let hash = UInt256::from_str(&boc[1..]).map_err(|err| {
+        if let Some(boc) = boc.strip_prefix('*') {
+            let hash = UInt256::from_str(boc).map_err(|err| {
                 Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {}", err))
             })?;
 

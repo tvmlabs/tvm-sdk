@@ -11,6 +11,7 @@ fn default_mandatory() -> bool {
     false
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Deserialize, Clone, PartialEq)]
 pub enum ApproveKind {
     ApproveOnChainCall,

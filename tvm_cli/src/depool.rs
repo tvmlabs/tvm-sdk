@@ -402,7 +402,6 @@ impl<'a> DepoolCmd<'a> {
                 filter: Some(answer_filter(&wallet, &depool, since)),
                 result: "id body created_at created_at_string".to_owned(),
                 timeout: Some(self.config.timeout),
-                ..Default::default()
             },
         )
         .await
@@ -448,13 +447,12 @@ impl<'a> DepoolCmd<'a> {
                     filter: Some(answer_filter(&depool, &wallet, since)),
                     result: "id body created_at created_at_string value".to_owned(),
                     timeout: Some(self.config.timeout),
-                    ..Default::default()
                 },
             )
             .await
             .map_err(|e| println!("failed to query answer: {}", e));
-            if message.is_ok() {
-                let message = message.unwrap().result;
+            if let Ok(message) = message {
+                let message = message.result;
                 println!("\nAnswer: ");
                 let (name, args) =
                     print_message(client.clone(), &message, PARTICIPANT_ABI, true).await?;
@@ -621,8 +619,10 @@ async fn print_answer(ton: TonClient, message: &serde_json::Value) -> Result<(),
 async fn events_command(m: &ArgMatches, config: &Config, depool: &str) -> Result<(), String> {
     let since = m.value_of("SINCE");
     let wait_for = m.is_present("WAITONE");
-    let depool = Some(depool);
-    print_args!(depool, since);
+    {
+        let depool = Some(depool);
+        print_args!(depool, since);
+    }
     if !wait_for {
         let since = since
             .map(|s| {
@@ -631,9 +631,9 @@ async fn events_command(m: &ArgMatches, config: &Config, depool: &str) -> Result
             })
             .transpose()?
             .unwrap_or(0);
-        get_events(config, depool.unwrap(), since).await
+        get_events(config, depool, since).await
     } else {
-        wait_for_event(config, depool.unwrap()).await
+        wait_for_event(config, depool).await
     }
 }
 
@@ -653,15 +653,13 @@ async fn print_event(ton: TonClient, event: &serde_json::Value) -> Result<(), St
             ..Default::default()
         },
     );
-    let (name, args) = if result.is_err() {
-        ("unknown".to_owned(), "{}".to_owned())
-    } else {
-        let result = result.unwrap();
-        (
+    let (name, args) = match result {
+        Ok(result) => (
             result.name,
             serde_json::to_string(&result.value)
                 .map_err(|e| format!("failed to serialize the result: {}", e))?,
-        )
+        ),
+        Err(_) => ("unknown".to_owned(), "{}".to_owned()),
     };
 
     println!(
@@ -712,7 +710,6 @@ async fn wait_for_event(config: &Config, depool: &str) -> Result<(), String> {
             filter: Some(events_filter(depool, now())),
             result: "id body created_at created_at_string".to_owned(),
             timeout: Some(config.timeout),
-            ..Default::default()
         },
     )
     .await

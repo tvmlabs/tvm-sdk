@@ -123,7 +123,6 @@ pub async fn fetch(
                 field: "fn".to_owned(),
                 aggregation_fn: AggregationFn::COUNT,
             }]),
-            ..Default::default()
         },
     )
     .await
@@ -152,7 +151,6 @@ pub async fn fetch(
             result: "accounts { id boc }".to_owned(),
             limit: Some(1),
             order: None,
-            ..Default::default()
         },
     )
     .await;
@@ -226,7 +224,6 @@ pub async fn fetch(
                         path: "lt".to_owned(),
                         direction: SortDirection::ASC,
                     }]),
-                    ..Default::default()
                 },
             );
             query.await
@@ -322,6 +319,7 @@ fn choose<'a>(st1: &'a mut State, st2: &'a mut State) -> &'a mut State {
     if lt1 <= lt2 { st1 } else { st2 }
 }
 
+#[allow(clippy::type_complexity)]
 pub async fn replay(
     input_filename: &str,
     config_filename: &str,
@@ -387,8 +385,11 @@ pub async fn replay(
         }
         if tr.id == txnid {
             if dump_mask & DUMP_ACCOUNT != 0 {
-                let path =
-                    format!("{}-{}.boc", account_address.split(':').last().unwrap_or(""), txnid);
+                let path = format!(
+                    "{}-{}.boc",
+                    account_address.split(':').next_back().unwrap_or(""),
+                    txnid
+                );
                 account_root
                     .write_to_file(&path)
                     .map_err(|e| format!("Failed to write account: {}", e))?;
@@ -551,7 +552,6 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
             result: "workchain_id end_lt boc".to_owned(),
             limit: None,
             order: None,
-            ..Default::default()
         },
     )
     .await?;
@@ -630,7 +630,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     let tasks: Vec<_> = accounts
         .iter()
         .map(|(account, txns)| {
-            let account_filename = account.split(':').last().unwrap_or("").to_owned();
+            let account_filename = account.split(':').next_back().unwrap_or("").to_owned();
             let _config = config.clone().to_owned();
             let txnid = txns[0].0.clone();
             tokio::spawn(async move {

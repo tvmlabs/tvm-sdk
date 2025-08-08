@@ -455,7 +455,7 @@ async fn debug_transaction_command(
     config: &Config,
     is_account: bool,
 ) -> Result<(), String> {
-    let trace_path = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
+    let trace_path = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
     let config_path = matches.value_of("CONFIG_PATH");
     let contract_path = matches.value_of("CONTRACT_PATH");
     let is_default_config = matches.is_present("DEFAULT_CONFIG");
@@ -463,20 +463,21 @@ async fn debug_transaction_command(
     let (tx_id, address) = if !is_account {
         let tx_id = matches.value_of("TX_ID");
         if !config.is_json {
+            let trace_path = Some(trace_path);
             print_args!(tx_id, trace_path, config_path, contract_path);
         }
         let address = query_address(tx_id.unwrap(), config).await?;
         (tx_id.unwrap().to_string(), address)
     } else {
-        let address = Some(
+        let address =
             matches.value_of("ADDRESS").map(|s| s.to_string()).or(config.addr.clone()).ok_or(
                 "ADDRESS is not defined. Supply it in the config file or command line.".to_string(),
-            )?,
-        );
+            )?;
         if !config.is_json {
+            let address = Some(address.clone());
+            let trace_path = Some(trace_path);
             print_args!(address, trace_path, config_path, contract_path);
         }
-        let address = address.unwrap();
         let transactions = query_transactions(&address, config).await?;
         let tr_id = choose_transaction(transactions)?;
         (tr_id, address)
@@ -507,7 +508,6 @@ async fn debug_transaction_command(
         }
     };
 
-    let trace_path = trace_path.unwrap();
     let mut dump_mask = DUMP_NONE;
     if matches.is_present("DUMP_CONFIG") {
         dump_mask |= DUMP_CONFIG;
@@ -548,11 +548,12 @@ async fn debug_transaction_command(
 async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let tx_id = matches.value_of("TX_ID");
     let config_path = matches.value_of("CONFIG_PATH");
-    let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
+    let output = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
     let input = matches.value_of("INPUT");
     let do_update = matches.is_present("UPDATE_STATE");
 
     if !config.is_json {
+        let output = Some(output);
         print_args!(input, tx_id, output, config_path);
     }
 
@@ -569,7 +570,6 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
             result: "lt block { start_lt } boc".to_string(),
             limit: Some(1),
             order: None,
-            ..Default::default()
         },
     )
     .await
@@ -602,7 +602,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
         })
         .transpose()?;
 
-    init_debug_logger(output.unwrap())?;
+    init_debug_logger(output)?;
 
     let result_trans = execute_debug(
         get_blockchain_config(config, config_path).await?,
@@ -641,7 +641,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
         }
     }
     if !config.is_json {
-        println!("Log saved to {}", output.unwrap());
+        println!("Log saved to {}", output);
     }
     Ok(())
 }
@@ -678,28 +678,21 @@ async fn debug_call_command(
     is_getter: bool,
 ) -> Result<(), String> {
     let (input, opt_abi, sign) = contract_data_from_matches_or_config_alias(matches, full_config)?;
-    let input = input.as_ref();
-    let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
-    let method = Some(
-        matches
-            .value_of("METHOD")
-            .or(full_config.config.method.as_deref())
-            .ok_or("Method is not defined. Supply it in the config file or command line.")?,
-    );
+    let input = input.as_deref();
+    let output = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
+    let method = matches
+        .value_of("METHOD")
+        .or(full_config.config.method.as_deref())
+        .ok_or("Method is not defined. Supply it in the config file or command line.")?;
     let is_boc = matches.is_present("BOC");
     let is_tvc = matches.is_present("TVC");
     let abi = load_abi(opt_abi.as_ref().unwrap(), &full_config.config).await?;
-    let params = Some(
-        unpack_alternative_params(
-            matches,
-            opt_abi.as_ref().unwrap(),
-            method.unwrap(),
-            &full_config.config,
-        )
-        .await?,
-    );
+    let params =
+        unpack_alternative_params(matches, opt_abi.as_ref().unwrap(), method, &full_config.config)
+            .await?;
 
     if !full_config.config.is_json {
+        let (method, params, output) = (Some(method), Some(&params), Some(output));
         print_args!(input, method, params, sign, opt_abi, output);
     }
 
@@ -722,13 +715,13 @@ async fn debug_call_command(
     let now = parse_now(matches)?;
 
     let addr = account.get_addr().unwrap().to_string();
-    let params = load_params(&params.unwrap())?;
+    let params = load_params(&params)?;
     let message = if false {
         prepare_message(
             ton_client.clone(),
             &addr,
             abi.clone(),
-            method.unwrap(),
+            method,
             &params,
             None,
             None,
@@ -747,7 +740,7 @@ async fn debug_call_command(
         let params = serde_json::from_str(&params)
             .map_err(|e| format!("params are not in json format: {e}"))?;
         let call_set = CallSet {
-            function_name: method.unwrap().to_string(),
+            function_name: method.to_string(),
             input: Some(params),
             header: Some(header),
         };
@@ -755,11 +748,7 @@ async fn debug_call_command(
             abi,
             address: account.get_addr().map(|addr| addr.to_string()),
             call_set: Some(call_set),
-            signer: if keys.is_some() {
-                Signer::Keys { keys: keys.unwrap() }
-            } else {
-                Signer::None
-            },
+            signer: if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None },
             ..Default::default()
         };
         encode_message(ton_client, msg_params)
@@ -777,7 +766,7 @@ async fn debug_call_command(
     let mut acc_root =
         account.serialize().map_err(|e| format!("Failed to serialize account: {}", e))?;
 
-    let trace_path = output.unwrap();
+    let trace_path = output;
     init_debug_logger(trace_path)?;
 
     let bc_config =
@@ -843,11 +832,12 @@ async fn debug_call_command(
 
 async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let input = matches.value_of("ADDRESS");
-    let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
+    let output = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
     let debug_info = matches.value_of("DBG_INFO").map(|s| s.to_string());
     let is_boc = matches.is_present("BOC");
     let message = matches.value_of("MESSAGE");
     if !config.is_json {
+        let output = Some(output);
         print_args!(input, message, output, debug_info);
     }
 
@@ -873,8 +863,7 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
     let mut acc_root =
         account.serialize().map_err(|e| format!("Failed to serialize account: {}", e))?;
 
-    let trace_path = output.unwrap();
-    init_debug_logger(trace_path)?;
+    init_debug_logger(output)?;
 
     let now = parse_now(matches)?;
     let result = execute_debug(
@@ -910,7 +899,7 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
 
     if !config.is_json {
         println!("{}", msg_string);
-        println!("Log saved to {}", trace_path);
+        println!("Log saved to {}", output);
     }
     match error {
         Some(e) => Err(e),
@@ -920,26 +909,21 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
 
 async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let tvc = matches.value_of("TVC");
-    let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
-    let opt_abi = Some(abi_from_matches_or_config(matches, config)?);
-    let debug_info = matches
-        .value_of("DBG_INFO")
-        .map(|s| s.to_string())
-        .or(load_debug_info(opt_abi.as_ref().unwrap()));
+    let output = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
+    let abi = abi_from_matches_or_config(matches, config)?;
+    let debug_info = matches.value_of("DBG_INFO").map(|s| s.to_string()).or(load_debug_info(&abi));
     let sign = matches.value_of("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
-    let params = Some(
-        unpack_alternative_params(matches, opt_abi.as_ref().unwrap(), "constructor", config)
-            .await?,
-    );
+    let params = unpack_alternative_params(matches, &abi, "constructor", config).await?;
     let wc = wc_from_matches_or_config(matches, config)?;
     if !config.is_json {
-        print_args!(tvc, params, sign, opt_abi, output, debug_info);
+        let (abi, params, output) = (Some(&abi), Some(&params), Some(output));
+        print_args!(tvc, params, sign, abi, output, debug_info);
     }
 
     let (msg, address) = prepare_deploy_message(
         tvc.unwrap(),
-        opt_abi.as_ref().unwrap(),
-        &load_params(&params.unwrap())?,
+        &abi,
+        &load_params(&params)?,
         sign,
         wc,
         config,
@@ -976,8 +960,7 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
     let mut acc_root =
         account.serialize().map_err(|e| format!("Failed to serialize account: {}", e))?;
 
-    let trace_path = output.unwrap();
-    init_debug_logger(trace_path)?;
+    init_debug_logger(output)?;
 
     let now = parse_now(matches)?;
 
@@ -1013,7 +996,7 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
     };
     if !config.is_json {
         println!("{}", msg_string);
-        println!("Log saved to {}", trace_path);
+        println!("Log saved to {}", output);
     }
     Ok(())
 }
@@ -1234,7 +1217,8 @@ pub async fn execute_debug(
         bc_config
     };
 
-    let executor: Box<dyn TransactionExecutor> = Box::new(OrdinaryTransactionExecutor::new(bc_config));
+    let executor: Box<dyn TransactionExecutor> =
+        Box::new(OrdinaryTransactionExecutor::new(bc_config));
 
     let params = ExecuteParams {
         block_unixtime: (time_in_ms / 1000) as u32,
@@ -1315,6 +1299,7 @@ fn get_position(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) -> Result<
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn generate_callback(
     matches: Option<&ArgMatches>,
     config: &Config,
@@ -1324,7 +1309,7 @@ fn generate_callback(
         let debug_info = matches
             .value_of("DBG_INFO")
             .map(|s| s.to_string())
-            .or(if opt_abi.is_ok() { load_debug_info(opt_abi.as_ref().unwrap()) } else { None });
+            .or(if let Ok(opt_abi) = opt_abi { load_debug_info(&opt_abi) } else { None });
         let debug_info = if let Some(dbg_path) = debug_info {
             match File::open(&dbg_path) {
                 Ok(file) => match serde_json::from_reader(file) {
@@ -1363,11 +1348,10 @@ pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> 
 
     let mut addresses = vec![];
     let lines = std::io::BufReader::new(file).lines();
-    for line in lines {
-        if let Ok(line) = line {
-            if !line.is_empty() && !line.starts_with('#') {
-                addresses.push(load_ton_address(&line, config)?);
-            }
+    #[allow(clippy::lines_filter_map_ok)]
+    for line in lines.filter_map(Result::ok) {
+        if !line.is_empty() && !line.starts_with('#') {
+            addresses.push(load_ton_address(&line, config)?);
         }
     }
     if addresses.iter().collect::<HashSet<_>>().len() < addresses.len() {
@@ -1380,7 +1364,7 @@ pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> 
     })
 }
 
-fn infer_address_width(input: &Vec<String>, min_width: usize) -> Result<usize, String> {
+fn infer_address_width(input: &[String], min_width: usize) -> Result<usize, String> {
     let max_width = input.iter().fold(0, |acc, item| std::cmp::max(acc, item.len()));
     let addresses =
         input.iter().map(|address| format!("{:>max_width$}", address)).collect::<Vec<_>>();

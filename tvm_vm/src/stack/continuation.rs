@@ -145,6 +145,7 @@ impl ContinuationData {
     }
 
     pub fn withdraw(&mut self) -> Self {
+        #[allow(clippy::mem_replace_with_default)]
         mem::replace(self, ContinuationData::new_empty())
     }
 
@@ -234,6 +235,7 @@ impl ContinuationData {
     ) -> Result<Self> {
         let mut list = Vec::new();
         ContinuationData::deserialize_internal(&mut list, slice, gas_consumer)?;
+        #[allow(clippy::mem_replace_with_default)]
         Ok(std::mem::replace(
             items_deserialize(list, gas_consumer)?.remove(0).as_continuation_mut()?,
             ContinuationData::new_empty(),

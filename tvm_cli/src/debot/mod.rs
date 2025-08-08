@@ -37,7 +37,7 @@ use term_browser::terminal_input;
 use crate::config::Config;
 use crate::helpers::load_ton_address;
 
-pub fn create_debot_command<'a, 'b>() -> App<'a> {
+pub fn create_debot_command<'a>() -> App<'a> {
     SubCommand::with_name("debot")
         .about("Debot commands.")
         .setting(AppSettings::AllowLeadingHyphen)
@@ -90,8 +90,8 @@ pub async fn debot_command(m: &ArgMatches, config: Config) -> Result<(), String>
 
     let mut loggers: Vec<Box<dyn SharedLogger>> = vec![];
     let file = std::fs::File::create("debot_err.log");
-    if file.is_ok() {
-        loggers.push(WriteLogger::new(LevelFilter::Error, log_conf.clone(), file.unwrap()));
+    if let Ok(file) = file {
+        loggers.push(WriteLogger::new(LevelFilter::Error, log_conf.clone(), file));
     }
 
     if debug {

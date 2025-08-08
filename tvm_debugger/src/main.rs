@@ -40,6 +40,7 @@ struct Cli {
     command: Commands,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Parser, Debug)]
 enum Commands {
     /// Run contract localy with specified parameters

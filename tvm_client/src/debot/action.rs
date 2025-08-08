@@ -90,17 +90,11 @@ impl DAction {
     }
 
     pub fn is_engine_call(&self) -> bool {
-        match self.action_type {
-            AcType::CallEngine => true,
-            _ => false,
-        }
+        matches!(self.action_type, AcType::CallEngine)
     }
 
     pub fn is_invoke(&self) -> bool {
-        match self.action_type {
-            AcType::Invoke => true,
-            _ => false,
-        }
+        matches!(self.action_type, AcType::Invoke)
     }
 
     pub fn is_instant(&self) -> bool {
