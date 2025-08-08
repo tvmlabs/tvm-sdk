@@ -213,6 +213,16 @@ wasmtime::component::bindgen!({
                 get-random-bytes: func(len: u64) -> list<u8>;
                 get-random-u64: func() -> u64;
             }
+
+            interface insecure {
+                get-insecure-random-bytes: func(len: u64) -> list<u8>;
+
+                get-insecure-random-u64: func() -> u64;
+            }
+
+            interface insecure-seed {
+                insecure-seed: func() -> tuple<u64, u64>;
+            }
         }
 
         world localworld {
@@ -225,6 +235,8 @@ wasmtime::component::bindgen!({
             import wasi:filesystem/preopens@0.2.3;
             import wasi:clocks/wall-clock@0.2.3;
             import wasi:random/random@0.2.3;
+            import wasi:random/insecure@0.2.3;
+            import wasi:random/insecure-seed@0.2.3;
         }
     "#,
     // with: {
@@ -444,6 +456,27 @@ impl wasi::random::random::Host for MyState {
 
     fn get_random_u64(&mut self) -> u64 {
         self.random_source.next_u64()
+    }
+}
+
+impl wasi::random::insecure::Host for MyState {
+    fn get_insecure_random_bytes(&mut self, len: u64) -> wasmtime::component::__internal::Vec<u8> {
+        let mut vector = Vec::<u8>::with_capacity(match len.try_into() {
+            Ok(k) => k,
+            Err(_) => u16::max_value().into(),
+        });
+        self.random_source.fill_bytes(&mut vector);
+        vector
+    }
+
+    fn get_insecure_random_u64(&mut self) -> u64 {
+        self.random_source.next_u64()
+    }
+}
+
+impl wasi::random::insecure_seed::Host for MyState {
+    fn insecure_seed(&mut self) -> (u64, u64) {
+        (self.random_source.next_u64(), self.random_source.next_u64())
     }
 }
 
