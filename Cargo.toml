@@ -21,7 +21,7 @@ members = [
   "tvm_struct",
   "tvm_tl_codegen",
   "tvm_types",
-  "tvm_vm",
+  "tvm_vm", "examples/wasm/rust/determinism-single-ret-native",
 ]
 [workspace.package]
 version = "2.20.1"
