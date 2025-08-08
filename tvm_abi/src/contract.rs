@@ -512,7 +512,7 @@ impl Contract {
             let key = SliceData::load_builder(item.key.write_to_new_cell()?)?;
             if let Some(value) = map.get(key)? {
                 tokens.append(&mut TokenValue::decode_params(
-                    &[item.value.clone()],
+                    std::slice::from_ref(&item.value),
                     value,
                     &self.abi_version,
                     allow_partial,

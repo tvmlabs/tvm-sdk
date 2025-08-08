@@ -377,8 +377,8 @@ impl McShardRecord {
         let block_id = BlockIdExt::with_params(
             shard,
             descr.seq_no,
-            descr.root_hash.clone(),
-            descr.file_hash.clone(),
+            descr.root_hash,
+            descr.file_hash,
         );
         Self { descr, block_id }
     }
@@ -392,8 +392,8 @@ impl McShardRecord {
                 reg_mc_seqno: 0xffff_ffff, // by t-node
                 start_lt: info.start_lt(),
                 end_lt: info.end_lt(),
-                root_hash: block_id.root_hash().clone(),
-                file_hash: block_id.file_hash().clone(),
+                root_hash: *block_id.root_hash(),
+                file_hash: *block_id.file_hash(),
                 before_split: info.before_split(),
                 before_merge: false, // by t-node
                 want_split: info.want_split(),
@@ -1517,8 +1517,8 @@ impl ShardBlockRef {
     pub fn with_params(block_id: &BlockIdExt, end_lt: u64) -> Self {
         Self {
             seq_no: block_id.seq_no,
-            root_hash: block_id.root_hash.clone(),
-            file_hash: block_id.file_hash.clone(),
+            root_hash: block_id.root_hash,
+            file_hash: block_id.file_hash,
             end_lt,
         }
     }

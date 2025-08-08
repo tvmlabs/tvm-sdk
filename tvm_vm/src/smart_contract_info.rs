@@ -118,7 +118,7 @@ impl SmartContractInfo {
         // combine all parameters to vec and calculate hash of them
         self.rand_seed = if !rand_seed_block.is_zero() {
             let mut hasher = Sha256::new();
-            hasher.update(&rand_seed_block);
+            hasher.update(rand_seed_block);
             hasher.update(account_address_anycast);
 
             let sha256 = hasher.finalize();

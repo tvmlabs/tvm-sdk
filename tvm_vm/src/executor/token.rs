@@ -92,13 +92,13 @@ const MAC_EXP_NEG_COEFF_Q32: [i64; 9] = [
     -715_827_883,  // -1/3! * 2^32
     178_956_971,  // 1/4! * 2^32
     -35_791_394,  // -1/5! 2^32
-    5_965_232,   // 1/6! * 2^32 
+    5_965_232,   // 1/6! * 2^32
     -852_176,  // -1/7! * 2^32
     106_522,   //1/8! * 2^32
 ];
 
 const KF_Q32:  i64  = 42_949_673;  // KF * 2 ^ 32 = 1e-2 * 2 ^ 32
-const ONE_PLUS_KF_Q32: i64  = ONE_Q32 + KF_Q32; 
+const ONE_PLUS_KF_Q32: i64  = ONE_Q32 + KF_Q32;
 const MAX_FREE_FLOAT_FRAC_Q32: i64  = ONE_Q32 / 3;
 const UF_Q64: i64 = 42_566_973_522;  // -ln(KF / (KF + 1)) / TTMT * 2^64 = -ln(1e-2 / (1 + 1e-2)) / 2e9 * 2^64
 
@@ -160,7 +160,7 @@ wasmtime::component::bindgen!({
                     closed,
                 }
             }
-                    
+
             world ioer {
             import error;
             import streams;
@@ -374,9 +374,7 @@ impl wasi::filesystem::types::Host for MyState {
         &mut self,
         err: wasmtime::component::Resource<wasi::io::streams::Error>,
     ) -> Option<wasi::filesystem::types::ErrorCode> {
-        match err {
-            _ => Some(wasi::filesystem::types::ErrorCode::Unsupported),
-        }
+        Some(wasi::filesystem::types::ErrorCode::Unsupported)
     }
 }
 
@@ -791,11 +789,11 @@ fn run_wasm_core(
         None => &engine.create_single_use_wasm_component(wasm_executable)?,
     };
 
-    engine.print_wasm_component_exports_and_imports(&wasm_component)?;
+    engine.print_wasm_component_exports_and_imports(wasm_component)?;
 
     // Add wasi-cli libs to linker
     let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(engine.get_wasm_engine()?);
-    let mut wasm_linker = wasm_linker.allow_shadowing(true);
+    let wasm_linker = wasm_linker.allow_shadowing(true);
     // match wasm_linker.define_unknown_imports_as_traps(&wasm_component) {
     //     Ok(_) => {}
     //     Err(e) => {
@@ -811,7 +809,7 @@ fn run_wasm_core(
 
     // This is a custom linker method, adding only sync, non-io wasi dependencies.
     // If more deps are needed, add them in there!
-    match add_to_linker_gosh::<MyState>(&mut wasm_linker) {
+    match add_to_linker_gosh::<MyState>(wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(
             ExceptionCode::WasmLoadFail,
@@ -823,7 +821,7 @@ fn run_wasm_core(
 
     let f: fn(&mut MyState) -> &mut MyState = |s| s;
     // let f: fn(&mut MyState) -> &mut WasiImpl<IoImpl<&mut MyState>> = |t| t;
-    match Localworld::add_to_linker::<MyState, MyLibrary>(&mut wasm_linker, f) {
+    match Localworld::add_to_linker::<MyState, MyLibrary>(wasm_linker, f) {
         Ok(_) => {}
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to link IO Plugs {:?}", e)?,
     };
@@ -836,7 +834,7 @@ fn run_wasm_core(
     // linker {:?}", e)?, };
 
     // Instantiate WASM component. Will error if missing some wasm deps from linker
-    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
+    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, wasm_component) {
         Ok(instance) => instance,
         Err(e) => err!(
             ExceptionCode::WasmLoadFail,
@@ -851,12 +849,12 @@ fn run_wasm_core(
     for export in wasm_component.component_type().exports(engine.get_wasm_engine()?) {
         log::debug!("{:?}", export.0);
     }
-    let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
+    let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, wasm_instance_name);
     log::debug!("Instance Index {:?}", instance_index);
     let func_index = match wasm_instance.get_export_index(
         &mut wasm_store,
         instance_index.as_ref(),
-        &wasm_func_name,
+        wasm_func_name,
     ) {
         Some(index) => index,
         None => {
@@ -935,7 +933,7 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCREPCOEF"))?;
     fetch_stack(engine, 1)?;
-    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u128;
+    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?;
     let repcoef = repcoef_int(bkrt);
     engine.cc.stack.push(int!(repcoef));
     Ok(())
@@ -955,12 +953,12 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //Average ReputationCoef
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let mut repavg = repavgbig / 1_000_000_000;
-    let rbkmin;
-    if t <= TTMT - 1 {
-        rbkmin = rbkprev / 3 * 2; 
+
+    let rbkmin = if t <= TTMT - 1 {
+        rbkprev / 3 * 2
     } else {
-        rbkmin = 0;
-    }
+        0
+    };
     if drbkavg == 0 {
         drbkavg = 1;
     }
@@ -968,41 +966,41 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
         repavg = 1;
     }
     let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg / repavg).max(rbkmin)).min(rbkprev);
-    engine.cc.stack.push(int!(rbk as u128));
+    engine.cc.stack.push(int!(rbk));
     Ok(())
 }
 
 pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMMVREWARDADJ"))?;
     fetch_stack(engine, 5)?;
-    let is_bm = engine.cmd.var(0).as_bool()?; 
+    let is_bm = engine.cmd.var(0).as_bool()?;
     let t = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //time from network start
     let rbmprev = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //previous value of rewardadjustment (not minimum)
     let mut drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let rbmmin;
-    if t <= TTMT - 1 {
-        rbmmin = rbmprev / 3 * 2; 
+
+    let rbmmin = if t <= TTMT - 1 {
+        rbmprev / 3 * 2
     } else {
-        rbmmin = 0;
-    }   
-    let rbm;
+        0
+    };
+
     if drbmavg == 0 {
         drbmavg = 1;
     }
-    if is_bm {
-        rbm = (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
+    let rbm = if is_bm {
+        (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
     } else {
-        rbm = (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev);
-    }
-    engine.cc.stack.push(int!(rbm as u128));
+        (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
+    };
+    engine.cc.stack.push(int!(rbm));
     Ok(())
 }
 
 fn exp_neg_q32(v_q32: i64) -> i64 {
-    let n = (v_q32 >> 32) as usize;     
+    let n = (v_q32 >> 32) as usize;
     if n >= EXP_NEG_VAL_Q32.len() { return 0; }
-    let f = v_q32 & (ONE_Q32 - 1);  
+    let f = v_q32 & (ONE_Q32 - 1);
     let int_part  = EXP_NEG_VAL_Q32[n];
     let frac_part = horner_q32(f, &MAC_EXP_NEG_COEFF_Q32);
     ((int_part as i128 * frac_part as i128) >> 32) as i64
@@ -1031,7 +1029,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepers
     let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)?; //last calculated reward_adjustment
-    repcoef = repcoef / 1000000000;
+    repcoef /= 1000000000;
     let reward;
     if totalbkstake == 0 {
         if nbk == 0 {
@@ -1044,7 +1042,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     } else {
         reward = 0;
     }
-    engine.cc.stack.push(int!(reward as u128));
+    engine.cc.stack.push(int!(reward));
     Ok(())
 }
 
@@ -1056,19 +1054,19 @@ pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Sta
     let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?;
     let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let _pubkey_cell = engine.cmd.var(4).as_cell()?;
-    let reward;
-    if mbm >= TOTALSUPPLY / 10 || count_bm == 0 {
-        reward = 0;
+
+    let reward = if mbm >= TOTALSUPPLY / 10 || count_bm == 0 {
+        0
     } else {
-        reward = radj * depoch / count_bm;
-    }
-    engine.cc.stack.push(int!(reward as u128));
+        radj * depoch / count_bm
+    };
+    engine.cc.stack.push(int!(reward));
     Ok(())
 }
 
 fn calc_one_minus_fstk_q32_int(t: u128) -> u128 {
     let fstk_q32: i64 = if t > TTMT {
-        MAX_FREE_FLOAT_FRAC_Q32                         
+        MAX_FREE_FLOAT_FRAC_Q32
     } else {
         let v_q32 = ((UF_Q64 as i128 * t as i128 + (1 << 31)) >> 32) as i64;
         let diff_q32 = ONE_Q32 - exp_neg_q32(v_q32);
@@ -1086,14 +1084,14 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepersAtBlockStart
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
-    let sbkbase;
-    if mbkav != 0 {
+
+    let sbkbase = if mbkav != 0 {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-        sbkbase = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) / 2 / nbk as u128;
+        ((mbkav * one_minus_fstk_q32) >> 32) / 2 / nbk
     } else {
-        sbkbase = 0;
-    }
-    engine.cc.stack.push(int!(sbkbase as u128));
+        0
+    };
+    engine.cc.stack.push(int!(sbkbase));
     Ok(())
 }
 
@@ -1101,11 +1099,11 @@ pub(super) fn execute_calculate_min_stake_bm(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKEBM"))?;
     fetch_stack(engine, 2)?;
-    let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start 
+    let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start
     let mbkav = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-    let sbkmin = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) as u128;
-    engine.cc.stack.push(int!(sbkmin as u128));
+    let sbkmin = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32);
+    engine.cc.stack.push(int!(sbkmin));
     Ok(())
 }
 
@@ -1182,12 +1180,12 @@ fn _calculate_sum_boost_coefficients(
 fn _validate_byte_array(bytes: &[u8], name: &str) -> anyhow::Result<()> {
     if bytes.len() % 8 != 0 {
         anyhow::bail!(
-            "{}: byte length must be multiple of 8 (got {})", 
+            "{}: byte length must be multiple of 8 (got {})",
             name, bytes.len()
         );
     } else if bytes.len() > 8000 {
         anyhow::bail!(
-            "{}: byte length exceeds 8000 bytes (got {})", 
+            "{}: byte length exceeds 8000 bytes (got {})",
             name, bytes.len()
         );
     }
@@ -1199,9 +1197,9 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     fetch_stack(engine, 2)?;
     let _s = engine.cmd.var(0).as_cell()?;
     let _s1 = engine.cmd.var(1).as_cell()?;
-    
+
     let total_boost_coef_list_bytes: Vec<u8> = Vec::new();
-    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;   
+    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
 
     engine.cc.stack.push(StackItem::cell(cell));
     engine.cc.stack.push(int!(0));
@@ -1216,8 +1214,8 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     let y3 = 2_f64;
     let y4 = 8_f64;
     let k1 = 10_f64;
-    let k2 = 1.894163612445_f64;    
-    let k3 = 17.999995065464_f64;     
+    let k2 = 1.894163612445_f64;
+    let k3 = 17.999995065464_f64;
     let (token_value, _) = TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)
         .map_err(|e| exception!(ExceptionCode::TypeCheckError, "Failed to read cell s: {}", e))?;
     let transformed_users_per_item = match token_value {
@@ -1226,7 +1224,7 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     };
     validate_byte_array(transformed_users_per_item.as_slice(), "s")
         .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
-        
+
     let vec_u64: Vec<u64> = transformed_users_per_item
         .as_slice()
         .chunks_exact(8)
@@ -1244,14 +1242,14 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
     };
     validate_byte_array(glst_bytes.as_slice(), "s1")
         .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
-        
+
     let glst: Vec<u64> = glst_bytes
         .as_slice()
         .chunks_exact(8)
         .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    
+
     let total_boost_coef_list = calculate_sum_boost_coefficients(
         &mbnlst, x1, x2, x3, x4,
         y1, y2, y3, y4,
@@ -1264,7 +1262,7 @@ pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
         .flat_map(|val| val.to_le_bytes())
         .collect();
 
-    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;   
+    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?.into_cell()?;
     let total = mbnlst_orig.iter()
         .zip(glst)
         .map(|(&x, y)| u128::from(x) * u128::from(y))
@@ -1284,7 +1282,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     let _sum = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     let _radj = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
     let _depoch = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    engine.cc.stack.push(int!(0 as u128));
+    engine.cc.stack.push(int!(0_u128));
     Ok(())
     /*
     let u = mbn * g / sum;
@@ -1324,7 +1322,7 @@ pub(super) fn execute_send_to_dapp_config(engine: &mut Engine) -> Status {
 pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("GETAVAILABLEBALANCE"))?;
-    let mut balance = engine.get_available_credit();  
+    let mut balance = engine.get_available_credit();
     if balance < 0 {
         balance = 0;
     }

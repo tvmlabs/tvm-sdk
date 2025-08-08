@@ -117,7 +117,7 @@ impl BlockFields<'_> {
         self.0["id"].as_str().unwrap_or("")
     }
 
-    pub fn as_shard_ident(&self) -> ShardIdentFields {
+    pub fn as_shard_ident(&self) -> ShardIdentFields<'_> {
         ShardIdentFields(self.0)
     }
 
@@ -133,19 +133,19 @@ impl BlockFields<'_> {
         self.0["after_merge"].as_bool().unwrap_or(false)
     }
 
-    pub fn prev_ref(&self) -> Option<RefFields> {
+    pub fn prev_ref(&self) -> Option<RefFields<'_>> {
         self.0.get("prev_ref").map(RefFields)
     }
 
-    pub fn prev_alt_ref(&self) -> Option<RefFields> {
+    pub fn prev_alt_ref(&self) -> Option<RefFields<'_>> {
         self.0.get("prev_alt_ref").map(RefFields)
     }
 
-    pub fn master(&self) -> Option<MasterFields> {
+    pub fn master(&self) -> Option<MasterFields<'_>> {
         self.0.get("master").map(MasterFields)
     }
 
-    pub fn account_blocks(&self) -> Option<Vec<AccountBlockFields>> {
+    pub fn account_blocks(&self) -> Option<Vec<AccountBlockFields<'_>>> {
         self.0["account_blocks"].as_array().map(|x| x.iter().map(AccountBlockFields).collect())
     }
 
@@ -199,7 +199,7 @@ impl AccountBlockFields<'_> {
         self.0["account_addr"].as_str().unwrap_or("")
     }
 
-    pub fn transactions(&self) -> Option<Vec<AccountBlockTransactionFields>> {
+    pub fn transactions(&self) -> Option<Vec<AccountBlockTransactionFields<'_>>> {
         self.0["transactions"]
             .as_array()
             .map(|x| x.iter().map(AccountBlockTransactionFields).collect())
@@ -225,11 +225,11 @@ impl DescrFields<'_> {
 pub(crate) struct ShardHashFields<'a>(&'a Value);
 
 impl ShardHashFields<'_> {
-    pub fn as_shard_ident(&self) -> ShardIdentFields {
+    pub fn as_shard_ident(&self) -> ShardIdentFields<'_> {
         ShardIdentFields(self.0)
     }
 
-    pub fn descr(&self) -> Option<DescrFields> {
+    pub fn descr(&self) -> Option<DescrFields<'_>> {
         self.0.get("descr").map(DescrFields)
     }
 }
@@ -237,7 +237,7 @@ impl ShardHashFields<'_> {
 pub(crate) struct MasterFields<'a>(&'a Value);
 
 impl MasterFields<'_> {
-    pub fn shard_hashes(&self) -> Option<Vec<ShardHashFields>> {
+    pub fn shard_hashes(&self) -> Option<Vec<ShardHashFields<'_>>> {
         self.0["shard_hashes"].as_array().map(|x| x.iter().map(ShardHashFields).collect())
     }
 }

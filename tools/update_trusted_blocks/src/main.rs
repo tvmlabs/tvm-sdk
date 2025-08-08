@@ -144,8 +144,8 @@ async fn main() -> Result<()> {
         let endpoint = with_project(network).to_owned();
         let value = query_network_keyblocks(
             endpoint,
-            zs_root_hash.clone(),
-            trusted_key_blocks.remove(&zs_root_hash.clone().inner()),
+            zs_root_hash,
+            trusted_key_blocks.remove(&zs_root_hash.inner()),
         )
         .await?;
         trusted_key_blocks.insert(zs_root_hash.inner(), value);

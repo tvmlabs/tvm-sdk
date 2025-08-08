@@ -783,7 +783,7 @@ impl ServerLink {
         let result = self
             .client_env
             .fetch(
-                &url.to_string(),
+                url.as_ref(),
                 FetchMethod::Get,
                 Some(headers),
                 None,

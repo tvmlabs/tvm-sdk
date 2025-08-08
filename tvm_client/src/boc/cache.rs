@@ -160,7 +160,7 @@ impl Bocs {
                     entry.pins.remove(pin);
                 }
                 if entry.pins.is_empty() {
-                    to_remove.push(key.clone());
+                    to_remove.push(*key);
                 }
             }
         }
@@ -187,7 +187,7 @@ impl Bocs {
                 .ok_or(Error::insufficient_cache_size(self.max_cache_size, size))?;
             lock.cache_size -= entry.size;
         }
-        lock.bocs.put(hash.clone(), InnerCachedBoc { cell, size });
+        lock.bocs.put(hash, InnerCachedBoc { cell, size });
         lock.cache_size += size;
 
         Ok(())
@@ -255,13 +255,13 @@ impl Bocs {
         let hash = cell.repr_hash();
         log::debug!("Bocs::add {:x}", hash);
         match cache_type {
-            BocCacheType::Pinned { pin } => self.add_new_pinned(hash.clone(), pin, cell),
+            BocCacheType::Pinned { pin } => self.add_new_pinned(hash, pin, cell),
             BocCacheType::Unpinned => {
                 if self.get_cached(&hash).is_some() {
                     return Ok(hash);
                 }
                 let size = size.unwrap_or_else(|| calc_tree_size(&cell));
-                self.add_cached(hash.clone(), cell, size)?;
+                self.add_cached(hash, cell, size)?;
             }
         }
         Ok(hash)

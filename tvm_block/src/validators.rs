@@ -549,7 +549,7 @@ impl ValidatorSet {
                 subset.push(ValidatorDescr::with_params(
                     next_validator.public_key.clone(),
                     1, // NB: shardchain validator lists have all weights = 1
-                    next_validator.adnl_addr.clone(),
+                    next_validator.adnl_addr,
                     next_validator.bls_public_key,
                 ));
                 debug_assert!(weight_remainder >= next_validator.weight);

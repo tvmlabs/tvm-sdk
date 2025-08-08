@@ -89,7 +89,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut now = Instant::now();
 
         let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
+            Some(AccountState::AccountUninit) => false,
             None => false,
             _ => true,
         };
@@ -177,7 +177,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     }
                     exchanged = true;
                 }
-            } 
+            }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
         if !ihr_delivered {
@@ -312,7 +312,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             ..Default::default()
         };
         smc_info.calc_rand_seed(
-            params.seed_block.clone(),
+            params.seed_block,
             &account_address.address().get_bytestring(0),
         );
         let mut stack = Stack::new();
@@ -366,7 +366,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     {
                         if !is_previous_state_active {
                             if let Some(header) = in_msg.int_header() {
-                                header.src_dapp_id().clone()
+                                *header.src_dapp_id()
                             } else {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
@@ -376,7 +376,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     } else {
                         None
                     };
-                    let minted_shell_orig = minted_shell.clone();
+                    let minted_shell_orig = *minted_shell;
                     match self.action_phase_with_copyleft(
                         &mut tr,
                         account,
@@ -394,8 +394,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
-                            if phase.success == false {
-                                *minted_shell = minted_shell_orig.clone();
+                            if !phase.success {
+                                *minted_shell = minted_shell_orig;
                             }
                             out_msgs = messages;
                             if let Some(copyleft_reward) = &copyleft_reward {
@@ -405,7 +405,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             Some(phase)
                         }
                         Err(e) => {
-                                *minted_shell = minted_shell_orig.clone();
+                                *minted_shell = minted_shell_orig;
                                 fail!(ExecutorError::TrExecutorError(format!(
                                     "cannot create action phase of a new transaction for smart contract for reason {}",
                                     e
@@ -461,7 +461,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 true
             }
         };
-        
+
         if description.aborted && !is_ext_msg && bounce {
             msg_balance = original_msg_balance.clone();
             if exchanged {
@@ -469,16 +469,16 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 add_value.set_other(2, msg_balance_convert.into())?;
                 if Grams::from(msg_balance_convert) > acc_balance.grams {
                     acc_balance.grams = Grams::zero();
-                    acc_balance.add(&add_value)?;     
+                    acc_balance.add(&add_value)?;
                 } else {
                     acc_balance.grams -= Grams::from(msg_balance_convert);
-                    acc_balance.add(&add_value)?;     
+                    acc_balance.add(&add_value)?;
                 }
             }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
-                log::debug!(target: "executor", "bounce_phase");     
+                log::debug!(target: "executor", "bounce_phase");
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,

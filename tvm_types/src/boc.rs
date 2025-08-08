@@ -87,7 +87,7 @@ impl OrderedCellsStorage for SimpleOrderedCellsStorage {
     fn push_cell(&mut self, hash: &UInt256) -> Result<()> {
         self.cells.get_mut(hash).ok_or_else(|| error!("Can't find cell with hash {:x}", hash))?.1 =
             self.sorted_rev.len() as u32;
-        self.sorted_rev.push(hash.clone());
+        self.sorted_rev.push(*hash);
         Ok(())
     }
 
