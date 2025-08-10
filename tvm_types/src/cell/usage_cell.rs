@@ -1,27 +1,72 @@
-use std::collections::HashSet;
-use std::sync::Arc;
-use std::sync::Weak;
-
 use crate::Cell;
 use crate::CellImpl;
 use crate::CellType;
 use crate::LevelMask;
 use crate::UInt256;
+use std::collections::{HashMap, HashSet};
+use std::hash::{BuildHasher, Hasher};
+use std::mem;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+
+#[derive(Default, Clone)]
+pub struct UInt256HashBuilder;
+
+impl BuildHasher for UInt256HashBuilder {
+    type Hasher = UInt256Hasher;
+
+    fn build_hasher(&self) -> UInt256Hasher {
+        UInt256Hasher { hash: 0 }
+    }
+}
+
+#[derive(Default)]
+pub struct UInt256Hasher {
+    hash: u64,
+}
+
+impl Hasher for UInt256Hasher {
+    fn finish(&self) -> u64 {
+        self.hash
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        self.hash = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
+    }
+
+    fn write_u64(&mut self, i: u64) {
+        self.hash = i;
+    }
+}
+
+type VisitedSet = Arc<(AtomicBool, parking_lot::Mutex<HashSet<UInt256, UInt256HashBuilder>>)>;
+type VisitedMap = Arc<(AtomicBool, parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>)>;
+
+#[derive(Clone)]
+enum Visited {
+    Set(VisitedSet),
+    Map(VisitedMap),
+}
+
+impl Visited {
+    fn is_enabled(&self) -> bool {
+        match &self {
+            Visited::Set(visited) => visited.0.load(std::sync::atomic::Ordering::Acquire),
+            Visited::Map(visited) => visited.0.load(std::sync::atomic::Ordering::Acquire),
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct UsageCell {
     cell: Cell,
     visit_on_load: bool,
-    visited: Weak<lockfree::map::Map<UInt256, Cell>>,
+    visited: Visited,
     usage_level: u64,
 }
 
 impl UsageCell {
-    fn new(
-        inner: Cell,
-        visit_on_load: bool,
-        visited: Weak<lockfree::map::Map<UInt256, Cell>>,
-    ) -> Self {
+    fn new(inner: Cell, visit_on_load: bool, visited: Visited) -> Self {
         let usage_level = inner.usage_level() + 1;
         assert!(usage_level <= 1, "Nested usage cells can cause stack overflow");
         let cell = Self { cell: inner, visit_on_load, visited, usage_level };
@@ -32,11 +77,21 @@ impl UsageCell {
     }
 
     fn visit(&self) -> bool {
-        if let Some(visited) = self.visited.upgrade() {
-            visited.insert(self.cell.repr_hash(), self.cell.clone());
-            return true;
+        match &self.visited {
+            Visited::Set(visited) => {
+                if !visited.0.load(std::sync::atomic::Ordering::Acquire) {
+                    return false;
+                }
+                visited.1.lock().insert(self.cell.repr_hash());
+            }
+            Visited::Map(visited) => {
+                if !visited.0.load(std::sync::atomic::Ordering::Acquire) {
+                    return false;
+                }
+                visited.1.lock().insert(self.cell.repr_hash(), self.cell.clone());
+            }
         }
-        false
+        true
     }
 }
 
@@ -64,7 +119,7 @@ impl CellImpl for UsageCell {
     }
 
     fn reference(&self, index: usize) -> crate::Result<Cell> {
-        if self.visit_on_load && self.visited.upgrade().is_some() || self.visit() {
+        if self.visit_on_load && self.visited.is_enabled() || self.visit() {
             let cell = self.cell.reference(index)?;
             let cell = if cell.is_usage_cell() { cell.downcast_usage() } else { cell };
             Ok(Cell::with_usage(UsageCell::new(cell, self.visit_on_load, self.visited.clone())))
@@ -122,27 +177,35 @@ impl CellImpl for UsageCell {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct UsageTree {
     root: Cell,
-    visited: Arc<lockfree::map::Map<UInt256, Cell>>,
+    visited: VisitedMap,
+}
+
+impl Drop for UsageTree {
+    fn drop(&mut self) {
+        self.visited.0.store(false, std::sync::atomic::Ordering::Release);
+    }
 }
 
 impl UsageTree {
     pub fn with_root(root: Cell) -> Self {
-        let visited = Arc::new(lockfree::map::Map::new());
-        let root = Cell::with_usage(UsageCell::new(root, false, Arc::downgrade(&visited)));
-        Self { root, visited }
+        Self::with_params(root, false)
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
-        let visited = Arc::new(lockfree::map::Map::new());
-        let root = Cell::with_usage(UsageCell::new(root, visit_on_load, Arc::downgrade(&visited)));
+        let visited = Arc::new((
+            AtomicBool::new(true),
+            parking_lot::Mutex::new(HashMap::<_, _, _>::default()),
+        ));
+        let root =
+            Cell::with_usage(UsageCell::new(root, visit_on_load, Visited::Map(visited.clone())));
         Self { root, visited }
     }
 
     pub fn use_cell(&self, cell: Cell, visit_on_load: bool) -> Cell {
-        let usage_cell = UsageCell::new(cell, visit_on_load, Arc::downgrade(&self.visited));
+        let usage_cell = UsageCell::new(cell, visit_on_load, Visited::Map(self.visited.clone()));
         usage_cell.visit();
         Cell::with_usage(usage_cell)
     }
@@ -158,28 +221,39 @@ impl UsageTree {
     }
 
     pub fn contains(&self, hash: &UInt256) -> bool {
-        self.visited.get(hash).is_some()
+        self.visited.1.lock().contains_key(hash)
     }
 
     pub fn build_visited_subtree(
         &self,
         is_include: &impl Fn(&UInt256) -> bool,
     ) -> crate::Result<HashSet<UInt256>> {
+        Self::build_visited_subtree_inner(&self.visited.1.lock(), is_include)
+    }
+
+    fn build_visited_subtree_inner(
+        visited: &HashMap<UInt256, Cell, UInt256HashBuilder>,
+        is_include: &impl Fn(&UInt256) -> bool,
+    ) -> crate::Result<HashSet<UInt256>> {
         let mut subvisited = HashSet::new();
-        for guard in self.visited.iter() {
-            if is_include(guard.key()) {
-                self.visit_subtree(guard.val(), &mut subvisited)?
+        for (hash, cell) in visited.iter() {
+            if is_include(hash) {
+                Self::visit_subtree(visited, cell, &mut subvisited)?
             }
         }
         Ok(subvisited)
     }
 
-    fn visit_subtree(&self, cell: &Cell, subvisited: &mut HashSet<UInt256>) -> crate::Result<()> {
+    fn visit_subtree(
+        visited: &HashMap<UInt256, Cell, UInt256HashBuilder>,
+        cell: &Cell,
+        subvisited: &mut HashSet<UInt256>,
+    ) -> crate::Result<()> {
         if subvisited.insert(cell.repr_hash()) {
             for i in 0..cell.references_count() {
                 let child_hash = cell.reference_repr_hash(i)?;
-                if let Some(guard) = self.visited.get(&child_hash) {
-                    self.visit_subtree(guard.val(), subvisited)?
+                if let Some(child) = visited.get(&child_hash) {
+                    Self::visit_subtree(visited, child, subvisited)?
                 }
             }
         }
@@ -188,9 +262,55 @@ impl UsageTree {
 
     pub fn build_visited_set(&self) -> HashSet<UInt256> {
         let mut visited = HashSet::new();
-        for guard in self.visited.iter() {
-            visited.insert(guard.key().clone());
+        for hash in self.visited.1.lock().keys() {
+            visited.insert(hash.clone());
         }
         visited
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct UsageSet {
+    root: Cell,
+    visited: VisitedSet,
+}
+
+impl Drop for UsageSet {
+    fn drop(&mut self) {
+        self.visited.0.store(false, std::sync::atomic::Ordering::Release);
+    }
+}
+
+impl UsageSet {
+    pub fn with_root(root: Cell) -> Self {
+        Self::with_params(root, false)
+    }
+
+    pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
+        let visited = Arc::new((
+            AtomicBool::new(true),
+            parking_lot::Mutex::new(HashSet::<UInt256, UInt256HashBuilder>::default()),
+        ));
+        let root =
+            Cell::with_usage(UsageCell::new(root, visit_on_load, Visited::Set(visited.clone())));
+        Self { root, visited }
+    }
+
+    pub fn use_cell(&self, cell: Cell, visit_on_load: bool) -> Cell {
+        let usage_cell = UsageCell::new(cell, visit_on_load, Visited::Set(self.visited.clone()));
+        usage_cell.visit();
+        Cell::with_usage(usage_cell)
+    }
+
+    pub fn root_cell(&self) -> Cell {
+        self.root.clone()
+    }
+
+    pub fn build_visited_set(&self) -> HashSet<UInt256, UInt256HashBuilder> {
+        self.visited.1.lock().clone()
+    }
+
+    pub fn take_visited_set(&mut self) -> HashSet<UInt256, UInt256HashBuilder> {
+        mem::take(&mut self.visited.1.lock())
     }
 }
