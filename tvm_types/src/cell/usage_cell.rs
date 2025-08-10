@@ -314,3 +314,52 @@ impl UsageSet {
         mem::take(&mut self.visited.1.lock())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{Cell, UsageTree, read_single_root_boc};
+    #[test]
+    fn test_usage_cell_speed() {
+        let original_bytes =
+            std::fs::read("../tvm_block/src/tests/data/block_with_ss/shard-states/571524").unwrap();
+        let original = read_single_root_boc(&original_bytes).unwrap();
+        // Original tree has 37395 cells
+        let micros = traverse_cell(&original, 0);
+        println!("No usage   micros: {micros}");
+        let micros = traverse_cell(&original, 1000);
+        println!("1000 usage micros: {micros}");
+        let micros = traverse_cell(&original, 10000000);
+        println!("Full usage micros: {micros}");
+    }
+
+    fn traverse_cell(cell: &Cell, drop_usage_tree_after: usize) -> usize {
+        let start = std::time::Instant::now();
+        for _ in 0..1000 {
+            let mut usage = Some(UsageTree::with_root(cell.clone()));
+            let usage_root = usage.as_ref().map(|x| x.root_cell()).unwrap();
+            let mut visited_cells = 0;
+            traverse_cell_inner(
+                if drop_usage_tree_after > 0 { &usage_root } else { cell },
+                &mut visited_cells,
+                &mut usage,
+                drop_usage_tree_after,
+            );
+        }
+        start.elapsed().as_micros() as usize
+    }
+
+    fn traverse_cell_inner(
+        cell: &Cell,
+        visited_cells: &mut usize,
+        usage_tree: &mut Option<UsageTree>,
+        drop_usage_tree_after: usize,
+    ) {
+        *visited_cells += 1;
+        if *visited_cells == drop_usage_tree_after {
+            *usage_tree = None;
+        }
+        for child in cell.clone_references() {
+            traverse_cell_inner(&child, visited_cells, usage_tree, drop_usage_tree_after);
+        }
+    }
+}
