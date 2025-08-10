@@ -34,23 +34,16 @@ use rand::Rng;
 
 fn determinism(its: usize) -> Vec<u8> {
     let iterations = its.into();
-    let mut results = Vec::with_capacity(iterations);
-    let mut r = [1f64];
+    let mut results = Vec::<u8>::with_capacity(iterations);
 
     for _ in 0..iterations {
         // Use floating point arithmetic with tiny imprecisions
-        r[0] = rand::thread_rng().gen_range(1..=100).into();
+        // r[0] = rand::thread_rng().gen_range(1..=100).into();
 
         // Perform some non-deterministic arithmetic operations
-        results.push(r[0].clone());
+        results.push(rand::thread_rng().gen_range(1..=255).into());
     }
-    let mut result_vec = Vec::<u8>::with_capacity(1000);
-    for r in results {
-        result_vec.append(&mut r.to_le_bytes().to_vec());
-    }
-    let mut act_res = [result_vec[0]].to_vec();
-    act_res.push(*result_vec.last().unwrap());
-    act_res
+    results
 }
 
 bindings::export!(Component with_types_in bindings);

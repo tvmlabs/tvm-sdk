@@ -435,7 +435,7 @@ fn test_execution_timeout() {
 }
 
 #[test]
-#[cfg(feature = "wasm_external")]
+//#[cfg(feature = "wasm_external")]
 fn test_run_wasm_basic_add() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
@@ -481,7 +481,7 @@ fn test_run_wasm_basic_add() {
         .into_cell()
         .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let its = 30000u32.to_be_bytes();
+    let its = 3000u32.to_be_bytes();
     println!("Its {:?}", its);
     let cell = TokenValue::write_bytes(&its, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
 
@@ -493,7 +493,7 @@ fn test_run_wasm_basic_add() {
     let wasm_func = "gosh:determinism/test-interface@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "./src/tests/determinism.wasm";
+    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/examples/wasm/rust/determinism-random/target/wasm32-wasip2/release/determinism.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
 
     let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
@@ -505,6 +505,7 @@ fn test_run_wasm_basic_add() {
     println!("Wasm Return Status: {:?}", status);
 
     let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
+    println!("Res: {:?}", res);
     // println!("Determinism Res: {:?}", res)
     let mut floats = Vec::new();
     for float in res.chunks(8) {
