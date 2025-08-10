@@ -10,6 +10,9 @@
 // limitations under the License.
 //
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::de::Error;
@@ -69,13 +72,14 @@ pub struct PostRequest {
 pub struct ExtMessage {
     pub id: String,
     pub body: String,
-    pub expireAt: Option<f64>,
-    pub threadId: Option<String>,
+    pub expire_at: Option<f64>,
+    pub thread_id: Option<String>,
+    pub ext_message_token: Option<Value>,
 }
 
 impl ExtMessage {
     pub fn set_thread_id(&mut self, thread_id: Option<String>) {
-        self.threadId = thread_id;
+        self.thread_id = thread_id;
     }
 }
 
@@ -508,13 +512,6 @@ impl GraphQLQuery {
         let query = "mutation postRequests($requests:[Request]){postRequests(requests:$requests)}"
             .to_owned();
         let variables = Some(json!({ "requests": serde_json::json!(requests) }));
-        Self { query, variables, timeout: None, is_batch: false }
-    }
-
-    pub fn with_send_message(message: &ExtMessage) -> Self {
-        let query = "mutation sendMessage($message:ExtMessage){sendMessage(message:$message){block_hash tx_hash message_hash ext_out_msgs thread_id aborted exit_code producers current_time}}"
-            .to_owned();
-        let variables = Some(json!({ "message": serde_json::json!(message) }));
         Self { query, variables, timeout: None, is_batch: false }
     }
 

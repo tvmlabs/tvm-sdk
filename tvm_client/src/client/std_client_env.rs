@@ -9,7 +9,11 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
+use std::error::Error as StdError;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -221,11 +225,18 @@ impl ClientEnv {
         if let Some(headers) = headers {
             request = request.headers(Self::string_map_to_header_map(headers)?);
         }
+
         if let Some(body) = body {
             request = request.body(body);
         }
 
-        let response = request.send().await.map_err(Error::http_request_send_error)?;
+        // let response = request.send().await.map_err(Error::http_request_send_error)?;
+        let result = request.send().await;
+        if let Err(e) = result {
+            return Err(Error::http_request_send_error(Self::flatten_error(e, url)));
+        }
+
+        let response = result.unwrap();
 
         Ok(FetchResult {
             headers: Self::header_map_to_string_map(response.headers()),
@@ -234,6 +245,17 @@ impl ClientEnv {
             remote_address: response.remote_addr().map(|x| x.to_string()),
             body: response.text().await.map_err(Error::http_request_parse_error)?,
         })
+    }
+
+    pub fn flatten_error(err: impl StdError + 'static, url: &str) -> anyhow::Error {
+        let mut parts = vec![err.to_string()];
+        let mut source = err.source();
+        while let Some(src) = source {
+            parts.push(src.to_string());
+            source = src.source();
+        }
+        parts.push(format!("{}", url));
+        anyhow::Error::msg(parts.join(": "))
     }
 }
 

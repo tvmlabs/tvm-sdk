@@ -10,8 +10,12 @@
 // limitations under the License.
 //
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::sync::Arc;
 
+use serde::Deserialize;
 use serde_json::Value;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
@@ -24,7 +28,6 @@ use crate::boc::internal::DeserializedObject;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
 use crate::encoding::base64_decode;
-use crate::encoding::hex_decode;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 use crate::processing::Error;
@@ -122,6 +125,7 @@ impl SendingMessage {
     ) -> ClientResult<Self> {
         // Check message
         let deserialized = deserialize_object_from_boc::<Message>(context, serialized, "message")?;
+
         let id = deserialized.cell.repr_hash().as_hex_string();
         let dst = deserialized.object.dst().ok_or(Error::message_has_not_destination_address())?;
 
@@ -134,16 +138,15 @@ impl SendingMessage {
         }
         let body = base64_decode(serialized)?;
         let thread_id = match thread_id {
-            Some(t) => ThreadIdentifier::try_from(t).unwrap_or_default(),
+            Some(t) => ThreadIdentifier::try_from(t).map_err(Error::invalid_thread)?,
             None => ThreadIdentifier::default(),
         };
         Ok(Self { serialized: serialized.to_string(), deserialized, id, body, dst, thread_id })
     }
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
-        let net = context.get_server_link()?;
-        let endpoint = net.state().get_query_endpoint().await?;
-        net.send_message(&hex_decode(&self.id)?, &self.body, Some(&endpoint), self.thread_id).await
+        let server_link: &crate::net::ServerLink = context.get_server_link()?;
+        server_link.send_message(&self.id, &self.body, self.thread_id).await
     }
 }
 
@@ -155,28 +158,36 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
     let message =
         SendingMessage::new(&context, &params.message, params.abi.as_ref(), params.thread_id)?;
 
-    let result = message.send(&context).await?;
+    let raw_result = message.send(&context).await?;
 
-    if let Some(data) = result.get("data").and_then(|d| d.get("sendMessage")) {
-        let mut res: ResultOfSendMessage =
-            serde_json::from_value(data.clone()).map_err(Error::invalid_data)?;
-        if let Some(abi) = params.abi {
-            if let Ok(ext_out_msgs) = data.get_array("ext_out_msgs") {
-                let msgs: Option<Vec<Value>> = ext_out_msgs
-                    .iter()
-                    .map(|body| decode_send_message_result(&context, abi.clone(), body))
-                    .filter(|v| v.is_some())
-                    .collect();
+    match raw_result.get("result") {
+        Some(result_value) if !result_value.is_null() => {
+            let mut res: ResultOfSendMessage =
+                serde_json::from_value(result_value.clone()).map_err(Error::invalid_data)?;
 
-                res.return_value = msgs.and_then(|v| v.into_iter().next());
+            if let Some(abi) = params.abi {
+                if let Ok(ext_out_msgs) = result_value.get_array("ext_out_msgs") {
+                    let msgs = ext_out_msgs
+                        .iter()
+                        .filter_map(|body| decode_send_message_result(&context, abi.clone(), body))
+                        .collect::<Vec<_>>();
+
+                    res.return_value = msgs.into_iter().next();
+                }
             }
-        }
 
-        Ok(res)
-    } else {
-        let err: ClientError =
-            serde_json::from_value(result["error"].clone()).map_err(Error::invalid_data)?;
-        Err(err)
+            Ok(res)
+        }
+        _ => {
+            let err: ClientError = serde_json::from_value(
+                raw_result
+                    .get("error")
+                    .cloned()
+                    .ok_or_else(|| Error::invalid_data("Missing `error` field"))?,
+            )
+            .map_err(Error::invalid_data)?;
+            Err(err)
+        }
     }
 }
 
@@ -196,4 +207,173 @@ pub fn decode_send_message_result(
         })
         .filter(|decoded| decoded.body_type == crate::abi::MessageBodyType::Output)
         .and_then(|decoded| decoded.value)
+}
+
+#[cfg(test)]
+mod test {
+    use std::net::IpAddr;
+    use std::net::SocketAddr;
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use axum::Json;
+    use axum::Router;
+    use axum::body::Body;
+    use axum::response::IntoResponse;
+    use axum::routing::post;
+    use if_addrs::get_if_addrs;
+    use serde_json::json;
+    use tokio::task::JoinHandle;
+
+    use crate::ClientConfig;
+    use crate::ClientContext;
+    use crate::error::ClientError;
+    use crate::net::NetworkConfig;
+    use crate::processing::send_message::SendingMessage;
+
+    // This helper function gets the external IP address of the host, for example
+    // 192.168.1.20. For our test, we can use this address in addition to the
+    // loopback interface.
+    fn get_ext_ip() -> Option<IpAddr> {
+        let addrs = get_if_addrs().ok()?;
+        for iface in addrs {
+            let ip = iface.ip();
+            if let IpAddr::V4(ipv4) = ip {
+                let octets = ipv4.octets();
+                if ipv4.is_loopback() {
+                    continue;
+                }
+                if octets[0] == 198 && (octets[1] == 18 || octets[1] == 19) {
+                    continue;
+                }
+                return Some(IpAddr::V4(ipv4));
+            }
+        }
+        None
+    }
+
+    async fn mock_server(socket_addr: SocketAddr) -> JoinHandle<()> {
+        let socket_addr_clone = socket_addr.to_string();
+        let app = Router::new().route(
+            "/v2/messages",
+            post(|_body: Body| async move {
+                if socket_addr_clone == "127.0.0.1:9000" {   
+                    let resp_json =  json!({
+                        "result": null,
+                        "error": {
+                            "code": "WRONG_PRODUCER",
+                            "message": "Resend message to the active Block Producer",
+                            "data": {
+                                "producers": vec![format!("{}:8600", get_ext_ip().unwrap().to_string())],
+                                "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
+                                "exit_code": null,
+                                "current_time": "1748084498461",
+                                "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000"
+                            }
+                        },
+                        "block_manager": {
+                            "license_address": "0:8e8dad0462a4d5c528e18251846f24bc5c04cd1871115fb1e9b00c9741f60800",
+                            "token": {
+                                "unsigned": "1748084798476",
+                                "signature": "c0c4fc73a9bab0f9d648eb1c2402d21a44559bf2a4b24f735f55a384d3a3914cbe2c9d1ed403ef548dded51c62510581b0dad96891ac6fa16af8687c7586b901",
+                                "verifying_key": "e2c9d4be54d342d3f0e6394a7738fc39b93d4fe3fdba317aa699f7305566de2b"
+                            }
+                        }
+                    });
+
+                    Json(resp_json).into_response()
+                } else {
+                    Json(json!({"my_addr": socket_addr_clone})).into_response()
+                }
+            }),
+        );
+
+        let listener = tokio::net::TcpListener::bind(socket_addr).await.unwrap();
+        let handle = tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        // Allow the Axum server to start before continuing testing.
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        handle
+    }
+
+    fn create_message(context: &Arc<ClientContext>) -> Result<SendingMessage, ClientError> {
+        let boc = "te6ccgEBBQEA3gABRYgB0sAot7nO81FRdsdro5q5hNKjB6k6k6N0XXZSSbXxTUoMAQHh4AxQHiMp1/uMXYuNfGnJTSsq1DVvVlzApSGJkiF2orMR7b4l5EDxyH+tSUgEiCa+PjBmLMDnpf5H6LU1nLxSAcWYRhwySlz8mR2+azk8IhaQSMlY/kcFs4BX0+ppdawTwAAAZf1xorQaHASN34I/2WACAmWAHADCv78M71zAKAvf+gThFn5J+iUYEGTkeR5uVkByCnogAAAAAAAAAAAAAAAAAAAAEAwEAwAAABGgAAAAAhg9CQQ=";
+        SendingMessage::new(context, boc, None, None)
+    }
+
+    #[tokio::test]
+    async fn test_send_message_success() {
+        let handle_0 = mock_server("127.0.0.1:8600".parse().unwrap()).await;
+        let handle_1 = mock_server("127.0.0.1:9000".parse().unwrap()).await;
+
+        let external_ip: IpAddr = get_ext_ip().unwrap();
+        let external_socket = SocketAddr::new(external_ip, 8600);
+        let handle_2 = mock_server(external_socket).await;
+
+        // 1. Localhost ip, no port
+        {
+            let config = ClientConfig {
+                network: NetworkConfig {
+                    endpoints: Some(vec!["http://127.0.0.1".to_string()]),
+                    api_token: Some("secret".to_string()),
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let client = Arc::new(ClientContext::new(config.clone()).unwrap());
+            let message = create_message(&client).unwrap();
+            let result = message.send(&client).await;
+            assert_eq!(
+                result.unwrap().to_string(),
+                json!( {"my_addr": "127.0.0.1:8600"}).to_string()
+            );
+        }
+
+        // 2. external_ip:8600.
+        {
+            let config = ClientConfig {
+                network: NetworkConfig {
+                    endpoints: Some(vec![format!("{external_ip}:8600")]),
+                    api_token: Some("secret".to_string()),
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let client = Arc::new(ClientContext::new(config.clone()).unwrap());
+            let message = create_message(&client).unwrap();
+            let result = message.send(&client).await;
+
+            assert!(result.is_ok());
+            assert_eq!(
+                result.unwrap().to_string(),
+                json!({"my_addr":  format!("{}:8600", get_ext_ip().unwrap())}).to_string()
+            );
+        }
+
+        // 3. Localhost ip, specific port.
+        // This server must redirect the client to external_ip:8600
+        {
+            let config = ClientConfig {
+                network: NetworkConfig {
+                    endpoints: Some(vec!["127.0.0.1:9000".to_string()]),
+                    api_token: Some("secret".to_string()),
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let client = Arc::new(ClientContext::new(config.clone()).unwrap());
+            let message = create_message(&client).unwrap();
+            let result = message.send(&client).await;
+
+            assert!(result.is_ok());
+            assert_eq!(
+                result.unwrap().to_string(),
+                json!({"my_addr":  format!("{}:8600", get_ext_ip().unwrap())}).to_string()
+            );
+        }
+        handle_0.abort();
+        handle_1.abort();
+        handle_2.abort();
+    }
 }

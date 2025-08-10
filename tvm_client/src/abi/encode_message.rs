@@ -4,6 +4,7 @@ use std::sync::Arc;
 use serde_json::Value;
 use tvm_abi::Contract;
 use tvm_block::CurrencyCollection;
+use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
 use tvm_sdk::ContractImage;
 use tvm_sdk::FunctionCallSet;
@@ -308,6 +309,7 @@ fn encode_deploy(
     pubkey: Option<&str>,
     signer: &Signer,
     processing_try_index: Option<u8>,
+    src_address: MsgAddressExt,
 ) -> ClientResult<(Vec<u8>, Option<Vec<u8>>, MsgAddressInt)> {
     let address = image.msg_address(workchain);
     Ok(match signer {
@@ -323,6 +325,7 @@ fn encode_deploy(
                 image,
                 None,
                 workchain,
+                src_address,
             )
             .map_err(|err| Error::encode_run_message_failed(err, Some(&call_set.function_name)))?;
             (message.serialized_message, None, address)
@@ -338,6 +341,7 @@ fn encode_deploy(
                 )?,
                 image,
                 workchain,
+                src_address,
             )
             .map_err(Error::encode_deploy_message_failed)?;
             (unsigned.message, Some(unsigned.data_to_sign), address)
@@ -375,10 +379,12 @@ fn encode_int_deploy(
 fn encode_empty_deploy(
     image: ContractImage,
     workchain: i32,
+    src_address: MsgAddressExt,
 ) -> ClientResult<(Vec<u8>, Option<Vec<u8>>, MsgAddressInt)> {
     let address = image.msg_address(workchain);
-    let message = tvm_sdk::Contract::construct_deploy_message_no_constructor(image, workchain)
-        .map_err(Error::encode_deploy_message_failed)?;
+    let message =
+        tvm_sdk::Contract::construct_deploy_message_no_constructor(image, workchain, src_address)
+            .map_err(Error::encode_deploy_message_failed)?;
 
     Ok((
         tvm_sdk::Contract::serialize_message(&message)
@@ -423,14 +429,16 @@ fn encode_run(
     call_set: &CallSet,
     pubkey: Option<&str>,
     processing_try_index: Option<u8>,
+    src_address: MsgAddressExt,
 ) -> ClientResult<(Vec<u8>, Option<Vec<u8>>, MsgAddressInt)> {
-    let address =
+    let dst_address_str =
         params.address.as_ref().ok_or(Error::required_address_missing_for_encode_message())?;
-    let address = account_decode(address)?;
+    let dst_address = account_decode(dst_address_str)?;
     Ok(match params.signer {
         Signer::None => {
             let message = tvm_sdk::Contract::construct_call_ext_in_message_json(
-                address.clone(),
+                dst_address.clone(),
+                src_address,
                 &call_set.to_function_call_set(
                     pubkey,
                     processing_try_index,
@@ -441,11 +449,12 @@ fn encode_run(
                 None,
             )
             .map_err(|err| Error::encode_run_message_failed(err, Some(&call_set.function_name)))?;
-            (message.serialized_message, None, address)
+            (message.serialized_message, None, dst_address)
         }
         _ => {
             let unsigned = tvm_sdk::Contract::get_call_message_bytes_for_signing(
-                address.clone(),
+                dst_address.clone(),
+                src_address,
                 &call_set.to_function_call_set(
                     pubkey,
                     processing_try_index,
@@ -456,7 +465,7 @@ fn encode_run(
             )
             .map_err(|err| Error::encode_run_message_failed(err, Some(&call_set.function_name)))?;
 
-            (unsigned.message, Some(unsigned.data_to_sign), address)
+            (unsigned.message, Some(unsigned.data_to_sign), dst_address)
         }
     })
 }
@@ -501,6 +510,22 @@ pub async fn encode_message(
     context: Arc<ClientContext>,
     params: ParamsOfEncodeMessage,
 ) -> ClientResult<ResultOfEncodeMessage> {
+    let bm_license_address = match context.get_server_link() {
+        Ok(server_link) => {
+            let network_state: Arc<crate::net::NetworkState> = server_link.state();
+            network_state
+                .get_bm_issuer_pubkey()
+                .await
+                .and_then(|s| {
+                    s.split_once(':')
+                        .map(|(_, part)| format!(":{}", part))
+                        .and_then(|s| MsgAddressExt::from_str(&s).ok())
+                })
+                .unwrap_or_default()
+        }
+        Err(_) => MsgAddressExt::AddrNone,
+    };
+
     let abi_contract = params.abi.abi()?;
     let abi_string = params.abi.json_string()?;
 
@@ -530,9 +555,10 @@ pub async fn encode_message(
                 public.as_deref(),
                 &params.signer,
                 params.processing_try_index,
+                bm_license_address,
             )?
         } else {
-            encode_empty_deploy(image, workchain)?
+            encode_empty_deploy(image, workchain, bm_license_address)?
         }
     } else if let Some(call_set) = &params.call_set {
         encode_run(
@@ -542,6 +568,7 @@ pub async fn encode_message(
             call_set,
             public.as_deref(),
             params.processing_try_index,
+            bm_license_address,
         )?
     } else {
         return Err(Error::missing_required_call_set_for_encode_message());

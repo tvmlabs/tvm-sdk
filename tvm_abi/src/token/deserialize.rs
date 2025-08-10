@@ -385,7 +385,7 @@ impl TokenValue {
         Ok((TokenValue::Map(key_type.clone(), value_type.clone(), new_map), cursor))
     }
 
-    fn read_bytes_from_chain(
+    pub fn read_bytes_from_chain(
         cursor: SliceData,
         last: bool,
         abi_version: &AbiVersion,
@@ -435,7 +435,7 @@ impl TokenValue {
         }
     }
 
-    fn read_bytes(
+    pub fn read_bytes(
         cursor: SliceData,
         last: bool,
         abi_version: &AbiVersion,
@@ -445,7 +445,7 @@ impl TokenValue {
         Ok((TokenValue::Bytes(data), cursor))
     }
 
-    fn read_string(
+    pub fn read_string(
         cursor: SliceData,
         last: bool,
         abi_version: &AbiVersion,

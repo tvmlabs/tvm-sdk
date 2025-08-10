@@ -121,7 +121,7 @@ impl AesEncryptionBox {
     }
 
     fn decode_base64_aligned(data: &str, align: usize) -> ClientResult<(Vec<u8>, usize)> {
-        let data_size = (data.len() + 3) / 4 * 3;
+        let data_size = data.len().div_ceil(4) * 3;
         let aligned_size = (data_size + align - 1) & !(align - 1);
 
         let mut vec = vec![0u8; aligned_size];

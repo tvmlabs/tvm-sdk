@@ -1,0 +1,10 @@
+package root:component;
+
+world root {
+  export docs:adder/add@0.1.0;
+}
+package docs:adder@0.1.0 {
+  interface add {
+    add: func(kwargs: list<u8>) -> list<u8>;
+  }
+}
