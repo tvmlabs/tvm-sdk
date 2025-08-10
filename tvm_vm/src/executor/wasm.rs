@@ -1,3 +1,5 @@
+use rand_chacha::rand_core::RngCore;
+use rand_chacha::rand_core::SeedableRng;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_types::ExceptionCode;
@@ -200,9 +202,30 @@ wasmtime::component::bindgen!({
         package wasi:clocks@0.2.3 {
             interface wall-clock {
                 record datetime {
-                seconds: u64,
-                nanoseconds: u32,
+                    seconds: u64,
+                    nanoseconds: u32,
                 }
+
+                now: func() -> datetime;
+
+                resolution: func() -> datetime;
+            }
+        }
+
+        package wasi:random@0.2.3 {
+            interface random {
+                get-random-bytes: func(len: u64) -> list<u8>;
+                get-random-u64: func() -> u64;
+            }
+
+            interface insecure {
+                get-insecure-random-bytes: func(len: u64) -> list<u8>;
+
+                get-insecure-random-u64: func() -> u64;
+            }
+
+            interface insecure-seed {
+                insecure-seed: func() -> tuple<u64, u64>;
             }
         }
 
@@ -215,6 +238,9 @@ wasmtime::component::bindgen!({
             import wasi:filesystem/types@0.2.3;
             import wasi:filesystem/preopens@0.2.3;
             import wasi:clocks/wall-clock@0.2.3;
+            import wasi:random/random@0.2.3;
+            import wasi:random/insecure@0.2.3;
+            import wasi:random/insecure-seed@0.2.3;
         }
     "#,
     // with: {
@@ -255,6 +281,7 @@ pub(crate) struct MyState {
     ctx: WasiCtx,
     table: ResourceTable,
     limiter: wasmtime::StoreLimits,
+    random_source: rand_chacha::ChaCha20Rng,
 }
 impl IoView for MyState {
     fn table(&mut self) -> &mut ResourceTable {
@@ -285,7 +312,15 @@ impl wasi::filesystem::preopens::Host for MyState {
     }
 }
 
-impl wasi::clocks::wall_clock::Host for MyState {}
+impl wasi::clocks::wall_clock::Host for MyState {
+    fn now(&mut self) -> wasi::clocks::wall_clock::Datetime {
+        wasi::clocks::wall_clock::Datetime { nanoseconds: 0, seconds: 0 }
+    }
+
+    fn resolution(&mut self) -> wasi::clocks::wall_clock::Datetime {
+        wasi::clocks::wall_clock::Datetime { nanoseconds: 0, seconds: 0 }
+    }
+}
 
 impl wasi::filesystem::types::Host for MyState {
     fn filesystem_error_code(
@@ -421,6 +456,42 @@ impl wasi::io::error::HostError for MyState {
 }
 impl wasi::io::error::Host for MyState {}
 
+impl wasi::random::random::Host for MyState {
+    fn get_random_bytes(&mut self, len: u64) -> wasmtime::component::__internal::Vec<u8> {
+        let mut vector = Vec::<u8>::with_capacity(match len.try_into() {
+            Ok(k) => k,
+            Err(_) => u16::max_value().into(),
+        });
+        self.random_source.fill_bytes(&mut vector);
+        vector
+    }
+
+    fn get_random_u64(&mut self) -> u64 {
+        self.random_source.next_u64()
+    }
+}
+
+impl wasi::random::insecure::Host for MyState {
+    fn get_insecure_random_bytes(&mut self, len: u64) -> wasmtime::component::__internal::Vec<u8> {
+        let mut vector = Vec::<u8>::with_capacity(match len.try_into() {
+            Ok(k) => k,
+            Err(_) => u16::max_value().into(),
+        });
+        self.random_source.fill_bytes(&mut vector);
+        vector
+    }
+
+    fn get_insecure_random_u64(&mut self) -> u64 {
+        self.random_source.next_u64()
+    }
+}
+
+impl wasi::random::insecure_seed::Host for MyState {
+    fn insecure_seed(&mut self) -> (u64, u64) {
+        (self.random_source.next_u64(), self.random_source.next_u64())
+    }
+}
+
 // Async IO annotator for WASI. Do not use unless you know what you're doing.
 // fn io_type_annotate<T: IoView, F>(val: F) -> F
 // where
@@ -464,21 +535,21 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     wasm_linker: &mut wasmtime::component::Linker<T>,
 ) -> Result<(), wasmtime::Error> {
     use wasmtime_wasi::p2::bindings::cli;
-    use wasmtime_wasi::p2::bindings::clocks;
-    use wasmtime_wasi::p2::bindings::filesystem;
-    use wasmtime_wasi::p2::bindings::random;
+    // use wasmtime_wasi::p2::bindings::clocks;
+    // use wasmtime_wasi::p2::bindings::filesystem;
+    // use wasmtime_wasi::p2::bindings::random;
 
     // wasmtime_wasi::p2::add_to_linker_sync(linker)
     let options = wasmtime_wasi::p2::bindings::sync::LinkOptions::default();
     let l = wasm_linker;
     let f: fn(&mut T) -> WasiImpl<&mut T> = |t| WasiImpl(IoImpl(t));
-    clocks::wall_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    clocks::monotonic_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    filesystem::preopens::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // clocks::wall_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // clocks::monotonic_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // filesystem::preopens::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // filesystem::types::add_to_linker::<T, HasWasi<T>>(l, f)?; // DONT USE, async
-    random::random::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    random::insecure::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    random::insecure_seed::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // random::random::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // random::insecure::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // random::insecure_seed::add_to_linker::<T, HasWasi<T>>(l, f)?;
     cli::exit::add_to_linker::<T, HasWasi<T>>(l, &options.into(), f)?;
     cli::environment::add_to_linker::<T, HasWasi<T>>(l, f)?;
     cli::stdin::add_to_linker::<T, HasWasi<T>>(l, f)?;
@@ -562,6 +633,7 @@ pub(crate) fn run_wasm_core(
             .table_elements(1000000)
             .trap_on_grow_failure(true)
             .build(),
+        random_source: rand_chacha::ChaCha20Rng::seed_from_u64(42),
     })?;
     wasm_store.limiter(|state| &mut state.limiter);
     // set WASM fuel limit based on available gas

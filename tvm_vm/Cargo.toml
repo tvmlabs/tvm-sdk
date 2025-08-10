@@ -66,6 +66,8 @@ itertools = "0.12.0"
 typenum = "1.13.0"
 ff = { version = "0.13.0", features = ["derive"] }
 
+rand_chacha = "0.2.2"
+
 [dev-dependencies]
 criterion = "0.5.1"
 libloading = "0.8.1"
