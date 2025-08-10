@@ -234,9 +234,9 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
-    ) -> Result<(Transaction, u128)> {
+    ) -> Result<(Transaction, i128)> {
         // let old_hash = account_root.repr_hash();
-        let minted_shell: &mut u128 = &mut 0;
+        let minted_shell: &mut i128 = &mut 0;
         // let mut account = Account::construct_from_cell(account_root.clone())?;
         let is_previous_state_active = match account.state() {
             Some(AccountState::AccountUninit {}) => false,
