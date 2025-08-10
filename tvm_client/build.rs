@@ -82,7 +82,7 @@ impl BuildInfo {
                 }
                 let source = x["source"].as_str().unwrap_or("");
                 let git_commit = if !source.is_empty() {
-                    source.split('#').last().unwrap_or("").to_string()
+                    source.split('#').next_back().unwrap_or("").to_string()
                 } else {
                     git_commit.clone()
                 };

@@ -119,6 +119,7 @@ pub struct Config {
     // SDK authentication parameters
     pub project_id: Option<String>,
     pub access_key: Option<String>,
+    pub api_token: Option<String>,
     ////////////////////////////////
     #[serde(default = "default_endpoints")]
     pub endpoints: Vec<String>,
@@ -147,6 +148,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             url: default_url(),
+            api_token: None,
             wc: default_wc(),
             addr: None,
             method: None,
@@ -191,6 +193,7 @@ impl Config {
         let endpoints = FullConfig::default_map()[&url].clone();
         Config {
             url,
+            api_token: None,
             wc: default_wc(),
             addr: None,
             method: None,
@@ -373,6 +376,9 @@ pub fn clear_config(
         let url = default_url();
         config.endpoints = FullConfig::default_map()[&url].clone();
         config.url = url;
+    }
+    if matches.is_present("API_TOKEN") {
+        config.api_token = None;
     }
     if matches.is_present("ADDR") {
         config.addr = None;
@@ -576,7 +582,9 @@ pub fn set_config(
             );
         }
     }
-
+    if let Some(s) = matches.value_of("API_TOKEN") {
+        config.api_token = Some(s.to_string());
+    }
     full_config.to_file(&full_config.path)?;
     if !(full_config.config.is_json || is_json) {
         println!("Succeeded.");

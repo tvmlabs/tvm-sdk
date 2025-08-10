@@ -23,10 +23,14 @@ num-traits.workspace = true
 rand.workspace = true
 similar = { features = ["bytes"], optional = true, workspace = true }
 thiserror.workspace = true
+wasmtime.workspace = true
+wasmtime-wasi.workspace = true
+wasmtime-wasi-io.workspace = true
 zstd = { default-features = false, optional = true, workspace = true }
 
 tvm_block.workspace = true
 tvm_types.workspace = true
+tvm_abi.workspace = true
 serde_json.workspace = true
 num-bigint.workspace = true
 serde.workspace = true
@@ -70,6 +74,7 @@ pprof = { features = ["criterion", "flamegraph"], version = "0.13.0" }
 pretty_assertions = "1.4.0"
 
 [features]
+default = ["gosh"]
 fift_check = []
 gosh = ["tvm_block/gosh", "diffy", "similar", "zstd"]
 log_file = []
@@ -77,6 +82,7 @@ signature_no_check = []
 signature_with_id = ["tvm_block/signature_with_id"]
 verbose = []
 ci_run = []
+wasm_external = []
 
 [[bench]]
 harness = false
