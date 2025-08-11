@@ -123,6 +123,44 @@ impl Serializable for MerkleUpdate {
 }
 
 impl MerkleUpdate {
+    /// Creating of a Merkle update
+    pub fn create(old: &Cell, new: &Cell) -> Result<MerkleUpdate> {
+        if old.repr_hash() == new.repr_hash() {
+            // if trees are the same
+            let hash = old.repr_hash();
+            let pruned_branch_cell = Self::build_pruned_branch(old, 0)?.into_cell()?;
+            Ok(MerkleUpdate {
+                old_hash: hash.clone(),
+                new_hash: hash,
+                old_depth: old.repr_depth(),
+                new_depth: old.repr_depth(),
+                old: pruned_branch_cell.clone(),
+                new: pruned_branch_cell,
+            })
+        } else {
+            // trees traversal and update creating;
+            let new_cells = Self::collect_cells(new);
+            let mut pruned_branches = HashMap::new();
+
+            let old_update_cell =
+                match Self::traverse_old_on_create(old, &new_cells, &mut pruned_branches, 0)? {
+                    Some(old_update_cell) => old_update_cell,
+                    // Nothing from old tree were pruned, lets prune all tree!
+                    None => Self::build_pruned_branch(old, 0)?,
+                };
+            let new_update_cell = Self::traverse_new_on_create(new, &pruned_branches)?;
+
+            Ok(MerkleUpdate {
+                old_hash: old.repr_hash(),
+                new_hash: new.repr_hash(),
+                old_depth: old.repr_depth(),
+                new_depth: new.repr_depth(),
+                old: old_update_cell.into_cell()?,
+                new: new_update_cell.into_cell()?,
+            })
+        }
+    }
+
     pub fn create_fast(
         old: &Cell,
         new: &Cell,
@@ -174,80 +212,20 @@ impl MerkleUpdate {
         }
     }
 
-    fn create_new_cell_fast(
-        cell: &Cell,
-        is_visited_old: &impl Fn(&UInt256) -> bool,
-        merkle_depth: u8,
-        pruned_branches: &mut HashSet<UInt256>,
-        done_cells: &mut HashMap<UInt256, Cell>,
-    ) -> Result<Cell> {
-        if cell.cell_type() == CellType::External {
-            pruned_branches.insert(cell.repr_hash());
-            return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
+    fn collect_cells(cell: &Cell) -> HashMap<UInt256, Cell> {
+        fn walker(cell: &Cell, hash: UInt256, cells: &mut HashMap<UInt256, Cell>) {
+            cells.insert(hash, cell.clone());
+            for i in 0..cell.references_count() {
+                let child_hash = cell.reference(i).unwrap().repr_hash();
+                if !cells.contains_key(&child_hash) {
+                    let child = cell.reference(i).unwrap();
+                    walker(&child, child_hash, cells);
+                }
+            }
         }
-        let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
-        let mut proof_cell_builder = BuilderData::from_cell(cell)?;
-        let children = cell.clone_references();
-        for i in 0..children.len() {
-            let child = &children[i];
-            let child_repr_hash = child.repr_hash();
-            let proof_child = if let Some(done) = done_cells.get(&child_repr_hash) {
-                done.clone()
-            } else if child.references_count() == 0 || !is_visited_old(&child_repr_hash) {
-                Self::create_new_cell_fast(
-                    child,
-                    is_visited_old,
-                    child_merkle_depth,
-                    pruned_branches,
-                    done_cells,
-                )?
-            } else {
-                pruned_branches.insert(child_repr_hash);
-                Self::build_pruned_branch(child, child_merkle_depth)?.into_cell()?
-            };
-            proof_cell_builder.replace_reference_cell(i, proof_child);
-        }
-
-        let proof_cell = proof_cell_builder.into_cell()?;
-        done_cells.insert(cell.repr_hash(), proof_cell.clone());
-
-        Ok(proof_cell)
-    }
-
-    fn create_old_cell_fast(
-        cell: &Cell,
-        used_paths_cells: &HashSet<UInt256>,
-        merkle_depth: u8,
-        done_cells: &mut HashMap<UInt256, Cell>,
-    ) -> Result<Cell> {
-        if cell.cell_type() == CellType::External {
-            return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
-        }
-        let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
-        let mut proof_cell_builder = BuilderData::from_cell(cell)?;
-        let children = cell.clone_references();
-        for i in 0..children.len() {
-            let child = &children[i];
-            let child_repr_hash = child.repr_hash();
-            let proof_child = if let Some(done) = done_cells.get(&child_repr_hash) {
-                done.clone()
-            } else if child.references_count() == 0 || used_paths_cells.contains(&child_repr_hash) {
-                Self::create_old_cell_fast(
-                    child,
-                    used_paths_cells,
-                    child_merkle_depth,
-                    done_cells,
-                )?
-            } else {
-                Self::build_pruned_branch(child, child_merkle_depth)?.into_cell()?
-            };
-            proof_cell_builder.replace_reference_cell(i, proof_child);
-        }
-
-        let proof_cell = proof_cell_builder.into_cell()?;
-        done_cells.insert(cell.repr_hash(), proof_cell.clone());
-
-        Ok(proof_cell)
+        let mut cells = HashMap::new();
+        walker(cell, cell.repr_hash(), &mut cells);
+        cells
     }
 
     fn collect_old_used_paths_cells(
@@ -296,176 +274,6 @@ impl MerkleUpdate {
             }
         }
         collect | is_pruned
-    }
-
-    /// Creating of a Merkle update
-    pub fn create(old: &Cell, new: &Cell) -> Result<MerkleUpdate> {
-        if old.repr_hash() == new.repr_hash() {
-            // if trees are the same
-            let hash = old.repr_hash();
-            let pruned_branch_cell = Self::build_pruned_branch(old, 0)?.into_cell()?;
-            Ok(MerkleUpdate {
-                old_hash: hash.clone(),
-                new_hash: hash,
-                old_depth: old.repr_depth(),
-                new_depth: old.repr_depth(),
-                old: pruned_branch_cell.clone(),
-                new: pruned_branch_cell,
-            })
-        } else {
-            // trees traversal and update creating;
-            let new_cells = Self::collect_cells(new);
-            let mut pruned_branches = HashMap::new();
-
-            let old_update_cell =
-                match Self::traverse_old_on_create(old, &new_cells, &mut pruned_branches, 0)? {
-                    Some(old_update_cell) => old_update_cell,
-                    // Nothing from old tree were pruned, lets prune all tree!
-                    None => Self::build_pruned_branch(old, 0)?,
-                };
-            let new_update_cell = Self::traverse_new_on_create(new, &pruned_branches)?;
-
-            Ok(MerkleUpdate {
-                old_hash: old.repr_hash(),
-                new_hash: new.repr_hash(),
-                old_depth: old.repr_depth(),
-                new_depth: new.repr_depth(),
-                old: old_update_cell.into_cell()?,
-                new: new_update_cell.into_cell()?,
-            })
-        }
-    }
-
-    fn collect_cells(cell: &Cell) -> HashMap<UInt256, Cell> {
-        fn walker(cell: &Cell, hash: UInt256, cells: &mut HashMap<UInt256, Cell>) {
-            cells.insert(hash, cell.clone());
-            for i in 0..cell.references_count() {
-                let child_hash = cell.reference(i).unwrap().repr_hash();
-                if !cells.contains_key(&child_hash) {
-                    let child = cell.reference(i).unwrap();
-                    walker(&child, child_hash, cells);
-                }
-            }
-        }
-        let mut cells = HashMap::new();
-        walker(cell, cell.repr_hash(), &mut cells);
-        cells
-    }
-
-    fn traverse_new_on_create(
-        new_cell: &Cell,
-        common_pruned: &HashMap<UInt256, Cell>,
-    ) -> Result<BuilderData> {
-        if new_cell.cell_type() == CellType::External {
-            fail!("External cell can not be included into Merkle update");
-        }
-
-        let mut new_update_cell = BuilderData::new();
-        new_update_cell.set_type(new_cell.cell_type());
-        let mut level_mask = new_cell.level_mask();
-        for child in new_cell.clone_references().iter() {
-            let update_child = if let Some(pruned) = common_pruned.get(&child.repr_hash()) {
-                pruned.clone()
-            } else {
-                Self::traverse_new_on_create(child, common_pruned)?.into_cell()?
-            };
-            level_mask |= update_child.level_mask();
-            new_update_cell.checked_append_reference(update_child)?;
-        }
-
-        new_update_cell.append_bytestring(&SliceData::load_cell_ref(new_cell)?)?;
-
-        Ok(new_update_cell)
-    }
-
-    // If old_cell's child contains in new_cells - it transformed to pruned branch
-    // cell,   else - recursion call for the child.
-    // If any child is pruned branch (or contains pruned branch among their subtree)
-    //   - all other skipped childs are transformed to pruned branches
-    //   else - skip this cell (return None)
-    fn traverse_old_on_create(
-        old_cell: &Cell,
-        new_cells: &HashMap<UInt256, Cell>,
-        pruned_branches: &mut HashMap<UInt256, Cell>,
-        mut merkle_depth: u8,
-    ) -> Result<Option<BuilderData>> {
-        if old_cell.cell_type() == CellType::External {
-            fail!("External cell can not be included into Merkle update");
-        }
-
-        if old_cell.is_merkle() {
-            merkle_depth += 1;
-        }
-
-        let mut childs = vec![None; old_cell.references_count()];
-        let mut has_pruned = false;
-
-        for (i, child) in old_cell.clone_references().iter().enumerate() {
-            let child_hash = child.repr_hash();
-            if let Some(common_cell) = new_cells.get(&child_hash) {
-                let pruned_branch_cell = Self::build_pruned_branch(common_cell, merkle_depth)?;
-                pruned_branches.insert(child_hash, pruned_branch_cell.clone().into_cell()?);
-
-                childs[i] = Some(pruned_branch_cell);
-                has_pruned = true;
-            } else {
-                childs[i] =
-                    Self::traverse_old_on_create(child, new_cells, pruned_branches, merkle_depth)?;
-                if childs[i].is_some() {
-                    has_pruned = true;
-                }
-            }
-        }
-
-        if has_pruned {
-            let mut old_update_cell = BuilderData::new();
-            old_update_cell.set_type(old_cell.cell_type());
-            for (i, child_opt) in childs.into_iter().enumerate() {
-                let child = match child_opt {
-                    None => {
-                        let child = old_cell.reference(i)?;
-                        Self::build_pruned_branch(&child, merkle_depth)?
-                    }
-                    Some(child) => child,
-                };
-                old_update_cell.checked_append_reference(child.into_cell()?)?;
-            }
-
-            old_update_cell.append_bytestring(&SliceData::load_cell_ref(old_cell)?)?;
-            Ok(Some(old_update_cell))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn add_one_hash(cell: &Cell, depth: u8) -> Result<LevelMask> {
-        let mask = cell.level_mask().mask();
-        if depth > 2 {
-            fail!(BlockError::InvalidArg("depth".to_string()))
-        } else if mask & (1 << depth) != 0 {
-            fail!(BlockError::InvalidOperation(format!(
-                "attempt to add hash with depth {} into mask {:03b}, {} cell",
-                depth,
-                mask,
-                cell.cell_type()
-            )))
-        }
-        Ok(LevelMask::with_mask(mask | (1 << depth)))
-    }
-
-    pub(crate) fn build_pruned_branch(cell: &Cell, merkle_depth: u8) -> Result<BuilderData> {
-        let mut result = BuilderData::new();
-        let level_mask = Self::add_one_hash(cell, merkle_depth)?;
-        result.set_type(CellType::PrunedBranch);
-        result.append_u8(CellType::PRUNED_BRANCH)?;
-        result.append_u8(level_mask.mask())?;
-        for hash in cell.hashes() {
-            result.append_raw(hash.as_slice(), hash.as_slice().len() * 8)?;
-        }
-        for depth in cell.depths() {
-            result.append_u16(depth)?;
-        }
-        Ok(result)
     }
 
     /// Applies update to given tree of cells by returning new updated one
@@ -622,6 +430,122 @@ impl MerkleUpdate {
         new_cell.into_cell()
     }
 
+    fn traverse_new_on_create(
+        new_cell: &Cell,
+        common_pruned: &HashMap<UInt256, Cell>,
+    ) -> Result<BuilderData> {
+        if new_cell.cell_type() == CellType::External {
+            fail!("External cell can not be included into Merkle update");
+        }
+
+        let mut new_update_cell = BuilderData::new();
+        new_update_cell.set_type(new_cell.cell_type());
+        let mut level_mask = new_cell.level_mask();
+        for child in new_cell.clone_references().iter() {
+            let update_child = if let Some(pruned) = common_pruned.get(&child.repr_hash()) {
+                pruned.clone()
+            } else {
+                Self::traverse_new_on_create(child, common_pruned)?.into_cell()?
+            };
+            level_mask |= update_child.level_mask();
+            new_update_cell.checked_append_reference(update_child)?;
+        }
+
+        new_update_cell.append_bytestring(&SliceData::load_cell_ref(new_cell)?)?;
+
+        Ok(new_update_cell)
+    }
+
+    // If old_cell's child contains in new_cells - it transformed to pruned branch
+    // cell,   else - recursion call for the child.
+    // If any child is pruned branch (or contains pruned branch among their subtree)
+    //   - all other skipped childs are transformed to pruned branches
+    //   else - skip this cell (return None)
+    fn traverse_old_on_create(
+        old_cell: &Cell,
+        new_cells: &HashMap<UInt256, Cell>,
+        pruned_branches: &mut HashMap<UInt256, Cell>,
+        mut merkle_depth: u8,
+    ) -> Result<Option<BuilderData>> {
+        if old_cell.cell_type() == CellType::External {
+            fail!("External cell can not be included into Merkle update");
+        }
+
+        if old_cell.is_merkle() {
+            merkle_depth += 1;
+        }
+
+        let mut childs = vec![None; old_cell.references_count()];
+        let mut has_pruned = false;
+
+        for (i, child) in old_cell.clone_references().iter().enumerate() {
+            let child_hash = child.repr_hash();
+            if let Some(common_cell) = new_cells.get(&child_hash) {
+                let pruned_branch_cell = Self::build_pruned_branch(common_cell, merkle_depth)?;
+                pruned_branches.insert(child_hash, pruned_branch_cell.clone().into_cell()?);
+
+                childs[i] = Some(pruned_branch_cell);
+                has_pruned = true;
+            } else {
+                childs[i] =
+                    Self::traverse_old_on_create(child, new_cells, pruned_branches, merkle_depth)?;
+                if childs[i].is_some() {
+                    has_pruned = true;
+                }
+            }
+        }
+
+        if has_pruned {
+            let mut old_update_cell = BuilderData::new();
+            old_update_cell.set_type(old_cell.cell_type());
+            for (i, child_opt) in childs.into_iter().enumerate() {
+                let child = match child_opt {
+                    None => {
+                        let child = old_cell.reference(i)?;
+                        Self::build_pruned_branch(&child, merkle_depth)?
+                    }
+                    Some(child) => child,
+                };
+                old_update_cell.checked_append_reference(child.into_cell()?)?;
+            }
+
+            old_update_cell.append_bytestring(&SliceData::load_cell_ref(old_cell)?)?;
+            Ok(Some(old_update_cell))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn add_one_hash(cell: &Cell, depth: u8) -> Result<LevelMask> {
+        let mask = cell.level_mask().mask();
+        if depth > 2 {
+            fail!(BlockError::InvalidArg("depth".to_string()))
+        } else if mask & (1 << depth) != 0 {
+            fail!(BlockError::InvalidOperation(format!(
+                "attempt to add hash with depth {} into mask {:03b}, {} cell",
+                depth,
+                mask,
+                cell.cell_type()
+            )))
+        }
+        Ok(LevelMask::with_mask(mask | (1 << depth)))
+    }
+
+    pub(crate) fn build_pruned_branch(cell: &Cell, merkle_depth: u8) -> Result<BuilderData> {
+        let mut result = BuilderData::new();
+        let level_mask = Self::add_one_hash(cell, merkle_depth)?;
+        result.set_type(CellType::PrunedBranch);
+        result.append_u8(CellType::PRUNED_BRANCH)?;
+        result.append_u8(level_mask.mask())?;
+        for hash in cell.hashes() {
+            result.append_raw(hash.as_slice(), hash.as_slice().len() * 8)?;
+        }
+        for depth in cell.depths() {
+            result.append_u16(depth)?;
+        }
+        Ok(result)
+    }
+
     fn traverse_old_on_check(
         cell: &Cell,
         known_cells: &mut HashSet<UInt256>,
@@ -690,4 +614,80 @@ impl MerkleUpdate {
             }
         }
     }
+    fn create_new_cell_fast(
+        cell: &Cell,
+        is_visited_old: &impl Fn(&UInt256) -> bool,
+        merkle_depth: u8,
+        pruned_branches: &mut HashSet<UInt256>,
+        done_cells: &mut HashMap<UInt256, Cell>,
+    ) -> Result<Cell> {
+        if cell.cell_type() == CellType::External {
+            pruned_branches.insert(cell.repr_hash());
+            return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
+        }
+        let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
+        let mut proof_cell_builder = BuilderData::from_cell(cell)?;
+        let children = cell.clone_references();
+        for i in 0..children.len() {
+            let child = &children[i];
+            let child_repr_hash = child.repr_hash();
+            let proof_child = if let Some(done) = done_cells.get(&child_repr_hash) {
+                done.clone()
+            } else if child.references_count() == 0 || !is_visited_old(&child_repr_hash) {
+                Self::create_new_cell_fast(
+                    child,
+                    is_visited_old,
+                    child_merkle_depth,
+                    pruned_branches,
+                    done_cells,
+                )?
+            } else {
+                pruned_branches.insert(child_repr_hash);
+                Self::build_pruned_branch(child, child_merkle_depth)?.into_cell()?
+            };
+            proof_cell_builder.replace_reference_cell(i, proof_child);
+        }
+
+        let proof_cell = proof_cell_builder.into_cell()?;
+        done_cells.insert(cell.repr_hash(), proof_cell.clone());
+
+        Ok(proof_cell)
+    }
+
+    fn create_old_cell_fast(
+        cell: &Cell,
+        used_paths_cells: &HashSet<UInt256>,
+        merkle_depth: u8,
+        done_cells: &mut HashMap<UInt256, Cell>,
+    ) -> Result<Cell> {
+        if cell.cell_type() == CellType::External {
+            return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
+        }
+        let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
+        let mut proof_cell_builder = BuilderData::from_cell(cell)?;
+        let children = cell.clone_references();
+        for i in 0..children.len() {
+            let child = &children[i];
+            let child_repr_hash = child.repr_hash();
+            let proof_child = if let Some(done) = done_cells.get(&child_repr_hash) {
+                done.clone()
+            } else if child.references_count() == 0 || used_paths_cells.contains(&child_repr_hash) {
+                Self::create_old_cell_fast(
+                    child,
+                    used_paths_cells,
+                    child_merkle_depth,
+                    done_cells,
+                )?
+            } else {
+                Self::build_pruned_branch(child, child_merkle_depth)?.into_cell()?
+            };
+            proof_cell_builder.replace_reference_cell(i, proof_child);
+        }
+
+        let proof_cell = proof_cell_builder.into_cell()?;
+        done_cells.insert(cell.repr_hash(), proof_cell.clone());
+
+        Ok(proof_cell)
+    }
+
 }
