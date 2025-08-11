@@ -60,7 +60,7 @@ impl Deserializable for MerkleProof {
         if cell.pos() != 0 {
             fail!("Merkle proof have to fill full cell from its zeroth bit.")
         }
-        if CellType::try_from(cell.get_next_byte()?)? != CellType::MerkleProof {
+        if cell.get_next_byte()? != CellType::MERKLE_PROOF {
             fail!(BlockError::InvalidData("invalid Merkle proof root's cell type".to_string()))
         }
         self.hash.read_from(cell)?;
@@ -86,7 +86,7 @@ impl Serializable for MerkleProof {
             fail!("Merkle proof have to fill full cell from its zeroth bit.")
         }
         cell.set_type(CellType::MerkleProof);
-        cell.append_u8(u8::from(CellType::MerkleProof))?;
+        cell.append_u8(CellType::MERKLE_PROOF)?;
         self.hash.write_to(cell)?;
         cell.append_u16(self.depth)?;
         cell.checked_append_reference(self.proof.clone())?;
@@ -173,7 +173,7 @@ impl MerkleProof {
                     done_cells,
                 )?
             } else {
-                let pbc = MerkleUpdate::make_pruned_branch_cell(&child, child_merkle_depth)?;
+                let pbc = MerkleUpdate::build_pruned_branch(&child, child_merkle_depth)?;
                 if let Some(pruned_branches) = pruned_branches.as_mut() {
                     pruned_branches.insert(child_repr_hash);
                 }
