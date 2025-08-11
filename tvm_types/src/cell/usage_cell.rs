@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasher, Hasher};
 use std::mem;
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicUsize};
 
 #[derive(Default, Clone)]
 pub struct UInt256HashBuilder;
@@ -39,8 +39,67 @@ impl Hasher for UInt256Hasher {
     }
 }
 
-type VisitedSet = Arc<(AtomicBool, parking_lot::Mutex<HashSet<UInt256, UInt256HashBuilder>>)>;
-type VisitedMap = Arc<(AtomicBool, parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>)>;
+struct VisitedSetInner {
+    set: parking_lot::Mutex<HashSet<UInt256, UInt256HashBuilder>>,
+    enabled: AtomicBool,
+    count: AtomicUsize,
+}
+
+impl VisitedSetInner {
+    fn new() -> Self {
+        VisitedSetInner {
+            set: parking_lot::Mutex::new(HashSet::default()),
+            enabled: AtomicBool::new(true),
+            count: AtomicUsize::new(0),
+        }
+    }
+    fn is_enabled(&self) -> bool {
+        self.enabled.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    fn visit(&self, cell: &Cell) -> bool {
+        if self.is_enabled() {
+            self.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.set.lock().insert(cell.repr_hash());
+            true
+        } else {
+            false
+        }
+    }
+}
+
+struct VisitedMapInner {
+    map: parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>,
+    enabled: AtomicBool,
+    count: AtomicUsize,
+}
+
+impl VisitedMapInner {
+    fn new() -> Self {
+        VisitedMapInner {
+            map: parking_lot::Mutex::new(HashMap::default()),
+            enabled: AtomicBool::new(true),
+            count: AtomicUsize::new(0),
+        }
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    fn visit(&self, cell: &Cell) -> bool {
+        if self.is_enabled() {
+            self.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.map.lock().insert(cell.repr_hash(), cell.clone());
+            true
+        } else {
+            false
+        }
+    }
+}
+
+type VisitedSet = Arc<VisitedSetInner>;
+type VisitedMap = Arc<VisitedMapInner>;
 
 #[derive(Clone)]
 enum Visited {
@@ -51,8 +110,15 @@ enum Visited {
 impl Visited {
     fn is_enabled(&self) -> bool {
         match &self {
-            Visited::Set(visited) => visited.0.load(std::sync::atomic::Ordering::Acquire),
-            Visited::Map(visited) => visited.0.load(std::sync::atomic::Ordering::Acquire),
+            Visited::Set(visited) => visited.is_enabled(),
+            Visited::Map(visited) => visited.is_enabled(),
+        }
+    }
+
+    fn visit(&self, cell: &Cell) -> bool {
+        match &self {
+            Visited::Set(visited) => visited.visit(cell),
+            Visited::Map(visited) => visited.visit(cell),
         }
     }
 }
@@ -77,21 +143,7 @@ impl UsageCell {
     }
 
     fn visit(&self) -> bool {
-        match &self.visited {
-            Visited::Set(visited) => {
-                if !visited.0.load(std::sync::atomic::Ordering::Acquire) {
-                    return false;
-                }
-                visited.1.lock().insert(self.cell.repr_hash());
-            }
-            Visited::Map(visited) => {
-                if !visited.0.load(std::sync::atomic::Ordering::Acquire) {
-                    return false;
-                }
-                visited.1.lock().insert(self.cell.repr_hash(), self.cell.clone());
-            }
-        }
-        true
+        self.visited.visit(&self.cell)
     }
 }
 
@@ -177,7 +229,7 @@ impl CellImpl for UsageCell {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct UsageTree {
     root: Cell,
     visited: VisitedMap,
@@ -185,7 +237,7 @@ pub struct UsageTree {
 
 impl Drop for UsageTree {
     fn drop(&mut self) {
-        self.visited.0.store(false, std::sync::atomic::Ordering::Release);
+        self.visited.enabled.store(false, std::sync::atomic::Ordering::Release);
     }
 }
 
@@ -195,10 +247,7 @@ impl UsageTree {
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
-        let visited = Arc::new((
-            AtomicBool::new(true),
-            parking_lot::Mutex::new(HashMap::<_, _, _>::default()),
-        ));
+        let visited = Arc::new(VisitedMapInner::new());
         let root =
             Cell::with_usage(UsageCell::new(root, visit_on_load, Visited::Map(visited.clone())));
         Self { root, visited }
@@ -221,14 +270,14 @@ impl UsageTree {
     }
 
     pub fn contains(&self, hash: &UInt256) -> bool {
-        self.visited.1.lock().contains_key(hash)
+        self.visited.map.lock().contains_key(hash)
     }
 
     pub fn build_visited_subtree(
         &self,
         is_include: &impl Fn(&UInt256) -> bool,
     ) -> crate::Result<HashSet<UInt256>> {
-        Self::build_visited_subtree_inner(&self.visited.1.lock(), is_include)
+        Self::build_visited_subtree_inner(&self.visited.map.lock(), is_include)
     }
 
     fn build_visited_subtree_inner(
@@ -262,14 +311,14 @@ impl UsageTree {
 
     pub fn build_visited_set(&self) -> HashSet<UInt256> {
         let mut visited = HashSet::new();
-        for hash in self.visited.1.lock().keys() {
+        for hash in self.visited.map.lock().keys() {
             visited.insert(hash.clone());
         }
         visited
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct UsageSet {
     root: Cell,
     visited: VisitedSet,
@@ -277,7 +326,7 @@ pub struct UsageSet {
 
 impl Drop for UsageSet {
     fn drop(&mut self) {
-        self.visited.0.store(false, std::sync::atomic::Ordering::Release);
+        self.visited.enabled.store(false, std::sync::atomic::Ordering::Release);
     }
 }
 
@@ -287,10 +336,7 @@ impl UsageSet {
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
-        let visited = Arc::new((
-            AtomicBool::new(true),
-            parking_lot::Mutex::new(HashSet::<UInt256, UInt256HashBuilder>::default()),
-        ));
+        let visited = Arc::new(VisitedSetInner::new());
         let root =
             Cell::with_usage(UsageCell::new(root, visit_on_load, Visited::Set(visited.clone())));
         Self { root, visited }
@@ -307,11 +353,15 @@ impl UsageSet {
     }
 
     pub fn build_visited_set(&self) -> HashSet<UInt256, UInt256HashBuilder> {
-        self.visited.1.lock().clone()
+        self.visited.set.lock().clone()
     }
 
     pub fn take_visited_set(&mut self) -> HashSet<UInt256, UInt256HashBuilder> {
-        mem::take(&mut self.visited.1.lock())
+        mem::take(&mut self.visited.set.lock())
+    }
+
+    pub fn total_visited_count(&self) -> usize {
+        self.visited.count.load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 
