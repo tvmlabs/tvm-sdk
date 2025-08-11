@@ -1,13 +1,17 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::hash::BuildHasher;
+use std::hash::Hasher;
+use std::mem;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicUsize;
+
 use crate::Cell;
 use crate::CellImpl;
 use crate::CellType;
 use crate::LevelMask;
 use crate::UInt256;
-use std::collections::{HashMap, HashSet};
-use std::hash::{BuildHasher, Hasher};
-use std::mem;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicUsize};
 
 #[derive(Default, Clone)]
 pub struct UInt256HashBuilder;
@@ -53,6 +57,7 @@ impl VisitedSetInner {
             count: AtomicUsize::new(0),
         }
     }
+
     fn is_enabled(&self) -> bool {
         self.enabled.load(std::sync::atomic::Ordering::Relaxed)
     }
@@ -367,7 +372,9 @@ impl UsageSet {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Cell, UsageTree, read_single_root_boc};
+    use crate::Cell;
+    use crate::UsageTree;
+    use crate::read_single_root_boc;
     #[test]
     fn test_usage_cell_speed() {
         let original_bytes =

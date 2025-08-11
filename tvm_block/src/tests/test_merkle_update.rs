@@ -22,12 +22,14 @@ use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
 
 use super::*;
+use crate::Account;
 use crate::Block;
 use crate::CurrencyCollection;
 use crate::Grams;
 use crate::HashmapE;
 use crate::HashmapType;
 use crate::InternalMessageHeader;
+use crate::MerkleProof;
 use crate::Message;
 use crate::MsgAddressInt;
 use crate::MsgEnvelope;
@@ -49,7 +51,6 @@ use crate::TickTock;
 use crate::define_HashmapE;
 use crate::generate_test_account_by_init_code_hash;
 use crate::hashmapaug::HashmapAugType;
-use crate::{Account, MerkleProof};
 
 #[test]
 fn test_merkle_update() {
@@ -1257,7 +1258,6 @@ fn test_fast_merkle_update() {
 
         let verify_new = update.apply_for(&old_state).unwrap();
         assert_eq!(verify_new, new_state);
-
     }
 }
 

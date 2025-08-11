@@ -614,6 +614,7 @@ impl MerkleUpdate {
             }
         }
     }
+
     fn create_new_cell_fast(
         cell: &Cell,
         is_visited_old: &impl Fn(&UInt256) -> bool,
@@ -672,12 +673,7 @@ impl MerkleUpdate {
             let proof_child = if let Some(done) = done_cells.get(&child_repr_hash) {
                 done.clone()
             } else if child.references_count() == 0 || used_paths_cells.contains(&child_repr_hash) {
-                Self::create_old_cell_fast(
-                    child,
-                    used_paths_cells,
-                    child_merkle_depth,
-                    done_cells,
-                )?
+                Self::create_old_cell_fast(child, used_paths_cells, child_merkle_depth, done_cells)?
             } else {
                 Self::build_pruned_branch(child, child_merkle_depth)?.into_cell()?
             };
@@ -689,5 +685,4 @@ impl MerkleUpdate {
 
         Ok(proof_cell)
     }
-
 }
