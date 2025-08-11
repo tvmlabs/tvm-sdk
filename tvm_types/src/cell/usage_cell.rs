@@ -357,6 +357,7 @@ impl UsageSet {
     }
 
     pub fn take_visited_set(&mut self) -> HashSet<UInt256, UInt256HashBuilder> {
+        self.visited.enabled.store(false, std::sync::atomic::Ordering::Release);
         mem::take(&mut self.visited.set.lock())
     }
 
