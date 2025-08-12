@@ -39,7 +39,7 @@ fn determinism(its: usize) -> Vec<u8> {
 
     for _ in 0..iterations {
         // Use floating point arithmetic with tiny imprecisions
-        r[0] = rand::thread_rng().gen_range(1..=100).into();
+        r[0] = rand::thread_rng().gen_range(-100000000.0..=1000000000.0).into();
 
         // Perform some non-deterministic arithmetic operations
         results.push(r[0].clone());
@@ -48,9 +48,7 @@ fn determinism(its: usize) -> Vec<u8> {
     for r in results {
         result_vec.append(&mut r.to_le_bytes().to_vec());
     }
-    let mut act_res = [result_vec[0]].to_vec();
-    act_res.push(*result_vec.last().unwrap());
-    act_res
+    result_vec
 }
 
 bindings::export!(Component with_types_in bindings);
