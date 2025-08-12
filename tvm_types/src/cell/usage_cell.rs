@@ -51,13 +51,12 @@ impl UsageCell {
 
     fn visit(&self) -> bool {
         if !self.visited.is_dropped() {
+            let mut map = self.visited.map.lock();
+            if map.contains_key(&self.cell.repr_hash()) {
+                return true;
+            }
             self.visited.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let usage_cell = Cell::with_usage(self.clone());
-            self.visited.map.lock().insert(self.cell.repr_hash(), usage_cell.clone());
-            self.visited
-                .usage_map
-                .lock()
-                .insert((self.cell.repr_hash(), self.cell.repr_depth()), usage_cell);
+            map.insert(self.cell.repr_hash(), Cell::with_usage(self.clone()));
             true
         } else {
             false
@@ -91,12 +90,8 @@ impl CellImpl for UsageCell {
     fn reference(&self, index: usize) -> crate::Result<Cell> {
         if self.visit_on_load && !self.visited.is_dropped() || self.visit() {
             let child = self.cell.reference(index)?;
-            if let Some(existing) = self
-                .visited
-                .usage_map
-                .lock()
-                .get(&(child.repr_hash(), child.repr_depth()))
-                .map(|x| x.clone())
+            if let Some(existing) =
+                self.visited.map.lock().get(&child.repr_hash()).map(|x| x.clone())
             {
                 return Ok(existing);
             }
