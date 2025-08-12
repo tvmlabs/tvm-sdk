@@ -402,8 +402,8 @@ impl NetworkState {
     }
 
     pub async fn update_bm_data(&self, token: &Value) {
-        let issuer_pubkey = token.get("issuer")
-            .and_then(|issuer| issuer.get("bm").or_else(|| issuer.get("bk")));
+        let issuer_pubkey =
+            token.get("issuer").and_then(|issuer| issuer.get("bm").or_else(|| issuer.get("bk")));
 
         if let Some(Value::String(pubkey)) = issuer_pubkey {
             self.update_bm_issuer_pubkey(Some(pubkey.to_string())).await;

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.2] - 2025-08-11
+
+### Fixed
+- Usage tree seg fault and added usage tree/set stoping tracking on tree drop
+
 ## [2.20.1] - 2025-08-06
 
 ### Update
