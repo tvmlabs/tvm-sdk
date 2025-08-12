@@ -57,6 +57,9 @@ impl UsageCell {
             }
             self.visited.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             map.insert(self.cell.repr_hash(), Cell::with_usage(self.clone()));
+            if map.len() > 2000 {
+                panic!("Nested usage cells can not cause stack overflow");
+            }
             true
         } else {
             false
