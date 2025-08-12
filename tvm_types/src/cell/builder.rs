@@ -174,7 +174,7 @@ impl BuilderData {
         }
         let data = SmallVec::from_slice(cell.data());
         let mut builder = BuilderData::with_raw(data, cell.bit_length())?;
-        builder.references = cell.clone_references_with_removed_usage();
+        builder.references = cell.clone_references();
         builder.cell_type = cell.cell_type();
         Ok(builder)
     }
@@ -304,7 +304,7 @@ impl BuilderData {
         if self.references_free() == 0 {
             fail!(ExceptionCode::CellOverflow)
         } else {
-            self.references.push(cell.remove_usage());
+            self.references.push(cell);
             Ok(self)
         }
     }
@@ -313,7 +313,7 @@ impl BuilderData {
         if self.references_free() == 0 {
             fail!(ExceptionCode::CellOverflow)
         } else {
-            self.references.insert(0, cell.remove_usage());
+            self.references.insert(0, cell);
             Ok(self)
         }
     }
@@ -333,7 +333,7 @@ impl BuilderData {
                     child.repr_hash()
                 );
             }
-            Some(old) => *old = child.remove_usage(),
+            Some(old) => *old = child,
         }
     }
 

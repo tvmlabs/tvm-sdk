@@ -435,15 +435,6 @@ impl Cell {
         refs
     }
 
-    pub fn clone_references_with_removed_usage(&self) -> SmallVec<[Cell; 4]> {
-        let count = self.references_count();
-        let mut refs = SmallVec::with_capacity(count);
-        for i in 0..count {
-            refs.push(self.reference(i).unwrap().remove_usage())
-        }
-        refs
-    }
-
     pub fn data(&self) -> &[u8] {
         #[cfg(feature = "dyn_cell")]
         {
@@ -884,18 +875,6 @@ impl Cell {
             Cell::Boc3(cell) => cell.downcast_usage(),
             Cell::Usage(cell) => cell.downcast_usage(),
             Cell::Virtual(cell) => cell.downcast_usage(),
-        }
-    }
-
-    fn remove_usage(self) -> Cell {
-        #[cfg(feature = "dyn_cell")]
-        {
-            if self.0.is_usage_cell() { self.0.downcast_usage() } else { self }
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Cell::Usage(ref usage) => usage.inner(),
-            _ => self,
         }
     }
 }

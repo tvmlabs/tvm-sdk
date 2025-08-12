@@ -145,10 +145,6 @@ impl UsageCell {
     fn visit(&self) -> bool {
         self.visited.visit(&self.cell)
     }
-
-    pub fn inner(&self) -> Cell {
-        self.cell.clone()
-    }
 }
 
 impl CellImpl for UsageCell {
