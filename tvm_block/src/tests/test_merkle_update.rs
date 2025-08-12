@@ -1243,10 +1243,12 @@ fn test_fast_merkle_update() {
         println!("Testing {}", path);
         let (old_state, new_state, usages) = read_states_and_usages(&path);
 
+        let start = Instant::now();
         let update_fast =
             MerkleUpdate::create_fast(&old_state, &new_state, |x| usages.contains(x)).unwrap();
-        println!("fast old:\n{}", cell_to_string(&update_fast.old));
-        println!("fast new:\n{}", cell_to_string(&update_fast.new));
+        println!("Created fast: {:?}", start.elapsed());
+        // println!("fast old:\n{}", cell_to_string(&update_fast.old));
+        // println!("fast new:\n{}", cell_to_string(&update_fast.new));
 
         let verify_new = update_fast.apply_for(&old_state).unwrap();
         assert_eq!(verify_new, new_state);

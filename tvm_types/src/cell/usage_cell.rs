@@ -3,80 +3,21 @@ use crate::CellImpl;
 use crate::CellType;
 use crate::LevelMask;
 use crate::UInt256;
+use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasher, Hasher};
-use std::mem;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize};
 
-#[derive(Default, Clone)]
-pub struct UInt256HashBuilder;
-
-impl BuildHasher for UInt256HashBuilder {
-    type Hasher = UInt256Hasher;
-
-    fn build_hasher(&self) -> UInt256Hasher {
-        UInt256Hasher { hash: 0 }
-    }
-}
-
-#[derive(Default)]
-pub struct UInt256Hasher {
-    hash: u64,
-}
-
-impl Hasher for UInt256Hasher {
-    fn finish(&self) -> u64 {
-        self.hash
-    }
-
-    fn write(&mut self, bytes: &[u8]) {
-        self.hash = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
-    }
-
-    fn write_u64(&mut self, i: u64) {
-        self.hash = i;
-    }
-}
-
-struct VisitedSetInner {
-    set: parking_lot::Mutex<HashSet<UInt256, UInt256HashBuilder>>,
-    enabled: AtomicBool,
-    count: AtomicUsize,
-}
-
-impl VisitedSetInner {
-    fn new() -> Self {
-        VisitedSetInner {
-            set: parking_lot::Mutex::new(HashSet::default()),
-            enabled: AtomicBool::new(true),
-            count: AtomicUsize::new(0),
-        }
-    }
-    fn is_enabled(&self) -> bool {
-        self.enabled.load(std::sync::atomic::Ordering::Relaxed)
-    }
-
-    fn visit(&self, cell: &Cell) -> bool {
-        if self.is_enabled() {
-            self.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            self.set.lock().insert(cell.repr_hash());
-            true
-        } else {
-            false
-        }
-    }
-}
-
-struct VisitedMapInner {
+struct VisitedMap {
     map: parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>,
     enabled: AtomicBool,
     count: AtomicUsize,
 }
 
-impl VisitedMapInner {
+impl VisitedMap {
     fn new() -> Self {
-        VisitedMapInner {
+        VisitedMap {
             map: parking_lot::Mutex::new(HashMap::default()),
             enabled: AtomicBool::new(true),
             count: AtomicUsize::new(0),
@@ -98,44 +39,24 @@ impl VisitedMapInner {
     }
 }
 
-type VisitedSet = Arc<VisitedSetInner>;
-type VisitedMap = Arc<VisitedMapInner>;
-
-#[derive(Clone)]
-enum Visited {
-    Set(VisitedSet),
-    Map(VisitedMap),
-}
-
-impl Visited {
-    fn is_enabled(&self) -> bool {
-        match &self {
-            Visited::Set(visited) => visited.is_enabled(),
-            Visited::Map(visited) => visited.is_enabled(),
-        }
-    }
-
-    fn visit(&self, cell: &Cell) -> bool {
-        match &self {
-            Visited::Set(visited) => visited.visit(cell),
-            Visited::Map(visited) => visited.visit(cell),
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct UsageCell {
     cell: Cell,
     visit_on_load: bool,
-    visited: Visited,
+    visited: Arc<VisitedMap>,
     usage_level: u64,
 }
 
 impl UsageCell {
-    fn new(inner: Cell, visit_on_load: bool, visited: Visited) -> Self {
+    fn new(inner: Cell, visit_on_load: bool, visited: Arc<VisitedMap>) -> Self {
         let usage_level = inner.usage_level() + 1;
         assert!(usage_level <= 1, "Nested usage cells can cause stack overflow");
-        let cell = Self { cell: inner, visit_on_load, visited, usage_level };
+        let cell = Self {
+            cell: inner,
+            visit_on_load,
+            visited,
+            usage_level,
+        };
         if visit_on_load {
             cell.visit();
         }
@@ -172,6 +93,10 @@ impl CellImpl for UsageCell {
 
     fn reference(&self, index: usize) -> crate::Result<Cell> {
         if self.visit_on_load && self.visited.is_enabled() || self.visit() {
+            let child_hash = self.reference_repr_hash(index)?;
+            if let Some(existing) = self.visited.map.lock().get(&child_hash).map(|x| x.clone()) {
+                return Ok(existing);
+            }
             let cell = self.cell.reference(index)?;
             let cell = if cell.is_usage_cell() { cell.downcast_usage() } else { cell };
             Ok(Cell::with_usage(UsageCell::new(cell, self.visit_on_load, self.visited.clone())))
@@ -232,7 +157,7 @@ impl CellImpl for UsageCell {
 #[derive(Clone)]
 pub struct UsageTree {
     root: Cell,
-    visited: VisitedMap,
+    visited: Arc<VisitedMap>,
 }
 
 impl Drop for UsageTree {
@@ -247,14 +172,13 @@ impl UsageTree {
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
-        let visited = Arc::new(VisitedMapInner::new());
-        let root =
-            Cell::with_usage(UsageCell::new(root, visit_on_load, Visited::Map(visited.clone())));
+        let visited = Arc::new(VisitedMap::new());
+        let root = Cell::with_usage(UsageCell::new(root, visit_on_load, visited.clone()));
         Self { root, visited }
     }
 
     pub fn use_cell(&self, cell: Cell, visit_on_load: bool) -> Cell {
-        let usage_cell = UsageCell::new(cell, visit_on_load, Visited::Map(self.visited.clone()));
+        let usage_cell = UsageCell::new(cell, visit_on_load, self.visited.clone());
         usage_cell.visit();
         Cell::with_usage(usage_cell)
     }
@@ -318,54 +242,6 @@ impl UsageTree {
     }
 }
 
-#[derive(Clone)]
-pub struct UsageSet {
-    root: Cell,
-    visited: VisitedSet,
-}
-
-impl Drop for UsageSet {
-    fn drop(&mut self) {
-        self.visited.enabled.store(false, std::sync::atomic::Ordering::Release);
-    }
-}
-
-impl UsageSet {
-    pub fn with_root(root: Cell) -> Self {
-        Self::with_params(root, false)
-    }
-
-    pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
-        let visited = Arc::new(VisitedSetInner::new());
-        let root =
-            Cell::with_usage(UsageCell::new(root, visit_on_load, Visited::Set(visited.clone())));
-        Self { root, visited }
-    }
-
-    pub fn use_cell(&self, cell: Cell, visit_on_load: bool) -> Cell {
-        let usage_cell = UsageCell::new(cell, visit_on_load, Visited::Set(self.visited.clone()));
-        usage_cell.visit();
-        Cell::with_usage(usage_cell)
-    }
-
-    pub fn root_cell(&self) -> Cell {
-        self.root.clone()
-    }
-
-    pub fn build_visited_set(&self) -> HashSet<UInt256, UInt256HashBuilder> {
-        self.visited.set.lock().clone()
-    }
-
-    pub fn take_visited_set(&mut self) -> HashSet<UInt256, UInt256HashBuilder> {
-        self.visited.enabled.store(false, std::sync::atomic::Ordering::Release);
-        mem::take(&mut self.visited.set.lock())
-    }
-
-    pub fn total_visited_count(&self) -> usize {
-        self.visited.count.load(std::sync::atomic::Ordering::Relaxed)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{Cell, UsageTree, read_single_root_boc};
@@ -412,5 +288,35 @@ mod tests {
         for child in cell.clone_references() {
             traverse_cell_inner(&child, visited_cells, usage_tree, drop_usage_tree_after);
         }
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct UInt256HashBuilder;
+
+impl BuildHasher for UInt256HashBuilder {
+    type Hasher = UInt256Hasher;
+
+    fn build_hasher(&self) -> UInt256Hasher {
+        UInt256Hasher { hash: 0 }
+    }
+}
+
+#[derive(Default)]
+pub struct UInt256Hasher {
+    hash: u64,
+}
+
+impl Hasher for UInt256Hasher {
+    fn finish(&self) -> u64 {
+        self.hash
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        self.hash = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
+    }
+
+    fn write_u64(&mut self, i: u64) {
+        self.hash = i;
     }
 }
