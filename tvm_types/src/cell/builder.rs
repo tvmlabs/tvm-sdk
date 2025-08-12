@@ -83,7 +83,7 @@ impl BuilderData {
         refs: impl IntoIterator<Item = Cell>,
     ) -> Result<BuilderData> {
         let mut builder = BuilderData::with_raw(data, length_in_bits)?;
-        builder.references = refs.into_iter().map(|x| x.remove_usage()).collect();
+        builder.references = refs.into_iter().collect();
         Ok(builder)
     }
 
