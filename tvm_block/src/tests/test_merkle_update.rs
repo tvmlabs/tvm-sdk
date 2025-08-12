@@ -1275,12 +1275,14 @@ fn read_states_and_usages(path: &str) -> (Cell, Cell, HashSet<UInt256>) {
     (old_state, new_state, usages)
 }
 
+#[allow(dead_code)]
 fn cell_to_string(cell: &Cell) -> String {
     let mut s = String::new();
     write_cell_to_string(cell, 0, &mut s);
     s
 }
 
+#[allow(dead_code)]
 fn write_cell_to_string(cell: &Cell, indent: usize, s: &mut String) {
     *s += &" ".repeat(indent);
     *s += cell.repr_hash().to_hex_string().split_at(4).0;

@@ -3,7 +3,6 @@ use crate::CellImpl;
 use crate::CellType;
 use crate::LevelMask;
 use crate::UInt256;
-use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasher, Hasher};
 use std::sync::Arc;
@@ -11,7 +10,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize};
 
 struct VisitedMap {
     map: parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>,
-    enabled: AtomicBool,
+    dropped: AtomicBool,
     count: AtomicUsize,
 }
 
@@ -19,17 +18,17 @@ impl VisitedMap {
     fn new() -> Self {
         VisitedMap {
             map: parking_lot::Mutex::new(HashMap::default()),
-            enabled: AtomicBool::new(true),
+            dropped: AtomicBool::new(false),
             count: AtomicUsize::new(0),
         }
     }
 
-    fn is_enabled(&self) -> bool {
-        self.enabled.load(std::sync::atomic::Ordering::Relaxed)
+    fn is_dropped(&self) -> bool {
+        self.dropped.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     fn visit(&self, cell: &Cell) -> bool {
-        if self.is_enabled() {
+        if !self.is_dropped() {
             self.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             self.map.lock().insert(cell.repr_hash(), cell.clone());
             true
@@ -51,12 +50,7 @@ impl UsageCell {
     fn new(inner: Cell, visit_on_load: bool, visited: Arc<VisitedMap>) -> Self {
         let usage_level = inner.usage_level() + 1;
         assert!(usage_level <= 1, "Nested usage cells can cause stack overflow");
-        let cell = Self {
-            cell: inner,
-            visit_on_load,
-            visited,
-            usage_level,
-        };
+        let cell = Self { cell: inner, visit_on_load, visited, usage_level };
         if visit_on_load {
             cell.visit();
         }
@@ -92,7 +86,7 @@ impl CellImpl for UsageCell {
     }
 
     fn reference(&self, index: usize) -> crate::Result<Cell> {
-        if self.visit_on_load && self.visited.is_enabled() || self.visit() {
+        if self.visit_on_load && !self.visited.is_dropped() || self.visit() {
             let child_hash = self.reference_repr_hash(index)?;
             if let Some(existing) = self.visited.map.lock().get(&child_hash).map(|x| x.clone()) {
                 return Ok(existing);
@@ -162,7 +156,7 @@ pub struct UsageTree {
 
 impl Drop for UsageTree {
     fn drop(&mut self) {
-        self.visited.enabled.store(false, std::sync::atomic::Ordering::Release);
+        self.visited.dropped.store(true, std::sync::atomic::Ordering::Release);
     }
 }
 
@@ -239,6 +233,15 @@ impl UsageTree {
             visited.insert(hash.clone());
         }
         visited
+    }
+
+    pub fn take_visited_map(&self) -> HashMap<UInt256, Cell, UInt256HashBuilder> {
+        self.visited.dropped.store(true, std::sync::atomic::Ordering::Release);
+        std::mem::take(&mut self.visited.map.lock())
+    }
+
+    pub fn take_visited_set(&self) -> HashSet<UInt256> {
+        HashSet::from_iter(self.take_visited_map().keys().cloned())
     }
 }
 
