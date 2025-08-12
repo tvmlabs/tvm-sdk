@@ -102,27 +102,24 @@ pub fn key_share(public_key: &[u8]) -> Vec<u8> {
     )
 }
 
-pub fn trunc_end_22(message: &Vec<u8>) -> Vec<u8> {
+pub fn trunc_end_with_trailer(message: &Vec<u8>, trailer: u8) -> Vec<u8> {
     let mut ind = message.len() - 1;
-    while message[ind]!=22 && ind>0 {
+    while ind>0 && message[ind]!=trailer {
         ind = ind - 1;
     }
-    message[..ind].to_vec()
-}
+    if ind > 0 {
+        message[..ind].to_vec()
+    } else {
+        message[..].to_vec()
+    }
 
-pub fn trunc_end_23(message: &Vec<u8>) -> Vec<u8> {
-    let mut ind = message.len() - 1;
-    while message[ind]!=23 && ind>0 {
-        ind = ind - 1;
-    }
-    message[..ind].to_vec()
 }
 
 pub fn contains_handshake_finish(message: &Vec<u8>) -> bool {
 
     for i in 0.. message.len() {
         if message[i]==20 {
-            if i+3<message.len() && message[i+1]==0 && message[i+2]==0 && message[i+3]==32 {
+            if i + 3 < message.len() && message[i+1]==0 && message[i+2]==0 && message[i+3]==32 {
                 return true;
             }
         }
@@ -137,10 +134,13 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
     };
     let mut current_pos: usize = 0;
 
+    // Пропускаем handshake type:
     current_pos = current_pos + 2; // 02 00 ("server hello") // buf.take(2);
 
+    // Пропускаем length_of_message:
     current_pos = current_pos + 2; // buf.take(2);
 
+    // Пропускаем tls type of message:
     current_pos = current_pos + 2; // 03 03 (client protocol version = "TLS 1.2") // buf.take(2);
 
     if &current_pos + 32 < buf.len() { // if let Some(random_bytes) = buf.take(32) {
@@ -156,10 +156,10 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
         current_pos = current_pos + 2;//buf.take(2); // cipher suite
         current_pos = current_pos + 1;// buf.take(1); // compression
 
-        let mut dst = [0u8; 2];
-        dst.clone_from_slice(&buf[current_pos..current_pos+2]);
-        let extensions_len = u16::from_be_bytes(dst);//let extensions_len = buf.read_u16().expect("Can t read len of extensions!");
-        //let extensions = buf.read_bytes(extensions_len);
+        //let mut dst = [0u8; 2];
+        //dst.clone_from_slice(&buf[current_pos..current_pos+2]);
+        //let _extensions_len = u16::from_be_bytes(dst);//let extensions_len = buf.read_u16().expect("Can t read len of extensions!");
+        //let extensions = buf.read_bytes(extensions_len); // need check extension
         current_pos = current_pos + 2;
 
         while &current_pos+2<buf.len() { // !extensions.is_empty()
@@ -181,18 +181,17 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
                     hello.public_key = public_key_bytes.try_into().unwrap(); // hello.public_key = public_key_bytes.to_vec();
                 }
                 0x002b => {
+                    // Ignore TLS version (and its nength, constantly equal to 2)
                     current_pos = current_pos + 6;
                 }
                 _ => {
                     let extension_len = u16::from_be_bytes(buf[current_pos..current_pos+2].try_into().unwrap());
                     current_pos = current_pos + 4;
                     current_pos = current_pos + (extension_len as usize);
-                    //eprintln!("unknown extension");
                 }
             }
         }
     } else {
-        //println!("not enough len of random bytes")
     }
 
     hello
@@ -228,15 +227,15 @@ pub fn extract_all_items(item: &str, data: &str) -> Vec<String> {
     while let Some(start_index) = data[start..].find(&target) {
 
         if let Some(open_quote_pos) = data[start + start_index + target.len()..].find('"'){
-            let start_pos = start + start_index + target.len() + open_quote_pos + 1; // Позиция после подстроки "n":"
+            let start_pos = start + start_index + target.len() + open_quote_pos + 1; // Position after substring "n":"
 
-            // Ищем конец подстроки
+            // Looking for the end of a substring
             if let Some(end_index) = data[start_pos..].find('"') {
-                let end_pos = start_pos + end_index; // Конечная позиция
-                results.push(data[start_pos..end_pos].to_string()); // Добавляем подстроку в результаты
-                start = end_pos; // Обновляем стартовую позицию для следующего поиска
+                let end_pos = start_pos + end_index;
+                results.push(data[start_pos..end_pos].to_string()); // Add a substring to the results
+                start = end_pos; // Updating the starting position for the next search
             } else {
-                break; // Если кавычка не найдена, выходим из цикла
+                break; // If the quote is not found, exit the loop
             }
         } else {break};
 

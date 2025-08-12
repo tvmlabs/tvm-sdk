@@ -336,7 +336,7 @@ const TD3:[u32; 256] = [
 ];
 
 // The AES block size in bytes.
-const BlockSize: usize = 16;
+const BLOCK_SIZE: usize = 16;
 
 pub fn uint32(b: &[u8]) -> u32 { // BigEndian
     assert!(b.len() >= 4); // bounds check
@@ -635,7 +635,7 @@ impl Aes256Cipher {
     }
 
     pub fn block_size(&self) -> usize {
-        return BlockSize;
+        return BLOCK_SIZE;
     }
 
 	pub fn encrypt(&self, dst: &mut [u8;16], src: &[u8;16]) {

@@ -1,6 +1,4 @@
 
-//use std::io::{self, Read};
-//use std::sync::{Once, ONCE_INIT};
 use num_bigint::{BigInt, Sign, ToBigInt};
 use num_bigint::BigUint;
 //use core::ops::Shl;
@@ -9,7 +7,6 @@ use std::str::FromStr;
 use num_integer::Integer;
 
 use num_traits::{Num, Zero, One, Signed};
-//use num_traits::One;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Curve {
@@ -23,6 +20,10 @@ pub struct Curve {
 }
 
 impl Curve {
+    pub fn n_minus2(&self) -> BigInt{
+        &self.n - BigInt::from(2)
+    }
+
     pub fn params(&self) -> &Self {
         self
     }
@@ -55,7 +56,7 @@ impl Curve {
             return false;
         }
 
-        let y2 = y * y % &self.p;
+        let y2 = (y * y).mod_floor(&self.p);
 
         self.polynomial(x) == y2
     }
@@ -75,18 +76,21 @@ impl Curve {
         }
 
         let z_inv = mod_inverse(&z, &self.p).unwrap(); // Assuming BigInt supports inverse
-        let z_inv_sq = (z_inv.clone() * z_inv.clone()) % &self.p;
+        let z_inv_sq = (&z_inv * &z_inv).mod_floor(&self.p);
 
-        let x_out = x * z_inv_sq.clone() % &self.p;
-        let z_inv_sq_mul = z_inv_sq * z_inv % &self.p;
-        let y_out = y * z_inv_sq_mul % &self.p;
+        let x_out = (x * &z_inv_sq).mod_floor(&self.p);
+        let z_inv_sq_mul = (z_inv_sq * z_inv).mod_floor(&self.p);
+        let y_out = (y * z_inv_sq_mul).mod_floor(&self.p);
 
         (x_out, y_out)
     }
 
     pub fn add(&self, x1: &BigInt, y1: &BigInt, x2: &BigInt, y2: &BigInt) -> (BigInt, BigInt) {
-        if matches_specific_curve(self).is_some() {
-            return matches_specific_curve(self).unwrap().add(x1, y1, x2, y2);
+        //if matches_specific_curve(self).is_some() {
+            //return matches_specific_curve(self).unwrap().add(x1, y1, x2, y2);
+        //}
+        if !matches_specific_curve(self).is_some() {
+            panic!("unknown curve");
         }
 
         panic_if_not_on_curve(self, x1, y1);
@@ -111,25 +115,25 @@ impl Curve {
             return (x1.clone(), y1.clone(), z1.clone());
         }
 
-        let z1z1 = z1 * z1 % &self.p;
-        let z2z2 = z2 * z2 % &self.p;
+        let z1z1 = (z1 * z1).mod_floor(&self.p);
+        let z2z2 = (z2 * z2).mod_floor(&self.p);
 
-        let u1 = x1 * z2z2.clone() % &self.p;
-        let u2 = x2 * z1z1.clone() % &self.p;
-        let mut h = u2 - u1.clone();
+        let u1 = (x1 * &z2z2).mod_floor(&self.p);
+        let u2 = (x2 * &z1z1).mod_floor(&self.p);
+        let mut h = u2 - &u1;
 
         if h.is_negative() {
             h += &self.p;
         }
 
         let x_equal = h.is_zero();
-        let i = h.clone() << 1;
-        let i_sq = i.clone() * i.clone() % &self.p;
-        let j = &h * i_sq % &self.p;
+        let i = &h << 1;
+        let i_sq = &i * &i;
+        let j = &h * &i_sq;
 
-        let mut s1 = y1 * z2 * &z2z2 % &self.p;
-        let s2 = y2 * z1 * z1z1.clone() % &self.p;
-        let mut r = s2 - s1.clone();
+        let mut s1 = (y1 * z2 * &z2z2).mod_floor(&self.p);
+        let s2 = (y2 * z1 * &z1z1).mod_floor(&self.p);
+        let mut r = s2 - &s1;
 
         if r.is_negative() {
             r += &self.p;
@@ -141,79 +145,81 @@ impl Curve {
         }
 
         r <<= 1;
-        let v = u1 * i;
+        let v = u1 * &i_sq;
 
-        x3 = r.clone();
-        x3 = x3.clone() * x3 % &self.p; // x3 = r^2
-        x3 = (x3 - &j - &v - &v) % &self.p; // x3 = r^2 - j - 2v
+        x3 = (&r * &r - &j - &v - &v).mod_floor(&self.p); // x3 = r^2 - j - 2v
 
-        y3 = r * (v - &x3) % &self.p; // y3 = r(v - x3)
+        //y3 = r * (v - &x3) % &self.p; // y3 = r(v - x3)
         s1 = s1 * j << 1; // s1 = 2 * y1 * z2 * z2z2
-        y3 = (y3 - s1) % &self.p;
+        y3 = (r * (v - &x3) - s1).mod_floor(&self.p);
 
-        z3 = (z1 + z2) % &self.p; // z3 = z1 + z2
-        z3 = (z3.clone() * z3.clone() - &z1z1 - &z2z2) % &self.p; // z3 = (z1 + z2)^2 - z1^2 - z2^2
-        z3 = (z3 * &h) % &self.p; // z3 *= h
+        z3 = z1 + z2;
+        z3 = (h * (&z3 * &z3 - &z1z1 - &z2z2)).mod_floor(&self.p); // z3 = h*( (z1 + z2)^2 - z1^2 - z2^2)
 
         (x3, y3, z3)
     }
 
     pub fn double_jacobian(&self, x: &BigInt, y: &BigInt, z: &BigInt) -> (BigInt, BigInt, BigInt) {
-        let delta = (z * z) % &self.p;
-        let gamma = (y * y) % &self.p;
+        let delta = (z * z).mod_floor(&self.p);
+        let gamma = (y * y).mod_floor(&self.p);
 
-        let mut alpha = (x - &delta) % &self.p;
+        let mut alpha = x - &delta;
         if alpha.is_negative() {
             alpha += &self.p;
         }
 
-        let alpha2 = (x + &delta) % &self.p;
-        alpha = (alpha * &alpha2) % &self.p;
-        let mut alpha_lsh = (&alpha << 1) % &self.p; // Alpha << 1 represents 2α
-        alpha = (alpha + &alpha_lsh) % &self.p;
+        let alpha2 = (x + &delta).mod_floor(&self.p);
+        alpha = alpha * &alpha2;
+        let mut alpha_lsh = &alpha << 1; // Alpha << 1 represents 2α
+        alpha = &alpha + &alpha_lsh;
 
-        let beta = (alpha2 * &gamma) % &self.p;
+        let beta = x * &gamma;
 
-        let mut x3 = (&alpha * &alpha) % &self.p;
-        let beta8 = (&beta << 3) % &self.p; // (beta * 2^3) % p
-        x3 = (x3 - &beta8) % &self.p;
+        let mut x3 = &alpha * &alpha;
+        let beta8 = (&beta << 3).mod_floor(&self.p); // (beta * 2^3) % p
+        x3 = x3 - &beta8;
         if x3.is_negative() {
             x3 += &self.p;
         }
+        x3 = x3.mod_floor(&self.p);
 
-        let mut z3 = (y + z) % &self.p;
-        z3 = (&z3 * &z3) % &self.p;
-        z3 = (&z3 - &gamma) % &self.p;
+        let mut z3 = y + z;
+        z3 = &z3 * &z3 - &gamma;
         if z3.is_negative() {
             z3 += &self.p;
         }
-        z3 = (z3 - &delta) % &self.p;
+        z3 = z3 - &delta;
         if z3.is_negative() {
             z3 += &self.p;
         }
+        z3 = z3.mod_floor(&self.p);
 
-        let mut beta_double = (beta << 2) % &self.p;
-        beta_double = (beta_double - &x3) % &self.p;
+        let mut beta_double = beta << 2;
+        beta_double = beta_double - &x3;
         if beta_double.is_negative() {
             beta_double += &self.p;
         }
 
-        let mut y3 = (alpha * beta_double) % &self.p;
+        let mut y3 = alpha * beta_double;
 
-        let gamma_sq = (&gamma * &gamma) % &self.p;
-        let gamma_lsh = (gamma_sq << 3) % &self.p;
+        let gamma_sq = &gamma * &gamma;
+        let gamma_lsh = (gamma_sq << 3).mod_floor(&self.p);
 
-        y3 = (y3 - &gamma_lsh) % &self.p;
+        y3 = y3 - &gamma_lsh;
         if y3.is_negative() {
             y3 += &self.p;
         }
+        y3 = y3.mod_floor(&self.p);
 
         (x3, y3, z3)
     }
 
     pub fn scalar_mult(&self, bx: &BigInt, by: &BigInt, k: &[u8]) -> (BigInt, BigInt) {
-        if let Some(specific) = matches_specific_curve(self) {
-            return specific.scalar_mult(bx, by, k);
+        //if let Some(specific) = matches_specific_curve(self) {
+            //return specific.scalar_mult(bx, by, k);
+        //}
+        if !matches_specific_curve(self).is_some() {
+            panic!("unknown curve");
         }
 
         panic_if_not_on_curve(self, bx, by);
@@ -233,19 +239,25 @@ impl Curve {
                 byte <<= 1;
             }
         }
+        let res = self.affine_from_jacobian(&x, &y, &z);
 
-        self.affine_from_jacobian(&x, &y, &z)
+        res//self.affine_from_jacobian(&x, &y, &z)
     }
 
     pub fn scalar_base_mult(&self, k: &[u8]) -> (BigInt, BigInt) {
-        if let Some(specific) = matches_specific_curve(self) {
-            return specific.scalar_base_mult(k);
+        //if let Some(specific) = matches_specific_curve(self) {
+            //return specific.scalar_base_mult(k);
+        //}
+
+        if !matches_specific_curve(self).is_some() {
+            panic!("unknown curve");
         }
 
         self.scalar_mult(&self.gx, &self.gy, k)
     }
 
     /*pub fn point_from_affine(&self, x: &BigUint, y: &BigUint) -> Option<Point> {
+        // Reject values that cannot be encoded correctly.
         if x.is_negative() || y.is_negative() {
             return None; // Err("negative coordinate".into());
         }
@@ -254,9 +266,10 @@ impl Curve {
             return None ; // Err("overflowing coordinate".into());
         }
 
+        // encodes the coordinates and lets SetBytes to reject invalid points.
         let byte_len = (&self.bit_size + 7) / 8;
         let mut buf = vec![0u8; 1 + 2 * byte_len];
-        buf[0] = 4; 
+        buf[0] = 4; // non-compessed point
         buf[1..1 + byte_len].copy_from_slice(&x.to_bytes_le());
 
         buf[1 + byte_len..1 + 2 * byte_len].copy_from_slice(&y.to_bytes_le());
@@ -265,6 +278,7 @@ impl Curve {
 
 }
 
+// The function checks if the parameters match one of the specific curves
 pub fn matches_specific_curve(params: &Curve) -> Option<Curve> {
     for curve in &[p224, p256, p384, p521] {
 
@@ -276,20 +290,6 @@ pub fn matches_specific_curve(params: &Curve) -> Option<Curve> {
     None
 }/*
 
-
-//pub trait Curve {
-    //fn params(&self) -> &CurveParams;
-
-    //fn is_on_curve(&self, x: &BigInt, y: &BigInt) -> bool;
-
-    //fn add(&self, x1: &BigInt, y1: &BigInt, x2: &BigInt, y2: &BigInt) -> (BigInt, BigInt);
-
-    //fn double(&self, x1: &BigInt, y1: &BigInt) -> (BigInt, BigInt);
-
-    //fn scalar_mult(&self, x1: &BigInt, y1: &BigInt, k: &[u8]) -> (BigInt, BigInt);
-
-    //fn scalar_base_mult(&self, k: &[u8]) -> (BigInt, BigInt);
-//}
 
 const MASK: [u8; 8] = [0xff, 0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f];
 
@@ -408,13 +408,6 @@ pub fn panic_if_not_on_curve(curve: &Curve, x: &BigInt, y: &BigInt) {
     }
 }
 
-//pub fn init_all() {
-    //init_p224();
-    //init_p256();
-    //init_p384();
-    //init_p521();
-//}
-
 pub fn p224() -> Curve { // -> &'static dyn Curve {
 
     Curve{
@@ -426,8 +419,7 @@ pub fn p224() -> Curve { // -> &'static dyn Curve {
         gx: BigInt::from_str_radix("b70e0cbd6bb4bf7f321390b94a03c1d356c21122343280d6115c1d21", 16).unwrap(),
         gy: BigInt::from_str_radix("bd376388b5f723fb4c22dfe6cd4375a05a07476444d5819985007e34", 16).unwrap(),
     }
-    //INIT_ONCE.call_once(init_all);
-    // return instance of p224 curve
+
 }
 
 pub fn p256() -> Curve {
@@ -440,8 +432,7 @@ pub fn p256() -> Curve {
         gx: BigInt::from_str_radix("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", 16).unwrap(),
         gy: BigInt::from_str_radix("4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5",16).unwrap(),
     }
-    //INIT_ONCE.call_once(init_all);
-    // return instance of p256 curve
+
 }
 
 pub fn p384() -> Curve {
@@ -454,8 +445,7 @@ pub fn p384() -> Curve {
         gx: BigInt::from_str_radix("aa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7", 16).unwrap(),
         gy: BigInt::from_str_radix("3617de4a96262c6f5d9e98bf9292dc29f8f41dbd289a147ce9da3113b5f0b8c00a60b1ce1d7e819d7a431d7c90ea0e5f", 16).unwrap(),
     }
-    //INIT_ONCE.call_once(init_all);
-    // return instance of p384 curve
+
 }
 
 pub fn p521() -> Curve {
@@ -468,23 +458,21 @@ pub fn p521() -> Curve {
         gx: BigInt::from_str_radix("00c6858e06b70404e9cd9e3ecb662395b4429c648139053fb521f828af606b4d3dbaa14b5e77efe75928fe1dc127a2ffa8de3348b3c1856a429bf97e7e31c2e5bd66", 16).unwrap(),
         gy: BigInt::from_str_radix("011839296a789a3bc0045c8a5fb42c7d1bd998f54449579b446817afbd17273e662c97ee72995ef42640c550b9013fad0761353c7086a272c24088be94769fd16650", 16).unwrap(),
     }
-    //INIT_ONCE.call_once(init_all);
-    // return instance of p384 curve
 }
 
 fn hash_to_int(hash: &[u8], c: &Curve) -> BigInt {
-    let order_bits = c.params().n.bits(); 
-    let order_bytes = (order_bits + 7) / 8;
+    let order_bits = c.params().n.bits(); // Extract the bit length of the order
+    let order_bytes = (order_bits + 7) / 8; // Determine the number of bytes
     let mut hash = hash.to_vec();
 
     if hash.len() > order_bytes as usize {
-        hash.truncate(order_bytes as usize); 
+        hash.truncate(order_bytes as usize); // Trims the hash to the required bytes
     }
 
-    let mut ret = BigInt::from_bytes_be(num_bigint::Sign::Plus, &hash); 
-    let excess = hash.len()*8 - order_bits; 
+    let mut ret = BigInt::from_bytes_be(num_bigint::Sign::Plus, &hash); // Transforms to BigInt
+    let excess = hash.len()*8 - order_bits; // Calculating the excess bits
     if excess > 0 {
-        ret >>= excess; 
+        ret >>= excess; // Move to the right
     }
     ret
 }
@@ -501,7 +489,7 @@ pub fn verify(pub_key: &PublicKey, hash: &[u8], r: &BigInt, s: &BigInt) -> bool 
         return false;
     }
 
-    verify_nistec(pub_key, hash, &r, &s)
+    verify_nistec(pub_key, &hash, &r, &s)
     //match encode_signature(&r.to_bytes_be().1, &s.to_bytes_be().1) {
         //Ok(sig) => verify_asn1(pub_key, hash, &sig),
         //Err(_) => false,
@@ -509,8 +497,8 @@ pub fn verify(pub_key: &PublicKey, hash: &[u8], r: &BigInt, s: &BigInt) -> bool 
 }
 
 pub fn verify_nistec(pub_key: &PublicKey, hash: &[u8], r: &BigInt, s: &BigInt) -> bool {
-    let c = &pub_key.curve; 
-    let n = &c.params().n; 
+    let c = &pub_key.curve; // Get the curve
+    let n = &c.params().n; // Get the curve's order
 
     if r.is_zero() || s.is_zero() {
         return false;
@@ -522,54 +510,60 @@ pub fn verify_nistec(pub_key: &PublicKey, hash: &[u8], r: &BigInt, s: &BigInt) -
 
     // SEC 1, Version 2.0, Section 4.1.4
     let e = hash_to_int(hash, c);
-    let w = mod_inverse(s, n).unwrap(); 
+    let w = mod_inverse(s, n).unwrap(); // Finds the inverse value of s modulo N
+    //let w = s.modpow(&c.n_minus2(), &c.n);//s^c.n_minus2()%c.n
 
-    let mut u1 = e * w.clone();
+    let mut u1 = e * &w;
     u1 = u1 % n; // u1 = e  w mod N
     let mut u2 = r * w;
     u2 = u2 % n; // u2 = r  w mod N
 
-    let (x1, y1) = c.scalar_base_mult(&u1.to_bytes_be().1); 
-    let (x2, y2) = c.scalar_mult(&pub_key.x, &pub_key.y, &u2.to_bytes_be().1); 
-    let (x, y) = c.add(&x1, &y1, &x2, &y2); 
+    let (x1, y1) = c.scalar_base_mult(&u1.to_bytes_be().1);
+    let (x2, y2) = c.scalar_mult(&pub_key.x, &pub_key.y, &u2.to_bytes_be().1);
+    let (x, y) = c.add(&x1, &y1, &x2, &y2); // Adding up the points
 
-    if x.is_zero() && y.is_zero() { 
+    if x.is_zero() && y.is_zero() { // Checking if a point is infinity
         return false;
     }
 
     let x_final = x.modpow(&BigInt::one(), n); // x = x mod N
-    x_final == *r 
+    x_final == *r // Compare x with r
 }
 
 pub fn mod_inverse(g: &BigInt, n: &BigInt) -> Option<BigInt> {
     let mut n = n.clone();
     let mut g = g.clone();
 
+    // GCD expects parameters a and b to be > 0.
     if n.sign()==Sign::Minus {
-        n = n.abs()//n.neg = false; 
+        n = n.abs() // Transforms n to positive
     }
     if g.sign()==Sign::Minus { // if g.neg {
         g = g.add(&n); // g = g.modulus(&n)?;
     }
 
-    let (d, x) = gcd(&g, &n); 
+    //let (d, x) = gcd(&g, &n); // Call GCD
 
+    // if and only if d == 1, g and n are relatively prime
+    //if d != BigInt::from(1) {
+        //return None;
+    //}
 
-    if d != BigInt::from(1) {
-        return None;
-    }
-
-
-    if x.sign()==Sign::Minus { // if x.neg {
-        Some(x.add(&n))
-    } else {
-        Some(x) //self.set(&x);
-    }
+    // x and y are such that g * x + n * y = 1, so x is the inverse element.
+    // but it can be negative, so we transform it into the range 0 <= z < |n|
+    //if x.sign()==Sign::Minus { // if x.neg {
+        //Some(x.add(&n))
+    //} else {
+        //Some(x) //self.set(&x);
+    //}
 
     //Some(self.clone())
+    let exponent = &n - BigInt::from(2);
+    let res = g.modpow(&exponent, &n);
+    Some(res)
 }
 
-
+// Find greatest common divisor of a and b.
 pub fn gcd(a: &BigInt, b: &BigInt) -> (BigInt, BigInt) { // pub fn gcd(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
     let mut x0 = BigInt::zero();
     let mut x1 = BigInt::one();
@@ -580,12 +574,14 @@ pub fn gcd(a: &BigInt, b: &BigInt) -> (BigInt, BigInt) { // pub fn gcd(a: &BigIn
     let mut b = b.clone();
 
     while b != BigInt::zero() {
-        let (q, r) = a.div_rem(&b); 
+        let (q, r) = a.div_rem(&b); // Divide a by b, get the quotient and the remainder
 
+        // Refresh a and b
         let temp = b.clone();
         b = r;
         a = temp;
 
+        // Refresh coefficients of x and y
         let x_temp = x1.clone();
         x1 = &x0 - &(&q  &x1);
         x0 = x_temp;
@@ -595,6 +591,6 @@ pub fn gcd(a: &BigInt, b: &BigInt) -> (BigInt, BigInt) { // pub fn gcd(a: &BigIn
         y0 = y_temp;
     }
 
-
-    (x0, y0) 
+    //(a, x0, y0) // returns GCD and coefficients of x and y
+    (x0, y0) // returns x's and y's coefficients
 }
