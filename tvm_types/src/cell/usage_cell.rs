@@ -237,11 +237,16 @@ impl UsageTree {
 
     pub fn take_visited_map(&self) -> HashMap<UInt256, Cell, UInt256HashBuilder> {
         self.visited.dropped.store(true, std::sync::atomic::Ordering::Release);
+        self.visited.count.store(0, std::sync::atomic::Ordering::Release);
         std::mem::take(&mut self.visited.map.lock())
     }
 
     pub fn take_visited_set(&self) -> HashSet<UInt256> {
         HashSet::from_iter(self.take_visited_map().keys().cloned())
+    }
+
+    pub fn total_visited_count(&self) -> usize {
+        self.visited.count.load(std::sync::atomic::Ordering::Acquire)
     }
 }
 
