@@ -1,4 +1,3 @@
-//use core::slice::SlicePattern;
 use num_bigint::{BigInt, BigUint, ToBigInt, Sign};
 use num_traits::Zero;
 //use std::error::Error;
@@ -6,40 +5,6 @@ use num_traits::Zero;
 
 use crate::tls_session::hkdf_sha256::Digest;
 
-/*
-struct Modulus {
-    nat: Nat,
-    leading: usize,
-    m0inv: usize,
-    rr: Vec<u8>,
-}
-
-impl Modulus {
-    // fn new_modulus_from_big(n: &BigUint) -> Result<Modulus, Box<dyn Error>> {
-    fn new_modulus_from_big(n: &BigInt) -> Option<Modulus> {
-        if n.is_zero() {
-            return None; //return Err("modulus must be >= 0".into());
-        } else if n.is_even() {
-            return None; //return Err("modulus must be odd".into());
-        }
-
-        let mut m = Modulus {
-            nat: Nat::new().set_big(n),
-            leading: 0, // Placeholder value
-            m0inv: 0,   // Placeholder value
-            rr: vec![], // Placeholder for "rr"
-        };
-
-        m.leading = std::mem::size_of::<usize>() * 8 - bit_len(&m.nat.limbs[m.nat.limbs.len() - 1]);
-        m.m0inv = minus_inverse_mod_w(&m.nat.limbs[0]);
-        m.rr = rr(&m);
-        Some(m) // Ok(m)
-    }
-}
-
-fn mod_exp(base: &BigInt, exponent: &BigInt, modulus: &BigInt) -> BigInt {
-    base.modpow(exponent, modulus)
-}*/
 
 #[derive(Debug, PartialEq)]
 pub struct PublicKey {
@@ -97,19 +62,19 @@ fn encrypt(pubkey: &PublicKey, plaintext: &[u8]) -> Vec<u8> {
     //let result = Nat::new().exp_short_var_time(&m, e, &n);
     //result.bytes(&n) // Ok(result.bytes(&n)) //return bigmod.NewNat().ExpShortVarTime(m, e, N).Bytes(N), nil
 
-    let base = BigInt::from_bytes_be(Sign::Plus, &plaintext);
-    let modulus = &pubkey.n;
-    let exponent = BigInt::from(pubkey.e.clone());
+    let base = BigUint::from_bytes_be(&plaintext); //let base = BigInt::from_bytes_be(Sign::Plus, &plaintext);
+    let modulus = &pubkey.n.to_biguint().unwrap(); //let modulus = &pubkey.n;
+    let exponent= BigInt::from(pubkey.e.clone()).to_biguint().unwrap();//let exponent = BigInt::from(pubkey.e.clone());
 
-    let result = base.modpow(&exponent, modulus);
+    let result = base.modpow(&exponent, &modulus);
 
-    result.to_signed_bytes_be()
+    result.to_bytes_be()//result.to_signed_bytes_be()
 }
 
 // fn verify_pkcs1v15(pub_key: &PublicKey, hash: usize, hashed: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
 pub fn verify_pkcs1v15(pub_key: &PublicKey, hash: usize, hashed: &[u8], sig: &[u8]) -> bool {
     let (hash_len, prefix) = pkcs1v15_hash_info(hash, hashed.len()); // let (hash_len, prefix) = pkcs1v15_hash_info(hash, hashed.len())?;
-    let t_len = &prefix.clone().unwrap().len() + hash_len;
+    let t_len = &prefix.clone().unwrap().len() + hash_len/8;
     let k = pub_key.size();
 
     if k < t_len + 11 {
@@ -122,13 +87,22 @@ pub fn verify_pkcs1v15(pub_key: &PublicKey, hash: usize, hashed: &[u8], sig: &[u
 
     let em = encrypt(pub_key, sig); // let em = encrypt(pub_key, sig)?;
 
-    let mut ok = em[0] == 0 && em[1] == 1;
-    ok &= (&em[k - hash_len..k] == hashed);
-    ok &= (&em[k - t_len..(k - hash_len)] == &prefix.unwrap());
-    ok &= (em[k - t_len - 1] == 0);
+    //let mut ok = em[0] == 0 && em[1] == 1;
+    //ok &= &em[k - hash_len/8..k] == hashed;
+    //ok &= &em[k - t_len..(k - hash_len/8)] == &prefix.unwrap();
+    //ok &= em[k - t_len - 1] == 0;
+
+    let mut ok = em[0] == 1;
+    ok &= &em[k - 1 - hash_len/8..k -1] == hashed;
+    ok &= &em[k - 1 - t_len..(k - 1 - hash_len/8)] == &prefix.unwrap();
+    ok &= em[k - 1 - t_len - 1] == 0;
+
+    //for i in 2..(k - t_len - 1) {
+        //ok &= em[i] == 0xff;
+    //}
 
     for i in 2..(k - t_len - 1) {
-        ok &= (em[i] == 0xff);
+        ok &= em[i-1] == 0xff;
     }
 
     if !ok {
@@ -139,12 +113,14 @@ pub fn verify_pkcs1v15(pub_key: &PublicKey, hash: usize, hashed: &[u8], sig: &[u
 }
 
 fn pkcs1v15_hash_info(hash: usize, in_len: usize) -> (usize, Option<Vec<u8>>) { // fn pkcs1v15_hash_info(hash: CryptoHash, in_len: usize) -> Result<(usize, Option<Vec<u8>>), Box<dyn Error>> {
+    // Special case: hash 0 is used to indicate that the data 
+    //  is directly signed.
     if hash == 0 { // if hash.size() == 0 {
         return (in_len, None); // return Ok((in_len, None));
     }
 
     //let hash_len = hash.size();
-    if in_len != hash { // if in_len != hash_len {
+    if in_len != hash/8 { // if in_len != hash_len {
         panic!("crypto/rsa: input must be hashed message");//return Err("crypto/rsa: input must be hashed message".into());
     }
 
@@ -180,12 +156,13 @@ fn get_hash_prefix(hash: usize) -> Option<Vec<u8>> {
     }
 }
 
-// PSSSaltLengthAuto causes the salt in a PSS signature to be as large
+// PSS_SALT_LENGTH_AUTO causes the salt in a PSS signature to be as large
 // as possible when signing, and to be auto-detected when verifying.
-pub const PSSSaltLengthAuto: isize = 0;
-	// PSSSaltLengthEqualsHash causes the salt length to equal the length
-	// of the hash used in the signature.
-pub const PSSSaltLengthEqualsHash: isize = -1;
+pub const PSS_SALT_LENGTH_AUTO: isize = 0;
+
+// PSS_SALT_LENGTH_EQUALS_HASH causes the salt length to equal the length
+// of the hash used in the signature.
+pub const PSS_SALT_LENGTH_EQUALS_HASH: isize = -1;
 
 // PSSOptions contains options for creating and verifying PSS signatures.
 pub struct PSSOptions {
@@ -212,7 +189,7 @@ pub fn verify_pss(pub_key: &PublicKey, hash: usize, digest: &[u8], sig: &[u8], o
         return false; // "ErrVerification"
     }
 
-    if opts.salt_length < PSSSaltLengthEqualsHash {
+    if opts.salt_length < PSS_SALT_LENGTH_EQUALS_HASH {
 		return false; // invalidSaltLenErr;
 	}
     let em_bits = pub_key.n.bits() - 1;
@@ -225,7 +202,7 @@ pub fn verify_pss(pub_key: &PublicKey, hash: usize, digest: &[u8], sig: &[u8], o
 	// then strip leading zeroes if necessary. This only happens for weird
 	// modulus sizes anyway.
 
-    for i in 0..em.len() { // while em.len() > em_len && em.len() > 0 {
+    for i in em_len..em.len() { // while em.len() > em_len && em.len() > 0 {
         if em[i] != 0u8 {
             return false; // ErrVerification
         }
@@ -240,7 +217,7 @@ pub fn verify_pss(pub_key: &PublicKey, hash: usize, digest: &[u8], sig: &[u8], o
 //fn emsa_pss_verify(m_hash: &[u8], em: &[u8], em_bits: usize, mut s_len: isize, hash: hash.Hash) -> bool {
 fn emsa_pss_verify(m_hash: &[u8], em: &[u8], em_bits: usize, mut s_len: isize, hash: u16) -> bool {
     let h_len = hash as isize; //hash.Size();
-	if s_len == PSSSaltLengthEqualsHash {
+	if s_len == PSS_SALT_LENGTH_EQUALS_HASH {
 		s_len = h_len;
 	}
 	let em_len = (em_bits + 7) / 8;
@@ -296,7 +273,7 @@ fn emsa_pss_verify(m_hash: &[u8], em: &[u8], em_bits: usize, mut s_len: isize, h
 	db[0] &= bit_mask;
 
     // If we don't know the salt length, look for the 0x01 delimiter.
-	if s_len == PSSSaltLengthAuto as usize {
+	if s_len == PSS_SALT_LENGTH_AUTO as usize {
 		//let ps_len = bytes.IndexByte(db, 0x01);
         let mut ps_len: isize = -1;
         for i in 0..db.len() {

@@ -358,7 +358,7 @@ fn block(dig: &mut Digest, p: &[u8]) {
         let (mut a, mut b, mut c, mut d, mut e, mut f, mut g, mut h) =
             (h0, h1, h2, h3, h4, h5, h6, h7);
         for i in 0..64 {
-            let t1 = h.wrapping_add((rotate_left_32(e, -6) ^ rotate_left_32(e, -11) ^ rotate_left_32(e, -25)))
+            let t1 = h.wrapping_add(rotate_left_32(e, -6) ^ rotate_left_32(e, -11) ^ rotate_left_32(e, -25))
                 .wrapping_add((e & f) ^ (!e & g))
                 .wrapping_add(K[i])
                 .wrapping_add(w[i]);
@@ -595,43 +595,3 @@ pub fn expand(pseudorandom_key: &[u8], info: &[u8]) -> Hkdf {
     //expander.update(pseudorandom_key);
     Hkdf::new(expander, info.to_vec())
 }
-
-
-
-/*
-#[test]
-fn test_hkdf_with_go_data_1(){
-    //
-    let hkdf_label = [0, 16, 9, 116, 108, 115, 49, 51, 32, 107, 101, 121, 0];
-    println!("hkdf_label is : {:?}", hkdf_label);
-    let secret:[u8;32] = [59, 61, 41, 36, 200, 156, 165, 163, 21, 137, 135, 142, 118, 165, 190, 112, 253, 73, 249, 79, 73, 155, 102, 96, 54, 170, 38, 140, 122, 98, 162, 169];
-    println!("secret is : {:?}", &secret);
-    let etalon_result = [196, 202, 165, 198, 49, 40, 206, 178, 195, 20, 150, 155, 126, 121, 8, 240];
-    println!("etalon_result is : {:?}", &etalon_result);
-
-    // Expand using HKDF
-    let mut reader = expand(&secret, &hkdf_label);//let hkdf = Hkdf::<Sha256>::new(Some(secret), &hkdf_label);
-    let length = 16;
-    let buf = reader.read(length as usize);
-    println!("hkdf expand result is is : {:?}", &buf);
-
-    assert_eq!(buf[..], etalon_result);
-}
-
-#[test]
-fn test_sha256_sum256(){
-    //
-    let transcript_messages = [1, 0, 0, 157, 3, 3, 27, 126, 189, 42, 117, 227, 85, 44, 186, 155, 29, 86, 176, 221, 181, 209, 227, 24, 67, 227, 112, 232, 244, 106, 59, 250, 1, 175, 102, 253, 52, 236, 0, 0, 2, 19,
-        1, 1, 0, 0, 114, 0, 0, 0, 23, 0, 21, 0, 0, 18, 119, 119, 119, 46, 103, 111, 111, 103, 108, 101, 97, 112, 105, 115, 46, 99, 111, 109, 0, 10, 0,
-        4, 0, 2, 0, 29, 0, 13, 0, 20, 0, 18, 4, 3, 8, 4, 4, 1, 5, 3, 8, 5, 5, 1, 8, 6, 6, 1, 2, 1, 0, 51, 0, 38, 0, 36, 0, 29, 0, 32, 192, 66, 56, 95,
-        6, 86, 129, 217, 28, 232, 5, 177, 109, 189, 139, 154, 6, 3, 215, 62, 202, 195, 214, 238, 231, 82, 157, 198, 107, 200, 81, 16, 0, 45, 0, 2, 1, 1,
-        0, 43, 0, 3, 2, 3, 4, 2, 0, 0, 86, 3, 3, 8, 215, 19, 207, 58, 155, 125, 3, 157, 121, 43, 159, 152, 229, 77, 159, 41, 50, 150, 5, 171, 174, 144,
-        47, 121, 11, 241, 132, 255, 77, 16, 244, 0, 19, 1, 0, 0, 46, 0, 51, 0, 36, 0, 29, 0, 32, 246, 48, 130, 234, 125, 96, 179, 219, 52, 226, 168, 235,
-        57, 47, 53, 103, 96, 246, 129, 101, 202, 83, 142, 117, 64, 20, 47, 242, 241, 212, 56, 30, 0, 43, 0, 2, 3, 4];
-
-    let etalon_result:[u8;32] = [162, 167, 100, 226, 203, 243, 188, 175, 210, 16, 93, 167, 119, 3, 240, 28, 125, 253, 213, 165, 137, 64, 175, 170, 4, 35, 61, 221, 215, 13, 98, 64];
-    let hash = sum256( &transcript_messages);
-    println!("derive_secret hash is : {:?}", &hash);
-    assert_eq!(hash, etalon_result);
-
-}*/
