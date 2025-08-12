@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize};
 
 struct VisitedMap {
     map: parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>,
+    usage_map: parking_lot::Mutex<HashMap<(UInt256, u16), Cell>>,
     dropped: AtomicBool,
     count: AtomicUsize,
 }
@@ -18,6 +19,7 @@ impl VisitedMap {
     fn new() -> Self {
         VisitedMap {
             map: parking_lot::Mutex::new(HashMap::default()),
+            usage_map: parking_lot::Mutex::new(HashMap::default()),
             dropped: AtomicBool::new(false),
             count: AtomicUsize::new(0),
         }
@@ -50,7 +52,12 @@ impl UsageCell {
     fn visit(&self) -> bool {
         if !self.visited.is_dropped() {
             self.visited.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            self.visited.map.lock().insert(self.cell.repr_hash(), Cell::with_usage(self.clone()));
+            let usage_cell = Cell::with_usage(self.clone());
+            self.visited.map.lock().insert(self.cell.repr_hash(), usage_cell.clone());
+            self.visited
+                .usage_map
+                .lock()
+                .insert((self.cell.repr_hash(), self.cell.repr_depth()), usage_cell);
             true
         } else {
             false
@@ -84,11 +91,15 @@ impl CellImpl for UsageCell {
     fn reference(&self, index: usize) -> crate::Result<Cell> {
         if self.visit_on_load && !self.visited.is_dropped() || self.visit() {
             let child = self.cell.reference(index)?;
-            // if let Some(existing) =
-            //     self.visited.map.lock().get(&child.repr_hash()).map(|x| x.clone())
-            // {
-            //     return Ok(existing);
-            // }
+            if let Some(existing) = self
+                .visited
+                .usage_map
+                .lock()
+                .get(&(child.repr_hash(), child.repr_depth()))
+                .map(|x| x.clone())
+            {
+                return Ok(existing);
+            }
             let child = if child.is_usage_cell() { child.downcast_usage() } else { child };
             Ok(Cell::with_usage(UsageCell::new(child, self.visit_on_load, self.visited.clone())))
         } else {
