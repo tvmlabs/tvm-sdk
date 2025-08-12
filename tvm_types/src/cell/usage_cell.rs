@@ -83,11 +83,12 @@ impl CellImpl for UsageCell {
 
     fn reference(&self, index: usize) -> crate::Result<Cell> {
         if self.visit_on_load && !self.visited.is_dropped() || self.visit() {
-            let child_hash = self.reference_repr_hash(index)?;
-            if let Some(existing) = self.visited.map.lock().get(&child_hash).map(|x| x.clone()) {
-                return Ok(existing);
-            }
             let child = self.cell.reference(index)?;
+            // if let Some(existing) =
+            //     self.visited.map.lock().get(&child.repr_hash()).map(|x| x.clone())
+            // {
+            //     return Ok(existing);
+            // }
             let child = if child.is_usage_cell() { child.downcast_usage() } else { child };
             Ok(Cell::with_usage(UsageCell::new(child, self.visit_on_load, self.visited.clone())))
         } else {
