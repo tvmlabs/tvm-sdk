@@ -739,9 +739,12 @@ pub(crate) fn run_wasm_core(
         }
     };
     log::debug!("Func Index {:?}", func_index);
-    let wasm_function = wasm_instance
-        .get_func(&mut wasm_store, func_index)
-        .expect(&format!("`{}` was not an exported function", wasm_func_name));
+    let wasm_function = match wasm_instance.get_func(&mut wasm_store, func_index) {
+        Some(f) => f,
+        None => {
+            err!(ExceptionCode::WasmLoadFail, "`{}` was not an exported function", wasm_func_name)?
+        }
+    };
     let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
         Ok(answer) => answer,
         Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
