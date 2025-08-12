@@ -604,7 +604,7 @@ pub struct InternalMessageHeader {
     pub created_lt: u64,
     pub created_at: UnixTime32,
     pub src_dapp_id: Option<UInt256>,
-    pub is_exchange: bool
+    pub is_exchange: bool,
 }
 
 impl InternalMessageHeader {
@@ -627,7 +627,7 @@ impl InternalMessageHeader {
             created_lt: 0, // Logical Time will be set on BlockBuilder
             created_at: UnixTime32::default(), // UNIX time too
             src_dapp_id: None,
-            is_exchange: false
+            is_exchange: false,
         }
     }
 
@@ -1582,7 +1582,7 @@ impl InternalMessageHeader {
             created_lt: 0,
             created_at: UnixTime32::default(),
             src_dapp_id: None,
-            is_exchange: false
+            is_exchange: false,
         }
     }
 }
