@@ -26,16 +26,6 @@ impl VisitedMap {
     fn is_dropped(&self) -> bool {
         self.dropped.load(std::sync::atomic::Ordering::Relaxed)
     }
-
-    fn visit(&self, cell: &Cell) -> bool {
-        if !self.is_dropped() {
-            self.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            self.map.lock().insert(cell.repr_hash(), cell.clone());
-            true
-        } else {
-            false
-        }
-    }
 }
 
 #[derive(Clone)]
@@ -58,7 +48,13 @@ impl UsageCell {
     }
 
     fn visit(&self) -> bool {
-        self.visited.visit(&self.cell)
+        if !self.visited.is_dropped() {
+            self.visited.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.visited.map.lock().insert(self.cell.repr_hash(), Cell::with_usage(self.clone()));
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -91,9 +87,9 @@ impl CellImpl for UsageCell {
             if let Some(existing) = self.visited.map.lock().get(&child_hash).map(|x| x.clone()) {
                 return Ok(existing);
             }
-            let cell = self.cell.reference(index)?;
-            let cell = if cell.is_usage_cell() { cell.downcast_usage() } else { cell };
-            Ok(Cell::with_usage(UsageCell::new(cell, self.visit_on_load, self.visited.clone())))
+            let child = self.cell.reference(index)?;
+            let child = if child.is_usage_cell() { child.downcast_usage() } else { child };
+            Ok(Cell::with_usage(UsageCell::new(child, self.visit_on_load, self.visited.clone())))
         } else {
             self.cell.reference(index)
         }
