@@ -87,6 +87,53 @@ wasmtime::component::bindgen!({
             import error;
             import streams;
             }
+
+
+            /// A poll API intended to let users wait for I/O events on multiple handles
+            /// at once.
+            @since(version = 0.2.0)
+            interface poll {
+                /// `pollable` represents a single I/O event which may be ready, or not.
+                @since(version = 0.2.0)
+                resource pollable {
+
+                    /// Return the readiness of a pollable. This function never blocks.
+                    ///
+                    /// Returns `true` when the pollable is ready, and `false` otherwise.
+                    @since(version = 0.2.0)
+                    ready: func() -> bool;
+
+                    /// `block` returns immediately if the pollable is ready, and otherwise
+                    /// blocks until ready.
+                    ///
+                    /// This function is equivalent to calling `poll.poll` on a list
+                    /// containing only this pollable.
+                    @since(version = 0.2.0)
+                    block: func();
+                }
+
+                /// Poll for completion on a set of pollables.
+                ///
+                /// This function takes a list of pollables, which identify I/O sources of
+                /// interest, and waits until one or more of the events is ready for I/O.
+                ///
+                /// The result `list<u32>` contains one or more indices of handles in the
+                /// argument list that is ready for I/O.
+                ///
+                /// This function traps if either:
+                /// - the list is empty, or:
+                /// - the list contains more elements than can be indexed with a `u32` value.
+                ///
+                /// A timeout can be implemented by adding a pollable from the
+                /// wasi-clocks API to the list.
+                ///
+                /// This function does not return a `result`; polling in itself does not
+                /// do any I/O so it doesn't fail. If any of the I/O sources identified by
+                /// the pollables has an error, it is indicated by marking the source as
+                /// being ready for I/O.
+                @since(version = 0.2.0)
+                poll: func(in: list<borrow<pollable>>) -> list<u32>;
+            }
         }
         package wasi:cli@0.2.3 {
             interface stdin {
@@ -234,6 +281,7 @@ wasmtime::component::bindgen!({
         world localworld {
             import wasi:io/streams@0.2.3;
             import wasi:io/error@0.2.3;
+            import wasi:io/poll@0.2.3;
             import wasi:cli/stdin@0.2.3;
             import wasi:cli/stdout@0.2.3;
             import wasi:cli/stderr@0.2.3;
@@ -458,6 +506,68 @@ impl wasi::io::error::HostError for MyState {
     }
 }
 impl wasi::io::error::Host for MyState {}
+
+impl wasi::io::poll::HostPollable for MyState {
+    #[doc = " Return the readiness of a pollable. This function never blocks."]
+    #[doc = " "]
+    #[doc = " Returns `true` when the pollable is ready, and `false` otherwise."]
+    fn ready(&mut self, self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) -> bool {
+        true
+    }
+
+    #[doc = " `block` returns immediately if the pollable is ready, and otherwise"]
+    #[doc = " blocks until ready."]
+    #[doc = " "]
+    #[doc = " This function is equivalent to calling `poll.poll` on a list"]
+    #[doc = " containing only this pollable."]
+    fn block(&mut self, self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) -> () {
+        ()
+    }
+
+    fn drop(
+        &mut self,
+        rep: wasmtime::component::Resource<wasi::io::poll::Pollable>,
+    ) -> wasmtime::Result<()> {
+        Ok(())
+    }
+}
+
+impl wasi::io::poll::Host for MyState {
+    #[doc = " Poll for completion on a set of pollables."]
+    #[doc = " "]
+    #[doc = " This function takes a list of pollables, which identify I/O sources of"]
+    #[doc = " interest, and waits until one or more of the events is ready for I/O."]
+    #[doc = " "]
+    #[doc = " The result `list<u32>` contains one or more indices of handles in the"]
+    #[doc = " argument list that is ready for I/O."]
+    #[doc = " "]
+    #[doc = " This function traps if either:"]
+    #[doc = " - the list is empty, or:"]
+    #[doc = " - the list contains more elements than can be indexed with a `u32` value."]
+    #[doc = " "]
+    #[doc = " A timeout can be implemented by adding a pollable from the"]
+    #[doc = " wasi-clocks API to the list."]
+    #[doc = " "]
+    #[doc = " This function does not return a `result`; polling in itself does not"]
+    #[doc = " do any I/O so it doesn\'t fail. If any of the I/O sources identified by"]
+    #[doc = " the pollables has an error, it is indicated by marking the source as"]
+    #[doc = " being ready for I/O."]
+    fn poll(
+        &mut self,
+        in_: wasmtime::component::__internal::Vec<
+            wasmtime::component::Resource<wasi::io::poll::Pollable>,
+        >,
+    ) -> wasmtime::component::__internal::Vec<u32> {
+        let p = (0..{
+            match in_.len().try_into() {
+                Ok(l) => l,
+                Err(_e) => u32::MAX,
+            }
+        })
+            .collect();
+        p
+    }
+}
 
 impl wasi::random::random::Host for MyState {
     fn get_random_bytes(&mut self, len: u64) -> wasmtime::component::__internal::Vec<u8> {
