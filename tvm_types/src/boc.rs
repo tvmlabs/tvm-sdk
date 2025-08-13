@@ -26,7 +26,6 @@ use std::sync::Arc;
 use smallvec::SmallVec;
 
 use crate::ByteOrderRead;
-use crate::CellImpl;
 use crate::CellType;
 use crate::Crc32;
 use crate::MAX_BIG_DATA_BYTES;

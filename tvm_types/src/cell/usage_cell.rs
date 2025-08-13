@@ -133,10 +133,6 @@ impl UsageCell {
         self.wrapped.clone()
     }
 
-    pub(crate) fn virtualization(&self) -> u8 {
-        0
-    }
-
     pub(crate) fn to_external(cell: &Arc<Self>) -> crate::Result<Cell> {
         Ok(Cell::Usage(UsageCell::new_arc(
             cell.wrapped.to_external()?,
