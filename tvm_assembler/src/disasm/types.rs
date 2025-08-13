@@ -36,7 +36,7 @@ impl Code {
         self.storage.push(insn)
     }
 
-    pub fn chunks_mut(&mut self, chunk_size: usize) -> ChunksMut<Instruction> {
+    pub fn chunks_mut(&mut self, chunk_size: usize) -> ChunksMut<'_, Instruction> {
         self.storage.chunks_mut(chunk_size)
     }
 

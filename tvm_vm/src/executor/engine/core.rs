@@ -1325,13 +1325,13 @@ impl Engine {
         }
     }
 
-    pub fn ctrl(&self, index: usize) -> ResultRef<StackItem> {
+    pub fn ctrl(&self, index: usize) -> ResultRef<'_, StackItem> {
         self.ctrls
             .get(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
     }
 
-    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<StackItem> {
+    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<'_, StackItem> {
         self.ctrls
             .get_mut(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
@@ -2003,7 +2003,7 @@ impl Engine {
     }
 
     /// get smartcontract info param from ctrl(7) tuple index 0
-    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<StackItem> {
+    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<'_, StackItem> {
         let tuple = self.ctrl(7)?.as_tuple()?;
         let tuple = tuple
             .first()
@@ -2019,7 +2019,7 @@ impl Engine {
         })
     }
 
-    pub(in crate::executor) fn rand(&self) -> ResultRef<IntegerData> {
+    pub(in crate::executor) fn rand(&self) -> ResultRef<'_, IntegerData> {
         self.smci_param(6)?.as_integer()
     }
 
