@@ -432,7 +432,7 @@ impl StackItem {
         }
     }
 
-    pub fn as_builder(&self) -> ResultRef<BuilderData> {
+    pub fn as_builder(&self) -> ResultRef<'_, BuilderData> {
         match self {
             StackItem::Builder(data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item is not a builder"),
@@ -448,21 +448,21 @@ impl StackItem {
         }
     }
 
-    pub fn as_cell(&self) -> ResultRef<Cell> {
+    pub fn as_cell(&self) -> ResultRef<'_, Cell> {
         match self {
             StackItem::Cell(data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item is not a cell"),
         }
     }
 
-    pub fn as_continuation(&self) -> ResultRef<ContinuationData> {
+    pub fn as_continuation(&self) -> ResultRef<'_, ContinuationData> {
         match self {
             StackItem::Continuation(ref data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item {} is not a continuation", self),
         }
     }
 
-    pub fn as_continuation_mut(&mut self) -> ResultMut<ContinuationData> {
+    pub fn as_continuation_mut(&mut self) -> ResultMut<'_, ContinuationData> {
         match self {
             StackItem::Continuation(data) => Ok(Arc::make_mut(data)),
             _ => err!(ExceptionCode::TypeCheckError, "item {} is not a continuation", self),
@@ -478,7 +478,7 @@ impl StackItem {
         }
     }
 
-    pub fn as_integer(&self) -> ResultRef<IntegerData> {
+    pub fn as_integer(&self) -> ResultRef<'_, IntegerData> {
         match self {
             StackItem::Integer(ref data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item is not an integer"),
@@ -489,21 +489,21 @@ impl StackItem {
         self.as_integer()?.into(0..=255)
     }
 
-    pub fn as_integer_mut(&mut self) -> ResultMut<IntegerData> {
+    pub fn as_integer_mut(&mut self) -> ResultMut<'_, IntegerData> {
         match self {
             StackItem::Integer(data) => Ok(Arc::make_mut(data)),
             _ => err!(ExceptionCode::TypeCheckError, "item is not an integer"),
         }
     }
 
-    pub fn as_slice(&self) -> ResultRef<SliceData> {
+    pub fn as_slice(&self) -> ResultRef<'_, SliceData> {
         match self {
             StackItem::Slice(data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item {} is not a slice", self),
         }
     }
 
-    pub fn as_tuple(&self) -> ResultRef<[StackItem]> {
+    pub fn as_tuple(&self) -> ResultRef<'_, [StackItem]> {
         match self {
             StackItem::Tuple(data) => Ok(data),
             _ => err!(ExceptionCode::TypeCheckError, "item {} is not a tuple", self),
@@ -524,7 +524,7 @@ impl StackItem {
         }
     }
 
-    pub fn tuple_item_ref(&self, index: usize) -> ResultRef<StackItem> {
+    pub fn tuple_item_ref(&self, index: usize) -> ResultRef<'_, StackItem> {
         let tuple = self.as_tuple()?;
         match tuple.get(index) {
             Some(value) => Ok(value),
@@ -1148,7 +1148,7 @@ impl Stack {
         }
     }
 
-    pub fn iter(&self) -> Iter<StackItem> {
+    pub fn iter(&self) -> Iter<'_, StackItem> {
         self.storage.iter()
     }
 }

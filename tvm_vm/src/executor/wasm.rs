@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use rand_chacha::rand_core::RngCore;
 use rand_chacha::rand_core::SeedableRng;
 use tvm_abi::TokenValue;
@@ -1281,7 +1279,7 @@ impl wasi::clocks::monotonic_clock::Host for MyState {
     #[doc = " has occurred."]
     fn subscribe_instant(
         &mut self,
-        when: wasi::clocks::monotonic_clock::Instant,
+        _when: wasi::clocks::monotonic_clock::Instant,
     ) -> wasmtime::component::Resource<wasi::clocks::monotonic_clock::Pollable> {
         wasmtime::component::Resource::new_own(0)
     }
@@ -1290,7 +1288,7 @@ impl wasi::clocks::monotonic_clock::Host for MyState {
     #[doc = " elapsed from the time this function is invoked."]
     fn subscribe_duration(
         &mut self,
-        when: wasi::clocks::monotonic_clock::Duration,
+        _when: wasi::clocks::monotonic_clock::Duration,
     ) -> wasmtime::component::Resource<wasi::clocks::monotonic_clock::Pollable> {
         wasmtime::component::Resource::new_own(0)
     }
@@ -1311,7 +1309,7 @@ impl wasi::filesystem::types::HostDirectoryEntryStream for MyState {
     #[doc = " Read a single directory entry from a `directory-entry-stream`."]
     fn read_directory_entry(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::DirectoryEntryStream>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::DirectoryEntryStream>,
     ) -> Result<Option<wasi::filesystem::types::DirectoryEntry>, wasi::filesystem::types::ErrorCode>
     {
         Err(wasi::filesystem::types::ErrorCode::Access)
@@ -1319,7 +1317,7 @@ impl wasi::filesystem::types::HostDirectoryEntryStream for MyState {
 
     fn drop(
         &mut self,
-        rep: wasmtime::component::Resource<wasi::filesystem::types::DirectoryEntryStream>,
+        _rep: wasmtime::component::Resource<wasi::filesystem::types::DirectoryEntryStream>,
     ) -> wasmtime::Result<()> {
         Ok(())
     }
@@ -1378,8 +1376,8 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This allows using `read-stream`, which is similar to `read` in POSIX."]
     fn read_via_stream(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        offset: wasi::filesystem::types::Filesize,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _offset: wasi::filesystem::types::Filesize,
     ) -> Result<
         wasmtime::component::Resource<wasi::filesystem::types::InputStream>,
         wasi::filesystem::types::ErrorCode,
@@ -1392,10 +1390,10 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " This is similar to `posix_fadvise` in POSIX."]
     fn advise(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        offset: wasi::filesystem::types::Filesize,
-        length: wasi::filesystem::types::Filesize,
-        advice: wasi::filesystem::types::Advice,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _offset: wasi::filesystem::types::Filesize,
+        _length: wasi::filesystem::types::Filesize,
+        _advice: wasi::filesystem::types::Advice,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1408,7 +1406,7 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `fdatasync` in POSIX."]
     fn sync_data(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Ok(())
     }
@@ -1421,7 +1419,7 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " from `fdstat_get` in earlier versions of WASI."]
     fn get_flags(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> Result<wasi::filesystem::types::DescriptorFlags, wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1432,8 +1430,8 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This was called `fd_filestat_set_size` in earlier versions of WASI."]
     fn set_size(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        size: wasi::filesystem::types::Filesize,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _size: wasi::filesystem::types::Filesize,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1445,9 +1443,9 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This was called `fd_filestat_set_times` in earlier versions of WASI."]
     fn set_times(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        data_access_timestamp: wasi::filesystem::types::NewTimestamp,
-        data_modification_timestamp: wasi::filesystem::types::NewTimestamp,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _data_access_timestamp: wasi::filesystem::types::NewTimestamp,
+        _data_modification_timestamp: wasi::filesystem::types::NewTimestamp,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1465,9 +1463,9 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `pread` in POSIX."]
     fn read(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        length: wasi::filesystem::types::Filesize,
-        offset: wasi::filesystem::types::Filesize,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _length: wasi::filesystem::types::Filesize,
+        _offset: wasi::filesystem::types::Filesize,
     ) -> Result<(wasmtime::component::__internal::Vec<u8>, bool), wasi::filesystem::types::ErrorCode>
     {
         Err(wasi::filesystem::types::ErrorCode::Access)
@@ -1484,9 +1482,9 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `pwrite` in POSIX."]
     fn write(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        buffer: wasmtime::component::__internal::Vec<u8>,
-        offset: wasi::filesystem::types::Filesize,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _buffer: wasmtime::component::__internal::Vec<u8>,
+        _offset: wasi::filesystem::types::Filesize,
     ) -> Result<wasi::filesystem::types::Filesize, wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1502,7 +1500,7 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " do not interfere with each other."]
     fn read_directory(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> Result<
         wasmtime::component::Resource<wasi::filesystem::types::DirectoryEntryStream>,
         wasi::filesystem::types::ErrorCode,
@@ -1518,7 +1516,7 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `fsync` in POSIX."]
     fn sync(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Ok(())
     }
@@ -1528,8 +1526,8 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `mkdirat` in POSIX."]
     fn create_directory_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _path: wasmtime::component::__internal::String,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1543,9 +1541,9 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This was called `path_filestat_get` in earlier versions of WASI."]
     fn stat_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        path_flags: wasi::filesystem::types::PathFlags,
-        path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _path_flags: wasi::filesystem::types::PathFlags,
+        _path: wasmtime::component::__internal::String,
     ) -> Result<wasi::filesystem::types::DescriptorStat, wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1558,11 +1556,11 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " WASI."]
     fn set_times_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        path_flags: wasi::filesystem::types::PathFlags,
-        path: wasmtime::component::__internal::String,
-        data_access_timestamp: wasi::filesystem::types::NewTimestamp,
-        data_modification_timestamp: wasi::filesystem::types::NewTimestamp,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _path_flags: wasi::filesystem::types::PathFlags,
+        _path: wasmtime::component::__internal::String,
+        _data_access_timestamp: wasi::filesystem::types::NewTimestamp,
+        _data_modification_timestamp: wasi::filesystem::types::NewTimestamp,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1576,11 +1574,11 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `linkat` in POSIX."]
     fn link_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        old_path_flags: wasi::filesystem::types::PathFlags,
-        old_path: wasmtime::component::__internal::String,
-        new_descriptor: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        new_path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _old_path_flags: wasi::filesystem::types::PathFlags,
+        _old_path: wasmtime::component::__internal::String,
+        _new_descriptor: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _new_path: wasmtime::component::__internal::String,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1599,11 +1597,11 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `openat` in POSIX."]
     fn open_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        path_flags: wasi::filesystem::types::PathFlags,
-        path: wasmtime::component::__internal::String,
-        open_flags: wasi::filesystem::types::OpenFlags,
-        flags: wasi::filesystem::types::DescriptorFlags,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _path_flags: wasi::filesystem::types::PathFlags,
+        _path: wasmtime::component::__internal::String,
+        _open_flags: wasi::filesystem::types::OpenFlags,
+        _flags: wasi::filesystem::types::DescriptorFlags,
     ) -> Result<
         wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
         wasi::filesystem::types::ErrorCode,
@@ -1619,8 +1617,8 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `readlinkat` in POSIX."]
     fn readlink_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _path: wasmtime::component::__internal::String,
     ) -> Result<wasmtime::component::__internal::String, wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1632,8 +1630,8 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `unlinkat(fd, path, AT_REMOVEDIR)` in POSIX."]
     fn remove_directory_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _path: wasmtime::component::__internal::String,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1643,10 +1641,10 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `renameat` in POSIX."]
     fn rename_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        old_path: wasmtime::component::__internal::String,
-        new_descriptor: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        new_path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _old_path: wasmtime::component::__internal::String,
+        _new_descriptor: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _new_path: wasmtime::component::__internal::String,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1659,9 +1657,9 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `symlinkat` in POSIX."]
     fn symlink_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        old_path: wasmtime::component::__internal::String,
-        new_path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _old_path: wasmtime::component::__internal::String,
+        _new_path: wasmtime::component::__internal::String,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1672,8 +1670,8 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " Note: This is similar to `unlinkat(fd, path, 0)` in POSIX."]
     fn unlink_file_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _path: wasmtime::component::__internal::String,
     ) -> Result<(), wasi::filesystem::types::ErrorCode> {
         Err(wasi::filesystem::types::ErrorCode::Access)
     }
@@ -1686,8 +1684,8 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " may be used instead."]
     fn is_same_object(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        other: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _other: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> bool {
         false
     }
@@ -1713,7 +1711,7 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " However, none of these is required."]
     fn metadata_hash(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
     ) -> Result<wasi::filesystem::types::MetadataHashValue, wasi::filesystem::types::ErrorCode>
     {
         Err(wasi::filesystem::types::ErrorCode::Access)
@@ -1725,9 +1723,9 @@ impl wasi::filesystem::types::HostDescriptor for MyState {
     #[doc = " This performs the same hash computation as `metadata-hash`."]
     fn metadata_hash_at(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
-        path_flags: wasi::filesystem::types::PathFlags,
-        path: wasmtime::component::__internal::String,
+        _self_: wasmtime::component::Resource<wasi::filesystem::types::Descriptor>,
+        _path_flags: wasi::filesystem::types::PathFlags,
+        _path: wasmtime::component::__internal::String,
     ) -> Result<wasi::filesystem::types::MetadataHashValue, wasi::filesystem::types::ErrorCode>
     {
         Err(wasi::filesystem::types::ErrorCode::Access)
@@ -1804,7 +1802,7 @@ impl wasi::io::streams::HostOutputStream for MyState {
     #[doc = " flush has completed and the stream can accept more writes."]
     fn flush(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
     ) -> Result<(), wasi::io::streams::StreamError> {
         Ok(())
     }
@@ -1834,8 +1832,8 @@ impl wasi::io::streams::HostOutputStream for MyState {
     #[doc = " that should be written."]
     fn write_zeroes(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
-        len: u64,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _len: u64,
     ) -> Result<(), wasi::io::streams::StreamError> {
         Ok(())
     }
@@ -1848,8 +1846,8 @@ impl wasi::io::streams::HostOutputStream for MyState {
     #[doc = " contents given as a list of len containing only zeroes."]
     fn blocking_write_zeroes_and_flush(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
-        len: u64,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _len: u64,
     ) -> Result<(), wasi::io::streams::StreamError> {
         Ok(())
     }
@@ -1869,8 +1867,8 @@ impl wasi::io::streams::HostOutputStream for MyState {
     #[doc = " than `len`."]
     fn splice(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
-        src: wasmtime::component::Resource<wasi::io::streams::InputStream>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _src: wasmtime::component::Resource<wasi::io::streams::InputStream>,
         len: u64,
     ) -> Result<u64, wasi::io::streams::StreamError> {
         Ok(len)
@@ -1883,8 +1881,8 @@ impl wasi::io::streams::HostOutputStream for MyState {
     #[doc = " is ready for reading, before performing the `splice`."]
     fn blocking_splice(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
-        src: wasmtime::component::Resource<wasi::io::streams::InputStream>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::OutputStream>,
+        _src: wasmtime::component::Resource<wasi::io::streams::InputStream>,
         len: u64,
     ) -> Result<u64, wasi::io::streams::StreamError> {
         Ok(len)
@@ -1927,8 +1925,8 @@ impl wasi::io::streams::HostInputStream for MyState {
     #[doc = " less than `len` in size while more bytes are available for reading."]
     fn read(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::InputStream>,
-        len: u64,
+        _self_: wasmtime::component::Resource<wasi::io::streams::InputStream>,
+        _len: u64,
     ) -> Result<wasmtime::component::__internal::Vec<u8>, wasi::io::streams::StreamError> {
         Err(wasi::io::streams::StreamError::Closed)
     }
@@ -1937,8 +1935,8 @@ impl wasi::io::streams::HostInputStream for MyState {
     #[doc = " be read. Except for blocking, behavior is identical to `read`."]
     fn blocking_read(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::InputStream>,
-        len: u64,
+        _self_: wasmtime::component::Resource<wasi::io::streams::InputStream>,
+        _len: u64,
     ) -> Result<wasmtime::component::__internal::Vec<u8>, wasi::io::streams::StreamError> {
         Err(wasi::io::streams::StreamError::Closed)
     }
@@ -1949,7 +1947,7 @@ impl wasi::io::streams::HostInputStream for MyState {
     #[doc = " of bytes, returns the number of bytes consumed from the stream."]
     fn skip(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::InputStream>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::InputStream>,
         len: u64,
     ) -> Result<u64, wasi::io::streams::StreamError> {
         Ok(len)
@@ -1959,7 +1957,7 @@ impl wasi::io::streams::HostInputStream for MyState {
     #[doc = " can be skipped. Except for blocking behavior, identical to `skip`."]
     fn blocking_skip(
         &mut self,
-        self_: wasmtime::component::Resource<wasi::io::streams::InputStream>,
+        _self_: wasmtime::component::Resource<wasi::io::streams::InputStream>,
         len: u64,
     ) -> Result<u64, wasi::io::streams::StreamError> {
         Ok(len)
@@ -1994,7 +1992,7 @@ impl wasi::io::poll::HostPollable for MyState {
     #[doc = " Return the readiness of a pollable. This function never blocks."]
     #[doc = " "]
     #[doc = " Returns `true` when the pollable is ready, and `false` otherwise."]
-    fn ready(&mut self, self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) -> bool {
+    fn ready(&mut self, _self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) -> bool {
         true
     }
 
@@ -2003,13 +2001,13 @@ impl wasi::io::poll::HostPollable for MyState {
     #[doc = " "]
     #[doc = " This function is equivalent to calling `poll.poll` on a list"]
     #[doc = " containing only this pollable."]
-    fn block(&mut self, self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) -> () {
+    fn block(&mut self, _self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) -> () {
         ()
     }
 
     fn drop(
         &mut self,
-        rep: wasmtime::component::Resource<wasi::io::poll::Pollable>,
+        _rep: wasmtime::component::Resource<wasi::io::poll::Pollable>,
     ) -> wasmtime::Result<()> {
         Ok(())
     }

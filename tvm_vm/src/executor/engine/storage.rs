@@ -37,7 +37,7 @@ use crate::types::Status;
 
 // Utilities ******************************************************************
 
-fn continuation_by_address(engine: &mut Engine, address: u16) -> ResultRef<ContinuationData> {
+fn continuation_by_address(engine: &mut Engine, address: u16) -> ResultRef<'_, ContinuationData> {
     match address_tag!(address) {
         VAR => engine.cmd.var(storage_index!(address)).as_continuation(),
         CTRL => match engine.ctrls.get(storage_index!(address)) {
