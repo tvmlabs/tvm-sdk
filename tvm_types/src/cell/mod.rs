@@ -406,7 +406,7 @@ impl Cell {
         match self {
             Cell::Data(cell) => cell.reference(index),
             Cell::Boc3(cell) => cell.reference(index),
-            Cell::Usage(cell) => cell.reference(index),
+            Cell::Usage(cell) => UsageCell::reference(cell, index),
             Cell::Virtual(cell) => cell.reference(index),
         }
     }
@@ -420,7 +420,7 @@ impl Cell {
         match self {
             Cell::Data(cell) => cell.reference_repr_hash(index),
             Cell::Boc3(cell) => cell.reference_repr_hash(index),
-            Cell::Usage(cell) => cell.reference_repr_hash(index),
+            Cell::Usage(cell) => Ok(UsageCell::reference(cell, index)?.hash(MAX_LEVEL)),
             Cell::Virtual(cell) => cell.reference_repr_hash(index),
         }
     }
@@ -444,7 +444,7 @@ impl Cell {
         match self {
             Cell::Data(cell) => cell.data(),
             Cell::Boc3(cell) => cell.data(),
-            Cell::Usage(cell) => cell.data(),
+            Cell::Usage(cell) => UsageCell::data(cell),
             Cell::Virtual(cell) => cell.data(),
         }
     }
@@ -458,7 +458,7 @@ impl Cell {
         match self {
             Cell::Data(cell) => cell.raw_data(),
             Cell::Boc3(cell) => cell.raw_data(),
-            Cell::Usage(cell) => cell.raw_data(),
+            Cell::Usage(cell) => UsageCell::raw_data(cell),
             Cell::Virtual(cell) => cell.raw_data(),
         }
     }
@@ -500,7 +500,7 @@ impl Cell {
         match self {
             Cell::Data(cell) => cell.level(),
             Cell::Boc3(cell) => cell.level(),
-            Cell::Usage(cell) => cell.level(),
+            Cell::Usage(cell) => cell.level_mask().level(),
             Cell::Virtual(cell) => cell.level(),
         }
     }
@@ -619,7 +619,7 @@ impl Cell {
         match self {
             Self::Boc3(cell) => cell.hash(MAX_LEVEL),
             Self::Data(cell) => cell.hash(MAX_LEVEL),
-            Self::Usage(cell) => cell.hash(MAX_LEVEL),
+            Self::Usage(cell) => UsageCell::hash(cell, MAX_LEVEL),
             Self::Virtual(cell) => cell.hash(MAX_LEVEL),
         }
     }
@@ -633,7 +633,7 @@ impl Cell {
         match self {
             Self::Boc3(cell) => cell.depth(MAX_LEVEL),
             Self::Data(cell) => cell.depth(MAX_LEVEL),
-            Self::Usage(cell) => cell.depth(MAX_LEVEL),
+            Self::Usage(cell) => UsageCell::depth(cell, MAX_LEVEL),
             Self::Virtual(cell) => cell.depth(MAX_LEVEL),
         }
     }
@@ -831,7 +831,7 @@ impl Cell {
         match self {
             Cell::Data(cell) => cell.to_external(),
             Cell::Boc3(cell) => cell.to_external(),
-            Cell::Usage(cell) => cell.to_external(),
+            Cell::Usage(cell) => UsageCell::to_external(cell),
             Cell::Virtual(cell) => cell.to_external(),
         }
     }
@@ -859,7 +859,7 @@ impl Cell {
         match self {
             Cell::Data(cell) => cell.is_usage_cell(),
             Cell::Boc3(cell) => cell.is_usage_cell(),
-            Cell::Usage(cell) => cell.is_usage_cell(),
+            Cell::Usage(_) => true,
             Cell::Virtual(cell) => cell.is_usage_cell(),
         }
     }

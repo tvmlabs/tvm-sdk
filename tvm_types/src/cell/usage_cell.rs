@@ -1,5 +1,4 @@
 use crate::Cell;
-use crate::CellImpl;
 use crate::CellType;
 use crate::LevelMask;
 use crate::UInt256;
@@ -10,7 +9,6 @@ use std::sync::atomic::{AtomicBool, AtomicUsize};
 
 struct VisitedMap {
     map: parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>,
-    usage_map: parking_lot::Mutex<HashMap<(UInt256, u16), Cell>>,
     dropped: AtomicBool,
     count: AtomicUsize,
 }
@@ -19,7 +17,6 @@ impl VisitedMap {
     fn new() -> Self {
         VisitedMap {
             map: parking_lot::Mutex::new(HashMap::default()),
-            usage_map: parking_lot::Mutex::new(HashMap::default()),
             dropped: AtomicBool::new(false),
             count: AtomicUsize::new(0),
         }
@@ -30,123 +27,121 @@ impl VisitedMap {
     }
 }
 
-#[derive(Clone)]
 pub struct UsageCell {
-    cell: Cell,
+    wrapped: Cell,
     visit_on_load: bool,
     visited: Arc<VisitedMap>,
     usage_level: u64,
 }
 
 impl UsageCell {
-    fn new(inner: Cell, visit_on_load: bool, visited: Arc<VisitedMap>) -> Self {
-        let usage_level = inner.usage_level() + 1;
+    fn new_arc(wrapped: Cell, visit_on_load: bool, visited: Arc<VisitedMap>) -> Arc<UsageCell> {
+        let usage_level = wrapped.usage_level() + 1;
         assert!(usage_level <= 1, "Nested usage cells can cause stack overflow");
-        let cell = Self { cell: inner, visit_on_load, visited, usage_level };
+        let usage_cell = Self { wrapped, visit_on_load, visited, usage_level };
+        let arc_cell = Arc::new(usage_cell);
         if visit_on_load {
-            cell.visit();
+            Self::visit(&arc_cell);
         }
-        cell
+        arc_cell
     }
 
-    fn visit(&self) -> bool {
-        if !self.visited.is_dropped() {
-            let mut map = self.visited.map.lock();
-            if map.contains_key(&self.cell.repr_hash()) {
+    fn visit(cell: &Arc<Self>) -> bool {
+        if !cell.visited.is_dropped() {
+            let mut map = cell.visited.map.lock();
+            if map.contains_key(&cell.wrapped.repr_hash()) {
                 return true;
             }
-            self.visited.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            map.insert(self.cell.repr_hash(), Cell::with_usage(self.clone()));
+            cell.visited.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            map.insert(cell.wrapped.repr_hash(), Cell::Usage(cell.clone()));
             true
         } else {
             false
         }
     }
-}
 
-impl CellImpl for UsageCell {
-    fn data(&self) -> &[u8] {
-        if !self.visit_on_load {
-            self.visit();
+    pub(crate) fn data(cell: &Arc<Self>) -> &[u8] {
+        if !cell.visit_on_load {
+            Self::visit(cell);
         }
-        self.cell.data()
+        cell.wrapped.data()
     }
 
-    fn raw_data(&self) -> crate::Result<&[u8]> {
-        if !self.visit_on_load {
-            self.visit();
+    pub(crate) fn raw_data(cell: &Arc<Self>) -> crate::Result<&[u8]> {
+        if !cell.visit_on_load {
+            Self::visit(cell);
         }
-        self.cell.raw_data()
+        cell.wrapped.raw_data()
     }
 
-    fn bit_length(&self) -> usize {
-        self.cell.bit_length()
+    pub(crate) fn bit_length(&self) -> usize {
+        self.wrapped.bit_length()
     }
 
-    fn references_count(&self) -> usize {
-        self.cell.references_count()
+    pub(crate) fn references_count(&self) -> usize {
+        self.wrapped.references_count()
     }
 
-    fn reference(&self, index: usize) -> crate::Result<Cell> {
-        if self.visit_on_load && !self.visited.is_dropped() || self.visit() {
-            let child = self.cell.reference(index)?;
+    pub fn reference(cell: &Arc<Self>, index: usize) -> crate::Result<Cell> {
+        if cell.visit_on_load && !cell.visited.is_dropped() || Self::visit(cell) {
+            let child = cell.wrapped.reference(index)?;
             if let Some(existing) =
-                self.visited.map.lock().get(&child.repr_hash()).map(|x| x.clone())
+                cell.visited.map.lock().get(&child.repr_hash()).map(|x| x.clone())
             {
                 return Ok(existing);
             }
             let child = if child.is_usage_cell() { child.downcast_usage() } else { child };
-            Ok(Cell::with_usage(UsageCell::new(child, self.visit_on_load, self.visited.clone())))
+            Ok(Cell::Usage(UsageCell::new_arc(child, cell.visit_on_load, cell.visited.clone())))
         } else {
-            self.cell.reference(index)
+            cell.wrapped.reference(index)
         }
     }
 
-    fn cell_type(&self) -> CellType {
-        self.cell.cell_type()
+    pub(crate) fn cell_type(&self) -> CellType {
+        self.wrapped.cell_type()
     }
 
-    fn level_mask(&self) -> LevelMask {
-        self.cell.level_mask()
+    pub(crate) fn level_mask(&self) -> LevelMask {
+        self.wrapped.level_mask()
     }
 
-    fn hash(&self, index: usize) -> UInt256 {
-        self.cell.hash(index)
+    pub(crate) fn hash(&self, index: usize) -> UInt256 {
+        self.wrapped.hash(index)
     }
 
-    fn depth(&self, index: usize) -> u16 {
-        self.cell.depth(index)
+    pub(crate) fn depth(&self, index: usize) -> u16 {
+        self.wrapped.depth(index)
     }
 
-    fn store_hashes(&self) -> bool {
-        self.cell.store_hashes()
+    pub(crate) fn store_hashes(&self) -> bool {
+        self.wrapped.store_hashes()
     }
 
-    fn tree_bits_count(&self) -> u64 {
-        self.cell.tree_bits_count()
+    pub(crate) fn tree_bits_count(&self) -> u64 {
+        self.wrapped.tree_bits_count()
     }
 
-    fn tree_cell_count(&self) -> u64 {
-        self.cell.tree_cell_count()
+    pub(crate) fn tree_cell_count(&self) -> u64 {
+        self.wrapped.tree_cell_count()
     }
 
-    fn usage_level(&self) -> u64 {
+    pub(crate) fn usage_level(&self) -> u64 {
         self.usage_level
     }
 
-    fn is_usage_cell(&self) -> bool {
-        true
+    pub(crate) fn downcast_usage(&self) -> Cell {
+        self.wrapped.clone()
     }
 
-    fn downcast_usage(&self) -> Cell {
-        self.cell.clone()
+    pub(crate) fn virtualization(&self) -> u8 {
+        0
     }
 
-    fn to_external(&self) -> crate::Result<Cell> {
-        Ok(Cell::with_usage(UsageCell::new(
-            self.cell.to_external()?,
-            self.visit_on_load,
-            self.visited.clone(),
+    pub(crate) fn to_external(cell: &Arc<Self>) -> crate::Result<Cell> {
+        Ok(Cell::Usage(UsageCell::new_arc(
+            cell.wrapped.to_external()?,
+            cell.visit_on_load,
+            cell.visited.clone(),
         )))
     }
 }
@@ -170,14 +165,14 @@ impl UsageTree {
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
         let visited = Arc::new(VisitedMap::new());
-        let root = Cell::with_usage(UsageCell::new(root, visit_on_load, visited.clone()));
+        let root = Cell::Usage(UsageCell::new_arc(root, visit_on_load, visited.clone()));
         Self { root, visited }
     }
 
     pub fn use_cell(&self, cell: Cell, visit_on_load: bool) -> Cell {
-        let usage_cell = UsageCell::new(cell, visit_on_load, self.visited.clone());
-        usage_cell.visit();
-        Cell::with_usage(usage_cell)
+        let usage_cell = UsageCell::new_arc(cell, visit_on_load, self.visited.clone());
+        UsageCell::visit(&usage_cell);
+        Cell::Usage(usage_cell)
     }
 
     pub fn use_cell_opt(&self, cell_opt: &mut Option<Cell>, visit_on_load: bool) {
