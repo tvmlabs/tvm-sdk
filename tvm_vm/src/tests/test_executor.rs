@@ -1257,6 +1257,98 @@ fn test_run_wasm_deterministic_random_from_hash() {
 }
 
 #[test]
+fn test_run_wasm_clock_random_from_hash() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let stack = Stack::new();
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+    engine.wasm_engine_init_cached().unwrap();
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap(); // Should not error on empty hash list!
+
+    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let its = 3000u32.to_be_bytes();
+    println!("Its {:?}", its);
+    let cell = TokenValue::write_bytes(&its, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "test";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_func = "gosh:determinism/test-interface@0.1.0";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/examples/wasm/rust/determinism-clocks/target/wasm32-wasip2/release/determinism.wasm";
+    let wasm_dict = std::fs::read(filename).unwrap();
+
+    let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+    let status = execute_run_wasm(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", status);
+
+    let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
+    println!("Res: {:?}", res);
+    // println!("Determinism Res: {:?}", res)
+    let mut floats = Vec::new();
+    for float in res.chunks(8) {
+        floats.push(f64::from_le_bytes(float.try_into().unwrap()));
+    }
+    // let mut wtr =
+    // csv::Writer::from_path("./src/tests/determinism.csv").unwrap();
+    // wtr.serialize(floats.clone()).unwrap();
+    // wtr.flush().unwrap();
+
+    // print!("Result [");
+    // for f in floats {
+    //     print!("{:.}, ", f);
+    // }
+    // println!("]");
+    // assert!(
+    //     rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).
+    // unwrap().pop().unwrap()         == 3u8
+    // );
+}
+
+#[test]
 fn test_run_wasm_fuel_error_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");

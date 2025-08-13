@@ -130,6 +130,7 @@ pub struct Engine {
     wasm_hash_whitelist: HashSet<[u8; 32]>, // store hashes of wasm binaries available locally
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
     wasm_engine_cache: Option<wasmtime::Engine>,
+    wasm_block_timestamp: u64,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -295,6 +296,7 @@ impl Engine {
             wasm_hash_whitelist: HashSet::new(),
             wash_component_cache: HashMap::new(),
             wasm_engine_cache: None,
+            wasm_block_timestamp: 0,
         }
     }
 
@@ -445,6 +447,10 @@ impl Engine {
         self.wasm_hash_whitelist = wasm_hash_whitelist;
     }
 
+    pub fn set_wasm_block_time(&mut self, time: u64) {
+        self.wasm_block_timestamp = time;
+    }
+
     pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
         log::debug!("Extern Initialising Wasm Engine");
         // load or access WASM engine
@@ -501,6 +507,10 @@ impl Engine {
                 "Wasm Engine was not created. This is probably a bug."
             )?,
         }
+    }
+
+    pub fn get_wasm_block_time(&self) -> u64 {
+        self.wasm_block_timestamp
     }
 
     pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {
