@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use rand_chacha::rand_core::RngCore;
 use rand_chacha::rand_core::SeedableRng;
 use tvm_abi::TokenValue;
@@ -282,6 +284,7 @@ pub(crate) struct MyState {
     table: ResourceTable,
     limiter: wasmtime::StoreLimits,
     random_source: rand_chacha::ChaCha20Rng,
+    time: u64,
 }
 impl IoView for MyState {
     fn table(&mut self) -> &mut ResourceTable {
@@ -314,11 +317,11 @@ impl wasi::filesystem::preopens::Host for MyState {
 
 impl wasi::clocks::wall_clock::Host for MyState {
     fn now(&mut self) -> wasi::clocks::wall_clock::Datetime {
-        wasi::clocks::wall_clock::Datetime { nanoseconds: 0, seconds: 0 }
+        wasi::clocks::wall_clock::Datetime { nanoseconds: 0, seconds: self.time }
     }
 
     fn resolution(&mut self) -> wasi::clocks::wall_clock::Datetime {
-        wasi::clocks::wall_clock::Datetime { nanoseconds: 0, seconds: 0 }
+        wasi::clocks::wall_clock::Datetime { nanoseconds: 0, seconds: 1 }
     }
 }
 
@@ -458,12 +461,15 @@ impl wasi::io::error::Host for MyState {}
 
 impl wasi::random::random::Host for MyState {
     fn get_random_bytes(&mut self, len: u64) -> wasmtime::component::__internal::Vec<u8> {
-        let mut vector = Vec::<u8>::with_capacity(match len.try_into() {
-            Ok(k) => k,
-            Err(_) => u16::max_value().into(),
-        });
+        let mut vector: Vec<u8> = vec![
+            0;
+            match len.try_into() {
+                Ok(k) => k,
+                Err(_) => u16::max_value().into(),
+            }
+        ];
         self.random_source.fill_bytes(&mut vector);
-        vector
+        vector.to_vec()
     }
 
     fn get_random_u64(&mut self) -> u64 {
@@ -473,12 +479,15 @@ impl wasi::random::random::Host for MyState {
 
 impl wasi::random::insecure::Host for MyState {
     fn get_insecure_random_bytes(&mut self, len: u64) -> wasmtime::component::__internal::Vec<u8> {
-        let mut vector = Vec::<u8>::with_capacity(match len.try_into() {
-            Ok(k) => k,
-            Err(_) => u16::max_value().into(),
-        });
+        let mut vector: Vec<u8> = vec![
+            0;
+            match len.try_into() {
+                Ok(k) => k,
+                Err(_) => u16::max_value().into(),
+            }
+        ];
         self.random_source.fill_bytes(&mut vector);
-        vector
+        vector.to_vec()
     }
 
     fn get_insecure_random_u64(&mut self) -> u64 {
@@ -634,6 +643,7 @@ pub(crate) fn run_wasm_core(
             .trap_on_grow_failure(true)
             .build(),
         random_source: rand_chacha::ChaCha20Rng::seed_from_u64(42),
+        time: engine.get_wasm_block_time(),
     })?;
     wasm_store.limiter(|state| &mut state.limiter);
     // set WASM fuel limit based on available gas
