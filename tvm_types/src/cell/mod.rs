@@ -709,13 +709,6 @@ impl Cell {
         }
     }
 
-    pub fn usage_level(&self) -> u64 {
-        match self {
-            Cell::Usage(cell) => cell.usage_level(),
-            _ => 0,
-        }
-    }
-
     fn is_usage_cell(&self) -> bool {
         match self {
             Cell::Usage(_) => true,
@@ -726,7 +719,7 @@ impl Cell {
 
     fn downcast_usage(&self) -> Cell {
         match self {
-            Cell::Usage(cell) => cell.downcast_usage(),
+            Cell::Usage(cell) => cell.wrapped.clone(),
             _ => {
                 unreachable!("Function can be called only for UsageCell")
             }

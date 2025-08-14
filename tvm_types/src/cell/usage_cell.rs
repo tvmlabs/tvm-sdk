@@ -28,17 +28,15 @@ impl VisitedMap {
 }
 
 pub struct UsageCell {
-    wrapped: Cell,
+    pub(crate) wrapped: Cell,
     visit_on_load: bool,
     visited: Arc<VisitedMap>,
-    usage_level: u64,
 }
 
 impl UsageCell {
     fn new_arc(wrapped: Cell, visit_on_load: bool, visited: Arc<VisitedMap>) -> Arc<UsageCell> {
-        let usage_level = wrapped.usage_level() + 1;
-        assert!(usage_level <= 1, "Nested usage cells can cause stack overflow");
-        let usage_cell = Self { wrapped, visit_on_load, visited, usage_level };
+        let wrapped = if wrapped.is_usage_cell() { wrapped.downcast_usage() } else { wrapped };
+        let usage_cell = Self { wrapped, visit_on_load, visited };
         let arc_cell = Arc::new(usage_cell);
         if visit_on_load {
             Self::visit(&arc_cell);
@@ -90,7 +88,6 @@ impl UsageCell {
             {
                 return Ok(existing);
             }
-            let child = if child.is_usage_cell() { child.downcast_usage() } else { child };
             Ok(Cell::Usage(UsageCell::new_arc(child, cell.visit_on_load, cell.visited.clone())))
         } else {
             cell.wrapped.reference(index)
@@ -123,14 +120,6 @@ impl UsageCell {
 
     pub(crate) fn tree_cell_count(&self) -> u64 {
         self.wrapped.tree_cell_count()
-    }
-
-    pub(crate) fn usage_level(&self) -> u64 {
-        self.usage_level
-    }
-
-    pub(crate) fn downcast_usage(&self) -> Cell {
-        self.wrapped.clone()
     }
 
     pub(crate) fn to_external(cell: &Arc<Self>) -> crate::Result<Cell> {
