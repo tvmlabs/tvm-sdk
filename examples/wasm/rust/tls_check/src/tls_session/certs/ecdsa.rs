@@ -1,5 +1,6 @@
 // use core::ops::Shl;
-use std::ops::{Add, Shl};
+use std::ops::Add;
+use std::ops::Shl;
 use std::str::FromStr;
 
 use num_bigint::BigInt;
@@ -295,7 +296,7 @@ pub fn matches_specific_curve(params: &Curve) -> Option<Curve> {
         }
     }
     None
-} /*
+}
 //
 
 // const MASK: [u8; 8] = [0xff, 0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f];

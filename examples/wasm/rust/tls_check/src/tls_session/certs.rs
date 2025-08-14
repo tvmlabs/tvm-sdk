@@ -73,10 +73,10 @@ const NULL_BYTES: [u8; 2] = [TAG_NULL, 0];
 #[derive(Debug, PartialEq)]
 pub enum SignatureAlgorithm {
     UnknownSignatureAlgorithm = 0,
-    MD2WithRSA = 1,  // Unsupported.
-    MD5WithRSA = 2,  // Only supported for signing, not verification.
+    MD2WithRSA = 1, // Unsupported.
+    MD5WithRSA = 2, // Only supported for signing, not verification.
     SHA1WithRSA = 3, /* Only supported for signing, and verification of CRLs, CSRs, and OCSP
-                      * responses. */
+                     * responses. */
     SHA256WithRSA = 4,
     SHA384WithRSA = 5,
     SHA512WithRSA = 6,
@@ -1185,9 +1185,9 @@ pub fn check_asn1_integer(bytes: &[u8]) -> bool {
 // Represents an extension
 #[derive(Debug, Clone)]
 pub struct Extension {
-    pub id: Vec<i32>,   // //pub id: ObjectIdentifier,
+    pub id: Vec<i32>, // //pub id: ObjectIdentifier,
     pub critical: bool, /* pub critical: Option<bool>, // Use Option to indicate an non-obvious
-                         * field */
+                       * field */
     pub value: Vec<u8>,
 }
 
@@ -1280,15 +1280,15 @@ struct Certificate {
     not_after: DateTime<Utc>,  // i64,//SystemTime,
     key_usage: KeyUsage,
 
-    extensions: Vec<Extension>,                   // Raw X.509 extensions
-    extra_extensions: Vec<Extension>,             /* Extensions to be copied raw into any
-                                                   * marshaled certificates */
+    extensions: Vec<Extension>, // Raw X.509 extensions
+    extra_extensions: Vec<Extension>, /* Extensions to be copied raw into any
+                                 * marshaled certificates */
     unhandled_critical_extensions: Vec<Vec<i32>>, // List of extension IDs not fully processed
 
     ext_key_usage: Vec<ExtKeyUsage>, // Sequence of extended key usages
     unknown_ext_key_usage: Vec<Vec<i32>>, /* unknown_ext_key_usage: Vec<asn1::ObjectIdentifier>,
-                                           * // Encountered extended key usages unknown to this
-                                           * package */
+                                      * // Encountered extended key usages unknown to this
+                                      * package */
 
     basic_constraints_valid: bool, // Indicates if BasicConstraints are valid
     is_ca: bool,
