@@ -245,44 +245,6 @@ impl fmt::Display for CellType {
     }
 }
 
-// pub trait CellImpl: Sync + Send {
-// fn reference_repr_hash(&self, index: usize) -> Result<UInt256> {
-// Ok(self.reference(index)?.hash(MAX_LEVEL))
-// }
-//
-// fn level(&self) -> u8 {
-// self.level_mask().level()
-// }
-//
-// fn tree_bits_count(&self) -> u64 {
-// 0
-// }
-//
-// fn tree_cell_count(&self) -> u64 {
-// 0
-// }
-//
-// fn virtualization(&self) -> u8 {
-// 0
-// }
-//
-// fn usage_level(&self) -> u64 {
-// 0
-// }
-//
-// fn is_usage_cell(&self) -> bool {
-// false
-// }
-//
-// fn downcast_usage(&self) -> Cell {
-// unreachable!("Function can be called only for UsageCell")
-// }
-//
-// fn to_external(&self) -> Result<Cell> {
-// fail!("Cell can not be converted to external")
-// }
-// }
-
 pub enum Cell {
     Data(Arc<DataCell>),
     Virtual(Arc<VirtualCell>),
