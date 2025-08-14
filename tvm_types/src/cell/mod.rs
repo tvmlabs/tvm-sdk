@@ -31,7 +31,8 @@ pub use boc3_cell::read_boc3_bytes;
 pub use boc3_cell::write_boc3;
 pub use boc3_cell::write_boc3_to_bytes;
 pub use data_cell::DataCell;
-pub use usage_cell::{UsageSet, UsageTree};
+pub use usage_cell::UsageSet;
+pub use usage_cell::UsageTree;
 
 pub const SHA256_SIZE: usize = 32;
 pub const DEPTH_SIZE: usize = 2;
@@ -78,14 +79,14 @@ pub enum CellType {
 }
 
 impl CellType {
-    pub const UNKNOWN: u8 = 0;
-    pub const ORDINARY: u8 = 0xff;
-    pub const PRUNED_BRANCH: u8 = 1;
+    pub const BIG: u8 = 5;
+    pub const EXTERNAL: u8 = 6;
     pub const LIBRARY_REFERENCE: u8 = 2;
     pub const MERKLE_PROOF: u8 = 3;
     pub const MERKLE_UPDATE: u8 = 4;
-    pub const BIG: u8 = 5;
-    pub const EXTERNAL: u8 = 6;
+    pub const ORDINARY: u8 = 0xff;
+    pub const PRUNED_BRANCH: u8 = 1;
+    pub const UNKNOWN: u8 = 0;
 
     fn is_merkle(&self) -> bool {
         *self == CellType::MerkleProof || *self == CellType::MerkleUpdate
