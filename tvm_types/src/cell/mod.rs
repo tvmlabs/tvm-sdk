@@ -78,14 +78,14 @@ pub enum CellType {
 }
 
 impl CellType {
-    pub const UNKNOWN: u8 = 0;
-    pub const ORDINARY: u8 = 0xff;
-    pub const PRUNED_BRANCH: u8 = 1;
+    pub const BIG: u8 = 5;
+    pub const EXTERNAL: u8 = 6;
     pub const LIBRARY_REFERENCE: u8 = 2;
     pub const MERKLE_PROOF: u8 = 3;
     pub const MERKLE_UPDATE: u8 = 4;
-    pub const BIG: u8 = 5;
-    pub const EXTERNAL: u8 = 6;
+    pub const ORDINARY: u8 = 0xff;
+    pub const PRUNED_BRANCH: u8 = 1;
+    pub const UNKNOWN: u8 = 0;
 
     fn is_merkle(&self) -> bool {
         *self == CellType::MerkleProof || *self == CellType::MerkleUpdate

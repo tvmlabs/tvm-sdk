@@ -1,3 +1,12 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::hash::BuildHasher;
+use std::hash::Hasher;
+use std::mem;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicUsize;
+
 use crate::Cell;
 use crate::UInt256;
 use std::collections::{HashMap, HashSet};
@@ -195,7 +204,9 @@ impl UsageTree {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Cell, UsageTree, read_single_root_boc};
+    use crate::Cell;
+    use crate::UsageTree;
+    use crate::read_single_root_boc;
     #[test]
     fn test_usage_cell_speed() {
         let original_bytes =

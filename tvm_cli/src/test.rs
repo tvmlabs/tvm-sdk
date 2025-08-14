@@ -349,18 +349,9 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
     init_debug_logger(trace_path)?;
     let bc_config = get_blockchain_config(config, bc_config).await?;
     let mut account_root = account.serialize().unwrap();
-    let result = execute_debug(
-        bc_config,
-        &mut account_root,
-        None,
-        Some(matches),
-        now,
-        0,
-        0,
-        false,
-        config,
-    )
-    .await;
+    let result =
+        execute_debug(bc_config, &mut account_root, None, Some(matches), now, 0, 0, false, config)
+            .await;
 
     match result {
         Ok(transaction) => {

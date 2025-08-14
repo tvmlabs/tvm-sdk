@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.3] - 2025-08-14
+
+### New
+- Wasm plugs for wasi-io, wasi-clocks, wasi-random, providing access to some tvm blockchain info.
+- Matching tests and examples
+
+### Fixed
+- Major refactor of wasm-related code
+
 ## [2.20.2] - 2025-08-11
 
 ### Fixed
