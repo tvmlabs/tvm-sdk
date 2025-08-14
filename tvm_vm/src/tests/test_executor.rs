@@ -1257,7 +1257,7 @@ fn test_run_wasm_deterministic_random_from_hash() {
 }
 
 #[test]
-fn test_run_wasm_clock_random_from_hash() {
+fn test_run_wasm_clock_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
     let config_data = load_boc("benches/config-data.boc");
@@ -1296,11 +1296,16 @@ fn test_run_wasm_clock_random_from_hash() {
     );
     engine.wasm_engine_init_cached().unwrap();
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap(); // Should not error on empty hash list!
+    engine.set_wasm_block_time(3005792924);
 
-    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
-        .unwrap()
-        .into_cell()
-        .unwrap();
+    let hash_str = "65b6403f531ba6504e590905712af3208ddcba3d0c4ea4c003d1ef9685ec4947";
+    let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    let hash: Vec<u8> = (0..hash_str.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+        .collect::<Vec<u8>>();
+    let cell =
+        TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let its = 3000u32.to_be_bytes();
     println!("Its {:?}", its);
@@ -1314,10 +1319,11 @@ fn test_run_wasm_clock_random_from_hash() {
     let wasm_func = "gosh:determinism/test-interface@0.1.0";
     let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
-    let filename = "/Users/elar/Code/Havok/AckiNacki/tvm-sdk/examples/wasm/rust/determinism-clocks/target/wasm32-wasip2/release/determinism.wasm";
-    let wasm_dict = std::fs::read(filename).unwrap();
 
-    let cell = TokenValue::write_bytes(&wasm_dict, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     // let cell = split_to_chain_of_cells(wasm_dict);
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));

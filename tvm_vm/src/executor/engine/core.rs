@@ -17,6 +17,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
 use std::time::Instant;
+use std::time::SystemTime;
 
 use tvm_block::GlobalCapabilities;
 use tvm_types::BuilderData;
@@ -1325,13 +1326,13 @@ impl Engine {
         }
     }
 
-    pub fn ctrl(&self, index: usize) -> ResultRef<'_, StackItem> {
+    pub fn ctrl(&self, index: usize) -> ResultRef<StackItem> {
         self.ctrls
             .get(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
     }
 
-    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<'_, StackItem> {
+    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<StackItem> {
         self.ctrls
             .get_mut(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
@@ -2003,7 +2004,7 @@ impl Engine {
     }
 
     /// get smartcontract info param from ctrl(7) tuple index 0
-    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<'_, StackItem> {
+    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<StackItem> {
         let tuple = self.ctrl(7)?.as_tuple()?;
         let tuple = tuple
             .first()
@@ -2019,7 +2020,7 @@ impl Engine {
         })
     }
 
-    pub(in crate::executor) fn rand(&self) -> ResultRef<'_, IntegerData> {
+    pub(in crate::executor) fn rand(&self) -> ResultRef<IntegerData> {
         self.smci_param(6)?.as_integer()
     }
 

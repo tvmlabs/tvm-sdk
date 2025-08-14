@@ -48,6 +48,12 @@ fn determinism(its: usize) -> Vec<u8> {
         match now.elapsed() {
             Ok(elapsed) => {
                 // it prints '2'
+                results.push(
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis_f64(),
+                );
                 results.push(elapsed.as_millis_f64());
             }
             Err(e) => {
