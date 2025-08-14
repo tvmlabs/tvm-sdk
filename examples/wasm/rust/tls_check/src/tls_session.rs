@@ -5,9 +5,8 @@ mod hkdf_sha256;
 mod sha512;
 mod x25519;
 
-use x25519::curve25519_donna;
+use x25519::{curve25519_donna, BASE_POINT};
 use format::*;
-//use network::send;
 use hkdf_sha256::*;
 use certs::check_certs;
 
@@ -38,7 +37,7 @@ const ECDSA_WITH_SHA512: u16 = 1539; // 06 03 (ECDSA-SECP521r1-SHA512)
 const SHA256WITH_RSAPSS: u16 = 2057; // 08 09 (RSA-PSS-PSS-SHA256)
 const SHA384WITH_RSAPSS: u16 = 2058; // 08 0a (RSA-PSS-PSS-SHA384)
 const SHA512WITH_RSAPSS: u16 = 2059; // 08 0b (RSA-PSS-PSS-SHA512)
-const PureEd25519: u16 = 2055; // 08 07 (ED25519)
+//const PureEd25519: u16 = 2055; // 08 07 (ED25519)
 
 
 pub struct Keys {
@@ -57,11 +56,10 @@ pub struct Keys {
 }
 
 
-
+/*
 pub fn key_pair() -> Keys {
     let private_key = [231, 226, 189, 128, 175, 192, 46, 233, 160, 243, 227, 168, 186, 174, 207, 111, 124, 21, 6, 220, 18, 155, 18, 17, 39, 165, 203, 108, 109, 3, 40, 186];
-    let basepoint:[u8;32] = [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    let public_key = curve25519_donna(&private_key, &basepoint);
+    let public_key = curve25519_donna(&private_key, &BASE_POINT);
 
     Keys {
         public: public_key,
@@ -78,7 +76,7 @@ pub fn key_pair() -> Keys {
         server_application_key: [0u8;16],
         server_application_iv: [0u8;12],
     }
-}
+}*/
 
 // AEAD helper functions
 
@@ -188,8 +186,7 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     //let http_response:[u8;1601] = data[handshake_end_index+640..handshake_end_index+640+1601].try_into().unwrap();
     let http_response = &data[handshake_end_index + app_request_len + encr_ticket_len..]; // let http_response = &data[handshake_end_index + app_request_len + 540..]; // let http_response = &data[handshake_end_index+640..];
 
-    let basepoint:[u8;32] = [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    let public_key = curve25519_donna(&private_key, &basepoint);
+    let public_key = curve25519_donna(&private_key, &BASE_POINT);
 
     let server_hello_data = parse_server_hello(&server_hello[5..]);
 
