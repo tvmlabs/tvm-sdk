@@ -1,0 +1,9 @@
+package gosh:determinism@0.1.0;
+
+interface test-interface {
+    test: func(kwargs: list<u8>) -> list<u8>;
+}
+
+world deterworld {
+    export test-interface;
+}

@@ -44,7 +44,7 @@ pub const MAX_LEVEL_MASK: u8 = 7;
 pub const MAX_DEPTH: u16 = u16::MAX - 1;
 
 // type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
-// len) (1) + max tree cells count (1) + max tree bits count (1)
+// len) (1) + min tree cells count (1) + min tree bits count (1)
 const EXTERNAL_CELL_MIN_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 2;
 // type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
 // len) (1) + max tree cells count (8) + max tree bits count (8)
@@ -75,6 +75,25 @@ pub enum CellType {
     MerkleUpdate,
     Big,
     External,
+}
+
+impl CellType {
+    pub const BIG: u8 = 5;
+    pub const EXTERNAL: u8 = 6;
+    pub const LIBRARY_REFERENCE: u8 = 2;
+    pub const MERKLE_PROOF: u8 = 3;
+    pub const MERKLE_UPDATE: u8 = 4;
+    pub const ORDINARY: u8 = 0xff;
+    pub const PRUNED_BRANCH: u8 = 1;
+    pub const UNKNOWN: u8 = 0;
+
+    fn is_merkle(&self) -> bool {
+        *self == CellType::MerkleProof || *self == CellType::MerkleUpdate
+    }
+
+    fn is_pruned(&self) -> bool {
+        *self == CellType::PrunedBranch
+    }
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Copy, Hash)]
@@ -182,13 +201,13 @@ impl TryFrom<u8> for CellType {
 
     fn try_from(num: u8) -> Result<CellType> {
         let typ = match num {
-            1 => CellType::PrunedBranch,
-            2 => CellType::LibraryReference,
-            3 => CellType::MerkleProof,
-            4 => CellType::MerkleUpdate,
-            5 => CellType::Big,
-            6 => CellType::External,
-            0xff => CellType::Ordinary,
+            Self::PRUNED_BRANCH => Self::PrunedBranch,
+            Self::LIBRARY_REFERENCE => Self::LibraryReference,
+            Self::MERKLE_PROOF => Self::MerkleProof,
+            Self::MERKLE_UPDATE => Self::MerkleUpdate,
+            Self::BIG => Self::Big,
+            Self::EXTERNAL => Self::External,
+            Self::ORDINARY => Self::Ordinary,
             _ => fail!("unknown cell type {}", num),
         };
         Ok(typ)
@@ -198,14 +217,14 @@ impl TryFrom<u8> for CellType {
 impl From<CellType> for u8 {
     fn from(ct: CellType) -> u8 {
         match ct {
-            CellType::Unknown => 0,
-            CellType::Ordinary => 0xff,
-            CellType::PrunedBranch => 1,
-            CellType::LibraryReference => 2,
-            CellType::MerkleProof => 3,
-            CellType::MerkleUpdate => 4,
-            CellType::Big => 5,
-            CellType::External => 6,
+            CellType::Unknown => CellType::UNKNOWN,
+            CellType::Ordinary => CellType::ORDINARY,
+            CellType::PrunedBranch => CellType::PRUNED_BRANCH,
+            CellType::LibraryReference => CellType::LIBRARY_REFERENCE,
+            CellType::MerkleProof => CellType::MERKLE_PROOF,
+            CellType::MerkleUpdate => CellType::MERKLE_UPDATE,
+            CellType::Big => CellType::BIG,
+            CellType::External => CellType::EXTERNAL,
         }
     }
 }
@@ -226,72 +245,13 @@ impl fmt::Display for CellType {
     }
 }
 
-pub trait CellImpl: Sync + Send {
-    fn data(&self) -> &[u8];
-    fn raw_data(&self) -> Result<&[u8]>;
-    fn bit_length(&self) -> usize;
-    fn references_count(&self) -> usize;
-    fn reference(&self, index: usize) -> Result<Cell>;
-    fn reference_repr_hash(&self, index: usize) -> Result<UInt256> {
-        Ok(self.reference(index)?.hash(MAX_LEVEL))
-    }
-    fn cell_type(&self) -> CellType;
-    fn level_mask(&self) -> LevelMask;
-    fn hash(&self, index: usize) -> UInt256;
-    fn depth(&self, index: usize) -> u16;
-    fn store_hashes(&self) -> bool;
-
-    fn level(&self) -> u8 {
-        self.level_mask().level()
-    }
-
-    fn is_merkle(&self) -> bool {
-        self.cell_type() == CellType::MerkleProof || self.cell_type() == CellType::MerkleUpdate
-    }
-
-    fn is_pruned(&self) -> bool {
-        self.cell_type() == CellType::PrunedBranch
-    }
-
-    fn tree_bits_count(&self) -> u64 {
-        0
-    }
-
-    fn tree_cell_count(&self) -> u64 {
-        0
-    }
-
-    fn virtualization(&self) -> u8 {
-        0
-    }
-
-    fn usage_level(&self) -> u64 {
-        0
-    }
-
-    fn is_usage_cell(&self) -> bool {
-        false
-    }
-
-    fn downcast_usage(&self) -> Cell {
-        unreachable!("Function can be called only for UsageCell")
-    }
-
-    fn to_external(&self) -> Result<Cell> {
-        fail!("Cell can not be converted to external")
-    }
-}
-
-#[cfg(not(feature = "dyn_cell"))]
 pub enum Cell {
     Data(Arc<DataCell>),
-    Boc3(Boc3Cell),
     Virtual(Arc<VirtualCell>),
     Usage(Arc<UsageCell>),
-}
 
-#[cfg(feature = "dyn_cell")]
-pub struct Cell(Arc<dyn CellImpl>);
+    Boc3(Boc3Cell), // Experimental, it is not used in production
+}
 
 lazy_static::lazy_static! {
     pub(crate) static ref CELL_DEFAULT: Cell = Cell::with_data(DataCell::new());
@@ -301,15 +261,12 @@ lazy_static::lazy_static! {
 
 impl Clone for Cell {
     fn clone(&self) -> Self {
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => Cell::Data(cell.clone()),
-            Cell::Boc3(boc) => Cell::Boc3(boc.clone()),
             Cell::Usage(cell) => Cell::Usage(cell.clone()),
             Cell::Virtual(cell) => Cell::Virtual(cell.clone()),
+            Cell::Boc3(boc) => Cell::Boc3(boc.clone()),
         }
-        #[cfg(feature = "dyn_cell")]
-        Self(self.0.clone())
     }
 }
 
@@ -329,51 +286,32 @@ impl Cell {
     }
 
     pub fn virtualization(&self) -> u8 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.virtualization()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
-            Cell::Data(cell) => cell.virtualization(),
-            Cell::Boc3(cell) => cell.virtualization(),
-            Cell::Usage(cell) => cell.virtualization(),
             Cell::Virtual(cell) => cell.virtualization(),
+            _ => 0,
         }
     }
 
-    pub fn with_usage(cell: UsageCell) -> Self {
-        #[cfg(not(feature = "dyn_cell"))]
-        let ret = Cell::Usage(Arc::new(cell));
-        #[cfg(feature = "dyn_cell")]
-        let ret = Self(Arc::new(cell));
+    pub fn with_usage(cell: Arc<UsageCell>) -> Self {
+        let ret = Cell::Usage(cell);
         CELL_COUNT.fetch_add(1, Ordering::Relaxed);
         ret
     }
 
     pub fn with_virtual(cell: VirtualCell) -> Self {
-        #[cfg(not(feature = "dyn_cell"))]
         let ret = Cell::Virtual(Arc::new(cell));
-        #[cfg(feature = "dyn_cell")]
-        let ret = Self(Arc::new(cell));
         CELL_COUNT.fetch_add(1, Ordering::Relaxed);
         ret
     }
 
     pub fn with_boc3(cell: Boc3Cell) -> Self {
-        #[cfg(not(feature = "dyn_cell"))]
         let ret = Cell::Boc3(cell);
-        #[cfg(feature = "dyn_cell")]
-        let ret = Self(Arc::new(cell));
         CELL_COUNT.fetch_add(1, Ordering::Relaxed);
         ret
     }
 
     pub fn with_data(cell: DataCell) -> Self {
-        #[cfg(not(feature = "dyn_cell"))]
         let ret = Cell::Data(Arc::new(cell));
-        #[cfg(feature = "dyn_cell")]
-        let ret = Self(Arc::new(cell));
         CELL_COUNT.fetch_add(1, Ordering::Relaxed);
         ret
     }
@@ -387,31 +325,16 @@ impl Cell {
     // }
 
     pub fn reference(&self, index: usize) -> Result<Cell> {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.reference(index)
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.reference(index),
-            Cell::Boc3(cell) => cell.reference(index),
-            Cell::Usage(cell) => cell.reference(index),
+            Cell::Usage(cell) => UsageCell::reference(cell, index),
             Cell::Virtual(cell) => cell.reference(index),
+            Cell::Boc3(cell) => cell.reference(index),
         }
     }
 
     pub fn reference_repr_hash(&self, index: usize) -> Result<UInt256> {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.reference_repr_hash(index)
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Cell::Data(cell) => cell.reference_repr_hash(index),
-            Cell::Boc3(cell) => cell.reference_repr_hash(index),
-            Cell::Usage(cell) => cell.reference_repr_hash(index),
-            Cell::Virtual(cell) => cell.reference_repr_hash(index),
-        }
+        Ok(self.reference(index)?.hash(MAX_LEVEL))
     }
 
     // TODO: make as simple clone
@@ -425,73 +348,43 @@ impl Cell {
     }
 
     pub fn data(&self) -> &[u8] {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.data()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.data(),
+            Cell::Usage(cell) => UsageCell::data(cell),
+            Cell::Virtual(cell) => cell.wrapped.data(),
             Cell::Boc3(cell) => cell.data(),
-            Cell::Usage(cell) => cell.data(),
-            Cell::Virtual(cell) => cell.data(),
         }
     }
 
     pub fn raw_data(&self) -> Result<&[u8]> {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.raw_data()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.raw_data(),
-            Cell::Boc3(cell) => cell.raw_data(),
-            Cell::Usage(cell) => cell.raw_data(),
+            Cell::Usage(cell) => UsageCell::raw_data(cell),
             Cell::Virtual(cell) => cell.raw_data(),
+            Cell::Boc3(cell) => cell.raw_data(),
         }
     }
 
     pub fn bit_length(&self) -> usize {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.bit_length()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.bit_length(),
+            Cell::Usage(cell) => cell.wrapped.bit_length(),
+            Cell::Virtual(cell) => cell.wrapped.bit_length(),
             Cell::Boc3(cell) => cell.bit_length(),
-            Cell::Usage(cell) => cell.bit_length(),
-            Cell::Virtual(cell) => cell.bit_length(),
         }
     }
 
     pub fn cell_type(&self) -> CellType {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.cell_type()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.cell_type(),
+            Cell::Usage(cell) => cell.wrapped.cell_type(),
+            Cell::Virtual(cell) => cell.wrapped.cell_type(),
             Cell::Boc3(cell) => cell.cell_type(),
-            Cell::Usage(cell) => cell.cell_type(),
-            Cell::Virtual(cell) => cell.cell_type(),
         }
     }
 
     pub fn level(&self) -> u8 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.level()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Cell::Data(cell) => cell.level(),
-            Cell::Boc3(cell) => cell.level(),
-            Cell::Usage(cell) => cell.level(),
-            Cell::Virtual(cell) => cell.level(),
-        }
+        self.level_mask().level()
     }
 
     pub fn hashes_count(&self) -> usize {
@@ -515,61 +408,41 @@ impl Cell {
     }
 
     pub fn level_mask(&self) -> LevelMask {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.level_mask()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.level_mask(),
-            Cell::Boc3(cell) => cell.level_mask(),
-            Cell::Usage(cell) => cell.level_mask(),
+            Cell::Usage(cell) => cell.wrapped.level_mask(),
             Cell::Virtual(cell) => cell.level_mask(),
+            Cell::Boc3(cell) => cell.level_mask(),
         }
     }
 
     pub fn references_count(&self) -> usize {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.references_count()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.references_count(),
-            Cell::Boc3(cell) => cell.references_count(),
-            Cell::Usage(cell) => cell.references_count(),
+            Cell::Usage(cell) => cell.wrapped.references_count(),
             Cell::Virtual(cell) => cell.references_count(),
+            Cell::Boc3(cell) => cell.references_count(),
         }
     }
 
     /// Returns cell's higher hash for given index (last one - representation
     /// hash)
     pub fn hash(&self, index: usize) -> UInt256 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.hash(index)
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.hash(index),
-            Cell::Boc3(cell) => cell.hash(index),
-            Cell::Usage(cell) => cell.hash(index),
+            Cell::Usage(cell) => cell.wrapped.hash(index),
             Cell::Virtual(cell) => cell.hash(index),
+            Cell::Boc3(cell) => cell.hash(index),
         }
     }
 
     /// Returns cell's depth for given index
     pub fn depth(&self, index: usize) -> u16 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.depth(index)
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.depth(index),
-            Cell::Boc3(cell) => cell.depth(index),
-            Cell::Usage(cell) => cell.depth(index),
+            Cell::Usage(cell) => cell.wrapped.depth(index),
             Cell::Virtual(cell) => cell.depth(index),
+            Cell::Boc3(cell) => cell.depth(index),
         }
     }
 
@@ -600,75 +473,40 @@ impl Cell {
     }
 
     pub fn repr_hash(&self) -> UInt256 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.hash(MAX_LEVEL)
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
-            Self::Boc3(cell) => cell.hash(MAX_LEVEL),
             Self::Data(cell) => cell.hash(MAX_LEVEL),
-            Self::Usage(cell) => cell.hash(MAX_LEVEL),
+            Self::Usage(cell) => cell.wrapped.hash(MAX_LEVEL),
             Self::Virtual(cell) => cell.hash(MAX_LEVEL),
+            Self::Boc3(cell) => cell.hash(MAX_LEVEL),
         }
     }
 
     pub fn repr_depth(&self) -> u16 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.depth(MAX_LEVEL)
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
-            Self::Boc3(cell) => cell.depth(MAX_LEVEL),
             Self::Data(cell) => cell.depth(MAX_LEVEL),
-            Self::Usage(cell) => cell.depth(MAX_LEVEL),
+            Self::Usage(cell) => cell.wrapped.depth(MAX_LEVEL),
             Self::Virtual(cell) => cell.depth(MAX_LEVEL),
+            Self::Boc3(cell) => cell.depth(MAX_LEVEL),
         }
     }
 
     pub fn store_hashes(&self) -> bool {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.store_hashes()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
-            Self::Boc3(cell) => cell.store_hashes(),
             Self::Data(cell) => cell.store_hashes(),
-            Self::Usage(cell) => cell.store_hashes(),
-            Self::Virtual(cell) => cell.store_hashes(),
+            Self::Usage(cell) => cell.wrapped.store_hashes(),
+            Self::Virtual(cell) => cell.wrapped.store_hashes(),
+            Self::Boc3(cell) => cell.store_hashes(),
         }
     }
 
     #[allow(dead_code)]
     pub fn is_merkle(&self) -> bool {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.is_merkle()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Self::Boc3(cell) => cell.is_merkle(),
-            Self::Data(cell) => cell.is_merkle(),
-            Self::Usage(cell) => cell.is_merkle(),
-            Self::Virtual(cell) => cell.is_merkle(),
-        }
+        self.cell_type().is_merkle()
     }
 
     #[allow(dead_code)]
     pub fn is_pruned(&self) -> bool {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.is_pruned()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Self::Boc3(cell) => cell.is_pruned(),
-            Self::Data(cell) => cell.is_pruned(),
-            Self::Usage(cell) => cell.is_pruned(),
-            Self::Virtual(cell) => cell.is_pruned(),
-        }
+        self.cell_type().is_pruned()
     }
 
     pub fn to_hex_string(&self, lower: bool) -> String {
@@ -804,86 +642,47 @@ impl Cell {
     }
 
     pub fn tree_bits_count(&self) -> u64 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.tree_bits_count()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.tree_bits_count(),
+            Cell::Usage(cell) => cell.wrapped.tree_bits_count(),
+            Cell::Virtual(cell) => cell.wrapped.tree_bits_count(),
             Cell::Boc3(cell) => cell.tree_bits_count(),
-            Cell::Usage(cell) => cell.tree_bits_count(),
-            Cell::Virtual(cell) => cell.tree_bits_count(),
         }
     }
 
     pub fn tree_cell_count(&self) -> u64 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.tree_cell_count()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.tree_cell_count(),
+            Cell::Usage(cell) => cell.wrapped.tree_cell_count(),
+            Cell::Virtual(cell) => cell.wrapped.tree_cell_count(),
             Cell::Boc3(cell) => cell.tree_cell_count(),
-            Cell::Usage(cell) => cell.tree_cell_count(),
-            Cell::Virtual(cell) => cell.tree_cell_count(),
         }
     }
 
     pub fn to_external(&self) -> Result<Cell> {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.to_external()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
             Cell::Data(cell) => cell.to_external(),
-            Cell::Boc3(cell) => cell.to_external(),
-            Cell::Usage(cell) => cell.to_external(),
-            Cell::Virtual(cell) => cell.to_external(),
-        }
-    }
-
-    pub fn usage_level(&self) -> u64 {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.usage_level()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
-        match self {
-            Cell::Data(cell) => cell.usage_level(),
-            Cell::Boc3(cell) => cell.usage_level(),
-            Cell::Usage(cell) => cell.usage_level(),
-            Cell::Virtual(cell) => cell.usage_level(),
+            Cell::Usage(cell) => UsageCell::to_external(cell),
+            _ => {
+                fail!("Cell can not be converted to external")
+            }
         }
     }
 
     fn is_usage_cell(&self) -> bool {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.is_usage_cell()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
-            Cell::Data(cell) => cell.is_usage_cell(),
-            Cell::Boc3(cell) => cell.is_usage_cell(),
-            Cell::Usage(cell) => cell.is_usage_cell(),
-            Cell::Virtual(cell) => cell.is_usage_cell(),
+            Cell::Usage(_) => true,
+            Cell::Virtual(cell) => cell.wrapped.is_usage_cell(),
+            _ => false,
         }
     }
 
     fn downcast_usage(&self) -> Cell {
-        #[cfg(feature = "dyn_cell")]
-        {
-            self.0.downcast_usage()
-        }
-        #[cfg(not(feature = "dyn_cell"))]
         match self {
-            Cell::Data(cell) => cell.downcast_usage(),
-            Cell::Boc3(cell) => cell.downcast_usage(),
-            Cell::Usage(cell) => cell.downcast_usage(),
-            Cell::Virtual(cell) => cell.downcast_usage(),
+            Cell::Usage(cell) => cell.wrapped.clone(),
+            _ => {
+                unreachable!("Function can be called only for UsageCell")
+            }
         }
     }
 }
@@ -1395,6 +1194,7 @@ mod data_cell;
 mod virtual_cell;
 
 use smallvec::SmallVec;
+use smallvec::smallvec;
 use virtual_cell::VirtualCell;
 
 pub use self::builder_operations::*;
@@ -1423,12 +1223,20 @@ pub(crate) fn to_hex_string(data: impl AsRef<[u8]>, len: usize, lower: bool) -> 
 }
 
 pub fn create_cell(
-    references: Vec<Cell>,
+    references: SmallVec<[Cell; 4]>,
     data: &[u8], // with completion tag (for big cell - without)!
 ) -> Result<Cell> {
     Ok(Cell::with_data(DataCell::with_refs_and_data(references, data)?))
 }
 
 pub fn create_big_cell(data: &[u8]) -> Result<Cell> {
-    Ok(Cell::with_data(DataCell::with_params(vec![], data, CellType::Big, 0, None, None, None)?))
+    Ok(Cell::with_data(DataCell::with_params(
+        smallvec![],
+        data,
+        CellType::Big,
+        0,
+        None,
+        None,
+        None,
+    )?))
 }

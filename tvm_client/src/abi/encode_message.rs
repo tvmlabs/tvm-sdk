@@ -514,7 +514,7 @@ pub async fn encode_message(
         Ok(server_link) => {
             let network_state: Arc<crate::net::NetworkState> = server_link.state();
             network_state
-                .get_bm_license_address()
+                .get_bm_issuer_pubkey()
                 .await
                 .and_then(|s| {
                     s.split_once(':')

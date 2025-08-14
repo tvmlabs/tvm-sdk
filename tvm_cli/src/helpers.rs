@@ -38,6 +38,8 @@ use tvm_client::abi::DeploySet;
 use tvm_client::abi::ParamsOfDecodeMessageBody;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
+use tvm_client::account;
+use tvm_client::boc::internal::serialize_cell_to_base64;
 use tvm_client::crypto::CryptoConfig;
 use tvm_client::crypto::KeyPair;
 use tvm_client::crypto::MnemonicDictionary;
@@ -59,7 +61,6 @@ use crate::debug::debug_level_from_env;
 use crate::replay::CONFIG_ADDR;
 use crate::replay::construct_blockchain_config;
 use crate::resolve_net_name;
-
 pub const HD_PATH: &str = "m/44'/396'/0'/0/0";
 pub const WORD_COUNT: u8 = 12;
 
@@ -188,6 +189,7 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             wait_for_timeout: config.timeout,
             out_of_sync_threshold: Some(config.out_of_sync_threshold * 1000),
             access_key: config.access_key.clone(),
+            api_token: config.api_token.clone(),
             ..Default::default()
         },
         ..Default::default()
@@ -295,24 +297,34 @@ pub async fn query_account_field(
     address: &str,
     field: &str,
 ) -> Result<String, String> {
-    let accounts = query_with_limit(
-        ton.clone(),
-        "accounts",
-        json!({ "id": { "eq": address } }),
-        field,
-        None,
-        Some(1),
-    )
-    .await
-    .map_err(|e| format!("failed to query account data: {}", e))?;
-    if accounts.is_empty() {
-        return Err(format!("account with address {} not found", address));
+    let params = account::ParamsOfGetAccount { address: address.to_owned() };
+    let result_of_get_acc = account::get_account(ton, params)
+        .await
+        .map_err(|e| format!("failed to get account: {e}"))?;
+
+    if field == "boc" {
+        return Ok(result_of_get_acc.boc);
     }
-    let data = accounts[0][field].as_str();
-    if data.is_none() {
-        return Err(format!("account doesn't contain {}", field));
+
+    if field != "data" {
+        return Err("Only boc and data field are supported".to_string());
     }
-    Ok(data.unwrap().to_string())
+
+    let account = Account::construct_from_base64(&result_of_get_acc.boc)
+        .map_err(|e| format!("failed to construct account from boc: {e}"))?;
+
+    let state_init = account.state_init();
+
+    if state_init.is_none() {
+        return Err(format!("account doesn't contain state_init"));
+    }
+
+    let cell: Option<tvm_types::Cell> = state_init.unwrap().clone().data;
+
+    match cell {
+        Some(cell) => Ok(serialize_cell_to_base64(&cell, "account data").unwrap()),
+        None => Err(format!("State init doesn't contain field data")),
+    }
 }
 
 pub async fn decode_msg_body(
