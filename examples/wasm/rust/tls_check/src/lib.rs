@@ -1,4 +1,3 @@
-
 //#![no_std]
 #[allow(warnings)]
 mod bindings;
