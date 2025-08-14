@@ -373,8 +373,8 @@ fn put_uint64(b: &mut [u8], v: u64) {
     b[7] = v as u8;
 }
 
-// XORBytes устанавливает dst[i] = x[i] ^ y[i] для всех i < n = min(len(x), len(y)),
-// возвращая n, количество байтов, записанных в dst.
+// XORBytes sets dst[i] = x[i] ^ y[i] for all i < n = min(len(x), len(y)),
+// and outputs n, the number of bits, that was written in dst.
 fn xor_bytes(dst: &mut [u8], x: &[u8], y: &[u8]) -> usize {
     let n = x.len().min(y.len());
     if n == 0 {
@@ -682,7 +682,7 @@ const GCM_REDUCTION_TABLE: [u16; 16] = [
     0x9180, 0x8da0, 0xa9c0, 0xb5e0,
 ];
 
-// Обратная работа с битами - изменение порядка битов 4-битного числа.
+// Work with bits - changing the order of bits for 4-bits number.
 fn reverse_bits(i: usize) -> usize {
     let mut i = i;
     i = ((i << 2) & 0xc) | ((i >> 2) & 0x3);
@@ -690,32 +690,32 @@ fn reverse_bits(i: usize) -> usize {
     i
 }
 
-// gcm_add складывает два элемента GF(2¹²⁸) и возвращает сумму.
+// gcm_add adds two GF(2¹²⁸) elements and outputs the result.
 fn gcm_add(x: &GcmFieldElement, y: &GcmFieldElement) -> GcmFieldElement {
-    // Сложение в поле характеристики 2 — это просто XOR.
+    // Addition in char-2 field is just bitwise XOR.
     GcmFieldElement {
         low: x.low ^ y.low,
         high: x.high ^ y.high,
     }
 }
 
-// gcm_double возвращает результат удвоения элемента GF(2¹²⁸).
+// gcm_double returns doubling of GF(2¹²⁸) elems.
 fn gcm_double(x: &GcmFieldElement) -> GcmFieldElement {
     let msb_set = x.high & 1 == 1;
 
-    // Из-за порядка бит удвоение фактически является правым сдвигом.
+    // Because of bits order the doubling is just shift to the right.
     let mut double = GcmFieldElement {
         high: x.high >> 1,
         low: x.low >> 1,
     };
     double.high |= x.low << 63;
 
-    // Если старший бит был установлен перед сдвигом, он
-    // становится термном x^128. Это больше, чем
-    // неприводимый многочлен, поэтому результат должен быть сокращен.
-    // Неприводимый многочлен: 1+x+x^2+x^7+x^128. Мы можем вычесть это, чтобы
-    // устранить термин x^128, что также означает вычитание других
-    // четырех терминов. В полях характеристики 2, вычитание == сложению ==
+    // If the most significant bit was set before shift then it became
+    // coefficient for x^128. This overflows the degree of basic irreducible
+    // polinomial, and because of this the result must be reduced.
+    // Irreducible polynomial: 1+x+x^2+x^7+x^128. We can substract it,
+    // to reduce term x^128, that also means substracting other
+    // four terms. In char-2 fields, substracion == addition ==
     // XOR.
     if msb_set {
         double.low ^= 0xe100000000000000;
@@ -730,14 +730,14 @@ pub struct Gcm {
 	cipher: Aes256Cipher,
 	nonce_size: usize,
 	tag_size: usize,
-	// product_table содержит первые шестнадцать степеней ключа H.
-	// Однако они находятся в порядке побитового реверса.
+	// product_table contains first sixteen degrees of key H.
+	// Hence they are in bitwise reverse order.
 	product_table: [GcmFieldElement; 16],
 }
 
 const GCM_BLOCK_SIZE: usize = 16;
 const GCM_TAG_SIZE: usize = 16;
-const GCM_MINIMUM_TAG_SIZE: usize = 12; // NIST SP 800-38D рекомендует теги размером 12 байт и больше.
+const GCM_MINIMUM_TAG_SIZE: usize = 12; // NIST SP 800-38D recommends tag size 12 bytes or more.
 const GCM_STANDARD_NONCE_SIZE: usize = 12;
 
 
@@ -815,11 +815,11 @@ impl Gcm {
             panic!("crypto/cipher: message too large for GCM");
         }
 
-        let mut ret = dst.to_vec(); // В Rust мы создаем новый вектор
+        let mut ret = dst.to_vec();
         ret.resize(plaintext.len() + self.tag_size, 0);
 
-        // Программа проверяет пересечение буферов - здесь будет потребоваться реализация
-        // let out = &mut ret; // Пример, как можно использовать `ret`
+        // Checking buffers overlapping
+        // let out = &mut ret; // Example of using `ret`
 
         let mut counter = [0u8; GCM_BLOCK_SIZE];
         let mut tag_mask = [0u8; GCM_BLOCK_SIZE];
@@ -844,7 +844,7 @@ impl Gcm {
             panic!("crypto/cipher: incorrect nonce length given to GCM");
         }
 
-        // Проверка на корректность размера тега
+        // Check the correctness of tag size
         if self.tag_size < GCM_MINIMUM_TAG_SIZE {
             panic!("crypto/cipher: incorrect GCM tag size");
         }
@@ -874,11 +874,11 @@ impl Gcm {
         let mut ret = Vec::with_capacity(ciphertext.len());
         ret.resize(ciphertext.len(), 0);
 
-        // Проверка пересечения буферов
+        // Check buffers overlapping
         // Let me know if you need to implement specific buffer overlap checks.
 
         if constant_time_compare(&expected_tag[..self.tag_size], tag) != 1 {
-            // Обнуляем выходной буфер в случае несовпадения тега
+            // Clear the output buffer if the tag does not match
             for byte in ret.iter_mut() {
                 *byte = 0;
             }
@@ -901,8 +901,8 @@ impl Gcm {
         }
     }
 
-    // update расширяет y еще полиномными терминами из данных. Если данные не являются
-    // кратными gcm_block_size байт, то остаток заполняется нулями.
+    // update extends y with more polynomial terms from the data. If the data is not 
+    // a multiple of gcm_block_size bytes, the remainder is filled with zeros.
     fn update(&self, y: &mut GcmFieldElement, data: &[u8]) {
         let full_blocks = (data.len() >> 4) << 4;
         self.update_blocks(y, &data[0..full_blocks]);
@@ -916,7 +916,7 @@ impl Gcm {
 
 
 
-    // counterCrypt шифрует в out, используя g.cipher в режиме счётчика.
+    //counter_crypt encrypts to out using g.cipher in counter mode.
     fn counter_crypt(&self, out: &mut [u8], in_data: &[u8], counter: &mut [u8; GCM_BLOCK_SIZE]) {
         let mut mask = [0u8; GCM_BLOCK_SIZE];
 
@@ -940,15 +940,15 @@ impl Gcm {
         }
     }
 
-	// mul устанавливает y равным y*H, где H - ключ GCM, фиксированный во время NewGCMWithNonceSize.
+	// mul sets y to y*H, where H is the GCM key fixed during NewGCMWithNonceSize.
 	fn mul(&self, y: &mut GcmFieldElement) {
         let mut z = GcmFieldElement { low: 0, high: 0 };
 
         for i in 0..2 {
             let mut word = if i == 1 { y.low } else { y.high };
 
-            // Умножение выполняется путем умножения z на 16 и добавления
-            // одного из предвычисленных кратных H.
+            // Multiplication is performed by multiplying z by 16 and adding
+            // one of the precomputed multiples of H.
             for _ in (0..64).step_by(4) {
                 let msw = (z.high & 0xf) as usize;
                 z.high >>= 4;
@@ -956,9 +956,9 @@ impl Gcm {
                 z.low >>= 4;
                 z.low ^= (GCM_REDUCTION_TABLE[msw] as u64) << 48;
 
-                // Значения в |table| упорядочены по
-                // порядку бит для little-endian. Смотрите комментарий
-                // в NewGCMWithNonceSize.
+                // The values in |table| are sorted in
+                // bit order for little-endian. See comment
+                // in NewGCMWithNonceSize.
                 let t = &self.product_table[(word & 0xf) as usize];
 
                 z.low ^= t.low;
@@ -970,7 +970,7 @@ impl Gcm {
         *y = z;
     }
 
-	// derive_counter вычисляет начальное состояние счетчика GCM из данного нонса.
+	//derive_counter computes the initial state of the GCM counter from the given nonce.
 	fn derive_counter(&self, counter: &mut [u8; GCM_BLOCK_SIZE], nonce: &[u8]) {
         if nonce.len() == GCM_STANDARD_NONCE_SIZE {
             counter[..nonce.len()].copy_from_slice(nonce);
@@ -985,8 +985,8 @@ impl Gcm {
         }
     }
 
-	// auth вычисляет GHASH(ciphertext, additionalData), маскирует результат с
-    // tagMask и записывает результат в out.
+	// auth computes GHASH(ciphertext, additionalData), masks the result with
+    // tagMask and writes the result to out.
     fn auth(&self, out: &mut [u8; GCM_TAG_SIZE], ciphertext: &[u8], additional_data: &[u8], tag_mask: &[u8; GCM_TAG_SIZE]) {
         let mut y = GcmFieldElement { low: 0, high: 0 };
         self.update(&mut y, additional_data);
@@ -1005,8 +1005,8 @@ impl Gcm {
     }
 }
 
-// gcm_inc32 рассматривает последние четыре байта counterBlock как значение в big-endian
-// и увеличивает его.
+// gcm_inc32 treats the last four bytes of counterBlock as a big-endian value
+// and increments it.
 fn gcm_inc32(counter_block: &mut [u8; GCM_BLOCK_SIZE]) {
 	let start_index = counter_block.len() - 4;
 	let ctr = &mut counter_block[start_index..];

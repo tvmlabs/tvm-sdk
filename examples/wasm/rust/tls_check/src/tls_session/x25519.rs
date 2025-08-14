@@ -415,9 +415,9 @@ fn fmonty(x2: &mut [i64; 19], z2: &mut [i64; 19], // output 2Q
     let x = fsum(x,z);//fsum(x, z);
     fdifference(z, &origx); // z becomes x - z
 
-    origxprime.copy_from_slice(xprime); // Копируем xprime в origxprime
+    origxprime.copy_from_slice(xprime); // Copy xprime to origxprime
     let xprime = fsum(xprime, zprime);//fsum(xprime, zprime);
-    fdifference(zprime, &origxprime); // zprime становится xprime - zprime
+    fdifference(zprime, &origxprime); // zprime becomes xprime - zprime
     fproduct(&mut xxprime, &xprime, z);
     fproduct(&mut zzprime, &x, zprime);
     freduce_degree(&mut xxprime);
@@ -425,10 +425,10 @@ fn fmonty(x2: &mut [i64; 19], z2: &mut [i64; 19], // output 2Q
 
     freduce_degree(&mut zzprime);
     freduce_coefficients(&mut zzprime);
-    origxprime.copy_from_slice(&xxprime); // Копируем xxprime в origxprime
+    origxprime.copy_from_slice(&xxprime); // Copy xxprime to origxprime
     let xxprime = fsum(&xxprime, &zzprime);//fsum(&mut xxprime, &zzprime);
 
-    fdifference(&mut zzprime, &origxprime); // zzprime становится xxprime - zzprime
+    fdifference(&mut zzprime, &origxprime); // zzprime becomes xxprime - zzprime
     fsquare(&mut xxxprime, &xxprime);
     fsquare(&mut zzzprime, &zzprime);
     fproduct(&mut zzprime, &zzzprime, qmqp);
@@ -436,17 +436,17 @@ fn fmonty(x2: &mut [i64; 19], z2: &mut [i64; 19], // output 2Q
     freduce_coefficients(&mut zzprime);
 
  
-    x3.copy_from_slice(&xxxprime); // Копируем xxxprime в x3
-    z3.copy_from_slice(&zzprime); // Копируем zzprime в z3
+    x3.copy_from_slice(&xxxprime); // Copy xxxprime to x3
+    z3.copy_from_slice(&zzprime); // Copy zzprime to z3
 
-    // Возводим в квадрат x и z
+    // Squares x and z
     fsquare(&mut xx, &x);
     fsquare(&mut zz, z);
     fproduct(x2, &xx, &zz);
     freduce_degree(x2);
     freduce_coefficients(x2);
     fdifference(&mut zz, &xx); // does zz = xx - zz
-    zzz[10..19].fill(0); // Обнуляем последние 9 элементов zzz //memset(zzz + 10, 0, sizeof(limb) * 9);
+    zzz[10..19].fill(0); // Reset the last 9 elements of zzz //memset(zzz + 10, 0, sizeof(limb) * 9);
     fscalar_product(&mut zzz, &zz, 121665);
 
     // No need to call freduce_degree here:
