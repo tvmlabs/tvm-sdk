@@ -1987,7 +1987,7 @@ fn parse_certificate(der: &[u8]) -> Certificate { // fn parse_certificate(der: &
 	}
 	if cert.public_key_algorithm != PublicKeyAlgorithm::UnknownPublicKeyAlgorithm {
 
-        let public_key_info = PublicKeyInfo{algorithm: pk_ai, public_key: spk};
+        let public_key_info = PublicKeyInfo{raw: Vec::new(), algorithm: pk_ai, public_key: spk};
         cert.public_key = parse_public_key(&public_key_info);
 		//cert.PublicKey, err = parsePublicKey(&publicKeyInfo{
 			//Algorithm: pkAI,
@@ -2654,7 +2654,7 @@ fn parse_extension(der: &mut ASN1String) -> Extension { // fn parse_extension(de
 }
 
 struct PublicKeyInfo {
-	//raw:       Vec<u8>,
+	raw:       Vec<u8>,
 	algorithm: AlgorithmIdentifier,
 	public_key: BitString,
 }
@@ -3074,10 +3074,10 @@ pub fn check_certs(current_time: i64, check_sum: &[u8], certs_chain: &[u8], sign
     let leaf_cert_slice = &certs_chain[6..len_of_leaf_cert+6];
 
     let mut leaf_cert = parse_certificate(leaf_cert_slice); // leafCert, err := x509.ParseCertificate(leafCertSlice)
-    //if leaf_cert.not_after.Before(time.Now()) || leaf_cert.not_before.After(time.Now()) {
-        //false
-    //}
 
+    if leaf_cert.not_after.timestamp() < current_time || leaf_cert.not_before.timestamp() > current_time {
+        return None;
+    }
 
     let start_index = len_of_leaf_cert + 8;
     let len_of_internal_cert = (certs_chain[start_index] as usize)*65536 + (certs_chain[start_index+1] as usize)*256 + (certs_chain[start_index+2] as usize);
@@ -3086,9 +3086,9 @@ pub fn check_certs(current_time: i64, check_sum: &[u8], certs_chain: &[u8], sign
 
     let mut internal_cert = parse_certificate(internal_cert_slice); // internalCert, err := x509.ParseCertificate(internalCertSlice)
 
-    //if internalCert.NotAfter.Before(time.Now()) || internalCert.NotBefore.After(time.Now()) {
-        //return false
-    //}
+    if internal_cert.not_after.timestamp() < current_time || internal_cert.not_before.timestamp() > current_time {
+        return None;
+    }
 
     let start_index = start_index + 3 + len_of_internal_cert + 2;
 
@@ -3100,6 +3100,10 @@ pub fn check_certs(current_time: i64, check_sum: &[u8], certs_chain: &[u8], sign
     } else {
         parse_certificate(&ROOT_FACEBOOK_CERT)
     };
+
+    if root_cert.not_after.timestamp() < current_time || root_cert.not_before.timestamp() > current_time {
+        return None;
+    }
 
     //let context: [u8; 98] = [32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
         //32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
