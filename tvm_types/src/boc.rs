@@ -23,7 +23,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use smallvec::{smallvec, SmallVec};
+use smallvec::SmallVec;
+use smallvec::smallvec;
 
 use crate::ByteOrderRead;
 use crate::CellType;

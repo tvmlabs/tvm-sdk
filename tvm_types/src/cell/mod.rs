@@ -245,45 +245,43 @@ impl fmt::Display for CellType {
     }
 }
 
-/*
-pub trait CellImpl: Sync + Send {
-    fn reference_repr_hash(&self, index: usize) -> Result<UInt256> {
-        Ok(self.reference(index)?.hash(MAX_LEVEL))
-    }
-
-    fn level(&self) -> u8 {
-        self.level_mask().level()
-    }
-
-    fn tree_bits_count(&self) -> u64 {
-        0
-    }
-
-    fn tree_cell_count(&self) -> u64 {
-        0
-    }
-
-    fn virtualization(&self) -> u8 {
-        0
-    }
-
-    fn usage_level(&self) -> u64 {
-        0
-    }
-
-    fn is_usage_cell(&self) -> bool {
-        false
-    }
-
-    fn downcast_usage(&self) -> Cell {
-        unreachable!("Function can be called only for UsageCell")
-    }
-
-    fn to_external(&self) -> Result<Cell> {
-        fail!("Cell can not be converted to external")
-    }
-}
-*/
+// pub trait CellImpl: Sync + Send {
+// fn reference_repr_hash(&self, index: usize) -> Result<UInt256> {
+// Ok(self.reference(index)?.hash(MAX_LEVEL))
+// }
+//
+// fn level(&self) -> u8 {
+// self.level_mask().level()
+// }
+//
+// fn tree_bits_count(&self) -> u64 {
+// 0
+// }
+//
+// fn tree_cell_count(&self) -> u64 {
+// 0
+// }
+//
+// fn virtualization(&self) -> u8 {
+// 0
+// }
+//
+// fn usage_level(&self) -> u64 {
+// 0
+// }
+//
+// fn is_usage_cell(&self) -> bool {
+// false
+// }
+//
+// fn downcast_usage(&self) -> Cell {
+// unreachable!("Function can be called only for UsageCell")
+// }
+//
+// fn to_external(&self) -> Result<Cell> {
+// fail!("Cell can not be converted to external")
+// }
+// }
 
 pub enum Cell {
     Data(Arc<DataCell>),
@@ -1233,7 +1231,8 @@ mod cell_data;
 mod data_cell;
 mod virtual_cell;
 
-use smallvec::{smallvec, SmallVec};
+use smallvec::SmallVec;
+use smallvec::smallvec;
 use virtual_cell::VirtualCell;
 
 pub use self::builder_operations::*;
@@ -1269,5 +1268,13 @@ pub fn create_cell(
 }
 
 pub fn create_big_cell(data: &[u8]) -> Result<Cell> {
-    Ok(Cell::with_data(DataCell::with_params(smallvec![], data, CellType::Big, 0, None, None, None)?))
+    Ok(Cell::with_data(DataCell::with_params(
+        smallvec![],
+        data,
+        CellType::Big,
+        0,
+        None,
+        None,
+        None,
+    )?))
 }

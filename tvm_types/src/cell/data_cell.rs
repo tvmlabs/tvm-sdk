@@ -1,3 +1,12 @@
+use std::cmp::max;
+use std::io::Cursor;
+use std::io::Read;
+use std::io::Write;
+use std::sync::Arc;
+
+use smallvec::SmallVec;
+use smallvec::smallvec;
+
 use crate::ByteOrderRead;
 use crate::Cell;
 use crate::CellType;
@@ -17,17 +26,12 @@ use crate::cell::EXTERNAL_CELL_MIN_SIZE;
 use crate::cell::cell_data::CellData;
 use crate::error;
 use crate::fail;
-use smallvec::{SmallVec, smallvec};
-use std::cmp::max;
-use std::io::Cursor;
-use std::io::Read;
-use std::io::Write;
-use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct DataCell {
     cell_data: CellData,
-    references: SmallVec<[Cell; 4]>, // TODO make array - you already know cells refs count, or may be vector
+    references: SmallVec<[Cell; 4]>, /* TODO make array - you already know cells refs count, or
+                                      * may be vector */
     tree_bits_count: u64,
     tree_cell_count: u64,
 }
