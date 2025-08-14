@@ -604,6 +604,7 @@ pub struct InternalMessageHeader {
     pub created_lt: u64,
     pub created_at: UnixTime32,
     pub src_dapp_id: Option<UInt256>,
+    pub is_exchange: bool,
 }
 
 impl InternalMessageHeader {
@@ -626,6 +627,7 @@ impl InternalMessageHeader {
             created_lt: 0, // Logical Time will be set on BlockBuilder
             created_at: UnixTime32::default(), // UNIX time too
             src_dapp_id: None,
+            is_exchange: false,
         }
     }
 
@@ -649,8 +651,16 @@ impl InternalMessageHeader {
         self.src_dapp_id = src_dapp_id
     }
 
+    pub fn set_exchange(&mut self, exchange: bool) {
+        self.is_exchange = exchange
+    }
+
     pub fn src_dapp_id(&self) -> &Option<UInt256> {
         &self.src_dapp_id
+    }
+
+    pub fn is_exchange(&self) -> &bool {
+        &self.is_exchange
     }
 
     /// Get IHR fee for message
@@ -701,6 +711,7 @@ impl Serializable for InternalMessageHeader {
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
         self.src_dapp_id.write_maybe_to(cell)?;
+        cell.append_bit_bool(self.is_exchange)?;
         Ok(())
     }
 }
@@ -724,6 +735,7 @@ impl Deserializable for InternalMessageHeader {
         if cell.get_next_bit()? {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
         }
+        self.is_exchange = cell.get_next_bit()?;
         Ok(())
     }
 }
@@ -1570,6 +1582,7 @@ impl InternalMessageHeader {
             created_lt: 0,
             created_at: UnixTime32::default(),
             src_dapp_id: None,
+            is_exchange: false,
         }
     }
 }
