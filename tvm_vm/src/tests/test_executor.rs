@@ -23,10 +23,9 @@ use tvm_types::SliceData;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
-use crate::executor::gas::gas_state::Gas;
 use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
-use crate::executor::token::execute_run_wasm;
+use crate::executor::token::{execute_run_wasm, execute_run_wasm_concat_multiarg};
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::stack::Stack;
@@ -37,7 +36,7 @@ use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
-use crate::utils::pack_data_to_cell;
+use crate::utils::{pack_data_to_cell, unpack_data_from_cell};
 
 #[allow(dead_code)]
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
@@ -428,7 +427,7 @@ fn test_execution_timeout() {
     let TvmError::TvmExceptionFull(exc, _) = err.downcast_ref::<TvmError>().unwrap() else {
         panic!("Should be TvmExceptionFull");
     };
-    assert_eq!(exc.exception_code(), Some(ExceptionCode::ExecutionTimeout));
+    assert!(matches!(exc.exception_code(), Some(ExceptionCode::ExecutionTimeout)));
 }
 
 #[test]
