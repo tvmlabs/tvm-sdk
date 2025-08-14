@@ -1,9 +1,3 @@
-use std::cmp::max;
-use std::io::Cursor;
-use std::io::Read;
-use std::io::Write;
-use std::sync::Arc;
-
 use crate::ByteOrderRead;
 use crate::Cell;
 use crate::CellType;
@@ -23,11 +17,17 @@ use crate::cell::EXTERNAL_CELL_MIN_SIZE;
 use crate::cell::cell_data::CellData;
 use crate::error;
 use crate::fail;
+use smallvec::{SmallVec, smallvec};
+use std::cmp::max;
+use std::io::Cursor;
+use std::io::Read;
+use std::io::Write;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct DataCell {
     cell_data: CellData,
-    references: Vec<Cell>, // TODO make array - you already know cells refs count, or may be vector
+    references: SmallVec<[Cell; 4]>, // TODO make array - you already know cells refs count, or may be vector
     tree_bits_count: u64,
     tree_cell_count: u64,
 }
@@ -40,18 +40,18 @@ impl Default for DataCell {
 
 impl DataCell {
     pub fn new() -> Self {
-        Self::with_refs_and_data(vec![], &[0x80]).unwrap()
+        Self::with_refs_and_data(smallvec![], &[0x80]).unwrap()
     }
 
     pub fn with_refs_and_data(
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         data: &[u8], // with completion tag (for big cell - without)!
     ) -> crate::Result<DataCell> {
         Self::with_params(references, data, CellType::Ordinary, 0, None, None, None)
     }
 
     pub fn with_params(
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         data: &[u8], // with completion tag (for big cell - without)!
         cell_type: CellType,
         level_mask: u8,
@@ -74,7 +74,7 @@ impl DataCell {
     }
 
     pub fn with_external_data(
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         buffer: &Arc<Vec<u8>>,
         offset: usize,
         max_depth: Option<u16>,
@@ -85,7 +85,7 @@ impl DataCell {
     }
 
     pub fn with_raw_data(
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         data: Vec<u8>,
         max_depth: Option<u16>,
         force_finalization: bool,
@@ -96,7 +96,7 @@ impl DataCell {
 
     fn construct_cell(
         cell_data: CellData,
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         max_depth: Option<u16>,
         force_finalization: bool,
     ) -> crate::Result<DataCell> {
@@ -469,7 +469,7 @@ impl DataCell {
         let size = cursor.position() as usize;
 
         let cell = DataCell::with_params(
-            vec![],
+            smallvec![],
             &cursor.into_inner()[..size],
             CellType::External,
             0,

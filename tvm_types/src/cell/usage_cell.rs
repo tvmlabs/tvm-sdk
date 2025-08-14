@@ -1,6 +1,4 @@
 use crate::Cell;
-use crate::CellType;
-use crate::LevelMask;
 use crate::UInt256;
 use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasher, Hasher};
@@ -72,54 +70,16 @@ impl UsageCell {
         cell.wrapped.raw_data()
     }
 
-    pub(crate) fn bit_length(&self) -> usize {
-        self.wrapped.bit_length()
-    }
-
-    pub(crate) fn references_count(&self) -> usize {
-        self.wrapped.references_count()
-    }
-
     pub fn reference(cell: &Arc<Self>, index: usize) -> crate::Result<Cell> {
         if cell.visit_on_load && !cell.visited.is_dropped() || Self::visit(cell) {
             let child = cell.wrapped.reference(index)?;
-            if let Some(existing) =
-                cell.visited.map.lock().get(&child.repr_hash()).map(|x| x.clone())
-            {
+            if let Some(existing) = cell.visited.map.lock().get(&child.repr_hash()).cloned() {
                 return Ok(existing);
             }
             Ok(Cell::Usage(UsageCell::new_arc(child, cell.visit_on_load, cell.visited.clone())))
         } else {
             cell.wrapped.reference(index)
         }
-    }
-
-    pub(crate) fn cell_type(&self) -> CellType {
-        self.wrapped.cell_type()
-    }
-
-    pub(crate) fn level_mask(&self) -> LevelMask {
-        self.wrapped.level_mask()
-    }
-
-    pub(crate) fn hash(&self, index: usize) -> UInt256 {
-        self.wrapped.hash(index)
-    }
-
-    pub(crate) fn depth(&self, index: usize) -> u16 {
-        self.wrapped.depth(index)
-    }
-
-    pub(crate) fn store_hashes(&self) -> bool {
-        self.wrapped.store_hashes()
-    }
-
-    pub(crate) fn tree_bits_count(&self) -> u64 {
-        self.wrapped.tree_bits_count()
-    }
-
-    pub(crate) fn tree_cell_count(&self) -> u64 {
-        self.wrapped.tree_cell_count()
     }
 
     pub(crate) fn to_external(cell: &Arc<Self>) -> crate::Result<Cell> {

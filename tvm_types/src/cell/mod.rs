@@ -391,7 +391,7 @@ impl Cell {
         match self {
             Cell::Data(cell) => cell.data(),
             Cell::Usage(cell) => UsageCell::data(cell),
-            Cell::Virtual(cell) => cell.data(),
+            Cell::Virtual(cell) => cell.wrapped.data(),
             Cell::Boc3(cell) => cell.data(),
         }
     }
@@ -408,8 +408,8 @@ impl Cell {
     pub fn bit_length(&self) -> usize {
         match self {
             Cell::Data(cell) => cell.bit_length(),
-            Cell::Usage(cell) => cell.bit_length(),
-            Cell::Virtual(cell) => cell.bit_length(),
+            Cell::Usage(cell) => cell.wrapped.bit_length(),
+            Cell::Virtual(cell) => cell.wrapped.bit_length(),
             Cell::Boc3(cell) => cell.bit_length(),
         }
     }
@@ -417,8 +417,8 @@ impl Cell {
     pub fn cell_type(&self) -> CellType {
         match self {
             Cell::Data(cell) => cell.cell_type(),
-            Cell::Usage(cell) => cell.cell_type(),
-            Cell::Virtual(cell) => cell.cell_type(),
+            Cell::Usage(cell) => cell.wrapped.cell_type(),
+            Cell::Virtual(cell) => cell.wrapped.cell_type(),
             Cell::Boc3(cell) => cell.cell_type(),
         }
     }
@@ -450,7 +450,7 @@ impl Cell {
     pub fn level_mask(&self) -> LevelMask {
         match self {
             Cell::Data(cell) => cell.level_mask(),
-            Cell::Usage(cell) => cell.level_mask(),
+            Cell::Usage(cell) => cell.wrapped.level_mask(),
             Cell::Virtual(cell) => cell.level_mask(),
             Cell::Boc3(cell) => cell.level_mask(),
         }
@@ -459,7 +459,7 @@ impl Cell {
     pub fn references_count(&self) -> usize {
         match self {
             Cell::Data(cell) => cell.references_count(),
-            Cell::Usage(cell) => cell.references_count(),
+            Cell::Usage(cell) => cell.wrapped.references_count(),
             Cell::Virtual(cell) => cell.references_count(),
             Cell::Boc3(cell) => cell.references_count(),
         }
@@ -470,7 +470,7 @@ impl Cell {
     pub fn hash(&self, index: usize) -> UInt256 {
         match self {
             Cell::Data(cell) => cell.hash(index),
-            Cell::Usage(cell) => cell.hash(index),
+            Cell::Usage(cell) => cell.wrapped.hash(index),
             Cell::Virtual(cell) => cell.hash(index),
             Cell::Boc3(cell) => cell.hash(index),
         }
@@ -480,7 +480,7 @@ impl Cell {
     pub fn depth(&self, index: usize) -> u16 {
         match self {
             Cell::Data(cell) => cell.depth(index),
-            Cell::Usage(cell) => cell.depth(index),
+            Cell::Usage(cell) => cell.wrapped.depth(index),
             Cell::Virtual(cell) => cell.depth(index),
             Cell::Boc3(cell) => cell.depth(index),
         }
@@ -515,7 +515,7 @@ impl Cell {
     pub fn repr_hash(&self) -> UInt256 {
         match self {
             Self::Data(cell) => cell.hash(MAX_LEVEL),
-            Self::Usage(cell) => UsageCell::hash(cell, MAX_LEVEL),
+            Self::Usage(cell) => cell.wrapped.hash(MAX_LEVEL),
             Self::Virtual(cell) => cell.hash(MAX_LEVEL),
             Self::Boc3(cell) => cell.hash(MAX_LEVEL),
         }
@@ -524,7 +524,7 @@ impl Cell {
     pub fn repr_depth(&self) -> u16 {
         match self {
             Self::Data(cell) => cell.depth(MAX_LEVEL),
-            Self::Usage(cell) => UsageCell::depth(cell, MAX_LEVEL),
+            Self::Usage(cell) => cell.wrapped.depth(MAX_LEVEL),
             Self::Virtual(cell) => cell.depth(MAX_LEVEL),
             Self::Boc3(cell) => cell.depth(MAX_LEVEL),
         }
@@ -533,8 +533,8 @@ impl Cell {
     pub fn store_hashes(&self) -> bool {
         match self {
             Self::Data(cell) => cell.store_hashes(),
-            Self::Usage(cell) => cell.store_hashes(),
-            Self::Virtual(cell) => cell.store_hashes(),
+            Self::Usage(cell) => cell.wrapped.store_hashes(),
+            Self::Virtual(cell) => cell.wrapped.store_hashes(),
             Self::Boc3(cell) => cell.store_hashes(),
         }
     }
@@ -684,8 +684,8 @@ impl Cell {
     pub fn tree_bits_count(&self) -> u64 {
         match self {
             Cell::Data(cell) => cell.tree_bits_count(),
-            Cell::Usage(cell) => cell.tree_bits_count(),
-            Cell::Virtual(cell) => cell.tree_bits_count(),
+            Cell::Usage(cell) => cell.wrapped.tree_bits_count(),
+            Cell::Virtual(cell) => cell.wrapped.tree_bits_count(),
             Cell::Boc3(cell) => cell.tree_bits_count(),
         }
     }
@@ -693,8 +693,8 @@ impl Cell {
     pub fn tree_cell_count(&self) -> u64 {
         match self {
             Cell::Data(cell) => cell.tree_cell_count(),
-            Cell::Usage(cell) => cell.tree_cell_count(),
-            Cell::Virtual(cell) => cell.tree_cell_count(),
+            Cell::Usage(cell) => cell.wrapped.tree_cell_count(),
+            Cell::Virtual(cell) => cell.wrapped.tree_cell_count(),
             Cell::Boc3(cell) => cell.tree_cell_count(),
         }
     }
@@ -1233,7 +1233,7 @@ mod cell_data;
 mod data_cell;
 mod virtual_cell;
 
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 use virtual_cell::VirtualCell;
 
 pub use self::builder_operations::*;
@@ -1262,12 +1262,12 @@ pub(crate) fn to_hex_string(data: impl AsRef<[u8]>, len: usize, lower: bool) -> 
 }
 
 pub fn create_cell(
-    references: Vec<Cell>,
+    references: SmallVec<[Cell; 4]>,
     data: &[u8], // with completion tag (for big cell - without)!
 ) -> Result<Cell> {
     Ok(Cell::with_data(DataCell::with_refs_and_data(references, data)?))
 }
 
 pub fn create_big_cell(data: &[u8]) -> Result<Cell> {
-    Ok(Cell::with_data(DataCell::with_params(vec![], data, CellType::Big, 0, None, None, None)?))
+    Ok(Cell::with_data(DataCell::with_params(smallvec![], data, CellType::Big, 0, None, None, None)?))
 }
