@@ -142,27 +142,43 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     let mut wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     let s = engine.cmd.var(4).as_cell()?;
     let mut wasm_args_tail =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
     let s = engine.cmd.var(5).as_cell()?;
     let mut wasm_args_tail =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
     let s = engine.cmd.var(6).as_cell()?;
     let mut wasm_args_tail =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
     log::debug!("WASM Args loaded {:?}", wasm_func_args);
@@ -204,7 +220,11 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     log::debug!("WASM Args loaded {:?}", wasm_func_args);
 
