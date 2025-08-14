@@ -362,6 +362,34 @@ pub enum ExceptionCode {
     WasmLoadFail = 18,
     #[error("wasm failed to execute")]
     WasmExecFail = 19,
+    #[error("wasm failed to execute")]
+    WasmForbiddenBinary = 20,
+    #[error("wasm failed to execute")]
+    WasmInvalidFunction = 21,
+    #[error("wasm failed to execute")]
+    WasmCellUnpackError = 22,
+    #[error("wasm failed to execute")]
+    WasmCellPackError = 23,
+    #[error("wasm failed to execute")]
+    WasmInvalidHash = 24,
+    #[error("wasm failed to execute")]
+    WasmLinkerFail = 25,
+    #[error("wasm failed to execute")]
+    WasmInstantiateFail = 26,
+    #[error("wasm failed to execute")]
+    WasmEngineInitFail = 27,
+    #[error("wasm failed to execute")]
+    WasmEngineMissing = 28,
+    #[error("wasm failed to execute")]
+    WasmPrecompileComponentFail = 29,
+    #[error("wasm failed to execute")]
+    WasmSingleUseComponentFail = 30,
+    #[error("wasm failed to execute")]
+    WasmWhitelistInvalidHash = 31,
+    #[error("wasm failed to execute")]
+    WasmWhitelistForbiddenHash = 32,
+    #[error("wasm failed to execute")]
+    WasmWhitelistMissingBinary = 33,
 }
 
 // impl fmt::Display for ExceptionCode {
