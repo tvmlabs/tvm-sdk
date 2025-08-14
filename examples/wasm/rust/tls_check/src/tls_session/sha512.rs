@@ -239,9 +239,9 @@ impl Digest {
         let nn = p.len();
         self.len += nn as u64;
 
-        let mut remaining = p;// Оставшиеся данные для записи
+        let mut remaining = p; // Remaining data to be written
 
-        // Если есть данные в nx, завершаем их
+        // If there is data in nx, terminate it
         if self.nx > 0 {
             let n = remaining.len().min(CHUNK - self.nx);
             self.x[self.nx..self.nx + n].copy_from_slice(&remaining[..n]);

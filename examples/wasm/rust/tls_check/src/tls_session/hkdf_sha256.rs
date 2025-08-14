@@ -1,7 +1,6 @@
 
 //use std::error::Error;
 //use std::io::{self, Read};
-//use std::marker::PhantomData;
 
 const SIZE: usize = 32;
 
@@ -141,8 +140,8 @@ impl Digest {
         }
 
         b.extend_from_slice(&self.x[..self.nx]);
-        //b.truncate(b.len() + self.x.len() - self.nx); // уже нулевой
-        b.resize(b.len() + self.x.len() - self.nx, 0); // // уже нулевой
+        //b.truncate(b.len() + self.x.len() - self.nx); // already zero
+        b.resize(b.len() + self.x.len() - self.nx, 0); // already zero
         append_uint64(&mut b, self.len);
 
         Ok(b)
@@ -224,16 +223,16 @@ impl Digest {
         let nn = p.len();
         self.len += nn as u64;
 
-        let mut remaining = p;// Оставшиеся данные для записи
+        let mut remaining = p; // Remaining data to be written
 
-        // Если есть данные в nx, завершаем их
+        // If there is data in nx, terminate it
         if self.nx > 0 {
             let n = remaining.len().min(CHUNK - self.nx);
             self.x[self.nx..self.nx + n].copy_from_slice(&remaining[..n]);
             self.nx += n;
             if self.nx == CHUNK {
                 //let selfx = &self.x.clone();//[0u8;CHUNK];
-                // Обработка полного блока
+                // Processing a full block
                 block(self, &self.x.clone()); // block(self, &self.x);
                 self.nx = 0;
             }
@@ -255,9 +254,9 @@ impl Digest {
     }
 
     pub fn sum(&self, in_bytes: &[u8]) -> Vec<u8> {
-        // Сделаем копию self, чтобы вызывающая сторона могла продолжать писать и суммировать.
+        // make a copy of self so that the caller can continue writing and summing.
         let mut d0 = self.clone();
-        let hash = d0.check_sum(); // Важно: вам нужно реализовать метод check_sum
+        let hash = d0.check_sum();
         //if d0.is224 {
             //[in_bytes, &hash[..SIZE_224]].concat()
         //} else {
@@ -265,7 +264,6 @@ impl Digest {
         //}
     }
 
-    // Логика проверки суммы
     fn check_sum(&mut self) -> [u8; SIZE] {
         let len = self.len;
         // Padding. Add a 1 bit and 0 bits until 56 bytes mod 64.
@@ -336,7 +334,7 @@ fn block(dig: &mut Digest, p: &[u8]) {
     let (mut h0, mut h1, mut h2, mut h3, mut h4, mut h5, mut h6, mut h7) =
         (dig.h[0], dig.h[1], dig.h[2], dig.h[3], dig.h[4], dig.h[5], dig.h[6], dig.h[7]);
 
-    let chunk = CHUNK; // Замените на нужный размер
+    let chunk = CHUNK;
     let mut pos = 0;
 
     while pos + chunk <= p.len() {
@@ -408,7 +406,6 @@ pub struct Hmac {
 
 impl Hmac {
 
-    // Функция для создания нового HMAC
     pub fn new(key: &[u8]) -> Hmac {
         let mut hmac = Hmac {
             opad: Vec::new(),
@@ -576,8 +573,8 @@ impl Hkdf {
             //*p = &p[new_size..];
             p.drain(..new_size);
 
-            // Обновление buf для последующих вызовов
-            self.buf.clear(); // Не забываем очищать buf перед новым заполнением
+            // Update buf for subsequent calls
+            self.buf.clear(); // Don't forget to clear buf before refilling
             self.buf.extend_from_slice(&self.prev);
         }
 

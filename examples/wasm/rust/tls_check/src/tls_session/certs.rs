@@ -385,7 +385,7 @@ struct AlgorithmDetails {
     name: String,
     oid: Vec<i32>, //ObjectIdentifier,
     pub_key_algo: PublicKeyAlgorithm,
-    hash: Option<String>, // Можно использовать String для хеш-алгоритма
+    hash: Option<String>, // One can use String for hashing algorithm
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -426,12 +426,12 @@ impl ExtKeyUsage {
 
 #[derive(Debug)]
 pub struct PssParameters {
-    // Поля не являются обязательными, так как значения по умолчанию
-    // указывают на SHA-1 (который больше не подходит для использования в подписях).
+    // The fields are not required as the default values
+    // point to SHA-1 (which is no longer suitable for use in signatures).
     pub hash: AlgorithmIdentifier,
     pub mgf: AlgorithmIdentifier,
     pub salt_length: i32,
-    pub trailer_field: Option<i32>, // Опциональное поле с значением по умолчанию 1
+    pub trailer_field: Option<i32>, // Optional field with default value 1
 }
 
 
@@ -448,14 +448,14 @@ pub struct PssParameters {
 const CLASS_CONSTRUCTED: u8 = 0x20;
 const CLASS_CONTEXT_SPECIFIC: u8 = 0x80;
 
-// Методы для Tag
+// Methods for Tag
 //impl Tag {
 
     //pub fn constructed(self) -> Tag {
         //Tag(self.0 | CLASS_CONSTRUCTED)
     //}
 
-    // Установка бита контекстного специфического класса
+    // Setting the bit of context specific class
     //pub fn context_specific(self) -> Tag {
         //Tag(self.0 | CLASS_CONTEXT_SPECIFIC)
     //}
@@ -468,7 +468,7 @@ pub const fn constructed(tag: u8) -> u8 {
     tag | CLASS_CONSTRUCTED
 }
 
-// Стандартные комбинации тегов и классов
+// Standard combinations of tags and classes
 //pub const BOOLEAN: Tag = Tag(1);
 //pub const INTEGER: Tag = Tag(2);
 //pub const BIT_STRING: Tag = Tag(3);
@@ -618,7 +618,6 @@ impl ASN1String {
         self.read_asn1(&mut unused, tag)
     }
 
-    // Чтение необязательного ASN.1
     pub fn read_optional_asn1(&mut self, out: &mut ASN1String, out_present: &mut bool, tag: u8) -> bool {
         let present = self.peek_asn1_tag(tag);
         //if let Some(ref mut p) = out_present {
@@ -631,7 +630,6 @@ impl ASN1String {
         true
     }
 
-    // Пропуск необязательного ASN.1
     pub fn skip_optional_asn1(&mut self, tag: u8) -> bool {
         if !self.peek_asn1_tag(tag) {
             return true;
@@ -640,7 +638,6 @@ impl ASN1String {
         self.read_asn1(&mut unused, tag)
     }
 
-    // Чтение необязательного ASN.1 целого числа
     // pub fn read_optional_asn1_integer(&mut self, out: &mut dyn std::any::Any, tag: Tag, default_value: &dyn std::any::Any) -> bool {
     pub fn read_optional_asn1_integer(&mut self, out: &mut i64, tag: u8, default_value: i64) -> bool {
         let mut present = false;
@@ -694,22 +691,22 @@ impl ASN1String {
 
 
 
-    // Чтение ASN.1 INTEGER в out
+    // Reading of ASN.1 INTEGER to out
     //pub fn read_asn1_integer(&mut self, out: &mut dyn std::any::Any) -> bool { // pub fn read_asn1_integer(&mut self, out: &mut dyn std::any::Any) -> bool {
-        // Пробуем получить указатель на тип числа
+        // Tey to get pointer ob number type.
         //if let Some(out_int) = out.downcast_mut::<i64>() {
             //let mut i: i64 = 0;
             //if !self.read_asn1_int64(&mut i) {
                 //return false;
             //}
-            // *out_int = i; // Устанавливаем значение
+            // *out_int = i; // Set the value
             //return true;
         //} else if let Some(out_uint) = out.downcast_mut::<u64>() {
             //let mut u: u64 = 0;
             //if !self.read_asn1_uint64(&mut u) {
                 //return false;
             //}
-            // *out_uint = u; // Устанавливаем значение
+            // *out_uint = u; // Set the value
             //return true;
         //} else if let Some(out_big) = out.downcast_mut::<BigInt>() {
             //return self.read_asn1_big_int(out_big);
@@ -723,7 +720,7 @@ impl ASN1String {
 
 
     pub fn read_asn1_int64(&mut self, out: &mut i64) -> bool {
-        let mut bytes = ASN1String{ 0: Vec::new()}; // Заполнение bytes должно происходить здесь
+        let mut bytes = ASN1String{ 0: Vec::new()};
         if !self.read_asn1(&mut bytes, INTEGER) || !check_asn1_integer(&bytes.0) || !asn1_signed(out, &bytes.0) {
             return false;
         }
@@ -731,7 +728,7 @@ impl ASN1String {
     }
 
     pub fn read_asn1_uint64(&mut self, out: &mut u64) -> bool {
-        let mut bytes = ASN1String{ 0: Vec::new()}; // Заполнение bytes должно происходить здесь
+        let mut bytes = ASN1String{ 0: Vec::new()};
         if !self.read_asn1(&mut bytes, INTEGER) || !check_asn1_integer(&bytes.0) || !asn1_unsigned(out, &bytes.0) {
             return false;
         }
@@ -739,13 +736,13 @@ impl ASN1String {
     }
 
     //pub fn read_asn1_big_int(&mut self, out: &mut BigInt) -> bool {
-        //let mut bytes = ASN1String{ 0: Vec::new()}; // Предполагается, что будет обработка, чтобы заполнить bytes
+        //let mut bytes = ASN1String{ 0: Vec::new()}; // It is assumed that there will be processing to fill bytes
         //if !self.read_asn1(&mut bytes, INTEGER) || !check_asn1_integer(&bytes.0) {
             //return false;
         //}
 
         //if bytes.0[0] & 0x80 == 0x80 {
-            // Отрицательное число.
+            // Negative number.
             //let mut neg = bytes.0.iter().map(|b| !b).collect::<Vec<u8>>();
             //*out = BigInt::from_bytes_be(Sign::Plus,&neg); //out.set_bytes(&neg);
             //out.add_assign(&BigInt::from(1));
@@ -757,7 +754,7 @@ impl ASN1String {
     //}
 
     pub fn read_asn1_big_int(&mut self) -> Option<BigInt> {
-        let mut bytes = ASN1String{ 0: Vec::new()}; // Предполагается, что будет обработка, чтобы заполнить bytes
+        let mut bytes = ASN1String{ 0: Vec::new()}; // It is assumed that there will be processing to fill bytes
         if !self.read_asn1(&mut bytes, INTEGER) || !check_asn1_integer(&bytes.0) {
             return None;
         }
@@ -776,17 +773,17 @@ impl ASN1String {
     }
 
     pub fn read_asn1_object_identifier(&mut self, out: &mut Vec<i32>) -> bool {
-        let mut bytes = ASN1String{ 0: Vec::new() }; // Инициализация вектора для хранения байтов
+        let mut bytes = ASN1String{ 0: Vec::new() }; // Initializing a vector to store bytes
         if !self.read_asn1(&mut bytes, OBJECT_IDENTIFIER) || bytes.0.is_empty() {
             return false;
         }
 
-        // В худшем случае, мы получаем два элемента из первого байта (который кодируется иначе),
-        // а затем каждый varint — это один байт.
+        // In the worst case, we get two elements from the first byte (which is encoded differently),
+        // and then each varint is one byte.
         let mut components = vec![0; bytes.0.len() + 1];
 
-        // Первый varint - это 40*value1 + value2:
-        // value1 может принимать значения 0, 1 и 2.
+        // The first varint is 40*value1 + value2:
+        // value1 can take values 0, 1 and 2.
         let mut v: i32 = 0;
         if !bytes.read_base128_int(&mut v) {
             return false;
@@ -812,7 +809,7 @@ impl ASN1String {
     }
 
     pub fn read_asn1_bytes(&mut self, out: &mut Vec<u8>) -> bool {
-        let mut bytes = ASN1String{ 0: Vec::new()};  // Заполнение bytes должно происходить здесь
+        let mut bytes = ASN1String{ 0: Vec::new()};
         if !self.read_asn1(&mut bytes, INTEGER) || !check_asn1_integer(&bytes.0) {
             return false;
         }
@@ -830,21 +827,21 @@ impl ASN1String {
         let mut ret = 0;
         for i in 0.. {
             if self.0.len() == 0 {
-                return false; // Обработка конца данных
+                return false; // Handling end of data
             }
             if i == 5 {
-                return false; // Слишком много байтов
+                return false; // Too many bytes
             }
-            // Избежание переполнения int на 32-битной платформе
+            // Avoiding int overflow on 32-bit platform
             if ret >= 1 << (31 - 7) {
                 return false;
             }
             ret <<= 7;
-            let b: u8 = self.read(1).unwrap()[0]; // Чтение одного байта
+            let b: u8 = self.read(1).unwrap()[0]; // Reading one byte
 
-            // ITU-T X.690, секция 8.19.2:
-            // Подидентификатор должен быть закодирован в минимально возможном количестве октетов,
-            // то есть ведущий октет подидентификатора не должен иметь значение 0x80.
+            // ITU-T X.690, section 8.19.2:
+            // The sub-identifier must be encoded in the minimum possible number of octets,
+            // i.e. the leading octet of the sub-identifier must not have the value 0x80.
             if i == 0 && b == 0x80 {
                 return false;
             }
@@ -855,7 +852,7 @@ impl ASN1String {
                 return true;
             }
         }
-        false // усеченные данные
+        false // truncated data
     }
 
     pub fn read_asn1_impl(&mut self, out: &mut ASN1String, out_tag: &mut u8, skip_header: bool) -> bool {
@@ -926,12 +923,12 @@ impl ASN1String {
         }
 
         let t = String::from_utf8_lossy(&bytes.0).into_owned();
-        let format_str = "%y%m%d%H%M%SZ"; // Стандартный формат UTCTime
+        let format_str = "%y%m%d%H%M%SZ"; // Standard UTCTime format
         match Utc.datetime_from_str(&t, format_str) {
             Ok(res) => {
-                // Применение дополнительной логики для 2050 года
+                // Applying additional logic for 2050 year
                 //if res.year() >= 2050 {
-                    //let res = res - chrono::Duration::days(36525); // -100 лет
+                    //let res = res - chrono::Duration::days(36525); // -100 years
                     //Ok(res)
                 //} else {
                     //Ok(res)
@@ -950,7 +947,7 @@ impl ASN1String {
         }
 
         let t = String::from_utf8_lossy(&bytes.0).into_owned();
-        let format_str = "%Y%m%d%H%M%S%.fZ"; // Стандартный формат GeneralizedTime
+        let format_str = "%Y%m%d%H%M%S%.fZ"; // Standard GeneralizedTime format
         match Utc.datetime_from_str(&t, format_str) {
             Ok(res) => Some(res),//Ok(res),
             Err(_) => None,//Err("Failed to parse GeneralizedTime".to_string()),
@@ -958,9 +955,9 @@ impl ASN1String {
     }
 
 
-    // Реализация чтения беззнакового целого числа из ASN.1
-    // Для упрощения реализации функции, предполагается,
-    // что строка достаточной длины и возвращает true на успех.
+    // Implementation of reading an unsigned integer from ASN.1
+    // To simplify the implementation of the function, we assume that
+    // the string is of sufficient length and returns "true" on success.
     pub fn read_unsigned(&mut self, out: &mut u32, length: usize) -> bool {
         let v = self.read(length);
         if v.is_none() {
@@ -979,22 +976,22 @@ impl ASN1String {
         true
     }
 
-    // Прочитать n байтов, продвигая строку
+    // Read n bytes, advancing the line
     fn read(&mut self, n: usize) -> Option<Vec<u8>> {
         if self.0.len() < n || n == 0 {
             return None;
         }
 
-        let v = self.0[..n].to_vec(); // Получаем срез и копируем его
-        self.0.drain(..n); // Удаляем прочитанные байты из внутреннего вектора
+        let v = self.0[..n].to_vec(); // We get a cut and copy it
+        self.0.drain(..n); // Remove read bytes from the internal vector
         Some(v)
     }
 
-    // Реализация чтения байтов из ASN.1
-    // По аналогии с другим кодом, должна быть реализована.
+    // Implementation of reading bytes from ASN.1
+    // By analogy with other code, should be implemented.
     pub fn read_bytes(&mut self, out: &mut ASN1String, length: usize) -> bool {
         if let Some(v) = self.read(length) {
-            *out = ASN1String{0:v}; // Копируем прочитанные байты в out
+            *out = ASN1String{0:v}; // Copy the read bytes to out
             true
         } else {
             false
@@ -1003,7 +1000,6 @@ impl ASN1String {
 
     // Skip advances the String by n byte and reports whether it was successful.
     fn skip(&mut self, length: usize) -> bool {
-        // Реализация пропуска определенного количества байтов
         //if length <= self.0.len() {
             //self.0.drain(..length);
             //true
@@ -1028,7 +1024,7 @@ pub fn asn1_signed(out: &mut i64, n: &[u8]) -> bool {
         *out <<= 8;
         *out |= byte as i64;
     }
-    // Сдвиг для расширения знака результата.
+    // Shift to extend the sign of the result.
     *out <<= 64 - (length as u8 * 8);
     *out >>= 64 - (length as u8 * 8);
     true
@@ -1037,11 +1033,11 @@ pub fn asn1_signed(out: &mut i64, n: &[u8]) -> bool {
 pub fn asn1_unsigned(out: &mut u64, n: &[u8]) -> bool {
     let length = n.len();
     if length > 9 || (length == 9 && n[0] != 0) {
-        // Слишком велико для uint64.
+        // Too large for uint64.
         return false;
     }
     if n[0] & 0x80 != 0 {
-        // Отрицательное число.
+        // Negative number.
         return false;
     }
     for &byte in n {
@@ -1051,38 +1047,38 @@ pub fn asn1_unsigned(out: &mut u64, n: &[u8]) -> bool {
     true
 }
 
-// Проверка на корректность ASN.1 INTEGER
+// Checking the correctness of an ASN.1 INTEGER
 pub fn check_asn1_integer(bytes: &[u8]) -> bool {
     if bytes.is_empty() {
-        // INTEGER кодируется как минимум одним октетом
+        // INTEGER is encoded by at least one octet
         return false;
     }
     if bytes.len() == 1 {
         return true;
     }
     if (bytes[0] == 0 && (bytes[1] & 0x80) == 0) || (bytes[0] == 0xff && (bytes[1] & 0x80) == 0x80) {
-        // Значение не минимально закодировано
+        // The value is not minimally encoded
         return false;
     }
     return true;
 }
 
-// Представляет набор AttributeTypeAndValue
+// Represents a set of AttributeTypeAndValue
 //#[derive(Debug, Clone)]
 //pub struct AttributeTypeAndValueSET {
     //pub rtype: ObjectIdentifier,
-    //pub value: Vec<Vec<AttributeTypeAndValue>>, // Вектор векторов
+    //pub value: Vec<Vec<AttributeTypeAndValue>>, // Vector of vectors
 //}
 
-// Представляет расширение
+// Represents an extension
 #[derive(Debug, Clone)]
 pub struct Extension {
     pub id: Vec<i32>, // //pub id: ObjectIdentifier,
-    pub critical: bool, // pub critical: Option<bool>, // Используем Option для обозначения опционального поля
+    pub critical: bool, // pub critical: Option<bool>, // Use Option to indicate an non-obvious field
     pub value: Vec<u8>,
 }
 
-// Представляет отличительное имя X.509
+// Represents the X.509 distinguished name
 #[derive(Debug, Clone)]
 pub struct Name {
     pub country: Vec<String>,
@@ -1094,8 +1090,8 @@ pub struct Name {
     pub postal_code: Vec<String>,
     pub serial_number: String,
     pub common_name: String,
-    pub names: Vec<AttributeTypeAndValue>, // Все разобранные атрибуты
-    pub extra_names: Vec<AttributeTypeAndValue>, // Атрибуты, копируемые в любые сериализованные имена
+    pub names: Vec<AttributeTypeAndValue>, // All attributes parsed
+    pub extra_names: Vec<AttributeTypeAndValue>, // Attributes copied to any serialized names
 }
 
 impl Name {
@@ -1126,9 +1122,9 @@ impl Name {
             }
 
             for atv in rdn {
-                self.names.push(atv.clone()); // Сохраняем атрибут
+                self.names.push(atv.clone()); // Save the attribute
 
-                // Проверяем значение
+                // Checking the value
                 let value = &atv.value;
 
                 let t = &atv.atype;
@@ -2785,11 +2781,9 @@ fn parse_public_key(key_data: &PublicKeyInfo) -> PublicKey {
             PublicKey::ED25519PublicKey(ed25519::PublicKey(der.0))
         },
         val if val==OID_PUBLIC_KEY_X25519.as_slice() => {
-            //
             PublicKey::X25519PublicKey
         },
         val if val==OID_PUBLIC_KEY_DSA.as_slice() => {
-            //
             PublicKey::DsaPublicKey
         },
         _ => panic!("x509: unknown public key algorithm"),

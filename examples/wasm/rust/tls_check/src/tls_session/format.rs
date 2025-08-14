@@ -5,9 +5,9 @@ pub struct Messages {
     pub client_hello: Record,
     pub server_hello: Record,
     pub server_handshake: DecryptedRecord,
-    pub encrypted_server_handshake: Record, // not needed
-    pub application_request: Record, // not needed
-    pub encrypted_ticket: Record, // not needed
+    pub encrypted_server_handshake: Record, // not obvious
+    pub application_request: Record, // not obvious
+    pub encrypted_ticket: Record, // not obvious
     pub http_response: Record,
 }
 
@@ -32,12 +32,12 @@ impl DecryptedRecord {
         DecryptedRecord{ 0: vec![]}
     }
 
-    // Возвращает последний байт в записи
+    // Returns the last byte in the record
     pub fn rtype(&self) -> u8 {
         *self.0.last().expect("DecryptedRecord is empty")
     }
 
-    // Возвращает все байты, кроме последнего
+    // Returns all bytes except the last one.
     pub fn contents(&self) -> &[u8] {
         &self.0[..self.0.len() - 1]
     }
@@ -134,13 +134,13 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
     };
     let mut current_pos: usize = 0;
 
-    // Пропускаем handshake type:
+    // Skip handshake type:
     current_pos = current_pos + 2; // 02 00 ("server hello") // buf.take(2);
 
-    // Пропускаем length_of_message:
+    // Skip length_of_message:
     current_pos = current_pos + 2; // buf.take(2);
 
-    // Пропускаем tls type of message:
+    // Skip tls type of message:
     current_pos = current_pos + 2; // 03 03 (client protocol version = "TLS 1.2") // buf.take(2);
 
     if &current_pos + 32 < buf.len() { // if let Some(random_bytes) = buf.take(32) {
@@ -192,6 +192,7 @@ pub fn parse_server_hello(buf: & [u8]) -> ServerHello {
             }
         }
     } else {
+        //panic!("not enougth len");
     }
 
     hello
