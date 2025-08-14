@@ -1,10 +1,15 @@
 pub mod fraction {
     #![allow(clippy::suspicious_arithmetic_impl)]
-    use core::ops::{Add, Div, Mul, Neg, Sub};
-    use num_bigint::*;
-    use num_traits::*;
+    use core::ops::Add;
+    use core::ops::Div;
+    use core::ops::Mul;
+    use core::ops::Neg;
+    use core::ops::Sub;
     use std::ops::Not;
-    use std::*; // 0.2.8
+    use std::*;
+
+    use num_bigint::*;
+    use num_traits::*; // 0.2.8
 
     #[derive(Debug, Clone, PartialEq, Eq, Ord)]
     pub struct Fraction {
@@ -29,10 +34,7 @@ pub mod fraction {
     impl Fraction {
         pub fn new(numerator: BigInt, denominator: BigUint) -> Self {
             assert!(denominator.is_zero().not(), "Division by zero");
-            let mut ret = Self {
-                numerator,
-                denominator,
-            };
+            let mut ret = Self { numerator, denominator };
             ret.simplify();
             ret
         }
@@ -59,20 +61,15 @@ pub mod fraction {
         }
 
         pub fn abs(self: &'_ Self) -> Self {
-            Self {
-                numerator: self.numerator.abs(),
-                denominator: self.denominator.clone(),
-            }
+            Self { numerator: self.numerator.abs(), denominator: self.denominator.clone() }
         }
 
         pub fn decimal(self: &'_ Self, precision: usize) -> String {
             use core::fmt::Write;
+
             use num_integer::Integer;
             let mut ret = String::new();
-            let Self {
-                numerator,
-                denominator,
-            } = self.clone();
+            let Self { numerator, denominator } = self.clone();
             let (sign, mut numerator) = numerator.split();
             if let Sign::Minus = sign {
                 ret.push('-');
@@ -249,8 +246,7 @@ pub mod fraction {
     impl SignSplit for BigInt {
         fn split(self: &'_ BigInt) -> (Sign, BigUint) {
             fn to_biguint_lossy(this: &'_ BigInt) -> BigUint {
-                this.to_biguint()
-                    .unwrap_or_else(|| this.neg().to_biguint().unwrap())
+                this.to_biguint().unwrap_or_else(|| this.neg().to_biguint().unwrap())
             }
             (self.sign(), to_biguint_lossy(self))
         }
