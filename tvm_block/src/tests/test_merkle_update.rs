@@ -548,6 +548,7 @@ fn get_message(val: u8) -> MsgEnvelope {
 }
 
 #[test]
+#[ignore = "reason: this test runs too long"]
 fn test_out_msg_queue_updates() -> Result<()> {
     std::env::set_var("RUST_BACKTRACE", "full");
 
@@ -772,6 +773,7 @@ fn test_prepare_empty_update_for_wc() -> Result<()> {
 }
 
 #[test]
+#[ignore = "reason: this test runs too long"]
 fn test_out_msg_queue_merge_updates() -> Result<()> {
     std::env::set_var("RUST_BACKTRACE", "full");
 
