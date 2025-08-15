@@ -1231,7 +1231,7 @@ fn test_update_shard_state_with_external_cell() {
 
 #[test]
 fn test_fast_merkle_update() {
-    const PATH_TO_DATA: &str = "src/tests/data/merkle_update";
+    const PATH_TO_DATA: &str = "src/tests/data";
 
     let mut paths = vec![];
     for entry in std::fs::read_dir(PATH_TO_DATA).unwrap().flatten() {
