@@ -52,13 +52,16 @@ fn determinism(its: usize) -> Vec<u8> {
                     std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
-                        .as_millis_f64(),
+                        .as_secs(),
                 );
-                results.push(elapsed.as_millis_f64());
+                results.push(match elapsed.as_nanos().try_into() {
+                    Ok(k) => k,
+                    Err(e) => u64::MAX,
+                });
             }
             Err(e) => {
                 // the system clock went backwards!
-                results.push(-1.0);
+                results.push(u64::MAX);
             }
         }
     }
