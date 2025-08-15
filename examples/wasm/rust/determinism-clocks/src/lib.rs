@@ -67,7 +67,7 @@ fn determinism(its: usize) -> Vec<u8> {
     }
     let mut result_vec = Vec::<u8>::with_capacity(1000);
     for r in results {
-        result_vec.append(&mut r.to_le_bytes().to_vec());
+        result_vec.append(&mut r.to_be_bytes().to_vec());
     }
     result_vec
 }
