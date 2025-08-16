@@ -17,7 +17,6 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
 use std::time::Instant;
-use std::time::SystemTime;
 
 use tvm_block::GlobalCapabilities;
 use tvm_types::BuilderData;
