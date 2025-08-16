@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.5] - 2025-08-15
+
+### Fixed
+- Fix mintshell action
+
 ## [2.20.4] - 2025-08-14
 
 ### Fixed
