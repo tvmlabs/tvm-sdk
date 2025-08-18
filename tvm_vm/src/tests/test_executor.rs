@@ -419,7 +419,7 @@ fn test_execution_timeout() {
         SliceData::load_cell_ref(&elector_code).unwrap(),
         Some(ctrls.clone()),
         Some(stack.clone()),
-        Some(Gas::test_with_credit(1013)),
+        None,
         vec![],
     );
     let from_start = Instant::now();

@@ -24,7 +24,11 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
+<<<<<<< HEAD
 version = "2.20.5"
+=======
+version = "2.20.4"
+>>>>>>> origin/main
 
 rust-version = "1.76.0"
 
