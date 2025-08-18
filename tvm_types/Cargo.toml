@@ -41,7 +41,6 @@ pprof = { version = "0.14.0", default-features = false, features = [
 
 [features]
 export_key = []
-dyn_cell = []
 
 [[bench]]
 harness = false
