@@ -1312,7 +1312,7 @@ fn test_run_wasm_clock_from_hash() {
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap(); // Should not error on empty hash list!
     engine.set_wasm_block_time(3005792924);
 
-    let hash_str = "65b6403f531ba6504e590905712af3208ddcba3d0c4ea4c003d1ef9685ec4947";
+    let hash_str = "afbe8c5a02df7d6fa5decd4d48ff0f74ecbd4dae38bb5144328354db6bd95967";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let hash: Vec<u8> = (0..hash_str.len())
         .step_by(2)
