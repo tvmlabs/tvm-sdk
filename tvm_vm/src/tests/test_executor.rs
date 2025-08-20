@@ -23,7 +23,6 @@ use tvm_types::SliceData;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
-use crate::executor::gas::gas_state::Gas;
 use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
 use crate::executor::token::execute_run_wasm;
@@ -40,6 +39,8 @@ use crate::stack::savelist::SaveList;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
+
+mod test_gas_consumption;
 
 #[allow(dead_code)]
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
