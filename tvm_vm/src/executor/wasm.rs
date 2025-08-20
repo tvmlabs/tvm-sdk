@@ -2174,7 +2174,11 @@ pub(crate) fn check_and_get_wasm_by_hash(
         let s = engine.cmd.var(exec_index).as_cell()?;
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         }
     };
     #[cfg(not(feature = "wasm_external"))]
@@ -2190,9 +2194,11 @@ pub(crate) fn check_and_get_wasm_by_hash(
                 .0
             {
                 TokenValue::Bytes(items) => items,
-                e => {
-                    err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?
-                }
+                e => err!(
+                    ExceptionCode::WasmCellUnpackError,
+                    "Failed to unpack wasm instruction {:?}",
+                    e
+                )?,
             };
         log::debug!("Using WASM Hash {:?}", wasm_hash);
         Ok((
@@ -2200,7 +2206,7 @@ pub(crate) fn check_and_get_wasm_by_hash(
             Some(match wasm_hash.try_into() {
                 Ok(h) => h,
                 Err(e) => err!(
-                    ExceptionCode::WasmLoadFail,
+                    ExceptionCode::WasmInvalidHash,
                     "Failed to turn valid hash into [u8; 32]. This is probably a bug. {:?}",
                     e
                 )?,
@@ -2233,7 +2239,7 @@ pub(crate) fn run_wasm_core(
             .table_elements(1000000)
             .trap_on_grow_failure(true)
             .build(),
-        random_source: rand_chacha::ChaCha20Rng::seed_from_u64(42),
+        random_source: rand_chacha::ChaCha20Rng::seed_from_u64(engine.get_wasm_block_time()),
         time: engine.get_wasm_block_time(),
     })?;
     wasm_store.limiter(|state| &mut state.limiter);
@@ -2244,6 +2250,11 @@ pub(crate) fn run_wasm_core(
     // instruction (or set to 0?)
     log::debug!("Starting gas: {:?}", engine.gas_remaining());
     let wasm_fuel: u64 = WASM_200MS_FUEL;
+    let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
+    match engine.gas_remaining() > gas_used {
+        true => {}
+        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    }
 
     // TODO: If switching to dunamic fuel limit, use this code:
     // let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
@@ -2256,7 +2267,7 @@ pub(crate) fn run_wasm_core(
     // };
     match wasm_store.set_fuel(wasm_fuel) {
         Ok(module) => module,
-        Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
+        Err(e) => err!(ExceptionCode::WasmFuelError, "Failed to set WASm fuel {:?}", e)?,
     };
 
     let wasm_component = match wasm_hash {
@@ -2290,7 +2301,7 @@ pub(crate) fn run_wasm_core(
     match add_to_linker_gosh::<MyState>(&mut wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(
-            ExceptionCode::WasmLoadFail,
+            ExceptionCode::WasmLinkerFail,
             "Failed to instantiate WASM
     instance {:?}",
             e
@@ -2301,7 +2312,7 @@ pub(crate) fn run_wasm_core(
     // let f: fn(&mut MyState) -> &mut WasiImpl<IoImpl<&mut MyState>> = |t| t;
     match Localworld::add_to_linker::<MyState, MyLibrary>(&mut wasm_linker, f) {
         Ok(_) => {}
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to link IO Plugs {:?}", e)?,
+        Err(e) => err!(ExceptionCode::WasmLinkerFail, "Failed to link IO Plugs {:?}", e)?,
     };
 
     // This is the default add to linker method, we dont use it as it will add async
@@ -2314,12 +2325,9 @@ pub(crate) fn run_wasm_core(
     // Instantiate WASM component. Will error if missing some wasm deps from linker
     let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
         Ok(instance) => instance,
-        Err(e) => err!(
-            ExceptionCode::WasmLoadFail,
-            "Failed to instantiate WASM instance
-    {:?}",
-            e
-        )?,
+        Err(e) => {
+            err!(ExceptionCode::WasmInstantiateFail, "Failed to instantiate WASM instance {:?}", e)?
+        }
     };
 
     // get callable wasm func
@@ -2335,20 +2343,25 @@ pub(crate) fn run_wasm_core(
         &wasm_func_name,
     ) {
         Some(index) => index,
-        None => {
-            err!(ExceptionCode::WasmLoadFail, "Failed to find WASM exported function or component",)?
-        }
+        None => err!(
+            ExceptionCode::WasmInvalidFunction,
+            "Failed to find WASM exported function or component",
+        )?,
     };
     log::debug!("Func Index {:?}", func_index);
     let wasm_function = match wasm_instance.get_func(&mut wasm_store, func_index) {
         Some(f) => f,
-        None => {
-            err!(ExceptionCode::WasmLoadFail, "`{}` was not an exported function", wasm_func_name)?
-        }
+        None => err!(
+            ExceptionCode::WasmInvalidFunction,
+            "`{}` was not an exported function",
+            wasm_func_name
+        )?,
     };
     let wasm_function = match wasm_function.typed::<(Vec<u8>,), (Vec<u8>,)>(&wasm_store) {
         Ok(answer) => answer,
-        Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to get WASM answer function {:?}", e)?,
+        Err(e) => {
+            err!(ExceptionCode::WasmInvalidFunction, "Failed to get WASM answer function {:?}", e)?
+        }
     };
 
     let result = match wasm_function.call(&mut wasm_store, (wasm_func_args,)) {
@@ -2360,7 +2373,6 @@ pub(crate) fn run_wasm_core(
     };
     log::debug!("WASM Execution result: {:?}", result);
 
-    let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
     // TODO: If we switch to dynamic gas usage, reenable this code
     // let gas_used: i64 = match wasm_store.get_fuel() {
     //     Ok(new_fuel) => i64::try_from((wasm_fuel -
@@ -2370,12 +2382,12 @@ pub(crate) fn run_wasm_core(
     //         e
     //     )?,
     // };
-    engine.use_gas(gas_used);
-    log::debug!("Remaining gas: {:?}", engine.gas_remaining());
-    match engine.gas_remaining() > 0 {
-        true => {}
-        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    // engine.use_gas(gas_used);
+    match engine.try_use_gas(gas_used) {
+        Ok(_) => {}
+        Err(e) => err!(ExceptionCode::OutOfGas, "Engine out of gas {:?}.", e)?,
     }
+    log::debug!("Remaining gas: {:?}", engine.gas_remaining());
 
     // return result
     log::debug!("EXEC Wasm execution result: {:?}", result);
