@@ -2382,12 +2382,12 @@ pub(crate) fn run_wasm_core(
     //         e
     //     )?,
     // };
-    engine.use_gas(gas_used);
-    log::debug!("Remaining gas: {:?}", engine.gas_remaining());
-    match engine.gas_remaining() > 0 {
-        true => {}
-        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    // engine.use_gas(gas_used);
+    match engine.try_use_gas(gas_used) {
+        Ok(_) => {}
+        Err(e) => err!(ExceptionCode::OutOfGas, "Engine out of gas {:?}.", e)?,
     }
+    log::debug!("Remaining gas: {:?}", engine.gas_remaining());
 
     // return result
     log::debug!("EXEC Wasm execution result: {:?}", result);
