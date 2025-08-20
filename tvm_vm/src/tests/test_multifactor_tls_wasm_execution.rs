@@ -74,7 +74,8 @@ fn test_tls_wasm_from_hash_for_google() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash_str =  "25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
+    let hash_str = //"f45dae3df26f2a45f006bd7e7d32f426e240dfd1391669953688cb40886aff11"; 
+    "25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -129,8 +130,11 @@ fn test_tls_wasm_from_hash_for_google() {
 
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
+    let start = std::time::Instant::now();
     let status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
+    let t = start.elapsed().as_micros();
     println!("Wasm Return Status: {:?}", status);
+    println!("Time: {:?}", t);
 
     let res = engine.cc.stack.get(0).as_cell().unwrap(); //engine.cc.stack.get(0).as_slice().unwrap().clone();
     let slice = SliceData::load_cell(res.clone()).unwrap();
