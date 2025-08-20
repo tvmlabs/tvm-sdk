@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::Json;
 use axum::Router;
@@ -46,6 +47,8 @@ async fn mock_server() -> JoinHandle<()> {
     let handle = tokio::spawn(async move {
         axum::serve(listener, app).await.unwrap();
     });
+    // Allow the Axum server to start before continuing testing.
+    tokio::time::sleep(Duration::from_secs(1)).await;
     handle
 }
 
@@ -87,7 +90,7 @@ async fn test_get_account() -> ClientResult<()> {
         }
     }
 
-    // Request without  wrong authorization
+    // Request with wrong authorization
     config.network.api_token = Some("wrong_token".to_string());
     let client = Arc::new(ClientContext::new(config.clone()).unwrap());
     let params = ParamsOfGetAccount { address: "0:12232323".to_string() };

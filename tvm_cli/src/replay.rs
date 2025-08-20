@@ -43,7 +43,6 @@ use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
 use tvm_executor::ExecuteParams;
 use tvm_executor::OrdinaryTransactionExecutor;
-use tvm_executor::TickTockTransactionExecutor;
 use tvm_executor::TransactionExecutor;
 use tvm_types::BuilderData;
 use tvm_types::SliceData;
@@ -465,9 +464,6 @@ pub async fn replay(
             .read_description()
             .map_err(|e| format!("failed to read transaction: {}", e))?
         {
-            TransactionDescr::TickTock(desc) => {
-                Box::new(TickTockTransactionExecutor::new(config.clone(), desc.tt))
-            }
             TransactionDescr::Ordinary(_) => {
                 Box::new(OrdinaryTransactionExecutor::new(config.clone()))
             }

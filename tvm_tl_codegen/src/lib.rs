@@ -1893,7 +1893,7 @@ type MethodsTree<'a> =
     BTreeMap<&'a str, BTreeMap<&'a TypeIR, BTreeSet<&'a Constructor<TypeIR, FieldIR>>>>;
 
 impl Constructors<TypeIR, FieldIR> {
-    fn coalesce_methods(&self) -> MethodsTree {
+    fn coalesce_methods(&self) -> MethodsTree<'_> {
         let mut map: MethodsTree = BTreeMap::new();
         for Matched(cons, _) in &self.0 {
             for field in &cons.fields {
