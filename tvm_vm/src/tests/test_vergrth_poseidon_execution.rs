@@ -8,50 +8,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-use ark_std::rand::rngs::StdRng;
-use std::collections::HashSet;
-use std::time::Duration;
 use std::time::Instant;
 
 use rand::rngs::OsRng;
 use num_traits::Zero;
 use crate::stack::integer::IntegerData;
-use crate::stack::integer::serialization::Encoding;
-use crate::stack::integer::serialization::SignedIntegerBigEndianEncoding;
-use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
-use crate::stack::serialization::Deserializer;
-
-use rand::RngCore;
-use tvm_abi::TokenValue;
-use tvm_abi::contract::ABI_VERSION_2_4;
-use tvm_types::BuilderData;
 use tvm_types::Cell;
-use tvm_types::ExceptionCode;
-use tvm_types::IBitstring;
 use tvm_types::SliceData;
 
-use crate::error::TvmError;
 use crate::executor::crypto::execute_chksigns;
-use crate::executor::deserialization::execute_pldu;
 use crate::executor::engine::Engine;
-use crate::executor::gas::gas_state::Gas;
 
-use crate::executor::serialize_currency_collection;
 
 use crate::executor::zk::execute_poseidon_zk_login;
 use crate::executor::zk::execute_vergrth16;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::savelist::SaveList;
-use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
 use crate::utils::pack_string_to_cell;
-use crate::utils::unpack_string_from_cell;
 
 use crate::executor::zk_stuff::utils::gen_address_seed;
-use crate::executor::zk_stuff::utils::get_zk_login_address;
-
 use crate::executor::test_data::*;
 use crate::executor::test_helper::*;
 
@@ -65,28 +43,15 @@ use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
 use crate::executor::zk_stuff::zk_login::OIDCProvider;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
-use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 
-use serde::Deserialize;
-use serde_derive::Serialize;
 use serde_json::Value;
-
 use std::collections::HashMap;
 
 use base64::decode;
 use base64ct::Encoding as bEncoding;
 
-use rand::Rng;
-use rand::SeedableRng;
-use rand::thread_rng;
-
-use crate::executor::deserialization::execute_schkrefs;
-use crate::executor::math::execute_divmod;
-
 use num_bigint::BigUint;
-use std::str::FromStr;
-use num_traits::FromPrimitive;
 
 const FACEBOOK: &str = "facebook";
 const CREDENZA3: &str = "credenza3";
@@ -357,7 +322,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
         let start: Instant = Instant::now();
-        let status = execute_poseidon_zk_login(&mut engine).unwrap();
+        let _ = execute_poseidon_zk_login(&mut engine).unwrap();
         let poseidon_elapsed = start.elapsed().as_micros();
 
         
@@ -390,7 +355,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         engine.cc.stack.push(StackItem::int(verification_key_id));
 
         let start: Instant = Instant::now();
-        let status = execute_vergrth16(&mut engine).unwrap();
+        let _ = execute_vergrth16(&mut engine).unwrap();
         let vergrth16_elapsed = start.elapsed().as_micros();
 
         println!("vergrth16_elapsed in microsecond: {:?}", vergrth16_elapsed); 
@@ -567,7 +532,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
         engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
         let start: Instant = Instant::now();
-        let status = execute_poseidon_zk_login(&mut engine).unwrap();
+        let _ = execute_poseidon_zk_login(&mut engine).unwrap();
         let poseidon_elapsed = start.elapsed().as_micros();
 
         
@@ -600,7 +565,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
         engine.cc.stack.push(StackItem::int(verification_key_id));
 
         let start: Instant = Instant::now();
-        let status = execute_vergrth16(&mut engine).unwrap();
+        let _ = execute_vergrth16(&mut engine).unwrap();
         let vergrth16_elapsed = start.elapsed().as_micros();
 
         println!("vergrth16_elapsed in microsecond: {:?}", vergrth16_elapsed); 
@@ -728,11 +693,9 @@ fn test_proof_stuff() {
     }
 }
 
-
 #[test]
-fn test_poseidon_1() {
+fn test_poseidon() {
     let mut stack = Stack::new();
-
 
     // password was 567890 in ascii 535455565748
     let user_pass_salt = "535455565748";
@@ -863,7 +826,7 @@ fn test_poseidon_1() {
 }
 
 #[test]
-fn test_vergrth16_1() {
+fn test_vergrth16() {
     
     let mut stack = Stack::new();
     
@@ -905,8 +868,8 @@ fn test_vergrth16_1() {
 
     println!("iss_and_header_base64details: {}", iss_and_header_base64details);
 
-    let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
-    let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
+    //let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
+    //let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
     
 
     let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
@@ -975,7 +938,7 @@ fn test_vergrth16_1() {
     let code = SliceData::new(res);
 
     let mut engine = Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
-    engine.execute();
+    let _ = engine.execute().unwrap();
     //let status = execute_vergrth16(&mut engine).unwrap();
     let vergrth16_elapsed = start.elapsed().as_micros();
 
@@ -983,8 +946,6 @@ fn test_vergrth16_1() {
 
     let res = engine.cc.stack.get(0).as_integer().unwrap();
     println!("res: {:?}", res);
-    assert!(*res == IntegerData::minus_one());
-
-    
+    assert!(*res == IntegerData::minus_one());    
 }
 
