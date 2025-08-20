@@ -571,6 +571,7 @@ fn schkbitrefs(engine: &mut Engine, name: &'static str, quiet: bool) -> Status {
     let data_len = s.remaining_bits();
     let refs_count = s.remaining_references();
     let status = l <= data_len && r <= refs_count;
+    
     if quiet {
         engine.cc.stack.push(boolean!(status));
     } else if !status {
