@@ -127,7 +127,7 @@ impl Error {
     }
 
     pub fn http_request_send_error<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::HttpRequestSendError, format!("Can not send http request: {}", err))
+        error(ErrorCode::HttpRequestSendError, format!("{}", err))
     }
 
     pub fn http_request_parse_error<E: Display>(err: E) -> ClientError {

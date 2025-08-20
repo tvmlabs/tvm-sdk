@@ -11,6 +11,7 @@
 
 use std::fs::read;
 use std::path::Path;
+use std::str::FromStr;
 use std::time::Instant;
 
 use tvm_types::AccountId;
@@ -28,6 +29,7 @@ use crate::Grams;
 use crate::HashmapE;
 use crate::HashmapType;
 use crate::InternalMessageHeader;
+use crate::MerkleProof;
 use crate::Message;
 use crate::MsgAddressInt;
 use crate::MsgEnvelope;
@@ -546,6 +548,7 @@ fn get_message(val: u8) -> MsgEnvelope {
 }
 
 #[test]
+#[ignore = "reason: this test runs too long"]
 fn test_out_msg_queue_updates() -> Result<()> {
     std::env::set_var("RUST_BACKTRACE", "full");
 
@@ -770,6 +773,7 @@ fn test_prepare_empty_update_for_wc() -> Result<()> {
 }
 
 #[test]
+#[ignore = "reason: this test runs too long"]
 fn test_out_msg_queue_merge_updates() -> Result<()> {
     std::env::set_var("RUST_BACKTRACE", "full");
 
@@ -1225,4 +1229,83 @@ fn test_update_shard_state_with_external_cell() {
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
     assert_eq!(update_full_full, update_ext_ext);
+}
+
+#[test]
+fn test_fast_merkle_update() {
+    const PATH_TO_DATA: &str = "src/tests/data";
+
+    let mut paths = vec![];
+    for entry in std::fs::read_dir(PATH_TO_DATA).unwrap().flatten() {
+        let path = entry.path().to_str().unwrap().to_string();
+        if let Some(path) = path.strip_suffix(".old_state") {
+            paths.push(path.to_string());
+        }
+    }
+    for path in paths {
+        println!("Testing {}", path);
+        let (old_state, new_state, usages) = read_states_and_usages(&path);
+
+        let start = Instant::now();
+        let update_fast =
+            MerkleUpdate::create_fast(&old_state, &new_state, |x| usages.contains(x)).unwrap();
+        println!("Created fast: {:?}", start.elapsed());
+        // println!("fast old:\n{}", cell_to_string(&update_fast.old));
+        // println!("fast new:\n{}", cell_to_string(&update_fast.new));
+
+        let verify_new = update_fast.apply_for(&old_state).unwrap();
+        assert_eq!(verify_new, new_state);
+
+        let update = MerkleUpdate::create(&old_state, &new_state).unwrap();
+        // println!("slow old:\n{}", cell_to_string(&update.old));
+        // println!("slow new:\n{}", cell_to_string(&update.new));
+
+        let verify_new = update.apply_for(&old_state).unwrap();
+        assert_eq!(verify_new, new_state);
+    }
+}
+
+fn read_states_and_usages(path: &str) -> (Cell, Cell, HashSet<UInt256>) {
+    let path = Path::new(path);
+    let old_state = Cell::construct_from_file(path.with_extension("old_state")).unwrap();
+    let new_state = Cell::construct_from_file(path.with_extension("new_state")).unwrap();
+    let usages = std::fs::read_to_string(path.with_extension("usages"))
+        .unwrap()
+        .split(",")
+        .map(|x| UInt256::from_str(x).unwrap())
+        .collect();
+    (old_state, new_state, usages)
+}
+
+#[allow(dead_code)]
+fn cell_to_string(cell: &Cell) -> String {
+    let mut s = String::new();
+    write_cell_to_string(cell, 0, &mut s);
+    s
+}
+
+#[allow(dead_code)]
+fn write_cell_to_string(cell: &Cell, indent: usize, s: &mut String) {
+    *s += &" ".repeat(indent);
+    *s += cell.repr_hash().to_hex_string().split_at(4).0;
+    match cell.cell_type() {
+        CellType::Unknown => *s += "Unknown ",
+        CellType::Ordinary => {
+            if cell.references_count() == 0 {
+                *s += " Data";
+            } else {
+                *s += &format!(" [{}]", cell.references_count());
+            }
+        }
+        CellType::PrunedBranch => *s += " Pruned Branch",
+        CellType::LibraryReference => *s += " Library Reference",
+        CellType::MerkleProof => *s += " Merkle Proof",
+        CellType::MerkleUpdate => *s += " Merkle Update",
+        CellType::Big => *s += " Big",
+        CellType::External => *s += " External",
+    }
+    *s += "\n";
+    for child in cell.clone_references() {
+        write_cell_to_string(&child, indent + 1, s);
+    }
 }

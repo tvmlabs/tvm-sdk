@@ -1,0 +1,18 @@
+[package]
+name = "determinism"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rand = "0.8.5"
+wit-bindgen-rt = { version = "0.41.0", features = ["bitflags"] }
+
+[lib]
+crate-type = ["cdylib"]
+
+[package.metadata.component]
+package = "gosh:determinism"
+
+[package.metadata.component.dependencies]
+
+[workspace]

@@ -30,6 +30,7 @@ sha2.workspace = true
 smallvec = { features = ["const_new", "union", "write"], version = "1.13.1" }
 thiserror.workspace = true
 x25519-dalek = "2.0.0"
+parking_lot = { version = "0.12.4" }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -40,7 +41,6 @@ pprof = { version = "0.14.0", default-features = false, features = [
 
 [features]
 export_key = []
-dyn_cell = []
 
 [[bench]]
 harness = false

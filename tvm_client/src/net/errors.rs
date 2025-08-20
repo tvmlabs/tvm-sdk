@@ -78,15 +78,15 @@ impl Error {
 
         let mut client_error = Self::send_message_server_error(error);
 
-        if let Some(bm_data) = resp_body.get("block_manager") {
+        if let Some(bm_data) = resp_body.get("ext_message_token") {
             client_error
                 .data
                 .as_object_mut()
-                .and_then(|obj| obj.get_mut("block_manager"))
+                .and_then(|obj| obj.get_mut("ext_message_token"))
                 .map(|entry| *entry = bm_data.clone());
 
-            if client_error.data.get("block_manager").is_none() {
-                client_error.data["block_manager"] = bm_data.clone();
+            if client_error.data.get("ext_message_token").is_none() {
+                client_error.data["ext_message_token"] = bm_data.clone();
             }
         }
 
@@ -275,8 +275,12 @@ impl Error {
         error(ErrorCode::NotFound, format!("Not found: {}", err))
     }
 
-    pub fn all_attempts_failed() -> ClientError {
-        error(ErrorCode::AllAttemptsFailed, "All attempts failed".to_string())
+    pub fn all_attempts_failed(err: Option<ClientError>) -> ClientError {
+        let err_msg = match err {
+            Some(e) => format!(" Last error: {}", e),
+            None => "".to_string(),
+        };
+        error(ErrorCode::AllAttemptsFailed, format!("All attempts failed.{}", err_msg))
     }
 }
 
