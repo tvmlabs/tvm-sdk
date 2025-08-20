@@ -8,9 +8,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-
+use std::collections::HashMap;
 use std::time::Duration;
-
+use base64ct::Encoding;
 use criterion::Criterion;
 use criterion::SamplingMode;
 use criterion::criterion_group;
@@ -25,6 +25,25 @@ use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
 use tvm_vm::stack::continuation::ContinuationData;
 use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
+use tvm_vm::executor::zk_stuff::zk_login::JwkId;
+use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
+use tvm_vm::executor::zk_stuff::zk_login::JWK;
+use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
+use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
+use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
+use tvm_vm::utils::pack_data_to_cell;
+
+use fastcrypto::ed25519::Ed25519KeyPair;
+use fastcrypto::traits::ToFromBytes;
+use fastcrypto::traits::KeyPair;
+
+use num_bigint::BigUint;
+
+use tvm_abi::contract::ABI_VERSION_2_4;
+use tvm_abi::TokenValue;
+
+use std::str::FromStr;
 
 static DEFAULT_CAPABILITIES: u64 = 0x572e;
 
