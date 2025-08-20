@@ -1054,8 +1054,6 @@ fn test_tls_wasm_from_hash_for_4_args_facebook() {
         .unwrap()
         .into_cell()
         .unwrap();
-    // let cell = split_to_chain_of_cells(wasm_dict);
-    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
@@ -1067,11 +1065,6 @@ fn test_tls_wasm_from_hash_for_4_args_facebook() {
 
     println!("ress: {:?}", ress);
     println!("ress: {:?}", hex::encode(ress));
-
-    // assert!(
-    // rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).
-    // unwrap().pop().unwrap() == 3u8
-    // );
 
 }
 

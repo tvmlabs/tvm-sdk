@@ -1,13 +1,10 @@
-use num_bigint::BigInt;
+ #![allow(unused)]
+
 use num_bigint::BigUint;
-use std::str::FromStr;
-use num_traits::FromPrimitive;
-use base64::decode;
 use base64ct::Encoding as bEncoding;
 
 use serde::Deserialize;
 use serde_derive::Serialize;
-use serde_json::Value;
 
 use std::collections::HashMap;
 
@@ -16,7 +13,6 @@ use std::iter::repeat;
 use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
 use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
-use crate::executor::zk_stuff::zk_login::OIDCProvider;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
 
 use crate::executor::zk_stuff::error::ZkCryptoError;
@@ -24,6 +20,7 @@ use crate::utils::pack_data_to_cell;
 use tvm_types::Cell;
 
 pub static DEFAULT_CAPABILITIES: u64 = 0x572e;
+
 
 pub fn read_boc(filename: &str) -> Vec<u8> {
     let mut bytes = Vec::new();
