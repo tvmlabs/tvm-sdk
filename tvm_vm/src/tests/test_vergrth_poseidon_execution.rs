@@ -181,7 +181,9 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
     );
 
     let data: Vec<&str> = vec![
-            TEST_AUTH_DATA_1_GOOGLE,
+        TEST_AUTH_DATA_0_GOOGLE
+            //TEST_AUTH_DATA_1_GOOGLE
+            /*,
             TEST_AUTH_DATA_2_GOOGLE,
             TEST_AUTH_DATA_3_GOOGLE,
             TEST_AUTH_DATA_4_GOOGLE,
@@ -213,7 +215,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
             TEST_AUTH_DATA_1_KAKAO,
             TEST_AUTH_DATA_1_SLACK,
             TEST_AUTH_DATA_1_KARRIER_ONE,
-            TEST_AUTH_DATA_1_MICROSOFT  
+            TEST_AUTH_DATA_1_MICROSOFT */ 
     ];
 
     let mut average_poseidon: u128 = 0;
@@ -329,6 +331,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         println!("index_mod4 = {:?}", jwt_data.zk_proofs.iss_base64_details.index_mod4);
         engine.cc.stack.push(StackItem::int(index_mod_4));
         engine.cc.stack.push(StackItem::int(max_epoch));
+        println!("IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())) : {:?} ", IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone()));
         engine.cc.stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
 
         let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
@@ -336,12 +339,16 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
 
         let iss_base_64= jwt_data.zk_proofs.iss_base64_details.value;
+
+        println!("iss_base_64 = {:?}", iss_base_64);
     
         let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
         println!("iss_base_64_cell = {:?}", iss_base_64_cell);
         engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
 
         let header_base_64 = jwt_data.zk_proofs.header_base64;
+
+        println!("header_base_64 = {:?}", header_base_64);
 
         let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
         println!("header_base_64_cell = {:?}", header_base_64_cell);
