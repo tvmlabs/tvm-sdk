@@ -839,7 +839,7 @@ impl Engine {
         DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
         MINTECC                              => 0xC7, 0x26
         CNVRTSHELLQ                          => 0xC7, 0x27
-        MINTSHELL                            => 0xC7, 0x28
+        MINTSHELLQ                           => 0xC7, 0x28
         CALCBKREWARD                         => 0xC7, 0x29
         CALCMINSTAKE                         => 0xC7, 0x30
         VERGRTH16                            => 0xC7, 0x31
@@ -847,11 +847,16 @@ impl Engine {
         CALCBKREWARDADJ                      => 0xC7, 0x33
         CALCREPCOEF                          => 0xC7, 0x34
         CALCBMREWARD                         => 0xC7, 0x35
-        CALCBMREWARDADJ                      => 0xC7, 0x36
+        CALCBMMVREWARDADJ                    => 0xC7, 0x36
         CALCMINSTAKEBM                       => 0xC7, 0x37
         BURNECC                              => 0xC7, 0x38
         RUNWASM                              => 0xC7, 0x39
         RUNWASMCONCATMULTIARG                => 0xC7, 0x3A
+        CALCBOOSTCOEF                        => 0xC7, 0x40
+        CALCMVREWARD                         => 0xC7, 0x41
+        GETAVAILABLEBALANCE                  => 0xC7, 0x42
+        MINTSHELL                            => 0xC7, 0x43
+        SENDTODAPPCONFIG                     => 0xC7, 0x44
     }
 
     fn add_commands<'a>(

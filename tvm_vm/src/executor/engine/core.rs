@@ -30,6 +30,7 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::error;
+use tvm_types::sha256_digest;
 
 use crate::error::TvmError;
 use crate::error::tvm_exception_full;
@@ -125,6 +126,11 @@ pub struct Engine {
     execution_timeout: Option<Duration>,
 
     wasm_binary_root_path: String,
+    available_credit: i128,
+    wasm_hash_whitelist: HashSet<[u8; 32]>, // store hashes of wasm binaries available locally
+    wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
+    wasm_engine_cache: Option<wasmtime::Engine>,
+    wasm_block_timestamp: u64,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -286,7 +292,20 @@ impl Engine {
             termination_deadline: None,
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
+            available_credit: 0,
+            wasm_hash_whitelist: HashSet::new(),
+            wash_component_cache: HashMap::new(),
+            wasm_engine_cache: None,
+            wasm_block_timestamp: 0,
         }
+    }
+
+    pub fn set_available_credit(&mut self, credit: i128) {
+        self.available_credit = credit;
+    }
+
+    pub fn get_available_credit(&mut self) -> i128 {
+        self.available_credit
     }
 
     pub fn set_block_related_flags(
@@ -424,6 +443,305 @@ impl Engine {
         self.wasm_binary_root_path = wasm_binary_root_path;
     }
 
+    pub fn set_wasm_hash_whitelist(&mut self, wasm_hash_whitelist: HashSet<[u8; 32]>) {
+        self.wasm_hash_whitelist = wasm_hash_whitelist;
+    }
+
+    pub fn set_wasm_block_time(&mut self, time: u64) {
+        self.wasm_block_timestamp = time;
+    }
+
+    pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
+        log::debug!("Extern Initialising Wasm Engine");
+        // load or access WASM engine
+        let mut wasm_config = wasmtime::Config::new();
+        wasm_config.wasm_component_model(true);
+        wasm_config.consume_fuel(true);
+        // configs to assure determinism
+        wasm_config.cranelift_nan_canonicalization(true);
+        wasm_config.cranelift_pcc(true);
+        wasm_config.wasm_relaxed_simd(true);
+        wasm_config.relaxed_simd_deterministic(true);
+        let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+            Ok(module) => module,
+            Err(e) => {
+                err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
+            }
+        };
+        Ok(wasm_engine)
+    }
+
+    pub fn wasm_engine_init_cached(&mut self) -> Result<()> {
+        log::debug!("Internal Initialising Wasm Engine");
+        // load or access WASM engine
+        let mut wasm_config = wasmtime::Config::new();
+        wasm_config.wasm_component_model(true);
+        wasm_config.consume_fuel(true);
+        // configs to assure determinism
+        wasm_config.cranelift_nan_canonicalization(true);
+        wasm_config.cranelift_pcc(true);
+        wasm_config.wasm_relaxed_simd(true);
+        wasm_config.relaxed_simd_deterministic(true);
+        let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+            Ok(module) => module,
+            Err(e) => {
+                err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
+            }
+        };
+        self.wasm_engine_cache = Some(wasm_engine);
+        Ok(())
+    }
+
+    pub fn extern_insert_wasm_engine(&mut self, engine: Option<wasmtime::Engine>) {
+        self.wasm_engine_cache = engine.clone();
+    }
+
+    pub fn extern_insert_wasm_component_cache(
+        &mut self,
+        cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    ) {
+        self.wash_component_cache = cache;
+    }
+
+    pub fn get_wasm_engine(&self) -> Result<&wasmtime::Engine> {
+        match &self.wasm_engine_cache {
+            Some(engine) => Ok(engine),
+            None => err!(
+                ExceptionCode::WasmEngineMissing,
+                "Wasm Engine was not created. This is probably a bug."
+            )?,
+        }
+    }
+
+    pub fn get_wasm_block_time(&self) -> u64 {
+        self.wasm_block_timestamp
+    }
+
+    pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {
+        Ok(wasmtime::Store::new(self.get_wasm_engine()?, data))
+    }
+
+    pub fn extern_precompile_all_wasm_from_hash_list(
+        wasm_binary_root_path: String,
+        wasm_engine: wasmtime::Engine,
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+    ) -> HashMap<[u8; 32], wasmtime::component::Component> {
+        let hashmap = wasm_hash_whitelist.clone();
+        let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+        // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+
+        for hash in hashmap {
+            let res = match Self::extern_get_wasm_binary_by_hash(
+                wasm_binary_root_path.clone(),
+                wasm_hash_whitelist.clone(),
+                hash.into(),
+            ) {
+                Ok(binary) => {
+                    match wasmtime::component::Component::new(&wasm_engine, &binary.as_slice()) {
+                        Ok(module) => Ok(module),
+                        Err(e) => err!(
+                            ExceptionCode::WasmPrecompileComponentFail,
+                            "Failed to load WASM
+            component {:?}",
+                            e
+                        ),
+                    }
+                }
+
+                Err(e) => Err(e),
+            };
+            // We catch errors to allow a partial precompilation in case of missing files
+            match res {
+                Ok(comp) => {
+                    cache.insert(hash, comp);
+                }
+                Err(e) => log::warn!("Failed to precompile hash: {:?} with error: {:?}", hash, e),
+            };
+            // let mut cache = &mut self.wash_component_cache;
+        }
+        cache
+    }
+
+    pub fn precompile_all_wasm_by_hash(mut self) -> Result<Engine> {
+        let hashmap = self.wasm_hash_whitelist.clone();
+        // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+
+        for hash in hashmap {
+            let binary = self.get_wasm_binary_by_hash(hash.into())?;
+            let component = match wasmtime::component::Component::new(
+                self.get_wasm_engine()?,
+                &binary.as_slice(),
+            ) {
+                Ok(module) => module,
+                Err(e) => err!(
+                    ExceptionCode::WasmPrecompileComponentFail,
+                    "Failed to load WASM
+    component {:?}",
+                    e
+                )?,
+            };
+            // let mut cache = &mut self.wash_component_cache;
+            self.wash_component_cache.insert(hash, component);
+        }
+        Ok(self)
+    }
+
+    pub fn get_precompiled_wasm_component(
+        &self,
+        hash: [u8; 32],
+    ) -> Option<&wasmtime::component::Component> {
+        self.wash_component_cache.get(&hash)
+    }
+
+    pub fn create_single_use_wasm_component(
+        &self,
+        executable: Vec<u8>,
+    ) -> Result<wasmtime::component::Component> {
+        match wasmtime::component::Component::new(self.get_wasm_engine()?, &executable.as_slice()) {
+            Ok(module) => Ok(module),
+            Err(e) => err!(
+                ExceptionCode::WasmSingleUseComponentFail,
+                "Failed to load WASM
+    component {:?}",
+                e
+            )?,
+        }
+    }
+
+    pub fn print_wasm_component_exports_and_imports(
+        &self,
+        component: &wasmtime::component::Component,
+    ) -> Result<()> {
+        let component_type = component.component_type();
+        let engine = self.get_wasm_engine()?;
+        let mut exports = component_type.exports(&engine);
+        let arg = exports.next();
+        log::debug!("List of exports from WASM: {:?}", arg);
+        if let Some(arg) = arg {
+            log::debug!("{:?}", arg);
+
+            for arg in exports {
+                log::debug!(" {:?}", arg);
+            }
+        }
+        let binding = component.component_type();
+        let mut imports = binding.imports(&engine);
+        let arg = imports.next();
+        log::debug!("List of imports from WASM: {:?}", arg);
+        if let Some(arg) = arg {
+            log::debug!("{:?}", arg);
+
+            for arg in imports {
+                log::debug!(" {:?}", arg);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn add_wasm_hash_to_whitelist_by_str(&mut self, wasm_hash_str: String) -> Result<bool> {
+        let hash: Result<Vec<u8>> = (0..wasm_hash_str.len())
+            .step_by(2)
+            .map(|i| match u8::from_str_radix(&wasm_hash_str[i..i + 2], 16) {
+                Ok(k) => Ok(k),
+                Err(e) => {
+                    err!(
+                        ExceptionCode::WasmWhitelistInvalidHash,
+                        "Error parsing wasm hash string: {:?}, original error: {:?}",
+                        i,
+                        e
+                    )
+                }
+            })
+            .collect();
+        let hash = hash?;
+        let hash = match hash.try_into() {
+            Ok(h) => h,
+            Err(e) => {
+                err!(ExceptionCode::WasmWhitelistInvalidHash, "This isn't a sha256 hash: {:?}", e)?
+            }
+        };
+        Ok(self.wasm_hash_whitelist.insert(hash))
+    }
+
+    pub fn extern_check_hash(
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+        file: Vec<u8>,
+        hash: String,
+    ) -> Result<Vec<u8>> {
+        let new_hash = sha256_digest(file.clone());
+        let mut s = String::with_capacity(new_hash.len() * 2);
+        for &b in new_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        if s == hash {
+            if wasm_hash_whitelist.contains(&new_hash) {
+                Ok(file)
+            } else {
+                err!(
+                    ExceptionCode::WasmWhitelistForbiddenHash,
+                    "Wasm hash not in whitelist: {:?}",
+                    s
+                )?
+            }
+        } else {
+            err!(
+                ExceptionCode::WasmForbiddenBinary,
+                "Wasm hash mismatch: expected {:?}, got {:?}",
+                hash,
+                s
+            )?
+        }
+    }
+
+    fn check_hash(&self, file: Vec<u8>, hash: String) -> Result<Vec<u8>> {
+        let new_hash = sha256_digest(file.clone());
+        let mut s = String::with_capacity(new_hash.len() * 2);
+        for &b in new_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        if s == hash {
+            if self.wasm_hash_whitelist.contains(&new_hash) {
+                Ok(file)
+            } else {
+                err!(
+                    ExceptionCode::WasmWhitelistForbiddenHash,
+                    "Wasm hash not in whitelist: {:?}",
+                    s
+                )?
+            }
+        } else {
+            err!(
+                ExceptionCode::WasmForbiddenBinary,
+                "Wasm hash mismatch: expected {:?}, got {:?}",
+                hash,
+                s
+            )?
+        }
+    }
+
+    pub fn extern_get_wasm_binary_by_hash(
+        wasm_binary_root_path: String,
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+        wasm_hash: Vec<u8>,
+    ) -> Result<Vec<u8>> {
+        let mut s = String::with_capacity(wasm_hash.len() * 2);
+        log::debug!("{}", std::env::current_dir()?.display());
+        for &b in wasm_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        let filename = format!("{}/{}", wasm_binary_root_path, s);
+        log::debug!("Getting file {:?}", filename);
+        // TODO: Add some hash checking of the file
+        match std::fs::read(filename) {
+            Ok(r) => Self::extern_check_hash(wasm_hash_whitelist, r, s),
+            Err(e) => err!(
+                ExceptionCode::WasmWhitelistMissingBinary,
+                "Failed to find wasm instruction by hash {:?}",
+                e
+            )?,
+        }
+    }
+
     pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
         log::debug!("{}", std::env::current_dir()?.display());
@@ -434,9 +752,9 @@ impl Engine {
         log::debug!("Getting file {:?}", filename);
         // TODO: Add some hash checking of the file
         match std::fs::read(filename) {
-            Ok(r) => Ok(r),
+            Ok(r) => self.check_hash(r, s),
             Err(e) => err!(
-                ExceptionCode::WasmLoadFail,
+                ExceptionCode::WasmWhitelistMissingBinary,
                 "Failed to find wasm instruction by hash {:?}",
                 e
             )?,
@@ -1021,13 +1339,13 @@ impl Engine {
         }
     }
 
-    pub fn ctrl(&self, index: usize) -> ResultRef<StackItem> {
+    pub fn ctrl(&self, index: usize) -> ResultRef<'_, StackItem> {
         self.ctrls
             .get(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
     }
 
-    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<StackItem> {
+    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<'_, StackItem> {
         self.ctrls
             .get_mut(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
@@ -1699,7 +2017,7 @@ impl Engine {
     }
 
     /// get smartcontract info param from ctrl(7) tuple index 0
-    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<StackItem> {
+    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<'_, StackItem> {
         let tuple = self.ctrl(7)?.as_tuple()?;
         let tuple = tuple
             .first()
@@ -1715,7 +2033,7 @@ impl Engine {
         })
     }
 
-    pub(in crate::executor) fn rand(&self) -> ResultRef<IntegerData> {
+    pub(in crate::executor) fn rand(&self) -> ResultRef<'_, IntegerData> {
         self.smci_param(6)?.as_integer()
     }
 

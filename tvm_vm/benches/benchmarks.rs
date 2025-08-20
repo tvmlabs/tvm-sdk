@@ -358,6 +358,200 @@ fn bench_massive_cell_finalize(c: &mut Criterion) {
     });
 }
 
+// Run  `cargo bench -p tvm_vm --bench benchmarks wasmadd`
+fn bench_wasmadd(c: &mut Criterion) {
+    c.bench_function("wasmadd", |b| {
+        let mut total_duration = Duration::default();
+        b.iter_custom(|iters| {
+            // b.iter(|| {
+            //+++++ Let's say I want to measure execution time from this point.
+
+            for _i in 0..iters {
+                let mut stack = Stack::new();
+
+                let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
+                let hash: Vec<u8> = (0..hash_str.len())
+                    .step_by(2)
+                    .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+                    .collect::<Vec<u8>>();
+                let cell = tvm_abi::TokenValue::write_bytes(
+                    hash.as_slice(),
+                    &tvm_abi::contract::ABI_VERSION_2_4,
+                )
+                .unwrap()
+                .into_cell()
+                .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let cell =
+                    tvm_abi::TokenValue::write_bytes(&[4u8], &tvm_abi::contract::ABI_VERSION_2_4)
+                        .unwrap()
+                        .into_cell()
+                        .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let cell =
+                    tvm_abi::TokenValue::write_bytes(&[3u8], &tvm_abi::contract::ABI_VERSION_2_4)
+                        .unwrap()
+                        .into_cell()
+                        .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let cell =
+                    tvm_abi::TokenValue::write_bytes(&[2u8], &tvm_abi::contract::ABI_VERSION_2_4)
+                        .unwrap()
+                        .into_cell()
+                        .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let cell =
+                    tvm_abi::TokenValue::write_bytes(&[1u8], &tvm_abi::contract::ABI_VERSION_2_4)
+                        .unwrap()
+                        .into_cell()
+                        .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                // Push args, func name, instance name, then wasm.
+                let wasm_func = "add";
+                let cell = tvm_vm::utils::pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let wasm_func = "docs:adder/add-interface@0.1.0";
+                let cell = tvm_vm::utils::pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let wasm_dict = Vec::<u8>::new();
+
+                let cell = tvm_abi::TokenValue::write_bytes(
+                    &wasm_dict.as_slice(),
+                    &tvm_abi::contract::ABI_VERSION_2_4,
+                )
+                .unwrap()
+                .into_cell()
+                .unwrap();
+                // let cell = split_to_chain_of_cells(wasm_dict);
+                // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+
+                let mut res = Vec::<u8>::with_capacity(3);
+                res.push(0xC7);
+                res.push(0x3A);
+                res.push(0x80);
+
+                let code = SliceData::new(res);
+
+                let mut engine = Engine::with_capabilities(0).setup_with_libraries(
+                    code,
+                    None,
+                    Some(stack),
+                    None,
+                    vec![],
+                );
+                engine.wasm_engine_init_cached().unwrap();
+                engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned()).unwrap();
+                let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
+
+                let start = std::time::Instant::now();
+                engine.execute();
+                total_duration += start.elapsed();
+            }
+            total_duration
+
+            // println!("ress: {:?}", hex::encode(ress));
+        })
+    });
+}
+
+// Run  `cargo bench -p tvm_vm --bench benchmarks wasmadd`
+fn bench_wasmadd_no_precompile(c: &mut Criterion) {
+    c.bench_function("wasmadd", |b| {
+        let mut total_duration = Duration::default();
+        b.iter_custom(|iters| {
+            // b.iter(|| {
+            //+++++ Let's say I want to measure execution time from this point.
+
+            for _i in 0..iters {
+                let mut stack = Stack::new();
+
+                let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
+                let hash: Vec<u8> = (0..hash_str.len())
+                    .step_by(2)
+                    .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+                    .collect::<Vec<u8>>();
+                let cell = tvm_abi::TokenValue::write_bytes(
+                    hash.as_slice(),
+                    &tvm_abi::contract::ABI_VERSION_2_4,
+                )
+                .unwrap()
+                .into_cell()
+                .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let cell =
+                    tvm_abi::TokenValue::write_bytes(&[4u8], &tvm_abi::contract::ABI_VERSION_2_4)
+                        .unwrap()
+                        .into_cell()
+                        .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let cell =
+                    tvm_abi::TokenValue::write_bytes(&[3u8], &tvm_abi::contract::ABI_VERSION_2_4)
+                        .unwrap()
+                        .into_cell()
+                        .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let cell =
+                    tvm_abi::TokenValue::write_bytes(&[2u8], &tvm_abi::contract::ABI_VERSION_2_4)
+                        .unwrap()
+                        .into_cell()
+                        .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let cell =
+                    tvm_abi::TokenValue::write_bytes(&[1u8], &tvm_abi::contract::ABI_VERSION_2_4)
+                        .unwrap()
+                        .into_cell()
+                        .unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                // Push args, func name, instance name, then wasm.
+                let wasm_func = "add";
+                let cell = tvm_vm::utils::pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let wasm_func = "docs:adder/add-interface@0.1.0";
+                let cell = tvm_vm::utils::pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+                let wasm_dict = Vec::<u8>::new();
+
+                let cell = tvm_abi::TokenValue::write_bytes(
+                    &wasm_dict.as_slice(),
+                    &tvm_abi::contract::ABI_VERSION_2_4,
+                )
+                .unwrap()
+                .into_cell()
+                .unwrap();
+                // let cell = split_to_chain_of_cells(wasm_dict);
+                // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+                stack.push(StackItem::cell(cell.clone()));
+
+                let mut res = Vec::<u8>::with_capacity(3);
+                res.push(0xC7);
+                res.push(0x3A);
+                res.push(0x80);
+
+                let code = SliceData::new(res);
+
+                let mut engine = Engine::with_capabilities(0).setup_with_libraries(
+                    code,
+                    None,
+                    Some(stack),
+                    None,
+                    vec![],
+                );
+                engine.wasm_engine_init_cached().unwrap();
+                engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned()).unwrap();
+                // let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
+
+                let start = std::time::Instant::now();
+                engine.execute();
+                total_duration += start.elapsed();
+            }
+            total_duration
+
+            // println!("ress: {:?}", hex::encode(ress));
+        })
+    });
+}
+
 criterion_group!(
     name = benches;
     config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
@@ -370,5 +564,7 @@ criterion_group!(
         bench_mergesort_tuple,
         bench_massive_cell_upload,
         bench_massive_cell_finalize,
+        bench_wasmadd,
+        bench_wasmadd_no_precompile,
 );
 criterion_main!(benches);
