@@ -32,7 +32,6 @@ use crate::executor::serialize_currency_collection;
 use crate::executor::token::execute_run_wasm;
 use crate::executor::token::execute_run_wasm_concat_multiarg;
 use crate::executor::deserialization::execute_schkrefs;
-use crate::executor::math::execute_divmod;
 use crate::executor::math::execute_xor;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
@@ -1462,7 +1461,7 @@ fn test_divmodc() {
     for i in 0..num_iter {
         println!("======================");
         println!("iter = {i}");
-        let mut value = rand::thread_rng().next_u32();
+        let value = rand::thread_rng().next_u32();
         println!("value = {value}");
         let mul_shift = 3;
         let div_shift = 1;
