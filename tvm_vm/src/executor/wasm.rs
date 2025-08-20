@@ -2239,7 +2239,7 @@ pub(crate) fn run_wasm_core(
             .table_elements(1000000)
             .trap_on_grow_failure(true)
             .build(),
-        random_source: rand_chacha::ChaCha20Rng::seed_from_u64(42),
+        random_source: rand_chacha::ChaCha20Rng::seed_from_u64(engine.get_wasm_block_time()),
         time: engine.get_wasm_block_time(),
     })?;
     wasm_store.limiter(|state| &mut state.limiter);
@@ -2250,6 +2250,11 @@ pub(crate) fn run_wasm_core(
     // instruction (or set to 0?)
     log::debug!("Starting gas: {:?}", engine.gas_remaining());
     let wasm_fuel: u64 = WASM_200MS_FUEL;
+    let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
+    match engine.gas_remaining() > gas_used {
+        true => {}
+        false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
+    }
 
     // TODO: If switching to dunamic fuel limit, use this code:
     // let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
@@ -2262,7 +2267,7 @@ pub(crate) fn run_wasm_core(
     // };
     match wasm_store.set_fuel(wasm_fuel) {
         Ok(module) => module,
-        Err(e) => err!(ExceptionCode::OutOfGas, "Failed to set WASm fuel {:?}", e)?,
+        Err(e) => err!(ExceptionCode::WasmFuelError, "Failed to set WASm fuel {:?}", e)?,
     };
 
     let wasm_component = match wasm_hash {
@@ -2368,7 +2373,6 @@ pub(crate) fn run_wasm_core(
     };
     log::debug!("WASM Execution result: {:?}", result);
 
-    let gas_used: i64 = RUNWASM_GAS_PRICE.try_into()?;
     // TODO: If we switch to dynamic gas usage, reenable this code
     // let gas_used: i64 = match wasm_store.get_fuel() {
     //     Ok(new_fuel) => i64::try_from((wasm_fuel -

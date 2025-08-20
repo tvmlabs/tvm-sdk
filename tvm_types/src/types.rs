@@ -362,34 +362,36 @@ pub enum ExceptionCode {
     WasmLoadFail = 18,
     #[error("wasm failed to execute")]
     WasmExecFail = 19,
-    #[error("wasm failed to execute")]
+    #[error("wasm local binary hash mismatch")]
     WasmForbiddenBinary = 20,
-    #[error("wasm failed to execute")]
+    #[error("wasm failed to find exported function or component")]
     WasmInvalidFunction = 21,
-    #[error("wasm failed to execute")]
+    #[error("wasm cell unpack error")]
     WasmCellUnpackError = 22,
-    #[error("wasm failed to execute")]
+    #[error("wasm cell pack error")]
     WasmCellPackError = 23,
-    #[error("wasm failed to execute")]
+    #[error("wasm not a valid sha256 provided")]
     WasmInvalidHash = 24,
-    #[error("wasm failed to execute")]
+    #[error("wasm linker failed for component")]
     WasmLinkerFail = 25,
-    #[error("wasm failed to execute")]
+    #[error("wasm failed to instantiate")]
     WasmInstantiateFail = 26,
-    #[error("wasm failed to execute")]
+    #[error("wasm failed to init engine")]
     WasmEngineInitFail = 27,
-    #[error("wasm failed to execute")]
+    #[error("wasm engine not created at launch")]
     WasmEngineMissing = 28,
-    #[error("wasm failed to execute")]
+    #[error("wasm precompilation failed")]
     WasmPrecompileComponentFail = 29,
-    #[error("wasm failed to execute")]
+    #[error("wasm runtime compilation failed")]
     WasmSingleUseComponentFail = 30,
-    #[error("wasm failed to execute")]
+    #[error("wasm failed to parse sha256 hash string")]
     WasmWhitelistInvalidHash = 31,
-    #[error("wasm failed to execute")]
+    #[error("wasm hash not in whitelist")]
     WasmWhitelistForbiddenHash = 32,
-    #[error("wasm failed to execute")]
+    #[error("wasm missing matching local binary")]
     WasmWhitelistMissingBinary = 33,
+    #[error("wasm failed to set or use fuel limit")]
+    WasmFuelError = 34,
 }
 
 // impl fmt::Display for ExceptionCode {
