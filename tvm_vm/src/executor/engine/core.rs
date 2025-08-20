@@ -17,7 +17,6 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
 use std::time::Instant;
-use std::time::SystemTime;
 
 use tvm_block::GlobalCapabilities;
 use tvm_types::BuilderData;
@@ -465,7 +464,9 @@ impl Engine {
         wasm_config.relaxed_simd_deterministic(true);
         let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
             Ok(module) => module,
-            Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
+            Err(e) => {
+                err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
+            }
         };
         Ok(wasm_engine)
     }
@@ -483,7 +484,9 @@ impl Engine {
         wasm_config.relaxed_simd_deterministic(true);
         let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
             Ok(module) => module,
-            Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to init WASM engine {:?}", e)?,
+            Err(e) => {
+                err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
+            }
         };
         self.wasm_engine_cache = Some(wasm_engine);
         Ok(())
@@ -504,7 +507,7 @@ impl Engine {
         match &self.wasm_engine_cache {
             Some(engine) => Ok(engine),
             None => err!(
-                ExceptionCode::WasmLoadFail,
+                ExceptionCode::WasmEngineMissing,
                 "Wasm Engine was not created. This is probably a bug."
             )?,
         }
@@ -537,7 +540,7 @@ impl Engine {
                     match wasmtime::component::Component::new(&wasm_engine, &binary.as_slice()) {
                         Ok(module) => Ok(module),
                         Err(e) => err!(
-                            ExceptionCode::WasmLoadFail,
+                            ExceptionCode::WasmPrecompileComponentFail,
                             "Failed to load WASM
             component {:?}",
                             e
@@ -571,7 +574,7 @@ impl Engine {
             ) {
                 Ok(module) => module,
                 Err(e) => err!(
-                    ExceptionCode::WasmLoadFail,
+                    ExceptionCode::WasmPrecompileComponentFail,
                     "Failed to load WASM
     component {:?}",
                     e
@@ -597,7 +600,7 @@ impl Engine {
         match wasmtime::component::Component::new(self.get_wasm_engine()?, &executable.as_slice()) {
             Ok(module) => Ok(module),
             Err(e) => err!(
-                ExceptionCode::WasmLoadFail,
+                ExceptionCode::WasmSingleUseComponentFail,
                 "Failed to load WASM
     component {:?}",
                 e
@@ -642,7 +645,7 @@ impl Engine {
                 Ok(k) => Ok(k),
                 Err(e) => {
                     err!(
-                        ExceptionCode::WasmLoadFail,
+                        ExceptionCode::WasmWhitelistInvalidHash,
                         "Error parsing wasm hash string: {:?}, original error: {:?}",
                         i,
                         e
@@ -653,7 +656,9 @@ impl Engine {
         let hash = hash?;
         let hash = match hash.try_into() {
             Ok(h) => h,
-            Err(e) => err!(ExceptionCode::RangeCheckError, "This isn't a sha256 hash: {:?}", e)?,
+            Err(e) => {
+                err!(ExceptionCode::WasmWhitelistInvalidHash, "This isn't a sha256 hash: {:?}", e)?
+            }
         };
         Ok(self.wasm_hash_whitelist.insert(hash))
     }
@@ -672,11 +677,15 @@ impl Engine {
             if wasm_hash_whitelist.contains(&new_hash) {
                 Ok(file)
             } else {
-                err!(ExceptionCode::WasmLoadFail, "Wasm hash not in whitelist: {:?}", s)?
+                err!(
+                    ExceptionCode::WasmWhitelistForbiddenHash,
+                    "Wasm hash not in whitelist: {:?}",
+                    s
+                )?
             }
         } else {
             err!(
-                ExceptionCode::WasmLoadFail,
+                ExceptionCode::WasmForbiddenBinary,
                 "Wasm hash mismatch: expected {:?}, got {:?}",
                 hash,
                 s
@@ -694,11 +703,15 @@ impl Engine {
             if self.wasm_hash_whitelist.contains(&new_hash) {
                 Ok(file)
             } else {
-                err!(ExceptionCode::WasmLoadFail, "Wasm hash not in whitelist: {:?}", s)?
+                err!(
+                    ExceptionCode::WasmWhitelistForbiddenHash,
+                    "Wasm hash not in whitelist: {:?}",
+                    s
+                )?
             }
         } else {
             err!(
-                ExceptionCode::WasmLoadFail,
+                ExceptionCode::WasmForbiddenBinary,
                 "Wasm hash mismatch: expected {:?}, got {:?}",
                 hash,
                 s
@@ -722,7 +735,7 @@ impl Engine {
         match std::fs::read(filename) {
             Ok(r) => Self::extern_check_hash(wasm_hash_whitelist, r, s),
             Err(e) => err!(
-                ExceptionCode::WasmLoadFail,
+                ExceptionCode::WasmWhitelistMissingBinary,
                 "Failed to find wasm instruction by hash {:?}",
                 e
             )?,
@@ -741,7 +754,7 @@ impl Engine {
         match std::fs::read(filename) {
             Ok(r) => self.check_hash(r, s),
             Err(e) => err!(
-                ExceptionCode::WasmLoadFail,
+                ExceptionCode::WasmWhitelistMissingBinary,
                 "Failed to find wasm instruction by hash {:?}",
                 e
             )?,
@@ -1326,13 +1339,13 @@ impl Engine {
         }
     }
 
-    pub fn ctrl(&self, index: usize) -> ResultRef<StackItem> {
+    pub fn ctrl(&self, index: usize) -> ResultRef<'_, StackItem> {
         self.ctrls
             .get(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
     }
 
-    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<StackItem> {
+    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<'_, StackItem> {
         self.ctrls
             .get_mut(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
@@ -2004,7 +2017,7 @@ impl Engine {
     }
 
     /// get smartcontract info param from ctrl(7) tuple index 0
-    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<StackItem> {
+    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<'_, StackItem> {
         let tuple = self.ctrl(7)?.as_tuple()?;
         let tuple = tuple
             .first()
@@ -2020,7 +2033,7 @@ impl Engine {
         })
     }
 
-    pub(in crate::executor) fn rand(&self) -> ResultRef<IntegerData> {
+    pub(in crate::executor) fn rand(&self) -> ResultRef<'_, IntegerData> {
         self.smci_param(6)?.as_integer()
     }
 

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.5] - 2025-08-20
+
+### New
+- Error codes for different wasm-related errors for better on-chain debugging
+- Various tests related to wasm clocks
+- Wasi random functions now use block timestamps as seed.
+
 ## [2.20.4] - 2025-08-14
 
 ### Fixed
