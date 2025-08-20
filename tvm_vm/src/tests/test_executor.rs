@@ -746,7 +746,7 @@ fn test_run_wasm_from_hash() {
 }
 
 #[test]
-fn test_tls_wasm_from_hash() {
+fn test_run_wasm_concat_multiarg_for_add_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
     let config_data = load_boc("benches/config-data.boc");
