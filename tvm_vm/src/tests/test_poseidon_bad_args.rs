@@ -1,50 +1,15 @@
-use ark_std::rand::rngs::StdRng;
-use std::collections::HashSet;
-use std::time::Duration;
-use std::time::Instant;
 
-use rand::rngs::OsRng;
-use num_traits::Zero;
 use crate::stack::integer::IntegerData;
-use crate::stack::integer::serialization::Encoding;
-use crate::stack::integer::serialization::SignedIntegerBigEndianEncoding;
-use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
-use crate::stack::serialization::Deserializer;
-
-use rand::RngCore;
-use tvm_abi::TokenValue;
-use tvm_abi::contract::ABI_VERSION_2_4;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::ExceptionCode;
-use tvm_types::IBitstring;
 use tvm_types::SliceData;
-
 use crate::error::TvmError;
-use crate::executor::crypto::execute_chksigns;
-use crate::executor::deserialization::execute_pldu;
 use crate::executor::engine::Engine;
-use crate::executor::gas::gas_state::Gas;
-
-use crate::executor::serialize_currency_collection;
-
 use crate::executor::zk::execute_poseidon_zk_login;
-use crate::executor::zk::execute_vergrth16;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::savelist::SaveList;
-use crate::types::Status;
 use crate::utils::pack_data_to_cell;
-use crate::utils::unpack_data_from_cell;
-use crate::utils::pack_string_to_cell;
-use crate::utils::unpack_string_from_cell;
-
 use crate::executor::zk_stuff::utils::gen_address_seed;
-
-
-
 use crate::executor::test_helper::*;
-
 
 use fastcrypto::ed25519::Ed25519KeyPair;
 use fastcrypto::traits::KeyPair;
@@ -55,31 +20,10 @@ use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
 use crate::executor::zk_stuff::zk_login::OIDCProvider;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
-use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
-
-use serde::Deserialize;
-use serde_derive::Serialize;
-use serde_json::Value;
-
 use std::collections::HashMap;
-
-use base64::decode;
 use base64ct::Encoding as bEncoding;
-
-use rand::Rng;
-use rand::SeedableRng;
-use rand::thread_rng;
-
-use crate::executor::deserialization::execute_schkrefs;
-use crate::executor::math::execute_divmod;
-
-use num_bigint::BigInt;
-use num_bigint::BigUint;
-use std::str::FromStr;
-use num_traits::FromPrimitive;
-use crate::executor::zk_stuff::zk_login::ZkLoginProof;
-
+use crate::utils::pack_string_to_cell;
 
 #[test]
 fn test_modulus_bad() {
@@ -211,10 +155,6 @@ fn test_modulus_bad() {
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
 
-    ///// Modulus handle /////
-
-    // Decode modulus to bytes.
-
     println!("Too short modulus...");
 
     let mut modulus_spoiled = modulus.clone();
@@ -230,12 +170,11 @@ fn test_modulus_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
     assert!(*poseidon_res != public_inputs_cell);
-
 
     println!("Too long modulus...");
 
@@ -256,7 +195,7 @@ fn test_modulus_bad() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -278,7 +217,7 @@ fn test_modulus_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -299,7 +238,7 @@ fn test_modulus_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -384,7 +323,7 @@ fn test_iss_64_bad() {
     println!("proof_and_jwt: {}", proof_and_jwt);
 
     let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
-    let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
+    //let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
     let index_mod_4 = 1;
 
     let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
@@ -416,7 +355,7 @@ fn test_iss_64_bad() {
 
     let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+    //let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
 
     let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
@@ -455,7 +394,7 @@ fn test_iss_64_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -476,7 +415,7 @@ fn test_iss_64_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -496,7 +435,7 @@ fn test_iss_64_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -521,7 +460,7 @@ fn test_iss_64_bad() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -608,7 +547,7 @@ fn test_header_bad() {
 
     println!("proof_and_jwt: {}", proof_and_jwt);
 
-    let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
+    //let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
     let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
     let index_mod_4 = 1;
 
@@ -680,7 +619,7 @@ fn test_header_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _res_error = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -702,7 +641,7 @@ fn test_header_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -722,7 +661,7 @@ fn test_header_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -747,7 +686,7 @@ fn test_header_bad() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -756,7 +695,6 @@ fn test_header_bad() {
         }
     }
 }
-
 
 #[test]
 fn test_zk_seed_bad() {
@@ -909,7 +847,7 @@ fn test_zk_seed_bad() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -935,7 +873,7 @@ fn test_zk_seed_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -958,7 +896,7 @@ fn test_zk_seed_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -984,7 +922,7 @@ fn test_zk_seed_bad() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -1009,7 +947,7 @@ fn test_zk_seed_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -1031,7 +969,7 @@ fn test_zk_seed_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -1118,7 +1056,7 @@ fn test_other_args_bad() {
 
     let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
     let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
-    let index_mod_4 = 1;
+    //let index_mod_4 = 1;
 
     let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
@@ -1174,7 +1112,6 @@ fn test_other_args_bad() {
     
     let wrong_index_mod_4 = 256;
 
-
     engine.cc.stack.push(StackItem::int(wrong_index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine.cc.stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
@@ -1187,7 +1124,7 @@ fn test_other_args_bad() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::RangeCheckError);
             }
             else {
@@ -1207,7 +1144,7 @@ fn test_other_args_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -1224,7 +1161,7 @@ fn test_other_args_bad() {
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let status = execute_poseidon_zk_login(&mut engine).unwrap();
+    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
