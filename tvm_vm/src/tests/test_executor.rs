@@ -1446,7 +1446,6 @@ fn test_run_wasm_fuel_error_from_hash() {
 #[test]
 fn test_divmodc() {
     
-
     let flags: u8 = 14;
     let mode = DivMode::with_flags(flags);
     println!("mode: {:?}", mode.command_name());
