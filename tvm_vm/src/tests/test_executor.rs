@@ -40,6 +40,8 @@ use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
 
+mod test_gas_consumption;
+
 #[allow(dead_code)]
 pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
     // TODO: Cell size can maybe be increased up to 128?
