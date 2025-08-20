@@ -1437,3 +1437,232 @@ fn test_run_wasm_fuel_error_from_hash() {
     let _res_error = result.expect_err("Test didn't error on fuel use");
 }
 
+#[test]
+fn test_divmodc() {
+    
+
+    let flags: u8 = 14;
+    let mode = DivMode::with_flags(flags);
+    println!("mode: {:?}", mode.command_name());
+    println!("flags: {:?}", flags);
+    
+    //test_div_primitive_execution::<Signaling>(&mode);
+    //test_div_primitive_execution::<Quiet>(&mode);
+
+    let command_name = command_name_from_mode::<Signaling>(&mode);
+    println!("Flags: {:#010b}, Cmd: {}", mode.flags, command_name);
+
+    let num_iter = 1;
+    let mut average_: u128 = 0;
+    for i in 0..num_iter {
+        println!("======================");
+        println!("iter = {i}");
+        let mut value = rand::thread_rng().next_u32();
+        println!("value = {value}");
+        let mul_shift = 3;
+        let div_shift = 1;
+
+        let multiplier: i32 = 1 << mul_shift;
+        let divisor: i32 = 1 << div_shift;
+        let mut stack = Stack::new();
+        let mut swap = 0;
+
+        stack.push(int!(value));
+
+        if mode.premultiply() && (!mode.mul_by_shift() || !mode.shift_parameter()) {
+            stack.push(int!(if mode.mul_by_shift() {
+                swap = 1;
+                mul_shift
+            } else {
+                multiplier
+            }));
+        }
+
+        if !(mode.div_by_shift() && mode.shift_parameter()) {
+            stack.push(int!(if mode.div_by_shift() {
+                div_shift
+            } else {
+                if swap == 1 {
+                    swap = 2
+                }
+                divisor
+            }));
+        }
+        if swap == 2 {
+            stack.swap(1, 0).unwrap()
+        }
+
+        let code = div_generate_bytecode::<Signaling>(&mode, mul_shift as u8, div_shift as u8);
+        let mut engine =
+        Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
+
+        let start: Instant = Instant::now();
+        let res = engine.execute(); 
+        let elapsed = start.elapsed().as_nanos();
+
+        average_ = average_ + elapsed;
+
+        println!("elapsed in nanoseconds: {:?}", elapsed);
+
+        match res {
+            Err(e) => panic!("Execute error: {}", e),
+            Ok(_) => {
+                println!("Ok!");
+            }
+        }
+
+    }
+    println!("======================");
+    let average_ =  average_ / num_iter;
+    println!("average_ in nanoseconds: {:?}", average_);    
+}
+
+#[test]
+fn test_schkrefs() {
+     let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+    let stack = Stack::new();
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+   
+    let num_iter = 10;
+    let mut average_: u128 = 0;
+    for i in 0..num_iter {
+        println!("======================");
+        println!("iter = {i}");
+        let mut arr_1: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_1);
+
+        let mut arr_2: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_2);
+
+        let mut arr_3: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_3);
+
+        let mut arr_4: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_4);
+
+        let mut arr_5: [u8; 32] = [0; 32];
+        let mut rng = thread_rng();
+        rng.fill(&mut arr_5);
+
+        let mut d = SliceData::new(arr_1.to_vec());
+        d.append_reference(SliceData::new(arr_2.to_vec()));
+        d.append_reference(SliceData::new(arr_3.to_vec()));
+        d.append_reference(SliceData::new(arr_4.to_vec()));
+        d.append_reference(SliceData::new(arr_5.to_vec()));
+        println!("{:?}", d);
+        println!("{:?}", d.remaining_references());
+        engine.cc.stack.push(StackItem::Slice(d));
+        engine.cc.stack.push(StackItem::int(0));
+
+        let start: Instant = Instant::now();
+        let status = execute_schkrefs(&mut engine).unwrap();
+        println!("status : {:?}", status);
+        let elapsed = start.elapsed().as_nanos();
+
+        average_ = average_ + elapsed;
+
+        println!("elapsed in nanoseconds: {:?}", elapsed);
+    }
+    
+    let average_ =  average_ / num_iter;
+    println!("average_ in nanoseconds: {:?}", average_);  
+    
+}
+
+#[test]
+fn test_xor() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+    let stack = Stack::new();
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+   
+    let num_iter = 10;
+    let mut average_: u128 = 0;
+    for i in 0..num_iter {
+        println!("======================");
+        println!("iter = {i}");
+        let x = rand::thread_rng().next_u32();
+        println!("x = {x}");
+        engine.cc.stack.push(StackItem::int(x));
+        let y = rand::thread_rng().next_u32();
+        println!("y = {y}");
+        engine.cc.stack.push(StackItem::int(y));
+
+        let start: Instant = Instant::now();
+        execute_xor::<Signaling>(&mut engine).unwrap();
+        let elapsed = start.elapsed().as_nanos();
+
+        println!("elapsed in nanoseconds: {:?}", elapsed);
+
+        let res = engine.cc.stack.get(0).as_integer().unwrap();
+        println!("res: {:?}", res);
+
+        average_ = average_ + elapsed;
+    }
+
+    let average_ =  average_ / num_iter;
+    println!("average_ in nanoseconds: {:?}", average_);      
+}
