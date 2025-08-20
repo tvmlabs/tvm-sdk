@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.21.0] - 2025-08-20
+
+### Changed
+-  Now function `tvm_client::account` returns account boc and **dapp_id**
+
 ## [2.20.4] - 2025-08-14
 
 ### Fixed
