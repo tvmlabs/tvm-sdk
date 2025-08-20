@@ -1,48 +1,15 @@
-use ark_std::rand::rngs::StdRng;
-use std::collections::HashSet;
-use std::time::Duration;
-use std::time::Instant;
 
-use rand::rngs::OsRng;
-use num_traits::Zero;
 use crate::stack::integer::IntegerData;
-use crate::stack::integer::serialization::Encoding;
-use crate::stack::integer::serialization::SignedIntegerBigEndianEncoding;
-use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
-use crate::stack::serialization::Deserializer;
-
-use rand::RngCore;
-use tvm_abi::TokenValue;
-use tvm_abi::contract::ABI_VERSION_2_4;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::ExceptionCode;
-use tvm_types::IBitstring;
 use tvm_types::SliceData;
 
 use crate::error::TvmError;
-use crate::executor::crypto::execute_chksigns;
-use crate::executor::deserialization::execute_pldu;
 use crate::executor::engine::Engine;
-use crate::executor::gas::gas_state::Gas;
-
-use crate::executor::serialize_currency_collection;
-
-use crate::executor::zk::execute_poseidon_zk_login;
 use crate::executor::zk::execute_vergrth16;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::savelist::SaveList;
-use crate::types::Status;
 use crate::utils::pack_data_to_cell;
-use crate::utils::unpack_data_from_cell;
-use crate::utils::pack_string_to_cell;
-use crate::utils::unpack_string_from_cell;
-
 use crate::executor::zk_stuff::utils::gen_address_seed;
-
-
-
 use crate::executor::test_helper::*;
 
 
@@ -55,29 +22,11 @@ use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
 use crate::executor::zk_stuff::zk_login::OIDCProvider;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
-use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
-
-use serde::Deserialize;
-use serde_derive::Serialize;
-use serde_json::Value;
-
 use std::collections::HashMap;
 
-use base64::decode;
 use base64ct::Encoding as bEncoding;
 
-use rand::Rng;
-use rand::SeedableRng;
-use rand::thread_rng;
-
-use crate::executor::deserialization::execute_schkrefs;
-use crate::executor::math::execute_divmod;
-
-use num_bigint::BigInt;
-use num_bigint::BigUint;
-use std::str::FromStr;
-use num_traits::FromPrimitive;
 use crate::executor::zk_stuff::zk_login::ZkLoginProof;
 
 pub struct TestPrecomputedData {
@@ -234,7 +183,7 @@ fn test_vrgrth16_short_public_input() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -312,7 +261,7 @@ fn test_vrgrth16_long_public_input() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -391,7 +340,7 @@ fn test_vrgrth16_bad_public_input() {
             println!("res: {:?}", res);
             assert!(*res == IntegerData::zero());
         },
-        Err(ref err) => {
+        Err(_) => {
             assert!(false);
         }
     };
@@ -409,7 +358,7 @@ fn test_vrgrth16_bad_public_input() {
             println!("res: {:?}", res);
             assert!(*res == IntegerData::zero());
         },
-        Err(ref err) => {
+        Err(_) => {
             assert!(false);
         }
     };
@@ -426,7 +375,7 @@ fn test_vrgrth16_bad_public_input() {
             println!("res: {:?}", res);
             assert!(*res == IntegerData::zero());
         },
-        Err(ref err) => {
+        Err(_) => {
             assert!(false);
         }
     };
@@ -480,7 +429,7 @@ fn test_vrgrth16_short_proof() {
     println!("proof_as_bytes : {:?}", proof_as_bytes);
     println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-    let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
+    let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
     let verification_key_id: u32 = 0; 
 
@@ -495,7 +444,7 @@ fn test_vrgrth16_short_proof() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -552,7 +501,7 @@ fn test_vrgrth16_long_proof() {
     println!("proof_as_bytes : {:?}", proof_as_bytes);
     println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-    let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
+    let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
     let verification_key_id: u32 = 0; 
 
@@ -569,7 +518,7 @@ fn test_vrgrth16_long_proof() {
             println!("res: {:?}", res);
             assert!(*res == IntegerData::minus_one());
         },
-        Err(ref err) => {
+        Err(_) => {
             assert!(false);
         }
     };
@@ -617,7 +566,7 @@ fn test_vrgrth16_long_incorrect_proof() {
     println!("proof_as_bytes : {:?}", proof_as_bytes);
     println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-    let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
+    let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
     let verification_key_id: u32 = 0; 
 
@@ -632,7 +581,7 @@ fn test_vrgrth16_long_incorrect_proof() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -684,7 +633,7 @@ fn test_vrgrth16_incorrect_proof() {
     println!("proof_as_bytes : {:?}", proof_as_bytes);
     println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-    let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
+    let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
     let verification_key_id: u32 = 0; 
 
@@ -699,7 +648,7 @@ fn test_vrgrth16_incorrect_proof() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -760,7 +709,7 @@ fn test_vrgrth16_invalid_proof() {
     println!("proof_as_bytes : {:?}", proof_as_bytes);
     println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-    let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
+    let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
     let verification_key_id: u32 = 0; 
 
@@ -775,7 +724,7 @@ fn test_vrgrth16_invalid_proof() {
         Ok(_) => assert!(false),
         Err(ref err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
@@ -836,7 +785,7 @@ fn test_vrgrth16_invalid_proof_one_more_case() {
     println!("proof_as_bytes : {:?}", proof_as_bytes);
     println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
-    let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
+    let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
     let verification_key_id: u32 = 0; 
 
@@ -849,9 +798,9 @@ fn test_vrgrth16_invalid_proof_one_more_case() {
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
-        Err(ref err) => {
+        Err(err) => {
             assert!(true); 
-            if let Some(TvmError::TvmExceptionFull(e, msg2)) = err.downcast_ref() {
+            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             }
             else {
