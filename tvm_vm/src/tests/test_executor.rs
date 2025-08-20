@@ -21,12 +21,19 @@ use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
 
+use rand::Rng;
+use rand::RngCore;
+use rand::thread_rng;
+
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
 use crate::executor::math::DivMode;
 use crate::executor::serialize_currency_collection;
 use crate::executor::token::execute_run_wasm;
 use crate::executor::token::execute_run_wasm_concat_multiarg;
+use crate::executor::deserialization::execute_schkrefs;
+use crate::executor::math::execute_divmod;
+use crate::executor::math::execute_xor;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::stack::Stack;
@@ -38,7 +45,6 @@ use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
 use crate::utils::pack_data_to_cell;
-use crate::utils::unpack_data_from_cell;
 
 mod test_gas_consumption;
 
