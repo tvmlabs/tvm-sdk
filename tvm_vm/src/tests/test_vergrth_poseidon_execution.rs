@@ -84,7 +84,6 @@ use rand::thread_rng;
 use crate::executor::deserialization::execute_schkrefs;
 use crate::executor::math::execute_divmod;
 
-use num_bigint::BigInt;
 use num_bigint::BigUint;
 use std::str::FromStr;
 use num_traits::FromPrimitive;
@@ -106,7 +105,7 @@ fn single_chcksgns(
         all_jwk: &HashMap<JwkId, JWK>,
         max_epoch: u64,
 ) -> u128 {
-    let (proof_cell, public_inputs_cell) = prepare_proof_and_public_key_cells_for_stack(
+    let (proof_cell, public_inputs_cell) = crate::executor::test_helper::prepare_proof_and_public_key_cells_for_stack(
         eph_pubkey,
         zk_login_inputs,
         all_jwk,
@@ -132,7 +131,7 @@ fn single_chcksgns(
 
 
     let start: Instant = Instant::now();
-    let status = execute_chksigns(engine).unwrap();
+    execute_chksigns(engine).unwrap();
     let chksigns_elapsed = start.elapsed().as_micros();
 
     println!("chksigns_elapsed in microsecond: {:?}", chksigns_elapsed); 
@@ -181,9 +180,8 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
     );
 
     let data: Vec<&str> = vec![
-        TEST_AUTH_DATA_0_GOOGLE
-            //TEST_AUTH_DATA_1_GOOGLE
-            /*,
+        TEST_AUTH_DATA_0_GOOGLE,
+            TEST_AUTH_DATA_1_GOOGLE,
             TEST_AUTH_DATA_2_GOOGLE,
             TEST_AUTH_DATA_3_GOOGLE,
             TEST_AUTH_DATA_4_GOOGLE,
@@ -215,7 +213,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
             TEST_AUTH_DATA_1_KAKAO,
             TEST_AUTH_DATA_1_SLACK,
             TEST_AUTH_DATA_1_KARRIER_ONE,
-            TEST_AUTH_DATA_1_MICROSOFT */ 
+            TEST_AUTH_DATA_1_MICROSOFT 
     ];
 
     let mut average_poseidon: u128 = 0;
@@ -731,15 +729,11 @@ fn test_proof_stuff() {
 }
 
 
-
-/////////
-
-
 #[test]
 fn test_poseidon_1() {
     let mut stack = Stack::new();
 
- 
+
     // password was 567890 in ascii 535455565748
     let user_pass_salt = "535455565748";
     let secret_key = [222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166, 87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14,
@@ -853,7 +847,7 @@ fn test_poseidon_1() {
     let code = SliceData::new(res);
 
     let mut engine = Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
-    engine.execute();
+    let _ = engine.execute();
     let poseidon_elapsed = start.elapsed().as_micros();
 
     println!("poseidon_elapsed in microsecond: {:?}", poseidon_elapsed);  
