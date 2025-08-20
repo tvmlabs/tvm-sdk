@@ -274,7 +274,7 @@ impl SliceData {
         };
         let length_in_bits = self.data_window.end - self.data_window.start;
         let start = self.data_window.start / 8;
-        let end = (self.data_window.end + 7) / 8;
+        let end = self.data_window.end.div_ceil(8);
         let trailing = self.data_window.start % 8;
         if trailing == 0 {
             return (SmallVec::from_slice(&data[start..end]), length_in_bits);

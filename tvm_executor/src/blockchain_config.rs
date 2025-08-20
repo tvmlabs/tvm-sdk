@@ -328,7 +328,7 @@ impl BlockchainConfig {
 
     /// Check if account is special TON account
     pub fn is_special_account(&self, address: &MsgAddressInt) -> Result<bool> {
-        log::debug!(target: "executor", "is_special_account address {}, config addr  {}, special_contracts {:#?}", address, self.raw_config.config_addr, self.special_contracts);
+        log::debug!(target: "executor", "is_special_account address {}, config addr  {}", address, self.raw_config.config_addr);
         let account_id = address.get_address();
         // special account adresses are stored in hashmap
         // config account is special too

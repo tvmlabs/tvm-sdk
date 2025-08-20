@@ -35,7 +35,6 @@ use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
 use tvm_block::TrComputePhase;
 use tvm_block::Transaction;
-use tvm_block::TransactionTickTock;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::FunctionHeader;
 use tvm_client::abi::ParamsOfEncodeMessage;
@@ -50,7 +49,6 @@ use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
 use tvm_executor::ExecuteParams;
 use tvm_executor::OrdinaryTransactionExecutor;
-use tvm_executor::TickTockTransactionExecutor;
 use tvm_executor::TransactionExecutor;
 use tvm_types::AccountId;
 use tvm_types::Cell;
@@ -615,7 +613,6 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
         block_lt,
         trans.logical_time(),
         false,
-        false,
         config,
     )
     .await;
@@ -794,7 +791,6 @@ async fn debug_call_command(
         now,
         now,
         is_getter,
-        false,
         &full_config.config,
     )
     .await;
@@ -889,7 +885,6 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
         now,
         now,
         now,
-        false,
         false,
         config,
     )
@@ -994,7 +989,6 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
         now,
         now,
         now,
-        false,
         false,
         config,
     )
@@ -1200,7 +1194,6 @@ pub async fn execute_debug_params(debug_params: &DebugParams<'_>) -> Result<Tran
         debug_params.block_lt,
         debug_params.last_tr_lt,
         debug_params.is_getter,
-        debug_params.is_tock,
         debug_params.config,
     )
     .await
@@ -1215,7 +1208,6 @@ pub async fn execute_debug(
     block_lt: u64,
     last_tr_lt: u64,
     is_getter: bool,
-    is_tock: bool,
     tonos_config: &Config,
 ) -> Result<Transaction, String> {
     let bc_config = if is_getter {
@@ -1242,12 +1234,9 @@ pub async fn execute_debug(
         bc_config
     };
 
-    let executor: Box<dyn TransactionExecutor> = if message.is_some() {
-        Box::new(OrdinaryTransactionExecutor::new(bc_config))
-    } else {
-        let tt = if is_tock { TransactionTickTock::Tock } else { TransactionTickTock::Tick };
-        Box::new(TickTockTransactionExecutor::new(bc_config, tt))
-    };
+    let executor: Box<dyn TransactionExecutor> =
+        Box::new(OrdinaryTransactionExecutor::new(bc_config));
+
     let params = ExecuteParams {
         block_unixtime: (time_in_ms / 1000) as u32,
         block_lt,
@@ -1681,7 +1670,6 @@ pub struct DebugParams<'a> {
     pub block_lt: u64,
     pub last_tr_lt: u64,
     pub is_getter: bool,
-    pub is_tock: bool,
 }
 
 impl<'a> DebugParams<'a> {
@@ -1696,7 +1684,6 @@ impl<'a> DebugParams<'a> {
             block_lt: 0,
             last_tr_lt: 0,
             is_getter: false,
-            is_tock: false,
         }
     }
 

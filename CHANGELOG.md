@@ -2,6 +2,94 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.4] - 2025-08-14
+
+### New
+- Error codes for different wasm-related errors for better on-chain debugging
+- Various tests related to wasm clocks
+- Wasi random functions now use block timestamps as seed.
+
+## [2.20.4] - 2025-08-14
+
+### Fixed
+- Cell optimizations
+- UsageTree refactoring + optimizations
+
+## [2.20.3] - 2025-08-14
+
+### New
+- Wasm plugs for wasi-io, wasi-clocks, wasi-random, providing access to some tvm blockchain info.
+- Matching tests and examples
+
+### Fixed
+- Major refactor of wasm-related code
+
+## [2.20.2] - 2025-08-11
+
+### Fixed
+- Usage tree seg fault and added usage tree/set stoping tracking on tree drop
+
+## [2.20.1] - 2025-08-06
+
+### Update
+
+- Passing wasm binaries as arguments to `runwasm` and `runwasmconcatmultiarg` now behind a feature flag. With default flags, those binaries will be ignored.
+
+## [2.20.0] - 2025-08-05
+
+### New
+
+- Add `getavailablecredit` `sendtodappconfig` `mintshellq` instructions 
+- Change `mintshell` instruction. 
+- Refactor fee in executor
+
+### Update
+
+- Update CALCBMREWARDADJ. Rename into CALCBMMVREWARDADJ
+
+## [2.19.1] - 2025-07-30
+
+### Fixes
+- Fixed `runwasm` and `runwasmconcatmultiarg` to support wasm components dependent on, when no real io access is needed:
+```
+import wasi:io/streams@0.2.3;
+import wasi:io/error@0.2.3;
+import wasi:cli/stdin@0.2.3;
+import wasi:cli/stdout@0.2.3;
+import wasi:cli/stderr@0.2.3;
+import wasi:filesystem/types@0.2.3;
+import wasi:filesystem/preopens@0.2.3;
+```
+- Local wasm execution by hash now enforces sha256sum checking of the local wasm binary against a whitelist.
+
+### Changed
+#### Determinism: 
+- added support for relaxed SIMD proposal with deterministic behaviour
+- added memory limiter support for dynamic table and linear memory allocation
+- enable other determinism settings via cranelift
+
+### New
+- Wasm Component Precompilation: Wasm Enginge gets preinitialised and Components get pre-compiled and passed into the Executor via the Executor Engine. There is support for initialising via the Executor Engine or passing pre-initialised from an external context.
+
+## [2.19.0] - 2025-07-30
+
+### Breaking changes
+- `ExtMessage` structure changed: `bm_license`, `bm_token` fields removed, `ext_message_token` field added
+- `network.endpoints` initialization changed: 
+    - If port is specified in the endpoint URL then use this port for sending messages and getting account
+    - If port is not specified in the endoint URL then use 8600 for sending and getting account
+    - For graphql - always use  http(s)://hostname/graphql url
+    - Use the specified schema (protocol) (https/http) 
+  
+## [2.18.4] - 2025-07-18
+### Fixes
+- Fixed an error decoding account data: `Invalid BOC: error decode contract data BOC base64`
+- 
+## [2.18.3] - 2025-07-08
+
+### Changed
+- Changed `api.json` file. Added properties related to module account.
+
 ## [2.18.2] - 2025-07-04
 
 ### Fixes

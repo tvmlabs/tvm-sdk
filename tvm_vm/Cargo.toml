@@ -23,6 +23,9 @@ num-traits.workspace = true
 rand.workspace = true
 similar = { features = ["bytes"], optional = true, workspace = true }
 thiserror.workspace = true
+wasmtime.workspace = true
+wasmtime-wasi.workspace = true
+wasmtime-wasi-io.workspace = true
 zstd = { default-features = false, optional = true, workspace = true }
 
 tvm_block.workspace = true
@@ -63,9 +66,7 @@ itertools = "0.12.0"
 typenum = "1.13.0"
 ff = { version = "0.13.0", features = ["derive"] }
 
-wasmtime = "33.0.0"
-wasmtime-wasi = "33.0.0"
-wasmtime-wasi-io = "33.0.0"
+rand_chacha = "0.2.2"
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -83,6 +84,7 @@ signature_no_check = []
 signature_with_id = ["tvm_block/signature_with_id"]
 verbose = []
 ci_run = []
+wasm_external = []
 
 [[bench]]
 harness = false
