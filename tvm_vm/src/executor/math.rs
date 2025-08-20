@@ -476,10 +476,13 @@ where
             .set_name_prefix(T::name_prefix())
             .set_opts(InstructionOptions::DivisionMode),
     )?;
-    let mode = engine.cmd.division_mode().clone();
+    let mode: DivMode = engine.cmd.division_mode().clone();
+    println!("FFFF");
     if !mode.is_valid() {
         return err!(ExceptionCode::InvalidOpcode);
     }
+    println!("mode: {:?}", mode.command_name());
+    println!("FFFF1");
 
     let mut n = 1;
     if mode.premultiply() && !(mode.mul_by_shift() && engine.cmd.has_length()) {
@@ -488,6 +491,8 @@ where
     if !mode.div_by_shift() || !engine.cmd.has_length() {
         n += 1
     }
+
+    println!("n: {:?}", n);
 
     fetch_stack(engine, n)?;
     for i in 0..n {
