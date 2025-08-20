@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [2.21.0] - 2025-08-20
 
 ### Fixed
+- Fix mintshell action
 - Add gas prices for Vergrth16 and Poseidon instructions
+- Add wasm binary to checl TLS data for multifactor
 
 ## [2.20.4] - 2025-08-14
 
