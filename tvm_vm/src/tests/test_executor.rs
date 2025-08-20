@@ -1922,6 +1922,7 @@ fn test_tls_wasm_from_hash_for_4_args() {
     // );
 }
 
+//////////////////////
 
 #[test]
 fn test_run_wasm_basic_tls() {
