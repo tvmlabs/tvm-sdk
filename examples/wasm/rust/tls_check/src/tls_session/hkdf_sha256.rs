@@ -1,8 +1,9 @@
 // use std::error::Error;
 // use std::io::{self, Read};
 
-const SIZE: usize = 32;
+#![allow(unused)]
 
+const SIZE: usize = 32;
 const BLOCK_SIZE: usize = 64;
 
 const CHUNK: usize = 64;

@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 const CHUNK: usize = 128;
 const INIT_0: u64 = 0x6a09e667f3bcc908;
 const INIT_1: u64 = 0xbb67ae8584caa73b;

@@ -3,6 +3,8 @@
 // use std::path::Path;
 // use std::error::Error;
 
+#![allow(unused)]
+
 pub const BASE_POINT: [u8; 32] = [
     9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
