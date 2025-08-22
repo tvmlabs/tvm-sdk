@@ -32,6 +32,21 @@ use crate::error::BlockError;
 #[path = "tests/test_merkle_update.rs"]
 mod tests;
 
+pub trait ExternalCellResolver {
+    fn resolve(&self, repr_hash: &UInt256) -> Result<Cell>;
+}
+
+pub struct DisableExternalCells;
+
+impl ExternalCellResolver for DisableExternalCells {
+    fn resolve(&self, repr_hash: &UInt256) -> Result<Cell> {
+        Err(failure::err_msg(format!(
+            "Cannot resolve external cell: {}",
+            repr_hash.to_hex_string()
+        )))
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct MerkleUpdateApplyMetrics {
     pub loaded_old_cells: usize,
@@ -278,13 +293,28 @@ impl MerkleUpdate {
 
     /// Applies update to given tree of cells by returning new updated one
     pub fn apply_for(&self, old_root: &Cell) -> Result<Cell> {
-        let old_cells = self.check(old_root, None)?;
+        self.apply_with_external_cells(old_root, DisableExternalCells)
+    }
+
+    /// Applies update to given tree of cells by returning new updated one
+    pub fn apply_with_external_cells(
+        &self,
+        old_root: &Cell,
+        external_cells: impl ExternalCellResolver,
+    ) -> Result<Cell> {
+        let mut old_cells = self.check(old_root, None)?;
 
         // cells for new bag
         if self.new_hash == self.old_hash {
             Ok(old_root.clone())
         } else {
-            let new_root = self.traverse_on_apply(&self.new, &old_cells, &mut HashMap::new(), 0)?;
+            let new_root = self.traverse_on_apply(
+                &self.new,
+                &mut old_cells,
+                &mut HashMap::new(),
+                0,
+                &external_cells,
+            )?;
 
             // constructed tree's hash have to coinside with self.new_hash
             if new_root.repr_hash() != self.new_hash {
@@ -299,15 +329,29 @@ impl MerkleUpdate {
         &self,
         old_root: &Cell,
     ) -> Result<(Cell, MerkleUpdateApplyMetrics)> {
+        self.apply_for_with_metrics_and_external_cell_resolver(old_root, DisableExternalCells)
+    }
+
+    pub fn apply_for_with_metrics_and_external_cell_resolver(
+        &self,
+        old_root: &Cell,
+        external_cells: impl ExternalCellResolver,
+    ) -> Result<(Cell, MerkleUpdateApplyMetrics)> {
         let mut metrics = MerkleUpdateApplyMetrics::default();
 
-        let old_cells = self.check(old_root, Some(&mut metrics))?;
+        let mut old_cells = self.check(old_root, Some(&mut metrics))?;
 
         // cells for new bag
         if self.new_hash == self.old_hash {
             Ok((old_root.clone(), MerkleUpdateApplyMetrics::default()))
         } else {
-            let new_root = self.traverse_on_apply(&self.new, &old_cells, &mut HashMap::new(), 0)?;
+            let new_root = self.traverse_on_apply(
+                &self.new,
+                &mut old_cells,
+                &mut HashMap::new(),
+                0,
+                &external_cells,
+            )?;
 
             // constructed tree's hash have to coinside with self.new_hash
             if new_root.repr_hash() != self.new_hash {
@@ -365,9 +409,10 @@ impl MerkleUpdate {
     fn traverse_on_apply(
         &self,
         update_cell: &Cell,
-        old_cells: &HashMap<UInt256, Cell>,
+        old_cells: &mut HashMap<UInt256, Cell>,
         new_cells: &mut HashMap<UInt256, Cell>,
         merkle_depth: u8,
+        external_cells: &impl ExternalCellResolver,
     ) -> Result<Cell> {
         // We will recursively construct new skeleton for new cells
         // and connect unchanged branches to it
@@ -395,6 +440,7 @@ impl MerkleUpdate {
                             old_cells,
                             new_cells,
                             child_merkle_depth,
+                            external_cells,
                         )?;
                         new_cells.insert(new_child_hash, c.clone());
                         c
@@ -407,12 +453,13 @@ impl MerkleUpdate {
                         // connect branch from old bag instead pruned
                         let new_child_hash =
                             Cell::hash(update_child, update_child.level() as usize - 1);
-                        old_cells
-                            .get(&new_child_hash)
-                            .ok_or_else(|| {
-                                error!("Can't get child with hash {:x}", new_child_hash)
-                            })?
-                            .clone()
+                        if let Some(existing) = old_cells.get(&new_child_hash) {
+                            existing.clone()
+                        } else {
+                            let resolved = external_cells.resolve(&new_child_hash)?;
+                            old_cells.insert(new_child_hash, resolved.clone());
+                            resolved
+                        }
                     } else {
                         // else - just copy this cell (like an ordinary)
                         update_child.clone()
