@@ -489,8 +489,6 @@ where
         n += 1
     }
 
-    println!("n: {:?}", n);
-
     fetch_stack(engine, n)?;
     for i in 0..n {
         engine.cmd.var(i).as_integer()?;
