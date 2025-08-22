@@ -240,7 +240,7 @@ impl TestClient {
         _: fn(Arc<ClientContext>, P) -> F,
         module: api_info::Module,
         function: api_info::Function,
-    ) -> AsyncFuncWrapper<P, R>
+    ) -> AsyncFuncWrapper<'_, P, R>
     where
         P: Serialize,
         R: DeserializeOwned,
@@ -258,7 +258,7 @@ impl TestClient {
         _: fn(Arc<ClientContext>, P, Arc<crate::json_interface::request::Request>) -> F,
         module: api_info::Module,
         function: api_info::Function,
-    ) -> AsyncFuncWrapper<P, R>
+    ) -> AsyncFuncWrapper<'_, P, R>
     where
         P: Serialize,
         R: DeserializeOwned,
@@ -276,7 +276,7 @@ impl TestClient {
         _: fn(Arc<ClientContext>, P) -> ClientResult<R>,
         module: api_info::Module,
         function: api_info::Function,
-    ) -> FuncWrapper<P, R>
+    ) -> FuncWrapper<'_, P, R>
     where
         P: Serialize,
         R: DeserializeOwned,
