@@ -45,8 +45,31 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 
 #[cfg(test)]
+#[path = "../tests/test_multifactor_tls_wasm_execution.rs"]
+mod test_multifactor_tls_wasm_execution;
+
+#[cfg(test)]
+#[path = "../tests/test_vergrth_poseidon_execution.rs"]
+mod test_vergrth_poseidon_execution;
+
+#[cfg(test)]
+#[path = "../tests/test_vergrth_bad_args.rs"]
+mod test_vergrth_bad_args;
+
+#[cfg(test)]
+#[path = "../tests/test_poseidon_bad_args.rs"]
+mod test_poseidon_bad_args;
+
+#[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
+
+#[path = "../tests/test_data.rs"]
+mod test_data;
+
+#[path = "../tests/test_helper.rs"]
+mod test_helper;
+
 pub mod zk;
 
 pub trait Mask {
