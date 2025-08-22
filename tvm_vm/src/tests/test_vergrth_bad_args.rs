@@ -1,33 +1,28 @@
+use std::collections::HashMap;
 
-use crate::stack::integer::IntegerData;
+use base64ct::Encoding as bEncoding;
+use fastcrypto::ed25519::Ed25519KeyPair;
+use fastcrypto::traits::KeyPair;
+use fastcrypto::traits::ToFromBytes;
 use tvm_types::SliceData;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
-use crate::executor::zk::execute_vergrth16;
-use crate::stack::Stack;
-use crate::stack::StackItem;
-use crate::stack::savelist::SaveList;
-use crate::utils::pack_data_to_cell;
-use crate::executor::zk_stuff::utils::gen_address_seed;
 use crate::executor::test_helper::*;
-
-
-use fastcrypto::ed25519::Ed25519KeyPair;
-use fastcrypto::traits::KeyPair;
-use fastcrypto::traits::ToFromBytes;
-
+use crate::executor::zk::execute_vergrth16;
+use crate::executor::zk_stuff::error::ZkCryptoError;
+use crate::executor::zk_stuff::utils::gen_address_seed;
 use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
 use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
 use crate::executor::zk_stuff::zk_login::OIDCProvider;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
-use crate::executor::zk_stuff::error::ZkCryptoError;
-use std::collections::HashMap;
-
-use base64ct::Encoding as bEncoding;
-
 use crate::executor::zk_stuff::zk_login::ZkLoginProof;
+use crate::stack::Stack;
+use crate::stack::StackItem;
+use crate::stack::integer::IntegerData;
+use crate::stack::savelist::SaveList;
+use crate::utils::pack_data_to_cell;
 
 pub struct TestPrecomputedData {
     pub public_inputs_as_bytes: Vec<u8>,
@@ -35,15 +30,14 @@ pub struct TestPrecomputedData {
 }
 
 pub fn do_initial_work() -> TestPrecomputedData {
-       
-    let user_pass_salt = "535455565748"; 
+    let user_pass_salt = "535455565748";
 
     let secret_key = [
-        222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162,
-        166, 87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14,
+        222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166,
+        87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14,
     ];
 
-    let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); 
+    let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap();
     let mut eph_pubkey = Vec::new();
     eph_pubkey.extend(ephemeral_kp.public().as_ref());
     println!("eph_pubkey: {:?}", eph_pubkey);
@@ -54,9 +48,10 @@ pub fn do_initial_work() -> TestPrecomputedData {
     let zk_seed = gen_address_seed(
         user_pass_salt,
         "sub",
-        "112897468626716626103", 
-        "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com", 
-    ).unwrap();
+        "112897468626716626103",
+        "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com",
+    )
+    .unwrap();
 
     println!("zk_seed = {:?}", zk_seed);
 
@@ -91,27 +86,25 @@ pub fn do_initial_work() -> TestPrecomputedData {
     all_jwk.insert(
         JwkId::new(
             OIDCProvider::Google.get_config().iss,
-            "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(), 
+            "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(),
         ),
         content,
     );
 
-    let (iss, kid) =
-        (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+    let (iss, kid) = (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
     let jwk = all_jwk
         .get(&JwkId::new(iss.clone(), kid.clone()))
-        .ok_or_else(|| {
-                ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
-        }).unwrap();
+        .ok_or_else(|| ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid)))
+        .unwrap();
 
-    let max_epoch = 142; 
+    let max_epoch = 142;
 
     let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n)
-        .map_err(|_| {
-                ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
-    }).unwrap();
+        .map_err(|_| ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string()))
+        .unwrap();
 
-    let public_inputs = &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+    let public_inputs =
+        &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
 
     let mut public_inputs_as_bytes = vec![];
     public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
@@ -170,7 +163,7 @@ fn test_vrgrth16_short_public_input() {
     let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
     public_inputs_as_bytes.pop();
 
-    let verification_key_id: u32 = 0; 
+    let verification_key_id: u32 = 0;
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
@@ -182,17 +175,15 @@ fn test_vrgrth16_short_public_input() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true); 
+            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
-            }
-            else {
+            } else {
                 assert!(false);
             }
         }
     }
 }
-
 
 #[test]
 fn test_vrgrth16_long_public_input() {
@@ -260,11 +251,10 @@ fn test_vrgrth16_long_public_input() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true); 
+            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
-            }
-            else {
+            } else {
                 assert!(false);
             }
         }
@@ -339,7 +329,7 @@ fn test_vrgrth16_bad_public_input() {
             let res = engine.cc.stack.get(0).as_integer().unwrap();
             println!("res: {:?}", res);
             assert!(*res == IntegerData::zero());
-        },
+        }
         Err(_) => {
             assert!(false);
         }
@@ -357,7 +347,7 @@ fn test_vrgrth16_bad_public_input() {
             let res = engine.cc.stack.get(0).as_integer().unwrap();
             println!("res: {:?}", res);
             assert!(*res == IntegerData::zero());
-        },
+        }
         Err(_) => {
             assert!(false);
         }
@@ -374,12 +364,11 @@ fn test_vrgrth16_bad_public_input() {
             let res = engine.cc.stack.get(0).as_integer().unwrap();
             println!("res: {:?}", res);
             assert!(*res == IntegerData::zero());
-        },
+        }
         Err(_) => {
             assert!(false);
         }
     };
-
 }
 
 #[test]
@@ -422,7 +411,7 @@ fn test_vrgrth16_short_proof() {
     let proof = data.proof.as_arkworks().unwrap();
     let mut proof_as_bytes = vec![];
     proof.serialize_compressed(&mut proof_as_bytes).unwrap();
-    
+
     // INTENTIONALLY SPOIL PROOF
     proof_as_bytes.pop();
 
@@ -431,7 +420,7 @@ fn test_vrgrth16_short_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0; 
+    let verification_key_id: u32 = 0;
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
@@ -443,11 +432,10 @@ fn test_vrgrth16_short_proof() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true); 
+            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
-            }
-            else {
+            } else {
                 assert!(false);
             }
         }
@@ -494,7 +482,7 @@ fn test_vrgrth16_long_proof() {
     let proof = data.proof.as_arkworks().unwrap();
     let mut proof_as_bytes = vec![];
     proof.serialize_compressed(&mut proof_as_bytes).unwrap();
-    
+
     // INTENTIONALLY SPOIL PROOF
     proof_as_bytes.push(1);
 
@@ -503,7 +491,7 @@ fn test_vrgrth16_long_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0; 
+    let verification_key_id: u32 = 0;
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
@@ -517,7 +505,7 @@ fn test_vrgrth16_long_proof() {
             let res = engine.cc.stack.get(0).as_integer().unwrap();
             println!("res: {:?}", res);
             assert!(*res == IntegerData::minus_one());
-        },
+        }
         Err(_) => {
             assert!(false);
         }
@@ -560,7 +548,7 @@ fn test_vrgrth16_long_incorrect_proof() {
         None,
         vec![],
     );
-    
+
     let proof_as_bytes = vec![1; 129];
 
     println!("proof_as_bytes : {:?}", proof_as_bytes);
@@ -568,7 +556,7 @@ fn test_vrgrth16_long_incorrect_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0; 
+    let verification_key_id: u32 = 0;
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
@@ -580,11 +568,10 @@ fn test_vrgrth16_long_incorrect_proof() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true); 
+            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
-            }
-            else {
+            } else {
                 assert!(false);
             }
         }
@@ -627,7 +614,7 @@ fn test_vrgrth16_incorrect_proof() {
         None,
         vec![],
     );
-    
+
     let proof_as_bytes = vec![2; 128];
 
     println!("proof_as_bytes : {:?}", proof_as_bytes);
@@ -635,7 +622,7 @@ fn test_vrgrth16_incorrect_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0; 
+    let verification_key_id: u32 = 0;
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
@@ -647,11 +634,10 @@ fn test_vrgrth16_incorrect_proof() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true); 
+            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
-            }
-            else {
+            } else {
                 assert!(false);
             }
         }
@@ -711,7 +697,7 @@ fn test_vrgrth16_invalid_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0; 
+    let verification_key_id: u32 = 0;
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
@@ -723,11 +709,10 @@ fn test_vrgrth16_invalid_proof() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true); 
+            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
-            }
-            else {
+            } else {
                 assert!(false);
             }
         }
@@ -787,7 +772,7 @@ fn test_vrgrth16_invalid_proof_one_more_case() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0; 
+    let verification_key_id: u32 = 0;
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
@@ -799,11 +784,10 @@ fn test_vrgrth16_invalid_proof_one_more_case() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(err) => {
-            assert!(true); 
+            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
-            }
-            else {
+            } else {
                 assert!(false);
             }
         }
