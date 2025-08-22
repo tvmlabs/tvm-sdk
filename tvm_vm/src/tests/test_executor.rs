@@ -13,6 +13,9 @@ use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
 
+use rand::Rng;
+use rand::RngCore;
+use rand::thread_rng;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_types::BuilderData;
@@ -21,18 +24,14 @@ use tvm_types::ExceptionCode;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
 
-use rand::Rng;
-use rand::RngCore;
-use rand::thread_rng;
-
 use crate::error::TvmError;
+use crate::executor::deserialization::execute_schkrefs;
 use crate::executor::engine::Engine;
 use crate::executor::math::DivMode;
+use crate::executor::math::execute_xor;
 use crate::executor::serialize_currency_collection;
 use crate::executor::token::execute_run_wasm;
 use crate::executor::token::execute_run_wasm_concat_multiarg;
-use crate::executor::deserialization::execute_schkrefs;
-use crate::executor::math::execute_xor;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::stack::Stack;
@@ -1444,14 +1443,13 @@ fn test_run_wasm_fuel_error_from_hash() {
 
 #[test]
 fn test_divmodc() {
-    
     let flags: u8 = 14;
     let mode = DivMode::with_flags(flags);
     println!("mode: {:?}", mode.command_name());
     println!("flags: {:?}", flags);
-    
-    //test_div_primitive_execution::<Signaling>(&mode);
-    //test_div_primitive_execution::<Quiet>(&mode);
+
+    // test_div_primitive_execution::<Signaling>(&mode);
+    // test_div_primitive_execution::<Quiet>(&mode);
 
     let command_name = command_name_from_mode::<Signaling>(&mode);
     println!("Flags: {:#010b}, Cmd: {}", mode.flags, command_name);
@@ -1497,11 +1495,16 @@ fn test_divmodc() {
         }
 
         let code = div_generate_bytecode::<Signaling>(&mode, mul_shift as u8, div_shift as u8);
-        let mut engine =
-        Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
+        let mut engine = Engine::with_capabilities(0).setup_with_libraries(
+            code,
+            None,
+            Some(stack),
+            None,
+            vec![],
+        );
 
         let start: Instant = Instant::now();
-        let res = engine.execute(); 
+        let res = engine.execute();
         let elapsed = start.elapsed().as_nanos();
 
         average_ = average_ + elapsed;
@@ -1514,16 +1517,15 @@ fn test_divmodc() {
                 println!("Ok!");
             }
         }
-
     }
     println!("======================");
-    let average_ =  average_ / num_iter;
-    println!("average_ in nanoseconds: {:?}", average_);    
+    let average_ = average_ / num_iter;
+    println!("average_ in nanoseconds: {:?}", average_);
 }
 
 #[test]
 fn test_schkrefs() {
-     let elector_code = load_boc("benches/elector-code.boc");
+    let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
     let config_data = load_boc("benches/config-data.boc");
     let mut ctrls = SaveList::default();
@@ -1556,7 +1558,7 @@ fn test_schkrefs() {
         None,
         vec![],
     );
-   
+
     let num_iter = 10;
     let mut average_: u128 = 0;
     for i in 0..num_iter {
@@ -1601,10 +1603,9 @@ fn test_schkrefs() {
 
         println!("elapsed in nanoseconds: {:?}", elapsed);
     }
-    
-    let average_ =  average_ / num_iter;
-    println!("average_ in nanoseconds: {:?}", average_);  
-    
+
+    let average_ = average_ / num_iter;
+    println!("average_ in nanoseconds: {:?}", average_);
 }
 
 #[test]
@@ -1642,7 +1643,7 @@ fn test_xor() {
         None,
         vec![],
     );
-   
+
     let num_iter = 10;
     let mut average_: u128 = 0;
     for i in 0..num_iter {
@@ -1667,6 +1668,6 @@ fn test_xor() {
         average_ = average_ + elapsed;
     }
 
-    let average_ =  average_ / num_iter;
-    println!("average_ in nanoseconds: {:?}", average_);      
+    let average_ = average_ / num_iter;
+    println!("average_ in nanoseconds: {:?}", average_);
 }

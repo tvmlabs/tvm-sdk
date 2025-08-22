@@ -1,26 +1,22 @@
- #![allow(unused)]
-
-use num_bigint::BigUint;
-use base64ct::Encoding as bEncoding;
-
-use serde::Deserialize;
-use serde_derive::Serialize;
+#![allow(unused)]
 
 use std::collections::HashMap;
-
 use std::iter::repeat;
 
+use base64ct::Encoding as bEncoding;
+use num_bigint::BigUint;
+use serde::Deserialize;
+use serde_derive::Serialize;
+use tvm_types::Cell;
+
+use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
 use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
-
-use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::utils::pack_data_to_cell;
-use tvm_types::Cell;
 
 pub static DEFAULT_CAPABILITIES: u64 = 0x572e;
-
 
 pub fn read_boc(filename: &str) -> Vec<u8> {
     let mut bytes = Vec::new();
@@ -88,7 +84,7 @@ pub struct JwtDataShort {
     pub modulus: String,
     pub kid: String,
     pub max_epoch: u64,
-    pub verification_key_id: u32
+    pub verification_key_id: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -97,23 +93,23 @@ pub struct JwtData {
     pub jwt: String,
     pub user_pass_to_int_format: String,
     pub ephemeral_key_pair: EphemeralKeyPair,
-    //pub zk_addr: String,
+    // pub zk_addr: String,
     pub zk_proofs: ZkProofs,
-    //pub extended_ephemeral_public_key: String,
+    // pub extended_ephemeral_public_key: String,
     pub modulus: String,
     pub kid: String,
     pub max_epoch: u64,
-    pub verification_key_id: u32
+    pub verification_key_id: u32,
 }
 
- #[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct JwtDataDecodedPart1 {
     pub alg: String,
     pub kid: String,
     pub typ: String,
 }
 
- #[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct JwtDataDecodedPart1Common {
     pub alg: String,
     pub kid: String,
@@ -132,7 +128,7 @@ pub struct JwtDataDecodedPart2Google {
     pub jti: String,
 }
 
- #[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct JwtDataDecodedPart2Facebook {
     pub iss: String,
     pub aud: String,
@@ -197,7 +193,7 @@ pub struct JwtDataDecodedPart2Kakao {
     pub auth_time: u32,
 }
 
- #[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct JwtDataDecodedPart2Microsoft {
     pub iss: String,
     pub aud: String,
@@ -243,7 +239,7 @@ pub struct JwtDataDecodedPart2KarrierOne {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct JwtDataDecodedPart2Common{
+pub struct JwtDataDecodedPart2Common {
     pub aud: String,
     pub sub: String,
 }
@@ -278,18 +274,18 @@ pub fn prepare_hex_representation(init_x: &str, y: BigUint) -> String {
     let mut binary_representation = pad_string_to_256(&to_binary_string(init_x));
 
     let p: BigUint = BigUint::from_bytes_be(&[
-            48, 100, 78, 114, 225, 49, 160, 41, 184, 80, 69, 182, 129, 129, 88, 93, 151, 129, 106,
-            145, 104, 113, 202, 141, 60, 32, 140, 22, 216, 124, 253, 71,
+        48, 100, 78, 114, 225, 49, 160, 41, 184, 80, 69, 182, 129, 129, 88, 93, 151, 129, 106, 145,
+        104, 113, 202, 141, 60, 32, 140, 22, 216, 124, 253, 71,
     ]);
 
-   
     if y > &p - &y {
         binary_representation.replace_range(0..1, "1");
     }
 
     let reversed_byte_array = bits_to_decimal_and_reverse(&binary_representation);
 
-    let hex_string = reversed_byte_array.iter().map(|byte| format!("{:02x}", byte)).collect::<String>();
+    let hex_string =
+        reversed_byte_array.iter().map(|byte| format!("{:02x}", byte)).collect::<String>();
 
     hex_string
 }

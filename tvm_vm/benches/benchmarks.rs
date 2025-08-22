@@ -10,36 +10,35 @@
 // limitations under the License.
 use std::collections::HashMap;
 use std::time::Duration;
+
 use base64ct::Encoding;
 use criterion::Criterion;
 use criterion::SamplingMode;
 use criterion::criterion_group;
 use criterion::criterion_main;
+use fastcrypto::ed25519::Ed25519KeyPair;
+use fastcrypto::traits::KeyPair;
+use fastcrypto::traits::ToFromBytes;
 use pprof::criterion::Output;
 use pprof::criterion::PProfProfiler;
+use tvm_abi::TokenValue;
+use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::Deserializable;
 use tvm_block::StateInit;
 use tvm_types::SliceData;
 use tvm_vm::executor::Engine;
+use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
+use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
+use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
+use tvm_vm::executor::zk_stuff::zk_login::JWK;
+use tvm_vm::executor::zk_stuff::zk_login::JwkId;
+use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
+use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
 use tvm_vm::stack::continuation::ContinuationData;
 use tvm_vm::stack::savelist::SaveList;
-use tvm_vm::executor::zk_stuff::error::ZkCryptoError;
-use tvm_vm::executor::zk_stuff::zk_login::JwkId;
-use tvm_vm::executor::zk_stuff::zk_login::OIDCProvider;
-use tvm_vm::executor::zk_stuff::zk_login::JWK;
-use tvm_vm::executor::zk_stuff::utils::gen_address_seed;
-use tvm_vm::executor::zk_stuff::zk_login::ZkLoginInputs;
-use tvm_vm::executor::zk_stuff::zk_login::CanonicalSerialize;
 use tvm_vm::utils::pack_data_to_cell;
-
-use fastcrypto::ed25519::Ed25519KeyPair;
-use fastcrypto::traits::ToFromBytes;
-use fastcrypto::traits::KeyPair;
-
-use tvm_abi::contract::ABI_VERSION_2_4;
-use tvm_abi::TokenValue;
 
 static DEFAULT_CAPABILITIES: u64 = 0x572e;
 
@@ -554,7 +553,7 @@ fn bench_wasmadd_no_precompile(c: &mut Criterion) {
                 );
                 engine.wasm_engine_init_cached().unwrap();
                 engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned()).unwrap();
-                //let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
+                // let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
 
                 let start = std::time::Instant::now();
                 let _ = engine.execute();
@@ -615,22 +614,22 @@ fn bench_wasmtls_without_whitelist(c: &mut Criterion) {
                     .unwrap()
                     .into_cell()
                     .unwrap();
-                
+
                 stack.push(StackItem::cell(cell.clone()));
 
                 let mut res = Vec::<u8>::with_capacity(3);
                 res.push(0xC7);
                 res.push(0x3A);
                 res.push(0x80);
-    
+
                 let code = SliceData::new(res);
 
                 let mut engine = Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
-                
+
                 let start = std::time::Instant::now();
                 let _ = engine.execute();
                 total_duration += start.elapsed();
-                
+
             }
             total_duration
         })
@@ -647,7 +646,7 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
             for _i in 0..iters {
                 let mut stack = Stack::new();
 
-                let hash_str = 
+                let hash_str =
                 //"f45dae3df26f2a45f006bd7e7d32f426e240dfd1391669953688cb40886aff11";
                 "25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
                 let hash: Vec<u8> = (0..hash_str.len())
@@ -687,14 +686,14 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
                     .unwrap()
                     .into_cell()
                     .unwrap();
-                
+
                 stack.push(StackItem::cell(cell.clone()));
 
                 let mut res = Vec::<u8>::with_capacity(3);
                 res.push(0xC7);
                 res.push(0x3A);
                 res.push(0x80);
-    
+
                 let code = SliceData::new(res);
 
                 let mut engine = Engine::with_capabilities(0).setup_with_libraries(
@@ -711,7 +710,7 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
                 let start = std::time::Instant::now();
                 let _ = engine.execute();
                 total_duration += start.elapsed();
-                
+
             }
             total_duration
         })
@@ -732,7 +731,7 @@ fn bench_poseidon(c: &mut Criterion) {
                 // password was 567890 in ascii 535455565748
                 let user_pass_salt = "535455565748";
                 let secret_key = [222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166, 87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14];
-                let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // 
+                let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //
                 let mut eph_pubkey = Vec::new();
                 eph_pubkey.extend(ephemeral_kp.public().as_ref());
                 //println!("eph_pubkey: {:?}", eph_pubkey);
@@ -767,7 +766,7 @@ fn bench_poseidon(c: &mut Criterion) {
 
                 let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
                 let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
-    
+
                 let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
                 let content: JWK = JWK {
                     kty: "RSA".to_string(),
@@ -780,7 +779,7 @@ fn bench_poseidon(c: &mut Criterion) {
                 all_jwk.insert(
                     JwkId::new(
                         OIDCProvider::Google.get_config().iss,
-                        "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(), 
+                        "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(),
                     ),
                 content,
                 );
@@ -791,7 +790,7 @@ fn bench_poseidon(c: &mut Criterion) {
                     ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
                 }).unwrap();
 
-                let max_epoch = 142; 
+                let max_epoch = 142;
 
                 let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n)
                     .map_err(|_| {
@@ -806,7 +805,7 @@ fn bench_poseidon(c: &mut Criterion) {
                 //println!("HERE public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
                 //println!("HERE public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
                 //println!("====== Start Poseidon ========");
-    
+
                 let index_mod_4 = 1;
                 stack.push(StackItem::int(index_mod_4));
                 stack.push(StackItem::int(max_epoch));
@@ -815,7 +814,7 @@ fn bench_poseidon(c: &mut Criterion) {
                 let modulus_cell = tvm_vm::utils::pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
                 //println!("modulus_cell = {:?}", modulus_cell);
                 stack.push(StackItem::cell(modulus_cell.clone()));
-    
+
                 let iss_base_64_cell = tvm_vm::utils::pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
                 //println!("iss_base_64_cell = {:?}", iss_base_64_cell);
                 stack.push(StackItem::cell(iss_base_64_cell.clone()));
@@ -832,15 +831,15 @@ fn bench_poseidon(c: &mut Criterion) {
                 res.push(0xC7);
                 res.push(0x32);
                 res.push(0x80);
-    
+
                 let code = SliceData::new(res);
 
                 let mut engine = Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
-               
+
                 let start = std::time::Instant::now();
                 let _ = engine.execute();
                 total_duration += start.elapsed();
-                
+
             }
             total_duration
 
@@ -863,7 +862,7 @@ fn bench_vergrth16(c: &mut Criterion) {
                 // password was 567890 in ascii 535455565748
                 let user_pass_salt = "535455565748";
                 let secret_key = [222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166, 87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14];
-                let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // 
+                let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); //
                 let mut eph_pubkey = Vec::new();
                 eph_pubkey.extend(ephemeral_kp.public().as_ref());
                 //println!("eph_pubkey: {:?}", eph_pubkey);
@@ -897,7 +896,7 @@ fn bench_vergrth16(c: &mut Criterion) {
 
                 //let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
                 //let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
-    
+
                 let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
                 let content: JWK = JWK {
                     kty: "RSA".to_string(),
@@ -910,7 +909,7 @@ fn bench_vergrth16(c: &mut Criterion) {
                 all_jwk.insert(
                     JwkId::new(
                         OIDCProvider::Google.get_config().iss,
-                        "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(), 
+                        "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(),
                     ),
                 content,
                 );
@@ -921,7 +920,7 @@ fn bench_vergrth16(c: &mut Criterion) {
                     ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
                 }).unwrap();
 
-                let max_epoch = 142; 
+                let max_epoch = 142;
 
                 let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n)
                     .map_err(|_| {
@@ -947,7 +946,7 @@ fn bench_vergrth16(c: &mut Criterion) {
                 let public_inputs_cell = tvm_vm::utils::pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
                 stack.push(StackItem::cell(public_inputs_cell.clone()));
 
-                let verification_key_id: u32 = 0; 
+                let verification_key_id: u32 = 0;
                 stack.push(StackItem::int(verification_key_id));
 
 
@@ -955,15 +954,15 @@ fn bench_vergrth16(c: &mut Criterion) {
                 res.push(0xC7);
                 res.push(0x31);
                 res.push(0x80);
-    
+
                 let code = SliceData::new(res);
 
                 let mut engine = Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
-               
+
                 let start = std::time::Instant::now();
                 let _ = engine.execute();
                 total_duration += start.elapsed();
-                
+
             }
             total_duration
 
