@@ -920,15 +920,9 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
         print_args!(tvc, params, sign, abi, output, debug_info);
     }
 
-    let (msg, address) = prepare_deploy_message(
-        tvc.unwrap(),
-        &abi,
-        &load_params(&params)?,
-        sign,
-        wc,
-        config,
-    )
-    .await?;
+    let (msg, address) =
+        prepare_deploy_message(tvc.unwrap(), &abi, &load_params(&params)?, sign, wc, config)
+            .await?;
     let initial_balance_opt = if let Some(initial_balance) = matches.value_of("INITIAL_BALANCE") {
         initial_balance.parse().ok()
     } else if matches.is_present("INIT_BALANCE") {

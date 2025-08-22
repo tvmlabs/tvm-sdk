@@ -323,12 +323,9 @@ pub async fn calc_storage(config: &Config, addr: &str, period: u32) -> Result<()
 
     let boc = query_account_field(client.clone(), addr, "boc").await?;
 
-    let res = calc_storage_fee(
-        client.clone(),
-        ParamsOfCalcStorageFee { account: boc, period },
-    )
-    .await
-    .map_err(|e| format!("failed to calculate storage fee: {}", e))?;
+    let res = calc_storage_fee(client.clone(), ParamsOfCalcStorageFee { account: boc, period })
+        .await
+        .map_err(|e| format!("failed to calculate storage fee: {}", e))?;
 
     if !config.is_json {
         println!("Storage fee per {} seconds: {} nanovmshells", period, res.fee);

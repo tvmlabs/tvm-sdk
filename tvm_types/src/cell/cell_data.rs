@@ -76,14 +76,7 @@ impl CellData {
         depths: Option<[u16; 4]>,
     ) -> crate::Result<Self> {
         let buffer = if cell_type == CellType::Big {
-            cell::build_big_cell_buf(
-                data,
-                level_mask,
-                refs as usize,
-                store_hashes,
-                hashes,
-                depths,
-            )?
+            cell::build_big_cell_buf(data, level_mask, refs as usize, store_hashes, hashes, depths)?
         } else {
             cell::build_cell_buf(
                 cell_type,

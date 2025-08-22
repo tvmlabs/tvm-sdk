@@ -342,12 +342,9 @@ pub async fn run_debot_browser(
     loop {
         let mut next_msg = browser.msg_queue.pop_front();
         while let Some(msg) = next_msg {
-            let parsed = parse_message(
-                ton.clone(),
-                ParamsOfParse { boc: msg.clone() },
-            )
-            .map_err(|e| format!("{}", e))?
-            .parsed;
+            let parsed = parse_message(ton.clone(), ParamsOfParse { boc: msg.clone() })
+                .map_err(|e| format!("{}", e))?
+                .parsed;
 
             let msg_dest = parsed["dst"]
                 .as_str()

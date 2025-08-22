@@ -781,13 +781,7 @@ impl ServerLink {
         }
         let result = self
             .client_env
-            .fetch(
-                url.as_ref(),
-                FetchMethod::Get,
-                Some(headers),
-                None,
-                self.config.query_timeout,
-            )
+            .fetch(url.as_ref(), FetchMethod::Get, Some(headers), None, self.config.query_timeout)
             .await;
 
         match result {

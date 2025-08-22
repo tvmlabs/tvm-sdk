@@ -281,12 +281,8 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //Average ReputationCoef
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let mut repavg = repavgbig / 1_000_000_000;
-    let rbkmin;
-    if t <= TTMT - 1 {
-        rbkmin = rbkprev / 3 * 2;
-    } else {
-        rbkmin = 0;
-    }
+
+    let rbkmin = if t < TTMT { rbkprev / 3 * 2 } else { 0 };
     if drbkavg == 0 {
         drbkavg = 1;
     }
@@ -295,7 +291,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     }
     let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg / repavg).max(rbkmin))
         .min(rbkprev);
-    engine.cc.stack.push(int!(rbk as u128));
+    engine.cc.stack.push(int!(rbk));
     Ok(())
 }
 
@@ -307,24 +303,18 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
     let rbmprev = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //previous value of rewardadjustment (not minimum)
     let mut drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let rbmmin;
-    if t <= TTMT - 1 {
-        rbmmin = rbmprev / 3 * 2;
-    } else {
-        rbmmin = 0;
-    }
-    let rbm;
+
+    let rbmmin = if t < TTMT { rbmprev / 3 * 2 } else { 0 };
+
     if drbmavg == 0 {
         drbmavg = 1;
     }
-    if is_bm {
-        rbm = (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev);
+    let rbm = if is_bm {
+        (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
     } else {
-        rbm = (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev);
-    }
-    engine.cc.stack.push(int!(rbm as u128));
+        (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
+    };
+    engine.cc.stack.push(int!(rbm));
     Ok(())
 }
 

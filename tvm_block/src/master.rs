@@ -374,12 +374,8 @@ pub struct McShardRecord {
 
 impl McShardRecord {
     pub fn from_shard_descr(shard: ShardIdent, descr: ShardDescr) -> Self {
-        let block_id = BlockIdExt::with_params(
-            shard,
-            descr.seq_no,
-            descr.root_hash,
-            descr.file_hash,
-        );
+        let block_id =
+            BlockIdExt::with_params(shard, descr.seq_no, descr.root_hash, descr.file_hash);
         Self { descr, block_id }
     }
 

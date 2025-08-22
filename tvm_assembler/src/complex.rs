@@ -836,6 +836,7 @@ fn compile_code_dict_cell(
         return Err(OperationError::CodeDictConstruction);
     }
 
+    #[allow(clippy::mutable_key_type)]
     let mut map = HashMap::new();
     let mut dict = HashmapE::with_bit_len(dict_key_bitlen);
     let mut info = DbgInfo::default();
