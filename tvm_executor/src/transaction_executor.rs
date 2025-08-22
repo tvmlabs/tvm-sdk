@@ -934,7 +934,12 @@ pub trait TransactionExecutor {
                 OutAction::MintShellQToken { mut value } => {
                     if available_credit != INFINITY_CREDIT {
                         if value as i128 + minted_shell.clone() as i128 > available_credit {
-                            value = available_credit.clone().try_into()?;
+                            if minted_shell.clone() as i128 >= available_credit {
+                                value = 0;
+                            } else {
+                                let new_value = available_credit - *minted_shell;
+                                value = new_value.try_into()?;
+                            }
                         }
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
