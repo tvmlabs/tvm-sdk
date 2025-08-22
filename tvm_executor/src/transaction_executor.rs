@@ -529,6 +529,7 @@ pub trait TransactionExecutor {
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_engine_available_credit(params.available_credit)
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
+        .set_wasm_block_time(params.block_unixtime.into())
         .extern_insert_wasm_engine(params.wasm_engine.clone())
         .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
         .create();
@@ -912,7 +913,7 @@ pub trait TransactionExecutor {
                 }
                 OutAction::MintShellToken { value } => {
                     if available_credit != INFINITY_CREDIT
-                        && value as i128 + *minted_shell > available_credit
+                        && value as i128 + minted_shell.clone() as i128 > available_credit
                     {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {

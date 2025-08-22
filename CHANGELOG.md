@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.20.5] - 2025-08-20
+
+### New
+- Error codes for different wasm-related errors for better on-chain debugging
+- Various tests related to wasm clocks
+- Wasi random functions now use block timestamps as seed.
+
+## [2.20.4] - 2025-08-14
+
+### Fixed
+- Cell optimizations
+- UsageTree refactoring + optimizations
+
+## [2.20.3] - 2025-08-14
+
+### New
+- Wasm plugs for wasi-io, wasi-clocks, wasi-random, providing access to some tvm blockchain info.
+- Matching tests and examples
+
+### Fixed
+- Major refactor of wasm-related code
+
 ## [2.20.2] - 2025-08-11
 
 ### Fixed

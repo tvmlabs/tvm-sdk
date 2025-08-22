@@ -419,7 +419,7 @@ fn test_execution_timeout() {
         SliceData::load_cell_ref(&elector_code).unwrap(),
         Some(ctrls.clone()),
         Some(stack.clone()),
-        Some(Gas::test_with_credit(1013)),
+        None,
         vec![],
     );
     let from_start = Instant::now();
@@ -1121,6 +1121,240 @@ fn test_run_wasm_fuel_error() {
 }
 
 #[test]
+fn test_run_wasm_deterministic_random_from_hash() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let stack = Stack::new();
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+    engine.wasm_engine_init_cached().unwrap();
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap(); // Should not error on empty hash list!
+
+    let hash_str = "9e3095fbdba10d1ea8303c63f7dbc4d1d51248cc2f328db909ee0546d508c954";
+    let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    let hash: Vec<u8> = (0..hash_str.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+        .collect::<Vec<u8>>();
+    let cell =
+        TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let its = 3000u32.to_be_bytes();
+    println!("Its {:?}", its);
+    let cell = TokenValue::write_bytes(&its, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "test";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_interface = "gosh:determinism/test-interface@0.1.0";
+    let cell = pack_data_to_cell(&wasm_interface.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // let filename = "";
+    let wasm_dict = Vec::<u8>::new();
+
+    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+    let status = execute_run_wasm(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", status);
+
+    let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
+    // println!("Res: {:?}", res);
+    // println!("Determinism Res: {:?}", res)
+    let mut floats = Vec::new();
+    for float in res.chunks(8) {
+        floats.push(f64::from_le_bytes(float.try_into().unwrap()));
+    }
+
+    for _k in 0..1000 {
+        let cell = TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4)
+            .unwrap()
+            .into_cell()
+            .unwrap();
+        engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+        let cell = TokenValue::write_bytes(&its, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+        engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+        let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+        engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+        let cell = pack_data_to_cell(&wasm_interface.as_bytes(), &mut engine).unwrap();
+        engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+        let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+            .unwrap()
+            .into_cell()
+            .unwrap();
+        // let cell = split_to_chain_of_cells(wasm_dict);
+        // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+        engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+        let _status = execute_run_wasm(&mut engine).unwrap();
+        // println!("Wasm Return Status: {:?}", status);
+
+        let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
+        // println!("Res: {:?}", res);
+        // println!("Determinism Res: {:?}", res)
+        let mut new_floats = Vec::new();
+        for float in res.chunks(8) {
+            new_floats.push(f64::from_le_bytes(float.try_into().unwrap()));
+        }
+        assert_eq!(new_floats, floats);
+    }
+    // let mut wtr =
+    // csv::Writer::from_path("./src/tests/determinism.csv").unwrap();
+    // wtr.serialize(floats.clone()).unwrap();
+    // wtr.flush().unwrap();
+
+    // print!("Result [");
+    // for f in floats {
+    //     print!("{:.}, ", f);
+    // }
+    // println!("]");
+    // assert!(
+    //     rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).
+    // unwrap().pop().unwrap()         == 3u8
+    // );
+}
+
+#[test]
+fn test_run_wasm_clock_from_hash() {
+    let elector_code = load_boc("benches/elector-code.boc");
+    let elector_data = load_boc("benches/elector-data.boc");
+    let config_data = load_boc("benches/config-data.boc");
+
+    let mut ctrls = SaveList::default();
+    ctrls.put(4, &mut StackItem::Cell(elector_data)).unwrap();
+    let params = vec![
+        StackItem::int(0x76ef1ea),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(1633458077),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::int(0),
+        StackItem::tuple(vec![StackItem::int(1000000000), StackItem::None]),
+        StackItem::slice(
+            SliceData::from_string(
+                "9fe0000000000000000000000000000000000000000000000000000000000000001_",
+            )
+            .unwrap(),
+        ),
+        StackItem::cell(config_data.reference(0).unwrap()),
+        StackItem::None,
+        StackItem::int(0),
+    ];
+    ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+
+    let stack = Stack::new();
+
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        SliceData::load_cell_ref(&elector_code).unwrap(),
+        Some(ctrls.clone()),
+        Some(stack.clone()),
+        None,
+        vec![],
+    );
+    engine.wasm_engine_init_cached().unwrap();
+    let mut engine = engine.precompile_all_wasm_by_hash().unwrap(); // Should not error on empty hash list!
+    engine.set_wasm_block_time(3005792924);
+
+    let hash_str = "afbe8c5a02df7d6fa5decd4d48ff0f74ecbd4dae38bb5144328354db6bd95967";
+    let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    let hash: Vec<u8> = (0..hash_str.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+        .collect::<Vec<u8>>();
+    let cell =
+        TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let its = 3000u32.to_be_bytes();
+    println!("Its {:?}", its);
+    let cell = TokenValue::write_bytes(&its, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    // Push args, func name, instance name, then wasm.
+    let wasm_func = "test";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+    let wasm_func = "gosh:determinism/test-interface@0.1.0";
+    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    // let cell = split_to_chain_of_cells(wasm_dict);
+    // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+    engine.cc.stack.push(StackItem::cell(cell.clone()));
+
+    let status = execute_run_wasm(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", status);
+
+    let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
+    println!("Res: {:?}", res);
+    // println!("Determinism Res: {:?}", res)
+    let mut floats = Vec::new();
+    for float in res.chunks(8) {
+        floats.push(f64::from_le_bytes(float.try_into().unwrap()));
+    }
+    // let mut wtr =
+    // csv::Writer::from_path("./src/tests/determinism.csv").unwrap();
+    // wtr.serialize(floats.clone()).unwrap();
+    // wtr.flush().unwrap();
+
+    // print!("Result [");
+    // for f in floats {
+    //     print!("{:.}, ", f);
+    // }
+    // println!("]");
+    // assert!(
+    //     rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).
+    // unwrap().pop().unwrap()         == 3u8
+    // );
+}
+
+#[test]
 fn test_run_wasm_fuel_error_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
@@ -1160,8 +1394,13 @@ fn test_run_wasm_fuel_error_from_hash() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash = "38a68caa4a3d3665b33c361c073664d0284a487ef11589950738362ee9b734da";
-    let cell = pack_data_to_cell(&hash.as_bytes(), &mut engine).unwrap();
+    let hash_str = "38a68caa4a3d3665b33c361c073664d0284a487ef11589950738362ee9b734da";
+    let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
+    let hash: Vec<u8> = (0..hash_str.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+        .collect::<Vec<u8>>();
+    let cell = pack_data_to_cell(&hash.as_slice(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let cell =

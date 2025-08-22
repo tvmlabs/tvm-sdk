@@ -401,7 +401,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             Some(phase)
                         }
                         Err(e) => {
-                            *minted_shell = minted_shell_orig;
+                            *minted_shell = minted_shell_orig.clone();
                             fail!(ExecutorError::TrExecutorError(format!(
                                 "cannot create action phase of a new transaction for smart contract for reason {}",
                                 e

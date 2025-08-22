@@ -94,40 +94,68 @@ impl Deserializable for OutActions {
 #[allow(clippy::large_enum_variant)]
 pub enum OutAction {
     /// Action for send message
-    SendMsg { mode: u8, out_msg: Message },
+    SendMsg {
+        mode: u8,
+        out_msg: Message,
+    },
 
     /// Action for set new code of smart-contract
-    SetCode { new_code: Cell },
+    SetCode {
+        new_code: Cell,
+    },
 
     /// Action for reserving some account balance.
     /// It is roughly equivalent to creating an output
     /// message carrying x nanograms to oneself,so that
     /// the subsequent output actions would not be able
     /// to spend more money than the remainder.
-    ReserveCurrency { mode: u8, value: CurrencyCollection },
+    ReserveCurrency {
+        mode: u8,
+        value: CurrencyCollection,
+    },
 
     /// Action for mint some token into account
-    MintToken { value: ExtraCurrencyCollection },
+    MintToken {
+        value: ExtraCurrencyCollection,
+    },
 
     /// Action for burn some token into account
-    BurnToken { value: u64, key: u32 },
+    BurnToken {
+        value: u64,
+        key: u32,
+    },
 
     /// Action for exchange some token into shell in account
-    ExchangeShell { value: u64 },
+    ExchangeShell {
+        value: u64,
+    },
 
     /// Action for change library.
-    ChangeLibrary { mode: u8, code: Option<Cell>, hash: Option<UInt256> },
+    ChangeLibrary {
+        mode: u8,
+        code: Option<Cell>,
+        hash: Option<UInt256>,
+    },
 
     /// Action for mint some shell token into account
-    MintShellToken { value: u64 },
+    MintShellToken {
+        value: u64,
+    },
 
     /// Action for mint some shell token into account
-    MintShellQToken { value: u64 },
+    MintShellQToken {
+        value: u64,
+    },
 
-    SendToDappConfigToken { value: u64 },
+    SendToDappConfigToken {
+        value: u64,
+    },
 
     /// Action for revert reward for code to code creater.
-    CopyLeft { license: u8, address: AccountId },
+    CopyLeft {
+        license: u8,
+        address: AccountId,
+    },
 
     #[default]
     None,
@@ -142,8 +170,11 @@ pub const SENDMSG_DELETE_IF_EMPTY: u8 = 32;
 pub const SENDMSG_REMAINING_MSG_BALANCE: u8 = 64;
 pub const SENDMSG_ALL_BALANCE: u8 = 128;
 // mask for cheking valid flags
-pub const SENDMSG_VALID_FLAGS: u8 =
-    SENDMSG_ORDINARY | SENDMSG_PAY_FEE_SEPARATELY | SENDMSG_EXCHANGE_ECC | SENDMSG_DELETE_IF_EMPTY | SENDMSG_ALL_BALANCE;
+pub const SENDMSG_VALID_FLAGS: u8 = SENDMSG_ORDINARY
+    | SENDMSG_PAY_FEE_SEPARATELY
+    | SENDMSG_EXCHANGE_ECC
+    | SENDMSG_DELETE_IF_EMPTY
+    | SENDMSG_ALL_BALANCE;
 
 /// variants of reserve action
 pub const RESERVE_EXACTLY: u8 = 0;
@@ -207,6 +238,7 @@ impl OutAction {
     pub fn new_mint_shellq(value: u64) -> Self {
         OutAction::MintShellQToken { value }
     }
+
     pub fn send_to_dapp_config(value: u64) -> Self {
         OutAction::SendToDappConfigToken { value }
     }
