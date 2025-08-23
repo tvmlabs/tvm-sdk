@@ -33,13 +33,16 @@ use crate::error::BlockError;
 mod tests;
 
 pub trait ExternalCellResolver {
-    fn resolve(&self, repr_hash: &UInt256) -> Result<Cell>;
+    fn add_external_cell(&mut self, repr_hash: &UInt256);
+    fn resolve(&mut self, repr_hash: &UInt256) -> Result<Cell>;
 }
 
 pub struct DisableExternalCells;
 
 impl ExternalCellResolver for DisableExternalCells {
-    fn resolve(&self, repr_hash: &UInt256) -> Result<Cell> {
+    fn add_external_cell(&mut self, _repr_hash: &UInt256) {}
+
+    fn resolve(&mut self, repr_hash: &UInt256) -> Result<Cell> {
         Err(failure::err_msg(format!(
             "Cannot resolve external cell: {}",
             repr_hash.to_hex_string()
@@ -293,16 +296,16 @@ impl MerkleUpdate {
 
     /// Applies update to given tree of cells by returning new updated one
     pub fn apply_for(&self, old_root: &Cell) -> Result<Cell> {
-        self.apply_with_external_cells(old_root, DisableExternalCells)
+        self.apply_with_external_cells(old_root, &mut DisableExternalCells)
     }
 
     /// Applies update to given tree of cells by returning new updated one
     pub fn apply_with_external_cells(
         &self,
         old_root: &Cell,
-        external_cells: impl ExternalCellResolver,
+        external_cells: &mut impl ExternalCellResolver,
     ) -> Result<Cell> {
-        let mut old_cells = self.check(old_root, None)?;
+        let mut old_cells = self.check(old_root, None, external_cells)?;
 
         // cells for new bag
         if self.new_hash == self.old_hash {
@@ -313,7 +316,7 @@ impl MerkleUpdate {
                 &mut old_cells,
                 &mut HashMap::new(),
                 0,
-                &external_cells,
+                external_cells,
             )?;
 
             // constructed tree's hash have to coinside with self.new_hash
@@ -329,17 +332,17 @@ impl MerkleUpdate {
         &self,
         old_root: &Cell,
     ) -> Result<(Cell, MerkleUpdateApplyMetrics)> {
-        self.apply_for_with_metrics_and_external_cell_resolver(old_root, DisableExternalCells)
+        self.apply_with_metrics_and_external_cell_resolver(old_root, &mut DisableExternalCells)
     }
 
-    pub fn apply_for_with_metrics_and_external_cell_resolver(
+    pub fn apply_with_metrics_and_external_cell_resolver(
         &self,
         old_root: &Cell,
-        external_cells: impl ExternalCellResolver,
+        external_cells: &mut impl ExternalCellResolver,
     ) -> Result<(Cell, MerkleUpdateApplyMetrics)> {
         let mut metrics = MerkleUpdateApplyMetrics::default();
 
-        let mut old_cells = self.check(old_root, Some(&mut metrics))?;
+        let mut old_cells = self.check(old_root, Some(&mut metrics), external_cells)?;
 
         // cells for new bag
         if self.new_hash == self.old_hash {
@@ -350,7 +353,7 @@ impl MerkleUpdate {
                 &mut old_cells,
                 &mut HashMap::new(),
                 0,
-                &external_cells,
+                external_cells,
             )?;
 
             // constructed tree's hash have to coinside with self.new_hash
@@ -368,6 +371,7 @@ impl MerkleUpdate {
         &self,
         old_root: &Cell,
         metrics: Option<&mut MerkleUpdateApplyMetrics>,
+        external_cells: &mut impl ExternalCellResolver,
     ) -> Result<HashMap<UInt256, Cell>> {
         // check that hash of `old_tree` is equal old hash from `self`
         if self.old_hash != old_root.repr_hash() {
@@ -397,6 +401,7 @@ impl MerkleUpdate {
             &mut known_cells_vals,
             &mut HashSet::new(),
             0,
+            external_cells,
         );
 
         Ok(known_cells_vals)
@@ -412,7 +417,7 @@ impl MerkleUpdate {
         old_cells: &mut HashMap<UInt256, Cell>,
         new_cells: &mut HashMap<UInt256, Cell>,
         merkle_depth: u8,
-        external_cells: &impl ExternalCellResolver,
+        external_cells: &mut impl ExternalCellResolver,
     ) -> Result<Cell> {
         // We will recursively construct new skeleton for new cells
         // and connect unchanged branches to it
@@ -642,8 +647,12 @@ impl MerkleUpdate {
         known_cells: &mut HashMap<UInt256, Cell>,
         visited: &mut HashSet<UInt256>,
         merkle_depth: u8,
+        external_cells: &mut impl ExternalCellResolver,
     ) {
         if visited.insert(cell.repr_hash()) {
+            if cell.cell_type() == CellType::External {
+                external_cells.add_external_cell(&cell.repr_hash());
+            }
             let hash = cell.hash(merkle_depth as usize);
             if known_cells_hashes.contains(&hash) {
                 known_cells.insert(hash, cell.clone());
@@ -656,6 +665,7 @@ impl MerkleUpdate {
                         known_cells,
                         visited,
                         child_merkle_depth,
+                        external_cells,
                     );
                 }
             }
