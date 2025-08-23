@@ -98,6 +98,7 @@ impl<T: ParserTracer, R: JsonReducer> BlockParser<T, R> {
             let now = std::time::Instant::now();
             let workchain_id = block_info.shard().workchain_id();
 
+            #[allow(clippy::mutable_key_type)]
             let mut block_transactions = BTreeMap::new();
 
             let mut accounts = ParserAccounts::new(&self.config, &block)?;

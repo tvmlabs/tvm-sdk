@@ -452,20 +452,20 @@ impl OutMsgQueueInfo {
         match ShardState::construct_from_cell(usage_tree.root_cell())? {
             ShardState::UnsplitState(state) => {
                 let (sq, pi) = visit_state(&state, workchain_id)?;
-                result.sub_queue_root_hash = sq.clone();
+                result.sub_queue_root_hash = sq;
                 result.root_hashes.insert(sq);
                 result.root_hashes.insert(pi);
             }
             ShardState::SplitState(split_state) => {
                 let left_ss = ShardStateUnsplit::construct_from_cell(split_state.left)?;
                 let (sq, pi) = visit_state(&left_ss, workchain_id)?;
-                result.sub_queue_root_hash = sq.clone();
+                result.sub_queue_root_hash = sq;
                 result.root_hashes.insert(sq);
                 result.root_hashes.insert(pi);
 
                 let right_ss = ShardStateUnsplit::construct_from_cell(split_state.right)?;
                 let (sq, pi) = visit_state(&right_ss, workchain_id)?;
-                result.sub_queue_root_hash_2 = Some(sq.clone());
+                result.sub_queue_root_hash_2 = Some(sq);
                 result.root_hashes.insert(sq);
                 result.root_hashes.insert(pi);
             }
@@ -683,7 +683,7 @@ impl OutMsg {
             OutMsg::New(ref x) => Some(x.out_message_cell().repr_hash()),
             OutMsg::Transit(ref x) => Some(x.out_message_cell().repr_hash()),
             OutMsg::Dequeue(ref x) => Some(x.out_message_cell().repr_hash()),
-            OutMsg::DequeueShort(ref x) => Some(x.msg_env_hash.clone()),
+            OutMsg::DequeueShort(ref x) => Some(x.msg_env_hash),
             OutMsg::DequeueImmediate(ref x) => Some(x.out_message_cell().repr_hash()),
             OutMsg::TransitRequeued(ref x) => Some(x.out_message_cell().repr_hash()),
             OutMsg::None => None,

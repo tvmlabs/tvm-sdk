@@ -73,7 +73,7 @@ impl ChainProcessor {
         &mut self,
         in_interface: &str,
         in_method: &str,
-        in_params: &Value,
+        _in_params: &Value,
     ) -> Result<Option<Value>, ProcessorError> {
         let chlink = self.chain_iter.next().ok_or(if self.interactive() {
             ProcessorError::InterfaceCallNeeded
@@ -85,7 +85,7 @@ impl ChainProcessor {
             ChainLink::Input { interface, method, params, mandatory } => {
                 if interface != in_interface {
                     if !mandatory {
-                        self.next_input(in_interface, in_method, in_params)
+                        self.next_input(in_interface, in_method, _in_params)
                     } else {
                         Err(ProcessorError::UnexpectedInterface)
                     }
@@ -116,8 +116,7 @@ impl ChainProcessor {
         let app_kind = match activity {
             DebotActivity::Transaction { .. } => ApproveKind::ApproveOnChainCall,
         };
-        let auto_approve =
-            self.pipechain.auto_approve.as_ref().map(|vec| vec.iter().any(|x| *x == app_kind));
+        let auto_approve = self.pipechain.auto_approve.as_ref().map(|vec| vec.contains(&app_kind));
 
         let chlink = self.chain_iter.next();
         if chlink.is_none() {

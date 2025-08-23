@@ -205,8 +205,7 @@ pub fn display_generated_message(
     print_encoded_message(msg, is_json);
 
     let msg_bytes = pack_message(msg, method, is_raw)?;
-    if output.is_some() {
-        let out_file = output.unwrap();
+    if let Some(out_file) = output {
         std::fs::write(out_file, msg_bytes)
             .map_err(|e| format!("cannot write message to file: {}", e))?;
         if !is_json {

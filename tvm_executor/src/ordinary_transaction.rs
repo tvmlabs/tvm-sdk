@@ -88,11 +88,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
 
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active =
+            !matches!(account.state(), Some(AccountState::AccountUninit) | None);
 
         let revert_anycast =
             self.config.global_version() >= VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
@@ -313,10 +310,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             config_params,
             ..Default::default()
         };
-        smc_info.calc_rand_seed(
-            params.seed_block.clone(),
-            &account_address.address().get_bytestring(0),
-        );
+        smc_info.calc_rand_seed(params.seed_block, &account_address.address().get_bytestring(0));
         let mut stack = Stack::new();
         stack
             .push(int!(acc_balance.grams.as_u128()))
@@ -368,7 +362,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     {
                         if !is_previous_state_active {
                             if let Some(header) = in_msg.int_header() {
-                                header.src_dapp_id().clone()
+                                *header.src_dapp_id()
                             } else {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
@@ -378,7 +372,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     } else {
                         None
                     };
-                    let minted_shell_orig = minted_shell.clone();
+                    let minted_shell_orig = *minted_shell;
                     match self.action_phase_with_copyleft(
                         &mut tr,
                         account,
@@ -396,8 +390,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
-                            if phase.success == false {
-                                *minted_shell = minted_shell_orig.clone();
+                            if !phase.success {
+                                *minted_shell = minted_shell_orig;
                             }
                             out_msgs = messages;
                             if let Some(copyleft_reward) = &copyleft_reward {
@@ -407,7 +401,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             Some(phase)
                         }
                         Err(e) => {
-                            *minted_shell = minted_shell_orig.clone();
+                            *minted_shell = minted_shell_orig;
                             fail!(ExecutorError::TrExecutorError(format!(
                                 "cannot create action phase of a new transaction for smart contract for reason {}",
                                 e

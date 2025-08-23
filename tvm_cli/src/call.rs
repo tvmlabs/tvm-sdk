@@ -121,24 +121,23 @@ pub async fn emulate_locally(
     msg: String,
     is_fee: bool,
 ) -> Result<(), String> {
-    let state: String;
-    let state_boc = query_account_field(ton.clone(), addr, "boc").await;
-    if state_boc.is_err() {
-        if is_fee {
-            let addr = tvm_block::MsgAddressInt::from_str(addr)
-                .map_err(|e| format!("couldn't decode address: {}", e))?;
-            state = base64_encode(
-                &tvm_types::write_boc(&Account::with_address(addr).serialize().map_err(|e| {
-                    format!("couldn't create dummy account for deploy emulation: {}", e)
-                })?)
-                .map_err(|e| format!("failed to serialize account cell: {}", e))?,
-            );
-        } else {
-            return Err(state_boc.err().unwrap());
+    let state = match query_account_field(ton.clone(), addr, "boc").await {
+        Ok(state_boc) => state_boc,
+        Err(err) => {
+            if is_fee {
+                let addr = tvm_block::MsgAddressInt::from_str(addr)
+                    .map_err(|e| format!("couldn't decode address: {}", e))?;
+                base64_encode(
+                    &tvm_types::write_boc(&Account::with_address(addr).serialize().map_err(
+                        |e| format!("couldn't create dummy account for deploy emulation: {}", e),
+                    )?)
+                    .map_err(|e| format!("failed to serialize account cell: {}", e))?,
+                )
+            } else {
+                return Err(err);
+            }
         }
-    } else {
-        state = state_boc.unwrap();
-    }
+    };
     let res = run_executor(
         ton.clone(),
         ParamsOfRunExecutor {

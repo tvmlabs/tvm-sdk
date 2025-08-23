@@ -176,7 +176,7 @@ impl UsageTree {
     pub fn build_visited_set(&self) -> HashSet<UInt256> {
         let mut visited = HashSet::new();
         for hash in self.visited.map.lock().keys() {
-            visited.insert(hash.clone());
+            visited.insert(*hash);
         }
         visited
     }

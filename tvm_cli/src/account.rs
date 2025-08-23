@@ -141,8 +141,8 @@ pub async fn get_account(
 
             if acc_type != "NonExist" {
                 let bal = acc.balance();
-                let balance = if bal.is_some() {
-                    let bal = bal.unwrap().grams.clone().to_string();
+                let balance = if let Some(bal) = bal {
+                    let bal = bal.grams.clone().to_string();
                     if config.balance_in_vmshells {
                         let bal = u64::from_str_radix(&bal, 10)
                             .map_err(|e| format!("failed to decode balance: {}", e))?;
@@ -178,7 +178,7 @@ pub async fn get_account(
 
                 let data_boc = if data.is_ok() {
                     hex::encode(
-                        base64_decode(&data.unwrap())
+                        base64_decode(data.unwrap())
                             .map_err(|e| format!("Failed to decode base64: {}", e))?,
                     )
                 } else {
@@ -323,12 +323,9 @@ pub async fn calc_storage(config: &Config, addr: &str, period: u32) -> Result<()
 
     let boc = query_account_field(client.clone(), addr, "boc").await?;
 
-    let res = calc_storage_fee(
-        client.clone(),
-        ParamsOfCalcStorageFee { account: boc, period, ..Default::default() },
-    )
-    .await
-    .map_err(|e| format!("failed to calculate storage fee: {}", e))?;
+    let res = calc_storage_fee(client.clone(), ParamsOfCalcStorageFee { account: boc, period })
+        .await
+        .map_err(|e| format!("failed to calculate storage fee: {}", e))?;
 
     if !config.is_json {
         println!("Storage fee per {} seconds: {} nanovmshells", period, res.fee);
@@ -410,7 +407,6 @@ pub async fn wait_for_change(
             limit: None,
             order: None,
             result: "last_trans_lt".to_owned(),
-            ..Default::default()
         },
     )
     .await
@@ -453,7 +449,6 @@ pub async fn wait_for_change(
                 },
             })),
             result: "last_trans_lt".to_owned(),
-            ..Default::default()
         },
         callback,
     )

@@ -180,7 +180,7 @@ fn build_contract_info(
         info.config_params = Some(data.clone());
     }
     if let Some(hash) = init_code_hash {
-        info.set_init_code_hash(hash.clone());
+        info.set_init_code_hash(*hash);
     }
     info.set_mycode(code);
     info
