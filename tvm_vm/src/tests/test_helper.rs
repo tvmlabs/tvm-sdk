@@ -34,10 +34,10 @@ pub fn secret_key_from_integer_map(key_data: HashMap<String, u8>) -> Vec<u8> {
     let mut vec: Vec<u8> = Vec::new();
     for i in 0..=key_data.len()/*31*//*32*/ {
         if let Some(value) = key_data.get(&i.to_string()) {
-            vec.push(value.clone());
+            vec.push(*value);
         }
     }
-    return vec;
+    vec
 }
 
 #[derive(Debug, Deserialize)]
@@ -257,7 +257,7 @@ fn pad_string_to_256(input: &str) -> String {
     }
 
     let zeros_to_add = 256 - current_length;
-    format!("{}{}", repeat('0').take(zeros_to_add).collect::<String>(), input)
+    format!("{}{}", "0".repeat(zeros_to_add), input)
 }
 
 fn bits_to_decimal_and_reverse(bits: &str) -> Vec<u8> {
@@ -291,7 +291,7 @@ pub fn prepare_hex_representation(init_x: &str, y: BigUint) -> String {
 }
 
 pub fn prepare_proof_and_public_key_cells_for_stack(
-    eph_pubkey: &Vec<u8>,
+    eph_pubkey: &[u8],
     zk_login_inputs: &ZkLoginInputs,
     all_jwk: &HashMap<JwkId, JWK>,
     max_epoch: u64,
@@ -312,7 +312,7 @@ pub fn prepare_proof_and_public_key_cells_for_stack(
 
     let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
     let public_inputs =
-        &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+        &[zk_login_inputs.calculate_all_inputs_hash(eph_pubkey, &modulus, max_epoch).unwrap()];
 
     let mut proof_as_bytes = vec![];
     proof.serialize_compressed(&mut proof_as_bytes).unwrap();

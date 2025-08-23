@@ -103,6 +103,7 @@ const ONE_PLUS_KF_Q32: i64 = ONE_Q32 + KF_Q32;
 const MAX_FREE_FLOAT_FRAC_Q32: i64 = ONE_Q32 / 3;
 const UF_Q64: i64 = 42_566_973_522; // -ln(KF / (KF + 1)) / TTMT * 2^64 = -ln(1e-2 / (1 + 1e-2)) / 2e9 * 2^64
 
+/* todo: unused
 const MV_FRAC_BITS: u32 = 32;
 const ONE: i128 = 1i128 << MV_FRAC_BITS;
 
@@ -140,6 +141,7 @@ const E_INT: [i128; 19] = [
     103_744_732_113_031_053,
     282_007_420_101_203_878,
 ];
+*/
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
@@ -726,7 +728,7 @@ fn repcoef_int(bkrt: u128) -> u128 {
     let rep_q32 = RC_ONE_Q32 + (((RC_K3_Q32 as i128 * diff_q32 as i128) >> 32) as i64);
     ((rep_q32 as i128 * RCSCALE) >> 32) as u128
 }
-
+/* todo: unused
 fn mul_fp_128(a: i128, b: i128) -> i128 {
     (a * b) >> MV_FRAC_BITS
 }
@@ -765,8 +767,8 @@ fn bc_integral_fp(bl: i128, br: i128, xl: i128, xr: i128, yd: i128, yu: i128, k:
 
 fn boost_coef_fp(dl: i128, dr: i128) -> i128 {
     let mut bc = 0i128;
-    if MV_X1 <= dl && dl <= MV_X2 {
-        if MV_X1 <= dr && dr <= MV_X2 {
+    if (MV_X1..=MV_X2).contains(&dl) {
+        if (MV_X1..=MV_X2).contains(&dr) {
             bc = bc_integral_fp(dl, dr, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1);
         } else if MV_X2 < dr && dr <= MV_X3 {
             bc = bc_integral_fp(dl, MV_X2, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1)
@@ -788,3 +790,4 @@ fn boost_coef_fp(dl: i128, dr: i128) -> i128 {
     }
     bc
 }
+*/
