@@ -1,14 +1,15 @@
-use super::fraction::fraction::Fraction;
+use std::convert::TryFrom;
+use std::ops::Not;
+use std::ops::Sub;
+use std::*;
+
 use num_bigint::{
     // 0.2.2
     BigInt,
     BigUint,
 };
-use std::{
-    convert::TryFrom,
-    ops::{Not, Sub},
-    *,
-};
+
+use super::fraction::fraction::Fraction;
 
 /// PI = 16 * atan(1/5) - 4 * atan(1/239)
 pub fn pi(precision: u64) -> String {
