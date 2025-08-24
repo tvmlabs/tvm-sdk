@@ -10,6 +10,7 @@
 // limitations under the License.
 
 use std::collections::HashSet;
+use std::fmt;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -1400,7 +1401,8 @@ fn test_run_wasm_fuel_error_from_hash() {
         .step_by(2)
         .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
         .collect::<Vec<u8>>();
-    let cell = pack_data_to_cell(&hash.as_slice(), &mut engine).unwrap();
+    let cell =
+        TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let cell =
@@ -1426,7 +1428,9 @@ fn test_run_wasm_fuel_error_from_hash() {
 
     println!("Wasm Return Status: {:?}", result);
 
-    let _res_error = result.expect_err("Test didn't error on fuel use");
+    let res_error = result.expect_err("Test didn't error on fuel use");
+    println!("{:?}", res_error.as_fail());
+    assert_eq!(format!("{}", res_error.as_fail()), "VM Exception: 0 1");
 }
 
 #[test]

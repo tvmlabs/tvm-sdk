@@ -2214,6 +2214,7 @@ pub(crate) fn check_and_get_wasm_by_hash(
         ))
         // todo!("Add hash lookup here from hash {:?}", wasm_hash);
     } else {
+        log::debug!("Using WASM Executable from args");
         Ok((wasm_executable, None))
     }
 }
