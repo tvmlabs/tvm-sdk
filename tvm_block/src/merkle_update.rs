@@ -650,11 +650,11 @@ impl MerkleUpdate {
         external_cells: &mut impl ExternalCellResolver,
     ) {
         if visited.insert(cell.repr_hash()) {
-            if cell.cell_type() == CellType::External {
-                external_cells.add_external_cell(&cell.repr_hash());
-            }
             let hash = cell.hash(merkle_depth as usize);
             if known_cells_hashes.contains(&hash) {
+                if cell.cell_type() == CellType::External {
+                    external_cells.add_external_cell(&cell.repr_hash());
+                }
                 known_cells.insert(hash, cell.clone());
                 let child_merkle_depth =
                     if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
