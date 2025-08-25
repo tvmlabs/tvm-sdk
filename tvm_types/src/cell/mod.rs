@@ -32,6 +32,7 @@ pub use boc3_cell::write_boc3;
 pub use boc3_cell::write_boc3_to_bytes;
 pub use data_cell::DataCell;
 pub use usage_cell::UsageTree;
+pub use usage_cell::USAGE_CELL_FORBIDDEN;
 
 pub const SHA256_SIZE: usize = 32;
 pub const DEPTH_SIZE: usize = 2;
