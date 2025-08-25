@@ -12,6 +12,7 @@ pub struct ParamsOfGetAccount {
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]
 pub struct ResultOfGetAccount {
     pub boc: String,
+    pub dapp_id: Option<String>,
 }
 
 #[cfg(test)]
