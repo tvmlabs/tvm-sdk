@@ -476,7 +476,7 @@ where
             .set_name_prefix(T::name_prefix())
             .set_opts(InstructionOptions::DivisionMode),
     )?;
-    let mode = engine.cmd.division_mode().clone();
+    let mode: DivMode = engine.cmd.division_mode().clone();
     if !mode.is_valid() {
         return err!(ExceptionCode::InvalidOpcode);
     }
