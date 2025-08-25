@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::hash::BuildHasher;
 use std::hash::Hasher;
+use std::ops::DerefMut;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicUsize;
-
+use std::time::Instant;
 use crate::Cell;
 use crate::UInt256;
 struct VisitedMap {
@@ -24,7 +25,10 @@ impl VisitedMap {
     }
 
     fn is_dropped(&self) -> bool {
-        self.dropped.load(std::sync::atomic::Ordering::Relaxed)
+        let start = Instant::now();
+        let res = self.dropped.load(std::sync::atomic::Ordering::Relaxed);
+        log::trace!(target: "profile_cell", "wait for lock: dropped: {}", start.elapsed().as_millis());
+        res
     }
 }
 
@@ -46,12 +50,17 @@ impl UsageCell {
     }
 
     fn visit(cell: &Arc<Self>) -> bool {
+        log::trace!(target: "profile_cell", "UsageCell::visit");
         if !cell.visited.is_dropped() {
+            let start = Instant::now();
             let mut map = cell.visited.map.lock();
+            log::trace!(target: "profile_cell", "wait for lock: map: {}", start.elapsed().as_millis());
             if map.contains_key(&cell.wrapped.repr_hash()) {
                 return true;
             }
+            let start = Instant::now();
             cell.visited.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            log::trace!(target: "profile_cell", "wait for lock: count: {}", start.elapsed().as_millis());
             map.insert(cell.wrapped.repr_hash(), Cell::Usage(cell.clone()));
             true
         } else {
@@ -76,9 +85,13 @@ impl UsageCell {
     pub fn reference(cell: &Arc<Self>, index: usize) -> crate::Result<Cell> {
         if cell.visit_on_load && !cell.visited.is_dropped() || Self::visit(cell) {
             let child = cell.wrapped.reference(index)?;
+
+            let start = Instant::now();
             if let Some(existing) = cell.visited.map.lock().get(&child.repr_hash()).cloned() {
+                log::trace!(target: "profile_cell", "wait for lock: map: {}", start.elapsed().as_millis());
                 return Ok(existing);
             }
+            log::trace!(target: "profile_cell", "wait for lock: map: {}", start.elapsed().as_millis());
             Ok(Cell::Usage(UsageCell::new_arc(child, cell.visit_on_load, cell.visited.clone())))
         } else {
             cell.wrapped.reference(index)
@@ -102,7 +115,9 @@ pub struct UsageTree {
 
 impl Drop for UsageTree {
     fn drop(&mut self) {
+        let start = Instant::now();
         self.visited.dropped.store(true, std::sync::atomic::Ordering::Release);
+        log::trace!(target: "profile_cell", "wait for lock: dropped: {}", start.elapsed().as_millis());
     }
 }
 
@@ -134,14 +149,20 @@ impl UsageTree {
     }
 
     pub fn contains(&self, hash: &UInt256) -> bool {
-        self.visited.map.lock().contains_key(hash)
+        let start = std::time::Instant::now();
+        let res = self.visited.map.lock().contains_key(hash);
+        log::trace!(target: "profile_cell", "wait for lock: map: {}", start.elapsed().as_millis());
+        res
     }
 
     pub fn build_visited_subtree(
         &self,
         is_include: &impl Fn(&UInt256) -> bool,
     ) -> crate::Result<HashSet<UInt256>> {
-        Self::build_visited_subtree_inner(&self.visited.map.lock(), is_include)
+        let start = Instant::now();
+        let res = Self::build_visited_subtree_inner(&self.visited.map.lock(), is_include);
+        log::trace!(target: "profile_cell", "wait for lock: map: {}", start.elapsed().as_millis());
+        res
     }
 
     fn build_visited_subtree_inner(
@@ -175,16 +196,26 @@ impl UsageTree {
 
     pub fn build_visited_set(&self) -> HashSet<UInt256> {
         let mut visited = HashSet::new();
+        let start = Instant::now();
         for hash in self.visited.map.lock().keys() {
             visited.insert(hash.clone());
         }
+        log::trace!(target: "profile_cell", "wait for lock: map: {}", start.elapsed().as_millis());
         visited
     }
 
     pub fn take_visited_map(&self) -> HashMap<UInt256, Cell, UInt256HashBuilder> {
+        let start = Instant::now();
         self.visited.dropped.store(true, std::sync::atomic::Ordering::Release);
+        log::trace!(target: "profile_cell", "wait for lock: dropped: {}", start.elapsed().as_millis());
+
+        let start = Instant::now();
         self.visited.count.store(0, std::sync::atomic::Ordering::Release);
-        std::mem::take(&mut self.visited.map.lock())
+        log::trace!(target: "profile_cell", "wait for lock: count: {}", start.elapsed().as_millis());
+        let start = Instant::now();
+        let res = std::mem::take(self.visited.map.lock().deref_mut());
+        log::trace!(target: "profile_cell", "wait for lock: map: {}", start.elapsed().as_millis());
+        res
     }
 
     pub fn take_visited_set(&self) -> HashSet<UInt256> {
@@ -192,7 +223,10 @@ impl UsageTree {
     }
 
     pub fn total_visited_count(&self) -> usize {
-        self.visited.count.load(std::sync::atomic::Ordering::Acquire)
+        let start = Instant::now();
+        let res = self.visited.count.load(std::sync::atomic::Ordering::Acquire);
+        log::trace!(target: "profile_cell", "wait for lock: count: {}", start.elapsed().as_millis());
+        res
     }
 }
 
