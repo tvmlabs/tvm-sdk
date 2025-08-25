@@ -29,6 +29,7 @@ serde = { workspace = true, features = ["derive", "rc"] }
 sha2.workspace = true
 smallvec = { features = ["const_new", "union", "write"], version = "1.13.1" }
 thiserror.workspace = true
+thread_local = "1.1.8"
 x25519-dalek = "2.0.0"
 parking_lot = { version = "0.12.4" }
 
