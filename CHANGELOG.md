@@ -2,10 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.21.1] - 2025-08-20
+
+### Changed/Fixed
+-  Now function `tvm_client::account` returns account boc and **dapp_id**
+
+
 ## [2.21.0] - 2025-08-20
 
-### Changed
--  Now function `tvm_client::account` returns account boc and **dapp_id**
+### Fixed
+- Fix mintshell action
+- Add gas prices for Vergrth16 and Poseidon instructions
+- Add wasm binary to checl TLS data for multifactor
+
+## [2.20.5] - 2025-08-20
+
+### New
+- Error codes for different wasm-related errors for better on-chain debugging
+- Various tests related to wasm clocks
+- Wasi random functions now use block timestamps as seed.
 
 ## [2.20.4] - 2025-08-14
 

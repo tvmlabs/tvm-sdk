@@ -35,10 +35,7 @@ mod writer;
 pub use debug::DbgPos;
 pub use writer::Unit;
 pub use writer::Units;
-
 pub mod disasm;
-
-pub mod instructions_tests;
 
 // Basic types *****************************************************************
 /// Operation Compilation result

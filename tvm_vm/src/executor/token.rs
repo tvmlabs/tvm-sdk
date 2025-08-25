@@ -103,6 +103,44 @@ const ONE_PLUS_KF_Q32: i64 = ONE_Q32 + KF_Q32;
 const MAX_FREE_FLOAT_FRAC_Q32: i64 = ONE_Q32 / 3;
 const UF_Q64: i64 = 42_566_973_522; // -ln(KF / (KF + 1)) / TTMT * 2^64 = -ln(1e-2 / (1 + 1e-2)) / 2e9 * 2^64
 
+const MV_FRAC_BITS: u32 = 32;
+const ONE: i128 = 1i128 << MV_FRAC_BITS;
+
+const MV_X1: i128 = 0;
+const MV_X2: i128 = 1_288_490_189; // 0.3 * 2^32
+const MV_X3: i128 = 3_006_477_107; // 0.7 * 2^32
+const MV_X4: i128 = 4_294_967_296; // 1.0 * 2^32
+const MV_Y1: i128 = 0;
+const MV_Y2: i128 = 286_461_212; // 0.066696948409 * 2^32
+const MV_Y3: i128 = 8_589_934_592; // 2 * 2^32
+const MV_Y4: i128 = 34_359_738_368; // 8 * 2^32
+const MV_K1: i128 = 42_949_672_960; // 10 * 2^32
+const MV_K2: i128 = 8_135_370_769; // 1.894163612445 * 2^32
+const MV_K3: i128 = 77_309_390_134; // 17.999995065464 * 2^32
+
+// e^n for n = 0..18 in Q32.32
+const E_INT: [i128; 19] = [
+    4_294_967_296,
+    11_674_931_555,
+    31_735_754_293,
+    86_266_724_208,
+    234_497_268_814,
+    637_429_664_642,
+    1_732_713_474_316,
+    4_710_003_551_159,
+    12_803_117_065_094,
+    34_802_480_465_680,
+    94_602_950_235_157,
+    257_157_480_542_844,
+    699_026_506_411_923,
+    1_900_151_049_990_741,
+    5_165_146_070_517_207,
+    14_040_322_704_823_566,
+    38_165_554_074_222_850,
+    103_744_732_113_031_053,
+    282_007_420_101_203_878,
+];
+
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
     fetch_stack(engine, 2)?;
@@ -142,27 +180,43 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     let mut wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     let s = engine.cmd.var(4).as_cell()?;
     let mut wasm_args_tail =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
     let s = engine.cmd.var(5).as_cell()?;
     let mut wasm_args_tail =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
     let s = engine.cmd.var(6).as_cell()?;
     let mut wasm_args_tail =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            e => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction {:?}", e)?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     wasm_func_args.append(&mut wasm_args_tail);
     log::debug!("WASM Args loaded {:?}", wasm_func_args);
@@ -204,7 +258,11 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     let wasm_func_args =
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
-            _ => err!(ExceptionCode::WasmLoadFail, "Failed to unpack wasm instruction")?,
+            e => err!(
+                ExceptionCode::WasmCellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
         };
     log::debug!("WASM Args loaded {:?}", wasm_func_args);
 
@@ -680,4 +738,66 @@ fn repcoef_int(bkrt: u128) -> u128 {
     let diff_q32 = RC_ONE_Q32 - rep_coef_exp_q32(x_q32);
     let rep_q32 = RC_ONE_Q32 + (((RC_K3_Q32 as i128 * diff_q32 as i128) >> 32) as i64);
     ((rep_q32 as i128 * RCSCALE) >> 32) as u128
+}
+
+fn mul_fp_128(a: i128, b: i128) -> i128 {
+    (a * b) >> MV_FRAC_BITS
+}
+fn div_fp_128(a: i128, b: i128) -> i128 {
+    (a << MV_FRAC_BITS) / b
+}
+fn add_fp_128(a: i128, b: i128) -> i128 {
+    a + b
+}
+
+fn exp_fp(x_fp: i128) -> i128 {
+    let n = (x_fp >> MV_FRAC_BITS) as usize;
+    let f = x_fp & (ONE - 1);
+    let en = E_INT[n];
+    let mut term = ONE;
+    let mut sum = ONE;
+    for k in 1..=7 {
+        term = mul_fp_128(term, f); // f^k
+        term = div_fp_128(term, (k as i128) * ONE); // f^k / k!
+        sum = add_fp_128(sum, term);
+    }
+    mul_fp_128(en, sum)
+}
+
+fn bc_integral_fp(bl: i128, br: i128, xl: i128, xr: i128, yd: i128, yu: i128, k: i128) -> i128 {
+    let dx = xr - xl;
+    let k_div = div_fp_128(k, dx);
+    let expk = exp_fp(k);
+    let term1 = mul_fp_128(
+        mul_fp_128(yu - yd, dx),
+        add_fp_128(exp_fp(mul_fp_128(k_div, br - xl)), -exp_fp(mul_fp_128(k_div, bl - xl))),
+    );
+    let term2 = mul_fp_128(mul_fp_128(k, br - bl), add_fp_128(mul_fp_128(yd, expk), -yu));
+    div_fp_128(add_fp_128(term1, term2), mul_fp_128(k, add_fp_128(expk, -ONE)))
+}
+
+fn boost_coef_fp(dl: i128, dr: i128) -> i128 {
+    let mut bc = 0i128;
+    if MV_X1 <= dl && dl <= MV_X2 {
+        if MV_X1 <= dr && dr <= MV_X2 {
+            bc = bc_integral_fp(dl, dr, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1);
+        } else if MV_X2 < dr && dr <= MV_X3 {
+            bc = bc_integral_fp(dl, MV_X2, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1)
+                + bc_integral_fp(MV_X2, dr, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2);
+        } else if MV_X3 < dr && dr <= MV_X4 {
+            bc = bc_integral_fp(dl, MV_X2, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1)
+                + bc_integral_fp(MV_X2, MV_X3, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2)
+                + bc_integral_fp(MV_X3, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
+        }
+    } else if MV_X2 < dl && dl <= MV_X3 {
+        if MV_X2 < dr && dr <= MV_X3 {
+            bc = bc_integral_fp(dl, dr, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2);
+        } else if MV_X3 < dr && dr <= MV_X4 {
+            bc = bc_integral_fp(dl, MV_X3, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2)
+                + bc_integral_fp(MV_X3, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
+        }
+    } else if MV_X3 < dl && dl <= MV_X4 && MV_X3 < dr && dr <= MV_X4 {
+        bc = bc_integral_fp(dl, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
+    }
+    bc
 }
