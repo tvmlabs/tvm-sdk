@@ -669,7 +669,7 @@ impl Cell {
         }
     }
 
-    fn is_usage_cell(&self) -> bool {
+    pub fn is_usage_cell(&self) -> bool {
         match self {
             Cell::Usage(_) => true,
             Cell::Virtual(cell) => cell.wrapped.is_usage_cell(),
@@ -677,7 +677,7 @@ impl Cell {
         }
     }
 
-    fn downcast_usage(&self) -> Cell {
+    pub fn downcast_usage(&self) -> Cell {
         match self {
             Cell::Usage(cell) => cell.wrapped.clone(),
             _ => {
