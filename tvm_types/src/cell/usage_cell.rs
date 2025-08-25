@@ -8,6 +8,12 @@ use std::sync::atomic::AtomicUsize;
 
 use crate::Cell;
 use crate::UInt256;
+
+
+thread_local! {
+    pub static USAGE_CELL_FORBIDDEN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
 struct VisitedMap {
     map: parking_lot::Mutex<HashMap<UInt256, Cell, UInt256HashBuilder>>,
     dropped: AtomicBool,
@@ -36,6 +42,7 @@ pub struct UsageCell {
 
 impl UsageCell {
     fn new_arc(wrapped: Cell, visit_on_load: bool, visited: Arc<VisitedMap>) -> Arc<UsageCell> {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         let wrapped = if wrapped.is_usage_cell() { wrapped.downcast_usage() } else { wrapped };
         let usage_cell = Self { wrapped, visit_on_load, visited };
         let arc_cell = Arc::new(usage_cell);
@@ -46,6 +53,7 @@ impl UsageCell {
     }
 
     fn visit(cell: &Arc<Self>) -> bool {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         if !cell.visited.is_dropped() {
             let mut map = cell.visited.map.lock();
             if map.contains_key(&cell.wrapped.repr_hash()) {
@@ -60,6 +68,7 @@ impl UsageCell {
     }
 
     pub(crate) fn data(cell: &Arc<Self>) -> &[u8] {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         if !cell.visit_on_load {
             Self::visit(cell);
         }
@@ -67,6 +76,7 @@ impl UsageCell {
     }
 
     pub(crate) fn raw_data(cell: &Arc<Self>) -> crate::Result<&[u8]> {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         if !cell.visit_on_load {
             Self::visit(cell);
         }
@@ -74,6 +84,7 @@ impl UsageCell {
     }
 
     pub fn reference(cell: &Arc<Self>, index: usize) -> crate::Result<Cell> {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         if cell.visit_on_load && !cell.visited.is_dropped() || Self::visit(cell) {
             let child = cell.wrapped.reference(index)?;
             if let Some(existing) = cell.visited.map.lock().get(&child.repr_hash()).cloned() {
@@ -108,32 +119,38 @@ impl Drop for UsageTree {
 
 impl UsageTree {
     pub fn with_root(root: Cell) -> Self {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         Self::with_params(root, false)
     }
 
     pub fn with_params(root: Cell, visit_on_load: bool) -> Self {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         let visited = Arc::new(VisitedMap::new());
         let root = Cell::Usage(UsageCell::new_arc(root, visit_on_load, visited.clone()));
         Self { root, visited }
     }
 
     pub fn use_cell(&self, cell: Cell, visit_on_load: bool) -> Cell {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         let usage_cell = UsageCell::new_arc(cell, visit_on_load, self.visited.clone());
         UsageCell::visit(&usage_cell);
         Cell::Usage(usage_cell)
     }
 
     pub fn use_cell_opt(&self, cell_opt: &mut Option<Cell>, visit_on_load: bool) {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         if let Some(cell) = cell_opt.as_mut() {
             *cell = self.use_cell(cell.clone(), visit_on_load);
         }
     }
 
     pub fn root_cell(&self) -> Cell {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         self.root.clone()
     }
 
     pub fn contains(&self, hash: &UInt256) -> bool {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         self.visited.map.lock().contains_key(hash)
     }
 
@@ -162,6 +179,7 @@ impl UsageTree {
         cell: &Cell,
         subvisited: &mut HashSet<UInt256>,
     ) -> crate::Result<()> {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         if subvisited.insert(cell.repr_hash()) {
             for i in 0..cell.references_count() {
                 let child_hash = cell.reference_repr_hash(i)?;
@@ -174,6 +192,7 @@ impl UsageTree {
     }
 
     pub fn build_visited_set(&self) -> HashSet<UInt256> {
+        assert!(!USAGE_CELL_FORBIDDEN.get());
         let mut visited = HashSet::new();
         for hash in self.visited.map.lock().keys() {
             visited.insert(hash.clone());
