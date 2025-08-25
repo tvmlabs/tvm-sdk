@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 
+## [2.21.1] - 2025-08-25
+
+### Added
+- Ability to resolve external cells when applying Merkle updates
+
 ## [2.21.0] - 2025-08-20
 
 ### Fixed
