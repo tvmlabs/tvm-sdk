@@ -133,7 +133,8 @@ pub struct BocWriter<'a, S: OrderedCellsStorage> {
 }
 
 pub fn write_boc(root_cell: &Cell) -> Result<Vec<u8>> {
-    let mut buf = Vec::new();
+    // 1 cell data =  data(1024b) + ref hashes(4*256b) = 256B
+    let mut buf = Vec::with_capacity(root_cell.tree_cell_count() as usize * 256);
     BocWriter::with_root(root_cell)?.write(&mut buf)?;
     Ok(buf)
 }
