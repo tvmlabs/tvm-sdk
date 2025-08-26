@@ -900,7 +900,7 @@ fn test_prepare_first_update_for_wc() -> Result<()> {
 }
 
 #[test]
-fn test_update_shard_state_with_external_cell() {
+fn test_update_shard_state_with_unloaded_account() {
     let mut shard_state_full = ShardStateUnsplit::default();
     let mut shard_accounts_full = ShardAccounts::default();
 
@@ -982,7 +982,7 @@ fn test_update_shard_state_with_external_cell() {
     };
 
     let mut shard_accounts_ext5 = shard_accounts_full.clone();
-    let acc5_root = shard_accounts_ext5.replace_with_external(&account_id5).unwrap();
+    let acc5_root = shard_accounts_ext5.replace_with_unloaded_account(&account_id5).unwrap();
     let mut shard_state_ext5 = shard_state_full.clone();
     shard_state_ext5.write_accounts(&shard_accounts_ext5).unwrap();
 
@@ -1022,7 +1022,7 @@ fn test_update_shard_state_with_external_cell() {
     shard_state_loaded.write_accounts(&shard_accounts_ext5).unwrap();
 
     let mut shard_accounts_ext6 = shard_accounts_full.clone();
-    shard_accounts_ext6.replace_with_external(&account_id6).unwrap();
+    shard_accounts_ext6.replace_with_unloaded_account(&account_id6).unwrap();
     let mut shard_state_ext6 = shard_state_full.clone();
     shard_state_ext6.write_accounts(&shard_accounts_ext6).unwrap();
 
@@ -1302,7 +1302,7 @@ fn write_cell_to_string(cell: &Cell, indent: usize, s: &mut String) {
         CellType::MerkleProof => *s += " Merkle Proof",
         CellType::MerkleUpdate => *s += " Merkle Update",
         CellType::Big => *s += " Big",
-        CellType::External => *s += " External",
+        CellType::UnloadedAccount => *s += " External",
     }
     *s += "\n";
     for child in cell.clone_references() {
