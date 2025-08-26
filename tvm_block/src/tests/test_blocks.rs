@@ -305,8 +305,8 @@ fn test_real_tvm_boc() {
 fn test_real_tvm_mgs() {
     // let in_path = Path::new("src/tests/data/wallet-query.boc");
     // let in_path = Path::new("src/tests/data/new-wallet-query.boc");
-    // let in_path = Path::new("src/tests/data/send-to-query.boc");
-    let in_path = Path::new("src/tests/data/int-msg-query.boc");
+    let in_path = Path::new("src/tests/data/send-to-query.boc");
+    // let in_path = Path::new("src/tests/data/int-msg-query.boc");
 
     println!("MSG file: {:?}", in_path);
     let root_cell = read_file_de_and_serialise(in_path);
