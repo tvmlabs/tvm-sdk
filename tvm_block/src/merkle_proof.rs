@@ -147,7 +147,7 @@ impl MerkleProof {
         pruned_branches: &mut Option<HashSet<UInt256>>,
         done_cells: &mut HashMap<UInt256, Cell>,
     ) -> Result<Cell> {
-        if cell.cell_type() == CellType::External {
+        if cell.cell_type() == CellType::UnloadedAccount {
             fail!("External cell can not be included into Merkle proof");
         }
         // println!("traversing {:?}", cell);
