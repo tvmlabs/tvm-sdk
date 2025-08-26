@@ -937,10 +937,11 @@ fn test_update_shard_state_with_unloaded_account() {
         let acc = modifier(&mut old_state, &mut new_state);
 
         let update = if fast {
+            let usage = usage_tree.take_visited_set();
             MerkleUpdate::create_fast(
                 &old_state.serialize().unwrap(),
                 &new_state.serialize().unwrap(),
-                |hash| usage_tree.contains(hash),
+                |hash| usage.contains(hash),
             )?
         } else {
             MerkleUpdate::create(&old_state.serialize().unwrap(), &new_state.serialize().unwrap())?
@@ -981,10 +982,10 @@ fn test_update_shard_state_with_unloaded_account() {
         Some(shard_acc)
     };
 
-    let mut shard_accounts_ext5 = shard_accounts_full.clone();
-    let acc5_root = shard_accounts_ext5.replace_with_unloaded_account(&account_id5).unwrap();
-    let mut shard_state_ext5 = shard_state_full.clone();
-    shard_state_ext5.write_accounts(&shard_accounts_ext5).unwrap();
+    let mut shard_accounts_unl5 = shard_accounts_full.clone();
+    let acc5_root = shard_accounts_unl5.replace_with_unloaded_account(&account_id5).unwrap();
+    let mut shard_state_unl5 = shard_state_full.clone();
+    shard_state_unl5.write_accounts(&shard_accounts_unl5).unwrap();
 
     let add_balance_ext = |_old_state: &mut ShardStateUnsplit,
                            new_state: &mut ShardStateUnsplit|
@@ -1015,44 +1016,44 @@ fn test_update_shard_state_with_unloaded_account() {
         result
     };
 
-    let mut shard_acc = shard_accounts_ext5.account(&account_id5.clone().into()).unwrap().unwrap();
+    let mut shard_acc = shard_accounts_unl5.account(&account_id5.clone().into()).unwrap().unwrap();
     shard_acc.set_account_cell(acc5_root.clone());
-    shard_accounts_ext5.insert(&account_id5, &shard_acc).unwrap();
-    let mut shard_state_loaded = shard_state_ext5.clone();
-    shard_state_loaded.write_accounts(&shard_accounts_ext5).unwrap();
+    shard_accounts_unl5.insert(&account_id5, &shard_acc).unwrap();
+    let mut shard_state_loaded = shard_state_unl5.clone();
+    shard_state_loaded.write_accounts(&shard_accounts_unl5).unwrap();
 
-    let mut shard_accounts_ext6 = shard_accounts_full.clone();
-    shard_accounts_ext6.replace_with_unloaded_account(&account_id6).unwrap();
-    let mut shard_state_ext6 = shard_state_full.clone();
-    shard_state_ext6.write_accounts(&shard_accounts_ext6).unwrap();
+    let mut shard_accounts_unl6 = shard_accounts_full.clone();
+    shard_accounts_unl6.replace_with_unloaded_account(&account_id6).unwrap();
+    let mut shard_state_unl6 = shard_state_full.clone();
+    shard_state_unl6.write_accounts(&shard_accounts_unl6).unwrap();
 
     let update_full_full =
         create_apply_and_check(&shard_state_full, &shard_state_full, false, &add_balance).unwrap();
 
     assert!(
-        create_apply_and_check(&shard_state_full, &shard_state_ext5, false, &add_balance).is_err()
+        create_apply_and_check(&shard_state_full, &shard_state_unl5, false, &add_balance).is_err()
     );
     assert!(
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &add_balance_ext)
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, false, &add_balance_ext)
             .is_err()
     );
     assert!(
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &add_balance_ext)
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, false, &add_balance_ext)
             .is_err()
     );
 
-    let update_ext_full = create_apply_and_check(
-        &shard_state_ext5,
+    let update_unl_full = create_apply_and_check(
+        &shard_state_unl5,
         &shard_state_full,
         false,
         &add_balance_ext_update,
     )
     .unwrap();
-    assert_eq!(update_full_full, update_ext_full);
+    assert_eq!(update_full_full, update_unl_full);
     assert!(
         create_apply_and_check(
-            &shard_state_ext5,
-            &shard_state_ext5,
+            &shard_state_unl5,
+            &shard_state_unl5,
             false,
             &add_balance_ext_update
         )
@@ -1063,7 +1064,7 @@ fn test_update_shard_state_with_unloaded_account() {
         create_apply_and_check(&shard_state_full, &shard_state_loaded, false, &add_balance)
             .unwrap();
     let update_ext_ext = create_apply_and_check(
-        &shard_state_ext5,
+        &shard_state_unl5,
         &shard_state_loaded,
         false,
         &add_balance_ext_update,
@@ -1073,11 +1074,11 @@ fn test_update_shard_state_with_unloaded_account() {
     assert_eq!(update_full_full, update_ext_ext);
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext6, &shard_state_full, false, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_full, false, &add_balance).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext6, false, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl6, false, &add_balance).unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, false, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_unl6, false, &add_balance).unwrap();
 
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
@@ -1087,30 +1088,30 @@ fn test_update_shard_state_with_unloaded_account() {
         create_apply_and_check(&shard_state_full, &shard_state_full, true, &add_balance).unwrap();
 
     assert!(
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &add_balance_ext)
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &add_balance_ext)
             .is_err()
     );
     assert!(
-        create_apply_and_check(&shard_state_full, &shard_state_ext5, true, &add_balance).is_err()
+        create_apply_and_check(&shard_state_full, &shard_state_unl5, true, &add_balance).is_err()
     );
     assert!(
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &add_balance_ext)
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext)
             .is_err()
     );
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &add_balance_ext_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &add_balance_ext_update)
             .unwrap();
     assert_ne!(update_full_full, update_ext_full);
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &add_balance_ext_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext_update)
             .unwrap();
     assert_ne!(update_full_full, update_ext_ext);
 
     let update_full_ext =
         create_apply_and_check(&shard_state_full, &shard_state_loaded, true, &add_balance).unwrap();
     let update_ext_ext = create_apply_and_check(
-        &shard_state_ext5,
+        &shard_state_unl5,
         &shard_state_loaded,
         true,
         &add_balance_ext_update,
@@ -1120,11 +1121,11 @@ fn test_update_shard_state_with_unloaded_account() {
     assert_ne!(update_full_full, update_ext_ext);
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext6, &shard_state_full, true, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_full, true, &add_balance).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext6, true, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl6, true, &add_balance).unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, true, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_unl6, true, &add_balance).unwrap();
 
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
@@ -1159,18 +1160,18 @@ fn test_update_shard_state_with_unloaded_account() {
     let update_full_full =
         create_apply_and_check(&shard_state_full, &shard_state_full, false, &remove).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext5, false, &remove).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl5, false, &remove).unwrap();
     assert_eq!(update_full_full, update_full_ext);
 
-    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &remove).is_err());
-    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_unl5, &shard_state_full, false, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_unl5, &shard_state_unl5, false, &remove).is_err());
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &remove_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, false, &remove_update)
             .unwrap();
     assert_eq!(update_full_full, update_ext_full);
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &remove_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, false, &remove_update)
             .unwrap();
     assert_eq!(update_full_full, update_ext_ext);
 
@@ -1178,17 +1179,17 @@ fn test_update_shard_state_with_unloaded_account() {
         create_apply_and_check(&shard_state_full, &shard_state_loaded, false, &remove_update)
             .unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_loaded, false, &remove_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_loaded, false, &remove_update)
             .unwrap();
     assert_eq!(update_full_full, update_full_ext);
     assert_eq!(update_full_full, update_ext_ext);
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext6, &shard_state_full, false, &remove).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_full, false, &remove).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext6, false, &remove).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl6, false, &remove).unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, false, &remove).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_unl6, false, &remove).unwrap();
 
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
@@ -1197,34 +1198,34 @@ fn test_update_shard_state_with_unloaded_account() {
     let update_full_full =
         create_apply_and_check(&shard_state_full, &shard_state_full, true, &remove).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext5, true, &remove).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl5, true, &remove).unwrap();
     assert_eq!(update_full_full, update_full_ext);
 
-    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &remove).is_err());
-    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &remove).is_err());
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &remove_update).unwrap();
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &remove_update).unwrap();
     assert_eq!(update_full_full, update_ext_full);
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &remove_update).unwrap();
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &remove_update).unwrap();
     assert_eq!(update_full_full, update_ext_ext);
 
     let update_full_ext =
         create_apply_and_check(&shard_state_full, &shard_state_loaded, true, &remove_update)
             .unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_loaded, true, &remove_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_loaded, true, &remove_update)
             .unwrap();
     assert_eq!(update_full_full, update_full_ext);
     assert_eq!(update_full_full, update_ext_ext);
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext6, &shard_state_full, true, &remove).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_full, true, &remove).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext6, true, &remove).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl6, true, &remove).unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, true, &remove).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_unl6, true, &remove).unwrap();
 
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
