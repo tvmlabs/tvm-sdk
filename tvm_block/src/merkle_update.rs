@@ -32,19 +32,19 @@ use crate::error::BlockError;
 #[path = "tests/test_merkle_update.rs"]
 mod tests;
 
-pub trait ExternalCellResolver {
-    fn add_external_cell(&mut self, repr_hash: &UInt256);
-    fn resolve(&mut self, repr_hash: &UInt256) -> Result<Cell>;
+pub trait UnloadedAccountsResolver {
+    fn add_unloaded_account_hash(&mut self, repr_hash: &UInt256);
+    fn resolve_cell_from_unloaded_accounts(&mut self, repr_hash: &UInt256) -> Result<Cell>;
 }
 
-pub struct DisableExternalCells;
+pub struct DisableUnloadedAccounts;
 
-impl ExternalCellResolver for DisableExternalCells {
-    fn add_external_cell(&mut self, _repr_hash: &UInt256) {}
+impl UnloadedAccountsResolver for DisableUnloadedAccounts {
+    fn add_unloaded_account_hash(&mut self, _repr_hash: &UInt256) {}
 
-    fn resolve(&mut self, repr_hash: &UInt256) -> Result<Cell> {
+    fn resolve_cell_from_unloaded_accounts(&mut self, repr_hash: &UInt256) -> Result<Cell> {
         Err(failure::err_msg(format!(
-            "Cannot resolve external cell: {}",
+            "Cannot resolve cell from unloaded accounts: {}",
             repr_hash.to_hex_string()
         )))
     }
@@ -296,16 +296,16 @@ impl MerkleUpdate {
 
     /// Applies update to given tree of cells by returning new updated one
     pub fn apply_for(&self, old_root: &Cell) -> Result<Cell> {
-        self.apply_with_external_cells(old_root, &mut DisableExternalCells)
+        self.apply_with_unloaded_accounts(old_root, &mut DisableUnloadedAccounts)
     }
 
     /// Applies update to given tree of cells by returning new updated one
-    pub fn apply_with_external_cells(
+    pub fn apply_with_unloaded_accounts(
         &self,
         old_root: &Cell,
-        external_cells: &mut impl ExternalCellResolver,
+        unloaded_accounts_resolver: &mut impl UnloadedAccountsResolver,
     ) -> Result<Cell> {
-        let mut old_cells = self.check(old_root, None, external_cells)?;
+        let mut old_cells = self.check(old_root, None, unloaded_accounts_resolver)?;
 
         // cells for new bag
         if self.new_hash == self.old_hash {
@@ -316,7 +316,7 @@ impl MerkleUpdate {
                 &mut old_cells,
                 &mut HashMap::new(),
                 0,
-                external_cells,
+                unloaded_accounts_resolver,
             )?;
 
             // constructed tree's hash have to coinside with self.new_hash
@@ -332,17 +332,20 @@ impl MerkleUpdate {
         &self,
         old_root: &Cell,
     ) -> Result<(Cell, MerkleUpdateApplyMetrics)> {
-        self.apply_with_metrics_and_external_cell_resolver(old_root, &mut DisableExternalCells)
+        self.apply_with_metrics_and_unloaded_accounts_resolver(
+            old_root,
+            &mut DisableUnloadedAccounts,
+        )
     }
 
-    pub fn apply_with_metrics_and_external_cell_resolver(
+    pub fn apply_with_metrics_and_unloaded_accounts_resolver(
         &self,
         old_root: &Cell,
-        external_cells: &mut impl ExternalCellResolver,
+        unloaded_accounts_resolver: &mut impl UnloadedAccountsResolver,
     ) -> Result<(Cell, MerkleUpdateApplyMetrics)> {
         let mut metrics = MerkleUpdateApplyMetrics::default();
 
-        let mut old_cells = self.check(old_root, Some(&mut metrics), external_cells)?;
+        let mut old_cells = self.check(old_root, Some(&mut metrics), unloaded_accounts_resolver)?;
 
         // cells for new bag
         if self.new_hash == self.old_hash {
@@ -353,7 +356,7 @@ impl MerkleUpdate {
                 &mut old_cells,
                 &mut HashMap::new(),
                 0,
-                external_cells,
+                unloaded_accounts_resolver,
             )?;
 
             // constructed tree's hash have to coinside with self.new_hash
@@ -371,7 +374,7 @@ impl MerkleUpdate {
         &self,
         old_root: &Cell,
         metrics: Option<&mut MerkleUpdateApplyMetrics>,
-        external_cells: &mut impl ExternalCellResolver,
+        unloaded_accounts_resolver: &mut impl UnloadedAccountsResolver,
     ) -> Result<HashMap<UInt256, Cell>> {
         // check that hash of `old_tree` is equal old hash from `self`
         if self.old_hash != old_root.repr_hash() {
@@ -401,7 +404,7 @@ impl MerkleUpdate {
             &mut known_cells_vals,
             &mut HashSet::new(),
             0,
-            external_cells,
+            unloaded_accounts_resolver,
         );
 
         Ok(known_cells_vals)
@@ -417,7 +420,7 @@ impl MerkleUpdate {
         old_cells: &mut HashMap<UInt256, Cell>,
         new_cells: &mut HashMap<UInt256, Cell>,
         merkle_depth: u8,
-        external_cells: &mut impl ExternalCellResolver,
+        unloaded_accounts_resolver: &mut impl UnloadedAccountsResolver,
     ) -> Result<Cell> {
         // We will recursively construct new skeleton for new cells
         // and connect unchanged branches to it
@@ -445,7 +448,7 @@ impl MerkleUpdate {
                             old_cells,
                             new_cells,
                             child_merkle_depth,
-                            external_cells,
+                            unloaded_accounts_resolver,
                         )?;
                         new_cells.insert(new_child_hash, c.clone());
                         c
@@ -461,7 +464,8 @@ impl MerkleUpdate {
                         if let Some(existing) = old_cells.get(&new_child_hash) {
                             existing.clone()
                         } else {
-                            let resolved = external_cells.resolve(&new_child_hash)?;
+                            let resolved = unloaded_accounts_resolver
+                                .resolve_cell_from_unloaded_accounts(&new_child_hash)?;
                             old_cells.insert(new_child_hash, resolved.clone());
                             resolved
                         }
@@ -486,7 +490,7 @@ impl MerkleUpdate {
         new_cell: &Cell,
         common_pruned: &HashMap<UInt256, Cell>,
     ) -> Result<BuilderData> {
-        if new_cell.cell_type() == CellType::External {
+        if new_cell.cell_type() == CellType::UnloadedAccount {
             fail!("External cell can not be included into Merkle update");
         }
 
@@ -519,7 +523,7 @@ impl MerkleUpdate {
         pruned_branches: &mut HashMap<UInt256, Cell>,
         mut merkle_depth: u8,
     ) -> Result<Option<BuilderData>> {
-        if old_cell.cell_type() == CellType::External {
+        if old_cell.cell_type() == CellType::UnloadedAccount {
             fail!("External cell can not be included into Merkle update");
         }
 
@@ -647,13 +651,13 @@ impl MerkleUpdate {
         known_cells: &mut HashMap<UInt256, Cell>,
         visited: &mut HashSet<UInt256>,
         merkle_depth: u8,
-        external_cells: &mut impl ExternalCellResolver,
+        unloaded_accounts_resolver: &mut impl UnloadedAccountsResolver,
     ) {
         if visited.insert(cell.repr_hash()) {
             let hash = cell.hash(merkle_depth as usize);
             if known_cells_hashes.contains(&hash) {
-                if cell.cell_type() == CellType::External {
-                    external_cells.add_external_cell(&cell.repr_hash());
+                if cell.cell_type() == CellType::UnloadedAccount {
+                    unloaded_accounts_resolver.add_unloaded_account_hash(&cell.repr_hash());
                 }
                 known_cells.insert(hash, cell.clone());
                 let child_merkle_depth =
@@ -665,7 +669,7 @@ impl MerkleUpdate {
                         known_cells,
                         visited,
                         child_merkle_depth,
-                        external_cells,
+                        unloaded_accounts_resolver,
                     );
                 }
             }
@@ -679,7 +683,7 @@ impl MerkleUpdate {
         pruned_branches: &mut HashSet<UInt256>,
         done_cells: &mut HashMap<UInt256, Cell>,
     ) -> Result<Cell> {
-        if cell.cell_type() == CellType::External {
+        if cell.cell_type() == CellType::UnloadedAccount {
             pruned_branches.insert(cell.repr_hash());
             return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
         }
@@ -718,7 +722,7 @@ impl MerkleUpdate {
         merkle_depth: u8,
         done_cells: &mut HashMap<UInt256, Cell>,
     ) -> Result<Cell> {
-        if cell.cell_type() == CellType::External {
+        if cell.cell_type() == CellType::UnloadedAccount {
             return Self::build_pruned_branch(cell, merkle_depth)?.into_cell();
         }
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
