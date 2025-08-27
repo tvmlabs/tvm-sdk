@@ -10,7 +10,7 @@
 // limitations under the License.
 
 use super::*;
-use crate::ExternalCellStruct;
+use crate::AccountCellStruct;
 use crate::generate_test_account_by_init_code_hash;
 use crate::write_read_and_assert;
 
@@ -48,18 +48,18 @@ fn test_external_account_serialization() {
 
     let account_id = UInt256::from([5u8].as_slice());
     let account = shard_acc.account(&account_id.clone().into()).unwrap().unwrap();
-    assert!(matches!(account.read_account().unwrap(), ExternalCellStruct::Struct(_)));
+    assert!(matches!(account.read_account().unwrap(), AccountCellStruct::Struct(_)));
 
     let serialized_full = shard_acc.serialize().unwrap();
-    let acc_cell = shard_acc.replace_with_external(&account_id).unwrap();
+    let acc_cell = shard_acc.replace_with_unloaded_account(&account_id).unwrap();
 
     shard_acc = write_read_and_assert(shard_acc);
 
-    let serialized_external = shard_acc.serialize().unwrap();
-    assert_eq!(serialized_full.repr_hash(), serialized_external.repr_hash());
+    let serialized_unloaded = shard_acc.serialize().unwrap();
+    assert_eq!(serialized_full.repr_hash(), serialized_unloaded.repr_hash());
 
     let account = shard_acc.account(&account_id.clone().into()).unwrap().unwrap();
-    assert!(matches!(account.read_account().unwrap(), ExternalCellStruct::External(_)));
+    assert!(matches!(account.read_account().unwrap(), AccountCellStruct::Unloaded(_)));
 
     let account = ShardAccount::with_account_root(
         acc_cell,
@@ -70,8 +70,8 @@ fn test_external_account_serialization() {
     shard_acc.insert(&account_id, &account).unwrap();
 
     let account = shard_acc.account(&account_id.into()).unwrap().unwrap();
-    assert!(matches!(account.read_account().unwrap(), ExternalCellStruct::Struct(_)));
+    assert!(matches!(account.read_account().unwrap(), AccountCellStruct::Struct(_)));
 
     let serialized_full = shard_acc.serialize().unwrap();
-    assert_eq!(serialized_full.repr_hash(), serialized_external.repr_hash());
+    assert_eq!(serialized_full.repr_hash(), serialized_unloaded.repr_hash());
 }
