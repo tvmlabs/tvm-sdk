@@ -250,10 +250,10 @@ impl DataCell {
                 // cells count + tree bits count
                 let min_required_len = 8 * (UNLOADED_ACCOUNT_CELL_MIN_SIZE);
                 if bit_len < min_required_len {
-                    fail!("fail creating external cell: bit_len {} < {}", bit_len, min_required_len)
+                    fail!("fail creating unloaded account cell: bit_len {} < {}", bit_len, min_required_len)
                 }
                 if !self.references.is_empty() {
-                    fail!("fail creating external cell: references {} != 0", self.references.len())
+                    fail!("fail creating unloaded account cell: references {} != 0", self.references.len())
                 }
                 let lengths_offset = 1 + SHA256_SIZE + 2;
                 let mut reader = Cursor::new(&self.data()[lengths_offset..]);
@@ -264,7 +264,7 @@ impl DataCell {
                 if bit_len != 8 * (lengths_offset + 1 + tree_bits_count_len + tree_cells_count_len)
                 {
                     fail!(
-                        "fail creating external cell: bit_len {} != {}",
+                        "fail creating unloaded account cell: bit_len {} != {}",
                         bit_len,
                         8 * (lengths_offset + 1 + tree_bits_count_len + tree_cells_count_len)
                     )
@@ -280,7 +280,7 @@ impl DataCell {
                 self.tree_bits_count = tree_bits_count;
                 self.tree_cell_count = tree_cell_count;
 
-                // hashes are not calculated for external cell
+                // hashes are not calculated for unloaded account cell
                 return Ok(());
             }
             CellType::Unknown => {

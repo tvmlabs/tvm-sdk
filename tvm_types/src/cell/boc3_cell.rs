@@ -307,7 +307,7 @@ impl Boc3Cell {
                 index = 0;
             }
         }
-        // external cell has only representation hash
+        // Unloaded account cell has only representation hash
         if cell_type == CellType::UnloadedAccount {
             let offset = 1;
             return cell::cell_data(raw_data)[offset..offset + SHA256_SIZE].into();
@@ -333,7 +333,7 @@ impl Boc3Cell {
                 index = 0;
             }
         }
-        // external cell has only representation hash
+        // Unloaded account cell has only representation hash
         if cell_type == CellType::UnloadedAccount {
             let offset = 1 + SHA256_SIZE;
             let data = cell::cell_data(cell_raw);

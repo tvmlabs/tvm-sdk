@@ -202,7 +202,7 @@ impl CellData {
                 index = 0;
             }
         }
-        // external cell has only representation hash
+        // Unloaded account cell has only representation hash
         if self.cell_type() == CellType::UnloadedAccount {
             let offset = 1;
             return &self.data()[offset..offset + SHA256_SIZE];
@@ -227,7 +227,7 @@ impl CellData {
                 index = 0;
             }
         }
-        // external cell stores only representation depth
+        // Unloaded account cell stores only representation depth
         if self.cell_type() == CellType::UnloadedAccount {
             let offset = 1 + SHA256_SIZE;
             let data = self.data();
