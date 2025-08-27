@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.21.2] - 2025-08-26
+
+### Added
+- Ability to resolve unloaded account cells when applying Merkle updates
+
+## [2.21.1] - 2025-08-20
+
+### Changed/Fixed
+-  Now function `tvm_client::account` returns account boc and **dapp_id**
+
 
 ## [2.21.0] - 2025-08-20
 
