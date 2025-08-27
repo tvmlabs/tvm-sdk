@@ -899,6 +899,48 @@ fn test_prepare_first_update_for_wc() -> Result<()> {
     Ok(())
 }
 
+fn print_tree(cell: &Cell) {
+    fn title(cell: &Cell) -> String {
+        format!(
+            "{} {}{}",
+            match cell.cell_type() {
+                CellType::Unknown => "?",
+                CellType::Ordinary => "○",
+                CellType::PrunedBranch => "\x1b[38;5;250m◌ prn\x1b[0m",
+                CellType::LibraryReference => "☐",
+                CellType::MerkleProof => "✓",
+                CellType::MerkleUpdate => "↻",
+                CellType::Big => "■",
+                CellType::UnloadedAccount => "\x1b[31m▒ unl\x1b[0m",
+            },
+            cell.repr_hash().to_hex_string()[0..6].to_string(),
+            if cell.references_count() == 0 {
+                "".to_string()
+            } else {
+                format!(" [{}]", cell.references_count())
+            }
+        )
+    }
+
+    fn print_cell(cell: &Cell, prefix: &str, is_last: bool) {
+        let connector = if is_last { "└ " } else { "├ " };
+        println!("{prefix}{connector}{}", title(cell));
+
+        let next_prefix = if is_last { format!("{prefix}   ") } else { format!("{prefix}│  ") };
+
+        for i in 0..cell.references_count() {
+            let child = cell.reference(i).unwrap();
+            let last = i + 1 == cell.references_count();
+            print_cell(&child, &next_prefix, last);
+        }
+    }
+
+    println!("{}", title(cell));
+    for i in 0..cell.references_count() {
+        print_cell(&cell.reference(i).unwrap(), "", i + 1 == cell.references_count());
+    }
+}
+
 #[test]
 fn test_update_shard_state_with_unloaded_account() {
     let mut shard_state_full = ShardStateUnsplit::default();
@@ -917,6 +959,7 @@ fn test_update_shard_state_with_unloaded_account() {
             .unwrap();
     }
     shard_state_full.write_accounts(&shard_accounts_full).unwrap();
+    let shard_state_full = shard_state_full;
     let account_id5 = UInt256::from([60].as_slice());
     let account_id6 = UInt256::from([50].as_slice());
 
@@ -940,7 +983,6 @@ fn test_update_shard_state_with_unloaded_account() {
         let new_state_root = new_state.serialize().unwrap();
         let update = if fast {
             let usage = usage_tree.take_visited_set();
-            println!("usage: {}", usage.len());
             MerkleUpdate::create_fast(&old_state_root, &new_state_root, |hash| {
                 usage.contains(hash)
             })?
@@ -987,6 +1029,7 @@ fn test_update_shard_state_with_unloaded_account() {
     let acc5_root = shard_accounts_unl5.replace_with_unloaded_account(&account_id5).unwrap();
     let mut shard_state_unl5 = shard_state_full.clone();
     shard_state_unl5.write_accounts(&shard_accounts_unl5).unwrap();
+    let shard_state_unl5 = shard_state_unl5;
 
     let add_balance_ext = |_old_state: &mut ShardStateUnsplit,
                            new_state: &mut ShardStateUnsplit|
@@ -1022,15 +1065,26 @@ fn test_update_shard_state_with_unloaded_account() {
     shard_accounts_unl5.insert(&account_id5, &shard_acc).unwrap();
     let mut shard_state_loaded = shard_state_unl5.clone();
     shard_state_loaded.write_accounts(&shard_accounts_unl5).unwrap();
+    let shard_state_loaded = shard_state_loaded;
 
     let mut shard_accounts_unl6 = shard_accounts_full.clone();
     shard_accounts_unl6.replace_with_unloaded_account(&account_id6).unwrap();
     let mut shard_state_unl6 = shard_state_full.clone();
     shard_state_unl6.write_accounts(&shard_accounts_unl6).unwrap();
+    let shard_state_unl6 = shard_state_unl6;
 
     let update_full_full =
         create_apply_and_check(&shard_state_full, &shard_state_full, false, &add_balance).unwrap();
 
+    // `shard_state_unl5` is the same as `shard_state_full`, but with unloaded acc5.
+    // Merkle create steps:
+    // - collect all cells from new state, including unloaded cell
+    // - traverse old state, prune one of the parent of unloaded cell
+    //   and skips traverse down
+    // - traverse new state and stop traverse down on unloaded parent because it was pruned in
+    //   merkle old
+    // So merkle create must be succeeded
+    //
     assert!(
         create_apply_and_check(&shard_state_full, &shard_state_unl5, false, &add_balance).is_err()
     );
@@ -1090,11 +1144,15 @@ fn test_update_shard_state_with_unloaded_account() {
 
     assert!(
         create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &add_balance_ext)
-            .is_err()
+            .is_ok()
     );
     assert!(
         create_apply_and_check(&shard_state_full, &shard_state_unl5, true, &add_balance).is_err()
     );
+
+    let update = create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext).unwrap();
+    print_tree(&update.old);
+    print_tree(&update.new);
     assert!(
         create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext)
             .is_err()
