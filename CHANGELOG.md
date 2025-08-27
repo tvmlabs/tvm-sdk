@@ -2,10 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.21.2] - 2025-08-26
+## [2.21.3] - 2025-08-26
 
 ### Added
 - Ability to resolve unloaded account cells when applying Merkle updates
+
+## [2.21.2] - 2025-08-27
+
+### Added
+- Ability to write BOC into generic Write destination
 
 ## [2.21.1] - 2025-08-20
 
