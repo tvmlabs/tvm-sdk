@@ -900,7 +900,6 @@ fn test_prepare_first_update_for_wc() -> Result<()> {
 }
 
 #[test]
-#[ignore] // todo: fix test
 fn test_update_shard_state_with_unloaded_account() {
     let mut shard_state_full = ShardStateUnsplit::default();
     let mut shard_accounts_full = ShardAccounts::default();
@@ -937,15 +936,16 @@ fn test_update_shard_state_with_unloaded_account() {
 
         let acc = modifier(&mut old_state, &mut new_state);
 
+        let old_state_root = old_state.serialize().unwrap();
+        let new_state_root = new_state.serialize().unwrap();
         let update = if fast {
             let usage = usage_tree.take_visited_set();
-            MerkleUpdate::create_fast(
-                &old_state.serialize().unwrap(),
-                &new_state.serialize().unwrap(),
-                |hash| usage.contains(hash),
-            )?
+            println!("usage: {}", usage.len());
+            MerkleUpdate::create_fast(&old_state_root, &new_state_root, |hash| {
+                usage.contains(hash)
+            })?
         } else {
-            MerkleUpdate::create(&old_state.serialize().unwrap(), &new_state.serialize().unwrap())?
+            MerkleUpdate::create(&old_state_root, &new_state_root)?
         };
 
         let new_state_acc = apply_to

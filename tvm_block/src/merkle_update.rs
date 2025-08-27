@@ -491,7 +491,7 @@ impl MerkleUpdate {
         common_pruned: &HashMap<UInt256, Cell>,
     ) -> Result<BuilderData> {
         if new_cell.cell_type() == CellType::UnloadedAccount {
-            fail!("External cell can not be included into Merkle update");
+            fail!("Unloaded account cell can not be included into Merkle update");
         }
 
         let mut new_update_cell = BuilderData::new();
@@ -524,7 +524,7 @@ impl MerkleUpdate {
         mut merkle_depth: u8,
     ) -> Result<Option<BuilderData>> {
         if old_cell.cell_type() == CellType::UnloadedAccount {
-            fail!("External cell can not be included into Merkle update");
+            fail!("Unloaded account cell can not be included into Merkle update");
         }
 
         if old_cell.is_merkle() {
