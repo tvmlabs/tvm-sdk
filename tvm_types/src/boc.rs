@@ -138,6 +138,10 @@ pub fn write_boc(root_cell: &Cell) -> Result<Vec<u8>> {
     Ok(buf)
 }
 
+pub fn write_boc_to<T: Write>(root_cell: &Cell, dest: &mut T) -> Result<()> {
+    BocWriter::with_root(root_cell)?.write(dest)
+}
+
 impl<'a> BocWriter<'a, SimpleOrderedCellsStorage> {
     pub fn with_root(root_cell: &'a Cell) -> Result<Self> {
         Self::with_roots([root_cell.clone()])
