@@ -1811,7 +1811,7 @@ impl AccountBlock {
                         self.account_addr
                     ))
                 })?
-                .account_cell()
+                .account_cell()?
                 .repr_hash();
             let new_hash = new_state
                 .read_accounts()?
@@ -1822,7 +1822,7 @@ impl AccountBlock {
                         self.account_addr
                     ))
                 })?
-                .account_cell()
+                .account_cell()?
                 .repr_hash();
             self.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
         }
