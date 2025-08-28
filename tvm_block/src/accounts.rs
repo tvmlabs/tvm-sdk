@@ -609,6 +609,13 @@ impl OptionalAccount {
             _ => fail!("Account was replaced with stub")
         }
     }
+
+    pub fn is_stub(&self) -> bool {
+        match self {
+            OptionalAccount::Account(_) => false,
+            OptionalAccount::AccountStub => true,
+        }
+    }
 }
 
 impl PartialEq for OptionalAccount {
@@ -1375,6 +1382,10 @@ impl ShardAccount {
 
     pub fn is_external(&self) -> bool {
         self.account.get_account().map(|a| a.is_external()).unwrap_or(false)
+    }
+
+    pub fn is_stub(&self) -> bool {
+        self.account.is_stub()
     }
 }
 
