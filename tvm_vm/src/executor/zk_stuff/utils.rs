@@ -1,16 +1,19 @@
 use std::str::FromStr;
-
+use fastcrypto::rsa::Base64UrlUnpadded;
 use fastcrypto::hash::Blake2b256;
 use fastcrypto::hash::HashFunction;
 use num_bigint::BigUint;
 use serde::Deserialize;
 use serde::Serialize;
-
+use serde_json::json;
+use base64ct::Encoding;
+use reqwest::Client;
 use super::zk_login::hash_ascii_str_to_field;
 use crate::executor::zk::Bn254Fr;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
+use crate::executor::zk_stuff::zk_login::ZkLoginInputsReader;
 
 const MAX_KEY_CLAIM_NAME_LENGTH: u8 = 32;
 const MAX_KEY_CLAIM_VALUE_LENGTH: u8 = 115;
@@ -80,3 +83,63 @@ pub struct TestIssuerJWTResponse {
     /// JWT token string.
     pub jwt: String,
 }
+
+/// Call the prover backend to get the zkLogin inputs based on jwt_token, max_epoch, jwt_randomness, eph_pubkey and salt.
+pub async fn get_proof(
+    jwt_token: &str,
+    max_epoch: u64,
+    jwt_randomness: &str,
+    eph_pubkey: &str,
+    salt: &str,
+    prover_url: &str,
+) -> Result<ZkLoginInputsReader, ZkCryptoError> {
+    let body = json!({
+    "jwt": jwt_token,
+    "extendedEphemeralPublicKey": eph_pubkey,
+    "maxEpoch": max_epoch,
+    "jwtRandomness": jwt_randomness,
+    "salt": salt,
+    "keyClaimName": "sub",
+    });
+    let client = Client::new();
+    let response = client
+        .post(prover_url.to_string())
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|_| ZkCryptoError::InvalidInput)?;
+    let full_bytes = response
+        .bytes()
+        .await
+        .map_err(|_| ZkCryptoError::InvalidInput)?;
+
+    let get_proof_response: ZkLoginInputsReader =
+        serde_json::from_slice(&full_bytes).map_err(|_| ZkCryptoError::InvalidInput)?;
+    Ok(get_proof_response)
+}
+
+/// Calculate the nonce for the given parameters. Nonce is defined as the Base64Url encoded of the poseidon hash of 4 inputs:
+/// first half of eph_pk_bytes in BigInt, second half of eph_pk_bytes in BigInt, max_epoch and jwt_randomness.
+pub fn get_nonce(
+    eph_pk_bytes: &[u8],
+    max_epoch: u64,
+    jwt_randomness: &str,
+) -> Result<String, ZkCryptoError> {
+    let (first, second) = split_to_two_frs(eph_pk_bytes)?;
+
+    let max_epoch = Bn254Fr::from_str(&max_epoch.to_string())
+        .expect("max_epoch.to_string is always non empty string without trailing zeros");
+    let jwt_randomness =
+        Bn254Fr::from_str(jwt_randomness).map_err(|_| ZkCryptoError::InvalidInput)?;
+
+    let hash = poseidon_zk_login([first, second, max_epoch, jwt_randomness].to_vec())
+        .expect("inputs is not too long");
+    let data = BigUint::from(hash).to_bytes_be();
+    let truncated = &data[data.len() - 20..];
+    let mut buf = vec![0; Base64UrlUnpadded::encoded_len(truncated)];
+    Ok(Base64UrlUnpadded::encode(truncated, &mut buf)
+        .unwrap()
+        .to_string())
+}
+
