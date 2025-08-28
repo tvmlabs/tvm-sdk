@@ -103,43 +103,44 @@ const ONE_PLUS_KF_Q32: i64 = ONE_Q32 + KF_Q32;
 const MAX_FREE_FLOAT_FRAC_Q32: i64 = ONE_Q32 / 3;
 const UF_Q64: i64 = 42_566_973_522; // -ln(KF / (KF + 1)) / TTMT * 2^64 = -ln(1e-2 / (1 + 1e-2)) / 2e9 * 2^64
 
-const MV_FRAC_BITS: u32 = 32;
-const ONE: i128 = 1i128 << MV_FRAC_BITS;
-
-const MV_X1: i128 = 0;
-const MV_X2: i128 = 1_288_490_189; // 0.3 * 2^32
-const MV_X3: i128 = 3_006_477_107; // 0.7 * 2^32
-const MV_X4: i128 = 4_294_967_296; // 1.0 * 2^32
-const MV_Y1: i128 = 0;
-const MV_Y2: i128 = 286_461_212; // 0.066696948409 * 2^32
-const MV_Y3: i128 = 8_589_934_592; // 2 * 2^32
-const MV_Y4: i128 = 34_359_738_368; // 8 * 2^32
-const MV_K1: i128 = 42_949_672_960; // 10 * 2^32
-const MV_K2: i128 = 8_135_370_769; // 1.894163612445 * 2^32
-const MV_K3: i128 = 77_309_390_134; // 17.999995065464 * 2^32
-
+// todo: unused
+// const MV_FRAC_BITS: u32 = 32;
+// const ONE: i128 = 1i128 << MV_FRAC_BITS;
+//
+// const MV_X1: i128 = 0;
+// const MV_X2: i128 = 1_288_490_189; // 0.3 * 2^32
+// const MV_X3: i128 = 3_006_477_107; // 0.7 * 2^32
+// const MV_X4: i128 = 4_294_967_296; // 1.0 * 2^32
+// const MV_Y1: i128 = 0;
+// const MV_Y2: i128 = 286_461_212; // 0.066696948409 * 2^32
+// const MV_Y3: i128 = 8_589_934_592; // 2 * 2^32
+// const MV_Y4: i128 = 34_359_738_368; // 8 * 2^32
+// const MV_K1: i128 = 42_949_672_960; // 10 * 2^32
+// const MV_K2: i128 = 8_135_370_769; // 1.894163612445 * 2^32
+// const MV_K3: i128 = 77_309_390_134; // 17.999995065464 * 2^32
+//
 // e^n for n = 0..18 in Q32.32
-const E_INT: [i128; 19] = [
-    4_294_967_296,
-    11_674_931_555,
-    31_735_754_293,
-    86_266_724_208,
-    234_497_268_814,
-    637_429_664_642,
-    1_732_713_474_316,
-    4_710_003_551_159,
-    12_803_117_065_094,
-    34_802_480_465_680,
-    94_602_950_235_157,
-    257_157_480_542_844,
-    699_026_506_411_923,
-    1_900_151_049_990_741,
-    5_165_146_070_517_207,
-    14_040_322_704_823_566,
-    38_165_554_074_222_850,
-    103_744_732_113_031_053,
-    282_007_420_101_203_878,
-];
+// const E_INT: [i128; 19] = [
+// 4_294_967_296,
+// 11_674_931_555,
+// 31_735_754_293,
+// 86_266_724_208,
+// 234_497_268_814,
+// 637_429_664_642,
+// 1_732_713_474_316,
+// 4_710_003_551_159,
+// 12_803_117_065_094,
+// 34_802_480_465_680,
+// 94_602_950_235_157,
+// 257_157_480_542_844,
+// 699_026_506_411_923,
+// 1_900_151_049_990_741,
+// 5_165_146_070_517_207,
+// 14_040_322_704_823_566,
+// 38_165_554_074_222_850,
+// 103_744_732_113_031_053,
+// 282_007_420_101_203_878,
+// ];
 
 pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("MINTECC"))?;
@@ -299,7 +300,7 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCREPCOEF"))?;
     fetch_stack(engine, 1)?;
-    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u128;
+    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?;
     let repcoef = repcoef_int(bkrt);
     engine.cc.stack.push(int!(repcoef));
     Ok(())
@@ -319,12 +320,8 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //Average ReputationCoef
     let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let mut repavg = repavgbig / 1_000_000_000;
-    let rbkmin;
-    if t <= TTMT - 1 {
-        rbkmin = rbkprev / 3 * 2;
-    } else {
-        rbkmin = 0;
-    }
+
+    let rbkmin = if t < TTMT { rbkprev / 3 * 2 } else { 0 };
     if drbkavg == 0 {
         drbkavg = 1;
     }
@@ -333,7 +330,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     }
     let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg / repavg).max(rbkmin))
         .min(rbkprev);
-    engine.cc.stack.push(int!(rbk as u128));
+    engine.cc.stack.push(int!(rbk));
     Ok(())
 }
 
@@ -345,24 +342,18 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
     let rbmprev = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //previous value of rewardadjustment (not minimum)
     let mut drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let rbmmin;
-    if t <= TTMT - 1 {
-        rbmmin = rbmprev / 3 * 2;
-    } else {
-        rbmmin = 0;
-    }
-    let rbm;
+
+    let rbmmin = if t < TTMT { rbmprev / 3 * 2 } else { 0 };
+
     if drbmavg == 0 {
         drbmavg = 1;
     }
-    if is_bm {
-        rbm = (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev);
+    let rbm = if is_bm {
+        (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
     } else {
-        rbm = (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev);
-    }
-    engine.cc.stack.push(int!(rbm as u128));
+        (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
+    };
+    engine.cc.stack.push(int!(rbm));
     Ok(())
 }
 
@@ -400,7 +391,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepers
     let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)?; //last calculated reward_adjustment
-    repcoef = repcoef / 1000000000;
+    repcoef /= 1000000000;
     let reward;
     if totalbkstake == 0 {
         if nbk == 0 {
@@ -413,7 +404,7 @@ pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status 
     } else {
         reward = 0;
     }
-    engine.cc.stack.push(int!(reward as u128));
+    engine.cc.stack.push(int!(reward));
     Ok(())
 }
 
@@ -425,13 +416,10 @@ pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Sta
     let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?;
     let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let _pubkey_cell = engine.cmd.var(4).as_cell()?;
-    let reward;
-    if mbm >= TOTALSUPPLY / 10 || count_bm == 0 {
-        reward = 0;
-    } else {
-        reward = radj * depoch / count_bm;
-    }
-    engine.cc.stack.push(int!(reward as u128));
+
+    let reward =
+        if mbm >= TOTALSUPPLY / 10 || count_bm == 0 { 0 } else { radj * depoch / count_bm };
+    engine.cc.stack.push(int!(reward));
     Ok(())
 }
 
@@ -455,14 +443,14 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepersAtBlockStart
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
-    let sbkbase;
-    if mbkav != 0 {
+
+    let sbkbase = if mbkav != 0 {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-        sbkbase = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) / 2 / nbk as u128;
+        ((mbkav * one_minus_fstk_q32) >> 32) / 2 / nbk
     } else {
-        sbkbase = 0;
-    }
-    engine.cc.stack.push(int!(sbkbase as u128));
+        0
+    };
+    engine.cc.stack.push(int!(sbkbase));
     Ok(())
 }
 
@@ -470,11 +458,11 @@ pub(super) fn execute_calculate_min_stake_bm(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKEBM"))?;
     fetch_stack(engine, 2)?;
-    let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start 
+    let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start
     let mbkav = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-    let sbkmin = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) as u128;
-    engine.cc.stack.push(int!(sbkmin as u128));
+    let sbkmin = (mbkav * one_minus_fstk_q32) >> 32;
+    engine.cc.stack.push(int!(sbkmin));
     Ok(())
 }
 
@@ -657,7 +645,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     let _sum = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
     let _radj = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
     let _depoch = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    engine.cc.stack.push(int!(0 as u128));
+    engine.cc.stack.push(int!(0_u128));
     Ok(())
     // let u = mbn * g / sum;
     // let reward;
@@ -739,65 +727,65 @@ fn repcoef_int(bkrt: u128) -> u128 {
     let rep_q32 = RC_ONE_Q32 + (((RC_K3_Q32 as i128 * diff_q32 as i128) >> 32) as i64);
     ((rep_q32 as i128 * RCSCALE) >> 32) as u128
 }
-
-fn mul_fp_128(a: i128, b: i128) -> i128 {
-    (a * b) >> MV_FRAC_BITS
-}
-fn div_fp_128(a: i128, b: i128) -> i128 {
-    (a << MV_FRAC_BITS) / b
-}
-fn add_fp_128(a: i128, b: i128) -> i128 {
-    a + b
-}
-
-fn exp_fp(x_fp: i128) -> i128 {
-    let n = (x_fp >> MV_FRAC_BITS) as usize;
-    let f = x_fp & (ONE - 1);
-    let en = E_INT[n];
-    let mut term = ONE;
-    let mut sum = ONE;
-    for k in 1..=7 {
-        term = mul_fp_128(term, f); // f^k
-        term = div_fp_128(term, (k as i128) * ONE); // f^k / k!
-        sum = add_fp_128(sum, term);
-    }
-    mul_fp_128(en, sum)
-}
-
-fn bc_integral_fp(bl: i128, br: i128, xl: i128, xr: i128, yd: i128, yu: i128, k: i128) -> i128 {
-    let dx = xr - xl;
-    let k_div = div_fp_128(k, dx);
-    let expk = exp_fp(k);
-    let term1 = mul_fp_128(
-        mul_fp_128(yu - yd, dx),
-        add_fp_128(exp_fp(mul_fp_128(k_div, br - xl)), -exp_fp(mul_fp_128(k_div, bl - xl))),
-    );
-    let term2 = mul_fp_128(mul_fp_128(k, br - bl), add_fp_128(mul_fp_128(yd, expk), -yu));
-    div_fp_128(add_fp_128(term1, term2), mul_fp_128(k, add_fp_128(expk, -ONE)))
-}
-
-fn boost_coef_fp(dl: i128, dr: i128) -> i128 {
-    let mut bc = 0i128;
-    if MV_X1 <= dl && dl <= MV_X2 {
-        if MV_X1 <= dr && dr <= MV_X2 {
-            bc = bc_integral_fp(dl, dr, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1);
-        } else if MV_X2 < dr && dr <= MV_X3 {
-            bc = bc_integral_fp(dl, MV_X2, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1)
-                + bc_integral_fp(MV_X2, dr, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2);
-        } else if MV_X3 < dr && dr <= MV_X4 {
-            bc = bc_integral_fp(dl, MV_X2, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1)
-                + bc_integral_fp(MV_X2, MV_X3, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2)
-                + bc_integral_fp(MV_X3, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
-        }
-    } else if MV_X2 < dl && dl <= MV_X3 {
-        if MV_X2 < dr && dr <= MV_X3 {
-            bc = bc_integral_fp(dl, dr, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2);
-        } else if MV_X3 < dr && dr <= MV_X4 {
-            bc = bc_integral_fp(dl, MV_X3, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2)
-                + bc_integral_fp(MV_X3, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
-        }
-    } else if MV_X3 < dl && dl <= MV_X4 && MV_X3 < dr && dr <= MV_X4 {
-        bc = bc_integral_fp(dl, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
-    }
-    bc
-}
+// todo: unused
+// fn mul_fp_128(a: i128, b: i128) -> i128 {
+// (a * b) >> MV_FRAC_BITS
+// }
+// fn div_fp_128(a: i128, b: i128) -> i128 {
+// (a << MV_FRAC_BITS) / b
+// }
+// fn add_fp_128(a: i128, b: i128) -> i128 {
+// a + b
+// }
+//
+// fn exp_fp(x_fp: i128) -> i128 {
+// let n = (x_fp >> MV_FRAC_BITS) as usize;
+// let f = x_fp & (ONE - 1);
+// let en = E_INT[n];
+// let mut term = ONE;
+// let mut sum = ONE;
+// for k in 1..=7 {
+// term = mul_fp_128(term, f); // f^k
+// term = div_fp_128(term, (k as i128) * ONE); // f^k / k!
+// sum = add_fp_128(sum, term);
+// }
+// mul_fp_128(en, sum)
+// }
+//
+// fn bc_integral_fp(bl: i128, br: i128, xl: i128, xr: i128, yd: i128, yu: i128,
+// k: i128) -> i128 { let dx = xr - xl;
+// let k_div = div_fp_128(k, dx);
+// let expk = exp_fp(k);
+// let term1 = mul_fp_128(
+// mul_fp_128(yu - yd, dx),
+// add_fp_128(exp_fp(mul_fp_128(k_div, br - xl)), -exp_fp(mul_fp_128(k_div, bl -
+// xl))), );
+// let term2 = mul_fp_128(mul_fp_128(k, br - bl), add_fp_128(mul_fp_128(yd,
+// expk), -yu)); div_fp_128(add_fp_128(term1, term2), mul_fp_128(k,
+// add_fp_128(expk, -ONE))) }
+//
+// fn boost_coef_fp(dl: i128, dr: i128) -> i128 {
+// let mut bc = 0i128;
+// if (MV_X1..=MV_X2).contains(&dl) {
+// if (MV_X1..=MV_X2).contains(&dr) {
+// bc = bc_integral_fp(dl, dr, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1);
+// } else if MV_X2 < dr && dr <= MV_X3 {
+// bc = bc_integral_fp(dl, MV_X2, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1)
+// + bc_integral_fp(MV_X2, dr, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2);
+// } else if MV_X3 < dr && dr <= MV_X4 {
+// bc = bc_integral_fp(dl, MV_X2, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1)
+// + bc_integral_fp(MV_X2, MV_X3, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2)
+// + bc_integral_fp(MV_X3, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
+// }
+// } else if MV_X2 < dl && dl <= MV_X3 {
+// if MV_X2 < dr && dr <= MV_X3 {
+// bc = bc_integral_fp(dl, dr, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2);
+// } else if MV_X3 < dr && dr <= MV_X4 {
+// bc = bc_integral_fp(dl, MV_X3, MV_X2, MV_X3, MV_Y2, MV_Y3, MV_K2)
+// + bc_integral_fp(MV_X3, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
+// }
+// } else if MV_X3 < dl && dl <= MV_X4 && MV_X3 < dr && dr <= MV_X4 {
+// bc = bc_integral_fp(dl, dr, MV_X3, MV_X4, MV_Y3, MV_Y4, MV_K3);
+// }
+// bc
+// }

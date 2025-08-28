@@ -209,11 +209,8 @@ pub trait TransactionExecutor {
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active =
+            !matches!(account.state(), Some(AccountState::AccountUninit) | None);
         log::trace!(target: "executor", "previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
             self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
@@ -506,7 +503,7 @@ pub trait TransactionExecutor {
         smc_info.set_mycode(code.clone());
         smc_info.set_storage_fee(storage_fee);
         if let Some(init_code_hash) = result_acc.init_code_hash() {
-            smc_info.set_init_code_hash(init_code_hash.clone());
+            smc_info.set_init_code_hash(*init_code_hash);
         }
         let mut vm = VMSetup::with_context(
             SliceData::load_cell(code)?,
@@ -696,7 +693,7 @@ pub trait TransactionExecutor {
         need_to_burn: Grams,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
-        let mut need_to_reserve = need_to_burn.as_u64_quiet().clone();
+        let mut need_to_reserve = need_to_burn.as_u64_quiet();
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
@@ -916,7 +913,7 @@ pub trait TransactionExecutor {
                 }
                 OutAction::MintShellToken { value } => {
                     if available_credit != INFINITY_CREDIT
-                        && value as i128 + minted_shell.clone() as i128 > available_credit
+                        && value as i128 + *minted_shell > available_credit
                     {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {
@@ -932,14 +929,14 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellQToken { mut value } => {
-                    if available_credit != INFINITY_CREDIT {
-                        if value as i128 + minted_shell.clone() as i128 > available_credit {
-                            if minted_shell.clone() as i128 >= available_credit {
-                                value = 0;
-                            } else {
-                                let new_value = available_credit - *minted_shell;
-                                value = new_value.try_into()?;
-                            }
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + *minted_shell > available_credit
+                    {
+                        if *minted_shell >= available_credit {
+                            value = 0;
+                        } else {
+                            let new_value = available_credit - *minted_shell;
+                            value = new_value.try_into()?;
                         }
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
@@ -987,7 +984,7 @@ pub trait TransactionExecutor {
         }
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
             if let Some(header) = out_msg.int_header_mut() {
-                header.set_src_dapp_id(message_src_dapp_id.clone());
+                header.set_src_dapp_id(message_src_dapp_id);
             }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
@@ -1029,10 +1026,8 @@ pub trait TransactionExecutor {
                 if process_err_code(err_code, i, &mut phase)? {
                     return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
                 }
-            } else {
-                if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
-                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
-                }
+            } else if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
 
