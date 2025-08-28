@@ -10,6 +10,7 @@
 // limitations under the License.
 use std::collections::HashMap;
 use std::time::Instant;
+use std::env;
 
 use base64::decode;
 use base64ct::Encoding as bEncoding;
@@ -20,6 +21,8 @@ use fastcrypto::traits::ToFromBytes;
 use num_bigint::BigUint;
 use num_traits::Zero;
 use rand::rngs::OsRng;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 use serde_json::Value;
 use tvm_types::Cell;
 use tvm_types::SliceData;
@@ -32,6 +35,8 @@ use crate::executor::zk::execute_poseidon_zk_login;
 use crate::executor::zk::execute_vergrth16;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::utils::gen_address_seed;
+use crate::executor::zk_stuff::utils::get_proof;
+use crate::executor::zk_stuff::utils::get_nonce;
 use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
 use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
@@ -53,6 +58,9 @@ const KAKAO: &str = "kakao";
 const SLACK: &str = "slack";
 const KARRIER_ONE: &str = "karrier_one";
 const MICROSOFT: &str = "microsoft";
+
+const MYSTEN_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.mystenlabs.com/v1";
+const ACKI_NACKI_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.ackinacki.org/v1";
 
 fn single_chcksgns(
     engine: &mut Engine,
@@ -949,4 +957,107 @@ fn test_vergrth16() {
     let res = engine.cc.stack.get(0).as_integer().unwrap();
     println!("res: {:?}", res);
     assert!(*res == IntegerData::minus_one());
+
 }
+
+#[tokio::test]
+async fn test_kakao_with_real_prove_service() {
+    async {
+        let mut stack = Stack::new();
+
+        let max_epoch = 10;
+        let jwt_randomness=      "100681567828351849884072155819400689117";
+        let user_salt = "129390038577185583942388216820280642146";
+
+        let kp = Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let mut eph_pubkey = vec![0x00];
+        eph_pubkey.extend(kp.public().as_ref());
+
+        let nonce = get_nonce(&eph_pubkey.clone(), max_epoch, jwt_randomness).unwrap();
+        assert_eq!(nonce, "hTPpgF7XAKbW37rEUS6pEVZqmoI");
+
+        let kp_encoded: String = base64::encode(&eph_pubkey);
+        println!("kp_encoded : {:?}", kp_encoded);
+
+        let token = "eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJhYTZiZGRmMzkzYjU0ZDRlMGQ0MmFlMDAxNGVkZmQyZiIsInN1YiI6IjMwOTUxMzQzODkiLCJhdXRoX3RpbWUiOjE2OTcxNDYwMjIsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwiZXhwIjoxNjk3MTY3NjIyLCJpYXQiOjE2OTcxNDYwMjIsIm5vbmNlIjoiaFRQcGdGN1hBS2JXMzdyRVVTNnBFVlpxbW9JIn0.ICP5Fz4Ves7HoFOixwvBeQSYBLWxFPtN6QTnMIv9d9zYnfkaXJ9VyqnaEE3BzY3dzHeWgKFps5Dmrm8Vn4WLmeRAvxDz7831g8Ln8-krTHIUcLzi91NGUPPyx6bIkCzxTqhIB4omatvXD7vAf_AlsqJJYMOIvLQxdpRq8-d_JyAfELE_aWVatXSwGIBYIi_91CEZ64nsHV1J4Wz_tVFc5vbPT4wZabBzepMPXcNHVtrtkuW96nWNygbpap1mSz4fEP9mdlTD2Oi2FHD2cX3rebqiEYTeZI5HySzo4NcN_4TcIgf5cFSapyglqCuulFBXCkIkF9lKN3Il6yJ9MD_N4w";
+
+        let url = &env::var("URL").unwrap_or_else(|_| MYSTEN_PROVER_DEV_SERVER_URL.to_owned());
+        //let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_DEV_SERVER_URL.to_owned());
+        println!("using URL: {:?}", url);
+        let reader = get_proof(
+            &token,
+            max_epoch,
+            &jwt_randomness,
+            &kp_encoded,
+            &user_salt,
+            url,
+        )
+        .await
+        .unwrap();
+    
+        let sub = "3095134389";
+        let aud = "aa6bddf393b54d4e0d42ae0014edfd2f";
+        let address_seed = gen_address_seed(&user_salt, "sub", &sub, &aud).unwrap();
+        println!("address_seed: {:?}", address_seed);
+        let zk_login_inputs =
+            ZkLoginInputs::from_reader(reader, &address_seed.to_string()).unwrap();
+
+        let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+
+        let mut proof_as_bytes = vec![];
+        proof.serialize_compressed(&mut proof_as_bytes).unwrap();
+        println!("proof_as_bytes : {:?}", hex::encode(proof_as_bytes.clone()));
+
+        ///////////////////////
+        println!("Verify proof...");
+        let jwk = "qGWf6RVzV2pM8YqJ6by5exoixIlTvdXDfYj2v7E6xkoYmesAjp_1IYL7rzhpUYqIkWX0P4wOwAsg-Ud8PcMHggfwUNPOcqgSk1hAIHr63zSlG8xatQb17q9LrWny2HWkUVEU30PxxHsLcuzmfhbRx8kOrNfJEirIuqSyWF_OBHeEgBgYjydd_c8vPo7IiH-pijZn4ZouPsEg7wtdIX3-0ZcXXDbFkaDaqClfqmVCLNBhg3DKYDQOoyWXrpFKUXUFuk2FTCqWaQJ0GniO4p_ppkYIf4zhlwUYfXZEhm8cBo6H2EgukntDbTgnoha8kNunTPekxWTDhE5wGAt6YpT4Yw"; //for Kakao long living kid 9f252dadd5f233f93d2fa528d12fea
+        let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk)
+            .map_err(|_| {
+                ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+            })
+            .unwrap(); 
+
+        println!("jwk modulus in hex = {:?}", hex::encode(modulus.clone()));
+
+        let public_inputs =
+        &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+
+        let mut public_inputs_as_bytes = vec![];
+        public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+        println!("HERE public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("HERE public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+
+        println!("====== Start VERGRTH16 ========");
+        let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
+        stack.push(StackItem::cell(proof_cell.clone()));
+
+        let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
+        stack.push(StackItem::cell(public_inputs_cell.clone()));
+
+        let verification_key_id: u32 = 0; // valid key id
+        //let verification_key_id: u32 = 1; //invalid key id
+        stack.push(StackItem::int(verification_key_id));
+
+        let start: Instant = Instant::now();
+
+        let mut res = Vec::<u8>::with_capacity(2);
+        res.push(0xC7);
+        res.push(0x31);
+        res.push(0x80);
+
+        let code = SliceData::new(res);
+
+        let mut engine = Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
+        let _ = engine.execute().unwrap();
+        // let status = execute_vergrth16(&mut engine).unwrap();
+        let vergrth16_elapsed = start.elapsed().as_micros();
+
+        println!("vergrth16_elapsed in microsecond: {:?}", vergrth16_elapsed);
+
+        let res = engine.cc.stack.get(0).as_integer().unwrap();
+        println!("res: {:?}", res);
+        assert!(*res == IntegerData::minus_one());
+    }.await; 
+}
+
+
