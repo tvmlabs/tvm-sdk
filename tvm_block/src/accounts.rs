@@ -582,6 +582,82 @@ impl Serializable for AccountStuff {
 }
 
 #[derive(Debug, Clone)]
+pub enum OptionalAccount {
+    Account(Account),
+    AccountStub,
+}
+
+impl OptionalAccount {
+    pub fn with_account(account: Account) -> Self {
+        OptionalAccount::Account(account)
+    }
+
+    pub fn stub() -> Self {
+        OptionalAccount::AccountStub
+    }
+
+    pub fn get_account(self) -> Result<Account> {
+        match self {
+            OptionalAccount::Account(account) => Ok(account),
+            _ => fail!("Account was replaced with stub")
+        }
+    }
+}
+
+impl PartialEq for OptionalAccount {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            OptionalAccount::Account(acc) => {
+                match other {
+                    OptionalAccount::Account(other) => acc.eq(other),
+                    _ => false,
+                }
+            }
+            OptionalAccount::AccountStub => {
+                match other {
+                    OptionalAccount::Account(_other) => false,
+                    _ => true,
+                }
+            },
+        }
+    }
+}
+
+impl Eq for OptionalAccount {}
+
+impl Default for OptionalAccount {
+    fn default() -> Self {
+        OptionalAccount::Account(Account::default())
+    }
+}
+
+impl Serializable for OptionalAccount {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        match self {
+            OptionalAccount::Account(account) => {
+                builder.append_bit_one()?;
+                account.write_to(builder)?;
+            }
+            OptionalAccount::AccountStub => {
+                builder.append_bit_zero()?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Deserializable for OptionalAccount {
+    fn construct_from(slice: &mut SliceData) -> Result<Self> {
+        if slice.get_next_bit()? {
+            let account = Account::construct_from(slice)?;
+            Ok(OptionalAccount::Account(account))
+        } else {
+            Ok(OptionalAccount::AccountStub)
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Account {
     stuff: Option<AccountStuff>,
 }
@@ -1219,7 +1295,7 @@ impl fmt::Display for Account {
 /// struct ShardAccount
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct ShardAccount {
-    account: ExternalCell<Account>,
+    account: ExternalCell<OptionalAccount>,
     last_trans_hash: UInt256,
     last_trans_lt: u64,
     dapp_id: Option<UInt256>,
@@ -1247,7 +1323,7 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Result<Self> {
         Ok(ShardAccount {
-            account: ExternalCell::with_struct(account)?,
+            account: ExternalCell::with_struct(&OptionalAccount::with_account(account.clone()))?,
             last_trans_hash,
             last_trans_lt,
             dapp_id,
@@ -1255,7 +1331,10 @@ impl ShardAccount {
     }
 
     pub fn read_account(&self) -> Result<ExternalCellStruct<Account>> {
-        self.account.read_struct()
+        match self.account.read_struct()?.as_struct() {
+            Ok(opt_account) => Ok(ExternalCellStruct::Struct(opt_account.get_account()?)),
+            Err(err) => fail!(err),
+        }
     }
 
     pub fn last_trans_hash(&self) -> &UInt256 {
