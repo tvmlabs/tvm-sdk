@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.21.4] - 2025-08-29
+
+### Changed/Fixed
+- Wasmtime upgrade to 36.0.2
+- Fixed some wasm tests
+
 ## [2.21.2] - 2025-08-27
 
 ### Added

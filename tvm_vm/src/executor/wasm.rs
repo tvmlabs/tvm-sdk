@@ -6,12 +6,10 @@ use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
 use wasmtime::component::ResourceTable;
-use wasmtime_wasi::p2::IoImpl;
-use wasmtime_wasi::p2::IoView;
-use wasmtime_wasi::p2::WasiCtx;
-use wasmtime_wasi::p2::WasiCtxBuilder;
-use wasmtime_wasi::p2::WasiImpl;
-use wasmtime_wasi::p2::WasiView;
+use wasmtime_wasi::WasiCtx;
+use wasmtime_wasi::WasiCtxBuilder;
+use wasmtime_wasi::WasiCtxView;
+use wasmtime_wasi::WasiView;
 
 use crate::error::TvmError;
 use crate::executor::engine::Engine;
@@ -1221,14 +1219,14 @@ pub(crate) struct MyState {
     random_source: rand_chacha::ChaCha20Rng,
     time: u64,
 }
-impl IoView for MyState {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-}
+// impl IoView for MyState {
+//     fn table(&mut self) -> &mut ResourceTable {
+//         &mut self.table
+//     }
+// }
 impl WasiView for MyState {
-    fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.ctx
+    fn ctx(&mut self) -> WasiCtxView<'_> {
+        WasiCtxView { ctx: &mut self.ctx, table: &mut self.table }
     }
 }
 pub struct MyWasiIoError;
@@ -2121,7 +2119,7 @@ use wasmtime::component::HasData;
 struct HasWasi<T>(T);
 
 impl<T: 'static> HasData for HasWasi<T> {
-    type Data<'a> = WasiImpl<&'a mut T>;
+    type Data<'a> = WasiCtxView<'a>;
 }
 
 struct MyLibrary;
@@ -2142,7 +2140,7 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     // wasmtime_wasi::p2::add_to_linker_sync(linker)
     let options = wasmtime_wasi::p2::bindings::sync::LinkOptions::default();
     let l = wasm_linker;
-    let f: fn(&mut T) -> WasiImpl<&mut T> = |t| WasiImpl(IoImpl(t));
+    // let f: fn(&mut T) -> WasiImpl<&mut T> = |t| WasiImpl(IoImpl(t));
     // clocks::wall_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // clocks::monotonic_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // filesystem::preopens::add_to_linker::<T, HasWasi<T>>(l, f)?;
@@ -2150,16 +2148,16 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     // random::random::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // random::insecure::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // random::insecure_seed::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::exit::add_to_linker::<T, HasWasi<T>>(l, &options.into(), f)?;
-    cli::environment::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::stdin::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::stdout::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::stderr::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::terminal_input::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::terminal_output::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::terminal_stdin::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::terminal_stdout::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    cli::terminal_stderr::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    cli::exit::add_to_linker::<T, HasWasi<T>>(l, &options.into(), T::ctx)?;
+    cli::environment::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
+    cli::stdin::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
+    cli::stdout::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
+    cli::stderr::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
+    cli::terminal_input::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
+    cli::terminal_output::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
+    cli::terminal_stdin::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
+    cli::terminal_stdout::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
+    cli::terminal_stderr::add_to_linker::<T, HasWasi<T>>(l, T::ctx)?;
     Ok(())
 }
 
