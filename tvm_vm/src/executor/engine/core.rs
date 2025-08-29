@@ -293,32 +293,7 @@ impl Engine {
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
             available_credit: 0,
-            wasm_hash_whitelist: {
-                let hash_strs = [
-                    "c5b3fe1a4fa391e9660a13d55ca2200f9343d5b1d18473ebbee19d8219e3ddc1",
-                    "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2",
-                    "e88c99c9a1cbbde5bf47839db7685953c3bf266945f3270abb731ed84d58d163",
-                    "e7adc782c05b67bcda5babaca1deabf80f30ca0e6cf668c89825286c3ce0e560",
-                    "afbe8c5a02df7d6fa5decd4d48ff0f74ecbd4dae38bb5144328354db6bd95967",
-                    "25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1",
-                ];
-                let mut whitelist = HashSet::<[u8; 32]>::new();
-                for hash_str in hash_strs {
-                    let hash: Vec<u8> = (0..hash_str.len())
-                        .step_by(2)
-                        .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
-                        .collect::<Vec<u8>>();
-                    let hash: [u8; 32] = match hash.try_into() {
-                        Ok(h) => h,
-                        Err(e) => {
-                            Err(anyhow::format_err!("hash whitelist has an invlid hash: {:?}", e))
-                                .unwrap()
-                        }
-                    };
-                    whitelist.insert(hash);
-                }
-                whitelist
-            },
+            wasm_hash_whitelist: HashSet::new(),
             wash_component_cache: HashMap::new(),
             wasm_engine_cache: None,
             wasm_block_timestamp: 0,
