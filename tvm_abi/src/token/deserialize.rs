@@ -113,7 +113,7 @@ impl TokenValue {
         if last {
             println!("allow_partial {}, slice {:?}", allow_partial, slice);
             println!("Cursor {:x?}", cursor.slice.cell().data());
-            //let allow_partial = true;
+            // let allow_partial = true;
             Self::check_full_decode(allow_partial, &slice)?;
         }
 
