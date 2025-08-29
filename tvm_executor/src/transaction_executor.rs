@@ -1539,7 +1539,7 @@ fn outmsg_action_handler(
         return Err(RESULT_CODE_INCORRECT_SRC_ADDRESS);
     }
 
-    let fwd_prices = config.get_fwd_prices(msg.is_masterchain());
+    let fwd_prices_basic = config.get_fwd_prices(msg.is_masterchain());
     let compute_fwd_fee = if is_special {
         Grams::default()
     } else {
@@ -1553,6 +1553,10 @@ fn outmsg_action_handler(
     };
 
     if let Some(int_header) = msg.int_header_mut() {
+        let mut fwd_prices = fwd_prices_basic.clone();
+        if let None = int_header.dest_dapp_id() {
+            fwd_prices *= 2;
+        }
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {
