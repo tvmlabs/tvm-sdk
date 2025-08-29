@@ -1726,6 +1726,26 @@ pub struct MsgForwardPrices {
     pub next_frac: u16,
 }
 
+impl std::ops::Mul<u64> for MsgForwardPrices {
+    type Output = Self;
+
+    fn mul(mut self, rhs: u64) -> Self::Output {
+        self.lump_price = self.lump_price.saturating_mul(rhs);
+        self.bit_price = self.bit_price.saturating_mul(rhs);
+        self.cell_price = self.cell_price.saturating_mul(rhs);
+        self.ihr_price_factor = self.ihr_price_factor.saturating_mul(rhs as u32);
+        self.first_frac = self.first_frac.saturating_mul(rhs as u16);
+        self.next_frac = self.next_frac.saturating_mul(rhs as u16);
+        self
+    }
+}
+
+impl std::ops::MulAssign<u64> for MsgForwardPrices {
+    fn mul_assign(&mut self, rhs: u64) {
+        *self = self.clone() * rhs;
+    }
+}
+
 impl MsgForwardPrices {
     pub fn new() -> Self {
         Self::default()
