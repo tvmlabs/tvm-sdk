@@ -721,7 +721,12 @@ impl Serializable for InternalMessageHeader {
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
         self.src_dapp_id.write_maybe_to(cell)?;
-        self.dest_dapp_id.write_maybe_to(cell)?;
+        if self.dest_dapp_id.is_some() {
+            cell.append_bit_one()?;
+            cell.checked_prepend_reference(self.dest_dapp_id.clone().unwrap().serialize()?)?;
+        } else {
+            cell.append_bit_zero()?;
+        }
         cell.append_bit_bool(self.is_exchange)?;
         Ok(())
     }
@@ -747,7 +752,9 @@ impl Deserializable for InternalMessageHeader {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
         }
         if cell.get_next_bit()? {
-            self.dest_dapp_id = Some(UInt256::construct_from(cell)?);
+            let mut dest_dapp_id = UInt256::default();
+            dest_dapp_id.read_from_reference(cell)?;
+            self.dest_dapp_id = Some(dest_dapp_id);
         }
         self.is_exchange = cell.get_next_bit()?;
         Ok(())
