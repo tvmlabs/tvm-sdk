@@ -1345,6 +1345,19 @@ impl ShardAccount {
         })
     }
 
+    pub fn with_stub(
+        last_trans_hash: UInt256,
+        last_trans_lt: u64,
+        dapp_id: Option<UInt256>,
+    ) -> Result<Self> {
+        Ok(ShardAccount {
+            account: OptionalAccount::stub(),
+            last_trans_hash,
+            last_trans_lt,
+            dapp_id,
+        })
+    }
+
     pub fn read_account(&self) -> Result<ExternalCellStruct<Account>> {
         self.account.get_account()?.read_struct()
     }
