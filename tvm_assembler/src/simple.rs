@@ -840,7 +840,6 @@ impl Engine {
         MINTECC                              => 0xC7, 0x26
         CNVRTSHELLQ                          => 0xC7, 0x27
         MINTSHELLQ                           => 0xC7, 0x28
-        CALCBKREWARD                         => 0xC7, 0x29
         CALCMINSTAKE                         => 0xC7, 0x30
         VERGRTH16                            => 0xC7, 0x31
         POSEIDON                             => 0xC7, 0x32

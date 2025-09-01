@@ -307,7 +307,7 @@ pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
 
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
-    fetch_stack(engine, 5)?;
+    fetch_stack(engine, 4)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //previous value of rewardadjustment (not minimum)
     let mut drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?;
@@ -316,9 +316,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     //_delta_reward - average time between reward adj calculate
     //_calc_reward_num - number of calculate
     //_reward_last_time - time of last calculate
-    let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //Average ReputationCoef
-    let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let mut repavg = repavgbig / 1_000_000_000;
+    let mbkt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let rbkmin;
     if t <= TTMT - 1 {
         rbkmin = rbkprev / 3 * 2;
@@ -328,10 +326,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     if drbkavg == 0 {
         drbkavg = 1;
     }
-    if repavg == 0 {
-        repavg = 1;
-    }
-    let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg / repavg).max(rbkmin))
+    let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg).max(rbkmin))
         .min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
@@ -388,33 +383,6 @@ fn calc_mbk(t: u128, krk_num: u128, krk_den: u128) -> u128 {
         ((TOTALSUPPLY as i128 * prod_q32 as i128) >> 32) as u128
     };
     (mbk * krk_num) / krk_den
-}
-
-pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
-    fetch_stack(engine, 7)?;
-    let mut repcoef = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //average reputation coef of licenses in one stake
-    let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //value of stake
-    let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //sum of stakes at start of epoch
-    let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //duration of epoch
-    let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepers
-    let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)?; //last calculated reward_adjustment
-    repcoef = repcoef / 1000000000;
-    let reward;
-    if totalbkstake == 0 {
-        if nbk == 0 {
-            reward = 0;
-        } else {
-            reward = rbk * t * repcoef / nbk;
-        }
-    } else if mbk < TOTALSUPPLY {
-        reward = rbk * t * repcoef * bkstake / totalbkstake;
-    } else {
-        reward = 0;
-    }
-    engine.cc.stack.push(int!(reward as u128));
-    Ok(())
 }
 
 pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Status {

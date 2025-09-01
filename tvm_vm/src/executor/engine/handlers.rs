@@ -390,7 +390,6 @@ impl Handlers {
                 .set(0x28, execute_mint_shellq)
                 .set(0x26, execute_ecc_mint)
                 .set(0x27, execute_exchange_shell)
-                .set(0x29, execute_calculate_validator_reward)
                 .set(0x30, execute_calculate_min_stake)
                 .set(0x31, execute_vergrth16)
                 .set(0x32, execute_poseidon_zk_login)
