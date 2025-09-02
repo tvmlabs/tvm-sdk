@@ -1700,6 +1700,10 @@ impl PartialEq for AccountBlock {
 }
 
 impl AccountBlock {
+    pub fn dapp_id_changed(&self) -> bool {
+        self.dapp_id_changed
+    }
+
     pub fn with_address(account_addr: AccountId) -> AccountBlock {
         AccountBlock {
             account_addr,
