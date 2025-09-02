@@ -76,14 +76,7 @@ impl CellData {
         depths: Option<[u16; 4]>,
     ) -> crate::Result<Self> {
         let buffer = if cell_type == CellType::Big {
-            cell::build_big_cell_buf(
-                data,
-                level_mask,
-                refs as usize,
-                store_hashes,
-                hashes.clone(),
-                depths,
-            )?
+            cell::build_big_cell_buf(data, level_mask, refs as usize, store_hashes, hashes, depths)?
         } else {
             cell::build_cell_buf(
                 cell_type,
@@ -91,7 +84,7 @@ impl CellData {
                 level_mask,
                 refs as usize,
                 store_hashes,
-                hashes.clone(),
+                hashes,
                 depths,
             )?
         };
@@ -108,7 +101,7 @@ impl CellData {
             (_, None, None) => (),
             (false, Some(hashes), Some(depths)) => {
                 for i in 0..hashes_count {
-                    hashes_depths.push((hashes[i].clone(), depths[i]));
+                    hashes_depths.push((hashes[i], depths[i]));
                 }
             }
             _ => fail!("`hashes` and `depths` existence are not correspond each other"),

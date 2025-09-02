@@ -157,11 +157,12 @@ async fn decode_data_command(m: &ArgMatches, config: &Config) -> Result<(), Stri
 
 async fn decode_body_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let body = m.value_of("BODY");
-    let abi = Some(abi_from_matches_or_config(m, config)?);
+    let abi = abi_from_matches_or_config(m, config)?;
     if !config.is_json {
+        let abi = Some(&abi);
         print_args!(body, abi);
     }
-    decode_body(body.unwrap(), &abi.unwrap(), config.is_json, config).await?;
+    decode_body(body.unwrap(), &abi, config.is_json, config).await?;
     Ok(())
 }
 
@@ -340,11 +341,9 @@ async fn decode_account_fields(m: &ArgMatches, config: &Config) -> Result<(), St
     let address = load_ton_address(address.unwrap(), config)?;
     let data = query_account_field(context.clone(), &address, "data").await?;
 
-    let res = decode_account_data(
-        context,
-        ParamsOfDecodeAccountData { abi, data, allow_partial: true, ..Default::default() },
-    )
-    .map_err(|e| format!("failed to decode data: {}", e))?;
+    let res =
+        decode_account_data(context, ParamsOfDecodeAccountData { abi, data, allow_partial: true })
+            .map_err(|e| format!("failed to decode data: {}", e))?;
 
     if !config.is_json {
         println!("Account fields:");
@@ -517,8 +516,7 @@ pub mod msg_printer {
     }
 
     async fn get_code_version(ton: TonClient, code: String) -> String {
-        let result =
-            get_compiler_version(ton, ParamsOfGetCompilerVersion { code, ..Default::default() });
+        let result = get_compiler_version(ton, ParamsOfGetCompilerVersion { code });
 
         if let Ok(result) = result {
             if let Some(version) = result.version {
@@ -660,16 +658,12 @@ pub mod msg_printer {
         }
         res["Body"] =
             json!(&tree_of_cells_into_base64(msg.body().map(|slice| slice.into_cell()).as_ref())?);
-        if abi_path.is_some() && msg.body().is_some() {
-            let abi_path = abi_path.unwrap();
-            let body_vec = write_boc(&msg.body().unwrap().into_cell())
+        if let (Some(abi_path), Some(msg_body)) = (abi_path, msg.body()) {
+            let body_vec = write_boc(&msg_body.into_cell())
                 .map_err(|e| format!("failed to serialize body: {}", e))?;
-            res["BodyCall"] = match serialize_body(body_vec, &abi_path, ton, config).await {
-                Ok(res) => res,
-                Err(_) => {
-                    json!("Undefined")
-                }
-            };
+            res["BodyCall"] = serialize_body(body_vec, &abi_path, ton, config)
+                .await
+                .unwrap_or_else(|_| json!("Undefined"));
         }
         Ok(res)
     }

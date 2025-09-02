@@ -279,19 +279,19 @@ impl FullConfig {
     pub fn from_file(path: &str) -> FullConfig {
         let conf_str = std::fs::read_to_string(path).ok().unwrap_or_default();
         let config: serde_json::error::Result<Config> = serde_json::from_str(&conf_str);
-        if config.is_ok() && config.as_ref().unwrap() != &Config::default() {
-            return FullConfig::new(config.unwrap(), path.to_string());
+        if let Ok(cfg) = config {
+            if cfg != Config::default() {
+                return FullConfig::new(cfg, path.to_string());
+            }
         }
         let full_config: serde_json::error::Result<FullConfig> = serde_json::from_str(&conf_str);
-        let mut full_config = if full_config.is_err() {
-            let conf_str = std::fs::read_to_string(global_config_path()).ok().unwrap_or_default();
+        let mut full_config = full_config.unwrap_or_else(|_| {
+            let conf_str = std::fs::read_to_string(global_config_path()).unwrap_or_default();
             let mut global_config =
                 serde_json::from_str::<FullConfig>(&conf_str).unwrap_or_default();
             global_config.path = path.to_string();
             global_config
-        } else {
-            full_config.unwrap()
-        };
+        });
         full_config.path = path.to_string();
         full_config
     }

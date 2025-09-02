@@ -79,11 +79,11 @@ impl Error {
         let mut client_error = Self::send_message_server_error(error);
 
         if let Some(bm_data) = resp_body.get("ext_message_token") {
-            client_error
-                .data
-                .as_object_mut()
-                .and_then(|obj| obj.get_mut("ext_message_token"))
-                .map(|entry| *entry = bm_data.clone());
+            if let Some(entry) =
+                client_error.data.as_object_mut().and_then(|obj| obj.get_mut("ext_message_token"))
+            {
+                *entry = bm_data.clone()
+            }
 
             if client_error.data.get("ext_message_token").is_none() {
                 client_error.data["ext_message_token"] = bm_data.clone();

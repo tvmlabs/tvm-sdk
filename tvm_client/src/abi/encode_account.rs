@@ -47,7 +47,7 @@ pub fn encode_account(
         "Account state init",
     )?;
     let id = state_init.cell.repr_hash();
-    let address = MsgAddressInt::with_standart(None, 0, id.clone().into()).unwrap();
+    let address = MsgAddressInt::with_standart(None, 0, id.into()).unwrap();
     let mut account = Account::with_address(address);
     account.set_balance(CurrencyCollection::from(params.balance.unwrap_or(100000000000)));
     account

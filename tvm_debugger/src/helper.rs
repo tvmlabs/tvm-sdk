@@ -110,7 +110,7 @@ pub(crate) fn get_base64_or_read_from_file(s: Option<&str>) -> anyhow::Result<Op
 pub(crate) fn get_json_value_or_read_file(s: &str) -> anyhow::Result<serde_json::Value> {
     serde_json::from_str(s).or_else(|_| {
         let content = std::fs::read_to_string(s)?;
-        serde_json::from_str(&content.trim())
+        serde_json::from_str(content.trim())
             .map_err(|_| anyhow::anyhow!("Failed to parse provided parameters as JSON"))
     })
 }

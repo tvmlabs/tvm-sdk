@@ -1229,33 +1229,35 @@ fn getkeypair_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
 
 async fn send_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let message = matches.value_of("MESSAGE");
-    let abi = Some(abi_from_matches_or_config(matches, config)?);
+    let abi = abi_from_matches_or_config(matches, config)?;
 
     if !config.is_json {
+        let abi = Some(&abi);
         print_args!(message, abi);
     }
 
-    call_contract_with_msg(config, message.unwrap().to_owned(), &abi.unwrap()).await
+    call_contract_with_msg(config, message.unwrap().to_owned(), &abi).await
 }
 
 async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
     let output = matches.value_of("OUTPUT");
-    let abi = Some(abi_from_matches_or_config(matches, config)?);
-    let params = Some(load_params(params.unwrap())?);
+    let abi = abi_from_matches_or_config(matches, config)?;
+    let params = load_params(params.unwrap())?;
     if !config.is_json {
+        let (abi, params) = (Some(&abi), Some(&params));
         print_args!(method, params, abi, output);
     }
 
-    let params = serde_json::from_str(&params.unwrap())
+    let params = serde_json::from_str(&params)
         .map_err(|e| format!("arguments are not in json format: {}", e))?;
 
     let client = create_client_local()?;
     let body = tvm_client::abi::encode_message_body(
         client.clone(),
         ParamsOfEncodeMessageBody {
-            abi: load_abi(abi.as_ref().unwrap(), config).await?,
+            abi: load_abi(&abi, config).await?,
             call_set: CallSet::some_with_function_and_input(method.unwrap(), params)
                 .ok_or("failed to create CallSet with specified parameters.")?,
             is_internal: true,
@@ -1285,7 +1287,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
     let raw = matches.is_present("RAW");
     let output = matches.value_of("OUTPUT");
 
-    let abi = Some(abi_from_matches_or_config(matches, config)?);
+    let abi = abi_from_matches_or_config(matches, config)?;
 
     let keys = matches
         .value_of("KEYS")
@@ -1295,8 +1297,9 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
 
     let thread_id = matches.value_of("THREAD");
 
-    let params = Some(load_params(params.unwrap())?);
+    let params = load_params(params.unwrap())?;
     if !config.is_json {
+        let (abi, params) = (Some(&abi), Some(&params));
         print_args!(address, method, params, abi, keys, lifetime, output);
     }
     let address = load_ton_address(address.unwrap(), config)?;
@@ -1307,9 +1310,9 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
             call_contract(
                 config,
                 address.as_str(),
-                &abi.unwrap(),
+                &abi,
                 method.unwrap(),
-                &params.unwrap(),
+                &params,
                 keys,
                 is_fee,
                 thread_id,
@@ -1334,9 +1337,9 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
             generate_message(
                 config,
                 address.as_str(),
-                &abi.unwrap(),
+                &abi,
                 method.unwrap(),
-                &params.unwrap(),
+                &params,
                 keys,
                 lifetime,
                 raw,
@@ -1350,35 +1353,24 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
 
 async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result<(), String> {
     let config = &full_config.config;
-    let method = Some(
-        matches
-            .value_of("METHOD")
-            .or(config.method.as_deref())
-            .ok_or("Method is not defined. Supply it in the config file or command line.")?,
-    );
+    let method = matches
+        .value_of("METHOD")
+        .or(config.method.as_deref())
+        .ok_or("Method is not defined. Supply it in the config file or command line.")?;
     let (address, abi, keys) = contract_data_from_matches_or_config_alias(matches, full_config)?;
-    let params =
-        unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?;
-    let params = Some(load_params(&params)?);
+    let params = unpack_alternative_params(matches, abi.as_ref().unwrap(), method, config).await?;
+    let params = load_params(&params)?;
     let thread_id = matches.value_of("THREAD");
 
     if !config.is_json {
+        let (method, params) = (Some(method), Some(&params));
         print_args!(address, method, params, abi, keys);
     }
 
     let address = load_ton_address(address.unwrap().as_str(), config)?;
 
-    call_contract(
-        config,
-        address.as_str(),
-        &abi.unwrap(),
-        method.unwrap(),
-        &params.unwrap(),
-        keys,
-        false,
-        thread_id,
-    )
-    .await
+    call_contract(config, address.as_str(), &abi.unwrap(), method, &params, keys, false, thread_id)
+        .await
 }
 
 async fn runget_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
@@ -1415,59 +1407,28 @@ async fn deploy_command(
     let wc = wc_from_matches_or_config(matches, config)?;
     let raw = matches.is_present("RAW");
     let output = matches.value_of("OUTPUT");
-    let abi = Some(abi_from_matches_or_config(matches, config)?);
+    let abi = abi_from_matches_or_config(matches, config)?;
     let keys = matches
         .value_of("KEYS")
         .or(matches.value_of("SIGN"))
         .map(|s| s.to_string())
         .or(config.keys_path.clone());
     let alias = matches.value_of("ALIAS");
-    let params = Some(
-        unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
-    );
+    let params = unpack_alternative_params(matches, &abi, "constructor", config).await?;
     if !config.is_json {
-        let opt_wc = Some(format!("{}", wc));
-        print_args!(tvc, params, abi, keys, opt_wc, alias);
+        let (params, abi, wc) = (Some(&params), Some(&abi), Some(format!("{}", wc)));
+        print_args!(tvc, params, abi, keys, wc, alias);
     }
     match deploy_type {
         DeployType::Full => {
-            deploy_contract(
-                full_config,
-                tvc.unwrap(),
-                &abi.unwrap(),
-                &params.unwrap(),
-                keys,
-                wc,
-                false,
-                alias,
-            )
-            .await
+            deploy_contract(full_config, tvc.unwrap(), &abi, &params, keys, wc, false, alias).await
         }
         DeployType::MsgOnly => {
-            generate_deploy_message(
-                tvc.unwrap(),
-                &abi.unwrap(),
-                &params.unwrap(),
-                keys,
-                wc,
-                raw,
-                output,
-                config,
-            )
-            .await
+            generate_deploy_message(tvc.unwrap(), &abi, &params, keys, wc, raw, output, config)
+                .await
         }
         DeployType::Fee => {
-            deploy_contract(
-                full_config,
-                tvc.unwrap(),
-                &abi.unwrap(),
-                &params.unwrap(),
-                keys,
-                wc,
-                true,
-                None,
-            )
-            .await
+            deploy_contract(full_config, tvc.unwrap(), &abi, &params, keys, wc, true, None).await
         }
     }
 }
@@ -1476,28 +1437,16 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
     let config = &full_config.config;
     let tvc = matches.value_of("TVC");
     let wc = wc_from_matches_or_config(matches, config)?;
-    let abi = Some(abi_from_matches_or_config(matches, config)?);
-    let params = Some(
-        unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
-    );
+    let abi = abi_from_matches_or_config(matches, config)?;
+    let params = unpack_alternative_params(matches, &abi, "constructor", config).await?;
     let keys = matches.value_of("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
 
     let alias = matches.value_of("ALIAS");
     if !config.is_json {
-        let opt_wc = Some(format!("{}", wc));
-        print_args!(tvc, params, abi, keys, opt_wc, alias);
+        let (params, abi, wc) = (Some(&params), Some(&abi), Some(format!("{}", wc)));
+        print_args!(tvc, params, abi, keys, wc, alias);
     }
-    deploy_contract(
-        full_config,
-        tvc.unwrap(),
-        &abi.unwrap(),
-        &params.unwrap(),
-        keys,
-        wc,
-        false,
-        alias,
-    )
-    .await
+    deploy_contract(full_config, tvc.unwrap(), &abi, &params, keys, wc, false, alias).await
 }
 
 fn config_command(
