@@ -584,7 +584,9 @@ impl Serializable for AccountStuff {
 #[derive(Debug, Clone)]
 pub enum OptionalAccount {
     Account(ExternalCell<Account>),
-    AccountStub,
+
+    // Note: used for accounts that were moved to the other blockchain thread according to their non default DApp ID
+    AccountRedirect,
 }
 
 impl OptionalAccount {
@@ -593,7 +595,7 @@ impl OptionalAccount {
     }
 
     pub fn stub() -> Self {
-        OptionalAccount::AccountStub
+        OptionalAccount::AccountRedirect
     }
 
     pub fn get_account(&self) -> Result<&ExternalCell<Account>> {
@@ -610,10 +612,10 @@ impl OptionalAccount {
         }
     }
 
-    pub fn is_stub(&self) -> bool {
+    pub fn is_redirect(&self) -> bool {
         match self {
             OptionalAccount::Account(_) => false,
-            OptionalAccount::AccountStub => true,
+            OptionalAccount::AccountRedirect => true,
         }
     }
 }
@@ -627,7 +629,7 @@ impl PartialEq for OptionalAccount {
                     _ => false,
                 }
             }
-            OptionalAccount::AccountStub => {
+            OptionalAccount::AccountRedirect => {
                 match other {
                     OptionalAccount::Account(_other) => false,
                     _ => true,
@@ -652,7 +654,7 @@ impl Serializable for OptionalAccount {
                 builder.append_bit_one()?;
                 builder.checked_prepend_reference(account.cell())?;
             }
-            OptionalAccount::AccountStub => {
+            OptionalAccount::AccountRedirect => {
                 builder.append_bit_zero()?;
             }
         }
@@ -667,7 +669,7 @@ impl Deserializable for OptionalAccount {
             account.read_from_reference(slice)?;
             Ok(OptionalAccount::Account(account))
         } else {
-            Ok(OptionalAccount::AccountStub)
+            Ok(OptionalAccount::AccountRedirect)
         }
     }
 }
@@ -1397,8 +1399,8 @@ impl ShardAccount {
         self.account.get_account().map(|a| a.is_external()).unwrap_or(false)
     }
 
-    pub fn is_stub(&self) -> bool {
-        self.account.is_stub()
+    pub fn is_redirect(&self) -> bool {
+        self.account.is_redirect()
     }
 }
 
