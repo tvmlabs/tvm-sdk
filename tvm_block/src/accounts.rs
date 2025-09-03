@@ -594,7 +594,7 @@ impl OptionalAccount {
         OptionalAccount::Account(account)
     }
 
-    pub fn stub() -> Self {
+    pub fn redirect() -> Self {
         OptionalAccount::AccountRedirect
     }
 
@@ -1347,13 +1347,13 @@ impl ShardAccount {
         })
     }
 
-    pub fn with_stub(
+    pub fn with_redirect(
         last_trans_hash: UInt256,
         last_trans_lt: u64,
         dapp_id: Option<UInt256>,
     ) -> Result<Self> {
         Ok(ShardAccount {
-            account: OptionalAccount::stub(),
+            account: OptionalAccount::redirect(),
             last_trans_hash,
             last_trans_lt,
             dapp_id,
