@@ -758,11 +758,11 @@ impl Deserializable for InternalMessageHeader {
         if cell.get_next_bit()? {
             let mut dest_dapp_id = UInt256::default();
             log::trace!(target: "node", "read dest dap id {} {}", cell.remaining_bits(), cell.remaining_references());
-            if let Ok(refer) = cell.reference(0) {
-                log::trace!(target: "node", "reference data: {} {}", refer.data().len(), refer.bit_length());
-            }
+            let refer = cell.checked_drain_reference()?;
+            log::trace!(target: "node", "reference data: {} {}", refer.data().len(), refer.bit_length());
             log::trace!(target: "node", "read dest dap id {} {}", cell.remaining_bits(), cell.remaining_references());
-            dest_dapp_id.read_from_reference(cell)?;
+            dest_dapp_id.read_from_cell(refer)?;
+            log::trace!(target: "node", "dest_dapp_id {}", dest_dapp_id.to_hex_string());
             self.dest_dapp_id = Some(dest_dapp_id);
         }
         self.is_exchange = cell.get_next_bit()?;
