@@ -723,7 +723,9 @@ impl Serializable for InternalMessageHeader {
         self.src_dapp_id.write_maybe_to(cell)?;
         if self.dest_dapp_id.is_some() {
             cell.append_bit_one()?;
-            cell.checked_prepend_reference(self.dest_dapp_id.clone().unwrap().serialize()?)?;
+            let refer = self.dest_dapp_id.clone().unwrap().serialize()?;
+            log::trace!(target: "node", "write reference data: {} {}", refer.data().len(), refer.bit_length());
+            cell.checked_prepend_reference(refer)?;
         } else {
             cell.append_bit_zero()?;
         }
