@@ -725,7 +725,7 @@ impl Serializable for InternalMessageHeader {
             cell.append_bit_one()?;
             let refer = self.dest_dapp_id.clone().unwrap().serialize()?;
             log::trace!(target: "node", "write reference data: {} {}", refer.data().len(), refer.bit_length());
-            cell.checked_prepend_reference(refer)?;
+            cell.checked_append_reference(refer)?;
             log::trace!(target: "node", "write reference data: {} {}", cell.references_used(), cell.references_free());
         } else {
             cell.append_bit_zero()?;
@@ -738,6 +738,11 @@ impl Serializable for InternalMessageHeader {
 impl Deserializable for InternalMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         log::trace!(target: "node", "read message start {} {}", cell.remaining_bits(), cell.remaining_references());
+        for i in 0..cell.remaining_references() {
+            if let Ok(r) = cell.reference(i) {
+                log::trace!(target: "node", "read ref({i}) {} {} {}", r.data().len(), r.bit_length(), r.references_count());
+            }
+        }
         // constructor tag will be readed in Message
         self.ihr_disabled = cell.get_next_bit()?; // ihr_disabled
         self.bounce = cell.get_next_bit()?; // bounce
