@@ -649,7 +649,7 @@ fn test_real_account_serde() {
             .read_accounts()
             .unwrap()
             .iterate_accounts(|_, sa, _| {
-                let acc_cell = sa.account_cell();
+                let acc_cell = sa.account_cell().unwrap();
                 let acc = sa.read_account().unwrap().as_struct().unwrap();
 
                 let cell = acc.serialize().unwrap();
