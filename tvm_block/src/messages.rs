@@ -724,9 +724,7 @@ impl Serializable for InternalMessageHeader {
         if self.dest_dapp_id.is_some() {
             cell.append_bit_one()?;
             let refer = self.dest_dapp_id.clone().unwrap().serialize()?;
-            log::trace!(target: "node", "write reference data: {} {}", refer.data().len(), refer.bit_length());
             cell.checked_append_reference(refer)?;
-            log::trace!(target: "node", "write reference data: {} {}", cell.references_used(), cell.references_free());
         } else {
             cell.append_bit_zero()?;
         }
@@ -737,10 +735,8 @@ impl Serializable for InternalMessageHeader {
 
 impl Deserializable for InternalMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        log::trace!(target: "node", "read message start {} {}", cell.remaining_bits(), cell.remaining_references());
         for i in 0..cell.remaining_references() {
             if let Ok(r) = cell.reference(i) {
-                log::trace!(target: "node", "read ref({i}) {} {} {}", r.data().len(), r.bit_length(), r.references_count());
             }
         }
         // constructor tag will be readed in Message
@@ -760,21 +756,9 @@ impl Deserializable for InternalMessageHeader {
         if cell.get_next_bit()? {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
         }
-        log::trace!(target: "node", "read next bit, {}", cell.remaining_bits());
         if cell.get_next_bit()? {
             let mut dest_dapp_id = UInt256::default();
-            log::trace!(target: "node", "read dest dap id {} {}", cell.remaining_bits(), cell.remaining_references());
-            log::trace!(target: "node", "read dest dap id self: {:?}", self);
-            for i in 0..cell.remaining_references() {
-                if let Ok(r) = cell.reference(i) {
-                    log::trace!(target: "node", "read ref({i}) {} {} {}", r.data().len(), r.bit_length(), r.references_count());
-                }
-            }
-            // let refer = cell.?;
-            // log::trace!(target: "node", "reference data: {} {}", refer.data().len(), refer.bit_length());
-            // log::trace!(target: "node", "read dest dap id {} {}", cell.remaining_bits(), cell.remaining_references());
             dest_dapp_id.read_from_reference(cell)?;
-            log::trace!(target: "node", "dest_dapp_id {}", dest_dapp_id.to_hex_string());
             self.dest_dapp_id = Some(dest_dapp_id);
         }
         self.is_exchange = cell.get_next_bit()?;
