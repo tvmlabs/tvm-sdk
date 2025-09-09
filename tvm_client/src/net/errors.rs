@@ -85,7 +85,6 @@ impl Error {
                 .and_then(|obj| obj.get_mut("ext_message_token"))
                 .map(|entry| *entry = bm_data.clone());
 
-
             if client_error.data.get("ext_message_token").is_none() {
                 client_error.data["ext_message_token"] = bm_data.clone();
             }

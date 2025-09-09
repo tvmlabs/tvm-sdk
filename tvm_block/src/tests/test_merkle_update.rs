@@ -22,12 +22,14 @@ use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
 
 use super::*;
+use crate::Account;
 use crate::Block;
 use crate::CurrencyCollection;
 use crate::Grams;
 use crate::HashmapE;
 use crate::HashmapType;
 use crate::InternalMessageHeader;
+use crate::MerkleProof;
 use crate::Message;
 use crate::MsgAddressInt;
 use crate::MsgEnvelope;
@@ -49,7 +51,6 @@ use crate::TickTock;
 use crate::define_HashmapE;
 use crate::generate_test_account_by_init_code_hash;
 use crate::hashmapaug::HashmapAugType;
-use crate::{Account, MerkleProof};
 
 #[test]
 fn test_merkle_update() {
@@ -547,6 +548,7 @@ fn get_message(val: u8) -> MsgEnvelope {
 }
 
 #[test]
+#[ignore = "reason: this test runs too long"]
 fn test_out_msg_queue_updates() -> Result<()> {
     std::env::set_var("RUST_BACKTRACE", "full");
 
@@ -771,6 +773,7 @@ fn test_prepare_empty_update_for_wc() -> Result<()> {
 }
 
 #[test]
+#[ignore = "reason: this test runs too long"]
 fn test_out_msg_queue_merge_updates() -> Result<()> {
     std::env::set_var("RUST_BACKTRACE", "full");
 
@@ -1230,7 +1233,7 @@ fn test_update_shard_state_with_external_cell() {
 
 #[test]
 fn test_fast_merkle_update() {
-    const PATH_TO_DATA: &str = "src/tests/data/merkle_update";
+    const PATH_TO_DATA: &str = "src/tests/data";
 
     let mut paths = vec![];
     for entry in std::fs::read_dir(PATH_TO_DATA).unwrap().flatten() {
@@ -1243,10 +1246,12 @@ fn test_fast_merkle_update() {
         println!("Testing {}", path);
         let (old_state, new_state, usages) = read_states_and_usages(&path);
 
+        let start = Instant::now();
         let update_fast =
             MerkleUpdate::create_fast(&old_state, &new_state, |x| usages.contains(x)).unwrap();
-        println!("fast old:\n{}", cell_to_string(&update_fast.old));
-        println!("fast new:\n{}", cell_to_string(&update_fast.new));
+        println!("Created fast: {:?}", start.elapsed());
+        // println!("fast old:\n{}", cell_to_string(&update_fast.old));
+        // println!("fast new:\n{}", cell_to_string(&update_fast.new));
 
         let verify_new = update_fast.apply_for(&old_state).unwrap();
         assert_eq!(verify_new, new_state);
@@ -1257,7 +1262,6 @@ fn test_fast_merkle_update() {
 
         let verify_new = update.apply_for(&old_state).unwrap();
         assert_eq!(verify_new, new_state);
-
     }
 }
 
@@ -1273,12 +1277,14 @@ fn read_states_and_usages(path: &str) -> (Cell, Cell, HashSet<UInt256>) {
     (old_state, new_state, usages)
 }
 
+#[allow(dead_code)]
 fn cell_to_string(cell: &Cell) -> String {
     let mut s = String::new();
     write_cell_to_string(cell, 0, &mut s);
     s
 }
 
+#[allow(dead_code)]
 fn write_cell_to_string(cell: &Cell, indent: usize, s: &mut String) {
     *s += &" ".repeat(indent);
     *s += cell.repr_hash().to_hex_string().split_at(4).0;

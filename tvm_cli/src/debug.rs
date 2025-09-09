@@ -1234,7 +1234,8 @@ pub async fn execute_debug(
         bc_config
     };
 
-    let executor: Box<dyn TransactionExecutor> = Box::new(OrdinaryTransactionExecutor::new(bc_config));
+    let executor: Box<dyn TransactionExecutor> =
+        Box::new(OrdinaryTransactionExecutor::new(bc_config));
 
     let params = ExecuteParams {
         block_unixtime: (time_in_ms / 1000) as u32,

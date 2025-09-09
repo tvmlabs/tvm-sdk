@@ -21,6 +21,7 @@ log.workspace = true
 num.workspace = true
 num-traits.workspace = true
 rand.workspace = true
+serde_derive.workspace = true
 similar = { features = ["bytes"], optional = true, workspace = true }
 thiserror.workspace = true
 wasmtime.workspace = true
@@ -38,6 +39,8 @@ serde.workspace = true
 regex.workspace = true
 
 bls12_381 = "0.8"
+
+base64 = "0.13"
 
 
 ark-bls12-381 = "0.4.0"
@@ -65,6 +68,8 @@ base64ct = { version = "1.5.3", features = ["alloc"] }
 itertools = "0.12.0"
 typenum = "1.13.0"
 ff = { version = "0.13.0", features = ["derive"] }
+
+rand_chacha = "0.2.2"
 
 [dev-dependencies]
 criterion = "0.5.1"

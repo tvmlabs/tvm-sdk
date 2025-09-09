@@ -176,6 +176,12 @@ impl VMSetup {
         self
     }
 
+    /// Sets block time for use in wasm
+    pub fn set_wasm_block_time(mut self, time: u64) -> VMSetup {
+        self.vm.set_wasm_block_time(time);
+        self
+    }
+
     /// Init wasmtime engine
     pub fn wasm_engine_init_cached(mut self) -> Result<VMSetup> {
         self.vm.wasm_engine_init_cached()?;

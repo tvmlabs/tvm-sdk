@@ -24,9 +24,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use smallvec::SmallVec;
+use smallvec::smallvec;
 
 use crate::ByteOrderRead;
-use crate::CellImpl;
 use crate::CellType;
 use crate::Crc32;
 use crate::MAX_BIG_DATA_BYTES;
@@ -136,6 +136,10 @@ pub fn write_boc(root_cell: &Cell) -> Result<Vec<u8>> {
     let mut buf = Vec::new();
     BocWriter::with_root(root_cell)?.write(&mut buf)?;
     Ok(buf)
+}
+
+pub fn write_boc_to<T: Write>(root_cell: &Cell, dest: &mut T) -> Result<()> {
+    BocWriter::with_root(root_cell)?.write(dest)
 }
 
 impl<'a> BocWriter<'a, SimpleOrderedCellsStorage> {
@@ -868,7 +872,7 @@ impl<'a> BocReader<'a> {
         for cell_index in (0..header.cells_count).rev() {
             check_abort(self.abort)?;
             let raw_cell = self.indexed_cells.remove(cell_index as u32)?;
-            let mut refs = vec![];
+            let mut refs = smallvec![];
             for i in 0..cell::refs_count(&raw_cell.data) {
                 refs.push(self.done_cells.get(raw_cell.refs[i])?)
             }
@@ -981,7 +985,7 @@ impl<'a> BocReader<'a> {
             let mut src = Cursor::new(&data[offset..]);
             let refs_indexes =
                 Self::read_refs_indexes(&mut src, header.ref_size, cell_index, header.cells_count)?;
-            let mut refs = Vec::with_capacity(refs_indexes.len());
+            let mut refs = SmallVec::with_capacity(refs_indexes.len());
             for ref_cell_index in refs_indexes {
                 let child = self.done_cells.get(ref_cell_index)?;
                 refs.push(child.clone());

@@ -63,15 +63,15 @@ impl TransactionBounceFields<'_> {
 pub(crate) struct TransactionFields<'a>(pub &'a Value);
 
 impl TransactionFields<'_> {
-    pub fn bounce(&self) -> Option<TransactionBounceFields> {
+    pub fn bounce(&self) -> Option<TransactionBounceFields<'_>> {
         self.0.get("bounce").map(TransactionBounceFields)
     }
 
-    pub fn in_message(&self) -> Option<MessageFields> {
+    pub fn in_message(&self) -> Option<MessageFields<'_>> {
         self.0.get("in_message").map(MessageFields)
     }
 
-    pub fn out_messages(&self) -> Option<Vec<MessageFields>> {
+    pub fn out_messages(&self) -> Option<Vec<MessageFields<'_>>> {
         self.0["out_messages"].as_array().map(|x| x.iter().map(MessageFields).collect())
     }
 }

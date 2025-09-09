@@ -347,7 +347,7 @@ fn compare_vectors(
     Ok(())
 }
 
-fn get_string(value: &Value, is_numeric: bool) -> Cow<str> {
+fn get_string(value: &Value, is_numeric: bool) -> Cow<'_, str> {
     let result = match value {
         Value::String(string) => Cow::Borrowed(string.as_str()),
         _ => Cow::Owned(value.to_string()),
