@@ -3,7 +3,6 @@ use std::io::Write;
 use std::sync::Arc;
 
 use crate::Cell;
-use crate::CellImpl;
 use crate::CellType;
 use crate::DEPTH_SIZE;
 use crate::LevelMask;
@@ -255,26 +254,24 @@ impl Boc3Cell {
         let unbounded = self.unbounded_raw_data();
         &unbounded[..raw_cell_len(unbounded)]
     }
-}
 
-impl CellImpl for Boc3Cell {
-    fn data(&self) -> &[u8] {
+    pub(crate) fn data(&self) -> &[u8] {
         cell::cell_data(self.unbounded_raw_data())
     }
 
-    fn raw_data(&self) -> crate::Result<&[u8]> {
+    pub(crate) fn raw_data(&self) -> crate::Result<&[u8]> {
         Ok(self.bounded_raw_data())
     }
 
-    fn bit_length(&self) -> usize {
+    pub(crate) fn bit_length(&self) -> usize {
         cell::bit_len(self.unbounded_raw_data())
     }
 
-    fn references_count(&self) -> usize {
+    pub(crate) fn references_count(&self) -> usize {
         cell::refs_count(self.unbounded_raw_data())
     }
 
-    fn reference(&self, index: usize) -> crate::Result<Cell> {
+    pub(crate) fn reference(&self, index: usize) -> crate::Result<Cell> {
         let raw_data = self.unbounded_raw_data();
         let refs_count = cell::refs_count(raw_data);
         if index >= refs_count {
@@ -285,15 +282,15 @@ impl CellImpl for Boc3Cell {
         Ok(Cell::with_boc3(Boc3Cell::new(self.data.clone(), self.boc_offset, child_offset)))
     }
 
-    fn cell_type(&self) -> CellType {
+    pub(crate) fn cell_type(&self) -> CellType {
         cell::cell_type(self.unbounded_raw_data())
     }
 
-    fn level_mask(&self) -> LevelMask {
+    pub(crate) fn level_mask(&self) -> LevelMask {
         cell::level_mask(self.unbounded_raw_data())
     }
 
-    fn hash(&self, index: usize) -> UInt256 {
+    pub(crate) fn hash(&self, index: usize) -> UInt256 {
         let raw_data = self.unbounded_raw_data();
         if cell::is_big_cell(raw_data) {
             let hash_offset = cell::full_len(raw_data);
@@ -318,7 +315,7 @@ impl CellImpl for Boc3Cell {
         cell::hash(raw_data, index).into()
     }
 
-    fn depth(&self, index: usize) -> u16 {
+    pub(crate) fn depth(&self, index: usize) -> u16 {
         let cell_raw = self.unbounded_raw_data();
         if cell::is_big_cell(cell_raw) {
             return 1;
@@ -345,11 +342,11 @@ impl CellImpl for Boc3Cell {
         cell::depth(cell_raw, index)
     }
 
-    fn store_hashes(&self) -> bool {
+    pub(crate) fn store_hashes(&self) -> bool {
         true
     }
 
-    fn tree_bits_count(&self) -> u64 {
+    pub(crate) fn tree_bits_count(&self) -> u64 {
         let raw_data = self.unbounded_raw_data();
         if cell::is_big_cell(raw_data) {
             cell::cell_data_len(raw_data) as u64 * 8
@@ -358,7 +355,7 @@ impl CellImpl for Boc3Cell {
         }
     }
 
-    fn tree_cell_count(&self) -> u64 {
+    pub(crate) fn tree_cell_count(&self) -> u64 {
         let raw_data = self.unbounded_raw_data();
         if cell::is_big_cell(raw_data) {
             1

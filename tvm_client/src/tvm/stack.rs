@@ -126,7 +126,7 @@ pub fn serialize_item(item: &StackItem) -> ClientResult<Value> {
     Ok(serialize_items(Box::new(vec![item].into_iter()), false)?[0].take())
 }
 
-fn process_item(item: &StackItem) -> ClientResult<ProcessingResult> {
+fn process_item(item: &StackItem) -> ClientResult<ProcessingResult<'_>> {
     Ok(match item {
         StackItem::None => ProcessingResult::Serialized(Value::Null),
         StackItem::Integer(value) => {

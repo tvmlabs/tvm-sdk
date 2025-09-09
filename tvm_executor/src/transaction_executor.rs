@@ -441,7 +441,7 @@ pub trait TransactionExecutor {
         log::debug!(target: "executor", "acc balance: {}", acc_balance);
         log::debug!(target: "executor", "msg balance: {}", msg_balance);
         let is_ordinary = self.ordinary_transaction();
-        if acc_balance.grams.is_zero()  {
+        if acc_balance.grams.is_zero() {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
@@ -454,7 +454,7 @@ pub trait TransactionExecutor {
             is_ordinary,
             gas_config,
         );
-        if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0  {
+        if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0 {
             log::debug!(target: "executor", "skip computing phase no gas");
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
@@ -487,7 +487,8 @@ pub trait TransactionExecutor {
             } else {
                 vm_phase.exit_arg = None;
                 vm_phase.success = false;
-                vm_phase.gas_fees = Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?;
+                vm_phase.gas_fees =
+                    Grams::new(if is_special { 0 } else { gas_config.calc_gas_fee(0) })?;
 
                 if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
                     log::debug!(target: "executor", "can't sub funds: {} from acc_balance: {}", vm_phase.gas_fees, acc_balance.grams);
@@ -531,6 +532,7 @@ pub trait TransactionExecutor {
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_engine_available_credit(params.available_credit)
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
+        .set_wasm_block_time(params.block_unixtime.into())
         .extern_insert_wasm_engine(params.wasm_engine.clone())
         .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
         .create();
@@ -913,7 +915,9 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellToken { value } => {
-                    if available_credit != INFINITY_CREDIT && value as i128 + minted_shell.clone() as i128 > available_credit { 
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + minted_shell.clone() as i128 > available_credit
+                    {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {
                         match acc_remaining_balance.grams.add(&(Grams::from(value))) {
@@ -930,7 +934,12 @@ pub trait TransactionExecutor {
                 OutAction::MintShellQToken { mut value } => {
                     if available_credit != INFINITY_CREDIT {
                         if value as i128 + minted_shell.clone() as i128 > available_credit {
-                            value = available_credit.clone().try_into()?;
+                            if minted_shell.clone() as i128 >= available_credit {
+                                value = 0;
+                            } else {
+                                let new_value = available_credit - *minted_shell;
+                                value = new_value.try_into()?;
+                            }
                         }
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
@@ -945,7 +954,7 @@ pub trait TransactionExecutor {
                 }
                 OutAction::SendToDappConfigToken { value } => {
                     let value_gram = Grams::from(value);
-                    if value_gram > acc_remaining_balance.grams { 
+                    if value_gram > acc_remaining_balance.grams {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {
                         match acc_remaining_balance.grams.sub(&value_gram) {
@@ -1635,7 +1644,7 @@ fn outmsg_action_handler(
         total_fwd_fees = fwd_fee + int_header.ihr_fee;
 
         let fwd_remain_fee = fwd_fee - fwd_mine_fee;
-        
+
         if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
             int_header.set_exchange(true);
         }
@@ -2004,10 +2013,10 @@ fn action_type(action: &OutAction) -> String {
         OutAction::SetCode { new_code: _ } => "SetCode".to_string(),
         OutAction::ReserveCurrency { mode: _, value: _ } => "ReserveCurrency".to_string(),
         OutAction::ChangeLibrary { mode: _, code: _, hash: _ } => "ChangeLibrary".to_string(),
-        OutAction::MintShellToken { value: _} => "MintShellToken".to_string(),
-        OutAction::MintShellQToken { value: _} => "MintShellQToken".to_string(),
-        OutAction::SendToDappConfigToken { value: _} => "SendToDappConfigToken".to_string(),
-        OutAction::ExchangeShell { value: _} => "ExchangeShell".to_string(),
+        OutAction::MintShellToken { value: _ } => "MintShellToken".to_string(),
+        OutAction::MintShellQToken { value: _ } => "MintShellQToken".to_string(),
+        OutAction::SendToDappConfigToken { value: _ } => "SendToDappConfigToken".to_string(),
+        OutAction::ExchangeShell { value: _ } => "ExchangeShell".to_string(),
         _ => "Unknown".to_string(),
     }
 }

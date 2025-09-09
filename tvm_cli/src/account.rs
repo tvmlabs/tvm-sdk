@@ -111,13 +111,18 @@ pub async fn get_account(
     let client = crate::helpers::create_client(config)?;
     for address in addresses.iter() {
         let params = account::ParamsOfGetAccount { address: address.to_string() };
-        let boc_base64 = account::get_account(client.clone(), params)
+
+        let result_of_get_account = account::get_account(client.clone(), params)
             .await
-            .map_err(|e| format!("failed to get account: {e}"))?
-            .boc;
+            .map_err(|e| format!("failed to get account: {e}"))?;
+
+        let boc_base64 = result_of_get_account.boc;
+        let dapp_id = result_of_get_account.dapp_id;
+
         let account = Account::construct_from_base64(&boc_base64)
             .map_err(|e| format!("failed to construct account from boc: {e}"))?;
-        accounts.push(account);
+
+        accounts.push((account, dapp_id));
     }
 
     if !config.is_json {
@@ -128,7 +133,7 @@ pub async fn get_account(
 
     if !accounts.is_empty() {
         let mut json_res = json!({});
-        for acc in accounts.iter() {
+        for (acc, dapp_id) in accounts.iter() {
             let address = acc.get_id().unwrap().as_hex_string();
             found_addresses.push(format!("0:{address}"));
 
@@ -215,7 +220,7 @@ pub async fn get_account(
                     );
                 }
 
-                let dapp_id = "None".to_owned();
+                let dapp_id = dapp_id.as_deref().unwrap_or("None");
 
                 let ecc_balance = acc
                     .balance()
@@ -289,7 +294,7 @@ pub async fn get_account(
     }
 
     if dumptvc.is_some() || dumpboc.is_some() && accounts.len() == 1 {
-        let account = accounts[0].clone();
+        let (account, _dapp_id) = accounts[0].clone();
         if dumptvc.is_some() {
             if account.state_init().is_some() {
                 account.state_init().unwrap().write_to_file(dumptvc.unwrap()).map_err(|e| {

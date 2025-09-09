@@ -25,7 +25,6 @@ use tvm_block::CommonMsgInfo;
 use tvm_block::CurrencyCollection;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
-use tvm_block::VarUInteger32;
 use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::Serializable;
@@ -34,6 +33,7 @@ use tvm_block::TrComputePhase;
 use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionDescrOrdinary;
+use tvm_block::VarUInteger32;
 use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
@@ -161,23 +161,25 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         echng = VarUInteger32::from(u64::MAX);
                     }
                     if echng != VarUInteger32::from(0) {
-                        msg_balance_convert = echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
+                        msg_balance_convert =
+                            echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
                         msg_balance.grams += Grams::from(msg_balance_convert);
                         value.sub(&echng)?;
                         let digits = value.value().iter_u64_digits().collect::<Vec<u64>>();
                         let base = u64::MAX as u128 + 1;
-                        let new_balance = if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
-                            u128::MAX
-                        } else {
-                            let d0 = digits.first().copied().unwrap_or(0) as u128;
-                            let d1 = digits.get(1).copied().unwrap_or(0) as u128;
-                            d0 + d1 * base
-                        };
+                        let new_balance =
+                            if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
+                                u128::MAX
+                            } else {
+                                let d0 = digits.first().copied().unwrap_or(0) as u128;
+                                let d1 = digits.get(1).copied().unwrap_or(0) as u128;
+                                d0 + d1 * base
+                            };
                         msg_balance.set_other(2, new_balance)?;
                     }
                     exchanged = true;
                 }
-            } 
+            }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
         if !ihr_delivered {
@@ -405,11 +407,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             Some(phase)
                         }
                         Err(e) => {
-                                *minted_shell = minted_shell_orig.clone();
-                                fail!(ExecutorError::TrExecutorError(format!(
-                                    "cannot create action phase of a new transaction for smart contract for reason {}",
-                                    e
-                                )))
+                            *minted_shell = minted_shell_orig.clone();
+                            fail!(ExecutorError::TrExecutorError(format!(
+                                "cannot create action phase of a new transaction for smart contract for reason {}",
+                                e
+                            )))
                         }
                     }
                 } else {
@@ -461,7 +463,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 true
             }
         };
-        
+
         if description.aborted && !is_ext_msg && bounce {
             msg_balance = original_msg_balance.clone();
             if exchanged {
@@ -469,16 +471,16 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 add_value.set_other(2, msg_balance_convert.into())?;
                 if Grams::from(msg_balance_convert) > acc_balance.grams {
                     acc_balance.grams = Grams::zero();
-                    acc_balance.add(&add_value)?;     
+                    acc_balance.add(&add_value)?;
                 } else {
                     acc_balance.grams -= Grams::from(msg_balance_convert);
-                    acc_balance.add(&add_value)?;     
+                    acc_balance.add(&add_value)?;
                 }
             }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
-                log::debug!(target: "executor", "bounce_phase");     
+                log::debug!(target: "executor", "bounce_phase");
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,

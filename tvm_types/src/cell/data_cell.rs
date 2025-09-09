@@ -4,9 +4,11 @@ use std::io::Read;
 use std::io::Write;
 use std::sync::Arc;
 
+use smallvec::SmallVec;
+use smallvec::smallvec;
+
 use crate::ByteOrderRead;
 use crate::Cell;
-use crate::CellImpl;
 use crate::CellType;
 use crate::DEPTH_SIZE;
 use crate::ExceptionCode;
@@ -28,7 +30,8 @@ use crate::fail;
 #[derive(Clone, Debug)]
 pub struct DataCell {
     cell_data: CellData,
-    references: Vec<Cell>, // TODO make array - you already know cells refs count, or may be vector
+    references: SmallVec<[Cell; 4]>, /* TODO make array - you already know cells refs count, or
+                                      * may be vector */
     tree_bits_count: u64,
     tree_cell_count: u64,
 }
@@ -41,18 +44,18 @@ impl Default for DataCell {
 
 impl DataCell {
     pub fn new() -> Self {
-        Self::with_refs_and_data(vec![], &[0x80]).unwrap()
+        Self::with_refs_and_data(smallvec![], &[0x80]).unwrap()
     }
 
     pub fn with_refs_and_data(
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         data: &[u8], // with completion tag (for big cell - without)!
     ) -> crate::Result<DataCell> {
         Self::with_params(references, data, CellType::Ordinary, 0, None, None, None)
     }
 
     pub fn with_params(
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         data: &[u8], // with completion tag (for big cell - without)!
         cell_type: CellType,
         level_mask: u8,
@@ -75,7 +78,7 @@ impl DataCell {
     }
 
     pub fn with_external_data(
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         buffer: &Arc<Vec<u8>>,
         offset: usize,
         max_depth: Option<u16>,
@@ -86,7 +89,7 @@ impl DataCell {
     }
 
     pub fn with_raw_data(
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         data: Vec<u8>,
         max_depth: Option<u16>,
         force_finalization: bool,
@@ -97,7 +100,7 @@ impl DataCell {
 
     fn construct_cell(
         cell_data: CellData,
-        references: Vec<Cell>,
+        references: SmallVec<[Cell; 4]>,
         max_depth: Option<u16>,
         force_finalization: bool,
     ) -> crate::Result<DataCell> {
@@ -138,7 +141,8 @@ impl DataCell {
         match cell_type {
             CellType::PrunedBranch => {
                 // type + level_mask + level * (hashes + depths)
-                let expected = 8 * (1 + 1 + (self.level() as usize) * (SHA256_SIZE + DEPTH_SIZE));
+                let expected =
+                    8 * (1 + 1 + (self.level_mask().level() as usize) * (SHA256_SIZE + DEPTH_SIZE));
                 if bit_len != expected {
                     fail!("fail creating pruned branch cell: {} != {}", bit_len, expected)
                 }
@@ -162,7 +166,7 @@ impl DataCell {
                         self.cell_data.level_mask().0
                     )
                 }
-                let level = self.level() as usize;
+                let level = self.level_mask().level() as usize;
                 if level == 0 {
                     fail!("Pruned branch cell must have non zero level");
                 }
@@ -398,58 +402,56 @@ impl DataCell {
     pub fn cell_data(&self) -> &CellData {
         &self.cell_data
     }
-}
 
-impl CellImpl for DataCell {
-    fn data(&self) -> &[u8] {
+    pub(crate) fn data(&self) -> &[u8] {
         self.cell_data.data()
     }
 
-    fn raw_data(&self) -> crate::Result<&[u8]> {
+    pub(crate) fn raw_data(&self) -> crate::Result<&[u8]> {
         Ok(self.cell_data.raw_data())
     }
 
-    fn bit_length(&self) -> usize {
+    pub(crate) fn bit_length(&self) -> usize {
         self.cell_data.bit_length()
     }
 
-    fn references_count(&self) -> usize {
+    pub(crate) fn references_count(&self) -> usize {
         self.references.len()
     }
 
-    fn reference(&self, index: usize) -> crate::Result<Cell> {
+    pub(crate) fn reference(&self, index: usize) -> crate::Result<Cell> {
         self.references.get(index).cloned().ok_or_else(|| error!(ExceptionCode::CellUnderflow))
     }
 
-    fn cell_type(&self) -> CellType {
+    pub(crate) fn cell_type(&self) -> CellType {
         self.cell_data.cell_type()
     }
 
-    fn level_mask(&self) -> LevelMask {
+    pub(crate) fn level_mask(&self) -> LevelMask {
         self.cell_data.level_mask()
     }
 
-    fn hash(&self, index: usize) -> UInt256 {
+    pub(crate) fn hash(&self, index: usize) -> UInt256 {
         self.cell_data().hash(index)
     }
 
-    fn depth(&self, index: usize) -> u16 {
+    pub(crate) fn depth(&self, index: usize) -> u16 {
         self.cell_data().depth(index)
     }
 
-    fn store_hashes(&self) -> bool {
+    pub(crate) fn store_hashes(&self) -> bool {
         self.cell_data().store_hashes()
     }
 
-    fn tree_bits_count(&self) -> u64 {
+    pub(crate) fn tree_bits_count(&self) -> u64 {
         self.tree_bits_count
     }
 
-    fn tree_cell_count(&self) -> u64 {
+    pub(crate) fn tree_cell_count(&self) -> u64 {
         self.tree_cell_count
     }
 
-    fn to_external(&self) -> crate::Result<Cell> {
+    pub(crate) fn to_external(&self) -> crate::Result<Cell> {
         if self.cell_type() != CellType::Ordinary && self.cell_type() != CellType::Big {
             fail!("Only ordinary and big cells can be converted to external")
         }
@@ -471,7 +473,7 @@ impl CellImpl for DataCell {
         let size = cursor.position() as usize;
 
         let cell = DataCell::with_params(
-            vec![],
+            smallvec![],
             &cursor.into_inner()[..size],
             CellType::External,
             0,

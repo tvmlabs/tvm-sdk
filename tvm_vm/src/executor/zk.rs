@@ -29,6 +29,7 @@ use tvm_types::error;
 use crate::error::TvmError;
 use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
+use crate::executor::gas::gas_state::Gas;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
@@ -47,6 +48,9 @@ use crate::types::Status;
 use crate::utils::pack_data_to_cell;
 use crate::utils::unpack_data_from_cell;
 use crate::utils::unpack_string_from_cell;
+
+pub const POSEIDON_ZK_LOGIN_GAS_PRICE: i64 = 356;
+pub const VERGRTH16_GAS_PRICE: i64 = 2380;
 
 pub type ZkCryptoResult<T> = Result<T, ZkCryptoError>;
 
@@ -689,6 +693,7 @@ fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
 
 pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16"))?;
+    engine.try_use_gas(Gas::vergrth16_price())?;
     fetch_stack(engine, 3)?;
 
     let vk_index = engine.cmd.var(0).as_small_integer()? as u32;
@@ -741,6 +746,7 @@ fn pop(barry: &[u8]) -> &[u8; 8] {
 
 pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("POSEIDON"))?;
+    engine.try_use_gas(Gas::poseidon_zk_login_price())?;
     fetch_stack(engine, 7)?;
 
     let zkaddr_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
