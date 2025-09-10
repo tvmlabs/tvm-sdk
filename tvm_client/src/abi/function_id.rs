@@ -28,6 +28,10 @@ pub fn calc_function_id(
     _context: Arc<ClientContext>,
     params: ParamsOfCalcFunctionId,
 ) -> ClientResult<ResultOfCalcFunctionId> {
+    if params.function_name == "constructor" {
+        let function_id = 1;
+        return Ok(ResultOfCalcFunctionId {function_id});
+    }
     let abi = params.abi.abi()?;
     let function = abi
         .function(&params.function_name)
