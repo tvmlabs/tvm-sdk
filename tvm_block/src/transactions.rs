@@ -1929,10 +1929,7 @@ impl ShardAccountBlocks {
         self.add_serialized_transaction(transaction, &transaction.serialize()?)
     }
 
-    pub fn set_dapp_id_changed_for_account(
-        &mut self,
-        account_id: &AccountId,
-    ) -> Result<()> {
+    pub fn set_dapp_id_changed_for_account(&mut self, account_id: &AccountId) -> Result<()> {
         let mut account_block;
         match self.get_serialized(account_id.clone())? {
             Some(acc) => {

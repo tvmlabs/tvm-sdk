@@ -585,7 +585,8 @@ impl Serializable for AccountStuff {
 pub enum OptionalAccount {
     Account(ExternalCell<Account>),
 
-    // Note: used for accounts that were moved to the other blockchain thread according to their non default DApp ID
+    // Note: used for accounts that were moved to the other blockchain thread according to their
+    // non default DApp ID
     AccountRedirect,
 }
 
@@ -601,14 +602,14 @@ impl OptionalAccount {
     pub fn get_account(&self) -> Result<&ExternalCell<Account>> {
         match self {
             OptionalAccount::Account(account) => Ok(account),
-            _ => fail!("Account was replaced with stub")
+            _ => fail!("Account was replaced with stub"),
         }
     }
 
     pub fn get_account_mut(&mut self) -> Result<&mut ExternalCell<Account>> {
         match self {
             OptionalAccount::Account(account) => Ok(account),
-            _ => fail!("Account was replaced with stub")
+            _ => fail!("Account was replaced with stub"),
         }
     }
 
@@ -623,17 +624,13 @@ impl OptionalAccount {
 impl PartialEq for OptionalAccount {
     fn eq(&self, other: &Self) -> bool {
         match self {
-            OptionalAccount::Account(acc) => {
-                match other {
-                    OptionalAccount::Account(other) => acc.eq(other),
-                    _ => false,
-                }
-            }
-            OptionalAccount::AccountRedirect => {
-                match other {
-                    OptionalAccount::Account(_other) => false,
-                    _ => true,
-                }
+            OptionalAccount::Account(acc) => match other {
+                OptionalAccount::Account(other) => acc.eq(other),
+                _ => false,
+            },
+            OptionalAccount::AccountRedirect => match other {
+                OptionalAccount::Account(_other) => false,
+                _ => true,
             },
         }
     }
