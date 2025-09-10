@@ -1293,7 +1293,7 @@ fn compute_new_state(
                         if in_msg.is_internal() {
                             if let Ok(function_id) = data.get_next_u32() {
                                 log::trace!(target: "executor", "{} function_id", function_id);
-                                if function_id != 0 {
+                                if function_id != 1 {
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
                             } else {
@@ -1328,7 +1328,7 @@ fn compute_new_state(
                             match data.get_next_u32() {
                                 Ok(function_id) => {
                                     log::trace!(target: "executor", "{} function_id", function_id);
-                                    if function_id != 0 {
+                                    if function_id != 1 {
                                         return Ok(Some(ComputeSkipReason::BadState));
                                     }
                                 }
