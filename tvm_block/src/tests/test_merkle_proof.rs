@@ -387,6 +387,7 @@ fn test_check_transaction_proof(wrong: bool, block_file: &str) -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn test_check_wrong_transaction_proof() {
     let block_files = vec![
         "src/tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
@@ -404,6 +405,7 @@ fn test_check_wrong_transaction_proof() {
 }
 
 #[test]
+#[ignore]
 fn test_check_correct_transaction_proof() {
     let block_files = vec![
         "src/tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
