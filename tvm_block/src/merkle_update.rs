@@ -305,7 +305,7 @@ impl MerkleUpdate {
         old_root: &Cell,
         unloaded_accounts_resolver: &mut impl UnloadedAccountsResolver,
     ) -> Result<Cell> {
-        let mut old_cells = self.check(old_root, None, unloaded_accounts_resolver)?;
+        let old_cells = self.check(old_root, None, unloaded_accounts_resolver)?;
 
         // cells for new bag
         if self.new_hash == self.old_hash {
@@ -313,7 +313,7 @@ impl MerkleUpdate {
         } else {
             let new_root = self.traverse_on_apply(
                 &self.new,
-                &mut old_cells,
+                &old_cells,
                 &mut HashMap::new(),
                 0,
                 unloaded_accounts_resolver,
@@ -345,7 +345,7 @@ impl MerkleUpdate {
     ) -> Result<(Cell, MerkleUpdateApplyMetrics)> {
         let mut metrics = MerkleUpdateApplyMetrics::default();
 
-        let mut old_cells = self.check(old_root, Some(&mut metrics), unloaded_accounts_resolver)?;
+        let old_cells = self.check(old_root, Some(&mut metrics), unloaded_accounts_resolver)?;
 
         // cells for new bag
         if self.new_hash == self.old_hash {
@@ -353,7 +353,7 @@ impl MerkleUpdate {
         } else {
             let new_root = self.traverse_on_apply(
                 &self.new,
-                &mut old_cells,
+                &old_cells,
                 &mut HashMap::new(),
                 0,
                 unloaded_accounts_resolver,
@@ -417,7 +417,7 @@ impl MerkleUpdate {
     fn traverse_on_apply(
         &self,
         update_cell: &Cell,
-        old_cells: &mut HashMap<UInt256, Cell>,
+        old_cells: &HashMap<UInt256, Cell>,
         new_cells: &mut HashMap<UInt256, Cell>,
         merkle_depth: u8,
         unloaded_accounts_resolver: &mut impl UnloadedAccountsResolver,
@@ -466,7 +466,6 @@ impl MerkleUpdate {
                         } else {
                             let resolved = unloaded_accounts_resolver
                                 .resolve_cell_from_unloaded_accounts(&new_child_hash)?;
-                            old_cells.insert(new_child_hash, resolved.clone());
                             resolved
                         }
                     } else {
