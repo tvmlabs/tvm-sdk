@@ -736,8 +736,7 @@ impl Serializable for InternalMessageHeader {
 impl Deserializable for InternalMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         for i in 0..cell.remaining_references() {
-            if let Ok(r) = cell.reference(i) {
-            }
+            if let Ok(r) = cell.reference(i) {}
         }
         // constructor tag will be readed in Message
         self.ihr_disabled = cell.get_next_bit()?; // ihr_disabled
@@ -2051,5 +2050,3 @@ impl Deserializable for MsgAddress {
         Ok(())
     }
 }
-
-
