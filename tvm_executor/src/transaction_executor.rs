@@ -1301,7 +1301,6 @@ fn compute_new_state(
                             }
                         }
                         if in_msg.is_inbound_external() {
-                            log::trace!(target: "executor", "inbound");
                             let sign_bit = match data.get_next_bit() {
                                 Ok(bit) => bit,
                                 Err(_) => return Ok(Some(ComputeSkipReason::BadState)),
@@ -1330,7 +1329,6 @@ fn compute_new_state(
                                 Ok(function_id) => {
                                     log::trace!(target: "executor", "{} function_id", function_id);
                                     if function_id != 1 {
-                                        log::trace!(target: "executor", "HERE3");
                                         return Ok(Some(ComputeSkipReason::BadState));
                                     }
                                 }
@@ -1341,7 +1339,6 @@ fn compute_new_state(
                         }
                     },
                     None => {
-                        log::trace!(target: "executor", "HERE2");
                         return Ok(Some(ComputeSkipReason::NoState));
                     }
                 }
@@ -1350,7 +1347,6 @@ fn compute_new_state(
                 log::debug!(target: "executor", "message for uninitialized: activated");
                 let text = "Cannot construct account from message with hash";
                 if !check_libraries(state_init, disable_set_lib, text, in_msg) {
-                    log::trace!(target: "executor", "HERE1");
                     return Ok(Some(ComputeSkipReason::BadState));
                 }
                 match acc.try_activate_by_init_code_hash(state_init, init_code_hash) {
