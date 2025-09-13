@@ -18,6 +18,7 @@ use crate::executor::zk_stuff::zk_login::JwkId;
 use crate::executor::zk_stuff::zk_login::OIDCProvider;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
 use crate::executor::zk_stuff::zk_login::ZkLoginProof;
+use crate::executor::zk::{GLOBAL_VK_SERIALIZED, INSECURE_VK_SERIALIZED, MY_TEST_VK_1_SERIALIZED};
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
@@ -163,14 +164,24 @@ fn test_vrgrth16_short_public_input() {
     let mut public_inputs_as_bytes = data.public_inputs_as_bytes;
     public_inputs_as_bytes.pop();
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
+
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
+    
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
@@ -242,11 +253,20 @@ fn test_vrgrth16_long_public_input() {
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
+    
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
@@ -318,11 +338,19 @@ fn test_vrgrth16_bad_public_input() {
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => {
@@ -340,7 +368,6 @@ fn test_vrgrth16_bad_public_input() {
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => {
@@ -357,7 +384,6 @@ fn test_vrgrth16_bad_public_input() {
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => {
@@ -420,14 +446,22 @@ fn test_vrgrth16_short_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
@@ -491,14 +525,22 @@ fn test_vrgrth16_long_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => {
@@ -556,14 +598,22 @@ fn test_vrgrth16_long_incorrect_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
@@ -622,14 +672,22 @@ fn test_vrgrth16_incorrect_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
@@ -697,14 +755,22 @@ fn test_vrgrth16_invalid_proof() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
@@ -772,14 +838,23 @@ fn test_vrgrth16_invalid_proof_one_more_case() {
 
     let public_inputs_as_bytes = data.public_inputs_as_bytes;
 
-    let verification_key_id: u32 = 0;
+    let vk_index: u32 = 0;
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
     let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-    engine.cc.stack.push(StackItem::int(verification_key_id));
+
 
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),

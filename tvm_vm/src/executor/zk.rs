@@ -274,7 +274,15 @@ impl ProofWrapper {
     }
 }
 
-fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
+pub const VK_LEN: usize = 296;
+
+pub const INSECURE_VK_SERIALIZED: [u8; VK_LEN] = [226, 242, 109, 190, 162, 153, 245, 34, 59, 100, 108, 177, 251, 51, 234, 219, 5, 157, 148, 7, 85, 157, 116, 65, 223, 217, 2, 227, 167, 154, 77, 45, 171, 183, 61, 193, 127, 188, 19, 2, 30, 36, 113, 224, 192, 139, 214, 125, 132, 1, 245, 43, 115, 214, 208, 116, 131, 121, 76, 173, 71, 120, 24, 14, 12, 6, 243, 59, 188, 76, 121, 169, 202, 222, 242, 83, 166, 128, 132, 211, 130, 241, 119, 136, 248, 133, 201, 175, 209, 118, 247, 203, 47, 3, 103, 137, 237, 246, 146, 217, 92, 189, 222, 70, 221, 218, 94, 247, 212, 34, 67, 103, 121, 68, 92, 94, 102, 0, 106, 66, 118, 30, 31, 18, 239, 222, 0, 24, 194, 18, 243, 174, 183, 133, 228, 151, 18, 231, 169, 53, 51, 73, 170, 241, 37, 93, 251, 49, 183, 191, 96, 114, 58, 72, 13, 146, 147, 147, 142, 25, 237, 246, 146, 217, 92, 189, 222, 70, 221, 218, 94, 247, 212, 34, 67, 103, 121, 68, 92, 94, 102, 0, 106, 66, 118, 30, 31, 18, 239, 222, 0, 24, 194, 18, 243, 174, 183, 133, 228, 151, 18, 231, 169, 53, 51, 73, 170, 241, 37, 93, 251, 49, 183, 191, 96, 114, 58, 72, 13, 146, 147, 147, 142, 25, 2, 0, 0, 0, 0, 0, 0, 0, 188, 109, 65, 14, 59, 194, 107, 53, 43, 136, 71, 184, 217, 252, 205, 146, 137, 248, 166, 82, 243, 30, 4, 205, 71, 203, 158, 80, 49, 134, 196, 45, 104, 33, 147, 62, 5, 214, 248, 224, 214, 11, 163, 236, 65, 113, 21, 154, 124, 161, 149, 238, 58, 248, 236, 80, 209, 30, 86, 217, 167, 170, 27, 129];
+
+pub const GLOBAL_VK_SERIALIZED: [u8; VK_LEN] = [153, 95, 236, 192, 209, 69, 53, 46, 44, 142, 22, 242, 149, 93, 223, 124, 146, 8, 25, 154, 53, 214, 241, 163, 103, 180, 152, 36, 31, 126, 153, 47, 210, 17, 210, 0, 61, 234, 165, 49, 25, 21, 84, 112, 182, 96, 83, 184, 146, 79, 162, 25, 16, 177, 167, 181, 115, 149, 186, 207, 43, 183, 151, 14, 151, 70, 109, 244, 206, 238, 26, 171, 24, 142, 154, 116, 90, 195, 28, 13, 228, 122, 128, 98, 173, 245, 60, 45, 111, 162, 108, 94, 56, 8, 213, 163, 237, 246, 146, 217, 92, 189, 222, 70, 221, 218, 94, 247, 212, 34, 67, 103, 121, 68, 92, 94, 102, 0, 106, 66, 118, 30, 31, 18, 239, 222, 0, 24, 194, 18, 243, 174, 183, 133, 228, 151, 18, 231, 169, 53, 51, 73, 170, 241, 37, 93, 251, 49, 183, 191, 96, 114, 58, 72, 13, 146, 147, 147, 142, 25, 2, 2, 242, 114, 244, 198, 146, 132, 120, 207, 247, 34, 5, 178, 202, 159, 101, 165, 84, 196, 10, 110, 110, 69, 231, 94, 93, 59, 233, 242, 148, 42, 36, 120, 3, 59, 238, 165, 13, 209, 130, 26, 71, 16, 75, 84, 248, 56, 180, 54, 248, 216, 82, 139, 80, 199, 60, 205, 239, 244, 145, 222, 123, 133, 2, 0, 0, 0, 0, 0, 0, 0, 60, 87, 71, 146, 228, 115, 61, 79, 87, 24, 48, 121, 168, 233, 18, 143, 162, 218, 225, 6, 231, 94, 56, 204, 94, 100, 111, 57, 67, 236, 141, 131, 103, 200, 250, 33, 200, 246, 96, 233, 240, 248, 141, 250, 199, 97, 59, 203, 165, 97, 216, 37, 33, 45, 71, 252, 147, 94, 249, 48, 34, 162, 169, 45];
+
+pub const MY_TEST_VK_1_SERIALIZED: [u8; VK_LEN] = [197, 4, 58, 66, 35, 79, 42, 146, 231, 7, 232, 227, 177, 50, 124, 221, 242, 199, 161, 192, 52, 46, 131, 80, 165, 85, 178, 200, 10, 193, 142, 163, 247, 111, 107, 63, 62, 194, 77, 89, 129, 26, 60, 23, 189, 135, 127, 50, 63, 34, 75, 204, 168, 248, 186, 41, 23, 107, 149, 232, 143, 208, 131, 15, 143, 217, 239, 13, 173, 52, 55, 113, 156, 224, 20, 141, 200, 144, 146, 56, 121, 35, 101, 142, 106, 162, 17, 23, 202, 208, 226, 233, 243, 5, 51, 21, 237, 246, 146, 217, 92, 189, 222, 70, 221, 218, 94, 247, 212, 34, 67, 103, 121, 68, 92, 94, 102, 0, 106, 66, 118, 30, 31, 18, 239, 222, 0, 24, 194, 18, 243, 174, 183, 133, 228, 151, 18, 231, 169, 53, 51, 73, 170, 241, 37, 93, 251, 49, 183, 191, 96, 114, 58, 72, 13, 146, 147, 147, 142, 25, 237, 246, 146, 217, 92, 189, 222, 70, 221, 218, 94, 247, 212, 34, 67, 103, 121, 68, 92, 94, 102, 0, 106, 66, 118, 30, 31, 18, 239, 222, 0, 24, 194, 18, 243, 174, 183, 133, 228, 151, 18, 231, 169, 53, 51, 73, 170, 241, 37, 93, 251, 49, 183, 191, 96, 114, 58, 72, 13, 146, 147, 147, 142, 25, 2, 0, 0, 0, 0, 0, 0, 0, 0, 236, 6, 195, 27, 115, 127, 86, 133, 110, 193, 169, 191, 53, 44, 41, 81, 95, 73, 177, 222, 78, 205, 228, 54, 49, 213, 76, 52, 69, 0, 154, 164, 179, 134, 188, 139, 110, 45, 141, 171, 202, 250, 228, 197, 1, 36, 56, 243, 107, 135, 51, 152, 144, 183, 171, 50, 183, 98, 73, 242, 76, 5, 150];
+
+fn insecure_pvk() -> VerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
     let vk_alpha_1 = g1_affine_from_str_projective(&vec![
         Bn254FqElementWrapper::from_str(
@@ -408,11 +416,10 @@ fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
         gamma_abc_g1: vk_gamma_abc_g1,
     };
 
-    // Convert the verifying key into the prepared form.
-    PreparedVerifyingKey::from(vk)
+    vk
 }
 
-fn global_pvk() -> PreparedVerifyingKey<Bn254> {
+fn global_pvk() -> VerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
     let vk_alpha_1 = g1_affine_from_str_projective(&vec![
         Bn254FqElementWrapper::from_str(
@@ -538,19 +545,16 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
         vk_gamma_abc_g1.push(g1);
     }
 
-    let vk = VerifyingKey {
+    VerifyingKey {
         alpha_g1: vk_alpha_1,
         beta_g2: vk_beta_2,
         gamma_g2: vk_gamma_2,
         delta_g2: vk_delta_2,
         gamma_abc_g1: vk_gamma_abc_g1,
-    };
-
-    // Convert the verifying key into the prepared form.
-    PreparedVerifyingKey::from(vk)
+    }
 }
 
-fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
+fn my_test_pvk_1() -> VerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
     let vk_alpha_1 = g1_affine_from_str_projective(&vec![
         Bn254FqElementWrapper::from_str(
@@ -679,29 +683,24 @@ fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
         vk_gamma_abc_g1.push(g1);
     }
 
-    let vk = VerifyingKey {
+    VerifyingKey {
         alpha_g1: vk_alpha_1,
         beta_g2: vk_beta_2,
         gamma_g2: vk_gamma_2,
         delta_g2: vk_delta_2,
         gamma_abc_g1: vk_gamma_abc_g1,
-    };
-
-    // Convert the verifying key into the prepared form.
-    PreparedVerifyingKey::from(vk)
+    }
 }
 
 pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16"))?;
     engine.try_use_gas(Gas::vergrth16_price())?;
-    fetch_stack(engine, 3)?;
+    fetch_stack(engine, 2)?;
 
-    let vk_index = engine.cmd.var(0).as_small_integer()? as u32;
-
-    let public_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+    let public_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
     let public_inputs_as_bytes = unpack_data_from_cell(public_inputs_slice, engine)?;
 
-    let proof_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
+    let proof_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let proof_as_bytes = unpack_data_from_cell(proof_slice, engine)?;
 
     let public_inputs = match FieldElementWrapper::deserialize_vector(&public_inputs_as_bytes) {
@@ -720,13 +719,24 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
 
     let x: Vec<Fr> = public_inputs.iter().map(|x| x.0).collect();
 
-    let vk = if vk_index == 0 {
-        insecure_pvk()
+    /*let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
     } else if vk_index == 1 {
-        global_pvk()
+        GLOBAL_VK_SERIALIZED
     } else {
-        my_test_pvk_1()
+        MY_TEST_VK_1_SERIALIZED
+    };*/
+
+    let vk_bytes = engine.get_vergrth16_verififcation_key_serialized();
+
+    let vk_deserialized: VerifyingKey<Bn254> = match ark_groth16::VerifyingKey::<Bn254>::deserialize_compressed(vk_bytes.as_slice()){
+        Ok(vk) => vk,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect verification key {}", err);
+        }
     };
+
+    let vk: PreparedVerifyingKey<Bn254> = PreparedVerifyingKey::from(vk_deserialized);
 
     // todo: add alternative for elliptic curve (BLS), read from stack curve id
 
@@ -855,4 +865,79 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     engine.cc.stack.push(Cell(public_inputs_cell));
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    pub use ark_bn254::Bn254;
+    use ark_groth16::VerifyingKey;
+    use ark_serialize::CanonicalDeserialize;
+    use ark_serialize::CanonicalSerialize;
+    use crate::executor::zk::global_pvk;
+    use crate::executor::zk::insecure_pvk;
+    use crate::executor::zk::my_test_pvk_1;
+    
+    #[test]
+    fn test_serialization_deserialization_global_pvk() {
+        let vk: VerifyingKey<Bn254> = global_pvk();
+
+        let mut bytes = Vec::new();
+        vk.serialize_compressed(&mut bytes).unwrap();
+        println!("vk serialized: {:?}", bytes.clone());
+        println!("vk serialized len: {:?}", bytes.len());
+
+        let vk_deserialized: VerifyingKey<Bn254> = match ark_groth16::VerifyingKey::<Bn254>::deserialize_compressed(bytes.as_slice()) {
+            Ok(res) => res,
+            Err(err) => {
+                println!("err: {:?}", err);
+                assert!(false);
+                return;
+            }
+        };
+        println!("global_pvk_deserialized: {:?}", vk);
+        assert_eq!(vk, vk_deserialized);
+    }
+
+    #[test]
+    fn test_serialization_deserialization_insecure_pvk() {
+        let vk: VerifyingKey<Bn254> = insecure_pvk();
+
+        let mut bytes = Vec::new();
+        vk.serialize_compressed(&mut bytes).unwrap();
+        println!("vk serialized: {:?}", bytes.clone());
+        println!("vk serialized len: {:?}", bytes.len());
+
+        let vk_deserialized: VerifyingKey<Bn254> = match ark_groth16::VerifyingKey::<Bn254>::deserialize_compressed(bytes.as_slice()) {
+            Ok(res) => res,
+            Err(err) => {
+                println!("err: {:?}", err);
+                assert!(false);
+                return;
+            }
+        };
+        println!("insecure_pvk_deserialized: {:?}", vk);
+        assert_eq!(vk, vk_deserialized);
+    }
+
+     #[test]
+    fn test_serialization_deserialization_my_test_pvk_1() {
+        let vk: VerifyingKey<Bn254> = my_test_pvk_1();
+
+        let mut bytes = Vec::new();
+        vk.serialize_compressed(&mut bytes).unwrap();
+        println!("vk serialized: {:?}", bytes.clone());
+        println!("vk serialized len: {:?}", bytes.len());
+
+        let vk_deserialized: VerifyingKey<Bn254> = match ark_groth16::VerifyingKey::<Bn254>::deserialize_compressed(bytes.as_slice()) {
+            Ok(res) => res,
+            Err(err) => {
+                println!("err: {:?}", err);
+                assert!(false);
+                return;
+            }
+        };
+        println!("my_test_pvk_1_deserialized: {:?}", vk);
+        assert_eq!(vk, vk_deserialized);
+    }
+
 }
