@@ -105,7 +105,7 @@ impl ShardAccounts {
     }
 
     pub fn replace_with_redirect(&mut self, account_id: &UInt256) -> Result<()> {
-        let mut account =
+        let account =
             self.shard_accounts.get(account_id)?.ok_or_else(|| error!("Account not found"))?;
         let redirect = ShardAccount::with_redirect(
             account.last_trans_hash().clone(),
