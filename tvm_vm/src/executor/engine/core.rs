@@ -131,6 +131,8 @@ pub struct Engine {
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
     wasm_engine_cache: Option<wasmtime::Engine>,
     wasm_block_timestamp: u64,
+
+    vergrth16_verififcation_key_serialized: [u8; 296]
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -297,6 +299,7 @@ impl Engine {
             wash_component_cache: HashMap::new(),
             wasm_engine_cache: None,
             wasm_block_timestamp: 0,
+            vergrth16_verififcation_key_serialized: [0u8; 296]
         }
     }
 
@@ -451,6 +454,10 @@ impl Engine {
         self.wasm_block_timestamp = time;
     }
 
+    pub fn set_vergrth16_verififcation_key_serialized(&mut self, vergrth16_verififcation_key_serialized: [u8; 296]) {
+        self.vergrth16_verififcation_key_serialized = vergrth16_verififcation_key_serialized;
+    }
+
     pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
         log::debug!("Extern Initialising Wasm Engine");
         // load or access WASM engine
@@ -515,6 +522,10 @@ impl Engine {
 
     pub fn get_wasm_block_time(&self) -> u64 {
         self.wasm_block_timestamp
+    }
+
+    pub fn get_vergrth16_verififcation_key_serialized(&self) -> [u8; 296] {
+        self.vergrth16_verififcation_key_serialized
     }
 
     pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {

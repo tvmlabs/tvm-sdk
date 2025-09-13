@@ -30,6 +30,7 @@ use crate::executor::test_data::*;
 use crate::executor::test_helper::*;
 use crate::executor::zk::execute_poseidon_zk_login;
 use crate::executor::zk::execute_vergrth16;
+use crate::executor::zk::{GLOBAL_VK_SERIALIZED, INSECURE_VK_SERIALIZED, MY_TEST_VK_1_SERIALIZED};
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::utils::gen_address_seed;
 use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
@@ -185,7 +186,16 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         let jwt_data: JwtData = serde_json::from_str(&data[i]).unwrap();
         println!("jwt_data: {:?}", jwt_data);
 
-        let verification_key_id: u32 = jwt_data.verification_key_id;
+        let vk_index: u32 = jwt_data.verification_key_id;
+        let vk_bytes = if vk_index == 0 {
+            INSECURE_VK_SERIALIZED
+        } else if vk_index == 1 {
+            GLOBAL_VK_SERIALIZED
+        } else {
+            MY_TEST_VK_1_SERIALIZED
+        };
+
+        engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
         let content: JWK = JWK {
             kty: "RSA".to_string(),
@@ -352,11 +362,9 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
 
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
         engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
-
         let public_inputs_cell =
             pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
         engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-        engine.cc.stack.push(StackItem::int(verification_key_id));
 
         let start: Instant = Instant::now();
         let _ = execute_vergrth16(&mut engine).unwrap();
@@ -414,8 +422,17 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
         StackItem::cell(config_data.reference(0).unwrap()),
         StackItem::None,
         StackItem::int(0),
+
+        StackItem::slice(
+            SliceData::from_string(
+                "20491192805390485299153009773594534940189261866228447918068658471970481763042",
+            )
+            .unwrap(),
+        )
     ];
+   
     ctrls.put(7, &mut StackItem::tuple(vec![StackItem::tuple(params)])).unwrap();
+    
     let stack = Stack::new();
     let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
         SliceData::load_cell_ref(&elector_code).unwrap(),
@@ -426,7 +443,9 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
     );
 
     let data: Vec<&str> =
-        vec![TEST_AUTH_DATA_1_CUT_GOOGLE, TEST_AUTH_DATA_2_CUT_GOOGLE, TEST_AUTH_DATA_3_CUT_GOOGLE];
+        vec![TEST_AUTH_DATA_1_CUT_GOOGLE,
+        TEST_AUTH_DATA_2_CUT_GOOGLE, 
+        TEST_AUTH_DATA_3_CUT_GOOGLE];
 
     let mut average_poseidon: u128 = 0;
     let mut average_vergrth16: u128 = 0;
@@ -438,7 +457,17 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
         let jwt_data: JwtDataShort = serde_json::from_str(&data[i]).unwrap();
         println!("jwt_data: {:?}", jwt_data);
 
-        let verification_key_id: u32 = jwt_data.verification_key_id;
+        let vk_index: u32 = jwt_data.verification_key_id;
+
+        let vk_bytes = if vk_index == 0 {
+            INSECURE_VK_SERIALIZED
+        } else if vk_index == 1 {
+            GLOBAL_VK_SERIALIZED
+        } else {
+            MY_TEST_VK_1_SERIALIZED
+        };
+
+        engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
 
         let content: JWK = JWK {
             kty: "RSA".to_string(),
@@ -558,7 +587,6 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
         let public_inputs_cell =
             pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
         engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-        engine.cc.stack.push(StackItem::int(verification_key_id));
 
         let start: Instant = Instant::now();
         let _ = execute_vergrth16(&mut engine).unwrap();
@@ -925,11 +953,6 @@ fn test_vergrth16() {
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     stack.push(StackItem::cell(public_inputs_cell.clone()));
 
-    let verification_key_id: u32 = 0; // valid key id
-    // let verification_key_id: u32 = 1; //invalid key id
-    stack.push(StackItem::int(verification_key_id));
-
-    let start: Instant = Instant::now();
 
     let mut res = Vec::<u8>::with_capacity(2);
     res.push(0xC7);
@@ -940,6 +963,20 @@ fn test_vergrth16() {
 
     let mut engine =
         Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
+    
+    let vk_index: u32 = 0; // valid key id
+    // let vk_index: u32 = 1; //invalid key id
+    let vk_bytes = if vk_index == 0 {
+        INSECURE_VK_SERIALIZED
+    } else if vk_index == 1 {
+        GLOBAL_VK_SERIALIZED
+    } else {
+        MY_TEST_VK_1_SERIALIZED
+    };
+    engine.set_vergrth16_verififcation_key_serialized(vk_bytes.clone());
+
+    let start: Instant = Instant::now();
+    
     let _ = engine.execute().unwrap();
     // let status = execute_vergrth16(&mut engine).unwrap();
     let vergrth16_elapsed = start.elapsed().as_micros();
