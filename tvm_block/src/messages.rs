@@ -742,9 +742,6 @@ impl Serializable for InternalMessageHeader {
 
 impl Deserializable for InternalMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        for i in 0..cell.remaining_references() {
-            if let Ok(r) = cell.reference(i) {}
-        }
         // constructor tag will be readed in Message
         self.ihr_disabled = cell.get_next_bit()?; // ihr_disabled
         self.bounce = cell.get_next_bit()?; // bounce
@@ -1617,6 +1614,7 @@ impl InternalMessageHeader {
             src_dapp_id: None,
             dest_dapp_id: None,
             is_exchange: false,
+            is_redirect: false,
         }
     }
 }
