@@ -606,6 +606,7 @@ pub struct InternalMessageHeader {
     pub src_dapp_id: Option<UInt256>,
     pub dest_dapp_id: Option<UInt256>,
     pub is_exchange: bool,
+    pub is_redirect: bool,
 }
 
 impl InternalMessageHeader {
@@ -630,6 +631,7 @@ impl InternalMessageHeader {
             src_dapp_id: None,
             dest_dapp_id: None,
             is_exchange: false,
+            is_redirect: false,
         }
     }
 
@@ -655,6 +657,10 @@ impl InternalMessageHeader {
 
     pub fn set_dest_dapp_id(&mut self, dest_dapp_id: Option<UInt256>) {
         self.dest_dapp_id = dest_dapp_id
+    }
+
+    pub fn set_is_redirect(&mut self) {
+        self.is_redirect = true;
     }
 
     pub fn set_exchange(&mut self, exchange: bool) {
@@ -729,6 +735,7 @@ impl Serializable for InternalMessageHeader {
             cell.append_bit_zero()?;
         }
         cell.append_bit_bool(self.is_exchange)?;
+        cell.append_bit_bool(self.is_redirect)?;
         Ok(())
     }
 }
@@ -761,6 +768,7 @@ impl Deserializable for InternalMessageHeader {
             self.dest_dapp_id = Some(dest_dapp_id);
         }
         self.is_exchange = cell.get_next_bit()?;
+        self.is_redirect = cell.get_next_bit()?;
         Ok(())
     }
 }
