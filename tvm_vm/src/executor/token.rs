@@ -518,7 +518,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
     log::debug!("Loading tapLst");
-    let mut tap_lst_bytes =
+    let tap_lst_bytes =
         match TokenValue::read_bytes(SliceData::load_cell(tap_lst_cell.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
             e => err!(
@@ -537,8 +537,9 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         .chunks_exact(8)
         .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
         .collect::<Vec<u64>>();
-
-    let mut mbn_lst_bytes =
+    
+    log::debug!("Loading mbnLst");
+    let mbn_lst_bytes =
         match TokenValue::read_bytes(SliceData::load_cell(mbn_lst_cell.clone())?, true, &ABI_VERSION_2_4)?.0 {
             TokenValue::Bytes(items) => items,
             e => err!(
@@ -558,8 +559,8 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
         .collect::<Vec<u64>>();
 
-    let bclst = build_bclst(&mbn_lst);
-    let rmv = compute_rmv(rpc, tap_num, &bclst, mbi, &tap_lst);
+    let bclst = build_bclst(&to_umbnlst(&mbn_lst));
+    let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi, &tap_lst);
     engine.cc.stack.push(int!(rmv as u128));
     Ok(())
 }
