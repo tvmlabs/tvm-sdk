@@ -164,6 +164,12 @@ impl VMSetup {
         self
     }
 
+    /// Sets verification key for VERGRTH16
+    pub fn set_vergrth16_verififcation_key_serialized(mut self, vergrth16_verififcation_key_serialized: [u8; 296]) -> VMSetup {
+        self.vm.set_vergrth16_verififcation_key_serialized(vergrth16_verififcation_key_serialized);
+        self
+    }
+
     /// Sets local wasm library root path
     pub fn set_wasm_root_path(mut self, path: String) -> VMSetup {
         self.vm.set_wasm_root_path(path);
