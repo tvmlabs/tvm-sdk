@@ -401,7 +401,6 @@ impl Handlers {
                 .set(0x38, execute_ecc_burn)
                 .set(0x39, execute_run_wasm)
                 .set(0x3A, execute_run_wasm_concat_multiarg)
-                .set(0x40, execute_calculate_boost_coef)
                 .set(0x41, execute_calculate_mobile_verifiers_reward)
                 .set(0x42, execute_get_available_balance)
                 .set(0x43, execute_mint_shell)
