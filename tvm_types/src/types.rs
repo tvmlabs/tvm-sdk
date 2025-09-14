@@ -392,6 +392,8 @@ pub enum ExceptionCode {
     WasmWhitelistMissingBinary = 33,
     #[error("wasm failed to set or use fuel limit")]
     WasmFuelError = 34,
+    #[error("failed to unpack cell")]
+    CellUnpackError = 35,
 }
 
 // impl fmt::Display for ExceptionCode {

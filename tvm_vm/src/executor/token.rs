@@ -456,186 +456,112 @@ pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_MINT_SHELL_TOKEN, None, cell)
 }
 
-// fn _boost_coef_integral_calculation(bl: f64, br: f64, xl: f64, xr: f64, yd:
-// f64, yu: f64, k: f64) -> f64 { let dx = xr - xl;
-// let expk = k.exp();
-// ((yu - yd) * dx * ((k * (br - xl) / dx).exp() - (k * (bl - xl) / dx).exp())
-// + k * (br - bl) * (yd * expk - yu))
-// / (k * (expk - 1_f64))
-// }
-//
-//
-// fn _boost_coef_calculation(dl: f64, dr: f64, x1: f64, x2: f64, x3: f64, x4:
-// f64, y1: f64, y2: f64, y3: f64, y4: f64, k1: f64, k2: f64, k3: f64) -> f64 {
-// let mut bc = 0_f64;
-// if x1 <= dl && dl <= x2 {
-// if x1 <= dr && dr <= x2 {
-// bc = boost_coef_integral_calculation(dl, dr, x1, x2, y1, y2, k1);
-// } else if x2 < dr && dr <= x3 {
-// bc = boost_coef_integral_calculation(dl, x2, x1, x2, y1, y2, k1)
-// + boost_coef_integral_calculation(x2, dr, x2, x3, y2, y3, k2);
-// } else if x3 < dr && dr <= x4 {
-// bc = boost_coef_integral_calculation(dl, x2, x1, x2, y1, y2, k1)
-// + boost_coef_integral_calculation(x2, x3, x2, x3, y2, y3, k2)
-// + boost_coef_integral_calculation(x3, dr, x3, x4, y3, y4, k3);
-// }
-// } else if x2 < dl && dl <= x3 {
-// if x2 < dr && dr <= x3 {
-// bc = boost_coef_integral_calculation(dl, dr, x2, x3, y2, y3, k2);
-// } else if x3 < dr && dr <= x4 {
-// bc = boost_coef_integral_calculation(dl, x3, x2, x3, y2, y3, k2)
-// + boost_coef_integral_calculation(x3, dr, x3, x4, y3, y4, k3);
-// }
-// } else if x3 < dl && dl <= x4 {
-// if x3 < dr && dr <= x4 {
-// bc = boost_coef_integral_calculation(dl, dr, x3, x4, y3, y4, k3);
-// }
-// }
-// bc
-// }
-//
-//
-// fn _calculate_sum_boost_coefficients(
-// lst: &[f64], x1: f64, x2: f64, x3: f64, x4: f64,
-// y1: f64, y2: f64, y3: f64, y4: f64,
-// k1: f64, k2: f64, k3: f64
-// ) -> Vec<f64> {
-// let mut total_lst: f64 = lst.iter().sum();
-// if total_lst == 0_f64 {
-// total_lst = 1_f64;
-// }
-// let mut cumulative_sum = 0_f64;
-// lst
-// .iter()
-// .map(|&value| {
-// let left_border = cumulative_sum / total_lst;
-// cumulative_sum += value;
-// let right_border = cumulative_sum / total_lst;
-// boost_coef_calculation(left_border, right_border, x1, x2, x3, x4, y1, y2, y3,
-// y4, k1, k2, k3) })
-// .collect()
-// }
-//
-// fn _validate_byte_array(bytes: &[u8], name: &str) -> anyhow::Result<()> {
-// if bytes.len() % 8 != 0 {
-// anyhow::bail!(
-// "{}: byte length must be multiple of 8 (got {})",
-// name, bytes.len()
-// );
-// } else if bytes.len() > 8000 {
-// anyhow::bail!(
-// "{}: byte length exceeds 8000 bytes (got {})",
-// name, bytes.len()
-// );
-// }
-// Ok(())
-// }
+fn to_umbnlst(weights: &Vec<u64>) -> Vec<u64> {
+    let wsum: u128 = weights.iter().map(|&w| w as u128).sum();
+    const M: u128 = 1u128 << 32;
 
-pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("CALCBOOSTCOEF"))?;
-    fetch_stack(engine, 2)?;
-    let _s = engine.cmd.var(0).as_cell()?;
-    let _s1 = engine.cmd.var(1).as_cell()?;
+    let mut acc: u128 = 0;
+    let mut cur: u128 = 0;
+    let mut out: Vec<u64> = Vec::with_capacity(weights.len() + 1);
+    out.push(0);
 
-    let total_boost_coef_list_bytes: Vec<u8> = Vec::new();
-    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?
-        .into_cell()?;
-
-    engine.cc.stack.push(StackItem::cell(cell));
-    engine.cc.stack.push(int!(0));
-    Ok(())
-    // let x1 = 0_f64;
-    // let x2 = 0.3_f64;
-    // let x3 = 0.7_f64;
-    // let x4 = 1_f64;
-    // let y1 = 0_f64;
-    // let y2 = 0.066696948409_f64;
-    // let y3 = 2_f64;
-    // let y4 = 8_f64;
-    // let k1 = 10_f64;
-    // let k2 = 1.894163612445_f64;
-    // let k3 = 17.999995065464_f64;
-    // let (token_value, _) =
-    // TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true,
-    // &ABI_VERSION_2_4) .map_err(|e|
-    // exception!(ExceptionCode::TypeCheckError, "Failed to read cell s: {}",
-    // e))?; let transformed_users_per_item = match token_value {
-    // TokenValue::Bytes(data) => data,
-    // _ => return err!(ExceptionCode::TypeCheckError, "Expected Bytes in cell
-    // s"), };
-    // validate_byte_array(transformed_users_per_item.as_slice(), "s")
-    // .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
-    //
-    // let vec_u64: Vec<u64> = transformed_users_per_item
-    // .as_slice()
-    // .chunks_exact(8)
-    // .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
-    // .collect();
-    //
-    // let mbnlst: Vec<f64> = vec_u64.iter().map(|&x| x as f64).collect();
-    // let mbnlst_orig = vec_u64.clone();
-    //
-    // let (token_value, _) =
-    // TokenValue::read_bytes(SliceData::load_cell(s1.clone())?, true,
-    // &ABI_VERSION_2_4) .map_err(|e|
-    // exception!(ExceptionCode::TypeCheckError, "Failed to read cell s1: {}",
-    // e))?; let glst_bytes = match token_value {
-    // TokenValue::Bytes(data) => data,
-    // _ => return err!(ExceptionCode::TypeCheckError, "Expected Bytes in cell
-    // s1"), };
-    // validate_byte_array(glst_bytes.as_slice(), "s1")
-    // .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
-    //
-    // let glst: Vec<u64> = glst_bytes
-    // .as_slice()
-    // .chunks_exact(8)
-    // .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
-    // .collect();
-    //
-    //
-    // let total_boost_coef_list = calculate_sum_boost_coefficients(
-    // &mbnlst, x1, x2, x3, x4,
-    // y1, y2, y3, y4,
-    // k1, k2, k3
-    // );
-    //
-    // let total_boost_coef_list_u64: Vec<u64> =
-    // total_boost_coef_list.iter().map(|&x| (x * 1e9_f64) as u64).collect();
-    //
-    // let total_boost_coef_list_bytes: Vec<u8> =
-    // total_boost_coef_list_u64.iter() .flat_map(|val| val.to_le_bytes())
-    // .collect();
-    //
-    // let cell =
-    // TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(),
-    // &ABI_VERSION_2_4)?.into_cell()?; let total = mbnlst_orig.iter()
-    // .zip(glst)
-    // .map(|(&x, y)| u128::from(x) * u128::from(y))
-    // .fold(0u128, |acc, val| acc.saturating_add(val));
-    // engine.cc.stack.push(StackItem::cell(cell));
-    // engine.cc.stack.push(int!(total));
-    // Ok(())
+    for &w in weights {
+        acc += M * (w as u128);
+        let ticks = acc / wsum;
+        acc -= ticks * wsum;
+        cur += ticks;
+        out.push(cur as u64);
+    }
+    out
 }
+
+fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
+    let len = umbnlst.len();
+    let mut bclst = Vec::new();
+
+    if len < 2 {
+        return bclst;
+    }
+
+    for i in 0..(len - 1) {
+        let dl = umbnlst[i] as i128;
+        let dr = umbnlst[i + 1] as i128;
+        let bc = boost_coef_fp(dl, dr) as u64;
+        bclst.push(bc);
+    }
+    bclst
+}
+
+fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Vec<u64>) -> i128 {
+    let mut denom: i128 = 0;
+    let len = bclst.len();
+    for j in 0..len {
+        denom += taplst[j] as i128 * bclst[j] as i128;
+    }
+    
+    if denom == 0 {
+        return 0;
+    }
+
+    let numer = rpc * tap_num * bclst[mbi as usize] as i128;
+    let rmv = numer / denom;
+    rmv
+}
+
 
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
     fetch_stack(engine, 5)?;
-    let _mbn = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let _g = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let _sum = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let _radj = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let _depoch = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    engine.cc.stack.push(int!(0 as u128));
+    let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
+    let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
+    let tap_lst_cell = engine.cmd.var(2).as_cell()?;
+    let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
+    let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
+    log::debug!("Loading tapLst");
+    let mut tap_lst_bytes =
+        match TokenValue::read_bytes(SliceData::load_cell(tap_lst_cell.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            e => err!(
+                ExceptionCode::CellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
+        };
+    if tap_lst_bytes.len() % 8 != 0 {
+        return Err(exception!(
+            ExceptionCode::CellUnpackError,
+            "Bytes length is not multiple of 8"
+        ));
+    } 
+    let tap_lst = tap_lst_bytes
+        .chunks_exact(8)
+        .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
+        .collect::<Vec<u64>>();
+
+    let mut mbn_lst_bytes =
+        match TokenValue::read_bytes(SliceData::load_cell(mbn_lst_cell.clone())?, true, &ABI_VERSION_2_4)?.0 {
+            TokenValue::Bytes(items) => items,
+            e => err!(
+                ExceptionCode::CellUnpackError,
+                "Failed to unpack wasm instruction {:?}",
+                e
+            )?,
+        };
+    if mbn_lst_bytes.len() % 8 != 0 {
+        return Err(exception!(
+            ExceptionCode::CellUnpackError,
+            "Bytes length is not multiple of 8"
+        ));
+    } 
+    let mbn_lst = mbn_lst_bytes
+        .chunks_exact(8)
+        .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
+        .collect::<Vec<u64>>();
+
+    let bclst = build_bclst(&mbn_lst);
+    let rmv = compute_rmv(rpc, tap_num, &bclst, mbi, &tap_lst);
+    engine.cc.stack.push(int!(rmv as u128));
     Ok(())
-    // let u = mbn * g / sum;
-    // let reward;
-    // if sum >= TOTALSUPPLY as f64 * KRMV {
-    // reward = 0_f64;
-    // } else {
-    // reward = radj * depoch * u * 1e9_f64;
-    // }
-    // engine.cc.stack.push(int!(reward as u128));
-    // Ok(())
 }
 
 pub(super) fn execute_mint_shellq(engine: &mut Engine) -> Status {
