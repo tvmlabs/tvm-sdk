@@ -535,6 +535,7 @@ pub trait TransactionExecutor {
         .set_wasm_block_time(params.block_unixtime.into())
         .extern_insert_wasm_engine(params.wasm_engine.clone())
         .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
+        .set_dapp_id(params.dapp_id.clone())
         .create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {
