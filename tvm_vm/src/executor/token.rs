@@ -67,6 +67,7 @@ const KRBM_DEN: u128 = 10;
 const KRMV_NUM: u128 = 225;
 const KRMV_DEN: u128 = 1000;
 const UM_Q64: i64 = 106_188_087_029; // -ln(KM / (KM + 1)) / TTMT * 2^64 = -ln(1e-5 / (1 + 1e-5)) / 2e9 * 2^64
+const SBK_BASE_START: u128 = 1;
 
 // e^(−n), n = 0...12 in Q‑32
 const EXP_NEG_VAL_Q32: [i64; 13] = [
@@ -436,7 +437,7 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
         sbkbase = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) / 2 / nbk as u128;
     } else {
-        sbkbase = 0;
+        sbkbase = SBK_BASE_START;
     }
     engine.cc.stack.push(int!(sbkbase as u128));
     Ok(())
