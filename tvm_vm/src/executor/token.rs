@@ -385,6 +385,14 @@ fn calc_mbk(t: u128, krk_num: u128, krk_den: u128) -> u128 {
     (mbk * krk_num) / krk_den
 }
 
+pub(super) fn execute_calculate_mbk(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCMBK"))?;
+    fetch_stack(engine, 1)?;
+    let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?;
+    engine.cc.stack.push(int!(calc_mbk(t, KRBK_NUM, KRBK_DEN)));
+    Ok(())
+}
+
 pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBMREWARD"))?;
     fetch_stack(engine, 5)?;
