@@ -1288,6 +1288,60 @@ fn compute_new_state(
         AccountStatus::AccStateUninit => {
             log::debug!(target: "executor", "AccountUninit");
             if let Some(state_init) = in_msg.state_init() {
+                match in_msg.body() {
+                    Some(mut data) => {
+                        if in_msg.is_internal() {
+                            if let Ok(function_id) = data.get_next_u32() {
+                                log::trace!(target: "executor", "{} function_id", function_id);
+                                if function_id != 1 {
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            } else {
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            }
+                        }
+                        if in_msg.is_inbound_external() {
+                            let sign_bit = match data.get_next_bit() {
+                                Ok(bit) => bit,
+                                Err(_) => return Ok(Some(ComputeSkipReason::BadState)),
+                            };                           
+                            if sign_bit {
+                                if data.get_next_bits(512).is_err() {
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }                           
+                            let pubkey_bit = match data.get_next_bit() {
+                                Ok(bit) => bit,
+                                Err(_) => return Ok(Some(ComputeSkipReason::BadState)),
+                            };                        
+                            if pubkey_bit {
+                                if data.get_next_bits(256).is_err() {
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }                            
+                            if data.get_next_u64().is_err() {
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            } 
+                            if data.get_next_u32().is_err() {
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            }
+                            match data.get_next_u32() {
+                                Ok(function_id) => {
+                                    log::trace!(target: "executor", "{} function_id", function_id);
+                                    if function_id != 1 {
+                                        return Ok(Some(ComputeSkipReason::BadState));
+                                    }
+                                }
+                                Err(_) => {
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }
+                        }
+                    },
+                    None => {
+                        return Ok(Some(ComputeSkipReason::NoState));
+                    }
+                }
                 // if msg is a constructor message then
                 // borrow code and data from it and switch account state to 'active'.
                 log::debug!(target: "executor", "message for uninitialized: activated");
