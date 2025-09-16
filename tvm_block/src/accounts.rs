@@ -595,7 +595,7 @@ impl OptionalAccount {
         OptionalAccount::Account(account)
     }
 
-    pub fn redirect() -> Self {
+    pub fn with_redirect() -> Self {
         OptionalAccount::AccountRedirect
     }
 
@@ -623,15 +623,10 @@ impl OptionalAccount {
 
 impl PartialEq for OptionalAccount {
     fn eq(&self, other: &Self) -> bool {
-        match self {
-            OptionalAccount::Account(acc) => match other {
-                OptionalAccount::Account(other) => acc.eq(other),
-                _ => false,
-            },
-            OptionalAccount::AccountRedirect => match other {
-                OptionalAccount::Account(_other) => false,
-                _ => true,
-            },
+        match (self, other) {
+            (OptionalAccount::AccountRedirect, OptionalAccount::AccountRedirect) => true,
+            (OptionalAccount::Account(acc), OptionalAccount::Account(other)) => acc.eq(other),
+            _ => false,
         }
     }
 }
@@ -1350,7 +1345,7 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Result<Self> {
         Ok(ShardAccount {
-            account: OptionalAccount::redirect(),
+            account: OptionalAccount::with_redirect(),
             last_trans_hash,
             last_trans_lt,
             dapp_id,

@@ -727,9 +727,9 @@ impl Serializable for InternalMessageHeader {
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
         self.src_dapp_id.write_maybe_to(cell)?;
-        if self.dest_dapp_id.is_some() {
+        if let Some(dest_dapp_id) = &self.dest_dapp_id {
             cell.append_bit_one()?;
-            let refer = self.dest_dapp_id.clone().unwrap().serialize()?;
+            let refer = dest_dapp_id.serialize()?;
             cell.checked_append_reference(refer)?;
         } else {
             cell.append_bit_zero()?;
