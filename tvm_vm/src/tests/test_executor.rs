@@ -1446,6 +1446,18 @@ fn test_run_wasm_fuel_error_from_hash() {
 }
 
 #[test]
+fn test_bocdepth() {
+    // let mut cell = BuilderData::new();
+    // cell.append_raw(&[0u8; 10230], 10230).unwrap();
+    // cell.finalize(2048).unwrap();
+    let cell = TokenValue::write_bytes(&[100u8; 128 * 2000], &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    println!("Success");
+}
+
+#[test]
 fn test_divmodc() {
     let flags: u8 = 14;
     let mode = DivMode::with_flags(flags);

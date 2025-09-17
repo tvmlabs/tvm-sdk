@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use std::fmt;
 
 use smallvec::SmallVec;
@@ -118,6 +119,28 @@ impl BuilderData {
         for r in self.references.iter() {
             children_level_mask |= r.level_mask();
         }
+        let mut unique_cells = HashSet::<Cell>::new();
+        let mut depths = Vec::new();
+        let mut depth = 0u16;
+        let mut depth2 = 0u64;
+        let mut refs = 0usize;
+        let mut count = 0u64;
+        let mut counts = Vec::new();
+        for r in self.references.iter() {
+            depths.push(r.depths());
+            depth += r.depths().iter().sum::<u16>();
+            depth2 += r.tree_cell_count();
+            counts.push(r.tree_bits_count());
+            count += r.tree_bits_count();
+            refs += r.references_count();
+        }
+        println!("Depths {:?}, counts {:?}", depths, counts);
+        println!("Depth {:?}, count {:?}", depth, count);
+        println!("Depth2 {:?}, refs {:?}", depth2, refs);
+        if depth2 >= 800 || count >= 1398101 * 1204 {
+            fail!("reached max BOC tree size allowed by current Node State limitations")
+        }
+
         let level_mask = match self.cell_type {
             CellType::Unknown => fail!("failed to finalize a cell of unknown type"),
             CellType::Ordinary => children_level_mask,
