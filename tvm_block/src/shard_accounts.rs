@@ -104,12 +104,12 @@ impl ShardAccounts {
         Ok(cell)
     }
 
-        pub fn replace_with_redirect(&mut self, account_id: &UInt256) -> Result<()> {
+    pub fn replace_with_redirect(&mut self, account_id: &UInt256) -> Result<()> {
         let account =
             self.shard_accounts.get(account_id)?.ok_or_else(|| error!("Account not found"))?;
         let redirect = ShardAccount::with_redirect(
             account.last_trans_hash().clone(),
-            account.last_trans_lt().clone(),
+            account.last_trans_lt(),
             account.get_dapp_id().cloned(),
         )?;
         self.shard_accounts.set(account_id, &redirect, &DepthBalanceInfo::default())

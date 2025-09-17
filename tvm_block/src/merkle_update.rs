@@ -608,9 +608,8 @@ impl MerkleUpdate {
                         if let Some(existing) = old_cells.get(&new_child_hash) {
                             existing.clone()
                         } else {
-                            let resolved = unloaded_accounts_resolver
-                                .resolve_cell_from_unloaded_accounts(&new_child_hash)?;
-                            resolved
+                            unloaded_accounts_resolver
+                                .resolve_cell_from_unloaded_accounts(&new_child_hash)?
                         }
                     } else {
                         // else - just copy this cell (like an ordinary)

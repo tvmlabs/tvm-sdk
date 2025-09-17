@@ -250,10 +250,17 @@ impl DataCell {
                 // cells count + tree bits count
                 let min_required_len = 8 * (UNLOADED_ACCOUNT_CELL_MIN_SIZE);
                 if bit_len < min_required_len {
-                    fail!("fail creating unloaded account cell: bit_len {} < {}", bit_len, min_required_len)
+                    fail!(
+                        "fail creating unloaded account cell: bit_len {} < {}",
+                        bit_len,
+                        min_required_len
+                    )
                 }
                 if !self.references.is_empty() {
-                    fail!("fail creating unloaded account cell: references {} != 0", self.references.len())
+                    fail!(
+                        "fail creating unloaded account cell: references {} != 0",
+                        self.references.len()
+                    )
                 }
                 let lengths_offset = 1 + SHA256_SIZE + 2;
                 let mut reader = Cursor::new(&self.data()[lengths_offset..]);
