@@ -425,8 +425,8 @@ pub trait TransactionExecutor {
 
                         // if there was a balance in message (not bounce), then account state at
                         // least become uninit
+                        result_acc.uninit_account();
                         *acc = result_acc.clone();
-                        acc.uninit_account();
                     }
                 }
                 false
