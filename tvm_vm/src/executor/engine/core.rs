@@ -131,6 +131,8 @@ pub struct Engine {
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
     wasm_engine_cache: Option<wasmtime::Engine>,
     wasm_block_timestamp: u64,
+
+    pub(in crate::executor) self_dapp_id: Option<UInt256>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -297,6 +299,7 @@ impl Engine {
             wash_component_cache: HashMap::new(),
             wasm_engine_cache: None,
             wasm_block_timestamp: 0,
+            self_dapp_id: None,
         }
     }
 
@@ -449,6 +452,10 @@ impl Engine {
 
     pub fn set_wasm_block_time(&mut self, time: u64) {
         self.wasm_block_timestamp = time;
+    }
+
+    pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {
+        self.self_dapp_id = dapp_id;
     }
 
     pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
