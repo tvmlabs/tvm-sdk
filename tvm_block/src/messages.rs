@@ -604,7 +604,9 @@ pub struct InternalMessageHeader {
     pub created_lt: u64,
     pub created_at: UnixTime32,
     pub src_dapp_id: Option<UInt256>,
+    pub dest_dapp_id: Option<UInt256>,
     pub is_exchange: bool,
+    pub is_redirect: bool,
 }
 
 impl InternalMessageHeader {
@@ -627,7 +629,9 @@ impl InternalMessageHeader {
             created_lt: 0, // Logical Time will be set on BlockBuilder
             created_at: UnixTime32::default(), // UNIX time too
             src_dapp_id: None,
+            dest_dapp_id: None,
             is_exchange: false,
+            is_redirect: false,
         }
     }
 
@@ -651,12 +655,24 @@ impl InternalMessageHeader {
         self.src_dapp_id = src_dapp_id
     }
 
+    pub fn set_dest_dapp_id(&mut self, dest_dapp_id: Option<UInt256>) {
+        self.dest_dapp_id = dest_dapp_id
+    }
+
+    pub fn set_is_redirect(&mut self) {
+        self.is_redirect = true;
+    }
+
     pub fn set_exchange(&mut self, exchange: bool) {
         self.is_exchange = exchange
     }
 
     pub fn src_dapp_id(&self) -> &Option<UInt256> {
         &self.src_dapp_id
+    }
+
+    pub fn dest_dapp_id(&self) -> &Option<UInt256> {
+        &self.dest_dapp_id
     }
 
     pub fn is_exchange(&self) -> &bool {
@@ -711,7 +727,15 @@ impl Serializable for InternalMessageHeader {
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
         self.src_dapp_id.write_maybe_to(cell)?;
+        if let Some(dest_dapp_id) = &self.dest_dapp_id {
+            cell.append_bit_one()?;
+            let refer = dest_dapp_id.serialize()?;
+            cell.checked_append_reference(refer)?;
+        } else {
+            cell.append_bit_zero()?;
+        }
         cell.append_bit_bool(self.is_exchange)?;
+        cell.append_bit_bool(self.is_redirect)?;
         Ok(())
     }
 }
@@ -735,7 +759,13 @@ impl Deserializable for InternalMessageHeader {
         if cell.get_next_bit()? {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
         }
+        if cell.get_next_bit()? {
+            let mut dest_dapp_id = UInt256::default();
+            dest_dapp_id.read_from_reference(cell)?;
+            self.dest_dapp_id = Some(dest_dapp_id);
+        }
         self.is_exchange = cell.get_next_bit()?;
+        self.is_redirect = cell.get_next_bit()?;
         Ok(())
     }
 }
@@ -1582,7 +1612,9 @@ impl InternalMessageHeader {
             created_lt: 0,
             created_at: UnixTime32::default(),
             src_dapp_id: None,
+            dest_dapp_id: None,
             is_exchange: false,
+            is_redirect: false,
         }
     }
 }

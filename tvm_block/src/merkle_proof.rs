@@ -381,7 +381,7 @@ pub fn check_account_proof(proof: &MerkleProof, acc: &Account) -> Result<BlockSe
 
     let shard_acc = accounts.account(&acc.get_addr().unwrap().get_address());
     if let Ok(Some(shard_acc)) = shard_acc {
-        let acc_root = shard_acc.account_cell();
+        let acc_root = shard_acc.account_cell()?;
         let acc_hash = Cell::hash(&acc_root, (max(acc_root.level(), 1) - 1) as usize);
         if acc.hash()? != acc_hash {
             fail!(BlockError::WrongMerkleProof("Wrong account's hash in proof".to_string()))

@@ -2,10 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.21.3] - 2025-08-26
+## [2.xx.y] - 2025-MM-DD
 
 ### Added
 - Ability to resolve unloaded account cells when applying Merkle updates
+
+
+## [2.21.3] - 2025-09-10
+
+### Added
+- New type OptionalAccount that can either contain account data or be account redirect
+- ShardAccount now contain OptionalAccount
+- New int message header field: dest_dapp_id
+- Added filed dapp_id_changed to AccountBlock struct
+- FWD fees increased *2 for messages without dest_dapp_id
 
 ## [2.21.2] - 2025-08-27
 

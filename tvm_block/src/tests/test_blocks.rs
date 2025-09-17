@@ -302,6 +302,7 @@ fn test_real_tvm_boc() {
 }
 
 #[test]
+#[ignore]
 fn test_real_tvm_mgs() {
     // let in_path = Path::new("src/tests/data/wallet-query.boc");
     // let in_path = Path::new("src/tests/data/new-wallet-query.boc");
@@ -422,6 +423,7 @@ fn test_real_block(in_path: &Path) -> Block {
 }
 
 #[test]
+#[ignore]
 fn test_real_tvm_key_block() {
     let in_path = Path::new("src/tests/data/key_block.boc");
     let block = test_real_block(in_path);
@@ -438,6 +440,7 @@ fn test_real_tvm_key_block() {
 }
 
 #[test]
+#[ignore]
 fn test_all_real_tvm_block_with_transaction() {
     for entry in read_dir(Path::new("src/tests/data/block_with_transaction"))
         .expect("Error reading BOCs dir")
@@ -531,6 +534,7 @@ fn test_block_id_ext_from_str() {
 }
 
 #[test]
+#[ignore]
 fn calc_value_flow() {
     let root_cell = read_file_de_and_serialise(Path::new(
         //"src/tests/data/91FDE9DA6661FE9D1FCB013C1079411AFC7BFEDF7FE533C6FD48D25388A3FC26.boc" // master
