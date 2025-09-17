@@ -1079,10 +1079,10 @@ fn test_update_shard_state_with_unloaded_account() {
     // `shard_state_unl5` is the same as `shard_state_full`, but with unloaded acc5.
     // Merkle create steps:
     // - collect all cells from new state, including unloaded cell
-    // - traverse old state, prune one of the parent of unloaded cell
-    //   and skips traverse down
-    // - traverse new state and stop traverse down on unloaded parent because it was pruned in
-    //   merkle old
+    // - traverse old state, prune one of the parent of unloaded cell and skips
+    //   traverse down
+    // - traverse new state and stop traverse down on unloaded parent because it was
+    //   pruned in merkle old
     // So merkle create must be succeeded
     //
     assert!(
@@ -1150,7 +1150,9 @@ fn test_update_shard_state_with_unloaded_account() {
         create_apply_and_check(&shard_state_full, &shard_state_unl5, true, &add_balance).is_err()
     );
 
-    let update = create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext).unwrap();
+    let update =
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext)
+            .unwrap();
     print_tree(&update.old);
     print_tree(&update.new);
     assert!(

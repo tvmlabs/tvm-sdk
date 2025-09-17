@@ -25,6 +25,8 @@ use tvm_types::UsageTree;
 use tvm_types::error;
 use tvm_types::fail;
 
+use crate::AccountCell;
+use crate::AccountCellStruct;
 use crate::ConfigParams;
 use crate::Deserializable;
 use crate::GetRepresentationHash;
@@ -581,7 +583,7 @@ impl Serializable for AccountStuff {
 
 #[derive(Debug, Clone)]
 pub enum OptionalAccount {
-    Account(ExternalCell<Account>),
+    Account(AccountCell<Account>),
 
     // Note: used for accounts that were moved to the other blockchain thread according to their
     // non default DApp ID
@@ -589,7 +591,7 @@ pub enum OptionalAccount {
 }
 
 impl OptionalAccount {
-    pub fn with_account(account: ExternalCell<Account>) -> Self {
+    pub fn with_account(account: AccountCell<Account>) -> Self {
         OptionalAccount::Account(account)
     }
 
@@ -597,14 +599,14 @@ impl OptionalAccount {
         OptionalAccount::AccountRedirect
     }
 
-    pub fn get_account(&self) -> Result<&ExternalCell<Account>> {
+    pub fn get_account(&self) -> Result<&AccountCell<Account>> {
         match self {
             OptionalAccount::Account(account) => Ok(account),
             _ => fail!("Account was replaced with stub"),
         }
     }
 
-    pub fn get_account_mut(&mut self) -> Result<&mut ExternalCell<Account>> {
+    pub fn get_account_mut(&mut self) -> Result<&mut AccountCell<Account>> {
         match self {
             OptionalAccount::Account(account) => Ok(account),
             _ => fail!("Account was replaced with stub"),
@@ -633,7 +635,7 @@ impl Eq for OptionalAccount {}
 
 impl Default for OptionalAccount {
     fn default() -> Self {
-        OptionalAccount::Account(ExternalCell::<Account>::default())
+        OptionalAccount::Account(AccountCell::<Account>::default())
     }
 }
 
@@ -655,7 +657,7 @@ impl Serializable for OptionalAccount {
 impl Deserializable for OptionalAccount {
     fn construct_from(slice: &mut SliceData) -> Result<Self> {
         if slice.get_next_bit()? {
-            let mut account = ExternalCell::<Account>::default();
+            let mut account = AccountCell::<Account>::default();
             account.read_from_reference(slice)?;
             Ok(OptionalAccount::Account(account))
         } else {
@@ -1316,7 +1318,7 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Self {
         ShardAccount {
-            account: OptionalAccount::with_account(ExternalCell::with_cell(account_root)),
+            account: OptionalAccount::with_account(AccountCell::with_cell(account_root)),
             last_trans_hash,
             last_trans_lt,
             dapp_id,
@@ -1330,7 +1332,7 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Result<Self> {
         Ok(ShardAccount {
-            account: OptionalAccount::with_account(ExternalCell::with_struct(account)?),
+            account: OptionalAccount::with_account(AccountCell::with_struct(account)?),
             last_trans_hash,
             last_trans_lt,
             dapp_id,
@@ -1350,7 +1352,7 @@ impl ShardAccount {
         })
     }
 
-    pub fn read_account(&self) -> Result<ExternalCellStruct<Account>> {
+    pub fn read_account(&self) -> Result<AccountCellStruct<Account>> {
         self.account.get_account()?.read_struct()
     }
 
@@ -1382,7 +1384,7 @@ impl ShardAccount {
         }
         let unloaded = original.to_unloaded_account()?;
         self.account = OptionalAccount::with_account(AccountCell::with_cell(unloaded));
-        Ok(cell)
+        Ok(original)
     }
 
     pub fn is_unloaded(&self) -> bool {
