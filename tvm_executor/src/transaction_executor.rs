@@ -1339,7 +1339,7 @@ fn compute_new_state(
                         }
                     },
                     None => {
-                        return Ok(Some(ComputeSkipReason::NoState));
+                        return Ok(Some(ComputeSkipReason::BadState));
                     }
                 }
                 // if msg is a constructor message then
