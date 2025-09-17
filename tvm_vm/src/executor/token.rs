@@ -523,19 +523,15 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     fetch_stack(engine, 5)?;
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
-    let tap_lst_cell = engine.cmd.var(2).as_cell()?;
-    let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
+
+    let tap_lst_cell = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
+    let tap_lst_bytes = unpack_data_from_cell(tap_lst_cell, engine)?;
+
+    let mbn_lst_cell = SliceData::load_cell_ref(engine.cmd.var(3).as_cell()?)?;
+    let mbn_lst_bytes = unpack_data_from_cell(mbn_lst_cell, engine)?;
+
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
     log::debug!("Loading tapLst");
-    let tap_lst_bytes =
-        match TokenValue::read_bytes(SliceData::load_cell(tap_lst_cell.clone())?, true, &ABI_VERSION_2_4)?.0 {
-            TokenValue::Bytes(items) => items,
-            e => err!(
-                ExceptionCode::CellUnpackError,
-                "Failed to unpack wasm instruction {:?}",
-                e
-            )?,
-        };
     if tap_lst_bytes.len() % 8 != 0 {
         return Err(exception!(
             ExceptionCode::CellUnpackError,
@@ -548,15 +544,6 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         .collect::<Vec<u64>>();
     
     log::debug!("Loading mbnLst");
-    let mbn_lst_bytes =
-        match TokenValue::read_bytes(SliceData::load_cell(mbn_lst_cell.clone())?, true, &ABI_VERSION_2_4)?.0 {
-            TokenValue::Bytes(items) => items,
-            e => err!(
-                ExceptionCode::CellUnpackError,
-                "Failed to unpack wasm instruction {:?}",
-                e
-            )?,
-        };
     if mbn_lst_bytes.len() % 8 != 0 {
         return Err(exception!(
             ExceptionCode::CellUnpackError,
