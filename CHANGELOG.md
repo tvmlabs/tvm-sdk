@@ -7,6 +7,15 @@ All notable changes to this project will be documented in this file.
 ### Added
 - External function for loading a wasm hash whitelist file from disk. Intended for use as a node config.
 
+## [2.22.0] - 2025-09-18
+
+### Added
+- New type OptionalAccount that can either contain account data or be account redirect
+- ShardAccount now contain OptionalAccount
+- New int message header field: dest_dapp_id
+- Added filed dapp_id_changed to AccountBlock struct
+- FWD fees increased *2 for messages without dest_dapp_id
+
 ## [2.21.2] - 2025-08-27
 
 ### Added
