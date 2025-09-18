@@ -17,7 +17,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use tvm_block::GlobalCapabilities;
-use tvm_types::Cell;
+use tvm_types::{Cell, UInt256};
 use tvm_types::HashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;

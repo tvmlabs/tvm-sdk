@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 - Ability to resolve unloaded account cells when applying Merkle updates
 
 
-## [2.21.3] - 2025-09-10
+## [2.22.0] - 2025-09-18
 
 ### Added
 - New type OptionalAccount that can either contain account data or be account redirect
