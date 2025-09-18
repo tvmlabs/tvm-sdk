@@ -128,17 +128,17 @@ impl BuilderData {
         let mut counts = Vec::new();
         for r in self.references.iter() {
             depths.push(r.depths());
-            depth += r.depths().iter().sum::<u16>();
+            depth = depth.max(r.depths().iter().sum::<u16>());
             depth2 += r.tree_cell_count();
             counts.push(r.tree_bits_count());
             count += r.tree_bits_count();
             refs += r.references_count();
         }
-        println!("Depths {:?}, counts {:?}", depths, counts);
-        println!("Depth {:?}, count {:?}", depth, count);
-        println!("Depth2 {:?}, refs {:?}", depth2, refs);
-        if depth2 >= 800 || count >= 1398101 * 1204 {
-            fail!("reached max BOC tree size allowed by current Node State limitations")
+        if depth >= 800 || count >= 1398101 * 1024 {
+            println!("Depths {:?}, counts {:?}", depths, counts);
+            println!("Depth {:?}, count {:?}", depth, count);
+            println!("Depth2 {:?}, refs {:?}", depth2, refs);
+            fail!("reached max BOC tree size allowed by current Node State limitations");
         }
 
         let level_mask = match self.cell_type {
