@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.22.0] - 2025-09-18
+
+### Added
+- New type OptionalAccount that can either contain account data or be account redirect
+- ShardAccount now contain OptionalAccount
+- New int message header field: dest_dapp_id
+- Added filed dapp_id_changed to AccountBlock struct
+- FWD fees increased *2 for messages without dest_dapp_id
+
+## [2.21.2] - 2025-08-27
+
+### Added
+- Ability to write BOC into generic Write destination
+
+## [2.21.1] - 2025-08-20
+
+### Changed/Fixed
+-  Now function `tvm_client::account` returns account boc and **dapp_id**
+
 
 ## [2.21.0] - 2025-08-20
 

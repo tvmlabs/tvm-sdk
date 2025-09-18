@@ -1331,7 +1331,7 @@ fn serialize_shard_accounts(
         let account_set = AccountSerializationSet {
             account,
             prev_code_hash: None,
-            boc: write_boc(&shard_acc.account_cell())?,
+            boc: write_boc(&shard_acc.account_cell()?)?,
             boc1,
             proof: None,
             dapp_id: shard_acc.get_dapp_id().cloned(),
