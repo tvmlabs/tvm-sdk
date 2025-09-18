@@ -392,6 +392,8 @@ pub enum ExceptionCode {
     WasmWhitelistMissingBinary = 33,
     #[error("wasm failed to set or use fuel limit")]
     WasmFuelError = 34,
+    #[error("DApp ID is not set")]
+    DAppIdNotSet = 35,
 }
 
 // impl fmt::Display for ExceptionCode {
