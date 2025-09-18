@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use byte_slice_cast::AsByteSlice;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_BURNECC;
@@ -589,6 +591,17 @@ pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
         balance = 0;
     }
     engine.cc.stack.push(int!(balance as u128));
+    Ok(())
+}
+
+pub(super) fn execute_my_dapp_id(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(Instruction::new("MYDAPPID"))?;
+    let dapp_id = match engine.self_dapp_id.as_ref() {
+        Some(dapp_id) => dapp_id.clone(),
+        None => err!(ExceptionCode::DAppIdNotSet)?,
+    };
+    engine.cc.stack.push(StackItem::Integer(Arc::new(IntegerData::from_unsigned_bytes_be(dapp_id.as_byte_slice()))));
     Ok(())
 }
 
