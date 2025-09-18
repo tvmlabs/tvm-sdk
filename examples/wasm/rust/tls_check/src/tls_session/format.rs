@@ -3,7 +3,7 @@ use chrono::DateTime;
 use chrono::FixedOffset;
 use chrono::TimeZone;
 
-#![allow(unused)]
+#[allow(unused)]
 
 pub struct Messages {
     pub client_hello: Record,
@@ -244,24 +244,26 @@ pub fn extract_all_items(item: &str, data: &str) -> Vec<String> {
 
 pub fn extract_expires(data: &str) -> i64 {
     let target = r#"Date: "#; // let target = r#"Expires: "#; // substring we are looking for
-    let start= data.find(target).unwrap();
+    let start = data.find(target).unwrap();
     let start_pos = start + target.len(); // position after substring
     let end = data[start_pos..].find('\n').unwrap();
     let end_pos = start_pos + end; // position after substring
     let date_time_string = data[start_pos..end_pos].to_string();
 
     let target = r#"Expires: "#;
-    let find_res= data.find(target);
+    let find_res = data.find(target);
     if find_res.is_some() {
         let start = find_res.unwrap();
         let start_pos = start + target.len();
         let end = data[start_pos..].find('\n').unwrap();
         let end_pos = start_pos + end;
         let expires_time_string = data[start_pos..end_pos].to_string(); // for Google
-        let dt: DateTime<FixedOffset> = DateTime::parse_from_rfc2822(&expires_time_string.trim()).unwrap();
+        let dt: DateTime<FixedOffset> =
+            DateTime::parse_from_rfc2822(&expires_time_string.trim()).unwrap();
         return dt.timestamp();
     } else {
-        let dt: DateTime<FixedOffset> = DateTime::parse_from_rfc2822(&date_time_string.trim()).unwrap();
+        let dt: DateTime<FixedOffset> =
+            DateTime::parse_from_rfc2822(&date_time_string.trim()).unwrap();
         let timestamp = dt.timestamp();
         return timestamp + 18223; // Date + 18223 = Expires (as for Google)
     }
