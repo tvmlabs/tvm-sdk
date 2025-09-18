@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.22.1] - 2025-09-18
+
+### Added
+- External function for loading a wasm hash whitelist file from disk. Intended for use as a node config.
+
 ## [2.21.2] - 2025-08-27
 
 ### Added
