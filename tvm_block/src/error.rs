@@ -50,6 +50,6 @@ pub enum BlockError {
     WrongMerkleUpdate(String),
     #[error("Bad signature")]
     BadSignature,
-    #[error("External cell read")]
-    ExternalCellRead,
+    #[error("Unloaded account cell read")]
+    UnloadedAccountCellRead,
 }
