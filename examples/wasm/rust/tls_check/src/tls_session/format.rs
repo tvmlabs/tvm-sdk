@@ -4,7 +4,6 @@ use chrono::FixedOffset;
 use chrono::TimeZone;
 
 #[allow(unused)]
-
 pub struct Messages {
     pub client_hello: Record,
     pub server_hello: Record,
