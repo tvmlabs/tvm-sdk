@@ -405,7 +405,8 @@ impl Handlers {
                 .set(0x42, execute_get_available_balance)
                 .set(0x43, execute_mint_shell)
                 .set(0x44, execute_send_to_dapp_config)
-                .set(0x45, execute_calculate_mbk);
+                .set(0x45, execute_my_dapp_id)
+                .set(0x46, execute_calculate_mbk);
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
