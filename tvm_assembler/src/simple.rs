@@ -857,6 +857,7 @@ impl Engine {
         GETAVAILABLEBALANCE                  => 0xC7, 0x42
         MINTSHELL                            => 0xC7, 0x43
         SENDTODAPPCONFIG                     => 0xC7, 0x44
+        MYDAPPID                             => 0xC7, 0x45
     }
 
     fn add_commands<'a>(
