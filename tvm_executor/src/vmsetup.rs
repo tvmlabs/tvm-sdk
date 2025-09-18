@@ -17,7 +17,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use tvm_block::GlobalCapabilities;
-use tvm_types::Cell;
+use tvm_types::{Cell, UInt256};
 use tvm_types::HashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;
@@ -179,6 +179,12 @@ impl VMSetup {
     /// Sets block time for use in wasm
     pub fn set_wasm_block_time(mut self, time: u64) -> VMSetup {
         self.vm.set_wasm_block_time(time);
+        self
+    }
+
+    /// Sets account dapp_id
+    pub fn set_dapp_id(mut self, dapp_id: Option<UInt256>) -> VMSetup {
+        self.vm.set_dapp_id(dapp_id);
         self
     }
 
