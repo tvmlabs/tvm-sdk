@@ -13,12 +13,12 @@ pub use ark_serialize::CanonicalSerialize;
 use itertools::Itertools;
 use num_bigint::BigUint;
 use regex::Regex;
+use reqwest::Client;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
 
-use reqwest::Client;
 use super::utils::split_to_two_frs;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
@@ -300,9 +300,20 @@ fn trim(str: String) -> String {
 }
 
 /// Fetch JWKs from the given provider and return a list of JwkId -> JWK.
-pub async fn fetch_jwks(provider: &OIDCProvider, client: &Client) -> Result<Vec<(JwkId, JWK)>, ZkCryptoError> {
-    let response = client.get(provider.get_config().jwk_endpoint).send().await.map_err(|e| {ZkCryptoError::GeneralError(format!("Failed to get JWK {:?} {:?}", e.to_string(), provider))})?;
-    let bytes = response.bytes().await.map_err(|e| {ZkCryptoError::GeneralError(format!("Failed to get bytes {:?} {:?}", e.to_string(), provider))})?;
+pub async fn fetch_jwks(
+    provider: &OIDCProvider,
+    client: &Client,
+) -> Result<Vec<(JwkId, JWK)>, ZkCryptoError> {
+    let response = client.get(provider.get_config().jwk_endpoint).send().await.map_err(|e| {
+        ZkCryptoError::GeneralError(format!("Failed to get JWK {:?} {:?}", e.to_string(), provider))
+    })?;
+    let bytes = response.bytes().await.map_err(|e| {
+        ZkCryptoError::GeneralError(format!(
+            "Failed to get bytes {:?} {:?}",
+            e.to_string(),
+            provider
+        ))
+    })?;
     parse_jwks(&bytes, provider)
 }
 
@@ -674,4 +685,3 @@ fn big_int_array_to_bits(integers: &[BigUint], intended_size: usize) -> ZkCrypto
         .flatten_ok()
         .collect()
 }
-
