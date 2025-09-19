@@ -525,37 +525,136 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     fetch_stack(engine, 5)?;
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
+    let tap_lst_cell = engine.cmd.var(2).as_cell()?;
+    let mut slice = match SliceData::load_cell(tap_lst_cell.clone()) {
+        Ok(slice) => slice,
+        Err(e) => {
+            return Err(exception!(
+                ExceptionCode::CellUnpackError,
+                "Failed to load cell: {:?}",
+                e
+            ));
+        }
+    };
+    let length = match slice.get_next_u32() {
+        Ok(len) => len,
+        Err(e) => {
+            return Err(exception!(
+                ExceptionCode::CellUnpackError,
+                "Failed to read array length: {:?}",
+                e
+            ));
+        }
+    };
+    let mut tap_lst = Vec::new();
+    let mut current_slice = slice;
+    for _ in 0..length {
+        if current_slice.remaining_bits() < 64 {
+            if current_slice.remaining_references() > 0 {
+                let ref_cell = match current_slice.checked_drain_reference() {
+                    Ok(cell) => cell,
+                    Err(e) => {
+                        return Err(exception!(
+                            ExceptionCode::CellUnpackError,
+                            "Failed to get reference: {:?}",
+                            e
+                        ));
+                    }
+                };
+                
+                current_slice = match SliceData::load_cell(ref_cell) {
+                    Ok(slice) => slice,
+                    Err(e) => {
+                        return Err(exception!(
+                            ExceptionCode::CellUnpackError,
+                            "Failed to load reference cell: {:?}",
+                            e
+                        ));
+                    }
+                };
+            } else {
+                break;
+            }
+        }
+        
+        let value = match current_slice.get_next_u64() {
+            Ok(val) => val,
+            Err(e) => {
+                return Err(exception!(
+                    ExceptionCode::CellUnpackError,
+                    "Failed to read u64 value: {:?}",
+                    e
+                ));
+            }
+        };
+        tap_lst.push(value);
+    }
 
-    let tap_lst_cell = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
-    let tap_lst_bytes = unpack_data_from_cell(tap_lst_cell, engine)?;
-
-    let mbn_lst_cell = SliceData::load_cell_ref(engine.cmd.var(3).as_cell()?)?;
-    let mbn_lst_bytes = unpack_data_from_cell(mbn_lst_cell, engine)?;
-
+    let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
+    let mut slice = match SliceData::load_cell(mbn_lst_cell.clone()) {
+        Ok(slice) => slice,
+        Err(e) => {
+            return Err(exception!(
+                ExceptionCode::CellUnpackError,
+                "Failed to load cell: {:?}",
+                e
+            ));
+        }
+    };
+    let length = match slice.get_next_u32() {
+        Ok(len) => len,
+        Err(e) => {
+            return Err(exception!(
+                ExceptionCode::CellUnpackError,
+                "Failed to read array length: {:?}",
+                e
+            ));
+        }
+    };
+    let mut mbn_lst = Vec::new();
+    let mut current_slice = slice;
+    for _ in 0..length {
+        if current_slice.remaining_bits() < 64 {
+            if current_slice.remaining_references() > 0 {
+                let ref_cell = match current_slice.checked_drain_reference() {
+                    Ok(cell) => cell,
+                    Err(e) => {
+                        return Err(exception!(
+                            ExceptionCode::CellUnpackError,
+                            "Failed to get reference: {:?}",
+                            e
+                        ));
+                    }
+                };
+                
+                current_slice = match SliceData::load_cell(ref_cell) {
+                    Ok(slice) => slice,
+                    Err(e) => {
+                        return Err(exception!(
+                            ExceptionCode::CellUnpackError,
+                            "Failed to load reference cell: {:?}",
+                            e
+                        ));
+                    }
+                };
+            } else {
+                break;
+            }
+        }
+        
+        let value = match current_slice.get_next_u64() {
+            Ok(val) => val,
+            Err(e) => {
+                return Err(exception!(
+                    ExceptionCode::CellUnpackError,
+                    "Failed to read u64 value: {:?}",
+                    e
+                ));
+            }
+        };
+        mbn_lst.push(value);
+    }
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
-    log::debug!("Loading tapLst");
-    if tap_lst_bytes.len() % 8 != 0 {
-        return Err(exception!(
-            ExceptionCode::CellUnpackError,
-            "Bytes length is not multiple of 8"
-        ));
-    } 
-    let tap_lst = tap_lst_bytes
-        .chunks_exact(8)
-        .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
-        .collect::<Vec<u64>>();
-    
-    log::debug!("Loading mbnLst");
-    if mbn_lst_bytes.len() % 8 != 0 {
-        return Err(exception!(
-            ExceptionCode::CellUnpackError,
-            "Bytes length is not multiple of 8"
-        ));
-    } 
-    let mbn_lst = mbn_lst_bytes
-        .chunks_exact(8)
-        .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
-        .collect::<Vec<u64>>();
 
     let bclst = build_bclst(&to_umbnlst(&mbn_lst));
     let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi, &tap_lst);
