@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.22.1] - 2025-09-19
+
+### Fixed
+- Fix bug with extract expires
+
 ## [2.22.0] - 2025-09-18
 
 ### Added
