@@ -582,6 +582,91 @@ impl Serializable for AccountStuff {
 }
 
 #[derive(Debug, Clone)]
+pub enum OptionalAccount {
+    Account(ExternalCell<Account>),
+
+    // Note: used for accounts that were moved to the other blockchain thread according to their
+    // non default DApp ID
+    AccountRedirect,
+}
+
+impl OptionalAccount {
+    pub fn with_account(account: ExternalCell<Account>) -> Self {
+        OptionalAccount::Account(account)
+    }
+
+    pub fn with_redirect() -> Self {
+        OptionalAccount::AccountRedirect
+    }
+
+    pub fn get_account(&self) -> Result<&ExternalCell<Account>> {
+        match self {
+            OptionalAccount::Account(account) => Ok(account),
+            _ => fail!("Account was replaced with stub"),
+        }
+    }
+
+    pub fn get_account_mut(&mut self) -> Result<&mut ExternalCell<Account>> {
+        match self {
+            OptionalAccount::Account(account) => Ok(account),
+            _ => fail!("Account was replaced with stub"),
+        }
+    }
+
+    pub fn is_redirect(&self) -> bool {
+        match self {
+            OptionalAccount::Account(_) => false,
+            OptionalAccount::AccountRedirect => true,
+        }
+    }
+}
+
+impl PartialEq for OptionalAccount {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (OptionalAccount::AccountRedirect, OptionalAccount::AccountRedirect) => true,
+            (OptionalAccount::Account(acc), OptionalAccount::Account(other)) => acc.eq(other),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for OptionalAccount {}
+
+impl Default for OptionalAccount {
+    fn default() -> Self {
+        OptionalAccount::Account(ExternalCell::<Account>::default())
+    }
+}
+
+impl Serializable for OptionalAccount {
+    fn write_to(&self, builder: &mut BuilderData) -> Result<()> {
+        match self {
+            OptionalAccount::Account(account) => {
+                builder.append_bit_one()?;
+                builder.checked_prepend_reference(account.cell())?;
+            }
+            OptionalAccount::AccountRedirect => {
+                builder.append_bit_zero()?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Deserializable for OptionalAccount {
+    fn construct_from(slice: &mut SliceData) -> Result<Self> {
+        if slice.get_next_bit()? {
+            let mut account = ExternalCell::<Account>::default();
+            account.read_from_reference(slice)?;
+            Ok(OptionalAccount::Account(account))
+        } else {
+            Ok(OptionalAccount::AccountRedirect)
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Account {
     stuff: Option<AccountStuff>,
 }
@@ -1219,7 +1304,7 @@ impl fmt::Display for Account {
 /// struct ShardAccount
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct ShardAccount {
-    account: ExternalCell<Account>,
+    account: OptionalAccount,
     last_trans_hash: UInt256,
     last_trans_lt: u64,
     dapp_id: Option<UInt256>,
@@ -1233,7 +1318,7 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Self {
         ShardAccount {
-            account: ExternalCell::with_cell(account_root),
+            account: OptionalAccount::with_account(ExternalCell::with_cell(account_root)),
             last_trans_hash,
             last_trans_lt,
             dapp_id,
@@ -1247,7 +1332,20 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Result<Self> {
         Ok(ShardAccount {
-            account: ExternalCell::with_struct(account)?,
+            account: OptionalAccount::with_account(ExternalCell::with_struct(account)?),
+            last_trans_hash,
+            last_trans_lt,
+            dapp_id,
+        })
+    }
+
+    pub fn with_redirect(
+        last_trans_hash: UInt256,
+        last_trans_lt: u64,
+        dapp_id: Option<UInt256>,
+    ) -> Result<Self> {
+        Ok(ShardAccount {
+            account: OptionalAccount::with_redirect(),
             last_trans_hash,
             last_trans_lt,
             dapp_id,
@@ -1255,7 +1353,7 @@ impl ShardAccount {
     }
 
     pub fn read_account(&self) -> Result<ExternalCellStruct<Account>> {
-        self.account.read_struct()
+        self.account.get_account()?.read_struct()
     }
 
     pub fn last_trans_hash(&self) -> &UInt256 {
@@ -1266,12 +1364,13 @@ impl ShardAccount {
         self.last_trans_lt
     }
 
-    pub fn account_cell(&self) -> Cell {
-        self.account.cell()
+    pub fn account_cell(&self) -> Result<Cell> {
+        Ok(self.account.get_account()?.cell())
     }
 
-    pub fn set_account_cell(&mut self, cell: Cell) {
-        self.account.set_cell(cell)
+    pub fn set_account_cell(&mut self, cell: Cell) -> Result<()> {
+        self.account.get_account_mut()?.set_cell(cell);
+        Ok(())
     }
 
     pub fn get_dapp_id(&self) -> Option<&UInt256> {
@@ -1279,23 +1378,27 @@ impl ShardAccount {
     }
 
     pub fn replace_with_external(&mut self) -> Result<Cell> {
-        let cell = self.account.cell();
+        let cell = self.account.get_account()?.cell();
         if cell.cell_type() != CellType::Ordinary {
             fail!("Only ordinary cells can be replaced with external")
         }
         let external = cell.to_external()?;
-        self.account = ExternalCell::with_cell(external);
+        self.account = OptionalAccount::with_account(ExternalCell::with_cell(external));
         Ok(cell)
     }
 
     pub fn is_external(&self) -> bool {
-        self.account.is_external()
+        self.account.get_account().map(|a| a.is_external()).unwrap_or(false)
+    }
+
+    pub fn is_redirect(&self) -> bool {
+        self.account.is_redirect()
     }
 }
 
 impl Serializable for ShardAccount {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.checked_append_reference(self.account.cell())?;
+        self.account.write_to(cell)?;
         self.last_trans_hash.write_to(cell)?;
         self.last_trans_lt.write_to(cell)?;
         self.dapp_id.write_maybe_to(cell)?;
@@ -1305,7 +1408,7 @@ impl Serializable for ShardAccount {
 
 impl Deserializable for ShardAccount {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        self.account.read_from_reference(cell)?;
+        self.account = OptionalAccount::construct_from(cell)?;
         self.last_trans_hash.read_from(cell)?;
         self.last_trans_lt.read_from(cell)?;
         self.dapp_id = UInt256::read_maybe_from(cell)?;
