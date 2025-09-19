@@ -38,7 +38,11 @@ num-bigint.workspace = true
 serde.workspace = true
 
 regex.workspace = true
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = [
+  "blocking",
+  "json",
+  "rustls-tls",
+] }
 
 
 bls12_381 = "0.8"

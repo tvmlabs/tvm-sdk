@@ -1,13 +1,15 @@
 use std::str::FromStr;
-use fastcrypto::rsa::Base64UrlUnpadded;
+
+use base64ct::Encoding;
 use fastcrypto::hash::Blake2b256;
 use fastcrypto::hash::HashFunction;
+use fastcrypto::rsa::Base64UrlUnpadded;
 use num_bigint::BigUint;
+use reqwest::Client;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::json;
-use base64ct::Encoding;
-use reqwest::Client;
+
 use super::zk_login::hash_ascii_str_to_field;
 use crate::executor::zk::Bn254Fr;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
@@ -84,7 +86,8 @@ pub struct TestIssuerJWTResponse {
     pub jwt: String,
 }
 
-/// Call the prover backend to get the zkLogin inputs based on jwt_token, max_epoch, jwt_randomness, eph_pubkey and salt.
+/// Call the prover backend to get the zkLogin inputs based on jwt_token,
+/// max_epoch, jwt_randomness, eph_pubkey and salt.
 pub async fn get_proof(
     jwt_token: &str,
     max_epoch: u64,
@@ -109,18 +112,17 @@ pub async fn get_proof(
         .send()
         .await
         .map_err(|_| ZkCryptoError::InvalidInput)?;
-    let full_bytes = response
-        .bytes()
-        .await
-        .map_err(|_| ZkCryptoError::InvalidInput)?;
+    let full_bytes = response.bytes().await.map_err(|_| ZkCryptoError::InvalidInput)?;
 
     let get_proof_response: ZkLoginInputsReader =
         serde_json::from_slice(&full_bytes).map_err(|_| ZkCryptoError::InvalidInput)?;
     Ok(get_proof_response)
 }
 
-/// Calculate the nonce for the given parameters. Nonce is defined as the Base64Url encoded of the poseidon hash of 4 inputs:
-/// first half of eph_pk_bytes in BigInt, second half of eph_pk_bytes in BigInt, max_epoch and jwt_randomness.
+/// Calculate the nonce for the given parameters. Nonce is defined as the
+/// Base64Url encoded of the poseidon hash of 4 inputs: first half of
+/// eph_pk_bytes in BigInt, second half of eph_pk_bytes in BigInt, max_epoch and
+/// jwt_randomness.
 pub fn get_nonce(
     eph_pk_bytes: &[u8],
     max_epoch: u64,
@@ -138,8 +140,5 @@ pub fn get_nonce(
     let data = BigUint::from(hash).to_bytes_be();
     let truncated = &data[data.len() - 20..];
     let mut buf = vec![0; Base64UrlUnpadded::encoded_len(truncated)];
-    Ok(Base64UrlUnpadded::encode(truncated, &mut buf)
-        .unwrap()
-        .to_string())
+    Ok(Base64UrlUnpadded::encode(truncated, &mut buf).unwrap().to_string())
 }
-
