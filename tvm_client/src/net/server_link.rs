@@ -29,6 +29,7 @@ use serde_json::Value;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
 use tokio::sync::watch;
+use tvm_block::MsgAddressInt;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
 
@@ -932,6 +933,7 @@ impl ServerLink {
         msg_id: &str,
         msg_body: &[u8],
         thread_id: ThreadIdentifier,
+        dst: MsgAddressInt,
     ) -> ClientResult<Value> {
         // This helper function adds "resource" part to the URL
         fn ensure_resource(url: &Url) -> Url {
@@ -969,7 +971,7 @@ impl ServerLink {
                 }
             }
 
-            let Err(ref err) = result else { return result };
+            let Err(err) = result.as_mut() else { return result };
 
             if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
                 network_state.update_bm_data(&err.data["ext_message_token"]).await;
@@ -985,6 +987,7 @@ impl ServerLink {
             };
 
             if !["WRONG_PRODUCER", "THREAD_MISMATCH", "TOKEN_EXPIRED"].contains(&code) {
+                ensure_address(&mut err.data, Value::String(dst.to_string()));
                 return result;
             }
 
@@ -1084,6 +1087,21 @@ impl ServerLink {
 
     pub async fn invalidate_querying_endpoint(&self) {
         self.state.invalidate_querying_endpoint().await
+    }
+}
+
+fn ensure_address(err_data: &mut Value, dst: Value) {
+    if let Some(addr) = err_data.pointer_mut("/node_error/extensions/details/address") {
+        if addr.is_null() {
+            *addr = dst;
+        }
+    } else {
+        if let Some(details) = err_data
+            .pointer_mut("/node_error/extensions/details")
+            .and_then(Value::as_object_mut)
+        {
+            details.insert("address".to_string(), dst);
+        }
     }
 }
 
