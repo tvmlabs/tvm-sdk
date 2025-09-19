@@ -146,7 +146,7 @@ impl SendingMessage {
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
         let server_link: &crate::net::ServerLink = context.get_server_link()?;
-        server_link.send_message(&self.id, &self.body, self.thread_id).await
+        server_link.send_message(&self.id, &self.body, self.thread_id, self.dst.clone()).await
     }
 }
 
