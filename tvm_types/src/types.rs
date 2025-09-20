@@ -394,6 +394,8 @@ pub enum ExceptionCode {
     WasmFuelError = 34,
     #[error("DApp ID is not set")]
     DAppIdNotSet = 35,
+    #[error("wasm base config is incorrect")]
+    WasmConfigError = 36,
 }
 
 // impl fmt::Display for ExceptionCode {
