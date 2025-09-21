@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.22.2] - 2025-09-21
+
+### Added
+- Added flag "is_high_priority" to int message header
+
 ## [2.22.1] - 2025-09-19
 
 ### Fixed
