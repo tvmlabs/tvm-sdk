@@ -617,10 +617,9 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
             ));
         }
     };
-    log::trace!(target: "executor", "lenght {}", length);
     let mut mbn_lst = Vec::new();
     let mut current_slice = slice;
-    for _ in 0..length {
+    for index in 0..length {
         if current_slice.remaining_bits() < 64 {
             if current_slice.remaining_references() > 0 {
                 let ref_cell = match current_slice.checked_drain_reference() {
@@ -654,7 +653,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
             Err(e) => {
                 return Err(exception!(
                     ExceptionCode::CellUnpackError,
-                    "Failed to read u64 value: {:?}",
+                    "Failed to read u64 value {index} and {length}: {:?}",
                     e
                 ));
             }
