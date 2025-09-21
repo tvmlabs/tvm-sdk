@@ -43,6 +43,9 @@ pub const MAXRT: u128 = 157_766_400;
 // pub const KRMV: f64 = 0.225_f64;
 // pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
+const DELTA_SBK_NUMENATOR:  u128 = 10_000_000;
+const DELTA_SBK_DENOMINATOR: u128 = 10_000_525;
+
 const RC_ONE_Q32: i64 = 1i64 << 32;
 const RC_POW2_COEFF: [i64; 6] = [
     4_294_967_296, // 1 * 2^32
@@ -437,7 +440,10 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let sbkbase;
     if mbkav != 0 {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-        sbkbase = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) / 2 / nbk as u128;
+        sbkbase =
+            ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
+            / (2u128 * (nbk as u128) * DELTA_SBK_DENOMINATOR);
+
     } else {
         sbkbase = SBK_BASE_START;
     }
