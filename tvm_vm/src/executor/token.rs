@@ -617,6 +617,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
             ));
         }
     };
+    log::trace!(target: "executor", "lenght {}", length);
     let mut mbn_lst = Vec::new();
     let mut current_slice = slice;
     for _ in 0..length {
