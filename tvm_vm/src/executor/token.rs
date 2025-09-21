@@ -1,5 +1,8 @@
 use std::sync::Arc;
 use byte_slice_cast::AsByteSlice;
+use tvm_abi::contract::ABI_VERSION_2_2;
+use tvm_abi::Param;
+use tvm_abi::ParamType;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_BURNECC;
@@ -525,141 +528,125 @@ fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Ve
     rmv
 }
 
+fn params_from_types(types: Vec<ParamType>) -> Vec<Param> {
+    let param_names = vec![
+        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+        "s", "t", "u", "v", "w", "x", "y", "z",
+    ];
+
+    types
+        .into_iter()
+        .zip(param_names)
+        .map(|(kind, name)| Param { name: name.to_owned(), kind })
+        .collect()
+}
 
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
     fetch_stack(engine, 5)?;
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
+    
     let tap_lst_cell = engine.cmd.var(2).as_cell()?;
-    let mut slice = match SliceData::load_cell(tap_lst_cell.clone()) {
-        Ok(slice) => slice,
-        Err(e) => {
+    let tap_lst_slice = SliceData::load_cell(tap_lst_cell.clone())?;
+    let params = params_from_types(vec![ParamType::Array(Box::new(ParamType::Uint(64)))]);
+    let tokens = TokenValue::decode_params(&params, tap_lst_slice, &ABI_VERSION_2_2, false)
+        .map_err(|e| {
+            exception!(
+                ExceptionCode::CellUnpackError,
+                "Failed to decode tap_lst array: {:?}",
+                e
+            )
+        })?;
+
+    let tap_lst = if let Some(token) = tokens.first() {
+        if let TokenValue::Array(_, items) = &token.value {
+            items.iter().map(|item| {
+                if let TokenValue::Uint(uint) = item {
+                    let bytes = uint.number.to_bytes_le();
+                    if bytes.len() > 8 {
+                        Err(exception!(
+                            ExceptionCode::CellUnpackError,
+                            "Value too large for u64: {}",
+                            uint.number
+                        ))
+                    } else {
+                        let mut array = [0u8; 8];
+                        array[..bytes.len()].copy_from_slice(&bytes);
+                        Ok(u64::from_le_bytes(array))
+                    }
+                } else {
+                    Err(exception!(
+                        ExceptionCode::CellUnpackError,
+                        "Expected Uint in array, got {:?}",
+                        item
+                    ))
+                }
+            }).collect::<Result<Vec<u64>, _>>()? 
+        } else {
             return Err(exception!(
                 ExceptionCode::CellUnpackError,
-                "Failed to load cell: {:?}",
-                e
+                "Expected array token, got {:?}",
+                token.value
             ));
         }
+    } else {
+        return Err(exception!(
+            ExceptionCode::CellUnpackError,
+            "No token found after decoding"
+        ));
     };
-    let length = match slice.get_next_u32() {
-        Ok(len) => len,
-        Err(e) => {
-            return Err(exception!(
-                ExceptionCode::CellUnpackError,
-                "Failed to read array length: {:?}",
-                e
-            ));
-        }
-    };
-    let mut tap_lst = Vec::new();
-    let mut current_slice = slice;
-    for index in 0..length {
-        if current_slice.remaining_bits() < 64 {
-            if current_slice.remaining_references() > 0 {
-                let ref_cell = match current_slice.checked_drain_reference() {
-                    Ok(cell) => cell,
-                    Err(e) => {
-                        return Err(exception!(
-                            ExceptionCode::CellUnpackError,
-                            "Failed to get reference: {:?}",
-                            e
-                        ));
-                    }
-                };
-                
-                current_slice = match SliceData::load_cell(ref_cell) {
-                    Ok(slice) => slice,
-                    Err(e) => {
-                        return Err(exception!(
-                            ExceptionCode::CellUnpackError,
-                            "Failed to load reference cell: {:?}",
-                            e
-                        ));
-                    }
-                };
-            } else {
-                break;
-            }
-        }
-        
-        let value = match current_slice.get_next_u64() {
-            Ok(val) => val,
-            Err(e) => {
-                return Err(exception!(
-                    ExceptionCode::CellUnpackError,
-                    "Failed to read u64 value {index} and {length}: {:?}",
-                    e
-                ));
-            }
-        };
-        tap_lst.push(value);
-    }
 
     let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
-    let mut slice = match SliceData::load_cell(mbn_lst_cell.clone()) {
-        Ok(slice) => slice,
-        Err(e) => {
+    let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone())?;
+    
+    let tokens = TokenValue::decode_params(&params, mbn_lst_slice, &ABI_VERSION_2_2, false)
+        .map_err(|e| {
+            exception!(
+                ExceptionCode::CellUnpackError,
+                "Failed to decode mbn_lst array: {:?}",
+                e
+            )
+        })?;
+
+    let mbn_lst = if let Some(token) = tokens.first() {
+        if let TokenValue::Array(_, items) = &token.value {
+            items.iter().map(|item| {
+                if let TokenValue::Uint(uint) = item {
+                    let bytes = uint.number.to_bytes_le();
+                    if bytes.len() > 8 {
+                        Err(exception!(
+                            ExceptionCode::CellUnpackError,
+                            "Value too large for u64: {}",
+                            uint.number
+                        ))
+                    } else {
+                        let mut array = [0u8; 8];
+                        array[..bytes.len()].copy_from_slice(&bytes);
+                        Ok(u64::from_le_bytes(array))
+                    }
+                } else {
+                    Err(exception!(
+                        ExceptionCode::CellUnpackError,
+                        "Expected Uint in array, got {:?}",
+                        item
+                    ))
+                }
+            }).collect::<Result<Vec<u64>, _>>()? 
+        } else {
             return Err(exception!(
                 ExceptionCode::CellUnpackError,
-                "Failed to load cell: {:?}",
-                e
+                "Expected array token, got {:?}",
+                token.value
             ));
         }
+    } else {
+        return Err(exception!(
+            ExceptionCode::CellUnpackError,
+            "No token found after decoding"
+        ));
     };
-    let length = match slice.get_next_u32() {
-        Ok(len) => len,
-        Err(e) => {
-            return Err(exception!(
-                ExceptionCode::CellUnpackError,
-                "Failed to read array length: {:?}",
-                e
-            ));
-        }
-    };
-    let mut mbn_lst = Vec::new();
-    let mut current_slice = slice;
-    for index in 0..length {
-        if current_slice.remaining_bits() < 64 {
-            if current_slice.remaining_references() > 0 {
-                let ref_cell = match current_slice.checked_drain_reference() {
-                    Ok(cell) => cell,
-                    Err(e) => {
-                        return Err(exception!(
-                            ExceptionCode::CellUnpackError,
-                            "Failed to get reference: {:?}",
-                            e
-                        ));
-                    }
-                };
-                
-                current_slice = match SliceData::load_cell(ref_cell) {
-                    Ok(slice) => slice,
-                    Err(e) => {
-                        return Err(exception!(
-                            ExceptionCode::CellUnpackError,
-                            "Failed to load reference cell: {:?}",
-                            e
-                        ));
-                    }
-                };
-            } else {
-                break;
-            }
-        }
-        
-        let value = match current_slice.get_next_u64() {
-            Ok(val) => val,
-            Err(e) => {
-                return Err(exception!(
-                    ExceptionCode::CellUnpackError,
-                    "Failed to read u64 value {index} and {length}: {:?}",
-                    e
-                ));
-            }
-        };
-        mbn_lst.push(value);
-    }
+    
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
 
     let bclst = build_bclst(&to_umbnlst(&mbn_lst));
