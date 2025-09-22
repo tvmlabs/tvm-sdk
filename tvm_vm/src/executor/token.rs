@@ -1,4 +1,5 @@
 use std::sync::Arc;
+
 use byte_slice_cast::AsByteSlice;
 use tvm_abi::contract::ABI_VERSION_2_2;
 use tvm_abi::Param;
@@ -710,7 +711,9 @@ pub(super) fn execute_my_dapp_id(engine: &mut Engine) -> Status {
         Some(dapp_id) => dapp_id.clone(),
         None => err!(ExceptionCode::DAppIdNotSet)?,
     };
-    engine.cc.stack.push(StackItem::Integer(Arc::new(IntegerData::from_unsigned_bytes_be(dapp_id.as_byte_slice()))));
+    engine.cc.stack.push(StackItem::Integer(Arc::new(IntegerData::from_unsigned_bytes_be(
+        dapp_id.as_byte_slice(),
+    ))));
     Ok(())
 }
 
