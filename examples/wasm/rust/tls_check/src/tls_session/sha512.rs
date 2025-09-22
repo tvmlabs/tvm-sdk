@@ -244,13 +244,7 @@ impl Digest {
     }
 
     pub fn new512() -> Digest {
-        let mut d = Digest {
-            h: [0; 8],
-            x: [0; CHUNK],
-            nx: 0,
-            len: 0,
-            kind: 4,
-        };
+        let mut d = Digest { h: [0; 8], x: [0; CHUNK], nx: 0, len: 0, kind: 4 };
         d.reset();
         d
     }

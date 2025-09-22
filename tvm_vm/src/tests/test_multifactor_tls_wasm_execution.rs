@@ -85,7 +85,7 @@ fn test_tls_wasm_from_hash_for_google() {
     let hash_str = //"f45dae3df26f2a45f006bd7e7d32f426e240dfd1391669953688cb40886aff11"; 
     //"25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
     //"f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
-    "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
+    "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -145,7 +145,7 @@ fn test_tls_wasm_from_hash_for_google() {
     let slice = SliceData::load_cell(res.clone()).unwrap();
     let ress = unpack_data_from_cell(slice, &mut engine).unwrap();
 
-    // assert_eq!("0100000000689fabf7ab8e1f759972f2594613044e4a197c71d4f3f541d7e2afaba98838c6d2e031e330e2fb0805dd8ea233cc05ae3d1d52ea11d0db3ae013e30b1f71808448606f90fb06a56215f57ad962829f36187e345c60153a92f9169f9de61ee7feb5dc6eaadd908e93790c729ab17a3ee9276f51cb0081e5a7d03dd76717ca596bdfc183fe5309d70b1b9cbce2757448b8577d9d1a00c30f56de34e5524255c8a51b0bcfa5d7661dfab69b7ed0e200629687635e769f43a8b2b0251d23da93753dde5b8873898500c85ea72ad05c9b3c1d014106ff21b12495051c87ed593fdc963578a73023b3390e88c39a3941ae443be09fff2a4d1a36c64c2e439ca82bb1dea584f325", hex::encode(ress.clone()));
+    assert_eq!("010000000068d1dd34959c3cb911566de12044befd39445660adad6fe7d9d2ab142ff079db21306667b11f1c10b45c7972d2dbb2d6f2de8394baa546f5ebda274c8b6cac3b6d9c5875d9f918265db25d1bde74fb9af72f08ea5313d16a94c843e33ec48bad0bba82f67bb02d7ac1e2b58bc0545b8f2b2777f7ba4b33f726a56865e48ff4980957a9515126b7f113241c9d13b78134b428e451252e3ac15776a93ae19339e6329b821032dee28e913c5cba7542ca3c196aa1490baa65fce33719a26e720294a5c0d11499e265ff70db69dce3364178342e65718ad47165756cc7ee4735df823730fdb78d5dc45d98be1015d8a4eebc05b6318779a56429ccd1f3bc024ee4746158e6b5", hex::encode(ress.clone()));
 
     println!("ress: {:?}", hex::encode(ress));
 }
@@ -190,7 +190,7 @@ fn test_tls_wasm_from_hash_for_kakao() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash_str = "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
+    let hash_str = "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -294,7 +294,7 @@ fn test_tls_wasm_from_hash_for_facebook() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash_str = "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
+    let hash_str = "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -399,7 +399,7 @@ fn test_tls_wasm_from_hash_for_google_for_not_existing_kid() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash_str = "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
+    let hash_str = "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -503,7 +503,7 @@ fn test_tls_wasm_from_hash_for_google_for_not_invalid_root_cert() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash_str = "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
+    let hash_str = "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -609,7 +609,7 @@ fn test_tls_wasm_from_hash_for_google_too_short_tls_data() {
 
     let hash_str = //"f45dae3df26f2a45f006bd7e7d32f426e240dfd1391669953688cb40886aff11"; 
     //"25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
-    "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
+    "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -719,7 +719,7 @@ fn test_tls_wasm_from_hash_for_google_too_short_tls_data() {
 // //"f45dae3df26f2a45f006bd7e7d32f426e240dfd1391669953688cb40886aff11";
 // "25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
 // "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
-// "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
+// "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
 // let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
 // let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
 // let hash: Vec<u8> = (0..hash_str.len())
