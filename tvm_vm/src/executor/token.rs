@@ -62,7 +62,7 @@ const RCSCALE: i128 = 1_000_000_000;
 
 const ONE_Q32: i64 = 1i64 << 32;
 const TOTALSUPPLY: u128 = 10_400_000_000_000_000_000;
-const TTMT: u128 = 2_000_000_000;
+const TTMT: u128 = 7_014_590; // 2_000_000_000
 const KM_Q32: i64 = 42_950; // KM * 2 ^ 32 = 1e-5 * 2 ^ 32
 const ONE_PLUS_KM: i64 = ONE_Q32 + KM_Q32;
 const KRBK_NUM: u128 = 675; // 0.675 = 675 / 1000
@@ -71,7 +71,7 @@ const KRBM_NUM: u128 = 1;
 const KRBM_DEN: u128 = 10;
 const KRMV_NUM: u128 = 225;
 const KRMV_DEN: u128 = 1000;
-const UM_Q64: i64 = 106_188_087_029; // -ln(KM / (KM + 1)) / TTMT * 2^64 = -ln(1e-5 / (1 + 1e-5)) / 2e9 * 2^64
+const UM_Q64: i64 = 30_276_348_875_489; // -ln(KM / (KM + 1)) / TTMT * 2^64 = -ln(1e-5 / (1 + 1e-5)) / 2e9 * 2^64 = 106_188_087_029
 const SBK_BASE_START: u128 = 1;
 
 // e^(−n), n = 0...12 in Q‑32
@@ -107,7 +107,7 @@ const MAC_EXP_NEG_COEFF_Q32: [i64; 9] = [
 const KF_Q32: i64 = 42_949_673; // KF * 2 ^ 32 = 1e-2 * 2 ^ 32
 const ONE_PLUS_KF_Q32: i64 = ONE_Q32 + KF_Q32;
 const MAX_FREE_FLOAT_FRAC_Q32: i64 = ONE_Q32 / 3;
-const UF_Q64: i64 = 42_566_973_522; // -ln(KF / (KF + 1)) / TTMT * 2^64 = -ln(1e-2 / (1 + 1e-2)) / 2e9 * 2^64
+const UF_Q64: i64 = 12_136_696_092_501; // -ln(KF / (KF + 1)) / TTMT * 2^64 = -ln(1e-2 / (1 + 1e-2)) / 2e9 * 2^64 = 42_566_973_522
 
 const MV_FRAC_BITS: u32 = 32;
 const ONE: i128 = 1i128 << MV_FRAC_BITS;
