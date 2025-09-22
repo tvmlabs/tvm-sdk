@@ -9,11 +9,14 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::BTreeSet;
 use std::collections::HashSet;
 use std::fmt;
 
 use smallvec::SmallVec;
 pub(super) type SmallData = SmallVec<[u8; 128]>;
+use bloom::ASMS;
+use bloom::BloomFilter;
 
 use crate::cell::Cell;
 use crate::cell::CellType;
@@ -31,12 +34,18 @@ use crate::types::Result;
 
 const EXACT_CAPACITY: usize = 128;
 
+thread_local! {
+    static UNIQUE_CELLS: std::cell::RefCell<BTreeSet<Cell>> = std::cell::RefCell::new(BTreeSet::new());
+    static UNIQUE_BLOOM: std::cell::RefCell<BloomFilter> = std::cell::RefCell::new(BloomFilter::with_rate(0.00001,1000000));
+}
+
 #[derive(Debug, Default, PartialEq, Clone, Eq)]
 pub struct BuilderData {
     data: SmallData,
     length_in_bits: usize,
     pub(super) references: SmallVec<[Cell; 4]>,
     pub(super) cell_type: CellType,
+    account_cell_hashes: Option<BTreeSet<Cell>>,
 }
 
 impl BuilderData {
@@ -50,6 +59,7 @@ impl BuilderData {
             length_in_bits: 0,
             references: SmallVec::new_const(),
             cell_type: CellType::Ordinary,
+            account_cell_hashes: None,
         }
     }
 
@@ -75,6 +85,8 @@ impl BuilderData {
             length_in_bits,
             references: SmallVec::new(),
             cell_type: CellType::Ordinary,
+            account_cell_hashes: None,
+            // store here every cell hash, passing it into the builder as a mutable ref
         })
     }
 
@@ -119,7 +131,7 @@ impl BuilderData {
         for r in self.references.iter() {
             children_level_mask |= r.level_mask();
         }
-        let mut unique_cells = HashSet::<Cell>::new();
+        let mut unique_cells = UNIQUE_CELLS.get();
         let mut depths = Vec::new();
         let mut depth = 0u16;
         let mut depth2 = 0u64;
@@ -133,6 +145,14 @@ impl BuilderData {
             counts.push(r.tree_bits_count());
             count += r.tree_bits_count();
             refs += r.references_count();
+            // if unique_cells.contains(r) {
+            // } else {
+            //     UNIQUE_CELLS. (|x: BTreeSet<Cell>| x.contains(r));
+            // }
+            if UNIQUE_CELLS.with_borrow(|x| x.contains(r)) {
+            } else {
+                UNIQUE_CELLS.with_borrow_mut(|x| x.insert(r));
+            }
         }
         if depth >= 800 || count >= 1398101 * 1024 {
             println!("Depths {:?}, counts {:?}", depths, counts);
