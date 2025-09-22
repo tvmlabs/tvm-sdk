@@ -322,7 +322,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
         SHA512WITH_RSA => sha512::sum512(&check_sum_extend).to_vec(),
         SHA512WITH_RSAE => sha512::sum512(&check_sum_extend).to_vec(),
         SHA512WITH_RSAPSS => sha512::sum512(&check_sum_extend).to_vec(),
-        _ => return vec![0u8, 3u8, 38u8], // "not supported (not sha256, sha384 or sha512) type of signature"
+        _ => return vec![0u8, 3u8, 38u8], /* "not supported (not sha256, sha384 or sha512) type
+                                           * of signature" */
     };
 
     if !check_certs_with_fixed_root(
