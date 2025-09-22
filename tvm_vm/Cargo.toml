@@ -11,6 +11,7 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 blst.workspace = true
+chrono.workspace = true
 diffy = { optional = true, version = "0.3.0" }
 ed25519.workspace = true
 ed25519-dalek.workspace = true
