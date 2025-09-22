@@ -648,9 +648,13 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     };
     
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
+    log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
+    log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
 
     let bclst = build_bclst(&to_umbnlst(&mbn_lst));
+    log::trace!(target: "executor", "bclst {:?}", bclst.clone());
     let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi, &tap_lst);
+    log::trace!(target: "executor", "rmv {:?}", rmv.clone());
     engine.cc.stack.push(int!(rmv as u128));
     Ok(())
 }
