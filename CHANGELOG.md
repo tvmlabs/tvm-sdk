@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.22.2] - 2025-09-22
+
+### Update
+- Change reward instructions
+- Change Constructor FunctionId to 1
+
 ## [2.22.1] - 2025-09-19
 
 ### Fixed
