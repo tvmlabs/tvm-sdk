@@ -548,7 +548,13 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
     
     let tap_lst_cell = engine.cmd.var(2).as_cell()?;
-    let tap_lst_slice = SliceData::load_cell(tap_lst_cell.clone())?;
+    let tap_lst_slice = SliceData::load_cell(tap_lst_cell.clone()).map_err(|e| {
+        exception!(
+            ExceptionCode::CellUnpackError,
+            "Failed to load cell tap: {:?}",
+            e
+        )
+    })?;
     let params = params_from_types(vec![ParamType::Array(Box::new(ParamType::Uint(64)))]);
     let tokens = TokenValue::decode_params(&params, tap_lst_slice, &ABI_VERSION_2_2, false)
         .map_err(|e| {
@@ -598,7 +604,13 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     };
 
     let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
-    let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone())?;
+    let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone()).map_err(|e| {
+        exception!(
+            ExceptionCode::CellUnpackError,
+            "Failed to load cell mbn: {:?}",
+            e
+        )
+    })?;
     
     let tokens = TokenValue::decode_params(&params, mbn_lst_slice, &ABI_VERSION_2_2, false)
         .map_err(|e| {
