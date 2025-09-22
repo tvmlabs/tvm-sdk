@@ -85,7 +85,8 @@ fn test_tls_wasm_from_hash_for_google() {
 
     let hash_str = //"f45dae3df26f2a45f006bd7e7d32f426e240dfd1391669953688cb40886aff11"; 
     //"25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
-    "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    //"f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -191,7 +192,7 @@ fn test_tls_wasm_from_hash_for_kakao() {
     engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = 
-    "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -295,7 +296,7 @@ fn test_tls_wasm_from_hash_for_facebook() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash_str = "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    let hash_str =  "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -401,7 +402,7 @@ fn test_tls_wasm_from_hash_for_google_for_not_existing_kid() {
     engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = 
-    "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -506,7 +507,7 @@ fn test_tls_wasm_from_hash_for_google_for_not_invalid_root_cert() {
     engine.wasm_engine_init_cached().unwrap();
 
     let hash_str = 
-    "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -612,7 +613,7 @@ fn test_tls_wasm_from_hash_for_google_too_short_tls_data() {
 
     let hash_str = //"f45dae3df26f2a45f006bd7e7d32f426e240dfd1391669953688cb40886aff11"; 
     //"25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
-    "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
@@ -721,7 +722,8 @@ fn test_tls_wasm_from_hash_for_google_spoiled_tls_data() {
 
     let hash_str = //"f45dae3df26f2a45f006bd7e7d32f426e240dfd1391669953688cb40886aff11"; 
     //"25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1";
-    "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    //"f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    "3662bb57f5ac92d1199d263e61646113dedfec0c5b489f4ee581759bc5ae4798";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
     let hash: Vec<u8> = (0..hash_str.len())
