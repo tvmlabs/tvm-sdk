@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use byte_slice_cast::AsByteSlice;
-use tvm_abi::contract::ABI_VERSION_2_2;
 use tvm_abi::Param;
 use tvm_abi::ParamType;
 use tvm_abi::TokenValue;
+use tvm_abi::contract::ABI_VERSION_2_2;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_BURNECC;
 use tvm_block::ACTION_CNVRTSHELLQ;
@@ -47,7 +47,7 @@ pub const MAXRT: u128 = 157_766_400;
 // pub const KRMV: f64 = 0.225_f64;
 // pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
-const DELTA_SBK_NUMENATOR:  u128 = 10_000_000;
+const DELTA_SBK_NUMENATOR: u128 = 10_000_000;
 const DELTA_SBK_DENOMINATOR: u128 = 10_000_525;
 
 const RC_ONE_Q32: i64 = 1i64 << 32;
@@ -336,8 +336,8 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     if drbkavg == 0 {
         drbkavg = 1;
     }
-    let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg).max(rbkmin))
-        .min(rbkprev);
+    let rbk =
+        (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg).max(rbkmin)).min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
 }
@@ -444,10 +444,8 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let sbkbase;
     if mbkav != 0 {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-        sbkbase =
-            ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
+        sbkbase = ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
             / (2u128 * (nbk as u128) * DELTA_SBK_DENOMINATOR);
-
     } else {
         sbkbase = SBK_BASE_START;
     }
@@ -519,7 +517,7 @@ fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Ve
     for j in 0..len {
         denom += taplst[j] as i128 * bclst[j] as i128;
     }
-    
+
     if denom == 0 {
         return 0;
     }
@@ -547,49 +545,44 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     fetch_stack(engine, 5)?;
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
-    
+
     let tap_lst_cell = engine.cmd.var(2).as_cell()?;
     let tap_lst_slice = SliceData::load_cell(tap_lst_cell.clone()).map_err(|e| {
-        exception!(
-            ExceptionCode::CellUnpackError,
-            "Failed to load cell tap: {:?}",
-            e
-        )
+        exception!(ExceptionCode::CellUnpackError, "Failed to load cell tap: {:?}", e)
     })?;
     let params = params_from_types(vec![ParamType::Array(Box::new(ParamType::Uint(64)))]);
     let tokens = TokenValue::decode_params(&params, tap_lst_slice, &ABI_VERSION_2_2, false)
         .map_err(|e| {
-            exception!(
-                ExceptionCode::CellUnpackError,
-                "Failed to decode tap_lst array: {:?}",
-                e
-            )
+            exception!(ExceptionCode::CellUnpackError, "Failed to decode tap_lst array: {:?}", e)
         })?;
 
     let tap_lst = if let Some(token) = tokens.first() {
         if let TokenValue::Array(_, items) = &token.value {
-            items.iter().map(|item| {
-                if let TokenValue::Uint(uint) = item {
-                    let bytes = uint.number.to_bytes_le();
-                    if bytes.len() > 8 {
+            items
+                .iter()
+                .map(|item| {
+                    if let TokenValue::Uint(uint) = item {
+                        let bytes = uint.number.to_bytes_le();
+                        if bytes.len() > 8 {
+                            Err(exception!(
+                                ExceptionCode::CellUnpackError,
+                                "Value too large for u64: {}",
+                                uint.number
+                            ))
+                        } else {
+                            let mut array = [0u8; 8];
+                            array[..bytes.len()].copy_from_slice(&bytes);
+                            Ok(u64::from_le_bytes(array))
+                        }
+                    } else {
                         Err(exception!(
                             ExceptionCode::CellUnpackError,
-                            "Value too large for u64: {}",
-                            uint.number
+                            "Expected Uint in array, got {:?}",
+                            item
                         ))
-                    } else {
-                        let mut array = [0u8; 8];
-                        array[..bytes.len()].copy_from_slice(&bytes);
-                        Ok(u64::from_le_bytes(array))
                     }
-                } else {
-                    Err(exception!(
-                        ExceptionCode::CellUnpackError,
-                        "Expected Uint in array, got {:?}",
-                        item
-                    ))
-                }
-            }).collect::<Result<Vec<u64>, _>>()? 
+                })
+                .collect::<Result<Vec<u64>, _>>()?
         } else {
             return Err(exception!(
                 ExceptionCode::CellUnpackError,
@@ -598,54 +591,46 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
             ));
         }
     } else {
-        return Err(exception!(
-            ExceptionCode::CellUnpackError,
-            "No token found after decoding"
-        ));
+        return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
     };
 
     let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
     let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone()).map_err(|e| {
-        exception!(
-            ExceptionCode::CellUnpackError,
-            "Failed to load cell mbn: {:?}",
-            e
-        )
+        exception!(ExceptionCode::CellUnpackError, "Failed to load cell mbn: {:?}", e)
     })?;
-    
+
     let tokens = TokenValue::decode_params(&params, mbn_lst_slice, &ABI_VERSION_2_2, false)
         .map_err(|e| {
-            exception!(
-                ExceptionCode::CellUnpackError,
-                "Failed to decode mbn_lst array: {:?}",
-                e
-            )
+            exception!(ExceptionCode::CellUnpackError, "Failed to decode mbn_lst array: {:?}", e)
         })?;
 
     let mbn_lst = if let Some(token) = tokens.first() {
         if let TokenValue::Array(_, items) = &token.value {
-            items.iter().map(|item| {
-                if let TokenValue::Uint(uint) = item {
-                    let bytes = uint.number.to_bytes_le();
-                    if bytes.len() > 8 {
+            items
+                .iter()
+                .map(|item| {
+                    if let TokenValue::Uint(uint) = item {
+                        let bytes = uint.number.to_bytes_le();
+                        if bytes.len() > 8 {
+                            Err(exception!(
+                                ExceptionCode::CellUnpackError,
+                                "Value too large for u64: {}",
+                                uint.number
+                            ))
+                        } else {
+                            let mut array = [0u8; 8];
+                            array[..bytes.len()].copy_from_slice(&bytes);
+                            Ok(u64::from_le_bytes(array))
+                        }
+                    } else {
                         Err(exception!(
                             ExceptionCode::CellUnpackError,
-                            "Value too large for u64: {}",
-                            uint.number
+                            "Expected Uint in array, got {:?}",
+                            item
                         ))
-                    } else {
-                        let mut array = [0u8; 8];
-                        array[..bytes.len()].copy_from_slice(&bytes);
-                        Ok(u64::from_le_bytes(array))
                     }
-                } else {
-                    Err(exception!(
-                        ExceptionCode::CellUnpackError,
-                        "Expected Uint in array, got {:?}",
-                        item
-                    ))
-                }
-            }).collect::<Result<Vec<u64>, _>>()? 
+                })
+                .collect::<Result<Vec<u64>, _>>()?
         } else {
             return Err(exception!(
                 ExceptionCode::CellUnpackError,
@@ -654,12 +639,9 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
             ));
         }
     } else {
-        return Err(exception!(
-            ExceptionCode::CellUnpackError,
-            "No token found after decoding"
-        ));
+        return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
     };
-    
+
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
     log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
     log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
