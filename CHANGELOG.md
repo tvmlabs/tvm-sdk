@@ -2,10 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.22.2] - 2025-09-21
+## [2.22.3] - 2025-09-22
 
 ### Added
 - Added flag "is_high_priority" to int message header
+
+## [2.22.2] - 2025-09-22
+
+### Update
+- Change reward instructions
+- Change Constructor FunctionId to 1
 
 ## [2.22.1] - 2025-09-19
 
