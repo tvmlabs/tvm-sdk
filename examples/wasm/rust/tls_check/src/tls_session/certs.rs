@@ -1501,9 +1501,11 @@ fn check_signature(
     // signed = hkdf_sha256::sum256(signed);
     //}
     let hash_type_str = hash_type.unwrap();
+    let mut hash_len_in_bits: usize = 0;
     let hashed = match hash_type_str.as_str() {
-        "SHA256" => hkdf_sha256::sum256(signed).to_vec(),
-        "SHA384" => sha512::sum384(signed).to_vec(),
+        "SHA256" => {hash_len_in_bits = 256; hkdf_sha256::sum256(signed).to_vec() },
+        "SHA384" => {hash_len_in_bits = 384; sha512::sum384(signed).to_vec() },
+        "SHA512" => {hash_len_in_bits = 512; sha512::sum512(signed).to_vec() },
         _ => panic!("unknown hash type"),
     };
 
@@ -1521,10 +1523,10 @@ fn check_signature(
             if algo.is_rsa_pss() {
                 let pss_options =
                     rsa::PSSOptions { salt_length: rsa::PSS_SALT_LENGTH_EQUALS_HASH, hash: 0 };
-                return rsa::verify_pss(rsa_pub_key, 256, &hashed, signature, &pss_options);
+                return rsa::verify_pss(rsa_pub_key, hash_len_in_bits, &hashed, signature, &pss_options);
             } else {
                 // return rsa::verify_pkcs1v15(rsa_pub_key, hash_type, signed, signature);
-                return rsa::verify_pkcs1v15(rsa_pub_key, 256, &hashed, signature);
+                return rsa::verify_pkcs1v15(rsa_pub_key, hash_len_in_bits, &hashed, signature);
             }
         }
         PublicKey::ECDSAPublicKey(ecdsa_pub_key) => {
@@ -3281,6 +3283,7 @@ pub fn check_certs(
     check_sum: &[u8],
     certs_chain: &[u8],
     signature: &[u8],
+    spare_root_cert: &[u8]
 ) -> Option<PublicKey> {
     // extract
     // divide input string into three slices
@@ -3332,7 +3335,7 @@ pub fn check_certs(
         // let root_cert = parse_certificate(root_cert_slice);
         parse_certificate(root_cert_slice)
     } else {
-        parse_certificate(&ROOT_FACEBOOK_CERT)
+        parse_certificate(&spare_root_cert)//parse_certificate(&ROOT_FACEBOOK_CERT)
     };
 
     if root_cert.not_after.timestamp() < current_time
@@ -3436,7 +3439,7 @@ pub fn check_certs_with_fixed_root(
     root_cert_bytes: &[u8],
 ) -> bool {
     //
-    let check_certs_result = check_certs(current_time, check_sum, certs_chain, signature);
+    let check_certs_result = check_certs(current_time, check_sum, certs_chain, signature, root_cert_bytes);
     if check_certs_result.is_none() {
         return false;
     }
@@ -3449,7 +3452,7 @@ pub fn check_certs_with_fixed_root(
     return false;
 }
 
-pub fn check_certs_with_known_roots(
+/*pub fn check_certs_with_known_roots(
     current_time: i64,
     check_sum: &[u8],
     certs_chain: &[u8],
@@ -3504,4 +3507,4 @@ pub fn check_certs_with_known_roots(
         return None;
     }
     return Some(result);
-}
+}*/
