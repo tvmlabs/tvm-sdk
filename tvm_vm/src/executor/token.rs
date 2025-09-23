@@ -516,6 +516,13 @@ fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
 fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Vec<u64>) -> i128 {
     let mut denom: i128 = 0;
     let len = bclst.len();
+    let len_tap = taplst.len();
+    if len == 0 {
+        return 0;
+    }
+    if len_tap != len {
+        return 0;
+    }
     for j in 0..len {
         denom += taplst[j] as i128 * bclst[j] as i128;
     }
@@ -523,8 +530,13 @@ fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Ve
     if denom == 0 {
         return 0;
     }
-
-    let numer = rpc * tap_num * bclst[mbi as usize] as i128;
+    let new_mbi;
+    if mbi >= len as u64 {
+        new_mbi = len as u64 - 1;
+    } else {
+        new_mbi = mbi;
+    }
+    let numer = rpc * tap_num * bclst[new_mbi as usize] as i128;
     let rmv = numer / denom;
     rmv
 }
