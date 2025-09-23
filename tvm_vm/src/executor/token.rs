@@ -487,6 +487,10 @@ fn to_umbnlst(weights: &Vec<u64>) -> Vec<u64> {
     out.push(0);
 
     for &w in weights {
+        if wsum == 0 {
+            out.push(0);
+            continue;
+        }
         acc += M * (w as u128);
         let ticks = acc / wsum;
         acc -= ticks * wsum;
