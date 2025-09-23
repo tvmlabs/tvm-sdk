@@ -189,6 +189,8 @@ impl BuilderData {
             Some(max_depth),
             None,
             None,
+            Some(count),
+            Some(depth2),
         )?))
     }
 

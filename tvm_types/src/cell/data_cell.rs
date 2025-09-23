@@ -51,7 +51,7 @@ impl DataCell {
         references: SmallVec<[Cell; 4]>,
         data: &[u8], // with completion tag (for big cell - without)!
     ) -> crate::Result<DataCell> {
-        Self::with_params(references, data, CellType::Ordinary, 0, None, None, None)
+        Self::with_params(references, data, CellType::Ordinary, 0, None, None, None, None, None)
     }
 
     pub fn with_params(
@@ -62,6 +62,8 @@ impl DataCell {
         max_depth: Option<u16>,
         hashes: Option<[UInt256; 4]>,
         depths: Option<[u16; 4]>,
+        extern_tree_bits_count: Option<u64>,
+        extern_tree_cell_count: Option<u64>,
     ) -> crate::Result<DataCell> {
         assert_eq!(hashes.is_some(), depths.is_some());
         let store_hashes = hashes.is_some();
@@ -74,7 +76,14 @@ impl DataCell {
             hashes,
             depths,
         )?;
-        Self::construct_cell(cell_data, references, max_depth, true)
+        Self::construct_cell(
+            cell_data,
+            references,
+            max_depth,
+            true,
+            extern_tree_bits_count,
+            extern_tree_cell_count,
+        )
     }
 
     pub fn with_external_data(
@@ -85,7 +94,7 @@ impl DataCell {
         force_finalization: bool,
     ) -> crate::Result<DataCell> {
         let cell_data = CellData::with_external_data(buffer, offset)?;
-        Self::construct_cell(cell_data, references, max_depth, force_finalization)
+        Self::construct_cell(cell_data, references, max_depth, force_finalization, None, None)
     }
 
     pub fn with_raw_data(
@@ -95,7 +104,7 @@ impl DataCell {
         force_finalization: bool,
     ) -> crate::Result<DataCell> {
         let cell_data = CellData::with_raw_data(data)?;
-        Self::construct_cell(cell_data, references, max_depth, force_finalization)
+        Self::construct_cell(cell_data, references, max_depth, force_finalization, None, None)
     }
 
     fn construct_cell(
@@ -103,14 +112,25 @@ impl DataCell {
         references: SmallVec<[Cell; 4]>,
         max_depth: Option<u16>,
         force_finalization: bool,
+        extern_tree_bits_count: Option<u64>,
+        extern_tree_cell_count: Option<u64>,
     ) -> crate::Result<DataCell> {
         const MAX_56_BITS: u64 = 0x00FF_FFFF_FFFF_FFFFu64;
         let mut tree_bits_count = cell_data.bit_length() as u64;
         let mut tree_cell_count = 1u64;
-        for reference in &references {
-            tree_bits_count = tree_bits_count.saturating_add(reference.tree_bits_count());
-            tree_cell_count = tree_cell_count.saturating_add(reference.tree_cell_count());
+        match extern_tree_bits_count {
+            Some(b) => tree_bits_count = tree_bits_count.saturating_add(b),
+            None => {}
         }
+        match extern_tree_cell_count {
+            Some(c) => tree_cell_count = tree_cell_count.saturating_add(c),
+            None => {}
+        }
+        // for reference in &references {
+        //     tree_bits_count =
+        // tree_bits_count.saturating_add(reference.tree_bits_count());
+        //     tree_cell_count =
+        // tree_cell_count.saturating_add(reference.tree_cell_count()); }
         if tree_bits_count > MAX_56_BITS {
             tree_bits_count = MAX_56_BITS;
         }
@@ -477,6 +497,8 @@ impl DataCell {
             &cursor.into_inner()[..size],
             CellType::External,
             0,
+            None,
+            None,
             None,
             None,
             None,
