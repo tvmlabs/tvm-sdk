@@ -259,61 +259,80 @@ lazy_static::lazy_static! {
     // static ref FINALIZATION_NANOS: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
 }
 
-impl std::cmp::PartialOrd for Cell {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        todo!()
+impl std::hash::Hash for HashableCell {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
     }
 
-    fn lt(&self, other: &Self) -> bool {
-        self.partial_cmp(other).is_some_and(std::cmp::Ordering::is_lt)
-    }
-
-    fn le(&self, other: &Self) -> bool {
-        self.partial_cmp(other).is_some_and(std::cmp::Ordering::is_le)
-    }
-
-    fn gt(&self, other: &Self) -> bool {
-        self.partial_cmp(other).is_some_and(std::cmp::Ordering::is_gt)
-    }
-
-    fn ge(&self, other: &Self) -> bool {
-        self.partial_cmp(other).is_some_and(std::cmp::Ordering::is_ge)
-    }
-}
-
-impl std::cmp::Ord for Cell {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        todo!()
-    }
-
-    fn max(self, other: Self) -> Self
+    fn hash_slice<H: std::hash::Hasher>(data: &[Self], state: &mut H)
     where
         Self: Sized,
     {
-        if other < self { self } else { other }
-    }
-
-    fn min(self, other: Self) -> Self
-    where
-        Self: Sized,
-    {
-        if other < self { other } else { self }
-    }
-
-    fn clamp(self, min: Self, max: Self) -> Self
-    where
-        Self: Sized,
-    {
-        assert!(min <= max);
-        if self < min {
-            min
-        } else if self > std::cmp::max {
-            std::cmp::max
-        } else {
-            self
+        for piece in data {
+            piece.hash(state)
         }
     }
 }
+
+pub enum HashableCell {
+    Any(Cell),
+}
+
+// impl std::cmp::PartialOrd for Cell {
+//     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+//         todo!()
+//     }
+
+//     fn lt(&self, other: &Self) -> bool {
+//         self.partial_cmp(other).is_some_and(std::cmp::Ordering::is_lt)
+//     }
+
+//     fn le(&self, other: &Self) -> bool {
+//         self.partial_cmp(other).is_some_and(std::cmp::Ordering::is_le)
+//     }
+
+//     fn gt(&self, other: &Self) -> bool {
+//         self.partial_cmp(other).is_some_and(std::cmp::Ordering::is_gt)
+//     }
+
+//     fn ge(&self, other: &Self) -> bool {
+//         self.partial_cmp(other).is_some_and(std::cmp::Ordering::is_ge)
+//     }
+// }
+
+// impl std::cmp::Ord for Cell {
+//     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+//         todo!()
+//     }
+
+//     fn max(self, other: Self) -> Self
+//     where
+//         Self: Sized,
+//     {
+//         if other < self { self } else { other }
+//     }
+
+//     fn min(self, other: Self) -> Self
+//     where
+//         Self: Sized,
+//     {
+//         if other < self { other } else { self }
+//     }
+
+//     fn clamp(self, min: Self, max: Self) -> Self
+//     where
+//         Self: Sized,
+//     {
+//         assert!(min <= max);
+//         if self < min {
+//             min
+//         } else if self > std::cmp::max {
+//             std::cmp::max
+//         } else {
+//             self
+//         }
+//     }
+// }
 
 // impl std::hash::Hash for Cell {
 //     // TODO
