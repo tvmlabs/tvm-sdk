@@ -438,12 +438,15 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
     let _nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; // needNumberOfActiveBlockKeepers = 10000
-    let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepersAtBlockStart
+    let mut nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepersAtBlockStart
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let sbkbase;
     if mbkav != 0 {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
+        if nbk == 0 {
+            nbk = 1;
+        }
         sbkbase =
             ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
             / (2u128 * (nbk as u128) * DELTA_SBK_DENOMINATOR);
