@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
 use byte_slice_cast::AsByteSlice;
+use tvm_abi::contract::ABI_VERSION_2_2;
+use tvm_abi::Param;
+use tvm_abi::ParamType;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_BURNECC;
@@ -44,6 +47,9 @@ pub const MAXRT: u128 = 157_766_400;
 // pub const KRMV: f64 = 0.225_f64;
 // pub const MAX_FREE_FLOAT_FRAC: f64 = 1_f64 / 3_f64;
 
+const DELTA_SBK_NUMENATOR:  u128 = 10_000_000;
+const DELTA_SBK_DENOMINATOR: u128 = 10_000_525;
+
 const RC_ONE_Q32: i64 = 1i64 << 32;
 const RC_POW2_COEFF: [i64; 6] = [
     4_294_967_296, // 1 * 2^32
@@ -70,6 +76,7 @@ const KRBM_DEN: u128 = 10;
 const KRMV_NUM: u128 = 225;
 const KRMV_DEN: u128 = 1000;
 const UM_Q64: i64 = 106_188_087_029; // -ln(KM / (KM + 1)) / TTMT * 2^64 = -ln(1e-5 / (1 + 1e-5)) / 2e9 * 2^64
+const SBK_BASE_START: u128 = 1;
 
 // e^(−n), n = 0...12 in Q‑32
 const EXP_NEG_VAL_Q32: [i64; 13] = [
@@ -310,7 +317,7 @@ pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
 
 pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCBKREWARDADJ"))?;
-    fetch_stack(engine, 5)?;
+    fetch_stack(engine, 4)?;
     let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start
     let rbkprev = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //previous value of rewardadjustment (not minimum)
     let mut drbkavg = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?;
@@ -319,9 +326,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     //_delta_reward - average time between reward adj calculate
     //_calc_reward_num - number of calculate
     //_reward_last_time - time of last calculate
-    let repavgbig = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //Average ReputationCoef
-    let mbkt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let mut repavg = repavgbig / 1_000_000_000;
+    let mbkt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let rbkmin;
     if t <= TTMT - 1 {
         rbkmin = rbkprev / 3 * 2;
@@ -331,10 +336,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     if drbkavg == 0 {
         drbkavg = 1;
     }
-    if repavg == 0 {
-        repavg = 1;
-    }
-    let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg / repavg).max(rbkmin))
+    let rbk = (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg).max(rbkmin))
         .min(rbkprev);
     engine.cc.stack.push(int!(rbk as u128));
     Ok(())
@@ -393,30 +395,11 @@ fn calc_mbk(t: u128, krk_num: u128, krk_den: u128) -> u128 {
     (mbk * krk_num) / krk_den
 }
 
-pub(super) fn execute_calculate_validator_reward(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("CALCBKREWARD"))?;
-    fetch_stack(engine, 7)?;
-    let mut repcoef = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //average reputation coef of licenses in one stake
-    let bkstake = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //value of stake
-    let totalbkstake = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //sum of stakes at start of epoch
-    let t = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //duration of epoch
-    let mbk = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let nbk = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepers
-    let rbk = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)?; //last calculated reward_adjustment
-    repcoef = repcoef / 1000000000;
-    let reward;
-    if totalbkstake == 0 {
-        if nbk == 0 {
-            reward = 0;
-        } else {
-            reward = rbk * t * repcoef / nbk;
-        }
-    } else if mbk < TOTALSUPPLY {
-        reward = rbk * t * repcoef * bkstake / totalbkstake;
-    } else {
-        reward = 0;
-    }
-    engine.cc.stack.push(int!(reward as u128));
+pub(super) fn execute_calculate_mbk(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("CALCMBK"))?;
+    fetch_stack(engine, 1)?;
+    let t = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?;
+    engine.cc.stack.push(int!(calc_mbk(t, KRBK_NUM, KRBK_DEN)));
     Ok(())
 }
 
@@ -461,9 +444,12 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let sbkbase;
     if mbkav != 0 {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-        sbkbase = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) / 2 / nbk as u128;
+        sbkbase =
+            ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
+            / (2u128 * (nbk as u128) * DELTA_SBK_DENOMINATOR);
+
     } else {
-        sbkbase = 0;
+        sbkbase = SBK_BASE_START;
     }
     engine.cc.stack.push(int!(sbkbase as u128));
     Ok(())
@@ -491,186 +477,200 @@ pub(super) fn execute_mint_shell(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_MINT_SHELL_TOKEN, None, cell)
 }
 
-// fn _boost_coef_integral_calculation(bl: f64, br: f64, xl: f64, xr: f64, yd:
-// f64, yu: f64, k: f64) -> f64 { let dx = xr - xl;
-// let expk = k.exp();
-// ((yu - yd) * dx * ((k * (br - xl) / dx).exp() - (k * (bl - xl) / dx).exp())
-// + k * (br - bl) * (yd * expk - yu))
-// / (k * (expk - 1_f64))
-// }
-//
-//
-// fn _boost_coef_calculation(dl: f64, dr: f64, x1: f64, x2: f64, x3: f64, x4:
-// f64, y1: f64, y2: f64, y3: f64, y4: f64, k1: f64, k2: f64, k3: f64) -> f64 {
-// let mut bc = 0_f64;
-// if x1 <= dl && dl <= x2 {
-// if x1 <= dr && dr <= x2 {
-// bc = boost_coef_integral_calculation(dl, dr, x1, x2, y1, y2, k1);
-// } else if x2 < dr && dr <= x3 {
-// bc = boost_coef_integral_calculation(dl, x2, x1, x2, y1, y2, k1)
-// + boost_coef_integral_calculation(x2, dr, x2, x3, y2, y3, k2);
-// } else if x3 < dr && dr <= x4 {
-// bc = boost_coef_integral_calculation(dl, x2, x1, x2, y1, y2, k1)
-// + boost_coef_integral_calculation(x2, x3, x2, x3, y2, y3, k2)
-// + boost_coef_integral_calculation(x3, dr, x3, x4, y3, y4, k3);
-// }
-// } else if x2 < dl && dl <= x3 {
-// if x2 < dr && dr <= x3 {
-// bc = boost_coef_integral_calculation(dl, dr, x2, x3, y2, y3, k2);
-// } else if x3 < dr && dr <= x4 {
-// bc = boost_coef_integral_calculation(dl, x3, x2, x3, y2, y3, k2)
-// + boost_coef_integral_calculation(x3, dr, x3, x4, y3, y4, k3);
-// }
-// } else if x3 < dl && dl <= x4 {
-// if x3 < dr && dr <= x4 {
-// bc = boost_coef_integral_calculation(dl, dr, x3, x4, y3, y4, k3);
-// }
-// }
-// bc
-// }
-//
-//
-// fn _calculate_sum_boost_coefficients(
-// lst: &[f64], x1: f64, x2: f64, x3: f64, x4: f64,
-// y1: f64, y2: f64, y3: f64, y4: f64,
-// k1: f64, k2: f64, k3: f64
-// ) -> Vec<f64> {
-// let mut total_lst: f64 = lst.iter().sum();
-// if total_lst == 0_f64 {
-// total_lst = 1_f64;
-// }
-// let mut cumulative_sum = 0_f64;
-// lst
-// .iter()
-// .map(|&value| {
-// let left_border = cumulative_sum / total_lst;
-// cumulative_sum += value;
-// let right_border = cumulative_sum / total_lst;
-// boost_coef_calculation(left_border, right_border, x1, x2, x3, x4, y1, y2, y3,
-// y4, k1, k2, k3) })
-// .collect()
-// }
-//
-// fn _validate_byte_array(bytes: &[u8], name: &str) -> anyhow::Result<()> {
-// if bytes.len() % 8 != 0 {
-// anyhow::bail!(
-// "{}: byte length must be multiple of 8 (got {})",
-// name, bytes.len()
-// );
-// } else if bytes.len() > 8000 {
-// anyhow::bail!(
-// "{}: byte length exceeds 8000 bytes (got {})",
-// name, bytes.len()
-// );
-// }
-// Ok(())
-// }
+fn to_umbnlst(weights: &Vec<u64>) -> Vec<u64> {
+    let wsum: u128 = weights.iter().map(|&w| w as u128).sum();
+    const M: u128 = 1u128 << 32;
 
-pub(super) fn execute_calculate_boost_coef(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("CALCBOOSTCOEF"))?;
-    fetch_stack(engine, 2)?;
-    let _s = engine.cmd.var(0).as_cell()?;
-    let _s1 = engine.cmd.var(1).as_cell()?;
+    let mut acc: u128 = 0;
+    let mut cur: u128 = 0;
+    let mut out: Vec<u64> = Vec::with_capacity(weights.len() + 1);
+    out.push(0);
 
-    let total_boost_coef_list_bytes: Vec<u8> = Vec::new();
-    let cell = TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(), &ABI_VERSION_2_4)?
-        .into_cell()?;
+    for &w in weights {
+        acc += M * (w as u128);
+        let ticks = acc / wsum;
+        acc -= ticks * wsum;
+        cur += ticks;
+        out.push(cur as u64);
+    }
+    out
+}
 
-    engine.cc.stack.push(StackItem::cell(cell));
-    engine.cc.stack.push(int!(0));
-    Ok(())
-    // let x1 = 0_f64;
-    // let x2 = 0.3_f64;
-    // let x3 = 0.7_f64;
-    // let x4 = 1_f64;
-    // let y1 = 0_f64;
-    // let y2 = 0.066696948409_f64;
-    // let y3 = 2_f64;
-    // let y4 = 8_f64;
-    // let k1 = 10_f64;
-    // let k2 = 1.894163612445_f64;
-    // let k3 = 17.999995065464_f64;
-    // let (token_value, _) =
-    // TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true,
-    // &ABI_VERSION_2_4) .map_err(|e|
-    // exception!(ExceptionCode::TypeCheckError, "Failed to read cell s: {}",
-    // e))?; let transformed_users_per_item = match token_value {
-    // TokenValue::Bytes(data) => data,
-    // _ => return err!(ExceptionCode::TypeCheckError, "Expected Bytes in cell
-    // s"), };
-    // validate_byte_array(transformed_users_per_item.as_slice(), "s")
-    // .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
-    //
-    // let vec_u64: Vec<u64> = transformed_users_per_item
-    // .as_slice()
-    // .chunks_exact(8)
-    // .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
-    // .collect();
-    //
-    // let mbnlst: Vec<f64> = vec_u64.iter().map(|&x| x as f64).collect();
-    // let mbnlst_orig = vec_u64.clone();
-    //
-    // let (token_value, _) =
-    // TokenValue::read_bytes(SliceData::load_cell(s1.clone())?, true,
-    // &ABI_VERSION_2_4) .map_err(|e|
-    // exception!(ExceptionCode::TypeCheckError, "Failed to read cell s1: {}",
-    // e))?; let glst_bytes = match token_value {
-    // TokenValue::Bytes(data) => data,
-    // _ => return err!(ExceptionCode::TypeCheckError, "Expected Bytes in cell
-    // s1"), };
-    // validate_byte_array(glst_bytes.as_slice(), "s1")
-    // .map_err(|e| exception!(ExceptionCode::TypeCheckError, "{}", e))?;
-    //
-    // let glst: Vec<u64> = glst_bytes
-    // .as_slice()
-    // .chunks_exact(8)
-    // .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
-    // .collect();
-    //
-    //
-    // let total_boost_coef_list = calculate_sum_boost_coefficients(
-    // &mbnlst, x1, x2, x3, x4,
-    // y1, y2, y3, y4,
-    // k1, k2, k3
-    // );
-    //
-    // let total_boost_coef_list_u64: Vec<u64> =
-    // total_boost_coef_list.iter().map(|&x| (x * 1e9_f64) as u64).collect();
-    //
-    // let total_boost_coef_list_bytes: Vec<u8> =
-    // total_boost_coef_list_u64.iter() .flat_map(|val| val.to_le_bytes())
-    // .collect();
-    //
-    // let cell =
-    // TokenValue::write_bytes(total_boost_coef_list_bytes.as_slice(),
-    // &ABI_VERSION_2_4)?.into_cell()?; let total = mbnlst_orig.iter()
-    // .zip(glst)
-    // .map(|(&x, y)| u128::from(x) * u128::from(y))
-    // .fold(0u128, |acc, val| acc.saturating_add(val));
-    // engine.cc.stack.push(StackItem::cell(cell));
-    // engine.cc.stack.push(int!(total));
-    // Ok(())
+fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
+    let len = umbnlst.len();
+    let mut bclst = Vec::new();
+
+    if len < 2 {
+        return bclst;
+    }
+
+    for i in 0..(len - 1) {
+        let dl = umbnlst[i] as i128;
+        let dr = umbnlst[i + 1] as i128;
+        let bc = boost_coef_fp(dl, dr) as u64;
+        bclst.push(bc);
+    }
+    bclst
+}
+
+fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Vec<u64>) -> i128 {
+    let mut denom: i128 = 0;
+    let len = bclst.len();
+    for j in 0..len {
+        denom += taplst[j] as i128 * bclst[j] as i128;
+    }
+    
+    if denom == 0 {
+        return 0;
+    }
+
+    let numer = rpc * tap_num * bclst[mbi as usize] as i128;
+    let rmv = numer / denom;
+    rmv
+}
+
+fn params_from_types(types: Vec<ParamType>) -> Vec<Param> {
+    let param_names = vec![
+        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+        "s", "t", "u", "v", "w", "x", "y", "z",
+    ];
+
+    types
+        .into_iter()
+        .zip(param_names)
+        .map(|(kind, name)| Param { name: name.to_owned(), kind })
+        .collect()
 }
 
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
     fetch_stack(engine, 5)?;
-    let _mbn = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as f64;
-    let _g = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as f64;
-    let _sum = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as f64;
-    let _radj = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as f64;
-    let _depoch = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as f64;
-    engine.cc.stack.push(int!(0 as u128));
+    let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
+    let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
+    
+    let tap_lst_cell = engine.cmd.var(2).as_cell()?;
+    let tap_lst_slice = SliceData::load_cell(tap_lst_cell.clone()).map_err(|e| {
+        exception!(
+            ExceptionCode::CellUnpackError,
+            "Failed to load cell tap: {:?}",
+            e
+        )
+    })?;
+    let params = params_from_types(vec![ParamType::Array(Box::new(ParamType::Uint(64)))]);
+    let tokens = TokenValue::decode_params(&params, tap_lst_slice, &ABI_VERSION_2_2, false)
+        .map_err(|e| {
+            exception!(
+                ExceptionCode::CellUnpackError,
+                "Failed to decode tap_lst array: {:?}",
+                e
+            )
+        })?;
+
+    let tap_lst = if let Some(token) = tokens.first() {
+        if let TokenValue::Array(_, items) = &token.value {
+            items.iter().map(|item| {
+                if let TokenValue::Uint(uint) = item {
+                    let bytes = uint.number.to_bytes_le();
+                    if bytes.len() > 8 {
+                        Err(exception!(
+                            ExceptionCode::CellUnpackError,
+                            "Value too large for u64: {}",
+                            uint.number
+                        ))
+                    } else {
+                        let mut array = [0u8; 8];
+                        array[..bytes.len()].copy_from_slice(&bytes);
+                        Ok(u64::from_le_bytes(array))
+                    }
+                } else {
+                    Err(exception!(
+                        ExceptionCode::CellUnpackError,
+                        "Expected Uint in array, got {:?}",
+                        item
+                    ))
+                }
+            }).collect::<Result<Vec<u64>, _>>()? 
+        } else {
+            return Err(exception!(
+                ExceptionCode::CellUnpackError,
+                "Expected array token, got {:?}",
+                token.value
+            ));
+        }
+    } else {
+        return Err(exception!(
+            ExceptionCode::CellUnpackError,
+            "No token found after decoding"
+        ));
+    };
+
+    let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
+    let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone()).map_err(|e| {
+        exception!(
+            ExceptionCode::CellUnpackError,
+            "Failed to load cell mbn: {:?}",
+            e
+        )
+    })?;
+    
+    let tokens = TokenValue::decode_params(&params, mbn_lst_slice, &ABI_VERSION_2_2, false)
+        .map_err(|e| {
+            exception!(
+                ExceptionCode::CellUnpackError,
+                "Failed to decode mbn_lst array: {:?}",
+                e
+            )
+        })?;
+
+    let mbn_lst = if let Some(token) = tokens.first() {
+        if let TokenValue::Array(_, items) = &token.value {
+            items.iter().map(|item| {
+                if let TokenValue::Uint(uint) = item {
+                    let bytes = uint.number.to_bytes_le();
+                    if bytes.len() > 8 {
+                        Err(exception!(
+                            ExceptionCode::CellUnpackError,
+                            "Value too large for u64: {}",
+                            uint.number
+                        ))
+                    } else {
+                        let mut array = [0u8; 8];
+                        array[..bytes.len()].copy_from_slice(&bytes);
+                        Ok(u64::from_le_bytes(array))
+                    }
+                } else {
+                    Err(exception!(
+                        ExceptionCode::CellUnpackError,
+                        "Expected Uint in array, got {:?}",
+                        item
+                    ))
+                }
+            }).collect::<Result<Vec<u64>, _>>()? 
+        } else {
+            return Err(exception!(
+                ExceptionCode::CellUnpackError,
+                "Expected array token, got {:?}",
+                token.value
+            ));
+        }
+    } else {
+        return Err(exception!(
+            ExceptionCode::CellUnpackError,
+            "No token found after decoding"
+        ));
+    };
+    
+    let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
+    log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
+    log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
+
+    let bclst = build_bclst(&to_umbnlst(&mbn_lst));
+    log::trace!(target: "executor", "bclst {:?}", bclst.clone());
+    log::trace!(target: "executor", "rpc {:?}", rpc.clone());
+    let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi, &tap_lst);
+    log::trace!(target: "executor", "rmv {:?}", rmv.clone());
+    engine.cc.stack.push(int!(rmv as u128));
     Ok(())
-    // let u = mbn * g / sum;
-    // let reward;
-    // if sum >= TOTALSUPPLY as f64 * KRMV {
-    // reward = 0_f64;
-    // } else {
-    // reward = radj * depoch * u * 1e9_f64;
-    // }
-    // engine.cc.stack.push(int!(reward as u128));
-    // Ok(())
 }
 
 pub(super) fn execute_mint_shellq(engine: &mut Engine) -> Status {
