@@ -18,6 +18,7 @@ pub(super) type SmallData = SmallVec<[u8; 128]>;
 use bloom::ASMS;
 use bloom::BloomFilter;
 
+use crate::HashableCell;
 use crate::cell::Cell;
 use crate::cell::CellType;
 use crate::cell::DataCell;
@@ -35,7 +36,7 @@ use crate::types::Result;
 const EXACT_CAPACITY: usize = 128;
 
 thread_local! {
-    static UNIQUE_CELLS: std::cell::RefCell<BTreeSet<Cell>> = std::cell::RefCell::new(BTreeSet::new());
+    static UNIQUE_CELLS: std::cell::RefCell<BTreeSet<HashableCell>> = std::cell::RefCell::new(BTreeSet::new());
     static UNIQUE_BLOOM: std::cell::RefCell<BloomFilter> = std::cell::RefCell::new(BloomFilter::with_rate(0.00001,1000000));
 }
 
@@ -131,7 +132,7 @@ impl BuilderData {
         for r in self.references.iter() {
             children_level_mask |= r.level_mask();
         }
-        let mut unique_cells = UNIQUE_CELLS.get();
+        // let mut unique_cells = UNIQUE_CELLS.get();
         let mut depths = Vec::new();
         let mut depth = 0u16;
         let mut depth2 = 0u64;
@@ -139,19 +140,21 @@ impl BuilderData {
         let mut count = 0u64;
         let mut counts = Vec::new();
         for r in self.references.iter() {
-            depths.push(r.depths());
-            depth = depth.max(r.depths().iter().sum::<u16>());
-            depth2 += r.tree_cell_count();
-            counts.push(r.tree_bits_count());
-            count += r.tree_bits_count();
-            refs += r.references_count();
             // if unique_cells.contains(r) {
             // } else {
             //     UNIQUE_CELLS. (|x: BTreeSet<Cell>| x.contains(r));
             // }
-            if UNIQUE_CELLS.with_borrow(|x| x.contains(r)) {
+            if UNIQUE_BLOOM.with_borrow(|x| x.contains(&HashableCell::Any(r.clone()))) {
+                // println!("repeat cell");
             } else {
-                UNIQUE_CELLS.with_borrow_mut(|x| x.insert(r));
+                UNIQUE_BLOOM.with_borrow_mut(|x| x.insert(&HashableCell::Any(r.clone())));
+                println!("new cell");
+                depths.push(r.depths());
+                depth = depth.max(r.depths().iter().sum::<u16>());
+                depth2 = depth2.saturating_add(r.tree_cell_count());
+                counts.push(r.tree_bits_count());
+                count = count.saturating_add(r.tree_bits_count());
+                refs = refs.saturating_add(r.references_count());
             }
         }
         if depth >= 800 || count >= 1398101 * 1024 {
