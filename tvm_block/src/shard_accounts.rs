@@ -94,13 +94,13 @@ impl ShardAccounts {
         self.shard_accounts.iterate_with_keys_and_aug(f)
     }
 
-    pub fn replace_with_external(&mut self, account_id: &UInt256) -> Result<Cell> {
-        let (mut account, aug) = self
+    pub fn replace_with_unloaded_account(&mut self, account_id: &UInt256) -> Result<Cell> {
+        let (mut shard_account, aug) = self
             .shard_accounts
             .get_with_aug(account_id)?
             .ok_or_else(|| error!("Account not found"))?;
-        let cell = account.replace_with_external()?;
-        self.shard_accounts.set(account_id, &account, &aug)?;
+        let cell = shard_account.replace_with_unloaded_account()?;
+        self.shard_accounts.set(account_id, &shard_account, &aug)?;
         Ok(cell)
     }
 
@@ -109,29 +109,29 @@ impl ShardAccounts {
             self.shard_accounts.get(account_id)?.ok_or_else(|| error!("Account not found"))?;
         let redirect = ShardAccount::with_redirect(
             account.last_trans_hash().clone(),
-            account.last_trans_lt().clone(),
+            account.last_trans_lt(),
             account.get_dapp_id().cloned(),
         )?;
         self.shard_accounts.set(account_id, &redirect, &DepthBalanceInfo::default())
     }
 
-    pub fn replace_all_with_external(&mut self) -> Result<()> {
+    pub fn replace_all_with_unloaded_account(&mut self) -> Result<()> {
         let copy = self.shard_accounts.clone();
-        copy.iterate_with_keys_and_aug(|account_id, mut account, aug| {
-            if !account.is_external() {
-                account.replace_with_external()?;
-                self.shard_accounts.set(&account_id, &account, &aug)?;
+        copy.iterate_with_keys_and_aug(|account_id, mut shard_account, aug| {
+            if !shard_account.is_unloaded() {
+                shard_account.replace_with_unloaded_account()?;
+                self.shard_accounts.set(&account_id, &shard_account, &aug)?;
             }
             Ok(true)
         })?;
         Ok(())
     }
 
-    pub fn is_external(&self, account_id: &UInt256) -> Result<bool> {
+    pub fn is_unloaded(&self, account_id: &UInt256) -> Result<bool> {
         Ok(self
             .shard_accounts
             .get(account_id)?
-            .map(|account| account.is_external())
+            .map(|account| account.is_unloaded())
             .unwrap_or(false))
     }
 
