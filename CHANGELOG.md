@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 - Ability to resolve unloaded account cells when applying Merkle updates
 
 
+## [2.22.2] - 2025-09-22
+
+### Update
+- Change reward instructions
+- Change Constructor FunctionId to 1
+
+## [2.22.1] - 2025-09-19
+
+### Fixed
+- Fix bug with extract expires
+
 ## [2.22.0] - 2025-09-18
 
 ### Added
