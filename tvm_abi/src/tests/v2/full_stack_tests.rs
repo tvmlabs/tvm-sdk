@@ -178,7 +178,7 @@ fn test_constructor_call() {
     expected_tree.append_bit_zero().unwrap(); // None for signature
     expected_tree.append_u32(0xffffffff).unwrap(); // max u32 for expire
     expected_tree.append_bit_zero().unwrap(); // None for public key
-    expected_tree.append_u32(0x68B55F3F).unwrap(); // function id
+    expected_tree.append_u32(0x1).unwrap(); // function id
 
     let test_tree = SliceData::load_builder(test_tree).unwrap();
     let expected_tree = SliceData::load_builder(expected_tree).unwrap();
