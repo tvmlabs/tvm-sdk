@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.22.3] - 2025-09-23
+
+### Fix
+- Fix mv reward instructions
+
 ## [2.22.2] - 2025-09-22
 
 ### Update
