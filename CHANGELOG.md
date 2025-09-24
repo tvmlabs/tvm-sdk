@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2.22.4] - 2025-09-19
 
 ### Changed/Fixed
+- Changed how the depth and bits are counted in BOC to account for deduplication (duplicate cells are not counted as they do not grow the account state). This updated counter is used to limit the max BOC size to avoid edge-case issues with node state updates.
 - Wasmtime upgrade to 36.0.2
 - Fixed some wasm tests
 
