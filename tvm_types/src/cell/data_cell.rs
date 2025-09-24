@@ -1,9 +1,12 @@
 use std::cmp::max;
+use std::collections::BTreeSet;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Write;
 use std::sync::Arc;
 
+use bloom::ASMS;
+use bloom::BloomFilter;
 use smallvec::SmallVec;
 use smallvec::smallvec;
 
@@ -12,6 +15,7 @@ use crate::Cell;
 use crate::CellType;
 use crate::DEPTH_SIZE;
 use crate::ExceptionCode;
+use crate::HashableCell;
 use crate::LevelMask;
 use crate::MAX_DATA_BITS;
 use crate::MAX_DEPTH;
@@ -40,6 +44,11 @@ impl Default for DataCell {
     fn default() -> Self {
         Self::new()
     }
+}
+
+thread_local! {
+    static UNIQUE_CELLS: std::cell::RefCell<BTreeSet<HashableCell>> = std::cell::RefCell::new(BTreeSet::new());
+    static UNIQUE_BLOOM: std::cell::RefCell<BloomFilter> = std::cell::RefCell::new(BloomFilter::with_rate(0.00001,1000000));
 }
 
 impl DataCell {
@@ -118,6 +127,38 @@ impl DataCell {
         const MAX_56_BITS: u64 = 0x00FF_FFFF_FFFF_FFFFu64;
         let mut tree_bits_count = cell_data.bit_length() as u64;
         let mut tree_cell_count = 1u64;
+
+        // let mut unique_cells = UNIQUE_CELLS.get();
+        let mut depths = Vec::new();
+        let mut depth = 0u16;
+        let mut depth2 = 0u64;
+        let mut refs = 0usize;
+        let mut count = 0u64;
+        let mut counts = Vec::new();
+        for r in references.iter() {
+            // if unique_cells.contains(r) {
+            // } else {
+            //     UNIQUE_CELLS. (|x: BTreeSet<Cell>| x.contains(r));
+            // }
+            if UNIQUE_BLOOM.with_borrow(|x| x.contains(&HashableCell::Any(r.clone()))) {
+                // println!("repeat cell");
+            } else {
+                UNIQUE_BLOOM.with_borrow_mut(|x| x.insert(&HashableCell::Any(r.clone())));
+                // println!("new cell");
+                depths.push(r.depths());
+                depth = depth.max(r.depths().iter().sum::<u16>());
+                depth2 = depth2.saturating_add(r.tree_cell_count());
+                counts.push(r.tree_bits_count());
+                count = count.saturating_add(r.tree_bits_count());
+                refs = refs.saturating_add(r.references_count());
+            }
+        }
+        if depth >= 800 || count >= 1398101 * 1024 {
+            log::debug!("Depths {:?}, counts {:?}", depths, counts);
+            log::debug!("Depth {:?}, count {:?}", depth, count);
+            log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
+            fail!("reached max BOC tree size allowed by current Node State limitations");
+        }
         match extern_tree_bits_count {
             Some(b) => tree_bits_count = tree_bits_count.saturating_add(b),
             None => {}
