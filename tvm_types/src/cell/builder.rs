@@ -147,7 +147,7 @@ impl BuilderData {
                 // println!("repeat cell");
             } else {
                 UNIQUE_BLOOM.with_borrow_mut(|x| x.insert(&HashableCell::Any(r.clone())));
-                println!("new cell");
+                // println!("new cell");
                 depths.push(r.depths());
                 depth = depth.max(r.depths().iter().sum::<u16>());
                 depth2 = depth2.saturating_add(r.tree_cell_count());
@@ -157,9 +157,9 @@ impl BuilderData {
             }
         }
         if depth >= 800 || count >= 1398101 * 1024 {
-            println!("Depths {:?}, counts {:?}", depths, counts);
-            println!("Depth {:?}, count {:?}", depth, count);
-            println!("Depth2 {:?}, refs {:?}", depth2, refs);
+            log::debug!("Depths {:?}, counts {:?}", depths, counts);
+            log::debug!("Depth {:?}, count {:?}", depth, count);
+            log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
             fail!("reached max BOC tree size allowed by current Node State limitations");
         }
 
