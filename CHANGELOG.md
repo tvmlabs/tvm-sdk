@@ -9,10 +9,10 @@ All notable changes to this project will be documented in this file.
 - Wasmtime upgrade to 36.0.2
 - Fixed some wasm tests
 
-## [2.22.3] - 2025-09-19
+## [2.22.3] - 2025-09-23
 
-### Added
-- External function for loading a wasm hash whitelist file from disk. Intended for use as a node config.
+### Fix
+- Fix mv reward instructions
 
 ## [2.22.2] - 2025-09-22
 

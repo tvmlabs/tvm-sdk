@@ -10,7 +10,6 @@
 // limitations under the License.
 
 use std::collections::BTreeSet;
-use std::collections::HashSet;
 use std::fmt;
 
 use smallvec::SmallVec;
