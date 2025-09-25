@@ -1,9 +1,12 @@
 use std::cmp::max;
+use std::collections::BTreeSet;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Write;
 use std::sync::Arc;
 
+use bloom::ASMS;
+use bloom::BloomFilter;
 use smallvec::SmallVec;
 use smallvec::smallvec;
 
@@ -12,6 +15,7 @@ use crate::Cell;
 use crate::CellType;
 use crate::DEPTH_SIZE;
 use crate::ExceptionCode;
+use crate::HashableCell;
 use crate::LevelMask;
 use crate::MAX_DATA_BITS;
 use crate::MAX_DEPTH;
@@ -42,6 +46,11 @@ impl Default for DataCell {
     }
 }
 
+thread_local! {
+    static UNIQUE_CELLS: std::cell::RefCell<BTreeSet<HashableCell>> = std::cell::RefCell::new(BTreeSet::new());
+    static UNIQUE_BLOOM: std::cell::RefCell<BloomFilter> = std::cell::RefCell::new(BloomFilter::with_rate(0.00001,1000000));
+}
+
 impl DataCell {
     pub fn new() -> Self {
         Self::with_refs_and_data(smallvec![], &[0x80]).unwrap()
@@ -51,7 +60,7 @@ impl DataCell {
         references: SmallVec<[Cell; 4]>,
         data: &[u8], // with completion tag (for big cell - without)!
     ) -> crate::Result<DataCell> {
-        Self::with_params(references, data, CellType::Ordinary, 0, None, None, None)
+        Self::with_params(references, data, CellType::Ordinary, 0, None, None, None, None, None)
     }
 
     pub fn with_params(
@@ -62,6 +71,8 @@ impl DataCell {
         max_depth: Option<u16>,
         hashes: Option<[UInt256; 4]>,
         depths: Option<[u16; 4]>,
+        extern_tree_bits_count: Option<u64>,
+        extern_tree_cell_count: Option<u64>,
     ) -> crate::Result<DataCell> {
         assert_eq!(hashes.is_some(), depths.is_some());
         let store_hashes = hashes.is_some();
@@ -74,7 +85,14 @@ impl DataCell {
             hashes,
             depths,
         )?;
-        Self::construct_cell(cell_data, references, max_depth, true)
+        Self::construct_cell(
+            cell_data,
+            references,
+            max_depth,
+            true,
+            extern_tree_bits_count,
+            extern_tree_cell_count,
+        )
     }
 
     pub fn with_external_data(
@@ -85,7 +103,7 @@ impl DataCell {
         force_finalization: bool,
     ) -> crate::Result<DataCell> {
         let cell_data = CellData::with_external_data(buffer, offset)?;
-        Self::construct_cell(cell_data, references, max_depth, force_finalization)
+        Self::construct_cell(cell_data, references, max_depth, force_finalization, None, None)
     }
 
     pub fn with_raw_data(
@@ -95,7 +113,7 @@ impl DataCell {
         force_finalization: bool,
     ) -> crate::Result<DataCell> {
         let cell_data = CellData::with_raw_data(data)?;
-        Self::construct_cell(cell_data, references, max_depth, force_finalization)
+        Self::construct_cell(cell_data, references, max_depth, force_finalization, None, None)
     }
 
     fn construct_cell(
@@ -103,14 +121,57 @@ impl DataCell {
         references: SmallVec<[Cell; 4]>,
         max_depth: Option<u16>,
         force_finalization: bool,
+        extern_tree_bits_count: Option<u64>,
+        extern_tree_cell_count: Option<u64>,
     ) -> crate::Result<DataCell> {
         const MAX_56_BITS: u64 = 0x00FF_FFFF_FFFF_FFFFu64;
         let mut tree_bits_count = cell_data.bit_length() as u64;
         let mut tree_cell_count = 1u64;
-        for reference in &references {
-            tree_bits_count = tree_bits_count.saturating_add(reference.tree_bits_count());
-            tree_cell_count = tree_cell_count.saturating_add(reference.tree_cell_count());
+
+        // let mut unique_cells = UNIQUE_CELLS.get();
+        let mut depths = Vec::new();
+        let mut depth = 0u16;
+        let mut depth2 = 0u64;
+        let mut refs = 0usize;
+        let mut count = 0u64;
+        let mut counts = Vec::new();
+        for r in references.iter() {
+            // if unique_cells.contains(r) {
+            // } else {
+            //     UNIQUE_CELLS. (|x: BTreeSet<Cell>| x.contains(r));
+            // }
+            if UNIQUE_BLOOM.with_borrow(|x| x.contains(&HashableCell::Any(r.clone()))) {
+                // println!("repeat cell");
+            } else {
+                UNIQUE_BLOOM.with_borrow_mut(|x| x.insert(&HashableCell::Any(r.clone())));
+                // println!("new cell");
+                depths.push(r.depths());
+                depth = depth.max(r.depths().iter().sum::<u16>());
+                depth2 = depth2.saturating_add(r.tree_cell_count());
+                counts.push(r.tree_bits_count());
+                count = count.saturating_add(r.tree_bits_count());
+                refs = refs.saturating_add(r.references_count());
+            }
         }
+        if depth >= 800 || count >= 1398101 * 1024 {
+            log::debug!("Depths {:?}, counts {:?}", depths, counts);
+            log::debug!("Depth {:?}, count {:?}", depth, count);
+            log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
+            fail!("reached max BOC tree size allowed by current Node State limitations");
+        }
+        match extern_tree_bits_count {
+            Some(b) => tree_bits_count = tree_bits_count.saturating_add(b),
+            None => {}
+        }
+        match extern_tree_cell_count {
+            Some(c) => tree_cell_count = tree_cell_count.saturating_add(c),
+            None => {}
+        }
+        // for reference in &references {
+        //     tree_bits_count =
+        // tree_bits_count.saturating_add(reference.tree_bits_count());
+        //     tree_cell_count =
+        // tree_cell_count.saturating_add(reference.tree_cell_count()); }
         if tree_bits_count > MAX_56_BITS {
             tree_bits_count = MAX_56_BITS;
         }
@@ -477,6 +538,8 @@ impl DataCell {
             &cursor.into_inner()[..size],
             CellType::External,
             0,
+            None,
+            None,
             None,
             None,
             None,

@@ -9,11 +9,15 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::BTreeSet;
 use std::fmt;
 
 use smallvec::SmallVec;
 pub(super) type SmallData = SmallVec<[u8; 128]>;
+use bloom::ASMS;
+use bloom::BloomFilter;
 
+use crate::HashableCell;
 use crate::cell::Cell;
 use crate::cell::CellType;
 use crate::cell::DataCell;
@@ -36,6 +40,7 @@ pub struct BuilderData {
     length_in_bits: usize,
     pub(super) references: SmallVec<[Cell; 4]>,
     pub(super) cell_type: CellType,
+    account_cell_hashes: Option<BTreeSet<Cell>>,
 }
 
 impl BuilderData {
@@ -49,6 +54,7 @@ impl BuilderData {
             length_in_bits: 0,
             references: SmallVec::new_const(),
             cell_type: CellType::Ordinary,
+            account_cell_hashes: None,
         }
     }
 
@@ -74,6 +80,8 @@ impl BuilderData {
             length_in_bits,
             references: SmallVec::new(),
             cell_type: CellType::Ordinary,
+            account_cell_hashes: None,
+            // store here every cell hash, passing it into the builder as a mutable ref
         })
     }
 
@@ -118,6 +126,7 @@ impl BuilderData {
         for r in self.references.iter() {
             children_level_mask |= r.level_mask();
         }
+
         let level_mask = match self.cell_type {
             CellType::Unknown => fail!("failed to finalize a cell of unknown type"),
             CellType::Ordinary => children_level_mask,
@@ -141,6 +150,8 @@ impl BuilderData {
             self.cell_type,
             level_mask.mask(),
             Some(max_depth),
+            None,
+            None,
             None,
             None,
         )?))
