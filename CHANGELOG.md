@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.22.5] - 2025-09-25
+
+### Changed/Fixed
+- Fixed hardcoded root certificates and sha384 issue in TLS wasm binary. 
+
 ## [2.22.4] - 2025-09-19
 
 ### Changed/Fixed
