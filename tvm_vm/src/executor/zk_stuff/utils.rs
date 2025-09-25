@@ -111,11 +111,23 @@ pub async fn get_proof(
         .json(&body)
         .send()
         .await
-        .map_err(|_| ZkCryptoError::InvalidInput)?;
-    let full_bytes = response.bytes().await.map_err(|_| ZkCryptoError::InvalidInput)?;
+        .map_err(|err| {
+		println!("{err:?}");
+		ZkCryptoError::InvalidInput
+	})?;
+    let full_bytes = response.bytes().await
+        .map_err(|err| {
+		println!("{err:?}");
+		ZkCryptoError::InvalidInput
+	})?;
 
     let get_proof_response: ZkLoginInputsReader =
-        serde_json::from_slice(&full_bytes).map_err(|_| ZkCryptoError::InvalidInput)?;
+        serde_json::from_slice(&full_bytes)
+        .map_err(|err| {
+		println!("{err:?}");
+		ZkCryptoError::InvalidInput
+	})?;
+
     Ok(get_proof_response)
 }
 
