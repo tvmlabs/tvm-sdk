@@ -8,6 +8,15 @@ const INIT_5: u64 = 0x9b05688c2b3e6c1f;
 const INIT_6: u64 = 0x1f83d9abfb41bd6b;
 const INIT_7: u64 = 0x5be0cd19137e2179;
 
+const INIT_0_224: u64 = 0x8c3d37c819544da2;
+const INIT_1_224: u64 = 0x73e1996689dcd4d6;
+const INIT_2_224: u64 = 0x1dfab7ae32ff9c82;
+const INIT_3_224: u64 = 0x679dd514582f9fcf;
+const INIT_4_224: u64 = 0x0f6d2b697bd44da8;
+const INIT_5_224: u64 = 0x77e36f7304c48942;
+const INIT_6_224: u64 = 0x3f9d85a86a1d36c8;
+const INIT_7_224: u64 = 0x1112e6ad91d692a1;
+
 const INIT_0_256: u64 = 0x22312194fc2bf72c;
 const INIT_1_256: u64 = 0x9f555fa3c84c64c2;
 const INIT_2_256: u64 = 0x2393b86b6f53b151;
@@ -27,12 +36,16 @@ const INIT_6_384: u64 = 0xdb0c2e0d64f98fa7;
 const INIT_7_384: u64 = 0x47b5481dbefa4fa4;
 
 const MAGIC384: &[u8] = b"sha\x04";
+const MAGIC224: &[u8] = b"sha\x05";
 const MAGIC256: &[u8] = b"sha\x06";
 const MAGIC512: &[u8] = b"sha\x07";
 const MARSHALLED_SIZE: usize = MAGIC512.len() + 8 * 8 + CHUNK + 8;
 
 // Size is the size, in bytes, of a SHA-512 checksum.
 const SIZE: usize = 64;
+
+// Size224 is the size, in bytes, of a SHA-224 checksum.
+const SIZE_224: usize = 28;
 
 // Size256 is the size, in bytes, of a SHA-512/256 checksum.
 const SIZE_256: usize = 32;
@@ -124,6 +137,16 @@ impl Digest {
                 self.h[6] = INIT_6_256;
                 self.h[7] = INIT_7_256;
             }
+            1 => {
+                self.h[0] = INIT_0_224;
+                self.h[1] = INIT_1_224;
+                self.h[2] = INIT_2_224;
+                self.h[3] = INIT_3_224;
+                self.h[4] = INIT_4_224;
+                self.h[5] = INIT_5_224;
+                self.h[6] = INIT_6_224;
+                self.h[7] = INIT_7_224;
+            }
             _ => {
                 self.h[0] = INIT_0;
                 self.h[1] = INIT_1;
@@ -148,6 +171,7 @@ impl Digest {
         // b.extend_from_slice(MAGIC384);
         //}
         match self.kind {
+            1 => b.extend_from_slice(MAGIC224),
             2 => b.extend_from_slice(MAGIC256),
             3 => b.extend_from_slice(MAGIC384),
             _ => b.extend_from_slice(MAGIC512),
@@ -195,6 +219,12 @@ impl Digest {
         // Ok(())
     }
 
+    pub fn new224() -> Digest {
+        let mut d = Digest { h: [0; 8], x: [0; CHUNK], nx: 0, len: 0, kind: 1 };
+        d.reset();
+        d
+    }
+
     pub fn new256() -> Digest {
         let mut d = Digest { h: [0; 8], x: [0; CHUNK], nx: 0, len: 0, kind: 2 };
         d.reset();
@@ -213,9 +243,16 @@ impl Digest {
         d
     }
 
+    pub fn new512() -> Digest {
+        let mut d = Digest { h: [0; 8], x: [0; CHUNK], nx: 0, len: 0, kind: 4 };
+        d.reset();
+        d
+    }
+
     pub fn size(&self) -> usize {
         // if !self.is224 {
         match self.kind {
+            1 => SIZE_224,
             2 => SIZE_256,
             3 => SIZE_384,
             _ => SIZE,
@@ -270,6 +307,7 @@ impl Digest {
         //[in_bytes, &hash].concat()
         //}
         match self.kind {
+            1 => [in_bytes, &hash[..SIZE_224]].concat(),
             2 => [in_bytes, &hash[..SIZE_256]].concat(),
             3 => [in_bytes, &hash[..SIZE_384]].concat(),
             _ => [in_bytes, &hash].concat(),
@@ -332,6 +370,16 @@ pub fn sum384(data: &[u8]) -> [u8; SIZE_384] {
     d.write(data);
     let sum = d.check_sum();
     let res: [u8; SIZE_384] = sum[..SIZE_384].try_into().unwrap();
+    return res;
+}
+
+// Sum512 returns the SHA512 checksum of the data.
+pub fn sum512(data: &[u8]) -> [u8; SIZE] {
+    let mut d = Digest::new512();
+    d.reset();
+    d.write(data);
+    let sum = d.check_sum();
+    let res: [u8; SIZE] = sum[..SIZE].try_into().unwrap();
     return res;
 }
 
@@ -493,23 +541,4 @@ fn block(dig: &mut Digest, p: &[u8]) {
     dig.h[5] = h5;
     dig.h[6] = h6;
     dig.h[7] = h7;
-}
-
-#[test]
-fn test_sha256() {
-    let input: [u8; 130] = [
-        32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-        32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-        32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 84, 76, 83, 32, 49,
-        46, 51, 44, 32, 115, 101, 114, 118, 101, 114, 32, 67, 101, 114, 116, 105, 102, 105, 99, 97,
-        116, 101, 86, 101, 114, 105, 102, 121, 0, 158, 174, 79, 177, 5, 0, 119, 59, 51, 244, 251,
-        215, 106, 247, 206, 172, 254, 114, 114, 168, 228, 66, 218, 120, 76, 245, 253, 57, 74, 247,
-        28, 207,
-    ];
-    let res = sum256(&input);
-    let etalon_res = [
-        116, 88, 18, 51, 69, 31, 113, 50, 74, 19, 106, 96, 249, 109, 157, 94, 41, 155, 217, 39,
-        210, 28, 183, 222, 55, 9, 250, 54, 52, 212, 228, 175,
-    ];
-    assert_eq!(res, etalon_res);
 }

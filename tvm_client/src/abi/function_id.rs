@@ -30,7 +30,7 @@ pub fn calc_function_id(
 ) -> ClientResult<ResultOfCalcFunctionId> {
     if params.function_name == "constructor" {
         let function_id = 1;
-        return Ok(ResultOfCalcFunctionId {function_id});
+        return Ok(ResultOfCalcFunctionId { function_id });
     }
     let abi = params.abi.abi()?;
     let function = abi
