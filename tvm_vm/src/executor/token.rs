@@ -447,8 +447,7 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
         if nbk == 0 {
             nbk = 1;
         }
-        sbkbase =
-            ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
+        sbkbase = ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
             / (2u128 * (nbk as u128) * DELTA_SBK_DENOMINATOR);
     } else {
         sbkbase = SBK_BASE_START;
