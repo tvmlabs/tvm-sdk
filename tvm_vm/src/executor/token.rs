@@ -76,7 +76,7 @@ const KRBM_DEN: u128 = 10;
 const KRMV_NUM: u128 = 225;
 const KRMV_DEN: u128 = 1000;
 const UM_Q64: i64 = 106_188_087_029; // -ln(KM / (KM + 1)) / TTMT * 2^64 = -ln(1e-5 / (1 + 1e-5)) / 2e9 * 2^64
-const SBK_BASE_START: u128 = 1;
+const SBK_BASE_START: u128 = 14393409967783;
 
 // e^(−n), n = 0...12 in Q‑32
 const EXP_NEG_VAL_Q32: [i64; 13] = [
@@ -438,13 +438,17 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMINSTAKE"))?;
     fetch_stack(engine, 4)?;
     let _nbkreq = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; // needNumberOfActiveBlockKeepers = 10000
-    let nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepersAtBlockStart
+    let mut nbk = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //numberOfActiveBlockKeepersAtBlockStart
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let sbkbase;
     if mbkav != 0 {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-        sbkbase = ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
+        if nbk == 0 {
+            nbk = 1;
+        }
+        sbkbase =
+            ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
             / (2u128 * (nbk as u128) * DELTA_SBK_DENOMINATOR);
     } else {
         sbkbase = SBK_BASE_START;
@@ -485,6 +489,10 @@ fn to_umbnlst(weights: &Vec<u64>) -> Vec<u64> {
     out.push(0);
 
     for &w in weights {
+        if wsum == 0 {
+            out.push(0);
+            continue;
+        }
         acc += M * (w as u128);
         let ticks = acc / wsum;
         acc -= ticks * wsum;
@@ -514,6 +522,13 @@ fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
 fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Vec<u64>) -> i128 {
     let mut denom: i128 = 0;
     let len = bclst.len();
+    let len_tap = taplst.len();
+    if len == 0 {
+        return 0;
+    }
+    if len_tap != len {
+        return 0;
+    }
     for j in 0..len {
         denom += taplst[j] as i128 * bclst[j] as i128;
     }
@@ -521,8 +536,13 @@ fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Ve
     if denom == 0 {
         return 0;
     }
-
-    let numer = rpc * tap_num * bclst[mbi as usize] as i128;
+    let new_mbi;
+    if mbi >= len as u64 {
+        new_mbi = len as u64 - 1;
+    } else {
+        new_mbi = mbi;
+    }
+    let numer = rpc * tap_num * bclst[new_mbi as usize] as i128;
     let rmv = numer / denom;
     rmv
 }
