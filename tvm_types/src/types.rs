@@ -396,6 +396,8 @@ pub enum ExceptionCode {
     DAppIdNotSet = 35,
     #[error("failed to unpack cell")]
     CellUnpackError = 36,
+    #[error("wasm base config is incorrect")]
+    WasmConfigError = 37,
 }
 
 // impl fmt::Display for ExceptionCode {

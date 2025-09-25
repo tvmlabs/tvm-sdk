@@ -32,7 +32,9 @@ pub fn load_boc(filename: &str) -> tvm_types::Cell {
 
 pub fn secret_key_from_integer_map(key_data: HashMap<String, u8>) -> Vec<u8> {
     let mut vec: Vec<u8> = Vec::new();
-    for i in 0..=key_data.len()/*31*//*32*/ {
+    for i in 0..=key_data.len()
+    /*31*//*32*/
+    {
         if let Some(value) = key_data.get(&i.to_string()) {
             vec.push(value.clone());
         }
