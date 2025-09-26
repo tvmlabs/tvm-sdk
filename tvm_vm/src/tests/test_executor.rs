@@ -874,7 +874,8 @@ fn test_wasm_from_nonexistent_hash() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash_str = "1234567890123456789012345678901234567890123456789012345678901234";
+    let hash_str = "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    //"1234567890123456789012345678901234567890123456789012345678901234";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     // we skip precompilation as it would check the hash and error early
     // let mut engine = engine.precompile_all_wasm_by_hash().unwrap();

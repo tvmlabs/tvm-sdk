@@ -149,8 +149,8 @@ impl Function {
         if let Some(pos) = signature.find('(') {
             if &signature[0..pos] == "constructor" {
                 return 1;
-            } 
-        } 
+            }
+        }
         // Sha256 hash of signature
         let function_hash = sha256_digest(signature.as_bytes());
 
