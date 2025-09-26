@@ -14,10 +14,7 @@ use std::fmt;
 
 use smallvec::SmallVec;
 pub(super) type SmallData = SmallVec<[u8; 128]>;
-use bloom::ASMS;
-use bloom::BloomFilter;
 
-use crate::HashableCell;
 use crate::cell::Cell;
 use crate::cell::CellType;
 use crate::cell::DataCell;

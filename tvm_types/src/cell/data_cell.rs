@@ -47,7 +47,7 @@ impl Default for DataCell {
 }
 
 thread_local! {
-    static UNIQUE_CELLS: std::cell::RefCell<BTreeSet<HashableCell>> = std::cell::RefCell::new(BTreeSet::new());
+    static UNIQUE_CELLS: std::cell::RefCell<BTreeSet<HashableCell>> = const { std::cell::RefCell::new(BTreeSet::new()) };
     static UNIQUE_BLOOM: std::cell::RefCell<BloomFilter> = std::cell::RefCell::new(BloomFilter::with_rate(0.00001,1000000));
 }
 
@@ -63,6 +63,7 @@ impl DataCell {
         Self::with_params(references, data, CellType::Ordinary, 0, None, None, None, None, None)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn with_params(
         references: SmallVec<[Cell; 4]>,
         data: &[u8], // with completion tag (for big cell - without)!
@@ -159,13 +160,11 @@ impl DataCell {
             log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
             fail!("reached max BOC tree size allowed by current Node State limitations");
         }
-        match extern_tree_bits_count {
-            Some(b) => tree_bits_count = tree_bits_count.saturating_add(b),
-            None => {}
+        if let Some(b) = extern_tree_bits_count {
+            tree_bits_count = tree_bits_count.saturating_add(b)
         }
-        match extern_tree_cell_count {
-            Some(c) => tree_cell_count = tree_cell_count.saturating_add(c),
-            None => {}
+        if let Some(c) = extern_tree_cell_count {
+            tree_cell_count = tree_cell_count.saturating_add(c)
         }
         // for reference in &references {
         //     tree_bits_count =
