@@ -1018,7 +1018,7 @@ fn test_update_shard_state_with_unloaded_account() {
         let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
         let mut acc = shard_acc.read_account().unwrap().as_struct().unwrap();
         acc.add_funds(&CurrencyCollection::with_grams(20)).unwrap();
-        shard_acc.set_account_cell(acc.serialize().unwrap());
+        shard_acc.set_account_cell(acc.serialize().unwrap()).unwrap();
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         new_state.write_accounts(&shard_accounts).unwrap();
 
@@ -1039,7 +1039,7 @@ fn test_update_shard_state_with_unloaded_account() {
         shard_acc.read_account().unwrap();
         let mut acc = Account::construct_from_cell(acc5_root.clone()).unwrap();
         acc.add_funds(&CurrencyCollection::with_grams(20)).unwrap();
-        shard_acc.set_account_cell(acc.serialize().unwrap());
+        shard_acc.set_account_cell(acc.serialize().unwrap()).unwrap();
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         new_state.write_accounts(&shard_accounts).unwrap();
 
@@ -1053,7 +1053,7 @@ fn test_update_shard_state_with_unloaded_account() {
 
         let mut shard_accounts = old_state.read_accounts().unwrap();
         let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
-        shard_acc.set_account_cell(acc5_root.clone());
+        shard_acc.set_account_cell(acc5_root.clone()).unwrap();
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         old_state.write_accounts(&shard_accounts).unwrap();
 
@@ -1061,7 +1061,7 @@ fn test_update_shard_state_with_unloaded_account() {
     };
 
     let mut shard_acc = shard_accounts_unl5.account(&account_id5.clone().into()).unwrap().unwrap();
-    shard_acc.set_account_cell(acc5_root.clone());
+    shard_acc.set_account_cell(acc5_root.clone()).unwrap();
     shard_accounts_unl5.insert(&account_id5, &shard_acc).unwrap();
     let mut shard_state_loaded = shard_state_unl5.clone();
     shard_state_loaded.write_accounts(&shard_accounts_unl5).unwrap();
@@ -1211,7 +1211,7 @@ fn test_update_shard_state_with_unloaded_account() {
 
         let mut shard_accounts = old_state.read_accounts().unwrap();
         let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
-        shard_acc.set_account_cell(acc5_root.clone());
+        shard_acc.set_account_cell(acc5_root.clone()).unwrap();
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         old_state.write_accounts(&shard_accounts).unwrap();
 
