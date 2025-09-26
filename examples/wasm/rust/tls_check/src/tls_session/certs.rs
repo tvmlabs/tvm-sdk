@@ -3011,11 +3011,12 @@ pub fn ext_key_usage_from_oid(oid: &[i32]) -> Option<ExtKeyUsage> {
 
 pub fn check_certs(
     current_time: i64,
+    issuer: &[u8],
     check_sum: &[u8],
     certs_chain: &[u8],
     signature: &[u8],
     spare_root_cert: &[u8],
-) -> Option<PublicKey> {
+) -> Result<PublicKey, Vec<u8> > { // -> Option<PublicKey> {
     // extract
     // divide input string into three slices
 
@@ -3024,7 +3025,7 @@ pub fn check_certs(
         + (certs_chain[2] as usize);
 
     if len_of_certs_chain + 1 != certs_chain.len() {
-        return None;
+        return Err(vec![0u8, 3u8, 75u8]); // "certs chain len does not match" // return None;
     }
 
     let len_of_leaf_cert = (certs_chain[3] as usize) * 65536
@@ -3038,7 +3039,7 @@ pub fn check_certs(
     if leaf_cert.not_after.timestamp() < current_time
         || leaf_cert.not_before.timestamp() > current_time
     {
-        return None;
+        return Err(vec![0u8, 3u8, 76u8]); // "leaf cert has expired"  // return None;
     }
 
     let start_index = len_of_leaf_cert + 8;
@@ -3053,7 +3054,7 @@ pub fn check_certs(
     if internal_cert.not_after.timestamp() < current_time
         || internal_cert.not_before.timestamp() > current_time
     {
-        return None;
+        return Err(vec![0u8, 3u8, 77u8]); // "internal cert has expired" // return None;
     }
 
     let start_index = start_index + 3 + len_of_internal_cert + 2;
@@ -3072,7 +3073,7 @@ pub fn check_certs(
     if root_cert.not_after.timestamp() < current_time
         || root_cert.not_before.timestamp() > current_time
     {
-        return None;
+        return Err(vec![0u8, 3u8, 80u8]); // "root cert has expired" // return None;
     }
 
     // let context: [u8; 98] = [32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
@@ -3106,12 +3107,45 @@ pub fn check_certs(
     // 79, 5, 163, 96, 180, 148];
 
     if !leaf_cert.check_signature_from(&internal_cert) {
-        panic!("leaf_cert.check_signature_from(&internal_cert)"); //return None;
+        return Err(vec![0u8, 3u8, 81u8]); // panic!("leaf_cert.check_signature_from(&internal_cert)"); //return None;
     }
 
     if !internal_cert.check_signature_from(&root_cert) {
         // return None;
-        panic!("internal_cert.check_signature_from(&root_cert)");
+        return Err(vec![0u8, 3u8, 82u8]); // panic!("internal_cert.check_signature_from(&root_cert)");
+    }
+
+    if leaf_cert.issuer.organization[0] != "DigiCert Inc" && leaf_cert.issuer.organization[0] != "Google Trust Services" {
+        return Err(vec![0u8, 3u8, 83u8]); // "untrusted leaf cert issuer"
+    }
+
+    match leaf_cert.subject.common_name.as_str() {
+        "upload.video.google.com" => {
+            if internal_cert.subject.common_name!="WR2" && internal_cert.subject.common_name!="WE2" {
+                return Err(vec![0u8, 3u8, 84u8]); // "untrusted internal cert common_name"
+            }
+
+            if issuer!=vec![6, 103, 111, 111, 103, 108, 101] {
+                return Err(vec![0u8, 3u8, 85u8]); // "incorrect leaf_cert.subject.common_name"
+            }
+        },
+        "*.kakao.com" => {
+            if internal_cert.subject.common_name!="Thawte TLS RSA CA G1" {
+                return Err(vec![0u8, 3u8, 84u8]); // "untrusted internal cert common_name"
+            }
+            if issuer!=vec![5, 107, 97, 107, 97, 111] {
+                return Err(vec![0u8, 3u8, 85u8]); // "incorrect leaf_cert.subject.common_name"
+            }
+        },
+        "*.facebook.com" => {
+            if internal_cert.subject.common_name!="DigiCert Global G2 TLS RSA SHA256 2020 CA1" {
+                return Err(vec![0u8, 3u8, 84u8]); // "untrusted internal cert common_name"
+            }
+            if issuer!=vec![8, 102, 97, 99, 101, 98, 111, 111, 107] {
+                return Err(vec![0u8, 3u8, 85u8]); // "incorrect leaf_cert.subject.common_name"
+            }
+        },
+        _ => return Err(vec![0u8, 3u8, 85u8]) // "incorrect leaf_cert.subject.common_name"
     }
 
     match leaf_cert.public_key_algorithm.to_string() {
@@ -3124,7 +3158,7 @@ pub fn check_certs(
                 if !rsa::verify_pss(&pub_key, 256, check_sum, signature, &pss_options) {
                     // if !rsa::verify_pss(&pub_key, 256, &check_prepared, &sig, &pss_options) {
                     // return None;
-                    panic!("verify pss panic");
+                    return Err(vec![0u8, 3u8, 86u8]); // panic!("verify pss panic");
                 }
 
                 // if !rsa::verify_pkcs1v15(&pub_key,256, &check_prepared,
@@ -3134,7 +3168,7 @@ pub fn check_certs(
                 //}
             } else {
                 // return None; //ErrCertificateTypeMismatch
-                panic!("certificate type mismatch panic");
+                return Err(vec![0u8, 3u8, 87u8]);  // panic!("certificate type mismatch panic");
             }
         }
         val if val == "ECDSA".to_string() => {
@@ -3149,37 +3183,41 @@ pub fn check_certs(
                 let s = BigInt::from_bytes_be(Sign::Plus, s_data); //     s := new(big.Int).SetBytes(sData)
                 if !ecdsa::verify(&pub_key, check_sum, &r, &s) {
                     // return None;
-                    panic!("ecds verify panic");
+                    return Err(vec![0u8, 3u8, 88u8]); // panic!("ecds verify panic");
                 }
             } else {
                 // return None;  //ErrCertificateTypeMismatch
-                panic!("certificate type mismatch panic");
+                return Err(vec![0u8, 3u8, 89u8]); // panic!("certificate type mismatch panic");
             }
         }
-        _ => panic!("Unknown signature algorithm"),
+        _ => return Err(vec![0u8, 3u8, 90u8]) // panic!("Unknown signature algorithm"),
     }
 
-    return Some(root_cert.public_key);
+    return Ok(root_cert.public_key); // Some(root_cert.public_key);
 }
 
 pub fn check_certs_with_fixed_root(
     current_time: i64,
+    issuer: &[u8],
     check_sum: &[u8],
     certs_chain: &[u8],
     signature: &[u8],
     root_cert_bytes: &[u8],
-) -> bool {
-    //
+) -> Result<(), Vec<u8> > { // -> bool {
+
     let check_certs_result =
-        check_certs(current_time, check_sum, certs_chain, signature, root_cert_bytes);
-    if check_certs_result.is_none() {
-        return false;
+        check_certs(current_time, issuer, check_sum, certs_chain, signature, root_cert_bytes);
+    //if check_certs_result.is_none() {
+        //return false;
+    //}
+    match check_certs_result {
+        Ok(root_public_key) => {
+            let proposed_root_cert = parse_certificate(&root_cert_bytes);
+            if proposed_root_cert.public_key == root_public_key {
+                return Ok(()); // return true;
+            }
+            return Err(vec![0u8, 3u8, 190u8]);// "root public key does not match with key from proposed root cert" // return false;
+        },
+        Err(e) => return Err(e)
     }
-
-    let proposed_root_cert = parse_certificate(&root_cert_bytes);
-
-    if proposed_root_cert.public_key == check_certs_result.unwrap() {
-        return true;
-    }
-    return false;
 }
