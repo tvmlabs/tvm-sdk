@@ -1670,8 +1670,6 @@ pub fn db_serialize_block_ex<'a>(
     });
     let value_flow = set.block.read_value_flow()?;
     let mut value_map = Map::new();
-    serialize_cc(&mut value_map, "from_prev_blk", &value_flow.from_prev_blk, mode)?;
-    serialize_cc(&mut value_map, "to_next_blk", &value_flow.to_next_blk, mode)?;
     serialize_cc(&mut value_map, "imported", &value_flow.imported, mode)?;
     serialize_cc(&mut value_map, "exported", &value_flow.exported, mode)?;
     serialize_cc(&mut value_map, "fees_collected", &value_flow.fees_collected, mode)?;
