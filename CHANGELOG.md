@@ -2,10 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.22.3] - 2025-09-22
+## [2.22.6] - 2025-**-**
 
 ### Added
 - Added flag "is_high_priority" to int message header
+
+## [2.22.5] - 2025-09-25
+
+### Changed/Fixed
+- Fixed hardcoded root certificates and sha384 issue in TLS wasm binary. 
 
 ## [2.22.4] - 2025-09-19
 

@@ -130,6 +130,10 @@ pub fn derive_secret(secret: &[u8; 32], label: &str, transcript_messages: &[u8])
 }
 
 pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
+    if raw.len() < 5000 {
+        return vec![0u8, 3u8, 33u8]; // "insufficient len" : 0x3, 0x21 = 801
+    }
+
     let timestamp_bytes = &raw[..4];
     let len_of_kid = raw[4] as usize;
     let kid = &raw[5..5 + len_of_kid]; // let kid = &raw[4..24];
@@ -150,9 +154,6 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let records_received_declared: u8 = data[33];
     // check len of data
 
-    if data.len() < 5000 {
-        return vec![0u8, 3u8, 33u8]; // "insufficient len" : 0x3, 0x21 = 801
-    }
     let client_hello_len = data[38] as usize;
 
     let client_hello: &[u8] = &data[34..39 + client_hello_len]; //let client_hello:[u8;166] = data[34..200].try_into().unwrap(); // len is 166 bytes
@@ -317,7 +318,12 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
         SHA384WITH_RSAPSS => sha512::sum384(&check_sum_extend).to_vec(),
         SHA384WITH_RSA => sha512::sum384(&check_sum_extend).to_vec(),
         SHA384WITH_RSAE => sha512::sum384(&check_sum_extend).to_vec(),
-        _ => return vec![0u8, 3u8, 38u8], // "not supported (not sha256 or 384) type of signature"
+        ECDSA_WITH_SHA512 => sha512::sum512(&check_sum_extend).to_vec(),
+        SHA512WITH_RSA => sha512::sum512(&check_sum_extend).to_vec(),
+        SHA512WITH_RSAE => sha512::sum512(&check_sum_extend).to_vec(),
+        SHA512WITH_RSAPSS => sha512::sum512(&check_sum_extend).to_vec(),
+        _ => return vec![0u8, 3u8, 38u8], /* "not supported (not sha256, sha384 or sha512) type
+                                           * of signature" */
     };
 
     if !check_certs_with_fixed_root(
