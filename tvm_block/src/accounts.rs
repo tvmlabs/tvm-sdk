@@ -34,7 +34,6 @@ use crate::MaybeDeserialize;
 use crate::MaybeSerialize;
 use crate::Serializable;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentation;
 use crate::merkle_proof::MerkleProof;
 use crate::messages::AnycastInfo;
 use crate::messages::Message;
@@ -45,7 +44,6 @@ use crate::messages::StateInitLib;
 use crate::messages::TickTock;
 use crate::shard::ShardIdent;
 use crate::shard::ShardStateUnsplit;
-use crate::shard_accounts::DepthBalanceInfo;
 use crate::types::AddSub;
 use crate::types::CurrencyCollection;
 use crate::types::Grams;
@@ -1235,19 +1233,6 @@ impl Account {
         builder.checked_prepend_reference(cell.clone())?;
         self.set_data(builder.into_cell()?);
         Ok(())
-    }
-}
-
-impl Augmentation<DepthBalanceInfo> for Account {
-    fn aug(&self) -> Result<DepthBalanceInfo> {
-        let mut info = DepthBalanceInfo::default();
-        if let Some(balance) = self.balance() {
-            info.set_balance(balance.clone());
-        }
-        if let Some(split_depth) = self.state_init().and_then(|s| s.split_depth.clone()) {
-            info.set_split_depth(split_depth);
-        }
-        Ok(info)
     }
 }
 
