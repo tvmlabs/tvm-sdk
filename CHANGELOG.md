@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.23.0] - 2025-09-27
+
+### Changed/Fixed
+- Removed full shard state balance from ValueFlow
+- Changed ShardAccountsMap from HashmapAugE to HashmapE 
+
 ## [2.22.5] - 2025-09-25
 
 ### Changed/Fixed
