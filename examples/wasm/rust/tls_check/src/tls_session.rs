@@ -135,12 +135,12 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     }
 
     let timestamp_bytes = &raw[..4];
-    let len_of_issuer = raw[4] as usize;
-    if len_of_issuer < 4 || len_of_issuer > 100 {
-        return vec![0u8, 3u8, 34u8]; // "corrupted issuer (not lv format) / incorrect issuer len" : 0x3, 0x22 = 802
+    let len_of_provider = raw[4] as usize;
+    if len_of_provider < 4 || len_of_provider > 100 {
+        return vec![0u8, 3u8, 34u8]; // "corrupted provider name (not lv format) / incorrect issuer len" : 0x3, 0x22 = 802
     }
-    let issuer = &raw[5..5 + len_of_issuer];
-    let start_kid_pos = 5 + len_of_issuer;
+    let provider = &raw[5..5 + len_of_provider];
+    let start_kid_pos = 5 + len_of_provider;
 
     let len_of_kid = raw[start_kid_pos] as usize;
     if len_of_kid < 1 || len_of_kid > 30 {
@@ -371,7 +371,7 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
 
     if let Err(e) = check_certs_with_fixed_root( // !check_certs_with_fixed_root(
         timestamp,
-        &issuer,
+        &provider,
         &check_prepared,
         &certs_chain[4..certs_chain_len + 1],
         &signature,
