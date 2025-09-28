@@ -9,15 +9,16 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+use std::time::Instant;
+
+use tvm_types::HashmapE;
+
 use super::*;
-use crate::{define_HashmapE, AccountCellStruct};
+use crate::AccountCellStruct;
+use crate::define_HashmapE;
 use crate::generate_test_account_by_init_code_hash;
 use crate::write_read_and_assert;
-use blake3::Hasher;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Instant;
-use tvm_types::HashmapE;
 
 #[test]
 fn test_serialization_shard_account() {
@@ -112,8 +113,7 @@ fn test_shard_account_insert_time() {
     }
     println!("Shard accounts 2 insertion time {:?}", time.elapsed());
 
-    let subset =
-        accounts.iter().map(|(k, v)| (k.clone(), v.clone())).take(300).collect::<Vec<_>>();
+    let subset = accounts.iter().map(|(k, v)| (k.clone(), v.clone())).take(300).collect::<Vec<_>>();
 
     let time = Instant::now();
     for (id, shard_acc) in &subset {
