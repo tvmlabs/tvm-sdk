@@ -24,7 +24,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "2.22.2"
+version = "2.23.0"
 
 rust-version = "1.76.0"
 
@@ -104,9 +104,9 @@ similar = "2.4.0"
 smallvec = "1.13.1"
 thiserror = "1.0.56"
 tokio = { default-features = false, version = "1.36.0" }
-wasmtime = "35.0.0"
-wasmtime-wasi = "35.0.0"
-wasmtime-wasi-io = "35.0.0"
+wasmtime = "36.0.2"
+wasmtime-wasi = "36.0.2"
+wasmtime-wasi-io = "36.0.2"
 zstd = "0.13.0"
 #
 tvm_abi = { path = "./tvm_abi" }

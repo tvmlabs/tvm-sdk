@@ -7,6 +7,31 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Ability to resolve unloaded account cells when applying Merkle updates
 
+## [2.23.0] - 2025-09-27
+
+### Changed/Fixed
+- Removed full shard state balance from ValueFlow
+- Changed ShardAccountsMap from HashmapAugE to HashmapE 
+
+## [2.22.5] - 2025-09-25
+
+### Changed/Fixed
+- Fixed hardcoded root certificates and sha384 issue in TLS wasm binary. 
+
+## [2.22.4] - 2025-09-19
+
+### Changed/Fixed
+- Changed how the depth and bits are counted in BOC to account for deduplication (duplicate cells are not counted as they do not grow the account state). This updated counter is used to limit the max BOC size to avoid edge-case issues with node state updates.
+- Wasmtime upgrade to 36.0.2
+- Fixed some wasm tests
+
+### Added
+- External function for loading a wasm hash whitelist file from disk. Intended for use as a node config.
+
+## [2.22.3] - 2025-09-23
+
+### Fix
+- Fix mv reward instructions
 
 ## [2.22.2] - 2025-09-22
 

@@ -41,12 +41,7 @@ fn test_blockinfo(block_info: BlockInfo) {
     let mut block_extra = BlockExtra::new();
     block_extra.write_account_blocks(&generate_test_shard_account_block()).unwrap();
 
-    let mut collection = CurrencyCollection::with_grams(3);
-    collection.set_other(1005004, 2_000_003).unwrap();
-
     let value_flow = ValueFlow {
-        from_prev_blk: collection,
-        to_next_blk: CurrencyCollection::new(),
         imported: CurrencyCollection::new(),
         exported: CurrencyCollection::new(),
         fees_collected: CurrencyCollection::new(),
@@ -195,8 +190,6 @@ fn test_currency_collection() {
 
 #[test]
 fn test_value_flow() {
-    let mut from_prev_blk = CurrencyCollection::with_grams(1);
-    let mut to_next_blk = CurrencyCollection::with_grams(1);
     let mut imported = CurrencyCollection::with_grams(1);
     let mut exported = CurrencyCollection::with_grams(1);
     let mut fees_collected = CurrencyCollection::with_grams(1);
@@ -204,14 +197,6 @@ fn test_value_flow() {
     let mut recovered = CurrencyCollection::with_grams(1);
     let mut created = CurrencyCollection::with_grams(1);
     let mut minted = CurrencyCollection::with_grams(1);
-
-    from_prev_blk.set_other(1001, 1_000_000 + 1).unwrap();
-    from_prev_blk.set_other(100500, 9_000_000 + 777).unwrap();
-    from_prev_blk.set_other(100500, 8_000_000 + 1005700).unwrap();
-    from_prev_blk.set_other(100500, 555_000_000 + 1070500).unwrap();
-
-    to_next_blk.set_other(1002, 1_000_000 + 1).unwrap();
-    to_next_blk.set_other(100500, 6_767_000_000 + 8888).unwrap();
 
     imported.set_other(1003, 1_000_000 + 1).unwrap();
     imported.set_other(100500, 4_000_000 + 6).unwrap();
@@ -243,8 +228,6 @@ fn test_value_flow() {
     copyleft_rewards.set(&address, &200.into()).unwrap();
 
     let value_flow = ValueFlow {
-        from_prev_blk: from_prev_blk.clone(),
-        to_next_blk: to_next_blk.clone(),
         imported: imported.clone(),
         exported: exported.clone(),
         fees_collected: fees_collected.clone(),
@@ -258,8 +241,6 @@ fn test_value_flow() {
     write_read_and_assert(value_flow);
 
     let value_flow_without_copyleft = ValueFlow {
-        from_prev_blk,
-        to_next_blk,
         imported,
         exported,
         fees_collected,
