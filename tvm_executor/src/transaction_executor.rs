@@ -1308,30 +1308,30 @@ fn compute_new_state(
                                     log::error!(target: "executor", "Failed to get sign_bit from external message body");
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
-                            };                           
+                            };
                             if sign_bit {
                                 if data.get_next_bits(512).is_err() {
                                     log::error!(target: "executor", "Failed to get 512-bit signature from external message body");
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
-                            }                           
+                            }
                             let pubkey_bit = match data.get_next_bit() {
                                 Ok(bit) => bit,
                                 Err(_) => {
                                     log::error!(target: "executor", "Failed to get pubkey_bit from external message body");
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
-                            };                        
+                            };
                             if pubkey_bit {
                                 if data.get_next_bits(256).is_err() {
                                     log::error!(target: "executor", "Failed to get 256-bit public key from external message body");
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
-                            }                            
+                            }
                             if data.get_next_u64().is_err() {
                                 log::error!(target: "executor", "Failed to get timestamp (u64) from external message body");
                                 return Ok(Some(ComputeSkipReason::BadState));
-                            } 
+                            }
                             if data.get_next_u32().is_err() {
                                 log::error!(target: "executor", "Failed to get expire (u32) from external message body");
                                 return Ok(Some(ComputeSkipReason::BadState));
@@ -1350,7 +1350,7 @@ fn compute_new_state(
                                 }
                             }
                         }
-                    },
+                    }
                     None => {
                         return Ok(Some(ComputeSkipReason::BadState));
                     }
