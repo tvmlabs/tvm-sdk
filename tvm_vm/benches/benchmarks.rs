@@ -576,7 +576,7 @@ fn bench_wasmtls_without_whitelist(c: &mut Criterion) {
             for _i in 0..iters {
                 let mut stack = Stack::new();
 
-                let hash_str = "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";;
+                let hash_str = "b8891b913656ae35d9ffff371f0f03e4f1f869d0e17556a8c273750313884b0a";
                 let hash: Vec<u8> = (0..hash_str.len())
                     .step_by(2)
                     .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -647,7 +647,7 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
                 let mut stack = Stack::new();
 
                 let hash_str =
-                "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
+                "b8891b913656ae35d9ffff371f0f03e4f1f869d0e17556a8c273750313884b0a";
                 let hash: Vec<u8> = (0..hash_str.len())
                     .step_by(2)
                     .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
