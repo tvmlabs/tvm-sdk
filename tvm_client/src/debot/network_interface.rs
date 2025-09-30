@@ -88,8 +88,10 @@ impl NetworkInterface {
         for h in headers {
             let mut iter = h.split(':');
             match (iter.next(), iter.next()) {
-                (Some(key), Some(value)) => header_map.insert(key.trim().to_owned(), value.trim().to_owned()),
-                _ => None
+                (Some(key), Some(value)) => {
+                    header_map.insert(key.trim().to_owned(), value.trim().to_owned())
+                }
+                _ => None,
             };
         }
         let response = self
