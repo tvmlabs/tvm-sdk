@@ -79,11 +79,11 @@ impl Error {
         let mut client_error = Self::send_message_server_error(error);
 
         if let Some(bm_data) = resp_body.get("ext_message_token") {
-            client_error
-                .data
-                .as_object_mut()
-                .and_then(|obj| obj.get_mut("ext_message_token"))
-                .map(|entry| *entry = bm_data.clone());
+            if let Some(entry) =
+                client_error.data.as_object_mut().and_then(|obj| obj.get_mut("ext_message_token"))
+            {
+                *entry = bm_data.clone();
+            }
 
             if client_error.data.get("ext_message_token").is_none() {
                 client_error.data["ext_message_token"] = bm_data.clone();
@@ -305,12 +305,11 @@ mod tests {
                     "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000"
                 }
             },
-            "block_manager": {
-                "license_address": "0:8e8dad0462a4d5c528e18251846f24bc5c04cd1871115fb1e9b00c9741f60800",
-                "token": {
-                    "unsigned": "1748084798476",
-                    "signature": "c0c4fc73a9bab0f9d648eb1c2402d21a44559bf2a4b24f735f55a384d3a3914cbe2c9d1ed403ef548dded51c62510581b0dad96891ac6fa16af8687c7586b901",
-                    "verifying_key": "e2c9d4be54d342d3f0e6394a7738fc39b93d4fe3fdba317aa699f7305566de2b"
+            "ext_message_token": {
+                "unsigned": "1758820230831",
+                "signature": "55dea88bd54c90dd6964be91b52377a91dad18d1c42b2b4d7258411a7ae05bdb2d46b5fd80af884d5c4b8de268fc34c7e1e512eae985b5d82b000b929c7a1008",
+                "issuer": {
+                    "bm": "e0c946c35553918996f3c4dfe71c142488c1985e3920201174f38f5d814580cb"
                 }
             }
         });
@@ -323,9 +322,9 @@ mod tests {
         assert_eq!(client_error.code, ErrorCode::SendMessageFailed as u32);
         assert_eq!(client_error.message, "Resend message to the active Block Producer");
 
-        let bm = client_error.data.get("block_manager");
-        assert!(bm.is_some());
-        assert!(bm.unwrap().get("license_address").is_some());
+        let token = client_error.data.get("ext_message_token");
+        assert!(token.is_some());
+        assert!(token.unwrap().get("issuer").is_some());
 
         let extensions = client_error.data.get("node_error").and_then(|v| v.get("extensions"));
         assert!(extensions.is_some());

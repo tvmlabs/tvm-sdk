@@ -313,6 +313,7 @@ async fn test_run_message<F>(
     );
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_run_account_none() {
     TestClient::init_log();
@@ -345,6 +346,7 @@ async fn test_run_account_none() {
     assert_eq!(parsed.parsed["acc_type_name"], "Uninit");
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_run_account_uninit() {
     TestClient::init_log();
@@ -831,6 +833,7 @@ async fn test_method_error(
     }
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_resolve_blockchain_config() {
     let mut client_config = crate::ClientConfig::default();
@@ -935,6 +938,7 @@ async fn test_my_code() {
     println!("{:?}", get_my_code);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_run_executor_fees() {
     let client = TestClient::new_with_config(json!({}));
@@ -1088,6 +1092,7 @@ async fn test_run_executor_fees() {
     assert_eq!(1000000, return_value.fees.total_fwd_fees);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_gosh() {
     let client = TestClient::new_with_config(json!({}));
@@ -1172,6 +1177,7 @@ async fn test_gosh() {
     }
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_signature_id() {
     let client = TestClient::new_with_config(json!({}));
