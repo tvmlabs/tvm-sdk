@@ -45,28 +45,24 @@
     "file_hash": "ac71c2dbcddaecb8cc32a26808eca12af7394f37f2981e2f45e9acf65c6b6604"
   },
   "value_flow": {
-    "from_prev_blk_dec": "483583989232340",
-    "from_prev_blk": "0c1b7d12be5b2d4",
-    "from_prev_blk_other": [
+    "imported_dec": "483583989232340",
+    "imported": "0c1b7d12be5b2d4",
+    "imported_other": [
       {
         "currency": 239,
         "value_dec": "4533867",
         "value": "05452e6b"
       }
     ],
-    "to_next_blk_dec": "483583989232340",
-    "to_next_blk": "0c1b7d12be5b2d4",
-    "to_next_blk_other": [
+    "exported_dec": "483583989232340",
+    "exported": "0c1b7d12be5b2d4",
+    "exported_other": [
       {
         "currency": 239,
         "value_dec": "4533867",
         "value": "05452e6b"
       }
     ],
-    "imported_dec": "0",
-    "imported": "000",
-    "exported_dec": "0",
-    "exported": "000",
     "fees_collected_dec": "250000000",
     "fees_collected": "06ee6b280",
     "fees_imported_dec": "0",

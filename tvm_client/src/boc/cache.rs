@@ -198,8 +198,8 @@ impl Bocs {
         boc: &str,
         name: &str,
     ) -> ClientResult<(DeserializedBoc, Cell)> {
-        if boc.starts_with('*') {
-            let hash = UInt256::from_str(&boc[1..]).map_err(|err| {
+        if let Some(stripped) = boc.strip_prefix('*') {
+            let hash = UInt256::from_str(stripped).map_err(|err| {
                 Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {}", err))
             })?;
 

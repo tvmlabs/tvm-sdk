@@ -87,11 +87,10 @@ impl NetworkInterface {
         let mut header_map = HashMap::new();
         for h in headers {
             let mut iter = h.split(':');
-            let key = iter.next();
-            let value = iter.next();
-            if key.is_some() && value.is_some() {
-                header_map.insert(key.unwrap().trim().to_owned(), value.unwrap().trim().to_owned());
-            }
+            match (iter.next(), iter.next()) {
+                (Some(key), Some(value)) => header_map.insert(key.trim().to_owned(), value.trim().to_owned()),
+                _ => None
+            };
         }
         let response = self
             .client
