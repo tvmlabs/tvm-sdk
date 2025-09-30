@@ -16,9 +16,6 @@ jobs:
         with:
           components: clippy, rustfmt
       - run: |
-          rustup toolchain list
-          cargo -V
-      - run: |
           cargo +nightly fmt --all -- --check
           # Check formatting for each example
           for manifest in $(find examples -name Cargo.toml); do
