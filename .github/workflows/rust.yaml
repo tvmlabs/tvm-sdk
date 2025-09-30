@@ -17,6 +17,8 @@ jobs:
           components: clippy, rustfmt
       - run: cargo fmt --all -- --check
       - run: |
+          rustup toolchain list
+          cargo -V
           # Check formatting for each example
           for manifest in $(find examples -name Cargo.toml); do
             cargo fmt --manifest-path $manifest -- --check
