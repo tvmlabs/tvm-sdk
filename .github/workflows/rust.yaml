@@ -19,10 +19,10 @@ jobs:
           rustup toolchain list
           cargo -V
       - run: |
-          cargo fmt --all -- --check
+          cargo +nightly fmt --all -- --check
           # Check formatting for each example
           for manifest in $(find examples -name Cargo.toml); do
-            cargo fmt --manifest-path $manifest -- --check
+            cargo +nightly fmt --manifest-path $manifest -- --check
           done
 
       ## clippy is currently broken, require big refactor
