@@ -155,13 +155,13 @@ impl VMSetup {
 
     /// Sets termination deadline
     pub fn set_termination_deadline(mut self, deadline: Option<Instant>) -> VMSetup {
-        self.vm.set_termination_deadline(deadline);
+        self.termination_deadline = deadline;
         self
     }
 
     /// Sets execution timeout
     pub fn set_execution_timeout(mut self, timeout: Option<Duration>) -> VMSetup {
-        self.vm.set_execution_timeout(timeout);
+        self.execution_timeout = timeout;
         self
     }
 
