@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [2.23.2] - 2025-09-30
-- Proofs and jwks updated to be in sync with mysten secure proof key
+- Leaf cert subject check and some error codes in certs checking added
 
 ## [2.23.1] - 2025-09-30
 
