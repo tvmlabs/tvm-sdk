@@ -274,7 +274,7 @@ impl ProofWrapper {
     }
 }
 
-fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
+/*fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
     let vk_alpha_1 = g1_affine_from_str_projective(&vec![
         Bn254FqElementWrapper::from_str(
@@ -410,7 +410,7 @@ fn insecure_pvk() -> PreparedVerifyingKey<Bn254> {
 
     // Convert the verifying key into the prepared form.
     PreparedVerifyingKey::from(vk)
-}
+}*/
 
 fn global_pvk() -> PreparedVerifyingKey<Bn254> {
     // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
@@ -550,147 +550,6 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
     PreparedVerifyingKey::from(vk)
 }
 
-fn my_test_pvk_1() -> PreparedVerifyingKey<Bn254> {
-    // Convert the Circom G1/G2/GT to arkworks G1/G2/GT
-    let vk_alpha_1 = g1_affine_from_str_projective(&vec![
-        Bn254FqElementWrapper::from_str(
-            "16083174311393072332126484955039141051820368387551336007741432494536231879877",
-        )
-        .unwrap(),
-        Bn254FqElementWrapper::from_str(
-            "11995344593741129498206341608147577676708407993917230939676252851997423446210",
-        )
-        .unwrap(),
-        Bn254FqElementWrapper::from_str("1").unwrap(),
-    ])
-    .unwrap();
-
-    let vk_beta_2 = g2_affine_from_str_projective(&vec![
-        vec![
-            Bn254FqElementWrapper::from_str(
-                "7017589137241388812217334676878160715759313595646525247042913539379033763831",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str(
-                "9588720105182136304988839277158105754318461657916765428451866781594135026063",
-            )
-            .unwrap(),
-        ],
-        vec![
-            Bn254FqElementWrapper::from_str(
-                "2484424409632768920146683103978991861859052149379216050446911519906662584090",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str(
-                "3390288516800701266276631045627865236740814264026178914799455551851945389106",
-            )
-            .unwrap(),
-        ],
-        vec![
-            Bn254FqElementWrapper::from_str("1").unwrap(),
-            Bn254FqElementWrapper::from_str("0").unwrap(),
-        ],
-    ])
-    .unwrap();
-
-    let vk_gamma_2 = g2_affine_from_str_projective(&vec![
-        vec![
-            Bn254FqElementWrapper::from_str(
-                "10857046999023057135944570762232829481370756359578518086990519993285655852781",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str(
-                "11559732032986387107991004021392285783925812861821192530917403151452391805634",
-            )
-            .unwrap(),
-        ],
-        vec![
-            Bn254FqElementWrapper::from_str(
-                "8495653923123431417604973247489272438418190587263600148770280649306958101930",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str(
-                "4082367875863433681332203403145435568316851327593401208105741076214120093531",
-            )
-            .unwrap(),
-        ],
-        vec![
-            Bn254FqElementWrapper::from_str("1").unwrap(),
-            Bn254FqElementWrapper::from_str("0").unwrap(),
-        ],
-    ])
-    .unwrap();
-
-    let vk_delta_2 = g2_affine_from_str_projective(&vec![
-        vec![
-            Bn254FqElementWrapper::from_str(
-                "10857046999023057135944570762232829481370756359578518086990519993285655852781",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str(
-                "11559732032986387107991004021392285783925812861821192530917403151452391805634",
-            )
-            .unwrap(),
-        ],
-        vec![
-            Bn254FqElementWrapper::from_str(
-                "8495653923123431417604973247489272438418190587263600148770280649306958101930",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str(
-                "4082367875863433681332203403145435568316851327593401208105741076214120093531",
-            )
-            .unwrap(),
-        ],
-        vec![
-            Bn254FqElementWrapper::from_str("1").unwrap(),
-            Bn254FqElementWrapper::from_str("0").unwrap(),
-        ],
-    ])
-    .unwrap();
-
-    // Create a vector of G1Affine elements from the IC
-    let mut vk_gamma_abc_g1 = Vec::new();
-    for e in [
-        vec![
-            Bn254FqElementWrapper::from_str(
-                "11760611693671517707466601638901224388668992590928868758649168369215563295744",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str(
-                "15842561259007247784907604255150260908812200067246900457940460682994649597353",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str("1").unwrap(),
-        ],
-        vec![
-            Bn254FqElementWrapper::from_str(
-                "9960247968913608540350443520882802417817484595360267448450266543686043480996",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str(
-                "11040490439713280236989540698814598402024610465375008410116396264618122562865",
-            )
-            .unwrap(),
-            Bn254FqElementWrapper::from_str("1").unwrap(),
-        ],
-    ] {
-        let g1 = g1_affine_from_str_projective(&e).unwrap();
-        vk_gamma_abc_g1.push(g1);
-    }
-
-    let vk = VerifyingKey {
-        alpha_g1: vk_alpha_1,
-        beta_g2: vk_beta_2,
-        gamma_g2: vk_gamma_2,
-        delta_g2: vk_delta_2,
-        gamma_abc_g1: vk_gamma_abc_g1,
-    };
-
-    // Convert the verifying key into the prepared form.
-    PreparedVerifyingKey::from(vk)
-}
-
 pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16"))?;
     engine.try_use_gas(Gas::vergrth16_price())?;
@@ -720,13 +579,15 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
 
     let x: Vec<Fr> = public_inputs.iter().map(|x| x.0).collect();
 
-    let vk = if vk_index == 0 {
+    /*let vk = if vk_index == 0 {
         insecure_pvk()
     } else if vk_index == 1 {
         global_pvk()
     } else {
         my_test_pvk_1()
-    };
+    };*/
+
+    let vk = global_pvk();
 
     // todo: add alternative for elliptic curve (BLS), read from stack curve id
 
