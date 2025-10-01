@@ -720,13 +720,15 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
 
     let x: Vec<Fr> = public_inputs.iter().map(|x| x.0).collect();
 
-    let vk = if vk_index == 0 {
+    /*let vk = if vk_index == 0 {
         insecure_pvk()
     } else if vk_index == 1 {
         global_pvk()
     } else {
         my_test_pvk_1()
-    };
+    };*/
+
+    let vk = global_pvk();
 
     // todo: add alternative for elliptic curve (BLS), read from stack curve id
 
