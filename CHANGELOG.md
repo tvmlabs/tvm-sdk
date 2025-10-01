@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [2.23.1] - 2025-09-30
+
+### Fixed
+- Fixed VM deadlines setup
+
 ## [2.23.0] - 2025-09-27
 
 ### Changed/Fixed
