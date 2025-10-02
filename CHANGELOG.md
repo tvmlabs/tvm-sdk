@@ -2,11 +2,59 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.21.4] - 2025-08-29
+## [2.23.2] - 2025-09-30
+- Leaf cert subject check and some error codes in certs checking added
+
+## [2.23.1] - 2025-09-30
+
+### Fixed
+- Fixed VM deadlines setup
+
+## [2.23.0] - 2025-09-27
 
 ### Changed/Fixed
+- Removed full shard state balance from ValueFlow
+- Changed ShardAccountsMap from HashmapAugE to HashmapE 
+
+## [2.22.5] - 2025-09-25
+
+### Changed/Fixed
+- Fixed hardcoded root certificates and sha384 issue in TLS wasm binary. 
+
+## [2.22.4] - 2025-09-19
+
+### Changed/Fixed
+- Changed how the depth and bits are counted in BOC to account for deduplication (duplicate cells are not counted as they do not grow the account state). This updated counter is used to limit the max BOC size to avoid edge-case issues with node state updates.
 - Wasmtime upgrade to 36.0.2
 - Fixed some wasm tests
+
+### Added
+- External function for loading a wasm hash whitelist file from disk. Intended for use as a node config.
+
+## [2.22.3] - 2025-09-23
+
+### Fix
+- Fix mv reward instructions
+
+## [2.22.2] - 2025-09-22
+
+### Update
+- Change reward instructions
+- Change Constructor FunctionId to 1
+
+## [2.22.1] - 2025-09-19
+
+### Fixed
+- Fix bug with extract expires
+
+## [2.22.0] - 2025-09-18
+
+### Added
+- New type OptionalAccount that can either contain account data or be account redirect
+- ShardAccount now contain OptionalAccount
+- New int message header field: dest_dapp_id
+- Added filed dapp_id_changed to AccountBlock struct
+- FWD fees increased *2 for messages without dest_dapp_id
 
 ## [2.21.2] - 2025-08-27
 

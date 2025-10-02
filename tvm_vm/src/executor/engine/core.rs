@@ -12,6 +12,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Write;
+use std::io::BufRead;
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -131,6 +132,8 @@ pub struct Engine {
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
     wasm_engine_cache: Option<wasmtime::Engine>,
     wasm_block_timestamp: u64,
+
+    pub(in crate::executor) self_dapp_id: Option<UInt256>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -297,6 +300,7 @@ impl Engine {
             wash_component_cache: HashMap::new(),
             wasm_engine_cache: None,
             wasm_block_timestamp: 0,
+            self_dapp_id: None,
         }
     }
 
@@ -451,6 +455,10 @@ impl Engine {
         self.wasm_block_timestamp = time;
     }
 
+    pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {
+        self.self_dapp_id = dapp_id;
+    }
+
     pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
         log::debug!("Extern Initialising Wasm Engine");
         // load or access WASM engine
@@ -519,6 +527,54 @@ impl Engine {
 
     pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {
         Ok(wasmtime::Store::new(self.get_wasm_engine()?, data))
+    }
+
+    pub fn extern_load_wasm_hash_whitelist_from_path(
+        wasm_whitelist_path: String,
+    ) -> Result<HashSet<[u8; 32]>> {
+        let b = std::io::BufReader::new(std::fs::File::open(wasm_whitelist_path)?);
+        let hash_strs: std::io::Result<Vec<String>> = b.lines().collect();
+        let hash_strs: Vec<String> = match hash_strs {
+            Ok(h) => h,
+            Err(e) => {
+                return err!(
+                    ExceptionCode::WasmConfigError,
+                    "wasm whitelist config could not be read {:?}",
+                    e
+                );
+            }
+        };
+        let mut whitelist = HashSet::<[u8; 32]>::new();
+        for hash_str in hash_strs {
+            let hash: Result<Vec<u8>> = (0..hash_str.len())
+                .step_by(2)
+                .map(|i| match u8::from_str_radix(&hash_str[i..i + 2], 16) {
+                    Ok(k) => Ok(k),
+                    Err(e) => {
+                        err!(
+                            ExceptionCode::WasmWhitelistInvalidHash,
+                            "Error parsing wasm hash string: {:?}, original error: {:?}",
+                            hash_str,
+                            e
+                        )
+                    }
+                })
+                .collect();
+            let hash = hash?;
+            let hash: [u8; 32] = match hash.try_into() {
+                Ok(h) => h,
+                Err(e) => {
+                    return err!(
+                        ExceptionCode::WasmWhitelistInvalidHash,
+                        "Error parsing wasm hash string: {:?}, original error: {:?}",
+                        hash_str,
+                        e
+                    );
+                }
+            };
+            whitelist.insert(hash);
+        }
+        Ok(whitelist)
     }
 
     pub fn extern_precompile_all_wasm_from_hash_list(
@@ -647,7 +703,7 @@ impl Engine {
                     err!(
                         ExceptionCode::WasmWhitelistInvalidHash,
                         "Error parsing wasm hash string: {:?}, original error: {:?}",
-                        i,
+                        wasm_hash_str,
                         e
                     )
                 }

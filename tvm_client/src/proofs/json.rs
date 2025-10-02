@@ -127,14 +127,10 @@ lazy_static! {
         "value_flow.fees_collected_other.value",
         "value_flow.fees_imported",
         "value_flow.fees_imported_other.value",
-        "value_flow.from_prev_blk",
-        "value_flow.from_prev_blk_other.value",
         "value_flow.imported",
         "value_flow.imported_other.value",
         "value_flow.minted",
         "value_flow.minted_other.value",
-        "value_flow.to_next_blk",
-        "value_flow.to_next_blk_other.value",
     ])
     .collect();
     static ref TRANSACTION_NUMERIC_FIELDS: HashSet<&'static str> = IntoIterator::into_iter([

@@ -425,8 +425,8 @@ pub trait TransactionExecutor {
 
                         // if there was a balance in message (not bounce), then account state at
                         // least become uninit
+                        result_acc.uninit_account();
                         *acc = result_acc.clone();
-                        acc.uninit_account();
                     }
                 }
                 false
@@ -535,6 +535,7 @@ pub trait TransactionExecutor {
         .set_wasm_block_time(params.block_unixtime.into())
         .extern_insert_wasm_engine(params.wasm_engine.clone())
         .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
+        .set_dapp_id(params.dapp_id.clone())
         .create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {
@@ -1288,6 +1289,72 @@ fn compute_new_state(
         AccountStatus::AccStateUninit => {
             log::debug!(target: "executor", "AccountUninit");
             if let Some(state_init) = in_msg.state_init() {
+                match in_msg.body() {
+                    Some(mut data) => {
+                        if in_msg.is_internal() {
+                            if let Ok(function_id) = data.get_next_u32() {
+                                log::trace!(target: "executor", "{} function_id", function_id);
+                                if function_id != 1 {
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            } else {
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            }
+                        }
+                        if in_msg.is_inbound_external() {
+                            let sign_bit = match data.get_next_bit() {
+                                Ok(bit) => bit,
+                                Err(_) => {
+                                    log::error!(target: "executor", "Failed to get sign_bit from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            };
+                            if sign_bit {
+                                if data.get_next_bits(512).is_err() {
+                                    log::error!(target: "executor", "Failed to get 512-bit signature from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }
+                            let pubkey_bit = match data.get_next_bit() {
+                                Ok(bit) => bit,
+                                Err(_) => {
+                                    log::error!(target: "executor", "Failed to get pubkey_bit from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            };
+                            if pubkey_bit {
+                                if data.get_next_bits(256).is_err() {
+                                    log::error!(target: "executor", "Failed to get 256-bit public key from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }
+                            if data.get_next_u64().is_err() {
+                                log::error!(target: "executor", "Failed to get timestamp (u64) from external message body");
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            }
+                            if data.get_next_u32().is_err() {
+                                log::error!(target: "executor", "Failed to get expire (u32) from external message body");
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            }
+                            match data.get_next_u32() {
+                                Ok(function_id) => {
+                                    log::trace!(target: "executor", "{} function_id", function_id);
+                                    if function_id != 1 {
+                                        log::error!(target: "executor", "Invalid function_id {} in external message, expected 1", function_id);
+                                        return Ok(Some(ComputeSkipReason::BadState));
+                                    }
+                                }
+                                Err(_) => {
+                                    log::error!(target: "executor", "Failed to get function_id (u32) from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }
+                        }
+                    }
+                    None => {
+                        return Ok(Some(ComputeSkipReason::BadState));
+                    }
+                }
                 // if msg is a constructor message then
                 // borrow code and data from it and switch account state to 'active'.
                 log::debug!(target: "executor", "message for uninitialized: activated");
@@ -1539,7 +1606,7 @@ fn outmsg_action_handler(
         return Err(RESULT_CODE_INCORRECT_SRC_ADDRESS);
     }
 
-    let fwd_prices = config.get_fwd_prices(msg.is_masterchain());
+    let fwd_prices_basic = config.get_fwd_prices(msg.is_masterchain());
     let compute_fwd_fee = if is_special {
         Grams::default()
     } else {
@@ -1553,6 +1620,10 @@ fn outmsg_action_handler(
     };
 
     if let Some(int_header) = msg.int_header_mut() {
+        let mut fwd_prices = fwd_prices_basic.clone();
+        if let None = int_header.dest_dapp_id() {
+            fwd_prices *= 2;
+        }
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {

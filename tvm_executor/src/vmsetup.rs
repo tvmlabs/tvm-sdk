@@ -21,6 +21,7 @@ use tvm_types::Cell;
 use tvm_types::HashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::UInt256;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::smart_contract_info::SmartContractInfo;
@@ -154,13 +155,13 @@ impl VMSetup {
 
     /// Sets termination deadline
     pub fn set_termination_deadline(mut self, deadline: Option<Instant>) -> VMSetup {
-        self.vm.set_termination_deadline(deadline);
+        self.termination_deadline = deadline;
         self
     }
 
     /// Sets execution timeout
     pub fn set_execution_timeout(mut self, timeout: Option<Duration>) -> VMSetup {
-        self.vm.set_execution_timeout(timeout);
+        self.execution_timeout = timeout;
         self
     }
 
@@ -179,6 +180,12 @@ impl VMSetup {
     /// Sets block time for use in wasm
     pub fn set_wasm_block_time(mut self, time: u64) -> VMSetup {
         self.vm.set_wasm_block_time(time);
+        self
+    }
+
+    /// Sets account dapp_id
+    pub fn set_dapp_id(mut self, dapp_id: Option<UInt256>) -> VMSetup {
+        self.vm.set_dapp_id(dapp_id);
         self
     }
 

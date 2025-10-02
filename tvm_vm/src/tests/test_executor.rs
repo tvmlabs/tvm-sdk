@@ -874,7 +874,8 @@ fn test_wasm_from_nonexistent_hash() {
     );
     engine.wasm_engine_init_cached().unwrap();
 
-    let hash_str = "1234567890123456789012345678901234567890123456789012345678901234";
+    let hash_str = "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87";
+    //"1234567890123456789012345678901234567890123456789012345678901234";
     let _ = engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned());
     // we skip precompilation as it would check the hash and error early
     // let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
@@ -1443,6 +1444,18 @@ fn test_run_wasm_fuel_error_from_hash() {
     let res_error = result.expect_err("Test didn't error on fuel use");
     println!("{:?}", res_error.as_fail());
     assert_eq!(format!("{}", res_error.as_fail()), "VM Exception: 0 1");
+}
+
+#[test]
+fn test_bocdepth() {
+    // let mut cell = BuilderData::new();
+    // cell.append_raw(&[0u8; 10230], 10230).unwrap();
+    // cell.finalize(2048).unwrap();
+    let cell = TokenValue::write_bytes(&[100u8; 128 * 2000], &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
+    println!("Success");
 }
 
 #[test]
