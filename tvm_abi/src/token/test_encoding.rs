@@ -96,7 +96,9 @@ fn test_parameters_set(
         let cursor = Cursor { slice, used_bits: 32, used_refs: 1 };
 
         let decoded_tokens =
-            TokenValue::decode_params_with_cursor(&params, cursor, version, false, true).unwrap().0;
+            TokenValue::decode_params_with_cursor(&params, cursor, version, false, true, false)
+                .unwrap()
+                .0;
         assert_eq!(decoded_tokens, inputs);
     }
 }
