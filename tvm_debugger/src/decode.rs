@@ -30,6 +30,7 @@ pub(crate) fn decode_body(
     internal: bool,
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
+    println!("Bugs be here: {:?}, {:?}, {:?}, {:?}, {:?}", abi_file, function, body, internal, res);
     let response =
         decode_function_response(&load_abi_as_string(abi_file)?, function, body, internal, false)
             .map_err(|e| anyhow::format_err!("Failed to decode function response: {e}"))?;
