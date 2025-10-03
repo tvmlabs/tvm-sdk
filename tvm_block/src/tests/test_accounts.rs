@@ -648,7 +648,7 @@ fn test_real_account_serde() {
         state
             .read_accounts()
             .unwrap()
-            .iterate_accounts(|_, sa, _| {
+            .iterate_accounts(|_, sa| {
                 let acc_cell = sa.account_cell().unwrap();
                 let acc = sa.read_account().unwrap().as_struct().unwrap();
 

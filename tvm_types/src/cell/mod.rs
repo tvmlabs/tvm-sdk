@@ -45,10 +45,10 @@ pub const MAX_DEPTH: u16 = u16::MAX - 1;
 
 // type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
 // len) (1) + min tree cells count (1) + min tree bits count (1)
-const EXTERNAL_CELL_MIN_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 2;
+const UNLOADED_ACCOUNT_CELL_MIN_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 2;
 // type (1) + hash (256) + depth (2) + (tree cells count len | tree bits count
 // len) (1) + max tree cells count (8) + max tree bits count (8)
-const EXTERNAL_CELL_MAX_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 8 * 2;
+const UNLOADED_ACCOUNT_CELL_MAX_SIZE: usize = 1 + SHA256_SIZE + 2 + 1 + 8 * 2;
 
 // recommended maximum depth, this value is safe for stack. Use custom stack
 // size to use bigger depths (see `test_max_depth`).
@@ -74,18 +74,18 @@ pub enum CellType {
     MerkleProof,
     MerkleUpdate,
     Big,
-    External,
+    UnloadedAccount,
 }
 
 impl CellType {
     pub const BIG: u8 = 5;
-    pub const EXTERNAL: u8 = 6;
     pub const LIBRARY_REFERENCE: u8 = 2;
     pub const MERKLE_PROOF: u8 = 3;
     pub const MERKLE_UPDATE: u8 = 4;
     pub const ORDINARY: u8 = 0xff;
     pub const PRUNED_BRANCH: u8 = 1;
     pub const UNKNOWN: u8 = 0;
+    pub const UNLOADED_ACCOUNT_ROOT: u8 = 6;
 
     fn is_merkle(&self) -> bool {
         *self == CellType::MerkleProof || *self == CellType::MerkleUpdate
@@ -206,7 +206,7 @@ impl TryFrom<u8> for CellType {
             Self::MERKLE_PROOF => Self::MerkleProof,
             Self::MERKLE_UPDATE => Self::MerkleUpdate,
             Self::BIG => Self::Big,
-            Self::EXTERNAL => Self::External,
+            Self::UNLOADED_ACCOUNT_ROOT => Self::UnloadedAccount,
             Self::ORDINARY => Self::Ordinary,
             _ => fail!("unknown cell type {}", num),
         };
@@ -224,7 +224,7 @@ impl From<CellType> for u8 {
             CellType::MerkleProof => CellType::MERKLE_PROOF,
             CellType::MerkleUpdate => CellType::MERKLE_UPDATE,
             CellType::Big => CellType::BIG,
-            CellType::External => CellType::EXTERNAL,
+            CellType::UnloadedAccount => CellType::UNLOADED_ACCOUNT_ROOT,
         }
     }
 }
@@ -238,7 +238,7 @@ impl fmt::Display for CellType {
             CellType::MerkleProof => "Merkle proof",
             CellType::MerkleUpdate => "Merkle update",
             CellType::Big => "Big",
-            CellType::External => "External",
+            CellType::UnloadedAccount => "External",
             CellType::Unknown => "Unknown",
         };
         f.write_str(msg)
@@ -750,10 +750,10 @@ impl Cell {
         }
     }
 
-    pub fn to_external(&self) -> Result<Cell> {
+    pub fn to_unloaded_account(&self) -> Result<Cell> {
         match self {
-            Cell::Data(cell) => cell.to_external(),
-            Cell::Usage(cell) => UsageCell::to_external(cell),
+            Cell::Data(cell) => cell.to_unloaded_account(),
+            Cell::Usage(cell) => UsageCell::to_unloaded_account(cell),
             _ => {
                 fail!("Cell can not be converted to external")
             }
