@@ -512,68 +512,68 @@ fn test_check_account_proof(
     check_account_proof(&proof, &account)
 }
 
-// #[test]
-// #[ignore]
-// fn test_check_correct_account_proof() {
-//     let state_files =
-//         vec!["src/tests/data/
-// 7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
+#[test]
+#[ignore]
+fn test_check_correct_account_proof() {
+    let state_files = vec![
+        "src/tests/data/
+7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
+    ];
 
-//     for state_file in state_files {
-//         println!("state file: {}", state_file);
+    for state_file in state_files {
+        println!("state file: {}", state_file);
 
-//         let (state, state_root) = get_real_tvm_state(state_file);
+        let (state, state_root) = get_real_tvm_state(state_file);
 
-//         state
-//             .read_accounts()
-//             .unwrap()
-//             .iterate_accounts(|_, account, _| {
-//                 let account =
-// account.read_account().unwrap().as_struct().unwrap();
+        state
+            .read_accounts()
+            .unwrap()
+            .iterate_accounts(|_, account| {
+                let account = account.read_account().unwrap().as_struct().unwrap();
 
-//                 println!("account: {}", account.get_id().unwrap());
+                println!("account: {}", account.get_id().unwrap());
 
-//                 let block_id = test_check_account_proof(false, account,
-// &state_root)                     .expect("error checking proof");
+                let block_id = test_check_account_proof(false, account, &state_root)
+                    .expect("error checking proof");
 
-//                 assert_eq!(block_id.seq_no, state.seq_no());
-//                 assert_eq!(block_id.vert_seq_no, state.vert_seq_no());
-//                 assert_eq!(&block_id.shard_id, state.shard());
+                assert_eq!(block_id.seq_no, state.seq_no());
+                assert_eq!(block_id.vert_seq_no, state.vert_seq_no());
+                assert_eq!(&block_id.shard_id, state.shard());
 
-//                 Ok(true)
-//             })
-//             .unwrap();
-//     }
-// }
+                Ok(true)
+            })
+            .unwrap();
+    }
+}
 
-// #[ignore]
-// #[test]
-// fn test_check_wrong_account_proof() {
-//     let state_files =
-//         vec!["src/tests/data/
-// 7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
+#[ignore]
+#[test]
+fn test_check_wrong_account_proof() {
+    let state_files = vec![
+        "src/tests/data/
+7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
+    ];
 
-//     for state_file in state_files {
-//         println!("state file: {}", state_file);
+    for state_file in state_files {
+        println!("state file: {}", state_file);
 
-//         let (state, state_root) = get_real_tvm_state(state_file);
+        let (state, state_root) = get_real_tvm_state(state_file);
 
-//         state
-//             .read_accounts()
-//             .unwrap()
-//             .iterate_accounts(|_, account, _| {
-//                 let account =
-// account.read_account().unwrap().as_struct().unwrap();
+        state
+            .read_accounts()
+            .unwrap()
+            .iterate_accounts(|_, account| {
+                let account = account.read_account().unwrap().as_struct().unwrap();
 
-//                 println!("account: {}", account.get_id().unwrap());
+                println!("account: {}", account.get_id().unwrap());
 
-//                 match test_check_account_proof(true, account, &state_root) {
-//                     Result::Err(err) => println!("{}", err),
-//                     res => panic!("unexpected result: {:?}", res),
-//                 }
+                match test_check_account_proof(true, account, &state_root) {
+                    Result::Err(err) => println!("{}", err),
+                    res => panic!("unexpected result: {:?}", res),
+                }
 
-//                 Ok(true)
-//             })
-//             .unwrap();
-//     }
-// }
+                Ok(true)
+            })
+            .unwrap();
+    }
+}

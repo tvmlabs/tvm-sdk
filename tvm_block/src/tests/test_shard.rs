@@ -36,7 +36,7 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     let mut len = 0;
     ss.read_accounts()
         .unwrap()
-        .iterate_accounts(|_, sh_account_ref, _| {
+        .iterate_accounts(|_, sh_account_ref| {
             let account = sh_account_ref.read_account().unwrap().as_struct().unwrap();
             println!("account: {}", account.get_id().unwrap());
             println!("  balance: {}", account.get_balance().unwrap());
