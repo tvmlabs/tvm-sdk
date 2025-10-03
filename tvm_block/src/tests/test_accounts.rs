@@ -634,41 +634,39 @@ fn get_real_tvm_state(filename: &str) -> (ShardStateUnsplit, Cell) {
     (state, root)
 }
 
-// #[test]
-// #[ignore]
-// fn test_real_account_serde() {
-//     let state_files =
-//         ["src/tests/data/
-// 7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
+#[test]
+#[ignore]
+fn test_real_account_serde() {
+    let state_files = ["src/tests/data/
+7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
-//     for state_file in state_files {
-//         println!("state file: {}", state_file);
+    for state_file in state_files {
+        println!("state file: {}", state_file);
 
-//         let (state, _) = get_real_tvm_state(state_file);
+        let (state, _) = get_real_tvm_state(state_file);
 
-//         state
-//             .read_accounts()
-//             .unwrap()
-//             .iterate_accounts(|_, sa, _| {
-//                 let acc_cell = sa.account_cell().unwrap();
-//                 let acc = sa.read_account().unwrap().as_struct().unwrap();
+        state
+            .read_accounts()
+            .unwrap()
+            .iterate_accounts(|_, sa| {
+                let acc_cell = sa.account_cell().unwrap();
+                let acc = sa.read_account().unwrap().as_struct().unwrap();
 
-//                 let cell = acc.serialize().unwrap();
-//                 let acc2 =
-// Account::construct_from_cell(cell.clone()).unwrap();
+                let cell = acc.serialize().unwrap();
+                let acc2 = Account::construct_from_cell(cell.clone()).unwrap();
 
-//                 println!("orig:\n{:#.1}\n\n", acc_cell);
-//                 println!("our:\n{:#.1}\n\n", cell);
+                println!("orig:\n{:#.1}\n\n", acc_cell);
+                println!("our:\n{:#.1}\n\n", cell);
 
-//                 assert_eq!(acc, acc2);
+                assert_eq!(acc, acc2);
 
-//                 assert_eq!(acc_cell.repr_hash(), cell.repr_hash());
+                assert_eq!(acc_cell.repr_hash(), cell.repr_hash());
 
-//                 Ok(true)
-//             })
-//             .unwrap();
-//     }
-// }
+                Ok(true)
+            })
+            .unwrap();
+    }
+}
 
 #[test]
 fn test_account_modify_state() {
