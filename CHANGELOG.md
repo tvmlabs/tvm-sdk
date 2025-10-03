@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Ability to resolve unloaded account cells when applying Merkle updates
 
+## [2.23.2] - 2025-09-30
+- Leaf cert subject check and some error codes in certs checking added
+
+## [2.23.1] - 2025-09-30
+
+### Fixed
+- Fixed VM deadlines setup
+
 ## [2.23.0] - 2025-09-27
 
 ### Changed/Fixed
