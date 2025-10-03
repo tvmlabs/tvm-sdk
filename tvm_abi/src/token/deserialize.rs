@@ -239,6 +239,7 @@ impl TokenValue {
             abi_version,
             allow_partial,
             last,
+            false,
         )?;
         Ok((TokenValue::Tuple(tokens), cursor))
     }
@@ -535,8 +536,15 @@ impl TokenValue {
         abi_version: &AbiVersion,
         allow_partial: bool,
     ) -> Result<Vec<Token>> {
-        Self::decode_params_with_cursor(params, cursor.into(), abi_version, allow_partial, true)
-            .map(|(tokens, _)| tokens)
+        Self::decode_params_with_cursor(
+            params,
+            cursor.into(),
+            abi_version,
+            allow_partial,
+            true,
+            true,
+        )
+        .map(|(tokens, _)| tokens)
     }
 
     pub fn decode_params_with_cursor(
@@ -545,6 +553,7 @@ impl TokenValue {
         abi_version: &AbiVersion,
         allow_partial: bool,
         last: bool,
+        k: bool,
     ) -> Result<(Vec<Token>, Cursor)> {
         let mut tokens = vec![];
 
