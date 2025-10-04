@@ -120,7 +120,10 @@ fn test_tls_wasm_from_hash_for_google() {
     let mut lv_provider: Vec<u8> = vec![6, 103, 111, 111, 103, 108, 101]; //google
     timestamp_lv_provider.append(&mut lv_provider);
 
-    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     // Push args, func name, instance name, then wasm.
@@ -232,7 +235,10 @@ fn test_tls_wasm_from_hash_for_kakao() {
     let mut lv_provider: Vec<u8> = vec![5, 107, 97, 107, 97, 111]; // kakao
     timestamp_lv_provider.append(&mut lv_provider);
 
-    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     // Push args, func name, instance name, then wasm.
@@ -339,7 +345,10 @@ fn test_tls_wasm_from_hash_for_facebook() {
     let mut lv_provider: Vec<u8> = vec![8, 102, 97, 99, 101, 98, 111, 111, 107]; // facebook
     timestamp_lv_provider.append(&mut lv_provider);
 
-    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     // Push args, func name, instance name, then wasm.
@@ -446,7 +455,10 @@ fn test_tls_wasm_from_hash_for_google_for_not_existing_kid() {
     let mut lv_provider: Vec<u8> = vec![6, 103, 111, 111, 103, 108, 101]; //google
     timestamp_lv_provider.append(&mut lv_provider);
 
-    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     // Push args, func name, instance name, then wasm.
@@ -553,7 +565,10 @@ fn test_tls_wasm_from_hash_for_google_for_invalid_root_cert() {
     let mut lv_provider: Vec<u8> = vec![6, 103, 111, 111, 103, 108, 101]; //google
     timestamp_lv_provider.append(&mut lv_provider);
 
-    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     // Push args, func name, instance name, then wasm.
@@ -773,7 +788,10 @@ fn test_tls_wasm_from_hash_for_google_invalid_provider_name() {
     let mut lv_provider: Vec<u8> = vec![8, 102, 97, 99, 101, 98, 111, 111, 107]; //google but facebook
     timestamp_lv_provider.append(&mut lv_provider);
 
-    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     // Push args, func name, instance name, then wasm.
@@ -802,10 +820,7 @@ fn test_tls_wasm_from_hash_for_google_invalid_provider_name() {
     let slice = SliceData::load_cell(res.clone()).unwrap();
     let ress = unpack_data_from_cell(slice, &mut engine).unwrap();
 
-    assert_eq!(
-        "000327",
-        hex::encode(ress.clone())
-    );
+    assert_eq!("000327", hex::encode(ress.clone()));
 
     println!("ress: {:?}", hex::encode(ress));
 }
@@ -883,7 +898,10 @@ fn test_tls_wasm_from_hash_for_facebook_invalid_root_cert() {
     let mut lv_provider: Vec<u8> = vec![8, 102, 97, 99, 101, 98, 111, 111, 107]; // facebook
     timestamp_lv_provider.append(&mut lv_provider);
 
-    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+    let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4)
+        .unwrap()
+        .into_cell()
+        .unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     // Push args, func name, instance name, then wasm.
@@ -909,23 +927,10 @@ fn test_tls_wasm_from_hash_for_facebook_invalid_root_cert() {
     let slice = SliceData::load_cell(res.clone()).unwrap();
     let ress = unpack_data_from_cell(slice, &mut engine).unwrap();
 
-    assert_eq!(
-        "000352",
-        hex::encode(ress.clone())
-    );
+    assert_eq!("000352", hex::encode(ress.clone()));
 
     println!("ress: {:?}", hex::encode(ress));
 }
-
-
-
-
-
-
-
-
-
-
 
 // #[test]
 // fn test_tls_wasm_from_hash_for_google_spoiled_tls_data() {
