@@ -82,7 +82,7 @@ impl<'a> StateBuilder<'a> {
             shard: branch.shard.clone(),
             block_id: branch.block_id.clone(),
             update_time: branch.update_time,
-            next_link: if traversed_by_prev { NextLink::ByPrevAlt } else { NextLink::ByPrev },
+            next_link: if traversed_by_prev { NextLink::PrevAlt } else { NextLink::Prev },
         });
 
         self.new_wanted_branch(block, None)?;
@@ -100,7 +100,7 @@ impl<'a> StateBuilder<'a> {
                 block_id: fields.id().to_string(),
                 update_time: self.now_ms,
                 shard: fields.as_shard_ident().shard_ident()?,
-                next_link: next_link.unwrap_or(NextLink::ByBoth),
+                next_link: next_link.unwrap_or(NextLink::Both),
             });
         }
         if self.filter.is_required_to_iterate(&block)? {

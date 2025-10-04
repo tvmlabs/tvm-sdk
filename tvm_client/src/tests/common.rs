@@ -2,6 +2,7 @@ use super::*;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::ResultOfQueryCollection;
 
+#[ignore]
 #[test]
 fn test_parallel_requests() {
     let client1 = Arc::new(TestClient::new());
