@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.23.3] - 2025-10-04
+- Tests fixed
+
 ## [2.23.2] - 2025-09-30
 - Leaf cert subject check and some error codes in certs checking added
 

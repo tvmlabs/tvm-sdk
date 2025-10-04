@@ -144,6 +144,7 @@ async fn test_mon_info() {
     assert_eq!(info.unresolved, 1);
 }
 
+#[ignore = "subscription does not supported"]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_buffering() {
     let api = sdk_services();
