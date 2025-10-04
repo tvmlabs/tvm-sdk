@@ -504,7 +504,7 @@ fn test_vrgrth16_long_proof() {
         Ok(_) => {
             let res = engine.cc.stack.get(0).as_integer().unwrap();
             println!("res: {:?}", res);
-            //assert!(*res == IntegerData::minus_one());
+            // assert!(*res == IntegerData::minus_one());
         }
         Err(_) => {
             assert!(false);
