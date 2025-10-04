@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::backtrace::Backtrace;
 use std::collections::BTreeMap;
 
 use num_bigint::BigInt;
@@ -238,6 +239,7 @@ impl TokenValue {
             abi_version,
             allow_partial,
             last,
+            false,
         )?;
         Ok((TokenValue::Tuple(tokens), cursor))
     }
@@ -246,6 +248,7 @@ impl TokenValue {
         if !allow_partial
             && (remaining.remaining_references() != 0 || remaining.remaining_bits() != 0)
         {
+            println!("Custom backtrace: {}", Backtrace::force_capture());
             fail!(AbiError::IncompleteDeserializationError)
         } else {
             Ok(())
@@ -533,8 +536,15 @@ impl TokenValue {
         abi_version: &AbiVersion,
         allow_partial: bool,
     ) -> Result<Vec<Token>> {
-        Self::decode_params_with_cursor(params, cursor.into(), abi_version, allow_partial, true)
-            .map(|(tokens, _)| tokens)
+        Self::decode_params_with_cursor(
+            params,
+            cursor.into(),
+            abi_version,
+            allow_partial,
+            true,
+            true,
+        )
+        .map(|(tokens, _)| tokens)
     }
 
     pub fn decode_params_with_cursor(
@@ -543,11 +553,11 @@ impl TokenValue {
         abi_version: &AbiVersion,
         allow_partial: bool,
         last: bool,
+        k: bool,
     ) -> Result<(Vec<Token>, Cursor)> {
         let mut tokens = vec![];
 
         for param in params {
-            // println!("{:?}", param);
             let last = Some(param) == params.last() && last;
             let (token_value, new_cursor) =
                 Self::read_from(&param.kind, cursor, last, abi_version, allow_partial)?;
@@ -570,6 +580,7 @@ fn find_next_bits(mut cursor: SliceData, bits: usize) -> Result<SliceData> {
     let original = cursor.clone();
     if cursor.remaining_bits() == 0 {
         if cursor.reference(1).is_ok() {
+            println!("Custom backtrace: {}", Backtrace::force_capture());
             fail!(AbiError::IncompleteDeserializationError)
         }
         cursor = SliceData::load_cell(cursor.reference(0)?)?;
