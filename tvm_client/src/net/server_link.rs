@@ -485,8 +485,7 @@ fn get_redirection_data(data: &Value) -> (Option<String>, Option<Url>) {
         .and_then(|val| val.as_array())
         .and_then(|arr| arr.first())
         .and_then(|v| v.as_str())
-        .map(|s| construct_rest_api_endpoint(s).ok())
-        .flatten();
+        .and_then(|s| construct_rest_api_endpoint(s).ok());
 
     let thread_id = data
         .get("node_error")
@@ -782,13 +781,7 @@ impl ServerLink {
         }
         let result = self
             .client_env
-            .fetch(
-                &url.to_string(),
-                FetchMethod::Get,
-                Some(headers),
-                None,
-                self.config.query_timeout,
-            )
+            .fetch(url.as_ref(), FetchMethod::Get, Some(headers), None, self.config.query_timeout)
             .await;
 
         match result {

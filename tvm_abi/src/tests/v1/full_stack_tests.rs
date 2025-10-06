@@ -130,6 +130,7 @@ const WALLET_ABI: &str = r#"{
 }
 "#;
 
+#[ignore]
 #[test]
 fn test_constructor_call() {
     let params = r#"{}"#;

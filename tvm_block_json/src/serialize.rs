@@ -1319,7 +1319,7 @@ fn serialize_shard_accounts(
     mode: SerializationMode,
 ) -> Result<()> {
     let mut accounts = Vec::new();
-    shard_accounts.iterate_accounts(|_, shard_acc, _| -> Result<bool> {
+    shard_accounts.iterate_accounts(|_, shard_acc| -> Result<bool> {
         let account = shard_acc.read_account()?.as_struct()?;
         let mut boc1 = None;
         if account.init_code_hash().is_some() {
@@ -1670,8 +1670,6 @@ pub fn db_serialize_block_ex<'a>(
     });
     let value_flow = set.block.read_value_flow()?;
     let mut value_map = Map::new();
-    serialize_cc(&mut value_map, "from_prev_blk", &value_flow.from_prev_blk, mode)?;
-    serialize_cc(&mut value_map, "to_next_blk", &value_flow.to_next_blk, mode)?;
     serialize_cc(&mut value_map, "imported", &value_flow.imported, mode)?;
     serialize_cc(&mut value_map, "exported", &value_flow.exported, mode)?;
     serialize_cc(&mut value_map, "fees_collected", &value_flow.fees_collected, mode)?;

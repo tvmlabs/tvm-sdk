@@ -1132,8 +1132,7 @@ impl CopyleftRewards {
     }
 }
 
-/// value_flow ^[ from_prev_blk:CurrencyCollection
-///   to_next_blk:CurrencyCollection
+/// value_flow ^[
 ///   imported:CurrencyCollection
 ///   exported:CurrencyCollection ]
 ///   fees_collected:CurrencyCollection
@@ -1150,10 +1149,8 @@ impl CopyleftRewards {
 /// moved from a cell containing a large record into a separate subcell.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ValueFlow {
-    pub from_prev_blk: CurrencyCollection, // serialized into another cell 1
-    pub to_next_blk: CurrencyCollection,   // serialized into another cell 1
-    pub imported: CurrencyCollection,      // serialized into another cell 1
-    pub exported: CurrencyCollection,      // serialized into another cell 1
+    pub imported: CurrencyCollection, // serialized into another cell 1
+    pub exported: CurrencyCollection, // serialized into another cell 1
     pub fees_collected: CurrencyCollection,
     pub fees_imported: CurrencyCollection, // serialized into another cell 2
     pub recovered: CurrencyCollection,     // serialized into another cell 2
@@ -1167,8 +1164,6 @@ impl fmt::Display for ValueFlow {
         write!(
             f,
             "\
-            from_prev_blk: {}, \
-            to_next_blk: {}, \
             imported: {}, \
             exported: {}, \
             fees_collected: {}, \
@@ -1176,8 +1171,6 @@ impl fmt::Display for ValueFlow {
             recovered: {}, \
             created: {}, \
             minted: {}",
-            self.from_prev_blk,
-            self.to_next_blk,
             self.imported,
             self.exported,
             self.fees_collected,
@@ -1191,8 +1184,6 @@ impl fmt::Display for ValueFlow {
 
 impl ValueFlow {
     pub fn read_in_full_depth(&self) -> Result<()> {
-        self.from_prev_blk.other.iterate(|_value| Ok(true))?;
-        self.to_next_blk.other.iterate(|_value| Ok(true))?;
         self.imported.other.iterate(|_value| Ok(true))?;
         self.exported.other.iterate(|_value| Ok(true))?;
         self.fees_collected.other.iterate(|_value| Ok(true))?;
@@ -1346,8 +1337,6 @@ impl Serializable for ValueFlow {
         cell.append_u32(tag)?;
 
         let mut cell1 = BuilderData::new();
-        self.from_prev_blk.write_to(&mut cell1)?;
-        self.to_next_blk.write_to(&mut cell1)?;
         self.imported.write_to(&mut cell1)?;
         self.exported.write_to(&mut cell1)?;
         cell.checked_append_reference(cell1.into_cell()?)?;
@@ -1375,8 +1364,6 @@ impl Deserializable for ValueFlow {
             fail!(BlockError::InvalidConstructorTag { t: tag, s: "ValueFlow".to_string() })
         }
         let cell1 = &mut SliceData::load_cell(cell.checked_drain_reference()?)?;
-        self.from_prev_blk.read_from(cell1)?;
-        self.to_next_blk.read_from(cell1)?;
         self.imported.read_from(cell1)?;
         self.exported.read_from(cell1)?;
         self.fees_collected.read_from(cell)?;

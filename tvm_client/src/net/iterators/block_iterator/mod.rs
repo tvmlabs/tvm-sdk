@@ -44,9 +44,9 @@ mod state;
 
 #[derive(Deserialize, Serialize, Clone, PartialEq)]
 pub(crate) enum NextLink {
-    ByBoth = 0,
-    ByPrev = 1,
-    ByPrevAlt = 2,
+    Both = 0,
+    Prev = 1,
+    PrevAlt = 2,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -204,12 +204,12 @@ impl BlockIterator {
             let prev_ids_by = |l: NextLink| {
                 prev_ids
                     .iter()
-                    .filter(|x| x.next_link == NextLink::ByBoth || x.next_link == l)
+                    .filter(|x| x.next_link == NextLink::Both || x.next_link == l)
                     .map(|x| x.block_id.clone())
                     .collect::<Vec<String>>()
             };
-            let by_prev_ids = prev_ids_by(NextLink::ByPrev);
-            let by_prev_alt_ids = prev_ids_by(NextLink::ByPrevAlt);
+            let by_prev_ids = prev_ids_by(NextLink::Prev);
+            let by_prev_alt_ids = prev_ids_by(NextLink::PrevAlt);
 
             let mut blocks = query_collection(
                 context.clone(),
