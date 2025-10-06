@@ -61,6 +61,7 @@ const MICROSOFT: &str = "microsoft";
 
 const MYSTEN_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.mystenlabs.com/v1";
 const ACKI_NACKI_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.ackinacki.org/v1";
+const ACKI_NACKI_PROVER_PROD_SERVER_URL: &str = "https://prover.ackinacki.org/v1";
 
 fn single_chcksgns(
     engine: &mut Engine,
@@ -957,28 +958,31 @@ fn test_vergrth16() {
 }
 
 #[tokio::test]
-async fn test_kakao_with_real_prove_service() {
+async fn test_google_with_real_prove_service() {
     async {
         let mut stack = Stack::new();
 
-        let max_epoch = 10;
-        let jwt_randomness= "100681567828351849884072155819400689117";
-        let user_salt = "129390038577185583942388216820280642146";
+        let max_epoch = 1773994327;
+        let jwt_randomness= "218431472965469685119891380782761641897";
+        let user_salt = "535455565748";
 
-        let kp = Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let kp = Ed25519KeyPair::from_bytes(&hex::decode("2e1d3d0bc7914ebdfdb7a09367118daae1b65dc98fd5ddc40a30e9483d2ffdec").unwrap()).unwrap();
+        //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
         let mut eph_pubkey = vec![0x00];
         eph_pubkey.extend(kp.public().as_ref());
 
         let nonce = get_nonce(&eph_pubkey.clone(), max_epoch, jwt_randomness).unwrap();
-        assert_eq!(nonce, "hTPpgF7XAKbW37rEUS6pEVZqmoI");
+
+        println!("nonce : {:?}", nonce);
 
         let kp_encoded: String = base64::encode(&eph_pubkey);
         println!("kp_encoded : {:?}", kp_encoded);
+        assert_eq!(kp_encoded, "AGkOhciuopy6FCipd5Woav28W8O3Yle+FXpY2LBroI6I".to_string());
 
-        let token = "eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJhYTZiZGRmMzkzYjU0ZDRlMGQ0MmFlMDAxNGVkZmQyZiIsInN1YiI6IjMwOTUxMzQzODkiLCJhdXRoX3RpbWUiOjE2OTcxNDYwMjIsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwiZXhwIjoxNjk3MTY3NjIyLCJpYXQiOjE2OTcxNDYwMjIsIm5vbmNlIjoiaFRQcGdGN1hBS2JXMzdyRVVTNnBFVlpxbW9JIn0.ICP5Fz4Ves7HoFOixwvBeQSYBLWxFPtN6QTnMIv9d9zYnfkaXJ9VyqnaEE3BzY3dzHeWgKFps5Dmrm8Vn4WLmeRAvxDz7831g8Ln8-krTHIUcLzi91NGUPPyx6bIkCzxTqhIB4omatvXD7vAf_AlsqJJYMOIvLQxdpRq8-d_JyAfELE_aWVatXSwGIBYIi_91CEZ64nsHV1J4Wz_tVFc5vbPT4wZabBzepMPXcNHVtrtkuW96nWNygbpap1mSz4fEP9mdlTD2Oi2FHD2cX3rebqiEYTeZI5HySzo4NcN_4TcIgf5cFSapyglqCuulFBXCkIkF9lKN3Il6yJ9MD_N4w";
+        let token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE3ZjBmMGYxNGU5Y2FmYTlhYjUxODAxNTBhZTcxNGM5ZmQxYjVjMjYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6IncyaUxqMFJhOTBickFQdEdlVEp5ZjQwbVpVUSIsIm5iZiI6MTc1OTc1NDYxMywiaWF0IjoxNzU5NzU0OTEzLCJleHAiOjE3NTk3NTg1MTMsImp0aSI6ImFmZTEzNTllYWZmMmI4YmMwYmQ2MTc2Njg1Y2NkMzA2NDZiY2FmNjAifQ.ehmoOi9vLSu77Z4rvvXezTo0Nj5ju8eLbdbErklzUQ0oz1JJ2Sov5Xoc7mEE_uShVXUxbzUAiBhxbQXkf1QJrhz-sAOc8H6lTBPHHMaPh5_vQNwWzbra-xMH3vW0koLtlQDv_P3UP5WhHUUnQiWgcatcfjUKv4VbMGZns6aQ9Ufsb_G1QPZM4nMU4To8kbsYTjx-I8wazghbBVP206CLmNkUreVE2Bad2qG6Or6U9kKK8uL-mHn6Qgc6gXL_iK7IehVa5Eg_gY8Na64q74vmBxz2JOSS8SJ8c-PwC99vHM3vWN523ALRpr_lMEQoDkyQ1yjzBxizo9tCI_VYdjyNXg";
 
-        let url = &env::var("URL").unwrap_or_else(|_| MYSTEN_PROVER_DEV_SERVER_URL.to_owned());
-        //let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_DEV_SERVER_URL.to_owned());
+        //let url = &env::var("URL").unwrap_or_else(|_| MYSTEN_PROVER_DEV_SERVER_URL.to_owned());
+        let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_PROD_SERVER_URL.to_owned());
         println!("using URL: {:?}", url);
         let reader = get_proof(
             &token,
@@ -990,8 +994,8 @@ async fn test_kakao_with_real_prove_service() {
         )
         .await
         .unwrap();
-        let sub = "3095134389";
-        let aud = "aa6bddf393b54d4e0d42ae0014edfd2f";
+        let sub = "112897468626716626103";
+        let aud = "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com";
         let address_seed = gen_address_seed(&user_salt, "sub", &sub, &aud).unwrap();
         println!("address_seed: {:?}", address_seed);
         let zk_login_inputs =
@@ -1005,7 +1009,7 @@ async fn test_kakao_with_real_prove_service() {
 
         ///////////////////////
         println!("Verify proof...");
-        let jwk = "qGWf6RVzV2pM8YqJ6by5exoixIlTvdXDfYj2v7E6xkoYmesAjp_1IYL7rzhpUYqIkWX0P4wOwAsg-Ud8PcMHggfwUNPOcqgSk1hAIHr63zSlG8xatQb17q9LrWny2HWkUVEU30PxxHsLcuzmfhbRx8kOrNfJEirIuqSyWF_OBHeEgBgYjydd_c8vPo7IiH-pijZn4ZouPsEg7wtdIX3-0ZcXXDbFkaDaqClfqmVCLNBhg3DKYDQOoyWXrpFKUXUFuk2FTCqWaQJ0GniO4p_ppkYIf4zhlwUYfXZEhm8cBo6H2EgukntDbTgnoha8kNunTPekxWTDhE5wGAt6YpT4Yw"; //for Kakao long living kid 9f252dadd5f233f93d2fa528d12fea
+        let jwk = "k3HI0jn3cz76VEhSQ3VhtF9LLEWDmt-S57--NQ3tm5W3yh9W4BsNofWVnBzi5w6VfImYRKrMSGWTeM3vlxjeTjKbWNY7PyIKv9NMuJ1vk0ENzyt1nbhvJrknLvb77Kb5HoDOHuo7hj_1gBxoTngrzUGpFyIas1OORDDFputlj9qfsoM6lowGo2bulchFnRsROrmPFeGKskYBD3vWcFMlsDkkaL-Bis_auPkT_Z7YYlkxLKpvKXujPcB8cIlFhehcnafxPGdvAm9AGJsg1Wx6V7j3a1veM8eMnfWMogkfk_NSta0CgGmrva_-6yVCuPQ19iRn9QyzmuVWbbz76S8afQ"; 
         let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk)
         .map_err(|_| {ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())}).unwrap(); 
         println!("jwk modulus in hex = {:?}", hex::encode(modulus.clone()));
@@ -1024,8 +1028,7 @@ async fn test_kakao_with_real_prove_service() {
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
         stack.push(StackItem::cell(public_inputs_cell.clone()));
 
-        let verification_key_id: u32 = 0; // valid key id
-        //let verification_key_id: u32 = 1; //invalid key id
+        let verification_key_id: u32 = 1; 
         stack.push(StackItem::int(verification_key_id));
 
         let start: Instant = Instant::now();
