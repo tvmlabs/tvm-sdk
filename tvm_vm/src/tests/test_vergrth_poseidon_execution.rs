@@ -59,8 +59,8 @@ const SLACK: &str = "slack";
 const KARRIER_ONE: &str = "karrier_one";
 const MICROSOFT: &str = "microsoft";
 
-const MYSTEN_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.mystenlabs.com/v1";
-const ACKI_NACKI_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.ackinacki.org/v1";
+// const MYSTEN_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.mystenlabs.com/v1";
+// const ACKI_NACKI_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.ackinacki.org/v1";
 const ACKI_NACKI_PROVER_PROD_SERVER_URL: &str = "https://prover.ackinacki.org/v1";
 
 fn single_chcksgns(
@@ -982,6 +982,7 @@ async fn test_google_with_real_prove_service() {
         let token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE3ZjBmMGYxNGU5Y2FmYTlhYjUxODAxNTBhZTcxNGM5ZmQxYjVjMjYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6IncyaUxqMFJhOTBickFQdEdlVEp5ZjQwbVpVUSIsIm5iZiI6MTc1OTc1NDYxMywiaWF0IjoxNzU5NzU0OTEzLCJleHAiOjE3NTk3NTg1MTMsImp0aSI6ImFmZTEzNTllYWZmMmI4YmMwYmQ2MTc2Njg1Y2NkMzA2NDZiY2FmNjAifQ.ehmoOi9vLSu77Z4rvvXezTo0Nj5ju8eLbdbErklzUQ0oz1JJ2Sov5Xoc7mEE_uShVXUxbzUAiBhxbQXkf1QJrhz-sAOc8H6lTBPHHMaPh5_vQNwWzbra-xMH3vW0koLtlQDv_P3UP5WhHUUnQiWgcatcfjUKv4VbMGZns6aQ9Ufsb_G1QPZM4nMU4To8kbsYTjx-I8wazghbBVP206CLmNkUreVE2Bad2qG6Or6U9kKK8uL-mHn6Qgc6gXL_iK7IehVa5Eg_gY8Na64q74vmBxz2JOSS8SJ8c-PwC99vHM3vWN523ALRpr_lMEQoDkyQ1yjzBxizo9tCI_VYdjyNXg";
 
         //let url = &env::var("URL").unwrap_or_else(|_| MYSTEN_PROVER_DEV_SERVER_URL.to_owned());
+        //let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_DEV_SERVER_URL.to_owned());
         let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_PROD_SERVER_URL.to_owned());
         println!("using URL: {:?}", url);
         let reader = get_proof(
@@ -1028,7 +1029,7 @@ async fn test_google_with_real_prove_service() {
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
         stack.push(StackItem::cell(public_inputs_cell.clone()));
 
-        let verification_key_id: u32 = 1; 
+        let verification_key_id: u32 = 1;
         stack.push(StackItem::int(verification_key_id));
 
         let start: Instant = Instant::now();
