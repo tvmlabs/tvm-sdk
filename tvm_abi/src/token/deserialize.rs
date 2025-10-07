@@ -555,6 +555,9 @@ impl TokenValue {
             println!("params: {:?}, cursor: {:?}", params, cursor);
         }
         for param in params {
+            if k {
+                println!("param: {:?}, cursor: {:?}", param, cursor);
+            }
             let last = Some(param) == params.last() && last;
             let (token_value, new_cursor) =
                 Self::read_from(&param.kind, cursor, last, abi_version, allow_partial)?;
