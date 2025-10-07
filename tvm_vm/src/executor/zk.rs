@@ -415,14 +415,12 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
 pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("VERGRTH16"))?;
     engine.try_use_gas(Gas::vergrth16_price())?;
-    fetch_stack(engine, 3)?;
+    fetch_stack(engine, 2)?;
 
-    let vk_index = engine.cmd.var(0).as_small_integer()? as u32;
-
-    let public_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+    let public_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
     let public_inputs_as_bytes = unpack_data_from_cell(public_inputs_slice, engine)?;
 
-    let proof_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
+    let proof_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let proof_as_bytes = unpack_data_from_cell(proof_slice, engine)?;
 
     let public_inputs = match FieldElementWrapper::deserialize_vector(&public_inputs_as_bytes) {
@@ -441,11 +439,9 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
 
     let x: Vec<Fr> = public_inputs.iter().map(|x| x.0).collect();
 
-    let vk = global_pvk();
-
     // todo: add alternative for elliptic curve (BLS), read from stack curve id
 
-    let res = Groth16::<Bn254>::verify_with_processed_vk(&vk, &x, &proof.0)
+    let res = Groth16::<Bn254>::verify_with_processed_vk(&global_pvk(), &x, &proof.0)
         .map_err(|e| ZkCryptoError::GeneralError(e.to_string()));
 
     let succes = res.is_ok();

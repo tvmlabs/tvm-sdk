@@ -195,8 +195,6 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         let jwt_data: JwtData = serde_json::from_str(&data[i]).unwrap();
         println!("jwt_data: {:?}", jwt_data);
 
-        let verification_key_id: u32 = 0; //jwt_data.verification_key_id;
-
         let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
@@ -366,7 +364,6 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         let public_inputs_cell =
             pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
         engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-        engine.cc.stack.push(StackItem::int(verification_key_id));
 
         let start: Instant = Instant::now();
         let _ = execute_vergrth16(&mut engine).unwrap();
@@ -447,8 +444,6 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
         println!("jwt_data: {:?}", data[i]);
         let jwt_data: JwtDataShort = serde_json::from_str(&data[i]).unwrap();
         println!("jwt_data: {:?}", jwt_data);
-
-        let verification_key_id: u32 = jwt_data.verification_key_id;
 
         let content: JWK = JWK {
             kty: "RSA".to_string(),
@@ -568,7 +563,6 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
         let public_inputs_cell =
             pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
         engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
-        engine.cc.stack.push(StackItem::int(verification_key_id));
 
         let start: Instant = Instant::now();
         let _ = execute_vergrth16(&mut engine).unwrap();
@@ -930,10 +924,6 @@ fn test_vergrth16() {
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
     stack.push(StackItem::cell(public_inputs_cell.clone()));
-
-    let verification_key_id: u32 = 0;
-    // let verification_key_id: u32 = 1;
-    stack.push(StackItem::int(verification_key_id));
 
     let start: Instant = Instant::now();
 
