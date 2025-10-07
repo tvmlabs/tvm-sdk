@@ -67,6 +67,7 @@ pub(crate) fn decode_actions(
         .map_err(|e| anyhow::format_err!("OutActions::construct_from: {e}"))?;
 
         assert_eq!(actions, actions_from_cell); //
+        println!("All actions are equal.");
 
         res.log("Output actions:\n----------------".to_string());
         let mut created_lt = 1;
