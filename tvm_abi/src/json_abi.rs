@@ -119,16 +119,18 @@ pub fn decode_function_response(
 
     let function = contract.function(function)?;
 
-    println!(
-        "decode_function_response: {:?}, {:?}, {:?}, {:?}, {:?},  function: {}",
-        abi,
-        function,
-        response,
-        internal,
-        allow_partial,
-        // contract.functions().into_iter().map(|x| x.0),
-        function.name
-    );
+    if function.name == "deployLicenseOwner" {
+        println!(
+            "decode_function_response: {:?}, {:?}, {:?}, {:?}, {:?},  function: {}",
+            abi,
+            function,
+            response,
+            internal,
+            allow_partial,
+            // contract.functions().into_iter().map(|x| x.0),
+            function.name
+        );
+    }
     let tokens = function.decode_output(response, internal, allow_partial)?;
 
     Detokenizer::detokenize(&tokens)
