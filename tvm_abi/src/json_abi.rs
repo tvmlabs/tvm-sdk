@@ -115,14 +115,20 @@ pub fn decode_function_response(
     internal: bool,
     allow_partial: bool,
 ) -> Result<String> {
-    println!(
-        "decode_function_response: {:?}, {:?}, {:?}, {:?}, {:?}, ",
-        abi, function, response, internal, allow_partial
-    );
     let contract = Contract::load(abi.as_bytes())?;
 
     let function = contract.function(function)?;
 
+    println!(
+        "decode_function_response: {:?}, {:?}, {:?}, {:?}, {:?},  function: {}",
+        abi,
+        function,
+        response,
+        internal,
+        allow_partial,
+        // contract.functions().into_iter().map(|x| x.0),
+        function.name
+    );
     let tokens = function.decode_output(response, internal, allow_partial)?;
 
     Detokenizer::detokenize(&tokens)
