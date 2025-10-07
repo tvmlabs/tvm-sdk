@@ -184,12 +184,13 @@ impl Function {
         mut data: SliceData,
         internal: bool,
         allow_partial: bool,
+        k: bool,
     ) -> Result<Vec<Token>> {
         let id = data.get_next_u32()?;
         if !internal && id != self.get_output_id() {
             Err(AbiError::WrongId { id })?
         }
-        TokenValue::decode_params(self.output_params(), data, &self.abi_version, allow_partial)
+        TokenValue::decode_params(self.output_params(), data, &self.abi_version, allow_partial, k)
     }
 
     /// Parses the ABI function call to list of tokens.

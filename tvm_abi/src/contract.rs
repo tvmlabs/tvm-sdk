@@ -415,7 +415,7 @@ impl Contract {
         let func_id = Function::decode_output_id(data)?;
 
         if let Ok(func) = self.function_by_id(func_id, false) {
-            let tokens = func.decode_output(original_data, internal, allow_partial)?;
+            let tokens = func.decode_output(original_data, internal, allow_partial, false)?;
 
             Ok(DecodedMessage { function_name: func.name.clone(), tokens })
         } else {
@@ -516,6 +516,7 @@ impl Contract {
                     value,
                     &self.abi_version,
                     allow_partial,
+                    false,
                 )?);
             }
         }
@@ -597,7 +598,7 @@ impl Contract {
         data: SliceData,
         allow_partial: bool,
     ) -> Result<Vec<Token>> {
-        TokenValue::decode_params(&self.fields, data, &self.abi_version, allow_partial)
+        TokenValue::decode_params(&self.fields, data, &self.abi_version, allow_partial, false)
     }
 
     /// Get signature and signed hash from function call data
