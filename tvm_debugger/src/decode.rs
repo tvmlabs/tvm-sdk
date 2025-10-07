@@ -12,6 +12,7 @@ use tvm_block::OutAction;
 use tvm_block::OutActions;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
+use tvm_client::abi;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::SliceData;
@@ -48,6 +49,7 @@ pub(crate) fn decode_actions(
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
     let abi_file = args.abi_file.as_ref();
+    println!("ABI_FILE: {:?}", abi_file);
     let function_name = args.function_name.as_ref();
     let address =
         args.address.as_ref().map(|s| MsgAddressInt::from_str(s).unwrap()).unwrap_or_default();
