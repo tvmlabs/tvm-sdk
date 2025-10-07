@@ -535,16 +535,10 @@ impl TokenValue {
         cursor: SliceData,
         abi_version: &AbiVersion,
         allow_partial: bool,
+        k: bool,
     ) -> Result<Vec<Token>> {
-        Self::decode_params_with_cursor(
-            params,
-            cursor.into(),
-            abi_version,
-            allow_partial,
-            true,
-            true,
-        )
-        .map(|(tokens, _)| tokens)
+        Self::decode_params_with_cursor(params, cursor.into(), abi_version, allow_partial, true, k)
+            .map(|(tokens, _)| tokens)
     }
 
     pub fn decode_params_with_cursor(

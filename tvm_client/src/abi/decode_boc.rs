@@ -66,6 +66,7 @@ pub fn decode_boc(
         slice_from_cell(data)?,
         &tvm_abi::contract::MAX_SUPPORTED_VERSION,
         params.allow_partial,
+        false,
     )
     .map_err(Error::invalid_data_for_decode)?;
 
