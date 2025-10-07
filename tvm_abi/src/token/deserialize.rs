@@ -565,6 +565,9 @@ impl TokenValue {
             cursor = new_cursor;
             tokens.push(Token { name: param.name.clone(), value: token_value });
         }
+        if k {
+            println!("params: {:?}, cursor: {:?}", params, cursor);
+        }
 
         Ok((tokens, cursor))
     }
