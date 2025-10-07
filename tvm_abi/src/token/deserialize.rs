@@ -551,6 +551,9 @@ impl TokenValue {
     ) -> Result<(Vec<Token>, Cursor)> {
         let mut tokens = vec![];
 
+        if k {
+            println!("params: {:?}, cursor: {:?}", params, cursor);
+        }
         for param in params {
             let last = Some(param) == params.last() && last;
             let (token_value, new_cursor) =
@@ -558,9 +561,6 @@ impl TokenValue {
 
             cursor = new_cursor;
             tokens.push(Token { name: param.name.clone(), value: token_value });
-        }
-        if k {
-            println!("params: {:?}, cursor: {:?}", params, cursor);
         }
 
         Ok((tokens, cursor))
