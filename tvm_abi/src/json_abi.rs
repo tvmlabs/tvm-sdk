@@ -23,6 +23,7 @@ use crate::PublicKeyData;
 use crate::SignatureData;
 use crate::contract::Contract;
 use crate::error::AbiError;
+use crate::int;
 use crate::token::Detokenizer;
 use crate::token::TokenValue;
 use crate::token::Tokenizer;
@@ -114,6 +115,10 @@ pub fn decode_function_response(
     internal: bool,
     allow_partial: bool,
 ) -> Result<String> {
+    println!(
+        "decode_function_response: {:?}, {:?}, {:?}, {:?}, {:?}, ",
+        abi, function, response, internal, allow_partial
+    );
     let contract = Contract::load(abi.as_bytes())?;
 
     let function = contract.function(function)?;
