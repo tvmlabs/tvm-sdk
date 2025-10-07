@@ -52,13 +52,25 @@ pub(crate) fn decode_actions(
     let address =
         args.address.as_ref().map(|s| MsgAddressInt::from_str(s).unwrap()).unwrap_or_default();
     if let StackItem::Cell(ref cell) = actions {
+        // process out actions to get out messages
+        let actions_cell = actions
+            .as_cell()
+            .map_err(|err| anyhow::format_err!("can not get actions: {}", err))?
+            .clone();
+        let actions_from_cell = OutActions::construct_from_cell(actions_cell)
+            .map_err(|err| anyhow::format_err!("can not parse actions: {}", err))?;
+
         let actions: OutActions = OutActions::construct_from(
             &mut SliceData::load_cell(cell.clone())
                 .map_err(|e| anyhow::format_err!("SliceData::load_cell: {e}"))?,
         )
         .map_err(|e| anyhow::format_err!("OutActions::construct_from: {e}"))?;
+
+        assert_eq!(actions, actions_from_cell); //
+
         res.log("Output actions:\n----------------".to_string());
         let mut created_lt = 1;
+
         for act in actions {
             match act {
                 OutAction::SendMsg { mode: _, mut out_msg } => {
