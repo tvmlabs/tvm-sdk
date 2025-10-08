@@ -248,7 +248,12 @@ impl TokenValue {
         if !allow_partial
             && (remaining.remaining_references() != 0 || remaining.remaining_bits() != 0)
         {
-            println!("remaining: {:?}", remaining);
+            println!(
+                "remaining: {:?},  {}, {}",
+                remaining,
+                remaining.remaining_bits(),
+                remaining.remaining_references()
+            );
             println!("Custom backtrace: {}", Backtrace::force_capture());
             fail!(AbiError::IncompleteDeserializationError)
         } else {
