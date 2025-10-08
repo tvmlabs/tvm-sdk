@@ -1019,9 +1019,6 @@ async fn test_google_with_real_prove_service() {
         let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
         stack.push(StackItem::cell(public_inputs_cell.clone()));
 
-        let verification_key_id: u32 = 1;
-        stack.push(StackItem::int(verification_key_id));
-
         let start: Instant = Instant::now();
 
         let mut res = Vec::<u8>::with_capacity(2);
