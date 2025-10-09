@@ -31,10 +31,10 @@ pub(crate) fn decode_body(
     internal: bool,
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
-    println!(
-        "Bugs be here: abi_file {:?}, function {:?}, body {:?}, internal {:?}, {}",
-        abi_file, function, body, internal, res
-    );
+    // println!(
+    //     "Bugs be here: abi_file {:?}, function {:?}, body {:?}, internal {:?},
+    // {}",     abi_file, function, body, internal, res
+    // );
     let response =
         decode_function_response(&load_abi_as_string(abi_file)?, function, body, internal, false)
             .map_err(|e| anyhow::format_err!("Failed to decode function response: {e}"))?;
@@ -49,7 +49,7 @@ pub(crate) fn decode_actions(
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
     let abi_file = args.abi_file.as_ref();
-    println!("ABI_FILE: {:?}", abi_file);
+    // println!("ABI_FILE: {:?}", abi_file);
     let function_name = args.function_name.as_ref();
     let address =
         args.address.as_ref().map(|s| MsgAddressInt::from_str(s).unwrap()).unwrap_or_default();
@@ -69,7 +69,7 @@ pub(crate) fn decode_actions(
         .map_err(|e| anyhow::format_err!("OutActions::construct_from: {e}"))?;
 
         assert_eq!(actions, actions_from_cell); //
-        println!("All actions are equal.");
+        // println!("All actions are equal.");
 
         res.log("Output actions:\n----------------".to_string());
         let mut created_lt = 1;
@@ -77,7 +77,7 @@ pub(crate) fn decode_actions(
         for act in actions {
             match act {
                 OutAction::SendMsg { mode: _, mut out_msg } => {
-                    println!("Message: {}", out_msg);
+                    // println!("Message: {}", out_msg);
                     if out_msg.is_internal() {
                         out_msg.set_src_address(address.clone());
                         out_msg.set_at_and_lt(0, created_lt);
