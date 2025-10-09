@@ -464,7 +464,8 @@ pub trait TransactionExecutor {
             if let Some(state_init) = msg.state_init() {
                 libs.push(state_init.libraries().inner());
             }
-            let compute_result = compute_new_state(&mut result_acc, acc_balance, msg, self.config());
+            let compute_result =
+                compute_new_state(&mut result_acc, acc_balance, msg, self.config());
             if let Err(_) = &compute_result {
                 if let CommonMsgInfo::IntMsgInfo(ref mut header) = msg.header_mut() {
                     if !header.bounce {
@@ -473,8 +474,7 @@ pub trait TransactionExecutor {
                     }
                 }
             }
-            if let Some(reason) = compute_result?
-            {
+            if let Some(reason) = compute_result? {
                 if !init_code_hash {
                     *acc = result_acc;
                 }
