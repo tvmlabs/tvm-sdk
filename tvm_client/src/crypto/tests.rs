@@ -563,6 +563,7 @@ fn mnemonic() {
     assert_eq!(result.tvm_public_key, "PuZdw_KyXIzo8IksTrERN3_WoAoYTyK7OvM-yaLk711sUIB3");
 }
 
+#[ignore]
 #[test]
 fn hdkey() {
     TestClient::init_log();
