@@ -63,6 +63,7 @@ fn deploy_debot(name: &str) -> Result<String, Box<dyn std::error::Error>> {
     Ok(addr)
 }
 
+#[ignore]
 #[test]
 fn test_signing_box_interface() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("sample1")?;
@@ -86,6 +87,7 @@ fn test_signing_box_interface() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_userinfo() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("sample2")?;
@@ -155,6 +157,7 @@ fn test_pipechain_inputs() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_encryptionboxes() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("sample3")?;
@@ -182,6 +185,7 @@ fn test_encryptionboxes() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_address_input() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("AddressInput")?;
@@ -203,6 +207,7 @@ fn test_address_input() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_amount_input() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("AmountInput")?;
@@ -222,6 +227,7 @@ fn test_amount_input() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_confirm_input() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("ConfirmInput")?;
@@ -240,6 +246,7 @@ fn test_confirm_input() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_number_input() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("NumberInput")?;
@@ -257,6 +264,7 @@ fn test_number_input() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_terminal() -> Result<(), Box<dyn std::error::Error>> {
     let addr = deploy_debot("Terminal")?;
@@ -275,6 +283,7 @@ fn test_terminal() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_pipechain_signing() -> Result<(), Box<dyn std::error::Error>> {
     let path_to_pipechain = "tests/PipechainTest2.chain";

@@ -507,10 +507,10 @@ impl ProofHelperEngineImpl {
             }
 
             let (expected, remaining) = proofs_sorted.split_at_mut(blocks.len());
-            for i in 0..blocks.len() {
+            for item in expected.iter_mut().take(blocks.len()) {
                 let (seq_no, mut block) = blocks.remove(0);
 
-                let expected_seq_no = expected[i].0 + 1;
+                let expected_seq_no = item.0 + 1;
                 if seq_no != expected_seq_no {
                     tvm_types::fail!(
                         "Block with seq_no: {} missed on DApp server (actual seq_no: {})",
@@ -519,7 +519,7 @@ impl ProofHelperEngineImpl {
                     );
                 }
 
-                expected[i].1["file_hash"] = block["prev_ref"]["file_hash"].take();
+                item.1["file_hash"] = block["prev_ref"]["file_hash"].take();
             }
 
             proofs_sorted = remaining;
@@ -726,8 +726,8 @@ impl ProofHelperEngineImpl {
         }
 
         let mut result = Vec::with_capacity(blocks.len());
-        for i in 0..blocks.len() {
-            let (seq_no, block) = &blocks[i];
+        for (i, item) in blocks.iter().enumerate() {
+            let (seq_no, block) = &item;
 
             let expected_seq_no = seq_no_range.start + i as u32;
             if *seq_no != expected_seq_no {

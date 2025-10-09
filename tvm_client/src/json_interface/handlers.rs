@@ -310,6 +310,7 @@ where
 {
     handler: Arc<F>,
     // Mutex is needed to have Sync trait implemented for struct
+    #[allow(clippy::type_complexity)]
     phantom: PhantomData<std::sync::Mutex<(P, R, Fut, AP, AR)>>,
 }
 
