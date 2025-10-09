@@ -555,7 +555,7 @@ pub(crate) fn execute_vergrth16(engine: &mut Engine) -> Status {
     engine.try_use_gas(Gas::vergrth16_price())?;
     fetch_stack(engine, 3)?;
 
-    let vk_index = engine.cmd.var(0).as_small_integer()? as u32;
+    let _vk_index = engine.cmd.var(0).as_small_integer()? as u32;
 
     let public_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
     let public_inputs_as_bytes = unpack_data_from_cell(public_inputs_slice, engine)?;

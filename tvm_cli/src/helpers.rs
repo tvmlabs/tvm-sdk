@@ -20,6 +20,7 @@ use std::time::Duration;
 use std::time::SystemTime;
 
 use clap::ArgMatches;
+use serde_json::Map;
 use serde_json::Value;
 use serde_json::json;
 use tvm_block::Account;
@@ -28,6 +29,7 @@ use tvm_block::Deserializable;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
+use tvm_client::account::ResultOfGetAccount;
 use tvm_client::ClientConfig;
 use tvm_client::ClientContext;
 use tvm_client::abi::Abi;
@@ -316,14 +318,14 @@ pub async fn query_account_field(
     let state_init = account.state_init();
 
     if state_init.is_none() {
-        return Err(format!("account doesn't contain state_init"));
+        return Err("account doesn't contain state_init".to_string());
     }
 
     let cell: Option<tvm_types::Cell> = state_init.unwrap().clone().data;
 
     match cell {
         Some(cell) => Ok(serialize_cell_to_base64(&cell, "account data").unwrap()),
-        None => Err(format!("State init doesn't contain field data")),
+        None => Err("State init doesn't contain field data".to_string()),
     }
 }
 
@@ -507,33 +509,39 @@ pub fn json_account(
     data: Option<String>,
     code_hash: Option<String>,
     state_init: Option<String>,
+    state_timestamp: Option<u64>,
 ) -> Value {
-    let mut res = json!({});
-    if acc_type.is_some() {
-        res["acc_type"] = json!(acc_type.unwrap());
+    let mut map = Map::new();
+
+    if let Some(v) = acc_type {
+        map.insert("acc_type".into(), json!(v));
     }
-    if address.is_some() {
-        res["address"] = json!(address.unwrap());
+    if let Some(v) = address {
+        map.insert("address".into(), json!(v));
     }
-    if balance.is_some() {
-        res["balance"] = json!(balance.unwrap());
+    if let Some(v) = balance {
+        map.insert("balance".into(), json!(v));
     }
-    if last_paid.is_some() {
-        res["last_paid"] = json!(last_paid.unwrap());
+    if let Some(v) = last_paid {
+        map.insert("last_paid".into(), json!(v));
     }
-    if last_trans_lt.is_some() {
-        res["last_trans_lt"] = json!(last_trans_lt.unwrap());
+    if let Some(v) = last_trans_lt {
+        map.insert("last_trans_lt".into(), json!(v));
     }
-    if data.is_some() {
-        res["data_boc"] = json!(data.unwrap());
+    if let Some(v) = data {
+        map.insert("data_boc".into(), json!(v));
     }
-    if code_hash.is_some() {
-        res["code_hash"] = json!(code_hash.unwrap());
+    if let Some(v) = code_hash {
+        map.insert("code_hash".into(), json!(v));
     }
-    if state_init.is_some() {
-        res["state_init"] = json!(state_init.unwrap());
+    if let Some(v) = state_init {
+        map.insert("state_init".into(), json!(v));
     }
-    res
+    if let Some(v) = state_timestamp {
+        map.insert("state_timestamp".into(), json!(v));
+    }
+
+    Value::Object(map)
 }
 
 pub fn print_account(
@@ -546,6 +554,7 @@ pub fn print_account(
     data: Option<String>,
     code_hash: Option<String>,
     state_init: Option<String>,
+    state_timestamp: Option<u64>,
 ) {
     if config.is_json {
         let acc = json_account(
@@ -557,6 +566,7 @@ pub fn print_account(
             data,
             code_hash,
             state_init,
+            state_timestamp,
         );
         println!("{:#}", acc);
     } else {
@@ -565,28 +575,31 @@ pub fn print_account(
             return;
         }
         if address.is_some() {
-            println!("address:       {}", address.unwrap());
+            println!("address:         {}", address.unwrap());
         }
         if acc_type.is_some() {
-            println!("acc_type:      {}", acc_type.unwrap());
+            println!("acc_type:        {}", acc_type.unwrap());
         }
         if balance.is_some() {
-            println!("balance:       {}", balance.unwrap());
+            println!("balance:         {}", balance.unwrap());
         }
         if last_paid.is_some() {
-            println!("last_paid:     {}", last_paid.unwrap());
+            println!("last_paid:       {}", last_paid.unwrap());
         }
         if last_trans_lt.is_some() {
-            println!("last_trans_lt: {}", last_trans_lt.unwrap());
+            println!("last_trans_lt:   {}", last_trans_lt.unwrap());
         }
         if data.is_some() {
-            println!("data_boc:      {}", data.unwrap());
+            println!("data_boc:        {}", data.unwrap());
         }
         if code_hash.is_some() {
-            println!("code_hash:     {}", code_hash.unwrap());
+            println!("code_hash:       {}", code_hash.unwrap());
         }
         if state_init.is_some() {
-            println!("state_init:    {}", state_init.unwrap());
+            println!("state_init:      {}", state_init.unwrap());
+        }
+        if let Some(state_timestamp) = state_timestamp {
+            println!("state_timestamp: {}", state_timestamp);
         }
     }
 }
@@ -632,20 +645,28 @@ pub enum AccountSource {
 pub async fn load_account(
     source_type: &AccountSource,
     source: &str,
-    ton_client: Option<TonClient>,
+    tvm_client: Option<TonClient>,
     config: &Config,
-) -> Result<(Account, String), String> {
+) -> Result<(Account, String, Option<u64>), String> {
     match source_type {
         AccountSource::NETWORK => {
-            let ton_client = match ton_client {
-                Some(ton_client) => ton_client,
+            let ton_client = match tvm_client {
+                Some(tvm_client) => tvm_client,
                 None => create_client(config)?,
             };
-            let boc = query_account_field(ton_client.clone(), source, "boc").await?;
+
+            let ResultOfGetAccount { boc, state_timestamp, .. } = account::get_account(
+                ton_client,
+                account::ParamsOfGetAccount { address: source.to_string() },
+            )
+            .await
+            .map_err(|e| format!("Failed to get account: {e}"))?;
+
             Ok((
                 Account::construct_from_base64(&boc)
                     .map_err(|e| format!("Failed to construct account: {}", e))?,
                 boc,
+                state_timestamp,
             ))
         }
         _ => {
@@ -659,7 +680,7 @@ pub async fn load_account(
             let account_bytes = account
                 .write_to_bytes()
                 .map_err(|e| format!(" failed to load data from the account: {}", e))?;
-            Ok((account, base64_encode(&account_bytes)))
+            Ok((account, base64_encode(&account_bytes), None))
         }
     }
 }
