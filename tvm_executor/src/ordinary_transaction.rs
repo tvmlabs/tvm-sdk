@@ -116,7 +116,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             ExecutorError::TrExecutorError(format!(
                 "Input message {:x} has no dst address",
                 in_msg_cell.repr_hash()
-            ))    
+            ))
         })?;
 
         let account_id = match account.get_id() {
