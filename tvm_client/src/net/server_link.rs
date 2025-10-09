@@ -1096,9 +1096,8 @@ fn ensure_address(err_data: &mut Value, dst: Value) {
             *addr = dst;
         }
     } else {
-        if let Some(details) = err_data
-            .pointer_mut("/node_error/extensions/details")
-            .and_then(Value::as_object_mut)
+        if let Some(details) =
+            err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
         {
             details.insert("address".to_string(), dst);
         }
