@@ -245,6 +245,7 @@ pub async fn print_account_data(
         Some(data),
         code_hash,
         if decode_stateinit { Some(si) } else { None },
+        None,
     );
 
     if tvc_path.is_some() && state_init.is_some() {
