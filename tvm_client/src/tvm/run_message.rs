@@ -392,7 +392,7 @@ pub async fn run_tvm(
 
 async fn call_executor<F>(
     mut account_root: Cell,
-    msg: Message,
+    mut msg: Message,
     options: ResolvedExecutionOptions,
     contract_info: impl FnOnce() -> F,
     show_tips_on_error: bool,
@@ -413,7 +413,7 @@ where
         ..ExecuteParams::default()
     };
     let (transaction, _) =
-        match executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params) {
+        match executor.execute_with_libs_and_params(Some(&mut msg), &mut account_root, params) {
             Ok(transaction) => transaction,
             Err(err) => {
                 let err_message = err.to_string();
