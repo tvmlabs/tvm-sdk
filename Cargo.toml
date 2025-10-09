@@ -31,7 +31,8 @@ rust-version = "1.76.0"
 authors = ["TVM Labs <hello@tvmlabs.io>"]
 repository = "https://github.com/tvmlabs/tvm-sdk"
 edition = "2021"
-license = "GPL-3.0"
+license = "GPL-3.0-or-later"
+license-file = "LICENSE"
 
 [workspace.lints.rust]
 # aim to have fmt::Debug implemented for all our public types
