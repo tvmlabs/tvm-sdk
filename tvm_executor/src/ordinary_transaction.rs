@@ -80,7 +80,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
     /// Create and execute transaction from message for account
     fn execute_with_params(
         &self,
-        in_msg: Option<&Message>,
+        in_msg: Option<&mut Message>,
         account: &mut Account,
         params: ExecuteParams,
         minted_shell: &mut i128,
@@ -112,12 +112,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             CommonMsgInfo::ExtInMsgInfo(_) => (false, true),
         };
 
-        let account_address = in_msg.dst_ref().ok_or_else(|| {
+        let account_address = &in_msg.dst_ref().cloned().ok_or_else(|| {
             ExecutorError::TrExecutorError(format!(
                 "Input message {:x} has no dst address",
                 in_msg_cell.repr_hash()
-            ))
+            ))    
         })?;
+
         let account_id = match account.get_id() {
             Some(account_id) => {
                 log::debug!(target: "executor", "Account = {:x}", account_id);
@@ -329,7 +330,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             Some(in_msg),
             account,
             &mut acc_balance,
-            &msg_balance,
+            &mut msg_balance,
             smc_info,
             stack,
             storage_fee,

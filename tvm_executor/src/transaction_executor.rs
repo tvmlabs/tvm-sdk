@@ -194,7 +194,7 @@ impl Default for ExecuteParams {
 pub trait TransactionExecutor {
     fn execute_with_params(
         &self,
-        in_msg: Option<&Message>,
+        in_msg: Option<&mut Message>,
         account: &mut Account,
         params: ExecuteParams,
         minted_shell: &mut i128,
@@ -202,7 +202,7 @@ pub trait TransactionExecutor {
 
     fn execute_with_libs_and_params(
         &self,
-        in_msg: Option<&Message>,
+        in_msg: Option<&mut Message>,
         account_root: &mut Cell,
         params: ExecuteParams,
     ) -> Result<(Transaction, i128)> {
@@ -394,10 +394,10 @@ pub trait TransactionExecutor {
     /// Evaluates new accout state and invokes TVM if account has contract code.
     fn compute_phase(
         &self,
-        msg: Option<&Message>,
+        msg: Option<&mut Message>,
         acc: &mut Account,
         acc_balance: &mut CurrencyCollection,
-        msg_balance: &CurrencyCollection,
+        msg_balance: &mut CurrencyCollection,
         mut smc_info: SmartContractInfo,
         stack: Stack,
         storage_fee: u128,
@@ -409,7 +409,7 @@ pub trait TransactionExecutor {
         let mut vm_phase = TrComputePhaseVm::default();
         let init_code_hash = self.config().has_capability(GlobalCapabilities::CapInitCodeHash);
         let libs_disabled = !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
-        let is_external = if let Some(msg) = msg {
+        let is_external = if let Some(ref msg) = msg {
             if let Some(header) = msg.int_header() {
                 log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
                 if result_acc.is_none() {
@@ -464,8 +464,16 @@ pub trait TransactionExecutor {
             if let Some(state_init) = msg.state_init() {
                 libs.push(state_init.libraries().inner());
             }
-            if let Some(reason) =
-                compute_new_state(&mut result_acc, acc_balance, msg, self.config())?
+            let compute_result = compute_new_state(&mut result_acc, acc_balance, msg, self.config());
+            if let Err(_) = &compute_result {
+                if let CommonMsgInfo::IntMsgInfo(ref mut header) = msg.header_mut() {
+                    if !header.bounce {
+                        msg_balance.grams = Grams::zero();
+                        header.value_mut().set_grams(0)?;
+                    }
+                }
+            }
+            if let Some(reason) = compute_result?
             {
                 if !init_code_hash {
                     *acc = result_acc;
