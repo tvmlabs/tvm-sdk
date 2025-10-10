@@ -160,12 +160,10 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         TEST_AUTH_DATA_19_GOOGLE,
         TEST_AUTH_DATA_20_GOOGLE,
         TEST_AUTH_DATA_21_GOOGLE,
-        /*
         TEST_AUTH_DATA_1_FACEBOOK,
         TEST_AUTH_DATA_2_FACEBOOK,
-        TEST_AUTH_DATA_1_KAKAO*/
-
-        /*,
+        /*TEST_AUTH_DATA_1_KAKAO*/
+        /*
         TEST_AUTH_DATA_1_APPLE,
         TEST_AUTH_DATA_1_TWITCH,
         TEST_AUTH_DATA_1_SLACK,
