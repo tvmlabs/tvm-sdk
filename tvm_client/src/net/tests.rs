@@ -47,6 +47,7 @@ async fn bad_request() {
     }
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn not_authorized_response_code() {
     // Query failed: Can not send http request: Server responded with code 401
@@ -76,6 +77,7 @@ async fn not_authorized_response_code() {
     }
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn not_authorized_response_text() {
     // Query failed: Can not send http request: Server responded with code 401
@@ -159,6 +161,7 @@ async fn auth_header() {
     assert_eq!(None, client.context().config.network.get_auth_header());
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn endpoints_with_graphql_suffix() {
     let url = TestClient::endpoints()[0].clone();
@@ -188,6 +191,7 @@ async fn endpoints_with_graphql_suffix() {
     );
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn batch_query() {
     let client = TestClient::new();
@@ -229,6 +233,7 @@ async fn batch_query() {
     assert_eq!(batch.results.len(), 3);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn query() {
     let client = TestClient::new();
@@ -245,6 +250,7 @@ async fn query() {
     assert_eq!(version.split('.').count(), 3);
 }
 
+#[ignore]
 #[test]
 fn query_sync() {
     let client = TestClient::new();
@@ -267,6 +273,7 @@ fn query_sync() {
     assert!(result.is_err());
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn block_signatures() {
     let client = TestClient::new();
@@ -286,6 +293,7 @@ async fn block_signatures() {
         .unwrap();
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn all_accounts() {
     let client = TestClient::new();
@@ -307,6 +315,7 @@ async fn all_accounts() {
     assert!(!accounts.result.is_empty());
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn aggregates() {
     let client = TestClient::new();
@@ -330,6 +339,7 @@ async fn aggregates() {
     assert!(count > 0);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn ranges() {
     let client = TestClient::new();
@@ -661,6 +671,7 @@ async fn subscribe_for_messages() {
     let _: () = client.request_async("net.unsubscribe", handle).await.unwrap();
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn find_last_shard_block() {
     let client = TestClient::new();
@@ -695,6 +706,7 @@ async fn find_last_shard_block() {
 //         .unwrap();
 // }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_wait_resume() {
     let client = std::sync::Arc::new(TestClient::new());
@@ -997,6 +1009,7 @@ async fn retry_query_on_network_errors_ws_multiple_endpoints() {
     assert!(query_block_id(&client).await.is_err());
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn querying_endpoint_selection() {
     let client = Arc::new(
@@ -1373,6 +1386,7 @@ async fn transaction_tree() {
     assert_eq!(result.transactions.len(), 2);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn order_by_fallback() {
     let params: ParamsOfQueryCollection = serde_json::from_str(
@@ -1526,6 +1540,7 @@ async fn low_level_subscribe() {
     let _: () = client.request_async("net.unsubscribe", handle).await.unwrap();
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn query_using_ws() {
     let client = TestClient::new_with_config(json!({

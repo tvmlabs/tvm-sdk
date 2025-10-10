@@ -904,10 +904,10 @@ impl AddSub for CurrencyCollection {
             // subtract
         });
         if let Ok(true) = res {
-            return Ok(true);
+            Ok(true)
         } else {
             *self = data;
-            return res;
+            res
         }
     }
 

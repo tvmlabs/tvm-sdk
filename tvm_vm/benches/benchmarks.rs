@@ -576,7 +576,7 @@ fn bench_wasmtls_without_whitelist(c: &mut Criterion) {
             for _i in 0..iters {
                 let mut stack = Stack::new();
 
-                let hash_str = "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";;
+                let hash_str = "b8891b913656ae35d9ffff371f0f03e4f1f869d0e17556a8c273750313884b0a";
                 let hash: Vec<u8> = (0..hash_str.len())
                     .step_by(2)
                     .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -647,7 +647,7 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
                 let mut stack = Stack::new();
 
                 let hash_str =
-                "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5";
+                "b8891b913656ae35d9ffff371f0f03e4f1f869d0e17556a8c273750313884b0a";
                 let hash: Vec<u8> = (0..hash_str.len())
                     .step_by(2)
                     .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
@@ -936,18 +936,12 @@ fn bench_vergrth16(c: &mut Criterion) {
                 let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
                 let mut proof_as_bytes = vec![];
                 proof.serialize_compressed(&mut proof_as_bytes).unwrap();
-                //println!("proof_as_bytes : {:?}", proof_as_bytes);
-                //println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
                let proof_cell = tvm_vm::utils::pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
                 stack.push(StackItem::cell(proof_cell.clone()));
 
                 let public_inputs_cell = tvm_vm::utils::pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
                 stack.push(StackItem::cell(public_inputs_cell.clone()));
-
-                let verification_key_id: u32 = 0;
-                stack.push(StackItem::int(verification_key_id));
-
 
                 let mut res = Vec::<u8>::with_capacity(3);
                 res.push(0xC7);
