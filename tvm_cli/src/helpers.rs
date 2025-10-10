@@ -66,22 +66,46 @@ use crate::resolve_net_name;
 pub const HD_PATH: &str = "m/44'/396'/0'/0/0";
 pub const WORD_COUNT: u8 = 12;
 
-const CONFIG_BASE_NAME: &str = "tonos-cli.conf.json";
-const GLOBAL_CONFIG_PATH: &str = ".tonos-cli.global.conf.json";
+const DEPRECATED_CONFIG_BASE_NAME: &str = "tonos-cli.conf.json";
+const CONFIG_BASE_NAME: &str = "tvm-cli.conf.json";
+const DEPRECATED_GLOBAL_CONFIG_PATH: &str = ".tonos-cli.global.conf.json";
+const GLOBAL_CONFIG_PATH: &str = ".tvm-cli.global.conf.json";
 
+
+// todo: rewrite `config.url`, `config.endpoints[]`, `endpoints_map{}` and `path`
 pub fn default_config_name() -> String {
-    env::current_dir()
-        .map(|dir| dir.join(PathBuf::from(CONFIG_BASE_NAME)).to_str().unwrap().to_string())
-        .unwrap_or(CONFIG_BASE_NAME.to_string())
+    match env::current_dir() {
+        Ok(dir) => {
+            let new = dir.join(PathBuf::from(CONFIG_BASE_NAME));
+            let old = dir.join(PathBuf::from(DEPRECATED_CONFIG_BASE_NAME));
+
+            if !new.exists() && old.exists() {
+                let _ = std::fs::rename(&old, &new);
+            }
+
+            new.to_string_lossy().into_owned()
+        }
+        Err(_) => CONFIG_BASE_NAME.to_string(),
+    }
 }
 
 pub fn global_config_path() -> String {
-    env::current_exe()
-        .map(|mut dir| {
-            dir.set_file_name(GLOBAL_CONFIG_PATH);
-            dir.to_str().unwrap().to_string()
-        })
-        .unwrap_or(GLOBAL_CONFIG_PATH.to_string())
+    match env::current_exe() {
+        Ok(exe_path) => {
+            let mut new = exe_path.clone();
+            new.set_file_name(GLOBAL_CONFIG_PATH);
+
+            let mut old = exe_path;
+            old.set_file_name(DEPRECATED_GLOBAL_CONFIG_PATH);
+
+            if !new.exists() && old.exists() {
+                let _ = std::fs::rename(&old, &new);
+            }
+
+            new.to_string_lossy().into_owned()
+        }
+        Err(_) => GLOBAL_CONFIG_PATH.to_string(),
+    }
 }
 
 struct SimpleLogger;
