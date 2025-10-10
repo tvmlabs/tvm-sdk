@@ -30,12 +30,9 @@ pub struct TestPrecomputedData {
 }
 
 pub fn do_initial_work() -> TestPrecomputedData {
-    let user_pass_salt = "535455565748";
+    let user_pass_salt = "10710710710810810857575748484856565649";
 
-    let secret_key = [
-        222, 248, 61, 101, 214, 199, 113, 189, 223, 94, 151, 140, 235, 182, 203, 46, 143, 162, 166,
-        87, 162, 250, 176, 4, 29, 19, 42, 221, 116, 33, 178, 14,
-    ];
+    let secret_key = hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
 
     let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap();
     let mut eph_pubkey = Vec::new();
@@ -48,29 +45,20 @@ pub fn do_initial_work() -> TestPrecomputedData {
     let zk_seed = gen_address_seed(
         user_pass_salt,
         "sub",
-        "112897468626716626103",
+        "112829771585146440943",
         "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com",
     )
     .unwrap();
 
     println!("zk_seed = {:?}", zk_seed);
 
-    let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"2352077003566407045854435506409565889408960755152253285189640818725808263237\",\
-    \"9548308350778027075240385782578683112366097953461273569343148999989145049123\",\"1\"],\
-    \"b\":[[\"2172697685172701179756462481453772004245591587568555358926512547679273443868\",\
-    \"11300889616992175665271080883374830731684409375838395487979439153562369168807\"],\
-    [\"18769153619672444537277685186545610305405730219274884099876386487766026068190\",\
-    \"12892936063156115176399929981646174277274895601746717550262309650970826515227\"],[\"1\",\"0\"]],\
-    \"c\":[\"21276833037675249246843718004583052134371270695679878402069223253610209272159\",\
-    \"8637596258221986824049981569842218428861929142818091935707054543971817804456\",\"1\"]},\
-    \"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\
-    \"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
+    let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"11653644709263251558401833339895967150038453157931503547786049700851019971914\",\"19645115655849386411721408046258151875851981532797037592519388256606989838291\",\"1\"],\"b\":[[\"10337823157100207874978547418909107794705315336434612201980868079626861490142\",\"7608493619307023258619280401565914642046036477885384923318894672159944771521\"],[\"10758338821706782118264705480027910748070506589960188719799243416958368105493\",\"6776868143492437139790442766508489213494523558051657976873009128727632896413\"],[\"1\",\"0\"]],\"c\":[\"15216679157139253008581452087709521187862970390016716857578619200852570992090\",\"2736378039742229911693987843238912925507982255227299601017775788476938986405\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImM4YWI3MTUzMDk3MmJiYTIwYjQ5Zjc4YTA5Yzk4NTJjNDNmZjkxMTgiLCJ0eXAiOiJKV1QifQ\"}";
     let len = proof_and_jwt.bytes().len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
 
-    let iss_and_header_base64details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
+    let iss_and_header_base64details = "{\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImM4YWI3MTUzMDk3MmJiYTIwYjQ5Zjc4YTA5Yzk4NTJjNDNmZjkxMTgiLCJ0eXAiOiJKV1QifQ\"}";
 
     println!("iss_and_header_base64details: {}", iss_and_header_base64details);
 
@@ -78,7 +66,7 @@ pub fn do_initial_work() -> TestPrecomputedData {
     let content: JWK = JWK {
         kty: "RSA".to_string(),
         e: "AQAB".to_string(),
-        n: "uBHF-esPKiNlFaAvpdpejD4vpONW9FL0rgLDg1z8Q-x_CiHCvJCpiSehD41zmDOhzXP_fbMMSGpGL7R3duiz01nK5r_YmRw3RXeB0kcS7Z9H8MN6IJcde9MWbqkMabCDduFgdr6gvH0QbTipLB1qJK_oI_IBfRgjk6G0bGrKz3PniQw5TZ92r0u1LM-1XdBIb3aTYTGDW9KlOsrTTuKq0nj-anW5TXhecuxqSveFM4Hwlw7pw34ydBunFjFWDx4VVJqGNSqWCfcERxOulizIFruZIHJGkgunZnB4DF7mCZOttx2dwT9j7s3GfLJf0xoGumqpOMvecuipfTPeIdAzcQ".to_string(), // Alina's data
+        n: "vG5pJE-wQNbH7tvZU3IgjdeHugdw2x5eXPe47vOP3dIy4d9HnCWSTroJLtPYA1SFkcl8FlgrgWspCGBzJ8gwMo81Tk-5hX2pWXsNKrOH8R01jFqIn_UBwhmqU-YDde1R4w9upLzwNyl9Je_VY65EKrMOZG9u4UYtzTkNFLf1taBe0gIM20VSAcClUhTGpE3MX9lXxQqN3Hoybja7C_SZ8ymcnB5h-20ynZGgQybZRU43KcZkIMK2YKkLd7Tn4UQeSRPbmlbm5a0zbs5GpcYB7MONYh7MD16FTS72-tYKX-kDh3NltO6HQsV9pfoOi7qJrFaYWP3AHd_h7mWTHIkNjQ".to_string(), // Alina's data
         alg: "RS256".to_string(),
     };
 
@@ -86,7 +74,7 @@ pub fn do_initial_work() -> TestPrecomputedData {
     all_jwk.insert(
         JwkId::new(
             OIDCProvider::Google.get_config().iss,
-            "a3b762f871cdb3bae0044c649622fc1396eda3e3".to_string(),
+            "c8ab71530972bba20b49f78a09c9852c43ff9118".to_string(),
         ),
         content,
     );
@@ -97,7 +85,7 @@ pub fn do_initial_work() -> TestPrecomputedData {
         .ok_or_else(|| ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid)))
         .unwrap();
 
-    let max_epoch = 142;
+    let max_epoch = 4774516312;
 
     let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n)
         .map_err(|_| ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string()))
@@ -172,8 +160,8 @@ fn test_vrgrth16_short_public_input() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
+                print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
                 assert!(false);
@@ -245,8 +233,8 @@ fn test_vrgrth16_long_public_input() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
+                print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
                 assert!(false);
@@ -418,8 +406,8 @@ fn test_vrgrth16_short_proof() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
+                print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
                 assert!(false);
@@ -487,7 +475,7 @@ fn test_vrgrth16_long_proof() {
         Ok(_) => {
             let res = engine.cc.stack.get(0).as_integer().unwrap();
             println!("res: {:?}", res);
-            // assert!(*res == IntegerData::minus_one());
+            assert!(*res == IntegerData::minus_one());
         }
         Err(_) => {
             assert!(false);
@@ -548,8 +536,8 @@ fn test_vrgrth16_long_incorrect_proof() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
+                print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
                 assert!(false);
@@ -611,8 +599,8 @@ fn test_vrgrth16_incorrect_proof() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
+                print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
                 assert!(false);
@@ -683,8 +671,8 @@ fn test_vrgrth16_invalid_proof() {
     match execute_vergrth16(&mut engine) {
         Ok(_) => assert!(false),
         Err(ref err) => {
-            assert!(true);
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
+                print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
                 assert!(false);
@@ -753,14 +741,13 @@ fn test_vrgrth16_invalid_proof_one_more_case() {
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
     match execute_vergrth16(&mut engine) {
-        Ok(_) => assert!(false),
-        Err(err) => {
-            assert!(true);
-            if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
-                assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
-            } else {
-                assert!(false);
-            }
+        Ok(_) => {
+            let res = engine.cc.stack.get(0).as_integer().unwrap();
+            println!("res: {:?}", res);
+            assert!(*res == IntegerData::zero());
         }
-    }
+        Err(_) => {
+            assert!(false);
+        }
+    };
 }
