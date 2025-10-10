@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.23.6-rc] - 2025-10-10
+
+- In the `tvm_client::send_message()`/`tvm-cli call(x)` execution error result, the recipient account address has been added. This is particularly useful in cases where errors occur during contract deployment
+- `tvm-cli account|run|runx` calls now return `state_timestamp` — the timestamp of the state from which the account’s BOC was loaded
+- A `state_timestamp` field has also been added to `ResultOfGetAccount`
+- Rename tvm-cli config files:
+  - `tonos-cli.conf.json` to `tvm-cli.conf.json`
+  - `tonos-cli.global.conf.json` to `tvm-cli.global.conf.json`
+
+  On first run after upgrade, if the new files don’t exist but the deprecated ones do, they are automatically renamed
+
+
 ## [2.23.5] - 2025-10-08
 - Replace `bloom` with `fastbloom`
 
