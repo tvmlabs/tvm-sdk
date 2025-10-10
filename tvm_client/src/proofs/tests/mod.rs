@@ -952,14 +952,10 @@ async fn test_proof_block_data() -> Result<()> {
             fees_collected_other {value(format:DEC)}
             fees_imported(format:DEC)
             fees_imported_other {value(format:DEC)}
-            from_prev_blk(format:DEC)
-            from_prev_blk_other {value(format:DEC)}
             imported(format:DEC)
             imported_other {value(format:DEC)}
             minted(format:DEC)
             minted_other {value(format:DEC)}
-            to_next_blk(format:DEC)
-            to_next_blk_other {value(format:DEC)}
         }
     "#;
 

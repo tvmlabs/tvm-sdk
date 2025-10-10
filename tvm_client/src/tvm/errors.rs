@@ -185,7 +185,9 @@ impl Error {
             if error_code == ExceptionCode::OutOfGas {
                 error.message.push_str(". Check account balance");
                 if gas_used.is_none() && exit_arg.is_some() {
-                    error.data["gas_used"] = exit_arg.unwrap();
+                    if let Some(exit_arg) = exit_arg {
+                        error.data["gas_used"] = exit_arg;
+                    }
                 }
             }
         } else if let Some(code) = StdContractError::from_usize(exit_code as usize) {

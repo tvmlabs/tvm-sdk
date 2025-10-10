@@ -10,7 +10,6 @@
 // limitations under the License.
 
 use std::collections::HashSet;
-use std::fmt;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -1451,7 +1450,7 @@ fn test_bocdepth() {
     // let mut cell = BuilderData::new();
     // cell.append_raw(&[0u8; 10230], 10230).unwrap();
     // cell.finalize(2048).unwrap();
-    let cell = TokenValue::write_bytes(&[100u8; 128 * 2000], &ABI_VERSION_2_4)
+    let _cell = TokenValue::write_bytes(&[100u8; 128 * 2000], &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
