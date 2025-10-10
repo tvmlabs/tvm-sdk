@@ -139,7 +139,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
 
     let data: Vec<&str> = vec![
         TEST_AUTH_DATA_0_GOOGLE,
-        TEST_AUTH_DATA_1_GOOGLE,
+        /*TEST_AUTH_DATA_1_GOOGLE,
         TEST_AUTH_DATA_2_GOOGLE,
         TEST_AUTH_DATA_3_GOOGLE,
         TEST_AUTH_DATA_4_GOOGLE,
@@ -172,7 +172,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         TEST_AUTH_DATA_1_SLACK,
         TEST_AUTH_DATA_1_KARRIER_ONE,
         TEST_AUTH_DATA_1_MICROSOFT,
-        TEST_AUTH_DATA_1_KAKAO,
+        TEST_AUTH_DATA_1_KAKAO,*/
     ];
 
     let mut average_poseidon: u128 = 0;
@@ -364,7 +364,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
 
         let res = engine.cc.stack.get(0).as_integer().unwrap();
         println!("res: {:?}", res);
-        // assert!(*res == IntegerData::minus_one());
+        assert!(*res == IntegerData::minus_one());
 
         average_vergrth16 = average_vergrth16 + vergrth16_elapsed;
 

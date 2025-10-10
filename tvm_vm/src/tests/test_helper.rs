@@ -86,7 +86,6 @@ pub struct JwtDataShort {
     pub modulus: String,
     pub kid: String,
     pub max_epoch: u64,
-    pub verification_key_id: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -101,7 +100,6 @@ pub struct JwtData {
     pub modulus: String,
     pub kid: String,
     pub max_epoch: u64,
-    pub verification_key_id: u32,
 }
 
 #[derive(Debug, Deserialize)]
