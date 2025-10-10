@@ -139,7 +139,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
 
     let data: Vec<&str> = vec![
         TEST_AUTH_DATA_0_GOOGLE,
-        /*TEST_AUTH_DATA_1_GOOGLE,
+        TEST_AUTH_DATA_1_GOOGLE,
         TEST_AUTH_DATA_2_GOOGLE,
         TEST_AUTH_DATA_3_GOOGLE,
         TEST_AUTH_DATA_4_GOOGLE,
@@ -160,19 +160,16 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         TEST_AUTH_DATA_19_GOOGLE,
         TEST_AUTH_DATA_20_GOOGLE,
         TEST_AUTH_DATA_21_GOOGLE,
-        TEST_AUTH_DATA_FRESH_GOOGLE,
-        TEST_AUTH_DATA_1_NEW_GOOGLE,
-        TEST_AUTH_DATA_2_NEW_GOOGLE,
+        /*
         TEST_AUTH_DATA_1_FACEBOOK,
         TEST_AUTH_DATA_2_FACEBOOK,
-        TEST_AUTH_DATA_1_CREDENZA3,
+        TEST_AUTH_DATA_1_KAKAO*/
+
+        /*,
         TEST_AUTH_DATA_1_APPLE,
         TEST_AUTH_DATA_1_TWITCH,
-        TEST_AUTH_DATA_1_KAKAO,
         TEST_AUTH_DATA_1_SLACK,
-        TEST_AUTH_DATA_1_KARRIER_ONE,
-        TEST_AUTH_DATA_1_MICROSOFT,
-        TEST_AUTH_DATA_1_KAKAO,*/
+        TEST_AUTH_DATA_1_MICROSOFT,*/
     ];
 
     let mut average_poseidon: u128 = 0;
@@ -388,7 +385,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
 }
 
 #[test]
-fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
+fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
     let config_data = load_boc("benches/config-data.boc");
@@ -423,9 +420,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_cut() {
         vec![],
     );
 
-    // let data: Vec<&str> =
-    vec![TEST_AUTH_DATA_1_CUT_GOOGLE, TEST_AUTH_DATA_2_CUT_GOOGLE, TEST_AUTH_DATA_3_CUT_GOOGLE];
-    let data: Vec<&str> = vec![TEST_AUTH_DATA_2_CUT_GOOGLE];
+    let data: Vec<&str> = vec![TEST_AUTH_DATA_SHORT_GOOGLE];
     let mut average_poseidon: u128 = 0;
     let mut average_vergrth16: u128 = 0;
 
