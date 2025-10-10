@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [***] - 2025-**-**
+
+### Added
+- Added flag "is_high_priority" to int message header
+
 ## [2.23.5] - 2025-10-08
 - Replace `bloom` with `fastbloom`
 
@@ -37,7 +42,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - External function for loading a wasm hash whitelist file from disk. Intended for use as a node config.
 
-## [2.22.3] - 2025-09-23
+## [2.22.5] - 2025-09-25
 
 ### Fix
 - Fix mv reward instructions
