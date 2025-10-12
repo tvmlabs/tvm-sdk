@@ -44,7 +44,6 @@ pub(crate) fn decode_actions(
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
     let abi_file = args.abi_file.as_ref();
-    // println!("ABI_FILE: {:?}", abi_file);
     let function_name = args.function_name.as_ref();
     let address =
         args.address.as_ref().map(|s| MsgAddressInt::from_str(s).unwrap()).unwrap_or_default();
@@ -54,10 +53,8 @@ pub(crate) fn decode_actions(
                 .map_err(|e| anyhow::format_err!("SliceData::load_cell: {e}"))?,
         )
         .map_err(|e| anyhow::format_err!("OutActions::construct_from: {e}"))?;
-
         res.log("Output actions:\n----------------".to_string());
         let mut created_lt = 1;
-
         for act in actions {
             match act {
                 OutAction::SendMsg { mode: _, mut out_msg } => {
