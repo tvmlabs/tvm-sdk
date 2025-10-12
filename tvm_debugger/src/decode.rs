@@ -12,7 +12,6 @@ use tvm_block::OutAction;
 use tvm_block::OutActions;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
-use tvm_client::abi;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::SliceData;
@@ -31,10 +30,6 @@ pub(crate) fn decode_body(
     internal: bool,
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
-    // println!(
-    //     "Bugs be here: abi_file {:?}, function {:?}, body {:?}, internal {:?},
-    // {}",     abi_file, function, body, internal, res
-    // );
     let response =
         decode_function_response(&load_abi_as_string(abi_file)?, function, body, internal, false)
             .map_err(|e| anyhow::format_err!("Failed to decode function response: {e}"))?;
@@ -54,22 +49,11 @@ pub(crate) fn decode_actions(
     let address =
         args.address.as_ref().map(|s| MsgAddressInt::from_str(s).unwrap()).unwrap_or_default();
     if let StackItem::Cell(ref cell) = actions {
-        // process out actions to get out messages
-        let actions_cell = actions
-            .as_cell()
-            .map_err(|err| anyhow::format_err!("can not get actions: {}", err))?
-            .clone();
-        let actions_from_cell = OutActions::construct_from_cell(actions_cell)
-            .map_err(|err| anyhow::format_err!("can not parse actions: {}", err))?;
-
         let actions: OutActions = OutActions::construct_from(
             &mut SliceData::load_cell(cell.clone())
                 .map_err(|e| anyhow::format_err!("SliceData::load_cell: {e}"))?,
         )
         .map_err(|e| anyhow::format_err!("OutActions::construct_from: {e}"))?;
-
-        assert_eq!(actions, actions_from_cell); //
-        // println!("All actions are equal.");
 
         res.log("Output actions:\n----------------".to_string());
         let mut created_lt = 1;
@@ -77,7 +61,6 @@ pub(crate) fn decode_actions(
         for act in actions {
             match act {
                 OutAction::SendMsg { mode: _, mut out_msg } => {
-                    // println!("Message: {}", out_msg);
                     if out_msg.is_internal() {
                         out_msg.set_src_address(address.clone());
                         out_msg.set_at_and_lt(0, created_lt);
