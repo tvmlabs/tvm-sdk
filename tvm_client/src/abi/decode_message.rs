@@ -265,7 +265,7 @@ fn decode_with_function(
         AbiFunctionVariant::Function(function) => {
             let decode_output = || {
                 let decoded = function
-                    .decode_output(body.clone(), is_internal, allow_partial, false)
+                    .decode_output(body.clone(), is_internal, allow_partial)
                     .map_err(Error::invalid_message_for_decode)?;
                 DecodedMessageBody::new(
                     MessageBodyType::Output,

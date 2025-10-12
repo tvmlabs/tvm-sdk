@@ -570,7 +570,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         exception!(ExceptionCode::CellUnpackError, "Failed to load cell tap: {:?}", e)
     })?;
     let params = params_from_types(vec![ParamType::Array(Box::new(ParamType::Uint(64)))]);
-    let tokens = TokenValue::decode_params(&params, tap_lst_slice, &ABI_VERSION_2_2, false, false)
+    let tokens = TokenValue::decode_params(&params, tap_lst_slice, &ABI_VERSION_2_2, false)
         .map_err(|e| {
             exception!(ExceptionCode::CellUnpackError, "Failed to decode tap_lst array: {:?}", e)
         })?;
@@ -618,7 +618,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         exception!(ExceptionCode::CellUnpackError, "Failed to load cell mbn: {:?}", e)
     })?;
 
-    let tokens = TokenValue::decode_params(&params, mbn_lst_slice, &ABI_VERSION_2_2, false, false)
+    let tokens = TokenValue::decode_params(&params, mbn_lst_slice, &ABI_VERSION_2_2, false)
         .map_err(|e| {
             exception!(ExceptionCode::CellUnpackError, "Failed to decode mbn_lst array: {:?}", e)
         })?;

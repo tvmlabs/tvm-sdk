@@ -85,13 +85,7 @@ impl Event {
             Err(AbiError::WrongId { id })?
         }
 
-        TokenValue::decode_params(
-            &self.input_params(),
-            data,
-            &self.abi_version,
-            allow_partial,
-            false,
-        )
+        TokenValue::decode_params(&self.input_params(), data, &self.abi_version, allow_partial)
     }
 
     /// Decodes function id from contract answer

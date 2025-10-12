@@ -184,13 +184,12 @@ impl Function {
         mut data: SliceData,
         internal: bool,
         allow_partial: bool,
-        k: bool,
     ) -> Result<Vec<Token>> {
         let id = data.get_next_u32()?;
         if !internal && id != self.get_output_id() {
             Err(AbiError::WrongId { id })?
         }
-        TokenValue::decode_params(self.output_params(), data, &self.abi_version, allow_partial, k)
+        TokenValue::decode_params(self.output_params(), data, &self.abi_version, allow_partial)
     }
 
     /// Parses the ABI function call to list of tokens.
@@ -212,7 +211,6 @@ impl Function {
             &self.abi_version,
             allow_partial,
             true,
-            false,
         )
         .map(|(tokens, _)| tokens)
     }
@@ -331,14 +329,8 @@ impl Function {
                 };
             }
 
-            (tokens, cursor) = TokenValue::decode_params_with_cursor(
-                header,
-                cursor,
-                abi_version,
-                true,
-                false,
-                false,
-            )?;
+            (tokens, cursor) =
+                TokenValue::decode_params_with_cursor(header, cursor, abi_version, true, false)?;
         }
         if abi_version != &ABI_VERSION_1_0 {
             id = cursor.slice.get_next_u32()?;
