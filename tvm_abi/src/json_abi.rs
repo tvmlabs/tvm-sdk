@@ -23,7 +23,6 @@ use crate::PublicKeyData;
 use crate::SignatureData;
 use crate::contract::Contract;
 use crate::error::AbiError;
-use crate::int;
 use crate::token::Detokenizer;
 use crate::token::TokenValue;
 use crate::token::Tokenizer;
