@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::backtrace::Backtrace;
 use std::collections::BTreeMap;
 
 use num_bigint::BigInt;
@@ -570,7 +569,6 @@ fn find_next_bits(mut cursor: SliceData, bits: usize) -> Result<SliceData> {
     let original = cursor.clone();
     if cursor.remaining_bits() == 0 {
         if cursor.reference(1).is_ok() {
-            println!("Custom backtrace: {}", Backtrace::force_capture());
             fail!(AbiError::IncompleteDeserializationError)
         }
         cursor = SliceData::load_cell(cursor.reference(0)?)?;

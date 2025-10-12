@@ -512,13 +512,11 @@ fn test_check_account_proof(
     check_account_proof(&proof, &account)
 }
 
-#[test]
 #[ignore]
+#[test]
 fn test_check_correct_account_proof() {
-    let state_files = vec![
-        "src/tests/data/
-7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
-    ];
+    let state_files =
+        vec!["src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
         println!("state file: {}", state_file);
@@ -549,10 +547,8 @@ fn test_check_correct_account_proof() {
 #[ignore]
 #[test]
 fn test_check_wrong_account_proof() {
-    let state_files = vec![
-        "src/tests/data/
-7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
-    ];
+    let state_files =
+        vec!["src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
         println!("state file: {}", state_file);
