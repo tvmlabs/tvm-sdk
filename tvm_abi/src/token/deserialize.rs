@@ -239,7 +239,6 @@ impl TokenValue {
             abi_version,
             allow_partial,
             last,
-            false,
         )?;
         Ok((TokenValue::Tuple(tokens), cursor))
     }
@@ -248,13 +247,6 @@ impl TokenValue {
         if !allow_partial
             && (remaining.remaining_references() != 0 || remaining.remaining_bits() != 0)
         {
-            println!(
-                "remaining: {:?},  {}, {}",
-                remaining,
-                remaining.remaining_bits(),
-                remaining.remaining_references()
-            );
-            println!("Custom backtrace: {}", Backtrace::force_capture());
             fail!(AbiError::IncompleteDeserializationError)
         } else {
             Ok(())
@@ -541,9 +533,8 @@ impl TokenValue {
         cursor: SliceData,
         abi_version: &AbiVersion,
         allow_partial: bool,
-        k: bool,
     ) -> Result<Vec<Token>> {
-        Self::decode_params_with_cursor(params, cursor.into(), abi_version, allow_partial, true, k)
+        Self::decode_params_with_cursor(params, cursor.into(), abi_version, allow_partial, true)
             .map(|(tokens, _)| tokens)
     }
 
@@ -553,17 +544,10 @@ impl TokenValue {
         abi_version: &AbiVersion,
         allow_partial: bool,
         last: bool,
-        k: bool,
     ) -> Result<(Vec<Token>, Cursor)> {
         let mut tokens = vec![];
 
-        if k {
-            println!("params: {:?}, cursor: {:?}", params, cursor);
-        }
         for param in params {
-            if k {
-                println!("param: {:?}, cursor: {:?}", param, cursor);
-            }
             let last = Some(param) == params.last() && last;
             let (token_value, new_cursor) =
                 Self::read_from(&param.kind, cursor, last, abi_version, allow_partial)?;

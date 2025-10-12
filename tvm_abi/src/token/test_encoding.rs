@@ -96,9 +96,7 @@ fn test_parameters_set(
         let cursor = Cursor { slice, used_bits: 32, used_refs: 1 };
 
         let decoded_tokens =
-            TokenValue::decode_params_with_cursor(&params, cursor, version, false, true, false)
-                .unwrap()
-                .0;
+            TokenValue::decode_params_with_cursor(&params, cursor, version, false, true).unwrap().0;
         assert_eq!(decoded_tokens, inputs);
     }
 }
@@ -1106,8 +1104,7 @@ fn test_partial_decoding() {
     ];
 
     assert!(
-        TokenValue::decode_params(&params, slice.clone(), &MAX_SUPPORTED_VERSION, false, false)
-            .is_err()
+        TokenValue::decode_params(&params, slice.clone(), &MAX_SUPPORTED_VERSION, false).is_err()
     );
 
     let params = vec![
@@ -1116,12 +1113,11 @@ fn test_partial_decoding() {
     ];
 
     assert!(
-        TokenValue::decode_params(&params, slice.clone(), &MAX_SUPPORTED_VERSION, false, false)
-            .is_err()
+        TokenValue::decode_params(&params, slice.clone(), &MAX_SUPPORTED_VERSION, false).is_err()
     );
 
     assert_eq!(
-        TokenValue::decode_params(&params, slice, &MAX_SUPPORTED_VERSION, true, false).unwrap(),
+        TokenValue::decode_params(&params, slice, &MAX_SUPPORTED_VERSION, true).unwrap(),
         tokens_from_values(vec![
             TokenValue::Uint(Uint::new(0, 32)),
             TokenValue::Ref(Box::new(TokenValue::Int(Int::new(123, 64)))),
@@ -1299,21 +1295,21 @@ fn test_wrong_layout() {
     let params = params_from_types(vec![ParamType::Uint(32), ParamType::Uint(64)]);
 
     assert!(matches!(
-        TokenValue::decode_params(&params, slice.clone(), &ABI_VERSION_1_0, false, false)
+        TokenValue::decode_params(&params, slice.clone(), &ABI_VERSION_1_0, false)
             .unwrap_err()
             .downcast::<AbiError>()
             .unwrap(),
         AbiError::WrongDataLayout,
     ));
     assert!(matches!(
-        TokenValue::decode_params(&params, slice.clone(), &ABI_VERSION_2_1, false, false)
+        TokenValue::decode_params(&params, slice.clone(), &ABI_VERSION_2_1, false)
             .unwrap_err()
             .downcast::<AbiError>()
             .unwrap(),
         AbiError::WrongDataLayout,
     ));
     assert!(matches!(
-        TokenValue::decode_params(&params, slice.clone(), &ABI_VERSION_2_2, false, false)
+        TokenValue::decode_params(&params, slice.clone(), &ABI_VERSION_2_2, false)
             .unwrap_err()
             .downcast::<AbiError>()
             .unwrap(),
@@ -1331,7 +1327,7 @@ fn test_wrong_layout() {
     let params = params_from_types(vec![ParamType::Address, ParamType::Address]);
 
     assert!(matches!(
-        TokenValue::decode_params(&params, slice.clone(), &ABI_VERSION_2_2, false, false)
+        TokenValue::decode_params(&params, slice.clone(), &ABI_VERSION_2_2, false)
             .unwrap_err()
             .downcast::<AbiError>()
             .unwrap(),
