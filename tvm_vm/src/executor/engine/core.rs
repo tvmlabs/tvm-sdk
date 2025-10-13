@@ -64,6 +64,15 @@ use crate::types::ResultOpt;
 use crate::types::ResultRef;
 use crate::types::Status;
 
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct MVConfig {
+}
+
+impl MVConfig {
+    pub fn set_config(&mut self) {
+    }
+}
+
 pub(super) type ExecuteHandler = fn(&mut Engine) -> Status;
 
 pub(super) struct SliceProto {
@@ -132,6 +141,9 @@ pub struct Engine {
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
     wasm_engine_cache: Option<wasmtime::Engine>,
     wasm_block_timestamp: u64,
+
+    mvconfig: MVConfig,
+    seq_no: u32,
 
     pub(in crate::executor) self_dapp_id: Option<UInt256>,
 }
@@ -301,6 +313,8 @@ impl Engine {
             wasm_engine_cache: None,
             wasm_block_timestamp: 0,
             self_dapp_id: None,
+            mvconfig: MVConfig::default(),
+            seq_no: 0,
         }
     }
 
@@ -310,6 +324,18 @@ impl Engine {
 
     pub fn get_available_credit(&mut self) -> i128 {
         self.available_credit
+    }
+
+    pub fn get_mv_config(&mut self) -> MVConfig {
+        self.mvconfig.clone()
+    }
+
+    pub fn get_seq_no(&mut self) -> u32 {
+        self.seq_no
+    }
+
+    pub fn set_seq_no(&mut self, seq_no: u32) {
+        self.seq_no = seq_no;
     }
 
     pub fn set_block_related_flags(

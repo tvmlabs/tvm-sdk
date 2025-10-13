@@ -82,6 +82,7 @@ use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
+use tvm_vm::executor::MVConfig;
 
 use crate::blockchain_config::BlockchainConfig;
 use crate::blockchain_config::CalcMsgFwdFees;
@@ -140,6 +141,7 @@ pub struct ExecuteParams {
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
     pub wasm_engine: Option<wasmtime::Engine>,
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    pub mvconfig: MVConfig
 }
 
 pub struct ActionPhaseResult {
@@ -187,6 +189,7 @@ impl Default for ExecuteParams {
             wasm_hash_whitelist: HashSet::new(),
             wasm_engine: None,
             wasm_component_cache: HashMap::new(),
+            mvconfig: MVConfig::default(),
         }
     }
 }
@@ -531,6 +534,7 @@ pub trait TransactionExecutor {
         )
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_engine_available_credit(params.available_credit)
+        .set_engine_seq_no(params.seq_no)
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
         .set_wasm_block_time(params.block_unixtime.into())
         .extern_insert_wasm_engine(params.wasm_engine.clone())

@@ -88,6 +88,11 @@ impl VMSetup {
         self
     }
 
+    pub fn set_engine_seq_no(mut self, seq_no: u32) -> VMSetup {
+        self.vm.set_seq_no(seq_no);
+        self
+    }
+
     pub fn set_smart_contract_info(mut self, sci: SmartContractInfo) -> Result<VMSetup> {
         debug_assert_ne!(sci.capabilities, 0);
         let mut sci = sci.into_temp_data_item();
