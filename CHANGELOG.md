@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.23.6] - 2025-10-13
+### Fixed
+- Fixed tvm-debugger crashes when executing solidity functions that accept and return.
+
 ## [2.23.5] - 2025-10-08
 - Replace `bloom` with `fastbloom`
 
