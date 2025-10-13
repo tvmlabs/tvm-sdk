@@ -1067,6 +1067,14 @@ pub async fn get_blockchain_config(
     }
 }
 
+pub fn decode_hex_data(data: &str, param_name: &str) -> Result<Vec<u8>, String> {
+    if let Ok(data) = hex::decode(data) {
+        Ok(data)
+    } else {
+        Err(format!("the {} parameter should hex encoded", param_name))
+    }
+}
+
 pub fn decode_data(data: &str, param_name: &str) -> Result<Vec<u8>, String> {
     if let Ok(data) = base64_decode(data) {
         Ok(data)

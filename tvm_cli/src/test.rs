@@ -49,6 +49,7 @@ use crate::debug::init_debug_logger;
 use crate::getconfig::serialize_config_param;
 use crate::helpers::create_client_local;
 use crate::helpers::decode_data;
+use crate::helpers::decode_hex_data;
 use crate::helpers::get_blockchain_config;
 use crate::helpers::load_abi;
 use crate::helpers::load_params;
@@ -72,6 +73,16 @@ pub fn create_test_sign_command<'b>() -> App<'b> {
                 .takes_value(true)
                 .help("Serialized TOC for signing base64 or hex encoded."),
         )
+}
+
+pub fn create_test_sign_hex_data_command<'b>() -> App<'b> {
+    SubCommand::with_name("signhex").about("Generates the ED25519 signature for bytestring.").arg(
+        Arg::with_name("DATA")
+            .long("--data")
+            .short('d')
+            .takes_value(true)
+            .help("Bytestring for signing hex encoded."),
+    )
 }
 
 pub fn create_test_command<'b>() -> App<'b> {
@@ -208,6 +219,7 @@ pub fn create_test_command<'b>() -> App<'b> {
         .subcommand(ticktock_cmd)
         .subcommand(config_cmd)
         .subcommand(create_test_sign_command().alias("ts").arg(keys_arg.clone()))
+        .subcommand(create_test_sign_hex_data_command().arg(keys_arg.clone()))
 }
 
 pub async fn test_command(matches: &ArgMatches, full_config: &FullConfig) -> Result<(), String> {
@@ -220,6 +232,9 @@ pub async fn test_command(matches: &ArgMatches, full_config: &FullConfig) -> Res
     }
     if let Some(matches) = matches.subcommand_matches("sign") {
         return test_sign_command(matches, config);
+    }
+    if let Some(matches) = matches.subcommand_matches("signhex") {
+        return test_sign_hex_data_command(matches, config);
     }
     if let Some(matches) = matches.subcommand_matches("config") {
         return test_config_command(matches, config);
@@ -367,6 +382,37 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
     if !config.is_json {
         println!("Account written to {:?}", input);
     }
+    Ok(())
+}
+
+pub fn test_sign_hex_data_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
+    let data = if let Some(data) = matches.value_of("DATA") {
+        decode_hex_data(data, "data")?
+    } else {
+        return Err("data parameter not found".to_string());
+    };
+    let pair = match matches.value_of("KEYS") {
+        Some(keys) => crypto::load_keypair(keys)?,
+        None => match &config.keys_path {
+            Some(keys) => crypto::load_keypair(keys)?,
+            None => return Err("nor signing keys in the params neither in the config".to_string()),
+        },
+    };
+    let key = pair.decode().map_err(|err| format!("cannot decode keypair {}", err))?;
+    let signature = ed25519_sign_with_secret(&key.to_bytes(), &data)
+        .map_err(|e| format!("Failed to sign: {e}"))?;
+    let signature = hex::encode(signature.as_ref());
+    if config.is_json {
+        let result = json!({
+            "Data": hex::encode(data),
+            "public": hex::encode(pair.public.as_bytes()),
+            "Signature": signature
+        });
+        println!("{:#}", result);
+    } else {
+        println!("Signature: {}", signature);
+    }
+
     Ok(())
 }
 
