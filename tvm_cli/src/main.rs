@@ -82,8 +82,10 @@ use serde_json::Value;
 use serde_json::json;
 use test::create_test_command;
 use test::create_test_sign_command;
+use test::create_test_sign_hex_data_command;
 use test::test_command;
 use test::test_sign_command;
+use test::test_sign_hex_data_command;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::ParamsOfEncodeMessageBody;
 use voting::create_proposal;
@@ -455,6 +457,11 @@ async fn main_internal() -> Result<(), String> {
 
     let sign_cmd =
         create_test_sign_command().author(author).version(version_string).arg(keys_arg.clone());
+
+    let signhex_cmd = create_test_sign_hex_data_command()
+        .author(author)
+        .version(version_string)
+        .arg(keys_arg.clone());
 
     let run_cmd = SubCommand::with_name("run")
         .setting(AppSettings::AllowLeadingHyphen)
@@ -979,6 +986,7 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(message_cmd)
         .subcommand(body_cmd)
         .subcommand(sign_cmd)
+        .subcommand(signhex_cmd)
         .subcommand(run_cmd)
         .subcommand(runget_cmd)
         .subcommand(config_cmd)
@@ -1081,6 +1089,9 @@ async fn command_parser(matches: &ArgMatches, is_json: bool) -> Result<(), Strin
     }
     if let Some(m) = matches.subcommand_matches("sign") {
         return test_sign_command(m, config);
+    }
+    if let Some(m) = matches.subcommand_matches("signhex") {
+        return test_sign_hex_data_command(m, config);
     }
     if let Some(m) = matches.subcommand_matches("message") {
         return call_command(m, config, CallType::Msg).await;
