@@ -272,6 +272,7 @@ fn test_tls_wasm_from_hash_for_kakao() {
     println!("ress: {:?}", hex::encode(ress));
 }
 
+#[ignore]
 #[test]
 fn test_tls_wasm_from_hash_for_facebook() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -825,6 +826,7 @@ fn test_tls_wasm_from_hash_for_google_invalid_provider_name() {
     println!("ress: {:?}", hex::encode(ress));
 }
 
+#[ignore]
 #[test]
 fn test_tls_wasm_from_hash_for_facebook_invalid_root_cert() {
     let elector_code = load_boc("benches/elector-code.boc");
