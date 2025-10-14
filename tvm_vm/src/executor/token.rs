@@ -614,7 +614,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     } else {
         return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
     };
-    
+
     let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
     let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone()).map_err(|e| {
         exception!(ExceptionCode::CellUnpackError, "Failed to load cell mbn: {:?}", e)
@@ -661,7 +661,10 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
                 ));
             }
         } else {
-            return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
+            return Err(exception!(
+                ExceptionCode::CellUnpackError,
+                "No token found after decoding"
+            ));
         }
     } else {
         mbn_lst = engine.get_mv_config().mbn_lst_global;

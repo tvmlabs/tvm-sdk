@@ -77,12 +77,12 @@ use tvm_types::fail;
 use tvm_vm::error::TvmError;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::BehaviorModifiers;
+use tvm_vm::executor::MVConfig;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
-use tvm_vm::executor::MVConfig;
 
 use crate::blockchain_config::BlockchainConfig;
 use crate::blockchain_config::CalcMsgFwdFees;
@@ -141,7 +141,7 @@ pub struct ExecuteParams {
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
     pub wasm_engine: Option<wasmtime::Engine>,
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
-    pub mvconfig: MVConfig
+    pub mvconfig: MVConfig,
 }
 
 pub struct ActionPhaseResult {
