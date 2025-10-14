@@ -24,6 +24,7 @@ use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::gas::gas_state::Gas;
+use tvm_vm::executor::MVConfig;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
@@ -90,6 +91,11 @@ impl VMSetup {
 
     pub fn set_engine_seq_no(mut self, seq_no: u32) -> VMSetup {
         self.vm.set_seq_no(seq_no);
+        self
+    }
+
+    pub fn set_engine_mv_config(mut self, mvconfig: MVConfig) -> VMSetup {
+        self.vm.set_mv_config(mvconfig);
         self
     }
 

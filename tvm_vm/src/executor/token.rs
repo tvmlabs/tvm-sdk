@@ -614,7 +614,8 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
     };
 
-    let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
+    let _mbn_lst_cell = engine.cmd.var(3).as_cell()?;
+    /*
     let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone()).map_err(|e| {
         exception!(ExceptionCode::CellUnpackError, "Failed to load cell mbn: {:?}", e)
     })?;
@@ -661,12 +662,15 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     } else {
         return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
     };
+    */
+
+    let mbn_lst_global = engine.get_mv_config().mbn_lst_global;
 
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
-    log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
+    log::trace!(target: "executor", "mbn {:?}", mbn_lst_global.clone());
     log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
 
-    let bclst = build_bclst(&to_umbnlst(&mbn_lst));
+    let bclst = build_bclst(&to_umbnlst(&mbn_lst_global));
     log::trace!(target: "executor", "bclst {:?}", bclst.clone());
     log::trace!(target: "executor", "rpc {:?}", rpc.clone());
     let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi, &tap_lst);

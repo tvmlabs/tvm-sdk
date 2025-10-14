@@ -66,10 +66,12 @@ use crate::types::Status;
 
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct MVConfig {
+    pub mbn_lst_global: Vec<u64>,
 }
 
 impl MVConfig {
-    pub fn set_config(&mut self) {
+    pub fn set_config(&mut self, mbn_lst: Vec<u64>) {
+        self.mbn_lst_global = mbn_lst;
     }
 }
 
@@ -324,6 +326,10 @@ impl Engine {
 
     pub fn get_available_credit(&mut self) -> i128 {
         self.available_credit
+    }
+
+    pub fn set_mv_config(&mut self, config: MVConfig) {
+        self.mvconfig = config;
     }
 
     pub fn get_mv_config(&mut self) -> MVConfig {
