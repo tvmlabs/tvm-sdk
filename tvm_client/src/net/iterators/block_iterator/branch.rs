@@ -46,12 +46,12 @@ impl Branch {
                 shard,
                 block_id: fields.id().to_string(),
                 update_time,
-                next_link: NextLink::ByBoth,
+                next_link: NextLink::Both,
             });
         }
         for (shard, block_id) in fields.get_shards()? {
             if filter.match_shard(&shard) {
-                branches.push(Branch { shard, block_id, update_time, next_link: NextLink::ByBoth });
+                branches.push(Branch { shard, block_id, update_time, next_link: NextLink::Both });
             }
         }
         Ok(branches)

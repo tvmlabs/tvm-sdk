@@ -132,9 +132,9 @@ pub(crate) fn long_num_to_json_string(num: u64) -> String {
 
 pub fn decode_abi_bigint(string: &str) -> ClientResult<BigInt> {
     let result = if string.starts_with("-0x") || string.starts_with("-0X") {
-        BigInt::parse_bytes(string[3..].as_bytes(), 16).map(|number| -number)
+        BigInt::parse_bytes(&string.as_bytes()[3..], 16).map(|number| -number)
     } else if string.starts_with("0x") || string.starts_with("0X") {
-        BigInt::parse_bytes(string[2..].as_bytes(), 16)
+        BigInt::parse_bytes(&string.as_bytes()[2..], 16)
     } else {
         BigInt::parse_bytes(string.as_bytes(), 10)
     };

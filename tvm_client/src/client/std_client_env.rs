@@ -254,7 +254,7 @@ impl ClientEnv {
             parts.push(src.to_string());
             source = src.source();
         }
-        parts.push(format!("{}", url));
+        parts.push(url.to_string());
         anyhow::Error::msg(parts.join(": "))
     }
 }

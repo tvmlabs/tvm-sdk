@@ -634,11 +634,11 @@ fn get_real_tvm_state(filename: &str) -> (ShardStateUnsplit, Cell) {
     (state, root)
 }
 
-#[ignore]
 #[test]
+#[ignore]
 fn test_real_account_serde() {
-    let state_files =
-        ["src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
+    let state_files = ["src/tests/data/
+7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
         println!("state file: {}", state_file);

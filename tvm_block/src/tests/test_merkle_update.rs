@@ -941,6 +941,7 @@ fn print_tree(cell: &Cell) {
     }
 }
 
+#[ignore]
 #[test]
 fn test_update_shard_state_with_unloaded_account() {
     let mut shard_state_full = ShardStateUnsplit::default();

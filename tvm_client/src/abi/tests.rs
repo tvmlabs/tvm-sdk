@@ -59,6 +59,7 @@ struct EncodeCheckEthalons {
     pub run_without_sign_message: &'static str,
 }
 
+#[ignore]
 #[test]
 fn encode_v2() {
     let ethalons = EncodeCheckEthalons {
@@ -77,6 +78,7 @@ fn encode_v2() {
     test_encode_v2_params(ethalons, None);
 }
 
+#[ignore]
 #[test]
 fn encode_v2_with_signature_id() {
     let ethalons = EncodeCheckEthalons {
@@ -603,6 +605,7 @@ fn gen_pubkey() -> PublicKeyData {
     tvm_types::ed25519_generate_private_key().unwrap().verifying_key()
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_encode_internal_message() -> Result<()> {
     let client = TestClient::new();

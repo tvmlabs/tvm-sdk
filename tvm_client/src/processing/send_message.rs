@@ -304,7 +304,7 @@ mod test {
 
     #[tokio::test]
     async fn test_send_message_success() {
-        let handle_0 = mock_server("127.0.0.1:8600".parse().unwrap()).await;
+        let handle_0 = mock_server("127.0.0.1:8601".parse().unwrap()).await;
         let handle_1 = mock_server("127.0.0.1:9000".parse().unwrap()).await;
 
         let external_ip: IpAddr = get_ext_ip().unwrap();
@@ -315,7 +315,7 @@ mod test {
         {
             let config = ClientConfig {
                 network: NetworkConfig {
-                    endpoints: Some(vec!["http://127.0.0.1".to_string()]),
+                    endpoints: Some(vec!["http://127.0.0.1:8601".to_string()]),
                     api_token: Some("secret".to_string()),
                     ..Default::default()
                 },
@@ -326,7 +326,7 @@ mod test {
             let result = message.send(&client).await;
             assert_eq!(
                 result.unwrap().to_string(),
-                json!( {"my_addr": "127.0.0.1:8600"}).to_string()
+                json!( {"my_addr": "127.0.0.1:8601"}).to_string()
             );
         }
 
