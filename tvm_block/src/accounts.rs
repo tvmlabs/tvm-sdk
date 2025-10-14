@@ -25,10 +25,10 @@ use tvm_types::UsageTree;
 use tvm_types::error;
 use tvm_types::fail;
 
+use crate::AccountCell;
+use crate::AccountCellStruct;
 use crate::ConfigParams;
 use crate::Deserializable;
-use crate::ExternalCell;
-use crate::ExternalCellStruct;
 use crate::GetRepresentationHash;
 use crate::MaybeDeserialize;
 use crate::MaybeSerialize;
@@ -581,7 +581,7 @@ impl Serializable for AccountStuff {
 
 #[derive(Debug, Clone)]
 pub enum OptionalAccount {
-    Account(ExternalCell<Account>),
+    Account(AccountCell<Account>),
 
     // Note: used for accounts that were moved to the other blockchain thread according to their
     // non default DApp ID
@@ -589,7 +589,7 @@ pub enum OptionalAccount {
 }
 
 impl OptionalAccount {
-    pub fn with_account(account: ExternalCell<Account>) -> Self {
+    pub fn with_account(account: AccountCell<Account>) -> Self {
         OptionalAccount::Account(account)
     }
 
@@ -597,14 +597,14 @@ impl OptionalAccount {
         OptionalAccount::AccountRedirect
     }
 
-    pub fn get_account(&self) -> Result<&ExternalCell<Account>> {
+    pub fn get_account(&self) -> Result<&AccountCell<Account>> {
         match self {
             OptionalAccount::Account(account) => Ok(account),
             _ => fail!("Account was replaced with stub"),
         }
     }
 
-    pub fn get_account_mut(&mut self) -> Result<&mut ExternalCell<Account>> {
+    pub fn get_account_mut(&mut self) -> Result<&mut AccountCell<Account>> {
         match self {
             OptionalAccount::Account(account) => Ok(account),
             _ => fail!("Account was replaced with stub"),
@@ -633,7 +633,7 @@ impl Eq for OptionalAccount {}
 
 impl Default for OptionalAccount {
     fn default() -> Self {
-        OptionalAccount::Account(ExternalCell::<Account>::default())
+        OptionalAccount::Account(AccountCell::<Account>::default())
     }
 }
 
@@ -655,7 +655,7 @@ impl Serializable for OptionalAccount {
 impl Deserializable for OptionalAccount {
     fn construct_from(slice: &mut SliceData) -> Result<Self> {
         if slice.get_next_bit()? {
-            let mut account = ExternalCell::<Account>::default();
+            let mut account = AccountCell::<Account>::default();
             account.read_from_reference(slice)?;
             Ok(OptionalAccount::Account(account))
         } else {
@@ -1303,7 +1303,7 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Self {
         ShardAccount {
-            account: OptionalAccount::with_account(ExternalCell::with_cell(account_root)),
+            account: OptionalAccount::with_account(AccountCell::with_cell(account_root)),
             last_trans_hash,
             last_trans_lt,
             dapp_id,
@@ -1317,7 +1317,7 @@ impl ShardAccount {
         dapp_id: Option<UInt256>,
     ) -> Result<Self> {
         Ok(ShardAccount {
-            account: OptionalAccount::with_account(ExternalCell::with_struct(account)?),
+            account: OptionalAccount::with_account(AccountCell::with_struct(account)?),
             last_trans_hash,
             last_trans_lt,
             dapp_id,
@@ -1337,7 +1337,7 @@ impl ShardAccount {
         })
     }
 
-    pub fn read_account(&self) -> Result<ExternalCellStruct<Account>> {
+    pub fn read_account(&self) -> Result<AccountCellStruct<Account>> {
         self.account.get_account()?.read_struct()
     }
 
@@ -1362,18 +1362,18 @@ impl ShardAccount {
         self.dapp_id.as_ref()
     }
 
-    pub fn replace_with_external(&mut self) -> Result<Cell> {
-        let cell = self.account.get_account()?.cell();
-        if cell.cell_type() != CellType::Ordinary {
-            fail!("Only ordinary cells can be replaced with external")
+    pub fn replace_with_unloaded_account(&mut self) -> Result<Cell> {
+        let original = self.account.get_account()?.cell();
+        if original.cell_type() != CellType::Ordinary {
+            fail!("Only ordinary account cells can be unloaded")
         }
-        let external = cell.to_external()?;
-        self.account = OptionalAccount::with_account(ExternalCell::with_cell(external));
-        Ok(cell)
+        let unloaded = original.to_unloaded_account()?;
+        self.account = OptionalAccount::with_account(AccountCell::with_cell(unloaded));
+        Ok(original)
     }
 
-    pub fn is_external(&self) -> bool {
-        self.account.get_account().map(|a| a.is_external()).unwrap_or(false)
+    pub fn is_unloaded(&self) -> bool {
+        self.account.get_account().map(|a| a.is_unloaded()).unwrap_or(false)
     }
 
     pub fn is_redirect(&self) -> bool {

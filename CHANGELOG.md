@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.xx.y] - 2025-MM-DD
+
+### Added
+- Ability to resolve unloaded account cells when applying Merkle updates
+
+
 ## [2.23.6] - 2025-10-13
 ### Fixed
 - Fixed tvm-debugger crashes when executing solidity functions that accept and return.
