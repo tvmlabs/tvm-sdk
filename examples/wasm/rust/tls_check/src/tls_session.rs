@@ -131,51 +131,72 @@ pub fn derive_secret(secret: &[u8; 32], label: &str, transcript_messages: &[u8])
 
 pub fn is_valid_client_hello(provider: &[u8], data: &[u8]) -> bool {
     if data[0] != 0x16 {
-        return false
+        return false;
     }
 
     // Cipher suites – only 0x13 0x01 (TLS_AES_128_GCM_SHA256)
     if data[44] != 0 || data[45] != 2 || data[46] != 19 || data[47] != 1 {
-        return false
+        return false;
     }
 
     let mut len_of_hostname: usize = 0;
 
     match provider.to_vec() {
-        val if val == vec![103, 111, 111, 103, 108, 101] => { // "google"
+        val if val == vec![103, 111, 111, 103, 108, 101] => {
+            // "google"
             len_of_hostname = 25;
-            if data[54..79] != [0, 23, 0, 21, 0, 0, 18, 119, 119, 119, 46, 103, 111, 111, 103, 108, 101, 97, 112, 105, 115, 46, 99, 111, 109] {
+            if data[54..79]
+                != [
+                    0, 23, 0, 21, 0, 0, 18, 119, 119, 119, 46, 103, 111, 111, 103, 108, 101, 97,
+                    112, 105, 115, 46, 99, 111, 109,
+                ]
+            {
                 return false; // "www.googleapis.com"
             }
-        }, 
-        val if val == vec![107, 97, 107, 97, 111] => { // "kakao"
+        }
+        val if val == vec![107, 97, 107, 97, 111] => {
+            // "kakao"
             len_of_hostname = 22;
-            if data[54..76] != [0, 20, 0, 18, 0, 0, 15, 107, 97, 117, 116, 104, 46, 107, 97, 107, 97, 111, 46, 99, 111, 109] {
+            if data[54..76]
+                != [
+                    0, 20, 0, 18, 0, 0, 15, 107, 97, 117, 116, 104, 46, 107, 97, 107, 97, 111, 46,
+                    99, 111, 109,
+                ]
+            {
                 return false; // "kauth.kakao.com"
             }
-        },
-        val if val == vec![102, 97, 99, 101, 98, 111, 111, 107] => { // "facebook"
+        }
+        val if val == vec![102, 97, 99, 101, 98, 111, 111, 107] => {
+            // "facebook"
             len_of_hostname = 23;
-            if data[54..77] != [0, 21, 0, 19, 0, 0, 16, 119, 119, 119, 46, 102, 97, 99, 101, 98, 111, 111, 107, 46, 99, 111, 109 ] {
+            if data[54..77]
+                != [
+                    0, 21, 0, 19, 0, 0, 16, 119, 119, 119, 46, 102, 97, 99, 101, 98, 111, 111, 107,
+                    46, 99, 111, 109,
+                ]
+            {
                 return false; // "www.facebook.com"
             }
-        },
-        _ => {return false}
+        }
+        _ => return false,
     }
-    let group_extensions = vec![0, 10, 0, 4, 0, 2, 0, 29, 0, 13, 0, 20, 0, 18, 4, 3, 8, 4, 4, 1, 5, 3, 8, 5, 5, 1, 8, 6, 
-    6, 1, 2, 1, 0, 51, 0, 38, 0, 36, 0, 29, 0, 32];
+    let group_extensions = vec![
+        0, 10, 0, 4, 0, 2, 0, 29, 0, 13, 0, 20, 0, 18, 4, 3, 8, 4, 4, 1, 5, 3, 8, 5, 5, 1, 8, 6, 6,
+        1, 2, 1, 0, 51, 0, 38, 0, 36, 0, 29, 0, 32,
+    ];
     let start_group_ext = 54 + len_of_hostname;
 
     if data[start_group_ext..start_group_ext + 42] != group_extensions {
         return false;
     }
 
-    if data[start_group_ext + 42 + 32 ..] != [0, 45, 0, 2, 1, 1, 0, 43, 0, 3, 2, 3, 4] { // client_hello suffix
+    if data[start_group_ext + 42 + 32..] != [0, 45, 0, 2, 1, 1, 0, 43, 0, 3, 2, 3, 4] {
+        // client_hello suffix
         return false;
     }
 
     if data[4] != 136u8 + len_of_hostname as u8 {
-        return false
+        return false;
     }
 
     return true;
@@ -199,11 +220,12 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
         return vec![0u8, 3u8, 35u8]; // "corrupted kid (not lv format) / incorrect kid len" : 0x3, 0x22 = 802
     }
 
-    let kid = &raw[start_kid_pos + 1..start_kid_pos + 1 + len_of_kid];// let kid = &raw[5..5 + len_of_kid]; // let kid = &raw[4..24];
+    let kid = &raw[start_kid_pos + 1..start_kid_pos + 1 + len_of_kid]; // let kid = &raw[5..5 + len_of_kid]; // let kid = &raw[4..24];
     let start_cert = start_kid_pos + 1 + len_of_kid; // let start_cert = 5 + len_of_kid;
     let certificate_len = (256 * raw[start_cert] as u16 + raw[start_cert + 1] as u16) as usize; // let certificate_len = (256*raw[24] as u16 + raw[25] as u16) as usize;
 
-    if certificate_len < 500 { // for example 525 is valid ECDSA cert
+    if certificate_len < 500 {
+        // for example 525 is valid ECDSA cert
         return vec![0u8, 3u8, 36u8]; // "insufficient len of external certificate" : 0x3, 0x21 = 801
     }
 
@@ -229,8 +251,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
 
     let client_hello: &[u8] = &data[34..39 + client_hello_len]; //let client_hello:[u8;166] = data[34..200].try_into().unwrap(); // len is 166 bytes
 
-    //if client_hello[0] != 0x16 {
-        //return vec![0u8, 3u8, 39u8]; // "client hello not found"
+    // if client_hello[0] != 0x16 {
+    // return vec![0u8, 3u8, 39u8]; // "client hello not found"
     //}
     if !is_valid_client_hello(provider, client_hello) {
         return vec![0u8, 3u8, 39u8]; // "invalid client hello"
@@ -244,7 +266,7 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     }
     let enc_ser_handshake_len =
         256 * data[server_hello_start + 98] as u16 + data[server_hello_start + 99] as u16; // let enc_ser_handshake_len = 256*data[298] as u16 + data[299] as u16;
-    if enc_ser_handshake_len<2500 {
+    if enc_ser_handshake_len < 2500 {
         return vec![0u8, 3u8, 41u8]; // "server handshake len not sufficient"
     }
     let handshake_end_index = server_hello_start + 95 + 5 + enc_ser_handshake_len as usize; // let handshake_end_index = 295 + 5 + enc_ser_handshake_len as usize;
@@ -261,15 +283,16 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let mut encr_ticket_len = 256 * data[handshake_end_index + app_request_len + 3] as usize
         + data[handshake_end_index + app_request_len + 4] as usize
         + 5;
-    //if encr_ticket_len == 241 {
-        // if encr_ticket_len < 300 {
-        //encr_ticket_len = encr_ticket_len * 2;
-        //records_received = 2;
+    // if encr_ticket_len == 241 {
+    // if encr_ticket_len < 300 {
+    // encr_ticket_len = encr_ticket_len * 2;
+    // records_received = 2;
     //}
-    let next_packet_len = 256 * data[handshake_end_index + app_request_len + encr_ticket_len + 3] as usize 
+    let next_packet_len = 256
+        * data[handshake_end_index + app_request_len + encr_ticket_len + 3] as usize
         + data[handshake_end_index + app_request_len + encr_ticket_len + 4] as usize
         + 5;
-    if next_packet_len==encr_ticket_len {
+    if next_packet_len == encr_ticket_len {
         encr_ticket_len += next_packet_len; // double encrypted session ticket
         records_received = 2;
     }
@@ -277,8 +300,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let encrypted_ticket: &[u8] = &data[handshake_end_index + app_request_len
         ..handshake_end_index + app_request_len + encr_ticket_len]; // let encrypted_ticket: &[u8] = &data[handshake_end_index + app_request_len..handshake_end_index + app_request_len +540];// let encrypted_ticket:[u8;540] = data[handshake_end_index+100..handshake_end_index+100+540].try_into().unwrap(); // len of ticket is 524
 
-    //if ... {
-        //return vec![0u8, 3u8, 42u8]; // some trouble with encrypted session ticket
+    // if ... {
+    // return vec![0u8, 3u8, 42u8]; // some trouble with encrypted session ticket
     //}
 
     // let http_response:[u8;1601] =
@@ -367,7 +390,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
         + (certs_chain[1] as usize) * 256
         + (certs_chain[2] as usize);
 
-    if certs_chain_len < 1000 { // minimal chain is two ecdsa certs each of them approx 500 bytes len
+    if certs_chain_len < 1000 {
+        // minimal chain is two ecdsa certs each of them approx 500 bytes len
         return vec![0u8, 3u8, 70u8]; // "certs_chain_len is not sufficiet"
     }
 
@@ -422,10 +446,12 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
         SHA512WITH_RSA => sha512::sum512(&check_sum_extend).to_vec(),
         SHA512WITH_RSAE => sha512::sum512(&check_sum_extend).to_vec(),
         SHA512WITH_RSAPSS => sha512::sum512(&check_sum_extend).to_vec(),
-        _ => return vec![0u8, 3u8, 73u8], // "not supported (not sha256, sha384 or sha512) type of signature" 
+        _ => return vec![0u8, 3u8, 73u8], /* "not supported (not sha256, sha384 or sha512) type
+                                           * of signature" */
     };
 
-    if let Err(e) = check_certs_with_fixed_root( // !check_certs_with_fixed_root(
+    if let Err(e) = check_certs_with_fixed_root(
+        // !check_certs_with_fixed_root(
         timestamp,
         &provider,
         &check_prepared,

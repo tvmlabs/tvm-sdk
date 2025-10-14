@@ -47,6 +47,7 @@ fn _run_command_and_decode_json(
     Ok(())
 }
 
+#[ignore = "should run with local network"]
 #[test]
 fn test_json_output_1() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(&format!("account {}", GIVER_V2_ADDR))?;
@@ -69,6 +70,7 @@ fn test_json_output_1() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore = "should run with local network"]
 #[test]
 fn test_json_output_2() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "json_test.key";
@@ -118,6 +120,7 @@ fn test_json_output_2() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore = "should run with local network"]
 #[test]
 fn test_json_output_3() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json("--config 123.conf config clear")?;
@@ -172,6 +175,7 @@ fn test_json_output_3() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore = "should run with local network"]
 #[test]
 fn test_json_output_4() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(
@@ -215,6 +219,7 @@ fn test_json_output_4() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore = "should run with local network"]
 #[test]
 fn test_json_output_5() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(&format!(

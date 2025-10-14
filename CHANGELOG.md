@@ -7,6 +7,17 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Ability to resolve unloaded account cells when applying Merkle updates
 
+
+## [2.23.6] - 2025-10-13
+### Fixed
+- Fixed tvm-debugger crashes when executing solidity functions that accept and return.
+
+## [2.23.5] - 2025-10-08
+- Replace `bloom` with `fastbloom`
+
+## [2.23.3] - 2025-10-04
+- Tests fixed
+
 ## [2.23.2] - 2025-09-30
 - Leaf cert subject check and some error codes in certs checking added
 
@@ -19,12 +30,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed/Fixed
 - Removed full shard state balance from ValueFlow
-- Changed ShardAccountsMap from HashmapAugE to HashmapE 
+- Changed ShardAccountsMap from HashmapAugE to HashmapE
 
 ## [2.22.5] - 2025-09-25
 
 ### Changed/Fixed
-- Fixed hardcoded root certificates and sha384 issue in TLS wasm binary. 
+- Fixed hardcoded root certificates and sha384 issue in TLS wasm binary.
 
 ## [2.22.4] - 2025-09-19
 
@@ -116,8 +127,8 @@ All notable changes to this project will be documented in this file.
 
 ### New
 
-- Add `getavailablecredit` `sendtodappconfig` `mintshellq` instructions 
-- Change `mintshell` instruction. 
+- Add `getavailablecredit` `sendtodappconfig` `mintshellq` instructions
+- Change `mintshell` instruction.
 - Refactor fee in executor
 
 ### Update
@@ -140,7 +151,7 @@ import wasi:filesystem/preopens@0.2.3;
 - Local wasm execution by hash now enforces sha256sum checking of the local wasm binary against a whitelist.
 
 ### Changed
-#### Determinism: 
+#### Determinism:
 - added support for relaxed SIMD proposal with deterministic behaviour
 - added memory limiter support for dynamic table and linear memory allocation
 - enable other determinism settings via cranelift
@@ -152,16 +163,16 @@ import wasi:filesystem/preopens@0.2.3;
 
 ### Breaking changes
 - `ExtMessage` structure changed: `bm_license`, `bm_token` fields removed, `ext_message_token` field added
-- `network.endpoints` initialization changed: 
+- `network.endpoints` initialization changed:
     - If port is specified in the endpoint URL then use this port for sending messages and getting account
     - If port is not specified in the endoint URL then use 8600 for sending and getting account
     - For graphql - always use  http(s)://hostname/graphql url
-    - Use the specified schema (protocol) (https/http) 
-  
+    - Use the specified schema (protocol) (https/http)
+
 ## [2.18.4] - 2025-07-18
 ### Fixes
 - Fixed an error decoding account data: `Invalid BOC: error decode contract data BOC base64`
-- 
+-
 ## [2.18.3] - 2025-07-08
 
 ### Changed

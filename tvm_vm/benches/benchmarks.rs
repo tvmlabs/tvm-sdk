@@ -936,18 +936,12 @@ fn bench_vergrth16(c: &mut Criterion) {
                 let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
                 let mut proof_as_bytes = vec![];
                 proof.serialize_compressed(&mut proof_as_bytes).unwrap();
-                //println!("proof_as_bytes : {:?}", proof_as_bytes);
-                //println!("proof_as_bytes len: {:?}", proof_as_bytes.len());
 
                let proof_cell = tvm_vm::utils::pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
                 stack.push(StackItem::cell(proof_cell.clone()));
 
                 let public_inputs_cell = tvm_vm::utils::pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
                 stack.push(StackItem::cell(public_inputs_cell.clone()));
-
-                let verification_key_id: u32 = 0;
-                stack.push(StackItem::int(verification_key_id));
-
 
                 let mut res = Vec::<u8>::with_capacity(3);
                 res.push(0xC7);
