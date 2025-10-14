@@ -71,8 +71,8 @@ const CONFIG_BASE_NAME: &str = "tvm-cli.conf.json";
 const DEPRECATED_GLOBAL_CONFIG_PATH: &str = ".tonos-cli.global.conf.json";
 const GLOBAL_CONFIG_PATH: &str = ".tvm-cli.global.conf.json";
 
-
-// todo: rewrite `config.url`, `config.endpoints[]`, `endpoints_map{}` and `path`
+// todo: rewrite `config.url`, `config.endpoints[]`, `endpoints_map{}` and
+// `path`
 pub fn default_config_name() -> String {
     match env::current_dir() {
         Ok(dir) => {
