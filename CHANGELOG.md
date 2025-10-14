@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
   - `tonos-cli.global.conf.json` to `tvm-cli.global.conf.json`
 
   On first run after upgrade, if the new files don’t exist but the deprecated ones do, they are automatically renamed
-
+- Fixed decoding of `return_value` returned in `tvm-cli call(x)` invocations
 
 ## [2.23.5] - 2025-10-08
 - Replace `bloom` with `fastbloom`
