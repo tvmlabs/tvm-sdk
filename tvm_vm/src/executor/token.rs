@@ -561,6 +561,7 @@ fn params_from_types(types: Vec<ParamType>) -> Vec<Param> {
 }
 
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
+    log::trace!(targer: "node", "execute_calculate_mobile_verifiers_reward");
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
     let seq_no = engine.get_seq_no();
     fetch_stack(engine, 5)?;
