@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.23.7] - 2025-10-15
+## [2.24.0] - 2025-10-15
 
 ### Added
 - In the `tvm_client::send_message()`/`tvm-cli call(x)` execution error result, the recipient account address has been added. This is particularly useful in cases where errors occur during contract deployment
