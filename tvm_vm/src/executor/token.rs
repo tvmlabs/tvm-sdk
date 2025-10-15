@@ -502,6 +502,23 @@ fn to_umbnlst(weights: &Vec<u64>) -> Vec<u64> {
     out
 }
 
+fn build_bclst_old(umbnlst: &Vec<u64>) -> Vec<u64> {
+    let len = umbnlst.len();
+    let mut bclst = Vec::new();
+
+    if len < 2 {
+        return bclst;
+    }
+
+    for i in 0..(len - 1) {
+        let dl = umbnlst[i] as i128;
+        let dr = umbnlst[i + 1] as i128;
+        let bc = boost_coef_fp(dl, dr) as u64;
+        bclst.push(bc);
+    }
+    bclst
+}
+
 fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
     let len = umbnlst.len();
     let mut bclst = Vec::new();
@@ -529,7 +546,6 @@ fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
     }
     bclst
 }
-
 
 fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Vec<u64>) -> i128 {
     let mut denom: i128 = 0;
@@ -573,7 +589,6 @@ fn params_from_types(types: Vec<ParamType>) -> Vec<Param> {
 }
 
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
-    log::trace!(target: "node", "execute_calculate_mobile_verifiers_reward");
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
     let seq_no = engine.get_seq_no();
     fetch_stack(engine, 5)?;
@@ -639,7 +654,6 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         })?;
     let mbn_lst;
     if seq_no <= REPAIR_BK_WALLETS_BLOCK_SEQ_NO {
-        log::trace!(target: "node", "execute_calculate_mobile_verifiers_reward old formula");
         mbn_lst = if let Some(token) = tokens.first() {
             if let TokenValue::Array(_, items) = &token.value {
                 items
@@ -681,15 +695,17 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
             ));
         }
     } else {
-        log::trace!(target: "node", "execute_calculate_mobile_verifiers_reward new formula");
         mbn_lst = engine.get_mv_config().mbn_lst_global;
-        log::trace!(target: "node", "execute_calculate_mobile_verifiers_reward new formula data: {:?}", mbn_lst);
     }
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
     log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
     log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
 
-    let bclst = build_bclst(&to_umbnlst(&mbn_lst));
+    let bclst = if seq_no <= REPAIR_BK_WALLETS_BLOCK_SEQ_NO {
+        build_bclst_old(&to_umbnlst(&mbn_lst))
+    } else {
+        build_bclst(&to_umbnlst(&mbn_lst))
+    };
     log::trace!(target: "executor", "bclst {:?}", bclst.clone());
     log::trace!(target: "executor", "rpc {:?}", rpc.clone());
     let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi, &tap_lst);
