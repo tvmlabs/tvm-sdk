@@ -22,7 +22,9 @@ use tvm_block::MsgAddressInt;
 
 use super::ThreadIdentifier;
 use crate::abi::Abi;
+use crate::abi::ParamsOfDecodeMessage;
 use crate::abi::ParamsOfDecodeMessageBody;
+use crate::abi::decode_message;
 use crate::abi::decode_message_body;
 use crate::boc::internal::DeserializedObject;
 use crate::boc::internal::deserialize_object_from_boc;
@@ -146,7 +148,7 @@ impl SendingMessage {
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
         let server_link: &crate::net::ServerLink = context.get_server_link()?;
-        server_link.send_message(&self.id, &self.body, self.thread_id).await
+        server_link.send_message(&self.id, &self.body, self.thread_id, self.dst.clone()).await
     }
 }
 
@@ -199,11 +201,27 @@ pub fn decode_send_message_result(
     body.as_str()
         .map(String::from)
         .and_then(|body| {
-            decode_message_body(
-                Arc::clone(context),
-                ParamsOfDecodeMessageBody { abi, body, is_internal: false, ..Default::default() },
-            )
-            .ok()
+            let decoded_message = decode_message(
+                context.clone(),
+                ParamsOfDecodeMessage {
+                    abi: abi.clone(),
+                    message: body.clone(),
+                    ..Default::default()
+                },
+            );
+            match decoded_message {
+                Ok(message) => Some(message),
+                Err(_) => decode_message_body(
+                    Arc::clone(context),
+                    ParamsOfDecodeMessageBody {
+                        abi,
+                        body,
+                        is_internal: false,
+                        ..Default::default()
+                    },
+                )
+                .ok(),
+            }
         })
         .filter(|decoded| decoded.body_type == crate::abi::MessageBodyType::Output)
         .and_then(|decoded| decoded.value)
