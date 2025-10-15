@@ -513,11 +513,23 @@ fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
     for i in 0..(len - 1) {
         let dl = umbnlst[i] as i128;
         let dr = umbnlst[i + 1] as i128;
-        let bc = boost_coef_fp(dl, dr) as u64;
+        let bc_i = boost_coef_fp(dl, dr);
+        let mut bc: u64 = if bc_i <= 0 { 0 } else { bc_i as u64 };
+        
+        let width_i = dr - dl; 
+        if width_i <= 0 {
+            bc = 0;
+        } else {
+            let width: u128 = width_i as u128;
+            let one:   u128 = 1u128 << 32;
+            let num:   u128 = (bc as u128) * one;
+            bc = (num / width) as u64;
+        }
         bclst.push(bc);
     }
     bclst
 }
+
 
 fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Vec<u64>) -> i128 {
     let mut denom: i128 = 0;
