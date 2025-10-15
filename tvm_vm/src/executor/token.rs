@@ -627,6 +627,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         })?;
     let mbn_lst;
     if seq_no <= REPAIR_BK_WALLETS_BLOCK_SEQ_NO {
+        log::trace!(target: "node", "execute_calculate_mobile_verifiers_reward old formula");
         mbn_lst = if let Some(token) = tokens.first() {
             if let TokenValue::Array(_, items) = &token.value {
                 items
@@ -668,7 +669,9 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
             ));
         }
     } else {
+        log::trace!(target: "node", "execute_calculate_mobile_verifiers_reward new formula");
         mbn_lst = engine.get_mv_config().mbn_lst_global;
+        log::trace!(target: "node", "execute_calculate_mobile_verifiers_reward new formula data: {:?}", mbn_lst);
     }
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
     log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
