@@ -532,14 +532,14 @@ fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
         let dr = umbnlst[i + 1] as i128;
         let bc_i = boost_coef_fp(dl, dr);
         let mut bc: u64 = if bc_i <= 0 { 0 } else { bc_i as u64 };
-        
-        let width_i = dr - dl; 
+
+        let width_i = dr - dl;
         if width_i <= 0 {
             bc = 0;
         } else {
             let width: u128 = width_i as u128;
-            let one:   u128 = 1u128 << 32;
-            let num:   u128 = (bc as u128) * one;
+            let one: u128 = 1u128 << 32;
+            let num: u128 = (bc as u128) * one;
             bc = (num / width) as u64;
         }
         bclst.push(bc);
