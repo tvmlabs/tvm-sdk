@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.1] - 2025-10-15
+
+## Changed/Fixed
+- MobileVerifiers rewards fixes
+
 ## [2.24.0] - 2025-10-15
 
 ### Added
