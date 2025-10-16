@@ -36,7 +36,7 @@ use crate::utils::unpack_data_from_cell;
 pub const ECC_NACKL_KEY: u32 = 1;
 pub const ECC_SHELL_KEY: u32 = 2;
 pub const INFINITY_CREDIT: i128 = -1;
-pub const REPAIR_BK_WALLETS_BLOCK_SEQ_NO: u32 = 2860000;
+pub const REPAIR_BK_WALLETS_BLOCK_SEQ_NO: u32 = 2645000;
 
 // pub const ARFC: f64 = 1000_f64;
 // pub const MINRC: f64 = 1_f64;
