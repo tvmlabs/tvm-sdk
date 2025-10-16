@@ -36,6 +36,7 @@ use crate::utils::unpack_data_from_cell;
 pub const ECC_NACKL_KEY: u32 = 1;
 pub const ECC_SHELL_KEY: u32 = 2;
 pub const INFINITY_CREDIT: i128 = -1;
+pub const REPAIR_BK_WALLETS_BLOCK_SEQ_NO: u32 = 2645000;
 
 // pub const ARFC: f64 = 1000_f64;
 // pub const MINRC: f64 = 1_f64;
@@ -501,7 +502,7 @@ fn to_umbnlst(weights: &Vec<u64>) -> Vec<u64> {
     out
 }
 
-fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
+fn build_bclst_old(umbnlst: &Vec<u64>) -> Vec<u64> {
     let len = umbnlst.len();
     let mut bclst = Vec::new();
 
@@ -513,6 +514,34 @@ fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
         let dl = umbnlst[i] as i128;
         let dr = umbnlst[i + 1] as i128;
         let bc = boost_coef_fp(dl, dr) as u64;
+        bclst.push(bc);
+    }
+    bclst
+}
+
+fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
+    let len = umbnlst.len();
+    let mut bclst = Vec::new();
+
+    if len < 2 {
+        return bclst;
+    }
+
+    for i in 0..(len - 1) {
+        let dl = umbnlst[i] as i128;
+        let dr = umbnlst[i + 1] as i128;
+        let bc_i = boost_coef_fp(dl, dr);
+        let mut bc: u64 = if bc_i <= 0 { 0 } else { bc_i as u64 };
+
+        let width_i = dr - dl;
+        if width_i <= 0 {
+            bc = 0;
+        } else {
+            let width: u128 = width_i as u128;
+            let one: u128 = 1u128 << 32;
+            let num: u128 = (bc as u128) * one;
+            bc = (num / width) as u64;
+        }
         bclst.push(bc);
     }
     bclst
@@ -561,6 +590,7 @@ fn params_from_types(types: Vec<ParamType>) -> Vec<Param> {
 
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
+    let seq_no = engine.get_seq_no();
     fetch_stack(engine, 5)?;
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
@@ -622,50 +652,60 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         .map_err(|e| {
             exception!(ExceptionCode::CellUnpackError, "Failed to decode mbn_lst array: {:?}", e)
         })?;
-
-    let mbn_lst = if let Some(token) = tokens.first() {
-        if let TokenValue::Array(_, items) = &token.value {
-            items
-                .iter()
-                .map(|item| {
-                    if let TokenValue::Uint(uint) = item {
-                        let bytes = uint.number.to_bytes_le();
-                        if bytes.len() > 8 {
+    let mbn_lst;
+    if seq_no <= REPAIR_BK_WALLETS_BLOCK_SEQ_NO {
+        mbn_lst = if let Some(token) = tokens.first() {
+            if let TokenValue::Array(_, items) = &token.value {
+                items
+                    .iter()
+                    .map(|item| {
+                        if let TokenValue::Uint(uint) = item {
+                            let bytes = uint.number.to_bytes_le();
+                            if bytes.len() > 8 {
+                                Err(exception!(
+                                    ExceptionCode::CellUnpackError,
+                                    "Value too large for u64: {}",
+                                    uint.number
+                                ))
+                            } else {
+                                let mut array = [0u8; 8];
+                                array[..bytes.len()].copy_from_slice(&bytes);
+                                Ok(u64::from_le_bytes(array))
+                            }
+                        } else {
                             Err(exception!(
                                 ExceptionCode::CellUnpackError,
-                                "Value too large for u64: {}",
-                                uint.number
+                                "Expected Uint in array, got {:?}",
+                                item
                             ))
-                        } else {
-                            let mut array = [0u8; 8];
-                            array[..bytes.len()].copy_from_slice(&bytes);
-                            Ok(u64::from_le_bytes(array))
                         }
-                    } else {
-                        Err(exception!(
-                            ExceptionCode::CellUnpackError,
-                            "Expected Uint in array, got {:?}",
-                            item
-                        ))
-                    }
-                })
-                .collect::<Result<Vec<u64>, _>>()?
+                    })
+                    .collect::<Result<Vec<u64>, _>>()?
+            } else {
+                return Err(exception!(
+                    ExceptionCode::CellUnpackError,
+                    "Expected array token, got {:?}",
+                    token.value
+                ));
+            }
         } else {
             return Err(exception!(
                 ExceptionCode::CellUnpackError,
-                "Expected array token, got {:?}",
-                token.value
+                "No token found after decoding"
             ));
         }
     } else {
-        return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
-    };
-
+        mbn_lst = engine.get_mv_config().mbn_lst_global;
+    }
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
     log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
     log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
 
-    let bclst = build_bclst(&to_umbnlst(&mbn_lst));
+    let bclst = if seq_no <= REPAIR_BK_WALLETS_BLOCK_SEQ_NO {
+        build_bclst_old(&to_umbnlst(&mbn_lst))
+    } else {
+        build_bclst(&to_umbnlst(&mbn_lst))
+    };
     log::trace!(target: "executor", "bclst {:?}", bclst.clone());
     log::trace!(target: "executor", "rpc {:?}", rpc.clone());
     let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi, &tap_lst);
