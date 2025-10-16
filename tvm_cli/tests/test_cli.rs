@@ -240,24 +240,22 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("--config").arg(config_path).arg("config").arg("endpoint").arg("reset");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("main.evercloud.dev"))
-        .stdout(predicate::str::contains("https://mainnet.evercloud.dev"))
-        .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"));
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
+        .stdout(predicate::str::contains("http://127.0.0.1/"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("clear");
     cmd.assert().success().stdout(predicate::str::contains("Succeeded"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config").arg(config_path).arg("config").arg("--url").arg("main.evercloud.dev");
+    cmd.arg("--config").arg(config_path).arg("config").arg("--url").arg("mainnet.ackinacki.org");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#""url": "main.evercloud.dev","#))
+        .stdout(predicate::str::contains(r#""url": "mainnet.ackinacki.org","#))
         .stdout(predicate::str::contains(
             r#""endpoints": [
-    "https://mainnet.evercloud.dev"
+    "mainnet.ackinacki.org"
   ]"#,
         ));
 
@@ -271,11 +269,9 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .arg("[1.1.1.1,my.net.com]");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("main.evercloud.dev"))
-        .stdout(predicate::str::contains("https://mainnet.evercloud.dev"))
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
         .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
         .stdout(predicate::str::contains("myownhost"))
         .stdout(predicate::str::contains("1.1.1.1"))
         .stdout(predicate::str::contains("my.net.com"));
@@ -298,18 +294,15 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .arg("endpoint")
         .arg("add")
         .arg("myownhost")
-        .arg("[1.1.1.1,my.net.com,tonlabs.net]");
+        .arg("[1.1.1.1,my.net.com]");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("main.evercloud.dev"))
-        .stdout(predicate::str::contains("https://mainnet.evercloud.dev"))
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
         .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
         .stdout(predicate::str::contains("myownhost"))
         .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"))
-        .stdout(predicate::str::contains("tonlabs.net"));
+        .stdout(predicate::str::contains("my.net.com"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("--url").arg("myownhost");
@@ -317,8 +310,7 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains(r#""url": "myownhost","#))
         .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"))
-        .stdout(predicate::str::contains("tonlabs.net"));
+        .stdout(predicate::str::contains("my.net.com"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config")
@@ -326,42 +318,31 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .arg("config")
         .arg("endpoint")
         .arg("remove")
-        .arg("main.evercloud.dev");
+        .arg("myownhost");
+
     cmd.assert()
         .success()
-        .stdout(predicate::function(|s: &str| !s.contains("main.evercloud.dev")))
-        .stdout(predicate::function(|s: &str| !s.contains("https://mainnet.evercloud.dev")))
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
         .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
-        .stdout(predicate::str::contains("myownhost"))
-        .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"));
+        .stdout(predicate::function(|s: &str| !s.contains("myownhost")));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("endpoint").arg("print");
     cmd.assert()
         .success()
-        .stdout(predicate::function(|s: &str| !s.contains("main.evercloud.dev")))
-        .stdout(predicate::function(|s: &str| !s.contains("https://mainnet.evercloud.dev")))
-        .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
-        .stdout(predicate::str::contains("myownhost"))
-        .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"));
+        .stdout(predicate::function(|s: &str| !s.contains("myownhost")))
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
+        .stdout(predicate::str::contains("http://127.0.0.1/"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("endpoint").arg("reset");
     cmd.assert()
         .success()
-        .stdout(predicate::function(|s: &str| !s.contains("myownhost")))
-        .stdout(predicate::function(|s: &str| !s.contains("my.net.com")))
-        .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
-        .stdout(predicate::str::contains("main.evercloud.dev"))
-        .stdout(predicate::str::contains("https://mainnet.evercloud.dev"));
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
+        .stdout(predicate::str::contains("http://127.0.0.1/"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("--list");
@@ -369,8 +350,7 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains(r#""url": "myownhost","#))
         .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"))
-        .stdout(predicate::str::contains("tonlabs.net"));
+        .stdout(predicate::str::contains("my.net.com"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("clear");

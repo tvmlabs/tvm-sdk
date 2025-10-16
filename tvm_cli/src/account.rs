@@ -118,11 +118,12 @@ pub async fn get_account(
 
         let boc_base64 = result_of_get_account.boc;
         let dapp_id = result_of_get_account.dapp_id;
+        let state_timestamp = result_of_get_account.state_timestamp;
 
         let account = Account::construct_from_base64(&boc_base64)
             .map_err(|e| format!("failed to construct account from boc: {e}"))?;
 
-        accounts.push((account, dapp_id));
+        accounts.push((account, dapp_id, state_timestamp));
     }
 
     if !config.is_json {
@@ -133,7 +134,7 @@ pub async fn get_account(
 
     if !accounts.is_empty() {
         let mut json_res = json!({});
-        for (acc, dapp_id) in accounts.iter() {
+        for (acc, dapp_id, state_timestamp) in accounts.iter() {
             let address = acc.get_id().unwrap().as_hex_string();
             found_addresses.push(format!("0:{address}"));
 
@@ -183,7 +184,7 @@ pub async fn get_account(
 
                 let data_boc = if data.is_ok() {
                     hex::encode(
-                        base64_decode(&data.unwrap())
+                        base64_decode(data.unwrap())
                             .map_err(|e| format!("Failed to decode base64: {}", e))?,
                     )
                 } else {
@@ -205,6 +206,7 @@ pub async fn get_account(
                         Some(data_boc),
                         Some(code_hash),
                         None,
+                        *state_timestamp,
                     );
                 } else {
                     print_account(
@@ -217,6 +219,7 @@ pub async fn get_account(
                         Some(data_boc),
                         Some(code_hash),
                         None,
+                        *state_timestamp,
                     );
                 }
 
@@ -240,8 +243,8 @@ pub async fn get_account(
                     json_res["dapp_id"] = json!(dapp_id);
                     json_res["ecc_balance"] = ecc_balance;
                 } else {
-                    println!("dapp_id:       {}", dapp_id);
-                    println!("ecc:           {}", serde_json::to_string(&ecc_balance).unwrap());
+                    println!("dapp_id:         {}", dapp_id);
+                    println!("ecc:             {}", serde_json::to_string(&ecc_balance).unwrap());
                 }
             } else if config.is_json {
                 json_res = json_account(
@@ -253,6 +256,7 @@ pub async fn get_account(
                     None,
                     None,
                     None,
+                    *state_timestamp,
                 );
             } else {
                 print_account(
@@ -265,6 +269,7 @@ pub async fn get_account(
                     None,
                     None,
                     None,
+                    *state_timestamp,
                 );
             }
             if !config.is_json {
@@ -294,7 +299,7 @@ pub async fn get_account(
     }
 
     if dumptvc.is_some() || dumpboc.is_some() && accounts.len() == 1 {
-        let (account, _dapp_id) = accounts[0].clone();
+        let (account, ..) = accounts[0].clone();
         if dumptvc.is_some() {
             if account.state_init().is_some() {
                 account.state_init().unwrap().write_to_file(dumptvc.unwrap()).map_err(|e| {
