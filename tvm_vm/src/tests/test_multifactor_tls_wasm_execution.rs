@@ -931,4 +931,3 @@ fn test_tls_wasm_from_hash_for_facebook_invalid_root_cert() {
 
     println!("ress: {:?}", hex::encode(ress));
 }
-
