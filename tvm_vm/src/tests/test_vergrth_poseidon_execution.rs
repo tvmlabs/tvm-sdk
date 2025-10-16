@@ -16,6 +16,8 @@ use base64::decode;
 use base64ct::Encoding as bEncoding;
 use ed25519_dalek::Signer;
 use fastcrypto::ed25519::Ed25519KeyPair;
+use fastcrypto::rsa::Base64UrlUnpadded;
+use fastcrypto::rsa::Encoding;
 use fastcrypto::traits::KeyPair;
 use fastcrypto::traits::ToFromBytes;
 use num_bigint::BigUint;
@@ -34,14 +36,17 @@ use crate::executor::test_helper::*;
 use crate::executor::zk::execute_poseidon_zk_login;
 use crate::executor::zk::execute_vergrth16;
 use crate::executor::zk_stuff::error::ZkCryptoError;
+use crate::executor::zk_stuff::jwt_utils::parse_and_validate_jwt;
 use crate::executor::zk_stuff::utils::gen_address_seed;
 use crate::executor::zk_stuff::utils::get_nonce;
 use crate::executor::zk_stuff::utils::get_proof;
+use crate::executor::zk_stuff::utils::get_test_issuer_jwt_token;
 use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
 use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
 use crate::executor::zk_stuff::zk_login::OIDCProvider;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
+use crate::executor::zk_stuff::zk_login::fetch_jwks;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
@@ -948,45 +953,50 @@ fn test_vergrth16() {
 }
 
 #[tokio::test]
-async fn test_google_with_real_prove_service() {
+async fn test_test_issuer_with_real_prove_service() {
     async {
         let mut stack = Stack::new();
-
         let max_epoch = 1773994327;
-        let jwt_randomness= "218431472965469685119891380782761641897";
+        let jwt_randomness = "218431472965469685119891380782761641897";
         let user_salt = "535455565748";
-
-        let kp = Ed25519KeyPair::from_bytes(&hex::decode("2e1d3d0bc7914ebdfdb7a09367118daae1b65dc98fd5ddc40a30e9483d2ffdec").unwrap()).unwrap();
-        //Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
+        let kp = Ed25519KeyPair::from_bytes(
+            &hex::decode("2e1d3d0bc7914ebdfdb7a09367118daae1b65dc98fd5ddc40a30e9483d2ffdec")
+                .unwrap(),
+        )
+        .unwrap();
         let mut eph_pubkey = vec![0x00];
         eph_pubkey.extend(kp.public().as_ref());
-
         let nonce = get_nonce(&eph_pubkey.clone(), max_epoch, jwt_randomness).unwrap();
-
         println!("nonce : {:?}", nonce);
-
         let kp_encoded: String = base64::encode(&eph_pubkey);
         println!("kp_encoded : {:?}", kp_encoded);
         assert_eq!(kp_encoded, "AGkOhciuopy6FCipd5Woav28W8O3Yle+FXpY2LBroI6I".to_string());
+        let sub = "112897468626716626103";
 
-        let token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE3ZjBmMGYxNGU5Y2FmYTlhYjUxODAxNTBhZTcxNGM5ZmQxYjVjMjYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMzI2MjQwODUxOTEtdjF0cTIwZmcxa2RoaGd2YXQ2c2FqN2pmMGhkODIzM3IuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTc0Njg2MjY3MTY2MjYxMDMiLCJub25jZSI6IncyaUxqMFJhOTBickFQdEdlVEp5ZjQwbVpVUSIsIm5iZiI6MTc1OTc1NDYxMywiaWF0IjoxNzU5NzU0OTEzLCJleHAiOjE3NTk3NTg1MTMsImp0aSI6ImFmZTEzNTllYWZmMmI4YmMwYmQ2MTc2Njg1Y2NkMzA2NDZiY2FmNjAifQ.ehmoOi9vLSu77Z4rvvXezTo0Nj5ju8eLbdbErklzUQ0oz1JJ2Sov5Xoc7mEE_uShVXUxbzUAiBhxbQXkf1QJrhz-sAOc8H6lTBPHHMaPh5_vQNwWzbra-xMH3vW0koLtlQDv_P3UP5WhHUUnQiWgcatcfjUKv4VbMGZns6aQ9Ufsb_G1QPZM4nMU4To8kbsYTjx-I8wazghbBVP206CLmNkUreVE2Bad2qG6Or6U9kKK8uL-mHn6Qgc6gXL_iK7IehVa5Eg_gY8Na64q74vmBxz2JOSS8SJ8c-PwC99vHM3vWN523ALRpr_lMEQoDkyQ1yjzBxizo9tCI_VYdjyNXg";
-
-        //let url = &env::var("URL").unwrap_or_else(|_| MYSTEN_PROVER_DEV_SERVER_URL.to_owned());
-        //let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_DEV_SERVER_URL.to_owned());
-        let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_PROD_SERVER_URL.to_owned());
-        println!("using URL: {:?}", url);
-        let reader = get_proof(
-            &token,
-            max_epoch,
-            &jwt_randomness,
-            &kp_encoded,
-            &user_salt,
-            url,
+        let client = reqwest::Client::new();
+        let token = get_test_issuer_jwt_token(
+            &client,
+            &nonce,
+            &OIDCProvider::TestIssuer.get_config().iss,
+            &sub,
         )
         .await
-        .unwrap();
-        let sub = "112897468626716626103";
-        let aud = "232624085191-v1tq20fg1kdhhgvat6saj7jf0hd8233r.apps.googleusercontent.com";
+        .unwrap()
+        .jwt;
+
+        println!("token : {:?}", token);
+        let (sub, aud) = parse_and_validate_jwt(&token).unwrap();
+
+        // let url = &env::var("URL").unwrap_or_else(|_|
+        // MYSTEN_PROVER_DEV_SERVER_URL.to_owned()); let url = &env::var("URL").
+        // unwrap_or_else(|_| ACKI_NACKI_PROVER_DEV_SERVER_URL.to_owned());
+        let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_PROD_SERVER_URL.to_owned());
+        println!("using URL: {:?}", url);
+
+        let reader = get_proof(&token, max_epoch, &jwt_randomness, &kp_encoded, &user_salt, url)
+            .await
+            .unwrap();
+
         let address_seed = gen_address_seed(&user_salt, "sub", &sub, &aud).unwrap();
         println!("address_seed: {:?}", address_seed);
         let zk_login_inputs =
@@ -998,14 +1008,34 @@ async fn test_google_with_real_prove_service() {
         proof.serialize_compressed(&mut proof_as_bytes).unwrap();
         println!("proof_as_bytes : {:?}", hex::encode(proof_as_bytes.clone()));
 
-        ///////////////////////
+        let iss = zk_login_inputs.get_iss();
+        println!("iss : {:?}", iss);
+        let jwks = fetch_jwks(&OIDCProvider::from_iss(iss).unwrap(), &client).await.unwrap();
+        let mut all_jwk = HashMap::new();
+        for (id, jwk) in jwks {
+            all_jwk.insert(id, jwk);
+        }
+        println!("{:?}", all_jwk);
+
         println!("Verify proof...");
-        let jwk = "k3HI0jn3cz76VEhSQ3VhtF9LLEWDmt-S57--NQ3tm5W3yh9W4BsNofWVnBzi5w6VfImYRKrMSGWTeM3vlxjeTjKbWNY7PyIKv9NMuJ1vk0ENzyt1nbhvJrknLvb77Kb5HoDOHuo7hj_1gBxoTngrzUGpFyIas1OORDDFputlj9qfsoM6lowGo2bulchFnRsROrmPFeGKskYBD3vWcFMlsDkkaL-Bis_auPkT_Z7YYlkxLKpvKXujPcB8cIlFhehcnafxPGdvAm9AGJsg1Wx6V7j3a1veM8eMnfWMogkfk_NSta0CgGmrva_-6yVCuPQ19iRn9QyzmuVWbbz76S8afQ"; 
-        let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk)
-        .map_err(|_| {ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())}).unwrap(); 
-        println!("jwk modulus in hex = {:?}", hex::encode(modulus.clone()));
+        let (iss, kid) =
+            (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+        let jwk = all_jwk
+            .get(&JwkId::new(iss.clone(), kid.clone()))
+            .ok_or_else(|| {
+                ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+            })
+            .unwrap();
+
+        // Decode modulus to bytes.
+        let modulus = Base64UrlUnpadded::decode_vec(&jwk.n)
+            .map_err(|_| {
+                ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+            })
+            .unwrap();
+
         let public_inputs =
-        &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+            &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
 
         let mut public_inputs_as_bytes = vec![];
         public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
@@ -1016,7 +1046,8 @@ async fn test_google_with_real_prove_service() {
         let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
         stack.push(StackItem::cell(proof_cell.clone()));
 
-        let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
+        let public_inputs_cell =
+            pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
         stack.push(StackItem::cell(public_inputs_cell.clone()));
 
         let start: Instant = Instant::now();
@@ -1028,9 +1059,14 @@ async fn test_google_with_real_prove_service() {
 
         let code = SliceData::new(res);
 
-        let mut engine = Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
+        let mut engine = Engine::with_capabilities(0).setup_with_libraries(
+            code,
+            None,
+            Some(stack),
+            None,
+            vec![],
+        );
         let _ = engine.execute().unwrap();
-        // let status = execute_vergrth16(&mut engine).unwrap();
         let vergrth16_elapsed = start.elapsed().as_micros();
 
         println!("vergrth16_elapsed in microsecond: {:?}", vergrth16_elapsed);
@@ -1038,5 +1074,6 @@ async fn test_google_with_real_prove_service() {
         let res = engine.cc.stack.get(0).as_integer().unwrap();
         println!("res: {:?}", res);
         assert!(*res == IntegerData::minus_one());
-    }.await;
+    }
+    .await;
 }

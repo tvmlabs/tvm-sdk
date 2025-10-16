@@ -210,6 +210,7 @@ impl OIDCProvider {
     pub fn from_iss(iss: &str) -> Result<Self, ZkCryptoError> {
         match iss {
             "https://accounts.google.com" => Ok(Self::Google),
+            "https://oauth.sui.io" => Ok(Self::TestIssuer),
             "https://id.twitch.tv/oauth2" => Ok(Self::Twitch),
             "https://www.facebook.com" => Ok(Self::Facebook),
             "https://kauth.kakao.com" => Ok(Self::Kakao),

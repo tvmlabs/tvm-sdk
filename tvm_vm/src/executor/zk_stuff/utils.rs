@@ -135,10 +135,7 @@ pub async fn get_test_issuer_jwt_token(
         .send()
         .await
         .map_err(|_| ZkCryptoError::InvalidInput)?;
-    let full_bytes = response
-        .bytes()
-        .await
-        .map_err(|_| ZkCryptoError::InvalidInput)?;
+    let full_bytes = response.bytes().await.map_err(|_| ZkCryptoError::InvalidInput)?;
 
     println!("get_jwt_response response: {:?}", full_bytes);
 
@@ -170,5 +167,3 @@ pub fn get_nonce(
     let mut buf = vec![0; Base64UrlUnpadded::encoded_len(truncated)];
     Ok(Base64UrlUnpadded::encode(truncated, &mut buf).unwrap().to_string())
 }
-
-
