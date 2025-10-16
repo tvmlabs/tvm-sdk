@@ -97,6 +97,8 @@ pub enum OIDCProvider {
     KarrierOne,
     /// https://accounts.credenza3.com/openid-configuration
     Credenza3,
+    /// This is a test issuer that will return a JWT non-interactively.
+    TestIssuer,
 }
 
 impl FromStr for OIDCProvider {
@@ -112,6 +114,7 @@ impl FromStr for OIDCProvider {
             "Slack" => Ok(Self::Slack),
             "Microsoft" => Ok(Self::Microsoft),
             "KarrierOne" => Ok(Self::KarrierOne),
+            "TestIssuer" => Ok(Self::TestIssuer),
             "Credenza3" => Ok(Self::Credenza3),
             _ => {
                 let re = Regex::new(
@@ -141,6 +144,7 @@ impl ToString for OIDCProvider {
             Self::Slack => "Slack".to_string(),
             Self::Microsoft => "Microsoft".to_string(),
             Self::KarrierOne => "KarrierOne".to_string(),
+            Self::TestIssuer => "TestIssuer".to_string(),
             Self::Credenza3 => "Credenza3".to_string(),
             Self::AwsTenant((region, tenant_id)) => {
                 format!("AwsTenant-region:{}-tenant_id:{}", region, tenant_id)
@@ -190,6 +194,10 @@ impl OIDCProvider {
             OIDCProvider::KarrierOne => ProviderConfig::new(
                 "https://accounts.karrier.one/",
                 "https://accounts.karrier.one/.well-known/jwks",
+            ),
+            OIDCProvider::TestIssuer => ProviderConfig::new(
+                "https://oauth.sui.io",
+                "https://jwt-tester.mystenlabs.com/.well-known/jwks.json",
             ),
             OIDCProvider::Credenza3 => ProviderConfig::new(
                 "https://accounts.credenza3.com",

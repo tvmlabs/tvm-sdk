@@ -119,6 +119,34 @@ pub async fn get_proof(
     Ok(get_proof_response)
 }
 
+pub async fn get_test_issuer_jwt_token(
+    client: &reqwest::Client,
+    nonce: &str,
+    iss: &str,
+    sub: &str,
+) -> Result<TestIssuerJWTResponse, ZkCryptoError> {
+    let response = client
+        .post(format!(
+            "https://jwt-tester.mystenlabs.com/jwt?nonce={}&iss={}&sub={}",
+            nonce, iss, sub
+        ))
+        .header("Content-Type", "application/json")
+        .header("Content-Length", "0")
+        .send()
+        .await
+        .map_err(|_| ZkCryptoError::InvalidInput)?;
+    let full_bytes = response
+        .bytes()
+        .await
+        .map_err(|_| ZkCryptoError::InvalidInput)?;
+
+    println!("get_jwt_response response: {:?}", full_bytes);
+
+    let get_jwt_response: TestIssuerJWTResponse =
+        serde_json::from_slice(&full_bytes).map_err(|_| ZkCryptoError::InvalidInput)?;
+    Ok(get_jwt_response)
+}
+
 /// Calculate the nonce for the given parameters. Nonce is defined as the
 /// Base64Url encoded of the poseidon hash of 4 inputs: first half of
 /// eph_pk_bytes in BigInt, second half of eph_pk_bytes in BigInt, max_epoch and
@@ -142,3 +170,5 @@ pub fn get_nonce(
     let mut buf = vec![0; Base64UrlUnpadded::encoded_len(truncated)];
     Ok(Base64UrlUnpadded::encode(truncated, &mut buf).unwrap().to_string())
 }
+
+
