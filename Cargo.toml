@@ -24,7 +24,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "2.24.1"
+version = "2.24.2"
 
 rust-version = "1.76.0"
 
@@ -96,6 +96,7 @@ regex = "1.10.3"
 reqwest = { version = "0.12.12", default-features = false, features = [
   "rustls-tls-webpki-roots",
 ] }
+semver = "1.0.27"
 serde = "1.0.197"
 serde_derive = "1.0.197"
 serde_json = "1.0.114"
