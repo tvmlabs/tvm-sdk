@@ -145,7 +145,7 @@ pub struct Engine {
     wasm_block_timestamp: u64,
 
     mvconfig: MVConfig,
-    seq_no: u32,
+    engine_version: semver::Version,
 
     pub(in crate::executor) self_dapp_id: Option<UInt256>,
 }
@@ -316,7 +316,7 @@ impl Engine {
             wasm_block_timestamp: 0,
             self_dapp_id: None,
             mvconfig: MVConfig::default(),
-            seq_no: 0,
+            engine_version: "1.0.0".parse().unwrap(),
         }
     }
 
@@ -336,12 +336,12 @@ impl Engine {
         self.mvconfig.clone()
     }
 
-    pub fn get_seq_no(&mut self) -> u32 {
-        self.seq_no
+    pub fn get_version(&mut self) -> semver::Version {
+        self.engine_version.clone()
     }
 
-    pub fn set_seq_no(&mut self, seq_no: u32) {
-        self.seq_no = seq_no;
+    pub fn set_version(&mut self, version: semver::Version) {
+        self.engine_version = version;
     }
 
     pub fn set_block_related_flags(
