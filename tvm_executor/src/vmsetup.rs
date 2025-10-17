@@ -89,8 +89,8 @@ impl VMSetup {
         self
     }
 
-    pub fn set_engine_seq_no(mut self, seq_no: u32) -> VMSetup {
-        self.vm.set_seq_no(seq_no);
+    pub fn set_engine_version(mut self, version: semver::Version) -> VMSetup {
+        self.vm.set_version(version);
         self
     }
 

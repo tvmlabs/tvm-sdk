@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.2] - 2025-10-17
+
+## Changed/Fixed
+- Block seq no to repair accounts moved from SDK
+- Added engine version to execute params
+
 ## [2.24.1] - 2025-10-15
 
 ## Changed/Fixed

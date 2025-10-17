@@ -36,7 +36,6 @@ use crate::utils::unpack_data_from_cell;
 pub const ECC_NACKL_KEY: u32 = 1;
 pub const ECC_SHELL_KEY: u32 = 2;
 pub const INFINITY_CREDIT: i128 = -1;
-pub const REPAIR_BK_WALLETS_BLOCK_SEQ_NO: u32 = 2645000;
 
 // pub const ARFC: f64 = 1000_f64;
 // pub const MINRC: f64 = 1_f64;
@@ -590,7 +589,7 @@ fn params_from_types(types: Vec<ParamType>) -> Vec<Param> {
 
 pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMVREWARD"))?;
-    let seq_no = engine.get_seq_no();
+    let engine_version = engine.get_version();
     fetch_stack(engine, 5)?;
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
@@ -653,7 +652,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
             exception!(ExceptionCode::CellUnpackError, "Failed to decode mbn_lst array: {:?}", e)
         })?;
     let mbn_lst;
-    if seq_no <= REPAIR_BK_WALLETS_BLOCK_SEQ_NO {
+    if engine_version <= "1.0.0".parse().unwrap() {
         mbn_lst = if let Some(token) = tokens.first() {
             if let TokenValue::Array(_, items) = &token.value {
                 items
@@ -701,7 +700,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
     log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
 
-    let bclst = if seq_no <= REPAIR_BK_WALLETS_BLOCK_SEQ_NO {
+    let bclst = if engine_version <= "1.0.0".parse().unwrap() {
         build_bclst_old(&to_umbnlst(&mbn_lst))
     } else {
         build_bclst(&to_umbnlst(&mbn_lst))
