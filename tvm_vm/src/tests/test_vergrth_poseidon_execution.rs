@@ -17,14 +17,11 @@ use base64ct::Encoding as bEncoding;
 use ed25519_dalek::Signer;
 use fastcrypto::ed25519::Ed25519KeyPair;
 use fastcrypto::rsa::Base64UrlUnpadded;
-use fastcrypto::rsa::Encoding;
 use fastcrypto::traits::KeyPair;
 use fastcrypto::traits::ToFromBytes;
 use num_bigint::BigUint;
 use num_traits::Zero;
-use rand::SeedableRng;
 use rand::rngs::OsRng;
-use rand::rngs::StdRng;
 use serde_json::Value;
 use tvm_types::Cell;
 use tvm_types::SliceData;
@@ -997,13 +994,15 @@ async fn test_test_issuer_with_real_prove_service() {
             .await
             .unwrap();
 
+        println!("reader: {:?}", reader);
+
         let address_seed = gen_address_seed(&user_salt, "sub", &sub, &aud).unwrap();
         println!("address_seed: {:?}", address_seed);
         let zk_login_inputs =
             ZkLoginInputs::from_reader(reader, &address_seed.to_string()).unwrap();
 
         let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
-
+        println!("proof : {:?}", proof);
         let mut proof_as_bytes = vec![];
         proof.serialize_compressed(&mut proof_as_bytes).unwrap();
         println!("proof_as_bytes : {:?}", hex::encode(proof_as_bytes.clone()));
