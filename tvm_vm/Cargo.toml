@@ -36,6 +36,7 @@ tvm_types.workspace = true
 tvm_abi.workspace = true
 serde_json.workspace = true
 num-bigint.workspace = true
+semver.workspace = true
 serde.workspace = true
 
 regex.workspace = true

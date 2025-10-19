@@ -142,6 +142,7 @@ pub struct ExecuteParams {
     pub wasm_engine: Option<wasmtime::Engine>,
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
+    pub engine_version: semver::Version,
 }
 
 pub struct ActionPhaseResult {
@@ -190,6 +191,7 @@ impl Default for ExecuteParams {
             wasm_engine: None,
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
+            engine_version: "1.0.0".parse().unwrap(),
         }
     }
 }
@@ -534,7 +536,7 @@ pub trait TransactionExecutor {
         )
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_engine_available_credit(params.available_credit)
-        .set_engine_seq_no(params.seq_no)
+        .set_engine_version(params.engine_version.clone())
         .set_engine_mv_config(params.mvconfig.clone())
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
         .set_wasm_block_time(params.block_unixtime.into())
