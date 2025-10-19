@@ -995,6 +995,8 @@ async fn test_test_issuer_with_real_prove_service() {
             .unwrap();
 
         println!("reader: {:?}", reader);
+        println!("reader.header_base64 : {:?}", reader.header_base64);
+        println!("reader.iss_base64_details : {:?}", reader.iss_base64_details);
 
         let address_seed = gen_address_seed(&user_salt, "sub", &sub, &aud).unwrap();
         println!("address_seed: {:?}", address_seed);
@@ -1003,6 +1005,7 @@ async fn test_test_issuer_with_real_prove_service() {
 
         let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
         println!("proof : {:?}", proof);
+
         let mut proof_as_bytes = vec![];
         proof.serialize_compressed(&mut proof_as_bytes).unwrap();
         println!("proof_as_bytes : {:?}", hex::encode(proof_as_bytes.clone()));
@@ -1032,6 +1035,9 @@ async fn test_test_issuer_with_real_prove_service() {
                 ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
             })
             .unwrap();
+
+        println!("HERE get_header_base64 : {:?}", zk_login_inputs.get_header_base64());
+        println!("HERE get_iss : {:?}", zk_login_inputs.get_iss());
 
         let public_inputs =
             &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];

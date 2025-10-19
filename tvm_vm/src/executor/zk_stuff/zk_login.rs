@@ -399,11 +399,11 @@ pub struct ZkLoginInputs {
 #[derive(Debug, Clone, JsonSchema, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ZkLoginInputsReader {
-    proof_points: ZkLoginProof,
-    iss_base64_details: Claim,
-    header_base64: String,
+    pub proof_points: ZkLoginProof,
+    pub iss_base64_details: Claim,
+    pub header_base64: String,
     #[serde(skip)]
-    jwt_details: JWTDetails,
+    pub jwt_details: JWTDetails,
 }
 
 impl ZkLoginInputs {
@@ -445,6 +445,10 @@ impl ZkLoginInputs {
     /// Get the parsed iss string.
     pub fn get_iss(&self) -> &str {
         &self.jwt_details.iss
+    }
+
+    pub fn get_header_base64(&self) -> &str {
+        &self.header_base64
     }
 
     /// Get the zk login proof.
