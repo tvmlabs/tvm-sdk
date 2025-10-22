@@ -199,7 +199,7 @@ impl Default for ExecuteParams {
 pub trait TransactionExecutor {
     fn execute_with_params(
         &self,
-        in_msg: Option<&mut Message>,
+        in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
         minted_shell: &mut i128,
@@ -207,7 +207,7 @@ pub trait TransactionExecutor {
 
     fn execute_with_libs_and_params(
         &self,
-        in_msg: Option<&mut Message>,
+        in_msg: Option<&Message>,
         account_root: &mut Cell,
         params: ExecuteParams,
     ) -> Result<(Transaction, i128)> {
@@ -471,15 +471,13 @@ pub trait TransactionExecutor {
             }
             let compute_result =
                 compute_new_state(&mut result_acc, acc_balance, msg, self.config());
-            if let Err(_) = &compute_result {
+            if let Some(reason) = compute_result? {
                 if let CommonMsgInfo::IntMsgInfo(ref mut header) = msg.header_mut() {
                     if !header.bounce {
                         msg_balance.grams = Grams::zero();
                         header.value_mut().set_grams(0)?;
                     }
                 }
-            }
-            if let Some(reason) = compute_result? {
                 if !init_code_hash {
                     *acc = result_acc;
                 }

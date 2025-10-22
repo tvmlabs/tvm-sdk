@@ -441,7 +441,7 @@ pub async fn replay(
             if trace_callback.is_some() {
                 init_trace_last_logger()?;
                 let executor = Box::new(OrdinaryTransactionExecutor::new(config.clone()));
-                let mut msg = tr
+                let msg = tr
                     .tr
                     .in_msg_cell()
                     .map(|c| {
@@ -457,7 +457,7 @@ pub async fn replay(
                     ..ExecuteParams::default()
                 };
                 let (tr, _) = executor
-                    .execute_with_libs_and_params(msg.as_mut(), &mut account_root, params)
+                    .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params)
                     .map_err(|e| format!("Failed to execute txn: {}", e))?;
                 return Ok(tr);
             }
@@ -475,7 +475,7 @@ pub async fn replay(
             }
         };
 
-        let mut msg = tr
+        let msg = tr
             .tr
             .in_msg_cell()
             .map(|c| {
@@ -491,7 +491,7 @@ pub async fn replay(
             ..ExecuteParams::default()
         };
         let (tr_local, _) = executor
-            .execute_with_libs_and_params(msg.as_mut(), &mut account_root, params)
+            .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params)
             .map_err(|e| format!("Failed to execute txn: {}", e))?;
         state.account = Account::construct_from_cell(account_root.clone())
             .map_err(|e| format!("Failed to construct account: {}", e))?;
