@@ -80,13 +80,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
     /// Create and execute transaction from message for account
     fn execute_with_params(
         &self,
-        in_msg: Option<&mut Message>,
+        in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
         minted_shell: &mut i128,
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
+        let mut binding = in_msg.cloned();
+        let in_msg: Option<&mut Message> = binding.as_mut();
 
         let is_previous_state_active = match account.state() {
             Some(AccountState::AccountUninit {}) => false,
