@@ -59,7 +59,7 @@ pub struct Config {
     pub endpoints: Vec<String>,
 }
 
-const CONFIG_BASE_NAME: &str = "tonos-cli.conf.json";
+const CONFIG_BASE_NAME: &str = "tvm-cli.conf.json";
 
 fn print_paths(prefix: &str) {
     let folder = if !prefix.contains('/') { "./" } else { prefix.trim_end_matches(|c| c != '/') };
@@ -104,6 +104,7 @@ fn main() {
             options_map.insert(word.as_str(), words[index + 1].as_str());
         }
     }
+
     let config_path = options_map
         .get(&"-c")
         .or(options_map.get(&"--config").or(Some(&CONFIG_BASE_NAME)))

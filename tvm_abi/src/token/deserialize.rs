@@ -547,7 +547,6 @@ impl TokenValue {
         let mut tokens = vec![];
 
         for param in params {
-            // println!("{:?}", param);
             let last = Some(param) == params.last() && last;
             let (token_value, new_cursor) =
                 Self::read_from(&param.kind, cursor, last, abi_version, allow_partial)?;

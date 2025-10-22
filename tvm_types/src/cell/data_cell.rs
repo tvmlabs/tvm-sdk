@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::cmp::max;
 use std::collections::BTreeSet;
 use std::io::Cursor;
@@ -5,8 +6,7 @@ use std::io::Read;
 use std::io::Write;
 use std::sync::Arc;
 
-use bloom::ASMS;
-use bloom::BloomFilter;
+use fastbloom::BloomFilter;
 use smallvec::SmallVec;
 use smallvec::smallvec;
 
@@ -47,8 +47,8 @@ impl Default for DataCell {
 }
 
 thread_local! {
-    static UNIQUE_CELLS: std::cell::RefCell<BTreeSet<HashableCell>> = const { std::cell::RefCell::new(BTreeSet::new()) };
-    static UNIQUE_BLOOM: std::cell::RefCell<BloomFilter> = std::cell::RefCell::new(BloomFilter::with_rate(0.00001,1000000));
+    static UNIQUE_CELLS: RefCell<BTreeSet<HashableCell>> = const { RefCell::new(BTreeSet::new()) };
+    static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
 }
 
 impl DataCell {

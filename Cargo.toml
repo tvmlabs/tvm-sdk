@@ -24,14 +24,15 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "2.23.4"
+version = "2.24.2"
 
 rust-version = "1.76.0"
 
 authors = ["TVM Labs <hello@tvmlabs.io>"]
 repository = "https://github.com/tvmlabs/tvm-sdk"
 edition = "2021"
-license = "GPL-3.0"
+license = "GPL-3.0-or-later"
+license-file = "LICENSE"
 
 [workspace.lints.rust]
 # aim to have fmt::Debug implemented for all our public types
@@ -95,6 +96,7 @@ regex = "1.10.3"
 reqwest = { version = "0.12.12", default-features = false, features = [
   "rustls-tls-webpki-roots",
 ] }
+semver = "1.0.27"
 serde = "1.0.197"
 serde_derive = "1.0.197"
 serde_json = "1.0.114"

@@ -17,6 +17,22 @@ pub struct ExecutionResult {
     gas_used: i64,
 }
 
+impl std::fmt::Display for ExecutionResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "is_json: {}, log: {:?}, messages: {:?}, response: {}, response_code: {}, is_vm_success: {}, gas_used: {}",
+            self.is_json,
+            self.log,
+            self.messages,
+            self.response,
+            self.response_code,
+            self.is_vm_success,
+            self.gas_used
+        )
+    }
+}
+
 impl ExecutionResult {
     pub(crate) fn new(is_json: bool) -> ExecutionResult {
         return ExecutionResult {

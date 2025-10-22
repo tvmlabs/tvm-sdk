@@ -13,6 +13,7 @@ pub struct ParamsOfGetAccount {
 pub struct ResultOfGetAccount {
     pub boc: String,
     pub dapp_id: Option<String>,
+    pub state_timestamp: Option<u64>,
 }
 
 #[cfg(test)]
