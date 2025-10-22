@@ -474,6 +474,11 @@ pub trait TransactionExecutor {
             if let Some(reason) = compute_result? {
                 if let CommonMsgInfo::IntMsgInfo(ref mut header) = msg.header_mut() {
                     if !header.bounce {
+                        if msg_balance.grams > acc_balance.grams {
+                            acc_balance.grams = Grams::zero();
+                        } else {
+                            acc_balance.grams -= msg_balance.grams;
+                        }
                         msg_balance.grams = Grams::zero();
                         header.value_mut().set_grams(0)?;
                     }
