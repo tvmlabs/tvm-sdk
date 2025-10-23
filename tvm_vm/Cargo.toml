@@ -30,6 +30,7 @@ wasmtime-wasi.workspace = true
 wasmtime-wasi-io.workspace = true
 zstd = { default-features = false, optional = true, workspace = true }
 
+tokio.workspace = true
 tvm_block.workspace = true
 tvm_types.workspace = true
 tvm_abi.workspace = true
@@ -39,6 +40,12 @@ semver.workspace = true
 serde.workspace = true
 
 regex.workspace = true
+reqwest = { version = "0.12", default-features = false, features = [
+  "blocking",
+  "json",
+  "rustls-tls",
+] }
+
 
 bls12_381 = "0.8"
 
