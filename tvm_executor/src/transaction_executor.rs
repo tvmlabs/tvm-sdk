@@ -473,7 +473,7 @@ pub trait TransactionExecutor {
                 compute_new_state(&mut result_acc, acc_balance, msg, self.config());
             if let Some(reason) = compute_result? {
                 if let CommonMsgInfo::IntMsgInfo(ref mut header) = msg.header_mut() {
-                    if !header.bounce {
+                    if !header.bounce && reason == ComputeSkipReason::BadState {
                         if msg_balance.grams > acc_balance.grams {
                             acc_balance.grams = Grams::zero();
                         } else {
