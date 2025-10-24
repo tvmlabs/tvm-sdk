@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.3] - 2025-10-23
+
+## New
+- Add get_proof and get_nonce functions
+
+## [2.24.2] - 2025-10-17
+
+## Changed/Fixed
+- Block seq no to repair accounts moved from SDK
+- Added engine version to execute params
+
+## [2.24.1] - 2025-10-15
+
+## Changed/Fixed
+- MobileVerifiers rewards fixes
+
 ## [2.24.0] - 2025-10-15
 
 ### Added

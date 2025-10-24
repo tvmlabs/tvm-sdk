@@ -9,12 +9,14 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 use std::collections::HashMap;
+use std::env;
 use std::time::Instant;
 
 use base64::decode;
 use base64ct::Encoding as bEncoding;
 use ed25519_dalek::Signer;
 use fastcrypto::ed25519::Ed25519KeyPair;
+use fastcrypto::rsa::Base64UrlUnpadded;
 use fastcrypto::traits::KeyPair;
 use fastcrypto::traits::ToFromBytes;
 use num_bigint::BigUint;
@@ -31,12 +33,17 @@ use crate::executor::test_helper::*;
 use crate::executor::zk::execute_poseidon_zk_login;
 use crate::executor::zk::execute_vergrth16;
 use crate::executor::zk_stuff::error::ZkCryptoError;
+use crate::executor::zk_stuff::jwt_utils::parse_and_validate_jwt;
 use crate::executor::zk_stuff::utils::gen_address_seed;
+use crate::executor::zk_stuff::utils::get_nonce;
+use crate::executor::zk_stuff::utils::get_proof;
+use crate::executor::zk_stuff::utils::get_test_issuer_jwt_token;
 use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
 use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
 use crate::executor::zk_stuff::zk_login::OIDCProvider;
 use crate::executor::zk_stuff::zk_login::ZkLoginInputs;
+use crate::executor::zk_stuff::zk_login::fetch_jwks;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
@@ -53,6 +60,10 @@ const KAKAO: &str = "kakao";
 const SLACK: &str = "slack";
 const KARRIER_ONE: &str = "karrier_one";
 const MICROSOFT: &str = "microsoft";
+
+// const MYSTEN_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.mystenlabs.com/v1";
+// const ACKI_NACKI_PROVER_DEV_SERVER_URL: &str = "https://prover-dev.ackinacki.org/v1";
+const ACKI_NACKI_PROVER_PROD_SERVER_URL: &str = "https://prover.ackinacki.org/v1";
 
 fn single_chcksgns(
     engine: &mut Engine,
@@ -929,4 +940,138 @@ fn test_vergrth16() {
     let res = engine.cc.stack.get(0).as_integer().unwrap();
     println!("res: {:?}", res);
     // assert!(*res == IntegerData::minus_one());
+}
+
+#[tokio::test]
+async fn test_test_issuer_with_real_prove_service() {
+    async {
+        let mut stack = Stack::new();
+        let max_epoch = 1773994327;
+        let jwt_randomness = "218431472965469685119891380782761641897";
+        let user_salt = "535455565748";
+        let kp = Ed25519KeyPair::from_bytes(
+            &hex::decode("2e1d3d0bc7914ebdfdb7a09367118daae1b65dc98fd5ddc40a30e9483d2ffdec")
+                .unwrap(),
+        )
+        .unwrap();
+        let mut eph_pubkey = vec![0x00];
+        eph_pubkey.extend(kp.public().as_ref());
+        let nonce = get_nonce(&eph_pubkey.clone(), max_epoch, jwt_randomness).unwrap();
+        println!("nonce : {:?}", nonce);
+        let kp_encoded: String = base64::encode(&eph_pubkey);
+        println!("kp_encoded : {:?}", kp_encoded);
+        assert_eq!(kp_encoded, "AGkOhciuopy6FCipd5Woav28W8O3Yle+FXpY2LBroI6I".to_string());
+        let sub = "112897468626716626103";
+
+        let client = reqwest::Client::new();
+        let token = get_test_issuer_jwt_token(
+            &client,
+            &nonce,
+            &OIDCProvider::TestIssuer.get_config().iss,
+            &sub,
+        )
+        .await
+        .unwrap()
+        .jwt;
+
+        println!("token : {:?}", token);
+        let (sub, aud) = parse_and_validate_jwt(&token).unwrap();
+
+        // let url = &env::var("URL").unwrap_or_else(|_|
+        // MYSTEN_PROVER_DEV_SERVER_URL.to_owned()); let url = &env::var("URL").
+        // unwrap_or_else(|_| ACKI_NACKI_PROVER_DEV_SERVER_URL.to_owned());
+        let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_PROD_SERVER_URL.to_owned());
+        println!("using URL: {:?}", url);
+
+        let reader = get_proof(&token, max_epoch, &jwt_randomness, &kp_encoded, &user_salt, url)
+            .await
+            .unwrap();
+
+        println!("reader: {:?}", reader);
+        println!("reader.header_base64 : {:?}", reader.header_base64);
+        println!("reader.iss_base64_details : {:?}", reader.iss_base64_details);
+
+        let address_seed = gen_address_seed(&user_salt, "sub", &sub, &aud).unwrap();
+        println!("address_seed: {:?}", address_seed);
+        let zk_login_inputs =
+            ZkLoginInputs::from_reader(reader, &address_seed.to_string()).unwrap();
+
+        let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
+        println!("proof : {:?}", proof);
+
+        let mut proof_as_bytes = vec![];
+        proof.serialize_compressed(&mut proof_as_bytes).unwrap();
+        println!("proof_as_bytes : {:?}", hex::encode(proof_as_bytes.clone()));
+
+        let iss = zk_login_inputs.get_iss();
+        println!("iss : {:?}", iss);
+        let jwks = fetch_jwks(&OIDCProvider::from_iss(iss).unwrap(), &client).await.unwrap();
+        let mut all_jwk = HashMap::new();
+        for (id, jwk) in jwks {
+            all_jwk.insert(id, jwk);
+        }
+        println!("{:?}", all_jwk);
+
+        println!("Verify proof...");
+        let (iss, kid) =
+            (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
+        let jwk = all_jwk
+            .get(&JwkId::new(iss.clone(), kid.clone()))
+            .ok_or_else(|| {
+                ZkCryptoError::GeneralError(format!("JWK not found ({} - {})", iss, kid))
+            })
+            .unwrap();
+
+        // Decode modulus to bytes.
+        let modulus = Base64UrlUnpadded::decode_vec(&jwk.n)
+            .map_err(|_| {
+                ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string())
+            })
+            .unwrap();
+
+        println!("HERE get_header_base64 : {:?}", zk_login_inputs.get_header_base64());
+        println!("HERE get_iss : {:?}", zk_login_inputs.get_iss());
+
+        let public_inputs =
+            &[zk_login_inputs.calculate_all_inputs_hash(&eph_pubkey, &modulus, max_epoch).unwrap()];
+
+        let mut public_inputs_as_bytes = vec![];
+        public_inputs.serialize_compressed(&mut public_inputs_as_bytes).unwrap();
+        println!("HERE public_inputs_as_bytes : {:?}", public_inputs_as_bytes);
+        println!("HERE public_inputs_as_bytes len : {:?}", public_inputs_as_bytes.len());
+
+        println!("====== Start VERGRTH16 ========");
+        let proof_cell = pack_data_to_cell(&proof_as_bytes, &mut 0).unwrap();
+        stack.push(StackItem::cell(proof_cell.clone()));
+
+        let public_inputs_cell =
+            pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
+        stack.push(StackItem::cell(public_inputs_cell.clone()));
+
+        let start: Instant = Instant::now();
+
+        let mut res = Vec::<u8>::with_capacity(2);
+        res.push(0xC7);
+        res.push(0x31);
+        res.push(0x80);
+
+        let code = SliceData::new(res);
+
+        let mut engine = Engine::with_capabilities(0).setup_with_libraries(
+            code,
+            None,
+            Some(stack),
+            None,
+            vec![],
+        );
+        let _ = engine.execute().unwrap();
+        let vergrth16_elapsed = start.elapsed().as_micros();
+
+        println!("vergrth16_elapsed in microsecond: {:?}", vergrth16_elapsed);
+
+        let res = engine.cc.stack.get(0).as_integer().unwrap();
+        println!("res: {:?}", res);
+        assert!(*res == IntegerData::minus_one());
+    }
+    .await;
 }

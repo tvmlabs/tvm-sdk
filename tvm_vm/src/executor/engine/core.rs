@@ -64,6 +64,17 @@ use crate::types::ResultOpt;
 use crate::types::ResultRef;
 use crate::types::Status;
 
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct MVConfig {
+    pub mbn_lst_global: Vec<u64>,
+}
+
+impl MVConfig {
+    pub fn set_config(&mut self, mbn_lst: Vec<u64>) {
+        self.mbn_lst_global = mbn_lst;
+    }
+}
+
 pub(super) type ExecuteHandler = fn(&mut Engine) -> Status;
 
 pub(super) struct SliceProto {
@@ -132,6 +143,9 @@ pub struct Engine {
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
     wasm_engine_cache: Option<wasmtime::Engine>,
     wasm_block_timestamp: u64,
+
+    mvconfig: MVConfig,
+    engine_version: semver::Version,
 
     pub(in crate::executor) self_dapp_id: Option<UInt256>,
 }
@@ -301,6 +315,8 @@ impl Engine {
             wasm_engine_cache: None,
             wasm_block_timestamp: 0,
             self_dapp_id: None,
+            mvconfig: MVConfig::default(),
+            engine_version: "1.0.0".parse().unwrap(),
         }
     }
 
@@ -310,6 +326,22 @@ impl Engine {
 
     pub fn get_available_credit(&mut self) -> i128 {
         self.available_credit
+    }
+
+    pub fn set_mv_config(&mut self, config: MVConfig) {
+        self.mvconfig = config;
+    }
+
+    pub fn get_mv_config(&mut self) -> MVConfig {
+        self.mvconfig.clone()
+    }
+
+    pub fn get_version(&mut self) -> semver::Version {
+        self.engine_version.clone()
+    }
+
+    pub fn set_version(&mut self, version: semver::Version) {
+        self.engine_version = version;
     }
 
     pub fn set_block_related_flags(
