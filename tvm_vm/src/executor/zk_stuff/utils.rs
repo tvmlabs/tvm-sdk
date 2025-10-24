@@ -82,7 +82,6 @@ pub fn split_to_two_frs(eph_pk_bytes: &[u8]) -> Result<(Bn254Fr, Bn254Fr), ZkCry
 /// The response struct for the test issuer JWT token.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TestIssuerJWTResponse {
-    /// JWT token string.
     pub jwt: String,
 }
 
@@ -111,11 +110,21 @@ pub async fn get_proof(
         .json(&body)
         .send()
         .await
-        .map_err(|_| ZkCryptoError::InvalidInput)?;
-    let full_bytes = response.bytes().await.map_err(|_| ZkCryptoError::InvalidInput)?;
+        .map_err(|err| {
+            tracing::error!("{err:?}");
+            ZkCryptoError::InvalidInput
+        })?;
+
+    let full_bytes = response.bytes().await.map_err(|err| {
+        tracing::error!("{err:?}");
+        ZkCryptoError::InvalidInput
+    })?;
 
     let get_proof_response: ZkLoginInputsReader =
-        serde_json::from_slice(&full_bytes).map_err(|_| ZkCryptoError::InvalidInput)?;
+        serde_json::from_slice(&full_bytes).map_err(|err| {
+            tracing::error!("{err:?}");
+            ZkCryptoError::InvalidInput
+        })?;
     Ok(get_proof_response)
 }
 
@@ -134,13 +143,21 @@ pub async fn get_test_issuer_jwt_token(
         .header("Content-Length", "0")
         .send()
         .await
-        .map_err(|_| ZkCryptoError::InvalidInput)?;
-    let full_bytes = response.bytes().await.map_err(|_| ZkCryptoError::InvalidInput)?;
+        .map_err(|err| {
+            tracing::error!("{err:?}");
+            ZkCryptoError::InvalidInput
+        })?;
 
-    println!("get_jwt_response response: {:?}", full_bytes);
+    let full_bytes = response.bytes().await.map_err(|err| {
+        tracing::error!("{err:?}");
+        ZkCryptoError::InvalidInput
+    })?;
 
     let get_jwt_response: TestIssuerJWTResponse =
-        serde_json::from_slice(&full_bytes).map_err(|_| ZkCryptoError::InvalidInput)?;
+        serde_json::from_slice(&full_bytes).map_err(|err| {
+            tracing::error!("{err:?}");
+            ZkCryptoError::InvalidInput
+        })?;
     Ok(get_jwt_response)
 }
 
@@ -154,12 +171,10 @@ pub fn get_nonce(
     jwt_randomness: &str,
 ) -> Result<String, ZkCryptoError> {
     let (first, second) = split_to_two_frs(eph_pk_bytes)?;
-
     let max_epoch = Bn254Fr::from_str(&max_epoch.to_string())
         .expect("max_epoch.to_string is always non empty string without trailing zeros");
     let jwt_randomness =
         Bn254Fr::from_str(jwt_randomness).map_err(|_| ZkCryptoError::InvalidInput)?;
-
     let hash = poseidon_zk_login([first, second, max_epoch, jwt_randomness].to_vec())
         .expect("inputs is not too long");
     let data = BigUint::from(hash).to_bytes_be();
