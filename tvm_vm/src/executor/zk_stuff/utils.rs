@@ -137,8 +137,6 @@ pub async fn get_test_issuer_jwt_token(
         .map_err(|_| ZkCryptoError::InvalidInput)?;
     let full_bytes = response.bytes().await.map_err(|_| ZkCryptoError::InvalidInput)?;
 
-    println!("get_jwt_response response: {:?}", full_bytes);
-
     let get_jwt_response: TestIssuerJWTResponse =
         serde_json::from_slice(&full_bytes).map_err(|_| ZkCryptoError::InvalidInput)?;
     Ok(get_jwt_response)
