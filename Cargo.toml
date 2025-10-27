@@ -24,7 +24,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "2.24.2"
+version = "2.24.3"
 
 rust-version = "1.76.0"
 
