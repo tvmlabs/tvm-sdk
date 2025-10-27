@@ -13,6 +13,7 @@ pub use ark_serialize::CanonicalSerialize;
 use itertools::Itertools;
 use num_bigint::BigUint;
 use regex::Regex;
+use reqwest::Client;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -96,6 +97,8 @@ pub enum OIDCProvider {
     KarrierOne,
     /// https://accounts.credenza3.com/openid-configuration
     Credenza3,
+    /// This is a test issuer that will return a JWT non-interactively.
+    TestIssuer,
 }
 
 impl FromStr for OIDCProvider {
@@ -111,6 +114,7 @@ impl FromStr for OIDCProvider {
             "Slack" => Ok(Self::Slack),
             "Microsoft" => Ok(Self::Microsoft),
             "KarrierOne" => Ok(Self::KarrierOne),
+            "TestIssuer" => Ok(Self::TestIssuer),
             "Credenza3" => Ok(Self::Credenza3),
             _ => {
                 let re = Regex::new(
@@ -140,6 +144,7 @@ impl ToString for OIDCProvider {
             Self::Slack => "Slack".to_string(),
             Self::Microsoft => "Microsoft".to_string(),
             Self::KarrierOne => "KarrierOne".to_string(),
+            Self::TestIssuer => "TestIssuer".to_string(),
             Self::Credenza3 => "Credenza3".to_string(),
             Self::AwsTenant((region, tenant_id)) => {
                 format!("AwsTenant-region:{}-tenant_id:{}", region, tenant_id)
@@ -190,6 +195,10 @@ impl OIDCProvider {
                 "https://accounts.karrier.one/",
                 "https://accounts.karrier.one/.well-known/jwks",
             ),
+            OIDCProvider::TestIssuer => ProviderConfig::new(
+                "https://oauth.sui.io",
+                "https://jwt-tester.mystenlabs.com/.well-known/jwks.json",
+            ),
             OIDCProvider::Credenza3 => ProviderConfig::new(
                 "https://accounts.credenza3.com",
                 "https://accounts.credenza3.com/jwks",
@@ -201,6 +210,7 @@ impl OIDCProvider {
     pub fn from_iss(iss: &str) -> Result<Self, ZkCryptoError> {
         match iss {
             "https://accounts.google.com" => Ok(Self::Google),
+            "https://oauth.sui.io" => Ok(Self::TestIssuer),
             "https://id.twitch.tv/oauth2" => Ok(Self::Twitch),
             "https://www.facebook.com" => Ok(Self::Facebook),
             "https://kauth.kakao.com" => Ok(Self::Kakao),
@@ -298,31 +308,23 @@ fn trim(str: String) -> String {
     str.trim_end_matches('=').to_owned()
 }
 
-// /// Fetch JWKs from the given provider and return a list of JwkId -> JWK.
-// pub async fn fetch_jwks(
-// provider: &OIDCProvider,
-// client: &Client,
-// ) -> Result<Vec<(JwkId, JWK)>, ZkCryptoError> {
-// let response = client
-// .get(provider.get_config().jwk_endpoint)
-// .send()
-// .await
-// .map_err(|e| {
-// ZkCryptoError::GeneralError(format!(
-// "Failed to get JWK {:?} {:?}",
-// e.to_string(),
-// provider
-// ))
-// })?;
-// let bytes = response.bytes().await.map_err(|e| {
-// ZkCryptoError::GeneralError(format!(
-// "Failed to get bytes {:?} {:?}",
-// e.to_string(),
-// provider
-// ))
-// })?;
-// parse_jwks(&bytes, provider)
-// }
+/// Fetch JWKs from the given provider and return a list of JwkId -> JWK.
+pub async fn fetch_jwks(
+    provider: &OIDCProvider,
+    client: &Client,
+) -> Result<Vec<(JwkId, JWK)>, ZkCryptoError> {
+    let response = client.get(provider.get_config().jwk_endpoint).send().await.map_err(|e| {
+        ZkCryptoError::GeneralError(format!("Failed to get JWK {:?} {:?}", e.to_string(), provider))
+    })?;
+    let bytes = response.bytes().await.map_err(|e| {
+        ZkCryptoError::GeneralError(format!(
+            "Failed to get bytes {:?} {:?}",
+            e.to_string(),
+            provider
+        ))
+    })?;
+    parse_jwks(&bytes, provider)
+}
 
 /// Parse the JWK bytes received from the given provider and return a list of
 /// JwkId -> JWK.
@@ -397,11 +399,11 @@ pub struct ZkLoginInputs {
 #[derive(Debug, Clone, JsonSchema, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ZkLoginInputsReader {
-    proof_points: ZkLoginProof,
-    iss_base64_details: Claim,
-    header_base64: String,
+    pub proof_points: ZkLoginProof,
+    pub iss_base64_details: Claim,
+    pub header_base64: String,
     #[serde(skip)]
-    jwt_details: JWTDetails,
+    pub jwt_details: JWTDetails,
 }
 
 impl ZkLoginInputs {
@@ -443,6 +445,10 @@ impl ZkLoginInputs {
     /// Get the parsed iss string.
     pub fn get_iss(&self) -> &str {
         &self.jwt_details.iss
+    }
+
+    pub fn get_header_base64(&self) -> &str {
+        &self.header_base64
     }
 
     /// Get the zk login proof.
