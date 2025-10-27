@@ -582,7 +582,7 @@ tvm-cli --url main.evercloud.dev account <address>
 
 ### 2.7. Force json output
 
-You can force TONOS-CLi to print output in json format. To do so, add `--json` flag before a subcommand:
+You can force TVM-CLi to print output in json format. To do so, add `--json` flag before a subcommand:
 
 ```bash
 tvm-cli --json <any_subcommand>
@@ -624,7 +624,7 @@ tvm-cli config --is_json true
 
 ### 2.8. Debug on fail option
 
-You can force TONOS-CLi to debug call and run executions if they fail with error code **414**.
+You can force TVM-CLi to debug call and run executions if they fail with error code **414**.
 
 ```bash
 tvm-cli config --debug_fail <trace_level>

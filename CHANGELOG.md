@@ -7,6 +7,36 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Ability to resolve unloaded account cells when applying Merkle updates
 
+## [2.24.3] - 2025-10-23
+
+## New
+- Add get_proof and get_nonce functions
+
+## [2.24.2] - 2025-10-17
+
+## Changed/Fixed
+- Block seq no to repair accounts moved from SDK
+- Added engine version to execute params
+
+## [2.24.1] - 2025-10-15
+
+## Changed/Fixed
+- MobileVerifiers rewards fixes
+
+## [2.24.0] - 2025-10-15
+
+### Added
+- In the `tvm_client::send_message()`/`tvm-cli call(x)` execution error result, the recipient account address has been added. This is particularly useful in cases where errors occur during contract deployment
+- `tvm-cli account|run|runx` calls now return `state_timestamp` — the timestamp of the state from which the account’s BOC was loaded
+- A `state_timestamp` field has also been added to `ResultOfGetAccount`
+
+## Changed/Fixed
+- Rename tvm-cli config files:
+  - `tonos-cli.conf.json` to `tvm-cli.conf.json`
+  - `tonos-cli.global.conf.json` to `tvm-cli.global.conf.json`
+
+  On first run after upgrade, if the new files don’t exist but the deprecated ones do, they are automatically renamed
+- Decoding of `return_value` returned in `tvm-cli call(x)` invocations
 
 ## [2.23.6] - 2025-10-13
 ### Fixed

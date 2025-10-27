@@ -1364,11 +1364,9 @@ pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> 
 
     let mut addresses = vec![];
     let lines = std::io::BufReader::new(file).lines();
-    for line in lines {
-        if let Ok(line) = line {
-            if !line.is_empty() && !line.starts_with('#') {
-                addresses.push(load_ton_address(&line, config)?);
-            }
+    for line in lines.flatten() {
+        if !line.is_empty() && !line.starts_with('#') {
+            addresses.push(load_ton_address(&line, config)?);
         }
     }
     if addresses.iter().collect::<HashSet<_>>().len() < addresses.len() {

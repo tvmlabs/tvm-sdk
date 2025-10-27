@@ -77,6 +77,7 @@ use tvm_types::fail;
 use tvm_vm::error::TvmError;
 use tvm_vm::error::tvm_exception;
 use tvm_vm::executor::BehaviorModifiers;
+use tvm_vm::executor::MVConfig;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
 use tvm_vm::executor::token::INFINITY_CREDIT;
@@ -140,6 +141,8 @@ pub struct ExecuteParams {
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
     pub wasm_engine: Option<wasmtime::Engine>,
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    pub mvconfig: MVConfig,
+    pub engine_version: semver::Version,
 }
 
 pub struct ActionPhaseResult {
@@ -187,6 +190,8 @@ impl Default for ExecuteParams {
             wasm_hash_whitelist: HashSet::new(),
             wasm_engine: None,
             wasm_component_cache: HashMap::new(),
+            mvconfig: MVConfig::default(),
+            engine_version: "1.0.0".parse().unwrap(),
         }
     }
 }
@@ -531,6 +536,8 @@ pub trait TransactionExecutor {
         )
         .set_wasm_root_path(params.wasm_binary_root_path.clone())
         .set_engine_available_credit(params.available_credit)
+        .set_engine_version(params.engine_version.clone())
+        .set_engine_mv_config(params.mvconfig.clone())
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
         .set_wasm_block_time(params.block_unixtime.into())
         .extern_insert_wasm_engine(params.wasm_engine.clone())

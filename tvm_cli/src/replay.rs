@@ -387,8 +387,11 @@ pub async fn replay(
         }
         if tr.id == txnid {
             if dump_mask & DUMP_ACCOUNT != 0 {
-                let path =
-                    format!("{}-{}.boc", account_address.split(':').last().unwrap_or(""), txnid);
+                let path = format!(
+                    "{}-{}.boc",
+                    account_address.split(':').next_back().unwrap_or(""),
+                    txnid
+                );
                 account_root
                     .write_to_file(&path)
                     .map_err(|e| format!("Failed to write account: {}", e))?;
@@ -630,7 +633,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     let tasks: Vec<_> = accounts
         .iter()
         .map(|(account, txns)| {
-            let account_filename = account.split(':').last().unwrap_or("").to_owned();
+            let account_filename = account.split(':').next_back().unwrap_or("").to_owned();
             let _config = config.clone().to_owned();
             let txnid = txns[0].0.clone();
             tokio::spawn(async move {
