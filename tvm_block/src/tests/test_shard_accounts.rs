@@ -9,8 +9,14 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+use std::time::Instant;
+
+use tvm_types::HashmapE;
+
 use super::*;
-use crate::ExternalCellStruct;
+use crate::AccountCellStruct;
+use crate::define_HashmapE;
 use crate::generate_test_account_by_init_code_hash;
 use crate::write_read_and_assert;
 
@@ -48,18 +54,18 @@ fn test_external_account_serialization() {
 
     let account_id = UInt256::from([5u8].as_slice());
     let account = shard_acc.account(&account_id.clone().into()).unwrap().unwrap();
-    assert!(matches!(account.read_account().unwrap(), ExternalCellStruct::Struct(_)));
+    assert!(matches!(account.read_account().unwrap(), AccountCellStruct::Struct(_)));
 
     let serialized_full = shard_acc.serialize().unwrap();
-    let acc_cell = shard_acc.replace_with_external(&account_id).unwrap();
+    let acc_cell = shard_acc.replace_with_unloaded_account(&account_id).unwrap();
 
     shard_acc = write_read_and_assert(shard_acc);
 
-    let serialized_external = shard_acc.serialize().unwrap();
-    assert_eq!(serialized_full.repr_hash(), serialized_external.repr_hash());
+    let serialized_unloaded = shard_acc.serialize().unwrap();
+    assert_eq!(serialized_full.repr_hash(), serialized_unloaded.repr_hash());
 
     let account = shard_acc.account(&account_id.clone().into()).unwrap().unwrap();
-    assert!(matches!(account.read_account().unwrap(), ExternalCellStruct::External(_)));
+    assert!(matches!(account.read_account().unwrap(), AccountCellStruct::Unloaded(_)));
 
     let account = ShardAccount::with_account_root(
         acc_cell,
@@ -70,8 +76,54 @@ fn test_external_account_serialization() {
     shard_acc.insert(&account_id, &account).unwrap();
 
     let account = shard_acc.account(&account_id.into()).unwrap().unwrap();
-    assert!(matches!(account.read_account().unwrap(), ExternalCellStruct::Struct(_)));
+    assert!(matches!(account.read_account().unwrap(), AccountCellStruct::Struct(_)));
 
     let serialized_full = shard_acc.serialize().unwrap();
-    assert_eq!(serialized_full.repr_hash(), serialized_external.repr_hash());
+    assert_eq!(serialized_full.repr_hash(), serialized_unloaded.repr_hash());
+}
+
+define_HashmapE!(ShardAccounts2, 256, ShardAccount);
+
+#[test]
+fn test_shard_account_insert_time() {
+    let mut accounts = HashMap::new();
+    let time = Instant::now();
+    for n in 5..100_000u32 {
+        let account_id = UInt256::from(n.to_be_bytes().as_slice());
+        let acc = generate_test_account_by_init_code_hash(false);
+        accounts.insert(
+            account_id.clone(),
+            ShardAccount::with_params(&acc, UInt256::default(), 0, Some(Default::default()))
+                .unwrap(),
+        );
+    }
+    println!("Generation time {:?}", time.elapsed());
+
+    let mut shard_accounts = ShardAccounts::default();
+    let time = Instant::now();
+    for (id, shard_acc) in &accounts {
+        shard_accounts.insert(&id, &shard_acc).unwrap();
+    }
+    println!("Shard accounts insertion time {:?}", time.elapsed());
+
+    let mut shard_accounts2 = ShardAccounts2::default();
+    let time = Instant::now();
+    for (id, shard_acc) in &accounts {
+        shard_accounts2.set(id, &shard_acc).unwrap();
+    }
+    println!("Shard accounts 2 insertion time {:?}", time.elapsed());
+
+    let subset = accounts.iter().map(|(k, v)| (k.clone(), v.clone())).take(300).collect::<Vec<_>>();
+
+    let time = Instant::now();
+    for (id, shard_acc) in &subset {
+        shard_accounts.insert(id, shard_acc).unwrap();
+    }
+    println!("Shard accounts reinsertion time {:?}", time.elapsed());
+
+    let time = Instant::now();
+    for (id, shard_acc) in &subset {
+        shard_accounts2.set(id, shard_acc).unwrap();
+    }
+    println!("Shard accounts 2 reinsertion time {:?}", time.elapsed());
 }

@@ -1546,39 +1546,39 @@ impl<T: Default + Serializable + Deserializable> PartialEq for ChildCell<T> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ExternalCell<T: Default + Serializable + Deserializable> {
+pub struct AccountCell<T: Default + Serializable + Deserializable> {
     cell: Cell,
     phantom: PhantomData<T>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ExternalCellStruct<T> {
+pub enum AccountCellStruct<T> {
     Struct(T),
-    External(UInt256),
+    Unloaded(UInt256),
 }
 
-impl<T> ExternalCellStruct<T> {
+impl<T> AccountCellStruct<T> {
     pub fn as_struct(self) -> Result<T> {
         match self {
-            ExternalCellStruct::Struct(s) => Ok(s),
-            _ => Err(BlockError::ExternalCellRead.into()),
+            AccountCellStruct::Struct(s) => Ok(s),
+            _ => Err(BlockError::UnloadedAccountCellRead.into()),
         }
     }
 }
 
-impl<T: Default + Serializable + Deserializable + Clone> Default for ExternalCell<T> {
+impl<T: Default + Serializable + Deserializable + Clone> Default for AccountCell<T> {
     fn default() -> Self {
         Self { cell: T::default().serialize().unwrap_or_default(), phantom: PhantomData }
     }
 }
 
-impl<T: Default + Serializable + Deserializable + Clone> ExternalCell<T> {
+impl<T: Default + Serializable + Deserializable + Clone> AccountCell<T> {
     pub fn with_cell(cell: Cell) -> Self {
         Self { cell, phantom: PhantomData }
     }
 
     pub fn with_struct(s: &T) -> Result<Self> {
-        Ok(ExternalCell { cell: s.serialize()?, phantom: PhantomData })
+        Ok(AccountCell { cell: s.serialize()?, phantom: PhantomData })
     }
 
     pub fn write_struct(&mut self, s: &T) -> Result<()> {
@@ -1586,11 +1586,11 @@ impl<T: Default + Serializable + Deserializable + Clone> ExternalCell<T> {
         Ok(())
     }
 
-    pub fn read_struct(&self) -> Result<ExternalCellStruct<T>> {
-        if self.cell.cell_type() == CellType::External {
-            return Ok(ExternalCellStruct::External(self.cell.repr_hash()));
+    pub fn read_struct(&self) -> Result<AccountCellStruct<T>> {
+        if self.cell.cell_type() == CellType::UnloadedAccount {
+            return Ok(AccountCellStruct::Unloaded(self.cell.repr_hash()));
         }
-        T::construct_from_cell(self.cell.clone()).map(ExternalCellStruct::Struct)
+        T::construct_from_cell(self.cell.clone()).map(AccountCellStruct::Struct)
     }
 
     pub fn read_from_reference(&mut self, slice: &mut SliceData) -> Result<()> {
@@ -1610,7 +1610,7 @@ impl<T: Default + Serializable + Deserializable + Clone> ExternalCell<T> {
         self.cell.repr_hash()
     }
 
-    pub fn is_external(&self) -> bool {
-        self.cell.cell_type() == CellType::External
+    pub fn is_unloaded(&self) -> bool {
+        self.cell.cell_type() == CellType::UnloadedAccount
     }
 }

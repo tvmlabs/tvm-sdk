@@ -460,7 +460,7 @@ pub(super) fn execute_calculate_min_stake_bm(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("CALCMINSTAKEBM"))?;
     fetch_stack(engine, 2)?;
-    let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start 
+    let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start
     let mbkav = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
     let sbkmin = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) as u128;

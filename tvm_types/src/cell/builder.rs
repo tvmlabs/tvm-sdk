@@ -137,7 +137,9 @@ impl BuilderData {
             CellType::LibraryReference => LevelMask::with_level(0),
             CellType::MerkleProof | CellType::MerkleUpdate => children_level_mask.virtualize(1),
             CellType::Big => fail!("Big cell creation by builder is prohibited"),
-            CellType::External => fail!("External cell creation by builder is prohibited"),
+            CellType::UnloadedAccount => {
+                fail!("Unloaded account cell creation by builder is prohibited")
+            }
         };
         append_tag(&mut self.data, self.length_in_bits);
 

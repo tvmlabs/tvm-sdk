@@ -56,10 +56,10 @@ impl ShardAccounts {
         self.shard_accounts.iterate_with_keys(f)
     }
 
-    pub fn replace_with_external(&mut self, account_id: &UInt256) -> Result<Cell> {
+    pub fn replace_with_unloaded_account(&mut self, account_id: &UInt256) -> Result<Cell> {
         let mut account =
             self.shard_accounts.get(account_id)?.ok_or_else(|| error!("Account not found"))?;
-        let cell = account.replace_with_external()?;
+        let cell = account.replace_with_unloaded_account()?;
         self.shard_accounts.set(account_id, &account)?;
         Ok(cell)
     }
@@ -75,11 +75,11 @@ impl ShardAccounts {
         self.shard_accounts.set(account_id, &redirect)
     }
 
-    pub fn replace_all_with_external(&mut self) -> Result<()> {
+    pub fn replace_all_with_unloaded_account(&mut self) -> Result<()> {
         let copy = self.shard_accounts.clone();
         copy.iterate_with_keys::<UInt256, _>(|account_id, mut account| {
-            if !account.is_external() {
-                account.replace_with_external()?;
+            if !account.is_unloaded() {
+                account.replace_with_unloaded_account()?;
                 self.shard_accounts.set(&account_id, &account)?;
             }
             Ok(true)
@@ -87,11 +87,11 @@ impl ShardAccounts {
         Ok(())
     }
 
-    pub fn is_external(&self, account_id: &UInt256) -> Result<bool> {
+    pub fn is_unloaded(&self, account_id: &UInt256) -> Result<bool> {
         Ok(self
             .shard_accounts
             .get(account_id)?
-            .map(|account| account.is_external())
+            .map(|account| account.is_unloaded())
             .unwrap_or(false))
     }
 

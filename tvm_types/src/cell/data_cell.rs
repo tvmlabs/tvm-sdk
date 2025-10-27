@@ -25,8 +25,8 @@ use crate::SHA256_SIZE;
 use crate::Sha256;
 use crate::UInt256;
 use crate::cell;
-use crate::cell::EXTERNAL_CELL_MAX_SIZE;
-use crate::cell::EXTERNAL_CELL_MIN_SIZE;
+use crate::cell::UNLOADED_ACCOUNT_CELL_MAX_SIZE;
+use crate::cell::UNLOADED_ACCOUNT_CELL_MIN_SIZE;
 use crate::cell::cell_data::CellData;
 use crate::error;
 use crate::fail;
@@ -305,15 +305,22 @@ impl DataCell {
             CellType::Big => {
                 // all checks were performed before finalization
             }
-            CellType::External => {
+            CellType::UnloadedAccount => {
                 // type + hash + depth + (tree cells count len | tree bits count len) + tree
                 // cells count + tree bits count
-                let min_required_len = 8 * (EXTERNAL_CELL_MIN_SIZE);
+                let min_required_len = 8 * (UNLOADED_ACCOUNT_CELL_MIN_SIZE);
                 if bit_len < min_required_len {
-                    fail!("fail creating external cell: bit_len {} < {}", bit_len, min_required_len)
+                    fail!(
+                        "fail creating unloaded account cell: bit_len {} < {}",
+                        bit_len,
+                        min_required_len
+                    )
                 }
                 if !self.references.is_empty() {
-                    fail!("fail creating external cell: references {} != 0", self.references.len())
+                    fail!(
+                        "fail creating unloaded account cell: references {} != 0",
+                        self.references.len()
+                    )
                 }
                 let lengths_offset = 1 + SHA256_SIZE + 2;
                 let mut reader = Cursor::new(&self.data()[lengths_offset..]);
@@ -324,7 +331,7 @@ impl DataCell {
                 if bit_len != 8 * (lengths_offset + 1 + tree_bits_count_len + tree_cells_count_len)
                 {
                     fail!(
-                        "fail creating external cell: bit_len {} != {}",
+                        "fail creating unloaded account cell: bit_len {} != {}",
                         bit_len,
                         8 * (lengths_offset + 1 + tree_bits_count_len + tree_cells_count_len)
                     )
@@ -340,7 +347,7 @@ impl DataCell {
                 self.tree_bits_count = tree_bits_count;
                 self.tree_cell_count = tree_cell_count;
 
-                // hashes are not calculated for external cell
+                // hashes are not calculated for unloaded account cell
                 return Ok(());
             }
             CellType::Unknown => {
@@ -361,7 +368,7 @@ impl DataCell {
             CellType::MerkleProof => LevelMask::for_merkle_cell(children_mask),
             CellType::MerkleUpdate => LevelMask::for_merkle_cell(children_mask),
             CellType::Big => LevelMask::with_mask(0),
-            CellType::External => LevelMask::with_mask(0),
+            CellType::UnloadedAccount => LevelMask::with_mask(0),
             CellType::Unknown => fail!(ExceptionCode::RangeCheckError),
         };
         if self.cell_data.level_mask() != level_mask {
@@ -511,14 +518,14 @@ impl DataCell {
         self.tree_cell_count
     }
 
-    pub(crate) fn to_external(&self) -> crate::Result<Cell> {
+    pub(crate) fn to_unloaded_account(&self) -> crate::Result<Cell> {
         if self.cell_type() != CellType::Ordinary && self.cell_type() != CellType::Big {
             fail!("Only ordinary and big cells can be converted to external")
         }
 
-        let mut data = [0u8; EXTERNAL_CELL_MAX_SIZE + 1]; // including tag byte
+        let mut data = [0u8; UNLOADED_ACCOUNT_CELL_MAX_SIZE + 1]; // including tag byte
         let mut cursor = Cursor::new(data.as_mut());
-        cursor.write_all(&[CellType::EXTERNAL])?;
+        cursor.write_all(&[CellType::UNLOADED_ACCOUNT_ROOT])?;
         cursor.write_all(self.hash(MAX_LEVEL).as_slice())?;
         cursor.write_all(&self.depth(MAX_LEVEL).to_be_bytes())?;
 
@@ -535,7 +542,7 @@ impl DataCell {
         let cell = DataCell::with_params(
             smallvec![],
             &cursor.into_inner()[..size],
-            CellType::External,
+            CellType::UnloadedAccount,
             0,
             None,
             None,

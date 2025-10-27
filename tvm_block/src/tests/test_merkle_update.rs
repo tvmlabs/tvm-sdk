@@ -899,9 +899,51 @@ fn test_prepare_first_update_for_wc() -> Result<()> {
     Ok(())
 }
 
+fn print_tree(cell: &Cell) {
+    fn title(cell: &Cell) -> String {
+        format!(
+            "{} {}{}",
+            match cell.cell_type() {
+                CellType::Unknown => "?",
+                CellType::Ordinary => "○",
+                CellType::PrunedBranch => "\x1b[38;5;250m◌ prn\x1b[0m",
+                CellType::LibraryReference => "☐",
+                CellType::MerkleProof => "✓",
+                CellType::MerkleUpdate => "↻",
+                CellType::Big => "■",
+                CellType::UnloadedAccount => "\x1b[31m▒ unl\x1b[0m",
+            },
+            cell.repr_hash().to_hex_string()[0..6].to_string(),
+            if cell.references_count() == 0 {
+                "".to_string()
+            } else {
+                format!(" [{}]", cell.references_count())
+            }
+        )
+    }
+
+    fn print_cell(cell: &Cell, prefix: &str, is_last: bool) {
+        let connector = if is_last { "└ " } else { "├ " };
+        println!("{prefix}{connector}{}", title(cell));
+
+        let next_prefix = if is_last { format!("{prefix}   ") } else { format!("{prefix}│  ") };
+
+        for i in 0..cell.references_count() {
+            let child = cell.reference(i).unwrap();
+            let last = i + 1 == cell.references_count();
+            print_cell(&child, &next_prefix, last);
+        }
+    }
+
+    println!("{}", title(cell));
+    for i in 0..cell.references_count() {
+        print_cell(&cell.reference(i).unwrap(), "", i + 1 == cell.references_count());
+    }
+}
+
 #[ignore]
 #[test]
-fn test_update_shard_state_with_external_cell() {
+fn test_update_shard_state_with_unloaded_account() {
     let mut shard_state_full = ShardStateUnsplit::default();
     let mut shard_accounts_full = ShardAccounts::default();
 
@@ -918,6 +960,7 @@ fn test_update_shard_state_with_external_cell() {
             .unwrap();
     }
     shard_state_full.write_accounts(&shard_accounts_full).unwrap();
+    let shard_state_full = shard_state_full;
     let account_id5 = UInt256::from([60].as_slice());
     let account_id6 = UInt256::from([50].as_slice());
 
@@ -937,14 +980,15 @@ fn test_update_shard_state_with_external_cell() {
 
         let acc = modifier(&mut old_state, &mut new_state);
 
+        let old_state_root = old_state.serialize().unwrap();
+        let new_state_root = new_state.serialize().unwrap();
         let update = if fast {
-            MerkleUpdate::create_fast(
-                &old_state.serialize().unwrap(),
-                &new_state.serialize().unwrap(),
-                |hash| usage_tree.contains(hash),
-            )?
+            let usage = usage_tree.take_visited_set();
+            MerkleUpdate::create_fast(&old_state_root, &new_state_root, |hash| {
+                usage.contains(hash)
+            })?
         } else {
-            MerkleUpdate::create(&old_state.serialize().unwrap(), &new_state.serialize().unwrap())?
+            MerkleUpdate::create(&old_state_root, &new_state_root)?
         };
 
         let new_state_acc = apply_to
@@ -975,17 +1019,18 @@ fn test_update_shard_state_with_external_cell() {
         let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
         let mut acc = shard_acc.read_account().unwrap().as_struct().unwrap();
         acc.add_funds(&CurrencyCollection::with_grams(20)).unwrap();
-        let _ = shard_acc.set_account_cell(acc.serialize().unwrap());
+        shard_acc.set_account_cell(acc.serialize().unwrap()).unwrap();
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         new_state.write_accounts(&shard_accounts).unwrap();
 
         Some(shard_acc)
     };
 
-    let mut shard_accounts_ext5 = shard_accounts_full.clone();
-    let acc5_root = shard_accounts_ext5.replace_with_external(&account_id5).unwrap();
-    let mut shard_state_ext5 = shard_state_full.clone();
-    shard_state_ext5.write_accounts(&shard_accounts_ext5).unwrap();
+    let mut shard_accounts_unl5 = shard_accounts_full.clone();
+    let acc5_root = shard_accounts_unl5.replace_with_unloaded_account(&account_id5).unwrap();
+    let mut shard_state_unl5 = shard_state_full.clone();
+    shard_state_unl5.write_accounts(&shard_accounts_unl5).unwrap();
+    let shard_state_unl5 = shard_state_unl5;
 
     let add_balance_ext = |_old_state: &mut ShardStateUnsplit,
                            new_state: &mut ShardStateUnsplit|
@@ -995,7 +1040,7 @@ fn test_update_shard_state_with_external_cell() {
         shard_acc.read_account().unwrap();
         let mut acc = Account::construct_from_cell(acc5_root.clone()).unwrap();
         acc.add_funds(&CurrencyCollection::with_grams(20)).unwrap();
-        let _ = shard_acc.set_account_cell(acc.serialize().unwrap());
+        shard_acc.set_account_cell(acc.serialize().unwrap()).unwrap();
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         new_state.write_accounts(&shard_accounts).unwrap();
 
@@ -1009,51 +1054,62 @@ fn test_update_shard_state_with_external_cell() {
 
         let mut shard_accounts = old_state.read_accounts().unwrap();
         let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
-        let _ = shard_acc.set_account_cell(acc5_root.clone());
+        shard_acc.set_account_cell(acc5_root.clone()).unwrap();
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         old_state.write_accounts(&shard_accounts).unwrap();
 
         result
     };
 
-    let mut shard_acc = shard_accounts_ext5.account(&account_id5.clone().into()).unwrap().unwrap();
-    let _ = shard_acc.set_account_cell(acc5_root.clone());
-    shard_accounts_ext5.insert(&account_id5, &shard_acc).unwrap();
-    let mut shard_state_loaded = shard_state_ext5.clone();
-    shard_state_loaded.write_accounts(&shard_accounts_ext5).unwrap();
+    let mut shard_acc = shard_accounts_unl5.account(&account_id5.clone().into()).unwrap().unwrap();
+    shard_acc.set_account_cell(acc5_root.clone()).unwrap();
+    shard_accounts_unl5.insert(&account_id5, &shard_acc).unwrap();
+    let mut shard_state_loaded = shard_state_unl5.clone();
+    shard_state_loaded.write_accounts(&shard_accounts_unl5).unwrap();
+    let shard_state_loaded = shard_state_loaded;
 
-    let mut shard_accounts_ext6 = shard_accounts_full.clone();
-    shard_accounts_ext6.replace_with_external(&account_id6).unwrap();
-    let mut shard_state_ext6 = shard_state_full.clone();
-    shard_state_ext6.write_accounts(&shard_accounts_ext6).unwrap();
+    let mut shard_accounts_unl6 = shard_accounts_full.clone();
+    shard_accounts_unl6.replace_with_unloaded_account(&account_id6).unwrap();
+    let mut shard_state_unl6 = shard_state_full.clone();
+    shard_state_unl6.write_accounts(&shard_accounts_unl6).unwrap();
+    let shard_state_unl6 = shard_state_unl6;
 
     let update_full_full =
         create_apply_and_check(&shard_state_full, &shard_state_full, false, &add_balance).unwrap();
 
+    // `shard_state_unl5` is the same as `shard_state_full`, but with unloaded acc5.
+    // Merkle create steps:
+    // - collect all cells from new state, including unloaded cell
+    // - traverse old state, prune one of the parent of unloaded cell and skips
+    //   traverse down
+    // - traverse new state and stop traverse down on unloaded parent because it was
+    //   pruned in merkle old
+    // So merkle create must be succeeded
+    //
     assert!(
-        create_apply_and_check(&shard_state_full, &shard_state_ext5, false, &add_balance).is_err()
+        create_apply_and_check(&shard_state_full, &shard_state_unl5, false, &add_balance).is_err()
     );
     assert!(
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &add_balance_ext)
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, false, &add_balance_ext)
             .is_err()
     );
     assert!(
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &add_balance_ext)
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, false, &add_balance_ext)
             .is_err()
     );
 
-    let update_ext_full = create_apply_and_check(
-        &shard_state_ext5,
+    let update_unl_full = create_apply_and_check(
+        &shard_state_unl5,
         &shard_state_full,
         false,
         &add_balance_ext_update,
     )
     .unwrap();
-    assert_eq!(update_full_full, update_ext_full);
+    assert_eq!(update_full_full, update_unl_full);
     assert!(
         create_apply_and_check(
-            &shard_state_ext5,
-            &shard_state_ext5,
+            &shard_state_unl5,
+            &shard_state_unl5,
             false,
             &add_balance_ext_update
         )
@@ -1064,7 +1120,7 @@ fn test_update_shard_state_with_external_cell() {
         create_apply_and_check(&shard_state_full, &shard_state_loaded, false, &add_balance)
             .unwrap();
     let update_ext_ext = create_apply_and_check(
-        &shard_state_ext5,
+        &shard_state_unl5,
         &shard_state_loaded,
         false,
         &add_balance_ext_update,
@@ -1074,11 +1130,11 @@ fn test_update_shard_state_with_external_cell() {
     assert_eq!(update_full_full, update_ext_ext);
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext6, &shard_state_full, false, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_full, false, &add_balance).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext6, false, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl6, false, &add_balance).unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, false, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_unl6, false, &add_balance).unwrap();
 
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
@@ -1088,30 +1144,36 @@ fn test_update_shard_state_with_external_cell() {
         create_apply_and_check(&shard_state_full, &shard_state_full, true, &add_balance).unwrap();
 
     assert!(
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &add_balance_ext)
-            .is_err()
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &add_balance_ext)
+            .is_ok()
     );
     assert!(
-        create_apply_and_check(&shard_state_full, &shard_state_ext5, true, &add_balance).is_err()
+        create_apply_and_check(&shard_state_full, &shard_state_unl5, true, &add_balance).is_err()
     );
+
+    let update =
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext)
+            .unwrap();
+    print_tree(&update.old);
+    print_tree(&update.new);
     assert!(
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &add_balance_ext)
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext)
             .is_err()
     );
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &add_balance_ext_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &add_balance_ext_update)
             .unwrap();
     assert_ne!(update_full_full, update_ext_full);
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &add_balance_ext_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &add_balance_ext_update)
             .unwrap();
     assert_ne!(update_full_full, update_ext_ext);
 
     let update_full_ext =
         create_apply_and_check(&shard_state_full, &shard_state_loaded, true, &add_balance).unwrap();
     let update_ext_ext = create_apply_and_check(
-        &shard_state_ext5,
+        &shard_state_unl5,
         &shard_state_loaded,
         true,
         &add_balance_ext_update,
@@ -1121,11 +1183,11 @@ fn test_update_shard_state_with_external_cell() {
     assert_ne!(update_full_full, update_ext_ext);
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext6, &shard_state_full, true, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_full, true, &add_balance).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext6, true, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl6, true, &add_balance).unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, true, &add_balance).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_unl6, true, &add_balance).unwrap();
 
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
@@ -1150,7 +1212,7 @@ fn test_update_shard_state_with_external_cell() {
 
         let mut shard_accounts = old_state.read_accounts().unwrap();
         let mut shard_acc = shard_accounts.account(&account_id5.clone().into()).unwrap().unwrap();
-        let _ = shard_acc.set_account_cell(acc5_root.clone());
+        shard_acc.set_account_cell(acc5_root.clone()).unwrap();
         shard_accounts.insert(&account_id5, &shard_acc).unwrap();
         old_state.write_accounts(&shard_accounts).unwrap();
 
@@ -1160,18 +1222,18 @@ fn test_update_shard_state_with_external_cell() {
     let update_full_full =
         create_apply_and_check(&shard_state_full, &shard_state_full, false, &remove).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext5, false, &remove).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl5, false, &remove).unwrap();
     assert_eq!(update_full_full, update_full_ext);
 
-    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &remove).is_err());
-    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_unl5, &shard_state_full, false, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_unl5, &shard_state_unl5, false, &remove).is_err());
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, false, &remove_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, false, &remove_update)
             .unwrap();
     assert_eq!(update_full_full, update_ext_full);
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, false, &remove_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, false, &remove_update)
             .unwrap();
     assert_eq!(update_full_full, update_ext_ext);
 
@@ -1179,17 +1241,17 @@ fn test_update_shard_state_with_external_cell() {
         create_apply_and_check(&shard_state_full, &shard_state_loaded, false, &remove_update)
             .unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_loaded, false, &remove_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_loaded, false, &remove_update)
             .unwrap();
     assert_eq!(update_full_full, update_full_ext);
     assert_eq!(update_full_full, update_ext_ext);
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext6, &shard_state_full, false, &remove).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_full, false, &remove).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext6, false, &remove).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl6, false, &remove).unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, false, &remove).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_unl6, false, &remove).unwrap();
 
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
@@ -1198,34 +1260,34 @@ fn test_update_shard_state_with_external_cell() {
     let update_full_full =
         create_apply_and_check(&shard_state_full, &shard_state_full, true, &remove).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext5, true, &remove).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl5, true, &remove).unwrap();
     assert_eq!(update_full_full, update_full_ext);
 
-    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &remove).is_err());
-    assert!(create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &remove).is_err());
+    assert!(create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &remove).is_err());
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext5, &shard_state_full, true, &remove_update).unwrap();
+        create_apply_and_check(&shard_state_unl5, &shard_state_full, true, &remove_update).unwrap();
     assert_eq!(update_full_full, update_ext_full);
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_ext5, true, &remove_update).unwrap();
+        create_apply_and_check(&shard_state_unl5, &shard_state_unl5, true, &remove_update).unwrap();
     assert_eq!(update_full_full, update_ext_ext);
 
     let update_full_ext =
         create_apply_and_check(&shard_state_full, &shard_state_loaded, true, &remove_update)
             .unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext5, &shard_state_loaded, true, &remove_update)
+        create_apply_and_check(&shard_state_unl5, &shard_state_loaded, true, &remove_update)
             .unwrap();
     assert_eq!(update_full_full, update_full_ext);
     assert_eq!(update_full_full, update_ext_ext);
 
     let update_ext_full =
-        create_apply_and_check(&shard_state_ext6, &shard_state_full, true, &remove).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_full, true, &remove).unwrap();
     let update_full_ext =
-        create_apply_and_check(&shard_state_full, &shard_state_ext6, true, &remove).unwrap();
+        create_apply_and_check(&shard_state_full, &shard_state_unl6, true, &remove).unwrap();
     let update_ext_ext =
-        create_apply_and_check(&shard_state_ext6, &shard_state_ext6, true, &remove).unwrap();
+        create_apply_and_check(&shard_state_unl6, &shard_state_unl6, true, &remove).unwrap();
 
     assert_eq!(update_full_full, update_ext_full);
     assert_eq!(update_full_full, update_full_ext);
@@ -1303,7 +1365,7 @@ fn write_cell_to_string(cell: &Cell, indent: usize, s: &mut String) {
         CellType::MerkleProof => *s += " Merkle Proof",
         CellType::MerkleUpdate => *s += " Merkle Update",
         CellType::Big => *s += " Big",
-        CellType::External => *s += " External",
+        CellType::UnloadedAccount => *s += " External",
     }
     *s += "\n";
     for child in cell.clone_references() {

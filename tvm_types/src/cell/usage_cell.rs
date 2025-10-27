@@ -85,9 +85,9 @@ impl UsageCell {
         }
     }
 
-    pub(crate) fn to_external(cell: &Arc<Self>) -> crate::Result<Cell> {
+    pub(crate) fn to_unloaded_account(cell: &Arc<Self>) -> crate::Result<Cell> {
         Ok(Cell::Usage(UsageCell::new_arc(
-            cell.wrapped.to_external()?,
+            cell.wrapped.to_unloaded_account()?,
             cell.visit_on_load,
             cell.visited.clone(),
         )))
