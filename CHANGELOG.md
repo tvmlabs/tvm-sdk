@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.4] - 2025-10-30
+## Fixed
+- Facebook tls wasm test
+
 ## [2.24.3] - 2025-10-23
 
 ## New
