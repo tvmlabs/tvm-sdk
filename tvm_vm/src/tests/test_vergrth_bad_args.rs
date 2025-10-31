@@ -32,7 +32,8 @@ pub struct TestPrecomputedData {
 pub fn do_initial_work() -> TestPrecomputedData {
     let user_pass_salt = "10710710710810810857575748484856565649";
 
-    let secret_key = hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
+    let secret_key =
+        hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
 
     let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap();
     let mut eph_pubkey = Vec::new();

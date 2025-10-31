@@ -62,7 +62,8 @@ fn test_modulus_bad() {
 
     let user_pass_salt = "10710710710810810857575748484856565649";
     // Generate an ephemeral key pair.
-    let secret_key = hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
+    let secret_key =
+        hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
 
     // Generate an ephemeral key pair.
     let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
@@ -278,7 +279,8 @@ fn test_iss_64_bad() {
 
     let user_pass_salt = "10710710710810810857575748484856565649";
     // Generate an ephemeral key pair.
-    let secret_key = hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
+    let secret_key =
+        hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
 
     // Generate an ephemeral key pair.
     let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
@@ -494,7 +496,8 @@ fn test_header_base_64_bad() {
 
     let user_pass_salt = "10710710710810810857575748484856565649";
     // Generate an ephemeral key pair.
-    let secret_key = hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
+    let secret_key =
+        hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
 
     // Generate an ephemeral key pair.
     let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
@@ -710,7 +713,8 @@ fn test_zk_seed_bad() {
 
     let user_pass_salt = "10710710710810810857575748484856565649";
     // Generate an ephemeral key pair.
-    let secret_key = hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
+    let secret_key =
+        hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
 
     // Generate an ephemeral key pair.
     let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
@@ -986,7 +990,8 @@ fn test_other_args_bad() {
 
     let user_pass_salt = "10710710710810810857575748484856565649";
     // Generate an ephemeral key pair.
-    let secret_key = hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
+    let secret_key =
+        hex::decode("d08a6d2c6e460056d874e372338bc49355213cd763250d24a7c78516e86c982a").unwrap();
 
     // Generate an ephemeral key pair.
     let ephemeral_kp = Ed25519KeyPair::from_bytes(&secret_key).unwrap(); // Ed25519KeyPair::generate(&mut StdRng::from_seed([0; 32]));
