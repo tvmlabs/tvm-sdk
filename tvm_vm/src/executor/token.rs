@@ -77,6 +77,7 @@ const KRMV_NUM: u128 = 225;
 const KRMV_DEN: u128 = 1000;
 const UM_Q64: i64 = 106_188_087_029; // -ln(KM / (KM + 1)) / TTMT * 2^64 = -ln(1e-5 / (1 + 1e-5)) / 2e9 * 2^64
 const SBK_BASE_START: u128 = 14393409967783;
+const BIG_MIN_STAKE: u128 = 10_000_000_000_000_000;
 
 // e^(−n), n = 0...12 in Q‑32
 const EXP_NEG_VAL_Q32: [i64; 13] = [
@@ -442,6 +443,11 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let tstk = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //time from network start + uint128(_waitStep / 3) where waitStep - number of block duration of preEpoch
     let mbkav = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let sbkbase;
+    let engine_version = engine.get_version();
+    if engine_version >= "1.0.2".parse().unwrap() {
+        engine.cc.stack.push(int!(BIG_MIN_STAKE as u128));
+        return Ok(());
+    }
     if mbkav != 0 {
         let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
         if nbk == 0 {
@@ -593,7 +599,10 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     fetch_stack(engine, 5)?;
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
-
+    if engine_version >= "1.0.2".parse().unwrap() && tap_num == 1 {
+        engine.cc.stack.push(int!(0 as u128));
+        return Ok(());
+    }
     let tap_lst_cell = engine.cmd.var(2).as_cell()?;
     let tap_lst_slice = SliceData::load_cell(tap_lst_cell.clone()).map_err(|e| {
         exception!(ExceptionCode::CellUnpackError, "Failed to load cell tap: {:?}", e)
