@@ -1294,7 +1294,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     }
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "crypto.clear_crypto_box_secret_cache",
             RegisteredCryptoBox { handle: crypto_box.handle },
         )
@@ -1421,7 +1421,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     }
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "crypto.clear_crypto_box_secret_cache",
             RegisteredCryptoBox { handle: crypto_box.handle },
         )

@@ -47,7 +47,6 @@ impl Default for DataCell {
 }
 
 thread_local! {
-    static UNIQUE_CELLS: RefCell<BTreeSet<HashableCell>> = const { RefCell::new(BTreeSet::new()) };
     static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
 }
 
@@ -137,15 +136,11 @@ impl DataCell {
         let mut count = 0u64;
         let mut counts = Vec::new();
         for r in references.iter() {
-            // if unique_cells.contains(r) {
-            // } else {
-            //     UNIQUE_CELLS. (|x: BTreeSet<Cell>| x.contains(r));
-            // }
             if UNIQUE_BLOOM.with_borrow(|x| x.contains(&HashableCell::Any(r.clone()))) {
-                // println!("repeat cell");
+                // Do not count cells we've already seen.
             } else {
                 UNIQUE_BLOOM.with_borrow_mut(|x| x.insert(&HashableCell::Any(r.clone())));
-                // println!("new cell");
+                // Count new cell exactly once
                 depths.push(r.depths());
                 depth = depth.max(r.depths().iter().sum::<u16>());
                 depth2 = depth2.saturating_add(r.tree_cell_count());
@@ -166,11 +161,6 @@ impl DataCell {
         if let Some(c) = extern_tree_cell_count {
             tree_cell_count = tree_cell_count.saturating_add(c)
         }
-        // for reference in &references {
-        //     tree_bits_count =
-        // tree_bits_count.saturating_add(reference.tree_bits_count());
-        //     tree_cell_count =
-        // tree_cell_count.saturating_add(reference.tree_cell_count()); }
         if tree_bits_count > MAX_56_BITS {
             tree_bits_count = MAX_56_BITS;
         }
