@@ -1,0 +1,27 @@
+[package]
+name = "cell_generator"
+version.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+# base64 = "0.22.1"
+anyhow.workspace = true
+base64.workspace = true
+clap.workspace = true
+hex.workspace = true
+lazy_static.workspace = true
+serde_json.workspace = true
+
+tvm_abi.workspace = true
+tvm_block.workspace = true
+tvm_client = { workspace = true, features = ["std", "rustls-tls-webpki-roots"] }
+tvm_types.workspace = true
+tvm_vm.workspace = true
+serde = { version = "1.0.210", features = ["derive"] }
+
+[lints]
+workspace = true

@@ -1,6 +1,7 @@
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
+use tvm_block::config_params::GlobalCapabilities;
 use tvm_types::HashmapE;
 use tvm_types::SliceData;
 use tvm_vm::SmartContractInfo;
@@ -41,13 +42,11 @@ pub(crate) fn execute(args: &RunArgs, res: &mut ExecutionResult) -> anyhow::Resu
     let gas = Gas::test();
     let library_map = HashmapE::with_hashmap(256, contract_state_init.library.root().cloned());
 
-    let mut engine = Engine::with_capabilities(capabilities(args)).setup_with_libraries(
-        code,
-        Some(registers),
-        Some(stack),
-        Some(gas),
-        vec![library_map],
-    );
+    let mut engine = Engine::with_capabilities(
+        (GlobalCapabilities::CapFastStorageStatBugfix as u64
+            | GlobalCapabilities::CapFastStorageStat as u64),
+    )
+    .setup_with_libraries(code, Some(registers), Some(stack), Some(gas), vec![library_map]);
     engine.set_trace(0);
     if args.trace {
         engine.set_trace_callback(move |engine, info| {

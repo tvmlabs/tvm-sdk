@@ -1,0 +1,51 @@
+diff --git a/tvm_debugger/src/main.rs b/tvm_debugger/src/main.rs
+index 8a8df12f..5da5306f 100644
+--- a/tvm_debugger/src/main.rs
++++ b/tvm_debugger/src/main.rs
+@@ -146,6 +146,9 @@ struct RunArgs {
+     #[arg(short('p'), long, value_parser = parse_json_object)]
+     call_parameters: Option<Value>,
+ 
++    #[arg(long)]
++    call_parameters_file: Option<PathBuf>,
++
+     /// Contract address, that will be used for execution
+     #[arg(long, allow_hyphen_values(true))]
+     address: Option<String>,
+@@ -285,6 +288,7 @@ mod tests {
+             abi_header: None,
+             function_name: Some(func.to_string()),
+             call_parameters: None,
++            call_parameters_file: None,
+             address: None,
+             sign: None,
+             internal: false,
+diff --git a/tvm_debugger/src/message.rs b/tvm_debugger/src/message.rs
+index a89e22cf..41924dca 100644
+--- a/tvm_debugger/src/message.rs
++++ b/tvm_debugger/src/message.rs
+@@ -101,16 +101,16 @@ pub(crate) fn generate_message_body(args: &RunArgs) -> anyhow::Result<SliceData>
+         .abi_header
+         .clone()
+         .map(|v| serde_json::to_string(&v).unwrap_or("{}".to_string()).to_string());
+-    let parameters = args
++    let parameters = if let Some(file) = args.call_parameters_file.as_ref() {
++        let file_content = std::fs::read_to_string(file).map_err(|e| anyhow::format_err!("Failed to read call parameters file: {e}"))?;
++        file_content
++    } else {
++        args
+         .call_parameters
+         .clone()
+-        .map(|v| {
+-            serde_json::to_string(&v)
+-                .map_err(|err| anyhow::format_err!("Failed to serialize call parameters: {err}"))
+-                .unwrap()
+-                .to_string()
+-        })
+-        .unwrap_or("{}".to_string());
++        .map(|v| serde_json::to_string(&v).unwrap_or("{}".to_string()).to_string())
++        .unwrap_or("{}".to_string())
++    };
+     let key = args.sign.as_ref().map(|path| {
+         let keypair = read_keys(path).expect("Failed to read key pair file");
+         let secret = hex::decode(&keypair.secret).expect("Failed to decode secret key");

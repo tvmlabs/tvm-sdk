@@ -1096,6 +1096,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cell_generator"
+version = "2.24.4"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "clap 4.5.50",
+ "hex",
+ "lazy_static",
+ "serde",
+ "serde_json",
+ "tvm_abi",
+ "tvm_block",
+ "tvm_client",
+ "tvm_types",
+ "tvm_vm",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

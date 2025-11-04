@@ -22,6 +22,7 @@ members = [
   "tvm_tl_codegen",
   "tvm_types",
   "tvm_vm",
+  "cell_generator",
 ]
 [workspace.package]
 version = "2.24.4"

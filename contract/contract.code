@@ -1,0 +1,370 @@
+.fragment c4_to_c7, {
+	PUSHROOT
+	CTOS
+	LDU 256 ; pubkey c4
+	LDU 64 ; pubkey timestamp c4
+	LDREF
+	ENDS
+	SETGLOB 10
+	SETGLOB 3
+	SETGLOB 2
+}
+
+.fragment c7_to_c4, {
+	GETGLOB 10
+	GETGLOB 3
+	GETGLOB 2
+	NEWC
+	STU 256
+	STU 64
+	STREF
+	ENDC
+	POPROOT
+}
+
+.fragment doNothing_2f576f20_internal, {
+	.loc contract.sol, 0
+}
+
+.fragment doNothing, {
+	DROP
+	GETGLOB 2
+	ISNULL
+	IFREF {
+		.inline c4_to_c7
+	}
+	.loc contract.sol, 23
+	ENDS
+	.loc contract.sol, 0
+	CALLREF {
+		.inline doNothing_2f576f20_internal
+	}
+	CALLREF {
+		.inline c7_to_c4
+	}
+	THROW 0
+}
+
+.fragment get_content_of_cell_7f2be035_internal, {
+	.loc contract.sol, 12
+	DUP
+	CTOS
+	LDU 8
+	LDREF
+	ENDS
+	.loc contract.sol, 13
+	NULL
+	.loc contract.sol, 14
+	PUSHINT 0
+	.loc contract.sol, 15
+	PUSHCONT {
+		PUSH2 S0, S4
+		CDEPTH
+		DEC
+		UFITS 16
+		LESS
+	}
+	PUSHCONT {
+		.loc contract.sol, 16
+		PUSH3 S0, S1, S3
+		NEWC
+		STU 8
+		ROTREV
+		PUSHINT 257
+		DICTISETB
+		POP S2
+		.loc contract.sol, 17
+		PUSH S2
+		CTOS
+		LDU 8
+		LDREF
+		ENDS
+		POP S4
+		POP S4
+		.loc contract.sol, 15
+		INC
+		.loc contract.sol, 0
+	}
+	WHILE
+	.loc contract.sol, 19
+	PUSH S2
+	CTOS
+	LDU 8
+	ENDS
+	.loc contract.sol, 20
+	XCPU2 S1, S2, S1
+	NEWC
+	STU 8
+	ROTREV
+	PUSHINT 257
+	DICTISETB
+	XCHG3 S3, S0, S5
+	BLKDROP2 2, 3
+	.loc contract.sol, 21
+	CDEPTH
+	.loc contract.sol, 0
+}
+
+.fragment get_content_of_cell, {
+	DROP
+	.loc contract.sol, 11
+	LDREF
+	ENDS
+	.loc contract.sol, 0
+	CALLREF {
+		.inline get_content_of_cell_7f2be035_internal
+	}
+	PUSH S4
+	PUSHCONT {
+		PUSH S6
+		CTOS
+		LDU 2
+		LDMSGADDR
+		DROP
+		NIP
+		NEWC
+		STSLICECONST xc
+		STSLICE
+		PUSHINT 98
+		STZEROES
+		REVERSE 4, 1
+		STSLICECONST xafbe0afc
+		STU 8
+		STREF
+		STDICT
+		PUSHINT 257
+		STIX
+		ENDC
+		PUSHINT 0
+		SENDRAWMSG
+	}
+	PUSHCONT {
+		BLKDROP 4
+	}
+	IFELSE
+	IFREF {
+		.inline c7_to_c4
+	}
+	THROW 0
+}
+
+.fragment just_write_cell_de66757a_internal, {
+	.loc contract.sol, 8
+	DUP
+	SETGLOB 10
+	.loc contract.sol, 9
+	PUSHPOW2 10
+	CDATASIZE
+	.loc contract.sol, 0
+}
+
+.fragment just_write_cell, {
+	DROP
+	GETGLOB 2
+	ISNULL
+	IFREF {
+		.inline c4_to_c7
+	}
+	.loc contract.sol, 7
+	LDREF
+	ENDS
+	.loc contract.sol, 0
+	CALLREF {
+		.inline just_write_cell_de66757a_internal
+	}
+	PUSH S3
+	PUSHCONT {
+		PUSH S5
+		CTOS
+		LDU 2
+		LDMSGADDR
+		DROP
+		NIP
+		NEWC
+		STSLICECONST xc
+		STSLICE
+		PUSHINT 1
+		STUR 98
+		REVERSE 4, 0
+		NEWC
+		STSLICECONST xa4177761
+		STU 256
+		STU 256
+		STU 256
+		STBREFR
+		ENDC
+		PUSHINT 0
+		SENDRAWMSG
+	}
+	PUSHCONT {
+		BLKDROP 3
+	}
+	IFELSE
+	CALLREF {
+		.inline c7_to_c4
+	}
+	THROW 0
+}
+
+.fragment public_function_selector, {
+	DUP
+	PUSHINT 148904112
+	EQUAL
+	IFJMPREF {
+		.inline doNothing
+	}
+	DUP
+	PUSHINT 605517665
+	EQUAL
+	IFJMPREF {
+		.inline just_write_cell
+	}
+	DUP
+	PUSHINT 800983804
+	EQUAL
+	IFJMPREF {
+		.inline get_content_of_cell
+	}
+}
+
+.fragment main_external, {
+	OVER
+	CALLREF {
+		.inline c4_to_c7
+	}
+	LDU 1 ; haveSign msgSlice
+	SWAP
+	PUSHCONT {
+		PUSHPOW2 9
+		LDSLICEX
+		DUP
+		MYADDR
+		NEWC
+		STSLICE
+		STSLICE
+		ENDC
+		HASHCU
+		SWAP
+		LDU 1 ; signatureSlice hashMsgSlice hasPubkey msgSlice
+		SWAP
+		PUSHCONT {
+			LDU 256 ; signatureSlice hashMsgSlice pubkey msgSlice
+			XCHG2 S3, S3
+		}
+		PUSHCONT {
+			XCHG S2
+			GETGLOB 2
+		}
+		IFELSE
+		CHKSIGNU
+		THROWIFNOT 40
+	}
+	PUSHCONT {
+		LDU 1 ; hasPubkey msgSlice
+		SWAP
+		THROWIF 58
+	}
+	IFELSE
+	LDU 64 ; timestamp msgSlice
+	SWAP
+	.inline __replayProtection
+	LDU 32 ; expireAt msgSlice
+	SWAP
+	NOW ; msgSlice expireAt now
+	GREATER ; msgSlice expireAt>now
+	THROWIFNOT 57
+	LDU 32 ; funcId body
+	SWAP
+	CALLREF {
+		.inline public_function_selector
+	}
+	THROW 60
+}
+
+.fragment main_internal, {
+	PUSH S2
+	CTOS
+	PLDU 4
+	MODPOW2 1
+	IFRET
+	OVER
+	SEMPTY ; isEmpty
+	IFRET
+	OVER
+	LDUQ 32  ; [funcId] body' ok
+	THROWIFNOT 60
+	OVER
+	IFNOTRET
+	SWAP
+	CALLREF {
+		.inline public_function_selector
+	}
+	THROW 60
+}
+
+.fragment default_data_cell, {
+	PUSHREF {
+	}
+	NEWC
+	PUSHINT 320
+	STZEROES
+	STREF
+	ENDC
+}
+
+.fragment upd_only_time_in_c4, {
+	PUSHROOT
+	CTOS
+	LDU 256
+	LDU 64
+	NIP
+	GETGLOB 3
+	ROT
+	NEWC
+	STU 256
+	STU 64
+	STSLICE
+	ENDC
+	POPROOT
+}
+
+.fragment onTickTock, {
+}
+
+; The code below forms a value of the StateInit type.
+.blob x4_ ; split_depth = nothing
+.blob x4_ ; special = nothing
+.blob xc_ ; code = just
+.cell { ; code cell
+	PUSHREFCONT {
+		DICTPUSHCONST 32
+		DICTUGETJMPZ
+		THROW 78
+		.code-dict-cell 32, {
+		}
+		.cell { ; version
+			.blob x736f6c20302e37372e30 ; sol 0.77.0
+		}
+	}
+	POPCTR c3
+	DUP
+	IFNOTJMPREF {
+		.inline main_internal
+	}
+	DUP
+	EQINT -1
+	IFJMPREF {
+		.inline main_external
+	}
+	DUP
+	EQINT -2
+	IFJMPREF {
+		.inline onTickTock
+	}
+	THROW 11
+}
+.blob xc_ ; data = just
+.cell { 
+	.inline-computed-cell default_data_cell, 0
+}
+.blob x4_ ; library = hme_empty

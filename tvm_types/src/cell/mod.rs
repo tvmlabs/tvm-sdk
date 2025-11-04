@@ -261,7 +261,10 @@ lazy_static::lazy_static! {
 
 impl std::hash::Hash for HashableCell {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        core::mem::discriminant(self).hash(state);
+        match self {
+            HashableCell::Any(cell) => cell.hash(MAX_LEVEL).hash(state),
+        }
+        // core::mem::discriminant(self).hash(state);
     }
 
     fn hash_slice<H: std::hash::Hasher>(data: &[Self], state: &mut H)

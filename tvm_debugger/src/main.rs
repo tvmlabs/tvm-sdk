@@ -146,6 +146,9 @@ struct RunArgs {
     #[arg(short('p'), long, value_parser = parse_json_object)]
     call_parameters: Option<Value>,
 
+    #[arg(long)]
+    call_parameters_file: Option<PathBuf>,
+
     /// Contract address, that will be used for execution
     #[arg(long, allow_hyphen_values(true))]
     address: Option<String>,
@@ -285,6 +288,7 @@ mod tests {
             abi_header: None,
             function_name: Some(func.to_string()),
             call_parameters: None,
+            call_parameters_file: None,
             address: None,
             sign: None,
             internal: false,
