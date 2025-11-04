@@ -101,16 +101,16 @@ pub(crate) fn generate_message_body(args: &RunArgs) -> anyhow::Result<SliceData>
         .abi_header
         .clone()
         .map(|v| serde_json::to_string(&v).unwrap_or("{}".to_string()).to_string());
-    let parameters = args
-        .call_parameters
-        .clone()
-        .map(|v| {
-            serde_json::to_string(&v)
-                .map_err(|err| anyhow::format_err!("Failed to serialize call parameters: {err}"))
-                .unwrap()
-                .to_string()
-        })
-        .unwrap_or("{}".to_string());
+    let parameters = if let Some(file) = args.call_parameters_file.as_ref() {
+        let file_content = std::fs::read_to_string(file)
+            .map_err(|e| anyhow::format_err!("Failed to read call parameters file: {e}"))?;
+        file_content
+    } else {
+        args.call_parameters
+            .clone()
+            .map(|v| serde_json::to_string(&v).unwrap_or("{}".to_string()).to_string())
+            .unwrap_or("{}".to_string())
+    };
     let key = args.sign.as_ref().map(|path| {
         let keypair = read_keys(path).expect("Failed to read key pair file");
         let secret = hex::decode(&keypair.secret).expect("Failed to decode secret key");

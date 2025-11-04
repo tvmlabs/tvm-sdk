@@ -47,7 +47,7 @@ impl Default for DataCell {
 }
 
 thread_local! {
-    static UNIQUE_CELLS: RefCell<BTreeSet<HashableCell>> = const { RefCell::new(BTreeSet::new()) };
+    //static UNIQUE_CELLS: RefCell<BTreeSet<HashableCell>> = const { RefCell::new(BTreeSet::new()) };
     static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
 }
 

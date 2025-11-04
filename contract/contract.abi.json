@@ -1,0 +1,44 @@
+{
+	"ABI version": 2,
+	"version": "2.4",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "just_write_cell",
+			"inputs": [
+				{"name":"cell","type":"cell"}
+			],
+			"outputs": [
+				{"name":"cells_","type":"uint256"},
+				{"name":"bits_","type":"uint256"},
+				{"name":"refs_","type":"uint256"}
+			]
+		},
+		{
+			"name": "get_content_of_cell",
+			"inputs": [
+				{"name":"cell","type":"cell"}
+			],
+			"outputs": [
+				{"name":"u_","type":"uint8"},
+				{"name":"cell_","type":"cell"},
+				{"name":"value2","type":"map(int257,uint8)"},
+				{"name":"size_","type":"int257"}
+			]
+		},
+		{
+			"name": "doNothing",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		}
+	],
+	"events": [
+	],
+	"fields": [
+		{"init":true,"name":"_pubkey","type":"uint256"},
+		{"init":false,"name":"_timestamp","type":"uint64"},
+		{"init":false,"name":"c","type":"cell"}
+	]
+}

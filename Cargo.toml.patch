@@ -1,0 +1,13 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index e0a25a6e..21a80115 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -21,7 +21,7 @@ members = [
+   "tvm_struct",
+   "tvm_tl_codegen",
+   "tvm_types",
+-  "tvm_vm",
++  "tvm_vm", "cell_generator",
+ ]
+ [workspace.package]
+ version = "2.23.1"
