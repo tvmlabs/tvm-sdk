@@ -599,7 +599,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     fetch_stack(engine, 5)?;
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
-    if engine_version >= "1.0.2".parse().unwrap() && tap_num == 1 {
+    if engine_version >= "1.0.2".parse().unwrap() && tap_num <= 1 {
         engine.cc.stack.push(int!(0 as u128));
         return Ok(());
     }
