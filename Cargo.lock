@@ -1097,7 +1097,7 @@ dependencies = [
 
 [[package]]
 name = "cell_generator"
-version = "2.24.4"
+version = "2.24.5"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
