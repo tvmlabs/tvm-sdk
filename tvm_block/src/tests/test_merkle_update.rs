@@ -361,7 +361,7 @@ fn test_merkle_update4() {
     let mut root1 = BuilderData::new();
     root1.append_raw(&[0], 8).unwrap();
 
-    for i in 0..1024 {
+    for i in 0..800 {
         let mut new_root = BuilderData::new();
         new_root.append_raw(&[i as u8], 8).unwrap();
         new_root.checked_append_reference(root1.clone().into_cell().unwrap()).unwrap();

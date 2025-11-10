@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.6] - 2025-11-10
+## Fixed
+- Hash used for calculating BOC depth when applying BOC size limits
+- Modified tests to match Rust 2024 Standard
+
 ## [2.24.5] - 2025-11-03
 ## Fixed
 - Fix mvreward
