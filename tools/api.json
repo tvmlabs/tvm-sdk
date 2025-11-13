@@ -1,5 +1,5 @@
 {
-  "version": "2.18.5",
+  "version": "2.24.5",
   "modules": [
     {
       "name": "client",
@@ -1344,6 +1344,26 @@
             {
               "name": "boc",
               "type": "String",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "dapp_id",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "state_timestamp",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "BigInt",
+                "number_type": "UInt",
+                "number_size": 64
+              },
               "summary": null,
               "description": null
             }
