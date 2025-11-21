@@ -365,8 +365,8 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
         rbm = (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin))
             .min(rbmprev);
     } else {
-        rbm = (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev);
+        rbm = ((((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin))
+            .min(rbmprev)) / 2;
     }
     engine.cc.stack.push(int!(rbm as u128));
     Ok(())
