@@ -15,7 +15,7 @@ lazy_static.workspace = true
 log.workspace = true
 semver.workspace = true
 thiserror.workspace = true
-wasmtime.workspace = true
+#wasmtime.workspace = true
 #
 tvm_block.workspace = true
 tvm_types.workspace = true
