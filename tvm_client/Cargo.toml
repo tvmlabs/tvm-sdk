@@ -25,17 +25,11 @@ tvm_sdk.workspace = true
 tvm_abi.workspace = true
 tvm_block.workspace = true
 tvm_block_json.workspace = true
-tvm_executor = { workspace = true, features = ["signature_with_id"] }
 tvm_struct.workspace = true
 tvm_types.workspace = true
-tvm_vm = { workspace = true, features = [
-  "signature_with_id",
-  "signature_no_check",
-] }
 
 lockfree.workspace = true
 sodalite = { features = ["rand"], git = "https://github.com/tvmlabs/sodalite" }
-
 
 aes = "0.7.4"
 anyhow.workspace = true
@@ -79,7 +73,7 @@ zeroize = { features = ["zeroize_derive"], version = "1.7.0" }
 zstd = { workspace = true, optional = true }
 
 # optional for std
-reqwest = { features = ["cookies"], optional = true, workspace = true }
+reqwest = { features = ["cookies"], workspace = true }
 tokio-tungstenite = { optional = true, workspace = true }
 
 # optional for wasm
@@ -88,6 +82,13 @@ js-sys = { optional = true, version = "0.3.67" }
 wasm-bindgen = { optional = true, version = "0.2.90" }
 wasm-bindgen-futures = { optional = true, version = "0.4.40" }
 serde_with = "3.12.0"
+
+# [target.'cfg(not(all(target_arch = "wasm32", target_os = "unknown", target_vendor = "unknown")))'.dependencies]
+tvm_executor = { workspace = true, features = ["signature_with_id"] }
+tvm_vm = { workspace = true, features = [
+  "signature_with_id",
+  "signature_no_check",
+] }
 
 [dependencies.home]
 optional = true

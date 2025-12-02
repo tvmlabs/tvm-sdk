@@ -25,9 +25,6 @@ rand.workspace = true
 serde_derive.workspace = true
 similar = { features = ["bytes"], optional = true, workspace = true }
 thiserror.workspace = true
-wasmtime.workspace = true
-wasmtime-wasi.workspace = true
-wasmtime-wasi-io.workspace = true
 zstd = { default-features = false, optional = true, workspace = true }
 
 tokio.workspace = true
@@ -81,6 +78,12 @@ tracing = "0.1.41"
 ff = { version = "0.13.0", features = ["derive"] }
 
 rand_chacha = "0.2.2"
+
+# [target.'cfg(not(all(target_arch = "wasm32", target_os = "unknown", target_vendor = "unknown")))'.dependencies]
+#wasmtime.workspace = true
+#wasmtime-wasi.workspace = true
+#wasmtime-wasi-io.workspace = true
+
 
 [dev-dependencies]
 criterion = "0.5.1"

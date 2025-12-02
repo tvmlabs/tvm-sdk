@@ -11,7 +11,6 @@
 #![allow(clippy::too_many_arguments)]
 
 use std::cmp::min;
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::LinkedList;
 use std::sync::Arc;
@@ -139,8 +138,8 @@ pub struct ExecuteParams {
     pub execution_timeout: Option<Duration>,
     pub wasm_binary_root_path: String,
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
-    pub wasm_engine: Option<wasmtime::Engine>,
-    pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    // pub wasm_engine: Option<wasmtime::Engine>,
+    // pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
 }
@@ -188,8 +187,8 @@ impl Default for ExecuteParams {
             execution_timeout: None,
             wasm_binary_root_path: "./config/wasm".to_owned(),
             wasm_hash_whitelist: HashSet::new(),
-            wasm_engine: None,
-            wasm_component_cache: HashMap::new(),
+            // wasm_engine: None,
+            // wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
         }
@@ -540,8 +539,8 @@ pub trait TransactionExecutor {
         .set_engine_mv_config(params.mvconfig.clone())
         .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
         .set_wasm_block_time(params.block_unixtime.into())
-        .extern_insert_wasm_engine(params.wasm_engine.clone())
-        .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
+        // .extern_insert_wasm_engine(params.wasm_engine.clone())
+        // .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
         .set_dapp_id(params.dapp_id.clone())
         .create();
 

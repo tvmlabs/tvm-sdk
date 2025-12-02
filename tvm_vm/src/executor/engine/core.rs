@@ -140,8 +140,8 @@ pub struct Engine {
     wasm_binary_root_path: String,
     available_credit: i128,
     wasm_hash_whitelist: HashSet<[u8; 32]>, // store hashes of wasm binaries available locally
-    wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
-    wasm_engine_cache: Option<wasmtime::Engine>,
+    // wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
+    // wasm_engine_cache: Option<wasmtime::Engine>,
     wasm_block_timestamp: u64,
 
     mvconfig: MVConfig,
@@ -311,8 +311,8 @@ impl Engine {
             wasm_binary_root_path: "./config/wasm".to_owned(),
             available_credit: 0,
             wasm_hash_whitelist: HashSet::new(),
-            wash_component_cache: HashMap::new(),
-            wasm_engine_cache: None,
+            // wash_component_cache: HashMap::new(),
+            // wasm_engine_cache: None,
             wasm_block_timestamp: 0,
             self_dapp_id: None,
             mvconfig: MVConfig::default(),
@@ -491,75 +491,75 @@ impl Engine {
         self.self_dapp_id = dapp_id;
     }
 
-    pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
-        log::debug!("Extern Initialising Wasm Engine");
-        // load or access WASM engine
-        let mut wasm_config = wasmtime::Config::new();
-        wasm_config.wasm_component_model(true);
-        wasm_config.consume_fuel(true);
-        // configs to assure determinism
-        wasm_config.cranelift_nan_canonicalization(true);
-        wasm_config.cranelift_pcc(true);
-        wasm_config.wasm_relaxed_simd(true);
-        wasm_config.relaxed_simd_deterministic(true);
-        let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
-            Ok(module) => module,
-            Err(e) => {
-                err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
-            }
-        };
-        Ok(wasm_engine)
-    }
+    // pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
+    //     log::debug!("Extern Initialising Wasm Engine");
+    //     // load or access WASM engine
+    //     let mut wasm_config = wasmtime::Config::new();
+    //     wasm_config.wasm_component_model(true);
+    //     wasm_config.consume_fuel(true);
+    //     // configs to assure determinism
+    //     wasm_config.cranelift_nan_canonicalization(true);
+    //     wasm_config.cranelift_pcc(true);
+    //     wasm_config.wasm_relaxed_simd(true);
+    //     wasm_config.relaxed_simd_deterministic(true);
+    //     let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+    //         Ok(module) => module,
+    //         Err(e) => {
+    //             err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
+    //         }
+    //     };
+    //     Ok(wasm_engine)
+    // }
 
-    pub fn wasm_engine_init_cached(&mut self) -> Result<()> {
-        log::debug!("Internal Initialising Wasm Engine");
-        // load or access WASM engine
-        let mut wasm_config = wasmtime::Config::new();
-        wasm_config.wasm_component_model(true);
-        wasm_config.consume_fuel(true);
-        // configs to assure determinism
-        wasm_config.cranelift_nan_canonicalization(true);
-        wasm_config.cranelift_pcc(true);
-        wasm_config.wasm_relaxed_simd(true);
-        wasm_config.relaxed_simd_deterministic(true);
-        let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
-            Ok(module) => module,
-            Err(e) => {
-                err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
-            }
-        };
-        self.wasm_engine_cache = Some(wasm_engine);
-        Ok(())
-    }
+    // pub fn wasm_engine_init_cached(&mut self) -> Result<()> {
+    //     log::debug!("Internal Initialising Wasm Engine");
+    //     // load or access WASM engine
+    //     let mut wasm_config = wasmtime::Config::new();
+    //     wasm_config.wasm_component_model(true);
+    //     wasm_config.consume_fuel(true);
+    //     // configs to assure determinism
+    //     wasm_config.cranelift_nan_canonicalization(true);
+    //     wasm_config.cranelift_pcc(true);
+    //     wasm_config.wasm_relaxed_simd(true);
+    //     wasm_config.relaxed_simd_deterministic(true);
+    //     let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+    //         Ok(module) => module,
+    //         Err(e) => {
+    //             err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
+    //         }
+    //     };
+    //     self.wasm_engine_cache = Some(wasm_engine);
+    //     Ok(())
+    // }
 
-    pub fn extern_insert_wasm_engine(&mut self, engine: Option<wasmtime::Engine>) {
-        self.wasm_engine_cache = engine.clone();
-    }
-
-    pub fn extern_insert_wasm_component_cache(
-        &mut self,
-        cache: HashMap<[u8; 32], wasmtime::component::Component>,
-    ) {
-        self.wash_component_cache = cache;
-    }
-
-    pub fn get_wasm_engine(&self) -> Result<&wasmtime::Engine> {
-        match &self.wasm_engine_cache {
-            Some(engine) => Ok(engine),
-            None => err!(
-                ExceptionCode::WasmEngineMissing,
-                "Wasm Engine was not created. This is probably a bug."
-            )?,
-        }
-    }
+    // pub fn extern_insert_wasm_engine(&mut self, engine: Option<wasmtime::Engine>) {
+    //     self.wasm_engine_cache = engine.clone();
+    // }
+    //
+    // pub fn extern_insert_wasm_component_cache(
+    //     &mut self,
+    //     cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    // ) {
+    //     self.wash_component_cache = cache;
+    // }
+    //
+    // pub fn get_wasm_engine(&self) -> Result<&wasmtime::Engine> {
+    //     match &self.wasm_engine_cache {
+    //         Some(engine) => Ok(engine),
+    //         None => err!(
+    //             ExceptionCode::WasmEngineMissing,
+    //             "Wasm Engine was not created. This is probably a bug."
+    //         )?,
+    //     }
+    // }
 
     pub fn get_wasm_block_time(&self) -> u64 {
         self.wasm_block_timestamp
     }
 
-    pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {
-        Ok(wasmtime::Store::new(self.get_wasm_engine()?, data))
-    }
+    // pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {
+    //     Ok(wasmtime::Store::new(self.get_wasm_engine()?, data))
+    // }
 
     pub fn extern_load_wasm_hash_whitelist_from_path(
         wasm_whitelist_path: String,
@@ -609,6 +609,7 @@ impl Engine {
         Ok(whitelist)
     }
 
+    #[cfg(feature = "wasm_external")]
     pub fn extern_precompile_all_wasm_from_hash_list(
         wasm_binary_root_path: String,
         wasm_engine: wasmtime::Engine,
@@ -650,6 +651,17 @@ impl Engine {
         cache
     }
 
+    #[cfg(not(feature = "wasm_external"))]
+    pub fn extern_precompile_all_wasm_from_hash_list(
+        _wasm_binary_root_path: String,
+        _wasm_engine: (),
+        _wasm_hash_whitelist: HashSet<[u8; 32]>,
+    ) -> HashMap<[u8; 32], ()> {
+        // Wasm support is disabled; return empty map
+        HashMap::new()
+    }
+
+    #[cfg(feature = "wasm_external")]
     pub fn precompile_all_wasm_by_hash(mut self) -> Result<Engine> {
         let hashmap = self.wasm_hash_whitelist.clone();
         // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
@@ -674,6 +686,13 @@ impl Engine {
         Ok(self)
     }
 
+    #[cfg(not(feature = "wasm_external"))]
+    pub fn precompile_all_wasm_by_hash(self) -> Result<Engine> {
+        // No-op when wasm support is disabled
+        Ok(self)
+    }
+
+    #[cfg(feature = "wasm_external")]
     pub fn get_precompiled_wasm_component(
         &self,
         hash: [u8; 32],
@@ -681,6 +700,7 @@ impl Engine {
         self.wash_component_cache.get(&hash)
     }
 
+    #[cfg(feature = "wasm_external")]
     pub fn create_single_use_wasm_component(
         &self,
         executable: Vec<u8>,
@@ -696,6 +716,7 @@ impl Engine {
         }
     }
 
+    #[cfg(feature = "wasm_external")]
     pub fn print_wasm_component_exports_and_imports(
         &self,
         component: &wasmtime::component::Component,

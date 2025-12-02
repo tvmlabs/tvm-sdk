@@ -201,23 +201,47 @@ impl VMSetup {
     }
 
     /// Init wasmtime engine
+    #[cfg(feature = "wasm_external")]
     pub fn wasm_engine_init_cached(mut self) -> Result<VMSetup> {
         self.vm.wasm_engine_init_cached()?;
         Ok(self)
     }
 
+    /// Init wasmtime engine (no-op when wasm_external feature is disabled)
+    #[cfg(not(feature = "wasm_external"))]
+    pub fn wasm_engine_init_cached(self) -> Result<VMSetup> {
+        Ok(self)
+    }
+
     /// Insert external wasmtime engine
+    #[cfg(feature = "wasm_external")]
     pub fn extern_insert_wasm_engine(mut self, engine: Option<wasmtime::Engine>) -> VMSetup {
         self.vm.extern_insert_wasm_engine(engine);
         self
     }
 
+    /// Insert external wasmtime engine (disabled when wasm_external is off)
+    #[cfg(not(feature = "wasm_external"))]
+    pub fn extern_insert_wasm_engine(self, _engine: Option<()>) -> VMSetup {
+        self
+    }
+
     /// Insert external wasm component cache
+    #[cfg(feature = "wasm_external")]
     pub fn extern_insert_wasm_component_cache(
         mut self,
         cache: HashMap<[u8; 32], wasmtime::component::Component>,
     ) -> VMSetup {
         self.vm.extern_insert_wasm_component_cache(cache);
+        self
+    }
+
+    /// Insert external wasm component cache (disabled when wasm_external is off)
+    #[cfg(not(feature = "wasm_external"))]
+    pub fn extern_insert_wasm_component_cache(
+        self,
+        _cache: HashMap<[u8; 32], ()>,
+    ) -> VMSetup {
         self
     }
 
