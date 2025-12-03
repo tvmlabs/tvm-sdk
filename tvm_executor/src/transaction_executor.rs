@@ -543,7 +543,9 @@ pub trait TransactionExecutor {
         );
 
         #[cfg(not(feature = "wasm_web"))]
-        (vm_setup = vm_setup.set_wasm_root_path(params.wasm_binary_root_path.clone()));
+        {
+            vm_setup = vm_setup.set_wasm_root_path(params.wasm_binary_root_path.clone())
+        }
 
         vm_setup = vm_setup
             .set_engine_available_credit(params.available_credit)
@@ -552,17 +554,16 @@ pub trait TransactionExecutor {
 
         #[cfg(not(feature = "wasm_web"))]
         {
-            vm_setup = vm_setup.set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
+            vm_setup = vm_setup
+                .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
+                .set_wasm_block_time(params.block_unixtime.into())
+                .extern_insert_wasm_engine(params.wasm_engine.clone())
+                .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
         };
-        #[cfg(not(feature = "wasm_web"))]
-        (vm_setup = vm_setup.set_wasm_block_time(params.block_unixtime.into()));
-        #[cfg(not(feature = "wasm_web"))]
-        (vm_setup = vm_setup.extern_insert_wasm_engine(params.wasm_engine.clone()));
-        #[cfg(not(feature = "wasm_web"))]
-        (vm_setup =
-            vm_setup.extern_insert_wasm_component_cache(params.wasm_component_cache.clone()));
 
-        let mut vm = vm_setup.set_dapp_id(params.dapp_id.clone()).create();
+        vm_setup = vm_setup.set_dapp_id(params.dapp_id.clone());
+
+        let mut vm = vm_setup.create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {
             vm.modify_behavior(modifiers);

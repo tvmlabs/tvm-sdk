@@ -2168,6 +2168,7 @@ pub(crate) fn check_and_get_wasm_by_hash(
     hash_index: usize,
 ) -> Result<(Vec<u8>, Option<[u8; 32]>), failure::Error> {
     // load wasm component binary
+    #[cfg(feature = "wasm_external")]
     let wasm_executable = {
         let s = engine.cmd.var(exec_index).as_cell()?;
         match TokenValue::read_bytes(SliceData::load_cell(s.clone())?, true, &ABI_VERSION_2_4)?.0 {
@@ -2179,6 +2180,7 @@ pub(crate) fn check_and_get_wasm_by_hash(
             )?,
         }
     };
+    #[cfg(not(feature = "wasm_external"))]
     let wasm_executable = {
         let _e = exec_index; // avoid linter error
         Vec::<u8>::new()
