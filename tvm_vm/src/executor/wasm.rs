@@ -2161,6 +2161,7 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     Ok(())
 }
 
+#[cfg(not(feature = "wasm_web"))]
 pub(crate) fn check_and_get_wasm_by_hash(
     engine: &mut Engine,
     exec_index: usize,
