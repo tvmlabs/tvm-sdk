@@ -407,7 +407,7 @@ impl Handlers {
                 .set(0x46, execute_calculate_mbk);
             #[cfg(feature = "wasmtime")]
             {
-                c7_handlers
+                c7_handlers //
                     .set(0x39, execute_run_wasm)
                     .set(0x3A, execute_run_wasm_concat_multiarg);
             }
