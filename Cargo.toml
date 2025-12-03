@@ -120,11 +120,11 @@ tvm_cli = { path = "./tvm_cli" }
 tvm_client = { path = "./tvm_client", default-features = false }
 tvm_client_processing = { path = "./tvm_client_processing" }
 tvm_debugger = { path = "./tvm_debugger" }
-tvm_executor = { path = "./tvm_executor" }
+tvm_executor = { path = "./tvm_executor", default-features = false }
 tvm_sdk = { path = "./tvm_sdk" }
 tvm_struct = { path = "./tvm_struct" }
 tvm_types = { path = "./tvm_types" }
-tvm_vm = { path = "./tvm_vm" }
+tvm_vm = { path = "./tvm_vm", default-features = false }
 
 [workspace.dependencies.tokio-tungstenite]
 version = "0.26.2"

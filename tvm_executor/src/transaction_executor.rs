@@ -136,10 +136,14 @@ pub struct ExecuteParams {
     pub available_credit: i128,
     pub termination_deadline: Option<Instant>,
     pub execution_timeout: Option<Duration>,
+    #[cfg(not(feature = "wasm_web"))]
     pub wasm_binary_root_path: String,
+    #[cfg(not(feature = "wasm_web"))]
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
-    // pub wasm_engine: Option<wasmtime::Engine>,
-    // pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    #[cfg(not(feature = "wasm_web"))]
+    pub wasm_engine: Option<wasmtime::Engine>,
+    #[cfg(not(feature = "wasm_web"))]
+    pub wasm_component_cache: std::collections::HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
 }
@@ -185,10 +189,14 @@ impl Default for ExecuteParams {
             available_credit: 0,
             termination_deadline: None,
             execution_timeout: None,
+            #[cfg(not(feature = "wasm_web"))]
             wasm_binary_root_path: "./config/wasm".to_owned(),
+            #[cfg(not(feature = "wasm_web"))]
             wasm_hash_whitelist: HashSet::new(),
-            // wasm_engine: None,
-            // wasm_component_cache: HashMap::new(),
+            #[cfg(not(feature = "wasm_web"))]
+            wasm_engine: None,
+            #[cfg(not(feature = "wasm_web"))]
+            wasm_component_cache: std::collections::HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
         }
@@ -512,7 +520,7 @@ pub trait TransactionExecutor {
         if let Some(init_code_hash) = result_acc.init_code_hash() {
             smc_info.set_init_code_hash(init_code_hash.clone());
         }
-        let mut vm = VMSetup::with_context(
+        let mut vm_setup = VMSetup::with_context(
             SliceData::load_cell(code)?,
             VMSetupContext {
                 capabilities: self.config().capabilites(),
@@ -532,17 +540,29 @@ pub trait TransactionExecutor {
         .set_block_related_flags(
             params.vm_execution_is_block_related.clone(),
             params.block_collation_was_finished.clone(),
-        )
-        .set_wasm_root_path(params.wasm_binary_root_path.clone())
-        .set_engine_available_credit(params.available_credit)
-        .set_engine_version(params.engine_version.clone())
-        .set_engine_mv_config(params.mvconfig.clone())
-        .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
-        .set_wasm_block_time(params.block_unixtime.into())
-        // .extern_insert_wasm_engine(params.wasm_engine.clone())
-        // .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
-        .set_dapp_id(params.dapp_id.clone())
-        .create();
+        );
+
+        #[cfg(not(feature = "wasm_web"))]
+        (vm_setup = vm_setup.set_wasm_root_path(params.wasm_binary_root_path.clone()));
+
+        vm_setup = vm_setup
+            .set_engine_available_credit(params.available_credit)
+            .set_engine_version(params.engine_version.clone())
+            .set_engine_mv_config(params.mvconfig.clone());
+
+        #[cfg(not(feature = "wasm_web"))]
+        {
+            vm_setup = vm_setup.set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
+        };
+        #[cfg(not(feature = "wasm_web"))]
+        (vm_setup = vm_setup.set_wasm_block_time(params.block_unixtime.into()));
+        #[cfg(not(feature = "wasm_web"))]
+        (vm_setup = vm_setup.extern_insert_wasm_engine(params.wasm_engine.clone()));
+        #[cfg(not(feature = "wasm_web"))]
+        (vm_setup =
+            vm_setup.extern_insert_wasm_component_cache(params.wasm_component_cache.clone()));
+
+        let mut vm = vm_setup.set_dapp_id(params.dapp_id.clone()).create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {
             vm.modify_behavior(modifiers);

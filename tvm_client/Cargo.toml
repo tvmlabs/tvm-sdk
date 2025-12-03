@@ -25,8 +25,13 @@ tvm_sdk.workspace = true
 tvm_abi.workspace = true
 tvm_block.workspace = true
 tvm_block_json.workspace = true
+tvm_executor = { workspace = true, optional = true, features = ["signature_with_id"] }
 tvm_struct.workspace = true
 tvm_types.workspace = true
+tvm_vm = { workspace = true, optional = true, features = [
+  "signature_with_id",
+  "signature_no_check",
+] }
 
 lockfree.workspace = true
 sodalite = { features = ["rand"], git = "https://github.com/tvmlabs/sodalite" }
@@ -83,13 +88,6 @@ wasm-bindgen = { optional = true, version = "0.2.90" }
 wasm-bindgen-futures = { optional = true, version = "0.4.40" }
 serde_with = "3.12.0"
 
-# [target.'cfg(not(all(target_arch = "wasm32", target_os = "unknown", target_vendor = "unknown")))'.dependencies]
-tvm_executor = { workspace = true, features = ["signature_with_id"] }
-tvm_vm = { workspace = true, features = [
-  "signature_with_id",
-  "signature_no_check",
-] }
-
 [dependencies.home]
 optional = true
 version = "0.5.9"
@@ -123,7 +121,7 @@ pretty_assertions = "1.4.0"
 
 
 [features]
-default = ["std", "rustls-tls-webpki-roots"]
+default = ["std", "rustls-tls-webpki-roots", "tvm_vm/default", "tvm_executor/default"]
 include-zstd = ["tvm_block/gosh", "tvm_vm/gosh"]
 std = [
   "tokio/rt-multi-thread",
@@ -156,4 +154,12 @@ wasm-base = [
   "wasm-bindgen",
   "wasm-bindgen-futures",
   "web-sys",
+]
+
+# NOTE: supposed to be the same as "wasm" but for now
+# we don't support wasm contracts in the browser
+wasm_web = [
+  "wasm-base",
+  "tvm_vm/wasm_web",
+  "tvm_executor/wasm_web",
 ]
