@@ -25,8 +25,10 @@ use crate::executor::blockchain::add_action;
 use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::types::Instruction;
-// use crate::executor::wasm::check_and_get_wasm_by_hash;
-// use crate::executor::wasm::run_wasm_core;
+#[cfg(feature = "wasmtime")]
+use crate::executor::wasm::check_and_get_wasm_by_hash;
+#[cfg(feature = "wasmtime")]
+use crate::executor::wasm::run_wasm_core;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
 use crate::types::Exception;
@@ -164,11 +166,11 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_MINTECC, None, cell)
 }
 
+#[cfg(feature = "wasmtime")]
 pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 8)?;
-    return todo!();
-    /*
+
     let (wasm_executable, wasm_hash) = check_and_get_wasm_by_hash(engine, 0, 7)?;
 
     // let s = engine.cmd.var(0).as_cell()?;
@@ -232,25 +234,23 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
         };
     wasm_func_args.append(&mut wasm_args_tail);
     log::debug!("WASM Args loaded {:?}", wasm_func_args);
-     */
 
-    // run_wasm_core(
-    //     engine,
-    //     wasm_executable,
-    //     &wasm_func_name,
-    //     &wasm_instance_name,
-    //     wasm_func_args,
-    //     wasm_hash,
-    // )
+    run_wasm_core(
+        engine,
+        wasm_executable,
+        &wasm_func_name,
+        &wasm_instance_name,
+        wasm_func_args,
+        wasm_hash,
+    )
 }
 
 // execute wasm binary
+#[cfg(feature = "wasmtime")]
 pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 5)?;
-    return todo!();
 
-    /*
     let (wasm_executable, wasm_hash) = check_and_get_wasm_by_hash(engine, 0, 4)?;
     // let s = engine.cmd.var(0).as_cell()?;
     // let wasm_executable = rejoin_chain_of_cells(s)?;
@@ -289,7 +289,6 @@ pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
         wasm_func_args,
         wasm_hash,
     )
-     */
 }
 
 pub(super) fn execute_ecc_burn(engine: &mut Engine) -> Status {

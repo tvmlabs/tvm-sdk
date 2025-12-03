@@ -35,7 +35,8 @@ mod stack;
 pub mod token;
 mod tuple;
 mod types;
-// pub mod wasm;
+#[cfg(feature = "wasmtime")]
+pub mod wasm;
 pub mod zk_stuff;
 
 pub use engine::*;
@@ -44,7 +45,7 @@ use tvm_types::Cell;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 
-#[cfg(all(test, feature = "wasm_external"))]
+#[cfg(all(test, feature = "wasmtime"))]
 #[path = "../tests/test_multifactor_tls_wasm_execution.rs"]
 mod test_multifactor_tls_wasm_execution;
 

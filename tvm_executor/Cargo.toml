@@ -15,17 +15,22 @@ lazy_static.workspace = true
 log.workspace = true
 semver.workspace = true
 thiserror.workspace = true
-#wasmtime.workspace = true
 #
 tvm_block.workspace = true
 tvm_types.workspace = true
 tvm_vm.workspace = true
 
+wasmtime = { workspace = true, optional = true }
+
 [features]
+default = ["wasmtime", "tvm_vm/default", "tvm_vm/wasmtime"]
 signature_with_id = ["tvm_block/signature_with_id", "tvm_vm/signature_with_id"]
 ci_run = []
 timings = []
 ihr_disabled = []
+wasm_web = [
+    "tvm_vm/wasm_web",
+]
 
 [lib]
 bench = false
