@@ -442,6 +442,7 @@ fn test_execution_timeout() {
 
 #[cfg(feature = "wasmtime")]
 #[test]
+#[cfg(feature = "wasm_external")]
 fn test_run_wasm_basic_add() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
@@ -517,7 +518,9 @@ fn test_run_wasm_basic_add() {
     // );
 }
 
-#[cfg(all(test, feature = "wasmtime"))]
+#[cfg(feature = "wasmtime")]
+#[test]
+#[cfg(feature = "wasm_external")]
 fn test_run_wasm_fail_on_external() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
@@ -1071,6 +1074,7 @@ fn test_wasm_from_non_whitelist_hash() {
 
 #[cfg(feature = "wasmtime")]
 #[test]
+#[cfg(feature = "wasm_external")]
 fn test_run_wasm_fuel_error() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
