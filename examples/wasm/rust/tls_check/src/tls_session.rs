@@ -269,7 +269,6 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     //if client_hello[0] != 0x16 {
     //return vec![0u8, 3u8, 39u8]; // "client hello not found"
     //}
-    println!("client_hello: {:?}", client_hello);
 
     if !is_valid_client_hello(provider, client_hello) {
         return vec![0u8, 3u8, 39u8]; // "invalid client hello"
@@ -283,7 +282,7 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     }
     let enc_ser_handshake_len =
         256 * data[server_hello_start + 98] as u16 + data[server_hello_start + 99] as u16; // let enc_ser_handshake_len = 256*data[298] as u16 + data[299] as u16;
-    //println!("enc_ser_handshake_len: {:?}", enc_ser_handshake_len);
+    
     if enc_ser_handshake_len < 2500 {
         return vec![0u8, 3u8, 41u8]; // "server handshake len not sufficient"
     }
@@ -328,7 +327,6 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     // unwrap();
     let http_response = &data[handshake_end_index + app_request_len + encr_ticket_len..]; // let http_response = &data[handshake_end_index + app_request_len + 540..]; // let http_response = &data[handshake_end_index+640..];
 
-    println!("http_response.len(): {:?}", http_response.len());
     if http_response.len() < 1000 {
         return vec![0u8, 3u8, 43u8]; // "insufficient http response len"
     }
@@ -508,7 +506,6 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let signature_len = (certs_chain[certs_chain_len + 9] as usize) * 256
         + (certs_chain[certs_chain_len + 10] as usize);
 
-    println!("signature_len: {:?}", signature_len);
     if signature_len < 64 {
         return vec![0u8, 3u8, 72u8]; // "insufficient signature length"
     }
