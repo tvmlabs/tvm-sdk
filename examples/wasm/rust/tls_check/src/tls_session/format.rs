@@ -145,27 +145,30 @@ pub fn parse_server_hello(buf: &[u8]) -> Result<ServerHello, Vec<u8>> {
 
         let session_id_len: u8 = buf[current_pos]; // let session_id_len = buf.read_u8().expect("Can t read len of session ID");
         current_pos = current_pos + 1;
-        //let session_id = buf.read_bytes(session_id_len);
+        // let session_id = buf.read_bytes(session_id_len);
         current_pos = current_pos + (session_id_len as usize);
 
         current_pos = current_pos + 2; //buf.take(2); // cipher suite
         current_pos = current_pos + 1; // buf.take(1); // compression
 
-        //let mut dst = [0u8; 2];
-        //dst.clone_from_slice(&buf[current_pos..current_pos+2]);
-        //let _extensions_len = u16::from_be_bytes(dst);//let extensions_len = buf.read_u16().expect("Can t read len of extensions!");
-        //let extensions = buf.read_bytes(extensions_len); // need check extension
+        // let mut dst = [0u8; 2];
+        // dst.clone_from_slice(&buf[current_pos..current_pos+2]);
+        // let _extensions_len = u16::from_be_bytes(dst);//let extensions_len =
+        // buf.read_u16().expect("Can t read len of extensions!");
+        // let extensions = buf.read_bytes(extensions_len); // need check extension
         current_pos = current_pos + 2;
 
         while &current_pos + 2 < buf.len() {
             // !extensions.is_empty()
-            //dst.clone_from_slice(&buf[&current_pos..&current_pos+2]);
+            // dst.clone_from_slice(&buf[&current_pos..&current_pos+2]);
             let typ = u16::from_be_bytes(buf[current_pos..current_pos + 2].try_into().unwrap()); //let typ = extensions.read_u16().expect("can t read type of extension");
-            //current_pos = current_pos + 2;
-            //let extension_length = u16::from_be_bytes(buf[&current_pos..&current_pos+2]);// let extension_length = extensions.read_u16().expect("can t read len of extension");
-            //current_pos = current_pos + 2;
-            //let content = &buf[&current_pos..&current_pos+&extension_length];
-            //current_pos = current_pos + extension_length;
+            // current_pos = current_pos + 2;
+            // let extension_length =
+            // u16::from_be_bytes(buf[&current_pos..&current_pos+2]);// let extension_length
+            // = extensions.read_u16().expect("can t read len of extension");
+            // current_pos = current_pos + 2;
+            // let content = &buf[&current_pos..&current_pos+&extension_length];
+            // current_pos = current_pos + extension_length;
             match typ {
                 0x0033 => {
                     // key share
@@ -192,7 +195,7 @@ pub fn parse_server_hello(buf: &[u8]) -> Result<ServerHello, Vec<u8>> {
             }
         }
     } else {
-        return Err(vec![0u8, 5u8, 1u8]);//panic!("not enougth len");
+        return Err(vec![0u8, 5u8, 1u8]); //panic!("not enougth len");
     }
 
     Ok(hello)

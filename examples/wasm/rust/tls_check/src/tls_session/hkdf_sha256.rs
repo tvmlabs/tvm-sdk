@@ -492,7 +492,7 @@ impl Hmac {
 //========================================================
 
 pub fn extract(secret: &[u8; 32], salt: &[u8; 32]) -> Result<[u8; 32], Vec<u8>> {
-    //let salt = salt.unwrap_or(&vec![0; 32]);
+    // let salt = salt.unwrap_or(&vec![0; 32]);
     let mut extractor = Hmac::new(salt);
     extractor.write(secret);
     Ok(extractor.sum(&[]).try_into().unwrap())
@@ -520,14 +520,14 @@ impl Hkdf {
     // pub fn read(&mut self, p: &mut [u8]) -> usize {
     pub fn read(&mut self, need: usize) -> Result<Vec<u8>, Vec<u8>> {
         // Check whether enough data can be generated
-        //let need = p.len();
+        // let need = p.len();
         let remains = self.buf.len() + (255 - self.counter as usize + 1) * self.size;
 
         let mut p = vec![0u8; need];
         if remains < need {
-            //return Err(io::Error::new(io::ErrorKind::Other, "hkdf: entropy limit reached"));
-            //return 0;
-            //return p;
+            // return Err(io::Error::new(io::ErrorKind::Other, "hkdf: entropy limit
+            // reached")); return 0;
+            // return p;
             return Err(vec![0u8, 8u8, 1u8]);
         }
 
@@ -545,13 +545,13 @@ impl Hkdf {
             self.counter += 1;
 
             // Copy the new batch into p
-            //let batch_len = self.prev.len().min(p.len() - n);
-            //p[n..n + batch_len].copy_from_slice(&self.prev[..batch_len]);
-            //n += batch_len;
-            //self.buf = self.prev.clone();
+            // let batch_len = self.prev.len().min(p.len() - n);
+            // p[n..n + batch_len].copy_from_slice(&self.prev[..batch_len]);
+            // n += batch_len;
+            // self.buf = self.prev.clone();
             let new_size = self.prev.len().min(p.len());
             p[..new_size].copy_from_slice(&self.prev[..new_size]);
-            //p = &mut p[new_size..];
+            // p = &mut p[new_size..];
             //*p = &p[new_size..];
             p.drain(..new_size);
 
@@ -563,7 +563,7 @@ impl Hkdf {
         let mut result = self.prev.clone();
         result.truncate(need);
         Ok(result)
-        //return p; //need//Ok(need)
+        // return p; //need//Ok(need)
     }
 }
 

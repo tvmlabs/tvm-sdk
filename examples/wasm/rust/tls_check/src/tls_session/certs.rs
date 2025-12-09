@@ -1711,8 +1711,8 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
         serial_number: BigInt::default(),
         issuer: Name::default(),
         subject: Name::default(),
-        not_before: DateTime::<Utc>::MIN_UTC, //0i64,//SystemTime::now(),
-        not_after: DateTime::<Utc>::MAX_UTC,  //SystemTime::now(),
+        not_before: DateTime::<Utc>::MIN_UTC, // 0i64,//SystemTime::now(),
+        not_after: DateTime::<Utc>::MAX_UTC,  // SystemTime::now(),
         key_usage: KeyUsage::CERT_SIGN,
         extensions: Vec::new(),
         extra_extensions: Vec::new(),
@@ -1753,57 +1753,58 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
     let mut input1 = input.clone();
 
     if !input.read_asn1_element(&mut input1, SEQUENCE) {
-        //return Err("x509: malformed certificate".into());
-        return Err(vec![0u8, 21u8, 1u8]);//panic!("x509: malformed certificate");
+        // return Err("x509: malformed certificate".into());
+        return Err(vec![0u8, 21u8, 1u8]); //panic!("x509: malformed certificate");
     }
     cert.raw = input1.0.clone();
 
     if !input1.read_asn1(&mut input, SEQUENCE) {
-        //return Err("x509: malformed certificate".into());
-        return Err(vec![0u8, 21u8, 1u8]);//panic!("x509: malformed certificate");
+        // return Err("x509: malformed certificate".into());
+        return Err(vec![0u8, 21u8, 1u8]); //panic!("x509: malformed certificate");
     }
 
     let mut tbs = ASN1String { 0: Vec::new() }; // Suitable type for tbs
 
     if !input.read_asn1_element(&mut tbs, SEQUENCE) {
-        //return Err("x509: malformed tbs certificate".into());
-        return Err(vec![0u8, 21u8, 2u8]);// panic!("x509: malformed tbs certificate");
+        // return Err("x509: malformed tbs certificate".into());
+        return Err(vec![0u8, 21u8, 2u8]); // panic!("x509: malformed tbs certificate");
     }
 
     cert.raw_tbs_certificate = tbs.0.clone();
 
     let mut tbs1 = tbs.clone();
     if !tbs.read_asn1(&mut tbs1, SEQUENCE) {
-        //return Err("x509: malformed version".into());
-        return Err(vec![0u8, 21u8, 2u8]);// panic!("x509: malformed tbs certificate");
+        // return Err("x509: malformed version".into());
+        return Err(vec![0u8, 21u8, 2u8]); // panic!("x509: malformed tbs certificate");
     }
 
-    // if !tbs1.read_optional_asn1_integer(&mut cert.version, Tag(0).constructed().context_specific(), 0) {
+    // if !tbs1.read_optional_asn1_integer(&mut cert.version,
+    // Tag(0).constructed().context_specific(), 0) {
     if !tbs1.read_optional_asn1_integer(&mut cert.version, context_specific(constructed(0u8)), 0) {
-        //return Err("x509: malformed version".into());
-        return Err(vec![0u8, 21u8, 2u8]);// panic!("x509: malformed tbs certificate");
+        // return Err("x509: malformed version".into());
+        return Err(vec![0u8, 21u8, 2u8]); // panic!("x509: malformed tbs certificate");
     }
 
     if cert.version < 0 {
-        //return Err("x509: malformed version".into());
-        return Err(vec![0u8, 21u8, 3u8]);// panic!("x509: malformed version");
+        // return Err("x509: malformed version".into());
+        return Err(vec![0u8, 21u8, 3u8]); // panic!("x509: malformed version");
     }
 
     cert.version += 1;
     if cert.version > 3 {
-        //return Err("x509: invalid version".into());
-        return Err(vec![0u8, 21u8, 4u8]);// panic!("x509: invalid version");
+        // return Err("x509: invalid version".into());
+        return Err(vec![0u8, 21u8, 4u8]); // panic!("x509: invalid version");
     }
 
     match tbs1.read_asn1_big_int() {
         Some(serial) => cert.serial_number = serial,
-        None => return Err(vec![0u8, 21u8, 5u8]), //panic!("x509: malformed serial number"),
+        None => return Err(vec![0u8, 21u8, 5u8]), // panic!("x509: malformed serial number"),
     }
 
     let mut sig_ai_seq = ASN1String { 0: Vec::new() };
     if !tbs1.read_asn1(&mut sig_ai_seq, SEQUENCE) {
-        //return Err("x509: malformed signature algorithm identifier".into());
-        return Err(vec![0u8, 21u8, 6u8]);// panic!("x509: malformed signature algorithm identifier");
+        // return Err("x509: malformed signature algorithm identifier".into());
+        return Err(vec![0u8, 21u8, 6u8]); // panic!("x509: malformed signature algorithm identifier");
     }
 
     // Before parsing the inner algorithm identifier, extract
@@ -1811,14 +1812,15 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
     // match.
     let mut outer_sig_ai_seq = ASN1String { 0: Vec::new() };
     if !input.read_asn1(&mut outer_sig_ai_seq, SEQUENCE) {
-        //return Err("x509: malformed algorithm identifier".into());
-        return Err(vec![0u8, 21u8, 7u8]);// panic!("x509: malformed algorithm identifier");
+        // return Err("x509: malformed algorithm identifier".into());
+        return Err(vec![0u8, 21u8, 7u8]); // panic!("x509: malformed algorithm identifier");
     }
 
     if outer_sig_ai_seq.0 != sig_ai_seq.0 {
         // if outer_sig_ai_seq != sig_ai_seq {
-        //return Err("x509: inner and outer signature algorithm identifiers don't match".into());
-        return Err(vec![0u8, 21u8, 8u8]);// panic!("x509: inner and outer signature algorithm identifiers don't match");
+        // return Err("x509: inner and outer signature algorithm identifiers don't
+        // match".into());
+        return Err(vec![0u8, 21u8, 8u8]); // panic!("x509: inner and outer signature algorithm identifiers don't match");
     }
 
     let sig_ai = parse_ai(&mut sig_ai_seq);
@@ -1826,7 +1828,7 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
 
     let mut issuer_seq = ASN1String { 0: Vec::new() };
     if !tbs1.read_asn1_element(&mut issuer_seq, SEQUENCE) {
-        //return Err("x509: malformed issuer".into());
+        // return Err("x509: malformed issuer".into());
         return Err(vec![0u8, 21u8, 9u8]); // panic!("x509: malformed issuer");
     }
     cert.raw_issuer = issuer_seq.0.clone();
@@ -1864,8 +1866,8 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
     }
 
     let pk_ai = parse_ai(&mut pk_ai_seq); //pkAI, err := parseAI(pkAISeq)
-    //if err != nil {
-    //return nil, err
+    // if err != nil {
+    // return nil, err
     //}
     cert.public_key_algorithm = get_public_key_algorithm_from_oid(&pk_ai.algorithm);
     let mut spk = BitString { bytes: Vec::new(), bit_length: 0 }; //var spk asn1.BitString
@@ -1882,12 +1884,12 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
         }
 
         cert.public_key = parse_pk_res.unwrap();
-        //cert.public_key = parse_public_key(&public_key_info);
+        // cert.public_key = parse_public_key(&public_key_info);
     }
 
     if cert.version > 1 {
         if !tbs1.skip_optional_asn1(context_specific(1u8)) {
-            return Err(vec![0u8, 21u8, 12u8]);// panic!("x509: malformed issuerUniqueID");
+            return Err(vec![0u8, 21u8, 12u8]); // panic!("x509: malformed issuerUniqueID");
         }
         if !tbs1.skip_optional_asn1(context_specific(2u8)) {
             return Err(vec![0u8, 21u8, 13u8]); // panic!("x509: malformed subjectUniqueID");
@@ -1901,32 +1903,32 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
                 &mut present,
                 context_specific(constructed(3u8)),
             ) {
-                return Err(vec![0u8, 21u8, 14u8]);//panic!("x509: malformed extensions");
+                return Err(vec![0u8, 21u8, 14u8]); //panic!("x509: malformed extensions");
             }
 
             if present {
                 let mut seen_exts: HashMap<String, bool> = HashMap::new(); // seenExts := make(map[string]bool)
                 let mut extensions1 = ASN1String { 0: Vec::new() };
                 if !extensions.read_asn1(&mut extensions1, SEQUENCE) {
-                    return Err(vec![0u8, 21u8, 14u8]);// panic!("x509: malformed extensions");
+                    return Err(vec![0u8, 21u8, 14u8]); // panic!("x509: malformed extensions");
                 }
 
                 while !extensions1.0.is_empty() {
                     let mut extension = ASN1String { 0: Vec::new() };
                     if !extensions1.read_asn1(&mut extension, SEQUENCE) {
-                        return Err(vec![0u8, 21u8, 14u8]);// panic!("x509: malformed extension");
+                        return Err(vec![0u8, 21u8, 14u8]); // panic!("x509: malformed extension");
                     }
                     let ext = parse_extension(&mut extension); //ext, err := parseExtension(extension)
-                    //if err != nil {
-                    //return nil, err
+                    // if err != nil {
+                    // return nil, err
                     //}
 
                     let oid_str = to_oid_string(&ext.id); //oidStr := ext.Id.String()
                     if !seen_exts.get(&oid_str).is_none() {
                         return Err(vec![0u8, 21u8, 15u8]); // panic!("x509: certificate contains duplicate extensions");
                     }
-                    //if seenExts[oidStr] {
-                    //return nil, errors.New("x509: certificate contains duplicate extensions")
+                    // if seenExts[oidStr] {
+                    // return nil, errors.New("x509: certificate contains duplicate extensions")
                     //}
                     seen_exts.insert(oid_str, true); //seenExts[oidStr] = true
                     cert.extensions.push(ext);
@@ -2626,18 +2628,19 @@ fn parse_public_key(key_data: &PublicKeyInfo) -> Result<PublicKey, Vec<u8>> {
             // RSA public keys must have a NULL in the parameters.
             // See RFC 3279, Section 2.3.1.
             if params.full_bytes != NULL_BYTES.to_vec() {
-                return Err(vec![0u8, 21u8, 32u8]);//panic!("x509: RSA key missing NULL parameters");
+                return Err(vec![0u8, 21u8, 32u8]); //panic!("x509: RSA key missing NULL parameters");
             }
 
             let mut p = rsa::PublicKey { n: BigInt::from(0), e: 0i64 };
             let mut der1 = ASN1String { 0: Vec::new() };
             if !der.read_asn1(&mut der1, SEQUENCE) {
-                return Err(vec![0u8, 21u8, 33u8]);//panic!("x509: invalid RSA public key");
+                return Err(vec![0u8, 21u8, 33u8]); //panic!("x509: invalid RSA public key");
             }
 
             match der1.read_asn1_big_int() {
                 Some(big_int) => p.n = big_int,
-                None => return Err(vec![0u8, 21u8, 34u8]), // None => panic!("x509: invalid RSA modulus"),
+                None => return Err(vec![0u8, 21u8, 34u8]), /* None => panic!("x509: invalid RSA
+                                                            * modulus"), */
             }
 
             if !der1.read_asn1_i64(&mut p.e) {
@@ -2659,17 +2662,18 @@ fn parse_public_key(key_data: &PublicKeyInfo) -> Result<PublicKey, Vec<u8>> {
             if !params_der.read_asn1_object_identifier(&mut named_curve_oid) {
                 return Err(vec![0u8, 21u8, 38u8]); //panic!("x509: invalid ECDSA parameters");
             }
-            //let named_curve = named_curve_from_oid(&named_curve_oid);
+            // let named_curve = named_curve_from_oid(&named_curve_oid);
             match named_curve_from_oid(&named_curve_oid) {
                 Some(named_curve) => {
                     //
                     let (x, y): (BigInt, BigInt) = ecdsa::unmarshal(&named_curve, &der.0);
-                    //if x == nil {
-                    //panic!("x509: failed to unmarshal elliptic curve point");
+                    // if x == nil {
+                    // panic!("x509: failed to unmarshal elliptic curve point");
                     //}
-                    Ok(PublicKey::ECDSAPublicKey(ecdsa::PublicKey { curve: named_curve, x, y }) )
+                    Ok(PublicKey::ECDSAPublicKey(ecdsa::PublicKey { curve: named_curve, x, y }))
                 }
-                None => return Err(vec![0u8, 21u8, 39u8]), //panic!("x509: unsupported elliptic curve"),
+                None => return Err(vec![0u8, 21u8, 39u8]), /* panic!("x509: unsupported elliptic
+                                                            * curve"), */
             }
         }
         val if val == OID_PUBLIC_KEY_ED25519.as_slice() => {
@@ -2682,11 +2686,11 @@ fn parse_public_key(key_data: &PublicKeyInfo) -> Result<PublicKey, Vec<u8>> {
                 return Err(vec![0u8, 21u8, 41u8]); //panic!("x509: wrong Ed25519 public key size");
             }
 
-            Ok( PublicKey::ED25519PublicKey(ed25519::PublicKey(der.0)) )
+            Ok(PublicKey::ED25519PublicKey(ed25519::PublicKey(der.0)))
         }
         val if val == OID_PUBLIC_KEY_X25519.as_slice() => Ok(PublicKey::X25519PublicKey),
         val if val == OID_PUBLIC_KEY_DSA.as_slice() => Ok(PublicKey::DsaPublicKey),
-        _ => return Err(vec![0u8, 21u8, 42u8]), //panic!("x509: unknown public key algorithm"),
+        _ => return Err(vec![0u8, 21u8, 42u8]), // panic!("x509: unknown public key algorithm"),
     }
 }
 
@@ -3245,8 +3249,8 @@ pub fn check_certs_with_fixed_root(
     //}
     match check_certs_result {
         Ok(root_public_key) => {
-			let proposed_root_cert = parse_certificate(&root_cert_bytes).unwrap();
-			
+            let proposed_root_cert = parse_certificate(&root_cert_bytes).unwrap();
+
             if proposed_root_cert.public_key == root_public_key {
                 return Ok(()); // return true;
             }
