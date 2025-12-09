@@ -736,6 +736,12 @@ checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
 name = "base64"
+version = "0.21.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
+
+[[package]]
+name = "base64"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
@@ -745,6 +751,15 @@ name = "base64ct"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55248b47b0caf0546f7988906588779981c43bb1bc9d0c44087278f80cdb44ba"
+
+[[package]]
+name = "base64url"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33de68096bac8e252e45589f42afd364c1dd28fbb3466ed726a941d5b9727d2c"
+dependencies = [
+ "base64 0.21.7",
+]
 
 [[package]]
 name = "bech32"
@@ -2636,6 +2651,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "gosh_tls_lib"
+version = "0.2.1"
+source = "git+https://github.com/gosh-sh/gosh_tls_lib#7b095e81e62c8a8684da7ec373c9db41085d3e86"
+dependencies = [
+ "base64url",
+ "chrono",
+ "hex",
+ "num-bigint 0.2.6",
+ "num-integer",
+ "num-traits",
+ "rand 0.8.5",
+ "rand_core 0.6.4",
+]
+
+[[package]]
 name = "graphql-parser"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3766,6 +3796,17 @@ dependencies = [
  "num-integer",
  "num-iter",
  "num-rational",
+ "num-traits",
+]
+
+[[package]]
+name = "num-bigint"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "090c7f9998ee0ff65aa5b723e4009f7b217707f1fb5ea551329cc4d6231fb304"
+dependencies = [
+ "autocfg",
+ "num-integer",
  "num-traits",
 ]
 
@@ -6598,6 +6639,7 @@ dependencies = [
  "failure",
  "fastcrypto",
  "ff",
+ "gosh_tls_lib",
  "hex",
  "itertools 0.12.1",
  "lazy_static",

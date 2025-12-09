@@ -566,7 +566,7 @@ fn bench_wasmadd_no_precompile(c: &mut Criterion) {
     });
 }
 
-const WASM_TLS_CHECK_HASH_STR: &str = 6a1792e131a526d38c2fa8bac781ff8c00eddf435e5a8b8325505dc96aab7402;
+const WASM_TLS_CHECK_HASH_STR: &str = "343268736f6dbb5a075a477fb1146b3c25c114d341b41c142e6609a7d1a90a2c";
 
 // Run  `cargo bench -p tvm_vm --bench benchmarks wasmtls_without_whitelist`
 fn bench_wasmtls_without_whitelist(c: &mut Criterion) {

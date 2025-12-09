@@ -3151,6 +3151,19 @@ pub fn check_certs(
                 return Err(vec![0u8, 3u8, 85u8]); // "incorrect leaf_cert.subject.common_name"
             }
         }
+        "*.gosh.sh" => {
+            if internal_cert.subject.common_name != "WR1"
+                && internal_cert.subject.common_name != "WE1"
+                && internal_cert.subject.common_name != "WR2"
+                && internal_cert.subject.common_name != "WE2"
+            {
+                return Err(vec![0u8, 3u8, 84u8]); // "untrusted internal cert common_name"
+            }
+
+            if provider != vec![103, 111, 115, 104] {
+                return Err(vec![0u8, 3u8, 85u8]); // "incorrect leaf_cert.subject.common_name"
+            }
+        }
         "gosh.sh" => {
             if internal_cert.subject.common_name != "WR1"
                 && internal_cert.subject.common_name != "WE1"
