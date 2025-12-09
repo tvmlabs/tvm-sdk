@@ -256,7 +256,7 @@ fn test_tls_wasm_from_hash_for_gosh() {
 	//
 	let lv_kid: Vec<u8> = hex::decode("14ff8eed04282f1dbd89f5a79b787d67bc87620597").unwrap();
     //
-    let mut lv_provider: Vec<u8> = vec![103, 111, 115, 104]; // gosh
+    let mut lv_provider: Vec<u8> = vec![4, 103, 111, 115, 104]; // gosh
     //
     let current_timestamp = 1765263267u32; // 09 Dec 2025 08:00:05 +0000
     let ress = exec_tls_wasm_kernel(tls_data, root_cert, lv_kid, &mut lv_provider, current_timestamp);
