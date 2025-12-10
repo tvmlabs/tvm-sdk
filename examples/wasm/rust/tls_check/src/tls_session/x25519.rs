@@ -657,7 +657,8 @@ fn crecip(out: &mut [i64; 19], z: &[i64; 19]) {
 // return 0;
 // }
 
-pub fn curve25519_donna(secret: &[u8; 32], basepoint: &[u8; 32]) -> [u8; 32] {
+pub fn curve25519_donna(secret: &[u8; 32], basepoint: &[u8; 32]) -> Result<[u8; 32], Vec<u8>> {
+    // error codes [4][1]...[4][255]
     let mut bp = [0; 19];
     let mut x = [0; 19];
     let mut z = [0; 19];
@@ -677,9 +678,8 @@ pub fn curve25519_donna(secret: &[u8; 32], basepoint: &[u8; 32]) -> [u8; 32] {
 
     fmul(&mut z, &x, &zmone);
     freduce_coefficients(&mut z);
-
     fcontract(&mut mypublic, &mut z);
-    mypublic
+    Ok(mypublic)
 }
 
 fn base64_value(c: char) -> u16 {
