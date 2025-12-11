@@ -2292,6 +2292,24 @@ pub fn db_serialize_message_ex(
             serialize_lt(&mut map, "created_lt", &header.created_lt, mode);
             serialize_field(&mut map, "created_at", header.created_at.as_u32());
         }
+        CommonMsgInfo::CrossDappMessageInfo(ref header) => {
+            serialize_field(&mut map, "msg_type", 3);
+            if mode.is_q_server() {
+                serialize_field(&mut map, "msg_type_name", "cross_dapp");
+            }
+            serialize_field(&mut map, "src", header.src.to_string());
+            serialize_field(&mut map, "src_dapp", header.src_dapp_id.to_string());
+            serialize_field(&mut map, "dst", header.dst.to_string());
+            serialize_field(&mut map, "dest_dapp", header.dest_dapp_id.to_string());
+            serialize_field(&mut map, "dst_workchain_id", header.dst.get_workchain_id());
+            serialize_grams(&mut map, "ihr_fee", &header.ihr_fee, mode);
+            serialize_grams(&mut map, "fwd_fee", &header.fwd_fee, mode);
+            serialize_field(&mut map, "bounce", header.bounce);
+            serialize_field(&mut map, "bounced", header.bounced);
+            serialize_cc(&mut map, "value", &header.value, mode)?;
+            serialize_lt(&mut map, "created_lt", &header.created_lt, mode);
+            serialize_field(&mut map, "created_at", header.created_at.as_u32());
+        }
     }
     Ok(map)
 }

@@ -203,6 +203,19 @@ fn print_msg_header(header: &CommonMsgInfo) -> String {
                 + &format!("   created_lt  : {}\n", header.created_lt)
                 + &format!("   created_at  : {}\n", header.created_at)
         }
+        CommonMsgInfo::CrossDappMessageInfo(header) => {
+            format!("   bounce      : {}\n", header.bounce)
+                + &format!("   bounced     : {}\n", header.bounced)
+                + &format!("   source      : {}\n", &header.src)
+                + &format!("   source_dapp : {}\n", &header.src_dapp_id)
+                + &format!("   destination : {}\n", &header.dst)
+                + &format!("   dest_dapp   : {}\n", &header.dest_dapp_id)
+                + &format!("   value       : {}\n", print_cc(&header.value))
+                + &format!("   ihr_fee     : {}\n", print_grams(&header.ihr_fee))
+                + &format!("   fwd_fee     : {}\n", print_grams(&header.fwd_fee))
+                + &format!("   created_lt  : {}\n", header.created_lt)
+                + &format!("   created_at  : {}\n", header.created_at)
+        }
         CommonMsgInfo::ExtInMsgInfo(header) => {
             format!("   source      : {}\n", &header.src)
                 + &format!("   destination : {}\n", &header.dst)
