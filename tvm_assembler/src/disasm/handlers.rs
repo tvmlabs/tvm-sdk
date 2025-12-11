@@ -882,7 +882,7 @@ impl Handlers {
     fn add_subset(&mut self, code: u8, subset: &mut Handlers) -> &mut Handlers {
         match self.directs[code as usize] {
             Handler::Direct(x) => {
-                if x as usize == Loader::unknown as usize {
+                if x as usize == Loader::unknown as *const () as usize {
                     self.directs[code as usize] = Handler::Subset(self.subsets.len());
                     self.subsets.push(std::mem::replace(subset, Handlers::new()))
                 } else {
@@ -897,7 +897,7 @@ impl Handlers {
     fn register_handler(&mut self, code: u8, handler: LoadHandler) {
         match self.directs[code as usize] {
             Handler::Direct(x) => {
-                if x as usize == Loader::unknown as usize {
+                if x as usize == Loader::unknown as *const () as usize {
                     self.directs[code as usize] = Handler::Direct(handler)
                 } else {
                     panic!("Code {:02x} is already registered", code)
