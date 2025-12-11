@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn test_get_redirection_data_with_valid_url() {
         let error = mock_error(vec!["https://example.com"], "thread-123");
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, Some("thread-123".to_string()));
         assert_eq!(url, Some("https://example.com:8600/v2/".to_string()));
     }
@@ -201,7 +201,7 @@ mod tests {
             vec!["https://cool.com:1111", "https://google.com", "https://example.com"],
             "thread-123",
         );
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, Some("thread-123".to_string()));
         assert_eq!(url, Some("https://cool.com:1111/v2/".to_string()));
     }
@@ -217,7 +217,7 @@ mod tests {
                 }
             }),
         };
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, None);
         assert_eq!(url, None);
     }
@@ -225,7 +225,7 @@ mod tests {
     #[test]
     fn test_get_redirection_data_with_invalid_producer_url() {
         let error = mock_error(vec!["wrong_scheme://df"], "tid");
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, Some("tid".to_string()));
         assert_eq!(url, None);
     }
@@ -233,7 +233,7 @@ mod tests {
     #[test]
     fn test_get_redirection_data_with_no_node_error() {
         let error = ClientError { code: 1, message: "Test".to_string(), data: json!({}) };
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, None);
         assert_eq!(url, None);
     }
