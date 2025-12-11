@@ -968,42 +968,31 @@ fn calc_interval_integral_q40(a_u: u64, b_u: u64) -> i128 {
     }
     let a: i64 = a_u as i64;
     let b: i64 = b_u as i64;
-
     let dx_i64: i64 = b - a;
     let dx: i128 = dx_i64 as i128;
-
     // (b - a) in Q40
     let dx_q40: i128 = dx << SHIFT_Q40; // Q40
-
     // a0_q40 = k * (a - T_B), a1_q40 = k * (b - T_B) in Q40
     let diff_a: i128 = (a as i128) - (T_B as i128);
     let diff_b: i128 = (b as i128) - (T_B as i128);
-
     let a0_q40: i128 = K_Q40 * diff_a;  // Q40
     let a1_q40: i128 = K_Q40 * diff_b;  // Q40
-
     // exp(k * (x - T_B)) in Q40
     let e0_q40: i128 = fixed_exp_q40(a0_q40);  // Q40
     let e1_q40: i128 = fixed_exp_q40(a1_q40);  // Q40
-
     // u_q40 = 1 + exp(...)
     let u0_q40: i128 = ONE_Q40 + e0_q40;       // Q40
     let u1_q40: i128 = ONE_Q40 + e1_q40;       // Q40
-
     // ln(1 + exp(...)) in Q40
     let ln0_q40: i128 = fixed_ln_q40(u0_q40);  // Q40
     let ln1_q40: i128 = fixed_ln_q40(u1_q40);  // Q40
-
     // dln in Q40
     let dln_q40: i128 = ln1_q40 - ln0_q40;     // Q40
-
     // W_q40 = (1/k) * dln in Q40
     // (dln / k) = (dln_q40 / 2^40) / (K_Q40 / 2^40) = dln_q40 / K_Q40
     let w_q40: i128 = (dln_q40 << SHIFT_Q40) / K_Q40; // Q40
-
     // bracket_q40 = (b - a) - (1/k)*dln, in Q40
     let bracket_q40: i128 = dx_q40 - w_q40; // Q40
-
     if bracket_q40 <= 0 {
         return 0;
     }
@@ -1012,73 +1001,139 @@ fn calc_interval_integral_q40(a_u: u64, b_u: u64) -> i128 {
     integral_q40
 }
 
-
-
-
-fn calc_tap_coef_with_remainder(
+fn calc_tap_coef_with_params(
     total_tap_num: u64,
     tap_num: u64,
     mining_dur: u64,
     modified_tap_rem_q40: u64,
-    total_mining_dur: u64,
-    total_modified_tap_num: u64,
-) -> (u64, u64, u64) {
-    if total_tap_num >= 12_000 {
-        return (0, 0, modified_tap_rem_q40);
+    total_mining_dur_5min: u64,
+    total_modified_tap_num_5min: u64,
+    total_tap_num_5min: u64,
+) -> (u64, u64, u64, u64, u64, u64) {
+    if total_tap_num >= 12_000
+        || total_tap_num_5min >= 70
+        || total_mining_dur_5min >= 330
+        || total_modified_tap_num_5min >= 200
+    {
+        return (
+            0,
+            modified_tap_rem_q40,
+            total_mining_dur_5min,
+            total_modified_tap_num_5min,
+            total_tap_num_5min,
+            total_tap_num,
+        );
     }
     let a_u: u64 = total_tap_num;
     // max_creditable = 12_000 - a_u  (a_u <= 12_000 here)
     let max_creditable: u64 = 12_000 - a_u;
-    // used_taps = min(tap_num, max_creditable)
+    let remaining_5min: u64 = 70 - total_tap_num_5min;
     let mut used_taps: u64 = tap_num;
     if used_taps > max_creditable {
         used_taps = max_creditable;
     }
+    if used_taps > remaining_5min {
+        used_taps = remaining_5min;
+    }
     if used_taps == 0 {
-        return (0, 0, modified_tap_rem_q40);
+        return (
+            0,
+            modified_tap_rem_q40,
+            total_mining_dur_5min,
+            total_modified_tap_num_5min,
+            total_tap_num_5min,
+            total_tap_num,
+        );
     }
     // Integration interval [a, b), with b = a + used_taps <= 12_000
     let b_u: u64 = a_u + used_taps;
     // Integral of f(x) on [a, b) in Q40 (without dividing by K_B)
     let integral_q40: i128 = calc_interval_integral_q40(a_u, b_u);
     if integral_q40 <= 0 {
-        return (0, 0, modified_tap_rem_q40);
-    } 
-    let denom_q40_i: i128 = (K_B as i128) * ONE_Q40; 
+        return (
+            0,
+            modified_tap_rem_q40,
+            total_mining_dur_5min,
+            total_modified_tap_num_5min,
+            total_tap_num_5min,
+            total_tap_num,
+        );
+    }
+    let denom_q40_i: i128 = (K_B as i128) * ONE_Q40;
     let sum_q40: i128 = (modified_tap_rem_q40 as i128) + integral_q40;
-    let modified_taps_q: i128 = sum_q40 / denom_q40_i; 
-    let rem_q40_i: i128 = sum_q40 % denom_q40_i;           
+    let modified_taps_q: i128 = sum_q40 / denom_q40_i;
+    let rem_q40_i: i128 = sum_q40 % denom_q40_i;
     let new_modified_tap_rem_q40: u64 = rem_q40_i as u64;
     if modified_taps_q <= 0 {
-        return (0, 0, new_modified_tap_rem_q40);
+        return (
+            0,
+            new_modified_tap_rem_q40,
+            total_mining_dur_5min,
+            total_modified_tap_num_5min,
+            total_tap_num_5min,
+            total_tap_num,
+        );
     }
     let modified_taps: u64 = modified_taps_q as u64;
+    let remaining_dur: u64 = 330 - total_mining_dur_5min;
+    let effective_mining_dur: u64 = if mining_dur > remaining_dur {
+        remaining_dur
+    } else {
+        mining_dur
+    };
+    if effective_mining_dur == 0 {
+        return (
+            0,
+            new_modified_tap_rem_q40,
+            total_mining_dur_5min,
+            total_modified_tap_num_5min,
+            total_tap_num_5min,
+            total_tap_num,
+        );
+    }
     let tap_coef: u64 =
-        modified_taps * total_mining_dur
-        + mining_dur * total_modified_tap_num
-        + modified_taps * mining_dur;
-    (tap_coef, modified_taps, new_modified_tap_rem_q40)
+        modified_taps * total_mining_dur_5min
+        + effective_mining_dur * total_modified_tap_num_5min
+        + modified_taps * effective_mining_dur;
+    let new_total_modified_tap_num_5min: u64 = total_modified_tap_num_5min + modified_taps;
+    let new_total_mining_dur_5min: u64 = total_mining_dur_5min + effective_mining_dur;
+    let new_total_tap_num_5min: u64 = total_tap_num_5min + used_taps;
+    let new_total_tap_num: u64 = total_tap_num + used_taps;
+    (
+        tap_coef,
+        new_modified_tap_rem_q40,
+        new_total_mining_dur_5min,
+        new_total_modified_tap_num_5min,
+        new_total_tap_num_5min,
+        new_total_tap_num,
+    )
 }
+
 
 pub(super) fn execute_calculate_miner_tap_coef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMINERTAPCOEF"))?;
-    fetch_stack(engine, 6)?;
-    let total_modified_tap_num = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
-    let total_mining_dur = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
-    let modified_tap_rem_q40 = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as u64;
-    let mining_dur: u64 = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as u64;
-    let tap_num = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
-    let total_tap_num = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as u64;
-    let (tap_coef, modified_taps, new_modified_tap_rem_q40) = calc_tap_coef_with_remainder(
+    fetch_stack(engine, 7)?;
+    let total_tap_num_5min = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
+    let total_modified_tap_num_5min = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
+    let total_mining_dur_5min = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)? as u64;
+    let modified_tap_rem_q40 = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)? as u64;
+    let mining_dur: u64 = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
+    let tap_num = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as u64;
+    let total_tap_num = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as u64;
+    let (tap_coef, new_modified_tap_rem_q40, new_total_mining_dur_5min, new_total_modified_tap_num_5min, new_total_tap_num_5min, new_total_tap_num) = calc_tap_coef_with_params(
         total_tap_num,
         tap_num,
         mining_dur,
         modified_tap_rem_q40,
-        total_mining_dur,
-        total_modified_tap_num,
+        total_mining_dur_5min,
+        total_modified_tap_num_5min,
+        total_tap_num_5min
     );
+    engine.cc.stack.push(int!(new_total_tap_num as u128));
+    engine.cc.stack.push(int!(new_total_tap_num_5min as u128));
+    engine.cc.stack.push(int!(new_total_modified_tap_num_5min as u128));
+    engine.cc.stack.push(int!(new_total_mining_dur_5min as u128));
     engine.cc.stack.push(int!(new_modified_tap_rem_q40 as u128));
-    engine.cc.stack.push(int!(modified_taps as u128));
     engine.cc.stack.push(int!(tap_coef as u128));
     return Ok(());
 }
