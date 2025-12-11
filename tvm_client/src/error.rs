@@ -141,7 +141,7 @@ impl ClientError {
         self.code == net::ErrorCode::Unauthorized as u32
     }
 
-    pub fn get_redirection_data(&self) -> (Option<String>, Option<String>) {
+    pub fn get_redirection_data(&self, use_https: bool) -> (Option<String>, Option<String>) {
         let details = self
             .data
             .get("node_error")
@@ -153,7 +153,7 @@ impl ClientError {
             .and_then(Value::as_array)
             .and_then(|arr| arr.first())
             .and_then(Value::as_str)
-            .and_then(|url_str| construct_rest_api_endpoint(url_str).ok())
+            .and_then(|url_str| construct_rest_api_endpoint(url_str, use_https).ok())
             .map(|url| url.to_string());
 
         let thread_id =

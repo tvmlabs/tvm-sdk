@@ -100,6 +100,7 @@ pub(crate) struct NetworkState {
     rest_api_endpoint: RwLock<Url>,
     bm_issuer_pubkey: RwLock<Option<String>>,
     bm_token: RwLock<Option<Value>>,
+    use_https_for_rest_api: bool,
 }
 
 async fn query_by_url(
@@ -121,6 +122,7 @@ impl NetworkState {
         config: NetworkConfig,
         endpoint_addresses: Vec<String>,
         rest_api_endpoint: Url,
+        use_https_for_rest_api: bool,
     ) -> Self {
         let (sender, receiver) = watch::channel(false);
         let regulation =
@@ -141,6 +143,7 @@ impl NetworkState {
             rest_api_endpoint: RwLock::new(rest_api_endpoint),
             bm_issuer_pubkey: RwLock::new(None),
             bm_token: RwLock::new(None),
+            use_https_for_rest_api,
         }
     }
 
@@ -452,12 +455,12 @@ fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
     result
 }
 
-pub fn construct_rest_api_endpoint(original: &str) -> ClientResult<Url> {
+pub fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<Url> {
     // Set HTTP if scheme is not presented
-    let original = if original.contains("://") {
-        original.to_string()
+    let (added_scheme, original) = if original.contains("://") {
+        (false, original.to_string())
     } else {
-        format!("http://{}", original)
+        (true, format!("{}://{}", if use_https { "https" } else { "http" }, original))
     };
 
     let mut url = Url::parse(&original).map_err(Error::parse_url_failed)?;
@@ -469,11 +472,14 @@ pub fn construct_rest_api_endpoint(original: &str) -> ClientResult<Url> {
     if (url.scheme() == "http" && port == 80) || (url.scheme() == "https" && port == 443) {
         url.set_port(Some(REST_API_PORT)).map_err(|_| Error::parse_url_failed("Can't set port"))?;
     }
+    if added_scheme && url.scheme() == "https" {
+        url.set_port(None).map_err(|_| Error::parse_url_failed("Can't set port"))?;
+    }
     url.set_path(&format!("{API_VERSION}/"));
     Ok(url)
 }
 
-fn get_redirection_data(data: &Value) -> (Option<String>, Option<Url>) {
+fn get_redirection_data(data: &Value, use_https: bool) -> (Option<String>, Option<Url>) {
     // TODO: Add type RedirectionData
     let producers_opt = data.get("result").and_then(|res| res.get("producers")).or_else(|| {
         data.get("node_error")
@@ -486,7 +492,7 @@ fn get_redirection_data(data: &Value) -> (Option<String>, Option<Url>) {
         .and_then(|val| val.as_array())
         .and_then(|arr| arr.first())
         .and_then(|v| v.as_str())
-        .and_then(|s| construct_rest_api_endpoint(s).ok());
+        .and_then(|s| construct_rest_api_endpoint(s, use_https).ok());
 
     let thread_id = data
         .get("node_error")
@@ -509,13 +515,17 @@ impl ServerLink {
 
         let endpoint_addresses = replace_endpoints(endpoint_addresses);
 
-        let rest_api_endpoint = construct_rest_api_endpoint(&rest_api_addr)?;
+        let use_https_for_rest_api =
+            endpoint_addresses.first().map_or(false, |s| s.starts_with("https://"));
+        let rest_api_endpoint =
+            construct_rest_api_endpoint(&rest_api_addr, use_https_for_rest_api)?;
 
         let state = Arc::new(NetworkState::new(
             client_env.clone(),
             config.clone(),
             endpoint_addresses,
             rest_api_endpoint,
+            use_https_for_rest_api,
         ));
 
         Ok(ServerLink {
@@ -962,7 +972,7 @@ impl ServerLink {
         while attempts < self.config.message_retries_count {
             attempts += 1;
             if let Ok(ref data) = result {
-                let (_, bk_url) = get_redirection_data(data);
+                let (_, bk_url) = get_redirection_data(data, self.state.use_https_for_rest_api);
                 if bk_url.is_some() {
                     network_state.update_bk_send_message_endpoint(bk_url).await;
                 }
@@ -996,7 +1006,8 @@ impl ServerLink {
                 network_state.update_bk_send_message_endpoint(None).await;
             }
 
-            let (real_thread_id, redirect_url) = get_redirection_data(&err.data);
+            let (real_thread_id, redirect_url) =
+                get_redirection_data(&err.data, self.state.use_https_for_rest_api);
 
             if let Some(thread_id) = real_thread_id {
                 message.set_thread_id(Some(thread_id));
