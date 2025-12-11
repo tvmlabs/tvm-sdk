@@ -106,6 +106,7 @@ similar = "2.4.0"
 smallvec = "1.13.1"
 thiserror = "1.0.56"
 tokio = { default-features = false, version = "1.36.0" }
+typed-builder = "0.23.2"
 wasmtime = "36.0.2"
 wasmtime-wasi = "36.0.2"
 wasmtime-wasi-io = "36.0.2"
