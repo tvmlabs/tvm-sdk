@@ -968,7 +968,7 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )
@@ -983,7 +983,7 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )
