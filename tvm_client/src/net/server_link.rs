@@ -457,10 +457,10 @@ fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
 
 pub fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<Url> {
     // Set HTTP if scheme is not presented
-    let (added_scheme, original) = if original.contains("://") {
-        (false, original.to_string())
+    let original = if original.contains("://") {
+        original.to_string()
     } else {
-        (true, format!("{}://{}", if use_https { "https" } else { "http" }, original))
+        format!("{}://{}", if use_https { "https" } else { "http" }, original)
     };
 
     let mut url = Url::parse(&original).map_err(Error::parse_url_failed)?;
@@ -472,7 +472,7 @@ pub fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientRes
     if (url.scheme() == "http" && port == 80) || (url.scheme() == "https" && port == 443) {
         url.set_port(Some(REST_API_PORT)).map_err(|_| Error::parse_url_failed("Can't set port"))?;
     }
-    if added_scheme && url.scheme() == "https" {
+    if url.scheme() == "https" {
         url.set_port(None).map_err(|_| Error::parse_url_failed("Can't set port"))?;
     }
     url.set_path(&format!("{API_VERSION}/"));
@@ -1113,6 +1113,26 @@ fn ensure_address(err_data: &mut Value, dst: Value) {
             details.insert("address".to_string(), dst);
         }
     }
+}
+
+#[cfg(test)]
+#[test]
+fn test_construct_rest_endpoint() {
+    fn rest_url(origin: &str, use_https: bool) -> String {
+        construct_rest_api_endpoint(origin, use_https).unwrap().to_string()
+    }
+    assert_eq!(rest_url("a.b.c", false), "http://a.b.c:8600/v2/");
+    assert_eq!(rest_url("a.b.c", true), "https://a.b.c/v2/");
+    assert_eq!(rest_url("a.b.c:1234", false), "http://a.b.c:1234/v2/");
+    assert_eq!(rest_url("a.b.c:1234", true), "https://a.b.c/v2/");
+    assert_eq!(rest_url("http://a.b.c", false), "http://a.b.c:8600/v2/");
+    assert_eq!(rest_url("http://a.b.c", true), "http://a.b.c:8600/v2/");
+    assert_eq!(rest_url("http://a.b.c:1234", false), "http://a.b.c:1234/v2/");
+    assert_eq!(rest_url("http://a.b.c:1234", true), "http://a.b.c:1234/v2/");
+    assert_eq!(rest_url("https://a.b.c", false), "https://a.b.c/v2/");
+    assert_eq!(rest_url("https://a.b.c", true), "https://a.b.c/v2/");
+    assert_eq!(rest_url("https://a.b.c:1234", false), "https://a.b.c/v2/");
+    assert_eq!(rest_url("https://a.b.c:1234", true), "https://a.b.c/v2/");
 }
 
 // #[cfg(test)]
