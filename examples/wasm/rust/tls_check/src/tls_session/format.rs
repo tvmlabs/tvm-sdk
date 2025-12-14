@@ -123,7 +123,8 @@ pub fn contains_handshake_finish(message: &Vec<u8>) -> bool {
     return false;
 }
 
-pub fn parse_server_hello(buf: &[u8]) -> ServerHello {
+pub fn parse_server_hello(buf: &[u8]) -> Result<ServerHello, Vec<u8>> {
+    // error codes from [5][1] to [5][255]
     let mut hello = ServerHello { random: [0u8; 32], public_key: [0u8; 32] };
     let mut current_pos: usize = 0;
 
@@ -194,10 +195,10 @@ pub fn parse_server_hello(buf: &[u8]) -> ServerHello {
             }
         }
     } else {
-        // panic!("not enougth len");
+        return Err(vec![0u8, 5u8, 1u8]); //panic!("not enougth len");
     }
 
-    hello
+    Ok(hello)
 }
 
 pub fn concatenate(bufs: &[&[u8]]) -> Vec<u8> {

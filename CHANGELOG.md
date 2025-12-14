@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.6] - 2025-12-10
+## Fixed
+- Add support of Gosh provider into TLS wasm binary and update related tests
+
+
 ## [2.24.5] - 2025-11-03
 ## Fixed
 - Fix mvreward
