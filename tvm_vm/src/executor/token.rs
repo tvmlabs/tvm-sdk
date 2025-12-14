@@ -1045,6 +1045,16 @@ fn calc_tap_coef_with_params(
             total_tap_num,
         );
     }
+    if mining_dur == 0 {
+        return (
+            0,
+            modified_tap_rem_q40,
+            total_mining_dur_5min,
+            total_modified_tap_num_5min,
+            total_tap_num_5min,
+            total_tap_num,
+        );
+    }
     // Integration interval [a, b), with b = a + used_taps <= 12_000
     let b_u: u64 = a_u + used_taps;
     // Integral of f(x) on [a, b) in Q40 (without dividing by K_B)
@@ -1081,20 +1091,12 @@ fn calc_tap_coef_with_params(
     } else {
         mining_dur
     };
-    if effective_mining_dur == 0 {
-        return (
-            0,
-            new_modified_tap_rem_q40,
-            total_mining_dur_5min,
-            total_modified_tap_num_5min,
-            total_tap_num_5min,
-            total_tap_num,
-        );
-    }
+
     let tap_coef: u64 =
         modified_taps * total_mining_dur_5min
         + effective_mining_dur * total_modified_tap_num_5min
         + modified_taps * effective_mining_dur;
+
     let new_total_modified_tap_num_5min: u64 = total_modified_tap_num_5min + modified_taps;
     let new_total_mining_dur_5min: u64 = total_mining_dur_5min + effective_mining_dur;
     let new_total_tap_num_5min: u64 = total_tap_num_5min + used_taps;
@@ -1108,6 +1110,7 @@ fn calc_tap_coef_with_params(
         new_total_tap_num,
     )
 }
+
 
 
 pub(super) fn execute_calculate_miner_tap_coef(engine: &mut Engine) -> Status {
