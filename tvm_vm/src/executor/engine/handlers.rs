@@ -999,7 +999,7 @@ impl Handlers {
     fn add_subset(&mut self, code: u8, subset: &mut Handlers) -> &mut Handlers {
         match self.directs[code as usize] {
             Some(Handler::Direct(x)) => {
-                if x as usize == execute_unknown as usize {
+                if x as usize == execute_unknown as *const () as usize {
                     self.directs[code as usize] = Some(Handler::Subset(self.subsets.len()));
                     self.subsets.push(std::mem::replace(subset, Handlers::new()))
                 } else {
@@ -1019,7 +1019,7 @@ impl Handlers {
         match self.directs[code as usize] {
             None => self.directs[code as usize] = Some(Handler::Direct(handler)),
             Some(Handler::Direct(x)) => {
-                if x as usize == execute_unknown as usize {
+                if x as usize == execute_unknown as *const () as usize {
                     self.directs[code as usize] = Some(Handler::Direct(handler))
                 } else {
                     panic!("Code {:02x} is already registered", code)
