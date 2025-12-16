@@ -1010,6 +1010,8 @@ fn calc_tap_coef_with_params(
     total_modified_tap_num_5min: u64,
     total_tap_num_5min: u64,
 ) -> (u64, u64, u64, u64, u64, u64) {
+    let denom_q40_i: i128 = (K_B as i128) * ONE_Q40;
+    let modified_tap_rem_q40: u64 = modified_tap_rem_q40 % (denom_q40_i as u64);
     if total_tap_num >= 12_000
         || total_tap_num_5min >= 70
         || total_mining_dur_5min >= 330
@@ -1069,7 +1071,6 @@ fn calc_tap_coef_with_params(
             total_tap_num,
         );
     }
-    let denom_q40_i: i128 = (K_B as i128) * ONE_Q40;
     let sum_q40: i128 = (modified_tap_rem_q40 as i128) + integral_q40;
     let modified_taps_q: i128 = sum_q40 / denom_q40_i;
     let rem_q40_i: i128 = sum_q40 % denom_q40_i;
