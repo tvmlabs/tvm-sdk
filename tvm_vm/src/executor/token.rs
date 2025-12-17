@@ -633,10 +633,6 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
         return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
     };
 
-    let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
-    let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone()).map_err(|e| {
-        exception!(ExceptionCode::CellUnpackError, "Failed to load cell mbn: {:?}", e)
-    })?;
     let mbn_lst = engine.get_mv_config().mbn_lst_global;
     let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
     log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
