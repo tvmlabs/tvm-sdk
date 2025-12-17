@@ -583,125 +583,126 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     let _tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
     engine.cc.stack.push(int!(0 as u128));
     return Ok(());
-    /*
-    let tap_lst_cell = engine.cmd.var(2).as_cell()?;
-    let tap_lst_slice = SliceData::load_cell(tap_lst_cell.clone()).map_err(|e| {
-        exception!(ExceptionCode::CellUnpackError, "Failed to load cell tap: {:?}", e)
-    })?;
-    let params = params_from_types(vec![ParamType::Array(Box::new(ParamType::Uint(64)))]);
-    let tokens = TokenValue::decode_params(&params, tap_lst_slice, &ABI_VERSION_2_2, false)
-        .map_err(|e| {
-            exception!(ExceptionCode::CellUnpackError, "Failed to decode tap_lst array: {:?}", e)
-        })?;
-
-    let tap_lst = if let Some(token) = tokens.first() {
-        if let TokenValue::Array(_, items) = &token.value {
-            items
-                .iter()
-                .map(|item| {
-                    if let TokenValue::Uint(uint) = item {
-                        let bytes = uint.number.to_bytes_le();
-                        if bytes.len() > 8 {
-                            Err(exception!(
-                                ExceptionCode::CellUnpackError,
-                                "Value too large for u64: {}",
-                                uint.number
-                            ))
-                        } else {
-                            let mut array = [0u8; 8];
-                            array[..bytes.len()].copy_from_slice(&bytes);
-                            Ok(u64::from_le_bytes(array))
-                        }
-                    } else {
-                        Err(exception!(
-                            ExceptionCode::CellUnpackError,
-                            "Expected Uint in array, got {:?}",
-                            item
-                        ))
-                    }
-                })
-                .collect::<Result<Vec<u64>, _>>()?
-        } else {
-            return Err(exception!(
-                ExceptionCode::CellUnpackError,
-                "Expected array token, got {:?}",
-                token.value
-            ));
-        }
-    } else {
-        return Err(exception!(ExceptionCode::CellUnpackError, "No token found after decoding"));
-    };
-
-    let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
-    let mbn_lst_slice = SliceData::load_cell(mbn_lst_cell.clone()).map_err(|e| {
-        exception!(ExceptionCode::CellUnpackError, "Failed to load cell mbn: {:?}", e)
-    })?;
-
-    let tokens = TokenValue::decode_params(&params, mbn_lst_slice, &ABI_VERSION_2_2, false)
-        .map_err(|e| {
-            exception!(ExceptionCode::CellUnpackError, "Failed to decode mbn_lst array: {:?}", e)
-        })?;
-    let mbn_lst;
-    if engine_version <= "1.0.0".parse().unwrap() {
-        mbn_lst = if let Some(token) = tokens.first() {
-            if let TokenValue::Array(_, items) = &token.value {
-                items
-                    .iter()
-                    .map(|item| {
-                        if let TokenValue::Uint(uint) = item {
-                            let bytes = uint.number.to_bytes_le();
-                            if bytes.len() > 8 {
-                                Err(exception!(
-                                    ExceptionCode::CellUnpackError,
-                                    "Value too large for u64: {}",
-                                    uint.number
-                                ))
-                            } else {
-                                let mut array = [0u8; 8];
-                                array[..bytes.len()].copy_from_slice(&bytes);
-                                Ok(u64::from_le_bytes(array))
-                            }
-                        } else {
-                            Err(exception!(
-                                ExceptionCode::CellUnpackError,
-                                "Expected Uint in array, got {:?}",
-                                item
-                            ))
-                        }
-                    })
-                    .collect::<Result<Vec<u64>, _>>()?
-            } else {
-                return Err(exception!(
-                    ExceptionCode::CellUnpackError,
-                    "Expected array token, got {:?}",
-                    token.value
-                ));
-            }
-        } else {
-            return Err(exception!(
-                ExceptionCode::CellUnpackError,
-                "No token found after decoding"
-            ));
-        }
-    } else {
-        mbn_lst = engine.get_mv_config().mbn_lst_global;
-    }
-    let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
-    log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
-    log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
-
-    let bclst = if engine_version <= "1.0.0".parse().unwrap() {
-        build_bclst_old(&to_umbnlst(&mbn_lst))
-    } else {
-        build_bclst(&to_umbnlst(&mbn_lst))
-    };
-    log::trace!(target: "executor", "bclst {:?}", bclst.clone());
-    log::trace!(target: "executor", "rpc {:?}", rpc.clone());
-    let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi, &tap_lst);
-    log::trace!(target: "executor", "rmv {:?}", rmv.clone());
-    engine.cc.stack.push(int!(rmv as u128));
-    Ok(())
-    */
+    // let tap_lst_cell = engine.cmd.var(2).as_cell()?;
+    // let tap_lst_slice =
+    // SliceData::load_cell(tap_lst_cell.clone()).map_err(|e| {
+    // exception!(ExceptionCode::CellUnpackError, "Failed to load cell tap:
+    // {:?}", e) })?;
+    // let params =
+    // params_from_types(vec![ParamType::Array(Box::new(ParamType::Uint(64)))]);
+    // let tokens = TokenValue::decode_params(&params, tap_lst_slice,
+    // &ABI_VERSION_2_2, false) .map_err(|e| {
+    // exception!(ExceptionCode::CellUnpackError, "Failed to decode tap_lst
+    // array: {:?}", e) })?;
+    //
+    // let tap_lst = if let Some(token) = tokens.first() {
+    // if let TokenValue::Array(_, items) = &token.value {
+    // items
+    // .iter()
+    // .map(|item| {
+    // if let TokenValue::Uint(uint) = item {
+    // let bytes = uint.number.to_bytes_le();
+    // if bytes.len() > 8 {
+    // Err(exception!(
+    // ExceptionCode::CellUnpackError,
+    // "Value too large for u64: {}",
+    // uint.number
+    // ))
+    // } else {
+    // let mut array = [0u8; 8];
+    // array[..bytes.len()].copy_from_slice(&bytes);
+    // Ok(u64::from_le_bytes(array))
+    // }
+    // } else {
+    // Err(exception!(
+    // ExceptionCode::CellUnpackError,
+    // "Expected Uint in array, got {:?}",
+    // item
+    // ))
+    // }
+    // })
+    // .collect::<Result<Vec<u64>, _>>()?
+    // } else {
+    // return Err(exception!(
+    // ExceptionCode::CellUnpackError,
+    // "Expected array token, got {:?}",
+    // token.value
+    // ));
+    // }
+    // } else {
+    // return Err(exception!(ExceptionCode::CellUnpackError, "No token found
+    // after decoding")); };
+    //
+    // let mbn_lst_cell = engine.cmd.var(3).as_cell()?;
+    // let mbn_lst_slice =
+    // SliceData::load_cell(mbn_lst_cell.clone()).map_err(|e| {
+    // exception!(ExceptionCode::CellUnpackError, "Failed to load cell mbn:
+    // {:?}", e) })?;
+    //
+    // let tokens = TokenValue::decode_params(&params, mbn_lst_slice,
+    // &ABI_VERSION_2_2, false) .map_err(|e| {
+    // exception!(ExceptionCode::CellUnpackError, "Failed to decode mbn_lst
+    // array: {:?}", e) })?;
+    // let mbn_lst;
+    // if engine_version <= "1.0.0".parse().unwrap() {
+    // mbn_lst = if let Some(token) = tokens.first() {
+    // if let TokenValue::Array(_, items) = &token.value {
+    // items
+    // .iter()
+    // .map(|item| {
+    // if let TokenValue::Uint(uint) = item {
+    // let bytes = uint.number.to_bytes_le();
+    // if bytes.len() > 8 {
+    // Err(exception!(
+    // ExceptionCode::CellUnpackError,
+    // "Value too large for u64: {}",
+    // uint.number
+    // ))
+    // } else {
+    // let mut array = [0u8; 8];
+    // array[..bytes.len()].copy_from_slice(&bytes);
+    // Ok(u64::from_le_bytes(array))
+    // }
+    // } else {
+    // Err(exception!(
+    // ExceptionCode::CellUnpackError,
+    // "Expected Uint in array, got {:?}",
+    // item
+    // ))
+    // }
+    // })
+    // .collect::<Result<Vec<u64>, _>>()?
+    // } else {
+    // return Err(exception!(
+    // ExceptionCode::CellUnpackError,
+    // "Expected array token, got {:?}",
+    // token.value
+    // ));
+    // }
+    // } else {
+    // return Err(exception!(
+    // ExceptionCode::CellUnpackError,
+    // "No token found after decoding"
+    // ));
+    // }
+    // } else {
+    // mbn_lst = engine.get_mv_config().mbn_lst_global;
+    // }
+    // let mbi = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
+    // log::trace!(target: "executor", "mbn {:?}", mbn_lst.clone());
+    // log::trace!(target: "executor", "tap {:?}", tap_lst.clone());
+    //
+    // let bclst = if engine_version <= "1.0.0".parse().unwrap() {
+    // build_bclst_old(&to_umbnlst(&mbn_lst))
+    // } else {
+    // build_bclst(&to_umbnlst(&mbn_lst))
+    // };
+    // log::trace!(target: "executor", "bclst {:?}", bclst.clone());
+    // log::trace!(target: "executor", "rpc {:?}", rpc.clone());
+    // let rmv = compute_rmv(rpc as i128, tap_num as i128, &bclst, mbi,
+    // &tap_lst); log::trace!(target: "executor", "rmv {:?}", rmv.clone());
+    // engine.cc.stack.push(int!(rmv as u128));
+    // Ok(())
 }
 
 pub(super) fn execute_mint_shellq(engine: &mut Engine) -> Status {
@@ -852,10 +853,10 @@ fn boost_coef_fp(dl: i128, dr: i128) -> i128 {
 const SHIFT_Q40: u32 = 40;
 const SHIFT_Q80: u32 = 80;
 
-const ONE_Q40:  i128 = 1i128 << SHIFT_Q40;       // 2^40
+const ONE_Q40: i128 = 1i128 << SHIFT_Q40; // 2^40
 const HALF_Q80: i128 = 1i128 << (SHIFT_Q80 - 1); // 2^79
 
-const LN2_Q40:     i128 = 762_123_384_785;   // floor(ln(2) * 2^40)
+const LN2_Q40: i128 = 762_123_384_785; // floor(ln(2) * 2^40)
 const INV_LN2_Q40: i128 = 1_586_259_972_792; // floor(1/ln(2) * 2^40)
 
 const T_B: i64 = 6000;
@@ -867,14 +868,14 @@ const L: i128 = 200;
 const K_Q40: i128 = 601_300_899;
 
 // Polynomial coefficients for exp(r) on r in [-0.35, 0.35] in Q40
-const C1_2_Q40:   i128 = ONE_Q40 / 2;    //  1/2
-const C1_6_Q40:   i128 = ONE_Q40 / 6;    //  1/6
-const C1_24_Q40:  i128 = ONE_Q40 / 24;   //  1/24
-const C1_120_Q40: i128 = ONE_Q40 / 120;  //  1/120
+const C1_2_Q40: i128 = ONE_Q40 / 2; //  1/2
+const C1_6_Q40: i128 = ONE_Q40 / 6; //  1/6
+const C1_24_Q40: i128 = ONE_Q40 / 24; //  1/24
+const C1_120_Q40: i128 = ONE_Q40 / 120; //  1/120
 
 // Coefficients for ln series: ln(m) via z = (m-1)/(m+1)
-const C1_3_Q40: i128 = ONE_Q40 / 3;      // 1/3
-const C1_5_Q40: i128 = ONE_Q40 / 5;      // 1/5
+const C1_3_Q40: i128 = ONE_Q40 / 3; // 1/3
+const C1_5_Q40: i128 = ONE_Q40 / 5; // 1/5
 
 // exp(x_real) where x_real = x_q40 / 2^40
 // Accurate for |x_real| <= 10
@@ -892,15 +893,15 @@ fn fixed_exp_q40(mut x_q40: i128) -> i128 {
     // x_q40 and LN2_Q40 are Q40:
     // z_q80 = x_q40 * INV_LN2_Q40 is Q80
     // n = round(z_q80 / 2^40)
-    let z_q80: i128 = x_q40 * INV_LN2_Q40;              // Q40 * Q40 = Q80
+    let z_q80: i128 = x_q40 * INV_LN2_Q40; // Q40 * Q40 = Q80
     let n: i32 = ((z_q80 + HALF_Q80) >> SHIFT_Q80) as i32;
-    let r_q40: i128 = x_q40 - (n as i128) * LN2_Q40;    // r in Q40
+    let r_q40: i128 = x_q40 - (n as i128) * LN2_Q40; // r in Q40
     // exp(r) ≈ 1 + r + r^2/2 + r^3/6 + r^4/24 + r^5/120 (Horner)
     let mut t_q40: i128 = C1_120_Q40;
-    t_q40 = C1_24_Q40  + ((r_q40 * t_q40) >> SHIFT_Q40);
-    t_q40 = C1_6_Q40   + ((r_q40 * t_q40) >> SHIFT_Q40);
-    t_q40 = C1_2_Q40   + ((r_q40 * t_q40) >> SHIFT_Q40);
-    t_q40 = ONE_Q40    + ((r_q40 * t_q40) >> SHIFT_Q40);
+    t_q40 = C1_24_Q40 + ((r_q40 * t_q40) >> SHIFT_Q40);
+    t_q40 = C1_6_Q40 + ((r_q40 * t_q40) >> SHIFT_Q40);
+    t_q40 = C1_2_Q40 + ((r_q40 * t_q40) >> SHIFT_Q40);
+    t_q40 = ONE_Q40 + ((r_q40 * t_q40) >> SHIFT_Q40);
     let mut res_q40: i128 = ONE_Q40 + ((r_q40 * t_q40) >> SHIFT_Q40); // Q40
     // exp(x) = exp(r) * 2^n
     if n > 0 {
@@ -924,8 +925,8 @@ fn fixed_ln_q40(mut u_q40: i128) -> i128 {
     }
     // Normalize u_q40 to m_q40 in [0.5, 1.5) in real units
     // m_q40 in [0.5*2^40, 1.5*2^40)
-    let lower_q40: i128 = ONE_Q40 >> 1;                 // 0.5 * 2^40
-    let upper_q40: i128 = ONE_Q40 + (ONE_Q40 >> 1);     // 1.5 * 2^40
+    let lower_q40: i128 = ONE_Q40 >> 1; // 0.5 * 2^40
+    let upper_q40: i128 = ONE_Q40 + (ONE_Q40 >> 1); // 1.5 * 2^40
     let mut n: i32 = 0;
     // Bring u_q40 into [0.5, 1.5)
     while u_q40 < lower_q40 {
@@ -938,21 +939,21 @@ fn fixed_ln_q40(mut u_q40: i128) -> i128 {
     }
     // u_q40 represents m in [0.5, 1.5) in Q40
     // Compute z_q40 = (m - 1) / (m + 1) in Q40
-    let num_q40:   i128 = u_q40 - ONE_Q40;      // (m - 1) in Q40
-    let denom_q40: i128 = u_q40 + ONE_Q40;      // (m + 1) in Q40
-    let z_q40:     i128 = (num_q40 << SHIFT_Q40) / denom_q40;  // Q40
+    let num_q40: i128 = u_q40 - ONE_Q40; // (m - 1) in Q40
+    let denom_q40: i128 = u_q40 + ONE_Q40; // (m + 1) in Q40
+    let z_q40: i128 = (num_q40 << SHIFT_Q40) / denom_q40; // Q40
     // Powers of z: z^2, z^3, z^5 in Q40
-    let z2_q40: i128 = (z_q40 * z_q40) >> SHIFT_Q40;        // z^2
-    let z3_q40: i128 = (z2_q40 * z_q40) >> SHIFT_Q40;       // z^3
-    let z5_q40: i128 = (z3_q40 * z2_q40) >> SHIFT_Q40;      // z^5
+    let z2_q40: i128 = (z_q40 * z_q40) >> SHIFT_Q40; // z^2
+    let z3_q40: i128 = (z2_q40 * z_q40) >> SHIFT_Q40; // z^3
+    let z5_q40: i128 = (z3_q40 * z2_q40) >> SHIFT_Q40; // z^5
     // ln(m) = 2 * ( z + z^3/3 + z^5/5 )
-    let term1_q40: i128 = z_q40;                                // z
-    let term2_q40: i128 = (z3_q40 * C1_3_Q40) >> SHIFT_Q40;     // z^3 / 3
-    let term3_q40: i128 = (z5_q40 * C1_5_Q40) >> SHIFT_Q40;     // z^5 / 5
-    let series_q40: i128 = term1_q40 + term2_q40 + term3_q40;   // Q40
-    let ln_m_q40:   i128 = series_q40 << 1;                     // *2
+    let term1_q40: i128 = z_q40; // z
+    let term2_q40: i128 = (z3_q40 * C1_3_Q40) >> SHIFT_Q40; // z^3 / 3
+    let term3_q40: i128 = (z5_q40 * C1_5_Q40) >> SHIFT_Q40; // z^5 / 5
+    let series_q40: i128 = term1_q40 + term2_q40 + term3_q40; // Q40
+    let ln_m_q40: i128 = series_q40 << 1; // *2
     // ln(u) = n * ln(2) + ln(m)
-    let ln_u_q40: i128 = (n as i128) * LN2_Q40 + ln_m_q40;      // Q40
+    let ln_u_q40: i128 = (n as i128) * LN2_Q40 + ln_m_q40; // Q40
     ln_u_q40
 }
 
@@ -975,19 +976,19 @@ fn calc_interval_integral_q40(a_u: u64, b_u: u64) -> i128 {
     // a0_q40 = k * (a - T_B), a1_q40 = k * (b - T_B) in Q40
     let diff_a: i128 = (a as i128) - (T_B as i128);
     let diff_b: i128 = (b as i128) - (T_B as i128);
-    let a0_q40: i128 = K_Q40 * diff_a;  // Q40
-    let a1_q40: i128 = K_Q40 * diff_b;  // Q40
+    let a0_q40: i128 = K_Q40 * diff_a; // Q40
+    let a1_q40: i128 = K_Q40 * diff_b; // Q40
     // exp(k * (x - T_B)) in Q40
-    let e0_q40: i128 = fixed_exp_q40(a0_q40);  // Q40
-    let e1_q40: i128 = fixed_exp_q40(a1_q40);  // Q40
+    let e0_q40: i128 = fixed_exp_q40(a0_q40); // Q40
+    let e1_q40: i128 = fixed_exp_q40(a1_q40); // Q40
     // u_q40 = 1 + exp(...)
-    let u0_q40: i128 = ONE_Q40 + e0_q40;       // Q40
-    let u1_q40: i128 = ONE_Q40 + e1_q40;       // Q40
+    let u0_q40: i128 = ONE_Q40 + e0_q40; // Q40
+    let u1_q40: i128 = ONE_Q40 + e1_q40; // Q40
     // ln(1 + exp(...)) in Q40
-    let ln0_q40: i128 = fixed_ln_q40(u0_q40);  // Q40
-    let ln1_q40: i128 = fixed_ln_q40(u1_q40);  // Q40
+    let ln0_q40: i128 = fixed_ln_q40(u0_q40); // Q40
+    let ln1_q40: i128 = fixed_ln_q40(u1_q40); // Q40
     // dln in Q40
-    let dln_q40: i128 = ln1_q40 - ln0_q40;     // Q40
+    let dln_q40: i128 = ln1_q40 - ln0_q40; // Q40
     // W_q40 = (1/k) * dln in Q40
     // (dln / k) = (dln_q40 / 2^40) / (K_Q40 / 2^40) = dln_q40 / K_Q40
     let w_q40: i128 = (dln_q40 << SHIFT_Q40) / K_Q40; // Q40
@@ -1075,26 +1076,14 @@ fn calc_tap_coef_with_params(
     let modified_taps_q: i128 = sum_q40 / denom_q40_i;
     let rem_q40_i: i128 = sum_q40 % denom_q40_i;
     let new_modified_tap_rem_q40: u64 = rem_q40_i as u64;
-    if modified_taps_q <= 0 {
-        return (
-            0,
-            new_modified_tap_rem_q40,
-            total_mining_dur_5min,
-            total_modified_tap_num_5min,
-            total_tap_num_5min,
-            total_tap_num,
-        );
-    }
-    let modified_taps: u64 = modified_taps_q as u64;
-    let remaining_dur: u64 = 330 - total_mining_dur_5min;
-    let effective_mining_dur: u64 = if mining_dur > remaining_dur {
-        remaining_dur
-    } else {
-        mining_dur
-    };
 
-    let tap_coef: u64 =
-        modified_taps * total_mining_dur_5min
+    let modified_taps: u64 = if modified_taps_q <= 0 { 0 } else { modified_taps_q as u64 };
+
+    let remaining_dur: u64 = 330 - total_mining_dur_5min;
+    let effective_mining_dur: u64 =
+        if mining_dur > remaining_dur { remaining_dur } else { mining_dur };
+
+    let tap_coef: u64 = modified_taps * total_mining_dur_5min
         + effective_mining_dur * total_modified_tap_num_5min
         + modified_taps * effective_mining_dur;
 
@@ -1112,8 +1101,6 @@ fn calc_tap_coef_with_params(
     )
 }
 
-
-
 pub(super) fn execute_calculate_miner_tap_coef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCMINERTAPCOEF"))?;
     fetch_stack(engine, 7)?;
@@ -1124,14 +1111,21 @@ pub(super) fn execute_calculate_miner_tap_coef(engine: &mut Engine) -> Status {
     let mining_dur: u64 = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(5).as_integer()?.into(0..=u128::MAX)? as u64;
     let total_tap_num = engine.cmd.var(6).as_integer()?.into(0..=u128::MAX)? as u64;
-    let (tap_coef, new_modified_tap_rem_q40, new_total_mining_dur_5min, new_total_modified_tap_num_5min, new_total_tap_num_5min, new_total_tap_num) = calc_tap_coef_with_params(
+    let (
+        tap_coef,
+        new_modified_tap_rem_q40,
+        new_total_mining_dur_5min,
+        new_total_modified_tap_num_5min,
+        new_total_tap_num_5min,
+        new_total_tap_num,
+    ) = calc_tap_coef_with_params(
         total_tap_num,
         tap_num,
         mining_dur,
         modified_tap_rem_q40,
         total_mining_dur_5min,
         total_modified_tap_num_5min,
-        total_tap_num_5min
+        total_tap_num_5min,
     );
     engine.cc.stack.push(int!(new_total_tap_num as u128));
     engine.cc.stack.push(int!(new_total_tap_num_5min as u128));
