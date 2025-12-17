@@ -1070,12 +1070,12 @@ pub(super) fn execute_calculate_miner_tap_coef(engine: &mut Engine) -> Status {
         total_tap_num_5min,
     );
     log::trace!(target: "executor", "new_total_tap_num {:?} new_total_tap_num_5min {:?} new_total_modified_tap_num_5min {:?} new_total_mining_dur_5min {:?} new_modified_tap_rem_q40 {:?} tap_coef {:?}", new_total_tap_num.clone(), new_total_tap_num_5min.clone(), new_total_modified_tap_num_5min.clone(), new_total_mining_dur_5min.clone(), new_modified_tap_rem_q40.clone(), tap_coef.clone());
-    engine.cc.stack.push(int!(tap_coef as u128));
-    engine.cc.stack.push(int!(new_modified_tap_rem_q40 as u128));
-    engine.cc.stack.push(int!(new_total_mining_dur_5min as u128));
-    engine.cc.stack.push(int!(new_total_modified_tap_num_5min as u128));
-    engine.cc.stack.push(int!(new_total_tap_num_5min as u128));
     engine.cc.stack.push(int!(new_total_tap_num as u128));
+    engine.cc.stack.push(int!(new_total_tap_num_5min as u128));
+    engine.cc.stack.push(int!(new_total_modified_tap_num_5min as u128));
+    engine.cc.stack.push(int!(new_total_mining_dur_5min as u128));
+    engine.cc.stack.push(int!(new_modified_tap_rem_q40 as u128));
+    engine.cc.stack.push(int!(tap_coef as u128));
     return Ok(());
 }
 
