@@ -593,6 +593,7 @@ impl Deserializable for MsgAddressIntOrNone {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, TypedBuilder)]
 pub struct CrossDappMessageHeader {
+    pub ihr_disabled: bool,
     pub bounce: bool,
     pub bounced: bool,
     pub src_dapp_id: UInt256,
@@ -605,6 +606,7 @@ pub struct CrossDappMessageHeader {
     pub created_lt: u64,
     pub created_at: UnixTime32,
     pub is_exchange: bool,
+    pub is_redirect: bool,
 }
 
 impl fmt::Display for CrossDappMessageHeader {
@@ -634,6 +636,7 @@ impl Serializable for CrossDappMessageHeader {
             .append_bit_one()?
             .append_bit_zero()?
             .append_bit_one()?
+            .append_bit_bool(self.ihr_disabled)?
             .append_bit_bool(self.bounce)?
             .append_bit_bool(self.bounced)?;
 
@@ -647,10 +650,12 @@ impl Serializable for CrossDappMessageHeader {
 
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
-        self.src_dapp_id.write_to(cell)?;
-        cell.append_bit_bool(self.is_exchange)?;
+        Some(self.src_dapp_id.clone()).write_maybe_to(cell)?;
+        cell.append_bit_one()?;
         let refer = self.dest_dapp_id.serialize()?;
         cell.checked_append_reference(refer)?;
+        cell.append_bit_bool(self.is_exchange)?;
+        cell.append_bit_bool(self.is_redirect)?;
 
 
         Ok(())
@@ -660,6 +665,7 @@ impl Serializable for CrossDappMessageHeader {
 impl Deserializable for CrossDappMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // constructor tag will be readed in Message
+        self.ihr_disabled = cell.get_next_bit()?; // ihr_disabled
         self.bounce = cell.get_next_bit()?; // bounce
         self.bounced = cell.get_next_bit()?;
 
@@ -672,13 +678,16 @@ impl Deserializable for CrossDappMessageHeader {
         self.fwd_fee.read_from(cell)?; // fwd_fee
         self.created_lt.read_from(cell)?; // created_lt
         self.created_at.read_from(cell)?; // created_at
-        self.src_dapp_id = UInt256::construct_from(cell)?;
+        if cell.get_next_bit()? {
+            self.src_dapp_id = UInt256::construct_from(cell)?;
+        }
+        if cell.get_next_bit()? {
+            let mut dest_dapp_id = UInt256::default();
+            dest_dapp_id.read_from_reference(cell)?;
+            self.dest_dapp_id = dest_dapp_id;
+        }
         self.is_exchange = cell.get_next_bit()?;
-
-        let mut dest_dapp_id = UInt256::default();
-        dest_dapp_id.read_from_reference(cell)?;
-        self.dest_dapp_id = dest_dapp_id;
-
+        self.is_redirect = cell.get_next_bit()?;
         Ok(())
     }
 }
@@ -834,7 +843,7 @@ impl Serializable for InternalMessageHeader {
 
 impl Deserializable for InternalMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        // constructor tag will be readed in Message
+        // constructor tag will be read in Message
         self.ihr_disabled = cell.get_next_bit()?; // ihr_disabled
         self.bounce = cell.get_next_bit()?; // bounce
         self.bounced = cell.get_next_bit()?;
@@ -1384,6 +1393,9 @@ impl Message {
             CommonMsgInfo::ExtOutMsgInfo(ref mut header) => {
                 header.src = address;
             }
+            CommonMsgInfo::CrossDappMessageInfo(ref mut header) => {
+                header.src = address;
+            }
             _ => (),
         };
     }
@@ -1394,6 +1406,9 @@ impl Message {
                 header.src = MsgAddressIntOrNone::Some(src);
             }
             CommonMsgInfo::ExtOutMsgInfo(header) => {
+                header.src = MsgAddressIntOrNone::Some(src);
+            }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
                 header.src = MsgAddressIntOrNone::Some(src);
             }
             _ => (),
@@ -1454,6 +1469,11 @@ impl Message {
     /// Otherwise None
     pub fn get_fee(&self) -> Result<Option<Grams>> {
         self.header.fee()
+    }
+
+    /// Is message a CrossDapp
+    pub fn is_cross_dapp(&self) -> bool {
+        matches!(self.header, CommonMsgInfo::CrossDappMessageInfo(_))
     }
 
     /// Is message an internal?

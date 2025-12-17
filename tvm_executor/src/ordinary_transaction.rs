@@ -319,12 +319,18 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             &account_address.address().get_bytestring(0),
         );
         let mut stack = Stack::new();
+        let msg_type = int!(match in_msg.header() {
+            CommonMsgInfo::ExtOutMsgInfo(_) => fail!(ExecutorError::InvalidExtMessage),
+            CommonMsgInfo::IntMsgInfo(_) => 0,
+            CommonMsgInfo::CrossDappMessageInfo(_) => -3,
+            CommonMsgInfo::ExtInMsgInfo(_) => -1,
+        });
         stack
             .push(int!(acc_balance.grams.as_u128()))
             .push(int!(msg_balance.grams.as_u128()))
             .push(StackItem::Cell(in_msg_cell.clone()))
             .push(StackItem::Slice(in_msg.body().unwrap_or_default()))
-            .push(boolean!(is_ext_msg));
+            .push(msg_type);
         log::debug!(target: "executor", "compute_phase");
         let (compute_ph, actions, new_data) = match self.compute_phase(
             Some(in_msg),
