@@ -59,6 +59,7 @@ pub(crate) fn decode_actions(
             match act {
                 OutAction::SendMsg { mode: _, mut out_msg } => {
                     if out_msg.is_internal() {
+                    if out_msg.is_internal() || out_msg.is_cross_dapp() {
                         out_msg.set_src_address(address.clone());
                         out_msg.set_at_and_lt(0, created_lt);
                         created_lt += 1;
@@ -66,7 +67,7 @@ pub(crate) fn decode_actions(
                     res.add_out_message(out_msg.clone());
                     res.log(format!("Action(SendMsg):\n{}", msg_printer(&out_msg)?));
                     if let Some(b) = out_msg.body() {
-                        if abi_file.is_some() && function_name.is_some() && !out_msg.is_internal() {
+                        if abi_file.is_some() && function_name.is_some() && !(out_msg.is_internal() || out_msg.is_cross_dapp()){
                             decode_body(
                                 abi_file.unwrap(),
                                 function_name.unwrap(),
