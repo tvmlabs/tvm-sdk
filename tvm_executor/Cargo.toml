@@ -23,14 +23,13 @@ tvm_vm.workspace = true
 wasmtime = { workspace = true, optional = true }
 
 [features]
-default = ["wasmtime", "tvm_vm/default", "tvm_vm/wasmtime"]
+default = ["wasmtime"]
 signature_with_id = ["tvm_block/signature_with_id", "tvm_vm/signature_with_id"]
 ci_run = []
 timings = []
 ihr_disabled = []
-wasm_web = [
-    "tvm_vm/wasm_web",
-]
+wasm_web = ["tvm_vm/wasm_web"]
+wasmtime = ["dep:wasmtime", "tvm_vm/wasmtime"]
 
 [lib]
 bench = false
