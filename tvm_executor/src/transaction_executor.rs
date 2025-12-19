@@ -11,6 +11,9 @@
 #![allow(clippy::too_many_arguments)]
 
 use std::cmp::min;
+#[cfg(feature = "wasmtime")]
+use std::collections::HashMap;
+#[cfg(feature = "wasmtime")]
 use std::collections::HashSet;
 use std::collections::LinkedList;
 use std::sync::Arc;
@@ -136,14 +139,14 @@ pub struct ExecuteParams {
     pub available_credit: i128,
     pub termination_deadline: Option<Instant>,
     pub execution_timeout: Option<Duration>,
-    #[cfg(not(feature = "wasm_web"))]
+    #[cfg(feature = "wasmtime")]
     pub wasm_binary_root_path: String,
-    #[cfg(not(feature = "wasm_web"))]
+    #[cfg(feature = "wasmtime")]
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
-    #[cfg(not(feature = "wasm_web"))]
+    #[cfg(feature = "wasmtime")]
     pub wasm_engine: Option<wasmtime::Engine>,
-    #[cfg(not(feature = "wasm_web"))]
-    pub wasm_component_cache: std::collections::HashMap<[u8; 32], wasmtime::component::Component>,
+    #[cfg(feature = "wasmtime")]
+    pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
 }
@@ -189,14 +192,14 @@ impl Default for ExecuteParams {
             available_credit: 0,
             termination_deadline: None,
             execution_timeout: None,
-            #[cfg(not(feature = "wasm_web"))]
+            #[cfg(feature = "wasmtime")]
             wasm_binary_root_path: "./config/wasm".to_owned(),
-            #[cfg(not(feature = "wasm_web"))]
+            #[cfg(feature = "wasmtime")]
             wasm_hash_whitelist: HashSet::new(),
-            #[cfg(not(feature = "wasm_web"))]
+            #[cfg(feature = "wasmtime")]
             wasm_engine: None,
-            #[cfg(not(feature = "wasm_web"))]
-            wasm_component_cache: std::collections::HashMap::new(),
+            #[cfg(feature = "wasmtime")]
+            wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
         }
@@ -542,7 +545,7 @@ pub trait TransactionExecutor {
             params.block_collation_was_finished.clone(),
         );
 
-        #[cfg(not(feature = "wasm_web"))]
+        #[cfg(feature = "wasmtime")]
         {
             vm_setup = vm_setup.set_wasm_root_path(params.wasm_binary_root_path.clone())
         }
@@ -552,7 +555,7 @@ pub trait TransactionExecutor {
             .set_engine_version(params.engine_version.clone())
             .set_engine_mv_config(params.mvconfig.clone());
 
-        #[cfg(not(feature = "wasm_web"))]
+        #[cfg(feature = "wasmtime")]
         {
             vm_setup = vm_setup
                 .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())

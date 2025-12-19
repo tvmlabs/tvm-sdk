@@ -91,27 +91,16 @@ pprof = { features = ["criterion", "flamegraph"], version = "0.13.0" }
 pretty_assertions = "1.4.0"
 
 [features]
-default = [
-  "gosh",
-]
+default = ["gosh"]
 fift_check = []
-wasmtime = [
-  "wasmtime/std",
-  "wasmtime-wasi",
-  "wasmtime-wasi-io",
-]
-gosh = [
-  "tvm_block/gosh",
-  "diffy",
-  "similar",
-  "zstd",
-]
+wasmtime = ["wasmtime/std", "wasmtime-wasi", "wasmtime-wasi-io"]
+gosh = ["tvm_block/gosh", "diffy", "similar", "zstd"]
 log_file = []
 signature_no_check = []
 signature_with_id = ["tvm_block/signature_with_id"]
 verbose = []
 ci_run = []
-wasm_web = []  # browser compatible wasm
+wasm_web = []                                                    # browser compatible wasm
 wasm_external = []
 
 [[bench]]

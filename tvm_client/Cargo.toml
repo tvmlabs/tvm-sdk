@@ -25,7 +25,9 @@ tvm_sdk.workspace = true
 tvm_abi.workspace = true
 tvm_block.workspace = true
 tvm_block_json.workspace = true
-tvm_executor = { workspace = true, optional = true, features = ["signature_with_id"] }
+tvm_executor = { workspace = true, optional = true, features = [
+  "signature_with_id",
+] }
 tvm_struct.workspace = true
 tvm_types.workspace = true
 tvm_vm = { workspace = true, optional = true, features = [
@@ -121,7 +123,12 @@ pretty_assertions = "1.4.0"
 
 
 [features]
-default = ["std", "rustls-tls-webpki-roots", "tvm_vm/default", "tvm_executor/default"]
+default = [
+  "std",
+  "rustls-tls-webpki-roots",
+  "tvm_vm/default",
+  "tvm_executor/default",
+]
 include-zstd = ["tvm_block/gosh", "tvm_vm/gosh"]
 std = [
   "tokio/rt-multi-thread",
@@ -158,8 +165,4 @@ wasm-base = [
 
 # NOTE: supposed to be the same as "wasm" but for now
 # we don't support wasm contracts in the browser
-wasm_web = [
-  "wasm-base",
-  "tvm_vm/wasm_web",
-  "tvm_executor/wasm_web",
-]
+wasm_web = ["wasm-base", "tvm_vm/wasm_web", "tvm_executor/wasm_web"]
