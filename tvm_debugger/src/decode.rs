@@ -58,7 +58,6 @@ pub(crate) fn decode_actions(
         for act in actions {
             match act {
                 OutAction::SendMsg { mode: _, mut out_msg } => {
-                    if out_msg.is_internal() {
                     if out_msg.is_internal() || out_msg.is_cross_dapp() {
                         out_msg.set_src_address(address.clone());
                         out_msg.set_at_and_lt(0, created_lt);
