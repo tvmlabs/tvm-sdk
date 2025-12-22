@@ -1,0 +1,42 @@
+{
+  "config": {
+    "url": "localhost",
+    "wc": 0,
+    "addr": null,
+    "method": null,
+    "parameters": null,
+    "wallet": null,
+    "pubkey": null,
+    "abi_path": null,
+    "keys_path": null,
+    "retries": 5,
+    "timeout": 40000,
+    "message_processing_timeout": 40000,
+    "out_of_sync_threshold": 15,
+    "is_json": false,
+    "depool_fee": 0.5,
+    "lifetime": 60,
+    "no_answer": true,
+    "balance_in_vmshells": false,
+    "local_run": false,
+    "async_call": false,
+    "debug_fail": "None",
+    "project_id": null,
+    "access_key": null,
+    "api_token": null,
+    "endpoints": []
+  },
+  "endpoints_map": {
+    "http://127.0.0.1/": [
+      "http://localhost"
+    ],
+    "mainnet.ackinacki.org": [
+      "mainnet.ackinacki.org"
+    ],
+    "shellnet.ackinacki.org": [
+      "shellnet.ackinacki.org"
+    ]
+  },
+  "aliases": {},
+  "path": "/home/user/GOSH/tvm-sdk/tvm-cli.conf.json"
+}

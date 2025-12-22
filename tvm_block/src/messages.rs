@@ -959,7 +959,7 @@ impl ExtOutMessageHeader {
 
 impl Serializable for ExtOutMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bit_one()?.append_bit_one()?;
+        cell.append_bit_one()?.append_bit_one()?.append_bit_zero()?.append_bit_zero()?;
 
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
