@@ -858,6 +858,8 @@ impl Engine {
         SENDTODAPPCONFIG                     => 0xC7, 0x44
         MYDAPPID                             => 0xC7, 0x45
         CALCMBK                              => 0xC7, 0x46
+        CALCMINERTAPCOEF                     => 0xC7, 0x47
+        CALCMINERREWARD                      => 0xC7, 0x48
     }
 
     fn add_commands<'a>(

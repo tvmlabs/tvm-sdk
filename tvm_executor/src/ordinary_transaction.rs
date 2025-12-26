@@ -87,6 +87,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
+        let mut binding = in_msg.cloned();
+        let in_msg: Option<&mut Message> = binding.as_mut();
 
         let is_previous_state_active = match account.state() {
             Some(AccountState::AccountUninit {}) => false,
@@ -112,12 +114,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             CommonMsgInfo::ExtInMsgInfo(_) => (false, true),
         };
 
-        let account_address = in_msg.dst_ref().ok_or_else(|| {
+        let account_address = &in_msg.dst_ref().cloned().ok_or_else(|| {
             ExecutorError::TrExecutorError(format!(
                 "Input message {:x} has no dst address",
                 in_msg_cell.repr_hash()
             ))
         })?;
+
         let account_id = match account.get_id() {
             Some(account_id) => {
                 log::debug!(target: "executor", "Account = {:x}", account_id);
@@ -329,7 +332,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             Some(in_msg),
             account,
             &mut acc_balance,
-            &msg_balance,
+            &mut msg_balance,
             smc_info,
             stack,
             storage_fee,
