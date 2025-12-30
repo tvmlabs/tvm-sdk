@@ -8,6 +8,11 @@
   * [GraphQL Quick Start](graphql-quick-start.md)
 * [Add Acki Nacki to your backend](add_to_backend.md)
 
+## Bee Engine
+
+* [Overview](bee-engine/overview.md)
+* [Integration](bee-engine/integration.md)
+
 ## Reference
 
 * [Core Library Reference](reference/types-and-methods/README.md)
