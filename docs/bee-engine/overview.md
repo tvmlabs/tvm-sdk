@@ -43,10 +43,7 @@ The Bee Engin Miner can operate:
 
 #### 2. Mobile Verifiers Miner Subsystem Contracts
 
-Contracts repository:\
-https://github.com/gosh-sh/acki-nacki/blob/dev/contracts/mvsystem
-
-This on-chain contract subsystem provides:
+This [on-chain contract subsystem](https://github.com/ackinacki/ackinacki/tree/main/contracts/mvsystem) provides:
 
 * Mining rules
 * Work validation
