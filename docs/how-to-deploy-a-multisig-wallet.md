@@ -159,4 +159,4 @@ For example, we transfer 5 SHELL from the Multisig wallet's balance to the addre
 tvm-cli call 0:d2ba0db26f05a5f661599e3dfa1a88349bd8a4826dbf5c701ddeb191c178f95e sendTransaction '{"dest":"0:2672bb98816f2f9088d027f99681b65e05843b19367fe690cb4b5130d04eccf1", "value":0, "bounce":false, "cc": {"2": 5000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
 ```
 
-\
+<br>

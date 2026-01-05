@@ -659,8 +659,7 @@ Use the TVM instruction `gosh.mintshell` which mints some VMSHELL tokens, allowe
 gosh.mintshell(value)
 ```
 
-* `value` - amount of nanoVMSHELL to mint\
-
+* `value` - amount of nanoVMSHELL to mint<br>
 
 For example, let's use the `getTokens()` function in the HelloWorld contract:
 
