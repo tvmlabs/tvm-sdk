@@ -752,6 +752,10 @@ impl InternalMessageHeader {
         &self.value
     }
 
+    pub fn value_mut(&mut self) -> &mut CurrencyCollection {
+        &mut self.value
+    }
+
     pub fn set_src_dapp_id(&mut self, src_dapp_id: Option<UInt256>) {
         self.src_dapp_id = src_dapp_id
     }
