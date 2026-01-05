@@ -413,7 +413,7 @@ type CryptoConfig = {
 }
 ```
 
-* `mnemonic_dictionary`?: [_MnemonicDictionary_](broken-reference) – Mnemonic dictionary that will be used by default in crypto functions. If not specified, `English` dictionary will be used.
+* `mnemonic_dictionary`?: [_MnemonicDictionary_](/broken/pages/b7U0dxs59ESc6rtN09mV#mnemonicdictionary) – Mnemonic dictionary that will be used by default in crypto functions. If not specified, `English` dictionary will be used.
 * `mnemonic_word_count`?: _number_ – Mnemonic word count that will be used by default in crypto functions. If not specified the default value will be 12.
 * `hdkey_derivation_path`?: _string_ – Derivation path that will be used by default in crypto functions. If not specified `m/44'/396'/0'/0/0` will be used.
 

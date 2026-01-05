@@ -709,7 +709,7 @@ type ResultOfAppDebotBrowserGetSigningBoxVariant = {
 }
 ```
 
-* `signing_box`: [_SigningBoxHandle_](broken-reference) – Signing box for signing data requested by debot engine.\
+* `signing_box`: [_SigningBoxHandle_](/broken/pages/b7U0dxs59ESc6rtN09mV#signingboxhandle) – Signing box for signing data requested by debot engine.\
   Signing box is owned and disposed by debot engine
 
 ### ResultOfAppDebotBrowserInvokeDebotVariant
@@ -762,7 +762,7 @@ When _type_ is _'GetSigningBox'_
 
 Result of getting signing box.
 
-* `signing_box`: [_SigningBoxHandle_](broken-reference) – Signing box for signing data requested by debot engine.\
+* `signing_box`: [_SigningBoxHandle_](/broken/pages/b7U0dxs59ESc6rtN09mV#signingboxhandle) – Signing box for signing data requested by debot engine.\
   Signing box is owned and disposed by debot engine
 
 When _type_ is _'InvokeDebot'_
@@ -1005,7 +1005,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Result
 
-* `signing_box`: [_SigningBoxHandle_](broken-reference) – Signing box for signing data requested by debot engine.\
+* `signing_box`: [_SigningBoxHandle_](/broken/pages/b7U0dxs59ESc6rtN09mV#signingboxhandle) – Signing box for signing data requested by debot engine.\
   Signing box is owned and disposed by debot engine
 
 ### invoke\_debot
