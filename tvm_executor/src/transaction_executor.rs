@@ -1738,6 +1738,100 @@ fn outmsg_action_handler(
         fwd_mine_fee = compute_fwd_fee;
         total_fwd_fees = compute_fwd_fee;
         result_value = CurrencyCollection::from_grams(compute_fwd_fee);
+    } else if let Some(int_header) = msg.cross_dapp_header_mut() {
+        let mut fwd_prices = fwd_prices_basic.clone();
+        match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
+            Ok(new_dst) => int_header.dst = new_dst,
+            Err(type_error) => {
+                if type_error == IncorrectCheckRewrite::Anycast {
+                    log::warn!(target: "executor", "Incorrect destination anycast address {}", int_header.dst);
+                    return Err(skip.map(|_| RESULT_CODE_ANYCAST).unwrap_or_default());
+                } else {
+                    log::warn!(target: "executor", "Incorrect destination address {}", int_header.dst);
+                    return Err(skip
+                        .map(|_| RESULT_CODE_INCORRECT_DST_ADDRESS)
+                        .unwrap_or_default());
+                }
+            }
+        }
+
+        int_header.bounced = false;
+        result_value = int_header.value.clone();
+
+        if cfg!(feature = "ihr_disabled") {
+            int_header.ihr_disabled = true;
+        }
+        if !int_header.ihr_disabled {
+            let compute_ihr_fee = fwd_prices
+                .ihr_fee_checked(&compute_fwd_fee)
+                .map_err(|_| RESULT_CODE_UNSUPPORTED)?;
+            if int_header.ihr_fee < compute_ihr_fee {
+                int_header.ihr_fee = compute_ihr_fee
+            }
+        } else {
+            int_header.ihr_fee = Grams::zero();
+        }
+        let fwd_fee = *std::cmp::max(&int_header.fwd_fee, &compute_fwd_fee);
+        fwd_mine_fee =
+            fwd_prices.mine_fee_checked(&fwd_fee).map_err(|_| RESULT_CODE_UNSUPPORTED)?;
+        total_fwd_fees = fwd_fee + int_header.ihr_fee;
+
+        let fwd_remain_fee = fwd_fee - fwd_mine_fee;
+
+        if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
+            int_header.set_exchange(true);
+        }
+
+        if (mode & SENDMSG_ALL_BALANCE) != 0 {
+            // send all remaining account balance
+            result_value = acc_balance.clone();
+            //    if need_to_reserve != 0 {
+            // match result_value.grams.sub(&Grams::from(need_to_burn)) {
+            // Ok(true) => (),
+            // Ok(false) => {
+            // result_value.grams = Grams::zero();
+            // return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+            // }
+            // Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
+            // }
+            // }
+            int_header.value = result_value.clone();
+
+            mode &= !SENDMSG_PAY_FEE_SEPARATELY;
+        }
+        /*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+                    // send all remainig balance of inbound message
+                    result_value.add(msg_balance).ok();
+                    if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                        if &result_value.grams < compute_phase_fees {
+                            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                        }
+                        result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                            log::error!(target: "executor", "cannot subtract msg balance : {}", err);
+                            RESULT_CODE_ACTIONLIST_INVALID
+                        })?;
+                    }
+                    int_header.value = result_value.clone();
+                }
+        */
+        if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
+            // we must pay the fees, sum them with msg value
+            result_value.grams += total_fwd_fees;
+        } else if int_header.value.grams < total_fwd_fees {
+            // msg value is too small, reciever cannot pay the fees
+            log::warn!(
+                target: "executor",
+                "msg balance {} is too small, cannot pay fwd+ihr fees: {}",
+                int_header.value.grams, total_fwd_fees
+            );
+            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+        } else {
+            // reciever will pay the fees
+            int_header.value.grams -= total_fwd_fees;
+        }
+
+        // set evaluated fees and value back to msg
+        int_header.fwd_fee = fwd_remain_fee;
     } else {
         return Err(-1);
     }
