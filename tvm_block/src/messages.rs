@@ -692,6 +692,74 @@ impl Deserializable for CrossDappMessageHeader {
     }
 }
 
+impl CrossDappMessageHeader {
+    /// Get value transferred message
+    pub fn value(&self) -> &CurrencyCollection {
+        &self.value
+    }
+
+    pub fn value_mut(&mut self) -> &mut CurrencyCollection {
+        &mut self.value
+    }
+
+    pub fn set_src_dapp_id(&mut self, src_dapp_id: UInt256) {
+        self.src_dapp_id = src_dapp_id
+    }
+
+    pub fn set_dest_dapp_id(&mut self, dest_dapp_id: UInt256) {
+        self.dest_dapp_id = dest_dapp_id
+    }
+
+    pub fn set_is_redirect(&mut self) {
+        self.is_redirect = true;
+    }
+
+    pub fn set_exchange(&mut self, exchange: bool) {
+        self.is_exchange = exchange
+    }
+
+    pub fn src_dapp_id(&self) -> &UInt256 {
+        &self.src_dapp_id
+    }
+
+    pub fn dest_dapp_id(&self) -> &UInt256 {
+        &self.dest_dapp_id
+    }
+
+    pub fn is_exchange(&self) -> &bool {
+        &self.is_exchange
+    }
+
+    /// Get IHR fee for message
+    pub fn ihr_fee(&self) -> &Grams {
+        &self.ihr_fee
+    }
+
+    /// Get forwarding fee for message transfer
+    pub fn fwd_fee(&self) -> &Grams {
+        &self.fwd_fee
+    }
+
+    pub fn src(&self) -> Result<&MsgAddressInt> {
+        self.src_ref().ok_or_else(|| error!("incorrect source address"))
+    }
+
+    pub fn src_ref(&self) -> Option<&MsgAddressInt> {
+        match self.src {
+            MsgAddressIntOrNone::Some(ref addr) => Some(addr),
+            MsgAddressIntOrNone::None => None,
+        }
+    }
+
+    pub fn set_src(&mut self, src: MsgAddressInt) {
+        self.src = MsgAddressIntOrNone::Some(src)
+    }
+
+    pub fn set_dst(&mut self, dst: MsgAddressInt) {
+        self.dst = dst
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct InternalMessageHeader {
     pub ihr_disabled: bool,
@@ -1266,6 +1334,13 @@ impl Message {
     pub fn int_header_mut(&mut self) -> Option<&mut InternalMessageHeader> {
         match self.header {
             CommonMsgInfo::IntMsgInfo(ref mut header) => Some(header),
+            _ => None,
+        }
+    }
+
+    pub fn cross_dapp_header_mut(&mut self) -> Option<&mut CrossDappMessageHeader> {
+        match self.header {
+            CommonMsgInfo::CrossDappMessageInfo(ref mut header) => Some(header),
             _ => None,
         }
     }
