@@ -1015,6 +1015,24 @@ pub enum CommonMsgInfo {
     CrossDappMessageInfo(CrossDappMessageHeader),
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant)]
+pub enum CommonMsgInfoOld {
+    IntMsgInfo(InternalMessageHeader),
+    ExtInMsgInfo(ExternalInboundMessageHeader),
+    ExtOutMsgInfo(ExtOutMessageHeader),
+}
+
+impl From<CommonMsgInfoOld> for CommonMsgInfo {
+    fn from(value: CommonMsgInfoOld) -> Self {
+        match value {
+            CommonMsgInfoOld::IntMsgInfo(v) => CommonMsgInfo::IntMsgInfo(v),
+            CommonMsgInfoOld::ExtInMsgInfo(v) => CommonMsgInfo::ExtInMsgInfo(v),
+            CommonMsgInfoOld::ExtOutMsgInfo(v) => CommonMsgInfo::ExtOutMsgInfo(v),
+        }
+    }
+}
+
 impl CommonMsgInfo {
     /// Get destination account address
     pub fn dest_account_address(&self) -> Option<AccountId> {
@@ -1089,6 +1107,12 @@ impl Default for CommonMsgInfo {
     }
 }
 
+impl Default for CommonMsgInfoOld {
+    fn default() -> Self {
+        CommonMsgInfoOld::IntMsgInfo(InternalMessageHeader::default())
+    }
+}
+
 impl Serializable for CommonMsgInfo {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
@@ -1132,6 +1156,27 @@ impl Deserializable for CommonMsgInfo {
     }
 }
 
+impl Deserializable for CommonMsgInfoOld {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        *self = if !cell.get_next_bit()? {
+            // CommonMsgInfo::int_msg_info
+            let mut int_msg = InternalMessageHeader::default();
+            int_msg.read_from(cell)?;
+            CommonMsgInfoOld::IntMsgInfo(int_msg)
+        } else if !cell.get_next_bit()? {
+            let mut ext_in_msg = ExternalInboundMessageHeader::default();
+            ext_in_msg.read_from(cell)?;
+            CommonMsgInfoOld::ExtInMsgInfo(ext_in_msg)
+        } else {
+            let mut ext_out_ms = ExtOutMessageHeader::default();
+            ext_out_ms.read_from(cell)?;
+            CommonMsgInfoOld::ExtOutMsgInfo(ext_out_ms)
+        };
+
+        Ok(())
+    }
+}
+
 pub type MessageId = UInt256;
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1146,6 +1191,27 @@ pub struct Message {
     body: Option<SliceData>,
     body_to_ref: Option<bool>,
     init_to_ref: Option<bool>,
+}
+
+#[derive(Debug, Default, Clone, Eq)]
+pub struct MessageOld {
+    header: CommonMsgInfoOld,
+    init: Option<StateInit>,
+    body: Option<SliceData>,
+    body_to_ref: Option<bool>,
+    init_to_ref: Option<bool>,
+}
+
+impl From<MessageOld> for Message {
+    fn from(value: MessageOld) -> Self {
+        Message {
+            header: value.header.into(),
+            init: value.init,
+            body: value.body,
+            body_to_ref: value.body_to_ref,
+            init_to_ref: value.init_to_ref,
+        }
+    }
 }
 
 impl fmt::Display for Message {
@@ -1165,6 +1231,12 @@ impl fmt::Display for Message {
 
 impl PartialEq for Message {
     fn eq(&self, other: &Message) -> bool {
+        self.header == other.header && self.init == other.init && self.body == other.body
+    }
+}
+
+impl PartialEq for MessageOld {
+    fn eq(&self, other: &MessageOld) -> bool {
         self.header == other.header && self.init == other.init && self.body == other.body
     }
 }
@@ -1700,6 +1772,58 @@ impl Deserializable for Message {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // read header
         self.header.read_from(cell)?;
+
+        // read StateInit
+        if cell.get_next_bit()? {
+            // maybe of init
+            let mut init = StateInit::default();
+            if cell.get_next_bit()? {
+                // either of init
+                // read from reference
+                let r = cell.checked_drain_reference()?;
+                init.read_from_cell(r)?;
+                self.init = Some(init);
+                self.init_to_ref = Some(true);
+            } else {
+                // read from current cell
+                init.read_from(cell)?;
+                self.init = Some(init);
+                self.init_to_ref = Some(false);
+            }
+        } else {
+            self.init_to_ref = Some(false);
+        }
+
+        // read body
+        // A message is always serialized inside the blockchain as the last field in
+        // a cell. Therefore, the blockchain software may assume that whatever bits
+        // and references left unparsed after parsing the fields of a Message preceding
+        // body belong to the payload body : X, without knowing anything about the
+        // serialization of the type X.
+
+        self.body = if cell.get_next_bit()? {
+            // body in reference
+            self.body_to_ref = Some(true);
+            Some(SliceData::load_cell(cell.checked_drain_reference()?)?)
+        } else {
+            self.body_to_ref = Some(false);
+            if cell.is_empty() {
+                // no body
+                None
+            } else {
+                // body is leftover
+                Some(cell.clone())
+            }
+        };
+        Ok(())
+    }
+}
+
+impl Deserializable for MessageOld {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        // read header
+        self.header.read_from(cell)?;
+
         // read StateInit
         if cell.get_next_bit()? {
             // maybe of init
