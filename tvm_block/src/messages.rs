@@ -593,19 +593,28 @@ impl Deserializable for MsgAddressIntOrNone {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, TypedBuilder)]
 pub struct CrossDappMessageHeader {
+    #[builder(default = true)]
     pub ihr_disabled: bool,
+    #[builder(default = false)]
     pub bounce: bool,
+    #[builder(default = false)]
     pub bounced: bool,
     pub src_dapp_id: UInt256,
     pub src: MsgAddressIntOrNone,
     pub dest_dapp_id: UInt256,
     pub dst: MsgAddressInt,
     pub value: CurrencyCollection,
+    #[builder(default)]
     pub ihr_fee: Grams,
+    #[builder(default)]
     pub fwd_fee: Grams,
+    #[builder(default)]
     pub created_lt: u64,
+    #[builder(default)]
     pub created_at: UnixTime32,
+    #[builder(default = false)]
     pub is_exchange: bool,
+    #[builder(default = false)]
     pub is_redirect: bool,
 }
 
@@ -1371,6 +1380,17 @@ impl Message {
     pub fn with_int_header(h: InternalMessageHeader) -> Message {
         Message {
             header: CommonMsgInfo::IntMsgInfo(h),
+            init: None,
+            body: None,
+            body_to_ref: None,
+            init_to_ref: None,
+        }
+    }
+
+    /// Create new instance internal Message with cross dapp header
+    pub fn with_cross_dapp_header(h: CrossDappMessageHeader) -> Message {
+        Message {
+            header: CommonMsgInfo::CrossDappMessageInfo(h),
             init: None,
             body: None,
             body_to_ref: None,
