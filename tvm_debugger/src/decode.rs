@@ -71,7 +71,7 @@ pub(crate) fn decode_actions(
                                 abi_file.unwrap(),
                                 function_name.unwrap(),
                                 b,
-                                out_msg.is_internal(),
+                                out_msg.is_internal() || out_msg.is_cross_dapp(),
                                 res,
                             )?;
                         }

@@ -125,7 +125,7 @@ pub fn decode_message(
         decode_body(
             abi,
             body,
-            message.is_internal(),
+            message.is_internal() || message.is_cross_dapp(),
             params.allow_partial,
             params.function_name,
             data_layout,

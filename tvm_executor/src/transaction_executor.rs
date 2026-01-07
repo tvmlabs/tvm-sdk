@@ -1309,6 +1309,9 @@ fn compute_new_state(
             if let Some(state_init) = in_msg.state_init() {
                 match in_msg.body() {
                     Some(mut data) => {
+                        if in_msg.is_cross_dapp() {
+                            return Ok(Some(ComputeSkipReason::BadState));
+                        }
                         if in_msg.is_internal() {
                             if let Ok(function_id) = data.get_next_u32() {
                                 log::trace!(target: "executor", "{} function_id", function_id);
@@ -1739,7 +1742,7 @@ fn outmsg_action_handler(
         total_fwd_fees = compute_fwd_fee;
         result_value = CurrencyCollection::from_grams(compute_fwd_fee);
     } else if let Some(int_header) = msg.cross_dapp_header_mut() {
-        let mut fwd_prices = fwd_prices_basic.clone();
+        let fwd_prices = fwd_prices_basic.clone();
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {
