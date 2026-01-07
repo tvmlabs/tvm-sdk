@@ -1133,6 +1133,7 @@ impl CommonMsgInfo {
     pub fn get_value(&self) -> Option<&CurrencyCollection> {
         match self {
             CommonMsgInfo::IntMsgInfo(header) => Some(&header.value),
+            CommonMsgInfo::CrossDappMessageInfo(header) => Some(&header.value),
             _ => None,
         }
     }
@@ -1140,6 +1141,7 @@ impl CommonMsgInfo {
     pub fn get_value_mut(&mut self) -> Option<&mut CurrencyCollection> {
         match self {
             CommonMsgInfo::IntMsgInfo(header) => Some(&mut header.value),
+            CommonMsgInfo::CrossDappMessageInfo(header) => Some(&mut header.value),
             _ => None,
         }
     }
@@ -1154,16 +1156,22 @@ impl CommonMsgInfo {
                 result.add(&header.fwd_fee)?;
                 Ok(Some(result))
             }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
+                let mut result = header.ihr_fee;
+                result.add(&header.fwd_fee)?;
+                Ok(Some(result))
+            }
             CommonMsgInfo::ExtInMsgInfo(header) => Ok(Some(header.import_fee)),
             _ => Ok(None),
         }
     }
 
-    /// Get dest address for Intrenal and Inbound external messages
+    /// Get dest address for Internal and Inbound external messages
     pub fn get_dst_address(&self) -> Option<MsgAddressInt> {
         match self {
             CommonMsgInfo::IntMsgInfo(header) => Some(header.dst.clone()),
             CommonMsgInfo::ExtInMsgInfo(header) => Some(header.dst.clone()),
+            CommonMsgInfo::CrossDappMessageInfo(header) => Some(header.dst.clone()),
             _ => None,
         }
     }
