@@ -1317,6 +1317,13 @@ impl Message {
         }
     }
 
+    pub fn cross_dapp_header(&mut self) -> Option<&CrossDappMessageHeader> {
+        match self.header() {
+            CommonMsgInfo::CrossDappMessageInfo(header) => Some(header),
+            _ => None,
+        }
+    }
+
     pub fn ext_in_header(&self) -> Option<&ExternalInboundMessageHeader> {
         match self.header() {
             CommonMsgInfo::ExtInMsgInfo(header) => Some(header),
