@@ -185,7 +185,7 @@ fn test_with_address() {
 
     let anycast =
         AnycastInfo::with_rewrite_pfx(SliceData::new(vec![0x77, 0x78, 0x79, 0x80])).unwrap();
-    let addresses = vec![
+    let addresses = [
         MsgAddress::AddrNone,
         MsgAddress::with_extern(SliceData::new(vec![0x55, 0x80])).unwrap(),
         MsgAddress::with_standart(Some(anycast.clone()), -1, AccountId::from([0x11; 32])).unwrap(),
@@ -779,10 +779,8 @@ fn test_map() {
     let mut builder = BuilderData::new();
     builder.checked_append_reference(bytes_builder.into_cell().unwrap()).unwrap();
 
-    let bytes_map = vec_to_map(
-        &vec![(1u8, builder.clone()), (2u8, builder.clone()), (3u8, builder.clone())],
-        8,
-    );
+    let bytes_map =
+        vec_to_map(&[(1u8, builder.clone()), (2u8, builder.clone()), (3u8, builder.clone())], 8);
     let bytes_value = TokenValue::Map(
         ParamType::Uint(8),
         ParamType::Bytes,
@@ -794,7 +792,7 @@ fn test_map() {
     );
 
     let int_map = vec_to_map(
-        &vec![
+        &[
             (-1i16, BuilderData::with_raw((-1i128).to_be_bytes().to_vec(), 128).unwrap()),
             (0i16, BuilderData::with_raw(0i128.to_be_bytes().to_vec(), 128).unwrap()),
             (1i16, BuilderData::with_raw(1i128.to_be_bytes().to_vec(), 128).unwrap()),
@@ -881,7 +879,7 @@ fn test_address_map_key() {
     let addr2 = MsgAddress::from_str(addr2_str).unwrap();
 
     let map = vec_to_map(
-        &vec![
+        &[
             (addr1, BuilderData::with_raw((123u32).to_be_bytes().to_vec(), 32).unwrap()),
             (addr2, BuilderData::with_raw((456u32).to_be_bytes().to_vec(), 32).unwrap()),
         ],
@@ -984,7 +982,7 @@ fn test_big_map_value() {
 fn test_abi_2_1_types() {
     let string = "Some string";
     let string_builder =
-        BuilderData::with_raw(string.as_bytes().to_vec(), string.as_bytes().len() * 8).unwrap();
+        BuilderData::with_raw(string.as_bytes().to_vec(), string.len() * 8).unwrap();
     let string_value = TokenValue::String(string.into());
 
     let tuple_tokens = tokens_from_values(vec![
@@ -1129,7 +1127,7 @@ fn test_partial_decoding() {
 fn test_four_optional_strings() {
     let string = "Some string";
     let string_builder =
-        BuilderData::with_raw(string.as_bytes().to_vec(), string.as_bytes().len() * 8).unwrap();
+        BuilderData::with_raw(string.as_bytes().to_vec(), string.len() * 8).unwrap();
     let string_some_value =
         TokenValue::Optional(ParamType::String, Some(Box::new(TokenValue::String(string.into()))));
     let string_none_value = TokenValue::Optional(ParamType::String, None);

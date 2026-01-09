@@ -66,7 +66,10 @@ pub(crate) fn decode_actions(
                     res.add_out_message(out_msg.clone());
                     res.log(format!("Action(SendMsg):\n{}", msg_printer(&out_msg)?));
                     if let Some(b) = out_msg.body() {
-                        if abi_file.is_some() && function_name.is_some() && !(out_msg.is_internal() || out_msg.is_cross_dapp()){
+                        if abi_file.is_some()
+                            && function_name.is_some()
+                            && !(out_msg.is_internal() || out_msg.is_cross_dapp())
+                        {
                             decode_body(
                                 abi_file.unwrap(),
                                 function_name.unwrap(),

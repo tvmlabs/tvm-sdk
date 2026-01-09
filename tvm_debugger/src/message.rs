@@ -6,7 +6,8 @@ use serde_json::Value;
 #[cfg(test)]
 use serde_json::json;
 use tvm_abi::encode_function_call;
-use tvm_block::{CrossDappMessageHeader, CurrencyCollection, MsgAddressIntOrNone};
+use tvm_block::CrossDappMessageHeader;
+use tvm_block::CurrencyCollection;
 use tvm_block::ExternalInboundMessageHeader;
 use tvm_block::ExtraCurrencyCollection;
 use tvm_block::Grams;
@@ -14,8 +15,10 @@ use tvm_block::InternalMessageHeader;
 use tvm_block::Message;
 use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
+use tvm_block::MsgAddressIntOrNone;
 use tvm_block::VarUInteger32;
-use tvm_types::{SliceData, UInt256};
+use tvm_types::SliceData;
+use tvm_types::UInt256;
 use tvm_types::ed25519_create_private_key;
 
 use crate::RunArgs;
@@ -91,10 +94,18 @@ pub(crate) fn generate_internal_or_cross_dapp_message(
 
         Message::with_int_header(header)
     } else {
-        let src_dapp_id = args.message_source_dapp_id.clone().ok_or(anyhow::format_err!("message_source_dapp_id must be set for cross dapp"))?;
-        let dest_dapp_id = args.message_dest_dapp_id.clone().ok_or(anyhow::format_err!("message_dest_dapp_id must be set for cross dapp"))?;
-        let src_dapp_id = UInt256::from_str(&src_dapp_id).map_err(|e| anyhow::format_err!("Wrong src dapp id: {e}"))?;
-        let dest_dapp_id = UInt256::from_str(&dest_dapp_id).map_err(|e| anyhow::format_err!("Wrong dest dapp id: {e}"))?;
+        let src_dapp_id = args
+            .message_source_dapp_id
+            .clone()
+            .ok_or(anyhow::format_err!("message_source_dapp_id must be set for cross dapp"))?;
+        let dest_dapp_id = args
+            .message_dest_dapp_id
+            .clone()
+            .ok_or(anyhow::format_err!("message_dest_dapp_id must be set for cross dapp"))?;
+        let src_dapp_id = UInt256::from_str(&src_dapp_id)
+            .map_err(|e| anyhow::format_err!("Wrong src dapp id: {e}"))?;
+        let dest_dapp_id = UInt256::from_str(&dest_dapp_id)
+            .map_err(|e| anyhow::format_err!("Wrong dest dapp id: {e}"))?;
         let header = CrossDappMessageHeader::builder()
             .src_dapp_id(src_dapp_id)
             .src(MsgAddressIntOrNone::Some(src))

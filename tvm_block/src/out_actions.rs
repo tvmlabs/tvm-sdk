@@ -21,8 +21,9 @@ use tvm_types::UInt256;
 use tvm_types::error;
 use tvm_types::fail;
 
-use crate::{Deserializable, MessageOld};
+use crate::Deserializable;
 use crate::ExtraCurrencyCollection;
+use crate::MessageOld;
 use crate::Serializable;
 use crate::error::BlockError;
 use crate::messages::Message;

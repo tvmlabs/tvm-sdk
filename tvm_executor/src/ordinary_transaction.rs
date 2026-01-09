@@ -91,7 +91,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let in_msg: Option<&mut Message> = binding.as_mut();
 
         let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
+            Some(AccountState::AccountUninit) => false,
             None => false,
             _ => true,
         };
@@ -388,7 +388,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     } else {
                         None
                     };
-                    let minted_shell_orig = minted_shell.clone();
+                    let minted_shell_orig = *minted_shell;
                     match self.action_phase_with_copyleft(
                         &mut tr,
                         account,
@@ -406,8 +406,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
-                            if phase.success == false {
-                                *minted_shell = minted_shell_orig.clone();
+                            if !phase.success {
+                                *minted_shell = minted_shell_orig;
                             }
                             out_msgs = messages;
                             if let Some(copyleft_reward) = &copyleft_reward {
@@ -417,7 +417,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             Some(phase)
                         }
                         Err(e) => {
-                            *minted_shell = minted_shell_orig.clone();
+                            *minted_shell = minted_shell_orig;
                             fail!(ExecutorError::TrExecutorError(format!(
                                 "cannot create action phase of a new transaction for smart contract for reason {}",
                                 e
