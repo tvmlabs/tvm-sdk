@@ -11,7 +11,7 @@
 
 use std::fmt;
 use std::str::FromStr;
-use typed_builder::TypedBuilder;
+
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -26,6 +26,7 @@ use tvm_types::UInt256;
 use tvm_types::UsageTree;
 use tvm_types::error;
 use tvm_types::fail;
+use typed_builder::TypedBuilder;
 
 use crate::Deserializable;
 use crate::GetRepresentationHash;
@@ -620,7 +621,14 @@ pub struct CrossDappMessageHeader {
 
 impl fmt::Display for CrossDappMessageHeader {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "CrossDappMessage {{src: {}:{}, dst: {}:{}", self.src_dapp_id.to_hex_string(), self.src, self.dest_dapp_id.to_hex_string(), self.dst)?;
+        write!(
+            f,
+            "CrossDappMessage {{src: {}:{}, dst: {}:{}",
+            self.src_dapp_id.to_hex_string(),
+            self.src,
+            self.dest_dapp_id.to_hex_string(),
+            self.dst
+        )?;
         if f.alternate() {
             write!(
                 f,
@@ -665,7 +673,6 @@ impl Serializable for CrossDappMessageHeader {
         cell.checked_append_reference(refer)?;
         cell.append_bit_bool(self.is_exchange)?;
         cell.append_bit_bool(self.is_redirect)?;
-
 
         Ok(())
     }
@@ -1703,7 +1710,7 @@ impl Message {
             CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
             CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
-            CommonMsgInfo::CrossDappMessageInfo(_) => &MsgAddressIntOrNone::None, // workchain ID is not used in ackinacki
+            CommonMsgInfo::CrossDappMessageInfo(_) => &MsgAddressIntOrNone::None, /* workchain ID is not used in ackinacki */
         };
         match addr1 {
             MsgAddressIntOrNone::None => None,

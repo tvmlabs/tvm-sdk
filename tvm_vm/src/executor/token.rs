@@ -310,7 +310,7 @@ pub(super) fn execute_exchange_shell(engine: &mut Engine) -> Status {
 pub(super) fn execute_calculate_repcoef(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("CALCREPCOEF"))?;
     fetch_stack(engine, 1)?;
-    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u128;
+    let bkrt = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?;
     let repcoef = repcoef_int(bkrt);
     engine.cc.stack.push(int!(repcoef));
     Ok(())
@@ -329,7 +329,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     //_reward_last_time - time of last calculate
     let mbkt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let rbkmin;
-    if t <= TTMT - 1 {
+    if t < TTMT {
         rbkmin = rbkprev / 3 * 2;
     } else {
         rbkmin = 0;
@@ -339,7 +339,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     }
     let rbk =
         (((calc_mbk(t + drbkavg, KRBK_NUM, KRBK_DEN) - mbkt) / drbkavg).max(rbkmin)).min(rbkprev);
-    engine.cc.stack.push(int!(rbk as u128));
+    engine.cc.stack.push(int!(rbk));
     Ok(())
 }
 
@@ -352,7 +352,7 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
     let mut drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
     let rbmmin;
-    if t <= TTMT - 1 {
+    if t < TTMT {
         rbmmin = rbmprev / 3 * 2;
     } else {
         rbmmin = 0;
@@ -368,7 +368,7 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
         rbm = (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin))
             .min(rbmprev);
     }
-    engine.cc.stack.push(int!(rbm as u128));
+    engine.cc.stack.push(int!(rbm));
     Ok(())
 }
 
@@ -418,7 +418,7 @@ pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Sta
     } else {
         reward = radj * depoch / count_bm;
     }
-    engine.cc.stack.push(int!(reward as u128));
+    engine.cc.stack.push(int!(reward));
     Ok(())
 }
 
@@ -445,7 +445,7 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
     let sbkbase;
     let engine_version = engine.get_version();
     if engine_version >= "1.0.2".parse().unwrap() {
-        engine.cc.stack.push(int!(BIG_MIN_STAKE as u128));
+        engine.cc.stack.push(int!(BIG_MIN_STAKE));
         return Ok(());
     }
     if mbkav != 0 {
@@ -453,12 +453,12 @@ pub(super) fn execute_calculate_min_stake(engine: &mut Engine) -> Status {
         if nbk == 0 {
             nbk = 1;
         }
-        sbkbase = ((((mbkav as u128) * (one_minus_fstk_q32 as u128)) >> 32) * DELTA_SBK_NUMENATOR)
-            / (2u128 * (nbk as u128) * DELTA_SBK_DENOMINATOR);
+        sbkbase = (((mbkav * one_minus_fstk_q32) >> 32) * DELTA_SBK_NUMENATOR)
+            / (2u128 * nbk * DELTA_SBK_DENOMINATOR);
     } else {
         sbkbase = SBK_BASE_START;
     }
-    engine.cc.stack.push(int!(sbkbase as u128));
+    engine.cc.stack.push(int!(sbkbase));
     Ok(())
 }
 
@@ -469,8 +469,8 @@ pub(super) fn execute_calculate_min_stake_bm(engine: &mut Engine) -> Status {
     let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start 
     let mbkav = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-    let sbkmin = ((mbkav as u128 * one_minus_fstk_q32 as u128) >> 32) as u128;
-    engine.cc.stack.push(int!(sbkmin as u128));
+    let sbkmin = (mbkav * one_minus_fstk_q32) >> 32;
+    engine.cc.stack.push(int!(sbkmin));
     Ok(())
 }
 
@@ -559,8 +559,8 @@ fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Ve
         new_mbi = mbi;
     }
     let numer = rpc * tap_num * bclst[new_mbi as usize] as i128;
-    let rmv = numer / denom;
-    rmv
+
+    numer / denom
 }
 
 fn params_from_types(types: Vec<ParamType>) -> Vec<Param> {
@@ -582,7 +582,7 @@ pub(super) fn execute_calculate_mobile_verifiers_reward(engine: &mut Engine) -> 
     let rpc = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)? as u64;
     let tap_num = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)? as u64;
     if tap_num <= 1 {
-        engine.cc.stack.push(int!(0 as u128));
+        engine.cc.stack.push(int!(0_u128));
         return Ok(());
     }
     let tap_lst_cell = engine.cmd.var(2).as_cell()?;
@@ -768,8 +768,8 @@ fn bc_integral_fp(bl: i128, br: i128, xl: i128, xr: i128, yd: i128, yu: i128, k:
 
 fn boost_coef_fp(dl: i128, dr: i128) -> i128 {
     let mut bc = 0i128;
-    if MV_X1 <= dl && dl <= MV_X2 {
-        if MV_X1 <= dr && dr <= MV_X2 {
+    if (MV_X1..=MV_X2).contains(&dl) {
+        if (MV_X1..=MV_X2).contains(&dr) {
             bc = bc_integral_fp(dl, dr, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1);
         } else if MV_X2 < dr && dr <= MV_X3 {
             bc = bc_integral_fp(dl, MV_X2, MV_X1, MV_X2, MV_Y1, MV_Y2, MV_K1)
@@ -1076,7 +1076,7 @@ pub(super) fn execute_calculate_miner_tap_coef(engine: &mut Engine) -> Status {
     engine.cc.stack.push(int!(new_total_modified_tap_num_5min as u128));
     engine.cc.stack.push(int!(new_total_tap_num_5min as u128));
     engine.cc.stack.push(int!(new_total_tap_num as u128));
-    return Ok(());
+    Ok(())
 }
 
 pub(super) fn execute_calculate_miner_reward(engine: &mut Engine) -> Status {

@@ -181,7 +181,7 @@ struct RunArgs {
     /// Internal message dest dapp id
     #[clap(long, requires("cross_dapp"))]
     message_dest_dapp_id: Option<String>,
-    
+
     /// Decode out messages
     #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
     decode_out_messages: bool,

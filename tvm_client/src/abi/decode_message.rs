@@ -120,7 +120,8 @@ pub fn decode_message(
         let data_layout = match message.header() {
             tvm_block::CommonMsgInfo::ExtInMsgInfo(_) => Some(DataLayout::Input),
             tvm_block::CommonMsgInfo::ExtOutMsgInfo(_) => Some(DataLayout::Output),
-            tvm_block::CommonMsgInfo::IntMsgInfo(_) | tvm_block::CommonMsgInfo::CrossDappMessageInfo(_) => params.data_layout,
+            tvm_block::CommonMsgInfo::IntMsgInfo(_)
+            | tvm_block::CommonMsgInfo::CrossDappMessageInfo(_) => params.data_layout,
         };
         decode_body(
             abi,

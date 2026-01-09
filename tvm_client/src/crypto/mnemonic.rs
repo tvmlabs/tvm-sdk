@@ -34,10 +34,12 @@ use crate::error::ClientResult;
 
 #[derive(Copy, Clone, Debug, Deserialize_repr, Serialize_repr, Zeroize, PartialEq, ApiType)]
 #[repr(u8)]
+#[derive(Default)]
 pub enum MnemonicDictionary {
     /// TON compatible dictionary
     Ton = 0,
     /// English BIP-39 dictionary
+    #[default]
     English = 1,
     /// Chinese simplified BIP-39 dictionary
     ChineseSimplified = 2,
@@ -53,12 +55,6 @@ pub enum MnemonicDictionary {
     Korean = 7,
     /// Spanish BIP-39 dictionary
     Spanish = 8,
-}
-
-impl Default for MnemonicDictionary {
-    fn default() -> Self {
-        Self::English
-    }
 }
 
 impl TryFrom<u8> for MnemonicDictionary {

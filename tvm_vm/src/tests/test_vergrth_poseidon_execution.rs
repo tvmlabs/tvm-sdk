@@ -86,7 +86,7 @@ fn single_chcksgns(
     let first = binding.data();
     let binding = public_inputs_cell.clone();
     let second = binding.data();
-    let concatenated = [&first[..], &second[..]].concat();
+    let concatenated = [first, second].concat();
 
     let test_cell: Cell = pack_data_to_cell(&concatenated, &mut 0).unwrap();
     let signature = signing_key.sign(test_cell.data()).to_bytes().to_vec();
@@ -96,7 +96,7 @@ fn single_chcksgns(
     engine.cc.stack.push(StackItem::Slice(SliceData::load_cell(test_cell.clone()).unwrap()));
     engine.cc.stack.push(StackItem::Slice(SliceData::load_cell(signature.clone()).unwrap()));
     engine.cc.stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(
-        &signing_key.verifying_key().as_bytes().to_vec().clone(),
+        signing_key.verifying_key().as_bytes().to_vec().clone(),
     )));
 
     let start: Instant = Instant::now();
@@ -186,10 +186,10 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
     let mut average_chcksigns: u128 = 0;
 
     for i in 0..data.len() {
-        println!("");
+        println!();
         println!("====================== Iter@ is {i} =========================");
         println!("jwt_data: {:?}", data[i]);
-        let jwt_data: JwtData = serde_json::from_str(&data[i]).unwrap();
+        let jwt_data: JwtData = serde_json::from_str(data[i]).unwrap();
         println!("jwt_data: {:?}", jwt_data);
 
         let content: JWK = JWK {
@@ -259,7 +259,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
 
         let zk_login_inputs =
-            ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string()).unwrap();
+            ZkLoginInputs::from_json(&proof_and_jwt.to_string(), &zk_seed.to_string()).unwrap();
 
         let (iss, kid) =
             (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
@@ -297,12 +297,12 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         engine.cc.stack.push(StackItem::int(max_epoch));
         println!(
             "IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())) : {:?} ",
-            IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())
+            IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())
         );
         engine
             .cc
             .stack
-            .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+            .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
 
         let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
         println!("modulus_cell = {:?}", modulus_cell);
@@ -329,7 +329,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
         let start: Instant = Instant::now();
-        let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+        execute_poseidon_zk_login(&mut engine).unwrap();
         let poseidon_elapsed = start.elapsed().as_micros();
 
         let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
@@ -345,7 +345,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
 
         println!("poseidon_elapsed in microsecond: {:?}", poseidon_elapsed);
 
-        average_poseidon = average_poseidon + poseidon_elapsed;
+        average_poseidon += poseidon_elapsed;
 
         println!("====== Start VERGRTH16 ========");
         let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
@@ -363,7 +363,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
         let start: Instant = Instant::now();
-        let _ = execute_vergrth16(&mut engine).unwrap();
+        execute_vergrth16(&mut engine).unwrap();
         let vergrth16_elapsed = start.elapsed().as_micros();
 
         println!("vergrth16_elapsed in microsecond: {:?}", vergrth16_elapsed);
@@ -372,12 +372,12 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         println!("res: {:?}", res);
         assert!(*res == IntegerData::minus_one());
 
-        average_vergrth16 = average_vergrth16 + vergrth16_elapsed;
+        average_vergrth16 += vergrth16_elapsed;
 
         let time_for_chcksgns =
             single_chcksgns(&mut engine, &eph_pubkey, &zk_login_inputs, &all_jwk, max_epoch);
         println!("time_for_chcksgns is {time_for_chcksgns} micro seconds");
-        average_chcksigns = average_chcksigns + time_for_chcksgns;
+        average_chcksigns += time_for_chcksgns;
     }
 
     println!("===================================");
@@ -434,10 +434,10 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
     let mut average_vergrth16: u128 = 0;
 
     for i in 0..data.len() {
-        println!("");
+        println!();
         println!("====================== Iter@ is {i} =========================");
         println!("jwt_data: {:?}", data[i]);
-        let jwt_data: JwtDataShort = serde_json::from_str(&data[i]).unwrap();
+        let jwt_data: JwtDataShort = serde_json::from_str(data[i]).unwrap();
         println!("jwt_data: {:?}", jwt_data);
 
         let content: JWK = JWK {
@@ -466,7 +466,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
         let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
 
         let zk_login_inputs =
-            ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string()).unwrap();
+            ZkLoginInputs::from_json(&proof_and_jwt.to_string(), &zk_seed.to_string()).unwrap();
 
         let (iss, kid) =
             (zk_login_inputs.get_iss().to_string(), zk_login_inputs.get_kid().to_string());
@@ -503,7 +503,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
         engine
             .cc
             .stack
-            .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+            .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
 
         let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
         println!("modulus_cell = {:?}", modulus_cell);
@@ -526,7 +526,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
         engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
         let start: Instant = Instant::now();
-        let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+        execute_poseidon_zk_login(&mut engine).unwrap();
         let poseidon_elapsed = start.elapsed().as_micros();
 
         let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
@@ -542,7 +542,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
 
         println!("poseidon_elapsed in microsecond: {:?}", poseidon_elapsed);
 
-        average_poseidon = average_poseidon + poseidon_elapsed;
+        average_poseidon += poseidon_elapsed;
 
         println!("====== Start VERGRTH16 ========");
         let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
@@ -560,7 +560,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
         engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
         let start: Instant = Instant::now();
-        let _ = execute_vergrth16(&mut engine).unwrap();
+        execute_vergrth16(&mut engine).unwrap();
         let vergrth16_elapsed = start.elapsed().as_micros();
 
         println!("vergrth16_elapsed in microsecond: {:?}", vergrth16_elapsed);
@@ -569,7 +569,7 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
         println!("res: {:?}", res);
         assert!(*res == IntegerData::minus_one());
 
-        average_vergrth16 = average_vergrth16 + vergrth16_elapsed;
+        average_vergrth16 += vergrth16_elapsed;
     }
 
     println!("===================================");
@@ -610,7 +610,7 @@ fn test_proof_stuff() {
     ];
 
     for i in 0..data.len() {
-        let jwt_data: JwtData = serde_json::from_str(&data[i]).unwrap();
+        let jwt_data: JwtData = serde_json::from_str(data[i]).unwrap();
 
         let user_pass_salt = jwt_data.user_pass_to_int_format.as_str();
         println!("user_pass_salt is {user_pass_salt}");
@@ -636,7 +636,7 @@ fn test_proof_stuff() {
         let proof_and_jwt = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
 
         let zk_login_inputs =
-            ZkLoginInputs::from_json(&*proof_and_jwt.to_string(), &*zk_seed.to_string()).unwrap();
+            ZkLoginInputs::from_json(&proof_and_jwt.to_string(), &zk_seed.to_string()).unwrap();
 
         let proof = &zk_login_inputs.get_proof().as_arkworks().unwrap();
 
@@ -652,7 +652,7 @@ fn test_proof_stuff() {
         let json_string = serde_json::to_string(&jwt_data.zk_proofs).unwrap();
         println!("json_string ={:?}", json_string); // jwt_data.zk_proofs);
 
-        let data: Value = serde_json::from_str(&*json_string).unwrap();
+        let data: Value = serde_json::from_str(&json_string).unwrap();
         println!("data = {:?}", data);
 
         let a_x = data["proofPoints"]["a"][0].as_str().unwrap();
@@ -730,7 +730,7 @@ fn test_poseidon() {
     \"8637596258221986824049981569842218428861929142818091935707054543971817804456\",\"1\"]},\
     \"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\
     \"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
-    let len = proof_and_jwt.bytes().len();
+    let len = proof_and_jwt.len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
@@ -742,7 +742,7 @@ fn test_poseidon() {
     let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
     let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
 
-    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let zk_login_inputs = ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
         kty: "RSA".to_string(),
         e: "AQAB".to_string(),
@@ -783,17 +783,17 @@ fn test_poseidon() {
     let index_mod_4 = 1;
     stack.push(StackItem::int(index_mod_4));
     stack.push(StackItem::int(max_epoch));
-    stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+    stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
 
     let modulus_cell = pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
     println!("modulus_cell = {:?}", modulus_cell);
     stack.push(StackItem::cell(modulus_cell.clone()));
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64, &mut 0).unwrap();
     println!("iss_base_64_cell = {:?}", iss_base_64_cell);
     stack.push(StackItem::cell(iss_base_64_cell.clone()));
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
     println!("header_base_64_cell = {:?}", header_base_64_cell);
     stack.push(StackItem::cell(header_base_64_cell.clone()));
 
@@ -861,7 +861,7 @@ fn test_vergrth16() {
     \"8637596258221986824049981569842218428861929142818091935707054543971817804456\",\"1\"]},\
     \"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\
     \"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ\"}";
-    let len = proof_and_jwt.bytes().len();
+    let len = proof_and_jwt.len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
@@ -870,7 +870,7 @@ fn test_vergrth16() {
 
     println!("iss_and_header_base64details: {}", iss_and_header_base64details);
 
-    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let zk_login_inputs = ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
         kty: "RSA".to_string(),
         e: "AQAB".to_string(),
@@ -968,7 +968,7 @@ async fn test_test_issuer_with_real_prove_service() {
             &client,
             &nonce,
             &OIDCProvider::TestIssuer.get_config().iss,
-            &sub,
+            sub,
         )
         .await
         .unwrap()
@@ -983,7 +983,7 @@ async fn test_test_issuer_with_real_prove_service() {
         let url = &env::var("URL").unwrap_or_else(|_| ACKI_NACKI_PROVER_PROD_SERVER_URL.to_owned());
         println!("using URL: {:?}", url);
 
-        let reader = get_proof(&token, max_epoch, &jwt_randomness, &kp_encoded, &user_salt, url)
+        let reader = get_proof(&token, max_epoch, jwt_randomness, &kp_encoded, user_salt, url)
             .await
             .unwrap();
 
@@ -991,7 +991,7 @@ async fn test_test_issuer_with_real_prove_service() {
         println!("reader.header_base64 : {:?}", reader.header_base64);
         println!("reader.iss_base64_details : {:?}", reader.iss_base64_details);
 
-        let address_seed = gen_address_seed(&user_salt, "sub", &sub, &aud).unwrap();
+        let address_seed = gen_address_seed(user_salt, "sub", &sub, &aud).unwrap();
         println!("address_seed: {:?}", address_seed);
         let zk_login_inputs =
             ZkLoginInputs::from_reader(reader, &address_seed.to_string()).unwrap();

@@ -1295,11 +1295,9 @@ impl wasi::clocks::monotonic_clock::Host for MyState {
 impl wasi::filesystem::types::Host for MyState {
     fn filesystem_error_code(
         &mut self,
-        err: wasmtime::component::Resource<wasi::io::streams::Error>,
+        _err: wasmtime::component::Resource<wasi::io::streams::Error>,
     ) -> Option<wasi::filesystem::types::ErrorCode> {
-        match err {
-            _ => Some(wasi::filesystem::types::ErrorCode::Unsupported),
-        }
+        Some(wasi::filesystem::types::ErrorCode::Unsupported)
     }
 }
 
@@ -1999,9 +1997,7 @@ impl wasi::io::poll::HostPollable for MyState {
     #[doc = " "]
     #[doc = " This function is equivalent to calling `poll.poll` on a list"]
     #[doc = " containing only this pollable."]
-    fn block(&mut self, _self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) -> () {
-        ()
-    }
+    fn block(&mut self, _self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) {}
 
     fn drop(
         &mut self,
@@ -2037,14 +2033,13 @@ impl wasi::io::poll::Host for MyState {
             wasmtime::component::Resource<wasi::io::poll::Pollable>,
         >,
     ) -> wasmtime::component::__internal::Vec<u32> {
-        let p = (0..{
+        (0..{
             match in_.len().try_into() {
                 Ok(l) => l,
                 Err(_e) => u32::MAX,
             }
         })
-            .collect();
-        p
+            .collect()
     }
 }
 
@@ -2277,11 +2272,11 @@ pub(crate) fn run_wasm_core(
         None => &engine.create_single_use_wasm_component(wasm_executable)?,
     };
 
-    engine.print_wasm_component_exports_and_imports(&wasm_component)?;
+    engine.print_wasm_component_exports_and_imports(wasm_component)?;
 
     // Add wasi-cli libs to linker
     let mut wasm_linker = wasmtime::component::Linker::<MyState>::new(engine.get_wasm_engine()?);
-    let mut wasm_linker = wasm_linker.allow_shadowing(true);
+    let wasm_linker = wasm_linker.allow_shadowing(true);
     // match wasm_linker.define_unknown_imports_as_traps(&wasm_component) {
     //     Ok(_) => {}
     //     Err(e) => {
@@ -2297,7 +2292,7 @@ pub(crate) fn run_wasm_core(
 
     // This is a custom linker method, adding only sync, non-io wasi dependencies.
     // If more deps are needed, add them in there!
-    match add_to_linker_gosh::<MyState>(&mut wasm_linker) {
+    match add_to_linker_gosh::<MyState>(wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(
             ExceptionCode::WasmLinkerFail,
@@ -2309,7 +2304,7 @@ pub(crate) fn run_wasm_core(
 
     let f: fn(&mut MyState) -> &mut MyState = |s| s;
     // let f: fn(&mut MyState) -> &mut WasiImpl<IoImpl<&mut MyState>> = |t| t;
-    match Localworld::add_to_linker::<MyState, MyLibrary>(&mut wasm_linker, f) {
+    match Localworld::add_to_linker::<MyState, MyLibrary>(wasm_linker, f) {
         Ok(_) => {}
         Err(e) => err!(ExceptionCode::WasmLinkerFail, "Failed to link IO Plugs {:?}", e)?,
     };
@@ -2322,7 +2317,7 @@ pub(crate) fn run_wasm_core(
     // linker {:?}", e)?, };
 
     // Instantiate WASM component. Will error if missing some wasm deps from linker
-    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, &wasm_component) {
+    let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, wasm_component) {
         Ok(instance) => instance,
         Err(e) => {
             err!(ExceptionCode::WasmInstantiateFail, "Failed to instantiate WASM instance {:?}", e)?
@@ -2334,12 +2329,12 @@ pub(crate) fn run_wasm_core(
     for export in wasm_component.component_type().exports(engine.get_wasm_engine()?) {
         log::debug!("{:?}", export.0);
     }
-    let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, &wasm_instance_name);
+    let instance_index = wasm_instance.get_export_index(&mut wasm_store, None, wasm_instance_name);
     log::debug!("Instance Index {:?}", instance_index);
     let func_index = match wasm_instance.get_export_index(
         &mut wasm_store,
         instance_index.as_ref(),
-        &wasm_func_name,
+        wasm_func_name,
     ) {
         Some(index) => index,
         None => err!(
