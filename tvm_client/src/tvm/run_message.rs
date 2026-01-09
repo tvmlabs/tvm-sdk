@@ -33,7 +33,7 @@ use super::types::ExecutionOptions;
 use super::types::ResolvedExecutionOptions;
 use crate::abi::Abi;
 use crate::boc::BocCacheType;
-use crate::boc::internal::deserialize_cell_from_boc;
+use crate::boc::internal::{deserialize_cell_from_boc, deserialize_message_from_boc};
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::boc::internal::deserialize_object_from_cell;
 use crate::boc::internal::serialize_cell_to_boc;
@@ -268,7 +268,7 @@ pub async fn run_executor_internal(
     show_tips_on_error: bool,
 ) -> ClientResult<ResultOfRunExecutor> {
     let message =
-        deserialize_object_from_boc::<Message>(&context, &params.message, "message")?.object;
+        deserialize_message_from_boc(&context, &params.message, "message")?.object;
     let msg_address = message.dst_ref().ok_or_else(Error::invalid_message_type)?.clone();
     let (account, _) = params.account.get_account(&context, msg_address.clone())?;
     let options =
