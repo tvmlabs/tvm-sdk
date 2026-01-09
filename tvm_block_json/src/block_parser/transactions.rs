@@ -283,7 +283,9 @@ fn get_message_partitions(
 fn msg_src_slice(msg: &Message) -> Result<Option<SliceData>> {
     let src = match msg.header() {
         CommonMsgInfo::ExtInMsgInfo(header) => ext_addr_slice(&header.src),
-        CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::IntMsgInfo(_) => {
+        CommonMsgInfo::ExtOutMsgInfo(_)
+        | CommonMsgInfo::IntMsgInfo(_)
+        | CommonMsgInfo::CrossDappMessageInfo(_) => {
             Some(msg.src_ref().map(|addr| addr.address()).ok_or_else(|| {
                 BlockParsingError::InvalidData("Message has no source address".to_owned())
             })?)
@@ -297,6 +299,7 @@ fn msg_dst_slice(msg: &Message) -> Option<SliceData> {
         CommonMsgInfo::ExtInMsgInfo(header) => Some(header.dst.address()),
         CommonMsgInfo::ExtOutMsgInfo(header) => ext_addr_slice(&header.dst),
         CommonMsgInfo::IntMsgInfo(header) => Some(header.dst.address()),
+        CommonMsgInfo::CrossDappMessageInfo(header) => Some(header.dst.address()),
     }
 }
 

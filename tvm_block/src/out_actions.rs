@@ -23,6 +23,7 @@ use tvm_types::fail;
 
 use crate::Deserializable;
 use crate::ExtraCurrencyCollection;
+use crate::MessageOld;
 use crate::Serializable;
 use crate::error::BlockError;
 use crate::messages::Message;
@@ -321,7 +322,12 @@ impl Deserializable for OutAction {
         match tag {
             ACTION_SEND_MSG => {
                 let mode = cell.get_next_byte()?;
-                let msg = Message::construct_from_reference(cell)?;
+                let mut cell_clone = cell.clone();
+                let msg = if let Ok(msg) = Message::construct_from_reference(cell) {
+                    msg
+                } else {
+                    MessageOld::construct_from_reference(&mut cell_clone)?.into()
+                };
                 *self = OutAction::new_send(mode, msg);
             }
             ACTION_SET_CODE => *self = OutAction::new_set(cell.checked_drain_reference()?),

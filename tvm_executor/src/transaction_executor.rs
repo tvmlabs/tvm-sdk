@@ -215,7 +215,7 @@ pub trait TransactionExecutor {
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
         let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
+            Some(AccountState::AccountUninit) => false,
             None => false,
             _ => true,
         };
@@ -715,7 +715,7 @@ pub trait TransactionExecutor {
         need_to_burn: Grams,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
-        let mut need_to_reserve = need_to_burn.as_u64_quiet().clone();
+        let mut need_to_reserve = need_to_burn.as_u64_quiet();
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
@@ -935,7 +935,7 @@ pub trait TransactionExecutor {
                 }
                 OutAction::MintShellToken { value } => {
                     if available_credit != INFINITY_CREDIT
-                        && value as i128 + minted_shell.clone() as i128 > available_credit
+                        && value as i128 + *minted_shell > available_credit
                     {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {
@@ -951,14 +951,14 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellQToken { mut value } => {
-                    if available_credit != INFINITY_CREDIT {
-                        if value as i128 + minted_shell.clone() as i128 > available_credit {
-                            if minted_shell.clone() as i128 >= available_credit {
-                                value = 0;
-                            } else {
-                                let new_value = available_credit - *minted_shell;
-                                value = new_value.try_into()?;
-                            }
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + *minted_shell > available_credit
+                    {
+                        if *minted_shell >= available_credit {
+                            value = 0;
+                        } else {
+                            let new_value = available_credit - *minted_shell;
+                            value = new_value.try_into()?;
                         }
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
@@ -1048,10 +1048,8 @@ pub trait TransactionExecutor {
                 if process_err_code(err_code, i, &mut phase)? {
                     return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
                 }
-            } else {
-                if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
-                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
-                }
+            } else if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
 
@@ -1309,6 +1307,9 @@ fn compute_new_state(
             if let Some(state_init) = in_msg.state_init() {
                 match in_msg.body() {
                     Some(mut data) => {
+                        if in_msg.is_cross_dapp() {
+                            return Ok(Some(ComputeSkipReason::BadState));
+                        }
                         if in_msg.is_internal() {
                             if let Ok(function_id) = data.get_next_u32() {
                                 log::trace!(target: "executor", "{} function_id", function_id);
@@ -1327,11 +1328,9 @@ fn compute_new_state(
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
                             };
-                            if sign_bit {
-                                if data.get_next_bits(512).is_err() {
-                                    log::error!(target: "executor", "Failed to get 512-bit signature from external message body");
-                                    return Ok(Some(ComputeSkipReason::BadState));
-                                }
+                            if sign_bit && data.get_next_bits(512).is_err() {
+                                log::error!(target: "executor", "Failed to get 512-bit signature from external message body");
+                                return Ok(Some(ComputeSkipReason::BadState));
                             }
                             let pubkey_bit = match data.get_next_bit() {
                                 Ok(bit) => bit,
@@ -1340,11 +1339,9 @@ fn compute_new_state(
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
                             };
-                            if pubkey_bit {
-                                if data.get_next_bits(256).is_err() {
-                                    log::error!(target: "executor", "Failed to get 256-bit public key from external message body");
-                                    return Ok(Some(ComputeSkipReason::BadState));
-                                }
+                            if pubkey_bit && data.get_next_bits(256).is_err() {
+                                log::error!(target: "executor", "Failed to get 256-bit public key from external message body");
+                                return Ok(Some(ComputeSkipReason::BadState));
                             }
                             if data.get_next_u64().is_err() {
                                 log::error!(target: "executor", "Failed to get timestamp (u64) from external message body");
@@ -1639,7 +1636,7 @@ fn outmsg_action_handler(
 
     if let Some(int_header) = msg.int_header_mut() {
         let mut fwd_prices = fwd_prices_basic.clone();
-        if let None = int_header.dest_dapp_id() {
+        if int_header.dest_dapp_id().is_none() {
             fwd_prices *= 2;
         }
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
@@ -1738,6 +1735,100 @@ fn outmsg_action_handler(
         fwd_mine_fee = compute_fwd_fee;
         total_fwd_fees = compute_fwd_fee;
         result_value = CurrencyCollection::from_grams(compute_fwd_fee);
+    } else if let Some(int_header) = msg.cross_dapp_header_mut() {
+        let fwd_prices = fwd_prices_basic.clone();
+        match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
+            Ok(new_dst) => int_header.dst = new_dst,
+            Err(type_error) => {
+                if type_error == IncorrectCheckRewrite::Anycast {
+                    log::warn!(target: "executor", "Incorrect destination anycast address {}", int_header.dst);
+                    return Err(skip.map(|_| RESULT_CODE_ANYCAST).unwrap_or_default());
+                } else {
+                    log::warn!(target: "executor", "Incorrect destination address {}", int_header.dst);
+                    return Err(skip
+                        .map(|_| RESULT_CODE_INCORRECT_DST_ADDRESS)
+                        .unwrap_or_default());
+                }
+            }
+        }
+
+        int_header.bounced = false;
+        result_value = int_header.value.clone();
+
+        if cfg!(feature = "ihr_disabled") {
+            int_header.ihr_disabled = true;
+        }
+        if !int_header.ihr_disabled {
+            let compute_ihr_fee = fwd_prices
+                .ihr_fee_checked(&compute_fwd_fee)
+                .map_err(|_| RESULT_CODE_UNSUPPORTED)?;
+            if int_header.ihr_fee < compute_ihr_fee {
+                int_header.ihr_fee = compute_ihr_fee
+            }
+        } else {
+            int_header.ihr_fee = Grams::zero();
+        }
+        let fwd_fee = *std::cmp::max(&int_header.fwd_fee, &compute_fwd_fee);
+        fwd_mine_fee =
+            fwd_prices.mine_fee_checked(&fwd_fee).map_err(|_| RESULT_CODE_UNSUPPORTED)?;
+        total_fwd_fees = fwd_fee + int_header.ihr_fee;
+
+        let fwd_remain_fee = fwd_fee - fwd_mine_fee;
+
+        if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
+            int_header.set_exchange(true);
+        }
+
+        if (mode & SENDMSG_ALL_BALANCE) != 0 {
+            // send all remaining account balance
+            result_value = acc_balance.clone();
+            //    if need_to_reserve != 0 {
+            // match result_value.grams.sub(&Grams::from(need_to_burn)) {
+            // Ok(true) => (),
+            // Ok(false) => {
+            // result_value.grams = Grams::zero();
+            // return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+            // }
+            // Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
+            // }
+            // }
+            int_header.value = result_value.clone();
+
+            mode &= !SENDMSG_PAY_FEE_SEPARATELY;
+        }
+        /*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+                    // send all remainig balance of inbound message
+                    result_value.add(msg_balance).ok();
+                    if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                        if &result_value.grams < compute_phase_fees {
+                            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                        }
+                        result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                            log::error!(target: "executor", "cannot subtract msg balance : {}", err);
+                            RESULT_CODE_ACTIONLIST_INVALID
+                        })?;
+                    }
+                    int_header.value = result_value.clone();
+                }
+        */
+        if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
+            // we must pay the fees, sum them with msg value
+            result_value.grams += total_fwd_fees;
+        } else if int_header.value.grams < total_fwd_fees {
+            // msg value is too small, reciever cannot pay the fees
+            log::warn!(
+                target: "executor",
+                "msg balance {} is too small, cannot pay fwd+ihr fees: {}",
+                int_header.value.grams, total_fwd_fees
+            );
+            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+        } else {
+            // reciever will pay the fees
+            int_header.value.grams -= total_fwd_fees;
+        }
+
+        // set evaluated fees and value back to msg
+        int_header.fwd_fee = fwd_remain_fee;
     } else {
         return Err(-1);
     }

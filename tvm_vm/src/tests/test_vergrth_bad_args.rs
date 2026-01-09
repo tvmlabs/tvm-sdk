@@ -54,7 +54,7 @@ pub fn do_initial_work() -> TestPrecomputedData {
     println!("zk_seed = {:?}", zk_seed);
 
     let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"11653644709263251558401833339895967150038453157931503547786049700851019971914\",\"19645115655849386411721408046258151875851981532797037592519388256606989838291\",\"1\"],\"b\":[[\"10337823157100207874978547418909107794705315336434612201980868079626861490142\",\"7608493619307023258619280401565914642046036477885384923318894672159944771521\"],[\"10758338821706782118264705480027910748070506589960188719799243416958368105493\",\"6776868143492437139790442766508489213494523558051657976873009128727632896413\"],[\"1\",\"0\"]],\"c\":[\"15216679157139253008581452087709521187862970390016716857578619200852570992090\",\"2736378039742229911693987843238912925507982255227299601017775788476938986405\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImM4YWI3MTUzMDk3MmJiYTIwYjQ5Zjc4YTA5Yzk4NTJjNDNmZjkxMTgiLCJ0eXAiOiJKV1QifQ\"}";
-    let len = proof_and_jwt.bytes().len();
+    let len = proof_and_jwt.len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
@@ -63,7 +63,7 @@ pub fn do_initial_work() -> TestPrecomputedData {
 
     println!("iss_and_header_base64details: {}", iss_and_header_base64details);
 
-    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let zk_login_inputs = ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
         kty: "RSA".to_string(),
         e: "AQAB".to_string(),

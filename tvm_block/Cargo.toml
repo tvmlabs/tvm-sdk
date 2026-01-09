@@ -23,6 +23,7 @@ sha2.workspace = true
 thiserror.workspace = true
 #
 tvm_types.workspace = true
+typed-builder.workspace = true
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"

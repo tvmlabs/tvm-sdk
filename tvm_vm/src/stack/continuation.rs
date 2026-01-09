@@ -37,11 +37,12 @@ use crate::stack::savelist::SaveList;
 use crate::types::Exception;
 use crate::types::ResultOpt;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub enum ContinuationType {
     AgainLoopBody(SliceData),
     TryCatch,
     CatchRevert(u32),
+    #[default]
     Ordinary,
     PushInt(i32),
     Quit(i32),
@@ -49,12 +50,6 @@ pub enum ContinuationType {
     UntilLoopCondition(SliceData),
     WhileLoopCondition(SliceData, SliceData),
     ExcQuit,
-}
-
-impl Default for ContinuationType {
-    fn default() -> Self {
-        Self::Ordinary
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -145,7 +140,7 @@ impl ContinuationData {
     }
 
     pub fn withdraw(&mut self) -> Self {
-        mem::replace(self, ContinuationData::new_empty())
+        std::mem::take(self)
     }
 
     pub fn drain_reference(&mut self) -> Result<Cell> {
@@ -234,10 +229,7 @@ impl ContinuationData {
     ) -> Result<Self> {
         let mut list = Vec::new();
         ContinuationData::deserialize_internal(&mut list, slice, gas_consumer)?;
-        Ok(std::mem::replace(
-            items_deserialize(list, gas_consumer)?.remove(0).as_continuation_mut()?,
-            ContinuationData::new_empty(),
-        ))
+        Ok(std::mem::take(items_deserialize(list, gas_consumer)?.remove(0).as_continuation_mut()?))
     }
 
     pub(crate) fn deserialize_internal(

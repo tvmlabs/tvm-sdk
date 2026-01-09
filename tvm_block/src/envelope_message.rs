@@ -357,7 +357,7 @@ pub struct MsgEnvelope {
 impl MsgEnvelope {
     /// Create Envelope with message and remainig_fee
     pub fn with_message_and_fee(msg: &Message, fwd_fee_remaining: Grams) -> Result<Self> {
-        if !msg.is_internal() {
+        if !(msg.is_internal() || msg.is_cross_dapp()) {
             fail!("MsgEnvelope can be made only for internal messages")
         }
         Ok(Self::with_routing(

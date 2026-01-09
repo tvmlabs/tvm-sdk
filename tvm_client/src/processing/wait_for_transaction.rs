@@ -3,13 +3,12 @@ use std::sync::Arc;
 use futures::FutureExt;
 use futures::StreamExt;
 use tokio::sync::mpsc;
-use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 
 use super::remp::RempStatus;
 use super::remp::RempStatusData;
 use crate::abi::Abi;
-use crate::boc::internal::deserialize_object_from_boc;
+use crate::boc::internal::deserialize_message_from_boc;
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientResult;
@@ -89,7 +88,7 @@ async fn wait_by_remp<F: futures::Future<Output = ()> + Send>(
     futures::pin_mut!(fallback_fut);
 
     // Prepare to wait
-    let message = deserialize_object_from_boc::<Message>(&context, &params.message, "message")?;
+    let message = deserialize_message_from_boc(&context, &params.message, "message")?;
     let message_id = message.cell.repr_hash().as_hex_string();
     let message_dst = message.object.dst().ok_or(Error::message_has_not_destination_address())?;
 
@@ -307,7 +306,7 @@ async fn wait_by_block_walking<F: futures::Future<Output = ()> + Send>(
     let net = context.get_server_link()?;
 
     // Prepare to wait
-    let message = deserialize_object_from_boc::<Message>(&context, &params.message, "message")?;
+    let message = deserialize_message_from_boc(&context, &params.message, "message")?;
 
     let message_id = message.cell.repr_hash().as_hex_string();
     let address =
