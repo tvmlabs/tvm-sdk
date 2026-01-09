@@ -13,8 +13,7 @@ use super::types::extend_data_to_sign;
 use crate::abi::Error;
 use crate::abi::FunctionHeader;
 use crate::abi::types::Abi;
-use crate::boc::internal::deserialize_cell_from_boc;
-use crate::boc::internal::deserialize_object_from_boc;
+use crate::boc::internal::{deserialize_cell_from_boc, deserialize_message_from_boc};
 use crate::client::ClientContext;
 use crate::encoding::decode_abi_number;
 use crate::encoding::slice_from_cell;
@@ -189,7 +188,7 @@ fn prepare_decode(
     params: &ParamsOfDecodeMessage,
 ) -> ClientResult<(AbiContract, tvm_block::Message)> {
     let abi = params.abi.abi()?;
-    let message = deserialize_object_from_boc(context, &params.message, "message")
+    let message = deserialize_message_from_boc(context, &params.message, "message")
         .map_err(Error::invalid_message_for_decode)?;
     Ok((abi, message.object))
 }
@@ -370,7 +369,7 @@ pub async fn get_signature_data(
 ) -> ClientResult<ResultOfGetSignatureData> {
     let abi = params.abi.abi()?;
     let message: tvm_block::Message =
-        deserialize_object_from_boc(&context, &params.message, "message")?.object;
+        deserialize_message_from_boc(&context, &params.message, "message")?.object;
     if let Some(body) = message.body() {
         let address = message.dst().ok_or_else(|| {
             Error::invalid_message_for_decode("Message has no destination address")

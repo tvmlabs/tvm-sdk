@@ -12,7 +12,7 @@
 use serde_json::Value;
 use tvm_block::Deserializable;
 
-use super::internal::deserialize_cell_from_boc;
+use super::internal::{deserialize_cell_from_boc, deserialize_message_from_boc};
 use super::internal::deserialize_object_from_cell;
 use crate::boc::Error;
 use crate::boc::internal::deserialize_object_from_boc;
@@ -50,7 +50,7 @@ pub fn parse_message(
     params: ParamsOfParse,
 ) -> ClientResult<ResultOfParse> {
     let object =
-        deserialize_object_from_boc::<tvm_block::Message>(&context, &params.boc, "message")?;
+        deserialize_message_from_boc(&context, &params.boc, "message")?;
 
     let set = tvm_block_json::MessageSerializationSet {
         block_id: None,
