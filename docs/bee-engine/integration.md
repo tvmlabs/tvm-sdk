@@ -18,7 +18,7 @@ This file contains the client mining engine and must be accessible to your appli
 
 For web applications (React / Vite):
 
-1. Download [`bee_engine_miner_bg.wasm`](https://binaries.gosh.sh/bee_engine/bee_engine.zip) into the `public/` folder
+1. Download the archive [bee\_engine.zip](https://binaries.gosh.sh/bee_engine/bee_engine.zip) and extract it into the folder. The archive contains the `bee_engine_miner_bg.wasm` module and its bindings.
 2. Ensure the file is accessible via URL, for example: `/bee_engine_miner_bg.wasm`
 
 #### Integration Example (React + Vite)
@@ -32,7 +32,7 @@ import viteLogo from "/vite.svg";
 import reactLogo from "./assets/react.svg";
 import "./App.css";
 
-import { init, Miner } from "path/to/bee-engine/miner";
+import { init, Miner } from "/path/to/bee_engine/folder";
 import { useState } from "react";
 
 async function initMiner() {
