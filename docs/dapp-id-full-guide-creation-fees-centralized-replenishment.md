@@ -18,7 +18,7 @@ In this guide, we will use the test network at [`shellnet.ackinacki.org`](https:
 We need to specify the blockchain endpoint for deployment:
 
 ```
-tvm-cli config -g --url shellnet.ackinacki.org/graphql
+tvm-cli config -g --url shellnet.ackinacki.org
 ```
 
 ## Create your first Dapp ID
