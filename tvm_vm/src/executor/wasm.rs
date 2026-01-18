@@ -2161,7 +2161,7 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     Ok(())
 }
 
-#[cfg(feature="wasmtime")]
+#[cfg(feature = "wasmtime")]
 pub(crate) fn check_and_get_wasm_by_hash(
     engine: &mut Engine,
     exec_index: usize,
