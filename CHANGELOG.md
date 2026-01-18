@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.8] - 2025-12-10
+## Added/Changed
+- Add and modify reward instruction for mvrewards and mining
+
+## Fixed
+- Fix deploy between dapp_id
+
 ## [2.24.7] - 2025-12-10
 ## New
 - Client will choose https protocol for BK rest API if client's config endpoint uses https

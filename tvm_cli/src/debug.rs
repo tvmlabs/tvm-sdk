@@ -1245,7 +1245,6 @@ pub async fn execute_debug(
         trace_callback: Some(generate_callback(matches, tonos_config)),
         ..ExecuteParams::default()
     };
-
     let tr = executor.execute_with_libs_and_params(message, account_root, params).map_err(|e| {
         let exit_code = match e.downcast_ref() {
             Some(tvm_executor::ExecutorError::NoAcceptError(exit_code, _)) => *exit_code,
