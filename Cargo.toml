@@ -111,9 +111,6 @@ wasmtime-wasi = "36.0.2"
 wasmtime-wasi-io = "36.0.2"
 zstd = "0.13.0"
 
-halo2-base = { git = "https://github.com/scroll-tech/halo2-lib", branch = "develop", default-features=false, features=["halo2-pse","display"] }
-
-gosh_dark_dex_halo2_circuit = { git = 'https://github.com/gosh-sh/gosh_dark_dex_halo2_circuit.git', branch="poseidon_instead_of_ecc"}
 
 #
 tvm_abi = { path = "./tvm_abi" }
@@ -133,6 +130,8 @@ tvm_vm = { path = "./tvm_vm" }
 
 [workspace.dependencies.tokio-tungstenite]
 version = "0.26.2"
+
+
 
 [patch.crates-io]
 
