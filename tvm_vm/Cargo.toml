@@ -65,6 +65,13 @@ ark-crypto-primitives = { version = "0.4.0", features = ["r1cs", "prf"] }
 ark-r1cs-std = "0.4.0"
 ark-std = "0.4.0"
 
+halo2-ecc = { git = "https://github.com/scroll-tech/halo2-lib", branch = "develop", default-features=false, features=["halo2-pse","display"] }
+
+halo2_proofs = { git = "https://github.com/scroll-tech/halo2.git", branch = "v1.1" }
+halo2-base = { git = "https://github.com/scroll-tech/halo2-lib", branch = "develop", default-features=false, features=["halo2-pse","display"] }
+gosh_dark_dex_halo2_circuit = { git = 'https://github.com/gosh-sh/gosh_dark_dex_halo2_circuit.git', branch="poseidon_instead_of_ecc"}
+
+
 fastcrypto = "0.1.8"
 neptune = { version = "13.0.0", default-features = false }
 
@@ -81,6 +88,17 @@ tracing = "0.1.41"
 ff = { version = "0.13.0", features = ["derive"] }
 
 rand_chacha = "0.2.2"
+
+
+[patch.crates-io]
+
+halo2curves = { git = "https://github.com/scroll-tech/halo2curves", branch = "v0.1.0" }
+
+[patch."https://github.com/privacy-scaling-explorations/halo2.git"]
+halo2_proofs = { git = "https://github.com/scroll-tech/halo2.git", branch = "v1.1" }
+
+[patch."https://github.com/privacy-scaling-explorations/bls12_381"]
+bls12_381 = { git = "https://github.com/scroll-tech/bls12_381", branch = "feat/impl_scalar_field" }
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -107,3 +125,4 @@ name = "benchmarks"
 
 [lib]
 bench = false
+
