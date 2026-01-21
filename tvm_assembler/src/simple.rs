@@ -860,7 +860,7 @@ impl Engine {
         CALCMBK                              => 0xC7, 0x46
         CALCMINERTAPCOEF                     => 0xC7, 0x47
         CALCMINERREWARD                      => 0xC7, 0x48
-        ZK_HALO2_VERIFY                      => 0xC7, 0x49
+        ZKHALO2VERIFY                      => 0xC7, 0x49
     }
 
     fn add_commands<'a>(
