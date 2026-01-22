@@ -25,10 +25,10 @@ rand.workspace = true
 serde_derive.workspace = true
 similar = { features = ["bytes"], optional = true, workspace = true }
 thiserror.workspace = true
-wasmtime.workspace = true
-wasmtime-wasi.workspace = true
-wasmtime-wasi-io.workspace = true
-zstd = { default-features = false, optional = true, workspace = true }
+wasmtime = { workspace = true, optional = true }
+wasmtime-wasi = { workspace = true, optional = true }
+wasmtime-wasi-io = { workspace = true, optional = true }
+zstd = { optional = true, workspace = true }
 
 tokio.workspace = true
 tvm_block.workspace = true
@@ -82,6 +82,7 @@ ff = { version = "0.13.0", features = ["derive"] }
 
 rand_chacha = "0.2.2"
 
+
 [dev-dependencies]
 criterion = "0.5.1"
 libloading = "0.8.1"
@@ -89,16 +90,17 @@ log4rs = "1.2.0"
 pprof = { features = ["criterion", "flamegraph"], version = "0.13.0" }
 pretty_assertions = "1.4.0"
 
-
 [features]
 default = ["gosh"]
 fift_check = []
+wasmtime = ["wasmtime/std", "wasmtime-wasi", "wasmtime-wasi-io"]
 gosh = ["tvm_block/gosh", "diffy", "similar", "zstd"]
 log_file = []
 signature_no_check = []
 signature_with_id = ["tvm_block/signature_with_id"]
 verbose = []
 ci_run = []
+wasm_web = []                                                    # browser compatible wasm
 wasm_external = []
 
 [[bench]]

@@ -30,7 +30,9 @@ use crate::executor::engine::Engine;
 use crate::executor::math::DivMode;
 use crate::executor::math::execute_xor;
 use crate::executor::serialize_currency_collection;
+#[cfg(feature = "wasmtime")]
 use crate::executor::token::execute_run_wasm;
+#[cfg(feature = "wasmtime")]
 use crate::executor::token::execute_run_wasm_concat_multiarg;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
@@ -438,6 +440,7 @@ fn test_execution_timeout() {
     assert!(matches!(exc.exception_code(), Some(ExceptionCode::ExecutionTimeout)));
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 #[cfg(feature = "wasm_external")]
 fn test_run_wasm_basic_add() {
@@ -515,8 +518,9 @@ fn test_run_wasm_basic_add() {
     // );
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
-#[cfg(not(feature = "wasm_external"))]
+#[cfg(feature = "wasm_external")]
 fn test_run_wasm_fail_on_external() {
     let elector_code = load_boc("benches/elector-code.boc");
     let elector_data = load_boc("benches/elector-data.boc");
@@ -588,6 +592,7 @@ fn test_run_wasm_fail_on_external() {
     );
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_run_wasm_io_plug_hashmap() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -665,6 +670,7 @@ fn test_run_wasm_io_plug_hashmap() {
     );
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_run_wasm_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -749,6 +755,7 @@ fn test_run_wasm_from_hash() {
     // );
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_run_wasm_concat_multiarg_for_add_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -833,6 +840,7 @@ fn test_run_wasm_concat_multiarg_for_add_from_hash() {
     );
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_wasm_from_nonexistent_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -911,6 +919,7 @@ fn test_wasm_from_nonexistent_hash() {
     let _res_error = result.expect_err("Test didn't error on unrecognised hash");
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_wasm_from_wrong_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -988,6 +997,7 @@ fn test_wasm_from_wrong_hash() {
     let _res_error = result.expect_err("Test didn't error on binary hash mismatch");
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_wasm_from_non_whitelist_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -1062,6 +1072,7 @@ fn test_wasm_from_non_whitelist_hash() {
     let _res_error = result.expect_err("Test didn't error on non-whitelist hash");
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 #[cfg(feature = "wasm_external")]
 fn test_run_wasm_fuel_error() {
@@ -1133,6 +1144,7 @@ fn test_run_wasm_fuel_error() {
     let _res_error = result.expect_err("Test didn't error on fuel use");
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_run_wasm_deterministic_random_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -1269,6 +1281,7 @@ fn test_run_wasm_deterministic_random_from_hash() {
     // );
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_run_wasm_clock_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -1367,6 +1380,7 @@ fn test_run_wasm_clock_from_hash() {
     // );
 }
 
+#[cfg(feature = "wasmtime")]
 #[test]
 fn test_run_wasm_fuel_error_from_hash() {
     let elector_code = load_boc("benches/elector-code.boc");

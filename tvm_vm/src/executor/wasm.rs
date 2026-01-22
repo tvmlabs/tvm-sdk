@@ -61,7 +61,7 @@ wasmtime::component::bindgen!({
             interface error {
                 resource error;
             }
-            
+
             /// WASI I/O is an I/O abstraction API which is currently focused on providing
             /// stream types.
             ///
@@ -318,7 +318,7 @@ wasmtime::component::bindgen!({
                     ) -> result<u64, stream-error>;
                 }
             }
-                    
+
             world ioer {
             import error;
             import streams;
@@ -2161,6 +2161,7 @@ fn add_to_linker_gosh<'a, T: WasiView + 'static>(
     Ok(())
 }
 
+#[cfg(feature = "wasmtime")]
 pub(crate) fn check_and_get_wasm_by_hash(
     engine: &mut Engine,
     exec_index: usize,
