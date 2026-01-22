@@ -200,7 +200,7 @@ checksum = "a23eb6b1614318a8071c9b2521f36b424b2c83db5eb3a0fead4a6c0809af6e61"
 
 [[package]]
 name = "api_derive"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "api_info",
  "proc-macro2",
@@ -211,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "api_info"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "serde",
  "serde_derive",
@@ -220,7 +220,7 @@ dependencies = [
 
 [[package]]
 name = "api_test"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "api_derive",
  "api_info",
@@ -1335,9 +1335,9 @@ dependencies = [
 
 [[package]]
 name = "cookie_store"
-version = "0.21.1"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2eac901828f88a5241ee0600950ab981148a18f2f756900ffba1b125ca6a3ef9"
+checksum = "3fc4bff745c9b4c7fb1e97b25d13153da2bc7796260141df62378998d070207f"
 dependencies = [
  "cookie",
  "document-features",
@@ -4817,9 +4817,9 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "reqwest"
-version = "0.12.25"
+version = "0.12.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6eff9328d40131d43bd911d42d79eb6a47312002a4daefc9e37f17e74a7701a"
+checksum = "3b4c14b2d9afca6a60277086b0cc6a6ae0b568f6f7916c943a8cdc79f8be240f"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -5892,7 +5892,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tl_code_gen"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "serde_json",
  "tvm_tl_codegen",
@@ -6185,7 +6185,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_abi"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6202,7 +6202,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_api"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -6221,7 +6221,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_assembler"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -6249,7 +6249,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6270,7 +6270,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block_json"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "failure",
@@ -6292,7 +6292,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_cli"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -6334,7 +6334,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "aes",
  "anyhow",
@@ -6409,7 +6409,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client_processing"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "api_derive",
  "api_info",
@@ -6429,7 +6429,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_common"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "failure",
  "log",
@@ -6441,7 +6441,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_debugger"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6459,7 +6459,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_executor"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "failure",
@@ -6475,7 +6475,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_sdk"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "api_derive",
@@ -6501,7 +6501,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_struct"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "failure",
  "hex-literal",
@@ -6512,7 +6512,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tl_codegen"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "crc 1.8.1",
  "failure",
@@ -6526,7 +6526,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_types"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "aes-ctr",
  "base64 0.22.1",
@@ -6538,6 +6538,7 @@ dependencies = [
  "ed25519-dalek",
  "failure",
  "fastbloom",
+ "getrandom 0.3.4",
  "hex",
  "lazy_static",
  "lockfree",
@@ -6557,7 +6558,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_vm"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -6698,7 +6699,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "update_trusted_blocks"
-version = "2.24.8"
+version = "2.24.9"
 dependencies = [
  "bincode",
  "serde",
