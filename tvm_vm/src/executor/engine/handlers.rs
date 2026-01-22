@@ -404,7 +404,9 @@ impl Handlers {
                 .set(0x43, execute_mint_shell)
                 .set(0x44, execute_send_to_dapp_config)
                 .set(0x45, execute_my_dapp_id)
-                .set(0x46, execute_calculate_mbk);
+                .set(0x46, execute_calculate_mbk)
+                .set(0x47, execute_calculate_miner_tap_coef)
+                .set(0x48, execute_calculate_miner_reward);
             #[cfg(feature = "wasmtime")]
             {
                 c7_handlers //
