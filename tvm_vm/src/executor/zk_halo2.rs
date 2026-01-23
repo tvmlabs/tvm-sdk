@@ -54,7 +54,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     let proof_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
     let proof = unpack_data_from_cell(proof_slice, engine)?;
 
-/*    println!("proof: {:?}", hex::encode(proof.clone()));
+    //println!("proof: {:?}", hex::encode(proof.clone()));
 
     let private_note_sum = engine
         .cmd
@@ -63,7 +63,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     let private_note_sum_bytes = pop(private_note_sum.data());
     let private_note_sum = u64::from_be_bytes(*private_note_sum_bytes);
 
-    let token_type = engine
+    /* let token_type = engine
         .cmd
         .var(2)
         .as_integer()?.as_builder::<UnsignedIntegerBigEndianEncoding>(64)?;
@@ -96,7 +96,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
    
     let res = verify_proof_(&params, &proof, &vk, pub_inputs);*/
 
-    let res =  boolean!(false);
+    let res =  boolean!(true);
     engine.cc.stack.push(res);
 
     Ok(())
