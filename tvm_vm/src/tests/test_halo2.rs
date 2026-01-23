@@ -25,6 +25,7 @@ use halo2_base::halo2_proofs::{
     halo2curves::{bn256::Fr, secp256k1::{Fp, Fq, Secp256k1Affine}},
     plonk::Fixed,
 };
+use std::io::Cursor;
 
 #[test]
 fn test() {
