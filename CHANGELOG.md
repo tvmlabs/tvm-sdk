@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [2.24.9] - 2026-01-21
+## New
+- `tvm_client` now can be compiled without a wasmtime runtime (e.g. for the browser environment) with a new feature `wasm_web`
+
+## [2.24.8] - 2025-12-10
+## Added/Changed
+- Add and modify reward instruction for mvrewards and mining
+
+## Fixed
+- Fix deploy between dapp_id
+
+## [2.24.7] - 2025-12-10
+## New
+- Client will choose https protocol for BK rest API if client's config endpoint uses https
+
 ## [2.24.6] - 2025-12-10
 ## Fixed
 - Add support of Gosh provider into TLS wasm binary and update related git tests

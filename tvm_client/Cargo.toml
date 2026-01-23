@@ -25,17 +25,18 @@ tvm_sdk.workspace = true
 tvm_abi.workspace = true
 tvm_block.workspace = true
 tvm_block_json.workspace = true
-tvm_executor = { workspace = true, features = ["signature_with_id"] }
+tvm_executor = { workspace = true, optional = true, features = [
+  "signature_with_id",
+] }
 tvm_struct.workspace = true
 tvm_types.workspace = true
-tvm_vm = { workspace = true, features = [
+tvm_vm = { workspace = true, optional = true, features = [
   "signature_with_id",
   "signature_no_check",
 ] }
 
 lockfree.workspace = true
 sodalite = { features = ["rand"], git = "https://github.com/tvmlabs/sodalite" }
-
 
 aes = "0.7.4"
 anyhow.workspace = true
@@ -79,7 +80,7 @@ zeroize = { features = ["zeroize_derive"], version = "1.7.0" }
 zstd = { workspace = true, optional = true }
 
 # optional for std
-reqwest = { features = ["cookies"], optional = true, workspace = true }
+reqwest = { features = ["cookies"], workspace = true }
 tokio-tungstenite = { optional = true, workspace = true }
 
 # optional for wasm
@@ -133,6 +134,8 @@ std = [
   "home",
   "include-zstd",
   "zstd",
+  "tvm_vm/default",
+  "tvm_executor/default",
 ]
 native-tls = ["reqwest/default", "tokio-tungstenite/native-tls"]
 native-tls-vendored = [
@@ -156,3 +159,7 @@ wasm-base = [
   "wasm-bindgen-futures",
   "web-sys",
 ]
+
+# NOTE: supposed to be the same as "wasm" but for now
+# we don't support wasm contracts in the browser
+wasm_web = ["wasm-base", "tvm_vm/wasm_web", "tvm_executor/wasm_web"]

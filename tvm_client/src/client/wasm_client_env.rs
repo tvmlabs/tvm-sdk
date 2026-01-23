@@ -283,11 +283,11 @@ impl ClientEnv {
         body: Option<String>,
         timeout_ms: u32,
     ) -> ClientResult<FetchResult> {
-        let mut opts = RequestInit::new();
-        opts.method(method.as_str());
+        let opts = RequestInit::new();
+        opts.set_method(method.as_str());
 
         if let Some(body) = body {
-            opts.body(Some(&JsValue::from_str(&body)));
+            opts.set_body(&JsValue::from_str(&body));
         }
 
         let request = Request::new_with_str_and_init(url, &opts)
