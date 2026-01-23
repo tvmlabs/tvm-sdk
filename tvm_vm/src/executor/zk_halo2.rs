@@ -51,7 +51,7 @@ fn pop(barry: &[u8]) -> &[u8; 8] {
 pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFY"))?;
     fetch_stack(engine, 4)?;
-    let proof_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
+    /*let proof_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
     let proof = unpack_data_from_cell(proof_slice, engine)?;
 
     println!("proof: {:?}", hex::encode(proof.clone()));
@@ -86,7 +86,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     println!("token_type: {:?}", token_type);
     println!("private_note_sum: {:?}", private_note_sum);
 
-    /*let vk = verification_key_from_bytes(&mut DARK_DEX_VERIFIFCATION_HALO2_KEY);
+    let vk = verification_key_from_bytes(&mut DARK_DEX_VERIFIFCATION_HALO2_KEY);
     println!("vk: {:?}", vk);
     //let params = read_kzg_params("kzg_params.bin".to_string());
     let mut cursor = Cursor::new(KZG_PARAMS.to_vec());
