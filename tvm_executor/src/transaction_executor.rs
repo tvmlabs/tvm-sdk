@@ -11,7 +11,9 @@
 #![allow(clippy::too_many_arguments)]
 
 use std::cmp::min;
+#[cfg(feature = "wasmtime")]
 use std::collections::HashMap;
+#[cfg(feature = "wasmtime")]
 use std::collections::HashSet;
 use std::collections::LinkedList;
 use std::sync::Arc;
@@ -137,9 +139,13 @@ pub struct ExecuteParams {
     pub available_credit: i128,
     pub termination_deadline: Option<Instant>,
     pub execution_timeout: Option<Duration>,
+    #[cfg(feature = "wasmtime")]
     pub wasm_binary_root_path: String,
+    #[cfg(feature = "wasmtime")]
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
+    #[cfg(feature = "wasmtime")]
     pub wasm_engine: Option<wasmtime::Engine>,
+    #[cfg(feature = "wasmtime")]
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
@@ -186,9 +192,13 @@ impl Default for ExecuteParams {
             available_credit: 0,
             termination_deadline: None,
             execution_timeout: None,
+            #[cfg(feature = "wasmtime")]
             wasm_binary_root_path: "./config/wasm".to_owned(),
+            #[cfg(feature = "wasmtime")]
             wasm_hash_whitelist: HashSet::new(),
+            #[cfg(feature = "wasmtime")]
             wasm_engine: None,
+            #[cfg(feature = "wasmtime")]
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
@@ -524,7 +534,7 @@ pub trait TransactionExecutor {
         if let Some(init_code_hash) = result_acc.init_code_hash() {
             smc_info.set_init_code_hash(init_code_hash.clone());
         }
-        let mut vm = VMSetup::with_context(
+        let mut vm_setup = VMSetup::with_context(
             SliceData::load_cell(code)?,
             VMSetupContext {
                 capabilities: self.config().capabilites(),
@@ -544,17 +554,30 @@ pub trait TransactionExecutor {
         .set_block_related_flags(
             params.vm_execution_is_block_related.clone(),
             params.block_collation_was_finished.clone(),
-        )
-        .set_wasm_root_path(params.wasm_binary_root_path.clone())
-        .set_engine_available_credit(params.available_credit)
-        .set_engine_version(params.engine_version.clone())
-        .set_engine_mv_config(params.mvconfig.clone())
-        .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
-        .set_wasm_block_time(params.block_unixtime.into())
-        .extern_insert_wasm_engine(params.wasm_engine.clone())
-        .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
-        .set_dapp_id(params.dapp_id.clone())
-        .create();
+        );
+
+        #[cfg(feature = "wasmtime")]
+        {
+            vm_setup = vm_setup.set_wasm_root_path(params.wasm_binary_root_path.clone())
+        }
+
+        vm_setup = vm_setup
+            .set_engine_available_credit(params.available_credit)
+            .set_engine_version(params.engine_version.clone())
+            .set_engine_mv_config(params.mvconfig.clone());
+
+        #[cfg(feature = "wasmtime")]
+        {
+            vm_setup = vm_setup
+                .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
+                .set_wasm_block_time(params.block_unixtime.into())
+                .extern_insert_wasm_engine(params.wasm_engine.clone())
+                .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
+        };
+
+        vm_setup = vm_setup.set_dapp_id(params.dapp_id.clone());
+
+        let mut vm = vm_setup.create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {
             vm.modify_behavior(modifiers);

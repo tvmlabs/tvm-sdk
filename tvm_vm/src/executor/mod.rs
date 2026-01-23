@@ -35,6 +35,7 @@ mod stack;
 pub mod token;
 mod tuple;
 mod types;
+#[cfg(feature = "wasmtime")]
 pub mod wasm;
 pub mod zk_stuff;
 
@@ -44,7 +45,7 @@ use tvm_types::Cell;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "wasmtime"))]
 #[path = "../tests/test_multifactor_tls_wasm_execution.rs"]
 mod test_multifactor_tls_wasm_execution;
 

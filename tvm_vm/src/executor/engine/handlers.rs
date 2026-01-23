@@ -400,8 +400,6 @@ impl Handlers {
                 .set(0x36, execute_calculate_adjustment_reward_bmmv)
                 .set(0x37, execute_calculate_min_stake_bm)
                 .set(0x38, execute_ecc_burn)
-                .set(0x39, execute_run_wasm)
-                .set(0x3A, execute_run_wasm_concat_multiarg)
                 .set(0x41, execute_calculate_mobile_verifiers_reward)
                 .set(0x42, execute_get_available_balance)
                 .set(0x43, execute_mint_shell)
@@ -411,6 +409,12 @@ impl Handlers {
                 .set(0x47, execute_calculate_miner_tap_coef)
                 .set(0x48, execute_calculate_miner_reward)
                 .set(0x49, execute_halo2_proof_verification);
+            #[cfg(feature = "wasmtime")]
+            {
+                c7_handlers //
+                    .set(0x39, execute_run_wasm)
+                    .set(0x3A, execute_run_wasm_concat_multiarg);
+            }
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
