@@ -54,7 +54,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     let proof_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
     let proof = unpack_data_from_cell(proof_slice, engine)?;
 
-    println!("proof: {:?}", hex::encode(proof.clone()));
+/*    println!("proof: {:?}", hex::encode(proof.clone()));
 
     let private_note_sum = engine
         .cmd
@@ -85,7 +85,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     println!("private_note_digest: {:?}", private_note_digest);
     println!("token_type: {:?}", token_type);
     println!("private_note_sum: {:?}", private_note_sum);
-/*
+
     let vk = verification_key_from_bytes(&mut DARK_DEX_VERIFIFCATION_HALO2_KEY);
     println!("vk: {:?}", vk);
     //let params = read_kzg_params("kzg_params.bin".to_string());
@@ -96,7 +96,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
    
     let res = verify_proof_(&params, &proof, &vk, pub_inputs);*/
 
-    let res =  boolean!(true);
+    let res =  boolean!(false);
     engine.cc.stack.push(res);
 
     Ok(())
