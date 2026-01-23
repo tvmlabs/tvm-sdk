@@ -39,7 +39,6 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
 
     println!("proof: {:?}", hex::encode(proof.clone()));
 
-
     let private_note_sum = engine
         .cmd
         .var(1)
@@ -74,7 +73,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
 
     let params = read_kzg_params("kzg_params.bin".to_string());
 
-    let mut pub_inputs = vec![private_note_sum, token_type, private_note_digest];
+    let pub_inputs = vec![private_note_sum, token_type, private_note_digest];
    
     let res = verify_proof_(&params, &proof, &vk, pub_inputs);
 
