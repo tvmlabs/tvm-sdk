@@ -74,7 +74,14 @@ fn test() {
     let sk_u_commitment = poseidon_hash([sk_u_, Fr::zero()]);
     let data_to_hash = [sk_u_commitment, private_note_sum_, token_type_, sk_u_];
     let digest = poseidon_hash(data_to_hash);
+
+    println!("digest here: {:?}", digest);
+
+  
+
     let digest: [u8; 32] = digest.to_bytes();
+
+     println!("digest here here: {:?}", digest.clone());
 
     engine.cc.stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&digest.clone())));
     engine.cc.stack.push(StackItem::int(token_type));

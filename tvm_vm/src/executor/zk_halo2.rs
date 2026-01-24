@@ -76,29 +76,33 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
         .var(3)
         .as_integer()?
         .as_builder::<UnsignedIntegerBigEndianEncoding>(256)?;
-    let private_note_digest_bytes: &[u8; 32] = private_note_digest.data().try_into().unwrap();
+    //let private_note_digest_bytes: &[u8; 32] = private_note_digest.data().try_into().unwrap();
+
+    //println!("private_note_digest_bytes: {:?}", private_note_digest_bytes);
 
     let token_type = Fr::from(token_type);
     let private_note_sum = Fr::from(private_note_sum);
-    let private_note_digest_bytes = [0u8; 32];
+    
+    let private_note_digest_bytes = [226, 85, 155, 239, 216, 145, 194, 193, 238, 17, 117, 245, 200, 110, 137, 8, 214, 192, 106, 203, 225, 62, 19, 6, 158, 193, 65, 88, 241, 141, 228, 12];
+    //[0u8; 32];
     let private_note_digest = Fr::from_bytes(&private_note_digest_bytes).unwrap();
 
-/*
+
     println!("private_note_digest: {:?}", private_note_digest);
     println!("token_type: {:?}", token_type);
-    println!("private_note_sum: {:?}", private_note_sum);*/
+    println!("private_note_sum: {:?}", private_note_sum);
 
     let vk = verification_key_from_bytes(&mut DARK_DEX_VERIFIFCATION_HALO2_KEY);
     println!("vk: {:?}", vk);
-    //let params = read_kzg_params("kzg_params.bin".to_string());
+
     let mut cursor = Cursor::new(KZG_PARAMS.to_vec());
     let params = ParamsKZG::<Bn256>::read_custom(&mut cursor, SerdeFormat::RawBytesUnchecked).expect("Reading vkey should not fail");
 
-    /*let pub_inputs = vec![private_note_sum, token_type, private_note_digest];
+    let pub_inputs = vec![private_note_sum, token_type, private_note_digest];
    
-    let res = verify_proof_(&params, &proof, &vk, pub_inputs);*/
+    let res = verify_proof_(&params, &proof, &vk, pub_inputs);
 
-    let res =  boolean!(true);
+    let res =  boolean!(res);
     engine.cc.stack.push(res);
 
     Ok(())
