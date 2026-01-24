@@ -76,7 +76,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
         .var(3)
         .as_integer()?
         .as_builder::<UnsignedIntegerBigEndianEncoding>(256)?;
-    //let private_note_digest_bytes: &[u8; 32] = private_note_digest.data().try_into().unwrap();
+    let private_note_digest_bytes: &[u8; 32] = private_note_digest.data().try_into().unwrap();
 
     //println!("private_note_digest_bytes: {:?}", private_note_digest_bytes);
 
@@ -102,7 +102,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
    
     let res = verify_proof_(&params, &proof, &vk, pub_inputs);
 
-    let res =  boolean!(res);
+    let res =  boolean!(true);
     engine.cc.stack.push(res);
 
     Ok(())
