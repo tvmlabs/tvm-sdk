@@ -75,15 +75,17 @@ fn test() {
     let data_to_hash = [sk_u_commitment, private_note_sum_, token_type_, sk_u_];
     let digest = poseidon_hash(data_to_hash);
 
-    println!("digest here: {:?}", digest);
-
-  
-
+    
     let digest: [u8; 32] = digest.to_bytes();
 
-     println!("digest here here: {:?}", digest.clone());
+    let digest_hex = hex::encode(&digest);
 
-    engine.cc.stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&digest.clone())));
+    println!("digest here here: {:?}", digest.clone());
+    println!("digest_hex: {:?}", digest_hex);
+
+    let i = IntegerData::from_str_radix(digest_hex.as_str(), 16).unwrap();
+    /*let i = IntegerData::from_unsigned_bytes_be(&digest.clone());*/
+    engine.cc.stack.push(StackItem::integer(i));
     engine.cc.stack.push(StackItem::int(token_type));
     engine.cc.stack.push(StackItem::int(private_note_sum));
 
