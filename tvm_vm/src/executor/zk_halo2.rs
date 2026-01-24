@@ -79,9 +79,9 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     let private_note_digest_bytes: &[u8; 32] = private_note_digest.data().try_into().unwrap();
 
     let token_type = Fr::from(token_type);
-    let private_note_sum = Fr::from(private_note_sum);
-    let private_note_digest = Fr::from_bytes(private_note_digest_bytes).unwrap();
-/*
+    /*  let private_note_sum = Fr::from(private_note_sum);
+  let private_note_digest = Fr::from_bytes(private_note_digest_bytes).unwrap();
+
 
     println!("private_note_digest: {:?}", private_note_digest);
     println!("token_type: {:?}", token_type);
