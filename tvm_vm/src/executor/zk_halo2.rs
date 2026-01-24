@@ -102,7 +102,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
    
     let res = verify_proof_(&params, &proof, &vk, pub_inputs);
 
-    let res =  boolean!(true);
+    let res =  boolean!(res);
     engine.cc.stack.push(res);
 
     Ok(())
