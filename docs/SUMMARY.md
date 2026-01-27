@@ -8,6 +8,15 @@
   * [GraphQL Quick Start](graphql-quick-start.md)
 * [Add Acki Nacki to your backend](add_to_backend.md)
 
+## DEX.DO
+
+* [Smart Contract Interfaces](dex.do/smart-contract-interfaces/README.md)
+  * [RootPN](dex.do/smart-contract-interfaces/rootpn.md)
+  * [PrivateNote](dex.do/smart-contract-interfaces/privatenote.md)
+  * [Oracle](dex.do/smart-contract-interfaces/oracle.md)
+  * [OracleEventList](dex.do/smart-contract-interfaces/oracleeventlist.md)
+  * [Prediction Market Pool (PMP)](dex.do/smart-contract-interfaces/prediction-market-pool-pmp.md)
+
 ## Bee Engine
 
 * [Bee Engine Overview](bee-engine/bee-engine-overview.md)
