@@ -1,3 +1,7 @@
+use gosh_dark_dex_halo2_circuit::circuit::*;
+use gosh_dark_dex_halo2_circuit::snark_utils::*;
+use gosh_dark_dex_halo2_circuit::proof::*;
+
 use std::collections::HashMap;
 use std::env;
 use std::time::Instant;
@@ -16,8 +20,6 @@ use crate::utils::pack_string_to_cell;
 use crate::utils::unpack_data_from_cell;
 
 use crate::executor::test_helper::*;
-
-use gosh_dark_dex_halo2_circuit::prover::*;
 use gosh_dark_dex_halo2_circuit::circuit::poseidon_hash;
 
 use halo2_base::halo2_proofs::{
@@ -74,24 +76,24 @@ fn test() {
     let sk_u_commitment = poseidon_hash([sk_u_, Fr::zero()]);
     let data_to_hash = [sk_u_commitment, private_note_sum_, token_type_, sk_u_];
     let digest = poseidon_hash(data_to_hash);
-
-    
     let digest: [u8; 32] = digest.to_bytes();
-
     let digest_hex = hex::encode(&digest);
 
     println!("digest here here: {:?}", digest.clone());
     println!("digest_hex: {:?}", digest_hex);
 
-    let i = IntegerData::from_str_radix(digest_hex.as_str(), 16).unwrap();
-    /*let i = IntegerData::from_unsigned_bytes_be(&digest.clone());*/
-    engine.cc.stack.push(StackItem::integer(i));
-    engine.cc.stack.push(StackItem::int(token_type));
-    engine.cc.stack.push(StackItem::int(private_note_sum));
+    let private_note_sum_item = StackItem::int(private_note_sum);
+    let token_type_item = StackItem::int(token_type);
+    let digest_item = StackItem::integer(IntegerData::from_str_radix(digest_hex.as_str(), 16).unwrap());
+    
+    let pub_inputs = vec![private_note_sum_item, token_type_item, digest_item];
+
+    engine.cc.stack.push(StackItem::tuple(pub_inputs.clone()));
+
 
     let params = read_kzg_params("kzg_params.bin".to_string());
     let mut pub_inputs = vec![private_note_sum_, token_type_, Fr::from_bytes(&digest).unwrap()];
-    let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment),  &mut pub_inputs);
+    let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment)).unwrap().as_bytes().to_vec();
 
     
     let proof_cell = pack_data_to_cell(&proof.clone(), &mut 0).unwrap();
@@ -146,25 +148,35 @@ fn test_negative() {
 
     let sk_u: u64 = 23;
     let token_type: u64 = 1;
+    let token_type_wrong: u64 = 2;
     let private_note_sum: u64 = 1000;
 
     let sk_u_ = Fr::from(sk_u);
     let token_type_ = Fr::from(token_type);
+    let token_type_wrong_ = Fr::from(token_type_wrong);
     let private_note_sum_ = Fr::from(private_note_sum);
  
     let sk_u_commitment = poseidon_hash([sk_u_, Fr::zero()]);
     let data_to_hash = [sk_u_commitment, private_note_sum_, token_type_, sk_u_];
     let digest = poseidon_hash(data_to_hash);
     let digest: [u8; 32] = digest.to_bytes();
+    let digest_hex = hex::encode(&digest);
 
-    let token_type_wrong: u64 = 2;
-    engine.cc.stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&digest.clone())));
-    engine.cc.stack.push(StackItem::int(token_type_wrong));
-    engine.cc.stack.push(StackItem::int(private_note_sum));
+    println!("digest here here: {:?}", digest.clone());
+    println!("digest_hex: {:?}", digest_hex);
+
+    let private_note_sum_item = StackItem::int(private_note_sum);
+    let token_type_item = StackItem::int(token_type_wrong);
+    let digest_item = StackItem::integer(IntegerData::from_str_radix(digest_hex.as_str(), 16).unwrap());
+    
+    let pub_inputs = vec![private_note_sum_item, token_type_item, digest_item];
+
+    engine.cc.stack.push(StackItem::tuple(pub_inputs.clone()));
+
 
     let params = read_kzg_params("kzg_params.bin".to_string());
     let mut pub_inputs = vec![private_note_sum_, token_type_, Fr::from_bytes(&digest).unwrap()];
-    let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment),  &mut pub_inputs);
+    let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment)).unwrap().as_bytes().to_vec();
 
     
     let proof_cell = pack_data_to_cell(&proof.clone(), &mut 0).unwrap();
