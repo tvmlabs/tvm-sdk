@@ -2693,7 +2693,7 @@ dependencies = [
 [[package]]
 name = "gosh_dark_dex_halo2_circuit"
 version = "0.1.0"
-source = "git+https://github.com/gosh-sh/gosh_dark_dex_halo2_circuit.git?branch=poseidon_instead_of_ecc#fccaa0ba96bb2c5556efd760f5416479bce629b3"
+source = "git+https://github.com/gosh-sh/gosh_dark_dex_halo2_circuit.git?rev=fccaa0ba96bb2c5556efd760f5416479bce629b3#fccaa0ba96bb2c5556efd760f5416479bce629b3"
 dependencies = [
  "halo2-base",
  "halo2-ecc",
