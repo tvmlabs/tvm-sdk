@@ -31,6 +31,7 @@ use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::gas::gas_state::Gas;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
+use crate::executor::zk_stuff::bn254::poseidon::poseidon_bytes_flat;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
 use crate::executor::zk_stuff::utils::split_to_two_frs;
@@ -456,7 +457,7 @@ fn pop(barry: &[u8]) -> &[u8; 8] {
 }
 
 pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
-    engine.load_instruction(crate::executor::types::Instruction::new("POSEIDON"))?;
+    engine.load_instruction(crate::executor::types::Instruction::new("POSEIDONZKLOGIN"))?;
     engine.try_use_gas(Gas::poseidon_zk_login_price())?;
     fetch_stack(engine, 7)?;
 
@@ -564,6 +565,26 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
 
     let public_inputs_cell = pack_data_to_cell(&public_inputs_as_bytes, &mut 0)?;
     engine.cc.stack.push(Cell(public_inputs_cell));
+
+    Ok(())
+}
+
+pub(super) fn execute_poseidon(engine: &mut Engine) -> Status {
+    engine.load_instruction(crate::executor::types::Instruction::new("POSEIDON"))?;
+    fetch_stack(engine, 1)?;
+
+    let input_data_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
+    let input_data_as_bytes = unpack_data_from_cell(input_data_slice, engine)?;
+
+    let output_as_bytes = match poseidon_bytes_flat(&input_data_as_bytes) {
+        Ok(output_as_bytes) => output_as_bytes,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect input data {}", err);
+        }
+    };
+
+    let output_cell = pack_data_to_cell(&output_as_bytes, &mut 0)?;
+    engine.cc.stack.push(Cell(output_cell));
 
     Ok(())
 }
