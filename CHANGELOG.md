@@ -2,6 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
+
 ## [2.24.9] - 2026-01-21
 ## New
 - `tvm_client` now can be compiled without a wasmtime runtime (e.g. for the browser environment) with a new feature `wasm_web`
@@ -19,7 +20,7 @@ All notable changes to this project will be documented in this file.
 
 ## [2.24.6] - 2025-12-10
 ## Fixed
-- Add support of Gosh provider into TLS wasm binary and update related tests
+- Add support of Gosh provider into TLS wasm binary and update related git tests
 
 
 ## [2.24.5] - 2025-11-03

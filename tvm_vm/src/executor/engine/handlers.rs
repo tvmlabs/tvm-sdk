@@ -44,6 +44,7 @@ use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 use crate::executor::zk::*;
+use crate::executor::zk_halo2::*;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
@@ -406,7 +407,8 @@ impl Handlers {
                 .set(0x45, execute_my_dapp_id)
                 .set(0x46, execute_calculate_mbk)
                 .set(0x47, execute_calculate_miner_tap_coef)
-                .set(0x48, execute_calculate_miner_reward);
+                .set(0x48, execute_calculate_miner_reward)
+                .set(0x49, execute_halo2_proof_verification);
             #[cfg(feature = "wasmtime")]
             {
                 c7_handlers //
