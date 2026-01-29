@@ -110,7 +110,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
  
     let mut pub_inputs: Vec<Fr> = Vec::new();
     for i in 0..num_of_pub_inputs {
-        let pub_input_bytes = pub_inputs_bytes[i*32..(i+1)*32].as_array().unwrap();
+        let pub_input_bytes: &[u8; 32] = &pub_inputs_bytes[i*32..(i+1)*32].try_into().unwrap();
         
         println!("!!! pub_input_bytes: {:?}", pub_input_bytes);
        
