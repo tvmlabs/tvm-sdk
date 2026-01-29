@@ -92,7 +92,7 @@ fn test() {
 
 
     let params = read_kzg_params("kzg_params.bin".to_string());
-    let mut pub_inputs = vec![private_note_sum_, token_type_, Fr::from_bytes(&digest).unwrap()];
+    
     let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment)).unwrap().as_bytes().to_vec();
 
     
@@ -153,7 +153,6 @@ fn test_negative() {
 
     let sk_u_ = Fr::from(sk_u);
     let token_type_ = Fr::from(token_type);
-    let token_type_wrong_ = Fr::from(token_type_wrong);
     let private_note_sum_ = Fr::from(private_note_sum);
  
     let sk_u_commitment = poseidon_hash([sk_u_, Fr::zero()]);
