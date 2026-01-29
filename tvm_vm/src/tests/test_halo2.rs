@@ -82,17 +82,23 @@ fn test() {
     println!("digest here here: {:?}", digest.clone());
     println!("digest_hex: {:?}", digest_hex);
 
-    let private_note_sum_item = StackItem::int(private_note_sum);
-    let token_type_item = StackItem::int(token_type);
-    let digest_item = StackItem::integer(IntegerData::from_str_radix(digest_hex.as_str(), 16).unwrap());
-    
-    let pub_inputs = vec![private_note_sum_item, token_type_item, digest_item];
+    let mut pub_inputs_bytes: Vec<u8> = Vec::new();
 
-    engine.cc.stack.push(StackItem::tuple(pub_inputs.clone()));
+    pub_inputs_bytes.append(&mut vec![0u8; 24]);
+    pub_inputs_bytes.append(&mut private_note_sum.to_be_bytes().to_vec());
 
+    pub_inputs_bytes.append(&mut vec![0u8; 24]);
+    pub_inputs_bytes.append(&mut token_type.to_be_bytes().to_vec());
+
+    pub_inputs_bytes.append(&mut digest.to_vec());
+
+    println!("pub_inputs_bytes: {:?}", pub_inputs_bytes);
+
+    let pub_inputs_cell = pack_data_to_cell(&pub_inputs_bytes.clone(), &mut 0).unwrap();
+
+    engine.cc.stack.push(StackItem::cell(pub_inputs_cell.clone()));
 
     let params = read_kzg_params("kzg_params.bin".to_string());
-    
     let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment)).unwrap().as_bytes().to_vec();
 
     
@@ -164,17 +170,23 @@ fn test_negative() {
     println!("digest here here: {:?}", digest.clone());
     println!("digest_hex: {:?}", digest_hex);
 
-    let private_note_sum_item = StackItem::int(private_note_sum);
-    let token_type_item = StackItem::int(token_type_wrong);
-    let digest_item = StackItem::integer(IntegerData::from_str_radix(digest_hex.as_str(), 16).unwrap());
-    
-    let pub_inputs = vec![private_note_sum_item, token_type_item, digest_item];
+    let mut pub_inputs_bytes: Vec<u8> = Vec::new();
 
-    engine.cc.stack.push(StackItem::tuple(pub_inputs.clone()));
+    pub_inputs_bytes.append(&mut vec![0u8; 24]);
+    pub_inputs_bytes.append(&mut private_note_sum.to_be_bytes().to_vec());
 
+    pub_inputs_bytes.append(&mut vec![0u8; 24]);
+    pub_inputs_bytes.append(&mut token_type_wrong.to_be_bytes().to_vec());
+
+    pub_inputs_bytes.append(&mut digest.to_vec());
+
+    println!("pub_inputs_bytes: {:?}", pub_inputs_bytes);
+
+    let pub_inputs_cell = pack_data_to_cell(&pub_inputs_bytes.clone(), &mut 0).unwrap();
+
+    engine.cc.stack.push(StackItem::cell(pub_inputs_cell.clone()));
 
     let params = read_kzg_params("kzg_params.bin".to_string());
-    let mut pub_inputs = vec![private_note_sum_, token_type_, Fr::from_bytes(&digest).unwrap()];
     let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment)).unwrap().as_bytes().to_vec();
 
     
