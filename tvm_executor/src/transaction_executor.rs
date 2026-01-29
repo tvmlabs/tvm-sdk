@@ -149,7 +149,7 @@ pub struct ExecuteParams {
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
-    pub get_history_proof_data: Box<dyn Fn(u8, usize) -> Option<[u8; 32]>>,
+    pub get_history_proof_data: Arc<dyn Fn(u8, usize) -> Option<[u8; 32]>>,
 }
 
 pub struct ActionPhaseResult {
@@ -203,7 +203,7 @@ impl Default for ExecuteParams {
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
-            get_history_proof_data: Box::new(|_, _| None),
+            get_history_proof_data: Arc::new(|_, _| None),
         }
     }
 }
