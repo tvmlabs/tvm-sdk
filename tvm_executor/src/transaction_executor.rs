@@ -149,6 +149,7 @@ pub struct ExecuteParams {
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
+    pub get_history_proof_data: Box<dyn Fn(u8, usize) -> Option<[u8; 32]>>,
 }
 
 pub struct ActionPhaseResult {
