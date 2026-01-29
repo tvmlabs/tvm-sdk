@@ -723,8 +723,9 @@ fn test_poseidon(){
     let poseidon_res = unpack_data_from_cell(slice, &mut engine).unwrap();
     println!("poseidon_res from stack: {:?}", poseidon_res.clone());
 
-    let etalon_res: Vec<u8> = hex::decode("0b63a53787021a4a962a452c2921b3663aff1ffd8d5510540f8e659e782956f1").unwrap();
-    //let etalon_res: Vec<u8> = [0x0b, 0x63, 0xa5, 0x37, 87, 02, 1a, 4a, 96, 2a, 45, 2c, 29, 21, b3, 66, 3a, ff, 1f, fd, 8d, 55, 10, 54, 0f, 8e, 65, 9e, 78, 29, 56, f1];
+    //let etalon_res: Vec<u8> = hex::decode("0b63a53787021a4a962a452c2921b3663aff1ffd8d5510540f8e659e782956f1").unwrap();
+    let etalon_res: Vec<u8> = vec![0x0b, 0x63, 0xa5, 0x37, 0x87, 0x02, 0x1a, 0x4a, 0x96, 0x2a, 0x45, 0x2c, 0x29, 0x21, 0xb3, 0x66, 0x3a, 0xff, 0x1f, 0xfd, 0x8d, 0x55, 0x10, 0x54, 0x0f, 0x8e, 0x65, 0x9e, 0x78, 0x29, 0x56, 0xf1];
+    assert_equal(poseidon_res, etalon_res);
 }
 
 #[test]
