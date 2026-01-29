@@ -21,7 +21,12 @@ use halo2_base::halo2_proofs::{
     plonk::Fixed,
 };
 
+use tvm_types::error;
+use tvm_types::fail;
+
 use halo2_proofs::SerdeFormat;
+
+use tvm_types::ExceptionCode;
 
 use halo2_proofs::{
     halo2curves::bn256::{Bn256, G1Affine},
@@ -88,43 +93,44 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     fetch_stack(engine, 2)?;
     let proof_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
     let proof = unpack_data_from_cell(proof_slice, engine)?;
-
     println!("proof: {:?}", hex::encode(proof.clone()));
-
     let proof = Proof::new(proof);
 
-    let pub_inputs_items = engine
-        .cmd
-        .var(1).as_tuple()?;
+    let pub_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+    let pub_inputs_bytes = unpack_data_from_cell(pub_inputs_slice, engine)?;
+    println!("pub_inputs_bytes len: {:?}", pub_inputs_bytes.len());
 
-    println!("!!! pub_inputs_items len: {:?}", pub_inputs_items.len());
+    let len = pub_inputs_bytes.len();
 
+    if (len % 32 != 0) {
+        fail!(ExceptionCode::FatalError);
+    }
+
+    let num_of_pub_inputs = len  / 32;
+ 
     let mut pub_inputs: Vec<Fr> = Vec::new();
-    for item in pub_inputs_items {
-        let pub_input = item.as_integer()?
-        .as_builder::<UnsignedIntegerBigEndianEncoding>(256)?;
-        //println!("!!! pub_input: {:?}", pub_input);
-        let pub_input_bytes: &[u8; 32] = pub_input.data().try_into().unwrap();
-        //println!("!!! pub_input_bytes: {:?}", pub_input_bytes);
-        if (check_is_u64(pub_input_bytes.as_slice())) {
-            let elem: u64 = consume_uint64(pub_input_bytes.as_slice());
+    for i in 0..num_of_pub_inputs {
+        let pub_input_bytes = pub_inputs_bytes[i*32..(i+1)*32].as_array().unwrap();
+        
+        println!("!!! pub_input_bytes: {:?}", pub_input_bytes);
+       
+        if (check_is_u64(pub_input_bytes)) {
+            let elem: u64 = consume_uint64(pub_input_bytes);
             let pub_input = Fr::from(elem as u64);
             pub_inputs.push(pub_input);
         }
         else {
-            let pub_input = Fr::from_bytes(&pub_input_bytes).unwrap();
+            let pub_input = Fr::from_bytes(pub_input_bytes).unwrap();
             pub_inputs.push(pub_input);
         }
     }
 
     println!("pub_inputs: {:?}", pub_inputs);
 
-
     let mut cursor = Cursor::new(KZG_PARAMS.to_vec());
     let params = ParamsKZG::<Bn256>::read_custom(&mut cursor, SerdeFormat::RawBytesUnchecked).expect("Reading vkey should not fail");   
     let res = proof.verify_with_vk_from_bytes::<DarkDexCircuit>(&mut DARK_DEX_VERIFICATION_HALO2_KEY, &params, &[&pub_inputs]).is_ok();
     
-
     let res =  boolean!(res);
     engine.cc.stack.push(res);
 
