@@ -203,6 +203,7 @@ impl Default for ExecuteParams {
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
+            get_history_proof_data: Box::new(|_, _| None),
         }
     }
 }
