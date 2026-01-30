@@ -9,7 +9,7 @@ description: (Work in progress) OracleEventList Contract Interface Documentation
 ## Overview
 
 **OracleEventList** is a contract that manages a list of events an Oracle is willing to service.\
-It allows the Oracle to publish events, confirm or cancel participation via **Prediction Market Pool (PMP)** contracts, and manage event lifecycle state.
+It allows the Oracle to publish events, confirm or cancel participation via **Pari Mutuel Pool (PMP)** contracts, and manage event lifecycle state.
 
 Each `OracleEventList` is uniquely identified by:
 

@@ -16,7 +16,7 @@
   * [RootOracle](dex.do/smart-contract-interfaces/rootoracle.md)
   * [Oracle](dex.do/smart-contract-interfaces/oracle.md)
   * [OracleEventList](dex.do/smart-contract-interfaces/oracleeventlist.md)
-  * [Prediction Market Pool (PMP)](dex.do/smart-contract-interfaces/prediction-market-pool-pmp.md)
+  * [PARI MUTUEL POOL (PMP)](dex.do/smart-contract-interfaces/pari-mutuel-pool-pmp.md)
 
 ## Bee Engine
 

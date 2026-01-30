@@ -2,13 +2,13 @@
 description: (Work in progress) PMP Contract Interface Documentation
 ---
 
-# Prediction Market Pool (PMP)
+# PARI MUTUEL POOL (PMP)
 
 ## Overview
 
 {% file src="../../.gitbook/assets/PMP.abi.json" %}
 
-**Prediction Market Pool** is a decentralized prediction market contract that aggregates user stakes on discrete outcomes of an event.\
+**Pari Mutuel Pool** is a decentralized pari manuel contract that aggregates user stakes on discrete outcomes of an event.\
 A PMP **does not charge protocol fees**, but **requires approval from one or more oracles** before becoming active.
 
 Each PMP is:
@@ -22,7 +22,7 @@ Each PMP is:
 ## Contract Metadata
 
 * **Contract name:** `PMP`
-* **Role:** Prediction market pool
+* **Role:** Pari Mutuel Pool
 * **Deployed by:** `PrivateNote`
 * **Authorization model:**
   * Users: `PrivateNote`
@@ -406,11 +406,11 @@ function getDetails() external view returns (
 **Returns** :
 
 * **`name`**\
-  Human-readable pool name. Acts as a static identifier of the prediction market and is passed to `PrivateNote` callbacks.
+  Human-readable pool name. Acts as a static identifier of the Pari Mutuel Pool and is passed to `PrivateNote` callbacks.
 * **`token_type`**\
   Identifier of the token type used by this pool. Fixed at deployment time.
 * **`event_id`**\
-  Unique identifier of the event associated with this prediction market. Used in oracle interactions.
+  Unique identifier of the event associated with this Pari Mutuel Pool. Used in oracle interactions.
 * **`oracle_list_hash`**\
   Hash of the oracle list configuration for this event, ensuring all oracle confirmations refer to the same oracle set.
 * **`deployer`**\

@@ -9,7 +9,7 @@ description: (Work in progress) PrivateNote Contract Interface Documentation
 ## Overview
 
 **PrivateNote** is a non-custodial wallet contract bound to a single deposit identifier.\
-It allows users to deploy and interact with **Prediction Market Pool (PMP)** contracts, manage stakes, claim rewards, and withdraw tokens — all while preserving privacy guarantees.
+It allows users to deploy and interact with **Pari Mutuel Pool (PMP)** contracts, manage stakes, claim rewards, and withdraw tokens — all while preserving privacy guarantees.
 
 Each `PrivateNote`:
 
