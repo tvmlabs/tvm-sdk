@@ -13,6 +13,7 @@
 * [Smart Contract Interfaces](dex.do/smart-contract-interfaces/README.md)
   * [RootPN](dex.do/smart-contract-interfaces/rootpn.md)
   * [PrivateNote](dex.do/smart-contract-interfaces/privatenote.md)
+  * [RootOracle](dex.do/smart-contract-interfaces/rootoracle.md)
   * [Oracle](dex.do/smart-contract-interfaces/oracle.md)
   * [OracleEventList](dex.do/smart-contract-interfaces/oracleeventlist.md)
   * [Prediction Market Pool (PMP)](dex.do/smart-contract-interfaces/prediction-market-pool-pmp.md)

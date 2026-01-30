@@ -4,187 +4,176 @@ description: Oracle Contract Interface Documentation
 
 # Oracle
 
+{% file src="../../.gitbook/assets/Oracle.abi.json" %}
+
 ## Overview
 
-**Oracle** is a core contract responsible for managing oracle identity and deploying an associated **OracleEventList**.\
-It serves as the oracle’s root contract, holding the oracle public key, managing accumulated fees, and exposing metadata for integration with **PrivateNote** and **PMP** **(Prediction Market Pool)** contracts.
-
-Each `Oracle` instance is deployed by `RootPN` and is uniquely identified by its static name.
-
-***
-
-## Contract Metadata
-
-* **Contract name:** `Oracle`
-* **Role:** Oracle root & fee manager
-* **Deployed by:** `RootPN`
-* **Authorization model:** Oracle public key (`_oraclePubkey`)
-* **Associated contracts:** `OracleEventList`, `PrivateNote`, `PMP`
+**Oracle** is a core contract responsible for managing Oracle events and deploying `OracleEventList` contracts.\
+It provides authorization via an oracle public key, supports fee withdrawal, event list deployment, and helper utilities for proposal data encoding.
 
 ***
 
 ## Events
 
-### `OracleEventListDeployed`
+### OracleEventListDeployed
+
+Emitted when a new `OracleEventList` contract is deployed.
 
 ```solidity
-event OracleEventListDeployed(address eventListAddress);
+event OracleEventListDeployed(address eventListAddress, uint128 index);
 ```
 
-Emitted after successful deployment of the `OracleEventList` contract.
-
-**Parameters:**
-
-* `eventListAddress` — Address of the deployed `OracleEventList`
+* `eventListAddress` — address of the deployed OracleEventList
+* `index` — index identifier of the event list
 
 ***
 
-### `EventPublished`
+### EventPublished
+
+Emitted when an event is published by the Oracle.
 
 ```solidity
 event EventPublished(uint256 event_id, string event_name);
 ```
 
-Represents publication of an oracle event.
-
-> ℹ️ **Note:**\
-> This event is declared in the `Oracle` contract but not emitted directly in the shown implementation.\
-> It may be intended for future use or for emission via delegated logic.
+* `event_id` — unique identifier of the event
+* `event_name` — human-readable event name
 
 ***
 
-## Constructor
+## Public & External Interface
 
-#### `constructor`
+### **`deployEventList`**
+
+Deploys a new `OracleEventList` with a specified index.
 
 ```solidity
-constructor(
-    uint256 oraclePubkey,
-    TvmCell oracleEventListCode,
-    TvmCell PrivateNoteCode,
-    TvmCell pmpCode
-)
+function deployEventList(uint128 index)
+    public
+    view
+    onlyOwnerPubkey(_oraclePubkey)
+    accept;
 ```
 
-Deploys the `Oracle` contract and immediately deploys the associated `OracleEventList`.
+**Access:** oracle owner only\
+**Modifiers:** `onlyOwnerPubkey`, `accept`
 
 **Parameters:**
 
-* `oraclePubkey` — Public key controlling the oracle
-* `oracleEventListCode` — Contract code for `OracleEventList`
-* `PrivateNoteCode` — `PrivateNote` contract code
-* `pmpCode` — `PMP` contract code
+* `index` — index identifier of the new OracleEventList
 
-**Requirements:**
+**Behavior:**
 
-* Caller must be `ROOT_PN_ADDRESS`
-
-**Side Effects:**
-
-* Deploys a new `OracleEventList`
-* Stores oracle configuration and contract codes
-* Emits `OracleEventListDeployed`
+* Ensures the contract has sufficient native balance
+* Deploys a new `OracleEventList` for the given index
+* Emits `OracleEventListDeployed` with the deployed address and index
 
 ***
 
-## Fee Management
+### **`withdrawFees`**
 
-### `withdrawFees`
+Withdraws accumulated fees to a specified address.
 
 ```solidity
-function withdrawFees(
-    address to,
-    uint128 amount
-) public view onlyOwnerPubkey accept;
+function withdrawFees(address to, uint128 amount)
+    public
+    view
+    onlyOwnerPubkey(_oraclePubkey)
+    accept;
 ```
 
-Withdraws accumulated oracle fees to a specified address.
+**Access:** oracle owner only\
+**Modifiers:** `onlyOwnerPubkey`, `accept`
 
 **Parameters:**
 
-* `to` — Recipient address
-* `amount` — Amount of shell tokens to withdraw
-
-**Access Control:**
-
-* Callable only by the oracle owner (`_oraclePubkey`)
+* `to` — recipient address
+* `amount` — amount of fees to withdraw
 
 **Behavior:**
 
-* Transfers shell tokens using `CURRENCIES_ID_SHELL`
+* Transfers the specified amount in shell currency to the recipient
+* Uses a minimal attached value for the transfer
 
 ***
 
-## Native Transfers
+### **`getCellForProposalSetStakeDeadline`**
 
-### `receive`
-
-```solidity
-receive() external pure;
-```
-
-Accepts incoming native token transfers.
-
-**Behavior:**
-
-* Accepts the message
-* Ensures minimal contract balance
-
-***
-
-## View Functions
-
-### `getEventListAddress`
+Encodes staking and result submission deadlines into a `TvmCell`.
 
 ```solidity
-function getEventListAddress()
-    external view
-    returns (address);
+function getCellForProposalSetStakeDeadline(
+    uint64 stakeStart,
+    uint64 stakeEnd,
+    uint64 resultStart,
+    uint64 resultEnd
+) public pure returns (TvmCell);
 ```
 
-Returns the address of the associated `OracleEventList` contract.
+**Parameters:**
 
-***
-
-### `getVersion`
-
-```solidity
-function getVersion()
-    external pure
-    returns (string);
-```
-
-Returns the contract identifier.
+* `stakeStart` — staking period start timestamp
+* `stakeEnd` — staking period end timestamp
+* `resultStart` — result submission start timestamp
+* `resultEnd` — result submission end timestamp
 
 **Returns:**
 
-* `"Oracle"`
+* Encoded `TvmCell` containing all timestamps
 
 ***
 
-## Internal Mechanics (Informational)
+### **`getCellForProposalSetResolve`**
 
-#### Balance Safety
+Encodes event resolution data into a `TvmCell`.
 
-The contract internally maintains a minimum native balance using a private `ensureBalance()` helper.\
-If the balance falls below `MIN_BALANCE`, additional shell tokens are minted.
+```solidity
+function getCellForProposalSetResolve(uint32 outcomeId)
+    public
+    pure
+    returns (TvmCell);
+```
+
+**Parameters:**
+
+* `outcomeId` — identifier of the winning outcome
+
+**Returns:**
+
+* Encoded `TvmCell` containing the outcome ID
 
 ***
 
-## Access Control Summary
+### **`getEventListAddress`**
 
-| Function              | Access            |
-| --------------------- | ----------------- |
-| `withdrawFees`        | Oracle owner only |
-| `getEventListAddress` | Public            |
-| `getVersion`          | Public            |
-| `receive`             | Public            |
+Returns the address of an `OracleEventList` for a given index.
+
+```solidity
+function getEventListAddress(uint128 index)
+    external
+    view
+    returns (address);
+```
+
+**Parameters:**
+
+* `index` — index of the OracleEventList (currently index `0` is supported)
+
+**Returns:**
+
+* Address of the corresponding OracleEventList contract
 
 ***
 
-## Notes & Caveats
+### **`getVersion`**
 
-* `Oracle` contracts **must** be deployed by `RootPN`.
-* Fee withdrawal operates exclusively in **Shell tokens** (`CURRENCIES_ID_SHELL`).
-* Event publishing logic is expected to be handled by `OracleEventList`.
+Returns the contract version information.
 
+```solidity
+function getVersion() external pure returns (string, string);
+```
+
+**Returns:**
+
+* Semantic version string (e.g. `"1.0.0"`)
+* Contract identifier string: `"Oracle"`
