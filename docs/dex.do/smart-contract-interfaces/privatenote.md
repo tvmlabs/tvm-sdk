@@ -4,430 +4,347 @@ description: PrivateNote Contract Interface Documentation
 
 # PrivateNote
 
+{% file src="../../.gitbook/assets/PrivateNote.abi (1).json" %}
+
 ## Overview
 
-**PrivateNote** is a non-custodial wallet contract.\
-It manages user balances, deploys **PMP** **(Prediction Market Pool)** and **OracleUnion** contracts, places and manages stakes, and handles claims and withdrawals.
+**PrivateNote** is a non-custodial wallet contract bound to a single deposit identifier.\
+It allows users to deploy and interact with **Prediction Market Pool (PMP)** contracts, manage stakes, claim rewards, and withdraw tokens — all while preserving privacy guarantees.
 
-Each `PrivateNote` instance is **uniquely bound to a deposit identifier hash** and controlled by an **ephemeral public key**.
+Each `PrivateNote`:
 
-***
-
-## Contract Metadata
-
-* **Contract name:** `PrivateNote`
-* **Role:** Wallet & interaction hub for PMP contracts
-* **Deployed by:** `RootPN`
-* **Authorization model:** Ephemeral public key (`_ethemeral_pubkey`)
-* **Address derivation:** Deterministic via `_deposit_identifier_hash`
+* is deterministically deployed by `RootPN`
+* is controlled by an **public key**
+* maintains internal token balances
+* enforces single-operation-at-a-time semantics via a “busy” lock
 
 ***
 
 ## Events
 
-### `OwnerChanged`
+### OwnerChanged
+
+Emitted when the owner public key is updated.
 
 ```solidity
 event OwnerChanged(uint256 oldPubkey, uint256 newPubkey);
 ```
 
-Emitted when the owner (ephemeral public key) is changed.
-
-**Parameters:**
-
-* `oldPubkey` — Previous public key
-* `newPubkey` — New public key
+* `oldPubkey` - Previous public key
+* `newPubkey` - New public key
 
 ***
 
-### `StakeConfirmed`
+### StakeConfirmed
+
+Emitted after a stake is successfully accepted by a PMP.
 
 ```solidity
 event StakeConfirmed(address stakeController, uint32 outcome, uint128 amount);
 ```
 
-Emitted when a stake is successfully accepted by a PMP contract.
-
-**Parameters:**
-
-* `stakeController` — PMP contract address
-* `outcome` — Stake outcome
-* `amount` — Confirmed stake amount
+* `stakeController` - Address of the PMP contract that accepted the stake
+* `outcome` - Outcome identifier the stake was placed on
+* `amount` - Amount of tokens added to the stake
 
 ***
 
-### `StakeCancelled`
+### StakeCancelled
+
+Emitted after a stake is cancelled and refunded.
 
 ```solidity
 event StakeCancelled(address stakeController, uint32 outcome, uint128 amount);
 ```
 
-Emitted when a stake is cancelled and funds are returned.
+* `stakeController` - Address of the PMP contract that cancelled the stake
+* `outcome` - Outcome identifier of the cancelled stake
+* `amount` - Amount of tokens returned
 
 ***
 
-### `ClaimAccepted`
+### ClaimAccepted
+
+Emitted when a claim is resolved and payout is credited.
 
 ```solidity
-event ClaimAccepted(
-    address stakeController,
-    optional(uint32) outcome,
-    uint128 payout
-);
+event ClaimAccepted(address stakeController, optional(uint32) outcome, uint128 payout);
 ```
 
-Emitted after a claim is processed by PMP.
-
-**Notes:**
-
-* If `outcome` is empty, the PMP was not yet resolved.
+* `stakeController` - Address of the PMP contract
+* `outcome` - Final resolved outcome. Empty if the event is not yet resolved
+* `payout` - Amount of tokens paid to the wallet
 
 ***
 
-### `PMPDeployed`
+### PMPDeployed
+
+Emitted when a new PMP contract is deployed.
 
 ```solidity
 event PMPDeployed(
     string name,
     uint32 token_type,
     address pmpAddress,
-    uint128 oracleFee,
-    address oracleUnion
+    address[] oracleEventLists,
+    uint128[] oracleFee
 );
 ```
 
-Emitted after deploying a new PMP contract.
+* `name` - Name of the PMP event
+* `token_type` - Token type used for staking
+* `pmpAddress` - Address of the deployed PMP contract
+* `oracleEventLists` - Oracle event list contract addresses
+* `oracleFee` - Oracle fee values corresponding to each oracle
 
 ***
 
-## Constructor
+## Public & External Interface
 
-#### `constructor`
+### **`changeOwner`**
+
+Changes the public key controlling the wallet.
 
 ```solidity
-constructor(
-    uint128 value,
-    uint256 ethemeral_pubkey,
-    uint32 token_type,
-    TvmCell pmpCode,
-    TvmCell oracleUnionCode,
-    TvmCell oracleCode
-)
+function changeOwner(uint256 new_pubkey) external;
 ```
-
-Initializes the wallet and registers the deployment in `RootPN`.
 
 **Parameters:**
 
-* `value` — Initial token balance
-* `ethemeral_pubkey` — Authorization public key
-* `token_type` — Token type of the initial balance
-* `pmpCode` — PMP contract code
-* `oracleUnionCode` — OracleUnion contract code
-* `oracleCode` — Oracle contract code
-
-**Requirements:**
-
-* Must be deployed by `RootPN`
-
-**Side Effects:**
-
-* Initializes token balance
-* Registers deployment in `RootPN`
-
-***
-
-## Ownership & Authorization
-
-### `changeOwner`
-
-```solidity
-function changeOwner(uint256 new_pubkey) public;
-```
-
-Changes the wallet owner public key.
+* `new_pubkey`— Public key of the new owner
 
 **Access Control:**
 
-* Callable only by the current owner (`_ethemeral_pubkey`)
+* Must be signed by the current public key
 
-**Emits:** `OwnerChanged`
+**Effects:**
 
-***
-
-## Oracle & PMP Deployment
-
-### `deployOracleUnion`
-
-```solidity
-function deployOracleUnion(string[] name)
-    public view onlyOwnerPubkey accept;
-```
-
-Deploys a new `OracleUnion` contract.
-
-**Parameters:**
-
-* `name` — OracleUnion member names (must be unique, max length < 10)
+* Updates owner key
+* Emits `OwnerChanged`
 
 ***
 
-### `deployPMP`
+### **`deployPMP`**
+
+Deploys a new PMP contract associated with this wallet
 
 ```solidity
 function deployPMP(
     string name,
-    uint128 oracleFee,
+    uint128[] oracleFee,
     uint32 token_type,
-    string[] names
-) public view onlyOwnerPubkey;
+    string[] names,
+    uint128[] index
+)
 ```
-
-Deploys a new `PMP` contract.
 
 **Parameters:**
 
-* `name` — PMP name (must be non-empty)
-* `oracleFee` — Oracle fee in shell tokens
-* `token_type` — Token type used by PMP
-* `names` — OracleUnion member names
+* `name` — unique PMP name
+* `oracleFee` — oracle fees per oracle
+* `token_type` — token used for staking
+* `names` — oracle names
+* `index` — oracle event list indices
 
-**Emits:** `PMPDeployed`
+**Behavior:**
+
+* Computes oracle list hash
+* Calculates required oracle fees
+* Deploys PMP deterministically
+* Emits `PMPDeployed`
 
 ***
 
-## Staking
+### **`setStake`**
 
-### `setStake`
+Places or increases a stake on a PMP
 
 ```solidity
 function setStake(
     string name,
+    uint256 oracle_list_hash,
     uint32 token_type,
     uint32 outcome,
     uint128 amount
-) public onlyOwnerPubkey accept;
+) public;
 ```
 
-Places or updates a stake on a PMP contract.
+**Parameters:**
 
-**Requirements:**
+* `name` - Name of the `PMP` event.\
+  Used to derive the unique event identifier and the target `PMP` contract address.
+* `oracle_list_hash` - Hash of the oracle list configuration associated with the `PMP` event.\
+  Must match the oracle list used when the `PMP` contract was deployed.
+* `token_type` - Token type used for staking.\
+  Must correspond to a token balance available in the wallet.
+* `outcome` - Identifier of the outcome being staked on.\
+  The meaning of the outcome is defined by the `PMP` contract logic.
+* `amount` - Amount of tokens to stake.\
+  Must be greater than zero and less than or equal to the available balance for the specified token type.
 
-* Sufficient balance
+**Rules:**
+
 * Wallet must not be busy
-* Previous candidate stake must be confirmed
+* Balance must be sufficient
+* Stake is first stored as `candidate_amount`
+* `PMP` confirmation is required
 
 ***
 
-### `cancelStake`
+### **`cancelStake`**
+
+Cancels an existing stake.
 
 ```solidity
 function cancelStake(
-    string name,
-    uint32 token_type,
-    uint32 outcome
-) public onlyOwnerPubkey accept;
+string name,
+uint256 oracle_list_hash,
+uint32 token_type,
+uint32 outcome
+) public;
 ```
 
-Cancels an active stake.
+**Parameters**
+
+* `name` - Name of the `PMP` event.\
+  Used to derive the event identifier and the address of the target `PMP` contract.
+* `oracle_list_hash` - Hash of the oracle list configuration associated with the `PMP` event.\
+  Must match the oracle list hash of the existing stake.
+* `token_type` - Token type used for the stake being cancelled.\
+  Must correspond to the token type of the existing stake entry.
+* `outcome` - Identifier of the outcome for which the stake was placed.\
+  Specifies which stake position should be cancelled.
+
+**Behavior:**
+
+* Calls `PMP` to cancel stake
+* Locks wallet until response
 
 ***
 
-### `deleteStake`
+### **`deleteStake`**
+
+Deletes a local stake record without interacting with PMP.
 
 ```solidity
 function deleteStake(
-    string name,
-    uint32 token_type,
-    uint32 outcome
-) public onlyOwnerPubkey accept;
-```
-
-Deletes a local stake record (no PMP interaction).
-
-***
-
-### `onStakeAccepted`
-
-```solidity
-function onStakeAccepted(
-    string name,
-    uint32 token_type,
-    uint32 outcome
+string name,
+uint256 oracle_list_hash,
+uint32 token_type,
+uint32 outcome
 ) public;
 ```
 
-Callback from PMP after stake acceptance.
+**Parameters:**
 
-**Access Control:**
+* `name` - Name of the `PMP` event.\
+  Used to derive the internal stake identifier stored in the wallet.
+* `oracle_list_hash` - Hash of the oracle list configuration associated with the stake.\
+  Must match the oracle list hash used when the stake entry was created.
+* `token_type` - Token type of the stake being deleted.\
+  Used to identify the correct local stake record.
+* `outcome` - Identifier of the outcome associated with the stake.\
+  Specifies which stake record should be removed.
 
-* Callable only by the active PMP (`_busy`)
+**Use case:**
 
-**Emits:** `StakeConfirmed`
-
-***
-
-### `onStakeCancelled`
-
-```solidity
-function onStakeCancelled(
-    string name,
-    uint32 token_type,
-    uint32 outcome
-) public;
-```
-
-Callback from PMP after stake cancellation.
-
-**Emits:** `StakeCancelled`
+* Cleanup after expiration or full resolution
 
 ***
 
-## Claims
+### **`claim`**
 
-### `claim`
+Claims winnings from a resolved `PMP`.
 
 ```solidity
 function claim(
     string name,
+    uint256 oracle_list_hash,
     uint32 token_type,
     uint32 outcome
-) public onlyOwnerPubkey;
-```
-
-Claims winnings from a PMP contract.
-
-***
-
-### `onClaimAccepted`
-
-```solidity
-function onClaimAccepted(
-    string name,
-    uint32 token_type,
-    optional(uint32) outcome,
-    uint32 selfOutcome,
-    uint128 payout
 ) public;
 ```
 
-Callback from PMP after claim processing.
+**Parameters**
 
-**Behavior:**
-
-* If `outcome` is empty, PMP is unresolved
-* Otherwise:
-  * Adds payout to balance
-  * Removes stake record
-
-**Emits:** `ClaimAccepted`
+* `name` - Name of the `PMP` event.\
+  Used to derive the event identifier and the address of the target `PMP` contract.
+* `oracle_list_hash` - Hash of the oracle list configuration associated with the `PMP` event.\
+  Must match the oracle list hash of the existing stake.
+* `token_type` - Token type used for the stake.\
+  Determines which internal balance will receive the payout.
+* `outcome` - Outcome identifier originally selected by the user when placing the stake.\
+  Used to identify the stake position being claimed.
 
 ***
 
-## Withdrawals
+### **`withdrawTokens`**
 
-### `withdrawTokens`
+Withdraws tokens from the wallet via the `Vault`.
 
 ```solidity
 function withdrawTokens(
     uint8 flags,
     address dest_wallet_addr,
-    uint128 value,
     uint32 token_type
-) public onlyOwnerPubkey accept;
+) public;
 ```
 
-Withdraws tokens to an external wallet via `Vault`.
+**Parameters**
+
+* `flags` - Transfer flags passed to the Vault contract.\
+  Control message delivery behavior during the token transfer.
+* `dest_wallet_addr` - Destination wallet address that will receive the withdrawn tokens.
+* `token_type` - Type of token to withdraw.\
+  All available balance for this token type will be withdrawn.
+
+**Behavior:**
+
+* Transfers full balance of the given token type
+* Resets local balance to zero
 
 ***
 
-### `revertWithdraw`
+### Bounce Handling
 
-```solidity
-function revertWithdraw(
-    uint32 token_type,
-    uint128 value
-) public accept;
-```
+#### onBounce
 
-Reverts a withdrawal (called by `Vault` only).
-
-***
-
-## Native Transfers & Error Handling
-
-### `receive()`
-
-Receives native tokens and ensures minimum balance.
-
-***
-
-### `onBounce`
-
-```solidity
-onBounce(TvmSlice body) external;
-```
-
-Handles bounced PMP messages.
+Handles bounced PMP calls.
 
 **Behavior:**
 
 * Clears busy state
-* Restores stake or candidate amount
+* Restores candidate stake amount
+* Ensures balance consistency
 
 ***
 
 ## View Functions
 
-### `getPMPCode`
-
-```solidity
-function getPMPCode()
-    external view
-    returns (TvmCell pmpCode, uint256 pmpCodeHash);
-```
+### **`getPMPCode()`**
 
 Returns salted PMP code and its hash.
 
 ***
 
-### `getDetails`
+### **`getDetails()`**
 
-```solidity
-function getDetails()
-    external view
-    returns (
-        uint256 depositIdentifierHash,
-        uint256 etherealPubkey,
-        mapping(uint32 => uint128) balance,
-        uint256 pmpCodeHash,
-        uint256 privateNoteCodeHash,
-        optional(address) busyAddress
-    );
-```
+Returns current wallet state:
 
-Returns current wallet state and metadata.
+* deposit identifier hash
+* public key
+* token balances
+* PMP code hash
+* PrivateNote code hash
+* busy PMP address (if any)
 
 ***
 
-### `getVersion`
+### **`getVersion()`**
+
+Returns version and contract identifier.
 
 ```solidity
-function getVersion() external pure returns (string);
+("1.0.0", "PrivateNote")
 ```
-
-Returns the contract identifier.
-
-**Returns:** `"PrivateNote"`
-
-***
-
-## Access Control Summary
-
-| Function Category | Access           |
-| ----------------- | ---------------- |
-| Owner operations  | Ephemeral pubkey |
-| PMP callbacks     | Active PMP only  |
-| Vault callbacks   | Vault only       |
-| View functions    | Public           |
 

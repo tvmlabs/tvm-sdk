@@ -4,45 +4,25 @@ description: OracleEventList Contract Interface Documentation
 
 # OracleEventList
 
+{% file src="../../.gitbook/assets/OracleEventList.abi.json" %}
+
 ## Overview
 
-**OracleEventList** is a registry contract owned by an **Oracle**.\
-It defines which events the oracle is willing to service, along with the associated fees and deadlines, and acts as a validation layer during **PMP** **(Prediction Market Pool)** deployment and event confirmation.
+**OracleEventList** is a contract that manages a list of events an Oracle is willing to service.\
+It allows the Oracle to publish events, confirm or cancel participation via **Prediction Market Pool (PMP)** contracts, and manage event lifecycle state.
 
-Each `OracleEventList` is deployed by an `Oracle` contract and is uniquely bound to it.
+Each `OracleEventList` is uniquely identified by:
 
-***
-
-## Contract Metadata
-
-* **Contract name:** `OracleEventList`
-* **Role:** Oracle event registry & validation contract
-* **Owner:** Oracle contract (`_oracle`)
-* **Authorization model:** Oracle public key (`_oracle_pubkey`)
-* **Associated contracts:** `Oracle`, `PMP`, `PrivateNote`
-
-***
-
-## Storage Overview
-
-#### Static & State Variables
-
-* `_oracle` (`address`, static)\
-  Address of the owning `Oracle` contract.
-* `_oracle_pubkey` (`uint256`)\
-  Public key used to authorize oracle actions.
-* `_PrivateNoteCode` (`TvmCell`)\
-  Code of the `PrivateNote` contract (used for PMP address derivation).
-* `_pmpCode` (`TvmCell`)\
-  Code of the `PMP` contract.
-* `_events` (`mapping(uint256 => EventInfo)`)\
-  Mapping of supported oracle events by `event_id`.
+* the Oracle address
+* a static index
 
 ***
 
 ## Events
 
-### `EventAdded`
+### EventAdded
+
+Emitted when a new event is added to the OracleEventList.
 
 ```solidity
 event EventAdded(
@@ -53,177 +33,180 @@ event EventAdded(
 );
 ```
 
-Emitted when the oracle registers a new event.
-
-**Parameters:**
-
-* `event_id` — Hash identifier of the event
-* `event_name` — Human-readable event name
-* `oracle_fee` — Fee required for oracle service
-* `deadline` — Timestamp until which the oracle is willing to service the event
+* `event_id` — unique identifier (hash) of the event
+* `event_name` — human-readable name of the event
+* `oracle_fee` — fee required by the Oracle
+* `deadline` — timestamp until which the Oracle is willing to service the event
 
 ***
 
-### `EventConfirmed`
+### EventConfirmed
+
+Emitted when an Oracle confirms participation in an event via a PMP contract.
 
 ```solidity
-event EventConfirmed(
-    uint256 event_id,
-    address pmpAddress
-);
+event EventConfirmed(uint256 event_id, address pmpAddress);
 ```
 
-Emitted when the oracle confirms willingness to service an event requested by a PMP.
-
-**Parameters:**
-
-* `event_id` — Event identifier
-* `pmpAddress` — Address of the requesting PMP contract
+* `event_id` — identifier of the confirmed event
+* `pmpAddress` — address of the PMP contract that initiated confirmation
 
 ***
 
-## Constructor
+## Public & External Interface
 
-#### `constructor`
+### **`addEvent`**
 
-```solidity
-constructor(
-    uint256 pubkey,
-    TvmCell PrivateNoteCode,
-    TvmCell pmpCode
-)
-```
-
-Initializes the event list and binds it to an `Oracle`.
-
-**Parameters:**
-
-* `pubkey` — Oracle public key
-* `PrivateNoteCode` — `PrivateNote` contract code
-* `pmpCode` — `PMP` contract code
-
-**Behavior:**
-
-* Sets the deploying address as the oracle owner
-* Stores contract codes for PMP address verification
-
-***
-
-## Oracle Event Management
-
-### `addEvent`
+Adds a new event that the Oracle is willing to service.
 
 ```solidity
 function addEvent(
     string event_name,
     uint128 oracle_fee,
-    uint64 deadline
-) public onlyOwnerPubkey accept;
+    uint64 deadline,
+    string describe,
+    mapping(uint32 => string) outcomeNames,
+    optional(uint256) trustAddr
+)
+    public
+    onlyOwnerPubkey(_oracle_pubkey)
+    accept;
 ```
 
-Registers a new event that the oracle is willing to service.
+**Access:** oracle owner only\
+**Modifiers:** `onlyOwnerPubkey`, `accept`
 
 **Parameters:**
 
-* `event_name` — Human-readable event name
-* `oracle_fee` — Required oracle fee in shell tokens
-* `deadline` — Timestamp after which the event is no longer valid
+* `event_name` — human-readable event name
+* `oracle_fee` — Oracle fee for servicing the event
+* `deadline` — timestamp until which the event is valid
+* `describe` — detailed event description
+* `outcomeNames` — mapping of outcome IDs to outcome names
+* `trustAddr` — optional trusted address for the event
 
-**Requirements:**
+**Behavior:**
 
-* `deadline` must be greater than the current block timestamp
-* Callable only by the oracle owner (`_oracle_pubkey`)
-
-**Side Effects:**
-
-* Stores event metadata in `_events`
-* Emits `EventAdded`
+* Validates that the deadline is in the future
+* Ensures sufficient native balance
+* Requires at least 2 and fewer than 20 outcomes
+* Computes a deterministic `event_id` from event parameters
+* Stores event information in contract storage
+* Emits `EventAdded` to an external address
 
 ***
 
-## PMP Interaction
+### **`confirmEvent`**
 
-### `confirmEvent`
+Confirms Oracle participation in an event.
 
 ```solidity
 function confirmEvent(
     uint256 event_id,
     uint256 oracle_list_hash,
     uint32 token_type
-) public view accept;
+)
+    public
+    senderIs(
+        DexLib.computePMPAddress(
+            _PrivateNoteCode,
+            _pmpCode,
+            event_id,
+            oracle_list_hash,
+            token_type
+        )
+    )
+    accept;
 ```
 
-Confirms or rejects a PMP request to use the oracle for a specific event.
-
-**Access Control:**
-
-* Callable **only** by a valid `PMP` contract\
-  (address is verified using `DexLib.computePMPAddress`)
+**Access:** PMP contract only\
+**Modifiers:** `senderIs`, `accept`
 
 **Parameters:**
 
-* `event_id` — Event identifier
-* `oracle_list_hash` — Hash of the oracle list used by PMP
-* `token_type` — Token type associated with the PMP
+* `event_id` — identifier of the event
+* `oracle_list_hash` — hash of the oracle list
+* `token_type` — token type used by the PMP
 
 **Behavior:**
 
-1. Transfers received shell tokens to the owning `Oracle`
-2. Rejects the request if:
-   * Event does not exist
-   * Deadline has passed
-   * Provided fee is insufficient
-3. Approves the request otherwise
-
-**Outgoing Calls:**
-
-* `PMP.rejectEvent()` — if validation fails
-* `PMP.approveEvent(oracle_pubkey)` — if validation succeeds
-
-**Emits:**
-
-* `EventConfirmed` on successful approval
+* Ensures sufficient native balance
+* Transfers received fees to the Oracle owner
+* Rejects the event if it does not exist
+* Rejects the event if:
+  * the deadline has passed
+  * the paid fee is lower than the Oracle fee
+* Approves the event via the PMP contract if all conditions are met
+* Emits `EventConfirmed` upon successful confirmation
 
 ***
 
-## View Functions
+### **`cancelEvent`**
 
-### `getVersion`
+Cancels Oracle participation in an event.
 
 ```solidity
-function getVersion() external pure returns (string);
+function cancelEvent(
+    uint256 event_id,
+    uint256 oracle_list_hash,
+    uint32 token_type
+)
+    public
+    senderIs(
+        DexLib.computePMPAddress(
+            _PrivateNoteCode,
+            _pmpCode,
+            event_id,
+            oracle_list_hash,
+            token_type
+        )
+    )
+    accept;
 ```
 
-Returns the contract identifier.
+**Access:** PMP contract only\
+**Modifiers:** `senderIs`, `accept`
+
+**Behavior:**
+
+* Ensures sufficient native balance
+* Decreases the confirmation counter for the event
+
+***
+
+### **`deleteEvent(uint256 event_id)`**
+
+Deletes an event from the OracleEventList.
+
+```solidity
+function deleteEvent(uint256 event_id)
+    public
+    onlyOwnerPubkey(_oracle_pubkey)
+    accept;
+```
+
+**Access:** oracle owner only\
+**Modifiers:** `onlyOwnerPubkey`, `accept`
+
+**Behavior:**
+
+* Ensures sufficient native balance
+* Deletes the event if:
+  * no active confirmations exist, or
+  * the event deadline has passed
+
+***
+
+### **`getVersion()`**
+
+Returns the contract version information.
+
+```solidity
+function getVersion() external pure returns (string, string);
+```
 
 **Returns:**
 
-* `"OracleEventList"`
+* Semantic version string (e.g. `"1.0.0"`)
+* Contract identifier string: `"OracleEventList"`
 
-***
-
-## Internal Mechanics (Informational)
-
-### Balance Safety
-
-The contract maintains a minimum native balance via an internal `ensureBalance()` helper.\
-If the balance drops below `MIN_BALANCE`, shell tokens are minted automatically.
-
-***
-
-## Access Control Summary
-
-| Function       | Access              |
-| -------------- | ------------------- |
-| `addEvent`     | Oracle owner only   |
-| `confirmEvent` | Authorized PMP only |
-| `getVersion`   | Public              |
-
-***
-
-## Notes & Caveats
-
-* `event_id` is computed as `tvm.hash(event_name)`
-* Fees are transferred immediately to the owning `Oracle`
-* Event approval is **time-bound** via `deadline`
-* Event existence and fee sufficiency are validated atomically

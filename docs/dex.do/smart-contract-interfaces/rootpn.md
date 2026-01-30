@@ -1,18 +1,29 @@
 ---
-description: RootPN Contract Interface Documentation
+description: RootPrivateNote Contract Interface Documentation
 ---
 
 # RootPN
 
+{% file src="../../.gitbook/assets/RootPN.abi (1).json" %}
+
 ## Overview
 
-**RootPN** is the root contract responsible for deploying and coordinating the **PrivateNote**, **Nullifier**, and **Oracle** contracts. It stores their code, manages upgrades, and aggregates deployment statistics.
+**RootPN** is the system root contract responsible for deploying and managing `PrivateNote` contracts.\
+It also stores and manages the canonical contract code for related system components, including prediction markets, oracles, and nullifiers.
+
+The contract acts as a trusted entry point for:
+
+* zero-knowledge–verified deposits
+* deterministic deployment of `PrivateNote`
+* system-wide code upgrades
 
 ***
 
 ## Events
 
-### `PrivateNoteDeployed`
+### PrivateNoteDeployed
+
+Emitted when a new `PrivateNote` contract is deployed.
 
 ```solidity
 event PrivateNoteDeployed(
@@ -22,17 +33,16 @@ event PrivateNoteDeployed(
 );
 ```
 
-Emitted after a successful deployment of a new `PrivateNote`.
+**Meaning:**
 
-**Parameters:**
-
-* `depositIdentifierHash` — Unique hash identifying the deposit.
-* `noteAddress` — Deterministic address of the deployed `PrivateNote`.
-* `initialBalance` — Initial balance assigned to the note.
+* A `PrivateNote` was successfully deployed
+* The address is deterministically derived from the deposit identifier
 
 ***
 
-### `NullifierDeployed`
+### NullifierDeployed
+
+Emitted when a `Nullifier` contract is deployed.
 
 ```solidity
 event NullifierDeployed(
@@ -41,29 +51,18 @@ event NullifierDeployed(
 );
 ```
 
-Emitted after deploying a `Nullifier` contract.
+**Meaning:**
 
-**Parameters:**
-
-* `nullifierAddress` — _Note:_ the emitted value is the associated `PrivateNote` address, not the actual `Nullifier` address.
-* `value` — Amount minted and transferred during deployment.
-
-> ⚠️ **Important:**\
-> Despite the event name, `nullifierAddress` contains the **PrivateNote address** passed during emission.
+* A nullifier was created to prevent double-spending
+* Funds were transferred to the associated `PrivateNote`
 
 ***
 
-## Constructor
+## Public & External Interface
 
-#### `constructor()`
+### **`sendEccShellToPrivateNote`**
 
-Initializes the contract and accepts the deployment transaction.
-
-***
-
-## Public Functions
-
-### `sendEccShellToPrivateNote`
+Sends ECC Shell tokens to a `PrivateNote` after zero-knowledge proof verification.
 
 ```solidity
 function sendEccShellToPrivateNote(
@@ -71,32 +70,29 @@ function sendEccShellToPrivateNote(
     uint256 nullifier_hash,
     uint256 deposit_identifier_hash,
     uint64 value
-) public view accept;
+) public;
 ```
-
-Verifies a zero-knowledge proof, mints ECC Shell tokens, and deploys a `Nullifier` contract bound to a `PrivateNote`.
 
 **Parameters:**
 
-* `proof` — Zero-knowledge proof.
-* `nullifier_hash` — Hash used to initialize the `Nullifier`.
-* `deposit_identifier_hash` — Deposit identifier used to derive the `PrivateNote` address.
-* `value` — Amount to mint and transfer.
+* `proof` — zero-knowledge proof validating the deposit
+* `nullifier_hash` — unique nullifier preventing double spend
+* `deposit_identifier_hash` — deposit identifier hash
+* `value` — amount of ECC Shell tokens to mint and transfer
 
-**Requirements:**
+**Behavior:**
 
-* ZK proof must be valid for `CURRENCIES_ID_SHELL`.
-* Contract balance must meet the minimum required level.
-
-**Side Effects:**
-
-* Mints ECC Shell tokens.
-* Deploys a `Nullifier` contract.
-* Emits `NullifierDeployed`.
+* Verifies the proof using `zkhalo2verify`
+* Mints ECC Shell tokens
+* Deploys a `Nullifier` contract
+* Forwards minted tokens to the corresponding `PrivateNote`
+* Emits `NullifierDeployed`
 
 ***
 
-### `deployPrivateNote`
+### **`deployPrivateNote`**
+
+Deploys a new `PrivateNote` contract after ZK verification.
 
 ```solidity
 function deployPrivateNote(
@@ -105,131 +101,77 @@ function deployPrivateNote(
     uint256 ethemeral_pubkey,
     uint128 value,
     uint32 token_type
-) public view accept;
+) public;
 ```
-
-Deploys a new `PrivateNote` contract after validating token type and ZK proof.
 
 **Parameters:**
 
-* `zkproof` — Zero-knowledge proof.
-* `deposit_identifier_hash` — Unique deposit identifier.
-* `ethemeral_pubkey` — Ephemeral public key for the note.
-* `value` — Initial token balance.
-* `token_type` — Token type (must equal `CURRENCIES_ID`).
+* `zkproof` — zero-knowledge proof of deposit validity
+* `deposit_identifier_hash` — unique deposit identifier
+* `ethemeral_pubkey` — public key for the note
+* `value` — initial token balance
+* `token_type` — token type identifier
 
-**Requirements:**
+**Behavior:**
 
-* `token_type` must match `CURRENCIES_ID`.
-* ZK proof must be valid.
-* Contract must have sufficient balance.
-
-**Side Effects:**
-
-* Deploys a `PrivateNote` contract.
-* Emits `PrivateNoteDeployed`.
+* Verifies token type
+* Validates the deposit via zero-knowledge proof
+* Computes deterministic `PrivateNote` address
+* Deploys the `PrivateNote` contract
+* Emits `PrivateNoteDeployed`
 
 ***
 
-### `privateNoteDeployed`
+### **`privateNoteDeployed`**
+
+Records the deployment of a `PrivateNote`.
 
 ```solidity
 function privateNoteDeployed(
     uint256 deposit_identifier_hash,
     uint32 token_type,
     uint128 deployed_value
-) public accept;
+) public;
 ```
-
-Records a successful `PrivateNote` deployment and aggregates deployed values.
-
-**Parameters:**
-
-* `deposit_identifier_hash` — Deposit identifier.
-* `token_type` — Token type being tracked.
-* `deployed_value` — Amount to add to aggregated statistics.
 
 **Access Control:**
 
-* Callable **only** by the `PrivateNote` contract whose address is derived from `deposit_identifier_hash`.
+* Callable only by the corresponding `PrivateNote` contract
 
-**Side Effects:**
+**Behavior:**
 
-* Increments `_deployedValues[token_type]`.
-
-***
-
-### `deployOracle`
-
-```solidity
-function deployOracle(
-    uint256 oraclePubkey,
-    string oracleName
-) public view accept;
-```
-
-Deploys a new `Oracle` contract.
-
-**Parameters:**
-
-* `oraclePubkey` — Oracle public key.
-* `oracleName` — Human-readable oracle name.
-
-**Access Control:**
-
-* Owner only (`onlyOwnerPubkey`).
+* Updates internal accounting of deployed values by token type
 
 ***
 
-### `updateCode`
+## View Functions
 
-```solidity
-function updateCode(
-    TvmCell newcode,
-    TvmCell cell
-) public accept;
-```
+### **`getPrivateNoteCode`**
 
-Upgrades the RootPN contract code.
-
-**Parameters:**
-
-* `newcode` — New contract code.
-* `cell` — Encoded data for restoring state after upgrade.
-
-**Access Control:**
-
-* Owner only.
-
-**Side Effects:**
-
-* Replaces contract code.
-* Resets storage and reinitializes state via `onCodeUpgrade`.
-
-***
-
-### `getPrivateNoteCode`
+Returns the salted `PrivateNote` contract code.
 
 ```solidity
 function getPrivateNoteCode()
-    external view
+    external
+    view
     returns (TvmCell privateNoteCode, uint256 privateNoteHash);
 ```
 
-Returns the salted `PrivateNote` code and its hash.
-
 **Returns:**
 
-* `privateNoteCode` — Salted `TvmCell` of `PrivateNote`.
-* `privateNoteHash` — Hash of the salted code.
+* `privateNoteCode` — salted code cell
+* `privateNoteHash` — hash of the salted code
 
 ***
 
-### `getDetails`
+### **`getDetails`**
+
+Returns core RootPN state information.
 
 ```solidity
 function getDetails()
-    external view
+    external
+    view
     returns (
         uint256 pmpCodeHash,
         uint256 privateNoteCodeHash,
@@ -238,35 +180,24 @@ function getDetails()
     );
 ```
 
-Returns core contract metadata.
-
 **Returns:**
 
-* `pmpCodeHash` — Hash of PMP contract code.
-* `privateNoteCodeHash` — Hash of `PrivateNote` code.
-* `ownerPubkey` — Root owner public key.
-* `balance` — Current contract balance.
+* hash of PMP code
+* hash of PrivateNote code
+* root owner public key
+* current contract balance
 
 ***
 
-### `getVersion`
+### **`getVersion()`**
+
+Returns version information for the RootPN contract.
 
 ```solidity
-function getVersion() external pure returns (string);
+function getVersion() external pure returns (string, string);
 ```
-
-Returns the contract version identifier.
 
 **Returns:**
 
-* `"RootPN"`
-
-***
-
-## Notes on Access Control and Roles
-
-**Owner:**\
-The `deployOracle` and `updateCode` functions are protected by `onlyOwnerPubkey(_ownerPubkey)`.
-
-**PrivateNote-only:**\
-The `privateNoteDeployed` function is protected by `senderIs(...)` and accepts calls only from the expected note address, which is calculated from `deposit_identifier_hash`
+* semantic version string
+* contract identifier: `"RootPN"`
