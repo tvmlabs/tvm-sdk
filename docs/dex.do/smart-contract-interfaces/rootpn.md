@@ -9,7 +9,7 @@ description: (Work in progress) RootPrivateNote Contract Interface Documentation
 ## Overview
 
 **RootPN** is the system root contract responsible for deploying and managing `PrivateNote` contracts.\
-It also stores and manages the canonical contract code for related system components, including prediction markets, oracles, and nullifiers.
+It also stores and manages the canonical contract code for related system components, including Pari Mutuel Pool, Oracles, and Nullifiers.
 
 The contract acts as a trusted entry point for:
 
