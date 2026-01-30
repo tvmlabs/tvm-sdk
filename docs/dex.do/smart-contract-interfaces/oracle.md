@@ -1,5 +1,5 @@
 ---
-description: Oracle Contract Interface Documentation
+description: (Work in progress) Oracle Contract Interface Documentation
 ---
 
 # Oracle

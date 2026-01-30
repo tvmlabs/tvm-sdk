@@ -1,5 +1,5 @@
 ---
-description: RootPrivateNote Contract Interface Documentation
+description: (Work in progress) RootPrivateNote Contract Interface Documentation
 ---
 
 # RootPN

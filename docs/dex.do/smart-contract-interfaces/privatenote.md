@@ -1,5 +1,5 @@
 ---
-description: PrivateNote Contract Interface Documentation
+description: (Work in progress) PrivateNote Contract Interface Documentation
 ---
 
 # PrivateNote

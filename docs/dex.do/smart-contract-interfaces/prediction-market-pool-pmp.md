@@ -1,5 +1,5 @@
 ---
-description: PMP Contract Interface Documentation
+description: (Work in progress) PMP Contract Interface Documentation
 ---
 
 # Prediction Market Pool (PMP)
