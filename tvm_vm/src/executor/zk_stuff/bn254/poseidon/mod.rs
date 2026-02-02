@@ -128,6 +128,22 @@ pub fn poseidon_bytes(
     Ok(field_element_to_canonical_le_bytes(&output_as_field_element))
 }
 
+pub fn poseidon_bytes_flat(
+    input_data: &Vec<u8>,
+) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+    if input_data.len()%FIELD_ELEMENT_SIZE_IN_BYTES != 0 {
+        return Err(InputTooLong(input_data.len()));
+    }
+    let mut inputs_groupped: Vec<Vec<u8>> = Vec::new();
+
+    let field_elements = input_data.len()/FIELD_ELEMENT_SIZE_IN_BYTES;
+    for i in 0..field_elements {
+        let buffer = &input_data[i*FIELD_ELEMENT_SIZE_IN_BYTES..(i+1)*FIELD_ELEMENT_SIZE_IN_BYTES];
+        inputs_groupped.push(buffer.to_vec());
+    }
+    poseidon_bytes(&inputs_groupped)
+}
+
 /// Given a binary representation of a BN254 field element as an integer in
 /// little-endian encoding, this function returns the corresponding field
 /// element. If the field element is not canonical (is larger than the field
@@ -177,4 +193,16 @@ fn bn254_to_fr(fr: Fr) -> crate::executor::zk_stuff::Fr {
     bytes.clone_from_slice(&fr.into_bigint().to_bytes_be());
     crate::executor::zk_stuff::Fr::from_repr_vartime(FrRepr(bytes))
         .expect("The bytes of fr are guaranteed to be canonical here")
+}
+
+#[test]
+fn test_poseidon_bytes_flat() {
+    let input_bytes = [0u8; 32];
+    let hash = poseidon_bytes_flat(&input_bytes.to_vec()).unwrap();
+    println!(" bytes of Poseidon hash from zeroes = {:?}", hash);
+    
+
+    let etalon_res: Vec<u8> = hex::decode("0b63a53787021a4a962a452c2921b3663aff1ffd8d5510540f8e659e782956f1").unwrap();
+    //assert(true);
+    assert!(hash == etalon_res);
 }
