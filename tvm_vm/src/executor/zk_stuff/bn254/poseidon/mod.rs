@@ -129,7 +129,7 @@ pub fn poseidon_bytes(
 }
 
 pub fn poseidon_bytes_flat(
-    input_data: &Vec<u8>,
+    input_data: &[u8],
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
     if input_data.len()%FIELD_ELEMENT_SIZE_IN_BYTES != 0 {
         return Err(InputTooLong(input_data.len()));
