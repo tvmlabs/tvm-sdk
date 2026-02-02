@@ -131,17 +131,14 @@ pub fn poseidon_bytes(
 pub fn poseidon_bytes_flat(
     input_data: &[u8],
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    if input_data.len()%FIELD_ELEMENT_SIZE_IN_BYTES != 0 {
-        return Err(InputTooLong(input_data.len()));
-    }
-    let mut inputs_groupped: Vec<Vec<u8>> = Vec::new();
-
-    let field_elements = input_data.len()/FIELD_ELEMENT_SIZE_IN_BYTES;
-    for i in 0..field_elements {
-        let buffer = &input_data[i*FIELD_ELEMENT_SIZE_IN_BYTES..(i+1)*FIELD_ELEMENT_SIZE_IN_BYTES];
-        inputs_groupped.push(buffer.to_vec());
-    }
-    poseidon_bytes(&inputs_groupped)
+    let data = input_data.chunks(FIELD_ELEMENT_SIZE_IN_BYTES).map(|c| {
+        let mut v = c.to_vec();
+        if v.len() < FIELD_ELEMENT_SIZE_IN_BYTES {
+            v.resize(FIELD_ELEMENT_SIZE_IN_BYTES, 0);
+        }
+        v
+    }).collect();
+    poseidon_bytes(&data)
 }
 
 /// Given a binary representation of a BN254 field element as an integer in
