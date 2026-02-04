@@ -25,7 +25,7 @@ We added a unique index for blocks to paginate them across all the threads: `cha
 ```
 chain_order = block-timestamp-in-seconds + 
                 placeholder-for-future-purposes +
-                thread + height
+                thread_id + height
 ```
 
 Each value should be converted to hex string and prefixed with \<string size -1>.
