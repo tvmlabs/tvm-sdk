@@ -25,14 +25,6 @@ Read more in the next sections.
 
 You can find more information [here](../graphql-quick-start.md)
 
-## Client Libraries
-
-GraphQL API goes along with SDK that helps one to create messages, handle network issues and implement any possible use-case over this API.
-
-### [SDK documentation](https://dev.ackinacki.com/)
-
-### [How to connect with libraries.](../guides/queries_and_subscriptions/raw_query.md)
-
 ## More about GraphQL protocol
 
 Read more about GraphQL on the official GraphQL Foundation website [https://graphql.org/](https://graphql.org)
