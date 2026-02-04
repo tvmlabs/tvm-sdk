@@ -56,7 +56,12 @@
 * [Field Descriptions](graphql/field-descriptions.md)
 * [Info API](graphql/info-api.md)
 * [Web Playground](graphql/web-playground.md)
-* [Examples](graphql/examples.md)
+* [GraphQL API Examples](graphql/graphql-api-examples/README.md)
+  * [Connect to GraphQL API](graphql/graphql-api-examples/connect-to-graphql-api.md)
+  * [Send message](graphql/graphql-api-examples/send-message.md)
+  * [Retrieve all blocks, transactions, events](graphql/graphql-api-examples/retrieve-all-blocks-transactions-events.md)
+  * [Accounts queries](graphql/graphql-api-examples/accounts-queries.md)
+  * [Messages](graphql/graphql-api-examples/messages.md)
 
 ## ABI
 
@@ -65,14 +70,6 @@
 ## Examples
 
 * [Client Libraries JS Examples](https://github.com/tvmlabs/sdk-examples)
-* [GraphQL API Examples](examples/graphql-api-examples/README.md)
-  * [Connect to GraphQL API](examples/graphql-api-examples/connect-to-graphql-api.md)
-  * [Send message](examples/graphql-api-examples/send-message.md)
-  * [Accounts](examples/graphql-api-examples/accounts.md)
-  * [Blocks](examples/graphql-api-examples/blocks.md)
-  * [Messages](examples/graphql-api-examples/messages.md)
-  * [Block and Transaction Pagination: Best Practice](examples/graphql-api-examples/block-and-transaction-pagination-best-practice.md)
-  * [Transactions](examples/graphql-api-examples/transactions.md)
 
 ## Local Blockchain
 

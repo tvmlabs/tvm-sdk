@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Field Descriptions
 
 {% hint style="info" %}
