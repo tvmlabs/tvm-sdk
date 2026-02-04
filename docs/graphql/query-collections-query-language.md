@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Query Collections: Query Language
 
 ## Content table

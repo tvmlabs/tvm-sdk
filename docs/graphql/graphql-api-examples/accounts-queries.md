@@ -1,4 +1,4 @@
-# Accounts
+# Accounts queries
 
 ## Get account info
 
@@ -50,120 +50,6 @@ Result:
         }
       }
     }
-  }
-}
-```
-
-fields:
-
-* `address` is full account address that consists of workchainID:address
-* `acc_type`
-  * 0 – uninit (Account has balance but no code)
-  * 1 – active (Account has balance and code)
-  * 2 – frozen(Account has been frozen for some reasons)
-  * 3 - nonExist (Account was deleted)
-* `last_paid` - unixtime of the most recent storage payment (happens each transaction execution)
-* `balance` - tokens on account (Note: to deploy smart contract code you need to have non-zero balance)
-* `last_trans_lt` - logical time of last account transaction
-* `boc` - Bag of cells with the account struct encoded as base64 (contains code, data, library and other header information).
-* `data` - bag of cells with the account's data
-* `code` - bag of cells with the account's code
-* `library` - If present, contains library code used in smart-contract.
-* `data_hash` - hash of account data
-* `code_hash` - hash of account code
-* `library_hash` - library field hash
-
-## Filter accounts
-
-If you need to filter accounts by some condition and paginate them, use accounts collection.
-
-Use id(account address) as cursor for pagination.
-
-#### Paginate accounts having same code\_hash:
-
-```graphql
-query{
-  accounts(
-    filter:{
-      code_hash:{
-        eq:"80d6c47c4a25543c9b397b71716f3fae1e2c5d247174c52e2c19bd896442b105"
-      }
-      id:{
-        gt:"0:001a338e4af5fe33307c2b0d04de453513019942748eb2b290ca3db0adfe8343"
-      }
-    }
-    orderBy:[
-      {
-        path:"id",
-        direction:ASC
-      }
-    ]
-  ){
-    id
-    balance(format:DEC)
-    last_paid
-  }
-}
-```
-
-#### Paginate accounts having same code\_hash, updated after timestamp
-
-```graphql
-query{
-  accounts(
-    filter:{
-      workchain_id:{
-        eq:0
-      },
-      code_hash:{
-        eq:"80d6c47c4a25543c9b397b71716f3fae1e2c5d247174c52e2c19bd896442b105"
-      }
-      last_paid:{
-        ge:1687023485
-      }
-      id:{
-        gt:"0:001a338e4af5fe33307c2b0d04de453513019942748eb2b290ca3db0adfe8343"
-      }
-    }
-    orderBy:[
-      {path:"last_paid", direction:ASC}      
-      {path:"id", direction:ASC}
-    ]
-  ){
-    id
-    balance(format:DEC)
-    last_paid
-  }
-}
-```
-
-## Get a list of accounts
-
-You can enumerate a list of account addresses to get their balances and other metadata.
-
-{% hint style="warning" %}
-You can not get the list of BOCs of accounts. Retrieve each account's BOC individually with this query.
-{% endhint %}
-
-```graphql
-query{
-  accounts(
-    filter:{
-    	id:{
-        in:[
-          "0:001b3abc5f9e906990c2eee7a1664be20b1b47fdf5c140331e6003786735f453",
-          "0:2ef022951ae41da58f16f5e3f10d8660c919c13304723a401050fb02027301f6",
-          "0:34b83eee15f43580261c4ec654c2b03dcb2b8a99ab0b5257105be815cf040c6b",
-          "0:684c7604fcc86bece98136f83c8370bd73feb574c11b27b2f03b2a53c778230c",
-          "0:8f0be7f1e442ad576785c9b77dbe3ffb362260e828736957158449802397a48e"
-        ]
-      }
-  	}
-  ){
-    id
-    balance(format:DEC)
-    last_paid
-    last_trans_lt
   }
 }
 ```
@@ -383,7 +269,7 @@ Result. We see that the next page exists, we can continue pagination.
 
 ### Account events
 
-To get account events, we need to get Account's external outbound message. Their type is `ExtOut.` `Body` field contains ABI-encoded information with Event data. You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_abi#decode\_message\_body).
+To get account events, we need to get Account's external outbound message. Their type is `ExtOut.` `Body` field contains ABI-encoded information with Event data. You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#decode_message_body).
 
 ```graphql
 query{
@@ -445,7 +331,7 @@ Result
 
 ### Account external calls
 
-If you want to collect external calls of an account, filter by msg\_type = `ExtIn`. `Body` field contains ABI-encoded information with Event data. You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod\_abi#decode\_message\_body). Lets get the last external call:
+If you want to collect external calls of an account, filter by msg\_type = `ExtIn`. `Body` field contains ABI-encoded information with Event data. You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#decode_message_body). Lets get the last external call:
 
 ```graphql
 query{
