@@ -131,7 +131,7 @@ pub fn poseidon_bytes(
 pub fn poseidon_bytes_flat(
     input_data: &[u8],
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    let data = input_data.chunks(FIELD_ELEMENT_SIZE_IN_BYTES).map(|c| {
+    let data = input_data.chunks(FIELD_ELEMENT_SIZE_IN_BYTES - 1).map(|c| {
         let mut v = c.to_vec();
         if v.len() < FIELD_ELEMENT_SIZE_IN_BYTES {
             v.resize(FIELD_ELEMENT_SIZE_IN_BYTES, 0);
