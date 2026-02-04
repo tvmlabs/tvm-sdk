@@ -16,13 +16,11 @@ query{
 
 
 
-### сhain\_order cursor  structure
+### What is сhain\_order?
 
-This cursor splits all the blockchain threads' blocks into ranges between timestamps.
+Because Acki Nacki blockchain dynamically splits and merges it is not possible to follow one chain seqno to sequentially retrieve all the blocks.
 
-Because the blockchain is dinamically splitting and merging it is not possible to follow one chain seqno to sequentially retrieve all blocks.
-
-We added a unique index for blocks to paginate them across all threads: `chain_order`
+We added a unique index for blocks to paginate them across all the threads: `chain_order`
 
 ```
 chain_order = block-timestamp-in-seconds + 
