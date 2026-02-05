@@ -10,7 +10,7 @@
 // limitations under the License.
 
 use core::ops::Range;
-
+use std::sync::Arc;
 use aes_ctr::cipher::stream::NewStreamCipher;
 use aes_ctr::cipher::stream::SyncStreamCipher;
 use base64::Engine;
@@ -26,6 +26,7 @@ use ed25519_dalek::Signer;
 use ed25519_dalek::SigningKey;
 use ed25519_dalek::Verifier;
 use ed25519_dalek::VerifyingKey;
+use lazy_static::lazy_static;
 use sha2::Digest;
 
 use crate::Result;
@@ -210,6 +211,11 @@ pub fn x25519_shared_secret(exp_pvt_key: &[u8], other_pub_key: &[u8]) -> Result<
 
 // SHA-2 ----------------------------------------------------------------
 
+lazy_static! {
+    pub static ref SHA_CALLS: Arc<parking_lot::RwLock<usize>> = Arc::new(parking_lot::RwLock::new(0));
+    pub static ref SHA_BYTES: Arc<parking_lot::RwLock<usize>> = Arc::new(parking_lot::RwLock::new(0));
+}
+
 pub struct Sha256 {
     inner: sha2::Sha256,
     data_len: usize,
@@ -231,6 +237,14 @@ impl Sha256 {
 
     pub fn finalize(self) -> [u8; 32] {
         log::trace!(target: "node", "finalize Sha256: {}", self.data_len);
+        {
+            let mut calls = SHA_CALLS.write();
+            *calls = *calls + 1;
+        }
+        {
+            let mut bytes = SHA_BYTES.write();
+            *bytes = *bytes + self.data_len;
+        }
         self.inner.finalize().into()
     }
 }
