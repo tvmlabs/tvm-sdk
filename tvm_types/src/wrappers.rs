@@ -218,13 +218,13 @@ pub struct Sha256 {
 impl Sha256 {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        log::trace!(target: "node", "start Sha256");
+        // log::trace!(target: "node", "start Sha256");
         Self { inner: sha2::Sha256::new(), data_len: 0 }
     }
 
     pub fn update(&mut self, data: impl AsRef<[u8]>) {
         let data_len = data.as_ref().len();
-        log::trace!(target: "node", "update Sha256: {data_len}");
+        // log::trace!(target: "node", "update Sha256: {data_len}");
         self.data_len += data_len;
         self.inner.update(data)
     }
