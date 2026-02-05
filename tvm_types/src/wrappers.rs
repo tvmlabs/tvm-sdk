@@ -212,19 +212,25 @@ pub fn x25519_shared_secret(exp_pvt_key: &[u8], other_pub_key: &[u8]) -> Result<
 
 pub struct Sha256 {
     inner: sha2::Sha256,
+    data_len: usize,
 }
 
 impl Sha256 {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        Self { inner: sha2::Sha256::new() }
+        log::trace!(target: "node", "start Sha256");
+        Self { inner: sha2::Sha256::new(), data_len: 0 }
     }
 
     pub fn update(&mut self, data: impl AsRef<[u8]>) {
+        let data_len = data.as_ref().len();
+        log::trace!(target: "node", "update Sha256: {data_len}");
+        self.data_len += data_len;
         self.inner.update(data)
     }
 
     pub fn finalize(self) -> [u8; 32] {
+        log::trace!(target: "node", "finalize Sha256: {}", self.data_len);
         self.inner.finalize().into()
     }
 }
