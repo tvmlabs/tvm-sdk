@@ -47,7 +47,7 @@ curl --location --request POST https://shellnet.ackinacki.org/graphql \
 const {TvmClient} = require("@tvmsdk/core");
 const {libNode} = require("@tvmsdk/lib-node");
 
-TonClient.useBinaryLibrary(libNode)
+TvmClient.useBinaryLibrary(libNode)
 
 const client = new TvmClient({
     network: {
