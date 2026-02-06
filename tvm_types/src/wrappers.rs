@@ -10,6 +10,7 @@
 // limitations under the License.
 
 use core::ops::Range;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use aes_ctr::cipher::stream::NewStreamCipher;
 use aes_ctr::cipher::stream::SyncStreamCipher;
@@ -214,6 +215,7 @@ pub fn x25519_shared_secret(exp_pvt_key: &[u8], other_pub_key: &[u8]) -> Result<
 lazy_static! {
     pub static ref SHA_CALLS: Arc<parking_lot::RwLock<usize>> = Arc::new(parking_lot::RwLock::new(0));
     pub static ref SHA_BYTES: Arc<parking_lot::RwLock<usize>> = Arc::new(parking_lot::RwLock::new(0));
+    pub static ref SHA_BYTE_CNTS: Arc<parking_lot::RwLock<BTreeMap<usize, u32>>> = Arc::new(parking_lot::RwLock::new(BTreeMap::new()));
 }
 
 pub struct Sha256 {
@@ -244,6 +246,10 @@ impl Sha256 {
         {
             let mut bytes = SHA_BYTES.write();
             *bytes = *bytes + self.data_len;
+        }
+        {
+            let mut bytes = SHA_BYTE_CNTS.write();
+            bytes.entry(self.data_len).and_modify(|count| *count += 1).or_insert(1);
         }
         self.inner.finalize().into()
     }
