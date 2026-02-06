@@ -25,7 +25,9 @@ use crate::executor::blockchain::add_action;
 use crate::executor::engine::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::types::Instruction;
+#[cfg(feature = "wasmtime")]
 use crate::executor::wasm::check_and_get_wasm_by_hash;
+#[cfg(feature = "wasmtime")]
 use crate::executor::wasm::run_wasm_core;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
@@ -164,6 +166,7 @@ pub(super) fn execute_ecc_mint(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_MINTECC, None, cell)
 }
 
+#[cfg(feature = "wasmtime")]
 pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 8)?;
@@ -243,6 +246,7 @@ pub(super) fn execute_run_wasm_concat_multiarg(engine: &mut Engine) -> Status {
 }
 
 // execute wasm binary
+#[cfg(feature = "wasmtime")]
 pub(super) fn execute_run_wasm(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("RUNWASM"))?;
     fetch_stack(engine, 5)?;

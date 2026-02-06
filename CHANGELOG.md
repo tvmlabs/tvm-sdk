@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 ## Breaking changes
 - External outbound message header was changed to support new types of messages, but serde was changed to support old version deserialization.
 
+## [2.24.9] - 2026-01-21
+## New
+- `tvm_client` now can be compiled without a wasmtime runtime (e.g. for the browser environment) with a new feature `wasm_web`
+
 ## [2.24.8] - 2025-12-10
 ## Added/Changed
 - Add and modify reward instruction for mvrewards and mining

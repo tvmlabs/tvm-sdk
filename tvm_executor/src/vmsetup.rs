@@ -9,7 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+#[cfg(feature = "wasmtime")]
 use std::collections::HashMap;
+#[cfg(feature = "wasmtime")]
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -177,18 +179,21 @@ impl VMSetup {
     }
 
     /// Sets local wasm library root path
+    #[cfg(feature = "wasmtime")]
     pub fn set_wasm_root_path(mut self, path: String) -> VMSetup {
         self.vm.set_wasm_root_path(path);
         self
     }
 
     /// Sets whitelist of hashes in local wasm library
+    #[cfg(feature = "wasmtime")]
     pub fn set_wasm_hash_whitelist(mut self, whitelist: HashSet<[u8; 32]>) -> VMSetup {
         self.vm.set_wasm_hash_whitelist(whitelist);
         self
     }
 
     /// Sets block time for use in wasm
+    #[cfg(feature = "wasmtime")]
     pub fn set_wasm_block_time(mut self, time: u64) -> VMSetup {
         self.vm.set_wasm_block_time(time);
         self
@@ -201,18 +206,21 @@ impl VMSetup {
     }
 
     /// Init wasmtime engine
+    #[cfg(feature = "wasmtime")]
     pub fn wasm_engine_init_cached(mut self) -> Result<VMSetup> {
         self.vm.wasm_engine_init_cached()?;
         Ok(self)
     }
 
     /// Insert external wasmtime engine
+    #[cfg(feature = "wasmtime")]
     pub fn extern_insert_wasm_engine(mut self, engine: Option<wasmtime::Engine>) -> VMSetup {
         self.vm.extern_insert_wasm_engine(engine);
         self
     }
 
     /// Insert external wasm component cache
+    #[cfg(feature = "wasmtime")]
     pub fn extern_insert_wasm_component_cache(
         mut self,
         cache: HashMap<[u8; 32], wasmtime::component::Component>,
@@ -222,6 +230,7 @@ impl VMSetup {
     }
 
     /// Precompile local hash components
+    #[cfg(feature = "wasmtime")]
     pub fn precompile_all_wasm_by_hash(mut self) -> Result<VMSetup> {
         self.vm = self.vm.precompile_all_wasm_by_hash()?;
         Ok(self)

@@ -137,11 +137,16 @@ pub struct Engine {
     termination_deadline: Option<Instant>,
     execution_timeout: Option<Duration>,
 
+    #[cfg(feature = "wasmtime")]
     wasm_binary_root_path: String,
     available_credit: i128,
+    #[cfg(feature = "wasmtime")]
     wasm_hash_whitelist: HashSet<[u8; 32]>, // store hashes of wasm binaries available locally
+    #[cfg(feature = "wasmtime")]
     wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
+    #[cfg(feature = "wasmtime")]
     wasm_engine_cache: Option<wasmtime::Engine>,
+    #[cfg(feature = "wasmtime")]
     wasm_block_timestamp: u64,
 
     mvconfig: MVConfig,
@@ -308,11 +313,16 @@ impl Engine {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
             execution_timeout: None,
+            #[cfg(feature = "wasmtime")]
             wasm_binary_root_path: "./config/wasm".to_owned(),
             available_credit: 0,
+            #[cfg(feature = "wasmtime")]
             wasm_hash_whitelist: HashSet::new(),
+            #[cfg(feature = "wasmtime")]
             wash_component_cache: HashMap::new(),
+            #[cfg(feature = "wasmtime")]
             wasm_engine_cache: None,
+            #[cfg(feature = "wasmtime")]
             wasm_block_timestamp: 0,
             self_dapp_id: None,
             mvconfig: MVConfig::default(),
@@ -475,14 +485,17 @@ impl Engine {
         self.step
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn set_wasm_root_path(&mut self, wasm_binary_root_path: String) {
         self.wasm_binary_root_path = wasm_binary_root_path;
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn set_wasm_hash_whitelist(&mut self, wasm_hash_whitelist: HashSet<[u8; 32]>) {
         self.wasm_hash_whitelist = wasm_hash_whitelist;
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn set_wasm_block_time(&mut self, time: u64) {
         self.wasm_block_timestamp = time;
     }
@@ -491,6 +504,7 @@ impl Engine {
         self.self_dapp_id = dapp_id;
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
         log::debug!("Extern Initialising Wasm Engine");
         // load or access WASM engine
@@ -511,6 +525,7 @@ impl Engine {
         Ok(wasm_engine)
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn wasm_engine_init_cached(&mut self) -> Result<()> {
         log::debug!("Internal Initialising Wasm Engine");
         // load or access WASM engine
@@ -532,10 +547,12 @@ impl Engine {
         Ok(())
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn extern_insert_wasm_engine(&mut self, engine: Option<wasmtime::Engine>) {
         self.wasm_engine_cache = engine.clone();
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn extern_insert_wasm_component_cache(
         &mut self,
         cache: HashMap<[u8; 32], wasmtime::component::Component>,
@@ -543,6 +560,7 @@ impl Engine {
         self.wash_component_cache = cache;
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn get_wasm_engine(&self) -> Result<&wasmtime::Engine> {
         match &self.wasm_engine_cache {
             Some(engine) => Ok(engine),
@@ -553,14 +571,17 @@ impl Engine {
         }
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn get_wasm_block_time(&self) -> u64 {
         self.wasm_block_timestamp
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {
         Ok(wasmtime::Store::new(self.get_wasm_engine()?, data))
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn extern_load_wasm_hash_whitelist_from_path(
         wasm_whitelist_path: String,
     ) -> Result<HashSet<[u8; 32]>> {
@@ -609,6 +630,7 @@ impl Engine {
         Ok(whitelist)
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn extern_precompile_all_wasm_from_hash_list(
         wasm_binary_root_path: String,
         wasm_engine: wasmtime::Engine,
@@ -650,6 +672,7 @@ impl Engine {
         cache
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn precompile_all_wasm_by_hash(mut self) -> Result<Engine> {
         let hashmap = self.wasm_hash_whitelist.clone();
         // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
@@ -674,6 +697,7 @@ impl Engine {
         Ok(self)
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn get_precompiled_wasm_component(
         &self,
         hash: [u8; 32],
@@ -681,6 +705,7 @@ impl Engine {
         self.wash_component_cache.get(&hash)
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn create_single_use_wasm_component(
         &self,
         executable: Vec<u8>,
@@ -696,6 +721,7 @@ impl Engine {
         }
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn print_wasm_component_exports_and_imports(
         &self,
         component: &wasmtime::component::Component,
@@ -726,6 +752,7 @@ impl Engine {
         Ok(())
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn add_wasm_hash_to_whitelist_by_str(&mut self, wasm_hash_str: String) -> Result<bool> {
         let hash: Result<Vec<u8>> = (0..wasm_hash_str.len())
             .step_by(2)
@@ -751,6 +778,7 @@ impl Engine {
         Ok(self.wasm_hash_whitelist.insert(hash))
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn extern_check_hash(
         wasm_hash_whitelist: HashSet<[u8; 32]>,
         file: Vec<u8>,
@@ -781,6 +809,7 @@ impl Engine {
         }
     }
 
+    #[cfg(feature = "wasmtime")]
     fn check_hash(&self, file: Vec<u8>, hash: String) -> Result<Vec<u8>> {
         let new_hash = sha256_digest(file.clone());
         let mut s = String::with_capacity(new_hash.len() * 2);
@@ -807,6 +836,7 @@ impl Engine {
         }
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn extern_get_wasm_binary_by_hash(
         wasm_binary_root_path: String,
         wasm_hash_whitelist: HashSet<[u8; 32]>,
@@ -830,6 +860,7 @@ impl Engine {
         }
     }
 
+    #[cfg(feature = "wasmtime")]
     pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
         let mut s = String::with_capacity(wasm_hash.len() * 2);
         log::debug!("{}", std::env::current_dir()?.display());
