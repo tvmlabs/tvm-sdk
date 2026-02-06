@@ -2,18 +2,15 @@
 
 **Test your queries and explore blockchain data**
 
-GraphQL web playground is available for each network at its root endpoint URL. See the previous section for more details.
+GraphQL web playground is available for each network at its root endpoint URL.&#x20;
 
-The general address convention is `endpoint/graphql`
+Use the playground to explore documentation and test your queries.
 
-Use the playground to enter queries in the left side and get response in the right side. We have video tutorials showing how to use the playground.
+Go to [https://shellnet.ackinacki.org/graphql](https://shellnet.ackinacki.org/graphql)
 
-## Video turorials
+<figure><img src="../.gitbook/assets/image (3).png" alt=""><figcaption></figcaption></figure>
 
-Video tutorial - Using GraphQL Playground
 
-{% embed url="https://www.youtube.com/watch?v=ZQJpd0vJCgA" %}
 
-Video tutorial - GraphQL: Joined Blocks, OR Operator, Aggregations
 
-{% embed url="https://www.youtube.com/watch?v=8dNAv5vsYRI" %}
+

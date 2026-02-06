@@ -8,7 +8,7 @@ description: >-
 
 ## About `net.query` function
 
-Whenever you need to poll realtime data from GraphQL API with SDK - use [net.query](broken-reference) function.
+Whenever you need to poll realtime data from GraphQL API with SDK - use [net.query](/broken/pages/bdX3yGskXJEFBTwTxP5Y#query) function.
 
 Write your graphql query in playground, copy it and insert into SDK's net.query function. Define variables and execute it.
 
@@ -51,7 +51,3 @@ await client.net.query({
     }`
 })
 ```
-
-See this sample to understand how to pass variables to the queries
-
-{% embed url="https://github.com/tonlabs/sdk-samples/tree/master/core-examples/node-js/pagination" %}

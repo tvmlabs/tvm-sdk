@@ -7,10 +7,10 @@ query{
   info{
     version # API version
     time # server time
-    blocksLatency
-    messagesLatency
-    transactionsLatency
-    latency
+    blocksLatency # temporarily not supported
+    messagesLatency # temporarily not supported
+    transactionsLatency # temporarily not supported
+    latency # temporarily not supported
   }
 }
 ```

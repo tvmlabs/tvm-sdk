@@ -1,0 +1,255 @@
+{
+	"ABI version": 2,
+	"version": "2.4",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+				{"name":"value","type":"uint128"},
+				{"name":"ethemeral_pubkey","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"pmpCode","type":"cell"},
+				{"name":"oracleEventList","type":"cell"},
+				{"name":"oracleCode","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "changeOwner",
+			"inputs": [
+				{"name":"new_pubkey","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "deployPMP",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"oracleFee","type":"uint128[]"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"names","type":"string[]"},
+				{"name":"index","type":"uint128[]"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "deleteStake",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"outcome","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "cancelStake",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"outcome","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "onStakeCancelled",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"outcome","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "setStake",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"outcome","type":"uint32"},
+				{"name":"amount","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "onStakeAccepted",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"outcome","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "claim",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"outcome","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "onClaimAccepted",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"outcome","type":"optional(uint32)"},
+				{"name":"selfOutcome","type":"uint32"},
+				{"name":"payout","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawTokens",
+			"inputs": [
+				{"name":"flags","type":"uint8"},
+				{"name":"dest_wallet_addr","type":"address"},
+				{"name":"token_type","type":"uint32"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "revertWithdraw",
+			"inputs": [
+				{"name":"token_type","type":"uint32"},
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "getPMPCode",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"pmpCode","type":"cell"},
+				{"name":"pmpCodeHash","type":"uint256"}
+			]
+		},
+		{
+			"name": "getDetails",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"depositIdentifierHash","type":"uint256"},
+				{"name":"etherealPubkey","type":"uint256"},
+				{"name":"balance","type":"map(uint32,uint128)"},
+				{"name":"pmpCodeHash","type":"uint256"},
+				{"name":"privateNoteCodeHash","type":"uint256"},
+				{"name":"busyAddress","type":"optional(address)"}
+			]
+		},
+		{
+			"name": "getVersion",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"string"},
+				{"name":"value1","type":"string"}
+			]
+		},
+		{
+			"name": "_deposit_identifier_hash",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"_deposit_identifier_hash","type":"uint256"}
+			]
+		},
+		{
+			"name": "_stakes",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"amount","type":"uint128"},{"name":"outcome","type":"uint32"},{"name":"candidate_amount","type":"uint128"},{"name":"token_type","type":"uint32"},{"name":"oracle_list_hash","type":"uint256"}],"name":"_stakes","type":"map(uint256,tuple)"}
+			]
+		}
+	],
+	"events": [
+		{
+			"name": "OwnerChanged",
+			"inputs": [
+				{"name":"oldPubkey","type":"uint256"},
+				{"name":"newPubkey","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "StakeConfirmed",
+			"inputs": [
+				{"name":"stakeController","type":"address"},
+				{"name":"outcome","type":"uint32"},
+				{"name":"amount","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "StakeCancelled",
+			"inputs": [
+				{"name":"stakeController","type":"address"},
+				{"name":"outcome","type":"uint32"},
+				{"name":"amount","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "ClaimAccepted",
+			"inputs": [
+				{"name":"stakeController","type":"address"},
+				{"name":"outcome","type":"optional(uint32)"},
+				{"name":"payout","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "PMPDeployed",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"pmpAddress","type":"address"},
+				{"name":"oracleEventLists","type":"address[]"},
+				{"name":"oracleFee","type":"uint128[]"}
+			],
+			"outputs": [
+			]
+		}
+	],
+	"fields": [
+		{"init":true,"name":"_pubkey","type":"uint256"},
+		{"init":false,"name":"_timestamp","type":"uint64"},
+		{"init":false,"name":"_constructorFlag","type":"bool"},
+		{"init":false,"name":"THRESHOLD","type":"uint32"},
+		{"init":true,"name":"_deposit_identifier_hash","type":"uint256"},
+		{"init":false,"name":"_ethemeral_pubkey","type":"uint256"},
+		{"init":false,"name":"_pmpCode","type":"cell"},
+		{"init":false,"name":"_PrivateNoteCode","type":"cell"},
+		{"init":false,"name":"_oracleCode","type":"cell"},
+		{"init":false,"name":"_oracleEventList","type":"cell"},
+		{"components":[{"name":"amount","type":"uint128"},{"name":"outcome","type":"uint32"},{"name":"candidate_amount","type":"uint128"},{"name":"token_type","type":"uint32"},{"name":"oracle_list_hash","type":"uint256"}],"init":false,"name":"_stakes","type":"map(uint256,tuple)"},
+		{"init":false,"name":"_busy","type":"optional(address)"},
+		{"init":false,"name":"_lastHash","type":"uint256"},
+		{"init":false,"name":"_balance","type":"map(uint32,uint128)"}
+	]
+}
