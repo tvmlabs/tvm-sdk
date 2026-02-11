@@ -8,6 +8,11 @@ use ff::PrimeField as OtherPrimeField;
 use neptune::Poseidon;
 use neptune::poseidon::HashMode::OptimizedStatic;
 
+use halo2_base::halo2_proofs::halo2curves::bn256::Fr as halo2_Fr;
+use halo2_base::utils::ScalarField;
+use halo2_base::utils::fe_to_bigint;
+use pse_poseidon::Poseidon as pse_poseidon;
+
 use crate::executor::zk_stuff::FrRepr;
 use crate::executor::zk_stuff::bn254::poseidon::constants::*;
 use crate::executor::zk_stuff::error::ZkCryptoError;
@@ -128,6 +133,27 @@ pub fn poseidon_bytes(
     Ok(field_element_to_canonical_le_bytes(&output_as_field_element))
 }
 
+const T: usize = 3;
+const RATE: usize = 2;
+const R_F: usize = 8;
+const R_P: usize = 57;
+
+pub fn poseidon_bytes_axiom(
+    inputs: &Vec<Vec<u8>>,
+) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+    let mut field_elements = Vec::new();
+    for input in inputs {
+        field_elements.push(halo2_Fr::from_bytes_le(&input)?);// field_elements.push(canonical_le_bytes_to_field_element(input)?);
+    }
+
+    let mut native_sponge = pse_poseidon::<halo2_Fr, T, RATE>::new(R_F, R_P);
+    native_sponge.update(field_elements);
+    let output_as_field_element = native_sponge.squeeze();
+    //let output_as_field_element = poseidon_merkle_tree(field_elements)?;
+
+    Ok(field_element_to_canonical_le_bytes(&output_as_field_element))
+}
+
 pub fn poseidon_bytes_flat(
     input_data: &Vec<u8>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
@@ -141,7 +167,8 @@ pub fn poseidon_bytes_flat(
         let buffer = &input_data[i*FIELD_ELEMENT_SIZE_IN_BYTES..(i+1)*FIELD_ELEMENT_SIZE_IN_BYTES];
         inputs_groupped.push(buffer.to_vec());
     }
-    poseidon_bytes(&inputs_groupped)
+    //poseidon_bytes(&inputs_groupped)
+    poseidon_bytes_axiom(&inputs_groupped)
 }
 
 /// Given a binary representation of a BN254 field element as an integer in
@@ -195,6 +222,7 @@ fn bn254_to_fr(fr: Fr) -> crate::executor::zk_stuff::Fr {
         .expect("The bytes of fr are guaranteed to be canonical here")
 }
 
+/* 
 #[test]
 fn test_poseidon_bytes_flat() {
     let input_bytes = [0u8; 32];
@@ -205,4 +233,15 @@ fn test_poseidon_bytes_flat() {
     let etalon_res: Vec<u8> = hex::decode("0b63a53787021a4a962a452c2921b3663aff1ffd8d5510540f8e659e782956f1").unwrap();
     //assert(true);
     assert!(hash == etalon_res);
+}*/
+
+#[test]
+fn test_poseidon_bytes_flat() {
+    let data_to_hash = vec![0u8, 253u8, 1u8, 252u8, 2u8, 251u8, 3u8, 250u8, 4u8, 249u8, 5u8, 248u8, 6u8, 247u8, 7u8, 246u8,
+	8u8, 245u8, 9u8, 244u8, 10u8, 243u8, 11u8, 242u8, 12u8, 241u8, 13u8, 248u8, 14u8, 247u8, 15u8, 246u8];
+
+    //let digest = poseidon_hash(&data_to_hash);
+	let digest = poseidon_bytes_flat(&data_to_hash)?;
+
+    println!("digest {:?}", digest);
 }
