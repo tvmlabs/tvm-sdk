@@ -566,6 +566,9 @@ fn bench_wasmadd_no_precompile(c: &mut Criterion) {
     });
 }
 
+const WASM_TLS_CHECK_HASH_STR: &str =
+    "343268736f6dbb5a075a477fb1146b3c25c114d341b41c142e6609a7d1a90a2c";
+
 // Run  `cargo bench -p tvm_vm --bench benchmarks wasmtls_without_whitelist`
 fn bench_wasmtls_without_whitelist(c: &mut Criterion) {
     c.bench_function("wasmtls_without_whitelist", |b| {
@@ -576,10 +579,10 @@ fn bench_wasmtls_without_whitelist(c: &mut Criterion) {
             for _i in 0..iters {
                 let mut stack = Stack::new();
 
-                let hash_str = "b8891b913656ae35d9ffff371f0f03e4f1f869d0e17556a8c273750313884b0a";
-                let hash: Vec<u8> = (0..hash_str.len())
+                //let hash_str = "9d8beddc8d81853d6ee2390ed141b69d67bf683afbbf45cf405848a78ae969fc";
+                let hash: Vec<u8> = (0..WASM_TLS_CHECK_HASH_STR.len())
                     .step_by(2)
-                    .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+                    .map(|i| u8::from_str_radix(&WASM_TLS_CHECK_HASH_STR[i..i + 2], 16).unwrap())
                     .collect::<Vec<u8>>();
                 let cell =
                     TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
@@ -646,11 +649,11 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
             for _i in 0..iters {
                 let mut stack = Stack::new();
 
-                let hash_str =
-                "b8891b913656ae35d9ffff371f0f03e4f1f869d0e17556a8c273750313884b0a";
-                let hash: Vec<u8> = (0..hash_str.len())
+                //let hash_str =
+                //"9d8beddc8d81853d6ee2390ed141b69d67bf683afbbf45cf405848a78ae969fc";
+                let hash: Vec<u8> = (0..WASM_TLS_CHECK_HASH_STR.len())
                     .step_by(2)
-                    .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+                    .map(|i| u8::from_str_radix(&WASM_TLS_CHECK_HASH_STR[i..i + 2], 16).unwrap())
                     .collect::<Vec<u8>>();
                 let cell =
                     TokenValue::write_bytes(hash.as_slice(), &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
