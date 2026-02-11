@@ -141,7 +141,7 @@ impl ClientError {
         self.code == net::ErrorCode::Unauthorized as u32
     }
 
-    pub fn get_redirection_data(&self) -> (Option<String>, Option<String>) {
+    pub fn get_redirection_data(&self, use_https: bool) -> (Option<String>, Option<String>) {
         let details = self
             .data
             .get("node_error")
@@ -153,7 +153,7 @@ impl ClientError {
             .and_then(Value::as_array)
             .and_then(|arr| arr.first())
             .and_then(Value::as_str)
-            .and_then(|url_str| construct_rest_api_endpoint(url_str).ok())
+            .and_then(|url_str| construct_rest_api_endpoint(url_str, use_https).ok())
             .map(|url| url.to_string());
 
         let thread_id =
@@ -191,9 +191,9 @@ mod tests {
     #[test]
     fn test_get_redirection_data_with_valid_url() {
         let error = mock_error(vec!["https://example.com"], "thread-123");
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, Some("thread-123".to_string()));
-        assert_eq!(url, Some("https://example.com:8600/v2/".to_string()));
+        assert_eq!(url, Some("https://example.com/v2/".to_string()));
     }
     #[test]
     fn test_get_redirection_data_with_valid_urls() {
@@ -201,9 +201,9 @@ mod tests {
             vec!["https://cool.com:1111", "https://google.com", "https://example.com"],
             "thread-123",
         );
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, Some("thread-123".to_string()));
-        assert_eq!(url, Some("https://cool.com:1111/v2/".to_string()));
+        assert_eq!(url, Some("https://cool.com/v2/".to_string()));
     }
 
     #[test]
@@ -217,7 +217,7 @@ mod tests {
                 }
             }),
         };
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, None);
         assert_eq!(url, None);
     }
@@ -225,7 +225,7 @@ mod tests {
     #[test]
     fn test_get_redirection_data_with_invalid_producer_url() {
         let error = mock_error(vec!["wrong_scheme://df"], "tid");
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, Some("tid".to_string()));
         assert_eq!(url, None);
     }
@@ -233,7 +233,7 @@ mod tests {
     #[test]
     fn test_get_redirection_data_with_no_node_error() {
         let error = ClientError { code: 1, message: "Test".to_string(), data: json!({}) };
-        let (tid, url) = error.get_redirection_data();
+        let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, None);
         assert_eq!(url, None);
     }

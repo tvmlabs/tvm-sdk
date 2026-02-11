@@ -2,12 +2,12 @@
 
 Define a contract in your application to start working with it
 
-* [About contract artifacts](add\_contract\_to\_your\_app.md#about-contract-artifacts)
-* [Create contract wrapper](add\_contract\_to\_your\_app.md#create-contract-wrapper)
+* [About contract artifacts](add_contract_to_your_app.md#about-contract-artifacts)
+* [Create contract wrapper](add_contract_to_your_app.md#create-contract-wrapper)
 
 ## About contract artifacts
 
-Make sure your [added SDK to your app](../installation/add\_sdk\_to\_your\_app.md) and [configured your Client](../configuration/configure\_sdk.md) before proceeding.
+Make sure your [added SDK to your app](../installation/add_sdk_to_your_app.md) and [configured your Client](../configuration/configure_sdk.md) before proceeding.
 
 If you need to work with a previously deployed contract, you will need only its ABI and address. Get it in public repositories or ask the contract developer for it.
 
@@ -16,12 +16,12 @@ If you need to deploy a contract, then you will also need its tvc file. This fil
 If you plan to develop and compile the contracts yourself then these docs will help you:
 
 * [Compiling contract with one command with everdev](https://docs.everos.dev/everdev/command-line-interface/solidity#compile)
-* [Solidity Compiler](https://github.com/tonlabs/TON-Solidity-Compiler)
-* [Public repository with contracts](https://github.com/tonlabs/ton-labs-contracts)
+* [Solidity Compiler](https://github.com/gosh-sh/TVM-Solidity-Compiler)
+* [Public repository with contracts](https://github.com/tvmlabs/sdk-examples)
 
 ## Create contract wrapper
 
-Use EVERDEV tool to [generate contract wrapper](https://docs.everos.dev/everdev/command-line-interface/sdk#create-contract-js-wrapper) that will have the following structure:
+Use EVERDEV tool to generate contract wrapper that will have the following structure:
 
 ```javascript
 export type Contract = {
@@ -88,4 +88,4 @@ HelloContract: {
 
 **You're all done!**
 
-Find out how to [deploy](deploy.md) and [run](run\_onchain.md) your contract in the next sections.
+Find out how to [deploy](deploy.md) and [run](run_onchain.md) your contract in the next sections.

@@ -491,11 +491,11 @@ impl Hmac {
 
 //========================================================
 
-pub fn extract(secret: &[u8; 32], salt: &[u8; 32]) -> [u8; 32] {
+pub fn extract(secret: &[u8; 32], salt: &[u8; 32]) -> Result<[u8; 32], Vec<u8>> {
     // let salt = salt.unwrap_or(&vec![0; 32]);
     let mut extractor = Hmac::new(salt);
     extractor.write(secret);
-    extractor.sum(&[]).try_into().unwrap()
+    Ok(extractor.sum(&[]).try_into().unwrap())
 }
 
 pub struct Hkdf {
@@ -518,7 +518,7 @@ impl Hkdf {
 
     // fn read(&mut self, p: &mut [u8]) -> io::Result<usize> {
     // pub fn read(&mut self, p: &mut [u8]) -> usize {
-    pub fn read(&mut self, need: usize) -> Vec<u8> {
+    pub fn read(&mut self, need: usize) -> Result<Vec<u8>, Vec<u8>> {
         // Check whether enough data can be generated
         // let need = p.len();
         let remains = self.buf.len() + (255 - self.counter as usize + 1) * self.size;
@@ -527,7 +527,8 @@ impl Hkdf {
         if remains < need {
             // return Err(io::Error::new(io::ErrorKind::Other, "hkdf: entropy limit
             // reached")); return 0;
-            return p;
+            // return p;
+            return Err(vec![0u8, 8u8, 1u8]);
         }
 
         let n = self.buf.len().min(p.len());
@@ -561,7 +562,7 @@ impl Hkdf {
 
         let mut result = self.prev.clone();
         result.truncate(need);
-        result
+        Ok(result)
         // return p; //need//Ok(need)
     }
 }
