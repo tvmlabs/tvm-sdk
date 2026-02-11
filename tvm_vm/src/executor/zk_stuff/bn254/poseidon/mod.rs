@@ -143,21 +143,24 @@ pub fn poseidon_bytes_axiom(
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
     let mut field_elements = Vec::new();
     for input in inputs {
-        field_elements.push(halo2_Fr::from_bytes_le(&input)?);// field_elements.push(canonical_le_bytes_to_field_element(input)?);
+        let el = halo2_Fr::from_bytes_le(&input);
+        field_elements.push(el);// field_elements.push(canonical_le_bytes_to_field_element(input)?);
     }
 
     let mut native_sponge = pse_poseidon::<halo2_Fr, T, RATE>::new(R_F, R_P);
-    native_sponge.update(field_elements);
+    native_sponge.update(&field_elements);
     let output_as_field_element = native_sponge.squeeze();
     //let output_as_field_element = poseidon_merkle_tree(field_elements)?;
 
-    Ok(field_element_to_canonical_le_bytes(&output_as_field_element))
+    let output: [u8; FIELD_ELEMENT_SIZE_IN_BYTES] = output_as_field_element.to_bytes_le().try_into().unwrap();
+
+    Ok(output)
 }
 
-pub fn poseidon_bytes_flat(
+/*pub fn poseidon_bytes_flat(
     input_data: &Vec<u8>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    if input_data.len()%FIELD_ELEMENT_SIZE_IN_BYTES != 0 {
+    if input_data.len() % FIELD_ELEMENT_SIZE_IN_BYTES != 0 {
         return Err(InputTooLong(input_data.len()));
     }
     let mut inputs_groupped: Vec<Vec<u8>> = Vec::new();
@@ -169,6 +172,19 @@ pub fn poseidon_bytes_flat(
     }
     //poseidon_bytes(&inputs_groupped)
     poseidon_bytes_axiom(&inputs_groupped)
+}*/
+
+pub fn poseidon_bytes_flat(
+    input_data: &[u8],
+) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+    let data = input_data.chunks(FIELD_ELEMENT_SIZE_IN_BYTES - 1).map(|c| {
+        let mut v = c.to_vec();
+        if v.len() < FIELD_ELEMENT_SIZE_IN_BYTES {
+            v.resize(FIELD_ELEMENT_SIZE_IN_BYTES, 0);
+        }
+        v
+    }).collect();
+    poseidon_bytes_axiom(&data)
 }
 
 /// Given a binary representation of a BN254 field element as an integer in
@@ -222,26 +238,42 @@ fn bn254_to_fr(fr: Fr) -> crate::executor::zk_stuff::Fr {
         .expect("The bytes of fr are guaranteed to be canonical here")
 }
 
-/* 
+use num_traits::pow;
+use std::time::Instant;
+#[test]
+fn test_poseidon_bytes_flat_multiple_len() {
+    let base: u64 = 10;
+
+    for i in 0..8 {
+        let len = pow(base, i) as usize;
+        let data_to_hash = vec![0xFFu8; len];
+        println!("#iter{:?}", i);
+        println!("len {:?}", len);
+        let start: Instant = Instant::now();
+        let digest = poseidon_bytes_flat(&data_to_hash).unwrap();
+        println!("elapsed {:?} ms", start.elapsed().as_millis());
+        println!("digest {:?}", digest);
+    }
+}
+
 #[test]
 fn test_poseidon_bytes_flat() {
-    let input_bytes = [0u8; 32];
-    let hash = poseidon_bytes_flat(&input_bytes.to_vec()).unwrap();
-    println!(" bytes of Poseidon hash from zeroes = {:?}", hash);
-    
-
-    let etalon_res: Vec<u8> = hex::decode("0b63a53787021a4a962a452c2921b3663aff1ffd8d5510540f8e659e782956f1").unwrap();
-    //assert(true);
-    assert!(hash == etalon_res);
-}*/
-
-#[test]
-fn test_poseidon_bytes_flat() {
-    let data_to_hash = vec![0u8, 253u8, 1u8, 252u8, 2u8, 251u8, 3u8, 250u8, 4u8, 249u8, 5u8, 248u8, 6u8, 247u8, 7u8, 246u8,
-	8u8, 245u8, 9u8, 244u8, 10u8, 243u8, 11u8, 242u8, 12u8, 241u8, 13u8, 248u8, 14u8, 247u8, 15u8, 246u8];
-
-    //let digest = poseidon_hash(&data_to_hash);
-	let digest = poseidon_bytes_flat(&data_to_hash)?;
-
+    let data_to_hash = vec![0xFFu8; 32]; 
+    /*vec![0u8, 253u8, 1u8, 252u8, 2u8, 251u8, 3u8, 250u8, 4u8, 249u8, 5u8, 248u8, 6u8, 247u8, 7u8, 246u8,
+	8u8, 245u8, 9u8, 244u8, 10u8, 243u8, 11u8, 242u8, 12u8, 241u8, 13u8, 248u8, 14u8, 247u8, 15u8, 246u8];*/
+	let digest = poseidon_bytes_flat(&data_to_hash).unwrap();
     println!("digest {:?}", digest);
+	let etalon_res = [17, 144, 181, 203, 195, 40, 59, 230, 38, 96, 237, 159, 26, 21, 81, 182, 3, 65, 4, 198, 100, 165, 92, 201, 156, 197, 209, 125, 0, 99, 218, 18];
+    assert_equal(digest, etalon_res);
+}
+
+#[test]
+fn test_fr(){
+    let mut input= vec![0xFF; 31];
+    //input.push(0x3F);
+    let el = halo2_Fr::from_bytes_le(&input);
+    println!("el: {:?}", el); 
+
+    let v = el.to_bytes();
+    println!("v: {:?}", v); 
 }
