@@ -1,6 +1,7 @@
 use gosh_dark_dex_halo2_circuit::circuit::*;
 use gosh_dark_dex_halo2_circuit::snark_utils::*;
 use gosh_dark_dex_halo2_circuit::proof::*;
+use gosh_dark_dex_halo2_circuit::poseidon::*;
 
 use std::collections::HashMap;
 use std::env;
@@ -20,7 +21,6 @@ use crate::utils::pack_string_to_cell;
 use crate::utils::unpack_data_from_cell;
 
 use crate::executor::test_helper::*;
-use gosh_dark_dex_halo2_circuit::circuit::poseidon_hash;
 
 use halo2_base::halo2_proofs::{
     arithmetic::CurveAffine,
@@ -28,6 +28,11 @@ use halo2_base::halo2_proofs::{
     plonk::Fixed,
 };
 use std::io::Cursor;
+
+const KZG_PARAMS_PATH: &str = "halo2_test_data/kzg_bn254_12.srs";
+const PROOF_KEY_PATH: &str = "halo2_test_data/proof_key.bin";
+const BREAK_POINTS_PATH: &str = "halo2_test_data/break_points.bin";
+const CONFIG_PARAMS_PATH: &str = "halo2_test_data/config_params.bin";
 
 #[test]
 fn test() {
@@ -65,17 +70,18 @@ fn test() {
         vec![],
     );
 
-    let sk_u: u64 = 23;
-    let token_type: u64 = 1;
-    let private_note_sum: u64 = 1000;
-
-    let sk_u_ = Fr::from(sk_u);
-    let token_type_ = Fr::from(token_type);
-    let private_note_sum_ = Fr::from(private_note_sum);
+    let k = 12u32;
+    let unusable_rows = 9;
+    let token_type = 1u64;
+    let private_note_sum = 1000u64;
+    //let params = gen_srs(k);
+    let sk_u_ = Fr::from(23u64);
+    let token_type_ = Fr::from(1u64);
+    let private_note_sum_ = Fr::from(1000u64);
  
-    let sk_u_commitment = poseidon_hash([sk_u_, Fr::zero()]);
+    let sk_u_commitment = poseidon_hash(&[sk_u_, Fr::zero()]);
     let data_to_hash = [sk_u_commitment, private_note_sum_, token_type_, sk_u_];
-    let digest = poseidon_hash(data_to_hash);
+    let digest = poseidon_hash(&data_to_hash);
     let digest: [u8; 32] = digest.to_bytes();
     let digest_hex = hex::encode(&digest);
 
@@ -98,11 +104,21 @@ fn test() {
 
     engine.cc.stack.push(StackItem::cell(pub_inputs_cell.clone()));
 
-    let params = read_kzg_params("kzg_params.bin".to_string());
-    let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment)).unwrap().as_bytes().to_vec();
-
-    
-    let proof_cell = pack_data_to_cell(&proof.clone(), &mut 0).unwrap();
+    let params = read_kzg_params(KZG_PARAMS_PATH.to_string());
+    let proof = generate_dark_dex_proof(
+        k,
+        unusable_rows,
+        &params,
+        token_type_,
+        private_note_sum_,
+        sk_u_,
+        sk_u_commitment,
+        BREAK_POINTS_PATH.to_string(), 
+        CONFIG_PARAMS_PATH.to_string(), 
+        PROOF_KEY_PATH.to_string(), 
+    ).unwrap();
+        
+    let proof_cell = pack_data_to_cell(&proof.clone().0, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let start: Instant = Instant::now();
@@ -152,6 +168,10 @@ fn test_negative() {
         vec![],
     );
 
+    let k = 12u32;
+    let unusable_rows = 9;
+    //let params = gen_srs(k); 
+
     let sk_u: u64 = 23;
     let token_type: u64 = 1;
     let token_type_wrong: u64 = 2;
@@ -161,9 +181,9 @@ fn test_negative() {
     let token_type_ = Fr::from(token_type);
     let private_note_sum_ = Fr::from(private_note_sum);
  
-    let sk_u_commitment = poseidon_hash([sk_u_, Fr::zero()]);
+    let sk_u_commitment = poseidon_hash(&[sk_u_, Fr::zero()]);
     let data_to_hash = [sk_u_commitment, private_note_sum_, token_type_, sk_u_];
-    let digest = poseidon_hash(data_to_hash);
+    let digest = poseidon_hash(&data_to_hash);
     let digest: [u8; 32] = digest.to_bytes();
     let digest_hex = hex::encode(&digest);
 
@@ -186,11 +206,21 @@ fn test_negative() {
 
     engine.cc.stack.push(StackItem::cell(pub_inputs_cell.clone()));
 
-    let params = read_kzg_params("kzg_params.bin".to_string());
-    let proof = generate_proof(&params, Some(token_type_), Some(private_note_sum_), Some(sk_u_), Some(sk_u_commitment)).unwrap().as_bytes().to_vec();
-
-    
-    let proof_cell = pack_data_to_cell(&proof.clone(), &mut 0).unwrap();
+    let params = read_kzg_params(KZG_PARAMS_PATH.to_string());
+    let proof = generate_dark_dex_proof(
+        k,
+        unusable_rows,
+        &params,
+        token_type_,
+        private_note_sum_,
+        sk_u_,
+        sk_u_commitment,
+        BREAK_POINTS_PATH.to_string(), 
+        CONFIG_PARAMS_PATH.to_string(), 
+        PROOF_KEY_PATH.to_string(), 
+    ).unwrap();
+        
+    let proof_cell = pack_data_to_cell(&proof.clone().0, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell.clone()));
 
     let start: Instant = Instant::now();

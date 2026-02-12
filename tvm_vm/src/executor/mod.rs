@@ -79,6 +79,7 @@ mod test_helper;
 pub mod zk;
 
 pub mod zk_halo2;
+pub mod zk_halo2_utils;
 
 pub trait Mask {
     fn bit(&self, bits: Self) -> bool;
