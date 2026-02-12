@@ -185,13 +185,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
             }
         }
-        let ihr_delivered = false; // ihr is disabled because it does not work
-        if !ihr_delivered {
-            if let Some(h) = in_msg.int_header() {
-                msg_balance.grams += h.ihr_fee;
-            }
-        }
-
         let is_special = self.config.is_special_account(account_address)?;
         log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}",
             acc_balance.grams, msg_balance.grams, !bounce, is_special);
@@ -203,6 +196,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         tr.set_logical_time(lt);
         tr.set_now(params.block_unixtime);
         tr.set_in_msg_cell(in_msg_cell.clone());
+        if let Some(h) = in_msg.int_header() {
+            if !h.ihr_fee.is_zero() {
+                tr.add_fee_grams(&h.ihr_fee)?;
+            }
+        }
 
         let mut description = TransactionDescrOrdinary {
             credit_first: !bounce,
