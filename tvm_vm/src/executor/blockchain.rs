@@ -11,7 +11,7 @@
 
 use num::BigInt;
 use num::bigint::Sign;
-use tvm_block::ACTION_CHANGE_LIB;
+use tvm_block::{Message, MessageOld, Serializable, ACTION_CHANGE_LIB};
 use tvm_block::ACTION_COPYLEFT;
 use tvm_block::ACTION_RESERVE;
 use tvm_block::ACTION_SEND_MSG;
@@ -91,9 +91,24 @@ pub(super) fn execute_sendrawmsg(engine: &mut Engine) -> Status {
     fetch_stack(engine, 2)?;
     let x = engine.cmd.var(0).as_integer()?.into(0..=255)?;
     let cell = engine.cmd.var(1).as_cell()?.clone();
+    let old_message = MessageOld::construct_from_cell(cell)?;
+    let cell = Message::from(old_message).serialize()?;
     let suffix = BuilderData::with_raw(vec![x], 8)?;
     add_action(engine, ACTION_SEND_MSG, Some(cell), suffix)
 }
+
+
+/// SENDRAWMSGNEW (c x – ): pop mode and message cell from stack and put it at the
+/// end of output actions list.
+pub(super) fn execute_sendrawmsgnew(engine: &mut Engine) -> Status {
+    engine.load_instruction(Instruction::new("SENDRAWMSGNEW"))?;
+    fetch_stack(engine, 2)?;
+    let x = engine.cmd.var(0).as_integer()?.into(0..=255)?;
+    let cell = engine.cmd.var(1).as_cell()?.clone();
+    let suffix = BuilderData::with_raw(vec![x], 8)?;
+    add_action(engine, ACTION_SEND_MSG, Some(cell), suffix)
+}
+
 
 /// SETCODE (c - )
 pub(super) fn execute_setcode(engine: &mut Engine) -> Status {

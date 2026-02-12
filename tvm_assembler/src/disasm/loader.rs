@@ -743,6 +743,8 @@ impl Loader {
 
     create_handler_2!(sendrawmsg, 0xfb00, "SENDRAWMSG");
 
+    create_handler_2!(sendrawmsgnew, 0xfb10, "SENDRAWMSGNEW");
+
     create_handler_2!(rawreserve, 0xfb02, "RAWRESERVE");
 
     create_handler_2!(rawreservex, 0xfb03, "RAWRESERVEX");

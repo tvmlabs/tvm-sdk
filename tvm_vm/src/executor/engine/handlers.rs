@@ -752,7 +752,8 @@ impl Handlers {
                 .set(0x04, execute_setcode)
                 .set(0x06, execute_setlibcode)
                 .set(0x07, execute_changelib)
-                .set(0x0A, execute_copyleft),
+                .set(0x0A, execute_copyleft)
+                .set(0x10, execute_sendrawmsgnew),
         )
     }
 
