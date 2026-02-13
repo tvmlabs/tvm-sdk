@@ -11,14 +11,17 @@
 
 use num::BigInt;
 use num::bigint::Sign;
-use tvm_block::{Message, MessageOld, Serializable, ACTION_CHANGE_LIB};
+use tvm_block::ACTION_CHANGE_LIB;
 use tvm_block::ACTION_COPYLEFT;
 use tvm_block::ACTION_RESERVE;
 use tvm_block::ACTION_SEND_MSG;
 use tvm_block::ACTION_SET_CODE;
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
+use tvm_block::Message;
+use tvm_block::MessageOld;
 use tvm_block::MsgAddressInt;
+use tvm_block::Serializable;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::GasConsumer;
@@ -97,9 +100,8 @@ pub(super) fn execute_sendrawmsg(engine: &mut Engine) -> Status {
     add_action(engine, ACTION_SEND_MSG, Some(cell), suffix)
 }
 
-
-/// SENDRAWMSGNEW (c x – ): pop mode and message cell from stack and put it at the
-/// end of output actions list.
+/// SENDRAWMSGNEW (c x – ): pop mode and message cell from stack and put it at
+/// the end of output actions list.
 pub(super) fn execute_sendrawmsgnew(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("SENDRAWMSGNEW"))?;
     fetch_stack(engine, 2)?;
@@ -108,7 +110,6 @@ pub(super) fn execute_sendrawmsgnew(engine: &mut Engine) -> Status {
     let suffix = BuilderData::with_raw(vec![x], 8)?;
     add_action(engine, ACTION_SEND_MSG, Some(cell), suffix)
 }
-
 
 /// SETCODE (c - )
 pub(super) fn execute_setcode(engine: &mut Engine) -> Status {
