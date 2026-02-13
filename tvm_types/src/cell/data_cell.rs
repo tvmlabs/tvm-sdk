@@ -48,6 +48,8 @@ impl Default for DataCell {
 thread_local! {
     static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
 }
+pub const MAX_ALLOWED_CELL_DEPTH: u16 = 800;
+pub const MAX_ALLOWED_NESTED_CELL_COUNT: u64 = 1398101 * 1024;
 
 impl DataCell {
     pub fn new() -> Self {
@@ -148,7 +150,7 @@ impl DataCell {
                 refs = refs.saturating_add(r.references_count());
             }
         }
-        if depth >= 800 || count >= 1398101 * 1024 {
+        if depth >= MAX_ALLOWED_CELL_DEPTH || count >= MAX_ALLOWED_NESTED_CELL_COUNT {
             log::debug!("Depths {:?}, counts {:?}", depths, counts);
             log::debug!("Depth {:?}, count {:?}", depth, count);
             log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
