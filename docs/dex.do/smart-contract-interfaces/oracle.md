@@ -4,7 +4,7 @@ description: (Work in progress) Oracle Contract Interface Documentation
 
 # Oracle
 
-{% file src="../../.gitbook/assets/Oracle.abi.json" %}
+{% file src="../../.gitbook/assets/Oracle.abi (1).json" %}
 
 ## Overview
 
@@ -49,10 +49,7 @@ Deploys a new `OracleEventList` with a specified index.
 
 ```solidity
 function deployEventList(uint128 index)
-    public
-    view
-    onlyOwnerPubkey(_oraclePubkey)
-    accept;
+    public;
 ```
 
 **Access:** oracle owner only\
@@ -76,10 +73,7 @@ Withdraws accumulated fees to a specified address.
 
 ```solidity
 function withdrawFees(address to, uint128 amount)
-    public
-    view
-    onlyOwnerPubkey(_oraclePubkey)
-    accept;
+    public;
 ```
 
 **Access:** oracle owner only\
@@ -87,8 +81,8 @@ function withdrawFees(address to, uint128 amount)
 
 **Parameters:**
 
-* `to` — recipient address
-* `amount` — amount of fees to withdraw
+* `to` — Recipient address.
+* `amount` — Amount of fees to withdraw.
 
 **Behavior:**
 

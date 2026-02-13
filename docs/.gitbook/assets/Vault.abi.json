@@ -11,10 +11,22 @@
 			]
 		},
 		{
-			"name": "deployOracle",
+			"name": "generateVaucher",
 			"inputs": [
-				{"name":"oraclePubkey","type":"uint256"},
-				{"name":"oracleName","type":"string"}
+				{"name":"sk_u_commit","type":"uint256"},
+				{"name":"isFee","type":"bool"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawTokens",
+			"inputs": [
+				{"name":"withdrawed_value","type":"uint128"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"flags","type":"uint8"},
+				{"name":"wallet_addr","type":"address"},
+				{"name":"initial_data_hash","type":"uint256"}
 			],
 			"outputs": [
 			]
@@ -29,12 +41,13 @@
 			]
 		},
 		{
-			"name": "getOracleAddress",
+			"name": "getDetails",
 			"inputs": [
-				{"name":"name","type":"string"}
 			],
 			"outputs": [
-				{"name":"oracleAddress","type":"address"}
+				{"name":"ownerPubkey","type":"uint256"},
+				{"name":"root","type":"address"},
+				{"name":"privateNoteCodeHash","type":"uint256"}
 			]
 		},
 		{
@@ -49,11 +62,11 @@
 	],
 	"events": [
 		{
-			"name": "OracleDeployed",
+			"name": "vaucherGenerated",
 			"inputs": [
-				{"name":"oracle","type":"address"},
-				{"name":"pubkey","type":"uint256"},
-				{"name":"name","type":"string"}
+				{"name":"sk_u_commit","type":"uint256"},
+				{"name":"vaucher_nominal","type":"uint256"},
+				{"name":"token_type","type":"uint32"}
 			],
 			"outputs": [
 			]
@@ -64,10 +77,9 @@
 		{"init":false,"name":"_timestamp","type":"uint64"},
 		{"init":false,"name":"_constructorFlag","type":"bool"},
 		{"init":false,"name":"THRESHOLD","type":"uint32"},
+		{"init":false,"name":"_root","type":"address"},
 		{"init":false,"name":"_PrivateNoteCode","type":"cell"},
-		{"init":false,"name":"_pmpCode","type":"cell"},
-		{"init":false,"name":"_oracleCode","type":"cell"},
-		{"init":false,"name":"_oracleEventListCode","type":"cell"},
-		{"init":false,"name":"_ownerPubkey","type":"uint256"}
+		{"init":false,"name":"_ownerPubkey","type":"uint256"},
+		{"init":false,"name":"_withdrowValues","type":"map(uint32,uint128)"}
 	]
 }
