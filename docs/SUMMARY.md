@@ -22,7 +22,7 @@
 ## Bee Engine
 
 * [Bee Engine Overview](bee-engine/bee-engine-overview.md)
-* [Integration](bee-engine/integration.md)
+* [Bee Engine SDK — Integration Documentation](bee-engine/bee-engine-sdk-integration-documentation.md)
 
 ## Reference
 
