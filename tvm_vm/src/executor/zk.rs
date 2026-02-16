@@ -24,7 +24,6 @@ use serde::Deserialize;
 use serde::Serialize;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
-use tvm_types::UInt256;
 use tvm_types::error;
 
 use crate::error::TvmError;
