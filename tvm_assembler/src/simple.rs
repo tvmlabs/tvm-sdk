@@ -824,51 +824,44 @@ impl Engine {
 
     #[cfg(feature = "gosh")]
     simple_commands! {
-        enumerate_diff_commands
-        DIFF                                 => 0xC7, 0x14
-        DIFF_PATCH                           => 0xC7, 0x15
-        DIFF_PATCH_ZIP                       => 0xC7, 0x19
-        DIFF_PATCHQ                          => 0xC7, 0x20
-        DIFF_PATCH_ZIPQ                      => 0xC7, 0x21
-        DIFF_ZIP                             => 0xC7, 0x18
-        UNZIP                                => 0xC7, 0x17
-        ZIP                                  => 0xC7, 0x16
-        DIFF_PATCH_BINARY                    => 0xC7, 0x22
-        DIFF_PATCH_BINARY_ZIP                => 0xC7, 0x23
-        DIFF_PATCH_BINARYQ                   => 0xC7, 0x24
-        DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
-        MINTECC                              => 0xC7, 0x26
-        CNVRTSHELLQ                          => 0xC7, 0x27
-        MINTSHELLQ                           => 0xC7, 0x28
-        CALCMINSTAKE                         => 0xC7, 0x30
-        VERGRTH16                            => 0xC7, 0x31
-<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
-        POSEIDONZKLOGIN                      => 0xC7, 0x32
-=======
-        POSEIDON                             => 0xC7, 0x32
->>>>>>> main
-        CALCBKREWARDADJ                      => 0xC7, 0x33
-        CALCREPCOEF                          => 0xC7, 0x34
-        CALCBMREWARD                         => 0xC7, 0x35
-        CALCBMMVREWARDADJ                    => 0xC7, 0x36
-        CALCMINSTAKEBM                       => 0xC7, 0x37
-        BURNECC                              => 0xC7, 0x38
-        RUNWASM                              => 0xC7, 0x39
-        RUNWASMCONCATMULTIARG                => 0xC7, 0x3A
-        CALCBOOSTCOEF                        => 0xC7, 0x40
-        CALCMVREWARD                         => 0xC7, 0x41
-        GETAVAILABLEBALANCE                  => 0xC7, 0x42
-        MINTSHELL                            => 0xC7, 0x43
-        SENDTODAPPCONFIG                     => 0xC7, 0x44
-        MYDAPPID                             => 0xC7, 0x45
-        CALCMBK                              => 0xC7, 0x46
-        CALCMINERTAPCOEF                     => 0xC7, 0x47
-        CALCMINERREWARD                      => 0xC7, 0x48
-<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
-        POSEIDON                             => 0xC7, 0x50
-=======
->>>>>>> main
-    }
+            enumerate_diff_commands
+            DIFF                                 => 0xC7, 0x14
+            DIFF_PATCH                           => 0xC7, 0x15
+            DIFF_PATCH_ZIP                       => 0xC7, 0x19
+            DIFF_PATCHQ                          => 0xC7, 0x20
+            DIFF_PATCH_ZIPQ                      => 0xC7, 0x21
+            DIFF_ZIP                             => 0xC7, 0x18
+            UNZIP                                => 0xC7, 0x17
+            ZIP                                  => 0xC7, 0x16
+            DIFF_PATCH_BINARY                    => 0xC7, 0x22
+            DIFF_PATCH_BINARY_ZIP                => 0xC7, 0x23
+            DIFF_PATCH_BINARYQ                   => 0xC7, 0x24
+            DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
+            MINTECC                              => 0xC7, 0x26
+            CNVRTSHELLQ                          => 0xC7, 0x27
+            MINTSHELLQ                           => 0xC7, 0x28
+            CALCMINSTAKE                         => 0xC7, 0x30
+            VERGRTH16                            => 0xC7, 0x31
+            POSEIDONZKLOGIN                      => 0xC7, 0x32
+            CALCBKREWARDADJ                      => 0xC7, 0x33
+            CALCREPCOEF                          => 0xC7, 0x34
+            CALCBMREWARD                         => 0xC7, 0x35
+            CALCBMMVREWARDADJ                    => 0xC7, 0x36
+            CALCMINSTAKEBM                       => 0xC7, 0x37
+            BURNECC                              => 0xC7, 0x38
+            RUNWASM                              => 0xC7, 0x39
+            RUNWASMCONCATMULTIARG                => 0xC7, 0x3A
+            CALCBOOSTCOEF                        => 0xC7, 0x40
+            CALCMVREWARD                         => 0xC7, 0x41
+            GETAVAILABLEBALANCE                  => 0xC7, 0x42
+            MINTSHELL                            => 0xC7, 0x43
+            SENDTODAPPCONFIG                     => 0xC7, 0x44
+            MYDAPPID                             => 0xC7, 0x45
+            CALCMBK                              => 0xC7, 0x46
+            CALCMINERTAPCOEF                     => 0xC7, 0x47
+            CALCMINERREWARD                      => 0xC7, 0x48
+            POSEIDON                             => 0xC7, 0x50
+        }
 
     fn add_commands<'a>(
         &mut self,

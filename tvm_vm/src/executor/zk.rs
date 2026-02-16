@@ -24,20 +24,16 @@ use serde::Deserialize;
 use serde::Serialize;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
-<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
 use tvm_types::UInt256;
-=======
->>>>>>> main
+
 use tvm_types::error;
 
 use crate::error::TvmError;
 use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::gas::gas_state::Gas;
-<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_bytes_flat;
-=======
->>>>>>> main
+
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
@@ -464,11 +460,8 @@ fn pop(barry: &[u8]) -> &[u8; 8] {
 }
 
 pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
-<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
     engine.load_instruction(crate::executor::types::Instruction::new("POSEIDONZKLOGIN"))?;
-=======
-    engine.load_instruction(crate::executor::types::Instruction::new("POSEIDON"))?;
->>>>>>> main
+
     engine.try_use_gas(Gas::poseidon_zk_login_price())?;
     fetch_stack(engine, 7)?;
 
@@ -579,7 +572,6 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
 
     Ok(())
 }
-<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
 
 pub(super) fn execute_poseidon(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("POSEIDON"))?;
@@ -600,5 +592,4 @@ pub(super) fn execute_poseidon(engine: &mut Engine) -> Status {
 
     Ok(())
 }
-=======
->>>>>>> main
+
