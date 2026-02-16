@@ -52,6 +52,11 @@ pub const MAX_ALLOWED_CELL_DEPTH: u16 = 800;
 pub const MAX_ALLOWED_NESTED_CELL_COUNT: u64 = 1398101 * 1024;
 
 impl DataCell {
+    thread_local! {
+        pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = RefCell::new(Some(800));
+        pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT: RefCell<Option<u64>> = RefCell::new(Some(1398101 * 1024));
+    }
+
     pub fn new() -> Self {
         Self::with_refs_and_data(smallvec![], &[0x80]).unwrap()
     }
@@ -150,7 +155,13 @@ impl DataCell {
                 refs = refs.saturating_add(r.references_count());
             }
         }
-        if depth >= MAX_ALLOWED_CELL_DEPTH || count >= MAX_ALLOWED_NESTED_CELL_COUNT {
+        if Self::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow(|x| match x {
+            None => false,
+            Some(x) => depth >= *x,
+        }) || Self::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT.with_borrow(|x| match x {
+            None => false,
+            Some(x) => count >= *x,
+        }) {
             log::debug!("Depths {:?}, counts {:?}", depths, counts);
             log::debug!("Depth {:?}, count {:?}", depth, count);
             log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
