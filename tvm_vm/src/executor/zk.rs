@@ -25,7 +25,6 @@ use serde::Serialize;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-
 use tvm_types::error;
 
 use crate::error::TvmError;
@@ -33,7 +32,6 @@ use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::gas::gas_state::Gas;
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_bytes_flat;
-
 use crate::executor::zk_stuff::bn254::poseidon::poseidon_zk_login;
 use crate::executor::zk_stuff::curve_utils::Bn254FrElement;
 use crate::executor::zk_stuff::error::ZkCryptoError;
@@ -592,4 +590,3 @@ pub(super) fn execute_poseidon(engine: &mut Engine) -> Status {
 
     Ok(())
 }
-
