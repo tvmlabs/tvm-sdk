@@ -139,15 +139,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         let mut msg_balance_convert = 0;
         let mut exchanged = false;
-        let mut is_cross_dapp_deploy = false;
         if let Some(h) = in_msg.int_header() {
-            let is_deploy = in_msg.have_state_init()
-                && account
-                    .state()
-                    .map(|s| *s == AccountState::AccountUninit {})
-                    .unwrap_or(true);
-            let is_cross_dapp = *h.src_dapp_id() != params.dapp_id && !h.bounced;
-            if is_cross_dapp && !is_deploy {
+            if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
+                && !(in_msg.have_state_init()
+                    && account
+                        .state()
+                        .map(|s| *s == AccountState::AccountUninit {})
+                        .unwrap_or(true))
+                && !h.bounced
+            {
                 log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id);
                 log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_limit * gas_config.gas_price / 65536));
                 msg_balance.grams = min(
@@ -157,7 +157,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 need_to_burn = msg_balance.grams;
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
-            is_cross_dapp_deploy = is_cross_dapp && is_deploy;
             if h.is_exchange {
                 if let Ok(Some(mut value)) = msg_balance.get_other(2) {
                     let mut echng = value.clone();
@@ -185,6 +184,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
             }
         }
+        let ihr_delivered = false; // ihr is disabled because it does not work
+        if !ihr_delivered {
+            if let Some(h) = in_msg.int_header() {
+                msg_balance.grams += h.ihr_fee;
+            }
+        }
+
         let is_special = self.config.is_special_account(account_address)?;
         log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}",
             acc_balance.grams, msg_balance.grams, !bounce, is_special);
@@ -196,11 +202,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         tr.set_logical_time(lt);
         tr.set_now(params.block_unixtime);
         tr.set_in_msg_cell(in_msg_cell.clone());
-        if let Some(h) = in_msg.int_header() {
-            if !h.ihr_fee.is_zero() {
-                tr.add_fee_grams(&h.ihr_fee)?;
-            }
-        }
 
         let mut description = TransactionDescrOrdinary {
             credit_first: !bounce,
@@ -375,7 +376,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
                         } else {
-                            params.dapp_id.clone()
+                            params.dapp_id
                         }
                     } else {
                         None
@@ -418,13 +419,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     }
                 } else {
                     log::debug!(target: "executor", "compute_phase: failed");
-                    let burn = if is_cross_dapp_deploy {
-                        original_msg_balance.grams
-                    } else {
-                        need_to_burn
-                    };
-                    if acc_balance.grams >= burn {
-                        acc_balance.grams -= burn;
+                    if acc_balance.grams >= need_to_burn {
+                        acc_balance.grams -= need_to_burn;
                     } else {
                         acc_balance.grams = Grams::zero();
                     }
@@ -433,13 +429,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
             TrComputePhase::Skipped(skipped) => {
                 log::debug!(target: "executor", "compute_phase: skipped reason {:?}", skipped.reason);
-                let burn = if is_cross_dapp_deploy {
-                    original_msg_balance.grams
-                } else {
-                    need_to_burn
-                };
-                if acc_balance.grams >= burn {
-                    acc_balance.grams -= burn;
+                if acc_balance.grams >= need_to_burn {
+                    acc_balance.grams -= need_to_burn;
                 } else {
                     acc_balance.grams = Grams::zero();
                 }
@@ -467,13 +458,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
                 if phase.success {
                     acc_balance = new_acc_balance;
-                } else if is_cross_dapp_deploy {
-                    let burn = original_msg_balance.grams;
-                    if acc_balance.grams >= burn {
-                        acc_balance.grams -= burn;
-                    } else {
-                        acc_balance.grams = Grams::zero();
-                    }
                 }
                 !phase.success
             }
@@ -525,16 +509,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             if let Some(TrBouncePhase::Ok(_)) = description.bounce {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
-            } else {
-                let is_cross_dapp_msg = in_msg.int_header()
-                    .map(|h| *h.src_dapp_id() != params.dapp_id && !h.bounced)
-                    .unwrap_or(false);
-                if is_cross_dapp_msg {
-                    acc_balance.grams = Grams::zero();
-                } else if account.is_none() && !acc_balance.is_zero()? {
-                    *account =
-                        Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
-                }
+            } else if account.is_none() && !acc_balance.is_zero()? {
+                *account =
+                    Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
             }
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {
