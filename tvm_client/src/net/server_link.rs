@@ -516,7 +516,7 @@ impl ServerLink {
         let endpoint_addresses = replace_endpoints(endpoint_addresses);
 
         let use_https_for_rest_api =
-            endpoint_addresses.first().map_or(false, |s| s.starts_with("https://"));
+            endpoint_addresses.first().is_some_and(|s| s.starts_with("https://"));
         let rest_api_endpoint =
             construct_rest_api_endpoint(&rest_api_addr, use_https_for_rest_api)?;
 
@@ -1106,12 +1106,10 @@ fn ensure_address(err_data: &mut Value, dst: Value) {
         if addr.is_null() {
             *addr = dst;
         }
-    } else {
-        if let Some(details) =
-            err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
-        {
-            details.insert("address".to_string(), dst);
-        }
+    } else if let Some(details) =
+        err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
+    {
+        details.insert("address".to_string(), dst);
     }
 }
 

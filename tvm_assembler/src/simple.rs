@@ -634,6 +634,7 @@ impl Engine {
         SECOND                               => 0x6F, 0x11
         SEMPTY                               => 0xC7, 0x00
         SENDRAWMSG                           => 0xFB, 0x00
+        SENDRAWMSGNEW                        => 0xFB, 0x10
         SEQNO                                => 0xF8, 0x2D
         SETALTCTR z = parse_control_register => 0xED, 0x80 | z
         SETCODE                              => 0xFB, 0x04

@@ -158,6 +158,10 @@ struct RunArgs {
     #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
     internal: bool,
 
+    /// Emulate inbound cross dapp message
+    #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
+    cross_dapp: bool,
+
     /// Internal message balance
     #[arg(long, requires("internal"))]
     message_value: Option<u128>,
@@ -169,6 +173,14 @@ struct RunArgs {
     /// Internal message source address
     #[clap(long, requires("internal"))]
     message_source: Option<String>,
+
+    /// Internal message source dapp id
+    #[clap(long, requires("cross_dapp"))]
+    message_source_dapp_id: Option<String>,
+
+    /// Internal message dest dapp id
+    #[clap(long, requires("cross_dapp"))]
+    message_dest_dapp_id: Option<String>,
 
     /// Decode out messages
     #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
@@ -288,6 +300,7 @@ mod tests {
             address: None,
             sign: None,
             internal: false,
+            cross_dapp: false,
             message_value: None,
             message_ecc: None,
             message_source: None,

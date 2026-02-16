@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.25.0] - 2026-XX-XX
+## New
+- Add new type of message - Cross Dapp Message it behaves like internal but requires destination dapp id and could be sent between dapp id.
+
+## Breaking changes
+- External outbound message header was changed to support new types of messages, but serde was changed to support old version deserialization.
+
 ## [2.24.9] - 2026-01-21
 ## New
 - `tvm_client` now can be compiled without a wasmtime runtime (e.g. for the browser environment) with a new feature `wasm_web`
