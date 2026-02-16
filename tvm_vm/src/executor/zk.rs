@@ -584,13 +584,8 @@ pub(super) fn execute_poseidon(engine: &mut Engine) -> Status {
         }
     };
 
-    //let output_cell = pack_data_to_cell(&output_as_bytes, &mut 0)?;
-    //engine.cc.stack.push(Cell(output_cell));
-
-    //let hash = UInt256::from_le_bytes(&output_as_bytes); // UInt256::from(&output_as_bytes);
-    let hash_int = IntegerData::from_unsigned_bytes_le(&output_as_bytes);//let hash_int = hash_to_uint(hash);
+    let hash_int = IntegerData::from_unsigned_bytes_le(&output_as_bytes);
     engine.cc.stack.push(StackItem::integer(hash_int));
-    //engine.cc.stack.push(StackItem::integer(hash)); 
 
     Ok(())
 }
