@@ -134,6 +134,12 @@ fn prepare_stack(args: &RunArgs) -> anyhow::Result<Stack> {
                 .map_err(|e| anyhow::format_err!("Failed to serialize message: {e}"))?,
         ))
         .push(StackItem::Slice(body))
-        .push(int!(if args.internal { 0 } else { -1 }));
+        .push(int!(if args.internal {
+            0
+        } else if args.cross_dapp {
+            -3
+        } else {
+            -1
+        }));
     Ok(stack)
 }

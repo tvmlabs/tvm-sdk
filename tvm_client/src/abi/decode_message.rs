@@ -14,7 +14,8 @@ use crate::abi::Error;
 use crate::abi::FunctionHeader;
 use crate::abi::types::Abi;
 use crate::boc::internal::deserialize_cell_from_boc;
-use crate::boc::internal::deserialize_object_from_boc;
+use crate::boc::internal::deserialize_message_from_boc;
+use crate::boc::internal::deserialize_old_message_from_boc;
 use crate::client::ClientContext;
 use crate::encoding::decode_abi_number;
 use crate::encoding::slice_from_cell;
@@ -120,16 +121,40 @@ pub fn decode_message(
         let data_layout = match message.header() {
             tvm_block::CommonMsgInfo::ExtInMsgInfo(_) => Some(DataLayout::Input),
             tvm_block::CommonMsgInfo::ExtOutMsgInfo(_) => Some(DataLayout::Output),
-            tvm_block::CommonMsgInfo::IntMsgInfo(_) => params.data_layout,
+            tvm_block::CommonMsgInfo::IntMsgInfo(_)
+            | tvm_block::CommonMsgInfo::CrossDappMessageInfo(_) => params.data_layout.clone(),
         };
-        decode_body(
+        let mut res = decode_body(
             abi,
             body,
-            message.is_internal(),
+            message.is_internal() || message.is_cross_dapp(),
             params.allow_partial,
-            params.function_name,
+            params.function_name.clone(),
             data_layout,
-        )
+        );
+        if res.is_err() {
+            let (abi, message) = prepare_decode_old(&context, &params)?;
+            if let Some(body) = message.body() {
+                let data_layout = match message.header() {
+                    tvm_block::CommonMsgInfo::ExtInMsgInfo(_) => Some(DataLayout::Input),
+                    tvm_block::CommonMsgInfo::ExtOutMsgInfo(_) => Some(DataLayout::Output),
+                    tvm_block::CommonMsgInfo::IntMsgInfo(_)
+                    | tvm_block::CommonMsgInfo::CrossDappMessageInfo(_) => params.data_layout,
+                };
+                let old_decode_res = decode_body(
+                    abi,
+                    body,
+                    message.is_internal() || message.is_cross_dapp(),
+                    params.allow_partial,
+                    params.function_name,
+                    data_layout,
+                );
+                if old_decode_res.is_ok() {
+                    res = old_decode_res;
+                }
+            }
+        }
+        res
     } else {
         Err(Error::invalid_message_for_decode("The message body is empty"))
     }
@@ -188,7 +213,17 @@ fn prepare_decode(
     params: &ParamsOfDecodeMessage,
 ) -> ClientResult<(AbiContract, tvm_block::Message)> {
     let abi = params.abi.abi()?;
-    let message = deserialize_object_from_boc(context, &params.message, "message")
+    let message = deserialize_message_from_boc(context, &params.message, "message")
+        .map_err(Error::invalid_message_for_decode)?;
+    Ok((abi, message.object))
+}
+
+fn prepare_decode_old(
+    context: &ClientContext,
+    params: &ParamsOfDecodeMessage,
+) -> ClientResult<(AbiContract, tvm_block::Message)> {
+    let abi = params.abi.abi()?;
+    let message = deserialize_old_message_from_boc(context, &params.message, "message")
         .map_err(Error::invalid_message_for_decode)?;
     Ok((abi, message.object))
 }
@@ -369,7 +404,7 @@ pub async fn get_signature_data(
 ) -> ClientResult<ResultOfGetSignatureData> {
     let abi = params.abi.abi()?;
     let message: tvm_block::Message =
-        deserialize_object_from_boc(&context, &params.message, "message")?.object;
+        deserialize_message_from_boc(&context, &params.message, "message")?.object;
     if let Some(body) = message.body() {
         let address = message.dst().ok_or_else(|| {
             Error::invalid_message_for_decode("Message has no destination address")

@@ -87,7 +87,7 @@ fn test_modulus_bad() {
 
     let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"11653644709263251558401833339895967150038453157931503547786049700851019971914\",\"19645115655849386411721408046258151875851981532797037592519388256606989838291\",\"1\"],\"b\":[[\"10337823157100207874978547418909107794705315336434612201980868079626861490142\",\"7608493619307023258619280401565914642046036477885384923318894672159944771521\"],[\"10758338821706782118264705480027910748070506589960188719799243416958368105493\",\"6776868143492437139790442766508489213494523558051657976873009128727632896413\"],[\"1\",\"0\"]],\"c\":[\"15216679157139253008581452087709521187862970390016716857578619200852570992090\",\"2736378039742229911693987843238912925507982255227299601017775788476938986405\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImM4YWI3MTUzMDk3MmJiYTIwYjQ5Zjc4YTA5Yzk4NTJjNDNmZjkxMTgiLCJ0eXAiOiJKV1QifQ\"}";
 
-    let len = proof_and_jwt.bytes().len();
+    let len = proof_and_jwt.len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
@@ -96,7 +96,7 @@ fn test_modulus_bad() {
     let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
     let index_mod_4 = 1;
 
-    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let zk_login_inputs = ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
@@ -121,9 +121,9 @@ fn test_modulus_bad() {
 
     let max_epoch = 4774516312;
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64, &mut 0).unwrap();
 
     let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
@@ -153,13 +153,13 @@ fn test_modulus_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -177,7 +177,7 @@ fn test_modulus_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
@@ -204,13 +204,13 @@ fn test_modulus_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -228,13 +228,13 @@ fn test_modulus_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -304,7 +304,7 @@ fn test_iss_64_bad() {
 
     let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"11653644709263251558401833339895967150038453157931503547786049700851019971914\",\"19645115655849386411721408046258151875851981532797037592519388256606989838291\",\"1\"],\"b\":[[\"10337823157100207874978547418909107794705315336434612201980868079626861490142\",\"7608493619307023258619280401565914642046036477885384923318894672159944771521\"],[\"10758338821706782118264705480027910748070506589960188719799243416958368105493\",\"6776868143492437139790442766508489213494523558051657976873009128727632896413\"],[\"1\",\"0\"]],\"c\":[\"15216679157139253008581452087709521187862970390016716857578619200852570992090\",\"2736378039742229911693987843238912925507982255227299601017775788476938986405\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImM4YWI3MTUzMDk3MmJiYTIwYjQ5Zjc4YTA5Yzk4NTJjNDNmZjkxMTgiLCJ0eXAiOiJKV1QifQ\"}";
 
-    let len = proof_and_jwt.bytes().len();
+    let len = proof_and_jwt.len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
@@ -313,7 +313,7 @@ fn test_iss_64_bad() {
     let _iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
     let index_mod_4 = 1;
 
-    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let zk_login_inputs = ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
@@ -338,7 +338,7 @@ fn test_iss_64_bad() {
 
     let max_epoch = 4774516312;
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
     let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
@@ -364,20 +364,20 @@ fn test_iss_64_bad() {
 
     let iss_base_64_spoiled = "yJpc3MiOiJodHRwczovL";
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64_spoiled, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64_spoiled, &mut 0).unwrap();
 
     engine.cc.stack.push(StackItem::int(index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -387,20 +387,20 @@ fn test_iss_64_bad() {
 
     let iss_base_64_spoiled = "";
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64_spoiled, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64_spoiled, &mut 0).unwrap();
 
     engine.cc.stack.push(StackItem::int(index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -410,20 +410,20 @@ fn test_iss_64_bad() {
 
     let iss_base_64_spoiled = "ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666";
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64_spoiled, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64_spoiled, &mut 0).unwrap();
 
     engine.cc.stack.push(StackItem::int(index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -433,14 +433,14 @@ fn test_iss_64_bad() {
 
     let iss_base_64_spoiled = "ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666ghg67666";
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64_spoiled, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64_spoiled, &mut 0).unwrap();
 
     engine.cc.stack.push(StackItem::int(index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
@@ -521,7 +521,7 @@ fn test_header_base_64_bad() {
 
     let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"11653644709263251558401833339895967150038453157931503547786049700851019971914\",\"19645115655849386411721408046258151875851981532797037592519388256606989838291\",\"1\"],\"b\":[[\"10337823157100207874978547418909107794705315336434612201980868079626861490142\",\"7608493619307023258619280401565914642046036477885384923318894672159944771521\"],[\"10758338821706782118264705480027910748070506589960188719799243416958368105493\",\"6776868143492437139790442766508489213494523558051657976873009128727632896413\"],[\"1\",\"0\"]],\"c\":[\"15216679157139253008581452087709521187862970390016716857578619200852570992090\",\"2736378039742229911693987843238912925507982255227299601017775788476938986405\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImM4YWI3MTUzMDk3MmJiYTIwYjQ5Zjc4YTA5Yzk4NTJjNDNmZjkxMTgiLCJ0eXAiOiJKV1QifQ\"}";
 
-    let len = proof_and_jwt.bytes().len();
+    let len = proof_and_jwt.len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
@@ -529,7 +529,7 @@ fn test_header_base_64_bad() {
     let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
     let index_mod_4 = 1;
 
-    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let zk_login_inputs = ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
@@ -554,7 +554,7 @@ fn test_header_base_64_bad() {
 
     let max_epoch = 4774516312;
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64, &mut 0).unwrap();
 
     let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
@@ -581,20 +581,20 @@ fn test_header_base_64_bad() {
     let header_base_64 =
         "eyJhbGciOiJSUzI1NImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzElZGEzZTMiLCJ0eQifQ";
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
     engine.cc.stack.push(StackItem::int(index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _res_error = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -604,20 +604,20 @@ fn test_header_base_64_bad() {
 
     let header_base_64 = "";
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
     engine.cc.stack.push(StackItem::int(index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -627,20 +627,20 @@ fn test_header_base_64_bad() {
 
     let header_base_64 = "32789263432789263432789263432789263432789263432789263432789263432789263432786786786g32789263432789263432789263432789263432786786786g32789263432789263432789263432789263432786786786g";
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
     engine.cc.stack.push(StackItem::int(index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -650,14 +650,14 @@ fn test_header_base_64_bad() {
 
     let header_base_64 = "327892634327892634327892634327892634327892634327892634327892634327892634327892634327892634327892634ejwgdejhcg327892634327892634327892634327892634327892634327892634327892634327892634327892634327892634dsjhgcjhwdcgjwgcdjhwgcdhc327892634327892634327892634327892634327892634327892634327892634327892634327892634327892634327892634327892634327892634dgxhwjdcg";
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
     engine.cc.stack.push(StackItem::int(index_mod_4));
     engine.cc.stack.push(StackItem::int(max_epoch));
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
@@ -738,7 +738,7 @@ fn test_zk_seed_bad() {
 
     let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"11653644709263251558401833339895967150038453157931503547786049700851019971914\",\"19645115655849386411721408046258151875851981532797037592519388256606989838291\",\"1\"],\"b\":[[\"10337823157100207874978547418909107794705315336434612201980868079626861490142\",\"7608493619307023258619280401565914642046036477885384923318894672159944771521\"],[\"10758338821706782118264705480027910748070506589960188719799243416958368105493\",\"6776868143492437139790442766508489213494523558051657976873009128727632896413\"],[\"1\",\"0\"]],\"c\":[\"15216679157139253008581452087709521187862970390016716857578619200852570992090\",\"2736378039742229911693987843238912925507982255227299601017775788476938986405\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImM4YWI3MTUzMDk3MmJiYTIwYjQ5Zjc4YTA5Yzk4NTJjNDNmZjkxMTgiLCJ0eXAiOiJKV1QifQ\"}";
 
-    let len = proof_and_jwt.bytes().len();
+    let len = proof_and_jwt.len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
@@ -747,7 +747,7 @@ fn test_zk_seed_bad() {
     let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
     let index_mod_4 = 1;
 
-    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let zk_login_inputs = ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
@@ -772,9 +772,9 @@ fn test_zk_seed_bad() {
 
     let max_epoch = 4774516312;
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64, &mut 0).unwrap();
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
     let modulus = base64ct::Base64UrlUnpadded::decode_vec(&jwk.n)
         .map_err(|_| ZkCryptoError::GeneralError("Invalid Base64 encoded jwk modulus".to_string()))
@@ -805,7 +805,7 @@ fn test_zk_seed_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
@@ -834,13 +834,13 @@ fn test_zk_seed_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -859,13 +859,13 @@ fn test_zk_seed_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -884,7 +884,7 @@ fn test_zk_seed_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
@@ -914,13 +914,13 @@ fn test_zk_seed_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -939,13 +939,13 @@ fn test_zk_seed_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -1015,7 +1015,7 @@ fn test_other_args_bad() {
 
     let proof_and_jwt = "{\"proofPoints\":{\"a\":[\"11653644709263251558401833339895967150038453157931503547786049700851019971914\",\"19645115655849386411721408046258151875851981532797037592519388256606989838291\",\"1\"],\"b\":[[\"10337823157100207874978547418909107794705315336434612201980868079626861490142\",\"7608493619307023258619280401565914642046036477885384923318894672159944771521\"],[\"10758338821706782118264705480027910748070506589960188719799243416958368105493\",\"6776868143492437139790442766508489213494523558051657976873009128727632896413\"],[\"1\",\"0\"]],\"c\":[\"15216679157139253008581452087709521187862970390016716857578619200852570992090\",\"2736378039742229911693987843238912925507982255227299601017775788476938986405\",\"1\"]},\"issBase64Details\":{\"value\":\"yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC\",\"indexMod4\":1},\"headerBase64\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6ImM4YWI3MTUzMDk3MmJiYTIwYjQ5Zjc4YTA5Yzk4NTJjNDNmZjkxMTgiLCJ0eXAiOiJKV1QifQ\"}";
 
-    let len = proof_and_jwt.bytes().len();
+    let len = proof_and_jwt.len();
     println!(" proof_and_jwt_bytes len (in bytes) = {:?}", len);
 
     println!("proof_and_jwt: {}", proof_and_jwt);
@@ -1024,7 +1024,7 @@ fn test_other_args_bad() {
     let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
     let _index_mod_4 = 1;
 
-    let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+    let zk_login_inputs = ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
     let content: JWK = JWK {
             kty: "RSA".to_string(),
             e: "AQAB".to_string(),
@@ -1049,9 +1049,9 @@ fn test_other_args_bad() {
 
     let max_epoch = 4774516312;
 
-    let iss_base_64_cell = pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+    let iss_base_64_cell = pack_string_to_cell(iss_base_64, &mut 0).unwrap();
 
-    let header_base_64_cell = pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+    let header_base_64_cell = pack_string_to_cell(header_base_64, &mut 0).unwrap();
 
     let zk_seed_cell = pack_string_to_cell(&zk_seed.clone(), &mut 0).unwrap();
 
@@ -1078,7 +1078,7 @@ fn test_other_args_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
@@ -1102,13 +1102,13 @@ fn test_other_args_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");
@@ -1121,13 +1121,13 @@ fn test_other_args_bad() {
     engine
         .cc
         .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(eph_pubkey.clone())));
     engine.cc.stack.push(StackItem::cell(modulus_cell.clone()));
     engine.cc.stack.push(StackItem::cell(iss_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(header_base_64_cell.clone()));
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-    let _ = execute_poseidon_zk_login(&mut engine).unwrap();
+    execute_poseidon_zk_login(&mut engine).unwrap();
     let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
     println!("poseidon_res : {poseidon_res}");
     println!("public_inputs_cell : {public_inputs_cell}");

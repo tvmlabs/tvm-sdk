@@ -26,6 +26,7 @@ use tvm_types::UInt256;
 use tvm_types::UsageTree;
 use tvm_types::error;
 use tvm_types::fail;
+use typed_builder::TypedBuilder;
 
 use crate::Deserializable;
 use crate::GetRepresentationHash;
@@ -591,6 +592,190 @@ impl Deserializable for MsgAddressIntOrNone {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq, TypedBuilder)]
+pub struct CrossDappMessageHeader {
+    #[builder(default = true)]
+    pub ihr_disabled: bool,
+    #[builder(default = false)]
+    pub bounce: bool,
+    #[builder(default = false)]
+    pub bounced: bool,
+    pub src_dapp_id: UInt256,
+    pub src: MsgAddressIntOrNone,
+    pub dest_dapp_id: UInt256,
+    pub dst: MsgAddressInt,
+    pub value: CurrencyCollection,
+    #[builder(default)]
+    pub ihr_fee: Grams,
+    #[builder(default)]
+    pub fwd_fee: Grams,
+    #[builder(default)]
+    pub created_lt: u64,
+    #[builder(default)]
+    pub created_at: UnixTime32,
+    #[builder(default = false)]
+    pub is_exchange: bool,
+    #[builder(default = false)]
+    pub is_redirect: bool,
+}
+
+impl fmt::Display for CrossDappMessageHeader {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "CrossDappMessage {{src: {}:{}, dst: {}:{}",
+            self.src_dapp_id.to_hex_string(),
+            self.src,
+            self.dest_dapp_id.to_hex_string(),
+            self.dst
+        )?;
+        if f.alternate() {
+            write!(
+                f,
+                ", bounce: {}, bounced: {}, value: {}, ihr_fee: {}, fwd_fee: {}, lt: {}, at: {}, is_exchange: {}",
+                self.bounce,
+                self.bounced,
+                self.value,
+                self.ihr_fee,
+                self.fwd_fee,
+                self.created_lt,
+                self.created_at,
+                self.is_exchange,
+            )?;
+        }
+        write!(f, "}}")
+    }
+}
+
+impl Serializable for CrossDappMessageHeader {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        cell.append_bit_one()?// tag 1101
+            .append_bit_one()?
+            .append_bit_zero()?
+            .append_bit_one()?
+            .append_bit_bool(self.ihr_disabled)?
+            .append_bit_bool(self.bounce)?
+            .append_bit_bool(self.bounced)?;
+
+        self.src.write_to(cell)?;
+        self.dst.write_to(cell)?;
+
+        self.value.write_to(cell)?; // value: CurrencyCollection
+
+        self.ihr_fee.write_to(cell)?; // ihr_fee
+        self.fwd_fee.write_to(cell)?; // fwd_fee
+
+        self.created_lt.write_to(cell)?; // created_lt
+        self.created_at.write_to(cell)?; // created_at
+        Some(self.src_dapp_id.clone()).write_maybe_to(cell)?;
+        cell.append_bit_one()?;
+        let refer = self.dest_dapp_id.serialize()?;
+        cell.checked_append_reference(refer)?;
+        cell.append_bit_bool(self.is_exchange)?;
+        cell.append_bit_bool(self.is_redirect)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializable for CrossDappMessageHeader {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        // constructor tag will be readed in Message
+        self.ihr_disabled = cell.get_next_bit()?; // ihr_disabled
+        self.bounce = cell.get_next_bit()?; // bounce
+        self.bounced = cell.get_next_bit()?;
+
+        self.src.read_from(cell)?; // addr src
+        self.dst.read_from(cell)?; // addr dst
+
+        self.value.read_from(cell)?; // value - balance
+
+        self.ihr_fee.read_from(cell)?; // ihr_fee
+        self.fwd_fee.read_from(cell)?; // fwd_fee
+        self.created_lt.read_from(cell)?; // created_lt
+        self.created_at.read_from(cell)?; // created_at
+        if cell.get_next_bit()? {
+            self.src_dapp_id = UInt256::construct_from(cell)?;
+        }
+        if cell.get_next_bit()? {
+            let mut dest_dapp_id = UInt256::default();
+            dest_dapp_id.read_from_reference(cell)?;
+            self.dest_dapp_id = dest_dapp_id;
+        }
+        self.is_exchange = cell.get_next_bit()?;
+        self.is_redirect = cell.get_next_bit()?;
+        Ok(())
+    }
+}
+
+impl CrossDappMessageHeader {
+    /// Get value transferred message
+    pub fn value(&self) -> &CurrencyCollection {
+        &self.value
+    }
+
+    pub fn value_mut(&mut self) -> &mut CurrencyCollection {
+        &mut self.value
+    }
+
+    pub fn set_src_dapp_id(&mut self, src_dapp_id: UInt256) {
+        self.src_dapp_id = src_dapp_id
+    }
+
+    pub fn set_dest_dapp_id(&mut self, dest_dapp_id: UInt256) {
+        self.dest_dapp_id = dest_dapp_id
+    }
+
+    pub fn set_is_redirect(&mut self) {
+        self.is_redirect = true;
+    }
+
+    pub fn set_exchange(&mut self, exchange: bool) {
+        self.is_exchange = exchange
+    }
+
+    pub fn src_dapp_id(&self) -> &UInt256 {
+        &self.src_dapp_id
+    }
+
+    pub fn dest_dapp_id(&self) -> &UInt256 {
+        &self.dest_dapp_id
+    }
+
+    pub fn is_exchange(&self) -> &bool {
+        &self.is_exchange
+    }
+
+    /// Get IHR fee for message
+    pub fn ihr_fee(&self) -> &Grams {
+        &self.ihr_fee
+    }
+
+    /// Get forwarding fee for message transfer
+    pub fn fwd_fee(&self) -> &Grams {
+        &self.fwd_fee
+    }
+
+    pub fn src(&self) -> Result<&MsgAddressInt> {
+        self.src_ref().ok_or_else(|| error!("incorrect source address"))
+    }
+
+    pub fn src_ref(&self) -> Option<&MsgAddressInt> {
+        match self.src {
+            MsgAddressIntOrNone::Some(ref addr) => Some(addr),
+            MsgAddressIntOrNone::None => None,
+        }
+    }
+
+    pub fn set_src(&mut self, src: MsgAddressInt) {
+        self.src = MsgAddressIntOrNone::Some(src)
+    }
+
+    pub fn set_dst(&mut self, dst: MsgAddressInt) {
+        self.dst = dst
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct InternalMessageHeader {
     pub ihr_disabled: bool,
@@ -646,7 +831,7 @@ impl InternalMessageHeader {
         hdr
     }
 
-    /// Get value tansfered message
+    /// Get value transferred message
     pub fn value(&self) -> &CurrencyCollection {
         &self.value
     }
@@ -746,7 +931,7 @@ impl Serializable for InternalMessageHeader {
 
 impl Deserializable for InternalMessageHeader {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        // constructor tag will be readed in Message
+        // constructor tag will be read in Message
         self.ihr_disabled = cell.get_next_bit()?; // ihr_disabled
         self.bounce = cell.get_next_bit()?; // bounce
         self.bounced = cell.get_next_bit()?;
@@ -862,7 +1047,7 @@ impl ExtOutMessageHeader {
 
 impl Serializable for ExtOutMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bit_one()?.append_bit_one()?;
+        cell.append_bit_one()?.append_bit_one()?.append_bit_zero()?.append_bit_zero()?;
 
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
@@ -891,14 +1076,16 @@ impl Deserializable for ExtOutMessageHeader {
 /// created_lt:uint64 created_at:uint32 = CommonMsgInfo;
 /// ext_in_msg_info$10 src:MsgAddressExt dest:MsgAddressInt
 /// import_fee:Grams = CommonMsgInfo;
-/// ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
+/// ext_out_msg_info$1100 src:MsgAddressInt dest:MsgAddressExt
 /// created_lt:uint64 created_at:uint32 = CommonMsgInfo;
+/// cross_dapp_message$1101 cross_dapp_message_header = CommonMsgInfo;
 impl fmt::Display for CommonMsgInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             CommonMsgInfo::IntMsgInfo(hdr) => write!(f, "{}", hdr),
             CommonMsgInfo::ExtInMsgInfo(hdr) => write!(f, "{}", hdr),
             CommonMsgInfo::ExtOutMsgInfo(hdr) => write!(f, "{}", hdr),
+            CommonMsgInfo::CrossDappMessageInfo(hdr) => write!(f, "{}", hdr),
         }
     }
 }
@@ -909,6 +1096,25 @@ pub enum CommonMsgInfo {
     IntMsgInfo(InternalMessageHeader),
     ExtInMsgInfo(ExternalInboundMessageHeader),
     ExtOutMsgInfo(ExtOutMessageHeader),
+    CrossDappMessageInfo(CrossDappMessageHeader),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant)]
+pub enum CommonMsgInfoOld {
+    IntMsgInfo(InternalMessageHeader),
+    ExtInMsgInfo(ExternalInboundMessageHeader),
+    ExtOutMsgInfo(ExtOutMessageHeader),
+}
+
+impl From<CommonMsgInfoOld> for CommonMsgInfo {
+    fn from(value: CommonMsgInfoOld) -> Self {
+        match value {
+            CommonMsgInfoOld::IntMsgInfo(v) => CommonMsgInfo::IntMsgInfo(v),
+            CommonMsgInfoOld::ExtInMsgInfo(v) => CommonMsgInfo::ExtInMsgInfo(v),
+            CommonMsgInfoOld::ExtOutMsgInfo(v) => CommonMsgInfo::ExtOutMsgInfo(v),
+        }
+    }
 }
 
 impl CommonMsgInfo {
@@ -927,6 +1133,12 @@ impl CommonMsgInfo {
                     MsgAddressInt::AddrVar(ref _var) => unimplemented!(), // TODO
                 }
             }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
+                match header.dst {
+                    MsgAddressInt::AddrStd(ref std) => Some(std.address.clone()),
+                    MsgAddressInt::AddrVar(ref _var) => unimplemented!(), // TODO
+                }
+            }
             _ => None,
         }
     }
@@ -937,6 +1149,7 @@ impl CommonMsgInfo {
     pub fn get_value(&self) -> Option<&CurrencyCollection> {
         match self {
             CommonMsgInfo::IntMsgInfo(header) => Some(&header.value),
+            CommonMsgInfo::CrossDappMessageInfo(header) => Some(&header.value),
             _ => None,
         }
     }
@@ -944,6 +1157,7 @@ impl CommonMsgInfo {
     pub fn get_value_mut(&mut self) -> Option<&mut CurrencyCollection> {
         match self {
             CommonMsgInfo::IntMsgInfo(header) => Some(&mut header.value),
+            CommonMsgInfo::CrossDappMessageInfo(header) => Some(&mut header.value),
             _ => None,
         }
     }
@@ -958,16 +1172,22 @@ impl CommonMsgInfo {
                 result.add(&header.fwd_fee)?;
                 Ok(Some(result))
             }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
+                let mut result = header.ihr_fee;
+                result.add(&header.fwd_fee)?;
+                Ok(Some(result))
+            }
             CommonMsgInfo::ExtInMsgInfo(header) => Ok(Some(header.import_fee)),
             _ => Ok(None),
         }
     }
 
-    /// Get dest address for Intrenal and Inbound external messages
+    /// Get dest address for Internal and Inbound external messages
     pub fn get_dst_address(&self) -> Option<MsgAddressInt> {
         match self {
             CommonMsgInfo::IntMsgInfo(header) => Some(header.dst.clone()),
             CommonMsgInfo::ExtInMsgInfo(header) => Some(header.dst.clone()),
+            CommonMsgInfo::CrossDappMessageInfo(header) => Some(header.dst.clone()),
             _ => None,
         }
     }
@@ -979,12 +1199,19 @@ impl Default for CommonMsgInfo {
     }
 }
 
+impl Default for CommonMsgInfoOld {
+    fn default() -> Self {
+        CommonMsgInfoOld::IntMsgInfo(InternalMessageHeader::default())
+    }
+}
+
 impl Serializable for CommonMsgInfo {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
             CommonMsgInfo::IntMsgInfo(header) => header.write_to(cell)?,
             CommonMsgInfo::ExtInMsgInfo(header) => header.write_to(cell)?,
             CommonMsgInfo::ExtOutMsgInfo(header) => header.write_to(cell)?,
+            CommonMsgInfo::CrossDappMessageInfo(header) => header.write_to(cell)?,
         }
         Ok(())
     }
@@ -1002,9 +1229,40 @@ impl Deserializable for CommonMsgInfo {
             ext_in_msg.read_from(cell)?;
             CommonMsgInfo::ExtInMsgInfo(ext_in_msg)
         } else {
+            let first_bit = cell.get_next_bit()?;
+            let second_bit = cell.get_next_bit()?;
+            if !first_bit && !second_bit {
+                let mut ext_out_ms = ExtOutMessageHeader::default();
+                ext_out_ms.read_from(cell)?;
+                CommonMsgInfo::ExtOutMsgInfo(ext_out_ms)
+            } else if !first_bit && second_bit {
+                let mut cross_dapp_ms = CrossDappMessageHeader::default();
+                cross_dapp_ms.read_from(cell)?;
+                CommonMsgInfo::CrossDappMessageInfo(cross_dapp_ms)
+            } else {
+                fail!("Unsupported message header tag")
+            }
+        };
+
+        Ok(())
+    }
+}
+
+impl Deserializable for CommonMsgInfoOld {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        *self = if !cell.get_next_bit()? {
+            // CommonMsgInfo::int_msg_info
+            let mut int_msg = InternalMessageHeader::default();
+            int_msg.read_from(cell)?;
+            CommonMsgInfoOld::IntMsgInfo(int_msg)
+        } else if !cell.get_next_bit()? {
+            let mut ext_in_msg = ExternalInboundMessageHeader::default();
+            ext_in_msg.read_from(cell)?;
+            CommonMsgInfoOld::ExtInMsgInfo(ext_in_msg)
+        } else {
             let mut ext_out_ms = ExtOutMessageHeader::default();
             ext_out_ms.read_from(cell)?;
-            CommonMsgInfo::ExtOutMsgInfo(ext_out_ms)
+            CommonMsgInfoOld::ExtOutMsgInfo(ext_out_ms)
         };
 
         Ok(())
@@ -1025,6 +1283,27 @@ pub struct Message {
     body: Option<SliceData>,
     body_to_ref: Option<bool>,
     init_to_ref: Option<bool>,
+}
+
+#[derive(Debug, Default, Clone, Eq)]
+pub struct MessageOld {
+    header: CommonMsgInfoOld,
+    init: Option<StateInit>,
+    body: Option<SliceData>,
+    body_to_ref: Option<bool>,
+    init_to_ref: Option<bool>,
+}
+
+impl From<MessageOld> for Message {
+    fn from(value: MessageOld) -> Self {
+        Message {
+            header: value.header.into(),
+            init: value.init,
+            body: value.body,
+            body_to_ref: value.body_to_ref,
+            init_to_ref: value.init_to_ref,
+        }
+    }
 }
 
 impl fmt::Display for Message {
@@ -1048,10 +1327,23 @@ impl PartialEq for Message {
     }
 }
 
+impl PartialEq for MessageOld {
+    fn eq(&self, other: &MessageOld) -> bool {
+        self.header == other.header && self.init == other.init && self.body == other.body
+    }
+}
+
 impl Message {
     pub fn int_header(&self) -> Option<&InternalMessageHeader> {
         match self.header() {
             CommonMsgInfo::IntMsgInfo(header) => Some(header),
+            _ => None,
+        }
+    }
+
+    pub fn cross_dapp_header(&self) -> Option<&CrossDappMessageHeader> {
+        match self.header() {
+            CommonMsgInfo::CrossDappMessageInfo(header) => Some(header),
             _ => None,
         }
     }
@@ -1077,6 +1369,13 @@ impl Message {
         }
     }
 
+    pub fn cross_dapp_header_mut(&mut self) -> Option<&mut CrossDappMessageHeader> {
+        match self.header {
+            CommonMsgInfo::CrossDappMessageInfo(ref mut header) => Some(header),
+            _ => None,
+        }
+    }
+
     pub fn ext_in_header_mut(&mut self) -> Option<&mut ExternalInboundMessageHeader> {
         match self.header {
             CommonMsgInfo::ExtInMsgInfo(ref mut header) => Some(header),
@@ -1088,6 +1387,17 @@ impl Message {
     pub fn with_int_header(h: InternalMessageHeader) -> Message {
         Message {
             header: CommonMsgInfo::IntMsgInfo(h),
+            init: None,
+            body: None,
+            body_to_ref: None,
+            init_to_ref: None,
+        }
+    }
+
+    /// Create new instance internal Message with cross dapp header
+    pub fn with_cross_dapp_header(h: CrossDappMessageHeader) -> Message {
+        Message {
+            header: CommonMsgInfo::CrossDappMessageInfo(h),
             init: None,
             body: None,
             body_to_ref: None,
@@ -1229,6 +1539,7 @@ impl Message {
             CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
             CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
+            CommonMsgInfo::CrossDappMessageInfo(ref header) => &header.src,
         };
         match addr1 {
             MsgAddressIntOrNone::None => None,
@@ -1241,6 +1552,7 @@ impl Message {
         match self.header {
             CommonMsgInfo::IntMsgInfo(ref header) => Some(&header.dst),
             CommonMsgInfo::ExtInMsgInfo(ref header) => Some(&header.dst),
+            CommonMsgInfo::CrossDappMessageInfo(ref header) => Some(&header.dst),
             _ => None,
         }
     }
@@ -1258,6 +1570,10 @@ impl Message {
                 header.created_at = UnixTime32::new(at);
                 header.created_lt = lt;
             }
+            CommonMsgInfo::CrossDappMessageInfo(ref mut header) => {
+                header.created_at = UnixTime32::new(at);
+                header.created_lt = lt;
+            }
             _ => (),
         };
     }
@@ -1270,6 +1586,9 @@ impl Message {
             CommonMsgInfo::ExtOutMsgInfo(ref mut header) => {
                 header.src = address;
             }
+            CommonMsgInfo::CrossDappMessageInfo(ref mut header) => {
+                header.src = address;
+            }
             _ => (),
         };
     }
@@ -1280,6 +1599,9 @@ impl Message {
                 header.src = MsgAddressIntOrNone::Some(src);
             }
             CommonMsgInfo::ExtOutMsgInfo(header) => {
+                header.src = MsgAddressIntOrNone::Some(src);
+            }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
                 header.src = MsgAddressIntOrNone::Some(src);
             }
             _ => (),
@@ -1296,6 +1618,9 @@ impl Message {
             CommonMsgInfo::ExtOutMsgInfo(header) => {
                 Some((header.created_at.as_u32(), header.created_lt))
             }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
+                Some((header.created_at.as_u32(), header.created_lt))
+            }
             _ => None,
         }
     }
@@ -1304,6 +1629,7 @@ impl Message {
         match self.header {
             CommonMsgInfo::IntMsgInfo(ref header) => Some(header.created_lt),
             CommonMsgInfo::ExtOutMsgInfo(ref header) => Some(header.created_lt),
+            CommonMsgInfo::CrossDappMessageInfo(ref header) => Some(header.created_lt),
             _ => None,
         }
     }
@@ -1338,6 +1664,11 @@ impl Message {
         self.header.fee()
     }
 
+    /// Is message a CrossDapp
+    pub fn is_cross_dapp(&self) -> bool {
+        matches!(self.header, CommonMsgInfo::CrossDappMessageInfo(_))
+    }
+
     /// Is message an internal?
     pub fn is_internal(&self) -> bool {
         matches!(self.header, CommonMsgInfo::IntMsgInfo(_))
@@ -1364,6 +1695,7 @@ impl Message {
             CommonMsgInfo::IntMsgInfo(ref imi) => Some(imi.dst.get_workchain_id()),
             CommonMsgInfo::ExtInMsgInfo(ref eimi) => Some(eimi.dst.get_workchain_id()),
             CommonMsgInfo::ExtOutMsgInfo(_) => None,
+            CommonMsgInfo::CrossDappMessageInfo(_) => None, // workchain ID is not used in ackinacki
         }
     }
 
@@ -1378,6 +1710,7 @@ impl Message {
             CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
             CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
+            CommonMsgInfo::CrossDappMessageInfo(_) => &MsgAddressIntOrNone::None, /* workchain ID is not used in ackinacki */
         };
         match addr1 {
             MsgAddressIntOrNone::None => None,
@@ -1556,6 +1889,58 @@ impl Deserializable for Message {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // read header
         self.header.read_from(cell)?;
+
+        // read StateInit
+        if cell.get_next_bit()? {
+            // maybe of init
+            let mut init = StateInit::default();
+            if cell.get_next_bit()? {
+                // either of init
+                // read from reference
+                let r = cell.checked_drain_reference()?;
+                init.read_from_cell(r)?;
+                self.init = Some(init);
+                self.init_to_ref = Some(true);
+            } else {
+                // read from current cell
+                init.read_from(cell)?;
+                self.init = Some(init);
+                self.init_to_ref = Some(false);
+            }
+        } else {
+            self.init_to_ref = Some(false);
+        }
+
+        // read body
+        // A message is always serialized inside the blockchain as the last field in
+        // a cell. Therefore, the blockchain software may assume that whatever bits
+        // and references left unparsed after parsing the fields of a Message preceding
+        // body belong to the payload body : X, without knowing anything about the
+        // serialization of the type X.
+
+        self.body = if cell.get_next_bit()? {
+            // body in reference
+            self.body_to_ref = Some(true);
+            Some(SliceData::load_cell(cell.checked_drain_reference()?)?)
+        } else {
+            self.body_to_ref = Some(false);
+            if cell.is_empty() {
+                // no body
+                None
+            } else {
+                // body is leftover
+                Some(cell.clone())
+            }
+        };
+        Ok(())
+    }
+}
+
+impl Deserializable for MessageOld {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        // read header
+        self.header.read_from(cell)?;
+
         // read StateInit
         if cell.get_next_bit()? {
             // maybe of init

@@ -549,6 +549,7 @@ pub mod msg_printer {
         json!(
             match header {
                 CommonMsgInfo::IntMsgInfo(_) => "internal",
+                CommonMsgInfo::CrossDappMessageInfo(_) => "cross dapp",
                 CommonMsgInfo::ExtInMsgInfo(_) => "external inbound",
                 CommonMsgInfo::ExtOutMsgInfo(_) => "external outbound",
             }
@@ -588,6 +589,21 @@ pub mod msg_printer {
                     "bounced" : &header.bounced.to_string(),
                     "source" : &header.src.to_string(),
                     "destination" : &header.dst.to_string(),
+                    "value" : &serialize_currency_collection(&header.value),
+                    "ihr_fee" : &serialize_grams(&header.ihr_fee),
+                    "fwd_fee" : &serialize_grams(&header.fwd_fee),
+                    "created_lt" : &header.created_lt.to_string(),
+                    "created_at" : &header.created_at.to_string(),
+                })
+            }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
+                json!({
+                    "bounce" : &header.bounce.to_string(),
+                    "bounced" : &header.bounced.to_string(),
+                    "source" : &header.src.to_string(),
+                    "src_dapp" : &header.src_dapp_id.to_hex_string(),
+                    "destination" : &header.dst.to_string(),
+                    "dest_dapp" : &header.dest_dapp_id.to_hex_string(),
                     "value" : &serialize_currency_collection(&header.value),
                     "ihr_fee" : &serialize_grams(&header.ihr_fee),
                     "fwd_fee" : &serialize_grams(&header.fwd_fee),
