@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.10] - 2026-02-16
+## New
+- Add genral purpose Poseidon TVM instruction based on Axiom.
+
 ## [2.24.9] - 2026-01-21
 ## New
 - `tvm_client` now can be compiled without a wasmtime runtime (e.g. for the browser environment) with a new feature `wasm_web`
