@@ -244,7 +244,7 @@ pub trait TransactionExecutor {
         let cell = transaction
             .clone()
             .write_to_new_cell()?
-            .finalize(800 - 10)
+            .finalize(1024)
             .map_err(|err| tvm_types::Error::from_boxed_compat(err.into()))?;
         for k in cell.depths() {
             if k > 800 - 10 {
