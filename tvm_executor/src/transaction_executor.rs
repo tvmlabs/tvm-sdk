@@ -222,8 +222,9 @@ pub trait TransactionExecutor {
         params: ExecuteParams,
     ) -> Result<(Transaction, i128)> {
         // set exec cell depth limit with threadlocal
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None); //Some(800));
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT.with_borrow_mut(|x| *x = None); //Some(1398101 * 1024));
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT
+            .with_borrow_mut(|x| *x = Some(1398101 * 1024));
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
