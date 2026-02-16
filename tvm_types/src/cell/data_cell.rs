@@ -53,8 +53,8 @@ pub const MAX_ALLOWED_NESTED_CELL_COUNT: u64 = 1398101 * 1024;
 
 impl DataCell {
     thread_local! {
-        pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = RefCell::new(Some(800));
-        pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT: RefCell<Option<u64>> = RefCell::new(Some(1398101 * 1024));
+        pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = RefCell::new(None);
+        pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT: RefCell<Option<u64>> = RefCell::new(None);
     }
 
     pub fn new() -> Self {
