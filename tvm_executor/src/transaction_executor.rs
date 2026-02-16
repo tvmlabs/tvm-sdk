@@ -247,22 +247,22 @@ pub trait TransactionExecutor {
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT.with_borrow_mut(|x| *x = None);
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
-        let cell = account
-            .clone()
-            .write_to_new_cell()?
-            .finalize(1024)
-            .map_err(|err| tvm_types::Error::from_boxed_compat(err.into()))?;
-        for k in cell.depths() {
-            if k > 800 - 20 {
-                return Err(tvm_types::Error::from_boxed_compat(
-                    anyhow::format_err!(
-                        "failed in the right place on cell depths {:?}",
-                        cell.depths()
-                    )
-                    .into(),
-                ));
-            }
-        }
+        // let cell = account
+        //     .clone()
+        //     .write_to_new_cell()?
+        //     .finalize(1024)
+        //     .map_err(|err| tvm_types::Error::from_boxed_compat(err.into()))?;
+        // for k in cell.depths() {
+        //     if k > 800 - 20 {
+        //         return Err(tvm_types::Error::from_boxed_compat(
+        //             anyhow::format_err!(
+        //                 "failed in the right place on cell depths {:?}",
+        //                 cell.depths()
+        //             )
+        //             .into(),
+        //         ));
+        //     }
+        // }
         Ok((transaction, *minted_shell))
     }
 
