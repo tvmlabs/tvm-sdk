@@ -7,7 +7,7 @@ use byte_slice_cast::AsByteSlice;
 use ff::PrimeField as OtherPrimeField;
 use halo2_base::halo2_proofs::halo2curves::bn256::Fr as halo2_Fr;
 use halo2_base::utils::ScalarField;
-use halo2_base::utils::fe_to_bigint;
+
 use neptune::Poseidon;
 use neptune::poseidon::HashMode::OptimizedStatic;
 use pse_poseidon::Poseidon as pse_poseidon;
@@ -143,37 +143,18 @@ pub fn poseidon_bytes_axiom(
     let mut field_elements = Vec::new();
     for input in inputs {
         let el = halo2_Fr::from_bytes_le(&input);
-        field_elements.push(el); // field_elements.push(canonical_le_bytes_to_field_element(input)?);
+        field_elements.push(el); 
     }
 
     let mut native_sponge = pse_poseidon::<halo2_Fr, T, RATE>::new(R_F, R_P);
     native_sponge.update(&field_elements);
     let output_as_field_element = native_sponge.squeeze();
-    // let output_as_field_element = poseidon_merkle_tree(field_elements)?;
 
     let output: [u8; FIELD_ELEMENT_SIZE_IN_BYTES] =
         output_as_field_element.to_bytes_le().try_into().unwrap();
 
     Ok(output)
 }
-
-// pub fn poseidon_bytes_flat(
-// input_data: &Vec<u8>,
-// ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-// if input_data.len() % FIELD_ELEMENT_SIZE_IN_BYTES != 0 {
-// return Err(InputTooLong(input_data.len()));
-// }
-// let mut inputs_groupped: Vec<Vec<u8>> = Vec::new();
-//
-// let field_elements = input_data.len()/FIELD_ELEMENT_SIZE_IN_BYTES;
-// for i in 0..field_elements {
-// let buffer =
-// &input_data[i*FIELD_ELEMENT_SIZE_IN_BYTES..(i+1)*
-// FIELD_ELEMENT_SIZE_IN_BYTES]; inputs_groupped.push(buffer.to_vec());
-// }
-// poseidon_bytes(&inputs_groupped)
-// poseidon_bytes_axiom(&inputs_groupped)
-// }
 
 pub fn poseidon_bytes_flat(
     input_data: &[u8],
@@ -242,21 +223,15 @@ fn bn254_to_fr(fr: Fr) -> crate::executor::zk_stuff::Fr {
         .expect("The bytes of fr are guaranteed to be canonical here")
 }
 
-use std::time::Instant;
-
-use num_traits::pow;
 #[test]
 fn test_poseidon_bytes_flat_multiple_len() {
     let base: u64 = 10;
-
     for i in 0..8 {
-        let len = pow(base, i) as usize;
+        let len = num_traits::pow(base, i) as usize;
         let data_to_hash = vec![0xFFu8; len];
         println!("#iter{:?}", i);
         println!("len {:?}", len);
-        let start: Instant = Instant::now();
         let digest = poseidon_bytes_flat(&data_to_hash).unwrap();
-        println!("elapsed {:?} ms", start.elapsed().as_millis());
         println!("digest {:?}", digest);
     }
 }
@@ -278,7 +253,7 @@ fn test_poseidon_bytes_flat() {
 
 #[test]
 fn test_fr() {
-    let mut input = vec![0xFF; 31];
+    let input = vec![0xFF; 31];
     // input.push(0x3F);
     let el = halo2_Fr::from_bytes_le(&input);
     println!("el: {:?}", el);
