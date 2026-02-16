@@ -699,6 +699,7 @@ fn test_proof_stuff() {
 fn test_poseidon() {
     let mut stack = Stack::new();
 
+<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
     let input_data = vec![0xFFu8; 32];
 
     let input_data_cell = pack_data_to_cell(&input_data, &mut 0).unwrap();
@@ -744,6 +745,8 @@ fn test_poseidon() {
 fn test_poseidon_zklogin() {
     let mut stack = Stack::new();
 
+=======
+>>>>>>> main
     // password was 567890 in ascii 535455565748
     let user_pass_salt = "535455565748";
     let secret_key = [

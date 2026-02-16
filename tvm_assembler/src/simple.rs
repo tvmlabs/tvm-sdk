@@ -842,7 +842,11 @@ impl Engine {
         MINTSHELLQ                           => 0xC7, 0x28
         CALCMINSTAKE                         => 0xC7, 0x30
         VERGRTH16                            => 0xC7, 0x31
+<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
         POSEIDONZKLOGIN                      => 0xC7, 0x32
+=======
+        POSEIDON                             => 0xC7, 0x32
+>>>>>>> main
         CALCBKREWARDADJ                      => 0xC7, 0x33
         CALCREPCOEF                          => 0xC7, 0x34
         CALCBMREWARD                         => 0xC7, 0x35
@@ -860,7 +864,10 @@ impl Engine {
         CALCMBK                              => 0xC7, 0x46
         CALCMINERTAPCOEF                     => 0xC7, 0x47
         CALCMINERREWARD                      => 0xC7, 0x48
+<<<<<<< feature/node-2753-deserialization-bytearray-into-array-of-galois-elements-for
         POSEIDON                             => 0xC7, 0x50
+=======
+>>>>>>> main
     }
 
     fn add_commands<'a>(
