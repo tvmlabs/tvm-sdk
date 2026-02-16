@@ -244,6 +244,9 @@ pub trait TransactionExecutor {
         log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
+        // unset exec cell depth limit with thread local
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT.with_borrow_mut(|x| *x = None);
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
         let cell = account
             .clone()
@@ -261,9 +264,6 @@ pub trait TransactionExecutor {
                 ));
             }
         }
-        // unset exec cell depth limit with thread local
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT.with_borrow_mut(|x| *x = None);
         Ok((transaction, *minted_shell))
     }
 
