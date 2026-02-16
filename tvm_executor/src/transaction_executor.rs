@@ -241,7 +241,9 @@ pub trait TransactionExecutor {
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
-        transaction.clone().write_to_new_cell()?.finalize(800 - 10)?;
+        transaction.clone().write_to_new_cell()?.finalize(800 - 10).map_err(|err| {
+            tvm_types::error!(format!("finalised transaction exceeded depth limit {:?}", err))
+        })?;
         Ok((transaction, *minted_shell))
     }
 
