@@ -7,7 +7,6 @@ use byte_slice_cast::AsByteSlice;
 use ff::PrimeField as OtherPrimeField;
 use halo2_base::halo2_proofs::halo2curves::bn256::Fr as halo2_Fr;
 use halo2_base::utils::ScalarField;
-
 use neptune::Poseidon;
 use neptune::poseidon::HashMode::OptimizedStatic;
 use pse_poseidon::Poseidon as pse_poseidon;
@@ -143,7 +142,7 @@ pub fn poseidon_bytes_axiom(
     let mut field_elements = Vec::new();
     for input in inputs {
         let el = halo2_Fr::from_bytes_le(&input);
-        field_elements.push(el); 
+        field_elements.push(el);
     }
 
     let mut native_sponge = pse_poseidon::<halo2_Fr, T, RATE>::new(R_F, R_P);
