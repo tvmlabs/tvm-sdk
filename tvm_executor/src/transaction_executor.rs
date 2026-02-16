@@ -241,11 +241,22 @@ pub trait TransactionExecutor {
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
-        transaction
+        let cell = transaction
             .clone()
             .write_to_new_cell()?
             .finalize(800 - 10)
             .map_err(|err| tvm_types::Error::from_boxed_compat(err.into()))?;
+        for k in cell.depths() {
+            if k > 800 - 10 {
+                return Err(tvm_types::Error::from_boxed_compat(
+                    anyhow::format_err!(
+                        "failed in the right place on cell depths {:?}",
+                        cell.depths()
+                    )
+                    .into(),
+                ));
+            }
+        }
         Ok((transaction, *minted_shell))
     }
 
