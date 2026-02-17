@@ -2,9 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+<<<<<<< HEAD
 ## [2.24.11] - 2026-02-17
 ## Fixed
 - Hash used for calculating BOC depth when applying BOC size limits
+
+## [2.24.10] - 2026-02-16
+## New
+- Add general purpose Poseidon TVM instruction based on Axiom.
 
 ## [2.24.9] - 2026-01-21
 ## New
