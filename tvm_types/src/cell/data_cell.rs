@@ -45,6 +45,13 @@ impl Default for DataCell {
     }
 }
 
+use thiserror::Error;
+#[derive(Debug, Error, PartialEq)]
+pub enum DataCellError {
+    #[error("reached max BOC tree size allowed by current Node State limitations")]
+    MaxBOCSizeExceeded,
+}
+
 thread_local! {
     static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
 }
@@ -165,7 +172,7 @@ impl DataCell {
             log::debug!("Depths {:?}, counts {:?}", depths, counts);
             log::debug!("Depth {:?}, count {:?}", depth, count);
             log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
-            fail!("reached max BOC tree size allowed by current Node State limitations");
+            fail!(DataCellError::MaxBOCSizeExceeded)
         }
         if let Some(b) = extern_tree_bits_count {
             tree_bits_count = tree_bits_count.saturating_add(b)
