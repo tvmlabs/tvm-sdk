@@ -187,6 +187,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let ihr_delivered = false; // ihr is disabled because it does not work
         if !ihr_delivered {
             if let Some(h) = in_msg.int_header() {
+                if need_to_burn.as_u128() > 0 && !h.ihr_disabled {
+                    log::debug!(target: "executor", "Applying ihr_fee to cross-dapp cap: ihr_fee={}", h.ihr_fee);
+                    need_to_burn = std::cmp::max(need_to_burn, h.ihr_fee);
+                }
                 msg_balance.grams += h.ihr_fee;
             }
         }
@@ -258,7 +262,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     storage_fee += due.as_u128()
                 }
                 if let Some(due) = due_before_storage {
-                    storage_fee -= due;
+                    storage_fee = storage_fee.saturating_sub(due);
+                    log::debug!(target: "executor", "Protected storage_fee subtraction: collected={}, due={}, final={}", 
+                        storage_ph.storage_fees_collected, due, storage_fee);
                 }
                 Some(storage_ph)
             }
@@ -419,21 +425,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     }
                 } else {
                     log::debug!(target: "executor", "compute_phase: failed");
-                    if acc_balance.grams >= need_to_burn {
-                        acc_balance.grams -= need_to_burn;
-                    } else {
-                        acc_balance.grams = Grams::zero();
-                    }
                     None
                 }
             }
             TrComputePhase::Skipped(skipped) => {
                 log::debug!(target: "executor", "compute_phase: skipped reason {:?}", skipped.reason);
-                if acc_balance.grams >= need_to_burn {
-                    acc_balance.grams -= need_to_burn;
-                } else {
-                    acc_balance.grams = Grams::zero();
-                }
                 if is_ext_msg {
                     fail!(ExecutorError::ExtMsgComputeSkipped(skipped.reason.clone()))
                 }
@@ -467,18 +463,37 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
         };
 
+        if description.aborted {
+            match &description.compute_ph {
+                TrComputePhase::Vm(vm_phase) if vm_phase.success => {
+                    if acc_balance.grams >= need_to_burn {
+                        log::debug!(target: "executor", "Burning need_to_burn on compute success + abort: amount={}", need_to_burn);
+                        acc_balance.grams -= need_to_burn;
+                    } else {
+                        log::debug!(target: "executor", "Balance insufficient for need_to_burn, zeroing account");
+                        acc_balance.grams = Grams::zero();
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Apply need_to_burn only if no successful bounce or bounce disabled
+        let mut should_burn_need_to_burn = false;
+
         if description.aborted && !is_ext_msg && bounce {
             msg_balance = original_msg_balance.clone();
             if exchanged {
+                let grams_to_subtract = Grams::from(msg_balance_convert);
+                if grams_to_subtract > acc_balance.grams {
+                    log::debug!(target: "executor", "Exchange reversal underflow protected: balance={}, to_subtract={}", acc_balance.grams, grams_to_subtract);
+                    acc_balance.grams = Grams::zero();
+                } else {
+                    acc_balance.grams -= grams_to_subtract;
+                }
                 let mut add_value = CurrencyCollection::new();
                 add_value.set_other(2, msg_balance_convert.into())?;
-                if Grams::from(msg_balance_convert) > acc_balance.grams {
-                    acc_balance.grams = Grams::zero();
-                    acc_balance.add(&add_value)?;
-                } else {
-                    acc_balance.grams -= Grams::from(msg_balance_convert);
-                    acc_balance.add(&add_value)?;
-                }
+                acc_balance.add(&add_value)?;
             }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
@@ -503,15 +518,31 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         e
                     ))),
                 };
+                should_burn_need_to_burn = !matches!(description.bounce, Some(TrBouncePhase::Ok(_)));
+            } else {
+                should_burn_need_to_burn = true;
             }
             // if money can be returned to sender
             // restore account balance - storage fee
             if let Some(TrBouncePhase::Ok(_)) = description.bounce {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
+                should_burn_need_to_burn = false;
             } else if account.is_none() && !acc_balance.is_zero()? {
                 *account =
                     Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
+            }
+        } else {
+            should_burn_need_to_burn = false;
+        }
+        
+        // Apply need_to_burn if bounce failed or bouncing was not attempted
+        if should_burn_need_to_burn && need_to_burn.as_u128() > 0 {
+            log::debug!(target: "executor", "Applying cross-dapp burn: need_to_burn={}", need_to_burn);
+            if acc_balance.grams >= need_to_burn {
+                acc_balance.grams -= need_to_burn;
+            } else {
+                acc_balance.grams = Grams::zero();
             }
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {

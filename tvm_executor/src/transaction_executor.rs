@@ -1186,7 +1186,11 @@ pub trait TransactionExecutor {
         };
         let fwd_prices = self.config().get_fwd_prices(is_masterchain);
         let fwd_mine_fees = fwd_prices.mine_fee_checked(&fwd_full_fees)?;
-        let fwd_fees = fwd_full_fees - fwd_mine_fees;
+        let fwd_fees = if fwd_mine_fees.as_u128() > fwd_full_fees.as_u128() {
+            Grams::zero()
+        } else {
+            Grams::new(fwd_full_fees.as_u128() - fwd_mine_fees.as_u128())?
+        };
 
         log::debug!(target: "executor", "get fee {} from bounce msg {}", fwd_full_fees, remaining_msg_balance);
 
@@ -1705,6 +1709,9 @@ fn outmsg_action_handler(
 
         if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
             int_header.set_exchange(true);
+        } else {
+            int_header.set_exchange(false);
+            log::debug!(target: "executor", "Sanitizing is_exchange flag: forcing to false");
         }
 
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
