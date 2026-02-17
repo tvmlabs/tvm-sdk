@@ -13,7 +13,6 @@ use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
 
-use log4rs::append;
 use rand::Rng;
 use rand::RngCore;
 use rand::thread_rng;
@@ -1462,6 +1461,9 @@ fn test_run_wasm_fuel_error_from_hash() {
 
 #[test]
 fn test_bocdepth() {
+    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
+    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT
+        .with_borrow_mut(|x| *x = Some(1398101 * 1024));
     let mut data = [100u8; 98 * 1024 + 1248].to_vec();
     let _cell = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
         .unwrap()                              //1398101
@@ -1473,6 +1475,8 @@ fn test_bocdepth() {
         .unwrap()                              //1398101
         .into_cell();
     assert!(res.is_err());
+    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
+    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT.with_borrow_mut(|x| *x = None);
 
     println!("Success");
 }
