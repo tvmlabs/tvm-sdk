@@ -55,8 +55,6 @@ pub enum DataCellError {
 thread_local! {
     static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
 }
-pub const MAX_ALLOWED_CELL_DEPTH: u16 = 800;
-pub const MAX_ALLOWED_NESTED_CELL_COUNT: u64 = 1398101 * 1024;
 
 impl DataCell {
     thread_local! {
