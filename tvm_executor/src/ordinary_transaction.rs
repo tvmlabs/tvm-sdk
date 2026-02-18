@@ -131,6 +131,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 account_address.address()
             }
         };
+        let original_account_is_none = account.is_none();
         let mut need_to_burn = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
@@ -139,6 +140,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         let mut msg_balance_convert = 0;
         let mut exchanged = false;
+        let mut is_cross_dapp_capped = false;
         if let Some(h) = in_msg.int_header() {
             if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
@@ -155,9 +157,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     msg_balance.grams,
                 );
                 need_to_burn = msg_balance.grams;
+                is_cross_dapp_capped = account.stuff().is_some();
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
-            if h.is_exchange {
+            if h.is_exchange && !is_cross_dapp_capped {
                 if let Ok(Some(mut value)) = msg_balance.get_other(2) {
                     let mut echng = value.clone();
                     if echng > VarUInteger32::from(u64::MAX) {
@@ -187,11 +190,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let ihr_delivered = false; // ihr is disabled because it does not work
         if !ihr_delivered {
             if let Some(h) = in_msg.int_header() {
-                if need_to_burn.as_u128() > 0 && !h.ihr_disabled {
-                    log::debug!(target: "executor", "Applying ihr_fee to cross-dapp cap: ihr_fee={}", h.ihr_fee);
-                    need_to_burn = std::cmp::max(need_to_burn, h.ihr_fee);
+                if need_to_burn.as_u128() == 0 {
+                    msg_balance.grams += h.ihr_fee;
                 }
-                msg_balance.grams += h.ihr_fee;
             }
         }
 
@@ -491,8 +492,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 } else {
                     acc_balance.grams -= grams_to_subtract;
                 }
+                let gas_consumed = compute_phase_gas_fees.as_u128() as u64;
+                let ecc_to_restore = std::cmp::min(msg_balance_convert, gas_consumed);
                 let mut add_value = CurrencyCollection::new();
-                add_value.set_other(2, msg_balance_convert.into())?;
+                add_value.set_other(2, ecc_to_restore.into())?;
                 acc_balance.add(&add_value)?;
             }
             if !action_phase_processed
@@ -528,12 +531,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
                 should_burn_need_to_burn = false;
-            } else if account.is_none() && !acc_balance.is_zero()? {
-                *account =
-                    Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
+            } else if original_account_is_none && !acc_balance.is_zero()? {
+                acc_balance = CurrencyCollection::default();
             }
-        } else {
-            should_burn_need_to_burn = false;
+        } else if description.aborted && !is_ext_msg && !bounce {
+            should_burn_need_to_burn = true;
         }
         
         // Apply need_to_burn if bounce failed or bouncing was not attempted

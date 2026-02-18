@@ -1313,6 +1313,13 @@ fn compute_new_state(
         }
         // Account exists, but can be in different states.
         AccountStatus::AccStateActive => {
+            if let Some(state_init) = in_msg.state_init() {
+                let text = "Cannot process external message for active account with hash";
+                if !check_libraries(state_init, disable_set_lib, text, in_msg) {
+                    return Ok(Some(ComputeSkipReason::BadState));
+                }
+            }
+            
             if config.has_capability(GlobalCapabilities::CapSuspendedList) {
                 if let Some(suspended_addresses) = config.raw_config().suspended_addresses()? {
                     let addr =

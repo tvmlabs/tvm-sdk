@@ -1942,14 +1942,15 @@ impl Deserializable for MsgAddressExt {
         let bits = cell.get_next_bits(2)?[0] >> 6;
         if bits == 0 {
             *self = MsgAddressExt::AddrNone;
-        }
-        if bits == 1 {
+            Ok(())
+        } else if bits == 1 {
             let mut data = MsgAddrExt::default();
             data.read_from(cell)?;
             *self = MsgAddressExt::AddrExtern(data);
+            Ok(())
+        } else {
+            Err(BlockError::InvalidArg(format!("Invalid MsgAddressExt tag: {}", bits)).into())
         }
-        // TODO: add error checking!
-        Ok(())
     }
 }
 
