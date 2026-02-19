@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.11] - 2026-02-17
+## Fixed
+- Hash used for calculating BOC depth when applying BOC size limits
+
 ## [2.24.10] - 2026-02-16
 ## New
 - Add general purpose Poseidon TVM instruction based on Axiom.
@@ -24,7 +28,6 @@ All notable changes to this project will be documented in this file.
 ## [2.24.6] - 2025-12-10
 ## Fixed
 - Add support of Gosh provider into TLS wasm binary and update related tests
-
 
 ## [2.24.5] - 2025-11-03
 ## Fixed

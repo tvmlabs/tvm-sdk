@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::cmp::max;
-use std::collections::BTreeSet;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Write;
@@ -46,12 +45,23 @@ impl Default for DataCell {
     }
 }
 
+use thiserror::Error;
+#[derive(Debug, Error, PartialEq)]
+pub enum DataCellError {
+    #[error("reached max BOC tree size allowed by current Node State limitations")]
+    MaxBOCSizeExceeded,
+}
+
 thread_local! {
-    static UNIQUE_CELLS: RefCell<BTreeSet<HashableCell>> = const { RefCell::new(BTreeSet::new()) };
     static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
 }
 
 impl DataCell {
+    thread_local! {
+        pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = RefCell::new(None);
+        pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT: RefCell<Option<u64>> = RefCell::new(None);
+    }
+
     pub fn new() -> Self {
         Self::with_refs_and_data(smallvec![], &[0x80]).unwrap()
     }
@@ -137,15 +147,11 @@ impl DataCell {
         let mut count = 0u64;
         let mut counts = Vec::new();
         for r in references.iter() {
-            // if unique_cells.contains(r) {
-            // } else {
-            //     UNIQUE_CELLS. (|x: BTreeSet<Cell>| x.contains(r));
-            // }
             if UNIQUE_BLOOM.with_borrow(|x| x.contains(&HashableCell::Any(r.clone()))) {
-                // println!("repeat cell");
+                // Do not count cells we've already seen.
             } else {
                 UNIQUE_BLOOM.with_borrow_mut(|x| x.insert(&HashableCell::Any(r.clone())));
-                // println!("new cell");
+                // Count new cell exactly once
                 depths.push(r.depths());
                 depth = depth.max(r.depths().iter().sum::<u16>());
                 depth2 = depth2.saturating_add(r.tree_cell_count());
@@ -154,11 +160,17 @@ impl DataCell {
                 refs = refs.saturating_add(r.references_count());
             }
         }
-        if depth >= 800 || count >= 1398101 * 1024 {
+        if Self::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow(|x| match x {
+            None => false,
+            Some(x) => depth >= *x,
+        }) || Self::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT.with_borrow(|x| match x {
+            None => false,
+            Some(x) => count >= *x,
+        }) {
             log::debug!("Depths {:?}, counts {:?}", depths, counts);
             log::debug!("Depth {:?}, count {:?}", depth, count);
             log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
-            fail!("reached max BOC tree size allowed by current Node State limitations");
+            fail!(DataCellError::MaxBOCSizeExceeded)
         }
         if let Some(b) = extern_tree_bits_count {
             tree_bits_count = tree_bits_count.saturating_add(b)
@@ -166,11 +178,6 @@ impl DataCell {
         if let Some(c) = extern_tree_cell_count {
             tree_cell_count = tree_cell_count.saturating_add(c)
         }
-        // for reference in &references {
-        //     tree_bits_count =
-        // tree_bits_count.saturating_add(reference.tree_bits_count());
-        //     tree_cell_count =
-        // tree_cell_count.saturating_add(reference.tree_cell_count()); }
         if tree_bits_count > MAX_56_BITS {
             tree_bits_count = MAX_56_BITS;
         }

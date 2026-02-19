@@ -221,6 +221,10 @@ pub trait TransactionExecutor {
         account_root: &mut Cell,
         params: ExecuteParams,
     ) -> Result<(Transaction, i128)> {
+        // set exec cell depth limit with threadlocal
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
+            .with_borrow_mut(|x| *x = Some(1398101 * 1024));
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
@@ -240,7 +244,27 @@ pub trait TransactionExecutor {
         log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
+        // unset exec cell depth limit with thread local
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
+            .with_borrow_mut(|x| *x = None);
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
+        // let cell = account
+        //     .clone()
+        //     .write_to_new_cell()?
+        //     .finalize(1024)
+        //     .map_err(|err| tvm_types::Error::from_boxed_compat(err.into()))?;
+        // for k in cell.depths() {
+        //     if k > 800 - 20 {
+        //         return Err(tvm_types::Error::from_boxed_compat(
+        //             anyhow::format_err!(
+        //                 "failed in the right place on cell depths {:?}",
+        //                 cell.depths()
+        //             )
+        //             .into(),
+        //         ));
+        //     }
+        // }
         Ok((transaction, *minted_shell))
     }
 

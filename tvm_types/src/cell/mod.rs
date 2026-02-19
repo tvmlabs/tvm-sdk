@@ -31,6 +31,7 @@ pub use boc3_cell::read_boc3_bytes;
 pub use boc3_cell::write_boc3;
 pub use boc3_cell::write_boc3_to_bytes;
 pub use data_cell::DataCell;
+pub use data_cell::DataCellError;
 pub use usage_cell::UsageTree;
 
 pub const SHA256_SIZE: usize = 32;
@@ -261,7 +262,9 @@ lazy_static::lazy_static! {
 
 impl std::hash::Hash for HashableCell {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        core::mem::discriminant(self).hash(state);
+        match self {
+            HashableCell::Any(cell) => cell.hash(MAX_LEVEL).hash(state),
+        }
     }
 
     fn hash_slice<H: std::hash::Hasher>(data: &[Self], state: &mut H)
