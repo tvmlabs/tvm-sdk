@@ -1033,6 +1033,7 @@ impl Account {
                 }
                 AccountState::AccountFrozen { state_init_hash } => {
                     if state_init_hash == &state_init.hash()? {
+                        init_code_hash_opt = stuff.storage.init_code_hash.clone();
                         AccountState::AccountActive { state_init: state_init.clone() }
                     } else {
                         fail!("StateInit doesn't correspond to frozen hash")
