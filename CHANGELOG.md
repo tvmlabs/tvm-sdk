@@ -2,7 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-<<<<<<< HEAD
 ## [2.24.11] - 2026-02-17
 ## Fixed
 - Hash used for calculating BOC depth when applying BOC size limits
