@@ -58,7 +58,7 @@ thread_local! {
 
 impl DataCell {
     thread_local! {
-        pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = RefCell::new(None);
+        pub static UNIQUE_MAX_ALLOWED_CELL_BIT_DEPTH: RefCell<Option<u16>> = RefCell::new(None);
         pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT: RefCell<Option<u64>> = RefCell::new(None);
     }
 
@@ -160,7 +160,7 @@ impl DataCell {
                 refs = refs.saturating_add(r.references_count());
             }
         }
-        if Self::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow(|x| match x {
+        if Self::UNIQUE_MAX_ALLOWED_CELL_BIT_DEPTH.with_borrow(|x| match x {
             None => false,
             Some(x) => depth >= *x,
         }) || Self::UNIQUE_MAX_ALLOWED_NESTED_CELL_COUNT.with_borrow(|x| match x {
