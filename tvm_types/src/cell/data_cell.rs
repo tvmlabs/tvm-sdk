@@ -66,7 +66,17 @@ impl DataCell {
         data: &[u8], // with completion tag (for big cell - without)!
     ) -> crate::Result<DataCell> {
         Self::with_params(
-            references, data, CellType::Ordinary, 0, None, None, None, None, None, None, None,
+            references,
+            data,
+            CellType::Ordinary,
+            0,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
         )
     }
 
@@ -116,7 +126,14 @@ impl DataCell {
     ) -> crate::Result<DataCell> {
         let cell_data = CellData::with_external_data(buffer, offset)?;
         Self::construct_cell(
-            cell_data, references, max_depth, force_finalization, None, None, None, None,
+            cell_data,
+            references,
+            max_depth,
+            force_finalization,
+            None,
+            None,
+            None,
+            None,
         )
     }
 
@@ -128,7 +145,14 @@ impl DataCell {
     ) -> crate::Result<DataCell> {
         let cell_data = CellData::with_raw_data(data)?;
         Self::construct_cell(
-            cell_data, references, max_depth, force_finalization, None, None, None, None,
+            cell_data,
+            references,
+            max_depth,
+            force_finalization,
+            None,
+            None,
+            None,
+            None,
         )
     }
 

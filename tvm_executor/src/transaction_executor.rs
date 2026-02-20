@@ -591,7 +591,10 @@ pub trait TransactionExecutor {
             .set_engine_available_credit(params.available_credit)
             .set_engine_version(params.engine_version.clone())
             .set_engine_mv_config(params.mvconfig.clone())
-            .set_cell_limits(params.max_allowed_cell_depth, params.max_allowed_nested_cell_bit_count);
+            .set_cell_limits(
+                params.max_allowed_cell_depth,
+                params.max_allowed_nested_cell_bit_count,
+            );
 
         #[cfg(feature = "wasmtime")]
         {
