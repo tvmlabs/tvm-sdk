@@ -153,6 +153,8 @@ pub struct Engine {
     engine_version: semver::Version,
 
     pub(in crate::executor) self_dapp_id: Option<UInt256>,
+    cell_depth_limit: Option<u16>,
+    cell_bits_limit: Option<u64>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -226,8 +228,9 @@ impl CommittedState {
 }
 
 impl GasConsumer for Engine {
-    fn finalize_cell(&mut self, builder: BuilderData) -> Result<Cell> {
+    fn finalize_cell(&mut self, mut builder: BuilderData) -> Result<Cell> {
         self.use_gas(Gas::finalize_price());
+        builder.set_cell_limits(self.cell_depth_limit, self.cell_bits_limit);
         builder
             .finalize(1024)
             .map_err(|err| exception!(ExceptionCode::CellOverflow, "finalize cell error: {}", err))
@@ -327,7 +330,14 @@ impl Engine {
             self_dapp_id: None,
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
+            cell_depth_limit: None,
+            cell_bits_limit: None,
         }
+    }
+
+    pub fn set_cell_limits(&mut self, depth_limit: Option<u16>, bits_limit: Option<u64>) {
+        self.cell_depth_limit = depth_limit;
+        self.cell_bits_limit = bits_limit;
     }
 
     pub fn set_available_credit(&mut self, credit: i128) {

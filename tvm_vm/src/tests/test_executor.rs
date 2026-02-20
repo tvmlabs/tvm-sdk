@@ -1461,22 +1461,24 @@ fn test_run_wasm_fuel_error_from_hash() {
 
 #[test]
 fn test_bocdepth() {
-    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
-    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
-        .with_borrow_mut(|x| *x = Some(1398101 * 1024));
-    let mut data = [100u8; 98 * 1024 + 1248].to_vec();
-    let _cell = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
-        .unwrap()                              //1398101
-        .into_cell()
-        .unwrap();
+    const DEPTH_LIMIT: u16 = 800;
 
-    data.append(&mut [100u8].to_vec());
-    let res = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
-        .unwrap()                              //1398101
-        .into_cell();
-    assert!(res.is_err());
-    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
-    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT.with_borrow_mut(|x| *x = None);
+    // Build a chain of DEPTH_LIMIT - 1 cells with limits set on each builder.
+    // Each finalize checks the depth of its reference, so a chain of exactly
+    // DEPTH_LIMIT - 1 cells stays within the limit.
+    let mut cell = BuilderData::new().into_cell().unwrap();
+    for _ in 0..(DEPTH_LIMIT - 2) {
+        let mut b = BuilderData::new();
+        b.set_cell_limits(Some(DEPTH_LIMIT), Some(1398101 * 1024));
+        b.checked_append_reference(cell).unwrap();
+        cell = b.into_cell().unwrap();
+    }
+
+    // Adding one more level exceeds the depth limit.
+    let mut b = BuilderData::new();
+    b.set_cell_limits(Some(DEPTH_LIMIT), Some(1398101 * 1024));
+    b.checked_append_reference(cell).unwrap();
+    assert!(b.into_cell().is_err());
 
     println!("Success");
 }

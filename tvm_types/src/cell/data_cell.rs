@@ -57,11 +57,6 @@ thread_local! {
 }
 
 impl DataCell {
-    thread_local! {
-        pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = RefCell::new(None);
-        pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT: RefCell<Option<u64>> = RefCell::new(None);
-    }
-
     pub fn new() -> Self {
         Self::with_refs_and_data(smallvec![], &[0x80]).unwrap()
     }
@@ -70,7 +65,9 @@ impl DataCell {
         references: SmallVec<[Cell; 4]>,
         data: &[u8], // with completion tag (for big cell - without)!
     ) -> crate::Result<DataCell> {
-        Self::with_params(references, data, CellType::Ordinary, 0, None, None, None, None, None)
+        Self::with_params(
+            references, data, CellType::Ordinary, 0, None, None, None, None, None, None, None,
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -84,6 +81,8 @@ impl DataCell {
         depths: Option<[u16; 4]>,
         extern_tree_bits_count: Option<u64>,
         extern_tree_cell_count: Option<u64>,
+        unique_max_cell_depth: Option<u16>,
+        unique_max_nested_bits: Option<u64>,
     ) -> crate::Result<DataCell> {
         assert_eq!(hashes.is_some(), depths.is_some());
         let store_hashes = hashes.is_some();
@@ -103,6 +102,8 @@ impl DataCell {
             true,
             extern_tree_bits_count,
             extern_tree_cell_count,
+            unique_max_cell_depth,
+            unique_max_nested_bits,
         )
     }
 
@@ -114,7 +115,9 @@ impl DataCell {
         force_finalization: bool,
     ) -> crate::Result<DataCell> {
         let cell_data = CellData::with_external_data(buffer, offset)?;
-        Self::construct_cell(cell_data, references, max_depth, force_finalization, None, None)
+        Self::construct_cell(
+            cell_data, references, max_depth, force_finalization, None, None, None, None,
+        )
     }
 
     pub fn with_raw_data(
@@ -124,7 +127,9 @@ impl DataCell {
         force_finalization: bool,
     ) -> crate::Result<DataCell> {
         let cell_data = CellData::with_raw_data(data)?;
-        Self::construct_cell(cell_data, references, max_depth, force_finalization, None, None)
+        Self::construct_cell(
+            cell_data, references, max_depth, force_finalization, None, None, None, None,
+        )
     }
 
     fn construct_cell(
@@ -134,6 +139,8 @@ impl DataCell {
         force_finalization: bool,
         extern_tree_bits_count: Option<u64>,
         extern_tree_cell_count: Option<u64>,
+        unique_max_cell_depth: Option<u16>,
+        unique_max_nested_bits: Option<u64>,
     ) -> crate::Result<DataCell> {
         const MAX_56_BITS: u64 = 0x00FF_FFFF_FFFF_FFFFu64;
         let mut tree_bits_count = cell_data.bit_length() as u64;
@@ -160,13 +167,9 @@ impl DataCell {
                 refs = refs.saturating_add(r.references_count());
             }
         }
-        if Self::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow(|x| match x {
-            None => false,
-            Some(x) => depth >= *x,
-        }) || Self::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT.with_borrow(|x| match x {
-            None => false,
-            Some(x) => count >= *x,
-        }) {
+        if unique_max_cell_depth.is_some_and(|limit| depth >= limit)
+            || unique_max_nested_bits.is_some_and(|limit| count >= limit)
+        {
             log::debug!("Depths {:?}, counts {:?}", depths, counts);
             log::debug!("Depth {:?}, count {:?}", depth, count);
             log::debug!("Depth2 {:?}, refs {:?}", depth2, refs);
@@ -544,6 +547,8 @@ impl DataCell {
             &cursor.into_inner()[..size],
             CellType::External,
             0,
+            None,
+            None,
             None,
             None,
             None,

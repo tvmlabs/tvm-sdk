@@ -1334,5 +1334,7 @@ pub fn create_big_cell(data: &[u8]) -> Result<Cell> {
         None,
         None,
         None,
+        None,
+        None,
     )?))
 }
