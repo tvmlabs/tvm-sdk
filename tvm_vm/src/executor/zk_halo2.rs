@@ -8,6 +8,7 @@ use crate::stack::integer::IntegerData;
 use crate::stack::integer::serialization::UnsignedIntegerBigEndianEncoding;
 use crate::types::Exception;
 use crate::types::Status;
+use crate::error::TvmError;
 use crate::executor::zk_halo2_utils::*;
 
 use tvm_types::SliceData;
@@ -61,10 +62,9 @@ fn pop(barry: &[u8]) -> &[u8; 8] {
     barry.try_into().expect("slice with incorrect length")
 }
 
-pub fn consume_uint64(b: &[u8]) -> u64 {
+pub fn consume_uint64(b: &[u8]) -> tvm_types::Result<u64> {
     if b.len() != 32 {
-        //return Err("Not enough bytes for u64".into());
-        panic!("Not enough bytes for u64");
+        fail!("Not enough bytes for u64");
     }
     let result = (b[31] as u64)
         | ((b[30] as u64) << 8)
@@ -76,19 +76,19 @@ pub fn consume_uint64(b: &[u8]) -> u64 {
         | ((b[24] as u64) << 56)
         ;
     
-    result
+    Ok(result)
 }
 
-pub fn check_is_u64(b: &[u8]) -> bool {
+pub fn check_is_u64(b: &[u8]) -> tvm_types::Result<bool> {
     if b.len() != 32 {
-        panic!("Not enough bytes");
+        fail!("Not enough bytes");
     }
     for i in 0..24 {
         if (b[i] != 0){
-            return false;
+            return Ok(false);
         }
     }
-    true
+    Ok(true)
 }
 
 //Note: for now this instruction works with circuits handling only one Column of public inputs
@@ -97,7 +97,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
         k: 12,
         num_advice_per_phase: vec![4],
         num_fixed: 1,
-        num_lookup_advice_per_phase: vec![1,0,0],
+        num_lookup_advice_per_phase: vec![1, 0, 0],
         lookup_bits: Some(11),
         num_instance_columns: 1
     }; 
@@ -121,11 +121,16 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     let mut pub_inputs: Vec<Fr> = Vec::new();
     for i in 0..num_of_pub_inputs {
         let pub_input_bytes: &[u8; 32] = &pub_inputs_bytes[i*32..(i+1)*32].try_into().unwrap();
-        
         println!("portion of pub_input_bytes: {:?}", pub_input_bytes);
-       
-        if (check_is_u64(pub_input_bytes)) {
-            let elem: u64 = consume_uint64(pub_input_bytes);
+        let check_pub_input_bytes_is_u64 = match check_is_u64(pub_input_bytes) {
+            Ok(check_res) => { check_res }
+            Err(err) => { fail!("Invalid length {}", err) }
+        };
+        if (check_pub_input_bytes_is_u64) {
+            let elem: u64 = match consume_uint64(pub_input_bytes){
+                Ok(el) => { el }
+                Err(err) => { fail!("Invalid length {}", err) }
+            };
             let pub_input = Fr::from(elem as u64);
             pub_inputs.push(pub_input);
         }
@@ -137,9 +142,14 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     }
 
     println!("pub_inputs: {:?}", pub_inputs);
-
     let mut cursor = Cursor::new(KZG_PARAMS.to_vec());
-    let params = ParamsKZG::<Bn256>::read_custom(&mut cursor, SerdeFormat::RawBytesUnchecked).expect("Reading vkey should not fail");   
+    let params = match ParamsKZG::<Bn256>::read_custom(&mut cursor, SerdeFormat::RawBytesUnchecked){
+        Ok(params) => params,
+        Err(err) => {
+            return err!(ExceptionCode::FatalError, "Incorrect KZG params {}", err);
+        }
+    };
+
     let res = proof.verify_with_vk_from_bytes::<BaseCircuitBuilder<Fr>>(&mut DARK_DEX_VERIFICATION_HALO2_KEY, &params, concrete_params, &[&pub_inputs]);
     
     let res =  boolean!(res);
