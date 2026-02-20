@@ -149,6 +149,8 @@ pub struct ExecuteParams {
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
+    pub max_allowed_cell_depth: Option<u16>,
+    pub max_allowed_nested_cell_bit_count: Option<u64>,
 }
 
 pub struct ActionPhaseResult {
@@ -202,6 +204,8 @@ impl Default for ExecuteParams {
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
+            max_allowed_cell_depth: Some(800),
+            max_allowed_nested_cell_bit_count: Some(1398101 * 1024),
         }
     }
 }
@@ -222,9 +226,10 @@ pub trait TransactionExecutor {
         params: ExecuteParams,
     ) -> Result<(Transaction, i128)> {
         // set exec cell depth limit with threadlocal
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH
+            .with_borrow_mut(|x| *x = params.max_allowed_cell_depth);
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
-            .with_borrow_mut(|x| *x = Some(1398101 * 1024));
+            .with_borrow_mut(|x| *x = params.max_allowed_nested_cell_bit_count);
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
