@@ -214,10 +214,10 @@ impl Serializable for MsgAddressExt {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
             MsgAddressExt::AddrNone => {
-                cell.append_raw(&[0x00], 2)?; // prefix AddrNone
+                cell.append_tag(0b00, 2)?; // prefix AddrNone (00)
             }
             MsgAddressExt::AddrExtern(ext) => {
-                cell.append_raw(&[0x40], 2)?; // prefix AddrExtern
+                cell.append_tag(0b01, 2)?; // prefix AddrExtern (01)
                 ext.write_to(cell)?; // MsgAddressExt
             }
         }
@@ -353,7 +353,7 @@ impl fmt::Display for MsgAddress {
 
 impl Serializable for MsgAddress {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_raw(&[self.get_type() << 6], 2)?;
+        cell.append_tag(self.get_type(), 2)?;
         match self {
             MsgAddress::AddrNone => (),
             MsgAddress::AddrExt(ext) => ext.write_to(cell)?,
@@ -460,11 +460,11 @@ impl Serializable for MsgAddressInt {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
             MsgAddressInt::AddrStd(std) => {
-                cell.append_raw(&[0x80], 2)?; // $10 prefix AddrStd
+                cell.append_tag(0b10, 2)?; // $10 prefix AddrStd
                 std.write_to(cell)?; // MsgAddrStd
             }
             MsgAddressInt::AddrVar(var) => {
-                cell.append_raw(&[0xC0], 2)?; // $11 prefix AddrVar
+                cell.append_tag(0b11, 2)?; // $11 prefix AddrVar
                 var.write_to(cell)?; // MsgAddressInt
             }
         }
@@ -561,7 +561,7 @@ impl Serializable for MsgAddressIntOrNone {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         match self {
             MsgAddressIntOrNone::None => {
-                cell.append_raw(&[0x00], 2)?;
+                cell.append_tag(0b00, 2)?;
             }
             MsgAddressIntOrNone::Some(addr) => addr.write_to(cell)?,
         }
@@ -571,7 +571,7 @@ impl Serializable for MsgAddressIntOrNone {
 
 impl Deserializable for MsgAddressIntOrNone {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        let addr_type = cell.get_next_int(2)? as u8;
+        let addr_type = cell.get_next_tag(2)?;
         match addr_type & 0b11 {
             0b00 => {
                 *self = MsgAddressIntOrNone::None;
@@ -1047,7 +1047,7 @@ impl ExtOutMessageHeader {
 
 impl Serializable for ExtOutMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bit_one()?.append_bit_one()?.append_bit_zero()?.append_bit_zero()?;
+        cell.append_tag(0b11, 2)?;
 
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
@@ -1220,7 +1220,6 @@ impl Serializable for CommonMsgInfo {
 impl Deserializable for CommonMsgInfo {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         *self = if !cell.get_next_bit()? {
-            // CommonMsgInfo::int_msg_info
             let mut int_msg = InternalMessageHeader::default();
             int_msg.read_from(cell)?;
             CommonMsgInfo::IntMsgInfo(int_msg)
@@ -1228,43 +1227,28 @@ impl Deserializable for CommonMsgInfo {
             let mut ext_in_msg = ExternalInboundMessageHeader::default();
             ext_in_msg.read_from(cell)?;
             CommonMsgInfo::ExtInMsgInfo(ext_in_msg)
+        } else if cell.get_bits(0, 2)? != 0b01 {
+            // tag: 11^[01]
+            let mut ext_out_msg = ExtOutMessageHeader::default();
+            ext_out_msg.read_from(cell)?;
+            CommonMsgInfo::ExtOutMsgInfo(ext_out_msg)
         } else {
-            let first_bit = cell.get_next_bit()?;
-            let second_bit = cell.get_next_bit()?;
-            if !first_bit && !second_bit {
-                let mut ext_out_ms = ExtOutMessageHeader::default();
-                ext_out_ms.read_from(cell)?;
-                CommonMsgInfo::ExtOutMsgInfo(ext_out_ms)
-            } else if !first_bit && second_bit {
-                let mut cross_dapp_ms = CrossDappMessageHeader::default();
-                cross_dapp_ms.read_from(cell)?;
-                CommonMsgInfo::CrossDappMessageInfo(cross_dapp_ms)
-            } else {
-                fail!("Unsupported message header tag")
+            cell.move_by(2)?;
+            // tag: 1101
+            // 01 is an invalid sequence for the src field of the ext out header,
+            // so we use it as a part of the constructor for new message types
+            match cell.get_next_tag(2)? {
+                0b01 => {
+                    // tag: 110101
+                    let mut cross_dapp = CrossDappMessageHeader::default();
+                    cross_dapp.read_from(cell)?;
+                    CommonMsgInfo::CrossDappMessageInfo(cross_dapp)
+                }
+                _ => {
+                    fail!("Unsupported message header tag")
+                }
             }
         };
-
-        Ok(())
-    }
-}
-
-impl Deserializable for CommonMsgInfoOld {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        *self = if !cell.get_next_bit()? {
-            // CommonMsgInfo::int_msg_info
-            let mut int_msg = InternalMessageHeader::default();
-            int_msg.read_from(cell)?;
-            CommonMsgInfoOld::IntMsgInfo(int_msg)
-        } else if !cell.get_next_bit()? {
-            let mut ext_in_msg = ExternalInboundMessageHeader::default();
-            ext_in_msg.read_from(cell)?;
-            CommonMsgInfoOld::ExtInMsgInfo(ext_in_msg)
-        } else {
-            let mut ext_out_ms = ExtOutMessageHeader::default();
-            ext_out_ms.read_from(cell)?;
-            CommonMsgInfoOld::ExtOutMsgInfo(ext_out_ms)
-        };
-
         Ok(())
     }
 }
@@ -1285,27 +1269,6 @@ pub struct Message {
     init_to_ref: Option<bool>,
 }
 
-#[derive(Debug, Default, Clone, Eq)]
-pub struct MessageOld {
-    header: CommonMsgInfoOld,
-    init: Option<StateInit>,
-    body: Option<SliceData>,
-    body_to_ref: Option<bool>,
-    init_to_ref: Option<bool>,
-}
-
-impl From<MessageOld> for Message {
-    fn from(value: MessageOld) -> Self {
-        Message {
-            header: value.header.into(),
-            init: value.init,
-            body: value.body,
-            body_to_ref: value.body_to_ref,
-            init_to_ref: value.init_to_ref,
-        }
-    }
-}
-
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Message {{header: {}", self.header)?;
@@ -1323,12 +1286,6 @@ impl fmt::Display for Message {
 
 impl PartialEq for Message {
     fn eq(&self, other: &Message) -> bool {
-        self.header == other.header && self.init == other.init && self.body == other.body
-    }
-}
-
-impl PartialEq for MessageOld {
-    fn eq(&self, other: &MessageOld) -> bool {
         self.header == other.header && self.init == other.init && self.body == other.body
     }
 }
@@ -1886,57 +1843,6 @@ impl Serializable for Message {
 }
 
 impl Deserializable for Message {
-    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        // read header
-        self.header.read_from(cell)?;
-
-        // read StateInit
-        if cell.get_next_bit()? {
-            // maybe of init
-            let mut init = StateInit::default();
-            if cell.get_next_bit()? {
-                // either of init
-                // read from reference
-                let r = cell.checked_drain_reference()?;
-                init.read_from_cell(r)?;
-                self.init = Some(init);
-                self.init_to_ref = Some(true);
-            } else {
-                // read from current cell
-                init.read_from(cell)?;
-                self.init = Some(init);
-                self.init_to_ref = Some(false);
-            }
-        } else {
-            self.init_to_ref = Some(false);
-        }
-
-        // read body
-        // A message is always serialized inside the blockchain as the last field in
-        // a cell. Therefore, the blockchain software may assume that whatever bits
-        // and references left unparsed after parsing the fields of a Message preceding
-        // body belong to the payload body : X, without knowing anything about the
-        // serialization of the type X.
-
-        self.body = if cell.get_next_bit()? {
-            // body in reference
-            self.body_to_ref = Some(true);
-            Some(SliceData::load_cell(cell.checked_drain_reference()?)?)
-        } else {
-            self.body_to_ref = Some(false);
-            if cell.is_empty() {
-                // no body
-                None
-            } else {
-                // body is leftover
-                Some(cell.clone())
-            }
-        };
-        Ok(())
-    }
-}
-
-impl Deserializable for MessageOld {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // read header
         self.header.read_from(cell)?;

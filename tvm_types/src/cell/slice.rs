@@ -438,6 +438,8 @@ impl SliceData {
         self.get_bit_opt(offset).ok_or_else(|| error!(ExceptionCode::CellUnderflow))
     }
 
+    // get `bits` bits at `offset` and returns as the lowest bits of the resulting
+    // byte example: for `01000000` bitstring get_bits(0, 3) returns 0b010
     pub fn get_bits(&self, offset: usize, bits: usize) -> Result<u8> {
         if offset + bits > self.remaining_bits() {
             fail!(ExceptionCode::CellUnderflow)
@@ -458,11 +460,17 @@ impl SliceData {
             if q < data.len() {
                 ret |= (data[q] as u16) << 8;
             }
-            if q < data.len() - 1 {
+            if q + 1 < data.len() {
                 ret |= data[q + 1] as u16;
             }
             Ok((ret >> (8 - r)) as u8 >> (8 - bits))
         }
+    }
+
+    pub fn get_next_tag(&mut self, bits: usize) -> Result<u8> {
+        let result = self.get_bits(0, bits)?;
+        self.move_by(bits)?;
+        Ok(result)
     }
 
     pub fn get_byte(&self, offset: usize) -> Result<u8> {

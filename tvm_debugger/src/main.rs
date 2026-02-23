@@ -308,6 +308,8 @@ mod tests {
             json: true,
             trace: false,
             replace_code: None,
+            message_dest_dapp_id: None,
+            message_source_dapp_id: None,
         }
     }
 
