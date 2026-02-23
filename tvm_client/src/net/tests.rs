@@ -565,7 +565,11 @@ async fn subscribe_for_transactions_with_addresses() {
     // deploy to create second transaction
     client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: deploy_params, send_events: false },
+            ParamsOfProcessMessage {
+                message_encode_params: deploy_params,
+                send_events: false,
+                ..Default::default()
+            },
             TestClient::default_callback,
         )
         .await
@@ -599,6 +603,7 @@ async fn subscribe_for_transactions_with_addresses() {
                     ..Default::default()
                 },
                 send_events: false,
+                ..Default::default()
             },
             TestClient::default_callback,
         )

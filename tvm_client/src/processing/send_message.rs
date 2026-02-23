@@ -62,6 +62,8 @@ pub struct ParamsOfSendMessage {
     /// Default is `false`.
     #[serde(default)]
     pub send_events: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dst_dapp_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, PartialEq, Debug)]
@@ -116,6 +118,7 @@ struct SendingMessage {
     body: Vec<u8>,
     dst: MsgAddressInt,
     thread_id: ThreadIdentifier,
+    dst_dapp_id: Option<String>,
 }
 
 impl SendingMessage {
@@ -124,6 +127,7 @@ impl SendingMessage {
         serialized: &str,
         abi: Option<&Abi>,
         thread_id: Option<String>,
+        dst_dapp_id: Option<String>,
     ) -> ClientResult<Self> {
         // Check message
         let deserialized = deserialize_object_from_boc::<Message>(context, serialized, "message")?;
@@ -143,12 +147,28 @@ impl SendingMessage {
             Some(t) => ThreadIdentifier::try_from(t).map_err(Error::invalid_thread)?,
             None => ThreadIdentifier::default(),
         };
-        Ok(Self { serialized: serialized.to_string(), deserialized, id, body, dst, thread_id })
+        Ok(Self {
+            serialized: serialized.to_string(),
+            deserialized,
+            id,
+            body,
+            dst,
+            thread_id,
+            dst_dapp_id,
+        })
     }
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {
         let server_link: &crate::net::ServerLink = context.get_server_link()?;
-        server_link.send_message(&self.id, &self.body, self.thread_id, self.dst.clone()).await
+        server_link
+            .send_message(
+                &self.id,
+                &self.body,
+                self.thread_id,
+                self.dst.clone(),
+                self.dst_dapp_id.clone(),
+            )
+            .await
     }
 }
 
@@ -157,8 +177,13 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
     params: ParamsOfSendMessage,
     _callback: impl Fn(ProcessingEvent) -> F + Send + Sync + Clone,
 ) -> ClientResult<ResultOfSendMessage> {
-    let message =
-        SendingMessage::new(&context, &params.message, params.abi.as_ref(), params.thread_id)?;
+    let message = SendingMessage::new(
+        &context,
+        &params.message,
+        params.abi.as_ref(),
+        params.thread_id,
+        params.dst_dapp_id,
+    )?;
 
     let raw_result = message.send(&context).await?;
 
@@ -275,7 +300,7 @@ mod test {
         let app = Router::new().route(
             "/v2/messages",
             post(|_body: Body| async move {
-                if socket_addr_clone == "127.0.0.1:9000" {   
+                if socket_addr_clone == "127.0.0.1:9000" {
                     let resp_json =  json!({
                         "result": null,
                         "error": {
@@ -317,7 +342,7 @@ mod test {
 
     fn create_message(context: &Arc<ClientContext>) -> Result<SendingMessage, ClientError> {
         let boc = "te6ccgEBBQEA3gABRYgB0sAot7nO81FRdsdro5q5hNKjB6k6k6N0XXZSSbXxTUoMAQHh4AxQHiMp1/uMXYuNfGnJTSsq1DVvVlzApSGJkiF2orMR7b4l5EDxyH+tSUgEiCa+PjBmLMDnpf5H6LU1nLxSAcWYRhwySlz8mR2+azk8IhaQSMlY/kcFs4BX0+ppdawTwAAAZf1xorQaHASN34I/2WACAmWAHADCv78M71zAKAvf+gThFn5J+iUYEGTkeR5uVkByCnogAAAAAAAAAAAAAAAAAAAAEAwEAwAAABGgAAAAAhg9CQQ=";
-        SendingMessage::new(context, boc, None, None)
+        SendingMessage::new(context, boc, None, None, None)
     }
 
     #[tokio::test]

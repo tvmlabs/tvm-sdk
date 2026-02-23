@@ -138,6 +138,22 @@ pub fn read_keys(filename: &str) -> Result<KeyPair, String> {
 }
 
 pub fn load_ton_address(addr: &str, config: &Config) -> Result<String, String> {
+    // Separator extended format: dapp_hex64::account_hex64
+    if addr.contains("::") {
+        let (dapp, account) = addr.split_once("::").unwrap();
+        if dapp.len() != 64 || !dapp.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err("dapp_id must be exactly 64 hex characters".to_string());
+        }
+        if account.len() != 64 || !account.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err("account_id must be exactly 64 hex characters".to_string());
+        }
+        return Ok(addr.to_owned());
+    }
+    // Compact extended format: 128 contiguous hex chars (first 64 = dapp, last 64 = account)
+    if addr.len() == 128 && addr.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Ok(addr.to_owned());
+    }
+    // Legacy: prepend workchain if absent, then validate.
     let addr =
         if addr.find(':').is_none() { format!("{}:{}", config.wc, addr) } else { addr.to_owned() };
     let _ = MsgAddressInt::from_str(&addr).map_err(|e| {

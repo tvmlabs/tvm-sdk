@@ -170,6 +170,10 @@ struct RunArgs {
     #[clap(long, requires("internal"))]
     message_source: Option<String>,
 
+    /// Destination dapp id for external inbound messages
+    #[clap(long)]
+    message_dest_dapp_id_ext: Option<String>,
+
     /// Decode out messages
     #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
     decode_out_messages: bool,

@@ -37,8 +37,29 @@ pub(crate) fn get_now(_args: &RunArgs) -> UnixTime32 {
 
 pub(crate) fn get_dest_address(args: &RunArgs) -> anyhow::Result<MsgAddressInt> {
     Ok(match args.address.as_ref() {
-        Some(address) => MsgAddressInt::from_str(address)
-            .map_err(|e| anyhow::format_err!("Failed to decode contract address: {e}"))?,
+        Some(address) => {
+            // Strip optional dapp prefix from extended address formats.
+            let tvm_part: &str = if let Some((_, account)) = address.split_once("::") {
+                account
+            } else if address.len() == 128 && address.chars().all(|c| c.is_ascii_hexdigit()) {
+                &address[64..]
+            } else {
+                address.as_str()
+            };
+            // Bare 64-char hex needs workchain prefix for MsgAddressInt::from_str.
+            let owned;
+            let addr_str: &str = if tvm_part.len() == 64
+                && !tvm_part.contains(':')
+                && tvm_part.chars().all(|c| c.is_ascii_hexdigit())
+            {
+                owned = format!("0:{}", tvm_part);
+                &owned
+            } else {
+                tvm_part
+            };
+            MsgAddressInt::from_str(addr_str)
+                .map_err(|e| anyhow::format_err!("Failed to decode contract address: {e}"))?
+        }
         None => MsgAddressInt::default(),
     })
 }

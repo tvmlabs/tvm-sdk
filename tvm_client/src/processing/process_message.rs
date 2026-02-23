@@ -47,6 +47,7 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
                 abi: Some(abi.clone()),
                 thread_id: None,
                 send_events: params.send_events,
+                dst_dapp_id: message.dst_dapp_id.clone(),
             },
             &callback,
         )

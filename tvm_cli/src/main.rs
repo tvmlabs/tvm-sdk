@@ -171,6 +171,11 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("The identifier of the thread in which the message should be processed.");
 
+    let dst_dapp_id_arg = Arg::with_name("DST_DAPP_ID")
+        .long("--dst-dapp-id")
+        .takes_value(true)
+        .help("Destination DApp identifier (64-char hex). Required for sending ext messages to accounts in non-root dapps.");
+
     let method_opt_arg = Arg::with_name("METHOD")
         .takes_value(true)
         .long("--method")
@@ -200,7 +205,8 @@ async fn main_internal() -> Result<(), String> {
         .arg(keys_arg.clone())
         .arg(method_opt_arg.clone())
         .arg(multi_params_arg.clone())
-        .arg(thread_arg.clone());
+        .arg(thread_arg.clone())
+        .arg(dst_dapp_id_arg.clone());
 
     let tvc_arg = Arg::with_name("TVC")
         .takes_value(true)
@@ -404,7 +410,8 @@ async fn main_internal() -> Result<(), String> {
         .arg(abi_arg.clone())
         .arg(keys_arg.clone())
         .arg(sign_arg.clone())
-        .arg(thread_arg.clone());
+        .arg(thread_arg.clone())
+        .arg(dst_dapp_id_arg.clone());
 
     let send_cmd = SubCommand::with_name("send")
         .about("Sends a prepared message to the contract.")
@@ -908,7 +915,8 @@ async fn main_internal() -> Result<(), String> {
 
     let sendfile_cmd = SubCommand::with_name("sendfile")
         .about("Sends the boc file with an external inbound message to account.")
-        .arg(Arg::with_name("BOC").required(true).takes_value(true).help("Message boc file."));
+        .arg(Arg::with_name("BOC").required(true).takes_value(true).help("Message boc file."))
+        .arg(dst_dapp_id_arg.clone());
 
     let fetch_block_cmd = SubCommand::with_name("fetch-block")
         .about("Fetches a block.")
@@ -1294,6 +1302,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
         .or(config.keys_path.clone());
 
     let thread_id = matches.value_of("THREAD");
+    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
 
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
@@ -1313,6 +1322,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
                 keys,
                 is_fee,
                 thread_id,
+                dst_dapp_id,
             )
             .await
         }
@@ -1361,6 +1371,7 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
         unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?;
     let params = Some(load_params(&params)?);
     let thread_id = matches.value_of("THREAD");
+    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
 
     if !config.is_json {
         print_args!(address, method, params, abi, keys);
@@ -1377,6 +1388,7 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
         keys,
         false,
         thread_id,
+        dst_dapp_id,
     )
     .await
 }
@@ -1782,8 +1794,9 @@ fn nodeid_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
 
 async fn sendfile_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let boc = m.value_of("BOC");
+    let dst_dapp_id = m.value_of("DST_DAPP_ID");
     if !config.is_json {
         print_args!(boc);
     }
-    sendfile::sendfile(config, boc.unwrap()).await
+    sendfile::sendfile(config, boc.unwrap(), dst_dapp_id).await
 }

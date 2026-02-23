@@ -56,8 +56,18 @@ pub async fn create_proposal(
         )
         .await
     } else {
-        call::call_contract(config, addr, MSIG_ABI, "submitTransaction", &params, keys, false, None)
-            .await
+        call::call_contract(
+            config,
+            addr,
+            MSIG_ABI,
+            "submitTransaction",
+            &params,
+            keys,
+            false,
+            None,
+            None,
+        )
+        .await
     }
 }
 
@@ -100,6 +110,7 @@ pub async fn vote(
             keys,
             false,
             None,
+            None,
         )
         .await
     }
@@ -115,6 +126,7 @@ pub async fn decode_proposal(config: &Config, addr: &str, proposal_id: &str) -> 
         "{}",
         None,
         false,
+        None,
         None,
     )
     .await?;

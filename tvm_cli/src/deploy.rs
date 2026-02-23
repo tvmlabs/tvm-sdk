@@ -65,7 +65,7 @@ pub async fn deploy_contract(
         }
     }
 
-    let result = send_message(tvm_client.clone(), msg, None, config, None).await?;
+    let result = send_message(tvm_client.clone(), msg, None, config, None, None).await?;
 
     let mut map: serde_json::Map<String, serde_json::Value> =
         serde_json::from_value(result.clone())

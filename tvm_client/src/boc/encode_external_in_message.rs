@@ -11,6 +11,7 @@ use crate::boc::internal::deserialize_object_from_boc;
 use crate::boc::internal::serialize_object_to_boc;
 use crate::client::ClientContext;
 use crate::encoding::account_decode;
+use crate::encoding::parse_dapp_address;
 use crate::encoding::slice_from_cell;
 use crate::error::ClientResult;
 
@@ -40,6 +41,10 @@ pub struct ResultOfEncodeExternalInMessage {
 
     /// Message id.
     pub message_id: String,
+
+    /// Destination DApp identifier extracted from an extended `dst` address.
+    /// `None` for legacy addresses.
+    pub dst_dapp_id: Option<String>,
 }
 
 /// Encodes a message
@@ -50,6 +55,7 @@ pub fn encode_external_in_message(
     context: std::sync::Arc<ClientContext>,
     params: ParamsOfEncodeExternalInMessage,
 ) -> ClientResult<ResultOfEncodeExternalInMessage> {
+    let dst_dapp_id = parse_dapp_address(&params.dst).ok().and_then(|p| p.dapp_id);
     let src = params.src.clone();
     let header = ExternalInboundMessageHeader {
         dst: account_decode(&params.dst)?,
@@ -79,5 +85,5 @@ pub fn encode_external_in_message(
 
     let hash = msg.hash().map_err(crate::client::errors::Error::internal_error)?;
     let boc = serialize_object_to_boc(&context, &msg, "message", params.boc_cache)?;
-    Ok(ResultOfEncodeExternalInMessage { message: boc, message_id: hex::encode(hash) })
+    Ok(ResultOfEncodeExternalInMessage { message: boc, message_id: hex::encode(hash), dst_dapp_id })
 }

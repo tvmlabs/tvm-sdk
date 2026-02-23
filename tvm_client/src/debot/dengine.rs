@@ -773,7 +773,11 @@ impl DEngine {
 
         match process_message(
             self.ton.clone(),
-            ParamsOfProcessMessage { message_encode_params: call_params, send_events: true },
+            ParamsOfProcessMessage {
+                message_encode_params: call_params,
+                send_events: true,
+                ..Default::default()
+            },
             callback,
         )
         .await

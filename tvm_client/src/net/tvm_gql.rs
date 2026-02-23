@@ -73,13 +73,20 @@ pub struct ExtMessage {
     pub id: String,
     pub body: String,
     pub expire_at: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thread_id: Option<String>,
     pub ext_message_token: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dst_dapp_id: Option<String>,
 }
 
 impl ExtMessage {
     pub fn set_thread_id(&mut self, thread_id: Option<String>) {
         self.thread_id = thread_id;
+    }
+
+    pub fn set_dst_dapp_id(&mut self, dst_dapp_id: Option<String>) {
+        self.dst_dapp_id = dst_dapp_id;
     }
 }
 

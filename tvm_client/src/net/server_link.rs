@@ -944,6 +944,7 @@ impl ServerLink {
         msg_body: &[u8],
         thread_id: ThreadIdentifier,
         dst: MsgAddressInt,
+        dst_dapp_id: Option<String>,
     ) -> ClientResult<Value> {
         // This helper function adds "resource" part to the URL
         fn ensure_resource(url: &Url) -> Url {
@@ -963,6 +964,7 @@ impl ServerLink {
             expire_at: None,
             thread_id: Some(thread_id.to_string()),
             ext_message_token: network_state.get_bm_token().await,
+            dst_dapp_id,
         };
 
         let mut endpoint = network_state.select_send_message_endpoint().await;
