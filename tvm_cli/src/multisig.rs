@@ -286,6 +286,7 @@ impl CallArgs {
 
 pub struct MultisigArgs {
     addr: String,
+    dapp_id: Option<String>,
     abi: Abi,
     call_args: CallArgs,
     keys: String,
@@ -306,7 +307,7 @@ impl MultisigArgs {
             .ok_or("sign key is not defined".to_string())?;
         let v2 = matches.is_present("V2");
 
-        let addr = load_ton_address(&address, config)?;
+        let (addr, dapp_id) = load_ton_address(&address, config)?;
         let mut abi = serde_json::from_str::<AbiContract>(MSIG_ABI).unwrap_or_default();
         if v2 {
             abi.version = Some("2.3".to_owned());
@@ -328,7 +329,7 @@ impl MultisigArgs {
             }
         }
 
-        Ok(Self { addr, call_args, abi: Abi::Contract(abi), keys })
+        Ok(Self { addr, dapp_id, call_args, abi: Abi::Contract(abi), keys })
     }
 
     pub fn address(&self) -> &str {
@@ -373,7 +374,7 @@ impl MultisigArgs {
             Some(self.keys.clone()),
             false,
             None,
-            None,
+            self.dapp_id.as_ref().map(|x| x.as_str()),
         )
         .await
     }
@@ -531,7 +532,7 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
             None,
             false,
             None,
-            None,
+            self.dapp_id.as_ref().map(|x| x.as_str()),
         )
         .await?;
     }

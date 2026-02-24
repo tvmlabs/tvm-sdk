@@ -682,7 +682,6 @@ impl TestClient {
                     ..Default::default()
                 },
                 send_events: false,
-                ..Default::default()
             },
             Self::default_callback,
         )
@@ -790,11 +789,7 @@ impl TestClient {
 
         let _ = self
             .net_process_message(
-                ParamsOfProcessMessage {
-                    message_encode_params: params,
-                    send_events: false,
-                    ..Default::default()
-                },
+                ParamsOfProcessMessage { message_encode_params: params, send_events: false },
                 Self::default_callback,
             )
             .await

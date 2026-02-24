@@ -61,71 +61,10 @@ pub(crate) fn account_encode_ex(
     }
 }
 
-/// Parsed extended address with optional dapp namespace.
-pub(crate) struct DAppAddress {
-    /// 64-char hex dapp identifier, or `None` for legacy addresses.
-    pub dapp_id: Option<String>,
-    /// 64-char hex account identifier (no workchain prefix).
-    pub account_hex: String,
-}
-
-fn validate_hex64(s: &str, field: &str, original: &str) -> ClientResult<()> {
-    if s.len() != 64 || !s.chars().all(|c| c.is_ascii_hexdigit()) {
-        Err(client::Error::invalid_address(
-            format!("{} must be 64 hex characters", field),
-            original,
-        ))
-    } else {
-        Ok(())
-    }
-}
-
-/// Parse an address string that may carry a dapp namespace prefix.
-///
-/// Accepted formats (in detection order):
-/// 1. `dapp_hex64::account_hex64` — separator format
-/// 2. 128-char all-hex string — compact format (first 64 = dapp, last 64 = account)
-/// 3. Anything else — legacy (`0:account_hex` or bare `account_hex`)
-pub(crate) fn parse_dapp_address(input: &str) -> ClientResult<DAppAddress> {
-    if let Some((dapp, account)) = input.split_once("::") {
-        validate_hex64(dapp, "dapp_id", input)?;
-        validate_hex64(account, "account_id", input)?;
-        Ok(DAppAddress { dapp_id: Some(dapp.to_string()), account_hex: account.to_string() })
-    } else if input.len() == 128 && input.chars().all(|c| c.is_ascii_hexdigit()) {
-        let (dapp, account) = input.split_at(64);
-        Ok(DAppAddress { dapp_id: Some(dapp.to_string()), account_hex: account.to_string() })
-    } else {
-        let account = input.strip_prefix("0:").unwrap_or(input);
-        Ok(DAppAddress { dapp_id: None, account_hex: account.to_string() })
-    }
-}
-
-/// Format an extended address string from dapp and account identifiers.
-pub fn format_dapp_address(dapp_id: &str, account_hex: &str) -> String {
-    format!("{}::{}", dapp_id, account_hex)
-}
-
 pub(crate) fn account_decode(string: &str) -> ClientResult<MsgAddressInt> {
-    // Strip dapp prefix from extended format before parsing TVM address.
-    let tvm_part: &str = if let Some((_, account)) = string.split_once("::") {
-        account
-    } else if string.len() == 128 && string.chars().all(|c| c.is_ascii_hexdigit()) {
-        &string[64..]
-    } else {
-        string
-    };
-    // Bare 64-char hex needs a workchain prefix for MsgAddressInt::from_str.
-    let owned;
-    let addr_str: &str =
-        if tvm_part.len() == 64 && !tvm_part.contains(':') && tvm_part.chars().all(|c| c.is_ascii_hexdigit()) {
-            owned = format!("0:{}", tvm_part);
-            &owned
-        } else {
-            tvm_part
-        };
-    match MsgAddressInt::from_str(addr_str) {
+    match MsgAddressInt::from_str(string) {
         Ok(address) => Ok(address),
-        Err(_) if tvm_part.len() == 48 => decode_std_base64(tvm_part),
+        Err(_) if string.len() == 48 => decode_std_base64(string),
         Err(err) => Err(client::Error::invalid_address(err, string)),
     }
 }

@@ -28,7 +28,6 @@ use crate::boc::tvc::state_init_with_code;
 use crate::client::ClientContext;
 use crate::encoding::account_decode;
 use crate::encoding::account_encode;
-use crate::encoding::parse_dapp_address;
 use crate::encoding::decode_abi_number;
 use crate::encoding::hex_decode;
 use crate::error::ClientResult;
@@ -290,11 +289,6 @@ pub struct ResultOfEncodeMessage {
 
     /// Message id.
     pub message_id: String,
-
-    /// Destination DApp identifier extracted from an extended address
-    /// (`dapp_hex::account_hex` or 128-char compact hex).
-    /// `None` for legacy addresses.
-    pub dst_dapp_id: Option<String>,
 }
 
 fn required_public_key(public_key: Option<String>) -> ClientResult<String> {
@@ -585,18 +579,11 @@ pub async fn encode_message(
         try_to_sign_message(context.clone(), &abi_string, message, data_to_sign, &params.signer)
             .await?;
 
-    let dst_dapp_id = params
-        .address
-        .as_ref()
-        .and_then(|a| parse_dapp_address(a).ok())
-        .and_then(|p| p.dapp_id);
-
     Ok(ResultOfEncodeMessage {
         message: base64_encode(&message),
         data_to_sign: data_to_sign.map(base64_encode),
         address: account_encode(&address),
         message_id: get_boc_hash(&message)?,
-        dst_dapp_id,
     })
 }
 

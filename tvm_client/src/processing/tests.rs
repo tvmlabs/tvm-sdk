@@ -160,7 +160,6 @@ async fn test_wait_message() {
                 message: encoded.message.clone(),
                 thread_id: None,
                 send_events: true,
-                ..Default::default()
             },
             callback.clone(),
         )
@@ -226,11 +225,7 @@ async fn test_process_message() {
 
     let output = client
         .net_process_message(
-            ParamsOfProcessMessage {
-                message_encode_params: encode_params,
-                send_events: true,
-                ..Default::default()
-            },
+            ParamsOfProcessMessage { message_encode_params: encode_params, send_events: true },
             callback,
         )
         .await
@@ -269,7 +264,6 @@ async fn test_process_message() {
                     ..Default::default()
                 },
                 send_events: true,
-                ..Default::default()
             },
             callback,
         )
@@ -360,7 +354,6 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
-                ..Default::default()
             },
             TestClient::default_callback,
         )
@@ -383,7 +376,6 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
-                ..Default::default()
             },
             TestClient::default_callback,
         )
@@ -413,7 +405,6 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: run_params.clone(),
                 send_events: false,
-                ..Default::default()
             },
             TestClient::default_callback,
         )
@@ -434,7 +425,6 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
-                ..Default::default()
             },
             TestClient::default_callback,
         )
@@ -448,7 +438,6 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: run_params.clone(),
                 send_events: false,
-                ..Default::default()
             },
             TestClient::default_callback,
         )
@@ -519,7 +508,6 @@ async fn test_retries() {
                             ..Default::default()
                         },
                         send_events: false,
-                        ..Default::default()
                     },
                     TestClient::default_callback,
                 )
@@ -584,11 +572,7 @@ async fn test_fees() {
 
     let run_result = client
         .net_process_message(
-            ParamsOfProcessMessage {
-                message_encode_params: params,
-                send_events: false,
-                ..Default::default()
-            },
+            ParamsOfProcessMessage { message_encode_params: params, send_events: false },
             TestClient::default_callback,
         )
         .await
@@ -655,11 +639,7 @@ async fn test_deploy_from_tvc_v1() {
 
     let _ = client
         .net_process_message(
-            ParamsOfProcessMessage {
-                message_encode_params: encode_params,
-                send_events: false,
-                ..Default::default()
-            },
+            ParamsOfProcessMessage { message_encode_params: encode_params, send_events: false },
             |_: ProcessingEvent, _: ProcessingResponseType| async {},
         )
         .await
@@ -681,7 +661,6 @@ async fn test_deploy_from_tvc_v1() {
                     ..Default::default()
                 },
                 send_events: false,
-                ..Default::default()
             },
             move |_: ProcessingEvent, _: ProcessingResponseType| async {},
         )
@@ -746,7 +725,6 @@ fn test_process_message_sync() {
         .process_message_sync(ParamsOfProcessMessage {
             message_encode_params: encode_params,
             send_events: true,
-            ..Default::default()
         })
         .unwrap();
 
@@ -769,7 +747,6 @@ fn test_process_message_sync() {
                 ..Default::default()
             },
             send_events: true,
-            ..Default::default()
         })
         .unwrap();
     assert_eq!(output.out_messages.len(), 2);

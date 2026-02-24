@@ -29,6 +29,7 @@ use crate::abi::decode_message_body;
 use crate::boc::internal::DeserializedObject;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::client::ClientContext;
+use crate::encoding::SdkAddress;
 use crate::encoding::base64_decode;
 use crate::error::ClientError;
 use crate::error::ClientResult;
@@ -117,8 +118,8 @@ struct SendingMessage {
     id: String,
     body: Vec<u8>,
     dst: MsgAddressInt,
-    thread_id: ThreadIdentifier,
     dst_dapp_id: Option<String>,
+    thread_id: ThreadIdentifier,
 }
 
 impl SendingMessage {
@@ -147,15 +148,7 @@ impl SendingMessage {
             Some(t) => ThreadIdentifier::try_from(t).map_err(Error::invalid_thread)?,
             None => ThreadIdentifier::default(),
         };
-        Ok(Self {
-            serialized: serialized.to_string(),
-            deserialized,
-            id,
-            body,
-            dst,
-            thread_id,
-            dst_dapp_id,
-        })
+        Ok(Self { serialized: serialized.to_string(), deserialized, id, body, dst, thread_id })
     }
 
     async fn send(&self, context: &Arc<ClientContext>) -> ClientResult<Value> {

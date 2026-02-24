@@ -137,7 +137,7 @@ pub fn read_keys(filename: &str) -> Result<KeyPair, String> {
     Ok(keys)
 }
 
-pub fn load_ton_address(addr: &str, config: &Config) -> Result<String, String> {
+pub fn load_ton_address(addr: &str, config: &Config) -> Result<(String, Option<String>), String> {
     // Separator extended format: dapp_hex64::account_hex64
     if addr.contains("::") {
         let (dapp, account) = addr.split_once("::").unwrap();

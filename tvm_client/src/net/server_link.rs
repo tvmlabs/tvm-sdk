@@ -30,6 +30,7 @@ use tokio::sync::Mutex;
 use tokio::sync::RwLock;
 use tokio::sync::watch;
 use tvm_block::MsgAddressInt;
+use crate::encoding::SdkAddress;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
 

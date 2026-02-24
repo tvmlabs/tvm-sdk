@@ -257,11 +257,7 @@ pub async fn process_message(
     } else {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage {
-                message_encode_params: msg.clone(),
-                send_events: true,
-                ..Default::default()
-            },
+            ParamsOfProcessMessage { message_encode_params: msg.clone(), send_events: true },
             |_| async move {},
         )
         .await
@@ -382,6 +378,7 @@ pub async fn call_contract_with_msg(
     config: &Config,
     str_msg: String,
     abi_path: &str,
+    dst_dapp_id: Option<&str>,
 ) -> Result<(), String> {
     let ton = create_client_verbose(config)?;
     let abi = load_abi(abi_path, config).await?;
@@ -403,7 +400,7 @@ pub async fn call_contract_with_msg(
         println!("  \"Parameters\": {},", params.1);
         println!("}}");
     }
-    let result = send_message_and_wait(ton, Some(abi), msg.message, config, None).await?;
+    let result = send_message_and_wait(ton, Some(abi), msg.message, config, dst_dapp_id).await?;
 
     if !config.is_json {
         println!("Succeeded.");

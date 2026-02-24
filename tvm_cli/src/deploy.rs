@@ -40,6 +40,7 @@ pub async fn deploy_contract(
     wc: i32,
     is_fee: bool,
     alias: Option<&str>,
+    dst_dapp_id: Option<&str>,
 ) -> Result<(), String> {
     let config = &full_config.config;
     let tvm_client = create_client_verbose(config)?;
@@ -65,7 +66,7 @@ pub async fn deploy_contract(
         }
     }
 
-    let result = send_message(tvm_client.clone(), msg, None, config, None, None).await?;
+    let result = send_message(tvm_client.clone(), msg, None, config, None, dst_dapp_id).await?;
 
     let mut map: serde_json::Map<String, serde_json::Value> =
         serde_json::from_value(result.clone())
