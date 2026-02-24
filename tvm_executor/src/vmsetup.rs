@@ -86,6 +86,12 @@ impl VMSetup {
         }
     }
 
+    /// Sets cell depth and bit-count limits enforced during VM execution
+    pub fn set_cell_limits(mut self, depth_limit: Option<u16>, bits_limit: Option<u64>) -> VMSetup {
+        self.vm.set_cell_limits(depth_limit, bits_limit);
+        self
+    }
+
     pub fn set_engine_available_credit(mut self, credit: i128) -> VMSetup {
         self.vm.set_available_credit(credit);
         self

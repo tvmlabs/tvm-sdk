@@ -38,6 +38,8 @@ pub struct BuilderData {
     pub(super) references: SmallVec<[Cell; 4]>,
     pub(super) cell_type: CellType,
     account_cell_hashes: Option<BTreeSet<Cell>>,
+    cell_depth_limit: Option<u16>,
+    cell_bits_limit: Option<u64>,
 }
 
 impl BuilderData {
@@ -52,7 +54,19 @@ impl BuilderData {
             references: SmallVec::new_const(),
             cell_type: CellType::Ordinary,
             account_cell_hashes: None,
+            cell_depth_limit: None,
+            cell_bits_limit: None,
         }
+    }
+
+    pub fn set_cell_limits(
+        &mut self,
+        depth_limit: Option<u16>,
+        bits_limit: Option<u64>,
+    ) -> &mut Self {
+        self.cell_depth_limit = depth_limit;
+        self.cell_bits_limit = bits_limit;
+        self
     }
 
     pub fn with_raw(data: impl Into<SmallData>, length_in_bits: usize) -> Result<BuilderData> {
@@ -78,7 +92,8 @@ impl BuilderData {
             references: SmallVec::new(),
             cell_type: CellType::Ordinary,
             account_cell_hashes: None,
-            // store here every cell hash, passing it into the builder as a mutable ref
+            cell_depth_limit: None,
+            cell_bits_limit: None,
         })
     }
 
@@ -151,6 +166,8 @@ impl BuilderData {
             None,
             None,
             None,
+            self.cell_depth_limit,
+            self.cell_bits_limit,
         )?))
     }
 

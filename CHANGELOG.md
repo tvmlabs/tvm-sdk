@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.12] - 2026-02-20
+## New
+- BOC depth limits now controlled by ExecParams
+
 ## [2.24.11] - 2026-02-17
 ## Fixed
 - Hash used for calculating BOC depth when applying BOC size limits

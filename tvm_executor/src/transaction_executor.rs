@@ -149,6 +149,8 @@ pub struct ExecuteParams {
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
+    pub max_allowed_cell_depth: Option<u16>,
+    pub max_allowed_nested_cell_bit_count: Option<u64>,
 }
 
 pub struct ActionPhaseResult {
@@ -202,6 +204,8 @@ impl Default for ExecuteParams {
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
+            max_allowed_cell_depth: Some(800),
+            max_allowed_nested_cell_bit_count: Some(1398101 * 1024),
         }
     }
 }
@@ -221,10 +225,9 @@ pub trait TransactionExecutor {
         account_root: &mut Cell,
         params: ExecuteParams,
     ) -> Result<(Transaction, i128)> {
-        // set exec cell depth limit with threadlocal
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
-            .with_borrow_mut(|x| *x = Some(1398101 * 1024));
+        // save cell limits before params is moved into execute_with_params
+        let cell_depth_limit = params.max_allowed_cell_depth;
+        let cell_bits_limit = params.max_allowed_nested_cell_bit_count;
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
@@ -242,12 +245,11 @@ pub trait TransactionExecutor {
             account.update_storage_stat()?;
         }
         log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
-        *account_root = account.serialize()?;
+        // set exec cell depth limit on the serialization builder
+        let mut builder = account.write_to_new_cell()?;
+        builder.set_cell_limits(cell_depth_limit, cell_bits_limit);
+        *account_root = builder.into_cell()?;
         let new_hash = account_root.repr_hash();
-        // unset exec cell depth limit with thread local
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
-            .with_borrow_mut(|x| *x = None);
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
         // let cell = account
         //     .clone()
@@ -588,7 +590,11 @@ pub trait TransactionExecutor {
         vm_setup = vm_setup
             .set_engine_available_credit(params.available_credit)
             .set_engine_version(params.engine_version.clone())
-            .set_engine_mv_config(params.mvconfig.clone());
+            .set_engine_mv_config(params.mvconfig.clone())
+            .set_cell_limits(
+                params.max_allowed_cell_depth,
+                params.max_allowed_nested_cell_bit_count,
+            );
 
         #[cfg(feature = "wasmtime")]
         {
