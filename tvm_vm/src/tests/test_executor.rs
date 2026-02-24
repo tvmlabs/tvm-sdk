@@ -1467,7 +1467,7 @@ fn test_bocdepth() {
     // Each finalize checks the depth of its reference, so a chain of exactly
     // DEPTH_LIMIT - 1 cells stays within the limit.
     let mut cell = BuilderData::new().into_cell().unwrap();
-    for _ in 0..(DEPTH_LIMIT - 2) {
+    for _ in 0..(DEPTH_LIMIT) {
         let mut b = BuilderData::new();
         b.set_cell_limits(Some(DEPTH_LIMIT), Some(1398101 * 1024));
         b.checked_append_reference(cell).unwrap();
