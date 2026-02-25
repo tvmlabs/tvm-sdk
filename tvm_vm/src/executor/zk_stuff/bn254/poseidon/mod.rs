@@ -136,39 +136,83 @@ const RATE: usize = 2;
 const R_F: usize = 8;
 const R_P: usize = 57;
 
+/// Poseidon sponge hasher with precomputed round constants.
+///
+/// Creating a `PoseidonSponge` via [`PoseidonSponge::new`] computes the round
+/// constants once (expensive). Subsequent calls to [`PoseidonSponge::hash_bytes_axiom`]
+/// and [`PoseidonSponge::hash_bytes_flat`] clone the cached template (cheap).
+#[derive(Clone, Debug)]
+pub struct PoseidonSponge {
+    template: pse_poseidon<halo2_Fr, T, RATE>,
+}
+
+impl PoseidonSponge {
+    pub fn new() -> Self {
+        Self {
+            template: pse_poseidon::new(R_F, R_P),
+        }
+    }
+
+    pub fn hash_bytes_axiom(
+        &self,
+        inputs: &Vec<Vec<u8>>,
+    ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+        let mut field_elements = Vec::new();
+        for input in inputs {
+            let el = halo2_Fr::from_bytes_le(&input);
+            field_elements.push(el);
+        }
+
+        let mut native_sponge = self.template.clone();
+        native_sponge.update(&field_elements);
+        let output_as_field_element = native_sponge.squeeze();
+
+        let output: [u8; FIELD_ELEMENT_SIZE_IN_BYTES] =
+            output_as_field_element.to_bytes_le().try_into().unwrap();
+
+        Ok(output)
+    }
+
+    pub fn hash_bytes_flat(
+        &self,
+        input_data: &[u8],
+    ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+        let data = input_data
+            .chunks(FIELD_ELEMENT_SIZE_IN_BYTES - 1)
+            .map(|c| {
+                let mut v = c.to_vec();
+                if v.len() < FIELD_ELEMENT_SIZE_IN_BYTES {
+                    v.resize(FIELD_ELEMENT_SIZE_IN_BYTES, 0);
+                }
+                v
+            })
+            .collect();
+        self.hash_bytes_axiom(&data)
+    }
+}
+
+impl Default for PoseidonSponge {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Global cached sponge for free functions. Round constants are computed once.
+static GLOBAL_SPONGE: std::sync::LazyLock<PoseidonSponge> =
+    std::sync::LazyLock::new(PoseidonSponge::new);
+
+/// Convenience free function using cached round constants.
 pub fn poseidon_bytes_axiom(
     inputs: &Vec<Vec<u8>>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    let mut field_elements = Vec::new();
-    for input in inputs {
-        let el = halo2_Fr::from_bytes_le(&input);
-        field_elements.push(el);
-    }
-
-    let mut native_sponge = pse_poseidon::<halo2_Fr, T, RATE>::new(R_F, R_P);
-    native_sponge.update(&field_elements);
-    let output_as_field_element = native_sponge.squeeze();
-
-    let output: [u8; FIELD_ELEMENT_SIZE_IN_BYTES] =
-        output_as_field_element.to_bytes_le().try_into().unwrap();
-
-    Ok(output)
+    GLOBAL_SPONGE.hash_bytes_axiom(inputs)
 }
 
+/// Convenience free function using cached round constants.
 pub fn poseidon_bytes_flat(
     input_data: &[u8],
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    let data = input_data
-        .chunks(FIELD_ELEMENT_SIZE_IN_BYTES - 1)
-        .map(|c| {
-            let mut v = c.to_vec();
-            if v.len() < FIELD_ELEMENT_SIZE_IN_BYTES {
-                v.resize(FIELD_ELEMENT_SIZE_IN_BYTES, 0);
-            }
-            v
-        })
-        .collect();
-    poseidon_bytes_axiom(&data)
+    GLOBAL_SPONGE.hash_bytes_flat(input_data)
 }
 
 /// Given a binary representation of a BN254 field element as an integer in
