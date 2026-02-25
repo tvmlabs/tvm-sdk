@@ -139,8 +139,9 @@ const R_P: usize = 57;
 /// Poseidon sponge hasher with precomputed round constants.
 ///
 /// Creating a `PoseidonSponge` via [`PoseidonSponge::new`] computes the round
-/// constants once (expensive). Subsequent calls to [`PoseidonSponge::hash_bytes_axiom`]
-/// and [`PoseidonSponge::hash_bytes_flat`] clone the cached template (cheap).
+/// constants once (expensive). Subsequent calls to
+/// [`PoseidonSponge::hash_bytes_axiom`] and [`PoseidonSponge::hash_bytes_flat`]
+/// clone the cached template (cheap).
 #[derive(Clone, Debug)]
 pub struct PoseidonSponge {
     template: pse_poseidon<halo2_Fr, T, RATE>,
@@ -148,9 +149,7 @@ pub struct PoseidonSponge {
 
 impl PoseidonSponge {
     pub fn new() -> Self {
-        Self {
-            template: pse_poseidon::new(R_F, R_P),
-        }
+        Self { template: pse_poseidon::new(R_F, R_P) }
     }
 
     pub fn hash_bytes_axiom(
