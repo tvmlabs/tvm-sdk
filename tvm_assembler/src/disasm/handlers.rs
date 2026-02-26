@@ -642,8 +642,7 @@ impl Handlers {
                 .set(0x03, Loader::rawreservex)
                 .set(0x04, Loader::setcode)
                 .set(0x06, Loader::setlibcode)
-                .set(0x07, Loader::changelib)
-                .set(0x10, Loader::sendrawmsgnew),
+                .set(0x07, Loader::changelib),
         )
     }
 
