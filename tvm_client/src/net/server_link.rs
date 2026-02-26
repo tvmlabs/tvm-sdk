@@ -795,12 +795,12 @@ impl ServerLink {
             .find(|(name, _)| name.eq_ignore_ascii_case("traceparent"))
             .map(|(_, value)| value.clone());
 
-            let result = self
+        let result = self
             .client_env
             .fetch(url.as_ref(), FetchMethod::Get, Some(headers), None, self.config.query_timeout)
             .await;
 
-            let result = match result {
+        let result = match result {
             Err(err) => Err(err),
             Ok(response) => {
                 if response.status == 200 {
