@@ -1343,7 +1343,7 @@ fn compute_new_state(
                     return Ok(Some(ComputeSkipReason::BadState));
                 }
             }
-            
+
             if config.has_capability(GlobalCapabilities::CapSuspendedList) {
                 if let Some(suspended_addresses) = config.raw_config().suspended_addresses()? {
                     let addr =

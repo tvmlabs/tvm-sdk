@@ -521,7 +521,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         e
                     ))),
                 };
-                should_burn_need_to_burn = !matches!(description.bounce, Some(TrBouncePhase::Ok(_)));
+                should_burn_need_to_burn =
+                    !matches!(description.bounce, Some(TrBouncePhase::Ok(_)));
             } else {
                 should_burn_need_to_burn = true;
             }
@@ -537,7 +538,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         } else if description.aborted && !is_ext_msg && !bounce {
             should_burn_need_to_burn = true;
         }
-        
+
         // Apply need_to_burn if bounce failed or bouncing was not attempted
         if should_burn_need_to_burn && need_to_burn.as_u128() > 0 {
             log::debug!(target: "executor", "Applying cross-dapp burn: need_to_burn={}", need_to_burn);

@@ -9,9 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_block::BlockError;
 use tvm_block::ConfigParam18;
 use tvm_block::ConfigParams;
-use tvm_block::BlockError;
 use tvm_block::FundamentalSmcAddresses;
 use tvm_block::GasLimitsPrices;
 use tvm_block::GlobalCapabilities;
@@ -93,7 +93,8 @@ impl CalcMsgFwdFees for MsgForwardPrices {
     /// Calculate message IHR fee
     /// IHR fee is calculated as `(msg_forward_fee * ihr_factor) >> 16`
     fn ihr_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        let product = fwd_fee.as_u128()
+        let product = fwd_fee
+            .as_u128()
             .checked_mul(self.ihr_price_factor as u128)
             .ok_or_else(|| BlockError::InvalidArg("IHR fee calculation overflow".to_string()))?;
         Grams::new(product >> 16)
@@ -108,14 +109,16 @@ impl CalcMsgFwdFees for MsgForwardPrices {
     /// to validators of shard to which message destination address is
     /// belong.
     fn mine_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        let product = fwd_fee.as_u128()
+        let product = fwd_fee
+            .as_u128()
             .checked_mul(self.first_frac as u128)
             .ok_or_else(|| BlockError::InvalidArg("mine fee calculation overflow".to_string()))?;
         Grams::new(product >> 16)
     }
 
     fn next_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        let product = fwd_fee.as_u128()
+        let product = fwd_fee
+            .as_u128()
             .checked_mul(self.next_frac as u128)
             .ok_or_else(|| BlockError::InvalidArg("next fee calculation overflow".to_string()))?;
         Grams::new(product >> 16)
