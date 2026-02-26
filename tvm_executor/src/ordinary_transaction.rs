@@ -561,6 +561,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         self.timings[2].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
         tr.set_copyleft_reward(copyleft);
+        // tr.write_to_new_cell().unwrap().finalize(max_depth)
         Ok(tr)
     }
 
