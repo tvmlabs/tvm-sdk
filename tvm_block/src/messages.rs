@@ -1076,9 +1076,9 @@ impl Deserializable for ExtOutMessageHeader {
 /// created_lt:uint64 created_at:uint32 = CommonMsgInfo;
 /// ext_in_msg_info$10 src:MsgAddressExt dest:MsgAddressInt
 /// import_fee:Grams = CommonMsgInfo;
-/// ext_out_msg_info$1100 src:MsgAddressInt dest:MsgAddressExt
+/// ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
 /// created_lt:uint64 created_at:uint32 = CommonMsgInfo;
-/// cross_dapp_message$1101 cross_dapp_message_header = CommonMsgInfo;
+/// cross_dapp_message$110101 cross_dapp_message_header = CommonMsgInfo;
 impl fmt::Display for CommonMsgInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

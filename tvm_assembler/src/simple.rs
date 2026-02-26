@@ -634,6 +634,7 @@ impl Engine {
         SECOND                               => 0x6F, 0x11
         SEMPTY                               => 0xC7, 0x00
         SENDRAWMSG                           => 0xFB, 0x00
+        SENDRAWMSGNEW                        => 0xFB, 0x10
         SEQNO                                => 0xF8, 0x2D
         SETALTCTR z = parse_control_register => 0xED, 0x80 | z
         SETCODE                              => 0xFB, 0x04
@@ -842,7 +843,7 @@ impl Engine {
         MINTSHELLQ                           => 0xC7, 0x28
         CALCMINSTAKE                         => 0xC7, 0x30
         VERGRTH16                            => 0xC7, 0x31
-        POSEIDON                             => 0xC7, 0x32
+        POSEIDONZKLOGIN                      => 0xC7, 0x32
         CALCBKREWARDADJ                      => 0xC7, 0x33
         CALCREPCOEF                          => 0xC7, 0x34
         CALCBMREWARD                         => 0xC7, 0x35
@@ -860,6 +861,7 @@ impl Engine {
         CALCMBK                              => 0xC7, 0x46
         CALCMINERTAPCOEF                     => 0xC7, 0x47
         CALCMINERREWARD                      => 0xC7, 0x48
+        POSEIDON                             => 0xC7, 0x50
     }
 
     fn add_commands<'a>(

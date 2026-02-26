@@ -40,6 +40,10 @@ const NEW_SELECTOR_DATA: &[u8] = &[
     0x8a, 0xed, 0x53, 0x20, 0xe3, 0x03, 0x20, 0xc0, 0xff, 0xe3, 0x02, 0x20, 0xc0, 0xfe, 0xe3, 0x02,
     0xf2, 0x0b,
 ];
+const CROSS_DAPP_SELECTOR_DATA: &[u8] = &[
+    0x8a, 0xed, 0x53, 0x20, 0xe3, 0x03, 0x20, 0xc0, 0xff, 0xe3, 0x02, 0x20, 0xc0, 0xfd, 0xe3, 0x02,
+    0xf2, 0x0b,
+];
 const MYCODE_SELECTOR_DATA: &[u8] = &[0x8A, 0xDB, 0x35];
 
 #[derive(Serialize, Deserialize, Clone, ApiType, Default)]
@@ -97,7 +101,7 @@ pub fn get_salt_and_ver(code: Cell) -> ClientResult<(Option<Cell>, Option<Cell>)
     match code.data() {
         OLD_CPP_SELECTOR_DATA => get_old_selector_salt(&code).map(|salt| (salt, None)),
         OLD_SOL_SELECTOR_DATA => Ok((None, None)),
-        NEW_SELECTOR_DATA => {
+        NEW_SELECTOR_DATA | CROSS_DAPP_SELECTOR_DATA => {
             get_new_selector_salt_and_ver(&code).map(|(salt, ver)| (salt, Some(ver)))
         }
         MYCODE_SELECTOR_DATA => {
@@ -213,7 +217,7 @@ pub struct ResultOfSetCodeSalt {
 pub fn set_code_salt_cell(code: Cell, salt: Cell) -> ClientResult<Cell> {
     match code.data() {
         OLD_CPP_SELECTOR_DATA => set_old_selector_salt(code, salt),
-        NEW_SELECTOR_DATA => set_new_selector_salt(code, salt),
+        NEW_SELECTOR_DATA | CROSS_DAPP_SELECTOR_DATA => set_new_selector_salt(code, salt),
         MYCODE_SELECTOR_DATA => set_mycode_selector_salt(code, salt),
         OLD_SOL_SELECTOR_DATA => {
             Err(Error::invalid_boc("the contract doesn't support salt adding"))
@@ -233,7 +237,7 @@ pub fn set_code_salt(
 
     let code = match code.data() {
         OLD_CPP_SELECTOR_DATA => set_old_selector_salt(code, salt),
-        NEW_SELECTOR_DATA => set_new_selector_salt(code, salt),
+        NEW_SELECTOR_DATA | CROSS_DAPP_SELECTOR_DATA => set_new_selector_salt(code, salt),
         MYCODE_SELECTOR_DATA => set_mycode_selector_salt(code, salt),
         OLD_SOL_SELECTOR_DATA => {
             Err(Error::invalid_boc("the contract doesn't support salt adding"))

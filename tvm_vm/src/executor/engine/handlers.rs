@@ -406,7 +406,8 @@ impl Handlers {
                 .set(0x45, execute_my_dapp_id)
                 .set(0x46, execute_calculate_mbk)
                 .set(0x47, execute_calculate_miner_tap_coef)
-                .set(0x48, execute_calculate_miner_reward);
+                .set(0x48, execute_calculate_miner_reward)
+                .set(0x50, execute_poseidon);
             #[cfg(feature = "wasmtime")]
             {
                 c7_handlers //
@@ -752,7 +753,8 @@ impl Handlers {
                 .set(0x04, execute_setcode)
                 .set(0x06, execute_setlibcode)
                 .set(0x07, execute_changelib)
-                .set(0x0A, execute_copyleft),
+                .set(0x0A, execute_copyleft)
+                .set(0x10, execute_sendrawmsgnew),
         )
     }
 
