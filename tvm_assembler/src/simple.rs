@@ -843,7 +843,7 @@ impl Engine {
         MINTSHELLQ                           => 0xC7, 0x28
         CALCMINSTAKE                         => 0xC7, 0x30
         VERGRTH16                            => 0xC7, 0x31
-        POSEIDON                             => 0xC7, 0x32
+        POSEIDONZKLOGIN                      => 0xC7, 0x32
         CALCBKREWARDADJ                      => 0xC7, 0x33
         CALCREPCOEF                          => 0xC7, 0x34
         CALCBMREWARD                         => 0xC7, 0x35
@@ -861,6 +861,7 @@ impl Engine {
         CALCMBK                              => 0xC7, 0x46
         CALCMINERTAPCOEF                     => 0xC7, 0x47
         CALCMINERREWARD                      => 0xC7, 0x48
+        POSEIDON                             => 0xC7, 0x50
     }
 
     fn add_commands<'a>(

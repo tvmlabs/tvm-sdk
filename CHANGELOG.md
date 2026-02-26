@@ -6,8 +6,14 @@ All notable changes to this project will be documented in this file.
 ## New
 - Add new type of message - Cross Dapp Message it behaves like internal but requires destination dapp id and could be sent between dapp id.
 
-## Breaking changes
-- External outbound message header was changed to support new types of messages, but serde was changed to support old version deserialization.
+
+## [2.24.11] - 2026-02-17
+## Fixed
+- Hash used for calculating BOC depth when applying BOC size limits
+
+## [2.24.10] - 2026-02-16
+## New
+- Add general purpose Poseidon TVM instruction based on Axiom.
 
 ## [2.24.9] - 2026-01-21
 ## New
@@ -27,7 +33,6 @@ All notable changes to this project will be documented in this file.
 ## [2.24.6] - 2025-12-10
 ## Fixed
 - Add support of Gosh provider into TLS wasm binary and update related tests
-
 
 ## [2.24.5] - 2025-11-03
 ## Fixed
