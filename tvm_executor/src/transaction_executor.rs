@@ -149,6 +149,7 @@ pub struct ExecuteParams {
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
+    pub use_new_version: bool,
 }
 
 pub struct ActionPhaseResult {
@@ -202,6 +203,7 @@ impl Default for ExecuteParams {
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
+            use_new_version: false,
         }
     }
 }
@@ -221,10 +223,14 @@ pub trait TransactionExecutor {
         account_root: &mut Cell,
         params: ExecuteParams,
     ) -> Result<(Transaction, i128)> {
-        // set exec cell depth limit with threadlocal
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
-            .with_borrow_mut(|x| *x = Some(1398101 * 1024));
+        let use_new_version = params.use_new_version;
+        if use_new_version {
+            // set exec cell depth limit with threadlocal
+            tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH
+                .with_borrow_mut(|x| *x = Some(800));
+            tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
+                .with_borrow_mut(|x| *x = Some(1398101 * 1024));
+        }
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
@@ -244,10 +250,12 @@ pub trait TransactionExecutor {
         log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
-        // unset exec cell depth limit with thread local
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
-        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
-            .with_borrow_mut(|x| *x = None);
+        if use_new_version {
+            // unset exec cell depth limit with thread local
+            tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
+            tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
+                .with_borrow_mut(|x| *x = None);
+        }
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
         // let cell = account
         //     .clone()
@@ -504,7 +512,7 @@ pub trait TransactionExecutor {
                 libs.push(state_init.libraries().inner());
             }
             let compute_result =
-                compute_new_state(&mut result_acc, acc_balance, msg, self.config());
+                compute_new_state(&mut result_acc, acc_balance, msg, self.config(), params.use_new_version);
             if let Some(reason) = compute_result? {
                 if let CommonMsgInfo::IntMsgInfo(ref mut header) = msg.header_mut() {
                     if !header.bounce && reason == ComputeSkipReason::BadState {
@@ -725,6 +733,7 @@ pub trait TransactionExecutor {
         available_credit: i128,
         minted_shell: &mut i128,
         need_to_burn: Grams,
+        use_new_version: bool,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -741,6 +750,7 @@ pub trait TransactionExecutor {
             minted_shell,
             need_to_burn,
             None,
+            use_new_version,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -761,6 +771,7 @@ pub trait TransactionExecutor {
         minted_shell: &mut i128,
         need_to_burn: Grams,
         message_src_dapp_id: Option<UInt256>,
+        use_new_version: bool,
     ) -> Result<ActionPhaseResult> {
         let mut need_to_reserve = need_to_burn.as_u64_quiet().clone();
         let mut out_msgs = vec![];
@@ -864,6 +875,7 @@ pub trait TransactionExecutor {
                         my_addr,
                         &total_reserved_value,
                         &mut account_deleted,
+                        use_new_version,
                     );
                     match result {
                         Ok(_) => {
@@ -1078,6 +1090,7 @@ pub trait TransactionExecutor {
                     my_addr,
                     &total_reserved_value,
                     &mut account_deleted,
+                    use_new_version,
                 );
                 if need_to_reserve != 0 {
                     free_to_send.grams.add(&Grams::from(need_to_reserve))?;
@@ -1156,6 +1169,7 @@ pub trait TransactionExecutor {
         msg: &Message,
         tr: &mut Transaction,
         my_addr: &MsgAddressInt,
+        use_new_version: bool,
     ) -> Result<(TrBouncePhase, Option<Message>)> {
         let header = msg.int_header().ok_or_else(|| error!("Not found msg internal header"))?;
         if !header.bounce {
@@ -1210,10 +1224,14 @@ pub trait TransactionExecutor {
         };
         let fwd_prices = self.config().get_fwd_prices(is_masterchain);
         let fwd_mine_fees = fwd_prices.mine_fee_checked(&fwd_full_fees)?;
-        let fwd_fees = if fwd_mine_fees.as_u128() > fwd_full_fees.as_u128() {
-            Grams::zero()
+        let fwd_fees = if use_new_version {
+            if fwd_mine_fees.as_u128() > fwd_full_fees.as_u128() {
+                Grams::zero()
+            } else {
+                Grams::new(fwd_full_fees.as_u128() - fwd_mine_fees.as_u128())?
+            }
         } else {
-            Grams::new(fwd_full_fees.as_u128() - fwd_mine_fees.as_u128())?
+            fwd_full_fees - fwd_mine_fees
         };
 
         log::debug!(target: "executor", "get fee {} from bounce msg {}", fwd_full_fees, remaining_msg_balance);
@@ -1322,6 +1340,7 @@ fn compute_new_state(
     acc_balance: &CurrencyCollection,
     in_msg: &Message,
     config: &BlockchainConfig,
+    use_new_version: bool,
 ) -> Result<Option<ComputeSkipReason>> {
     log::debug!(target: "executor", "compute_account_state");
     let init_code_hash = config.has_capability(GlobalCapabilities::CapInitCodeHash);
@@ -1337,10 +1356,13 @@ fn compute_new_state(
         }
         // Account exists, but can be in different states.
         AccountStatus::AccStateActive => {
-            if let Some(state_init) = in_msg.state_init() {
-                let text = "Cannot process external message for active account with hash";
-                if !check_libraries(state_init, disable_set_lib, text, in_msg) {
-                    return Ok(Some(ComputeSkipReason::BadState));
+            if use_new_version {
+                if let Some(state_init) = in_msg.state_init() {
+                    let text =
+                        "Cannot process external message for active account with hash";
+                    if !check_libraries(state_init, disable_set_lib, text, in_msg) {
+                        return Ok(Some(ComputeSkipReason::BadState));
+                    }
                 }
             }
 
@@ -1658,6 +1680,7 @@ fn outmsg_action_handler(
     my_addr: &MsgAddressInt,
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
+    use_new_version: bool,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
     let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE
@@ -1697,6 +1720,11 @@ fn outmsg_action_handler(
 
     if let Some(int_header) = msg.int_header_mut() {
         let mut fwd_prices = fwd_prices_basic.clone();
+        if !use_new_version {
+            if let None = int_header.dest_dapp_id() {
+                fwd_prices *= 2;
+            }
+        }
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {
@@ -1737,7 +1765,7 @@ fn outmsg_action_handler(
 
         if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
             int_header.set_exchange(true);
-        } else {
+        } else if use_new_version {
             int_header.set_exchange(false);
             log::debug!(target: "executor", "Sanitizing is_exchange flag: forcing to false");
         }
