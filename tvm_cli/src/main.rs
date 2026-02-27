@@ -156,6 +156,8 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.");
 
+    let abi_arg_req = abi_arg.clone().required(true);
+
     let keys_arg = Arg::with_name("KEYS")
         .long("--keys")
         .takes_value(true)
@@ -335,7 +337,7 @@ async fn main_internal() -> Result<(), String> {
         .version(version_string)
         .author(author)
         .arg(tvc_arg.clone())
-        .arg(abi_arg.clone())
+        .arg(abi_arg_req.clone())
         .arg(wc_arg.clone())
         .arg(Arg::with_name("GENKEY")
             .takes_value(true)
