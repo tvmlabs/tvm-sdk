@@ -226,8 +226,7 @@ pub trait TransactionExecutor {
         let use_new_version = params.use_new_version;
         if use_new_version {
             // set exec cell depth limit with threadlocal
-            tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH
-                .with_borrow_mut(|x| *x = Some(800));
+            tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
             tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
                 .with_borrow_mut(|x| *x = Some(1398101 * 1024));
         }
@@ -511,8 +510,13 @@ pub trait TransactionExecutor {
             if let Some(state_init) = msg.state_init() {
                 libs.push(state_init.libraries().inner());
             }
-            let compute_result =
-                compute_new_state(&mut result_acc, acc_balance, msg, self.config(), params.use_new_version);
+            let compute_result = compute_new_state(
+                &mut result_acc,
+                acc_balance,
+                msg,
+                self.config(),
+                params.use_new_version,
+            );
             if let Some(reason) = compute_result? {
                 if let CommonMsgInfo::IntMsgInfo(ref mut header) = msg.header_mut() {
                     if !header.bounce && reason == ComputeSkipReason::BadState {
@@ -1358,8 +1362,7 @@ fn compute_new_state(
         AccountStatus::AccStateActive => {
             if use_new_version {
                 if let Some(state_init) = in_msg.state_init() {
-                    let text =
-                        "Cannot process external message for active account with hash";
+                    let text = "Cannot process external message for active account with hash";
                     if !check_libraries(state_init, disable_set_lib, text, in_msg) {
                         return Ok(Some(ComputeSkipReason::BadState));
                     }
