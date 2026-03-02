@@ -141,22 +141,27 @@ impl MerkleUpdate {
             // trees traversal and update creating;
             let new_cells = Self::collect_cells(new);
             let mut pruned_branches = HashMap::new();
-
             let old_update_cell =
-                match Self::traverse_old_on_create(old, &new_cells, &mut pruned_branches, 0)? {
-                    Some(old_update_cell) => old_update_cell,
+                match Self::traverse_old_on_create(
+                    old,
+                    &new_cells,
+                    &mut pruned_branches,
+                    0,
+                    &mut HashMap::new(),
+                )? {
+                    Some(cell) => cell,
                     // Nothing from old tree were pruned, lets prune all tree!
-                    None => Self::build_pruned_branch(old, 0)?,
+                    None => Self::build_pruned_branch(old, 0)?.into_cell()?,
                 };
-            let new_update_cell = Self::traverse_new_on_create(new, &pruned_branches)?;
-
+            let new_update_cell =
+                Self::traverse_new_on_create(new, &pruned_branches, &mut HashMap::new())?;
             Ok(MerkleUpdate {
                 old_hash: old.repr_hash(),
                 new_hash: new.repr_hash(),
                 old_depth: old.repr_depth(),
                 new_depth: new.repr_depth(),
-                old: old_update_cell.into_cell()?,
-                new: new_update_cell.into_cell()?,
+                old: old_update_cell,
+                new: new_update_cell,
             })
         }
     }
@@ -433,7 +438,8 @@ impl MerkleUpdate {
     fn traverse_new_on_create(
         new_cell: &Cell,
         common_pruned: &HashMap<UInt256, Cell>,
-    ) -> Result<BuilderData> {
+        done_cells: &mut HashMap<UInt256, Cell>,
+    ) -> Result<Cell> {
         if new_cell.cell_type() == CellType::External {
             fail!("External cell can not be included into Merkle update");
         }
@@ -442,10 +448,16 @@ impl MerkleUpdate {
         new_update_cell.set_type(new_cell.cell_type());
         let mut level_mask = new_cell.level_mask();
         for child in new_cell.clone_references().iter() {
-            let update_child = if let Some(pruned) = common_pruned.get(&child.repr_hash()) {
+            let child_hash = child.repr_hash();
+            let update_child = if let Some(pruned) = common_pruned.get(&child_hash) {
                 pruned.clone()
+            } else if let Some(cached) = done_cells.get(&child_hash) {
+                cached.clone()
             } else {
-                Self::traverse_new_on_create(child, common_pruned)?.into_cell()?
+                let built =
+                    Self::traverse_new_on_create(child, common_pruned, done_cells)?;
+                done_cells.insert(child_hash, built.clone());
+                built
             };
             level_mask |= update_child.level_mask();
             new_update_cell.checked_append_reference(update_child)?;
@@ -453,7 +465,7 @@ impl MerkleUpdate {
 
         new_update_cell.append_bytestring(&SliceData::load_cell_ref(new_cell)?)?;
 
-        Ok(new_update_cell)
+        new_update_cell.into_cell()
     }
 
     // If old_cell's child contains in new_cells - it transformed to pruned branch
@@ -466,7 +478,8 @@ impl MerkleUpdate {
         new_cells: &HashMap<UInt256, Cell>,
         pruned_branches: &mut HashMap<UInt256, Cell>,
         mut merkle_depth: u8,
-    ) -> Result<Option<BuilderData>> {
+        done_cells: &mut HashMap<UInt256, Option<Cell>>,
+    ) -> Result<Option<Cell>> {
         if old_cell.cell_type() == CellType::External {
             fail!("External cell can not be included into Merkle update");
         }
@@ -475,20 +488,30 @@ impl MerkleUpdate {
             merkle_depth += 1;
         }
 
-        let mut childs = vec![None; old_cell.references_count()];
+        let cell_hash = old_cell.repr_hash();
+        if let Some(cached) = done_cells.get(&cell_hash) {
+            return Ok(cached.clone());
+        }
+
+        let mut childs: Vec<Option<Cell>> = vec![None; old_cell.references_count()];
         let mut has_pruned = false;
 
         for (i, child) in old_cell.clone_references().iter().enumerate() {
             let child_hash = child.repr_hash();
             if let Some(common_cell) = new_cells.get(&child_hash) {
-                let pruned_branch_cell = Self::build_pruned_branch(common_cell, merkle_depth)?;
-                pruned_branches.insert(child_hash, pruned_branch_cell.clone().into_cell()?);
-
+                let pruned_branch_cell =
+                    Self::build_pruned_branch(common_cell, merkle_depth)?.into_cell()?;
+                pruned_branches.insert(child_hash, pruned_branch_cell.clone());
                 childs[i] = Some(pruned_branch_cell);
                 has_pruned = true;
             } else {
-                childs[i] =
-                    Self::traverse_old_on_create(child, new_cells, pruned_branches, merkle_depth)?;
+                childs[i] = Self::traverse_old_on_create(
+                    child,
+                    new_cells,
+                    pruned_branches,
+                    merkle_depth,
+                    done_cells,
+                )?;
                 if childs[i].is_some() {
                     has_pruned = true;
                 }
@@ -499,19 +522,22 @@ impl MerkleUpdate {
             let mut old_update_cell = BuilderData::new();
             old_update_cell.set_type(old_cell.cell_type());
             for (i, child_opt) in childs.into_iter().enumerate() {
-                let child = match child_opt {
+                let child_cell = match child_opt {
                     None => {
                         let child = old_cell.reference(i)?;
-                        Self::build_pruned_branch(&child, merkle_depth)?
+                        Self::build_pruned_branch(&child, merkle_depth)?.into_cell()?
                     }
-                    Some(child) => child,
+                    Some(cell) => cell,
                 };
-                old_update_cell.checked_append_reference(child.into_cell()?)?;
+                old_update_cell.checked_append_reference(child_cell)?;
             }
 
             old_update_cell.append_bytestring(&SliceData::load_cell_ref(old_cell)?)?;
-            Ok(Some(old_update_cell))
+            let result_cell = old_update_cell.into_cell()?;
+            done_cells.insert(cell_hash, Some(result_cell.clone()));
+            Ok(Some(result_cell))
         } else {
+            done_cells.insert(cell_hash, None);
             Ok(None)
         }
     }
