@@ -141,18 +141,17 @@ impl MerkleUpdate {
             // trees traversal and update creating;
             let new_cells = Self::collect_cells(new);
             let mut pruned_branches = HashMap::new();
-            let old_update_cell =
-                match Self::traverse_old_on_create(
-                    old,
-                    &new_cells,
-                    &mut pruned_branches,
-                    0,
-                    &mut HashMap::new(),
-                )? {
-                    Some(cell) => cell,
-                    // Nothing from old tree were pruned, lets prune all tree!
-                    None => Self::build_pruned_branch(old, 0)?.into_cell()?,
-                };
+            let old_update_cell = match Self::traverse_old_on_create(
+                old,
+                &new_cells,
+                &mut pruned_branches,
+                0,
+                &mut HashMap::new(),
+            )? {
+                Some(cell) => cell,
+                // Nothing from old tree were pruned, lets prune all tree!
+                None => Self::build_pruned_branch(old, 0)?.into_cell()?,
+            };
             let new_update_cell =
                 Self::traverse_new_on_create(new, &pruned_branches, &mut HashMap::new())?;
             Ok(MerkleUpdate {
@@ -454,8 +453,7 @@ impl MerkleUpdate {
             } else if let Some(cached) = done_cells.get(&child_hash) {
                 cached.clone()
             } else {
-                let built =
-                    Self::traverse_new_on_create(child, common_pruned, done_cells)?;
+                let built = Self::traverse_new_on_create(child, common_pruned, done_cells)?;
                 done_cells.insert(child_hash, built.clone());
                 built
             };
