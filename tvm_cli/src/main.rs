@@ -45,9 +45,9 @@ use account::wait_for_change;
 use call::call_contract;
 use call::call_contract_with_msg;
 use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
+use clap::Command;
 use clap::SubCommand;
 use config::Config;
 use config::clear_config;
@@ -194,9 +194,9 @@ async fn main_internal() -> Result<(), String> {
         .about("Sends an external message with encoded function call to the contract (alternative syntax).")
         .version(version_string)
         .author(author)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .arg(address_opt_arg.clone())
         .arg(abi_arg.clone())
         .arg(keys_arg.clone())
@@ -224,9 +224,9 @@ async fn main_internal() -> Result<(), String> {
         .about("Deploys a smart contract to the blockchain (alternative syntax).")
         .version(version_string)
         .author(author)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .arg(abi_arg.clone())
         .arg(keys_arg.clone())
         .arg(wc_arg.clone())
@@ -263,9 +263,9 @@ async fn main_internal() -> Result<(), String> {
         .about("Runs contract function locally (alternative syntax).")
         .version(version_string)
         .author(author)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .arg(address_boc_tvc_arg.clone().long("--addr"))
         .arg(abi_arg.clone())
         .arg(method_opt_arg.clone())
@@ -276,9 +276,9 @@ async fn main_internal() -> Result<(), String> {
 
     let runget_cmd = SubCommand::with_name("runget")
         .about("Runs get-method of a FIFT contract.")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .arg(Arg::with_name("ADDRESS")
             .required(true)
             .help("Contract address or path to the saved account state if --boc or --tvc flag is specified."))
@@ -331,35 +331,37 @@ async fn main_internal() -> Result<(), String> {
             .short('p')
             .help("Seed phrase (12 words) or secret (private) key. Seed phrase should be specified in quotes, secret key as 64 hex chars."));
 
-    let genaddr_cmd = SubCommand::with_name("genaddr")
-        .setting(AppSettings::AllowNegativeNumbers)
+    let genaddr_cmd = Command::new("genaddr")
+        .allow_negative_numbers(true)
         .about("Calculates smart contract address in different formats. By default, input tvc file isn't modified.")
         .version(version_string)
         .author(author)
         .arg(tvc_arg.clone())
         .arg(abi_arg_req.clone())
         .arg(wc_arg.clone())
-        .arg(Arg::with_name("GENKEY")
+        .arg(Arg::new("GENKEY")
             .takes_value(true)
             .long("--genkey")
             .conflicts_with("SETKEY")
+            .required(true)
             .help("Path to the file, where a new generated keypair for the contract will be saved."))
-        .arg(Arg::with_name("SETKEY")
+        .arg(Arg::new("SETKEY")
             .takes_value(true)
             .long("--setkey")
             .conflicts_with("GENKEY")
+            .required(true)
             .help("Seed phrase or path to the file with keypair."))
-        .arg(Arg::with_name("DATA")
+        .arg(Arg::new("DATA")
             .takes_value(true)
             .long("--data")
             .help("Initial data to insert into the contract. Should be specified in json format."))
-        .arg(Arg::with_name("SAVE")
+        .arg(Arg::new("SAVE")
             .long("--save")
             .help("If this flag is specified, modifies the tvc file with the keypair and initial data"));
 
     let deploy_cmd = SubCommand::with_name("deploy")
-        .setting(AppSettings::AllowNegativeNumbers)
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_negative_numbers(true)
+        .allow_hyphen_values(true)
         .about("Deploys a smart contract to the blockchain.")
         .version(version_string)
         .author(author)
@@ -396,7 +398,7 @@ async fn main_internal() -> Result<(), String> {
         .help("Function arguments. Can be specified with a filename, which contains json data.");
 
     let call_cmd = SubCommand::with_name("call")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Sends an external message with encoded function call to the contract.")
         .version(version_string)
         .author(author)
@@ -421,7 +423,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(abi_arg.clone());
 
     let message_cmd = SubCommand::with_name("message")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Generates a signed message with encoded function call.")
         .version(version_string)
         .author(author)
@@ -447,7 +449,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(raw_arg.clone());
 
     let body_cmd = SubCommand::with_name("body")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Generates a payload for internal function call.")
         .version(version_string)
         .author(author)
@@ -459,7 +461,7 @@ async fn main_internal() -> Result<(), String> {
         create_test_sign_command().author(author).version(version_string).arg(keys_arg.clone());
 
     let run_cmd = SubCommand::with_name("run")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Runs contract function locally.")
         .version(version_string)
         .author(author)
@@ -472,7 +474,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(bc_config_arg.clone());
 
     let config_clear_cmd = SubCommand::with_name("clear")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Resets certain default values for options in the config file. Resets all values if used without options.")
         .arg(Arg::with_name("URL")
             .long("--url")
@@ -594,7 +596,7 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(SubCommand::with_name("print").about("Print current endpoints map."));
 
     let config_cmd = SubCommand::with_name("config")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Allows to tune certain default values for options in the config file.")
         .version(version_string)
         .author(author)
@@ -704,7 +706,7 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(alias_cmd);
 
     let account_cmd = SubCommand::with_name("account")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Obtains and prints account information.")
         .version(version_string)
         .author(author)
@@ -728,7 +730,7 @@ async fn main_internal() -> Result<(), String> {
             .help("Dumps the whole account state boc to the specified file. Works only if one address was given. Use 'tvm-cli dump account` to dump several accounts."));
 
     let account_wait_cmd = SubCommand::with_name("account-wait")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Waits for account change (based on last_trans_lt).")
         .version(version_string)
         .author(author)
@@ -779,7 +781,7 @@ async fn main_internal() -> Result<(), String> {
         .about("Calculates fees for executing message or account storage fee.")
         .subcommand(
             SubCommand::with_name("storage")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .about("Gets account storage fee for specified period in nanovmshells.")
                 .version(version_string)
                 .author(author)
@@ -885,7 +887,7 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(
             SubCommand::with_name("account")
                 .about("Dumps state of given accounts.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(
                     Arg::with_name("ADDRESS")
                         .required(true)
@@ -919,7 +921,7 @@ async fn main_internal() -> Result<(), String> {
 
     let fetch_cmd = SubCommand::with_name("fetch")
         .about("Fetches account's zerostate and transactions.")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .arg(address_arg.clone().help("Account address to fetch zerostate and txns for."))
         .arg(Arg::with_name("OUTPUT").required(true).takes_value(true).help("Output file name"));
 
@@ -1006,7 +1008,7 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(deployx_cmd)
         .subcommand(runx_cmd)
         .subcommand(update_config_param_cmd)
-        .setting(AppSettings::SubcommandRequired);
+        .subcommand_required(true);
 
     let matches = matches.get_matches_safe().map_err(|e| match e.kind {
         clap::ErrorKind::DisplayVersion => {

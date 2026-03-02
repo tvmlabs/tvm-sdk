@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::SubCommand;
@@ -45,7 +44,7 @@ use crate::print_args;
 
 pub fn create_decode_command<'b>() -> App<'b> {
     let tvc_cmd = SubCommand::with_name("stateinit")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .about("Decodes tvc data (including compiler version) from different sources.")
         .arg(
             Arg::with_name("TVC")
@@ -66,9 +65,9 @@ pub fn create_decode_command<'b>() -> App<'b> {
         );
     SubCommand::with_name("decode")
         .about("Decode commands.")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .subcommand(SubCommand::with_name("body")
             .about("Decodes body base64 string.")
             .arg(Arg::with_name("BODY")
@@ -94,7 +93,7 @@ pub fn create_decode_command<'b>() -> App<'b> {
         .subcommand(SubCommand::with_name("account")
             .about("Top level command of account decode commands.")
             .subcommand(SubCommand::with_name("data")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .about("Decodes data fields from the contract state.")
                 .arg(Arg::with_name("TVC")
                     .long("--tvc")

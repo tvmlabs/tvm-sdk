@@ -409,7 +409,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
                 .required(true)
                 .takes_value(true)))
         .subcommand(SubCommand::with_name("sequence-diagram")
-            .setting(clap::AppSettings::AllowLeadingHyphen)
+            .allow_hyphen_values(true)
             .about("Produces UML sequence diagram for provided accounts.")
             .arg(Arg::with_name("ADDRESSES")
                 .required(true)
