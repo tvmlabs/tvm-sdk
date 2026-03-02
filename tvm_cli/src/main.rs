@@ -44,7 +44,6 @@ use account::get_account;
 use account::wait_for_change;
 use call::call_contract;
 use call::call_contract_with_msg;
-use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
@@ -946,7 +945,7 @@ async fn main_internal() -> Result<(), String> {
             .short('e')
             .conflicts_with("CONFIG_TXNS"));
 
-    let matches = App::new("tonos_cli")
+    let matches = Command::new("tonos_cli")
         .version(VERSION.as_str())
         .author(author)
         .about("TVMLabs console tool for TVM networks")

@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 extern crate reqwest;
-use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
@@ -378,7 +377,7 @@ impl MultisigArgs {
     }
 }
 
-pub fn create_multisig_command<'b>() -> App<'b> {
+pub fn create_multisig_command<'b>() -> Command<'b> {
     let v2_arg = Arg::with_name("V2")
         .long("--v2")
         .help("Force to interact with wallet account as multisig v2.");

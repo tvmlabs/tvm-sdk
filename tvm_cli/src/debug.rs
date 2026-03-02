@@ -17,7 +17,6 @@ use std::io::Write;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
-use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
@@ -175,7 +174,7 @@ pub fn init_debug_logger(trace_path: &str) -> Result<(), String> {
     log::set_boxed_logger(logger).map_err(|e| format!("Failed to set logger {trace_path}: {e}"))
 }
 
-pub fn create_debug_command<'b>() -> App<'b> {
+pub fn create_debug_command<'b>() -> Command<'b> {
     let output_arg = Arg::with_name("LOG_PATH")
         .help("Path where to store the trace. Default path is \"./trace.log\". Note: old file will be removed.")
         .takes_value(true)

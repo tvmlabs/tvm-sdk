@@ -10,7 +10,6 @@
 // limitations under the License.
 use std::collections::HashMap;
 
-use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
@@ -43,7 +42,7 @@ use crate::multisig::CallArgs;
 use crate::multisig::MultisigArgs;
 use crate::print_args;
 
-pub fn create_depool_command<'b>() -> App<'b> {
+pub fn create_depool_command<'b>() -> Command<'b> {
     let wallet_arg = Arg::with_name("MSIG")
         .takes_value(true)
         .long("--wallet")

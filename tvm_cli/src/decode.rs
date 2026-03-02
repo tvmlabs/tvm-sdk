@@ -8,7 +8,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
@@ -42,7 +41,7 @@ use crate::helpers::query_message;
 use crate::load_abi;
 use crate::print_args;
 
-pub fn create_decode_command<'b>() -> App<'b> {
+pub fn create_decode_command<'b>() -> Command<'b> {
     let tvc_cmd = Command::new("stateinit")
         .allow_hyphen_values(true)
         .about("Decodes tvc data (including compiler version) from different sources.")

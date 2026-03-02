@@ -11,7 +11,6 @@
 
 use std::path::PathBuf;
 
-use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
@@ -55,7 +54,7 @@ use crate::helpers::load_params;
 use crate::helpers::now_ms;
 use crate::helpers::unpack_alternative_params;
 
-pub fn create_test_sign_command<'b>() -> App<'b> {
+pub fn create_test_sign_command<'b>() -> Command<'b> {
     Command::new("sign")
         .about("Generates the ED25519 signature for bytestring.")
         .arg(
@@ -74,7 +73,7 @@ pub fn create_test_sign_command<'b>() -> App<'b> {
         )
 }
 
-pub fn create_test_command<'b>() -> App<'b> {
+pub fn create_test_command<'b>() -> Command<'b> {
     let output_arg = Arg::with_name("LOG_PATH")
         .help("Path where to store the trace. Default path is \"./trace.log\". Note: old file will be removed.")
         .takes_value(true)

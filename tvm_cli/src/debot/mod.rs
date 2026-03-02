@@ -17,7 +17,6 @@ mod term_encryption_box;
 mod term_signing_box;
 
 use callbacks::Callbacks;
-use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
@@ -37,7 +36,7 @@ use term_browser::terminal_input;
 use crate::config::Config;
 use crate::helpers::load_ton_address;
 
-pub fn create_debot_command<'a, 'b>() -> App<'a> {
+pub fn create_debot_command<'a, 'b>() -> Command<'a> {
     Command::new("debot")
         .about("Debot commands.")
         .setting(AppSettings::AllowLeadingHyphen)
