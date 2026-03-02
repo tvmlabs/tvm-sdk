@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 extern crate reqwest;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
@@ -394,10 +393,10 @@ pub fn create_multisig_command<'b>() -> Command<'b> {
 
     Command::new("multisig")
         .about("Multisignature wallet commands.")
-        .setting(AppSettings::AllowNegativeNumbers)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_negative_numbers(true)
+        .dont_collapse_args_in_usage(true)
         .subcommand(Command::new("send")
-            .setting(AppSettings::AllowLeadingHyphen)
+            .allow_hyphen_values(true)
             .about("Transfer funds from the wallet to the recipient.")
             .arg(Arg::with_name("MSIG")
                 .long("--addr")
@@ -422,7 +421,7 @@ pub fn create_multisig_command<'b>() -> Command<'b> {
             .arg(bounce_arg)
             .arg(v2_arg.clone()))
         .subcommand(Command::new("deploy")
-            .setting(AppSettings::AllowLeadingHyphen)
+            .allow_hyphen_values(true)
             .about("Deploys a wallet with a given public key. By default, deploys a SafeMultisig with one custodian, which can be tuned with flags.")
             .arg(keys_arg)
             .arg(Arg::with_name("SETCODE")

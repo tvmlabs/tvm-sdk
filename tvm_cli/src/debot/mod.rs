@@ -17,7 +17,6 @@ mod term_encryption_box;
 mod term_signing_box;
 
 use callbacks::Callbacks;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
@@ -39,18 +38,18 @@ use crate::helpers::load_ton_address;
 pub fn create_debot_command<'a, 'b>() -> Command<'a> {
     Command::new("debot")
         .about("Debot commands.")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .arg(Arg::with_name("DEBUG").long("--debug").short('d'))
         .subcommand(
             Command::new("fetch")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address.")),
         )
         .subcommand(
             Command::new("start")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address."))
                 .arg(
                     Arg::with_name("PIPECHAIN")
@@ -69,7 +68,7 @@ pub fn create_debot_command<'a, 'b>() -> Command<'a> {
         )
         .subcommand(
             Command::new("invoke")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(Arg::with_name("ADDRESS").required(true).help("Debot TON address."))
                 .arg(
                     Arg::with_name("MESSAGE")
