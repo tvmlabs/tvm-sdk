@@ -13,7 +13,7 @@ use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde_json::json;
 use tvm_client::abi::Abi;
 use tvm_client::abi::AbiContract;
@@ -393,11 +393,11 @@ pub fn create_multisig_command<'b>() -> App<'b> {
         .takes_value(true)
         .help("Path to the file with a keypair.");
 
-    SubCommand::with_name("multisig")
+    Command::new("multisig")
         .about("Multisignature wallet commands.")
         .setting(AppSettings::AllowNegativeNumbers)
         .setting(AppSettings::DontCollapseArgsInUsage)
-        .subcommand(SubCommand::with_name("send")
+        .subcommand(Command::new("send")
             .setting(AppSettings::AllowLeadingHyphen)
             .about("Transfer funds from the wallet to the recipient.")
             .arg(Arg::with_name("MSIG")
@@ -422,7 +422,7 @@ pub fn create_multisig_command<'b>() -> App<'b> {
                 .help("Seed phrase or path to file with keypair."))
             .arg(bounce_arg)
             .arg(v2_arg.clone()))
-        .subcommand(SubCommand::with_name("deploy")
+        .subcommand(Command::new("deploy")
             .setting(AppSettings::AllowLeadingHyphen)
             .about("Deploys a wallet with a given public key. By default, deploys a SafeMultisig with one custodian, which can be tuned with flags.")
             .arg(keys_arg)

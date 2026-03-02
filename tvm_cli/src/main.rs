@@ -48,7 +48,6 @@ use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
-use clap::SubCommand;
 use config::Config;
 use config::clear_config;
 use config::set_config;
@@ -190,7 +189,7 @@ async fn main_internal() -> Result<(), String> {
 
     let author = "TVM Labs";
 
-    let callx_cmd = SubCommand::with_name("callx")
+    let callx_cmd = Command::new("callx")
         .about("Sends an external message with encoded function call to the contract (alternative syntax).")
         .version(version_string)
         .author(author)
@@ -220,7 +219,7 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Saves contract address and abi to the aliases list to be able to call this contract with alias instaed of address.");
 
-    let deployx_cmd = SubCommand::with_name("deployx")
+    let deployx_cmd = Command::new("deployx")
         .about("Deploys a smart contract to the blockchain (alternative syntax).")
         .version(version_string)
         .author(author)
@@ -259,7 +258,7 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Path to the file with blockchain config.");
 
-    let runx_cmd = SubCommand::with_name("runx")
+    let runx_cmd = Command::new("runx")
         .about("Runs contract function locally (alternative syntax).")
         .version(version_string)
         .author(author)
@@ -274,7 +273,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
-    let runget_cmd = SubCommand::with_name("runget")
+    let runget_cmd = Command::new("runget")
         .about("Runs get-method of a FIFT contract.")
         .allow_hyphen_values(true)
         .trailing_var_arg(true)
@@ -292,9 +291,9 @@ async fn main_internal() -> Result<(), String> {
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
-    let version_cmd = SubCommand::with_name("version").about("Prints build and version info.");
+    let version_cmd = Command::new("version").about("Prints build and version info.");
 
-    let genphrase_cmd = SubCommand::with_name("genphrase")
+    let genphrase_cmd = Command::new("genphrase")
         .about("Generates a seed phrase for keypair.")
         .version(version_string)
         .author(author)
@@ -305,7 +304,7 @@ async fn main_internal() -> Result<(), String> {
                 .help("Path where to dump keypair generated from the phrase"),
         );
 
-    let genpubkey_cmd = SubCommand::with_name("genpubkey")
+    let genpubkey_cmd = Command::new("genpubkey")
         .about("Generates a public key from the seed phrase.")
         .version(version_string)
         .author(author)
@@ -316,7 +315,7 @@ async fn main_internal() -> Result<(), String> {
                 .help("Seed phrase (12 words). Should be specified in quotes."),
         );
 
-    let getkeypair_cmd = SubCommand::with_name("getkeypair")
+    let getkeypair_cmd = Command::new("getkeypair")
         .about("Generates a keypair from the seed phrase or private key and saves it to the file.")
         .version(version_string)
         .author(author)
@@ -359,7 +358,7 @@ async fn main_internal() -> Result<(), String> {
             .long("--save")
             .help("If this flag is specified, modifies the tvc file with the keypair and initial data"));
 
-    let deploy_cmd = SubCommand::with_name("deploy")
+    let deploy_cmd = Command::new("deploy")
         .allow_negative_numbers(true)
         .allow_hyphen_values(true)
         .about("Deploys a smart contract to the blockchain.")
@@ -397,7 +396,7 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Function arguments. Can be specified with a filename, which contains json data.");
 
-    let call_cmd = SubCommand::with_name("call")
+    let call_cmd = Command::new("call")
         .allow_hyphen_values(true)
         .about("Sends an external message with encoded function call to the contract.")
         .version(version_string)
@@ -410,7 +409,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(sign_arg.clone())
         .arg(thread_arg.clone());
 
-    let send_cmd = SubCommand::with_name("send")
+    let send_cmd = Command::new("send")
         .about("Sends a prepared message to the contract.")
         .version(version_string)
         .author(author)
@@ -422,7 +421,7 @@ async fn main_internal() -> Result<(), String> {
         )
         .arg(abi_arg.clone());
 
-    let message_cmd = SubCommand::with_name("message")
+    let message_cmd = Command::new("message")
         .allow_hyphen_values(true)
         .about("Generates a signed message with encoded function call.")
         .version(version_string)
@@ -448,7 +447,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(output_arg.clone())
         .arg(raw_arg.clone());
 
-    let body_cmd = SubCommand::with_name("body")
+    let body_cmd = Command::new("body")
         .allow_hyphen_values(true)
         .about("Generates a payload for internal function call.")
         .version(version_string)
@@ -460,7 +459,7 @@ async fn main_internal() -> Result<(), String> {
     let sign_cmd =
         create_test_sign_command().author(author).version(version_string).arg(keys_arg.clone());
 
-    let run_cmd = SubCommand::with_name("run")
+    let run_cmd = Command::new("run")
         .allow_hyphen_values(true)
         .about("Runs contract function locally.")
         .version(version_string)
@@ -473,7 +472,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
-    let config_clear_cmd = SubCommand::with_name("clear")
+    let config_clear_cmd = Command::new("clear")
         .allow_hyphen_values(true)
         .about("Resets certain default values for options in the config file. Resets all values if used without options.")
         .arg(Arg::with_name("URL")
@@ -549,10 +548,10 @@ async fn main_internal() -> Result<(), String> {
             .help("Project secret or JWT in Evercloud (dashboard.evercloud.dev)."));
 
     let alias_arg = Arg::with_name("ALIAS").required(true).takes_value(true).help("Alias name.");
-    let alias_cmd = SubCommand::with_name("alias")
+    let alias_cmd = Command::new("alias")
         .about("Commands to work with aliases map")
         .subcommand(
-            SubCommand::with_name("add")
+            Command::new("add")
                 .about("Add alias to the aliases map.")
                 .arg(alias_arg.clone())
                 .arg(
@@ -570,19 +569,19 @@ async fn main_internal() -> Result<(), String> {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("remove")
+            Command::new("remove")
                 .about("Remove alias from the aliases map.")
                 .arg(alias_arg.clone()),
         )
-        .subcommand(SubCommand::with_name("print").about("Print the aliases map."))
-        .subcommand(SubCommand::with_name("reset").about("Clear the aliases map."));
+        .subcommand(Command::new("print").about("Print the aliases map."))
+        .subcommand(Command::new("reset").about("Clear the aliases map."));
 
     let url_arg =
         Arg::with_name("URL").required(true).takes_value(true).help("Url of the endpoints list.");
-    let config_endpoint_cmd = SubCommand::with_name("endpoint")
+    let config_endpoint_cmd = Command::new("endpoint")
         .about("Commands to work with the endpoints map.")
         .subcommand(
-            SubCommand::with_name("add").about("Add endpoints list.").arg(url_arg.clone()).arg(
+            Command::new("add").about("Add endpoints list.").arg(url_arg.clone()).arg(
                 Arg::with_name("ENDPOINTS")
                     .required(true)
                     .takes_value(true)
@@ -590,12 +589,12 @@ async fn main_internal() -> Result<(), String> {
             ),
         )
         .subcommand(
-            SubCommand::with_name("remove").about("Remove endpoints list.").arg(url_arg.clone()),
+            Command::new("remove").about("Remove endpoints list.").arg(url_arg.clone()),
         )
-        .subcommand(SubCommand::with_name("reset").about("Reset the endpoints map."))
-        .subcommand(SubCommand::with_name("print").about("Print current endpoints map."));
+        .subcommand(Command::new("reset").about("Reset the endpoints map."))
+        .subcommand(Command::new("print").about("Print current endpoints map."));
 
-    let config_cmd = SubCommand::with_name("config")
+    let config_cmd = Command::new("config")
         .allow_hyphen_values(true)
         .about("Allows to tune certain default values for options in the config file.")
         .version(version_string)
@@ -705,7 +704,7 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(config_endpoint_cmd)
         .subcommand(alias_cmd);
 
-    let account_cmd = SubCommand::with_name("account")
+    let account_cmd = Command::new("account")
         .allow_hyphen_values(true)
         .about("Obtains and prints account information.")
         .version(version_string)
@@ -729,7 +728,7 @@ async fn main_internal() -> Result<(), String> {
             .conflicts_with("BOC")
             .help("Dumps the whole account state boc to the specified file. Works only if one address was given. Use 'tvm-cli dump account` to dump several accounts."));
 
-    let account_wait_cmd = SubCommand::with_name("account-wait")
+    let account_wait_cmd = Command::new("account-wait")
         .allow_hyphen_values(true)
         .about("Waits for account change (based on last_trans_lt).")
         .version(version_string)
@@ -742,7 +741,7 @@ async fn main_internal() -> Result<(), String> {
                 .help("Timeout in seconds (default value is 30)."),
         );
 
-    let query_raw = SubCommand::with_name("query-raw")
+    let query_raw = Command::new("query-raw")
         .about("Executes a raw GraphQL query.")
         .version(version_string)
         .author(author)
@@ -777,10 +776,10 @@ async fn main_internal() -> Result<(), String> {
                 .help("Query order parameter."),
         );
 
-    let fee_cmd = SubCommand::with_name("fee")
+    let fee_cmd = Command::new("fee")
         .about("Calculates fees for executing message or account storage fee.")
         .subcommand(
-            SubCommand::with_name("storage")
+            Command::new("storage")
                 .allow_hyphen_values(true)
                 .about("Gets account storage fee for specified period in nanovmshells.")
                 .version(version_string)
@@ -801,10 +800,10 @@ async fn main_internal() -> Result<(), String> {
             "Executes call locally, calculates fees and prints table of all fees in nanovmshells.",
         ));
 
-    let proposal_cmd = SubCommand::with_name("proposal")
+    let proposal_cmd = Command::new("proposal")
         .help("Proposal control commands.")
         .subcommand(
-            SubCommand::with_name("create")
+            Command::new("create")
                 .about("Submits a proposal transaction in the multisignature wallet with a text comment.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
                 .arg(Arg::with_name("DEST")
@@ -826,7 +825,7 @@ async fn main_internal() -> Result<(), String> {
                     .takes_value(true)
                     .help("Period of time in seconds while message is valid.")))
         .subcommand(
-            SubCommand::with_name("vote")
+            Command::new("vote")
                 .about("Confirms a proposal transaction in the multisignature wallet.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
                 .arg(Arg::with_name("ID")
@@ -844,7 +843,7 @@ async fn main_internal() -> Result<(), String> {
                     .takes_value(true)
                     .help("Period of time in seconds while message is valid.")))
         .subcommand(
-            SubCommand::with_name("decode")
+            Command::new("decode")
                 .about("Prints a comment string from the proposal transaction.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
                 .arg(Arg::with_name("ID")
@@ -853,13 +852,13 @@ async fn main_internal() -> Result<(), String> {
                     .help("Proposal transaction id.")));
 
     let getconfig_cmd =
-        SubCommand::with_name("getconfig")
+        Command::new("getconfig")
             .about("Reads the global configuration parameter with defined index.")
             .arg(Arg::with_name("INDEX").takes_value(true).help(
                 "Parameter index. If not specified, command will print all config parameters.",
             ));
 
-    let update_config_param_cmd = SubCommand::with_name("update_config")
+    let update_config_param_cmd = Command::new("update_config")
         .about("Generates message with update of config params.")
         .arg(abi_arg.clone())
         .arg(Arg::with_name("SEQNO").takes_value(true).help("Current seqno from config contract"))
@@ -870,12 +869,12 @@ async fn main_internal() -> Result<(), String> {
         )
         .arg(Arg::with_name("NEW_PARAM_FILE").takes_value(true).help("New config param value"));
 
-    let bcconfig_cmd = SubCommand::with_name("dump")
+    let bcconfig_cmd = Command::new("dump")
         .about("Commands to dump network entities.")
         .version(version_string)
         .author(author)
         .subcommand(
-            SubCommand::with_name("config")
+            Command::new("config")
                 .about("Dumps the blockchain config for the last key block.")
                 .arg(
                     Arg::with_name("PATH")
@@ -885,7 +884,7 @@ async fn main_internal() -> Result<(), String> {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("account")
+            Command::new("account")
                 .about("Dumps state of given accounts.")
                 .allow_hyphen_values(true)
                 .arg(
@@ -900,7 +899,7 @@ async fn main_internal() -> Result<(), String> {
                 )),
         );
 
-    let nodeid_cmd = SubCommand::with_name("nodeid")
+    let nodeid_cmd = Command::new("nodeid")
         .about("Calculates node ID from the validator public key")
         .arg(Arg::with_name("KEY").long("--pubkey").takes_value(true).help("Validator public key."))
         .arg(
@@ -910,22 +909,22 @@ async fn main_internal() -> Result<(), String> {
                 .help("Validator seed phrase or path to the file with keypair."),
         );
 
-    let sendfile_cmd = SubCommand::with_name("sendfile")
+    let sendfile_cmd = Command::new("sendfile")
         .about("Sends the boc file with an external inbound message to account.")
         .arg(Arg::with_name("BOC").required(true).takes_value(true).help("Message boc file."));
 
-    let fetch_block_cmd = SubCommand::with_name("fetch-block")
+    let fetch_block_cmd = Command::new("fetch-block")
         .about("Fetches a block.")
         .arg(Arg::with_name("BLOCKID").required(true).takes_value(true).help("Block ID."))
         .arg(Arg::with_name("OUTPUT").required(true).takes_value(true).help("Output file name"));
 
-    let fetch_cmd = SubCommand::with_name("fetch")
+    let fetch_cmd = Command::new("fetch")
         .about("Fetches account's zerostate and transactions.")
         .allow_hyphen_values(true)
         .arg(address_arg.clone().help("Account address to fetch zerostate and txns for."))
         .arg(Arg::with_name("OUTPUT").required(true).takes_value(true).help("Output file name"));
 
-    let replay_cmd = SubCommand::with_name("replay")
+    let replay_cmd = Command::new("replay")
         .about("Replays account's transactions starting from zerostate.")
         .arg(Arg::with_name("CONFIG_TXNS")
             .long("--config")

@@ -14,7 +14,7 @@ use std::path::PathBuf;
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde_json::json;
 use tvm_block::Account;
 use tvm_block::ConfigParams;
@@ -56,7 +56,7 @@ use crate::helpers::now_ms;
 use crate::helpers::unpack_alternative_params;
 
 pub fn create_test_sign_command<'b>() -> App<'b> {
-    SubCommand::with_name("sign")
+    Command::new("sign")
         .about("Generates the ED25519 signature for bytestring.")
         .arg(
             Arg::with_name("DATA")
@@ -125,7 +125,7 @@ pub fn create_test_command<'b>() -> App<'b> {
         .takes_value(true)
         .help("Now timestamp (in milliseconds) for execution. If not set it is equal to the current timestamp.");
 
-    let deploy_cmd = SubCommand::with_name("deploy")
+    let deploy_cmd = Command::new("deploy")
         .about("Deploy contract locally with trace. It uses TVC file on input and produced BOC file on output.")
         .alias("td")
         .arg(boc_path_arg.clone())
@@ -168,7 +168,7 @@ pub fn create_test_command<'b>() -> App<'b> {
                 .help("Initial balance in nanovmshells."),
         );
 
-    let ticktock_cmd = SubCommand::with_name("ticktock")
+    let ticktock_cmd = Command::new("ticktock")
         .about("Make ticktock transaction")
         .alias("tt")
         .arg(boc_path_arg.clone())
@@ -179,7 +179,7 @@ pub fn create_test_command<'b>() -> App<'b> {
         .arg(config_boc_arg.clone())
         .arg(Arg::with_name("IS_TOCK").long("--tock").help("make tock transaction."));
 
-    let config_cmd = SubCommand::with_name("config")
+    let config_cmd = Command::new("config")
         .about("Encode or decode config params")
         .alias("tc")
         .arg(Arg::with_name("ENCODE")
@@ -202,7 +202,7 @@ pub fn create_test_command<'b>() -> App<'b> {
             .help("Index of config parameter to decode.")
         );
 
-    SubCommand::with_name("test")
+    Command::new("test")
         .about("Test commands.")
         .subcommand(deploy_cmd)
         .subcommand(ticktock_cmd)

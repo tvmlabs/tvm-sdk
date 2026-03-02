@@ -11,7 +11,7 @@
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde::Serialize;
 use serde_json::json;
 use tvm_block::Account;
@@ -43,7 +43,7 @@ use crate::load_abi;
 use crate::print_args;
 
 pub fn create_decode_command<'b>() -> App<'b> {
-    let tvc_cmd = SubCommand::with_name("stateinit")
+    let tvc_cmd = Command::new("stateinit")
         .allow_hyphen_values(true)
         .about("Decodes tvc data (including compiler version) from different sources.")
         .arg(
@@ -63,12 +63,12 @@ pub fn create_decode_command<'b>() -> App<'b> {
                 .required(true)
                 .help("Contract address or path to the file with contract data."),
         );
-    SubCommand::with_name("decode")
+    Command::new("decode")
         .about("Decode commands.")
         .allow_hyphen_values(true)
         .trailing_var_arg(true)
         .dont_collapse_args_in_usage(true)
-        .subcommand(SubCommand::with_name("body")
+        .subcommand(Command::new("body")
             .about("Decodes body base64 string.")
             .arg(Arg::with_name("BODY")
                 .required(true)
@@ -77,7 +77,7 @@ pub fn create_decode_command<'b>() -> App<'b> {
                 .long("--abi")
                 .takes_value(true)
                 .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.")))
-        .subcommand(SubCommand::with_name("msg")
+        .subcommand(Command::new("msg")
             .about("Decodes message file.")
             .arg(Arg::with_name("MSG")
                 .required(true)
@@ -90,9 +90,9 @@ pub fn create_decode_command<'b>() -> App<'b> {
                 .long("--base64")
                 .help("Flag that changes behavior of the command to work with data in base64 (FLAG IS DEPRECATED).")))
         .subcommand(tvc_cmd)
-        .subcommand(SubCommand::with_name("account")
+        .subcommand(Command::new("account")
             .about("Top level command of account decode commands.")
-            .subcommand(SubCommand::with_name("data")
+            .subcommand(Command::new("data")
                 .allow_hyphen_values(true)
                 .about("Decodes data fields from the contract state.")
                 .arg(Arg::with_name("TVC")
@@ -111,7 +111,7 @@ pub fn create_decode_command<'b>() -> App<'b> {
                     .long("--abi")
                     .takes_value(true)
                     .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.")))
-            .subcommand(SubCommand::with_name("boc")
+            .subcommand(Command::new("boc")
                 .about("Decodes data from the file with boc of the account and saves contract tvc file if needed.")
                 .arg(Arg::with_name("BOCFILE")
                     .required(true)

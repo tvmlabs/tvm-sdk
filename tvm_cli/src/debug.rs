@@ -20,7 +20,7 @@ use std::sync::atomic::AtomicU64;
 use clap::App;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde_json::Value;
 use serde_json::json;
 use tvm_assembler::DbgInfo;
@@ -275,7 +275,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
         .long("--now")
         .help("Now timestamp (in milliseconds) for execution. If not set it is equal to the current timestamp.");
 
-    let msg_cmd = SubCommand::with_name("message")
+    let msg_cmd = Command::new("message")
         .about("Play message locally with trace")
         .arg(output_arg.clone())
         .arg(dbg_info_arg.clone())
@@ -293,7 +293,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
                 .help("Message in Base64 or path to file with message."),
         );
 
-    let run_cmd = SubCommand::with_name("run")
+    let run_cmd = Command::new("run")
         .about("Play getter locally with trace")
         .arg(output_arg.clone())
         .arg(dbg_info_arg.clone())
@@ -316,7 +316,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
         .arg(now_arg.clone())
         .arg(config_path_arg.clone());
 
-    let deploy_cmd = SubCommand::with_name("deploy")
+    let deploy_cmd = Command::new("deploy")
         .about("Play deploy locally with trace")
         .arg(output_arg.clone())
         .arg(dbg_info_arg.clone())
@@ -364,9 +364,9 @@ pub fn create_debug_command<'b>() -> App<'b> {
         .takes_value(true)
         .conflicts_with_all(&["CONFIG_PATH", "DEFAULT_CONFIG"]);
 
-    SubCommand::with_name("debug")
+    Command::new("debug")
         .about("Debug commands.")
-        .subcommand(SubCommand::with_name("transaction")
+        .subcommand(Command::new("transaction")
             .about("Replay transaction with specified ID.")
             .arg(default_config_arg.clone())
             .arg(config_save_path_arg.clone())
@@ -379,7 +379,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
             .arg(dump_config_arg.clone())
             .arg(dump_contract_arg.clone())
             .arg(config_boc_arg.clone()))
-        .subcommand(SubCommand::with_name("account")
+        .subcommand(Command::new("account")
             .about("Loads list of the last transactions for the specified account. User should choose which one to debug.")
             .arg(default_config_arg.clone())
             .arg(config_save_path_arg.clone())
@@ -392,7 +392,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
             .arg(dump_config_arg.clone())
             .arg(dump_contract_arg.clone())
             .arg(config_boc_arg.clone()))
-        .subcommand(SubCommand::with_name("replay")
+        .subcommand(Command::new("replay")
             .about("Replay transaction on the saved account state.")
             .arg(output_arg.clone())
             .arg(dbg_info_arg.clone())
@@ -408,7 +408,7 @@ pub fn create_debug_command<'b>() -> App<'b> {
                 .help("Path to the saved account state.")
                 .required(true)
                 .takes_value(true)))
-        .subcommand(SubCommand::with_name("sequence-diagram")
+        .subcommand(Command::new("sequence-diagram")
             .allow_hyphen_values(true)
             .about("Produces UML sequence diagram for provided accounts.")
             .arg(Arg::with_name("ADDRESSES")

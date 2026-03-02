@@ -21,7 +21,7 @@ use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 pub use interfaces::dinterface::SupportedInterfaces;
 use pipechain::ApproveKind;
 use pipechain::ChainLink;
@@ -38,19 +38,19 @@ use crate::config::Config;
 use crate::helpers::load_ton_address;
 
 pub fn create_debot_command<'a, 'b>() -> App<'a> {
-    SubCommand::with_name("debot")
+    Command::new("debot")
         .about("Debot commands.")
         .setting(AppSettings::AllowLeadingHyphen)
         .setting(AppSettings::TrailingVarArg)
         .setting(AppSettings::DontCollapseArgsInUsage)
         .arg(Arg::with_name("DEBUG").long("--debug").short('d'))
         .subcommand(
-            SubCommand::with_name("fetch")
+            Command::new("fetch")
                 .setting(AppSettings::AllowLeadingHyphen)
                 .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address.")),
         )
         .subcommand(
-            SubCommand::with_name("start")
+            Command::new("start")
                 .setting(AppSettings::AllowLeadingHyphen)
                 .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address."))
                 .arg(
@@ -69,7 +69,7 @@ pub fn create_debot_command<'a, 'b>() -> App<'a> {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("invoke")
+            Command::new("invoke")
                 .setting(AppSettings::AllowLeadingHyphen)
                 .arg(Arg::with_name("ADDRESS").required(true).help("Debot TON address."))
                 .arg(
