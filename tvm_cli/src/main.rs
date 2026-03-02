@@ -149,40 +149,40 @@ fn main() {
 async fn main_internal() -> Result<(), String> {
     let version_string = env!("CARGO_PKG_VERSION");
 
-    let abi_arg = Arg::with_name("ABI")
+    let abi_arg = Arg::new("ABI")
         .long("--abi")
         .takes_value(true)
         .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.");
 
     let abi_arg_req = abi_arg.clone().required(true);
 
-    let keys_arg = Arg::with_name("KEYS")
+    let keys_arg = Arg::new("KEYS")
         .long("--keys")
         .takes_value(true)
         .help("Seed phrase or path to the file with keypair used to sign the message. Can be specified in the config file.");
 
-    let sign_arg = Arg::with_name("SIGN")
+    let sign_arg = Arg::new("SIGN")
         .long("--sign")
         .takes_value(true)
         .help("Seed phrase or path to the file with keypair used to sign the message. Can be specified in the config.");
 
-    let thread_arg = Arg::with_name("THREAD")
+    let thread_arg = Arg::new("THREAD")
         .long("--thread")
         .takes_value(true)
         .help("The identifier of the thread in which the message should be processed.");
 
-    let method_opt_arg = Arg::with_name("METHOD")
+    let method_opt_arg = Arg::new("METHOD")
         .takes_value(true)
         .long("--method")
         .short('m')
         .help("Name of the function being called.");
 
-    let address_opt_arg = Arg::with_name("ADDRESS")
+    let address_opt_arg = Arg::new("ADDRESS")
         .long("--addr")
         .takes_value(true)
         .help("Contract address. Can be specified in the config file.");
 
-    let multi_params_arg = Arg::with_name("PARAMS")
+    let multi_params_arg = Arg::new("PARAMS")
         .help("Function arguments. Must be a list of `--name value` pairs or a json string with all arguments.")
         .multiple(true);
 
@@ -202,18 +202,18 @@ async fn main_internal() -> Result<(), String> {
         .arg(multi_params_arg.clone())
         .arg(thread_arg.clone());
 
-    let tvc_arg = Arg::with_name("TVC")
+    let tvc_arg = Arg::new("TVC")
         .takes_value(true)
         .required(true)
         .help("Path to the compiled smart contract (tvc file).");
 
-    let wc_arg = Arg::with_name("WC")
+    let wc_arg = Arg::new("WC")
         .takes_value(true)
         .long("--wc")
         .allow_hyphen_values(true)
         .help("Workchain id of the smart contract (default value is taken from the config).");
 
-    let alias_arg_long = Arg::with_name("ALIAS")
+    let alias_arg_long = Arg::new("ALIAS")
         .long("--alias")
         .takes_value(true)
         .help("Saves contract address and abi to the aliases list to be able to call this contract with alias instaed of address.");
@@ -232,26 +232,26 @@ async fn main_internal() -> Result<(), String> {
         .arg(alias_arg_long.clone())
         .arg(multi_params_arg.clone());
 
-    let address_boc_tvc_arg = Arg::with_name("ADDRESS").takes_value(true).help(
+    let address_boc_tvc_arg = Arg::new("ADDRESS").takes_value(true).help(
         "Contract address or path to the saved account state if --boc or --tvc flag is specified.",
     );
 
-    let method_arg = Arg::with_name("METHOD")
+    let method_arg = Arg::new("METHOD")
         .required(true)
         .takes_value(true)
         .help("Name of the function being called.");
 
-    let boc_flag = Arg::with_name("BOC")
+    let boc_flag = Arg::new("BOC")
         .long("--boc")
         .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
-    let tvc_flag = Arg::with_name("TVC")
+    let tvc_flag = Arg::new("TVC")
         .long("--tvc")
         .conflicts_with("BOC")
         .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC).");
 
-    let bc_config_arg = Arg::with_name("BCCONFIG")
+    let bc_config_arg = Arg::new("BCCONFIG")
         .long("--bc_config")
         .requires("BOC")
         .takes_value(true)
@@ -277,13 +277,13 @@ async fn main_internal() -> Result<(), String> {
         .allow_hyphen_values(true)
         .trailing_var_arg(true)
         .dont_collapse_args_in_usage(true)
-        .arg(Arg::with_name("ADDRESS")
+        .arg(Arg::new("ADDRESS")
             .required(true)
             .help("Contract address or path to the saved account state if --boc or --tvc flag is specified."))
-        .arg(Arg::with_name("METHOD")
+        .arg(Arg::new("METHOD")
             .required(true)
             .help("Name of the function being called."))
-        .arg(Arg::with_name("PARAMS")
+        .arg(Arg::new("PARAMS")
             .help("Function arguments.")
             .multiple(true))
         .arg(boc_flag.clone())
@@ -297,7 +297,7 @@ async fn main_internal() -> Result<(), String> {
         .version(version_string)
         .author(author)
         .arg(
-            Arg::with_name("DUMP_KEYPAIR")
+            Arg::new("DUMP_KEYPAIR")
                 .long("--dump")
                 .takes_value(true)
                 .help("Path where to dump keypair generated from the phrase"),
@@ -308,7 +308,7 @@ async fn main_internal() -> Result<(), String> {
         .version(version_string)
         .author(author)
         .arg(
-            Arg::with_name("PHRASE")
+            Arg::new("PHRASE")
                 .takes_value(true)
                 .required(true)
                 .help("Seed phrase (12 words). Should be specified in quotes."),
@@ -318,12 +318,12 @@ async fn main_internal() -> Result<(), String> {
         .about("Generates a keypair from the seed phrase or private key and saves it to the file.")
         .version(version_string)
         .author(author)
-        .arg(Arg::with_name("KEY_FILE")
+        .arg(Arg::new("KEY_FILE")
             .takes_value(true)
             .long("--output")
             .short('o')
             .help("Path to the file where to store the keypair."))
-        .arg(Arg::with_name("PHRASE")
+        .arg(Arg::new("PHRASE")
             .takes_value(true)
             .long("--phrase")
             .short('p')
@@ -364,7 +364,7 @@ async fn main_internal() -> Result<(), String> {
         .version(version_string)
         .author(author)
         .arg(tvc_arg.clone())
-        .arg(Arg::with_name("PARAMS").required(true).takes_value(true).help(
+        .arg(Arg::new("PARAMS").required(true).takes_value(true).help(
             "Constructor arguments. Can be specified with a filename, which contains json data.",
         ))
         .arg(abi_arg.clone())
@@ -372,13 +372,13 @@ async fn main_internal() -> Result<(), String> {
         .arg(keys_arg.clone())
         .arg(wc_arg.clone());
 
-    let output_arg = Arg::with_name("OUTPUT")
+    let output_arg = Arg::new("OUTPUT")
         .short('o')
         .long("--output")
         .takes_value(true)
         .help("Path to the file where to store the message.");
 
-    let raw_arg = Arg::with_name("RAW").long("--raw").help("Creates raw message boc.");
+    let raw_arg = Arg::new("RAW").long("--raw").help("Creates raw message boc.");
 
     let deploy_message_cmd = deploy_cmd
         .clone()
@@ -388,9 +388,9 @@ async fn main_internal() -> Result<(), String> {
         .arg(raw_arg.clone());
 
     let address_arg =
-        Arg::with_name("ADDRESS").required(true).takes_value(true).help("Contract address.");
+        Arg::new("ADDRESS").required(true).takes_value(true).help("Contract address.");
 
-    let params_arg = Arg::with_name("PARAMS")
+    let params_arg = Arg::new("PARAMS")
         .required(true)
         .takes_value(true)
         .help("Function arguments. Can be specified with a filename, which contains json data.");
@@ -413,7 +413,7 @@ async fn main_internal() -> Result<(), String> {
         .version(version_string)
         .author(author)
         .arg(
-            Arg::with_name("MESSAGE")
+            Arg::new("MESSAGE")
                 .required(true)
                 .takes_value(true)
                 .help("Message to send. Message data should be specified in quotes."),
@@ -432,13 +432,13 @@ async fn main_internal() -> Result<(), String> {
         .arg(keys_arg.clone())
         .arg(sign_arg.clone())
         .arg(
-            Arg::with_name("LIFETIME")
+            Arg::new("LIFETIME")
                 .long("--lifetime")
                 .takes_value(true)
                 .help("Period of time in seconds while message is valid."),
         )
         .arg(
-            Arg::with_name("TIMESTAMP")
+            Arg::new("TIMESTAMP")
                 .long("--time")
                 .takes_value(true)
                 .help("Message creation time in milliseconds. If not specified, `now` is used."),
@@ -474,79 +474,79 @@ async fn main_internal() -> Result<(), String> {
     let config_clear_cmd = Command::new("clear")
         .allow_hyphen_values(true)
         .about("Resets certain default values for options in the config file. Resets all values if used without options.")
-        .arg(Arg::with_name("URL")
+        .arg(Arg::new("URL")
             .long("--url")
             .help("Url to connect."))
-        .arg(Arg::with_name("API_TOKEN")
+        .arg(Arg::new("API_TOKEN")
             .long("--api-token")
             .takes_value(true)
             .help("Rest API token."))
-        .arg(Arg::with_name("ABI")
+        .arg(Arg::new("ABI")
             .long("--abi")
             .help("Path or link to the contract ABI file or pure json ABI data."))
         .arg(keys_arg.clone())
-        .arg(Arg::with_name("ADDR")
+        .arg(Arg::new("ADDR")
             .long("--addr")
             .help("Contract address."))
-        .arg(Arg::with_name("METHOD")
+        .arg(Arg::new("METHOD")
             .long("--method")
             .help("Method name that can be saved to be used by some commands (runx, callx)."))
-        .arg(Arg::with_name("PARAMETERS")
+        .arg(Arg::new("PARAMETERS")
             .long("--parameters")
             .help("Function parameters that can be saved to be used by some commands (runx, callx)."))
-        .arg(Arg::with_name("WALLET")
+        .arg(Arg::new("WALLET")
             .long("--wallet")
             .help("Multisig wallet address."))
-        .arg(Arg::with_name("PUBKEY")
+        .arg(Arg::new("PUBKEY")
             .long("--pubkey")
             .help("User public key. Used by DeBot Browser."))
-        .arg(Arg::with_name("WC")
+        .arg(Arg::new("WC")
             .long("--wc")
             .help("Workchain id."))
-        .arg(Arg::with_name("RETRIES")
+        .arg(Arg::new("RETRIES")
             .long("--retries")
             .help("Number of attempts to call smart contract function if previous attempt was unsuccessful."))
-        .arg(Arg::with_name("TIMEOUT")
+        .arg(Arg::new("TIMEOUT")
             .long("--timeout")
             .help("Network `wait_for` timeout in ms."))
-        .arg(Arg::with_name("MSG_TIMEOUT")
+        .arg(Arg::new("MSG_TIMEOUT")
             .long("--message_processing_timeout")
             .help("Network message processing timeout in ms."))
-        .arg(Arg::with_name("DEPOOL_FEE")
+        .arg(Arg::new("DEPOOL_FEE")
             .long("--depool_fee")
             .help("Value added to the message sent to depool to cover it's fees (change will be returned)."))
-        .arg(Arg::with_name("LIFETIME")
+        .arg(Arg::new("LIFETIME")
             .long("--lifetime")
             .help("Period of time in seconds while message is valid. Change of this parameter may affect \"out_of_sync\" parameter, because \"lifetime\" should be at least 2 times greater than \"out_of_sync\"."))
-        .arg(Arg::with_name("NO_ANSWER")
+        .arg(Arg::new("NO_ANSWER")
             .long("--no-answer")
             .help("Flag whether to wait for depool answer when calling a depool function."))
-        .arg(Arg::with_name("BALANCE_IN_VMSHELLS")
+        .arg(Arg::new("BALANCE_IN_VMSHELLS")
             .long("--balance_in_vmshells")
             .help("Print balance for account command in vmshells. If false balance is printed in nanovmshells."))
-        .arg(Arg::with_name("LOCAL_RUN")
+        .arg(Arg::new("LOCAL_RUN")
             .long("--local_run")
             .help("Enable preliminary local run before deploy and call commands."))
-        .arg(Arg::with_name("ASYNC_CALL")
+        .arg(Arg::new("ASYNC_CALL")
             .long("--async_call")
             .help("Disables wait for transaction to appear in the network after call command."))
-        .arg(Arg::with_name("DEBUG_FAIL")
+        .arg(Arg::new("DEBUG_FAIL")
             .long("--debug_fail")
             .help("When enabled tvm-cli executes debug command on fail of run or call command. Can be enabled with values 'full' or 'minimal' which set the trace level for debug run and disabled with value 'none'."))
-        .arg(Arg::with_name("OUT_OF_SYNC")
+        .arg(Arg::new("OUT_OF_SYNC")
             .long("--out_of_sync")
             .help("Network connection \"out_of_sync_threshold\" parameter in seconds. Mind that it cant exceed half of the \"lifetime\" parameter."))
-        .arg(Arg::with_name("IS_JSON")
+        .arg(Arg::new("IS_JSON")
             .long("--is_json")
             .help("Cli prints output in json format."))
-        .arg(Arg::with_name("PROJECT_ID")
+        .arg(Arg::new("PROJECT_ID")
             .long("--project_id")
             .help("Project Id in Evercloud (dashboard.evercloud.dev)."))
-        .arg(Arg::with_name("ACCESS_KEY")
+        .arg(Arg::new("ACCESS_KEY")
             .long("--access_key")
             .help("Project secret or JWT in Evercloud (dashboard.evercloud.dev)."));
 
-    let alias_arg = Arg::with_name("ALIAS").required(true).takes_value(true).help("Alias name.");
+    let alias_arg = Arg::new("ALIAS").required(true).takes_value(true).help("Alias name.");
     let alias_cmd = Command::new("alias")
         .about("Commands to work with aliases map")
         .subcommand(
@@ -554,14 +554,14 @@ async fn main_internal() -> Result<(), String> {
                 .about("Add alias to the aliases map.")
                 .arg(alias_arg.clone())
                 .arg(
-                    Arg::with_name("ADDRESS")
+                    Arg::new("ADDRESS")
                         .long("--addr")
                         .takes_value(true)
                         .help("Contract address."),
                 )
                 .arg(keys_arg.clone())
                 .arg(
-                    Arg::with_name("ABI")
+                    Arg::new("ABI")
                         .long("--abi")
                         .takes_value(true)
                         .help("Path or link to the contract ABI file or pure json ABI data."),
@@ -576,12 +576,12 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(Command::new("reset").about("Clear the aliases map."));
 
     let url_arg =
-        Arg::with_name("URL").required(true).takes_value(true).help("Url of the endpoints list.");
+        Arg::new("URL").required(true).takes_value(true).help("Url of the endpoints list.");
     let config_endpoint_cmd = Command::new("endpoint")
         .about("Commands to work with the endpoints map.")
         .subcommand(
             Command::new("add").about("Add endpoints list.").arg(url_arg.clone()).arg(
-                Arg::with_name("ENDPOINTS")
+                Arg::new("ENDPOINTS")
                     .required(true)
                     .takes_value(true)
                     .help("List of endpoints (comma separated)."),
@@ -598,104 +598,104 @@ async fn main_internal() -> Result<(), String> {
         .about("Allows to tune certain default values for options in the config file.")
         .version(version_string)
         .author(author)
-        .arg(Arg::with_name("GLOBAL")
+        .arg(Arg::new("GLOBAL")
             .long("--global")
             .short('g')
             .help("Change parameters of the global config which contains default values for ordinary configs."))
-        .arg(Arg::with_name("URL")
+        .arg(Arg::new("URL")
             .long("--url")
             .takes_value(true)
             .help("Url to connect."))
-        .arg(Arg::with_name("API_TOKEN")
+        .arg(Arg::new("API_TOKEN")
             .long("--api-token")
             .takes_value(true)
             .help("Rest API token."))
-        .arg(Arg::with_name("ABI")
+        .arg(Arg::new("ABI")
             .long("--abi")
             .takes_value(true)
             .help("Path or link to the contract ABI file or pure json ABI data."))
         .arg(keys_arg.clone())
-        .arg(Arg::with_name("ADDR")
+        .arg(Arg::new("ADDR")
             .long("--addr")
             .takes_value(true)
             .help("Contract address."))
-        .arg(Arg::with_name("METHOD")
+        .arg(Arg::new("METHOD")
             .long("--method")
             .takes_value(true)
             .help("Method name that can be saved to be used by some commands (runx, callx)."))
-        .arg(Arg::with_name("PARAMETERS")
+        .arg(Arg::new("PARAMETERS")
             .long("--parameters")
             .takes_value(true)
             .help("Function parameters that can be saved to be used by some commands (runx, callx)."))
-        .arg(Arg::with_name("WALLET")
+        .arg(Arg::new("WALLET")
             .long("--wallet")
             .takes_value(true)
             .help("Multisig wallet address."))
-        .arg(Arg::with_name("PUBKEY")
+        .arg(Arg::new("PUBKEY")
             .long("--pubkey")
             .takes_value(true)
             .help("User public key. Used by DeBot Browser."))
-        .arg(Arg::with_name("WC")
+        .arg(Arg::new("WC")
             .long("--wc")
             .takes_value(true)
             .help("Workchain id."))
-        .arg(Arg::with_name("RETRIES")
+        .arg(Arg::new("RETRIES")
             .long("--retries")
             .takes_value(true)
             .help("Number of attempts to call smart contract function if previous attempt was unsuccessful."))
-        .arg(Arg::with_name("TIMEOUT")
+        .arg(Arg::new("TIMEOUT")
             .long("--timeout")
             .takes_value(true)
             .help("Network `wait_for` timeout in ms."))
-        .arg(Arg::with_name("MSG_TIMEOUT")
+        .arg(Arg::new("MSG_TIMEOUT")
             .long("--message_processing_timeout")
             .takes_value(true)
             .help("Network message processing timeout in ms."))
-        .arg(Arg::with_name("LIST")
+        .arg(Arg::new("LIST")
             .long("--list")
             .conflicts_with_all(&["OUT_OF_SYNC", "NO_ANSWER","DEBUG_FAIL", "ASYNC_CALL", "LOCAL_RUN", "BALANCE_IN_VMSHELLS", "LIFETIME", "DEPOOL_FEE", "PUBKEY", "URL", "ABI", "KEYS", "ADDR", "RETRIES", "TIMEOUT", "WC", "WALLET"])
             .help("Prints all config parameters."))
-        .arg(Arg::with_name("DEPOOL_FEE")
+        .arg(Arg::new("DEPOOL_FEE")
             .long("--depool_fee")
             .takes_value(true)
             .help("Value added to the message sent to depool to cover it's fees (change will be returned)."))
-        .arg(Arg::with_name("LIFETIME")
+        .arg(Arg::new("LIFETIME")
             .long("--lifetime")
             .takes_value(true)
             .help("Period of time in seconds while message is valid. Change of this parameter may affect \"out_of_sync\" parameter, because \"lifetime\" should be at least 2 times greater than \"out_of_sync\"."))
-        .arg(Arg::with_name("NO_ANSWER")
+        .arg(Arg::new("NO_ANSWER")
             .long("--no-answer")
             .takes_value(true)
             .help("Flag whether to wait for depool answer when calling a depool function."))
-        .arg(Arg::with_name("BALANCE_IN_VMSHELLS")
+        .arg(Arg::new("BALANCE_IN_VMSHELLS")
             .long("--balance_in_vmshells")
             .takes_value(true)
             .help("Print balance for account command in vmshells. If false balance is printed in nanovmshells."))
-        .arg(Arg::with_name("LOCAL_RUN")
+        .arg(Arg::new("LOCAL_RUN")
             .long("--local_run")
             .takes_value(true)
             .help("Enable preliminary local run before deploy and call commands."))
-        .arg(Arg::with_name("ASYNC_CALL")
+        .arg(Arg::new("ASYNC_CALL")
             .long("--async_call")
             .takes_value(true)
             .help("Disables wait for transaction to appear in the network after call command."))
-        .arg(Arg::with_name("DEBUG_FAIL")
+        .arg(Arg::new("DEBUG_FAIL")
             .long("--debug_fail")
             .takes_value(true)
             .help("When enabled tvm-cli executes debug command on fail of run or call command. Can be enabled with values 'full' or 'minimal' which set the trace level for debug run and disabled with value 'none'."))
-        .arg(Arg::with_name("OUT_OF_SYNC")
+        .arg(Arg::new("OUT_OF_SYNC")
             .long("--out_of_sync")
             .takes_value(true)
             .help("Network connection \"out_of_sync_threshold\" parameter in seconds. Mind that it cant exceed half of the \"lifetime\" parameter."))
-        .arg(Arg::with_name("IS_JSON")
+        .arg(Arg::new("IS_JSON")
             .long("--is_json")
             .takes_value(true)
             .help("Cli prints output in json format."))
-        .arg(Arg::with_name("PROJECT_ID")
+        .arg(Arg::new("PROJECT_ID")
             .long("--project_id")
             .takes_value(true)
             .help("Project Id in Evercloud (dashboard.evercloud.dev)."))
-        .arg(Arg::with_name("ACCESS_KEY")
+        .arg(Arg::new("ACCESS_KEY")
             .long("--access_key")
             .takes_value(true)
             .help("Project secret or JWT in Evercloud (dashboard.evercloud.dev)."))
@@ -709,17 +709,17 @@ async fn main_internal() -> Result<(), String> {
         .version(version_string)
         .author(author)
         .arg(boc_flag.clone())
-        .arg(Arg::with_name("ADDRESS")
+        .arg(Arg::new("ADDRESS")
             .takes_value(true)
             .help("List of addresses or file paths (if flag --boc is used).")
             .multiple(true))
-        .arg(Arg::with_name("DUMPTVC")
+        .arg(Arg::new("DUMPTVC")
             .long("--dumptvc")
             .short('d')
             .takes_value(true)
             .conflicts_with("DUMPBOC")
             .help("Dumps account StateInit to the specified tvc file. Works only if one address was given."))
-        .arg(Arg::with_name("DUMPBOC")
+        .arg(Arg::new("DUMPBOC")
             .long("--dumpboc")
             .short('b')
             .takes_value(true)
@@ -734,7 +734,7 @@ async fn main_internal() -> Result<(), String> {
         .author(author)
         .arg(address_arg.clone())
         .arg(
-            Arg::with_name("TIMEOUT")
+            Arg::new("TIMEOUT")
                 .long("--timeout")
                 .takes_value(true)
                 .help("Timeout in seconds (default value is 30)."),
@@ -745,31 +745,31 @@ async fn main_internal() -> Result<(), String> {
         .version(version_string)
         .author(author)
         .arg(
-            Arg::with_name("COLLECTION")
+            Arg::new("COLLECTION")
                 .required(true)
                 .takes_value(true)
                 .help("Collection to query."),
         )
         .arg(
-            Arg::with_name("RESULT")
+            Arg::new("RESULT")
                 .required(true)
                 .takes_value(true)
                 .help("Result fields to print."),
         )
         .arg(
-            Arg::with_name("FILTER")
+            Arg::new("FILTER")
                 .long("--filter")
                 .takes_value(true)
                 .help("Query filter parameter."),
         )
         .arg(
-            Arg::with_name("LIMIT")
+            Arg::new("LIMIT")
                 .long("--limit")
                 .takes_value(true)
                 .help("Query limit parameter."),
         )
         .arg(
-            Arg::with_name("ORDER")
+            Arg::new("ORDER")
                 .long("--order")
                 .takes_value(true)
                 .help("Query order parameter."),
@@ -785,7 +785,7 @@ async fn main_internal() -> Result<(), String> {
                 .author(author)
                 .arg(address_arg.clone())
                 .arg(
-                    Arg::with_name("PERIOD")
+                    Arg::new("PERIOD")
                         .long("--period")
                         .short('p')
                         .takes_value(true)
@@ -805,20 +805,20 @@ async fn main_internal() -> Result<(), String> {
             Command::new("create")
                 .about("Submits a proposal transaction in the multisignature wallet with a text comment.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
-                .arg(Arg::with_name("DEST")
+                .arg(Arg::new("DEST")
                     .required(true)
                     .takes_value(true)
                     .help("Address of the proposal contract."))
-                .arg(Arg::with_name("COMMENT")
+                .arg(Arg::new("COMMENT")
                     .required(true)
                     .takes_value(true)
                     .help("Proposal description (max symbols 382)."))
                 .arg(keys_arg.clone())
-                .arg(Arg::with_name("OFFLINE")
+                .arg(Arg::new("OFFLINE")
                     .short('f')
                     .long("--offline")
                     .help("Prints signed message to terminal instead of sending it."))
-                .arg(Arg::with_name("LIFETIME")
+                .arg(Arg::new("LIFETIME")
                     .short('l')
                     .long("--lifetime")
                     .takes_value(true)
@@ -827,16 +827,16 @@ async fn main_internal() -> Result<(), String> {
             Command::new("vote")
                 .about("Confirms a proposal transaction in the multisignature wallet.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
-                .arg(Arg::with_name("ID")
+                .arg(Arg::new("ID")
                     .required(true)
                     .takes_value(true)
                     .help("Proposal transaction id."))
                 .arg(keys_arg.clone())
-                .arg(Arg::with_name("OFFLINE")
+                .arg(Arg::new("OFFLINE")
                     .short('f')
                     .long("--offline")
                     .help("Prints signed message to terminal instead of sending it."))
-                .arg(Arg::with_name("LIFETIME")
+                .arg(Arg::new("LIFETIME")
                     .short('l')
                     .long("--lifetime")
                     .takes_value(true)
@@ -845,7 +845,7 @@ async fn main_internal() -> Result<(), String> {
             Command::new("decode")
                 .about("Prints a comment string from the proposal transaction.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
-                .arg(Arg::with_name("ID")
+                .arg(Arg::new("ID")
                     .required(true)
                     .takes_value(true)
                     .help("Proposal transaction id.")));
@@ -853,20 +853,20 @@ async fn main_internal() -> Result<(), String> {
     let getconfig_cmd =
         Command::new("getconfig")
             .about("Reads the global configuration parameter with defined index.")
-            .arg(Arg::with_name("INDEX").takes_value(true).help(
+            .arg(Arg::new("INDEX").takes_value(true).help(
                 "Parameter index. If not specified, command will print all config parameters.",
             ));
 
     let update_config_param_cmd = Command::new("update_config")
         .about("Generates message with update of config params.")
         .arg(abi_arg.clone())
-        .arg(Arg::with_name("SEQNO").takes_value(true).help("Current seqno from config contract"))
+        .arg(Arg::new("SEQNO").takes_value(true).help("Current seqno from config contract"))
         .arg(
-            Arg::with_name("CONFIG_MASTER_KEY_FILE")
+            Arg::new("CONFIG_MASTER_KEY_FILE")
                 .takes_value(true)
                 .help("path to config-master files"),
         )
-        .arg(Arg::with_name("NEW_PARAM_FILE").takes_value(true).help("New config param value"));
+        .arg(Arg::new("NEW_PARAM_FILE").takes_value(true).help("New config param value"));
 
     let bcconfig_cmd = Command::new("dump")
         .about("Commands to dump network entities.")
@@ -876,7 +876,7 @@ async fn main_internal() -> Result<(), String> {
             Command::new("config")
                 .about("Dumps the blockchain config for the last key block.")
                 .arg(
-                    Arg::with_name("PATH")
+                    Arg::new("PATH")
                         .required(true)
                         .takes_value(true)
                         .help("Path to the file where to save the blockchain config."),
@@ -887,22 +887,22 @@ async fn main_internal() -> Result<(), String> {
                 .about("Dumps state of given accounts.")
                 .allow_hyphen_values(true)
                 .arg(
-                    Arg::with_name("ADDRESS")
+                    Arg::new("ADDRESS")
                         .required(true)
                         .takes_value(true)
                         .help("List of addresses.")
                         .multiple(true),
                 )
-                .arg(Arg::with_name("PATH").takes_value(true).long("--path").short('p').help(
+                .arg(Arg::new("PATH").takes_value(true).long("--path").short('p').help(
                     "Path to folder where to store the dumped accounts. Default value is \".\".",
                 )),
         );
 
     let nodeid_cmd = Command::new("nodeid")
         .about("Calculates node ID from the validator public key")
-        .arg(Arg::with_name("KEY").long("--pubkey").takes_value(true).help("Validator public key."))
+        .arg(Arg::new("KEY").long("--pubkey").takes_value(true).help("Validator public key."))
         .arg(
-            Arg::with_name("KEY_PAIR")
+            Arg::new("KEY_PAIR")
                 .long("--keypair")
                 .takes_value(true)
                 .help("Validator seed phrase or path to the file with keypair."),
@@ -910,36 +910,36 @@ async fn main_internal() -> Result<(), String> {
 
     let sendfile_cmd = Command::new("sendfile")
         .about("Sends the boc file with an external inbound message to account.")
-        .arg(Arg::with_name("BOC").required(true).takes_value(true).help("Message boc file."));
+        .arg(Arg::new("BOC").required(true).takes_value(true).help("Message boc file."));
 
     let fetch_block_cmd = Command::new("fetch-block")
         .about("Fetches a block.")
-        .arg(Arg::with_name("BLOCKID").required(true).takes_value(true).help("Block ID."))
-        .arg(Arg::with_name("OUTPUT").required(true).takes_value(true).help("Output file name"));
+        .arg(Arg::new("BLOCKID").required(true).takes_value(true).help("Block ID."))
+        .arg(Arg::new("OUTPUT").required(true).takes_value(true).help("Output file name"));
 
     let fetch_cmd = Command::new("fetch")
         .about("Fetches account's zerostate and transactions.")
         .allow_hyphen_values(true)
         .arg(address_arg.clone().help("Account address to fetch zerostate and txns for."))
-        .arg(Arg::with_name("OUTPUT").required(true).takes_value(true).help("Output file name"));
+        .arg(Arg::new("OUTPUT").required(true).takes_value(true).help("Output file name"));
 
     let replay_cmd = Command::new("replay")
         .about("Replays account's transactions starting from zerostate.")
-        .arg(Arg::with_name("CONFIG_TXNS")
+        .arg(Arg::new("CONFIG_TXNS")
             .long("--config")
             .short('c')
             .takes_value(true)
             .help("File containing zerostate and txns of -1:555..5 account.")
             .conflicts_with("DEFAULT_CONFIG"))
-        .arg(Arg::with_name("INPUT_TXNS")
+        .arg(Arg::new("INPUT_TXNS")
             .required(true)
             .takes_value(true)
             .help("File containing zerostate and txns of the account to replay."))
-        .arg(Arg::with_name("TXNID")
+        .arg(Arg::new("TXNID")
             .required(true)
             .takes_value(true)
             .help("Dump account state before this transaction ID and stop replaying."))
-        .arg(Arg::with_name("DEFAULT_CONFIG")
+        .arg(Arg::new("DEFAULT_CONFIG")
             .help("Replay transaction with current network config or default if it is not available.")
             .long("--default_config")
             .short('e')
@@ -950,21 +950,21 @@ async fn main_internal() -> Result<(), String> {
         .author(author)
         .about("TVMLabs console tool for TVM networks")
         .arg(
-            Arg::with_name("NETWORK")
+            Arg::new("NETWORK")
                 .help("Network to connect.")
                 .short('u')
                 .long("--url")
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("CONFIG")
+            Arg::new("CONFIG")
                 .help("Path to the tvm-cli configuration file.")
                 .short('c')
                 .long("--config")
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("JSON")
+            Arg::new("JSON")
                 .help("Cli prints output in json format.")
                 .short('j')
                 .long("--json"),

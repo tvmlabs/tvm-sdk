@@ -42,55 +42,55 @@ use crate::multisig::MultisigArgs;
 use crate::print_args;
 
 pub fn create_depool_command<'b>() -> Command<'b> {
-    let wallet_arg = Arg::with_name("MSIG")
+    let wallet_arg = Arg::new("MSIG")
         .takes_value(true)
         .long("--wallet")
         .short('w')
         .help("Multisig wallet address.");
     let value_arg =
-        Arg::with_name("VALUE").takes_value(true).long("--value").short('v').help("Value in tons.");
-    let keys_arg = Arg::with_name("SIGN")
+        Arg::new("VALUE").takes_value(true).long("--value").short('v').help("Value in tons.");
+    let keys_arg = Arg::new("SIGN")
         .takes_value(true)
         .long("--sign")
         .short('s')
         .help("Seed phrase or path to file with keypair which must be used to sign message to multisig wallet.");
-    let total_period_arg = Arg::with_name("TPERIOD")
+    let total_period_arg = Arg::new("TPERIOD")
         .takes_value(true)
         .long("--total")
         .short('t')
         .help("Total period of vesting stake (days).");
-    let withdrawal_period_arg = Arg::with_name("WPERIOD")
+    let withdrawal_period_arg = Arg::new("WPERIOD")
         .takes_value(true)
         .long("--withdrawal")
         .short('i')
         .help("Payment period of vesting stake (days).");
-    let beneficiary_arg = Arg::with_name("BENEFICIARY")
+    let beneficiary_arg = Arg::new("BENEFICIARY")
         .takes_value(true)
         .long("--beneficiary")
         .short('b')
         .help("Smart contract address which will own lock stake rewards.");
-    let donor_arg = Arg::with_name("DONOR")
+    let donor_arg = Arg::new("DONOR")
         .takes_value(true)
         .long("--donor")
         .short('d')
         .help("Donor smart contract address.");
-    let dest_arg = Arg::with_name("DEST")
+    let dest_arg = Arg::new("DEST")
         .takes_value(true)
         .long("--dest")
         .short('d')
         .help("Address of the destination smart contract.");
-    let wait_answer = Arg::with_name("WAIT_ANSWER")
+    let wait_answer = Arg::new("WAIT_ANSWER")
         .long("--wait-answer")
         .short('a')
         .help("Wait for depool answer when calling a depool function.");
     let v2_arg =
-        Arg::with_name("V2").long("--v2").help("Force to interpret wallet account as multisig v2.");
+        Arg::new("V2").long("--v2").help("Force to interpret wallet account as multisig v2.");
 
     Command::new("depool")
         .about("DePool commands.")
         .allow_hyphen_values(true)
         .dont_collapse_args_in_usage(true)
-        .arg(Arg::with_name("ADDRESS")
+        .arg(Arg::new("ADDRESS")
             .takes_value(true)
             .long("--addr")
             .help("DePool contract address. If omitted, then config.addr is used."))
@@ -117,7 +117,7 @@ pub fn create_depool_command<'b>() -> Command<'b> {
             .about("Prints depool answers")
             .allow_hyphen_values(true)
             .arg(wallet_arg.clone())
-            .arg(Arg::with_name("SINCE")
+            .arg(Arg::new("SINCE")
                 .takes_value(true)
                 .long("--since")
                 .short('s')
@@ -210,12 +210,12 @@ pub fn create_depool_command<'b>() -> Command<'b> {
         .subcommand(Command::new("events")
             .about("Prints depool events.")
             .allow_hyphen_values(true)
-            .arg(Arg::with_name("SINCE")
+            .arg(Arg::new("SINCE")
                 .takes_value(true)
                 .long("--since")
                 .short('s')
                 .help("Prints events since this unixtime."))
-            .arg(Arg::with_name("WAITONE")
+            .arg(Arg::new("WAITONE")
                 .long("--wait-one")
                 .short('w')
                 .help("Waits until new event will be emitted.")) )

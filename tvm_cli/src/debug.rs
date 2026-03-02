@@ -175,101 +175,101 @@ pub fn init_debug_logger(trace_path: &str) -> Result<(), String> {
 }
 
 pub fn create_debug_command<'b>() -> Command<'b> {
-    let output_arg = Arg::with_name("LOG_PATH")
+    let output_arg = Arg::new("LOG_PATH")
         .help("Path where to store the trace. Default path is \"./trace.log\". Note: old file will be removed.")
         .takes_value(true)
         .long("--output")
         .short('o');
 
-    let dbg_info_arg = Arg::with_name("DBG_INFO")
+    let dbg_info_arg = Arg::new("DBG_INFO")
         .help("Path to the file with debug info.")
         .takes_value(true)
         .long("--dbg_info")
         .short('d');
 
-    let address_arg = Arg::with_name("ADDRESS")
+    let address_arg = Arg::new("ADDRESS")
         .long("--addr")
         .takes_value(true)
         .help("Contract address or path the file with saved contract state if corresponding flag is used. Can be specified in th config file.");
 
-    let method_arg = Arg::with_name("METHOD")
+    let method_arg = Arg::new("METHOD")
         .long("--method")
         .short('m')
         .takes_value(true)
         .help("Name of the function being called. Can be specified in the config file.");
 
-    let params_arg = Arg::with_name("PARAMS")
+    let params_arg = Arg::new("PARAMS")
         .help("Function arguments. Must be a list of `--name value` pairs, a json string with all arguments or path to the file with parameters. Can be specified in the config file.")
         .multiple(true);
 
-    let sign_arg = Arg::with_name("KEYS")
+    let sign_arg = Arg::new("KEYS")
         .long("--keys")
         .takes_value(true)
         .help("Seed phrase or path to the file with keypair used to sign the message. Can be specified in the config.");
 
-    let abi_arg = Arg::with_name("ABI")
+    let abi_arg = Arg::new("ABI")
         .long("--abi")
         .takes_value(true)
         .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.");
 
-    let decode_abi_arg = Arg::with_name("DECODE_ABI").long("--decode_abi").takes_value(true).help(
+    let decode_abi_arg = Arg::new("DECODE_ABI").long("--decode_abi").takes_value(true).help(
         "Path to the ABI file used to decode output messages. Can be specified in the config file.",
     );
 
-    let full_trace_arg = Arg::with_name("FULL_TRACE")
+    let full_trace_arg = Arg::new("FULL_TRACE")
         .long("--full_trace")
         .help("Flag that changes trace to full version.");
 
-    let boc_arg = Arg::with_name("BOC")
+    let boc_arg = Arg::new("BOC")
         .long("--boc")
         .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
-    let tx_id_arg = Arg::with_name("TX_ID")
+    let tx_id_arg = Arg::new("TX_ID")
         .required(true)
         .takes_value(true)
         .help("ID of the transaction that should be replayed.");
 
-    let config_path_arg = Arg::with_name("CONFIG_PATH")
+    let config_path_arg = Arg::new("CONFIG_PATH")
         .help("Path to the file with saved config contract state.")
         .long("--config")
         .short('c')
         .takes_value(true);
 
-    let default_config_arg = Arg::with_name("DEFAULT_CONFIG")
+    let default_config_arg = Arg::new("DEFAULT_CONFIG")
         .help("Execute debug with current blockchain config or default if it is not available.")
         .long("--default_config")
         .short('e')
         .conflicts_with_all(&["CONFIG_PATH", "CONFIG_BOC"]);
 
-    let config_save_path_arg = Arg::with_name("CONFIG_PATH")
+    let config_save_path_arg = Arg::new("CONFIG_PATH")
         .help("Path to the file with saved config contract transactions. If not set and config contract state is not specified with other options transactions will be fetched to file \"config.txns\".")
         .long("--config")
         .short('c')
         .takes_value(true)
         .conflicts_with_all(&["DEFAULT_CONFIG", "CONFIG_BOC"]);
 
-    let contract_path_arg = Arg::with_name("CONTRACT_PATH")
+    let contract_path_arg = Arg::new("CONTRACT_PATH")
         .help("Path to the file with saved target contract transactions. If not set transactions will be fetched to file \"contract.txns\".")
         .long("--contract")
         .short('t')
         .takes_value(true);
 
-    let dump_config_arg = Arg::with_name("DUMP_CONFIG")
+    let dump_config_arg = Arg::new("DUMP_CONFIG")
         .help("Dump the replayed config contract account state.")
         .long("--dump_config")
         .conflicts_with("CONFIG_BOC");
 
-    let dump_contract_arg = Arg::with_name("DUMP_CONTRACT")
+    let dump_contract_arg = Arg::new("DUMP_CONTRACT")
         .help("Dump the replayed target contract account state.")
         .long("--dump_contract");
 
-    let update_arg = Arg::with_name("UPDATE_BOC")
+    let update_arg = Arg::new("UPDATE_BOC")
         .long("--update")
         .short('u')
         .help("Update contract BOC after execution.");
 
-    let now_arg = Arg::with_name("NOW")
+    let now_arg = Arg::new("NOW")
         .takes_value(true)
         .long("--now")
         .help("Now timestamp (in milliseconds) for execution. If not set it is equal to the current timestamp.");
@@ -286,7 +286,7 @@ pub fn create_debug_command<'b>() -> Command<'b> {
         .arg(update_arg.clone().requires("BOC"))
         .arg(now_arg.clone())
         .arg(
-            Arg::with_name("MESSAGE")
+            Arg::new("MESSAGE")
                 .takes_value(true)
                 .required(true)
                 .help("Message in Base64 or path to file with message."),
@@ -303,11 +303,11 @@ pub fn create_debug_command<'b>() -> Command<'b> {
         .arg(full_trace_arg.clone())
         .arg(decode_abi_arg.clone())
         .arg(boc_arg.clone())
-        .arg(Arg::with_name("TVC")
+        .arg(Arg::new("TVC")
             .long("--tvc")
             .conflicts_with("BOC")
             .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC)."))
-        .arg(Arg::with_name("ACCOUNT_ADDRESS")
+        .arg(Arg::new("ACCOUNT_ADDRESS")
             .takes_value(true)
             .long("--tvc_address")
             .help("Account address for account constructed from TVC.")
@@ -326,13 +326,13 @@ pub fn create_debug_command<'b>() -> Command<'b> {
         .arg(now_arg.clone())
         .arg(config_path_arg.clone())
         .arg(
-            Arg::with_name("TVC")
+            Arg::new("TVC")
                 .required(true)
                 .takes_value(true)
                 .help("Path to the TVC file with contract stateinit."),
         )
         .arg(
-            Arg::with_name("WC")
+            Arg::new("WC")
                 .takes_value(true)
                 .allow_hyphen_values(true)
                 .long("--wc")
@@ -341,12 +341,12 @@ pub fn create_debug_command<'b>() -> Command<'b> {
         .arg(params_arg.clone())
         .arg(update_arg.clone().help("Store account in same file, but with BOC extension."))
         .arg(
-            Arg::with_name("INITIAL_BALANCE")
+            Arg::new("INITIAL_BALANCE")
                 .long("--initial_balance")
                 .takes_value(true)
                 .help("Initial balance in nanovmshells."),
         )
-        .arg(Arg::with_name("INIT_BALANCE").long("--init_balance").help(
+        .arg(Arg::new("INIT_BALANCE").long("--init_balance").help(
             "Do not fetch account from the network, but create dummy account with big balance.",
         ));
 
@@ -357,7 +357,7 @@ pub fn create_debug_command<'b>() -> Command<'b> {
         .arg(sign_arg.clone())
         .arg(update_arg.clone());
 
-    let config_boc_arg = Arg::with_name("CONFIG_BOC")
+    let config_boc_arg = Arg::new("CONFIG_BOC")
         .help("Path to the config contract boc.")
         .long("--config_boc")
         .takes_value(true)
@@ -399,18 +399,18 @@ pub fn create_debug_command<'b>() -> Command<'b> {
             .arg(tx_id_arg.clone())
             .arg(config_path_arg.clone())
             .arg(decode_abi_arg.clone())
-            .arg(Arg::with_name("UPDATE_STATE")
+            .arg(Arg::new("UPDATE_STATE")
                 .help("Update state of the contract.")
                 .long("--update")
                 .short('u'))
-            .arg(Arg::with_name("INPUT")
+            .arg(Arg::new("INPUT")
                 .help("Path to the saved account state.")
                 .required(true)
                 .takes_value(true)))
         .subcommand(Command::new("sequence-diagram")
             .allow_hyphen_values(true)
             .about("Produces UML sequence diagram for provided accounts.")
-            .arg(Arg::with_name("ADDRESSES")
+            .arg(Arg::new("ADDRESSES")
                 .required(true)
                 .takes_value(true)
                 .help("File with a list of addresses, one per line.")))

@@ -41,25 +41,25 @@ pub fn create_debot_command<'a, 'b>() -> Command<'a> {
         .allow_hyphen_values(true)
         .trailing_var_arg(true)
         .dont_collapse_args_in_usage(true)
-        .arg(Arg::with_name("DEBUG").long("--debug").short('d'))
+        .arg(Arg::new("DEBUG").long("--debug").short('d'))
         .subcommand(
             Command::new("fetch")
                 .allow_hyphen_values(true)
-                .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address.")),
+                .arg(Arg::new("ADDRESS").required(true).help("DeBot TON address.")),
         )
         .subcommand(
             Command::new("start")
                 .allow_hyphen_values(true)
-                .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address."))
+                .arg(Arg::new("ADDRESS").required(true).help("DeBot TON address."))
                 .arg(
-                    Arg::with_name("PIPECHAIN")
+                    Arg::new("PIPECHAIN")
                         .short('m')
                         .long("pipechain")
                         .takes_value(true)
                         .help("Path to the DeBot Manifest."),
                 )
                 .arg(
-                    Arg::with_name("SIGNKEY")
+                    Arg::new("SIGNKEY")
                         .short('s')
                         .long("signkey")
                         .takes_value(true)
@@ -69,9 +69,9 @@ pub fn create_debot_command<'a, 'b>() -> Command<'a> {
         .subcommand(
             Command::new("invoke")
                 .allow_hyphen_values(true)
-                .arg(Arg::with_name("ADDRESS").required(true).help("Debot TON address."))
+                .arg(Arg::new("ADDRESS").required(true).help("Debot TON address."))
                 .arg(
-                    Arg::with_name("MESSAGE")
+                    Arg::new("MESSAGE")
                         .required(true)
                         .help("Message to DeBot encoded as base64/base64url."),
                 ),
