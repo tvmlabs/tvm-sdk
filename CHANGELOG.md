@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.12] - 2026-02-26
+## Changed
+- Refactored transaction execute to properly initialize account state from StateInit before execution
+
+## Fixed
+- Fix token transfers between and within dapp_id
+
 ## [2.24.11] - 2026-02-17
 ## Fixed
 - Hash used for calculating BOC depth when applying BOC size limits
