@@ -14,7 +14,6 @@ use std::str::FromStr;
 
 use tvm_block::Deserializable;
 use tvm_block::Message;
-use tvm_block::MessageOld;
 use tvm_block::Serializable;
 use tvm_types::UInt256;
 use tvm_types::base64_decode;
@@ -48,24 +47,7 @@ pub fn deserialize_cell_from_base64(
 pub fn deserialize_message_from_cell(cell: tvm_types::Cell, name: &str) -> ClientResult<Message> {
     let tip = "Please check that you have specified the message's BOC, not body, as a parameter.";
     let tip_full = if !tip.is_empty() { format!(".\nTip: {}", tip) } else { "".to_string() };
-    let cell_clone = cell.clone();
-    let mut res = Message::construct_from_cell(cell);
-    if res.is_err() {
-        res = MessageOld::construct_from_cell(cell_clone).map(|v| v.into())
-    }
-    res.map_err(|err| {
-        Error::invalid_boc(format!("cannot deserialize {} from BOC: {}{}", name, err, tip_full))
-    })
-}
-
-pub fn deserialize_old_message_from_cell(
-    cell: tvm_types::Cell,
-    name: &str,
-) -> ClientResult<Message> {
-    let tip = "Please check that you have specified the message's BOC, not body, as a parameter.";
-    let tip_full = if !tip.is_empty() { format!(".\nTip: {}", tip) } else { "".to_string() };
-    let cell_clone = cell.clone();
-    let res = MessageOld::construct_from_cell(cell_clone).map(|v| v.into());
+    let res = Message::construct_from_cell(cell);
     res.map_err(|err| {
         Error::invalid_boc(format!("cannot deserialize {} from BOC: {}{}", name, err, tip_full))
     })
@@ -155,18 +137,6 @@ pub fn deserialize_message_from_boc(
     let (boc, cell) = deserialize_cell_from_boc(context, boc, name)?;
 
     let object = deserialize_message_from_cell(cell.clone(), name)?;
-
-    Ok(DeserializedObject { boc, cell, object })
-}
-
-pub fn deserialize_old_message_from_boc(
-    context: &ClientContext,
-    boc: &str,
-    name: &str,
-) -> ClientResult<DeserializedObject<Message>> {
-    let (boc, cell) = deserialize_cell_from_boc(context, boc, name)?;
-
-    let object = deserialize_old_message_from_cell(cell.clone(), name)?;
 
     Ok(DeserializedObject { boc, cell, object })
 }

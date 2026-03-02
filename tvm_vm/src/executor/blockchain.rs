@@ -18,10 +18,7 @@ use tvm_block::ACTION_SEND_MSG;
 use tvm_block::ACTION_SET_CODE;
 use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
-use tvm_block::Message;
-use tvm_block::MessageOld;
 use tvm_block::MsgAddressInt;
-use tvm_block::Serializable;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::GasConsumer;
@@ -91,19 +88,6 @@ pub(super) fn execute_changelib(engine: &mut Engine) -> Status {
 /// end of output actions list.
 pub(super) fn execute_sendrawmsg(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("SENDRAWMSG"))?;
-    fetch_stack(engine, 2)?;
-    let x = engine.cmd.var(0).as_integer()?.into(0..=255)?;
-    let cell = engine.cmd.var(1).as_cell()?.clone();
-    let old_message = MessageOld::construct_from_cell(cell)?;
-    let cell = Message::from(old_message).serialize()?;
-    let suffix = BuilderData::with_raw(vec![x], 8)?;
-    add_action(engine, ACTION_SEND_MSG, Some(cell), suffix)
-}
-
-/// SENDRAWMSGNEW (c x – ): pop mode and message cell from stack and put it at
-/// the end of output actions list.
-pub(super) fn execute_sendrawmsgnew(engine: &mut Engine) -> Status {
-    engine.load_instruction(Instruction::new("SENDRAWMSGNEW"))?;
     fetch_stack(engine, 2)?;
     let x = engine.cmd.var(0).as_integer()?.into(0..=255)?;
     let cell = engine.cmd.var(1).as_cell()?.clone();
