@@ -50,7 +50,6 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::VarUInteger7;
 
-
 ///////////////////////////////////////////////////////////////////////////////
 /// 4.1.5. Storage profile of an account.
 ///

@@ -1,9 +1,7 @@
-
 #[test]
 fn test_account_merkle_update() -> anyhow::Result<()> {
-    use tvm_types::Cell;
-
     use tvm_block::Deserializable;
+    use tvm_types::Cell;
 
     // restrict memory allocation for this test
     rlimit::setrlimit(rlimit::Resource::AS, 512 * 1024 * 1024, 512 * 1024 * 1024)

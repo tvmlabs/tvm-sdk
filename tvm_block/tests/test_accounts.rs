@@ -11,11 +11,10 @@
 
 use std::fs::File;
 
-use tvm_types::BocReader;
-
-use tvm_block::*;
-use tvm_types::*;
 use tvm_block::MsgAddressExt;
+use tvm_block::*;
+use tvm_types::BocReader;
+use tvm_types::*;
 mod common;
 use common::write_read_and_assert;
 

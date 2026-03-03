@@ -12,12 +12,11 @@
 use std::collections::HashSet;
 use std::str::FromStr;
 
-use tvm_types::read_single_root_boc;
-
-use tvm_block::*;
-use tvm_types::*;
 use tvm_block::BlockIdExt;
 use tvm_block::HashmapAugType;
+use tvm_block::*;
+use tvm_types::read_single_root_boc;
+use tvm_types::*;
 mod common;
 use common::write_read_and_assert;
 
@@ -131,7 +130,6 @@ fn test_shard_state_unsplit_serialize() {
 
 #[test]
 fn test_shard_state_unsplit_serialize_fast_finality() {
-
     let in_path = "tests/data/shard_state.boc";
     let bytes = std::fs::read(in_path).unwrap();
     let root_cell = read_single_root_boc(bytes).unwrap();
@@ -788,8 +786,6 @@ fn test_shard_siblings() {
 }
 
 mod account_id_prefix_full {
-    use tvm_block::*;
-use tvm_types::*;
     use tvm_block::AnycastInfo;
     use tvm_block::IntermediateAddressExt;
     use tvm_block::IntermediateAddressSimple;
@@ -797,6 +793,8 @@ use tvm_types::*;
     use tvm_block::MsgAddrVar;
     use tvm_block::Number5;
     use tvm_block::Number9;
+    use tvm_block::*;
+    use tvm_types::*;
 
     fn get_anycast_info() -> AnycastInfo {
         let depth = 12;

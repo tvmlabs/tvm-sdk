@@ -206,8 +206,7 @@ mod tests {
     fn test_usage_cell_speed() {
         println!("{}", std::env::current_dir().unwrap().display());
         println!("{}", std::env::current_exe().unwrap().display());
-        let original_bytes =
-            std::fs::read("test_data/571524").unwrap();
+        let original_bytes = std::fs::read("test_data/571524").unwrap();
         let original = read_single_root_boc(&original_bytes).unwrap();
         // Original tree has 37395 cells
         let micros = traverse_cell(&original, 0);

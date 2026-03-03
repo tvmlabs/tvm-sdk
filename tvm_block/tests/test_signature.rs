@@ -10,18 +10,17 @@
 // limitations under the License.
 use std::fs::File;
 use std::io::Read;
+use std::str::FromStr;
 
 use ed25519_dalek::SigningKey;
 use ed25519_dalek::VerifyingKey;
-use tvm_types::read_boc;
-
-use tvm_block::*;
-use tvm_types::*;
-use std::str::FromStr;
 use tvm_block::Block;
+use tvm_block::ConfigParamEnum;
 use tvm_block::ShardIdent;
 use tvm_block::TopBlockDescr;
-use tvm_block::ConfigParamEnum;
+use tvm_block::*;
+use tvm_types::read_boc;
+use tvm_types::*;
 mod common;
 use common::write_read_and_assert;
 

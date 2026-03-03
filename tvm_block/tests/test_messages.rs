@@ -9,9 +9,10 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::str::FromStr;
+
 use tvm_block::*;
 use tvm_types::*;
-use std::str::FromStr;
 mod common;
 use common::write_read_and_assert;
 

@@ -56,7 +56,6 @@ use crate::types::InRefValue;
 use crate::types::UnixTime32;
 use crate::validators::ValidatorSet;
 
-
 // block_id_ext$_
 // shard_id:ShardIdent
 // seq_no:uint32

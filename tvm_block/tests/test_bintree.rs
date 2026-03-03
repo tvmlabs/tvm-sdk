@@ -9,17 +9,16 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::SliceData;
-
 use tvm_block::*;
+use tvm_types::SliceData;
 use tvm_types::*;
 mod common;
 use common::write_read_and_assert;
 
 mod test_bintree {
-    use tvm_block::*;
-use tvm_types::*;
     use tvm_block::CurrencyCollection;
+    use tvm_block::*;
+    use tvm_types::*;
 
     fn prepare_key(key: usize, bits: usize) -> SliceData {
         let mut builder = BuilderData::new();

@@ -11,10 +11,6 @@
 
 use std::str::FromStr;
 
-use tvm_types::AccountId;
-
-use tvm_block::*;
-use tvm_types::*;
 use tvm_block::Block;
 use tvm_block::CurrencyCollection;
 use tvm_block::IntermediateAddress;
@@ -23,6 +19,9 @@ use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 use tvm_block::MsgEnvelope;
 use tvm_block::ShardIdent;
+use tvm_block::*;
+use tvm_types::AccountId;
+use tvm_types::*;
 mod common;
 use common::write_read_and_assert;
 

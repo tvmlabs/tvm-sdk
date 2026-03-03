@@ -9,17 +9,17 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 use rand::Rng;
-use tvm_types::read_single_root_boc;
-
-use tvm_block::*;
-use tvm_types::*;
 use tvm_block::BASE_WORKCHAIN_ID;
 use tvm_block::BlockExtra;
 use tvm_block::MsgAddressInt;
 use tvm_block::ShardStateUnsplit;
+use tvm_block::*;
+use tvm_types::read_single_root_boc;
+use tvm_types::*;
 mod common;
 use common::generate_test_shard_account_block;
 use common::write_read_and_assert;

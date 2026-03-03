@@ -1,6 +1,11 @@
 use ed25519_dalek::SigningKey;
 use ed25519_dalek::VerifyingKey;
-
+use tvm_block::BASE_WORKCHAIN_ID;
+use tvm_block::Block;
+use tvm_block::BlockProof;
+use tvm_block::ConfigParamEnum;
+use tvm_block::MerkleProof;
+use tvm_block::ShardIdent;
 // Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
@@ -13,12 +18,6 @@ use ed25519_dalek::VerifyingKey;
 // limitations under the License.
 use tvm_block::*;
 use tvm_types::*;
-use tvm_block::BASE_WORKCHAIN_ID;
-use tvm_block::ShardIdent;
-use tvm_block::Block;
-use tvm_block::ConfigParamEnum;
-use tvm_block::MerkleProof;
-use tvm_block::BlockProof;
 mod common;
 use common::write_read_and_assert;
 

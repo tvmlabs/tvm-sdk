@@ -45,7 +45,6 @@ use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
 
-
 ///////////////////////////////////////////////////////////////////////////////
 /// MessageAddress
 // 3.1.2. TL-B scheme for addresses. The serialization of source and destination

@@ -9,9 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_block::VarUInteger32;
 use tvm_block::*;
 use tvm_types::*;
-use tvm_block::VarUInteger32;
 mod common;
 use common::write_read_and_assert;
 

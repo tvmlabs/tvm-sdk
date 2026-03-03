@@ -11,20 +11,19 @@
 
 use std::fs::read;
 use std::fs::read_dir;
-use std::path::Path;
-
-use tvm_types::BocReader;
-use tvm_types::read_single_root_boc;
-
-use tvm_block::*;
-use tvm_types::*;
 use std::io::Cursor;
+use std::path::Path;
 use std::str::FromStr;
+
 use tvm_block::AccountBlock;
-use tvm_block::Message;
-use tvm_block::TickTock;
 use tvm_block::BinTreeType;
 use tvm_block::HashmapAugType;
+use tvm_block::Message;
+use tvm_block::TickTock;
+use tvm_block::*;
+use tvm_types::BocReader;
+use tvm_types::read_single_root_boc;
+use tvm_types::*;
 mod common;
 use common::generate_test_shard_account_block;
 use common::write_read_and_assert;
@@ -427,8 +426,8 @@ fn test_real_tvm_key_block() {
 #[test]
 #[ignore]
 fn test_all_real_tvm_block_with_transaction() {
-    for entry in read_dir(Path::new("tests/data/block_with_transaction"))
-        .expect("Error reading BOCs dir")
+    for entry in
+        read_dir(Path::new("tests/data/block_with_transaction")).expect("Error reading BOCs dir")
     {
         let entry = entry.unwrap();
         let in_path = entry.path();

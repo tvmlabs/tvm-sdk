@@ -16,7 +16,10 @@ where
     s2
 }
 
-pub fn generate_account_block(address: AccountId, tr_count: usize) -> tvm_types::Result<AccountBlock> {
+pub fn generate_account_block(
+    address: AccountId,
+    tr_count: usize,
+) -> tvm_types::Result<AccountBlock> {
     let s_status_update = HashUpdate::default();
     let mut acc_block = AccountBlock::with_address(address.clone());
 

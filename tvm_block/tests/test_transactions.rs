@@ -11,10 +11,10 @@
 
 #[allow(unused_imports)] // TBD when types fixed
 use std::str::FromStr;
+use std::sync::Arc;
 
 use tvm_block::*;
 use tvm_types::*;
-use std::sync::Arc;
 mod common;
 use common::generate_account_block;
 use common::generate_test_shard_account_block;
@@ -51,7 +51,6 @@ fn test_accaunt_block_serialization() {
 
     write_read_and_assert(acc_block);
 }
-
 
 #[test]
 fn test_shard_account_blocks_serialization() {

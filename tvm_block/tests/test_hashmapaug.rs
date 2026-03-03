@@ -14,13 +14,12 @@
 #![allow(clippy::vec_init_then_push)]
 use std::fmt;
 
-use tvm_types::HashmapSubtree;
-use tvm_types::hm_label;
-
-use tvm_block::*;
-use tvm_types::*;
 use tvm_block::AddSub;
 use tvm_block::Grams;
+use tvm_block::*;
+use tvm_types::HashmapSubtree;
+use tvm_types::hm_label;
+use tvm_types::*;
 mod common;
 use common::write_read_and_assert;
 
@@ -739,7 +738,6 @@ fn test_traverse() {
 
 define_HashmapAugE!(MyHashmap, 8, u8, u8, u8);
 impl HashmapAugRemover<u8, u8, u8> for MyHashmap {}
-
 
 fn check_hashmap_fill_and_filter(mut keys: Vec<u8>, remove: &[u8], stop: usize, cancel: usize) {
     keys.sort();
