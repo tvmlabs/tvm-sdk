@@ -553,12 +553,7 @@ async fn main_internal() -> Result<(), String> {
             Command::new("add")
                 .about("Add alias to the aliases map.")
                 .arg(alias_arg.clone())
-                .arg(
-                    Arg::new("ADDRESS")
-                        .long("--addr")
-                        .takes_value(true)
-                        .help("Contract address."),
-                )
+                .arg(Arg::new("ADDRESS").long("--addr").takes_value(true).help("Contract address."))
                 .arg(keys_arg.clone())
                 .arg(
                     Arg::new("ABI")
@@ -587,9 +582,7 @@ async fn main_internal() -> Result<(), String> {
                     .help("List of endpoints (comma separated)."),
             ),
         )
-        .subcommand(
-            Command::new("remove").about("Remove endpoints list.").arg(url_arg.clone()),
-        )
+        .subcommand(Command::new("remove").about("Remove endpoints list.").arg(url_arg.clone()))
         .subcommand(Command::new("reset").about("Reset the endpoints map."))
         .subcommand(Command::new("print").about("Print current endpoints map."));
 
@@ -744,36 +737,11 @@ async fn main_internal() -> Result<(), String> {
         .about("Executes a raw GraphQL query.")
         .version(version_string)
         .author(author)
-        .arg(
-            Arg::new("COLLECTION")
-                .required(true)
-                .takes_value(true)
-                .help("Collection to query."),
-        )
-        .arg(
-            Arg::new("RESULT")
-                .required(true)
-                .takes_value(true)
-                .help("Result fields to print."),
-        )
-        .arg(
-            Arg::new("FILTER")
-                .long("--filter")
-                .takes_value(true)
-                .help("Query filter parameter."),
-        )
-        .arg(
-            Arg::new("LIMIT")
-                .long("--limit")
-                .takes_value(true)
-                .help("Query limit parameter."),
-        )
-        .arg(
-            Arg::new("ORDER")
-                .long("--order")
-                .takes_value(true)
-                .help("Query order parameter."),
-        );
+        .arg(Arg::new("COLLECTION").required(true).takes_value(true).help("Collection to query."))
+        .arg(Arg::new("RESULT").required(true).takes_value(true).help("Result fields to print."))
+        .arg(Arg::new("FILTER").long("--filter").takes_value(true).help("Query filter parameter."))
+        .arg(Arg::new("LIMIT").long("--limit").takes_value(true).help("Query limit parameter."))
+        .arg(Arg::new("ORDER").long("--order").takes_value(true).help("Query order parameter."));
 
     let fee_cmd = Command::new("fee")
         .about("Calculates fees for executing message or account storage fee.")
@@ -963,12 +931,7 @@ async fn main_internal() -> Result<(), String> {
                 .long("--config")
                 .takes_value(true),
         )
-        .arg(
-            Arg::new("JSON")
-                .help("Cli prints output in json format.")
-                .short('j')
-                .long("--json"),
-        )
+        .arg(Arg::new("JSON").help("Cli prints output in json format.").short('j').long("--json"))
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
         .subcommand(genpubkey_cmd)

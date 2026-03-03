@@ -377,9 +377,8 @@ impl MultisigArgs {
 }
 
 pub fn create_multisig_command<'b>() -> Command<'b> {
-    let v2_arg = Arg::new("V2")
-        .long("--v2")
-        .help("Force to interact with wallet account as multisig v2.");
+    let v2_arg =
+        Arg::new("V2").long("--v2").help("Force to interact with wallet account as multisig v2.");
     let bounce_arg = Arg::new("BOUNCE")
         .long("--bounce")
         .short('b')
