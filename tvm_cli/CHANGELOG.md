@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.13] - 2026-03-03
+
+### Changed
+- Migrated CLI argument definitions to current clap v3 API, removing deprecated usage
+
+### Fixed
+- `--abi` argument is now required for the `genaddr` subcommand, preventing confusing runtime errors when omitted
+
 ## 0.36.0
 
  - Supported [ABI 2.4](https://github.com/tonlabs/ever-abi/blob/master/CHANGELOG.md#version-240)

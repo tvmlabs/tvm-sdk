@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.13] - 2026-03-03
+
+### Added
+- `tvm_client`: outgoing HTTP requests now include a `traceparent` header; on failure the trace identifier is included in the error message for easier diagnostics
+
+### Changed
+- `tvm_cli`: migrated CLI argument definitions to current clap v3 API, removing deprecated usage
+
+### Fixed
+- `tvm_cli`: `--abi` argument is now required for the `genaddr` subcommand, preventing confusing runtime errors when omitted (breaking)
+
 ## [2.24.12] - 2026-02-26
 ## Changed
 - Refactored transaction execute to properly initialize account state from StateInit before execution
