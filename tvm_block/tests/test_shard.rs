@@ -14,9 +14,12 @@ use std::str::FromStr;
 
 use tvm_types::read_single_root_boc;
 
-use super::*;
-use crate::BlockIdExt;
-use crate::HashmapAugType;
+use tvm_block::*;
+use tvm_types::*;
+use tvm_block::BlockIdExt;
+use tvm_block::HashmapAugType;
+mod common;
+use common::write_read_and_assert;
 
 fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     println!("messages");
@@ -52,7 +55,7 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
         println!("custom.validator_info: {:?}", custom.validator_info);
         println!("custom.config.address {}", custom.config.config_addr);
         println!("custom.configparams");
-        crate::dump_config(&custom.config.config_params);
+        tvm_block::dump_config(&custom.config.config_params);
 
         let mut i: u64 = 0;
         custom
@@ -71,7 +74,7 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
 #[test]
 fn test_real_tvm_shardstate() {
     // getstate (-1,8000000000000000,0)
-    let in_path = "src/tests/data/shard_state.boc";
+    let in_path = "tests/data/shard_state.boc";
     println!("ShardState file: {:?}", in_path);
     let bytes = std::fs::read(in_path).unwrap();
     let root_cell = read_single_root_boc(bytes).unwrap();
@@ -92,7 +95,7 @@ fn test_real_tvm_shardstate() {
 
 #[test]
 fn test_shard_state_unsplit_serialize() {
-    let in_path = "src/tests/data/shard_state.boc";
+    let in_path = "tests/data/shard_state.boc";
     let bytes = std::fs::read(in_path).unwrap();
     let root_cell = read_single_root_boc(bytes).unwrap();
 
@@ -128,9 +131,8 @@ fn test_shard_state_unsplit_serialize() {
 
 #[test]
 fn test_shard_state_unsplit_serialize_fast_finality() {
-    use crate::write_read_and_assert;
 
-    let in_path = "src/tests/data/shard_state.boc";
+    let in_path = "tests/data/shard_state.boc";
     let bytes = std::fs::read(in_path).unwrap();
     let root_cell = read_single_root_boc(bytes).unwrap();
 
@@ -786,14 +788,15 @@ fn test_shard_siblings() {
 }
 
 mod account_id_prefix_full {
-    use super::super::*;
-    use crate::AnycastInfo;
-    use crate::IntermediateAddressExt;
-    use crate::IntermediateAddressSimple;
-    use crate::MsgAddrStd;
-    use crate::MsgAddrVar;
-    use crate::Number5;
-    use crate::Number9;
+    use tvm_block::*;
+use tvm_types::*;
+    use tvm_block::AnycastInfo;
+    use tvm_block::IntermediateAddressExt;
+    use tvm_block::IntermediateAddressSimple;
+    use tvm_block::MsgAddrStd;
+    use tvm_block::MsgAddrVar;
+    use tvm_block::Number5;
+    use tvm_block::Number9;
 
     fn get_anycast_info() -> AnycastInfo {
         let depth = 12;

@@ -15,12 +15,15 @@ use ed25519_dalek::SigningKey;
 use ed25519_dalek::VerifyingKey;
 use tvm_types::read_boc;
 
-use super::*;
-use crate::Block;
-use crate::ShardIdent;
-use crate::TopBlockDescr;
-use crate::config_params::ConfigParamEnum;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+use std::str::FromStr;
+use tvm_block::Block;
+use tvm_block::ShardIdent;
+use tvm_block::TopBlockDescr;
+use tvm_block::ConfigParamEnum;
+mod common;
+use common::write_read_and_assert;
 
 #[test]
 fn test_crypto_signature_new_default() {
@@ -587,12 +590,12 @@ fn test_check_block_signature() {
 
     // read block
     let (_, block_root, file_hash) = read_block(
-        "src/tests/data/E717C6051F28EC36FB7F612CC88380CACCBD16AEFB1F34456FC0C24F637E0020.boc",
+        "tests/data/E717C6051F28EC36FB7F612CC88380CACCBD16AEFB1F34456FC0C24F637E0020.boc",
     );
 
     // read key block & extract validator keys
     let (key_block, _, _) = read_block(
-        "src/tests/data/6DD4CFAFD43CB7B38656379392764136A08CC260CBC9D00D8D92F4F3CDF9AB61.boc",
+        "tests/data/6DD4CFAFD43CB7B38656379392764136A08CC260CBC9D00D8D92F4F3CDF9AB61.boc",
     );
 
     let cur_validators = key_block

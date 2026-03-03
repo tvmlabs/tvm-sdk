@@ -50,9 +50,6 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::VarUInteger7;
 
-#[cfg(test)]
-#[path = "tests/test_accounts.rs"]
-mod tests;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// 4.1.5. Storage profile of an account.
@@ -887,9 +884,8 @@ impl Account {
         }
     }
 
-    #[cfg(test)]
     /// getting statistic using storage for calculate storage/transfer fee
-    fn get_storage_stat(&self) -> Result<StorageUsed> {
+    pub fn get_storage_stat(&self) -> Result<StorageUsed> {
         if let Some(stuff) = self.stuff() {
             StorageUsed::calculate_for_struct(&stuff.storage)
         } else {

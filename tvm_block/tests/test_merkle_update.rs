@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use std::fs::read;
 use std::path::Path;
 use std::str::FromStr;
@@ -21,36 +22,39 @@ use tvm_types::UsageTree;
 use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
 
-use super::*;
-use crate::Account;
-use crate::Block;
-use crate::CurrencyCollection;
-use crate::Grams;
-use crate::HashmapE;
-use crate::HashmapType;
-use crate::InternalMessageHeader;
-use crate::MerkleProof;
-use crate::Message;
-use crate::MsgAddressInt;
-use crate::MsgEnvelope;
-use crate::Number5;
-use crate::OutMsgQueueInfo;
-use crate::OutMsgQueueKey;
-use crate::OutQueueUpdate;
-use crate::OutQueueUpdates;
-use crate::ProcessedInfoKey;
-use crate::ProcessedUpto;
-use crate::ShardAccount;
-use crate::ShardAccounts;
-use crate::ShardIdent;
-use crate::ShardState;
-use crate::ShardStateSplit;
-use crate::ShardStateUnsplit;
-use crate::StateInit;
-use crate::TickTock;
-use crate::define_HashmapE;
-use crate::generate_test_account_by_init_code_hash;
-use crate::hashmapaug::HashmapAugType;
+use tvm_block::*;
+use tvm_types::*;
+use tvm_block::Account;
+use tvm_block::Block;
+use tvm_block::CurrencyCollection;
+use tvm_block::Grams;
+use tvm_types::HashmapE;
+use tvm_types::HashmapType;
+use tvm_block::InternalMessageHeader;
+use tvm_block::MerkleProof;
+use tvm_block::Message;
+use tvm_block::MsgAddressInt;
+use tvm_block::MsgEnvelope;
+use tvm_block::Number5;
+use tvm_block::OutMsgQueueInfo;
+use tvm_block::OutMsgQueueKey;
+use tvm_block::OutQueueUpdate;
+use tvm_block::OutQueueUpdates;
+use tvm_block::ProcessedInfoKey;
+use tvm_block::ProcessedUpto;
+use tvm_block::ShardAccount;
+use tvm_block::ShardAccounts;
+use tvm_block::ShardIdent;
+use tvm_block::ShardState;
+use tvm_block::ShardStateSplit;
+use tvm_block::ShardStateUnsplit;
+use tvm_block::StateInit;
+use tvm_block::TickTock;
+use tvm_block::define_HashmapE;
+use tvm_block::generate_test_account_by_init_code_hash;
+use tvm_block::HashmapAugType;
+mod common;
+use common::write_read_and_assert;
 
 #[test]
 fn test_merkle_update() {
@@ -229,8 +233,8 @@ fn test_merkle_update3() {
     assert_eq!(root2, root3);
 }
 
-const PATH_TO_SS: &str = "src/tests/data/block_with_ss/shard-states/";
-const PATH_TO_BLOCK: &str = "src/tests/data/block_with_ss/blocks/";
+const PATH_TO_SS: &str = "tests/data/block_with_ss/shard-states/";
+const PATH_TO_BLOCK: &str = "tests/data/block_with_ss/blocks/";
 
 fn check_one_mu(index: u64) {
     let (block, _block_len) = block_from_file(&format!("{}{}", PATH_TO_BLOCK, index));
@@ -555,7 +559,7 @@ fn test_out_msg_queue_updates() -> Result<()> {
     // generate "old" shard state with out messages
 
     let mut old_state = ShardStateUnsplit::construct_from_file(
-        "src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
+        "tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
     )?;
 
     let mut out_msg_queue_info = old_state.read_out_msg_queue_info()?;
@@ -706,7 +710,7 @@ fn test_prepare_empty_update_for_wc() -> Result<()> {
     std::env::set_var("RUST_BACKTRACE", "full");
 
     let mut old_state = ShardStateUnsplit::construct_from_file(
-        "src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
+        "tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
     )?;
 
     let mut out_msg_queue_info = old_state.read_out_msg_queue_info()?;
@@ -780,7 +784,7 @@ fn test_out_msg_queue_merge_updates() -> Result<()> {
     // generate "old left" shard state with out messages
 
     let mut old_state_left = ShardStateUnsplit::construct_from_file(
-        "src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
+        "tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
     )?;
     old_state_left.set_shard(ShardIdent::with_tagged_prefix(0, 0x4000000000000000).unwrap());
 
@@ -793,7 +797,7 @@ fn test_out_msg_queue_merge_updates() -> Result<()> {
     // generate "old right" shard state with out messages
 
     let mut old_state_right = ShardStateUnsplit::construct_from_file(
-        "src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
+        "tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
     )?;
     old_state_right.set_shard(ShardIdent::with_tagged_prefix(0, 0xc000000000000000).unwrap());
 
@@ -807,7 +811,7 @@ fn test_out_msg_queue_merge_updates() -> Result<()> {
     // generate "new" shard state
 
     let mut new_state = ShardStateUnsplit::construct_from_file(
-        "src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
+        "tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc",
     )?;
     new_state.set_shard(ShardIdent::with_tagged_prefix(0, 0x8000000000000000).unwrap());
     let mut out_msg_queue_info = new_state.read_out_msg_queue_info()?;
@@ -875,7 +879,7 @@ fn test_prepare_first_update_for_wc() -> Result<()> {
     std::env::set_var("RUST_BACKTRACE", "full");
 
     let zerostate = ShardStateUnsplit::construct_from_file(
-        "src/tests/data/969b6b42350754c691dfce198e7f1419d57815fd92bfdf44f3afc17d30ae1911.boc",
+        "tests/data/969b6b42350754c691dfce198e7f1419d57815fd92bfdf44f3afc17d30ae1911.boc",
     )?;
 
     let mut next_state = zerostate.clone();
@@ -1234,7 +1238,7 @@ fn test_update_shard_state_with_external_cell() {
 
 #[test]
 fn test_fast_merkle_update() {
-    const PATH_TO_DATA: &str = "src/tests/data";
+    const PATH_TO_DATA: &str = "tests/data";
 
     let mut paths = vec![];
     for entry in std::fs::read_dir(PATH_TO_DATA).unwrap().flatten() {
@@ -1309,21 +1313,4 @@ fn write_cell_to_string(cell: &Cell, indent: usize, s: &mut String) {
     for child in cell.clone_references() {
         write_cell_to_string(&child, indent + 1, s);
     }
-}
-
-#[test]
-fn test_account_merkle_update() -> anyhow::Result<()> {
-    use tvm_types::Cell;
-
-    use crate::Deserializable;
-
-    // restrict memory allocation for this test
-    rlimit::setrlimit(rlimit::Resource::AS, 512 * 1024 * 1024, 512 * 1024 * 1024)
-        .expect("Failed to set memory limit");
-
-    let old_cell = Cell::construct_from_file("src/tests/data/test_accounts/b48dc01a6674e616f1f7c4c5e7212af4227b95c3111e1c2051850c35425f7d68:b48dc01a6674e616f1f7c4c5e7212af4227b95c3111e1c2051850c35425f7d68_old").expect("Failed to load cell from file");
-    let new_cell = Cell::construct_from_file("src/tests/data/test_accounts/b48dc01a6674e616f1f7c4c5e7212af4227b95c3111e1c2051850c35425f7d68:b48dc01a6674e616f1f7c4c5e7212af4227b95c3111e1c2051850c35425f7d68_new").expect("Failed to load cell from file");
-    let merkle_update = crate::MerkleUpdate::create(&old_cell, &new_cell).ok();
-    assert!(merkle_update.is_some());
-    Ok(())
 }

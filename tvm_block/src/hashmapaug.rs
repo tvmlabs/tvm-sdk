@@ -584,7 +584,6 @@ pub trait HashmapAugType<
             p(key, <X>::construct_from(&mut slice)?, aug)
         })
     }
-    #[cfg(test)]
     /// Puts element to the tree
     fn set_serialized(
         &mut self,
@@ -900,6 +899,18 @@ pub trait HashmapAugRemover<
     }
 }
 
-#[cfg(test)]
-#[path = "tests/test_hashmapaug.rs"]
-mod tests;
+// max
+impl Augmentable for u8 {
+    fn calc(&mut self, other: &Self) -> Result<bool> {
+        if *self < *other {
+            *self = *other
+        }
+        Ok(true)
+    }
+}
+
+impl Augmentation<u8> for u8 {
+    fn aug(&self) -> Result<u8> {
+        unreachable!()
+    }
+}

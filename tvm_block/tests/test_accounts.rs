@@ -13,9 +13,11 @@ use std::fs::File;
 
 use tvm_types::BocReader;
 
-use super::*;
-use crate::MsgAddressExt;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+use tvm_block::MsgAddressExt;
+mod common;
+use common::write_read_and_assert;
 
 #[test]
 fn test_serialize_storage_used() {
@@ -637,7 +639,7 @@ fn get_real_tvm_state(filename: &str) -> (ShardStateUnsplit, Cell) {
 #[test]
 #[ignore]
 fn test_real_account_serde() {
-    let state_files = ["src/tests/data/
+    let state_files = ["tests/data/
 7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
@@ -726,7 +728,7 @@ fn test_account_from_message() {
     let ext = MsgAddressExt::with_extern([0x99; 32].into()).unwrap();
 
     // external inbound message
-    let hdr = crate::ExternalInboundMessageHeader::new(ext.clone(), dst.clone());
+    let hdr = tvm_block::ExternalInboundMessageHeader::new(ext.clone(), dst.clone());
     let msg = Message::with_ext_in_header(hdr);
     assert!(
         Account::from_message_by_init_code_hash(&msg, false).is_none(),
@@ -734,7 +736,7 @@ fn test_account_from_message() {
     );
 
     // external outbound message
-    let hdr = crate::ExtOutMessageHeader::with_addresses(src.clone(), ext);
+    let hdr = tvm_block::ExtOutMessageHeader::with_addresses(src.clone(), ext);
     let msg = Message::with_ext_out_header(hdr);
     assert!(
         Account::from_message_by_init_code_hash(&msg, false).is_none(),
@@ -743,7 +745,7 @@ fn test_account_from_message() {
 
     // message without StateInit and with bounce
     let value = CurrencyCollection::with_grams(100);
-    let hdr = crate::InternalMessageHeader::with_addresses_and_bounce(
+    let hdr = tvm_block::InternalMessageHeader::with_addresses_and_bounce(
         src.clone(),
         dst.clone(),
         value,
@@ -757,7 +759,7 @@ fn test_account_from_message() {
 
     // message without code
     let value = CurrencyCollection::with_grams(100);
-    let hdr = crate::InternalMessageHeader::with_addresses_and_bounce(
+    let hdr = tvm_block::InternalMessageHeader::with_addresses_and_bounce(
         src.clone(),
         dst.clone(),
         value,
@@ -772,7 +774,7 @@ fn test_account_from_message() {
     );
 
     // message without balance
-    let hdr = crate::InternalMessageHeader::with_addresses_and_bounce(
+    let hdr = tvm_block::InternalMessageHeader::with_addresses_and_bounce(
         src.clone(),
         dst.clone(),
         Default::default(),
@@ -789,7 +791,7 @@ fn test_account_from_message() {
 
     // message without StateInit and without bounce
     let value = CurrencyCollection::with_grams(100);
-    let hdr = crate::InternalMessageHeader::with_addresses_and_bounce(
+    let hdr = tvm_block::InternalMessageHeader::with_addresses_and_bounce(
         src.clone(),
         dst.clone(),
         value,
@@ -803,7 +805,7 @@ fn test_account_from_message() {
 
     // message with code and without bounce
     let value = CurrencyCollection::with_grams(100);
-    let hdr = crate::InternalMessageHeader::with_addresses_and_bounce(
+    let hdr = tvm_block::InternalMessageHeader::with_addresses_and_bounce(
         src.clone(),
         dst.clone(),
         value,
@@ -820,7 +822,7 @@ fn test_account_from_message() {
 
     // message with code and with bounce
     let value = CurrencyCollection::with_grams(100);
-    let hdr = crate::InternalMessageHeader::with_addresses_and_bounce(src, dst, value, true);
+    let hdr = tvm_block::InternalMessageHeader::with_addresses_and_bounce(src, dst, value, true);
     let mut msg = Message::with_int_header(hdr);
     let mut init = StateInit::default();
     init.set_code(BuilderData::with_bitstring(vec![0x71, 0x80]).unwrap().into_cell().unwrap());

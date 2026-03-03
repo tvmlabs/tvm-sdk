@@ -12,8 +12,12 @@
 use num::CheckedAdd;
 use num::CheckedSub;
 
-use super::*;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+use num::{BigInt, bigint::Sign};
+use std::str::FromStr;
+mod common;
+use common::write_read_and_assert;
 
 #[test]
 fn test_get_len() {
@@ -307,10 +311,10 @@ fn test_filter() {
 #[test]
 fn test_grams_parsing() {
     let g = Grams::from_str("0xffffffffffffffffffffffffffffffff").unwrap();
-    assert_eq!(g.0, 340282366920938463463374607431768211455u128);
+    assert_eq!(g.as_u128(), 340282366920938463463374607431768211455u128);
     Grams::from_str("0x100000000000000000000000000000000").unwrap_err();
     Grams::from_str("340282366920938463463374607431768211455").unwrap();
-    assert_eq!(g.0, 340282366920938463463374607431768211455u128);
+    assert_eq!(g.as_u128(), 340282366920938463463374607431768211455u128);
     Grams::from_str("340282366920938463463374607431768211456").unwrap_err();
 }
 

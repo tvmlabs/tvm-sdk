@@ -15,9 +15,11 @@ use ed25519_dalek::VerifyingKey;
 use rand::Rng;
 use tvm_types::read_single_root_boc;
 
-use super::*;
-use crate::VarUInteger32;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+use tvm_block::VarUInteger32;
+mod common;
+use common::write_read_and_assert;
 
 fn get_config_param0() -> ConfigParam0 {
     ConfigParam0 { config_addr: UInt256::from([1; 32]) }
@@ -798,7 +800,7 @@ fn test_suspended_addresses() {
 
 #[test]
 fn test_real_tvm_config_params() {
-    let bytes = std::fs::read("src/tests/data/config.boc").unwrap();
+    let bytes = std::fs::read("tests/data/config.boc").unwrap();
     let cell = read_single_root_boc(bytes).unwrap();
     let config1 = ConfigParams::with_address_and_params(UInt256::from([1; 32]), Some(cell));
     dump_config(&config1.config_params);

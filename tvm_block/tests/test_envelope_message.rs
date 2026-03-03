@@ -9,14 +9,16 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use super::*;
-use crate::CurrencyCollection;
-use crate::InternalMessageHeader;
-use crate::MsgAddressInt;
-use crate::StateInit;
-use crate::TickTock;
-use crate::types::Number5;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+use tvm_block::CurrencyCollection;
+use tvm_block::InternalMessageHeader;
+use tvm_block::MsgAddressInt;
+use tvm_block::StateInit;
+use tvm_block::TickTock;
+use tvm_block::Number5;
+mod common;
+use common::write_read_and_assert;
 
 fn check_serialization_intermediate_addr_regular(addr_orig: IntermediateAddressRegular) {
     let mut b = BuilderData::new();

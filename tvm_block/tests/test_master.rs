@@ -9,18 +9,20 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use rand::Rng;
 use tvm_types::read_single_root_boc;
 
-use super::*;
-use crate::BASE_WORKCHAIN_ID;
-use crate::BlockExtra;
-use crate::MsgAddressInt;
-use crate::ShardStateUnsplit;
-use crate::transactions::tests::generate_test_shard_account_block;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+use tvm_block::BASE_WORKCHAIN_ID;
+use tvm_block::BlockExtra;
+use tvm_block::MsgAddressInt;
+use tvm_block::ShardStateUnsplit;
+mod common;
+use common::generate_test_shard_account_block;
+use common::write_read_and_assert;
 
 #[test]
 fn test_libraries() {
@@ -365,7 +367,7 @@ fn test_serialization_shard_hashes() {
 
 #[test]
 fn test_real_shard_hashes() {
-    let block = Block::construct_from_file("src/tests/data/key_block_not_all_shardes.boc").unwrap();
+    let block = Block::construct_from_file("tests/data/key_block_not_all_shardes.boc").unwrap();
     let extra = block.read_extra().unwrap().read_custom().unwrap().expect("need key block");
     let shards = extra.shards();
     let mut count = shards.dump("shards");
@@ -514,7 +516,7 @@ fn test_serialization_shard_fees() {
 
 #[test]
 fn test_get_next_prev_key_block() {
-    let bytes = std::fs::read("src/tests/data/free-ton-mc-state-61884").unwrap();
+    let bytes = std::fs::read("tests/data/free-ton-mc-state-61884").unwrap();
     let root = read_single_root_boc(bytes).unwrap();
     let shard_state = ShardStateUnsplit::construct_from_cell(root).unwrap();
     let prev_blocks = &shard_state.read_custom().unwrap().unwrap().prev_blocks;
@@ -643,15 +645,13 @@ fn test_shard_collators() {
     write_read_and_assert(collators);
 }
 
-impl RefShardBlocks {
-    pub fn collect_ref_shard_blocks(&self) -> Result<HashSet<(BlockIdExt, u64)>> {
-        let mut res = HashSet::new();
-        self.iterate_shard_block_refs(|block_id, u64| {
-            res.insert((block_id, u64));
-            Ok(true)
-        })?;
-        Ok(res)
-    }
+fn collect_ref_shard_blocks(rsb: &RefShardBlocks) -> Result<HashSet<(BlockIdExt, u64)>> {
+    let mut res = HashSet::new();
+    rsb.iterate_shard_block_refs(|block_id, u64| {
+        res.insert((block_id, u64));
+        Ok(true)
+    })?;
+    Ok(res)
 }
 
 #[test]
@@ -828,7 +828,7 @@ fn test_shard_descr_ref_shard_blocks() {
         1000100,
     ));
     let rsb = RefShardBlocks::with_ids(ids.iter()).unwrap();
-    assert_eq!(rsb.collect_ref_shard_blocks().unwrap(), ids);
+    assert_eq!(collect_ref_shard_blocks(&rsb).unwrap(), ids);
 
     let mut ids = HashSet::new();
     ids.insert((
@@ -841,7 +841,7 @@ fn test_shard_descr_ref_shard_blocks() {
         1000104,
     ));
     let rsb = RefShardBlocks::with_ids(ids.iter()).unwrap();
-    assert_eq!(rsb.collect_ref_shard_blocks().unwrap(), ids);
+    assert_eq!(collect_ref_shard_blocks(&rsb).unwrap(), ids);
 
     let mut ids = HashSet::new();
     ids.insert((
@@ -863,5 +863,5 @@ fn test_shard_descr_ref_shard_blocks() {
         1000100,
     ));
     let rsb = RefShardBlocks::with_ids(ids.iter()).unwrap();
-    assert_eq!(rsb.collect_ref_shard_blocks().unwrap(), ids);
+    assert_eq!(collect_ref_shard_blocks(&rsb).unwrap(), ids);
 }

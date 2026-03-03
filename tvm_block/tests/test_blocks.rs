@@ -16,14 +16,18 @@ use std::path::Path;
 use tvm_types::BocReader;
 use tvm_types::read_single_root_boc;
 
-use super::*;
-use crate::AccountBlock;
-use crate::Message;
-use crate::TickTock;
-use crate::bintree::BinTreeType;
-use crate::hashmapaug::HashmapAugType;
-use crate::transactions::tests::generate_test_shard_account_block;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+use std::io::Cursor;
+use std::str::FromStr;
+use tvm_block::AccountBlock;
+use tvm_block::Message;
+use tvm_block::TickTock;
+use tvm_block::BinTreeType;
+use tvm_block::HashmapAugType;
+mod common;
+use common::generate_test_shard_account_block;
+use common::write_read_and_assert;
 
 #[test]
 fn test_serialize_tick_tock() {
@@ -264,7 +268,7 @@ fn read_file_de_and_serialise(filename: &Path) -> Cell {
 
 #[test]
 fn test_real_tvm_boc() {
-    for entry in read_dir(Path::new("src/tests/data")).expect("Error reading BOCs dir") {
+    for entry in read_dir(Path::new("tests/data")).expect("Error reading BOCs dir") {
         let entry = entry.unwrap();
         let in_path = entry.path();
         if !in_path.is_dir() {
@@ -285,10 +289,10 @@ fn test_real_tvm_boc() {
 #[test]
 #[ignore]
 fn test_real_tvm_mgs() {
-    // let in_path = Path::new("src/tests/data/wallet-query.boc");
-    // let in_path = Path::new("src/tests/data/new-wallet-query.boc");
-    // let in_path = Path::new("src/tests/data/send-to-query.boc");
-    let in_path = Path::new("src/tests/data/int-msg-query.boc");
+    // let in_path = Path::new("tests/data/wallet-query.boc");
+    // let in_path = Path::new("tests/data/new-wallet-query.boc");
+    // let in_path = Path::new("tests/data/send-to-query.boc");
+    let in_path = Path::new("tests/data/int-msg-query.boc");
 
     println!("MSG file: {:?}", in_path);
     let root_cell = read_file_de_and_serialise(in_path);
@@ -406,15 +410,15 @@ fn test_real_block(in_path: &Path) -> Block {
 #[test]
 #[ignore]
 fn test_real_tvm_key_block() {
-    let in_path = Path::new("src/tests/data/key_block.boc");
+    let in_path = Path::new("tests/data/key_block.boc");
     let block = test_real_block(in_path);
 
     if let Some(custom) = block.read_extra().unwrap().read_custom().unwrap() {
         if let Some(c) = custom.config() {
-            crate::config_params::dump_config(&c.config_params);
+            tvm_block::config_params::dump_config(&c.config_params);
             // let bytes =
             // tvm_types::serialize_toc(c.config_params.data().unwrap()).
-            // unwrap(); std::fs::write("src/tests/data/config.boc",
+            // unwrap(); std::fs::write("tests/data/config.boc",
             // bytes).unwrap();
         }
     }
@@ -423,7 +427,7 @@ fn test_real_tvm_key_block() {
 #[test]
 #[ignore]
 fn test_all_real_tvm_block_with_transaction() {
-    for entry in read_dir(Path::new("src/tests/data/block_with_transaction"))
+    for entry in read_dir(Path::new("tests/data/block_with_transaction"))
         .expect("Error reading BOCs dir")
     {
         let entry = entry.unwrap();
@@ -445,12 +449,12 @@ fn test_all_real_tvm_block_with_transaction() {
 #[test]
 fn test_real_tvm_config() {
     // to get current config run lite_client with saveconfig config.boc
-    let in_path = Path::new("src/tests/data/config.boc");
+    let in_path = Path::new("tests/data/config.boc");
     println!("Config file: {:?}", in_path);
     let root_cell = read_file_de_and_serialise(in_path);
     println!("cell = {:#.2}", root_cell);
 
-    crate::config_params::dump_config(&HashmapE::with_hashmap(32, Some(root_cell)));
+    tvm_block::config_params::dump_config(&HashmapE::with_hashmap(32, Some(root_cell)));
 }
 
 #[test]
@@ -518,9 +522,9 @@ fn test_block_id_ext_from_str() {
 #[ignore]
 fn calc_value_flow() {
     let root_cell = read_file_de_and_serialise(Path::new(
-        //"src/tests/data/91FDE9DA6661FE9D1FCB013C1079411AFC7BFEDF7FE533C6FD48D25388A3FC26.boc" // master
-        "src/tests/data/9C2B3FC5AD455917D374CFADBED8FC2343E31A27C1DF2EB29E84404FA96DE9F8.boc", // old testnet WC
-                                                                                               //"src/tests/data/EC6D799FC7EA14D9FD1D840542514BA774EA3FB5E04B70B6E314C48F95B0C131.boc" // new testnet WC
+        //"tests/data/91FDE9DA6661FE9D1FCB013C1079411AFC7BFEDF7FE533C6FD48D25388A3FC26.boc" // master
+        "tests/data/9C2B3FC5AD455917D374CFADBED8FC2343E31A27C1DF2EB29E84404FA96DE9F8.boc", // old testnet WC
+                                                                                               //"tests/data/EC6D799FC7EA14D9FD1D840542514BA774EA3FB5E04B70B6E314C48F95B0C131.boc" // new testnet WC
     ));
     let block = Block::construct_from_cell(root_cell).unwrap();
 
@@ -571,7 +575,7 @@ fn calc_value_flow() {
 
 #[test]
 fn test_read_tob_block_descr() {
-    let data = std::fs::read("src/tests/data/top_block_descr.boc").unwrap();
+    let data = std::fs::read("tests/data/top_block_descr.boc").unwrap();
     let cell = read_single_root_boc(data).unwrap();
     let descr = TopBlockDescr::construct_from_cell(cell).unwrap();
     println!("{:?}", descr);
@@ -692,15 +696,11 @@ fn test_copyleft_rewards_merge_threshold() {
 
 #[test]
 fn block_info_serde() {
-    let block_info = super::BlockInfo {
-        version: 0,
-        gen_utime: 1684756262u32.into(),
-        gen_utime_ms_part: 99,
-        ..Default::default()
-    };
+    let mut block_info = BlockInfo::default();
+    block_info.set_gen_utime_ms(1684756262 * 1000 + 99);
     let serialized = block_info.serialize().unwrap();
     let deserialized =
-        super::BlockInfo::construct_from(&mut SliceData::load_cell(serialized).unwrap()).unwrap();
+        BlockInfo::construct_from(&mut SliceData::load_cell(serialized).unwrap()).unwrap();
     {
         let gen_utime_ms = 1684756262 * 1000 + 99;
         assert_eq!(deserialized.gen_utime_ms(), gen_utime_ms);

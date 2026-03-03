@@ -9,8 +9,11 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use super::*;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+use std::str::FromStr;
+mod common;
+use common::write_read_and_assert;
 
 #[test]
 fn test_serialize_many_times() {

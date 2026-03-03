@@ -56,9 +56,6 @@ use crate::types::InRefValue;
 use crate::types::UnixTime32;
 use crate::validators::ValidatorSet;
 
-#[cfg(test)]
-#[path = "tests/test_blocks.rs"]
-mod tests;
 
 // block_id_ext$_
 // shard_id:ShardIdent

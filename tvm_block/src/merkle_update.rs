@@ -28,10 +28,6 @@ use crate::Deserializable;
 use crate::Serializable;
 use crate::error::BlockError;
 
-#[cfg(test)]
-#[path = "tests/test_merkle_update.rs"]
-mod tests;
-
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct MerkleUpdateApplyMetrics {
     pub loaded_old_cells: usize,
