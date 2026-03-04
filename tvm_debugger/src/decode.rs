@@ -212,7 +212,7 @@ fn print_msg_header(header: &CommonMsgInfo) -> String {
                 + &format!("   source      : {}\n", &header.src)
                 + &format!("   source_dapp : {}\n", &header.src_dapp_id)
                 + &format!("   destination : {}\n", &header.dst)
-                + &format!("   dest_dapp   : {}\n", &header.dest_dapp_id)
+                + &format!("   dest_dapp   : {}\n", &header.dst_dapp_id)
                 + &format!("   value       : {}\n", print_cc(&header.value))
                 + &format!("   ihr_fee     : {}\n", print_grams(&header.ihr_fee))
                 + &format!("   fwd_fee     : {}\n", print_grams(&header.fwd_fee))

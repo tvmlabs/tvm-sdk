@@ -180,7 +180,7 @@ struct RunArgs {
 
     /// Internal message dest dapp id
     #[clap(long, requires("cross_dapp"))]
-    message_dest_dapp_id: Option<String>,
+    message_dst_dapp_id: Option<String>,
 
     /// Decode out messages
     #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
@@ -308,7 +308,7 @@ mod tests {
             json: true,
             trace: false,
             replace_code: None,
-            message_dest_dapp_id: None,
+            message_dst_dapp_id: None,
             message_source_dapp_id: None,
         }
     }

@@ -90,7 +90,7 @@ pub(crate) fn generate_internal_or_cross_dapp_message(
         header.created_at = get_now(args);
 
         header.src_dapp_id = Some(UInt256::default());
-        header.dest_dapp_id = Some(UInt256::default());
+        header.dst_dapp_id = Some(UInt256::default());
 
         Message::with_int_header(header)
     } else {
@@ -98,18 +98,18 @@ pub(crate) fn generate_internal_or_cross_dapp_message(
             .message_source_dapp_id
             .clone()
             .ok_or(anyhow::format_err!("message_source_dapp_id must be set for cross dapp"))?;
-        let dest_dapp_id = args
-            .message_dest_dapp_id
+        let dst_dapp_id = args
+            .message_dst_dapp_id
             .clone()
-            .ok_or(anyhow::format_err!("message_dest_dapp_id must be set for cross dapp"))?;
+            .ok_or(anyhow::format_err!("message_dst_dapp_id must be set for cross dapp"))?;
         let src_dapp_id = UInt256::from_str(&src_dapp_id)
             .map_err(|e| anyhow::format_err!("Wrong src dapp id: {e}"))?;
-        let dest_dapp_id = UInt256::from_str(&dest_dapp_id)
+        let dst_dapp_id = UInt256::from_str(&dst_dapp_id)
             .map_err(|e| anyhow::format_err!("Wrong dest dapp id: {e}"))?;
         let header = CrossDappMessageHeader::builder()
             .src_dapp_id(src_dapp_id)
             .src(MsgAddressIntOrNone::Some(src))
-            .dest_dapp_id(dest_dapp_id)
+            .dst_dapp_id(dst_dapp_id)
             .dst(dst)
             .value(value)
             .created_lt(1)

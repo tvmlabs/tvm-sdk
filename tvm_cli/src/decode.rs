@@ -603,7 +603,7 @@ pub mod msg_printer {
                     "source" : &header.src.to_string(),
                     "src_dapp" : &header.src_dapp_id.to_hex_string(),
                     "destination" : &header.dst.to_string(),
-                    "dest_dapp" : &header.dest_dapp_id.to_hex_string(),
+                    "dest_dapp" : &header.dst_dapp_id.to_hex_string(),
                     "value" : &serialize_currency_collection(&header.value),
                     "ihr_fee" : &serialize_grams(&header.ihr_fee),
                     "fwd_fee" : &serialize_grams(&header.fwd_fee),

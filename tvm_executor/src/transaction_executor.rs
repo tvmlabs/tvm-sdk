@@ -1056,7 +1056,7 @@ pub trait TransactionExecutor {
                 header.set_src_dapp_id(message_src_dapp_id.clone().clone());
             }
             if let Some(header) = out_msg.cross_dapp_header_mut() {
-                header.set_dest_dapp_id(message_src_dapp_id.clone().unwrap());
+                header.set_dst_dapp_id(message_src_dapp_id.clone().unwrap());
             }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
@@ -1686,7 +1686,7 @@ fn outmsg_action_handler(
 
     if let Some(int_header) = msg.int_header_mut() {
         let mut fwd_prices = fwd_prices_basic.clone();
-        if int_header.dest_dapp_id().is_none() {
+        if int_header.dst_dapp_id().is_none() {
             fwd_prices *= 2;
         }
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
