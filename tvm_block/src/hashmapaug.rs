@@ -899,7 +899,7 @@ pub trait HashmapAugRemover<
     }
 }
 
-// max
+#[cfg(test)]
 impl Augmentable for u8 {
     fn calc(&mut self, other: &Self) -> Result<bool> {
         if *self < *other {
@@ -909,6 +909,7 @@ impl Augmentable for u8 {
     }
 }
 
+#[cfg(test)]
 impl Augmentation<u8> for u8 {
     fn aug(&self) -> Result<u8> {
         unreachable!()

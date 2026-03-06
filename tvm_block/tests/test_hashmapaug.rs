@@ -736,9 +736,13 @@ fn test_traverse() {
     assert_eq!(way, high_way);
 }
 
+#[cfg(test)]
 define_HashmapAugE!(MyHashmap, 8, u8, u8, u8);
+
+#[cfg(test)]
 impl HashmapAugRemover<u8, u8, u8> for MyHashmap {}
 
+#[cfg(test)]
 fn check_hashmap_fill_and_filter(mut keys: Vec<u8>, remove: &[u8], stop: usize, cancel: usize) {
     keys.sort();
     let mut queue1 = MyHashmap::default();
