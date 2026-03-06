@@ -556,7 +556,12 @@ async fn emulate_transaction(
         result.transaction.pointer("/compute/exit_code").and_then(|val| val.as_i64()).unwrap_or(0);
 
     if exit_code != 0 {
-        let err = ClientError { code: 0, message: String::from(""), data: result.transaction };
+        let err = ClientError {
+            code: 0,
+            message: String::from(""),
+            data: result.transaction,
+            traceparent: None,
+        };
         return Err(err);
     }
 
