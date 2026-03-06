@@ -493,7 +493,7 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
 
     /////////
 
-    let address_seed = match Bn254FrElement::from_str(&*zkaddr) {
+    let address_seed = match Bn254FrElement::from_str(&zkaddr) {
         Ok(address_seed) => address_seed,
         Err(err) => {
             return err!(ExceptionCode::FatalError, "Incorrect address seed {}", err);
@@ -501,7 +501,7 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
     };
     let addr_seed = (&address_seed).into();
 
-    let (first, second) = match split_to_two_frs(&eph_pub_key_bytes) {
+    let (first, second) = match split_to_two_frs(eph_pub_key_bytes) {
         Ok((first, second)) => (first, second),
         Err(err) => {
             return err!(ExceptionCode::FatalError, "Incorrect ephemeral public key {}", err);
@@ -584,7 +584,7 @@ pub(super) fn execute_poseidon(engine: &mut Engine) -> Status {
         }
     };
 
-    let hash_int = IntegerData::from_unsigned_bytes_le(&output_as_bytes);
+    let hash_int = IntegerData::from_unsigned_bytes_le(output_as_bytes);
     engine.cc.stack.push(StackItem::integer(hash_int));
 
     Ok(())

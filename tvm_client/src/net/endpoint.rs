@@ -71,6 +71,7 @@ impl Endpoint {
         let mut headers = vec![
             ("tvmclient-core-version".to_string(), core_version()),
             ("X-AckiNacki-Expected-Account-Boc-Version".to_string(), BOC_VERSION.to_owned()),
+            ("traceparent".to_string(), current_traceparent()),
         ];
         if let Some(binding) = binding_config() {
             headers.push(("tvmclient-binding-library".to_string(), binding.library));
@@ -230,6 +231,14 @@ impl Endpoint {
     pub fn remp_enabled(&self) -> bool {
         self.remp_enabled.load(Ordering::Relaxed)
     }
+}
+
+fn current_traceparent() -> String {
+    // temporary placeholder — replace by a propagator when switching to
+    // opentelemetry
+    let n =
+        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().subsec_nanos();
+    format!("00-{:032x}-{:016x}-01", n as u128, n as u64)
 }
 
 #[test]

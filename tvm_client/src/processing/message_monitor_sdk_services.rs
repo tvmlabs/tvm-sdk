@@ -62,7 +62,7 @@ impl From<ClientError> for tvm_client_processing::Error {
 
 impl From<tvm_client_processing::Error> for ClientError {
     fn from(value: tvm_client_processing::Error) -> Self {
-        Self { code: value.code, message: value.message, data: value.data }
+        Self { code: value.code, message: value.message, data: value.data, traceparent: None }
     }
 }
 

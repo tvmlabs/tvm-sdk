@@ -88,7 +88,7 @@ pub(crate) fn module_to_tokens(m: &api_info::Module) -> TokenStream {
 
 pub(crate) fn const_value_to_tokens(v: &api_info::ConstValue) -> TokenStream {
     match v {
-        api_info::ConstValue::None {} => quote! { api_info::ConstValue::None {} },
+        api_info::ConstValue::None => quote! { api_info::ConstValue::None {} },
         api_info::ConstValue::Bool(repr) => quote! { api_info::ConstValue::Bool(#repr.into()) },
         api_info::ConstValue::String(repr) => {
             quote! { api_info::ConstValue::String(#repr.into()) }
@@ -140,9 +140,9 @@ fn number_type_to_tokens(number_type: &NumberType) -> TokenStream {
 
 fn type_to_tokens(t: &api_info::Type) -> TokenStream {
     match t {
-        api_info::Type::None {} => quote! { api_info::Type::None {} },
-        api_info::Type::Any {} => quote! { api_info::Type::Any {} },
-        api_info::Type::Boolean {} => quote! { api_info::Type::Boolean {} },
+        api_info::Type::None => quote! { api_info::Type::None {} },
+        api_info::Type::Any => quote! { api_info::Type::Any {} },
+        api_info::Type::Boolean => quote! { api_info::Type::Boolean {} },
         api_info::Type::Number { number_type, number_size: size } => {
             let number_type_tokens = number_type_to_tokens(number_type);
             quote! { api_info::Type::Number { number_type: #number_type_tokens, number_size: #size } }
@@ -151,7 +151,7 @@ fn type_to_tokens(t: &api_info::Type) -> TokenStream {
             let number_type_tokens = number_type_to_tokens(number_type);
             quote! { api_info::Type::BigInt { number_type: #number_type_tokens, number_size: #size } }
         }
-        api_info::Type::String {} => quote! { api_info::Type::String {} },
+        api_info::Type::String => quote! { api_info::Type::String {} },
         api_info::Type::Ref { name } => {
             quote! { api_info::Type::Ref { name: #name.into() } }
         }
@@ -300,16 +300,16 @@ fn reduce_lines(lines: Vec<String>) -> Vec<String> {
         let line = replace_tabs(line);
         if !line.is_empty() {
             let leading_spaces = get_leading_spaces(&line);
-            if min_leading_spaces.is_none() || leading_spaces < min_leading_spaces.unwrap() {
+            if min_leading_spaces.map_or(true, |min| leading_spaces < min) {
                 min_leading_spaces = Some(leading_spaces);
             }
         }
         reduced.push(line);
     }
-    if min_leading_spaces.is_some() && min_leading_spaces.unwrap() > 0 {
+    if let Some(min_leading_spaces) = min_leading_spaces.filter(|&min| min > 0) {
         for line in &mut reduced {
             if !line.is_empty() {
-                *line = line[min_leading_spaces.unwrap()..].into();
+                line.drain(..min_leading_spaces);
             }
         }
     }
