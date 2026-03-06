@@ -45,10 +45,6 @@ use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
 
-#[cfg(test)]
-#[path = "tests/test_messages.rs"]
-mod tests;
-
 ///////////////////////////////////////////////////////////////////////////////
 /// MessageAddress
 // 3.1.2. TL-B scheme for addresses. The serialization of source and destination
@@ -1021,7 +1017,7 @@ pub type MessageId = UInt256;
 #[derive(Debug, Default, Clone, Eq)]
 pub struct Message {
     header: CommonMsgInfo,
-    init: Option<StateInit>,
+    pub init: Option<StateInit>,
     body: Option<SliceData>,
     body_to_ref: Option<bool>,
     init_to_ref: Option<bool>,
@@ -1426,12 +1422,10 @@ impl Message {
         MerkleProof::create_by_usage_tree(block_root, usage_tree)?.serialize()
     }
 
-    #[cfg(test)]
     pub fn serialization_params(&self) -> (Option<bool>, Option<bool>) {
         (self.body_to_ref, self.init_to_ref)
     }
 
-    #[cfg(test)]
     pub fn set_serialization_params(
         &mut self,
         body_to_ref: Option<bool>,

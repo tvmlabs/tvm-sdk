@@ -735,7 +735,3 @@ impl ValidatorSetPRNG {
         ((range as u128 * val as u128) >> 64) as u64
     }
 }
-
-#[cfg(test)]
-#[path = "tests/test_validators.rs"]
-mod tests;

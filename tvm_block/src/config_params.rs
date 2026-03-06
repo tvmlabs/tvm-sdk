@@ -39,10 +39,6 @@ use crate::types::Number32;
 use crate::validators::ValidatorDescr;
 use crate::validators::ValidatorSet;
 
-#[cfg(test)]
-#[path = "tests/test_config_params.rs"]
-mod tests;
-
 // 1.6.3. Quick access through the header of masterchain blocks
 // _ config_addr:uint256
 // config:^(Hashmap 32 ^Cell) = ConfigParams;
@@ -2408,8 +2404,8 @@ impl Serializable for WorkchainFormat0 {
 pub struct WorkchainDescr {
     pub enabled_since: u32,
     actual_min_split: u8,
-    min_split: u8,
-    max_split: u8,
+    pub min_split: u8,
+    pub max_split: u8,
     // basic: bool, // depends on format
     pub active: bool,
     pub accept_msgs: bool,
@@ -3266,8 +3262,8 @@ impl Serializable for BlockLimits {
     }
 }
 
-type ConfigParam22 = BlockLimits;
-type ConfigParam23 = BlockLimits;
+pub type ConfigParam22 = BlockLimits;
+pub type ConfigParam23 = BlockLimits;
 
 const COPYLEFT_TAG: u8 = 0x9A;
 
@@ -3347,8 +3343,7 @@ impl SuspendedAddresses {
     }
 }
 
-#[cfg(test)]
-pub(crate) fn dump_config(params: &HashmapE) {
+pub fn dump_config(params: &HashmapE) {
     params
         .iterate_slices(|ref mut key, ref mut slice| -> Result<bool> {
             let key = key.get_next_u32()?;

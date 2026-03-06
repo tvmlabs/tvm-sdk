@@ -55,10 +55,6 @@ use crate::types::CurrencyCollection;
 use crate::types::InRefValue;
 use crate::validators::ValidatorInfo;
 
-#[cfg(test)]
-#[path = "tests/test_master.rs"]
-mod tests;
-
 // _ (HashmapE 32 ^(BinTree ShardDescr)) = ShardHashes;
 // _ (HashmapAugE 96 ShardFeeCreated ShardFeeCreated) = ShardFees;
 //
@@ -494,8 +490,8 @@ define_HashmapE! {CopyleftMessages, 15, InRefValue<InMsg>}
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct McBlockExtra {
     key_block: bool,
-    shards: ShardHashes, // workchain_id of ShardIdent from all blocks
-    fees: ShardFees,
+    pub shards: ShardHashes, // workchain_id of ShardIdent from all blocks
+    pub fees: ShardFees,
     prev_blk_signatures: CryptoSignatures,
     recover_create_msg: Option<ChildCell<InMsg>>,
     copyleft_msgs: CopyleftMessages,
