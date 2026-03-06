@@ -650,11 +650,7 @@ impl StateParser {
                 let p = PathMap::cont(config, "p", p)?;
                 let public_key = hex::decode(p.get_str("public_key")?)?;
                 let weight = p.get_num("weight")? as u64;
-                let adnl_addr = if let Ok(adnl_addr) = p.get_uint256("adnl_addr") {
-                    Some(adnl_addr)
-                } else {
-                    None
-                };
+                let adnl_addr = p.get_uint256("adnl_addr").ok();
                 let bls_public_key = if let Ok(bls_public_key) = p.get_str("bls_public_key") {
                     let bls_public_key = hex::decode(bls_public_key)?;
                     Some(bls_public_key.as_slice().try_into()?)
