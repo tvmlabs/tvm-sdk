@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.24.13] - 2026-03-03
+## [2.24.13] - 2026-03-06
 
 ### Added
 - `tvm_client`: outgoing HTTP requests now include a `traceparent` header; on failure the trace identifier is included in the error message for easier diagnostics
