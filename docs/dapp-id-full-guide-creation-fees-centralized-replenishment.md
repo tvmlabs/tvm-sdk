@@ -244,7 +244,7 @@ sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bo
 ```
 
 * `dest`  - the transfer target address;
-* `value`  - the amount of funds (nanoVMSHELL) to transfer (should be `0`);
+* `value`  - the amount of funds (nanoVMSHELL) used to pay fees (it must not be `0`);
 * `cc`  - the type of ECC token (SHELL has index 2) and amount (specified in nanotokens) to transfer;
 * `bounce`  - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
 * `flags-`[sendmsg flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (should be `1`);
@@ -738,3 +738,89 @@ When transferring messages between contracts under the same Dapp ID, fees are di
 
 When transferring messages between contracts under different Dapp IDs, the entire amount of tokens specified in `msg.value` (VMSHELL) is nullified. In this case, the recipient contract must assume responsibility for executing the initiated transaction by calling `tvm.accept()` within the invoked function. Otherwise, the transaction will fail with the error `Not enough funds`.
 
+## Troubleshooting
+
+### Error 621: `The account doesn't have a state` during contract deployment
+
+#### Description
+
+When running the deploy command, you may encounter the following error:
+
+```
+Input arguments:
+     tvc: UpdateCustodianMultisigWallet.tvc
+  params: {"owners_pubkey":["0x7111b817f126522ead42c315ed1d908110bb7caf033fb1c4428537d0dc82cf4b"], "owners_address": [], "reqConfirms":1, "reqConfirmsData": 1, "value":0}
+     abi: UpdateCustodianMultisigWallet.abi.json
+    keys: UpdateCustodianMultisigWallet.keys.json
+  opt_wc: 0
+   alias: None
+Connecting to:
+        Url: shellnet.ackinacki.org
+        Endpoints: ["shellnet.ackinacki.org"]
+
+Deploying...
+Processing...
+Error: {
+  "code": 621,
+  "message": "The account doesn't have a state",
+  "data": {
+    "core_version": "2.24.9",
+    "node_error": {
+      "extensions": {
+        "code": "COMPUTE_SKIPPED",
+        "message": "The account doesn't have a state",
+        "details": {
+          "producers": [
+            "shellnet-2.testbk.ackinacki.org:8600"
+          ],
+          "message_hash": "ab499e8388cd69f72bcf985f059c2f4cfe43f9aa4aaf1455dd44656bc388f3ea",
+          "exit_code": 0,
+          "current_time": "1771864434272",
+          "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000",
+          "address": "0:ceb8919b1100367905c8e052e22deeca9f5f1c0f39c126a0fad03a78b4a8d32c"
+        }
+      }
+    },
+    "ext_message_token": {
+      "unsigned": "1771864464272",
+      "signature": "f5d3c7ad18d1bdfd9748fc2f5e841f272642a4ab0e5f0c6238794c9c310a592177140e725c4d109eb1ab13aa90404641a4bda7fa202de148bd7bbbe70095b800",
+      "issuer": {
+        "bm": "d09e10f63d84f8c89b5ad48e0497756bacf0749437ad84210824fb582d23a396"
+      }
+    }
+  }
+}
+```
+
+#### Cause
+
+This error means that the target account does not have an initialized state on the network.
+
+### ✅ Solution
+
+{% hint style="warning" %}
+**Before deploying the contract, you must fund the future contract address with `VMSHELL` tokens.**
+{% endhint %}
+
+This can be done by calling the `sendTransaction` method with **flag `16`**.
+
+In this case, you transfer **SHELL** tokens, which are automatically converted into **VMSHELL** tokens and credited to the balance of the account you intend to deploy.
+
+#### Example Command
+
+```bash
+tvm-cli call <MSIG_ADDR> sendTransaction \
+'{
+  "dest":"0:ceb8919b1100367905c8e052e22deeca9f5f1c0f39c126a0fad03a78b4a8d32c",
+  "value":1000000000,
+  "cc":{"2":5000000000},
+  "bounce":false,
+  "flags":16,
+  "payload":""
+}' \
+--abi <WALLET_ABI.json> \
+--sign <WALLET_KEYS.json>
+```
+
+As a result, the account balance will be credited with **5 VMSHELL**\
+After the transaction is confirmed, you can safely run the deploy command again.
