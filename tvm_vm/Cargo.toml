@@ -69,8 +69,8 @@ fastcrypto = "0.1.8"
 neptune = { version = "13.0.0", default-features = false }
 
 once_cell = "1.16"
-halo2-base = "0.5.1"
-pse-poseidon = { git = "https://github.com/axiom-crypto/pse-poseidon.git" }
+halo2-base = { version = "0.5.1", optional = true }
+pse-poseidon = { git = "https://github.com/axiom-crypto/pse-poseidon.git", optional = true }
 
 schemars = "0.8.10"
 
@@ -97,7 +97,7 @@ pretty_assertions = "1.4.0"
 default = ["gosh"]
 fift_check = []
 wasmtime = ["wasmtime/std", "wasmtime-wasi", "wasmtime-wasi-io"]
-gosh = ["tvm_block/gosh", "diffy", "similar", "zstd"]
+gosh = ["tvm_block/gosh", "diffy", "similar", "zstd", "halo2-base", "pse-poseidon"]
 log_file = []
 signature_no_check = []
 signature_with_id = ["tvm_block/signature_with_id"]

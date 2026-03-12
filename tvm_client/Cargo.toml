@@ -163,3 +163,6 @@ wasm-base = [
 # NOTE: supposed to be the same as "wasm" but for now
 # we don't support wasm contracts in the browser
 wasm_web = ["wasm-base", "tvm_vm/wasm_web", "tvm_executor/wasm_web"]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-O", "--enable-bulk-memory", "--enable-nontrapping-float-to-int"]
