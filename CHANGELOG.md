@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.14] - 2026-03-06
+
+### Fixes
+- Fixed MerkleUpdate generation for a single account cell
+
+## [2.24.13] - 2026-03-06
+
+### Added
+- `tvm_client`: outgoing HTTP requests now include a `traceparent` header; on failure the trace identifier is included in the error message for easier diagnostics
+
+### Changed
+- `tvm_cli`: migrated CLI argument definitions to current clap v3 API, removing deprecated usage
+
+### Fixed
+- `tvm_cli`: `--abi` argument is now required for the `genaddr` subcommand, preventing confusing runtime errors when omitted (breaking)
+
+## [2.24.12] - 2026-02-26
+## Changed
+- Refactored transaction execute to properly initialize account state from StateInit before execution
+
+## Fixed
+- Fix token transfers between and within dapp_id
+
+## [2.24.11] - 2026-02-17
+## Fixed
+- Hash used for calculating BOC depth when applying BOC size limits
+
+## [2.24.10] - 2026-02-16
+## New
+- Add general purpose Poseidon TVM instruction based on Axiom.
 
 ## [2.24.9] - 2026-01-21
 ## New
@@ -20,8 +50,7 @@ All notable changes to this project will be documented in this file.
 
 ## [2.24.6] - 2025-12-10
 ## Fixed
-- Add support of Gosh provider into TLS wasm binary and update related git tests
-
+- Add support of Gosh provider into TLS wasm binary and update related tests
 
 ## [2.24.5] - 2025-11-03
 ## Fixed

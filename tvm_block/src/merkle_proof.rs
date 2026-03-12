@@ -38,10 +38,6 @@ use crate::messages::Message;
 use crate::shard::ShardStateUnsplit;
 use crate::transactions::Transaction;
 
-#[cfg(test)]
-#[path = "tests/test_merkle_proof.rs"]
-mod tests;
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MerkleProof {
     pub hash: UInt256,

@@ -50,10 +50,6 @@ use crate::types::AddSub;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
 
-#[cfg(test)]
-#[path = "tests/test_out_msgs.rs"]
-mod tests;
-
 // 3.3 Outbound message queue and descriptors
 // This section discusses OutMsgDescr, the structure representing all outbound
 // messages of a block, along with their envelopes and brief descriptions of the

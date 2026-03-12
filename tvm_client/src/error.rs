@@ -12,6 +12,7 @@ use crate::net::construct_rest_api_endpoint;
 pub struct ClientError {
     pub code: u32,
     pub message: String,
+    pub traceparent: Option<String>,
     pub data: Value,
 }
 
@@ -87,7 +88,13 @@ impl AddNetworkUrl for ClientError {
 
 impl Display for ClientError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if f.alternate() { write!(f, "{:#}", json!(self)) } else { write!(f, "{}", self.message) }
+        if f.alternate() {
+            write!(f, "{:#}", json!(self))
+        } else if let Some(traceparent) = &self.traceparent {
+            write!(f, "{}; traceparent: {}", self.message, traceparent)
+        } else {
+            write!(f, "{}", self.message)
+        }
     }
 }
 
@@ -111,7 +118,7 @@ impl ClientError {
             data["binding_library"] = Value::String(binding.library);
             data["binding_version"] = Value::String(binding.version);
         }
-        Self { code, message, data }
+        Self { code, message, data, traceparent: None }
     }
 
     pub fn with_code_message(code: u32, message: String) -> Self {
@@ -121,6 +128,7 @@ impl ClientError {
             data: json!({
                 "core_version": core_version(),
             }),
+            traceparent: None,
         }
     }
 
@@ -161,6 +169,11 @@ impl ClientError {
 
         (thread_id, redirect_url)
     }
+
+    pub fn add_trace(mut self, traceparent: String) -> ClientError {
+        self.traceparent = Some(traceparent);
+        self
+    }
 }
 
 pub(crate) fn format_time(time: u32) -> String {
@@ -185,6 +198,7 @@ mod tests {
                     }
                 }
             }),
+            traceparent: None,
         }
     }
 
@@ -216,6 +230,7 @@ mod tests {
                     "extensions": {}
                 }
             }),
+            traceparent: None,
         };
         let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, None);
@@ -232,7 +247,12 @@ mod tests {
 
     #[test]
     fn test_get_redirection_data_with_no_node_error() {
-        let error = ClientError { code: 1, message: "Test".to_string(), data: json!({}) };
+        let error = ClientError {
+            code: 1,
+            message: "Test".to_string(),
+            data: json!({}),
+            traceparent: None,
+        };
         let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, None);
         assert_eq!(url, None);

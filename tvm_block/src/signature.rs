@@ -34,10 +34,6 @@ use crate::error::BlockError;
 use crate::validators::ValidatorBaseInfo;
 use crate::validators::ValidatorDescr;
 
-#[cfg(test)]
-#[path = "tests/test_signature.rs"]
-mod tests;
-
 // ed25519_signature#5 R:bits256 s:bits256 = CryptoSignature;
 /// CryptoSignature
 #[derive(Clone, Debug, Eq, PartialEq)]

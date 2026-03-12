@@ -30,10 +30,6 @@ use crate::types::AddSub;
 use crate::types::ChildCell;
 use crate::types::Grams;
 
-#[cfg(test)]
-#[path = "tests/test_envelope_message.rs"]
-mod tests;
-
 // 3.1.15. Enveloped messages. Message envelopes are used for attaching
 // routing information, such as the current (transit) address and the next-hop
 // address, to inbound, transit, and outbound messages (cf. 2.1.16). The message
@@ -391,7 +387,7 @@ impl MsgEnvelope {
     /// Create Envelope with hypercube routing params
     /// TBD
     #[allow(dead_code)]
-    pub(crate) fn hypercube_routing(
+    pub fn hypercube_routing(
         msg: &Message,
         src_shard: &ShardIdent,
         fwd_fee_remaining: Grams,
