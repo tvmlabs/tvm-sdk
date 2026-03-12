@@ -25,7 +25,6 @@ use zeroize::ZeroizeOnDrop;
 use crate::client::ClientContext;
 use crate::crypto;
 use crate::crypto::MnemonicDictionary;
-use crate::crypto::default_hdkey_compliant;
 use crate::crypto::internal::Key256;
 use crate::crypto::internal::Key264;
 use crate::crypto::internal::key256;
@@ -146,7 +145,7 @@ pub fn hdkey_derive_from_xprv(
     params: ParamsOfHDKeyDeriveFromXPrv,
 ) -> ClientResult<ResultOfHDKeyDeriveFromXPrv> {
     let xprv = HDPrivateKey::from_serialized_string(&params.xprv)?;
-    let derived = xprv.derive(params.child_index, params.hardened, default_hdkey_compliant())?;
+    let derived = xprv.derive(params.child_index, params.hardened)?;
     Ok(ResultOfHDKeyDeriveFromXPrv { xprv: derived.serialize_to_string() })
 }
 
@@ -174,7 +173,7 @@ pub fn hdkey_derive_from_xprv_path(
 ) -> ClientResult<ResultOfHDKeyDeriveFromXPrvPath> {
     let xprv = HDPrivateKey::from_serialized_string(&params.xprv)?;
     Ok(ResultOfHDKeyDeriveFromXPrvPath {
-        xprv: xprv.derive_path(&params.path, default_hdkey_compliant())?.serialize_to_string(),
+        xprv: xprv.derive_path(&params.path)?.serialize_to_string(),
     })
 }
 
@@ -237,7 +236,6 @@ impl HDPrivateKey {
         &self,
         child_index: u32,
         hardened: bool,
-        compliant: bool,
     ) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = Default::default();
         child.depth += 1;
@@ -257,7 +255,6 @@ impl HDPrivateKey {
             Hmac::new_from_slice(&self.child_chain).map_err(crypto::Error::bip32_invalid_key)?;
 
         if hardened {
-            // Both compliant and non-compliant use the same 32-byte zero-padded key
             hmac.update(&[0]);
             hmac.update(&self.key.0);
         } else {
@@ -281,7 +278,7 @@ impl HDPrivateKey {
         Ok(child)
     }
 
-    pub(crate) fn derive_path(&self, path: &str, compliant: bool) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn derive_path(&self, path: &str) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = self.clone();
         for step in path.split('/') {
             if step == "m" {
@@ -290,7 +287,7 @@ impl HDPrivateKey {
                 let index: u32 = (if hardened { &step[0..(step.len() - 1)] } else { step })
                     .parse()
                     .map_err(|_| crypto::Error::bip32_invalid_derive_path(path))?;
-                child = child.derive(index, hardened, compliant)?;
+                child = child.derive(index, hardened)?;
             }
         }
         Ok(child)
