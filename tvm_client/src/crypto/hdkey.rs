@@ -15,8 +15,8 @@ use byteorder::ByteOrder;
 use byteorder::LittleEndian;
 use hmac::Hmac;
 use hmac::Mac;
-use libsecp256k1::PublicKey;
-use libsecp256k1::SecretKey;
+use k256::elliptic_curve::sec1::ToEncodedPoint;
+use k256::NonZeroScalar;
 use pbkdf2::pbkdf2;
 use sha2::Digest;
 use sha2::Sha512;
@@ -220,36 +220,17 @@ impl HDPrivateKey {
     }
 
     fn public(&self) -> Key264 {
-        let secret_key = SecretKey::parse(&self.key.0).unwrap();
-        let public_key = PublicKey::from_secret_key(&secret_key);
-        public_key.serialize_compressed().into()
+        let secret_key = k256::SecretKey::from_slice(&self.key.0).unwrap();
+        let public_key = secret_key.public_key();
+        let point = public_key.to_encoded_point(true);
+        let bytes: &[u8] = point.as_bytes();
+        let mut result = [0u8; 33];
+        result.copy_from_slice(bytes);
+        result.into()
     }
 
-    fn map_secp_error(error: libsecp256k1::Error) -> ClientError {
-        match error {
-            libsecp256k1::Error::InvalidSignature => {
-                crypto::Error::bip32_invalid_key("InvalidSignature")
-            }
-            libsecp256k1::Error::InvalidPublicKey => {
-                crypto::Error::bip32_invalid_key("InvalidPublicKey")
-            }
-            libsecp256k1::Error::InvalidSecretKey => {
-                crypto::Error::bip32_invalid_key("InvalidSecretKey")
-            }
-            libsecp256k1::Error::InvalidRecoveryId => {
-                crypto::Error::bip32_invalid_key("InvalidRecoveryId")
-            }
-            libsecp256k1::Error::InvalidMessage => {
-                crypto::Error::bip32_invalid_key("InvalidMessage")
-            }
-            libsecp256k1::Error::InvalidInputLength => {
-                crypto::Error::bip32_invalid_key("InvalidInputLength")
-            }
-            libsecp256k1::Error::TweakOutOfRange => {
-                crypto::Error::bip32_invalid_key("TweakOutOfRange")
-            }
-            libsecp256k1::Error::InvalidAffine => crypto::Error::bip32_invalid_key("InvalidAffine"),
-        }
+    fn map_k256_error(error: impl std::fmt::Display) -> ClientError {
+        crypto::Error::bip32_invalid_key(error.to_string())
     }
 
     pub(crate) fn derive(
@@ -275,16 +256,10 @@ impl HDPrivateKey {
         let mut hmac: Hmac<Sha512> =
             Hmac::new_from_slice(&self.child_chain).map_err(crypto::Error::bip32_invalid_key)?;
 
-        let secret_key = SecretKey::parse(&self.key.0).unwrap();
-        if hardened && !compliant {
-            // The private key serialization in this case will not be exactly 32 bytes and
-            // can be any smaller value, and the value is not zero-padded.
+        if hardened {
+            // Both compliant and non-compliant use the same 32-byte zero-padded key
             hmac.update(&[0]);
-            hmac.update(&secret_key.serialize());
-        } else if hardened {
-            // This will use a 32 byte zero padded serialization of the private key
-            hmac.update(&[0]);
-            hmac.update(&secret_key.serialize());
+            hmac.update(&self.key.0);
         } else {
             hmac.update(&public);
         }
@@ -292,13 +267,17 @@ impl HDPrivateKey {
         let result = hmac.finalize().into_bytes();
         let (child_key_bytes, chain_code) = result.split_at(32);
 
-        let mut child_secret_key =
-            SecretKey::parse_slice(child_key_bytes).map_err(Self::map_secp_error)?;
-        let self_secret_key = SecretKey::parse(&self.key.0).map_err(Self::map_secp_error)?;
-        child_secret_key.tweak_add_assign(&self_secret_key).map_err(Self::map_secp_error)?;
+        // BIP-32 scalar addition: child_key = parse(IL) + parent_key (mod n)
+        let child_scalar = NonZeroScalar::try_from(child_key_bytes)
+            .map_err(Self::map_k256_error)?;
+        let parent_scalar = NonZeroScalar::try_from(self.key.0.as_slice())
+            .map_err(Self::map_k256_error)?;
+        let sum = child_scalar.as_ref() + parent_scalar.as_ref();
+        let result_scalar = Option::<NonZeroScalar>::from(NonZeroScalar::new(sum))
+            .ok_or_else(|| crypto::Error::bip32_invalid_key("resulting key is zero"))?;
 
         child.child_chain.0.copy_from_slice(chain_code);
-        child.key.0.copy_from_slice(&child_secret_key.serialize());
+        child.key.0.copy_from_slice(&result_scalar.to_bytes());
         Ok(child)
     }
 
