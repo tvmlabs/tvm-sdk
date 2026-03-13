@@ -51,7 +51,6 @@ bls12_381 = "0.8"
 
 base64 = "0.13"
 
-
 ark-bls12-381 = "0.4.0"
 ark-bn254 = "0.4.0"
 ark-ec = { version = "0.4.1" }
@@ -65,13 +64,15 @@ ark-crypto-primitives = { version = "0.4.0", features = ["r1cs", "prf"] }
 ark-r1cs-std = "0.4.0"
 ark-std = "0.4.0"
 
+halo2-base = "0.5.1"
+halo2-ecc = "0.5.1"
+gosh_dark_dex_halo2_circuit = { git = 'https://github.com/gosh-sh/gosh_dark_dex_halo2_circuit.git', branch = "poseidon_instead_of_ecc_axiom" }
+
 fastcrypto = "0.1.8"
 neptune = { version = "13.0.0", default-features = false }
 
 once_cell = "1.16"
-halo2-base = "0.5.1"
 pse-poseidon = { git = "https://github.com/axiom-crypto/pse-poseidon.git" }
-
 schemars = "0.8.10"
 
 derive_more = "0.99.16"
@@ -84,7 +85,6 @@ tracing = "0.1.41"
 ff = { version = "0.13.0", features = ["derive"] }
 
 rand_chacha = "0.2.2"
-
 
 [dev-dependencies]
 criterion = "0.5.1"
