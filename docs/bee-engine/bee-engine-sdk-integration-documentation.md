@@ -17,7 +17,7 @@ Repository with artifacts is here:\
 
 Before users can start mining, you must complete the following steps:
 
-1. Application Registration
+1. Application Registration (for Mainnet)
 2. Install Bee SDK
 3. Integrate into your application (React + Vite example)
 4. User Authorization via AN Wallet
@@ -29,7 +29,7 @@ To connect your application to the Bee Engine system:
 
 You must obtain your application identifier in the system: `app_dapp_id`&#x20;
 
-* At this stage of development, please contact us with a request via our [Telegram channel](https://t.me/tvmlabs).
+* At this stage of development, please specify the value `0x0000000000000000000000000000000000000000000000000000000000000001`
 * In the future, the developer will:
   * deploy their own application smart contract system in the **Acki Nacki blockchain**
   * retrieve `app_dapp_id`, which will equal the [DAPP ID](https://docs.ackinacki.com/glossary#dapp-id) of the first deployed contract
