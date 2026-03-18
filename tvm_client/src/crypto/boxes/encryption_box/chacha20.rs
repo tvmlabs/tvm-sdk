@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use chacha20::cipher::{KeyIvInit, StreamCipher};
+use chacha20::cipher::KeyIvInit;
+use chacha20::cipher::StreamCipher;
 use tvm_types::base64_encode;
 use zeroize::Zeroize;
 

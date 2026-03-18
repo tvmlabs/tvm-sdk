@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use chacha20::cipher::{KeyIvInit, StreamCipher};
+use chacha20::cipher::KeyIvInit;
+use chacha20::cipher::StreamCipher;
 use rand::RngCore;
 use sodalite::BOX_NONCE_LEN;
 use sodalite::BOX_PUBLIC_KEY_LEN;

@@ -15,7 +15,9 @@ use aes::Aes128;
 use aes::Aes192;
 use aes::Aes256;
 use base64::Engine;
-use cbc::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
+use cbc::cipher::BlockDecryptMut;
+use cbc::cipher::BlockEncryptMut;
+use cbc::cipher::KeyIvInit;
 use cbc::cipher::block_padding::NoPadding;
 
 /// AES block size in bytes (128 bits = 16 bytes), same for all AES variants.
@@ -85,17 +87,23 @@ impl AesEncryptionBox {
         Ok(Self { key, iv, mode: params.mode.clone() })
     }
 
-    fn encrypt_cbc<C: cbc::cipher::BlockEncrypt + cbc::cipher::BlockCipher + cbc::cipher::KeyInit>(
+    fn encrypt_cbc<
+        C: cbc::cipher::BlockEncrypt + cbc::cipher::BlockCipher + cbc::cipher::KeyInit,
+    >(
         key: &[u8],
         iv: &[u8],
         data: &mut Vec<u8>,
         size: usize,
     ) -> ClientResult<()> {
         // Pad to block boundary with zeros (matching old ZeroPadding behavior)
-        let padded_size = if size % AES_BLOCK_SIZE == 0 { size } else { (size / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE };
+        let padded_size = if size % AES_BLOCK_SIZE == 0 {
+            size
+        } else {
+            (size / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE
+        };
         data.resize(padded_size, 0);
-        let encryptor = cbc::Encryptor::<C>::new_from_slices(key, iv)
-            .map_err(Error::cannot_create_cipher)?;
+        let encryptor =
+            cbc::Encryptor::<C>::new_from_slices(key, iv).map_err(Error::cannot_create_cipher)?;
         // encrypt_padded_mut with NoPadding since we already padded with zeros
         encryptor
             .encrypt_padded_mut::<NoPadding>(data, padded_size)
@@ -103,13 +111,15 @@ impl AesEncryptionBox {
         Ok(())
     }
 
-    fn decrypt_cbc<C: cbc::cipher::BlockDecrypt + cbc::cipher::BlockCipher + cbc::cipher::KeyInit>(
+    fn decrypt_cbc<
+        C: cbc::cipher::BlockDecrypt + cbc::cipher::BlockCipher + cbc::cipher::KeyInit,
+    >(
         key: &[u8],
         iv: &[u8],
         data: &mut [u8],
     ) -> ClientResult<()> {
-        let decryptor = cbc::Decryptor::<C>::new_from_slices(key, iv)
-            .map_err(Error::cannot_create_cipher)?;
+        let decryptor =
+            cbc::Decryptor::<C>::new_from_slices(key, iv).map_err(Error::cannot_create_cipher)?;
         decryptor
             .decrypt_padded_mut::<NoPadding>(data)
             .map_err(|err| Error::decrypt_data_error(format!("{:#?}", err)))?;
@@ -168,15 +178,9 @@ impl EncryptionBox for AesEncryptionBox {
     async fn decrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
         let mut data = base64_decode(data)?;
         match (self.key.len(), &self.mode) {
-            (16, CipherMode::CBC) => {
-                Self::decrypt_cbc::<Aes128>(&self.key, &self.iv, &mut data)?
-            }
-            (24, CipherMode::CBC) => {
-                Self::decrypt_cbc::<Aes192>(&self.key, &self.iv, &mut data)?
-            }
-            (32, CipherMode::CBC) => {
-                Self::decrypt_cbc::<Aes256>(&self.key, &self.iv, &mut data)?
-            }
+            (16, CipherMode::CBC) => Self::decrypt_cbc::<Aes128>(&self.key, &self.iv, &mut data)?,
+            (24, CipherMode::CBC) => Self::decrypt_cbc::<Aes192>(&self.key, &self.iv, &mut data)?,
+            (32, CipherMode::CBC) => Self::decrypt_cbc::<Aes256>(&self.key, &self.iv, &mut data)?,
             _ => return Err(Error::unsupported_cipher_mode(&format!("{:?}", self.mode))),
         }
         Ok(base64_encode(&data))

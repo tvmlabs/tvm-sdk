@@ -186,7 +186,6 @@ pub fn default_hdkey_derivation_path() -> String {
     "m/44'/396'/0'/0/0".into()
 }
 
-
 fn deserialize_mnemonic_dictionary<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<MnemonicDictionary, D::Error> {

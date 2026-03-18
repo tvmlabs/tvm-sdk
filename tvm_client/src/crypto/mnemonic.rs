@@ -323,8 +323,7 @@ impl CryptoMnemonic for Bip39Mnemonic {
         path: &str,
     ) -> ClientResult<KeyPair> {
         check_phrase(self, phrase)?;
-        let derived =
-            HDPrivateKey::from_mnemonic(phrase)?.derive_path(path)?;
+        let derived = HDPrivateKey::from_mnemonic(phrase)?.derive_path(path)?;
         ed25519_keys_from_secret_bytes(&derived.secret().0)
     }
 

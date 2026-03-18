@@ -15,8 +15,8 @@ use byteorder::ByteOrder;
 use byteorder::LittleEndian;
 use hmac::Hmac;
 use hmac::Mac;
-use k256::elliptic_curve::sec1::ToEncodedPoint;
 use k256::NonZeroScalar;
+use k256::elliptic_curve::sec1::ToEncodedPoint;
 use pbkdf2::pbkdf2;
 use sha2::Digest;
 use sha2::Sha512;
@@ -232,11 +232,7 @@ impl HDPrivateKey {
         crypto::Error::bip32_invalid_key(error.to_string())
     }
 
-    pub(crate) fn derive(
-        &self,
-        child_index: u32,
-        hardened: bool,
-    ) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn derive(&self, child_index: u32, hardened: bool) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = Default::default();
         child.depth += 1;
 
@@ -265,10 +261,10 @@ impl HDPrivateKey {
         let (child_key_bytes, chain_code) = result.split_at(32);
 
         // BIP-32 scalar addition: child_key = parse(IL) + parent_key (mod n)
-        let child_scalar = NonZeroScalar::try_from(child_key_bytes)
-            .map_err(Self::map_k256_error)?;
-        let parent_scalar = NonZeroScalar::try_from(self.key.0.as_slice())
-            .map_err(Self::map_k256_error)?;
+        let child_scalar =
+            NonZeroScalar::try_from(child_key_bytes).map_err(Self::map_k256_error)?;
+        let parent_scalar =
+            NonZeroScalar::try_from(self.key.0.as_slice()).map_err(Self::map_k256_error)?;
         let sum = child_scalar.as_ref() + parent_scalar.as_ref();
         let result_scalar = Option::<NonZeroScalar>::from(NonZeroScalar::new(sum))
             .ok_or_else(|| crypto::Error::bip32_invalid_key("resulting key is zero"))?;

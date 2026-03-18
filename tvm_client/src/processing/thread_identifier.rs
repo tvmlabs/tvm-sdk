@@ -22,14 +22,17 @@ impl<'de> Deserialize<'de> for ThreadIdentifier {
         struct BytesVisitor;
         impl<'de> serde::de::Visitor<'de> for BytesVisitor {
             type Value = ThreadIdentifier;
+
             fn expecting(&self, f: &mut Formatter) -> std::fmt::Result {
                 write!(f, "34 bytes")
             }
+
             fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
                 let arr: [u8; 34] =
                     v.try_into().map_err(|_| E::invalid_length(v.len(), &"34 bytes"))?;
                 Ok(ThreadIdentifier(arr))
             }
+
             fn visit_seq<A: serde::de::SeqAccess<'de>>(
                 self,
                 mut seq: A,
