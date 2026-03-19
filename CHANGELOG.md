@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.15] - 2026-03-19
+
+### Fixes
+- Fixed exchange system for 16 flag in message
+
 ## [2.24.14] - 2026-03-06
 
 ### Fixes
