@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.24.15] - 2026-03-19
+## [2.24.16] - 2026-03-19
 
 ### Fixed
 - Fixed WASM web build compatibility and ZK dependency handling
@@ -11,6 +11,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Removed redundant `compliant` flag from HD key derivation
+
+## [2.24.15] - 2026-03-19
+
+### Fixes
+- Fixed exchange system for 16 flag in message
 
 ## [2.24.14] - 2026-03-06
 
