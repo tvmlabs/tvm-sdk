@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.15] - 2026-03-19
+
+### Fixed
+- Fixed WASM web build compatibility and ZK dependency handling
+- Fixed `current_traceparent` function in endpoint.rs
+- Optimized dependencies: ZK deps behind feature gate, dependency deduplication, workspace consolidation
+
+### Changed
+- Removed redundant `compliant` flag from HD key derivation
+
 ## [2.24.14] - 2026-03-06
 
 ### Fixes
