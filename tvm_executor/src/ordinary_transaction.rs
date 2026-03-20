@@ -494,8 +494,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 } else {
                     acc_balance.grams -= grams_to_subtract;
                 }
-                let gas_consumed = compute_phase_gas_fees.as_u128() as u64;
-                let ecc_to_restore = std::cmp::min(msg_balance_convert, gas_consumed);
+                let ecc_to_restore = if use_new_version {
+                    msg_balance_convert
+                } else {
+                    let gas_consumed = compute_phase_gas_fees.as_u128() as u64;
+                    std::cmp::min(msg_balance_convert, gas_consumed)
+                };
                 let mut add_value = CurrencyCollection::new();
                 add_value.set_other(2, ecc_to_restore.into())?;
                 acc_balance.add(&add_value)?;
@@ -536,7 +540,26 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 acc_balance = original_acc_balance;
                 should_burn_need_to_burn = false;
             } else if original_account_is_none && !acc_balance.is_zero()? {
-                acc_balance = CurrencyCollection::default();
+                if use_new_version && exchanged {
+                    // Preserve ECC on account, only zero grams
+                    let ecc = acc_balance.get_other(2)?;
+                    acc_balance = CurrencyCollection::default();
+                    if let Some(ecc_val) = ecc {
+                        let digits = ecc_val.value().iter_u64_digits().collect::<Vec<u64>>();
+                        let base = u64::MAX as u128 + 1;
+                        let ecc_u128 = if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0)
+                        {
+                            u128::MAX
+                        } else {
+                            let d0 = digits.first().copied().unwrap_or(0) as u128;
+                            let d1 = digits.get(1).copied().unwrap_or(0) as u128;
+                            d0 + d1 * base
+                        };
+                        acc_balance.set_other(2, ecc_u128)?;
+                    }
+                } else {
+                    acc_balance = CurrencyCollection::default();
+                }
             }
         } else if description.aborted && !is_ext_msg && !bounce {
             should_burn_need_to_burn = true;
