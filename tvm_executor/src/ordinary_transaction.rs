@@ -539,27 +539,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
                 should_burn_need_to_burn = false;
+            } else if use_new_version && account.status() == AccountStatus::AccStateUninit {
+                // Don't leave fwd_fee on uninit accounts after bounce failure,
+                // but preserve ECC
+                log::debug!(target: "executor", "Bounce failed on uninit account, restoring grams, preserving ECC");
+                let ecc = acc_balance.other.clone();
+                acc_balance = original_acc_balance;
+                acc_balance.other = ecc;
             } else if original_account_is_none && !acc_balance.is_zero()? {
-                if use_new_version && exchanged {
-                    // Preserve ECC on account, only zero grams
-                    let ecc = acc_balance.get_other(2)?;
-                    acc_balance = CurrencyCollection::default();
-                    if let Some(ecc_val) = ecc {
-                        let digits = ecc_val.value().iter_u64_digits().collect::<Vec<u64>>();
-                        let base = u64::MAX as u128 + 1;
-                        let ecc_u128 = if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0)
-                        {
-                            u128::MAX
-                        } else {
-                            let d0 = digits.first().copied().unwrap_or(0) as u128;
-                            let d1 = digits.get(1).copied().unwrap_or(0) as u128;
-                            d0 + d1 * base
-                        };
-                        acc_balance.set_other(2, ecc_u128)?;
-                    }
-                } else {
-                    acc_balance = CurrencyCollection::default();
-                }
+                acc_balance = CurrencyCollection::default();
             }
         } else if description.aborted && !is_ext_msg && !bounce {
             should_burn_need_to_burn = true;
