@@ -149,7 +149,6 @@ pub struct ExecuteParams {
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
-    pub use_new_version: bool,
 }
 
 pub struct ActionPhaseResult {
@@ -203,7 +202,6 @@ impl Default for ExecuteParams {
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
-            use_new_version: false,
         }
     }
 }
