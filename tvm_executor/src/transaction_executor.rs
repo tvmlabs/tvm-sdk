@@ -1697,11 +1697,6 @@ fn outmsg_action_handler(
 
     if let Some(int_header) = msg.int_header_mut() {
         let mut fwd_prices = fwd_prices_basic.clone();
-
-        if let None = int_header.dest_dapp_id() {
-            fwd_prices *= 2;
-        }
-
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {
