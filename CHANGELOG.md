@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixes
 - Fixed fwd_fee with flag 16
-- Fixed use_new_version artefacts
+- Fixed use_new_version artifacts
 
 ## [2.24.15] - 2026-03-19
 
