@@ -131,7 +131,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 account_address.address()
             }
         };
-        let is_version_1_0_3 = params.engine_version == semver::Version::new(1, 0, 3);
+        let is_version_1_0_3 = params.engine_version >= semver::Version::new(1, 0, 3);
         let original_account_is_none = account.is_none();
         let mut need_to_burn = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
