@@ -405,7 +405,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         minted_shell,
                         need_to_burn,
                         message_src_dapp_id,
-                        use_new_version,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             if phase.success == false {
@@ -515,7 +514,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     in_msg,
                     &mut tr,
                     account_address,
-                    use_new_version,
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
                         log::debug!(target: "executor", "bounce_phase: out_msg value: {}", bounce_msg.get_value().unwrap());
