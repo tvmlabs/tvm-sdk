@@ -15,7 +15,7 @@ use crate::fail;
 type Offset = u32;
 const OFFSET_SIZE: usize = 4;
 
-pub fn write_boc3_to_bytes(root_cells: &[Cell]) -> Result<Vec<u8>, failure::Error> {
+pub fn write_boc3_to_bytes(root_cells: &[Cell]) -> crate::Result<Vec<u8>> {
     let mut result = Vec::new();
     write_boc3(&mut std::io::Cursor::new(&mut result), root_cells)?;
     Ok(result)
@@ -39,7 +39,7 @@ impl<W: Write> WriteInts for W {
 pub fn write_boc3<W: Write + Seek>(
     writer: &mut W,
     root_cells: &[Cell],
-) -> Result<(), failure::Error> {
+) -> crate::Result<()> {
     writer.write_u32_be(BOC_V3_TAG)?;
     writer.write_u32_be(root_cells.len() as u32)?;
 
@@ -67,7 +67,7 @@ fn write_cell_tree<W: Write>(
     writer: &mut W,
     offset: &mut u32,
     cell: Cell,
-) -> Result<Offset, failure::Error> {
+) -> crate::Result<Offset> {
     struct Processing {
         cell: Cell,
         children_processed: usize,
@@ -128,7 +128,7 @@ fn write_big_cell<W: Write>(
     offset: &mut u32,
     cell: &Cell,
     raw_data: &[u8],
-) -> Result<(), failure::Error> {
+) -> crate::Result<()> {
     writer.write_all(raw_data)?;
     *offset += raw_data.len() as u32;
     writer.write_all(cell.hash(0).as_slice())?;
@@ -143,7 +143,7 @@ fn write_non_big_cell<W: Write>(
     raw_data: &[u8],
     child_offsets: &[u32; 4],
     child_count: usize,
-) -> Result<(), failure::Error> {
+) -> crate::Result<()> {
     if cell::store_hashes(raw_data) {
         let len = cell::full_len(raw_data);
         writer.write_all(&raw_data[0..len])?;
@@ -166,7 +166,7 @@ fn write_with_hashes<W: Write>(
     offset: &mut u32,
     cell: &Cell,
     raw_data: &[u8],
-) -> Result<(), failure::Error> {
+) -> crate::Result<()> {
     writer.write_u8(raw_data[0] | cell::HASHES_D1_FLAG)?;
     writer.write_u8(raw_data[1])?;
 
@@ -190,7 +190,7 @@ fn write_with_hashes<W: Write>(
     Ok(())
 }
 
-pub fn read_boc3_bytes(data: Arc<Vec<u8>>, boc_offset: usize) -> Result<Vec<Cell>, failure::Error> {
+pub fn read_boc3_bytes(data: Arc<Vec<u8>>, boc_offset: usize) -> crate::Result<Vec<Cell>> {
     let magic = get_u32_checked(&data, boc_offset)?;
     if magic != BOC_V3_TAG {
         fail!("Invalid BOC3 magic: {}", magic);
@@ -208,7 +208,7 @@ pub fn read_boc3_bytes(data: Arc<Vec<u8>>, boc_offset: usize) -> Result<Vec<Cell
     Ok(root_cells)
 }
 
-fn get_u32_checked(buf: &[u8], offset: usize) -> Result<u32, failure::Error> {
+fn get_u32_checked(buf: &[u8], offset: usize) -> crate::Result<u32> {
     if buf.len() - offset >= 4 {
         let mut offset_buf = [0u8; 4];
         offset_buf.copy_from_slice(&buf[offset..offset + 4]);

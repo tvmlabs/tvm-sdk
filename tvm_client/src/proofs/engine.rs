@@ -613,7 +613,7 @@ impl ProofHelperEngineImpl {
         }
 
         result.ok_or_else(|| {
-            failure::err_msg(format!("Top block for the given shard ({}) not found", shard))
+            anyhow::Error::msg(format!("Top block for the given shard ({}) not found", shard))
         })
     }
 

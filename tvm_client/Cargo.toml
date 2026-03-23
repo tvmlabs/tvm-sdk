@@ -50,7 +50,6 @@ chacha20 = "0.6.0"
 chrono.workspace = true
 crc.workspace = true
 ed25519-dalek.workspace = true
-failure.workspace = true
 futures.workspace = true
 hex.workspace = true
 hmac = "0.12.1"

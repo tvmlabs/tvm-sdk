@@ -540,7 +540,7 @@ pub async fn replay(
 
 pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm_types::Status {
     let context = create_client(config)
-        .map_err(|e| failure::err_msg(format!("Failed to create ctx: {}", e)))?;
+        .map_err(|e| anyhow::Error::msg(format!("Failed to create ctx: {}", e)))?;
 
     let block = query_collection(
         context.clone(),
@@ -596,7 +596,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         println!("Fetching transactions of {}", account);
         fetch(config, account.as_str(), format!("{}.txns", account).as_str(), Some(end_lt), false)
             .await
-            .map_err(failure::err_msg)?;
+            .map_err(|e| anyhow::Error::msg(e))?;
     }
 
     let config_txns_path = format!("{}.txns", CONFIG_ADDR);
@@ -604,7 +604,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         println!("Fetching transactions of {}", CONFIG_ADDR);
         fetch(config, CONFIG_ADDR, config_txns_path.as_str(), Some(end_lt), false)
             .await
-            .map_err(failure::err_msg)?;
+            .map_err(|e| anyhow::Error::msg(e))?;
     }
 
     let acc = accounts[0].0.as_str();
@@ -624,7 +624,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
             None,
         )
         .await
-        .map_err(failure::err_msg)?;
+        .map_err(|e| anyhow::Error::msg(e))?;
     } else {
         println!("Using pre-computed config {}", config_path);
     }
@@ -651,7 +651,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
                         None,
                     )
                     .await
-                    .map_err(failure::err_msg)
+                    .map_err(|e| anyhow::Error::msg(e))
                     .unwrap();
                 }
             })
