@@ -163,7 +163,7 @@ pub fn poseidon_bytes_axiom(
 pub fn poseidon_bytes_axiom(
     _inputs: &Vec<Vec<u8>>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    Err(InvalidInput)
+    Err(ZkCryptoError::UnsupportedPlatform)
 }
 
 pub fn poseidon_bytes_flat(
