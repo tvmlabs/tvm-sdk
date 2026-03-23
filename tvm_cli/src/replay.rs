@@ -539,8 +539,8 @@ pub async fn replay(
 }
 
 pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm_types::Status {
-    let context = create_client(config)
-        .map_err(|e| anyhow::anyhow!("Failed to create ctx: {e}"))?;
+    let context =
+        create_client(config).map_err(|e| anyhow::anyhow!("Failed to create ctx: {e}"))?;
 
     let block = query_collection(
         context.clone(),

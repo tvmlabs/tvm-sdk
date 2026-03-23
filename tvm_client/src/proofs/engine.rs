@@ -612,9 +612,7 @@ impl ProofHelperEngineImpl {
             })?;
         }
 
-        result.ok_or_else(|| {
-            anyhow::anyhow!("Top block for the given shard ({}) not found", shard)
-        })
+        result.ok_or_else(|| anyhow::anyhow!("Top block for the given shard ({}) not found", shard))
     }
 
     pub(crate) async fn query_closest_mc_block_for_shard_block(
