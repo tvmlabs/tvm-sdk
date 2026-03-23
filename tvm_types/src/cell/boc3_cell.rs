@@ -36,10 +36,7 @@ impl<W: Write> WriteInts for W {
     }
 }
 
-pub fn write_boc3<W: Write + Seek>(
-    writer: &mut W,
-    root_cells: &[Cell],
-) -> crate::Result<()> {
+pub fn write_boc3<W: Write + Seek>(writer: &mut W, root_cells: &[Cell]) -> crate::Result<()> {
     writer.write_u32_be(BOC_V3_TAG)?;
     writer.write_u32_be(root_cells.len() as u32)?;
 
