@@ -9,7 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
 //
 
 use std::collections::HashMap;
@@ -96,11 +96,19 @@ pub(crate) struct NetworkState {
     resume_timeout: AtomicU32,
     query_endpoint: RwLock<Option<Arc<Endpoint>>>,
     resolved_endpoints: RwLock<HashMap<String, ResolvedEndpoint>>,
-    bk_send_message_endpoint: RwLock<Option<Url>>,
+    pub(crate) bk_send_message_endpoint: RwLock<Option<Url>>,
     rest_api_endpoint: RwLock<Url>,
     bm_issuer_pubkey: RwLock<Option<String>>,
     bm_token: RwLock<Option<Value>>,
     use_https_for_rest_api: bool,
+    /// All BM REST API endpoints derived from configured endpoint addresses.
+    all_bm_endpoints: Vec<Url>,
+    /// Discovered active BM endpoint (via readiness check).
+    pub(crate) active_bm_endpoint: RwLock<Option<Url>>,
+    /// Serializes concurrent BM discovery attempts.
+    bm_discovery_lock: Mutex<()>,
+    /// When true, all messages are routed through BM (never directly to BP).
+    pub(crate) bp_fallback_active: AtomicBool,
 }
 
 async fn query_by_url(
@@ -123,6 +131,7 @@ impl NetworkState {
         endpoint_addresses: Vec<String>,
         rest_api_endpoint: Url,
         use_https_for_rest_api: bool,
+        all_bm_endpoints: Vec<Url>,
     ) -> Self {
         let (sender, receiver) = watch::channel(false);
         let regulation =
@@ -144,6 +153,10 @@ impl NetworkState {
             bm_issuer_pubkey: RwLock::new(None),
             bm_token: RwLock::new(None),
             use_https_for_rest_api,
+            all_bm_endpoints,
+            active_bm_endpoint: RwLock::new(None),
+            bm_discovery_lock: Mutex::new(()),
+            bp_fallback_active: AtomicBool::new(false),
         }
     }
 
@@ -372,13 +385,102 @@ impl NetworkState {
         })
     }
 
-    pub async fn select_send_message_endpoint(&self) -> Url {
+    pub async fn select_send_message_endpoint(&self) -> ClientResult<Url> {
+        // If multiple BM endpoints configured, ensure discovery has been performed
+        if self.all_bm_endpoints.len() > 1 {
+            self.ensure_bm_discovered().await?;
+        }
+
+        // If fallback proxy mode is active, always route through BM
+        if self.bp_fallback_active.load(Ordering::Relaxed) {
+            return Ok(self.get_active_bm_endpoint().await);
+        }
+
+        // Prefer BP endpoint if available, fall back to BM
         let guarded_bk_endpoint = self.bk_send_message_endpoint.read().await;
         if let Some(bk_endpoint) = guarded_bk_endpoint.as_ref() {
-            bk_endpoint.clone()
+            Ok(bk_endpoint.clone())
+        } else {
+            Ok(self.get_active_bm_endpoint().await)
+        }
+    }
+
+    /// Returns the active BM endpoint (discovered or default).
+    pub async fn get_active_bm_endpoint(&self) -> Url {
+        if let Some(active) = self.active_bm_endpoint.read().await.as_ref() {
+            active.clone()
         } else {
             self.rest_api_endpoint.read().await.clone()
         }
+    }
+
+    /// Broadcasts GET /readiness to all configured BM endpoints concurrently.
+    /// The first endpoint to respond with HTTP 200 becomes the active BM.
+    pub async fn discover_active_bm(&self) -> ClientResult<Url> {
+        if self.all_bm_endpoints.is_empty() {
+            return Err(Error::no_bm_available());
+        }
+
+        let timeout = self.config.bm_readiness_timeout;
+        let mut futures: Vec<Pin<Box<dyn Future<Output = ClientResult<Url>> + Send>>> = Vec::new();
+
+        for bm_url in &self.all_bm_endpoints {
+            let readiness_url = format!("{}readiness", bm_url);
+            let env = self.client_env.clone();
+            let bm_url = bm_url.clone();
+            futures.push(Box::pin(async move {
+                let response =
+                    env.fetch(&readiness_url, FetchMethod::Get, None, None, timeout).await?;
+                if response.status == 200 { Ok(bm_url) } else { Err(Error::no_bm_available()) }
+            }));
+        }
+
+        while !futures.is_empty() {
+            let (result, _, remaining) = futures::future::select_all(futures).await;
+            if let Ok(url) = result {
+                // Spawn remaining futures so they don't leak
+                if !remaining.is_empty() {
+                    self.client_env.spawn(async move {
+                        futures::future::join_all(remaining).await;
+                    });
+                }
+                // Update active BM and rest_api_endpoint
+                *self.active_bm_endpoint.write().await = Some(url.clone());
+                *self.rest_api_endpoint.write().await = url.clone();
+                log::debug!("Discovered active BM: {}", url);
+                return Ok(url);
+            }
+            futures = remaining;
+        }
+
+        Err(Error::no_bm_available())
+    }
+
+    /// Ensures BM discovery has been performed at least once.
+    /// Uses double-checked locking to avoid thundering herd.
+    pub async fn ensure_bm_discovered(&self) -> ClientResult<()> {
+        // Fast path: already discovered
+        if self.active_bm_endpoint.read().await.is_some() {
+            return Ok(());
+        }
+        // Slow path: acquire lock, double-check, discover
+        let _guard = self.bm_discovery_lock.lock().await;
+        if self.active_bm_endpoint.read().await.is_some() {
+            return Ok(());
+        }
+        self.discover_active_bm().await.map(|_| ())
+    }
+
+    /// Forces re-discovery of the active BM endpoint.
+    pub async fn rediscover_bm(&self) -> ClientResult<Url> {
+        let _guard = self.bm_discovery_lock.lock().await;
+        *self.active_bm_endpoint.write().await = None;
+        self.discover_active_bm().await
+    }
+
+    /// Returns true if the given URL matches one of the known BM endpoints.
+    pub fn is_bm_endpoint(&self, url: &Url) -> bool {
+        self.all_bm_endpoints.iter().any(|bm| bm.host() == url.host() && bm.port() == url.port())
     }
 
     pub async fn get_rest_api_endpoint(&self) -> Url {
@@ -520,12 +622,19 @@ impl ServerLink {
         let rest_api_endpoint =
             construct_rest_api_endpoint(&rest_api_addr, use_https_for_rest_api)?;
 
+        // Construct REST API URLs for all configured endpoints (for BM discovery)
+        let all_bm_endpoints: Vec<Url> = endpoint_addresses
+            .iter()
+            .filter_map(|addr| construct_rest_api_endpoint(addr, use_https_for_rest_api).ok())
+            .collect();
+
         let state = Arc::new(NetworkState::new(
             client_env.clone(),
             config.clone(),
             endpoint_addresses,
             rest_api_endpoint,
             use_https_for_rest_api,
+            all_bm_endpoints,
         ));
 
         Ok(ServerLink {
@@ -975,7 +1084,7 @@ impl ServerLink {
             ext_message_token: network_state.get_bm_token().await,
         };
 
-        let mut endpoint = network_state.select_send_message_endpoint().await;
+        let mut endpoint = network_state.select_send_message_endpoint().await?;
 
         let query = json!([message]).to_string();
         let mut result = self.query_http(query, &ensure_resource(&endpoint)).await;
@@ -983,7 +1092,8 @@ impl ServerLink {
             attempts += 1;
             if let Ok(ref data) = result {
                 let (_, bk_url) = get_redirection_data(data, self.state.use_https_for_rest_api);
-                if bk_url.is_some() {
+                // Only update BP endpoint if fallback proxy is NOT active
+                if bk_url.is_some() && !network_state.bp_fallback_active.load(Ordering::Relaxed) {
                     network_state.update_bk_send_message_endpoint(bk_url).await;
                 }
                 if let Some(Value::Object(_)) = data.get("ext_message_token") {
@@ -996,6 +1106,43 @@ impl ServerLink {
             if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
                 network_state.update_bm_data(&err.data["ext_message_token"]).await;
                 message.ext_message_token = network_state.get_bm_token().await;
+            }
+
+            // Handle network errors (no node_error/extensions) with BM failover
+            // and BP fallback proxy. AllAttemptsFailed from query_http also
+            // indicates a network error (it wraps the original network error).
+            if crate::client::Error::is_network_error(err)
+                || err.code == ErrorCode::AllAttemptsFailed as u32
+            {
+                let is_bm = network_state.is_bm_endpoint(&endpoint);
+                if is_bm {
+                    // BM is unreachable — try to discover a new one
+                    if network_state.all_bm_endpoints.len() > 1 {
+                        if let Ok(new_bm) = network_state.rediscover_bm().await {
+                            endpoint = new_bm;
+                            message.ext_message_token = network_state.get_bm_token().await;
+                            result = self
+                                .query_http(
+                                    json!([message]).to_string(),
+                                    &ensure_resource(&endpoint),
+                                )
+                                .await;
+                            continue;
+                        }
+                    }
+                    return result;
+                }
+                // BP is unreachable — fall back to BM
+                if self.config.fallback_proxy_mode {
+                    network_state.bp_fallback_active.store(true, Ordering::Relaxed);
+                    log::info!("BP unreachable, activating fallback proxy mode through BM");
+                }
+                network_state.update_bk_send_message_endpoint(None).await;
+                endpoint = network_state.get_active_bm_endpoint().await;
+                result = self
+                    .query_http(json!([message]).to_string(), &ensure_resource(&endpoint))
+                    .await;
+                continue;
             }
 
             let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
@@ -1024,8 +1171,11 @@ impl ServerLink {
             }
 
             if let Some(bk_endpoint) = redirect_url {
-                network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
-                endpoint = network_state.select_send_message_endpoint().await;
+                // Only update BP endpoint if fallback proxy is NOT active
+                if !network_state.bp_fallback_active.load(Ordering::Relaxed) {
+                    network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
+                    endpoint = network_state.select_send_message_endpoint().await?;
+                }
             }
             result =
                 self.query_http(json!([message]).to_string(), &ensure_resource(&endpoint)).await;

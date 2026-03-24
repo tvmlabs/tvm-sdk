@@ -1,4 +1,4 @@
-// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
 //
 
 use std::fmt::Display;
@@ -34,6 +34,7 @@ pub enum ErrorCode {
     SendMessageFailed = 621,
     NotFound = 622,
     AllAttemptsFailed = 623,
+    NoBmAvailable = 624,
 }
 
 pub struct Error;
@@ -281,6 +282,13 @@ impl Error {
             None => "".to_string(),
         };
         error(ErrorCode::AllAttemptsFailed, format!("All attempts failed.{}", err_msg))
+    }
+
+    pub fn no_bm_available() -> ClientError {
+        error(
+            ErrorCode::NoBmAvailable,
+            "No Block Manager endpoint is reachable. All readiness checks failed.".to_string(),
+        )
     }
 }
 

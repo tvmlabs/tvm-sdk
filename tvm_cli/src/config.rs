@@ -8,6 +8,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::BTreeMap;
 
 use clap::ArgMatches;
@@ -123,6 +127,8 @@ pub struct Config {
     ////////////////////////////////
     #[serde(default = "default_endpoints")]
     pub endpoints: Vec<String>,
+    #[serde(default = "default_false")]
+    pub fallback_proxy_mode: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -172,6 +178,7 @@ impl Default for Config {
             debug_fail: default_trace(),
             project_id: None,
             access_key: None,
+            fallback_proxy_mode: default_false(),
         }
     }
 }
@@ -217,6 +224,7 @@ impl Config {
             debug_fail: default_trace(),
             project_id: None,
             access_key: None,
+            fallback_proxy_mode: default_false(),
         }
     }
 }

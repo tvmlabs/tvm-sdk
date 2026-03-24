@@ -9,7 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
 //
 
 use std::env;
@@ -216,6 +216,7 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             out_of_sync_threshold: Some(config.out_of_sync_threshold * 1000),
             access_key: config.access_key.clone(),
             api_token: config.api_token.clone(),
+            fallback_proxy_mode: config.fallback_proxy_mode,
             ..Default::default()
         },
         ..Default::default()
