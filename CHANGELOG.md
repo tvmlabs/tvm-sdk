@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.14] - 2026-03-06
+
+### Fixes
+- Fixed MerkleUpdate generation for a single account cell
+
 ## [2.24.13] - 2026-03-06
 
 ### Added

@@ -11,18 +11,19 @@
 
 use std::str::FromStr;
 
+use tvm_block::Block;
+use tvm_block::CurrencyCollection;
+use tvm_block::IntermediateAddress;
+use tvm_block::InternalMessageHeader;
+use tvm_block::Message;
+use tvm_block::MsgAddressInt;
+use tvm_block::MsgEnvelope;
+use tvm_block::ShardIdent;
+use tvm_block::*;
 use tvm_types::AccountId;
-
-use super::*;
-use crate::Block;
-use crate::CurrencyCollection;
-use crate::IntermediateAddress;
-use crate::InternalMessageHeader;
-use crate::Message;
-use crate::MsgAddressInt;
-use crate::MsgEnvelope;
-use crate::ShardIdent;
-use crate::write_read_and_assert;
+use tvm_types::*;
+mod common;
+use common::write_read_and_assert;
 
 #[test]
 fn test_process_info_key() {
@@ -119,7 +120,7 @@ fn test_find_shards_by_routing_custom() {
     assert_eq!(cur_prefix.prefix, 0xd78b3fd904191a09);
     assert_eq!(next_prefix.prefix, 0x9f8b3fd904191a09);
 
-    let block = Block::construct_from_file("src/tests/data/key_block_not_all_shardes.boc").unwrap();
+    let block = Block::construct_from_file("tests/data/key_block_not_all_shardes.boc").unwrap();
     let extra = block.read_extra().unwrap().read_custom().unwrap().expect("need key block");
     let shards = extra.shards();
 

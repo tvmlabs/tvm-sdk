@@ -1,6 +1,11 @@
 use ed25519_dalek::SigningKey;
 use ed25519_dalek::VerifyingKey;
-
+use tvm_block::BASE_WORKCHAIN_ID;
+use tvm_block::Block;
+use tvm_block::BlockProof;
+use tvm_block::ConfigParamEnum;
+use tvm_block::MerkleProof;
+use tvm_block::ShardIdent;
 // Copyright (C) 2019-2021 TON Labs. All Rights Reserved.
 //
 // Licensed under the SOFTWARE EVALUATION License (the "License"); you may not
@@ -11,14 +16,10 @@ use ed25519_dalek::VerifyingKey;
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-use super::*;
-use crate::BASE_WORKCHAIN_ID;
-use crate::ShardIdent;
-use crate::blocks::Block;
-use crate::config_params::ConfigParamEnum;
-use crate::merkle_proof::MerkleProof;
-use crate::signature::BlockProof;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+mod common;
+use common::write_read_and_assert;
 
 #[test]
 fn test_validator_info_new_default() {
@@ -149,31 +150,31 @@ fn check_block_proof(key_block_file_name: &str, proof_file_name: &str) {
 #[test]
 fn test_calc_mc_subset() {
     check_block_proof(
-        "src/tests/data/test_calc_subset/key_block__no_shuffle",
-        "src/tests/data/test_calc_subset/proof__no_shuffle",
+        "tests/data/test_calc_subset/key_block__no_shuffle",
+        "tests/data/test_calc_subset/proof__no_shuffle",
     );
 }
 
 #[test]
 fn test_calc_mc_subset_shuffle() {
     check_block_proof(
-        "src/tests/data/test_calc_subset/key_block__shuffle",
-        "src/tests/data/test_calc_subset/proof__shuffle",
+        "tests/data/test_calc_subset/key_block__shuffle",
+        "tests/data/test_calc_subset/proof__shuffle",
     );
 }
 
 #[test]
 fn test_calc_shard_subset() {
     check_block_proof(
-        "src/tests/data/test_calc_shard_subset/key_block",
-        "src/tests/data/test_calc_shard_subset/proof_4377252",
+        "tests/data/test_calc_shard_subset/key_block",
+        "tests/data/test_calc_shard_subset/proof_4377252",
     );
 }
 
 #[test]
 fn test_isolate_mc_validators() {
     let key_block =
-        Block::construct_from_file("src/tests/data/test_calc_subset/key_block__shuffle").unwrap();
+        Block::construct_from_file("tests/data/test_calc_subset/key_block__shuffle").unwrap();
     let config =
         key_block.read_extra().unwrap().read_custom().unwrap().unwrap().config().unwrap().clone();
 

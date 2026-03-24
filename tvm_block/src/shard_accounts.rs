@@ -24,10 +24,6 @@ use crate::Serializable;
 use crate::accounts::ShardAccount;
 use crate::define_HashmapE;
 
-#[cfg(test)]
-#[path = "tests/test_shard_accounts.rs"]
-mod tests;
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // 4.1.9. The combined state of all accounts in a shard. The split part
 // of the shardchain state (cf. 1.2.1 and 1.2.2) is given by (upd from Lite

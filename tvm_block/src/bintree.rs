@@ -23,10 +23,6 @@ use crate::Serializable;
 use crate::error::BlockError;
 use crate::hashmapaug::Augmentable;
 
-#[cfg(test)]
-#[path = "tests/test_bintree.rs"]
-mod tests;
-
 pub trait BinTreeType<X: Default + Serializable + Deserializable> {
     fn get_data(&self) -> SliceData;
     /// Returns item by key
@@ -274,7 +270,7 @@ where
 /// bt_fork$1 {X:Type} left:^(BinTree X) right:^(BinTree X) = BinTree X;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct BinTree<X: Default + Serializable + Deserializable> {
-    data: SliceData,
+    pub data: SliceData,
     phantom: PhantomData<X>,
 }
 

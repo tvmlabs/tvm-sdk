@@ -9,16 +9,19 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use std::fs::File;
 
+use tvm_block::BlkPrevInfo;
+use tvm_block::BlockExtra;
+use tvm_block::ExtBlkRef;
+use tvm_block::ShardIdent;
+use tvm_block::ValueFlow;
+use tvm_block::*;
 use tvm_types::BocReader;
-
-use super::*;
-use crate::blocks::BlkPrevInfo;
-use crate::blocks::BlockExtra;
-use crate::blocks::ExtBlkRef;
-use crate::blocks::ValueFlow;
-use crate::shard::ShardIdent;
+use tvm_types::*;
+mod common;
+use common::write_read_and_assert;
 
 #[test]
 fn test_merkle_proof_invalid_arg() {
@@ -324,8 +327,8 @@ fn get_real_tvm_state(filename: &str) -> (ShardStateUnsplit, Cell) {
 #[test]
 fn test_check_block_info_proof() {
     let block_files = vec![
-        "src/tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
-        "src/tests/data/55A29231AD8FC6C6FF85C9EF430EC9F9D76B35F21A3A5C963CAD3B60701AEF48.boc",
+        "tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
+        "tests/data/55A29231AD8FC6C6FF85C9EF430EC9F9D76B35F21A3A5C963CAD3B60701AEF48.boc",
     ];
 
     for block_file in block_files {
@@ -390,9 +393,9 @@ fn test_check_transaction_proof(wrong: bool, block_file: &str) -> Result<()> {
 #[ignore]
 fn test_check_wrong_transaction_proof() {
     let block_files = vec![
-        "src/tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
-        "src/tests/data/3F7B3F53F9F0684E29D67B813E2197689FE725A77491BD50A5438EA66D4341E0.boc",
-        "src/tests/data/CF475DF9B65917A490AE96B021F68FF3AEC6848880C90BD3959626A2D56E5427.boc",
+        "tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
+        "tests/data/3F7B3F53F9F0684E29D67B813E2197689FE725A77491BD50A5438EA66D4341E0.boc",
+        "tests/data/CF475DF9B65917A490AE96B021F68FF3AEC6848880C90BD3959626A2D56E5427.boc",
     ];
 
     for block_file in block_files {
@@ -408,9 +411,9 @@ fn test_check_wrong_transaction_proof() {
 #[ignore]
 fn test_check_correct_transaction_proof() {
     let block_files = vec![
-        "src/tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
-        "src/tests/data/3F7B3F53F9F0684E29D67B813E2197689FE725A77491BD50A5438EA66D4341E0.boc",
-        "src/tests/data/CF475DF9B65917A490AE96B021F68FF3AEC6848880C90BD3959626A2D56E5427.boc",
+        "tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
+        "tests/data/3F7B3F53F9F0684E29D67B813E2197689FE725A77491BD50A5438EA66D4341E0.boc",
+        "tests/data/CF475DF9B65917A490AE96B021F68FF3AEC6848880C90BD3959626A2D56E5427.boc",
     ];
 
     for block_file in block_files {
@@ -468,10 +471,10 @@ fn get_out_msg_from_block(block: &Block) -> (Option<Message>, Option<UInt256>) {
 #[test]
 fn test_check_msg_proof() {
     let block_files = [
-        "src/tests/data/9D134C5ABBC859B6ED7A7201757BA4CB5E837641C6E5AEACA31DDD4B1B3D51A2.boc",
-        "src/tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
-        "src/tests/data/3F7B3F53F9F0684E29D67B813E2197689FE725A77491BD50A5438EA66D4341E0.boc",
-        "src/tests/data/CF475DF9B65917A490AE96B021F68FF3AEC6848880C90BD3959626A2D56E5427.boc",
+        "tests/data/9D134C5ABBC859B6ED7A7201757BA4CB5E837641C6E5AEACA31DDD4B1B3D51A2.boc",
+        "tests/data/8A8270ED58F5F982EFC3A16DA19D3EF99D12D7A9E0039B911213D0F2940A1B29.boc",
+        "tests/data/3F7B3F53F9F0684E29D67B813E2197689FE725A77491BD50A5438EA66D4341E0.boc",
+        "tests/data/CF475DF9B65917A490AE96B021F68FF3AEC6848880C90BD3959626A2D56E5427.boc",
     ];
 
     for (i, block_file) in block_files.iter().enumerate() {
@@ -516,7 +519,7 @@ fn test_check_account_proof(
 #[test]
 fn test_check_correct_account_proof() {
     let state_files =
-        vec!["src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
+        vec!["tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
         println!("state file: {}", state_file);
@@ -548,7 +551,7 @@ fn test_check_correct_account_proof() {
 #[test]
 fn test_check_wrong_account_proof() {
     let state_files =
-        vec!["src/tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
+        vec!["tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
         println!("state file: {}", state_file);

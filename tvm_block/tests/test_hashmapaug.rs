@@ -14,12 +14,14 @@
 #![allow(clippy::vec_init_then_push)]
 use std::fmt;
 
+use tvm_block::AddSub;
+use tvm_block::Grams;
+use tvm_block::*;
 use tvm_types::HashmapSubtree;
 use tvm_types::hm_label;
-
-use super::*;
-use crate::AddSub;
-use crate::Grams;
+use tvm_types::*;
+mod common;
+use common::write_read_and_assert;
 
 #[derive(Eq, Clone, Debug, Default, PartialEq)]
 pub struct GramStruct(Grams);
@@ -734,25 +736,13 @@ fn test_traverse() {
     assert_eq!(way, high_way);
 }
 
+#[cfg(test)]
 define_HashmapAugE!(MyHashmap, 8, u8, u8, u8);
+
+#[cfg(test)]
 impl HashmapAugRemover<u8, u8, u8> for MyHashmap {}
 
-impl Augmentation<u8> for u8 {
-    fn aug(&self) -> Result<u8> {
-        unreachable!()
-    }
-}
-
-// max
-impl Augmentable for u8 {
-    fn calc(&mut self, other: &Self) -> Result<bool> {
-        if *self < *other {
-            *self = *other
-        }
-        Ok(true)
-    }
-}
-
+#[cfg(test)]
 fn check_hashmap_fill_and_filter(mut keys: Vec<u8>, remove: &[u8], stop: usize, cancel: usize) {
     keys.sort();
     let mut queue1 = MyHashmap::default();

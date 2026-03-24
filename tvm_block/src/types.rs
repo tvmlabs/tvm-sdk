@@ -41,10 +41,6 @@ use crate::define_HashmapE;
 use crate::error::BlockError;
 use crate::hashmapaug::Augmentable;
 
-#[cfg(test)]
-#[path = "tests/test_types.rs"]
-mod tests;
-
 /// var_uint$_ {n:#} len:(#< n) value:(uint (len * 8)) = VarUInteger n;
 /// var_int$_ {n:#} len:(#< n) value:(int (len * 8)) = VarInteger n;
 /// nanograms$_ amount:(VarUInteger 16) = Grams;
@@ -60,7 +56,7 @@ macro_rules! define_VarIntegerN {
 
         #[allow(dead_code)]
         impl $varname {
-            fn get_len(value: &BigInt) -> usize {
+            pub fn get_len(value: &BigInt) -> usize {
                 (value.bits() as usize + 7) >> 3
             }
 

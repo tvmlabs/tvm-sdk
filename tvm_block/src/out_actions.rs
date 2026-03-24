@@ -40,10 +40,6 @@ pub const ACTION_MINT_SHELLQ_TOKEN: u32 = 0x144a733e;
 pub const ACTION_SEND_TO_DAPP_CONFIG: u32 = 0xe6eb9feb;
 pub const ACTION_BURNECC: u32 = 0x130efdee;
 
-#[cfg(test)]
-#[path = "tests/test_out_actions.rs"]
-mod tests;
-
 // out_list_empty$_ = OutList 0;
 // out_list$_ {n:#} prev:^(OutList n) action:OutAction = OutList (n+1);
 // action_reserve#ad4de08e = OutAction;
