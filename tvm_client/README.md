@@ -59,6 +59,30 @@
 
 - `process_message` – observable single function with callback support
     instead of a lot of runs deploys, waits for transactions etc.
+- `discover_bm` – forces re-discovery of the active Block Manager (BM) endpoint
+    by broadcasting readiness checks to all configured endpoints
+
+
+## Block Manager Discovery and Failover
+
+When multiple endpoints are configured, the client automatically discovers the
+best Block Manager by broadcasting `GET /v2/readiness` to all endpoints on
+first message send. The first endpoint to respond with HTTP 200 becomes the
+active BM.
+
+- **BM failover**: if the active BM becomes unreachable during message delivery,
+  the client re-runs discovery to find a new working BM.
+- **BP fallback proxy**: when `fallback_proxy_mode` is enabled in `NetworkConfig`
+  and a Block Producer (BP) is unreachable from the client (e.g. due to firewall),
+  the client routes all subsequent messages through the BM, which proxies them
+  to the BP. This mode is sticky and stays active until client restart.
+
+### Configuration
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `fallback_proxy_mode` | `bool` | `false` | Enable sticky fallback proxy through BM when BP is unreachable |
+| `bm_readiness_timeout` | `u32` | `5000` | Timeout (ms) for each BM readiness check during discovery |
 
 
 # Internal Code Refactorings
