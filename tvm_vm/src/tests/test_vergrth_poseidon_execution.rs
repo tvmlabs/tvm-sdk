@@ -699,51 +699,6 @@ fn test_proof_stuff() {
 fn test_poseidon() {
     let mut stack = Stack::new();
 
-    let input_data = vec![0xFFu8; 32];
-
-    let input_data_cell = pack_data_to_cell(&input_data, &mut 0).unwrap();
-    stack.push(StackItem::cell(input_data_cell.clone()));
-
-    let start: Instant = Instant::now();
-
-    let mut res = Vec::<u8>::with_capacity(2);
-    res.push(0xC7);
-    res.push(0x50);
-    res.push(0x80);
-
-    let code = SliceData::new(res);
-
-    let mut engine =
-        Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
-    let _ = engine.execute();
-    let poseidon_elapsed = start.elapsed().as_micros();
-
-    println!("poseidon_elapsed: {:?}", poseidon_elapsed);
-
-    // let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
-    // let slice = SliceData::load_cell(poseidon_res.clone()).unwrap();
-
-    // let poseidon_res = unpack_data_from_cell(slice, &mut engine).unwrap();
-
-    let poseidon_res = engine.cc.stack.get(0).as_integer().unwrap();
-
-    println!("poseidon_res from stack: {:?}", poseidon_res.clone());
-
-    // let etalon_res: Vec<u8> =
-    // hex::decode("
-    // 0b63a53787021a4a962a452c2921b3663aff1ffd8d5510540f8e659e782956f1").unwrap();
-    let etalon_res_bytes: Vec<u8> = vec![
-        17, 144, 181, 203, 195, 40, 59, 230, 38, 96, 237, 159, 26, 21, 81, 182, 3, 65, 4, 198, 100,
-        165, 92, 201, 156, 197, 209, 125, 0, 99, 218, 18,
-    ];
-    let etalon_res = IntegerData::from_unsigned_bytes_le(&etalon_res_bytes);
-    assert_eq!(*poseidon_res, etalon_res);
-}
-
-#[test]
-fn test_poseidon_zklogin() {
-    let mut stack = Stack::new();
-
     // password was 567890 in ascii 535455565748
     let user_pass_salt = "535455565748";
     let secret_key = [
