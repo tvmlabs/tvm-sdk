@@ -17,11 +17,9 @@ mod term_encryption_box;
 mod term_signing_box;
 
 use callbacks::Callbacks;
-use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 pub use interfaces::dinterface::SupportedInterfaces;
 use pipechain::ApproveKind;
 use pipechain::ChainLink;
@@ -37,31 +35,31 @@ use term_browser::terminal_input;
 use crate::config::Config;
 use crate::helpers::load_ton_address;
 
-pub fn create_debot_command<'a, 'b>() -> App<'a> {
-    SubCommand::with_name("debot")
+pub fn create_debot_command<'a, 'b>() -> Command<'a> {
+    Command::new("debot")
         .about("Debot commands.")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
-        .arg(Arg::with_name("DEBUG").long("--debug").short('d'))
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
+        .arg(Arg::new("DEBUG").long("--debug").short('d'))
         .subcommand(
-            SubCommand::with_name("fetch")
-                .setting(AppSettings::AllowLeadingHyphen)
-                .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address.")),
+            Command::new("fetch")
+                .allow_hyphen_values(true)
+                .arg(Arg::new("ADDRESS").required(true).help("DeBot TON address.")),
         )
         .subcommand(
-            SubCommand::with_name("start")
-                .setting(AppSettings::AllowLeadingHyphen)
-                .arg(Arg::with_name("ADDRESS").required(true).help("DeBot TON address."))
+            Command::new("start")
+                .allow_hyphen_values(true)
+                .arg(Arg::new("ADDRESS").required(true).help("DeBot TON address."))
                 .arg(
-                    Arg::with_name("PIPECHAIN")
+                    Arg::new("PIPECHAIN")
                         .short('m')
                         .long("pipechain")
                         .takes_value(true)
                         .help("Path to the DeBot Manifest."),
                 )
                 .arg(
-                    Arg::with_name("SIGNKEY")
+                    Arg::new("SIGNKEY")
                         .short('s')
                         .long("signkey")
                         .takes_value(true)
@@ -69,11 +67,11 @@ pub fn create_debot_command<'a, 'b>() -> App<'a> {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("invoke")
-                .setting(AppSettings::AllowLeadingHyphen)
-                .arg(Arg::with_name("ADDRESS").required(true).help("Debot TON address."))
+            Command::new("invoke")
+                .allow_hyphen_values(true)
+                .arg(Arg::new("ADDRESS").required(true).help("Debot TON address."))
                 .arg(
-                    Arg::with_name("MESSAGE")
+                    Arg::new("MESSAGE")
                         .required(true)
                         .help("Message to DeBot encoded as base64/base64url."),
                 ),

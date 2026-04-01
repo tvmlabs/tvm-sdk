@@ -44,11 +44,9 @@ use account::get_account;
 use account::wait_for_change;
 use call::call_contract;
 use call::call_contract_with_msg;
-use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use config::Config;
 use config::clear_config;
 use config::set_config;
@@ -151,55 +149,57 @@ fn main() {
 async fn main_internal() -> Result<(), String> {
     let version_string = env!("CARGO_PKG_VERSION");
 
-    let abi_arg = Arg::with_name("ABI")
+    let abi_arg = Arg::new("ABI")
         .long("--abi")
         .takes_value(true)
         .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.");
 
-    let keys_arg = Arg::with_name("KEYS")
+    let abi_arg_req = abi_arg.clone().required(true);
+
+    let keys_arg = Arg::new("KEYS")
         .long("--keys")
         .takes_value(true)
         .help("Seed phrase or path to the file with keypair used to sign the message. Can be specified in the config file.");
 
-    let sign_arg = Arg::with_name("SIGN")
+    let sign_arg = Arg::new("SIGN")
         .long("--sign")
         .takes_value(true)
         .help("Seed phrase or path to the file with keypair used to sign the message. Can be specified in the config.");
 
-    let thread_arg = Arg::with_name("THREAD")
+    let thread_arg = Arg::new("THREAD")
         .long("--thread")
         .takes_value(true)
         .help("The identifier of the thread in which the message should be processed.");
 
-    let dst_dapp_id_arg = Arg::with_name("DST_DAPP_ID")
+    let dst_dapp_id_arg = Arg::new("DST_DAPP_ID")
         .long("--dst-dapp-id")
         .takes_value(true)
         .help("Destination DApp identifier (64-char hex). Required for sending ext messages to accounts in non-root dapps.");
 
-    let method_opt_arg = Arg::with_name("METHOD")
+    let method_opt_arg = Arg::new("METHOD")
         .takes_value(true)
         .long("--method")
         .short('m')
         .help("Name of the function being called.");
 
-    let address_opt_arg = Arg::with_name("ADDRESS")
+    let address_opt_arg = Arg::new("ADDRESS")
         .long("--addr")
         .takes_value(true)
         .help("Contract address. Can be specified in the config file.");
 
-    let multi_params_arg = Arg::with_name("PARAMS")
+    let multi_params_arg = Arg::new("PARAMS")
         .help("Function arguments. Must be a list of `--name value` pairs or a json string with all arguments.")
         .multiple(true);
 
     let author = "TVM Labs";
 
-    let callx_cmd = SubCommand::with_name("callx")
+    let callx_cmd = Command::new("callx")
         .about("Sends an external message with encoded function call to the contract (alternative syntax).")
         .version(version_string)
         .author(author)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .arg(address_opt_arg.clone())
         .arg(abi_arg.clone())
         .arg(keys_arg.clone())
@@ -208,29 +208,29 @@ async fn main_internal() -> Result<(), String> {
         .arg(thread_arg.clone())
         .arg(dst_dapp_id_arg.clone());
 
-    let tvc_arg = Arg::with_name("TVC")
+    let tvc_arg = Arg::new("TVC")
         .takes_value(true)
         .required(true)
         .help("Path to the compiled smart contract (tvc file).");
 
-    let wc_arg = Arg::with_name("WC")
+    let wc_arg = Arg::new("WC")
         .takes_value(true)
         .long("--wc")
         .allow_hyphen_values(true)
         .help("Workchain id of the smart contract (default value is taken from the config).");
 
-    let alias_arg_long = Arg::with_name("ALIAS")
+    let alias_arg_long = Arg::new("ALIAS")
         .long("--alias")
         .takes_value(true)
         .help("Saves contract address and abi to the aliases list to be able to call this contract with alias instaed of address.");
 
-    let deployx_cmd = SubCommand::with_name("deployx")
+    let deployx_cmd = Command::new("deployx")
         .about("Deploys a smart contract to the blockchain (alternative syntax).")
         .version(version_string)
         .author(author)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .arg(abi_arg.clone())
         .arg(keys_arg.clone())
         .arg(wc_arg.clone())
@@ -238,38 +238,38 @@ async fn main_internal() -> Result<(), String> {
         .arg(alias_arg_long.clone())
         .arg(multi_params_arg.clone());
 
-    let address_boc_tvc_arg = Arg::with_name("ADDRESS").takes_value(true).help(
+    let address_boc_tvc_arg = Arg::new("ADDRESS").takes_value(true).help(
         "Contract address or path to the saved account state if --boc or --tvc flag is specified.",
     );
 
-    let method_arg = Arg::with_name("METHOD")
+    let method_arg = Arg::new("METHOD")
         .required(true)
         .takes_value(true)
         .help("Name of the function being called.");
 
-    let boc_flag = Arg::with_name("BOC")
+    let boc_flag = Arg::new("BOC")
         .long("--boc")
         .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
-    let tvc_flag = Arg::with_name("TVC")
+    let tvc_flag = Arg::new("TVC")
         .long("--tvc")
         .conflicts_with("BOC")
         .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC).");
 
-    let bc_config_arg = Arg::with_name("BCCONFIG")
+    let bc_config_arg = Arg::new("BCCONFIG")
         .long("--bc_config")
         .requires("BOC")
         .takes_value(true)
         .help("Path to the file with blockchain config.");
 
-    let runx_cmd = SubCommand::with_name("runx")
+    let runx_cmd = Command::new("runx")
         .about("Runs contract function locally (alternative syntax).")
         .version(version_string)
         .author(author)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
         .arg(address_boc_tvc_arg.clone().long("--addr"))
         .arg(abi_arg.clone())
         .arg(method_opt_arg.clone())
@@ -278,97 +278,99 @@ async fn main_internal() -> Result<(), String> {
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
-    let runget_cmd = SubCommand::with_name("runget")
+    let runget_cmd = Command::new("runget")
         .about("Runs get-method of a FIFT contract.")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
-        .arg(Arg::with_name("ADDRESS")
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
+        .arg(Arg::new("ADDRESS")
             .required(true)
             .help("Contract address or path to the saved account state if --boc or --tvc flag is specified."))
-        .arg(Arg::with_name("METHOD")
+        .arg(Arg::new("METHOD")
             .required(true)
             .help("Name of the function being called."))
-        .arg(Arg::with_name("PARAMS")
+        .arg(Arg::new("PARAMS")
             .help("Function arguments.")
             .multiple(true))
         .arg(boc_flag.clone())
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
-    let version_cmd = SubCommand::with_name("version").about("Prints build and version info.");
+    let version_cmd = Command::new("version").about("Prints build and version info.");
 
-    let genphrase_cmd = SubCommand::with_name("genphrase")
+    let genphrase_cmd = Command::new("genphrase")
         .about("Generates a seed phrase for keypair.")
         .version(version_string)
         .author(author)
         .arg(
-            Arg::with_name("DUMP_KEYPAIR")
+            Arg::new("DUMP_KEYPAIR")
                 .long("--dump")
                 .takes_value(true)
                 .help("Path where to dump keypair generated from the phrase"),
         );
 
-    let genpubkey_cmd = SubCommand::with_name("genpubkey")
+    let genpubkey_cmd = Command::new("genpubkey")
         .about("Generates a public key from the seed phrase.")
         .version(version_string)
         .author(author)
         .arg(
-            Arg::with_name("PHRASE")
+            Arg::new("PHRASE")
                 .takes_value(true)
                 .required(true)
                 .help("Seed phrase (12 words). Should be specified in quotes."),
         );
 
-    let getkeypair_cmd = SubCommand::with_name("getkeypair")
+    let getkeypair_cmd = Command::new("getkeypair")
         .about("Generates a keypair from the seed phrase or private key and saves it to the file.")
         .version(version_string)
         .author(author)
-        .arg(Arg::with_name("KEY_FILE")
+        .arg(Arg::new("KEY_FILE")
             .takes_value(true)
             .long("--output")
             .short('o')
             .help("Path to the file where to store the keypair."))
-        .arg(Arg::with_name("PHRASE")
+        .arg(Arg::new("PHRASE")
             .takes_value(true)
             .long("--phrase")
             .short('p')
             .help("Seed phrase (12 words) or secret (private) key. Seed phrase should be specified in quotes, secret key as 64 hex chars."));
 
-    let genaddr_cmd = SubCommand::with_name("genaddr")
-        .setting(AppSettings::AllowNegativeNumbers)
+    let genaddr_cmd = Command::new("genaddr")
+        .allow_negative_numbers(true)
         .about("Calculates smart contract address in different formats. By default, input tvc file isn't modified.")
         .version(version_string)
         .author(author)
         .arg(tvc_arg.clone())
-        .arg(abi_arg.clone())
+        .arg(abi_arg_req.clone())
         .arg(wc_arg.clone())
-        .arg(Arg::with_name("GENKEY")
+        .arg(Arg::new("GENKEY")
             .takes_value(true)
             .long("--genkey")
             .conflicts_with("SETKEY")
+            .required(true)
             .help("Path to the file, where a new generated keypair for the contract will be saved."))
-        .arg(Arg::with_name("SETKEY")
+        .arg(Arg::new("SETKEY")
             .takes_value(true)
             .long("--setkey")
             .conflicts_with("GENKEY")
+            .required(true)
             .help("Seed phrase or path to the file with keypair."))
-        .arg(Arg::with_name("DATA")
+        .arg(Arg::new("DATA")
             .takes_value(true)
             .long("--data")
             .help("Initial data to insert into the contract. Should be specified in json format."))
-        .arg(Arg::with_name("SAVE")
+        .arg(Arg::new("SAVE")
             .long("--save")
             .help("If this flag is specified, modifies the tvc file with the keypair and initial data"));
 
-    let deploy_cmd = SubCommand::with_name("deploy")
-        .setting(AppSettings::AllowNegativeNumbers)
-        .setting(AppSettings::AllowLeadingHyphen)
+    let deploy_cmd = Command::new("deploy")
+        .allow_negative_numbers(true)
+        .allow_hyphen_values(true)
         .about("Deploys a smart contract to the blockchain.")
         .version(version_string)
         .author(author)
         .arg(tvc_arg.clone())
-        .arg(Arg::with_name("PARAMS").required(true).takes_value(true).help(
+        .arg(Arg::new("PARAMS").required(true).takes_value(true).help(
             "Constructor arguments. Can be specified with a filename, which contains json data.",
         ))
         .arg(abi_arg.clone())
@@ -376,13 +378,13 @@ async fn main_internal() -> Result<(), String> {
         .arg(keys_arg.clone())
         .arg(wc_arg.clone());
 
-    let output_arg = Arg::with_name("OUTPUT")
+    let output_arg = Arg::new("OUTPUT")
         .short('o')
         .long("--output")
         .takes_value(true)
         .help("Path to the file where to store the message.");
 
-    let raw_arg = Arg::with_name("RAW").long("--raw").help("Creates raw message boc.");
+    let raw_arg = Arg::new("RAW").long("--raw").help("Creates raw message boc.");
 
     let deploy_message_cmd = deploy_cmd
         .clone()
@@ -392,15 +394,15 @@ async fn main_internal() -> Result<(), String> {
         .arg(raw_arg.clone());
 
     let address_arg =
-        Arg::with_name("ADDRESS").required(true).takes_value(true).help("Contract address.");
+        Arg::new("ADDRESS").required(true).takes_value(true).help("Contract address.");
 
-    let params_arg = Arg::with_name("PARAMS")
+    let params_arg = Arg::new("PARAMS")
         .required(true)
         .takes_value(true)
         .help("Function arguments. Can be specified with a filename, which contains json data.");
 
-    let call_cmd = SubCommand::with_name("call")
-        .setting(AppSettings::AllowLeadingHyphen)
+    let call_cmd = Command::new("call")
+        .allow_hyphen_values(true)
         .about("Sends an external message with encoded function call to the contract.")
         .version(version_string)
         .author(author)
@@ -413,20 +415,20 @@ async fn main_internal() -> Result<(), String> {
         .arg(thread_arg.clone())
         .arg(dst_dapp_id_arg.clone());
 
-    let send_cmd = SubCommand::with_name("send")
+    let send_cmd = Command::new("send")
         .about("Sends a prepared message to the contract.")
         .version(version_string)
         .author(author)
         .arg(
-            Arg::with_name("MESSAGE")
+            Arg::new("MESSAGE")
                 .required(true)
                 .takes_value(true)
                 .help("Message to send. Message data should be specified in quotes."),
         )
         .arg(abi_arg.clone());
 
-    let message_cmd = SubCommand::with_name("message")
-        .setting(AppSettings::AllowLeadingHyphen)
+    let message_cmd = Command::new("message")
+        .allow_hyphen_values(true)
         .about("Generates a signed message with encoded function call.")
         .version(version_string)
         .author(author)
@@ -437,13 +439,13 @@ async fn main_internal() -> Result<(), String> {
         .arg(keys_arg.clone())
         .arg(sign_arg.clone())
         .arg(
-            Arg::with_name("LIFETIME")
+            Arg::new("LIFETIME")
                 .long("--lifetime")
                 .takes_value(true)
                 .help("Period of time in seconds while message is valid."),
         )
         .arg(
-            Arg::with_name("TIMESTAMP")
+            Arg::new("TIMESTAMP")
                 .long("--time")
                 .takes_value(true)
                 .help("Message creation time in milliseconds. If not specified, `now` is used."),
@@ -451,8 +453,8 @@ async fn main_internal() -> Result<(), String> {
         .arg(output_arg.clone())
         .arg(raw_arg.clone());
 
-    let body_cmd = SubCommand::with_name("body")
-        .setting(AppSettings::AllowLeadingHyphen)
+    let body_cmd = Command::new("body")
+        .allow_hyphen_values(true)
         .about("Generates a payload for internal function call.")
         .version(version_string)
         .author(author)
@@ -463,8 +465,8 @@ async fn main_internal() -> Result<(), String> {
     let sign_cmd =
         create_test_sign_command().author(author).version(version_string).arg(keys_arg.clone());
 
-    let run_cmd = SubCommand::with_name("run")
-        .setting(AppSettings::AllowLeadingHyphen)
+    let run_cmd = Command::new("run")
+        .allow_hyphen_values(true)
         .about("Runs contract function locally.")
         .version(version_string)
         .author(author)
@@ -476,231 +478,224 @@ async fn main_internal() -> Result<(), String> {
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
-    let config_clear_cmd = SubCommand::with_name("clear")
-        .setting(AppSettings::AllowLeadingHyphen)
+    let config_clear_cmd = Command::new("clear")
+        .allow_hyphen_values(true)
         .about("Resets certain default values for options in the config file. Resets all values if used without options.")
-        .arg(Arg::with_name("URL")
+        .arg(Arg::new("URL")
             .long("--url")
             .help("Url to connect."))
-        .arg(Arg::with_name("API_TOKEN")
+        .arg(Arg::new("API_TOKEN")
             .long("--api-token")
             .takes_value(true)
             .help("Rest API token."))
-        .arg(Arg::with_name("ABI")
+        .arg(Arg::new("ABI")
             .long("--abi")
             .help("Path or link to the contract ABI file or pure json ABI data."))
         .arg(keys_arg.clone())
-        .arg(Arg::with_name("ADDR")
+        .arg(Arg::new("ADDR")
             .long("--addr")
             .help("Contract address."))
-        .arg(Arg::with_name("METHOD")
+        .arg(Arg::new("METHOD")
             .long("--method")
             .help("Method name that can be saved to be used by some commands (runx, callx)."))
-        .arg(Arg::with_name("PARAMETERS")
+        .arg(Arg::new("PARAMETERS")
             .long("--parameters")
             .help("Function parameters that can be saved to be used by some commands (runx, callx)."))
-        .arg(Arg::with_name("WALLET")
+        .arg(Arg::new("WALLET")
             .long("--wallet")
             .help("Multisig wallet address."))
-        .arg(Arg::with_name("PUBKEY")
+        .arg(Arg::new("PUBKEY")
             .long("--pubkey")
             .help("User public key. Used by DeBot Browser."))
-        .arg(Arg::with_name("WC")
+        .arg(Arg::new("WC")
             .long("--wc")
             .help("Workchain id."))
-        .arg(Arg::with_name("RETRIES")
+        .arg(Arg::new("RETRIES")
             .long("--retries")
             .help("Number of attempts to call smart contract function if previous attempt was unsuccessful."))
-        .arg(Arg::with_name("TIMEOUT")
+        .arg(Arg::new("TIMEOUT")
             .long("--timeout")
             .help("Network `wait_for` timeout in ms."))
-        .arg(Arg::with_name("MSG_TIMEOUT")
+        .arg(Arg::new("MSG_TIMEOUT")
             .long("--message_processing_timeout")
             .help("Network message processing timeout in ms."))
-        .arg(Arg::with_name("DEPOOL_FEE")
+        .arg(Arg::new("DEPOOL_FEE")
             .long("--depool_fee")
             .help("Value added to the message sent to depool to cover it's fees (change will be returned)."))
-        .arg(Arg::with_name("LIFETIME")
+        .arg(Arg::new("LIFETIME")
             .long("--lifetime")
             .help("Period of time in seconds while message is valid. Change of this parameter may affect \"out_of_sync\" parameter, because \"lifetime\" should be at least 2 times greater than \"out_of_sync\"."))
-        .arg(Arg::with_name("NO_ANSWER")
+        .arg(Arg::new("NO_ANSWER")
             .long("--no-answer")
             .help("Flag whether to wait for depool answer when calling a depool function."))
-        .arg(Arg::with_name("BALANCE_IN_VMSHELLS")
+        .arg(Arg::new("BALANCE_IN_VMSHELLS")
             .long("--balance_in_vmshells")
             .help("Print balance for account command in vmshells. If false balance is printed in nanovmshells."))
-        .arg(Arg::with_name("LOCAL_RUN")
+        .arg(Arg::new("LOCAL_RUN")
             .long("--local_run")
             .help("Enable preliminary local run before deploy and call commands."))
-        .arg(Arg::with_name("ASYNC_CALL")
+        .arg(Arg::new("ASYNC_CALL")
             .long("--async_call")
             .help("Disables wait for transaction to appear in the network after call command."))
-        .arg(Arg::with_name("DEBUG_FAIL")
+        .arg(Arg::new("DEBUG_FAIL")
             .long("--debug_fail")
             .help("When enabled tvm-cli executes debug command on fail of run or call command. Can be enabled with values 'full' or 'minimal' which set the trace level for debug run and disabled with value 'none'."))
-        .arg(Arg::with_name("OUT_OF_SYNC")
+        .arg(Arg::new("OUT_OF_SYNC")
             .long("--out_of_sync")
             .help("Network connection \"out_of_sync_threshold\" parameter in seconds. Mind that it cant exceed half of the \"lifetime\" parameter."))
-        .arg(Arg::with_name("IS_JSON")
+        .arg(Arg::new("IS_JSON")
             .long("--is_json")
             .help("Cli prints output in json format."))
-        .arg(Arg::with_name("PROJECT_ID")
+        .arg(Arg::new("PROJECT_ID")
             .long("--project_id")
             .help("Project Id in Evercloud (dashboard.evercloud.dev)."))
-        .arg(Arg::with_name("ACCESS_KEY")
+        .arg(Arg::new("ACCESS_KEY")
             .long("--access_key")
             .help("Project secret or JWT in Evercloud (dashboard.evercloud.dev)."));
 
-    let alias_arg = Arg::with_name("ALIAS").required(true).takes_value(true).help("Alias name.");
-    let alias_cmd = SubCommand::with_name("alias")
+    let alias_arg = Arg::new("ALIAS").required(true).takes_value(true).help("Alias name.");
+    let alias_cmd = Command::new("alias")
         .about("Commands to work with aliases map")
         .subcommand(
-            SubCommand::with_name("add")
+            Command::new("add")
                 .about("Add alias to the aliases map.")
                 .arg(alias_arg.clone())
-                .arg(
-                    Arg::with_name("ADDRESS")
-                        .long("--addr")
-                        .takes_value(true)
-                        .help("Contract address."),
-                )
+                .arg(Arg::new("ADDRESS").long("--addr").takes_value(true).help("Contract address."))
                 .arg(keys_arg.clone())
                 .arg(
-                    Arg::with_name("ABI")
+                    Arg::new("ABI")
                         .long("--abi")
                         .takes_value(true)
                         .help("Path or link to the contract ABI file or pure json ABI data."),
                 ),
         )
         .subcommand(
-            SubCommand::with_name("remove")
+            Command::new("remove")
                 .about("Remove alias from the aliases map.")
                 .arg(alias_arg.clone()),
         )
-        .subcommand(SubCommand::with_name("print").about("Print the aliases map."))
-        .subcommand(SubCommand::with_name("reset").about("Clear the aliases map."));
+        .subcommand(Command::new("print").about("Print the aliases map."))
+        .subcommand(Command::new("reset").about("Clear the aliases map."));
 
     let url_arg =
-        Arg::with_name("URL").required(true).takes_value(true).help("Url of the endpoints list.");
-    let config_endpoint_cmd = SubCommand::with_name("endpoint")
+        Arg::new("URL").required(true).takes_value(true).help("Url of the endpoints list.");
+    let config_endpoint_cmd = Command::new("endpoint")
         .about("Commands to work with the endpoints map.")
         .subcommand(
-            SubCommand::with_name("add").about("Add endpoints list.").arg(url_arg.clone()).arg(
-                Arg::with_name("ENDPOINTS")
+            Command::new("add").about("Add endpoints list.").arg(url_arg.clone()).arg(
+                Arg::new("ENDPOINTS")
                     .required(true)
                     .takes_value(true)
                     .help("List of endpoints (comma separated)."),
             ),
         )
-        .subcommand(
-            SubCommand::with_name("remove").about("Remove endpoints list.").arg(url_arg.clone()),
-        )
-        .subcommand(SubCommand::with_name("reset").about("Reset the endpoints map."))
-        .subcommand(SubCommand::with_name("print").about("Print current endpoints map."));
+        .subcommand(Command::new("remove").about("Remove endpoints list.").arg(url_arg.clone()))
+        .subcommand(Command::new("reset").about("Reset the endpoints map."))
+        .subcommand(Command::new("print").about("Print current endpoints map."));
 
-    let config_cmd = SubCommand::with_name("config")
-        .setting(AppSettings::AllowLeadingHyphen)
+    let config_cmd = Command::new("config")
+        .allow_hyphen_values(true)
         .about("Allows to tune certain default values for options in the config file.")
         .version(version_string)
         .author(author)
-        .arg(Arg::with_name("GLOBAL")
+        .arg(Arg::new("GLOBAL")
             .long("--global")
             .short('g')
             .help("Change parameters of the global config which contains default values for ordinary configs."))
-        .arg(Arg::with_name("URL")
+        .arg(Arg::new("URL")
             .long("--url")
             .takes_value(true)
             .help("Url to connect."))
-        .arg(Arg::with_name("API_TOKEN")
+        .arg(Arg::new("API_TOKEN")
             .long("--api-token")
             .takes_value(true)
             .help("Rest API token."))
-        .arg(Arg::with_name("ABI")
+        .arg(Arg::new("ABI")
             .long("--abi")
             .takes_value(true)
             .help("Path or link to the contract ABI file or pure json ABI data."))
         .arg(keys_arg.clone())
-        .arg(Arg::with_name("ADDR")
+        .arg(Arg::new("ADDR")
             .long("--addr")
             .takes_value(true)
             .help("Contract address."))
-        .arg(Arg::with_name("METHOD")
+        .arg(Arg::new("METHOD")
             .long("--method")
             .takes_value(true)
             .help("Method name that can be saved to be used by some commands (runx, callx)."))
-        .arg(Arg::with_name("PARAMETERS")
+        .arg(Arg::new("PARAMETERS")
             .long("--parameters")
             .takes_value(true)
             .help("Function parameters that can be saved to be used by some commands (runx, callx)."))
-        .arg(Arg::with_name("WALLET")
+        .arg(Arg::new("WALLET")
             .long("--wallet")
             .takes_value(true)
             .help("Multisig wallet address."))
-        .arg(Arg::with_name("PUBKEY")
+        .arg(Arg::new("PUBKEY")
             .long("--pubkey")
             .takes_value(true)
             .help("User public key. Used by DeBot Browser."))
-        .arg(Arg::with_name("WC")
+        .arg(Arg::new("WC")
             .long("--wc")
             .takes_value(true)
             .help("Workchain id."))
-        .arg(Arg::with_name("RETRIES")
+        .arg(Arg::new("RETRIES")
             .long("--retries")
             .takes_value(true)
             .help("Number of attempts to call smart contract function if previous attempt was unsuccessful."))
-        .arg(Arg::with_name("TIMEOUT")
+        .arg(Arg::new("TIMEOUT")
             .long("--timeout")
             .takes_value(true)
             .help("Network `wait_for` timeout in ms."))
-        .arg(Arg::with_name("MSG_TIMEOUT")
+        .arg(Arg::new("MSG_TIMEOUT")
             .long("--message_processing_timeout")
             .takes_value(true)
             .help("Network message processing timeout in ms."))
-        .arg(Arg::with_name("LIST")
+        .arg(Arg::new("LIST")
             .long("--list")
             .conflicts_with_all(&["OUT_OF_SYNC", "NO_ANSWER","DEBUG_FAIL", "ASYNC_CALL", "LOCAL_RUN", "BALANCE_IN_VMSHELLS", "LIFETIME", "DEPOOL_FEE", "PUBKEY", "URL", "ABI", "KEYS", "ADDR", "RETRIES", "TIMEOUT", "WC", "WALLET"])
             .help("Prints all config parameters."))
-        .arg(Arg::with_name("DEPOOL_FEE")
+        .arg(Arg::new("DEPOOL_FEE")
             .long("--depool_fee")
             .takes_value(true)
             .help("Value added to the message sent to depool to cover it's fees (change will be returned)."))
-        .arg(Arg::with_name("LIFETIME")
+        .arg(Arg::new("LIFETIME")
             .long("--lifetime")
             .takes_value(true)
             .help("Period of time in seconds while message is valid. Change of this parameter may affect \"out_of_sync\" parameter, because \"lifetime\" should be at least 2 times greater than \"out_of_sync\"."))
-        .arg(Arg::with_name("NO_ANSWER")
+        .arg(Arg::new("NO_ANSWER")
             .long("--no-answer")
             .takes_value(true)
             .help("Flag whether to wait for depool answer when calling a depool function."))
-        .arg(Arg::with_name("BALANCE_IN_VMSHELLS")
+        .arg(Arg::new("BALANCE_IN_VMSHELLS")
             .long("--balance_in_vmshells")
             .takes_value(true)
             .help("Print balance for account command in vmshells. If false balance is printed in nanovmshells."))
-        .arg(Arg::with_name("LOCAL_RUN")
+        .arg(Arg::new("LOCAL_RUN")
             .long("--local_run")
             .takes_value(true)
             .help("Enable preliminary local run before deploy and call commands."))
-        .arg(Arg::with_name("ASYNC_CALL")
+        .arg(Arg::new("ASYNC_CALL")
             .long("--async_call")
             .takes_value(true)
             .help("Disables wait for transaction to appear in the network after call command."))
-        .arg(Arg::with_name("DEBUG_FAIL")
+        .arg(Arg::new("DEBUG_FAIL")
             .long("--debug_fail")
             .takes_value(true)
             .help("When enabled tvm-cli executes debug command on fail of run or call command. Can be enabled with values 'full' or 'minimal' which set the trace level for debug run and disabled with value 'none'."))
-        .arg(Arg::with_name("OUT_OF_SYNC")
+        .arg(Arg::new("OUT_OF_SYNC")
             .long("--out_of_sync")
             .takes_value(true)
             .help("Network connection \"out_of_sync_threshold\" parameter in seconds. Mind that it cant exceed half of the \"lifetime\" parameter."))
-        .arg(Arg::with_name("IS_JSON")
+        .arg(Arg::new("IS_JSON")
             .long("--is_json")
             .takes_value(true)
             .help("Cli prints output in json format."))
-        .arg(Arg::with_name("PROJECT_ID")
+        .arg(Arg::new("PROJECT_ID")
             .long("--project_id")
             .takes_value(true)
             .help("Project Id in Evercloud (dashboard.evercloud.dev)."))
-        .arg(Arg::with_name("ACCESS_KEY")
+        .arg(Arg::new("ACCESS_KEY")
             .long("--access_key")
             .takes_value(true)
             .help("Project secret or JWT in Evercloud (dashboard.evercloud.dev)."))
@@ -708,23 +703,23 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(config_endpoint_cmd)
         .subcommand(alias_cmd);
 
-    let account_cmd = SubCommand::with_name("account")
-        .setting(AppSettings::AllowLeadingHyphen)
+    let account_cmd = Command::new("account")
+        .allow_hyphen_values(true)
         .about("Obtains and prints account information.")
         .version(version_string)
         .author(author)
         .arg(boc_flag.clone())
-        .arg(Arg::with_name("ADDRESS")
+        .arg(Arg::new("ADDRESS")
             .takes_value(true)
             .help("List of addresses or file paths (if flag --boc is used).")
             .multiple(true))
-        .arg(Arg::with_name("DUMPTVC")
+        .arg(Arg::new("DUMPTVC")
             .long("--dumptvc")
             .short('d')
             .takes_value(true)
             .conflicts_with("DUMPBOC")
             .help("Dumps account StateInit to the specified tvc file. Works only if one address was given."))
-        .arg(Arg::with_name("DUMPBOC")
+        .arg(Arg::new("DUMPBOC")
             .long("--dumpboc")
             .short('b')
             .takes_value(true)
@@ -732,65 +727,40 @@ async fn main_internal() -> Result<(), String> {
             .conflicts_with("BOC")
             .help("Dumps the whole account state boc to the specified file. Works only if one address was given. Use 'tvm-cli dump account` to dump several accounts."));
 
-    let account_wait_cmd = SubCommand::with_name("account-wait")
-        .setting(AppSettings::AllowLeadingHyphen)
+    let account_wait_cmd = Command::new("account-wait")
+        .allow_hyphen_values(true)
         .about("Waits for account change (based on last_trans_lt).")
         .version(version_string)
         .author(author)
         .arg(address_arg.clone())
         .arg(
-            Arg::with_name("TIMEOUT")
+            Arg::new("TIMEOUT")
                 .long("--timeout")
                 .takes_value(true)
                 .help("Timeout in seconds (default value is 30)."),
         );
 
-    let query_raw = SubCommand::with_name("query-raw")
+    let query_raw = Command::new("query-raw")
         .about("Executes a raw GraphQL query.")
         .version(version_string)
         .author(author)
-        .arg(
-            Arg::with_name("COLLECTION")
-                .required(true)
-                .takes_value(true)
-                .help("Collection to query."),
-        )
-        .arg(
-            Arg::with_name("RESULT")
-                .required(true)
-                .takes_value(true)
-                .help("Result fields to print."),
-        )
-        .arg(
-            Arg::with_name("FILTER")
-                .long("--filter")
-                .takes_value(true)
-                .help("Query filter parameter."),
-        )
-        .arg(
-            Arg::with_name("LIMIT")
-                .long("--limit")
-                .takes_value(true)
-                .help("Query limit parameter."),
-        )
-        .arg(
-            Arg::with_name("ORDER")
-                .long("--order")
-                .takes_value(true)
-                .help("Query order parameter."),
-        );
+        .arg(Arg::new("COLLECTION").required(true).takes_value(true).help("Collection to query."))
+        .arg(Arg::new("RESULT").required(true).takes_value(true).help("Result fields to print."))
+        .arg(Arg::new("FILTER").long("--filter").takes_value(true).help("Query filter parameter."))
+        .arg(Arg::new("LIMIT").long("--limit").takes_value(true).help("Query limit parameter."))
+        .arg(Arg::new("ORDER").long("--order").takes_value(true).help("Query order parameter."));
 
-    let fee_cmd = SubCommand::with_name("fee")
+    let fee_cmd = Command::new("fee")
         .about("Calculates fees for executing message or account storage fee.")
         .subcommand(
-            SubCommand::with_name("storage")
-                .setting(AppSettings::AllowLeadingHyphen)
+            Command::new("storage")
+                .allow_hyphen_values(true)
                 .about("Gets account storage fee for specified period in nanovmshells.")
                 .version(version_string)
                 .author(author)
                 .arg(address_arg.clone())
                 .arg(
-                    Arg::with_name("PERIOD")
+                    Arg::new("PERIOD")
                         .long("--period")
                         .short('p')
                         .takes_value(true)
@@ -804,177 +774,172 @@ async fn main_internal() -> Result<(), String> {
             "Executes call locally, calculates fees and prints table of all fees in nanovmshells.",
         ));
 
-    let proposal_cmd = SubCommand::with_name("proposal")
+    let proposal_cmd = Command::new("proposal")
         .help("Proposal control commands.")
         .subcommand(
-            SubCommand::with_name("create")
+            Command::new("create")
                 .about("Submits a proposal transaction in the multisignature wallet with a text comment.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
-                .arg(Arg::with_name("DEST")
+                .arg(Arg::new("DEST")
                     .required(true)
                     .takes_value(true)
                     .help("Address of the proposal contract."))
-                .arg(Arg::with_name("COMMENT")
+                .arg(Arg::new("COMMENT")
                     .required(true)
                     .takes_value(true)
                     .help("Proposal description (max symbols 382)."))
                 .arg(keys_arg.clone())
-                .arg(Arg::with_name("OFFLINE")
+                .arg(Arg::new("OFFLINE")
                     .short('f')
                     .long("--offline")
                     .help("Prints signed message to terminal instead of sending it."))
-                .arg(Arg::with_name("LIFETIME")
+                .arg(Arg::new("LIFETIME")
                     .short('l')
                     .long("--lifetime")
                     .takes_value(true)
                     .help("Period of time in seconds while message is valid.")))
         .subcommand(
-            SubCommand::with_name("vote")
+            Command::new("vote")
                 .about("Confirms a proposal transaction in the multisignature wallet.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
-                .arg(Arg::with_name("ID")
+                .arg(Arg::new("ID")
                     .required(true)
                     .takes_value(true)
                     .help("Proposal transaction id."))
                 .arg(keys_arg.clone())
-                .arg(Arg::with_name("OFFLINE")
+                .arg(Arg::new("OFFLINE")
                     .short('f')
                     .long("--offline")
                     .help("Prints signed message to terminal instead of sending it."))
-                .arg(Arg::with_name("LIFETIME")
+                .arg(Arg::new("LIFETIME")
                     .short('l')
                     .long("--lifetime")
                     .takes_value(true)
                     .help("Period of time in seconds while message is valid.")))
         .subcommand(
-            SubCommand::with_name("decode")
+            Command::new("decode")
                 .about("Prints a comment string from the proposal transaction.")
                 .arg(address_arg.clone().help("Address of the multisignature wallet."))
-                .arg(Arg::with_name("ID")
+                .arg(Arg::new("ID")
                     .required(true)
                     .takes_value(true)
                     .help("Proposal transaction id.")));
 
     let getconfig_cmd =
-        SubCommand::with_name("getconfig")
+        Command::new("getconfig")
             .about("Reads the global configuration parameter with defined index.")
-            .arg(Arg::with_name("INDEX").takes_value(true).help(
+            .arg(Arg::new("INDEX").takes_value(true).help(
                 "Parameter index. If not specified, command will print all config parameters.",
             ));
 
-    let update_config_param_cmd = SubCommand::with_name("update_config")
+    let update_config_param_cmd = Command::new("update_config")
         .about("Generates message with update of config params.")
         .arg(abi_arg.clone())
-        .arg(Arg::with_name("SEQNO").takes_value(true).help("Current seqno from config contract"))
+        .arg(Arg::new("SEQNO").takes_value(true).help("Current seqno from config contract"))
         .arg(
-            Arg::with_name("CONFIG_MASTER_KEY_FILE")
+            Arg::new("CONFIG_MASTER_KEY_FILE")
                 .takes_value(true)
                 .help("path to config-master files"),
         )
-        .arg(Arg::with_name("NEW_PARAM_FILE").takes_value(true).help("New config param value"));
+        .arg(Arg::new("NEW_PARAM_FILE").takes_value(true).help("New config param value"));
 
-    let bcconfig_cmd = SubCommand::with_name("dump")
+    let bcconfig_cmd = Command::new("dump")
         .about("Commands to dump network entities.")
         .version(version_string)
         .author(author)
         .subcommand(
-            SubCommand::with_name("config")
+            Command::new("config")
                 .about("Dumps the blockchain config for the last key block.")
                 .arg(
-                    Arg::with_name("PATH")
+                    Arg::new("PATH")
                         .required(true)
                         .takes_value(true)
                         .help("Path to the file where to save the blockchain config."),
                 ),
         )
         .subcommand(
-            SubCommand::with_name("account")
+            Command::new("account")
                 .about("Dumps state of given accounts.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(
-                    Arg::with_name("ADDRESS")
+                    Arg::new("ADDRESS")
                         .required(true)
                         .takes_value(true)
                         .help("List of addresses.")
                         .multiple(true),
                 )
-                .arg(Arg::with_name("PATH").takes_value(true).long("--path").short('p').help(
+                .arg(Arg::new("PATH").takes_value(true).long("--path").short('p').help(
                     "Path to folder where to store the dumped accounts. Default value is \".\".",
                 )),
         );
 
-    let nodeid_cmd = SubCommand::with_name("nodeid")
+    let nodeid_cmd = Command::new("nodeid")
         .about("Calculates node ID from the validator public key")
-        .arg(Arg::with_name("KEY").long("--pubkey").takes_value(true).help("Validator public key."))
+        .arg(Arg::new("KEY").long("--pubkey").takes_value(true).help("Validator public key."))
         .arg(
-            Arg::with_name("KEY_PAIR")
+            Arg::new("KEY_PAIR")
                 .long("--keypair")
                 .takes_value(true)
                 .help("Validator seed phrase or path to the file with keypair."),
         );
 
-    let sendfile_cmd = SubCommand::with_name("sendfile")
+    let sendfile_cmd = Command::new("sendfile")
         .about("Sends the boc file with an external inbound message to account.")
-        .arg(Arg::with_name("BOC").required(true).takes_value(true).help("Message boc file."))
+        .arg(Arg::new("BOC").required(true).takes_value(true).help("Message boc file."))
         .arg(dst_dapp_id_arg.clone());
 
-    let fetch_block_cmd = SubCommand::with_name("fetch-block")
+    let fetch_block_cmd = Command::new("fetch-block")
         .about("Fetches a block.")
-        .arg(Arg::with_name("BLOCKID").required(true).takes_value(true).help("Block ID."))
-        .arg(Arg::with_name("OUTPUT").required(true).takes_value(true).help("Output file name"));
+        .arg(Arg::new("BLOCKID").required(true).takes_value(true).help("Block ID."))
+        .arg(Arg::new("OUTPUT").required(true).takes_value(true).help("Output file name"));
 
-    let fetch_cmd = SubCommand::with_name("fetch")
+    let fetch_cmd = Command::new("fetch")
         .about("Fetches account's zerostate and transactions.")
-        .setting(AppSettings::AllowLeadingHyphen)
+        .allow_hyphen_values(true)
         .arg(address_arg.clone().help("Account address to fetch zerostate and txns for."))
-        .arg(Arg::with_name("OUTPUT").required(true).takes_value(true).help("Output file name"));
+        .arg(Arg::new("OUTPUT").required(true).takes_value(true).help("Output file name"));
 
-    let replay_cmd = SubCommand::with_name("replay")
+    let replay_cmd = Command::new("replay")
         .about("Replays account's transactions starting from zerostate.")
-        .arg(Arg::with_name("CONFIG_TXNS")
+        .arg(Arg::new("CONFIG_TXNS")
             .long("--config")
             .short('c')
             .takes_value(true)
             .help("File containing zerostate and txns of -1:555..5 account.")
             .conflicts_with("DEFAULT_CONFIG"))
-        .arg(Arg::with_name("INPUT_TXNS")
+        .arg(Arg::new("INPUT_TXNS")
             .required(true)
             .takes_value(true)
             .help("File containing zerostate and txns of the account to replay."))
-        .arg(Arg::with_name("TXNID")
+        .arg(Arg::new("TXNID")
             .required(true)
             .takes_value(true)
             .help("Dump account state before this transaction ID and stop replaying."))
-        .arg(Arg::with_name("DEFAULT_CONFIG")
+        .arg(Arg::new("DEFAULT_CONFIG")
             .help("Replay transaction with current network config or default if it is not available.")
             .long("--default_config")
             .short('e')
             .conflicts_with("CONFIG_TXNS"));
 
-    let matches = App::new("tonos_cli")
+    let matches = Command::new("tonos_cli")
         .version(VERSION.as_str())
         .author(author)
         .about("TVMLabs console tool for TVM networks")
         .arg(
-            Arg::with_name("NETWORK")
+            Arg::new("NETWORK")
                 .help("Network to connect.")
                 .short('u')
                 .long("--url")
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("CONFIG")
+            Arg::new("CONFIG")
                 .help("Path to the tvm-cli configuration file.")
                 .short('c')
                 .long("--config")
                 .takes_value(true),
         )
-        .arg(
-            Arg::with_name("JSON")
-                .help("Cli prints output in json format.")
-                .short('j')
-                .long("--json"),
-        )
+        .arg(Arg::new("JSON").help("Cli prints output in json format.").short('j').long("--json"))
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
         .subcommand(genpubkey_cmd)
@@ -1012,7 +977,7 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(deployx_cmd)
         .subcommand(runx_cmd)
         .subcommand(update_config_param_cmd)
-        .setting(AppSettings::SubcommandRequired);
+        .subcommand_required(true);
 
     let matches = matches.get_matches_safe().map_err(|e| match e.kind {
         clap::ErrorKind::DisplayVersion => {

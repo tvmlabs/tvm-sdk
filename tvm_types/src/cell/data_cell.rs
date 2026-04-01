@@ -58,8 +58,8 @@ thread_local! {
 
 impl DataCell {
     thread_local! {
-        pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = RefCell::new(None);
-        pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT: RefCell<Option<u64>> = RefCell::new(None);
+        pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = const { RefCell::new(None) };
+        pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT: RefCell<Option<u64>> = const { RefCell::new(None) };
     }
 
     pub fn new() -> Self {

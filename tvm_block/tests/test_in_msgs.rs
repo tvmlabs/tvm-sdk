@@ -11,19 +11,10 @@
 
 use std::sync::Arc;
 
-use super::*;
-use crate::AccountId;
-use crate::AccountStatus;
-use crate::ExternalInboundMessageHeader;
-use crate::HashUpdate;
-use crate::InternalMessageHeader;
-use crate::MsgAddressExt;
-use crate::MsgAddressInt;
-use crate::StateInit;
-use crate::TickTock;
-use crate::TransactionDescr;
-use crate::types::Number5;
-use crate::write_read_and_assert;
+use tvm_block::*;
+use tvm_types::*;
+mod common;
+use common::write_read_and_assert;
 
 fn create_external_message() -> Arc<Message> {
     let src =

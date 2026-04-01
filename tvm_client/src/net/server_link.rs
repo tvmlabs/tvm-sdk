@@ -791,12 +791,17 @@ impl ServerLink {
         for (name, value) in Endpoint::http_headers(&self.config) {
             headers.insert(name, value);
         }
+        let traceparent = headers
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case("traceparent"))
+            .map(|(_, value)| value.clone());
+
         let result = self
             .client_env
             .fetch(url.as_ref(), FetchMethod::Get, Some(headers), None, self.config.query_timeout)
             .await;
 
-        match result {
+        let result = match result {
             Err(err) => Err(err),
             Ok(response) => {
                 if response.status == 200 {
@@ -810,6 +815,11 @@ impl ServerLink {
                     Err(Error::invalid_server_response(response.body))
                 }
             }
+        };
+
+        match (traceparent, result) {
+            (Some(traceparent), Err(err)) => Err(err.add_trace(traceparent)),
+            (_, result) => result,
         }
     }
 

@@ -9,11 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 extern crate reqwest;
-use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde_json::json;
 use tvm_client::abi::Abi;
 use tvm_client::abi::AbiContract;
@@ -380,68 +378,67 @@ impl MultisigArgs {
     }
 }
 
-pub fn create_multisig_command<'b>() -> App<'b> {
-    let v2_arg = Arg::with_name("V2")
-        .long("--v2")
-        .help("Force to interact with wallet account as multisig v2.");
-    let bounce_arg = Arg::with_name("BOUNCE")
+pub fn create_multisig_command<'b>() -> Command<'b> {
+    let v2_arg =
+        Arg::new("V2").long("--v2").help("Force to interact with wallet account as multisig v2.");
+    let bounce_arg = Arg::new("BOUNCE")
         .long("--bounce")
         .short('b')
         .help("Send bounce message to destination account.");
 
-    let keys_arg = Arg::with_name("KEYS")
+    let keys_arg = Arg::new("KEYS")
         .long("--keys")
         .short('k')
         .takes_value(true)
         .help("Path to the file with a keypair.");
 
-    SubCommand::with_name("multisig")
+    Command::new("multisig")
         .about("Multisignature wallet commands.")
-        .setting(AppSettings::AllowNegativeNumbers)
-        .setting(AppSettings::DontCollapseArgsInUsage)
-        .subcommand(SubCommand::with_name("send")
-            .setting(AppSettings::AllowLeadingHyphen)
+        .allow_negative_numbers(true)
+        .dont_collapse_args_in_usage(true)
+        .subcommand(Command::new("send")
+            .allow_hyphen_values(true)
             .about("Transfer funds from the wallet to the recipient.")
-            .arg(Arg::with_name("MSIG")
+            .arg(Arg::new("MSIG")
                 .long("--addr")
                 .takes_value(true)
                 .help("Wallet address. If undefined then config.wallet is used."))
-            .arg(Arg::with_name("DEST")
+            .arg(Arg::new("DEST")
                 .long("--dest")
                 .takes_value(true)
                 .help("Recipient address."))
-            .arg(Arg::with_name("VALUE")
+            .arg(Arg::new("VALUE")
                 .long("--value")
                 .takes_value(true)
                 .help("Amount of funds to transfer (in evers)."))
-            .arg(Arg::with_name("PURPOSE")
+            .arg(Arg::new("PURPOSE")
                 .long("--purpose")
                 .takes_value(true)
                 .help("Optional, comment attached to transfer."))
-            .arg(Arg::with_name("SIGN")
+            .arg(Arg::new("SIGN")
                 .long("--sign")
                 .takes_value(true)
                 .help("Seed phrase or path to file with keypair."))
             .arg(bounce_arg)
             .arg(v2_arg.clone()))
-        .subcommand(SubCommand::with_name("deploy")
-            .setting(AppSettings::AllowLeadingHyphen)
+        .subcommand(Command::new("deploy")
+            .allow_hyphen_values(true)
             .about("Deploys a wallet with a given public key. By default, deploys a SafeMultisig with one custodian, which can be tuned with flags.")
             .arg(keys_arg)
-            .arg(Arg::with_name("SETCODE")
+            .arg(Arg::new("SETCODE")
                 .long("--setcode")
                 .help("Deploy SetcodeMultisig instead of SafeMultisig."))
-            .arg(Arg::with_name("VALUE")
+            .arg(Arg::new("VALUE")
                 .long("--local")
                 .takes_value(true)
                 .short('l')
                 .help("Perform a preliminary call of local giver to initialize contract with given value."))
-            .arg(Arg::with_name("OWNERS")
+            .arg(Arg::new("OWNERS")
                 .long("--owners")
                 .takes_value(true)
                 .short('o')
                 .help("Array of wallet owners public keys. Note: deployer could be not included in this case. If not specified the only owner is contract deployer."))
-            .arg(Arg::with_name("CONFIRMS")
+            .arg(Arg::new("CONFIRMS")
                 .long("--confirms")
                 .takes_value(true)
                 .short('c')

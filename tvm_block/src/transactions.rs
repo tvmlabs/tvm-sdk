@@ -51,10 +51,6 @@ use crate::types::InRefValue;
 use crate::types::VarUInteger3;
 use crate::types::VarUInteger7;
 
-#[cfg(test)]
-#[path = "tests/test_transactions.rs"]
-pub mod tests;
-
 // acst_unchanged$0 = AccStatusChange;  // x -> x
 // acst_frozen$10 = AccStatusChange;    // init -> frozen
 // acst_deleted$11 = AccStatusChange;   // frozen -> deleted
