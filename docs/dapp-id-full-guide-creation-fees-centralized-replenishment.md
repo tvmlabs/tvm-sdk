@@ -185,7 +185,7 @@ cd contracts/helloWorld
 
 ### **Compile**
 
-Compile the contract `helloWorld` using TVM Solidity compiler:
+Compile the contract `helloWorld` using [TVM Solidity compiler](https://github.com/gosh-sh/TVM-Solidity-Compiler/releases/tag/gosh_0.79.3):
 
 ```
 sold --tvm-version gosh helloWorld.sol
@@ -253,6 +253,7 @@ sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bo
 For example: you can use the command:
 
 <pre><code><strong>tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e", "value":0, "bounce":false, "cc": {"2": 1000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+</strong><strong>
 </strong></code></pre>
 
 {% hint style="info" %}
@@ -549,6 +550,7 @@ In our case, the command will be as follows:
 
 ```
 tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:f2fe666ad8126ca78f8190305bdf6436971236c477699b3c34e90c5ed6b0691e"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
+
 ```
 
 {% hint style="info" %}
@@ -593,32 +595,50 @@ For example, our HelloWorld contract will have the following Dapp ID:
 
 <figure><img src=".gitbook/assets/dc1.jpg" alt=""><figcaption></figcaption></figure>
 
-2. To deploy a `DappConfig` contract, you need to call the `deployNewConfigCustom` function of the [`DappRoot`](https://github.com/ackinacki/ackinacki/tree/main/contracts/dappconfig) contract:
+2.  To deploy a `DappConfig` contract, you need to call the `deployNewConfigCustom` function via an internal message from a contract within the Dapp where you want to deploy the `DappConfig` contract.
+
+    The function call must be performed via a `payload` passed into a function such as `sendTransaction` (similar to how deploying a new contract in your Dapp is described [here](dapp-id-full-guide-creation-fees-centralized-replenishment.md#add-another-contract-to-your-dapp-id)).
+
+    That is, you first need to generate the message body by running the following command:<br>
+
+    ```
+    tvm-cli body --abi contracts/0.79.3_compiled/dappconfig/DappConfig.abi.json deployNewConfigCustom '{"authorityAddress": null}'
+
+    ```
+
+    \
+    \* abi [DappConfig](https://github.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/dappconfig/DappConfig.abi.json)\
+    \
+    As a result, you will get:<br>
+
+    ```
+    Input arguments:
+      method: deployNewConfigCustom
+      params: {"authorityAddress": null}
+         abi: contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json
+      output: None
+    Message body: te6ccgEBAQEABwAACVumOBNA
+    ```
+
+    \
+    We need to place the **Message body** field value into the payload of the `sendTransaction` function in our main contract (in our case, the HelloWorld contract), and set the recipient to the [DappRoot contract](https://github.com/ackinacki/ackinacki/tree/main/contracts/dappconfig).
+
+    Specify the amount of SHELL tokens that will be converted into VMSHELL during deployment and credited to the DappConfig balance.
 
 {% hint style="info" %}
 `DappRoot` is a system contract that manages `DappConfig` contracts, including their deployment and the calculation of the `DappConfig` address for a given Dapp ID.\
 The address of the `DappRoot` contract is: `0:9999999999999999999999999999999999999999999999999999999999999999`
 {% endhint %}
 
-```
-deployNewConfigCustom(uint256 dapp_id)
-```
-
-* `dapp_id` - the indentifier of your DAPP
-
-{% hint style="danger" %}
-The value of the Dapp ID is specified with the `0x` prefix.
-{% endhint %}
-
-Example command to deploy the DappConfig contract:
+Example command:
 
 ```
+tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e sendTransaction '{"dest":"0:9999999999999999999999999999999999999999999999999999999999999999", "value":10000000, "bounce":false, "cc": {"2": 100000000000}, "flags": 1, "payload": "te6ccgEBAQEABwAACVumOBNA"}' --abi helloWorld.abi.json.abi.json --sign helloWorld.keys.json
 
-tvm-cli call 0:9999999999999999999999999999999999999999999999999999999999999999 deployNewConfigCustom '{"dapp_id":"0xcf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e"}' --abi DappRoot.abi.json
 ```
 
 {% hint style="info" %}
-Upon deployment, the contract's balance is credited with **15 VMSHELL tokens**.
+Upon deployment, the contract's balance is credited with **100 VMSHELL tokens**.
 {% endhint %}
 
 3. Use the getConfigAddr method to retrieve the address of the deployed `DappConfig` contract:
@@ -632,12 +652,18 @@ getConfigAddr(uint256 dapp_id)
 Example command to get the address of the DappConfig contract:
 
 ```
-tvm-cli -j run 0:9999999999999999999999999999999999999999999999999999999999999999 getConfigAddr '{"dapp_id":"0xcf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e"}' --abi DappRoot.abi.json
+tvm-cli -u shellnet.ackinacki.org -j run 0:9999999999999999999999999999999999999999999999999999999999999999 getConfigAddr '{"dapp_id":"0xcf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e"}' --abi acki-nacki/contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json
+
 ```
 
 result:
 
-<figure><img src=".gitbook/assets/3.jpg" alt=""><figcaption></figcaption></figure>
+```
+{
+"config": "0:45744296d4bb46028e6693f586c6d158f02041e51ed48b62debac71a38bd415d",
+"state_timestamp": 1774094007991
+}
+```
 
 To enable the auto-replenishment system, you need to fund the balance with SHELL tokens.
 
@@ -647,7 +673,8 @@ Example command to transfer 10 SHELL from the balance of the Multisig contract t
 
 ```
 
-tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:020473650f8bf0d3df871aadf28a40315ce6ae6d7fffe63e5e557198e0c68b5d","value": 1000000000,"bounce":false, "cc": {"2":10000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:45744296d4bb46028e6693f586c6d158f02041e51ed48b62debac71a38bd415d","value": 1000000000,"bounce":false, "cc": {"2":10000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+
 ```
 
 #### **Step 2: Enabling Automatic Replenishment**
