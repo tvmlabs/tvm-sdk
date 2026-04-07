@@ -131,7 +131,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 account_address.address()
             }
         };
-        let use_new_version = params.use_new_version;
+        let is_version_1_0_3 = params.engine_version >= semver::Version::new(1, 0, 3);
         let original_account_is_none = account.is_none();
         let mut need_to_burn = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
@@ -161,7 +161,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 is_cross_dapp_capped = account.stuff().is_some();
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
-            if h.is_exchange && (!is_cross_dapp_capped || use_new_version) {
+            if h.is_exchange && (!is_cross_dapp_capped || is_version_1_0_3) {
                 if let Ok(Some(mut value)) = msg_balance.get_other(2) {
                     let mut echng = value.clone();
                     if echng > VarUInteger32::from(u64::MAX) {
@@ -405,7 +405,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         minted_shell,
                         need_to_burn,
                         message_src_dapp_id,
-                        use_new_version,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             if phase.success == false {
@@ -494,8 +493,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 } else {
                     acc_balance.grams -= grams_to_subtract;
                 }
-                let gas_consumed = compute_phase_gas_fees.as_u128() as u64;
-                let ecc_to_restore = std::cmp::min(msg_balance_convert, gas_consumed);
+                let ecc_to_restore = if is_version_1_0_3 {
+                    msg_balance_convert
+                } else {
+                    let gas_consumed = compute_phase_gas_fees.as_u128() as u64;
+                    std::cmp::min(msg_balance_convert, gas_consumed)
+                };
                 let mut add_value = CurrencyCollection::new();
                 add_value.set_other(2, ecc_to_restore.into())?;
                 acc_balance.add(&add_value)?;
@@ -511,7 +514,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     in_msg,
                     &mut tr,
                     account_address,
-                    use_new_version,
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
                         log::debug!(target: "executor", "bounce_phase: out_msg value: {}", bounce_msg.get_value().unwrap());
@@ -535,6 +537,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
                 should_burn_need_to_burn = false;
+            } else if is_version_1_0_3 && account.status() == AccountStatus::AccStateUninit {
+                // Don't leave fwd_fee on uninit accounts after bounce failure,
+                // but preserve ECC
+                log::debug!(target: "executor", "Bounce failed on uninit account, restoring grams, preserving ECC");
+                let ecc = acc_balance.other.clone();
+                acc_balance = original_acc_balance;
+                acc_balance.other = ecc;
             } else if original_account_is_none && !acc_balance.is_zero()? {
                 acc_balance = CurrencyCollection::default();
             }
