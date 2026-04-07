@@ -1,11 +1,8 @@
 # Table of contents
 
-* [About Acki Nacki SDK](README.md)
+* [Dapp ID Full Guide: creation, fees, centralized replenishment](README.md)
+* [Developer Portal Overview](developer-portal-overview.md)
 * [How to deploy a Multisig Wallet](how-to-deploy-a-multisig-wallet.md)
-* [Dapp ID Full Guide: creation, fees, centralized replenishment](dapp-id-full-guide-creation-fees-centralized-replenishment.md)
-* [Quick Starts](quick-starts/README.md)
-  * [Quick Start TVM SDK JavaScript](quick-starts/quick-start-tvm-sdk-javascript.md)
-  * [GraphQL Quick Start](graphql-quick-start.md)
 * [Add Acki Nacki to your backend](add_to_backend.md)
 
 ## DEX.DO
@@ -19,27 +16,37 @@
   * [OracleEventList](dex.do/smart-contract-interfaces/oracleeventlist.md)
   * [PARI MUTUEL POOL (PMP)](dex.do/smart-contract-interfaces/pari-mutuel-pool-pmp.md)
 
+## Accumulator contract system
+
+* [Overview](accumulator-contract-system/overview.md)
+* [Architecture](accumulator-contract-system/architecture.md)
+* [Flows](accumulator-contract-system/flows.md)
+* [API reference](accumulator-contract-system/api-reference.md)
+
 ## Bee Engine
 
 * [Bee Engine Overview](bee-engine/bee-engine-overview.md)
 * [Bee Engine SDK — Integration Documentation](bee-engine/bee-engine-sdk-integration-documentation.md)
 
-## Reference
+## Acki Nacki SDK
 
-* [Core Library Reference](reference/types-and-methods/README.md)
-  * [Modules](reference/types-and-methods/modules.md)
-  * [Module abi](reference/types-and-methods/mod_abi.md)
-  * [Module boc](reference/types-and-methods/mod_boc.md)
-  * [Module client](reference/types-and-methods/mod_client.md)
-  * [Module crypto](reference/types-and-methods/mod_crypto.md)
-  * [Module debot](reference/types-and-methods/mod_debot.md)
-  * [Module net](reference/types-and-methods/mod_net.md)
-  * [Module processing](reference/types-and-methods/mod_processing.md)
-  * [Module proofs](reference/types-and-methods/mod_proofs.md)
-  * [Module tvm](reference/types-and-methods/mod_tvm.md)
-  * [Module utils](reference/types-and-methods/mod_utils.md)
-* [Core Library Error API](reference/error_api.md)
-* [Error Codes](reference/error_codes.md)
+* [About Acki Nacki SDK](acki-nacki-sdk/untitled.md)
+* [Quick Start TVM SDK JavaScript](acki-nacki-sdk/quick-start-tvm-sdk-javascript.md)
+* [Client Libraries JS Examples](https://github.com/tvmlabs/sdk-examples)
+* [Core Library Reference](acki-nacki-sdk/types-and-methods/README.md)
+  * [Modules](acki-nacki-sdk/types-and-methods/modules.md)
+  * [Module abi](acki-nacki-sdk/types-and-methods/mod_abi.md)
+  * [Module boc](acki-nacki-sdk/types-and-methods/mod_boc.md)
+  * [Module client](acki-nacki-sdk/types-and-methods/mod_client.md)
+  * [Module crypto](acki-nacki-sdk/types-and-methods/mod_crypto.md)
+  * [Module debot](acki-nacki-sdk/types-and-methods/mod_debot.md)
+  * [Module net](acki-nacki-sdk/types-and-methods/mod_net.md)
+  * [Module processing](acki-nacki-sdk/types-and-methods/mod_processing.md)
+  * [Module proofs](acki-nacki-sdk/types-and-methods/mod_proofs.md)
+  * [Module tvm](acki-nacki-sdk/types-and-methods/mod_tvm.md)
+  * [Module utils](acki-nacki-sdk/types-and-methods/mod_utils.md)
+* [Core Library Error API](acki-nacki-sdk/error_api.md)
+* [Error Codes](acki-nacki-sdk/error_codes.md)
 * [TVM-CLI Reference](https://github.com/tvmlabs/tvm-sdk/blob/main/tvm_cli/README.md)
 
 ## VM Instructions
@@ -50,30 +57,20 @@
 
 ## GraphQL
 
-* [Schema](graphql/schema.md)
+* [GraphQL Quick Start](graphql/graphql-quick-start.md)
 * [Blockchain API](graphql/blockchain-api.md)
-* [Query Collections: Query Language](graphql/query-collections-query-language.md)
-* [Field Descriptions](graphql/field-descriptions.md)
 * [Info API](graphql/info-api.md)
 * [Web Playground](graphql/web-playground.md)
 * [GraphQL API Examples](graphql/graphql-api-examples/README.md)
   * [Connect to GraphQL API](graphql/graphql-api-examples/connect-to-graphql-api.md)
   * [Send message](graphql/graphql-api-examples/send-message.md)
   * [Retrieve all blocks, transactions, events](graphql/graphql-api-examples/retrieve-all-blocks-transactions-events.md)
-  * [Account queries](graphql/graphql-api-examples/account-queries.md)
+  * [Account queries](graphql/graphql-api-examples/accounts-queries.md)
   * [Messages](graphql/graphql-api-examples/messages.md)
 
 ## ABI
 
 * [ABI Specification](abi/abi.md)
-
-## Examples
-
-* [Client Libraries JS Examples](https://github.com/tvmlabs/sdk-examples)
-
-## Local Blockchain
-
-* [How to run a local blockchain](guides/WIP.md)
 
 ## JS(TS) guides
 

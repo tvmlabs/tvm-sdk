@@ -1571,7 +1571,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 * `secret_encryption_salt`: _string_ – Salt used for secret encryption. For example, a mobile device can use device ID as salt.
 * `secret`: [_CryptoBoxSecret_](mod_crypto.md#cryptoboxsecret) – Cryptobox secret
-* `obj`: [AppPasswordProvider](mod_AppPasswordProvider.md#apppasswordprovider) – Interface that provides a callback that returns an encrypted password, used for cryptobox secret encryption
+* `obj`: [AppPasswordProvider](../../reference/types-and-methods/mod_AppPasswordProvider.md#apppasswordprovider) – Interface that provides a callback that returns an encrypted password, used for cryptobox secret encryption
 
 #### Result
 
@@ -1793,7 +1793,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `obj`: [AppSigningBox](mod_AppSigningBox.md#appsigningbox) – Signing box callbacks.
+* `obj`: [AppSigningBox](../../reference/types-and-methods/mod_AppSigningBox.md#appsigningbox) – Signing box callbacks.
 
 #### Result
 
@@ -1946,7 +1946,7 @@ NOTE: Sync version is available only for `lib-node` binding.
 
 #### Parameters
 
-* `obj`: [AppEncryptionBox](mod_AppEncryptionBox.md#appencryptionbox) – Interface for data encryption/decryption
+* `obj`: [AppEncryptionBox](../../reference/types-and-methods/mod_AppEncryptionBox.md#appencryptionbox) – Interface for data encryption/decryption
 
 #### Result
 

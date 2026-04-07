@@ -8,7 +8,7 @@ If you want to test your contract locally and find out will your operation work 
 
 ## Lets debug!
 
-Core SDK provides [run\_executor](../../reference/types-and-methods/mod_tvm.md#run_executor) method of `tvm` module for it.
+Core SDK provides [run\_executor](../../acki-nacki-sdk/types-and-methods/mod_tvm.md#run_executor) method of `tvm` module for it.
 
 [AppKit](https://github.com/tonlabs/ever-appkit-js) provides `localDeploy` and `localRun` functions for it.
 

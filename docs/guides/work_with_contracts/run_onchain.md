@@ -7,7 +7,7 @@ Learn how to run methods of a contract on-chain
   * [Pattern 1. Run in 1 step: `process_message` method](run_onchain.md#pattern-1-run-in-1-step-process_message-method)
   * [Pattern 2. Run in 3 steps: `encode_message` -> `send_message` -> `wait_for_transaction`](run_onchain.md#pattern-2--run-in-3-steps-encode_message----send_message---wait_for_transaction)
 
-> [See the API reference](../../reference/types-and-methods/modules.md).
+> [See the API reference](../../acki-nacki-sdk/types-and-methods/modules.md).
 
 Core api is more flexible than [AppKit](https://github.com/tonlabs/ever-appkit-js) and you can perform a lot of complex logic using it. But you will need to write more code with it as well :)
 
@@ -31,7 +31,7 @@ Run operation consists of few steps:
 
 ### Pattern 1. Run in 1 step: `process_message` method
 
-The [process\_message](../../reference/types-and-methods/mod_processing.md#process_message) method runs ABI-compatible contract method on-chain and returns the result transaction along with the external messages bocs, and decoded external messages bodies.
+The [process\_message](../../acki-nacki-sdk/types-and-methods/mod_processing.md#process_message) method runs ABI-compatible contract method on-chain and returns the result transaction along with the external messages bocs, and decoded external messages bodies.
 
 `process_message` performs all the run operation steps inside.
 

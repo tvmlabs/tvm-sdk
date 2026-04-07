@@ -16,7 +16,7 @@ Find out how to deploy a contract to Acki Nacki Blockchain with SDK
 * [Deploy a contract from another contract](deploy.md#deploy-a-contract-from-another-contract)
 * [Sample Source Code](deploy.md#sample-source-code)
 
-> [See the API reference](../../reference/types-and-methods/modules.md).
+> [See the API reference](../../acki-nacki-sdk/types-and-methods/modules.md).
 
 Core api is more flexible than [AppKit](https://github.com/tonlabs/ever-appkit-js), and you can perform a lot of complex logic using it. But you will need to write more code with it as well:)
 
@@ -70,7 +70,7 @@ type DeploySet = {
 
 To deploy you will need a pair of keys to sign the deployment message. The keys are used during address generation, so the future contract address depends partially on the key as well.
 
-In fact, keys are optional for deploy, but, if you want to be the contract owner then specify Signer object for that. [Read more about Signer object in Reference](../../reference/types-and-methods/mod_abi.md#Signer).
+In fact, keys are optional for deploy, but, if you want to be the contract owner then specify Signer object for that. [Read more about Signer object in Reference](../../acki-nacki-sdk/types-and-methods/mod_abi.md#Signer).
 
 If you want to make another person owner of the contract then specify their pubkey via `DeploySet.initial_pubkey`.
 
@@ -98,7 +98,7 @@ To be used as `initParams` variables must be declared as `static` in the contrac
 
 Constructor - is any contract function that will be called upon deploy. It will not influence contract address.
 
-It, together with its parameters, is specified in the [CallSet](../../reference/types-and-methods/mod_abi.md#callset) structure:
+It, together with its parameters, is specified in the [CallSet](../../acki-nacki-sdk/types-and-methods/mod_abi.md#callset) structure:
 
 ```javascript
 type CallSet = {
@@ -289,7 +289,7 @@ This is not a correct way.
 
 You can get it several ways:
 
-* You can use SDK function [get\_code\_from\_tvc](../../reference/types-and-methods/mod_boc.md#get_code_from_tvc) of `boc` module and retrieve the code's boc from tvc file.
+* You can use SDK function [get\_code\_from\_tvc](../../acki-nacki-sdk/types-and-methods/mod_boc.md#get_code_from_tvc) of `boc` module and retrieve the code's boc from tvc file.
 * You can download another account with the same `code_hash`'s `boc` from graphql, using [blockchain API](https://docs.everplatform.dev/samples/graphql-samples/accounts#get-account-info) and retrieve the 'code' from the result `boc` field.
 
 ## Sample Source Code

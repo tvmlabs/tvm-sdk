@@ -51,7 +51,7 @@ type ResultOfAppSigningBoxSign = {
 }
 ```
 
-All the methods that create messages - `encode_message`, `process_message` can take [Signer of type SigningBox object](../../reference/types-and-methods/mod_abi.md#signer), implementing this interface, instead of a key pair.
+All the methods that create messages - `encode_message`, `process_message` can take [Signer of type SigningBox object](../../acki-nacki-sdk/types-and-methods/mod_abi.md#signer), implementing this interface, instead of a key pair.
 
 ### Sample source code
 
@@ -65,7 +65,7 @@ All the methods that create messages - `encode_message`, `process_message` can t
 
 ## Sign message outside sdk
 
-In this case you may create an unsigned message with `encode_message` function, specifying Signer of type `External` . After that you sign it somewhere outside and attach signature with [attach\_signature](../../reference/types-and-methods/mod_abi.md#attach_signature) function.
+In this case you may create an unsigned message with `encode_message` function, specifying Signer of type `External` . After that you sign it somewhere outside and attach signature with [attach\_signature](../../acki-nacki-sdk/types-and-methods/mod_abi.md#attach_signature) function.
 
 ### Sample source code
 

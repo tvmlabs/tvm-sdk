@@ -1,3 +1,3 @@
 # Config Reference
 
-## [TVMClient.config reference](../../reference/types-and-methods/mod_client.md#clientconfig)
+## [TVMClient.config reference](../../acki-nacki-sdk/types-and-methods/mod_client.md#clientconfig)

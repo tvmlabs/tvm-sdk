@@ -33,6 +33,6 @@ When you use separate functions to create (`encoded_message`) and to send a mess
 
 ## When to retry with 507 error
 
-Normally, `process_message` and `wait_for_transaction` perform local emulation of transaction in case of expired message error and attach the results to the error object of `507` error ([ErrorData.exit\_code](../../reference/error_api.md)). It will give you a possible reason why the message was not executed on-chain (check exit code meaning in contract source code).
+Normally, `process_message` and `wait_for_transaction` perform local emulation of transaction in case of expired message error and attach the results to the error object of `507` error ([ErrorData.exit\_code](../../acki-nacki-sdk/error_api.md)). It will give you a possible reason why the message was not executed on-chain (check exit code meaning in contract source code).
 
 **If you see there is no `exit_code`, then do the retry. Also retry can be executed in case of replay protection `exit_code`.** Sometimes when a network undergoes high loads, this may happen.

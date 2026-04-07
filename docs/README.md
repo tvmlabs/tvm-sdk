@@ -1,218 +1,853 @@
----
-description: Overview of SDK components
----
+# Dapp ID Full Guide: creation, fees, centralized replenishment
 
-# About Acki Nacki SDK
+## **What will you learn from this guide?** <a href="#prerequisites" id="prerequisites"></a>
 
-Acki Nacki SDK consists of
+* How to create your [Dapp ID](https://docs.ackinacki.com/glossary#dapp-id)
+* How to interact with contracts inside a Dapp&#x20;
+* How to interact with contracts of other Dapps
+* How to use the centralized replenishment mechanism for the Dapp ID contracts
 
-* Client Libraries
-* CLI
+## **Prerequisites** <a href="#prerequisites" id="prerequisites"></a>
 
-Core TVM-SDK client library is written in Rust, with bindings for other programming languages.
+* [TVM-Solidity-Compiler](https://github.com/gosh-sh/TVM-Solidity-Compiler)
+* [TVM-CLI and Multisig Wallet](how-to-deploy-a-multisig-wallet.md)
 
-JS/TS guides are present here as reference guides meaning bindings in other languages have the same api calls.
+## Configure CLI tool
 
-**Get quick help in our telegram channel:**
+In this guide, we will use the test network at [`shellnet.ackinacki.org`](https://shellnet.ackinacki.org).\
+We need to specify the blockchain endpoint for deployment:
 
-[![Channel on Telegram](https://img.shields.io/badge/chat-on%20telegram-9cf.svg)](https://t.me/+1tWNH2okaPthMWU0)
+```
+tvm-cli config -g --url shellnet.ackinacki.org
+```
 
-* [TVM SDK](./#tvm-sdk)
-  * [Supported languages](./#supported-languages)
-    * [Rust (core library)](./#rust-core-library)
-    * [Official Javascript(Typescript) binding](./#official-javascripttypescript-binding)
-    * [Community bindings](./#community-bindings)
-    * [If you did not find the language you need](./#if-you-did-not-find-the-language-you-need)
-  * [Use-cases](./#use-cases)
-  * [Quick Start](./#quick-start)
-  * [Versioning](./#versioning)
-  * [How to avoid Soft Breaking Problems](./#how-to-avoid-soft-breaking-problems)
-  * [Build client library](./#build-client-library)
-  * [Build artifacts](./#build-artifacts)
-  * [Run tests](./#run-tests)
-  * [Download precompiled binaries](./#download-precompiled-binaries)
+## Create your first Dapp ID
 
-## Supported languages
+You create a new Dapp ID when you deploy a contract using an external message. The address of this contract becomes the Dapp ID of your system.
 
-### Rust (core library)
+If your Dapp consists of multiple contracts, you need to implement your system so that all the contracts are deployed either from the root contract or its children.
 
-Repository: https://github.com/tvmlabs/tvm-sdk
+In this guide, we will use the [`helloWorld`](https://github.com/tvmlabs/sdk-examples/blob/main/contracts/helloWorld/helloWorld.sol) contract to demonstrate the features of a Dapp ID.
 
-**What is Core Client Library?**
+```solidity
+pragma tvm-solidity >=0.76.1;
+pragma AbiHeader expire;
 
-Core Client Library is written in Rust that can be dynamically linked. It provides all heavy-computation components and functions, such as TVM Virtual Machine,  Transaction Executor, ABI-related functions, BOC manipulation functions, crypto functions.
-
-The decision to create the Rust library was made after a period of time using pure JavaScript to implement these use cases.
-
-We ended up with very slow work of pure JavaScript and decided to move all this to Rust library and link it to Javascript as a compiled binary including a wasm module for browser applications.
-
-Also this approach provided an opportunity to easily create bindings for any programming language and platform, thus, to make it possible to develop distributed applications (DApps) for any possible use-cases, such as: mobile DApps, web DApps, server-side DApps, enterprise DApp, desktop Dapps etc.
-
-Client Library exposes all the functionality through a few of exported functions. All interaction with library is performed using JSON-RPC like protocol via C .h file.
-
-### Official Javascript(Typescript) binding
-
-Repository: [JavaScript SDK](https://github.com/tvmlabs/tvm-sdk-js)
-
-You need to install core package and the package with binary for your platform. [See the documentation.](https://github.com/tvmlabs/tvm-sdk-js#library-distribution)
-
-| Platform                       | Package                                                            |
-| ------------------------------ | ------------------------------------------------------------------ |
-| core package for all platforms | [@tvmsdk/core](https://www.npmjs.com/package/@tvmsdk/core)         |
-| Node.js                        | [@tvmsdk/lib-node](https://www.npmjs.com/package/@tvmsdk/lib-node) |
-| Web                            | [@tvmsdk/lib-web](https://www.npmjs.com/package/@tvmsdk/lib-web)   |
-
-### Community bindings
-
-| Language | Repository                                                                                                                                                                               |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Java     | <p><a href="https://github.com/radianceteam/ton-client-java">radianceteam/ton-client-java</a><br><a href="https://github.com/deplant/java4ever-binding">laugan/java4ever-binding</a></p> |
-| .NET     | [everscale-actions/everscale-dotnet](https://github.com/everscale-actions/everscale-dotnet)                                                                                              |
-
-### If you did not find the language you need
-
-* use library module `json_interface` which provides access to library functions through JSON-RPC interface. This interface exports several extern "C" functions. So you can build a dynamic or static link library and link it to your application as any other external libraries. The JSON Interface is fully "C" compliant. You can find description in section [JSON Interface](for-binding-developers/json_interface.md).
-* write your own binding to chosen language and share it with community.
-
-If you choose using JSON Interface please read this document [JSON Interface](for-binding-developers/json_interface.md).\
-Here you can find directions how to use `json_interface` and write your own binding.
-
-## Use-cases
-
-With TVM SDK you can implement logic of any complexity on TVM compatible blockchains (Acki Nacki, Everscale, TON, Venom, etc).
-
-* Create and send messages to blockchain
-* Process messages reliably (supports retries and message expiration mechanics)
-* Supports TVM Solidity and ABI compatible contracts
-* Emulate transactions locally
-* Run get methods
-* Get account state
-* Query blockchain data (blocks, transactions, messages)
-* Sign data/check signature, calculate hashes (sha256, sha512), encrypt/decrypt data
-* Validate addresses
-* Work with blockchain native types (bag of cells or BOCs): encode, decode, calculate hash, etc
-* Works on top of GraphQL API and compatible with Acki Nacki [Block Keeper node](https://docs.ackinacki.com/glossary#block-keeper-node-bk) or [Block Manager](https://docs.ackinacki.com/glossary#block-manager) node
-
-## Quick Start
-
-Quick Start (Javascript binding)
-
-[Error descriptions](reference/error_codes.md)
-
-[JavaScript SDK Types and Methods (API Reference)](https://github.com/tvmlabs/tvm-sdk-js)
-
-[Core Types and Methods (API Reference)](reference/types-and-methods/modules.md)
-
-Guides
-
-## Versioning
-
-We aim to follow semver practises, although before the mainnet launch we may introduce breaking changes in any release: patch and minor. Check the CHANGELOG.md file for breaking changes.
-
-## How to avoid Soft Breaking Problems
-
-Soft Breaking is API changes that include only new optional fields in the existing structures. This changes are fully backward compatible for JSON Interface.
-
-But in Rust such changes can produce some problems with an old client code.
-
-Look at the example below:
-
-1. There is an API v1.0 function `foo` and the corresponding params structure:
-
-```rust
-#[derive(Default)]
-struct ParamsOfFoo {
-    pub foo: String,
+interface IHelloWorld {
+    function touch() external;
 }
 
-pub fn foo(params: ParamsOfFoo)
+
+// This is class that describes you smart contract.
+contract helloWorld {
+    // Contract can have an instance variables.
+    // In this example instance variable `timestamp` is used to store the time of `constructor` or `touch`
+    // function call
+    uint32 public timestamp;
+
+    // The contract can have a `constructor` – a function that is called when the contract is deployed to the blockchain.
+    // Parameter `value` represents the number of SHELL tokens to be converted to VMSHELL to pay the transaction fee.
+    // In this example, the constructor stores the current timestamp in an instance variable.
+    // All contracts need to call `tvm.accept()` for a successful deployment.
+    constructor(uint64 value) {
+        // Call the VM command to convert SHELL tokens to VMSHELL tokens to pay the transaction fee.
+        gosh.cnvrtshellq(value);
+
+        // Ensure that the contract's public key is set.
+        require(tvm.pubkey() != 0, 101);
+
+        // The current smart contract agrees to buy some gas to complete the
+        // current transaction. This action is required to process external
+        // messages, which carry no value (and therefore no gas).
+        tvm.accept();
+
+        // Set the instance variable to the current block timestamp.
+        timestamp = block.timestamp;
+    }
+
+    // Converts SHELL to VMSHELL for payment of transaction fees
+    // Parameter `value`- the amount of SHELL tokens that will be exchanged 1-to-1 into VMSHELL tokens.
+    function exchangeToken(uint64 value) public pure {
+        tvm.accept();
+        getTokens();
+        gosh.cnvrtshellq(value);
+    }
+
+    // Returns a static message, "helloWorld".
+    // This function serves as a basic example of returning a fixed string in Solidity.
+    function renderHelloWorld () public pure returns (string) {
+        return 'helloWorld';
+    }
+
+    // Updates the `timestamp` variable with the current blockchain time.
+    // We will use this function to modify the data in the contract.
+    // Сalled by an external message.
+    function touch() external {
+        // Informs the TVM that we accept this message.
+        tvm.accept();
+        getTokens();
+        // Update the timestamp variable with the current block timestamp.
+        timestamp = block.timestamp;
+    }
+
+    // Used to call the touch method of a contract via an internal message.
+    // Parameter 'addr' - the address of the contract where the 'touch' will be invoked.
+    function callExtTouch(address addr) public view {
+        // Each function that accepts an external message must check that
+        // the message is correctly signed.
+        require(msg.pubkey() == tvm.pubkey(), 102);
+        tvm.accept();
+        getTokens();
+        IHelloWorld(addr).touch();
+    }
+
+    // Sends VMSHELL to another contract with the same Dapp ID.
+    // Parameter `dest` - the target address within the same Dapp ID to receive the transfer.
+    // Parameter `value`- the amount of VMSHELL tokens to transfer.
+    // Parameter `bounce` - Bounce flag. Set true if need to transfer funds to existing account;
+    // set false to create new account.
+    function sendVMShell(address dest, uint128 amount, bool bounce) public view {
+        require(msg.pubkey() == tvm.pubkey(), 102);
+        tvm.accept();
+        getTokens();
+        // Enables a transfer with arbitrary settings
+        dest.transfer(varuint16(amount), bounce, 0);
+    }
+
+    // Allows transferring SHELL tokens within the same Dapp ID and to other Dapp IDs.
+    // Parameter `dest` - the target address to receive the transfer.
+    // Parameter `value`- the amount of SHELL tokens to transfer.
+    function sendShell(address dest, uint128 value) public view {
+        require(msg.pubkey() == tvm.pubkey(), 102);
+        tvm.accept();
+        getTokens();
+
+        TvmCell payload;
+        mapping(uint32 => varuint32) cc;
+        cc[2] = varuint32(value);
+        // Executes transfer to target address
+        dest.transfer(0, true, 1, payload, cc);
+    }
+
+    // Deploys a new contract within its Dapp.
+    // The address of the new contract is calculated as a hash of its initial state.
+    // The owner's public key is part of the initial state.
+    // Parameter `stateInit` - the contract code plus data.
+    // Parameter `initialBalance` - the amount of funds to transfer. 
+    // Parameter `payload` - a tree of cells used as the body of the outbound internal message.
+    function deployNewContract(
+        TvmCell stateInit,
+        uint128 initialBalance,
+        TvmCell payload
+    )
+        public pure
+    {
+        // Runtime function to deploy contract with prepared msg body for constructor call.
+        tvm.accept();
+        getTokens();
+        address addr = address.makeAddrStd(0, tvm.hash(stateInit));
+        addr.transfer({stateInit: stateInit, body: payload, value: varuint16(initialBalance)});
+    }
+    
+    // Checks the contract balance
+    // and if it is below the specified limit, mints VMSHELL.
+    // The amounts are specified in nanotokens.
+    // Used to enable automatic balance replenishment.
+    function getTokens() private pure {
+        if (address(this).balance > 100000000000) {     // 100 VMSHELL
+            return; 
+        }
+        gosh.mintshell(100000000000);                   // 100 VMSHELL
+    }
+
+}
+
+
 ```
 
-1. Application uses this function in this way:
+### **Prepare contract source code**
 
-```rust
-foo(ParamsOfFoo {
-    foo: "foo".into(),
-});
+Let's create a folder for our project and clone the [repository](https://github.com/tvmlabs/sdk-examples/tree/main) with examples into it:
+
+<pre><code>cd ~
+mkdir helloWorld
+<strong>cd helloWorld
+</strong>git clone https://github.com/tvmlabs/sdk-examples.git
+
+</code></pre>
+
+and copy the `contracts` folder from there:
+
+```
+cp -r sdk-examples/contracts .
+cd contracts/helloWorld
 ```
 
-1. API v.1.1 introduces new field in `ParamsOfFoo`:
+### **Compile**
 
-```rust
-#[derive(Default)]
-struct ParamsOfFoo {
-    pub foo: String,
-    pub bar: Option<String>,
+Compile the contract `helloWorld` using [TVM Solidity compiler](https://github.com/gosh-sh/TVM-Solidity-Compiler/releases/tag/gosh_0.79.3):
+
+```
+sold --tvm-version gosh helloWorld.sol
+```
+
+The compiler produces `helloWorld.tvc` and `helloWorld.abi.json` to be used in the next steps.
+
+TVM binary code of your contract is stored into `helloWorld.tvc` file.
+
+### **Top up with Shell**
+
+To deploy a contract, its balance must be funded with SHELL tokens.
+
+To do this, we first need to determine its address. Let's start by generating a **seed phrase** and **keys** for your contract:
+
+<pre><code><strong>tvm-cli genphrase --dump helloWorld.keys.json
+</strong></code></pre>
+
+{% hint style="info" %}
+**Seed phrase** is printed to stdout.\
+**Key pair** will be generated and saved to the file **`helloWorld.keys.json`**.
+{% endhint %}
+
+<figure><img src=".gitbook/assets/seed_phrase (2).jpg" alt=""><figcaption></figcaption></figure>
+
+{% hint style="danger" %}
+**Write your Seed Phrase down and store it somewhere safe, and never share it with anyone. Avoid storing it in plain text or screenshots, or any other non-secure way. If you lose it, you will not be able to recover it from your Key Pair. If you lose both Seed Phrase and Key Pair you lose access to your assets. Anyone who gets it, gets full access to your assets.**\
+**Also, save the file with a pair of keys in a safe place.**
+{% endhint %}
+
+Now let's generate the **contract address** using the keys obtained earlier:
+
+```
+tvm-cli genaddr helloWorld.tvc --save --setkey helloWorld.keys.json
+```
+
+{% hint style="info" %}
+After this step, the `.tvc` file will be overwritten with the specified keys.
+{% endhint %}
+
+Address of your contract in the blockchain is located after `Raw address:`
+
+<figure><img src=".gitbook/assets/raw_address (1).jpg" alt=""><figcaption></figcaption></figure>
+
+{% hint style="info" %}
+**Save `Raw address` value** - you will need it to deploy your contract and to work with it.\
+We will refer to it as **`<YourAddress>`** below.
+{% endhint %}
+
+To top up the balance (approx. 10 SHELL) of the `helloWorld` contract, [use your Multisig Wallet](how-to-deploy-a-multisig-wallet.md#how-to-use-a-sponsor-wallet)&#x20;
+
+and apply the following method `sendTransaction`:
+
+```
+sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bool bounce, uint8 flags, TvmCell payload)
+```
+
+* `dest`  - the transfer target address;
+* `value`  - the amount of funds (nanoVMSHELL) used to pay fees (it must not be `0`);
+* `cc`  - the type of ECC token (SHELL has index 2) and amount (specified in nanotokens) to transfer;
+* `bounce`  - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
+* `flags-`[sendmsg flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (should be `1`);
+* `payload` - [tree of cells used as body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string).&#x20;
+
+For example: you can use the command:
+
+<pre><code><strong>tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e", "value":0, "bounce":false, "cc": {"2": 1000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+</strong><strong>
+</strong></code></pre>
+
+{% hint style="info" %}
+Within Dapp ID, you can transfer both ECC tokens (e.x.SHELL) and VMSHELL. \
+**For contracts of other Dapp IDs, only ECC tokens can be transferred.**
+{% endhint %}
+
+Check the state of the pre-deployed contract. It should be `Uninit`:
+
+```
+tvm-cli account <YourAddress>
+```
+
+You will see something similar to the following:
+
+<figure><img src=".gitbook/assets/uinit.jpg" alt=""><figcaption></figcaption></figure>
+
+### Deploy
+
+When you deploy a contract with external message contract must  exchange some amount of [SHELL](https://docs.ackinacki.com/glossary#shell) into [VMSHELL](https://docs.ackinacki.com/glossary#vmshell) during the contract deployment. To do this, the contract’s constructor must call the VM command `gosh.cnvrtshellq(uint64 value).`&#x20;
+
+{% hint style="warning" %}
+**CNVRTSHELLQ converts SHELL to VMSHELL  at a 1:1 ratio**
+
+Q in the end stands for ‘quiet’ which means that if there is not enough Shell, it will not throw an exception.
+
+If the account balance does not have the required number of tokens, the exchange will be made for the entire available amount. That is, MIN(available\_tokens, want\_to\_convert\_amount).
+{% endhint %}
+
+Go back now and check the constructor code of `helloWallet` - you will find this command.
+
+Lets deploy `helloWorld` and create our first Dapp ID with this command:
+
+```
+tvm-cli deploy --abi helloWorld.abi.json --sign helloWorld.keys.json helloWorld.tvc '{"value":10000000000}'
+```
+
+<figure><img src=".gitbook/assets/deploing.jpg" alt=""><figcaption></figcaption></figure>
+
+6. Check the contract state again. This time, it is should be `Active`.
+
+<figure><img src=".gitbook/assets/active (2).jpg" alt=""><figcaption></figcaption></figure>
+
+**View contract information with Explorer**
+
+Go to [testnet Acki Nacki explorer](https://shellnet.ackinacki.org) and search for in search bar.\
+Open your account page. You will need it later to see its transactions and messages, that we will produce in the next steps.
+
+<figure><img src=".gitbook/assets/expl (1).jpg" alt=""><figcaption></figcaption></figure>
+
+**Explore contract information with GraphQL**
+
+Go to [GraphQL playground](https://shellnet.ackinacki.org/graphql).
+
+Enter the information in the left pane and click the "Run" button (replace the contract's address with the one you obtained in the previous steps).
+
+```
+query {
+  accounts(
+    filter: {
+      id: {
+        eq: "<YourAddress>"
+      }
+    }
+  ) {
+    acc_type_name
+    dapp_id
+    balance
+    code
+    code_hash
+    data
+  }
 }
 ```
 
-From the perspective of JSON-interface it isn't breaking change because the new parameter is optional. But code snippet (2) will produce Rust compilation error.
+{% hint style="info" %}
+The `dapp_id` field will contain the identifier of your decentralized contract system on the Acki Nacki blockchain.
+{% endhint %}
 
-1. To avoid such problems we recommend to use default implementation inside structure initialisation:
+You will see something that looks similar following:
 
-```rust
-foo(ParamsOfFoo {
-    foo: "foo".into(),
-    ..Default::default(),
-});
-```
+<figure><img src=".gitbook/assets/GQL_.jpg" alt=""><figcaption></figcaption></figure>
 
-For all TVM Client API structures `Default` trait is implemented.
+{% hint style="info" %}
+**You can specify any other fields in the result section that are available in GraphQL Schema.**\
+Click the icon <img src=".gitbook/assets/image (2).png" alt="" data-size="line">  in the upper-left corner of the screen to view the API documentation.
+{% endhint %}
 
-## Build client library
+## **Run a getter**&#x20;
 
-The best way to build client libraries is to use build scripts from this repo.
-
-**Note**: The scripts are written in JavaScript so you have to install Node.js (v.10 or newer) to run them. Also make sure you have the latest version of Rust installed.
-
-To build a binary for a specific target (or binding), navigate to the relevant folder and run `node build.js`.
-
-The resulting binaries are placed to `bin` folder in the gz-compressed format.
-
-Note that the build script generates binaries compatible with the platform used to run the script. For example, if you run it on Mac OS, you get binaries targeted at Darwin (macOS) platform.
-
-**Note**: You need latest version of rust. Upgrade it with `rustup update` command. Check version with `rustc --version`, it should be above or equal to `1.47.0`.
-
-## Build artifacts
-
-Rebuild `api.json`:
-
-```shell
-cd tvmcli
-cargo run api -o ../tools
-```
-
-Rebuild `docs`:
-
-```shell
-cd tools
-npm i
-tsc
-node index docs -o ../docs
-```
-
-Rebuild `modules.ts`:
-
-```shell
-cd tools
-npm i
-tsc
-node index binding -l ts -o ../../ever-sdk-js/packages/core/src
-```
-
-## Run tests
-
-To run test suite use standard Rust test command
+The `helloWorld` contract features a get-method: `timestamp`. Let's call it and check the result:
 
 ```
-cargo test
+tvm-cli run <YourAddress> timestamp {} --abi helloWorld.abi.json
 ```
 
-SDK tests need GraphQL endpoint to run on. Such an API is exposed by a Block Manager or Keeper node.
+result:
+
+<figure><img src=".gitbook/assets/timestamp.jpg" alt="" width="423"><figcaption></figcaption></figure>
+
+## Call a method on-chain
+
+The helloWorld contract has a `touch` method. Let’s run it on-chain using the `call` command:
 
 ```
-TON_USE_SE: true/false - flag defining if tests run against local network (true) or a real network (false)
-TON_NETWORK_ADDRESS - Block Keeper addresses separated by comma.
-TON_GIVER_SECRET - Sponsor Wallet secret key. If not defined, default Local Network giver keys are used
-TON_GIVER_ADDRESS - Address of the Sponsor Wallet to use for prepaying accounts before deploying test contracts. If not defined, the address is calculated using `GiverV2.tvc` and configured public key
+tvm-cli call <YourAddress> touch {} --abi helloWorld.abi.json --sign helloWorld.keys.json
 ```
+
+<figure><img src=".gitbook/assets/touch (1) (1).jpg" alt=""><figcaption></figcaption></figure>
+
+Call the get-method `timestamp` again to verify that the timestamp has been updated:
+
+<figure><img src=".gitbook/assets/timestamp_after.jpg" alt=""><figcaption></figcaption></figure>
+
+## Add another contract to your Dapp ID
+
+{% hint style="warning" %}
+To add a contract to the Dapp ID system, it must be deployed via an internal message through the root contract of the Dapp ID, which in our case is `helloworld`.
+{% endhint %}
+
+In our case, this can be done using the following function:
+
+```
+function deployNewContract(
+        TvmCell stateInit,
+        uint128 initialBalance,
+        TvmCell payload
+    )
+```
+
+* `stateInit`  - the contract code plus data (tvc in base64);
+* `initialBalance`  - the amount of funds to transfer;
+* `payload`  - a tree of cells used as the body of the outbound internal message;
+
+Let’s add another contract to our Dapp ID. For this, we’ll use a copy of the `helloWorld` contract and name it `helloUniverse:`
+
+```
+cp helloWorld.tvc helloUniverse.tvc
+cp helloWorld.abi.json helloUniverse.abi.json
+```
+
+Now, let’s calculate the address of the `helloUniverse` contract using the existing key pair.
+
+```
+tvm-cli genaddr helloUniverse.tvc --save --setkey helloWorld.keys.json
+```
+
+And we get the same address as the `helloWorld` contract.
+
+<figure><img src=".gitbook/assets/universe_gen_addr_too.jpg" alt=""><figcaption></figcaption></figure>
+
+To avoid this, it’s essential to use a different key pair. \
+Let’s generate a new seed phrase with a fresh pair of keys:
+
+```
+tvm-cli genphrase --dump helloUniverse.keys.json
+```
+
+<figure><img src=".gitbook/assets/seed_phrase_universe.jpg" alt=""><figcaption></figcaption></figure>
+
+Let’s calculate the address and prepare the TVC file for the new contract:
+
+```
+tvm-cli genaddr helloUniverse.tvc --save --setkey helloUniverse.keys.json
+```
+
+<figure><img src=".gitbook/assets/raw_address_universe.jpg" alt=""><figcaption></figcaption></figure>
+
+To deploy a new contract, you need to prepare its `stateInit` and a deployment message body.
+
+To obtain the `stateInit`, execute the following command:
+
+Since the result can be quite large, let’s save this value in a variable: `HW_STATE_INIT`.&#x20;
+
+```
+HW_STATE_INIT=$(base64 -w 0 helloUniverse.tvc)
+```
+
+Let’s generate the message body with a constructor call for the internal deployment of the contract from another contract.:
+
+```
+tvm-cli body --abi helloUniverse.abi.json constructor '{"value": 10000000000}'
+```
+
+<figure><img src=".gitbook/assets/msg_body_for_HU.jpg" alt=""><figcaption></figcaption></figure>
+
+We’ll need to place the `Message body` field value into the deployment payload.
+
+Now we can call  `deployNewContract` function.
+
+In our case, the command will be as follows:
+
+```
+tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e deployNewContract '{"stateInit":"'$HW_STATE_INIT'", "initialBalance":10000000000, "payload":"te6ccgEBAQEADgAAGHA94s8AAAACVAvkAA=="}' --abi helloWorld.abi.json 
+```
+
+This way, the new contract within the DAPP ID will be deployed through an internal message.
+
+Check the contract state:&#x20;
+
+<figure><img src=".gitbook/assets/universe_activ.jpg" alt=""><figcaption></figcaption></figure>
+
+{% hint style="success" %}
+Note that the `helloUniverse` contract shares **the same DAPP ID** as the `helloWorld` contract.
+{% endhint %}
+
+## Call a contract inside Dapp ID
+
+To transfer  SHELL, within the same DAPP ID, use the function `sendShell`
+
+```
+function sendShell(address dest, uint128 value)
+```
+
+* `dest` - the target address to receive the transfer;
+* &#x20;`value`  - the amount of SHELL tokens to transfer.
+
+To transfer  VMSHELL, within the same DAPP ID, use the function `sendVMShell`
+
+```
+function sendVMShell(address dest, uint128 amount, bool bounce)
+```
+
+* `dest` - the target address to receive the transfer;
+* `amount`  - the amount of VMSHELL tokens to transfer.
+* `bounce`  - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
+
+
+
+Let's call the `touch` function in `helloUniverse` through the `helloWorld` contract.\
+But first, let's check the value of the `timestamp` variable in the `helloUniverse` contract.
+
+```
+tvm-cli run <Address_helloUniverse> timestamp {} --abi helloUniverse.abi.json
+```
+
+result:
+
+<figure><img src=".gitbook/assets/timestamp_HU_before.jpg" alt=""><figcaption></figcaption></figure>
+
+To call the `touch` function in `helloUniverse`, we’ll invoke the `callExtTouch` method in `helloWorld`.
+
+```
+function callExtTouch(address addr)
+```
+
+* `addr` - is the address of the contract in which the method is called.
+
+In our case, the command will be as follows:
+
+```
+tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:4d5639cd88ee726492b767db774b5a2fe8573c46fd598a75febb5525dc12f918"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
+```
+
+<figure><img src=".gitbook/assets/callExtTouch_HU.jpg" alt=""><figcaption></figcaption></figure>
+
+Then, let's check if the `timestamp` has changed in the `helloUniverse` contract:
+
+<figure><img src=".gitbook/assets/timestamp_HU_after.jpg" alt=""><figcaption></figcaption></figure>
+
+Output: The timestamp has changed.
+
+{% hint style="info" %}
+The fee distribution for message transfers within a single DAPP ID is described in the "[Fees](./#fees)" section.
+{% endhint %}
+
+## Call a contract from another Dapp ID
+
+Let's deploy the `helloWorld2` contract  the same way as `helloWorld`.
+
+The `helloWorld` and `helloWorld2` contracts are deployed with different Dapp IDs.
+
+<div><figure><img src=".gitbook/assets/ballance_HW.jpg" alt=""><figcaption><p>helloWorld</p></figcaption></figure> <figure><img src=".gitbook/assets/ballance_HW2.jpg" alt=""><figcaption><p>helloWorld2</p></figcaption></figure></div>
+
+Let’s check the current `timestamp` in the `helloWorld2` contract:
+
+```
+tvm-cli run <YourAddress> timestamp {} --abi helloWorld2.abi.json
+```
+
+result:
+
+<figure><img src=".gitbook/assets/timestamp_HW2_before.jpg" alt=""><figcaption></figcaption></figure>
+
+To call the `touch` function in `helloWorld2`, we’ll invoke the `callExtTouch` method in `helloWorld`.
+
+```
+function callExtTouch(address addr)
+```
+
+* `addr` - is the address of the contract in which the method is called.
+
+In our case, the command will be as follows:
+
+```
+tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:f2fe666ad8126ca78f8190305bdf6436971236c477699b3c34e90c5ed6b0691e"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
+
+```
+
+{% hint style="info" %}
+If the message is sent to a different Dapp ID, all VMSHELL tokens (in `msg_value)` are set to zero.
+{% endhint %}
+
+<figure><img src=".gitbook/assets/callExtTouch_HW2.jpg" alt=""><figcaption></figcaption></figure>
+
+Then, let's check if the `timestamp` has changed in the `helloWorld2` contract:
+
+<figure><img src=".gitbook/assets/timestamp_HW2_after.jpg" alt=""><figcaption></figcaption></figure>
+
+Output: The timestamp has changed.
+
+{% hint style="info" %}
+The fee distribution for message transfers between different DAPP IDs is described in the "[Fees](./#fees)" section.
+{% endhint %}
+
+## Centralized replenishment of contracts within a Dapp ID
+
+In the Acki Nacki network, developers can implement a mechanism that allows contracts, grouped under a single Dapp ID, to replenish their balances directly from the shared balance of the entire Dapp ID. This is achieved using the TVM instruction `gosh.mintshell`, enabling seamless internal allocation of resources across the contracts within a single Dapp.
+
+How it works:
+
+During the block assembly, the Block Keeper (BK) collects information about all calls to the TVM instruction `gosh.mintshell` in the transactions included in the block. For each instruction call, the Dapp ID of the contract is determined, and the presence of a `DappConfig` contract for that Dapp ID is verified. The total amount of tokens specified in the instruction calls is then debited from the balance of the `DappConfig` contract. Correspondingly, the appropriate amount of  `VMSHELL` tokens is credited to the balances of the contracts for which this instruction was invoked.
+
+To ensure the system functions correctly and resources are managed automatically, follow these steps:
+
+#### **Step 1: Deploying the DappConfig contract**
+
+The `DappConfig` contract is an informational contract that holds data about the amount of VMSHELL available for a specific Dapp ID. It is deployed **once per Dapp ID**. `DappConfig` contracts do not have an owner, and anyone can fund them.
+
+**Actions to Perform:**
+
+1. To deploy the `DappConfig` contract, you need to know the Dapp ID. You can obtain it as follows:
+
+```
+tvm-cli account <CONTRACT_ADDRESS>
+```
+
+For example, our HelloWorld contract will have the following Dapp ID:
+
+<figure><img src=".gitbook/assets/dc1.jpg" alt=""><figcaption></figcaption></figure>
+
+2.  To deploy a `DappConfig` contract, you need to call the `deployNewConfigCustom` function via an internal message from a contract within the Dapp where you want to deploy the `DappConfig` contract.
+
+    The function call must be performed via a `payload` passed into a function such as `sendTransaction` (similar to how deploying a new contract in your Dapp is described [here](./#add-another-contract-to-your-dapp-id)).
+
+    That is, you first need to generate the message body by running the following command:<br>
+
+    ```
+    tvm-cli body --abi contracts/0.79.3_compiled/dappconfig/DappConfig.abi.json deployNewConfigCustom '{"authorityAddress": null}'
+
+    ```
+
+    \
+    \* abi [DappConfig](https://github.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/dappconfig/DappConfig.abi.json)\
+    \
+    As a result, you will get:<br>
+
+    ```
+    Input arguments:
+      method: deployNewConfigCustom
+      params: {"authorityAddress": null}
+         abi: contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json
+      output: None
+    Message body: te6ccgEBAQEABwAACVumOBNA
+    ```
+
+    \
+    We need to place the **Message body** field value into the payload of the `sendTransaction` function in our main contract (in our case, the HelloWorld contract), and set the recipient to the [DappRoot contract](https://github.com/ackinacki/ackinacki/tree/main/contracts/dappconfig).
+
+    Specify the amount of SHELL tokens that will be converted into VMSHELL during deployment and credited to the DappConfig balance.
+
+{% hint style="info" %}
+`DappRoot` is a system contract that manages `DappConfig` contracts, including their deployment and the calculation of the `DappConfig` address for a given Dapp ID.\
+The address of the `DappRoot` contract is: `0:9999999999999999999999999999999999999999999999999999999999999999`
+{% endhint %}
+
+Example command:
+
+```
+tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e sendTransaction '{"dest":"0:9999999999999999999999999999999999999999999999999999999999999999", "value":10000000, "bounce":false, "cc": {"2": 100000000000}, "flags": 1, "payload": "te6ccgEBAQEABwAACVumOBNA"}' --abi helloWorld.abi.json.abi.json --sign helloWorld.keys.json
+
+```
+
+{% hint style="info" %}
+Upon deployment, the contract's balance is credited with **100 VMSHELL tokens**.
+{% endhint %}
+
+3. Use the getConfigAddr method to retrieve the address of the deployed `DappConfig` contract:
+
+```
+getConfigAddr(uint256 dapp_id)
+```
+
+* `dapp_id` - the indentifier of your Dapp
+
+Example command to get the address of the DappConfig contract:
+
+```
+tvm-cli -u shellnet.ackinacki.org -j run 0:9999999999999999999999999999999999999999999999999999999999999999 getConfigAddr '{"dapp_id":"0xcf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e"}' --abi acki-nacki/contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json
+
+```
+
+result:
+
+```
+{
+"config": "0:45744296d4bb46028e6693f586c6d158f02041e51ed48b62debac71a38bd415d",
+"state_timestamp": 1774094007991
+}
+```
+
+To enable the auto-replenishment system, you need to fund the balance with SHELL tokens.
+
+To fund the balance of the `DappConfig` contract, you can call the `sendTransaction` method in the Multisig contract [as described earlier](./#top-up-with-shell).
+
+Example command to transfer 10 SHELL from the balance of the Multisig contract to the balance of the `DappConfig` contract:
+
+```
+
+tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:45744296d4bb46028e6693f586c6d158f02041e51ed48b62debac71a38bd415d","value": 1000000000,"bounce":false, "cc": {"2":10000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+
+```
+
+#### **Step 2: Enabling Automatic Replenishment**
+
+To automate the funding process, add balance check and token minting logic to your DAPP ID contracts.\
+Use the TVM instruction `gosh.mintshell` which mints some VMSHELL tokens, allowed by the available credit in the DappConfig contract for this Dapp ID:
+
+```
+gosh.mintshell(value)
+```
+
+* `value` - amount of nanoVMSHELL to mint<br>
+
+For example, let's use the `getTokens()` function in the HelloWorld contract:
+
+```solidity
+function getTokens() private pure {
+    if (address(this).balance > 100000000000) {     // 100 VMSHELL
+        return; 
+    }
+    gosh.mintshell(100000000000);                   // 100 VMSHELL
+}
+```
+
+This function mints 100 VMSHELL tokens automatically if the balance falls below the specified threshold.
+
+Let's try:
+
+Check the balance of the HelloWorld contract:
+
+```
+tvm-cli -j account 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e
+```
+
+Result: the balance is 0.465631997 VMSHELL tokens.
+
+<figure><img src=".gitbook/assets/avtR1 (1).jpg" alt=""><figcaption></figcaption></figure>
+
+Using the `getDetails()` method, you can view the available balance of the DappConfig contract.&#x20;
+
+```
+tvm-cli -j run 0:020473650f8bf0d3df871aadf28a40315ce6ae6d7fffe63e5e557198e0c68b5d getDetails {} --abi dappConfig/DappConfig.abi.json
+```
+
+Result: the balance is 500.
+
+<figure><img src=".gitbook/assets/dcb1.jpg" alt=""><figcaption></figcaption></figure>
+
+Thus, when using the `touch()` method, the `getTokens()` function will be called. This function will check the balance of the HelloWorld contract, and since it is less than 100 VMSHELL, it will trigger a replenishment:
+
+<figure><img src=".gitbook/assets/touch.jpg" alt=""><figcaption></figcaption></figure>
+
+Call the `touch()` function:
+
+```
+tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e touch {} --abi helloWorld.abi.json
+```
+
+and check the contract balance:
+
+```
+tvm-cli -j account 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e
+```
+
+As a result, we see that the balance has been replenished by 100 VMSHELL and now amounts to 100.460237956 VMSHELL.
+
+<figure><img src=".gitbook/assets/dc2.jpg" alt=""><figcaption></figcaption></figure>
+
+And checking the available balance of the DappConfig contract will also show that it has decreased by 100 tokens:
+
+<figure><img src=".gitbook/assets/dcb2.jpg" alt=""><figcaption></figcaption></figure>
+
+{% hint style="danger" %}
+When calling `getDetails()`, you retrieve the available balance in SHELL tokens.\
+In contrast, when checking the account data, the `ecc` field will show the cumulative amount of tokens ever transferred to this balance.\
+**This behavior is relevant only for the** `DappConfig` **contract.**
+{% endhint %}
+
+<figure><img src=".gitbook/assets/accDC.jpg" alt="" width="563"><figcaption></figcaption></figure>
+
+## Fees
+
+When transferring messages between contracts under the same Dapp ID, fees are distributed as follows:
+
+* To create an outgoing message, payment is deducted from the sender’s balance.
+* For relaying a message, payment is taken either from the sender's balance or deducted from the message balance (`msg.value`). The specific behavior depends on the flags set during transmission, as described [here](https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#addresstransfer).
+* Processing an incoming message is paid from the message balance (`msg.value`) and, if `tvm.accept()` is used, from the recipient’s balance.
+
+When transferring messages between contracts under different Dapp IDs, the entire amount of tokens specified in `msg.value` (VMSHELL) is nullified. In this case, the recipient contract must assume responsibility for executing the initiated transaction by calling `tvm.accept()` within the invoked function. Otherwise, the transaction will fail with the error `Not enough funds`.
+
+## Troubleshooting
+
+### Error 621: `The account doesn't have a state` during contract deployment
+
+#### Description
+
+When running the deploy command, you may encounter the following error:
+
+```
+Input arguments:
+     tvc: UpdateCustodianMultisigWallet.tvc
+  params: {"owners_pubkey":["0x7111b817f126522ead42c315ed1d908110bb7caf033fb1c4428537d0dc82cf4b"], "owners_address": [], "reqConfirms":1, "reqConfirmsData": 1, "value":0}
+     abi: UpdateCustodianMultisigWallet.abi.json
+    keys: UpdateCustodianMultisigWallet.keys.json
+  opt_wc: 0
+   alias: None
+Connecting to:
+        Url: shellnet.ackinacki.org
+        Endpoints: ["shellnet.ackinacki.org"]
+
+Deploying...
+Processing...
+Error: {
+  "code": 621,
+  "message": "The account doesn't have a state",
+  "data": {
+    "core_version": "2.24.9",
+    "node_error": {
+      "extensions": {
+        "code": "COMPUTE_SKIPPED",
+        "message": "The account doesn't have a state",
+        "details": {
+          "producers": [
+            "shellnet-2.testbk.ackinacki.org:8600"
+          ],
+          "message_hash": "ab499e8388cd69f72bcf985f059c2f4cfe43f9aa4aaf1455dd44656bc388f3ea",
+          "exit_code": 0,
+          "current_time": "1771864434272",
+          "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000",
+          "address": "0:ceb8919b1100367905c8e052e22deeca9f5f1c0f39c126a0fad03a78b4a8d32c"
+        }
+      }
+    },
+    "ext_message_token": {
+      "unsigned": "1771864464272",
+      "signature": "f5d3c7ad18d1bdfd9748fc2f5e841f272642a4ab0e5f0c6238794c9c310a592177140e725c4d109eb1ab13aa90404641a4bda7fa202de148bd7bbbe70095b800",
+      "issuer": {
+        "bm": "d09e10f63d84f8c89b5ad48e0497756bacf0749437ad84210824fb582d23a396"
+      }
+    }
+  }
+}
+```
+
+#### Cause
+
+This error means that the target account does not have an initialized state on the network.
+
+### ✅ Solution
+
+{% hint style="warning" %}
+**Before deploying the contract, you must fund the future contract address with `VMSHELL` tokens.**
+{% endhint %}
+
+This can be done by calling the `sendTransaction` method with **flag `16`**.
+
+In this case, you transfer **SHELL** tokens, which are automatically converted into **VMSHELL** tokens and credited to the balance of the account you intend to deploy.
+
+#### Example Command
+
+```bash
+tvm-cli call <MSIG_ADDR> sendTransaction \
+'{
+  "dest":"0:ceb8919b1100367905c8e052e22deeca9f5f1c0f39c126a0fad03a78b4a8d32c",
+  "value":1000000000,
+  "cc":{"2":5000000000},
+  "bounce":false,
+  "flags":16,
+  "payload":""
+}' \
+--abi <WALLET_ABI.json> \
+--sign <WALLET_KEYS.json>
+```
+
+As a result, the account balance will be credited with **5 VMSHELL**\
+After the transaction is confirmed, you can safely run the deploy command again.
