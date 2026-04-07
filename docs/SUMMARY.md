@@ -50,7 +50,6 @@
 
 ## GraphQL
 
-* [GraphQL API](graphql/graphql-api.md)
 * [Schema](graphql/schema.md)
 * [Blockchain API](graphql/blockchain-api.md)
 * [Query Collections: Query Language](graphql/query-collections-query-language.md)
@@ -61,7 +60,7 @@
   * [Connect to GraphQL API](graphql/graphql-api-examples/connect-to-graphql-api.md)
   * [Send message](graphql/graphql-api-examples/send-message.md)
   * [Retrieve all blocks, transactions, events](graphql/graphql-api-examples/retrieve-all-blocks-transactions-events.md)
-  * [Accounts queries](graphql/graphql-api-examples/accounts-queries.md)
+  * [Account queries](graphql/graphql-api-examples/account-queries.md)
   * [Messages](graphql/graphql-api-examples/messages.md)
 
 ## ABI
