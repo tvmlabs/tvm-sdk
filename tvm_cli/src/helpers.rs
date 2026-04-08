@@ -217,6 +217,7 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             access_key: config.access_key.clone(),
             api_token: config.api_token.clone(),
             fallback_proxy_mode: config.fallback_proxy_mode,
+            bm_endpoint_urls: config.bm_endpoint_urls.clone(),
             ..Default::default()
         },
         ..Default::default()

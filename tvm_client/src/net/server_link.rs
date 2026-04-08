@@ -25,6 +25,7 @@ use futures::Stream;
 use futures::StreamExt;
 use rand::seq::SliceRandom;
 use reqwest::Url;
+use serde::Deserialize;
 use serde_json::Value;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
@@ -109,6 +110,8 @@ pub(crate) struct NetworkState {
     bm_discovery_lock: Mutex<()>,
     /// When true, all messages are routed through BM (never directly to BP).
     pub(crate) bp_fallback_active: AtomicBool,
+    /// BM endpoints fetched from remote URLs at startup.
+    remote_bm_endpoints: RwLock<Vec<Url>>,
 }
 
 async fn query_by_url(
@@ -157,6 +160,7 @@ impl NetworkState {
             active_bm_endpoint: RwLock::new(None),
             bm_discovery_lock: Mutex::new(()),
             bp_fallback_active: AtomicBool::new(false),
+            remote_bm_endpoints: RwLock::new(Vec::new()),
         }
     }
 
@@ -386,8 +390,9 @@ impl NetworkState {
     }
 
     pub async fn select_send_message_endpoint(&self) -> ClientResult<Url> {
-        // If multiple BM endpoints configured, ensure discovery has been performed
-        if self.all_bm_endpoints.len() > 1 {
+        // If multiple BM endpoints configured or remote URLs present,
+        // ensure discovery has been performed
+        if self.all_bm_endpoints.len() > 1 || self.config.bm_endpoint_urls.is_some() {
             self.ensure_bm_discovered().await?;
         }
 
@@ -417,14 +422,18 @@ impl NetworkState {
     /// Broadcasts GET /readiness to all configured BM endpoints concurrently.
     /// The first endpoint to respond with HTTP 200 becomes the active BM.
     pub async fn discover_active_bm(&self) -> ClientResult<Url> {
-        if self.all_bm_endpoints.is_empty() {
+        // Collect all BM endpoints: static + remote
+        let remote = self.remote_bm_endpoints.read().await;
+        let all_endpoints: Vec<&Url> = self.all_bm_endpoints.iter().chain(remote.iter()).collect();
+
+        if all_endpoints.is_empty() {
             return Err(Error::no_bm_available());
         }
 
         let timeout = self.config.bm_readiness_timeout;
         let mut futures: Vec<Pin<Box<dyn Future<Output = ClientResult<Url>> + Send>>> = Vec::new();
 
-        for bm_url in &self.all_bm_endpoints {
+        for bm_url in all_endpoints {
             let readiness_url = format!("{}readiness", bm_url);
             let env = self.client_env.clone();
             let bm_url = bm_url.clone();
@@ -456,6 +465,49 @@ impl NetworkState {
         Err(Error::no_bm_available())
     }
 
+    /// Fetches remote BM endpoints and merges them into `all_bm_endpoints`.
+    /// Called once at startup if `bm_endpoint_urls` is configured.
+    async fn fetch_and_merge_remote_endpoints(&self) {
+        let Some(urls) = &self.config.bm_endpoint_urls else {
+            return;
+        };
+        if urls.is_empty() {
+            return;
+        }
+        match fetch_remote_bm_endpoints(&self.client_env, urls, self.config.bm_readiness_timeout)
+            .await
+        {
+            Ok(remote_endpoints) => {
+                // Merge remote endpoints into all_bm_endpoints (via interior
+                // mutability would require changing the field type; instead we
+                // update rest_api_endpoint list and re-derive).
+                // Since all_bm_endpoints is Vec<Url> (not behind RwLock), we
+                // store the merged set in a separate RwLock field.
+                let mut new_urls = Vec::new();
+                for addr in &remote_endpoints {
+                    if let Ok(url) = construct_rest_api_endpoint(addr, self.use_https_for_rest_api)
+                    {
+                        // Only add if not already present
+                        if !self.all_bm_endpoints.iter().any(|existing| {
+                            existing.host() == url.host() && existing.port() == url.port()
+                        }) && !new_urls.iter().any(|existing: &Url| {
+                            existing.host() == url.host() && existing.port() == url.port()
+                        }) {
+                            new_urls.push(url);
+                        }
+                    }
+                }
+                if !new_urls.is_empty() {
+                    log::info!("Merged {} remote BM endpoints into discovery list", new_urls.len());
+                    self.remote_bm_endpoints.write().await.extend(new_urls);
+                }
+            }
+            Err(e) => {
+                log::warn!("Failed to fetch remote BM endpoints: {}", e);
+            }
+        }
+    }
+
     /// Ensures BM discovery has been performed at least once.
     /// Uses double-checked locking to avoid thundering herd.
     pub async fn ensure_bm_discovered(&self) -> ClientResult<()> {
@@ -468,6 +520,8 @@ impl NetworkState {
         if self.active_bm_endpoint.read().await.is_some() {
             return Ok(());
         }
+        // Fetch remote endpoints before first discovery
+        self.fetch_and_merge_remote_endpoints().await;
         self.discover_active_bm().await.map(|_| ())
     }
 
@@ -478,9 +532,14 @@ impl NetworkState {
         self.discover_active_bm().await
     }
 
-    /// Returns true if the given URL matches one of the known BM endpoints.
-    pub fn is_bm_endpoint(&self, url: &Url) -> bool {
-        self.all_bm_endpoints.iter().any(|bm| bm.host() == url.host() && bm.port() == url.port())
+    /// Returns true if the given URL matches one of the known BM endpoints
+    /// (both static and remotely fetched).
+    pub async fn is_bm_endpoint(&self, url: &Url) -> bool {
+        let matches = |bm: &Url| bm.host() == url.host() && bm.port() == url.port();
+        if self.all_bm_endpoints.iter().any(matches) {
+            return true;
+        }
+        self.remote_bm_endpoints.read().await.iter().any(matches)
     }
 
     pub async fn get_rest_api_endpoint(&self) -> Url {
@@ -605,6 +664,61 @@ fn get_redirection_data(data: &Value, use_https: bool) -> (Option<String>, Optio
         .map(String::from);
 
     (thread_id, redirection_url)
+}
+
+/// YAML format for remote BM endpoint list files.
+#[derive(Deserialize)]
+struct BmEndpointList {
+    endpoints: Vec<String>,
+}
+
+/// Fetches BM endpoint list from remote URLs. Tries URLs in order,
+/// returns the first successful result.
+async fn fetch_remote_bm_endpoints(
+    client_env: &ClientEnv,
+    urls: &[String],
+    timeout: u32,
+) -> ClientResult<Vec<String>> {
+    let mut last_error = None;
+    for url in urls {
+        let result = client_env.fetch(url, FetchMethod::Get, None, None, timeout).await;
+        match result {
+            Ok(response) if response.status == 200 => {
+                match serde_yaml::from_str::<BmEndpointList>(&response.body) {
+                    Ok(list) if !list.endpoints.is_empty() => {
+                        log::debug!("Fetched {} BM endpoints from {}", list.endpoints.len(), url);
+                        return Ok(list.endpoints);
+                    }
+                    Ok(_) => {
+                        log::warn!("Empty endpoint list from {}", url);
+                        last_error = Some(Error::invalid_server_response(format!(
+                            "Empty endpoint list from {}",
+                            url
+                        )));
+                    }
+                    Err(e) => {
+                        log::warn!("Failed to parse YAML from {}: {}", url, e);
+                        last_error = Some(Error::invalid_server_response(format!(
+                            "Failed to parse YAML from {}: {}",
+                            url, e
+                        )));
+                    }
+                }
+            }
+            Ok(response) => {
+                log::warn!("HTTP {} from {}", response.status, url);
+                last_error = Some(Error::invalid_server_response(format!(
+                    "HTTP {} from {}",
+                    response.status, url
+                )));
+            }
+            Err(e) => {
+                log::warn!("Failed to fetch BM endpoints from {}: {}", url, e);
+                last_error = Some(e);
+            }
+        }
+    }
+    Err(last_error.unwrap_or_else(Error::no_bm_available))
 }
 
 impl ServerLink {
@@ -1114,10 +1228,12 @@ impl ServerLink {
             if crate::client::Error::is_network_error(err)
                 || err.code == ErrorCode::AllAttemptsFailed as u32
             {
-                let is_bm = network_state.is_bm_endpoint(&endpoint);
+                let is_bm = network_state.is_bm_endpoint(&endpoint).await;
                 if is_bm {
                     // BM is unreachable — try to discover a new one
-                    if network_state.all_bm_endpoints.len() > 1 {
+                    let has_alternatives = network_state.all_bm_endpoints.len() > 1
+                        || !network_state.remote_bm_endpoints.read().await.is_empty();
+                    if has_alternatives {
                         if let Ok(new_bm) = network_state.rediscover_bm().await {
                             endpoint = new_bm;
                             message.ext_message_token = network_state.get_bm_token().await;

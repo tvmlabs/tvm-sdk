@@ -352,6 +352,18 @@ pub struct NetworkConfig {
         deserialize_with = "deserialize_bm_readiness_timeout"
     )]
     pub bm_readiness_timeout: u32,
+
+    /// List of URLs to fetch BM endpoint list from (e.g. GitHub raw, CF CDN).
+    /// The file at each URL must be a YAML document with an `endpoints` array:
+    /// ```yaml
+    /// endpoints:
+    ///   - bm1.example.com
+    ///   - bm2.example.com
+    /// ```
+    /// URLs are tried in order; the first successful response is used.
+    /// Fetched endpoints are merged with locally configured `endpoints`.
+    /// The list is fetched once at client startup.
+    pub bm_endpoint_urls: Option<Vec<String>>,
 }
 
 impl NetworkConfig {
@@ -397,6 +409,7 @@ impl Default for NetworkConfig {
             api_token: None,
             fallback_proxy_mode: default_fallback_proxy_mode(),
             bm_readiness_timeout: default_bm_readiness_timeout(),
+            bm_endpoint_urls: None,
         }
     }
 }

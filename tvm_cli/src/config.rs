@@ -129,6 +129,8 @@ pub struct Config {
     pub endpoints: Vec<String>,
     #[serde(default = "default_false")]
     pub fallback_proxy_mode: bool,
+    /// URLs to fetch BM endpoint list from (YAML format).
+    pub bm_endpoint_urls: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -179,6 +181,7 @@ impl Default for Config {
             project_id: None,
             access_key: None,
             fallback_proxy_mode: default_false(),
+            bm_endpoint_urls: None,
         }
     }
 }
@@ -225,6 +228,7 @@ impl Config {
             project_id: None,
             access_key: None,
             fallback_proxy_mode: default_false(),
+            bm_endpoint_urls: None,
         }
     }
 }

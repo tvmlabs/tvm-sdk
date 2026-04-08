@@ -1862,3 +1862,83 @@ async fn test_bp_fallback_without_proxy_mode_not_sticky() {
         "Fallback proxy should NOT be sticky when fallback_proxy_mode is disabled"
     );
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_remote_bm_endpoint_fetch_and_discovery() {
+    let yaml_response = "endpoints:\n  - bm-remote1\n  - bm-remote2\n";
+
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm-local".into()]),
+                bm_endpoint_urls: Some(vec!["https://example.com/bm-endpoints.yaml".into()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    // Mock: YAML fetch succeeds, bm-local is down, bm-remote2 is ready
+    NetworkMock::build()
+        .url("example.com")
+        .ok(yaml_response) // YAML fetch
+        .url("bm-local")
+        .status(503, "not ready") // local BM down
+        .url("bm-remote1")
+        .status(503, "not ready") // remote BM1 down
+        .url("bm-remote2")
+        .ok("ready") // remote BM2 ready
+        .reset_client(&client)
+        .await;
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    // Trigger discovery (which fetches remote endpoints first)
+    let result = state.ensure_bm_discovered().await;
+    assert!(result.is_ok(), "Discovery should succeed via remote BM");
+
+    let active_bm = state.active_bm_endpoint.read().await;
+    assert!(active_bm.is_some(), "Active BM should be set");
+    let active_url = active_bm.as_ref().unwrap().to_string();
+    assert!(
+        active_url.contains("bm-remote2"),
+        "Active BM should be bm-remote2, got: {}",
+        active_url
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_remote_bm_endpoint_fetch_failure_falls_back_to_local() {
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm-local".into()]),
+                bm_endpoint_urls: Some(vec!["https://example.com/bm-endpoints.yaml".into()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    // Mock: YAML fetch fails, but local BM is ready
+    NetworkMock::build()
+        .url("example.com")
+        .network_err() // YAML fetch fails
+        .url("bm-local")
+        .ok("ready") // local BM ready
+        .reset_client(&client)
+        .await;
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    let result = state.ensure_bm_discovered().await;
+    assert!(result.is_ok(), "Discovery should succeed with local BM even if remote fetch fails");
+
+    let active_bm = state.active_bm_endpoint.read().await;
+    let active_url = active_bm.as_ref().unwrap().to_string();
+    assert!(active_url.contains("bm-local"), "Active BM should be bm-local, got: {}", active_url);
+}
