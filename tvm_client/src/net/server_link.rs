@@ -9,7 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
 //
 
 use std::collections::HashMap;
@@ -62,6 +62,20 @@ pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
 pub const API_VERSION: &str = "v2";
 pub const REST_API_PORT: u16 = 8600;
 pub const ENDPOINT_MESSAGES: &str = "messages";
+
+/// Maximum number of attempts for `query_http` (1 original + 2 retries).
+const QUERY_HTTP_MAX_ATTEMPTS: u32 = 3;
+/// Initial delay before the first retry in ms.
+const QUERY_HTTP_INITIAL_RETRY_DELAY_MS: u64 = 200;
+
+/// Exponential backoff delay: 200ms, 400ms, ...
+fn query_http_retry_delay_ms(attempt: u32) -> u64 {
+    QUERY_HTTP_INITIAL_RETRY_DELAY_MS * 2u64.pow(attempt)
+}
+
+fn is_retryable_http_status(status: u16) -> bool {
+    matches!(status, 429 | 500 | 502 | 503 | 504)
+}
 
 pub(crate) struct Subscription {
     pub unsubscribe: Pin<Box<dyn Future<Output = ()> + Send>>,
@@ -735,10 +749,9 @@ impl ServerLink {
             headers.insert(name, value);
         }
 
-        let start = self.client_env.now_ms();
-
         let mut last_error = None;
-        for _ in 0..1 {
+
+        for attempt in 0..QUERY_HTTP_MAX_ATTEMPTS {
             let result = self
                 .client_env
                 .fetch(
@@ -750,37 +763,60 @@ impl ServerLink {
                 )
                 .await;
 
-            let result = match result {
-                Err(err) => Err(err),
+            let remaining = QUERY_HTTP_MAX_ATTEMPTS - attempt - 1;
+
+            match result {
+                Err(err) => {
+                    if remaining > 0 && crate::client::Error::is_network_error(&err) {
+                        let delay = query_http_retry_delay_ms(attempt);
+                        log::warn!(
+                            "Retrying request to {}, attempt {}/{}, error: {}, delay: {}ms",
+                            endpoint,
+                            attempt + 1,
+                            QUERY_HTTP_MAX_ATTEMPTS,
+                            err.message,
+                            delay,
+                        );
+                        let _ = self.client_env.set_timer(delay).await;
+                        last_error = Some(err);
+                        continue;
+                    }
+                    return Err(err);
+                }
                 Ok(response) => {
+                    if remaining > 0 && is_retryable_http_status(response.status) {
+                        let delay = query_http_retry_delay_ms(attempt);
+                        log::warn!(
+                            "Retrying request to {}, attempt {}/{}, status: {}, delay: {}ms",
+                            endpoint,
+                            attempt + 1,
+                            QUERY_HTTP_MAX_ATTEMPTS,
+                            response.status,
+                            delay,
+                        );
+                        let _ = self.client_env.set_timer(delay).await;
+                        last_error = Some(crate::client::Error::http_request_send_error(format!(
+                            "Server responded with status {}",
+                            response.status
+                        )));
+                        continue;
+                    }
+
                     self.state.reset_resume_timeout();
                     if response.status == 401 {
-                        Err(Error::unauthorized(&response))
+                        return Err(Error::unauthorized(&response));
                     } else if response.status == 404 {
-                        Err(Error::not_found("The requested resource could not be found"))
-                    } else {
-                        match response.body_as_json(true) {
-                            Err(err) => Err(err),
-                            Ok(value) => match Error::try_extract_send_messages_error(&value) {
-                                Some(err) => Err(err),
-                                None => Ok(value),
-                            },
-                        }
+                        return Err(Error::not_found("The requested resource could not be found"));
                     }
-                }
-            };
-
-            if let Err(err) = &result {
-                if crate::client::Error::is_network_error(err)
-                    && self.state.can_retry_network_error(start)
-                {
-                    let _ =
-                        self.client_env.set_timer(self.state.next_resume_timeout() as u64).await;
-                    last_error = Some(err.clone());
-                    continue;
+                    return match response.body_as_json(true) {
+                        Err(err) => Err(err),
+                        Ok(value) => match Error::try_extract_send_messages_error(&value) {
+                            Some(err) => Err(err),
+                            None => Ok(value),
+                        },
+                    };
                 }
             }
-            return result;
         }
         Err(Error::all_attempts_failed(last_error))
     }
