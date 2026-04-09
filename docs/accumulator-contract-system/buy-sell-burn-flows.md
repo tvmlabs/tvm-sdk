@@ -1,26 +1,84 @@
-# Flows
+---
+description: All primary flows in the Accumulator system.
+---
 
-All four primary flows in the Accumulator system.
+# Buy/Sell/Burn Flows
 
-## Sell — deposit SHELL
+**Seller lifecycle: from order creation (SHELL deposit) to USDC payout:**
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User
+    actor Seller
+    actor Buyer
     actor Owner as Owner / Backend
     participant Exchange
     participant Accumulator as ShellAccumulatorRootUSDC
     participant SellOrder as ShellSellOrderLot
 
     rect rgb(240, 255, 240)
-        Note over User,SellOrder: Sell SHELL for USDC
-        User->>Accumulator: Send ECC SHELL for one lot
+        Note over Seller,SellOrder: 1. Seller deposits SHELL — joins the queue
+        Seller->>Accumulator: Send ECC SHELL (e.g. 1000 SHELL = 10 USDC lot)
         Accumulator->>Accumulator: Validate denomination and amount
-        Accumulator->>Accumulator: Assign FIFO orderId, increment available
-        Accumulator->>SellOrder: Deploy lot contract (10 vmshell)
-        Accumulator-->>User: Emit SellOrderCreated
-    end    
+        Accumulator->>Accumulator: Assign FIFO orderId, increment available[D]
+        Accumulator->>SellOrder: Deploy lot contract
+        Accumulator-->>Seller: Emit SellOrderCreated
+        Note over SellOrder: Lot status: Waiting
+    end
+
+    rect rgb(235, 245, 255)
+        Note over Buyer,Accumulator: 2. Buyer pays USDC — seller's lot gets matched
+        alt Direct buy
+            Buyer->>Accumulator: Send ECC USDC
+        else Buy through Exchange
+            Owner->>Exchange: mintAndSendAccumulator(buyer, value, nonce)
+            Exchange->>Accumulator: buyShellFor(buyer) + ECC USDC
+        end
+        Accumulator->>Accumulator: Match FIFO queues 1000 → 100 → 10 → 1
+        Accumulator->>Accumulator: soldPrefix[D] += matched lots
+        Accumulator->>Accumulator: Mint remaining SHELL if sellers insufficient
+        Accumulator-->>Buyer: Transfer ECC SHELL
+        Note over SellOrder: Lot status: Sold (orderId ≤ soldPrefix)
+    end
+    
+    rect rgb(255, 248, 235)
+        Note over Seller,SellOrder: 3. Seller claims USDC payout
+        Seller->>SellOrder: claim() — called by wallet automatically
+        SellOrder->>Accumulator: claimUSDC(denom, orderId, owner)
+         alt Lot is sold
+            Accumulator-->>Seller: Transfer ECC USDC directly to seller
+            Accumulator-->>SellOrder: onReceiveUSDC(amount)
+            Note over SellOrder: Lot destroyed
+        else Lot not sold yet
+            Accumulator--xSellOrder: Bounce (require failed)
+            SellOrder->>SellOrder: Reset _claimed = false
+            Note over SellOrder: Lot status: Waiting (retry later)
+        end
+    end 
+
+```
+
+## Sell Shell (create sell order)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Seller
+    actor Buyer
+    participant Exchange
+    participant Accumulator as ShellAccumulatorRootUSDC
+    participant SellOrder as ShellSellOrderLot
+
+    rect rgb(240, 255, 240)
+        Note over Seller,SellOrder: 1. Seller deposits SHELL — joins the queue
+        Seller->>Accumulator: Send ECC SHELL (e.g. 1000 SHELL = 10 USDC lot)
+        Accumulator->>Accumulator: Validate denomination and amount
+        Accumulator->>Accumulator: Assign FIFO orderId, increment available[D]
+        Accumulator->>SellOrder: Deploy lot contract
+        Accumulator-->>Seller: Emit SellOrderCreated
+        Note over SellOrder: Lot status: Waiting
+    end
+
 ```
 
 A seller creates a lot by sending ECC SHELL to the Root's `receive()`. The amount must correspond to exactly one denomination:
@@ -44,28 +102,30 @@ A seller creates a lot by sending ECC SHELL to the Root's `receive()`. The amoun
 
 ***
 
-## Buy — deposit USDC
+## Buy Shell (deposit USDC)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User
+    actor Buyer
     actor Owner as Owner / Backend
     participant Exchange
     participant Accumulator as ShellAccumulatorRootUSDC
     participant SellOrder as ShellSellOrderLot
 
     rect rgb(235, 245, 255)
-        Note over User,Accumulator: Buy SHELL for USDC
+        Note over Buyer,Accumulator: 2. Buyer pays USDC — seller's lot gets matched
         alt Direct buy
-            User->>Accumulator: Send ECC USDC
+            Buyer->>Accumulator: Send ECC USDC
         else Buy through Exchange
             Owner->>Exchange: mintAndSendAccumulator(buyer, value, nonce)
             Exchange->>Accumulator: buyShellFor(buyer) + ECC USDC
         end
         Accumulator->>Accumulator: Match FIFO queues 1000 → 100 → 10 → 1
+        Accumulator->>Accumulator: soldPrefix[D] += matched lots
         Accumulator->>Accumulator: Mint remaining SHELL if sellers insufficient
-        Accumulator-->>User: Transfer ECC SHELL
+        Accumulator-->>Buyer: Transfer ECC SHELL
+        Note over SellOrder: Lot status: Sold (orderId ≤ soldPrefix)
     end
 ```
 
@@ -107,23 +167,23 @@ send totalShellFromSellers + mintedShell to buyer
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User
-    actor Owner as Owner / Backend
+    actor Seller
     participant Exchange
     participant Accumulator as ShellAccumulatorRootUSDC
     participant SellOrder as ShellSellOrderLot
 
     rect rgb(255, 248, 235)
-        Note over User,SellOrder: Claim USDC payout
-        User->>SellOrder: claim()
+        Note over Seller,SellOrder: 3. Seller claims USDC payout
+        Seller->>SellOrder: claim() — called by wallet automatically
         SellOrder->>Accumulator: claimUSDC(denom, orderId, owner)
-        alt Order is sold
-            Accumulator-->>User: Transfer ECC USDC directly to seller
+        alt Lot is sold
+            Accumulator-->>Seller: Transfer ECC USDC directly to seller
             Accumulator-->>SellOrder: onReceiveUSDC(amount)
-            SellOrder->>SellOrder: Self-destruct
-        else Order not sold yet
-            Accumulator--xSellOrder: Bounce
+            Note over SellOrder: Lot destroyed
+        else Lot not sold yet
+            Accumulator--xSellOrder: Bounce (require failed)
             SellOrder->>SellOrder: Reset _claimed = false
+            Note over SellOrder: Lot status: Waiting (retry later)
         end
     end
 ```
@@ -168,7 +228,7 @@ Double-claim protection is multi-layered: the lot checks `!_claimed` before call
 
 ***
 
-## Redeem NACKL
+## Redeem (Burn-to-earn) NACKL
 
 ```mermaid
 sequenceDiagram
@@ -177,8 +237,7 @@ sequenceDiagram
     actor Owner as Owner / Backend
     participant Exchange
     participant Accumulator as ShellAccumulatorRootUSDC
-    participant SellOrder as ShellSellOrderLot
-
+    
     rect rgb(255, 235, 240)
         Note over User,Accumulator: Redeem NACKL
         User->>Accumulator: Send ECC NACKL
