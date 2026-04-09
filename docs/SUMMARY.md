@@ -20,7 +20,7 @@
 
 * [Overview](accumulator-contract-system/overview.md)
 * [Architecture](accumulator-contract-system/architecture.md)
-* [Buy/Sell/Burn Flows](accumulator-contract-system/buy-sell-burn-flows.md)
+* [Sell/Buy/Burn Flows](accumulator-contract-system/sell-buy-burn-flows.md)
 * [API reference](accumulator-contract-system/api-reference.md)
 
 ## Bee Engine
