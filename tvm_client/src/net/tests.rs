@@ -1621,7 +1621,7 @@ fn make_send_message_success_response() -> String {
             "message_hash": "abc123",
             "block_hash": "block456",
             "tx_hash": "tx789",
-            "producers": ["bp1:8600"],
+            "producers": ["bp1"],
             "current_time": "1000",
             "thread_id": "0000000000000000000000000000000000000000000000000000000000000000"
         },

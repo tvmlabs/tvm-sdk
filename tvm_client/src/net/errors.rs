@@ -306,7 +306,7 @@ mod tests {
                 "code": "WRONG_PRODUCER",
                 "message": "Resend message to the active Block Producer",
                 "data": {
-                    "producers": ["15.204.30.84:8600"],
+                    "producers": ["15.204.30.84"],
                     "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
                     "exit_code": null,
                     "current_time": "1748084498461",

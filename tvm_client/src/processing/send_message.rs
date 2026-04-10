@@ -282,7 +282,7 @@ mod test {
                             "code": "WRONG_PRODUCER",
                             "message": "Resend message to the active Block Producer",
                             "data": {
-                                "producers": vec![format!("{}:8600", get_ext_ip().unwrap().to_string())],
+                                "producers": vec![format!("{}:18600", get_ext_ip().unwrap().to_string())],
                                 "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
                                 "exit_code": null,
                                 "current_time": "1748084498461",
@@ -326,7 +326,7 @@ mod test {
         let handle_1 = mock_server("127.0.0.1:9000".parse().unwrap()).await;
 
         let external_ip: IpAddr = get_ext_ip().unwrap();
-        let external_socket = SocketAddr::new(external_ip, 8600);
+        let external_socket = SocketAddr::new(external_ip, 18600);
         let handle_2 = mock_server(external_socket).await;
 
         // 1. Localhost ip, no port
@@ -348,11 +348,11 @@ mod test {
             );
         }
 
-        // 2. external_ip:8600.
+        // 2. external_ip:18600.
         {
             let config = ClientConfig {
                 network: NetworkConfig {
-                    endpoints: Some(vec![format!("{external_ip}:8600")]),
+                    endpoints: Some(vec![format!("{external_ip}:18600")]),
                     api_token: Some("secret".to_string()),
                     ..Default::default()
                 },
@@ -365,12 +365,12 @@ mod test {
             assert!(result.is_ok());
             assert_eq!(
                 result.unwrap().to_string(),
-                json!({"my_addr":  format!("{}:8600", get_ext_ip().unwrap())}).to_string()
+                json!({"my_addr":  format!("{}:18600", get_ext_ip().unwrap())}).to_string()
             );
         }
 
         // 3. Localhost ip, specific port.
-        // This server must redirect the client to external_ip:8600
+        // This server must redirect the client to external_ip:18600
         {
             let config = ClientConfig {
                 network: NetworkConfig {
@@ -387,7 +387,7 @@ mod test {
             assert!(result.is_ok());
             assert_eq!(
                 result.unwrap().to_string(),
-                json!({"my_addr":  format!("{}:8600", get_ext_ip().unwrap())}).to_string()
+                json!({"my_addr":  format!("{}:18600", get_ext_ip().unwrap())}).to_string()
             );
         }
         handle_0.abort();

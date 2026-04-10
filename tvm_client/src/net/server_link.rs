@@ -61,7 +61,6 @@ pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
 pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
 pub const API_VERSION: &str = "v2";
-pub const REST_API_PORT: u16 = 8600;
 pub const ENDPOINT_MESSAGES: &str = "messages";
 
 /// Maximum number of attempts for `query_http` (1 original + 2 retries).
@@ -639,14 +638,7 @@ pub fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientRes
     };
 
     let mut url = Url::parse(&original).map_err(Error::parse_url_failed)?;
-    let port = url
-        .port_or_known_default()
-        .ok_or_else(|| Error::parse_url_failed("Missing port in URL"))?;
 
-    // Set the port for the REST API if no specific port is specified
-    if (url.scheme() == "http" && port == 80) || (url.scheme() == "https" && port == 443) {
-        url.set_port(Some(REST_API_PORT)).map_err(|_| Error::parse_url_failed("Can't set port"))?;
-    }
     if url.scheme() == "https" {
         url.set_port(None).map_err(|_| Error::parse_url_failed("Can't set port"))?;
     }
@@ -1433,12 +1425,15 @@ fn test_construct_rest_endpoint() {
     fn rest_url(origin: &str, use_https: bool) -> String {
         construct_rest_api_endpoint(origin, use_https).unwrap().to_string()
     }
-    assert_eq!(rest_url("a.b.c", false), "http://a.b.c:8600/v2/");
+    // No scheme: use_https determines scheme, standard ports (80/443)
+    assert_eq!(rest_url("a.b.c", false), "http://a.b.c/v2/");
     assert_eq!(rest_url("a.b.c", true), "https://a.b.c/v2/");
+    // Explicit port preserved for HTTP, stripped for HTTPS
     assert_eq!(rest_url("a.b.c:1234", false), "http://a.b.c:1234/v2/");
     assert_eq!(rest_url("a.b.c:1234", true), "https://a.b.c/v2/");
-    assert_eq!(rest_url("http://a.b.c", false), "http://a.b.c:8600/v2/");
-    assert_eq!(rest_url("http://a.b.c", true), "http://a.b.c:8600/v2/");
+    // Explicit scheme takes precedence over use_https
+    assert_eq!(rest_url("http://a.b.c", false), "http://a.b.c/v2/");
+    assert_eq!(rest_url("http://a.b.c", true), "http://a.b.c/v2/");
     assert_eq!(rest_url("http://a.b.c:1234", false), "http://a.b.c:1234/v2/");
     assert_eq!(rest_url("http://a.b.c:1234", true), "http://a.b.c:1234/v2/");
     assert_eq!(rest_url("https://a.b.c", false), "https://a.b.c/v2/");

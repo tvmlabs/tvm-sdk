@@ -48,7 +48,6 @@ pub use queries::wait_for_collection;
 pub(crate) use server_link::EndpointStat;
 pub(crate) use server_link::MAX_TIMEOUT;
 pub(crate) use server_link::NetworkState;
-pub use server_link::REST_API_PORT;
 pub(crate) use server_link::ServerLink;
 pub use server_link::construct_rest_api_endpoint;
 pub use subscriptions::ParamsOfSubscribe;
