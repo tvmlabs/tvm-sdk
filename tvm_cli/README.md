@@ -816,6 +816,29 @@ When `--log-path` is active:
 - The log level is automatically set to `Trace` to capture the maximum detail.
 - This can be combined with `--json` (`-j`) for fully machine-parseable output on stdout.
 
+Use `--log-filter` to control which modules are logged. Entries are comma-separated; prefix
+with `-` to exclude a module:
+
+```bash
+# Only log messages from tvm_client
+tvm-cli --log-path /tmp/tvm.log --log-filter="tvm_client" call ...
+
+# Log everything except hyper and reqwest
+tvm-cli --log-path /tmp/tvm.log --log-filter="-hyper,-reqwest" call ...
+
+# Combine include and exclude: only tvm_client, but skip its net submodule
+tvm-cli --log-path /tmp/tvm.log --log-filter="tvm_client,-tvm_client::net" call ...
+```
+
+The filter matches by module prefix, so `tvm_client` includes `tvm_client::net`,
+`tvm_client::processing`, etc. Exclude rules (`-`) take precedence over include rules.
+
+The filter can also be set via the `TVM_CLI_LOG_FILTER` environment variable:
+
+```bash
+export TVM_CLI_LOG_FILTER="-hyper,-reqwest"
+```
+
 ## 3. Cryptographic commands
 
 ### 3.1. Create seed phrase

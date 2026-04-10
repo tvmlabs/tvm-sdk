@@ -116,7 +116,38 @@ struct LogFile {
     file: Mutex<std::fs::File>,
 }
 
+struct LogFilter {
+    include: Vec<String>,
+    exclude: Vec<String>,
+}
+
+impl LogFilter {
+    fn parse(spec: &str) -> Self {
+        let mut include = Vec::new();
+        let mut exclude = Vec::new();
+        for token in spec.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+            if let Some(module) = token.strip_prefix('-') {
+                exclude.push(module.to_string());
+            } else {
+                include.push(token.to_string());
+            }
+        }
+        LogFilter { include, exclude }
+    }
+
+    fn allows(&self, target: &str) -> bool {
+        if self.exclude.iter().any(|e| target.starts_with(e.as_str())) {
+            return false;
+        }
+        if self.include.is_empty() {
+            return true;
+        }
+        self.include.iter().any(|i| target.starts_with(i.as_str()))
+    }
+}
+
 static LOG_FILE: OnceLock<LogFile> = OnceLock::new();
+static LOG_FILTER: OnceLock<LogFilter> = OnceLock::new();
 
 pub(crate) fn init_log_file(path: &str) -> Result<(), String> {
     let file = std::fs::OpenOptions::new()
@@ -129,6 +160,10 @@ pub(crate) fn init_log_file(path: &str) -> Result<(), String> {
         .map_err(|_| "log file already initialized".to_string())
 }
 
+pub(crate) fn init_log_filter(spec: &str) {
+    let _ = LOG_FILTER.set(LogFilter::parse(spec));
+}
+
 pub(crate) fn has_log_file() -> bool {
     LOG_FILE.get().is_some()
 }
@@ -138,6 +173,11 @@ pub(crate) fn log_file_path() -> Option<&'static str> {
 }
 
 pub(crate) fn write_log_record(record: &log::Record) {
+    if let Some(filter) = LOG_FILTER.get() {
+        if !filter.allows(record.target()) {
+            return;
+        }
+    }
     if let Some(lf) = LOG_FILE.get() {
         if let Ok(mut file) = lf.file.lock() {
             let _ = writeln!(
