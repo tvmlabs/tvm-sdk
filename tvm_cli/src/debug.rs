@@ -69,6 +69,7 @@ use crate::helpers::create_client;
 use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::get_blockchain_config;
+use crate::helpers::has_log_file;
 use crate::helpers::load_abi;
 use crate::helpers::load_debug_info;
 use crate::helpers::load_params;
@@ -77,6 +78,7 @@ use crate::helpers::now_ms;
 use crate::helpers::query_account_field;
 use crate::helpers::query_with_limit;
 use crate::helpers::wc_from_matches_or_config;
+use crate::helpers::write_log_record;
 use crate::message::prepare_message;
 use crate::print_args;
 use crate::replay::CONFIG_ADDR;
@@ -143,12 +145,18 @@ impl log::Log for DebugLogger {
                             .expect("Failed to write trace");
                     }
                     Err(_) => {
-                        println!("{}", record.args());
+                        if has_log_file() {
+                            write_log_record(record);
+                        } else {
+                            println!("{}", record.args());
+                        }
                     }
                 }
             }
             _ => {
-                if record.level() <= self.ordinary_log_level {
+                if has_log_file() {
+                    write_log_record(record);
+                } else if record.level() <= self.ordinary_log_level {
                     match record.level() {
                         log::Level::Error | log::Level::Warn => {
                             eprintln!("{}", record.args());

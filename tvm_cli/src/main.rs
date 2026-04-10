@@ -932,6 +932,12 @@ async fn main_internal() -> Result<(), String> {
                 .takes_value(true),
         )
         .arg(Arg::new("JSON").help("Cli prints output in json format.").short('j').long("--json"))
+        .arg(
+            Arg::new("LOG_PATH")
+                .help("Path to a log file. All log output is appended to this file instead of stdout/stderr.")
+                .long("--log-path")
+                .takes_value(true),
+        )
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
         .subcommand(genpubkey_cmd)
@@ -987,6 +993,15 @@ async fn main_internal() -> Result<(), String> {
     })?;
 
     let is_json = matches.is_present("JSON");
+
+    let log_path = matches
+        .value_of("LOG_PATH")
+        .map(|v| v.to_string())
+        .or_else(|| env::var("TVM_CLI_LOG_PATH").ok());
+    if let Some(ref path) = log_path {
+        helpers::init_log_file(path)?;
+        helpers::log_startup_info();
+    }
 
     command_parser(&matches, is_json).await.map_err(|e| {
         if e.is_empty() {
