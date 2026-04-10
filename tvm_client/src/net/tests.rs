@@ -1942,3 +1942,101 @@ async fn test_remote_bm_endpoint_fetch_failure_falls_back_to_local() {
     let active_url = active_bm.as_ref().unwrap().to_string();
     assert!(active_url.contains("bm-local"), "Active BM should be bm-local, got: {}", active_url);
 }
+
+// ------ query_http retry tests ------
+
+/// Helper: create a ClientContext with mock network and call `query_http`
+/// directly.
+async fn call_query_http(client: &Arc<ClientContext>) -> ClientResult<Value> {
+    let link = client.get_server_link().unwrap();
+    let endpoint = reqwest::Url::parse("http://test-endpoint/v2/messages").unwrap();
+    link.query_http("{}".to_string(), &endpoint).await
+}
+
+fn make_retry_test_client() -> Arc<ClientContext> {
+    Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig { endpoints: Some(vec!["a".into()]), ..Default::default() },
+            ..Default::default()
+        })
+        .unwrap(),
+    )
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_retry_503_502_200() {
+    let client = make_retry_test_client();
+    NetworkMock::build()
+        .url("test-endpoint")
+        .status(503, "")
+        .status(502, "")
+        .ok(r#"{"result":"ok"}"#)
+        .reset_client(&client)
+        .await;
+    let result = call_query_http(&client).await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["result"], "ok");
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_retry_429_200() {
+    let client = make_retry_test_client();
+    NetworkMock::build()
+        .url("test-endpoint")
+        .status(429, "")
+        .ok(r#"{"result":"ok"}"#)
+        .reset_client(&client)
+        .await;
+    let result = call_query_http(&client).await;
+    assert!(result.is_ok());
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_no_retry_on_400() {
+    let client = make_retry_test_client();
+    NetworkMock::build()
+        .url("test-endpoint")
+        .status(400, r#"{"status":"bad request"}"#)
+        .reset_client(&client)
+        .await;
+    // 400 is not retryable — the response is returned as-is (parsed as JSON)
+    let result = call_query_http(&client).await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["status"], "bad request");
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_retry_exhausted_503() {
+    let client = make_retry_test_client();
+    NetworkMock::build().url("test-endpoint").repeat(3).status(503, "").reset_client(&client).await;
+    // All 3 attempts return 503 → last attempt falls through to response processing
+    let result = call_query_http(&client).await;
+    // Empty body → JSON parse error
+    assert!(result.is_err());
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_no_retry_on_200() {
+    let client = make_retry_test_client();
+    NetworkMock::build().url("test-endpoint").ok(r#"{"result":"ok"}"#).reset_client(&client).await;
+    let result = call_query_http(&client).await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["result"], "ok");
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_retry_network_error() {
+    let client = make_retry_test_client();
+    NetworkMock::build().url("test-endpoint").repeat(3).network_err().reset_client(&client).await;
+    // 3 network errors → all attempts exhausted → last error returned as-is
+    let result = call_query_http(&client).await;
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert_eq!(err.code, crate::client::errors::ErrorCode::HttpRequestSendError as u32);
+    NetworkMock::assert_is_empty(&client).await;
+}
