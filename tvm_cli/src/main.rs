@@ -945,6 +945,13 @@ async fn main_internal() -> Result<(), String> {
                 .takes_value(true)
                 .global(true),
         )
+        .arg(
+            Arg::new("LOG_FILTER")
+                .help("Comma-separated log filter. Prefix with '-' to exclude: 'tvm_client,-hyper'.")
+                .long("--log-filter")
+                .takes_value(true)
+                .global(true),
+        )
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
         .subcommand(genpubkey_cmd)
@@ -1004,6 +1011,12 @@ async fn main_internal() -> Result<(), String> {
     let log_path = find_arg_value(&matches, "LOG_PATH")
         .map(|v| v.to_string())
         .or_else(|| env::var("TVM_CLI_LOG_PATH").ok());
+    let log_filter = find_arg_value(&matches, "LOG_FILTER")
+        .map(|v| v.to_string())
+        .or_else(|| env::var("TVM_CLI_LOG_FILTER").ok());
+    if let Some(ref filter) = log_filter {
+        helpers::init_log_filter(filter);
+    }
     if let Some(ref path) = log_path {
         helpers::init_log_file(path)?;
         helpers::log_startup_info();
