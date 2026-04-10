@@ -42,6 +42,7 @@ tvm-cli <subcommand> -h
     - [2.8. Debug on fail option](#28-debug-on-fail-option)
     - [2.9. Configure aliases map](#29-configure-aliases-map)
     - [2.10. Enabling verbose mode for SDK execution](#210-enabling-verbose-mode-for-sdk-execution)
+    - [2.11. Redirect log output to file](#211-redirect-log-output-to-file)
   - [3. Cryptographic commands](#3-cryptographic-commands)
     - [3.1. Create seed phrase](#31-create-seed-phrase)
     - [3.2. Generate public key](#32-generate-public-key)
@@ -778,6 +779,42 @@ fetch_block_timeout 83209
 Succeeded.
 Result: {}
 ```
+
+### 2.11. Redirect log output to file
+
+When TVM-CLI is used in automation scripts, log messages (debug, info, warnings) can interfere with parsing
+of the structured output. To redirect all log output to a file, use the `--log-path` flag:
+
+```bash
+tvm-cli --log-path /tmp/tvm.log <any_subcommand>
+```
+
+Alternatively, set the `TVM_CLI_LOG_PATH` environment variable:
+
+```bash
+export TVM_CLI_LOG_PATH=/tmp/tvm.log
+tvm-cli <any_subcommand>
+```
+
+The `--log-path` flag takes precedence over the environment variable.
+
+Log records are **appended** to the file (not overwritten), so logs from multiple runs accumulate. Each session
+starts with a header that includes the command-line arguments and working directory:
+
+```
+[2025-01-15 10:30:00.123 INFO  tvm_cli] === tvm-cli session started ===
+[2025-01-15 10:30:00.123 INFO  tvm_cli]   args: tvm-cli --log-path /tmp/tvm.log -j call 0:abc... method
+[2025-01-15 10:30:00.123 INFO  tvm_cli]   cwd: /home/user/project
+[2025-01-15 10:30:00.456 INFO  tvm_cli] Connecting to: url=https://..., endpoints=[...]
+[2025-01-15 10:30:01.789 DEBUG tvm_client::net] HTTP request to ...
+```
+
+When `--log-path` is active:
+
+- All log messages from TVM-CLI and the underlying SDK go to the file.
+- `stdout` and `stderr` remain clean for structured output parsing.
+- The log level is automatically set to `Trace` to capture the maximum detail.
+- This can be combined with `--json` (`-j`) for fully machine-parseable output on stdout.
 
 ## 3. Cryptographic commands
 
