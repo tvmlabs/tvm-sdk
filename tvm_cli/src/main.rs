@@ -146,6 +146,12 @@ fn main() {
     }
 }
 
+fn find_arg_value<'a>(matches: &'a ArgMatches, name: &str) -> Option<&'a str> {
+    matches
+        .value_of(name)
+        .or_else(|| matches.subcommand().and_then(|(_, sub)| find_arg_value(sub, name)))
+}
+
 async fn main_internal() -> Result<(), String> {
     let version_string = env!("CARGO_PKG_VERSION");
 
@@ -936,7 +942,8 @@ async fn main_internal() -> Result<(), String> {
             Arg::new("LOG_PATH")
                 .help("Path to a log file. All log output is appended to this file instead of stdout/stderr.")
                 .long("--log-path")
-                .takes_value(true),
+                .takes_value(true)
+                .global(true),
         )
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
@@ -994,8 +1001,7 @@ async fn main_internal() -> Result<(), String> {
 
     let is_json = matches.is_present("JSON");
 
-    let log_path = matches
-        .value_of("LOG_PATH")
+    let log_path = find_arg_value(&matches, "LOG_PATH")
         .map(|v| v.to_string())
         .or_else(|| env::var("TVM_CLI_LOG_PATH").ok());
     if let Some(ref path) = log_path {
