@@ -1,4 +1,4 @@
-// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
 //
 
 use std::fmt::Display;
@@ -34,6 +34,7 @@ pub enum ErrorCode {
     SendMessageFailed = 621,
     NotFound = 622,
     AllAttemptsFailed = 623,
+    NoBmAvailable = 624,
 }
 
 pub struct Error;
@@ -282,6 +283,13 @@ impl Error {
         };
         error(ErrorCode::AllAttemptsFailed, format!("All attempts failed.{}", err_msg))
     }
+
+    pub fn no_bm_available() -> ClientError {
+        error(
+            ErrorCode::NoBmAvailable,
+            "No Block Manager endpoint is reachable. All readiness checks failed.".to_string(),
+        )
+    }
 }
 
 #[cfg(test)]
@@ -298,7 +306,7 @@ mod tests {
                 "code": "WRONG_PRODUCER",
                 "message": "Resend message to the active Block Producer",
                 "data": {
-                    "producers": ["15.204.30.84:8600"],
+                    "producers": ["15.204.30.84"],
                     "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
                     "exit_code": null,
                     "current_time": "1748084498461",

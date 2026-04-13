@@ -9,7 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
 //
 
 use serde::Deserialize;
@@ -71,6 +71,14 @@ pub fn default_first_remp_status_timeout() -> u32 {
 
 pub fn default_next_remp_status_timeout() -> u32 {
     5000
+}
+
+pub fn default_bm_readiness_timeout() -> u32 {
+    5000
+}
+
+pub fn default_fallback_proxy_mode() -> bool {
+    false
 }
 
 fn deserialize_network_retries_count<'de, D: Deserializer<'de>>(
@@ -145,6 +153,18 @@ fn deserialize_next_remp_status_timeout<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<u32, D::Error> {
     Ok(Option::deserialize(deserializer)?.unwrap_or(default_next_remp_status_timeout()))
+}
+
+fn deserialize_bm_readiness_timeout<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<u32, D::Error> {
+    Ok(Option::deserialize(deserializer)?.unwrap_or(default_bm_readiness_timeout()))
+}
+
+fn deserialize_fallback_proxy_mode<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<bool, D::Error> {
+    Ok(Option::deserialize(deserializer)?.unwrap_or(default_fallback_proxy_mode()))
 }
 
 /// Network protocol used to perform GraphQL queries.
@@ -311,6 +331,39 @@ pub struct NetworkConfig {
     pub access_key: Option<String>,
     /// Access token to the Node REST API
     pub api_token: Option<String>,
+
+    /// When enabled, if the client gets a network error communicating directly
+    /// with a Block Producer (BP), it falls back to routing all messages
+    /// through the Block Manager (BM). Once activated, proxy mode stays
+    /// until client restart.
+    ///
+    /// Default is false.
+    #[serde(
+        default = "default_fallback_proxy_mode",
+        deserialize_with = "deserialize_fallback_proxy_mode"
+    )]
+    pub fallback_proxy_mode: bool,
+
+    /// Timeout for the BM readiness check during endpoint discovery.
+    ///
+    /// Must be specified in milliseconds. Default is 5000 (5 sec).
+    #[serde(
+        default = "default_bm_readiness_timeout",
+        deserialize_with = "deserialize_bm_readiness_timeout"
+    )]
+    pub bm_readiness_timeout: u32,
+
+    /// List of URLs to fetch BM endpoint list from (e.g. GitHub raw, CF CDN).
+    /// The file at each URL must be a YAML document with an `endpoints` array:
+    /// ```yaml
+    /// endpoints:
+    ///   - bm1.example.com
+    ///   - bm2.example.com
+    /// ```
+    /// URLs are tried in order; the first successful response is used.
+    /// Fetched endpoints are merged with locally configured `endpoints`.
+    /// The list is fetched once at client startup.
+    pub bm_endpoint_urls: Option<Vec<String>>,
 }
 
 impl NetworkConfig {
@@ -354,6 +407,9 @@ impl Default for NetworkConfig {
             signature_id: None,
             access_key: None,
             api_token: None,
+            fallback_proxy_mode: default_fallback_proxy_mode(),
+            bm_readiness_timeout: default_bm_readiness_timeout(),
+            bm_endpoint_urls: None,
         }
     }
 }

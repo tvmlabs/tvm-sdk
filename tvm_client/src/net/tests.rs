@@ -16,6 +16,7 @@ use crate::error::ClientError;
 // use crate::net::subscriptions::ParamsOfSubscribe;
 use crate::net::tvm_gql::GraphQLQuery;
 use crate::processing::ParamsOfProcessMessage;
+use crate::processing::ThreadIdentifier;
 use crate::tests::HELLO;
 use crate::tests::TestClient;
 
@@ -1610,4 +1611,432 @@ async fn return_network_error_on_subscribe() {
         .await;
 
     assert!(result.is_err());
+}
+
+// --- BM Discovery and Fallback Proxy Tests ---
+
+fn make_send_message_success_response() -> String {
+    json!({
+        "result": {
+            "message_hash": "abc123",
+            "block_hash": "block456",
+            "tx_hash": "tx789",
+            "producers": ["bp1"],
+            "current_time": "1000",
+            "thread_id": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "error": null,
+        "ext_message_token": null
+    })
+    .to_string()
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_bm_discovery_selects_first_ready() {
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm1".into(), "bm2".into()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    // bm1 is NOT ready (503), bm2 IS ready (200)
+    NetworkMock::build()
+        .url("bm1")
+        .status(503, "not ready")
+        .url("bm2")
+        .ok("ready")
+        .reset_client(&client)
+        .await;
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    let result = state.discover_active_bm().await;
+    assert!(result.is_ok(), "BM discovery should succeed");
+
+    let active_bm = state.active_bm_endpoint.read().await;
+    assert!(active_bm.is_some(), "Active BM should be set");
+    let active_url = active_bm.as_ref().unwrap().to_string();
+    assert!(active_url.contains("bm2"), "Active BM should be bm2, got: {}", active_url);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_bm_discovery_all_unavailable() {
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm1".into(), "bm2".into()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    // Both BMs unavailable
+    NetworkMock::build()
+        .url("bm1")
+        .status(503, "not ready")
+        .url("bm2")
+        .network_err()
+        .reset_client(&client)
+        .await;
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    let result = state.discover_active_bm().await;
+    assert!(result.is_err(), "BM discovery should fail when all BMs are unavailable");
+    assert_eq!(result.unwrap_err().code, crate::net::ErrorCode::NoBmAvailable as u32);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_bm_rediscovery() {
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm1".into(), "bm2".into()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    // First discovery: bm1 is ready
+    NetworkMock::build()
+        .url("bm1")
+        .ok("ready")
+        .url("bm2")
+        .status(503, "not ready")
+        .reset_client(&client)
+        .await;
+
+    let result = state.discover_active_bm().await;
+    assert!(result.is_ok());
+    let url = result.unwrap().to_string();
+    assert!(url.contains("bm1"), "First discovery should find bm1, got: {}", url);
+
+    // Re-discovery: bm1 is now down, bm2 is ready
+    {
+        let mut mock = client.env.network_mock.write().await;
+        mock.fetches = None;
+    }
+    NetworkMock::build()
+        .url("bm1")
+        .network_err()
+        .url("bm2")
+        .ok("ready")
+        .reset_client(&client)
+        .await;
+
+    let result = state.rediscover_bm().await;
+    assert!(result.is_ok());
+    let url = result.unwrap().to_string();
+    assert!(url.contains("bm2"), "Re-discovery should find bm2, got: {}", url);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_bp_fallback_proxy_mode() {
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm1".into()]),
+                fallback_proxy_mode: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    // 1st send: BM returns success with producers (redirecting client to BP)
+    // 2nd send: Client tries BP, gets network error → falls back to BM
+    // 3rd send: Client should stay on BM (proxy mode active)
+    NetworkMock::build()
+        .url("bm1")
+        .ok(&make_send_message_success_response()) // 1st: BM success
+        .url("bp1")
+        .network_err() // 2nd: BP unreachable
+        .url("bm1")
+        .ok(&make_send_message_success_response()) // 2nd: BM fallback
+        .url("bm1")
+        .ok(&make_send_message_success_response()) // 3rd: stays on BM
+        .reset_client(&client)
+        .await;
+
+    let msg_body = b"test_message";
+    let thread_id = ThreadIdentifier::default();
+    let dst = tvm_block::MsgAddressInt::default();
+
+    // 1st send: goes to BM, gets producers with bp1
+    let result = server_link.send_message("msg1", msg_body, thread_id.clone(), dst.clone()).await;
+    assert!(result.is_ok(), "1st send should succeed via BM");
+
+    // BP endpoint should be set from producers
+    assert!(
+        state.bk_send_message_endpoint.read().await.is_some(),
+        "BP endpoint should be set after 1st send"
+    );
+
+    // 2nd send: tries BP (network error) → falls back to BM
+    let result = server_link.send_message("msg2", msg_body, thread_id.clone(), dst.clone()).await;
+    assert!(result.is_ok(), "2nd send should succeed after fallback to BM");
+
+    // Proxy mode should now be active
+    assert!(
+        state.bp_fallback_active.load(std::sync::atomic::Ordering::Relaxed),
+        "Fallback proxy mode should be active"
+    );
+
+    // BP endpoint should be cleared
+    assert!(
+        state.bk_send_message_endpoint.read().await.is_none(),
+        "BP endpoint should be cleared in proxy mode"
+    );
+
+    // 3rd send: should go directly to BM (proxy mode)
+    let result = server_link.send_message("msg3", msg_body, thread_id.clone(), dst.clone()).await;
+    assert!(result.is_ok(), "3rd send should succeed via BM proxy");
+
+    // All mocks should be consumed
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_bp_fallback_without_proxy_mode_not_sticky() {
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm1".into()]),
+                fallback_proxy_mode: false, // Proxy mode disabled
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    // 1st send: BM returns success with producers
+    // 2nd send: Client tries BP, network error → falls back to BM (one-time)
+    // But bp_fallback_active should NOT be set
+    NetworkMock::build()
+        .url("bm1")
+        .ok(&make_send_message_success_response()) // 1st: BM success
+        .url("bp1")
+        .network_err() // 2nd: BP unreachable
+        .url("bm1")
+        .ok(&make_send_message_success_response()) // 2nd: BM fallback
+        .reset_client(&client)
+        .await;
+
+    let msg_body = b"test_message";
+    let thread_id = ThreadIdentifier::default();
+    let dst = tvm_block::MsgAddressInt::default();
+
+    // 1st send
+    let result = server_link.send_message("msg1", msg_body, thread_id.clone(), dst.clone()).await;
+    assert!(result.is_ok());
+
+    // 2nd send: BP fails, falls back to BM
+    let result = server_link.send_message("msg2", msg_body, thread_id.clone(), dst.clone()).await;
+    assert!(result.is_ok());
+
+    // Proxy mode should NOT be active (fallback_proxy_mode is false)
+    assert!(
+        !state.bp_fallback_active.load(std::sync::atomic::Ordering::Relaxed),
+        "Fallback proxy should NOT be sticky when fallback_proxy_mode is disabled"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_remote_bm_endpoint_fetch_and_discovery() {
+    let yaml_response = "endpoints:\n  - bm-remote1\n  - bm-remote2\n";
+
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm-local".into()]),
+                bm_endpoint_urls: Some(vec!["https://example.com/bm-endpoints.yaml".into()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    // Mock: YAML fetch succeeds, bm-local is down, bm-remote2 is ready
+    NetworkMock::build()
+        .url("example.com")
+        .ok(yaml_response) // YAML fetch
+        .url("bm-local")
+        .status(503, "not ready") // local BM down
+        .url("bm-remote1")
+        .status(503, "not ready") // remote BM1 down
+        .url("bm-remote2")
+        .ok("ready") // remote BM2 ready
+        .reset_client(&client)
+        .await;
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    // Trigger discovery (which fetches remote endpoints first)
+    let result = state.ensure_bm_discovered().await;
+    assert!(result.is_ok(), "Discovery should succeed via remote BM");
+
+    let active_bm = state.active_bm_endpoint.read().await;
+    assert!(active_bm.is_some(), "Active BM should be set");
+    let active_url = active_bm.as_ref().unwrap().to_string();
+    assert!(
+        active_url.contains("bm-remote2"),
+        "Active BM should be bm-remote2, got: {}",
+        active_url
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_remote_bm_endpoint_fetch_failure_falls_back_to_local() {
+    let client = Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["bm-local".into()]),
+                bm_endpoint_urls: Some(vec!["https://example.com/bm-endpoints.yaml".into()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+
+    // Mock: YAML fetch fails, but local BM is ready
+    NetworkMock::build()
+        .url("example.com")
+        .network_err() // YAML fetch fails
+        .url("bm-local")
+        .ok("ready") // local BM ready
+        .reset_client(&client)
+        .await;
+
+    let server_link = client.get_server_link().unwrap();
+    let state = server_link.state();
+
+    let result = state.ensure_bm_discovered().await;
+    assert!(result.is_ok(), "Discovery should succeed with local BM even if remote fetch fails");
+
+    let active_bm = state.active_bm_endpoint.read().await;
+    let active_url = active_bm.as_ref().unwrap().to_string();
+    assert!(active_url.contains("bm-local"), "Active BM should be bm-local, got: {}", active_url);
+}
+
+// ------ query_http retry tests ------
+
+/// Helper: create a ClientContext with mock network and call `query_http`
+/// directly.
+async fn call_query_http(client: &Arc<ClientContext>) -> ClientResult<Value> {
+    let link = client.get_server_link().unwrap();
+    let endpoint = reqwest::Url::parse("http://test-endpoint/v2/messages").unwrap();
+    link.query_http("{}".to_string(), &endpoint).await
+}
+
+fn make_retry_test_client() -> Arc<ClientContext> {
+    Arc::new(
+        ClientContext::new(ClientConfig {
+            network: NetworkConfig { endpoints: Some(vec!["a".into()]), ..Default::default() },
+            ..Default::default()
+        })
+        .unwrap(),
+    )
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_retry_503_502_200() {
+    let client = make_retry_test_client();
+    NetworkMock::build()
+        .url("test-endpoint")
+        .status(503, "")
+        .status(502, "")
+        .ok(r#"{"result":"ok"}"#)
+        .reset_client(&client)
+        .await;
+    let result = call_query_http(&client).await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["result"], "ok");
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_retry_429_200() {
+    let client = make_retry_test_client();
+    NetworkMock::build()
+        .url("test-endpoint")
+        .status(429, "")
+        .ok(r#"{"result":"ok"}"#)
+        .reset_client(&client)
+        .await;
+    let result = call_query_http(&client).await;
+    assert!(result.is_ok());
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_no_retry_on_400() {
+    let client = make_retry_test_client();
+    NetworkMock::build()
+        .url("test-endpoint")
+        .status(400, r#"{"status":"bad request"}"#)
+        .reset_client(&client)
+        .await;
+    // 400 is not retryable — the response is returned as-is (parsed as JSON)
+    let result = call_query_http(&client).await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["status"], "bad request");
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_retry_exhausted_503() {
+    let client = make_retry_test_client();
+    NetworkMock::build().url("test-endpoint").repeat(3).status(503, "").reset_client(&client).await;
+    // All 3 attempts return 503 → last attempt falls through to response processing
+    let result = call_query_http(&client).await;
+    // Empty body → JSON parse error
+    assert!(result.is_err());
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_no_retry_on_200() {
+    let client = make_retry_test_client();
+    NetworkMock::build().url("test-endpoint").ok(r#"{"result":"ok"}"#).reset_client(&client).await;
+    let result = call_query_http(&client).await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["result"], "ok");
+    NetworkMock::assert_is_empty(&client).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn query_http_retry_network_error() {
+    let client = make_retry_test_client();
+    NetworkMock::build().url("test-endpoint").repeat(3).network_err().reset_client(&client).await;
+    // 3 network errors → all attempts exhausted → last error returned as-is
+    let result = call_query_http(&client).await;
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert_eq!(err.code, crate::client::errors::ErrorCode::HttpRequestSendError as u32);
+    NetworkMock::assert_is_empty(&client).await;
 }

@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 pub use batch::ParamsOfBatchQuery;
 pub use batch::ResultOfBatchQuery;
 pub use batch::batch_query;
@@ -45,7 +48,6 @@ pub use queries::wait_for_collection;
 pub(crate) use server_link::EndpointStat;
 pub(crate) use server_link::MAX_TIMEOUT;
 pub(crate) use server_link::NetworkState;
-pub use server_link::REST_API_PORT;
 pub(crate) use server_link::ServerLink;
 pub use server_link::construct_rest_api_endpoint;
 pub use subscriptions::ParamsOfSubscribe;
@@ -114,6 +116,15 @@ pub async fn suspend(context: std::sync::Arc<ClientContext>) -> ClientResult<()>
 #[api_function]
 pub async fn resume(context: std::sync::Arc<ClientContext>) -> ClientResult<()> {
     context.get_server_link()?.resume().await;
+    Ok(())
+}
+
+/// Forces re-discovery of the active Block Manager endpoint by broadcasting
+/// readiness checks to all configured endpoints. The first endpoint to respond
+/// with HTTP 200 becomes the active BM for message delivery.
+#[api_function]
+pub async fn discover_bm(context: std::sync::Arc<ClientContext>) -> ClientResult<()> {
+    context.get_server_link()?.state().rediscover_bm().await?;
     Ok(())
 }
 

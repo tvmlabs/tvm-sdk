@@ -6627,6 +6627,7 @@ dependencies = [
  "serde_json",
  "serde_repr",
  "serde_with",
+ "serde_yaml",
  "sha2 0.10.9",
  "sodalite",
  "thiserror 1.0.69",
