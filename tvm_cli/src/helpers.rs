@@ -19,6 +19,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 use std::time::SystemTime;
 
@@ -148,6 +150,15 @@ impl LogFilter {
 
 static LOG_FILE: OnceLock<LogFile> = OnceLock::new();
 static LOG_FILTER: OnceLock<LogFilter> = OnceLock::new();
+static JSON_MODE: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn set_json_mode(enabled: bool) {
+    JSON_MODE.store(enabled, Ordering::Relaxed);
+}
+
+pub(crate) fn is_json_mode() -> bool {
+    JSON_MODE.load(Ordering::Relaxed)
+}
 
 pub(crate) fn init_log_file(path: &str) -> Result<(), String> {
     let file = std::fs::OpenOptions::new()
@@ -217,6 +228,9 @@ impl log::Log for SimpleLogger {
     fn log(&self, record: &log::Record) {
         if has_log_file() {
             write_log_record(record);
+            return;
+        }
+        if is_json_mode() {
             return;
         }
         match record.level() {
