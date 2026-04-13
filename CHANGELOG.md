@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.17] - 2026-04-13
+
+### Added
+- `tvm_client`: retry with exponential backoff for `query_http`
+- `tvm_cli`: `--log-path` and `--log-filter` options to redirect and filter log output to a file, keeping stdout/stderr clean for automation
+
+### Changed
+- `tvm_client`: removed non-standard REST API port 8600, use standard HTTP/HTTPS ports
+- `tvm_cli`: console log output is suppressed in `--json` mode; default log level lowered from Warn to Error
+
 ## [2.24.16] - 2026-03-23
 
 ### Fixes

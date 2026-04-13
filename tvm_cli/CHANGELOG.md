@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.17] - 2026-04-13
+
+### Added
+- `--log-path` global option and `TVM_CLI_LOG_PATH` env var to redirect all log output to a file (append mode), keeping stdout/stderr clean for automation scripts
+- `--log-filter` option and `TVM_CLI_LOG_FILTER` env var for include/exclude module filtering (e.g. `tvm_client,-hyper`)
+- Session startup info (command-line arguments, working directory) is logged to the log file
+
+### Changed
+- Console log output is now suppressed in `--json` (`-j`) mode
+- Default console log level lowered from Warn to Error to reduce noise
+
 ## [2.24.13] - 2026-03-03
 
 ### Changed
