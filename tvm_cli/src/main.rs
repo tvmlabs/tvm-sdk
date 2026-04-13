@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 #![allow(clippy::from_str_radix_10)]
 #![allow(clippy::or_fun_call)]
 #![allow(clippy::too_many_arguments)]
@@ -1007,6 +1010,7 @@ async fn main_internal() -> Result<(), String> {
     })?;
 
     let is_json = matches.is_present("JSON");
+    helpers::set_json_mode(is_json);
 
     let log_path = find_arg_value(&matches, "LOG_PATH")
         .map(|v| v.to_string())
