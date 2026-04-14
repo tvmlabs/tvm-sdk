@@ -5,7 +5,7 @@ use std::future::Future;
 
 #[cfg(test)]
 pub use mock_sdk_services::MockSdkServices;
-use tvm_types::cell::Cell;
+use tvm_types::Cell;
 
 use crate::error;
 use crate::message_monitor::MessageMonitoringParams;

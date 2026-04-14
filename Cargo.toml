@@ -43,8 +43,8 @@ debug = 1
 inherits = 'release'
 
 [profile.dev]
-# Must always use panic = "abort" to avoid needing to define the unstable eh_personality lang item.
-panic = "abort"
+# Tests require unwind; keeping dev on unwind avoids profile mismatches in `cargo test`.
+panic = "unwind"
 # Enable only a small amount of optimization in debug mode
 opt-level = 1
 
