@@ -24,7 +24,6 @@ use futures::Future;
 use futures::Stream;
 use futures::StreamExt;
 use rand::seq::SliceRandom;
-use reqwest::Url;
 use serde_json::Value;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
@@ -32,6 +31,7 @@ use tokio::sync::watch;
 use tvm_block::MsgAddressInt;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
+use url::Url;
 
 use super::ErrorCode;
 use super::tvm_gql::ExtMessage;

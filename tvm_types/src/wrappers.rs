@@ -11,13 +11,13 @@
 
 use core::ops::Range;
 
-use aes_ctr::cipher::stream::NewStreamCipher;
-use aes_ctr::cipher::stream::SyncStreamCipher;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use base64::engine::general_purpose::URL_SAFE;
 use crc::CRC_32_ISCSI;
 use crc::Crc;
+use ctr::cipher::KeyIvInit;
+use ctr::cipher::StreamCipher;
 pub use ed25519_dalek::PUBLIC_KEY_LENGTH as ED25519_PUBLIC_KEY_LENGTH;
 pub use ed25519_dalek::SECRET_KEY_LENGTH as ED25519_SECRET_KEY_LENGTH;
 pub use ed25519_dalek::SIGNATURE_LENGTH as ED25519_SIGNATURE_LENGTH;
@@ -35,17 +35,14 @@ use crate::fail;
 // AES-CTR --------------------------------------------------------------
 
 pub struct AesCtr {
-    inner: aes_ctr::Aes256Ctr,
+    inner: ctr::Ctr128BE<aes::Aes256>,
 }
 
 impl AesCtr {
     pub fn with_params(key: &[u8], ctr: &[u8]) -> Result<Self> {
-        let aes_ctr = aes_ctr::Aes256Ctr::new(
-            aes_ctr::cipher::generic_array::GenericArray::from_slice(key),
-            aes_ctr::cipher::generic_array::GenericArray::from_slice(ctr),
-        );
-        let ret = Self { inner: aes_ctr };
-        Ok(ret)
+        let inner = ctr::Ctr128BE::<aes::Aes256>::new_from_slices(key, ctr)
+            .map_err(|e| error!("AesCtr init error: {}", e))?;
+        Ok(Self { inner })
     }
 
     pub fn apply_keystream(&mut self, buf: &mut [u8], range: Range<usize>) -> Result<()> {

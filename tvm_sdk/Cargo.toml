@@ -9,7 +9,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-getrandom = { version = "0.2", features = ["js"] }
 anyhow.workspace = true
 base64.workspace = true
 chrono.workspace = true

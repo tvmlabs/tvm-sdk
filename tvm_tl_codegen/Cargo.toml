@@ -15,9 +15,9 @@ quote.workspace = true
 serde.workspace = true
 serde_derive.workspace = true
 
-crc = "1.8"
-pom = "1.1"
-syn = "2.0.48"
+crc.workspace = true
+pom = "1"
+syn = "2"
 
 [features]
 reformat = []

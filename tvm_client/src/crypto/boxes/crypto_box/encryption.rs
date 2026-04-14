@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use chacha20::cipher::NewStreamCipher;
-use chacha20::cipher::SyncStreamCipher;
+use chacha20::cipher::KeyIvInit;
+use chacha20::cipher::StreamCipher;
 use rand::RngCore;
 use sodalite::BOX_NONCE_LEN;
 use sodalite::BOX_PUBLIC_KEY_LEN;
@@ -38,10 +38,8 @@ async fn apply_chacha20(
 ) -> ClientResult<SecretBuf> {
     let password = get_password(password_provider).await?;
     let key = context.derived_keys.derive(&password.0, salt)?;
-    let mut cipher = chacha20::ChaCha20::new(
-        chacha20::Key::from_slice(&key.0),
-        chacha20::Nonce::from_slice(nonce),
-    );
+    let mut cipher = chacha20::ChaCha20::new_from_slices(&key.0, nonce)
+        .map_err(|e| Error::crypto_box_secret_serialization_error(e))?;
     let mut output = SecretBuf(secret.into());
     cipher.apply_keystream(&mut output.0);
 
@@ -93,7 +91,8 @@ async fn get_password(password_provider: &PasswordProvider) -> ClientResult<Secr
 fn gen_nacl_box_keypair() -> (SecretKey, sodalite::BoxPublicKey) {
     let mut secret_key = SecretKey([0; BOX_SECRET_KEY_LEN]);
     let mut public_key = [0; BOX_PUBLIC_KEY_LEN];
-    sodalite::box_keypair(&mut public_key, &mut secret_key.0);
+    let seed: [u8; 32] = rand::random();
+    sodalite::box_keypair_seed(&mut public_key, &mut secret_key.0, &seed);
 
     (secret_key, public_key)
 }

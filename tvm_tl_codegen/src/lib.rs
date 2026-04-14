@@ -325,7 +325,7 @@ pub mod parser {
                 string += " = ";
                 string += &output;
 
-                Some(crc::crc32::checksum_ieee(string.as_bytes()))
+                Some(crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC).checksum(string.as_bytes()))
             }
         }
     }

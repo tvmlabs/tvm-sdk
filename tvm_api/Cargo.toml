@@ -22,8 +22,8 @@ thiserror.workspace = true
 tvm_block.workspace = true
 tvm_types.workspace = true
 
-ordered-float = "4.2.0"
-secstr = "0.5.1"
+ordered-float = "4"
+secstr = "0.5"
 
 [features]
 bytes_as_vec = []

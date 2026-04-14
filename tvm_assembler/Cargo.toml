@@ -27,12 +27,6 @@ rand.workspace = true
 tvm_types.workspace = true
 tvm_vm = { workspace = true }
 
-base64 = "0.13"
-log4rs = '1.2'
-fastcrypto = "0.1.8"
-ark-std = "0.4.0"
-ark-ff = "0.4.2"
-base64ct = { version = "1.5.3", features = ["alloc"] }
 
 [features]
 default = ["gosh"]

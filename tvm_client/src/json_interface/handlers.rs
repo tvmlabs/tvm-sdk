@@ -14,7 +14,9 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use api_info::ApiType;
+#[cfg(feature = "api_info")]
 use api_info::Field;
+#[cfg(feature = "api_info")]
 use api_info::Type;
 use futures::Future;
 use serde::Serialize;
@@ -28,9 +30,12 @@ use crate::client::AppObject;
 use crate::client::ClientContext;
 use crate::client::Error;
 use crate::error::ClientResult;
+#[cfg(feature = "api_info")]
 use crate::json_interface::runtime::Runtime;
 
+#[cfg(feature = "api_info")]
 const ENUM_TYPE_TAG: &str = "type";
+#[cfg(feature = "api_info")]
 const ENUM_VALUE_FIELD: &str = "value";
 
 fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResult<P> {
@@ -38,6 +43,7 @@ fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResul
         Ok(deserialized) => Ok(deserialized),
         Err(err) => {
             let mut error = Error::invalid_params(params_json, err);
+            #[cfg(feature = "api_info")]
             if let Ok(value) = serde_json::from_str::<Value>(params_json) {
                 let field = P::api();
                 let mut errors = vec![];
@@ -60,7 +66,9 @@ fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResul
                             .collect(),
                     );
                 }
-            } else {
+            }
+            #[cfg(not(feature = "api_info"))]
+            if serde_json::from_str::<Value>(params_json).is_err() {
                 error.message.push_str("\nTip: Fix syntax error in the JSON string.");
             }
 
@@ -69,11 +77,13 @@ fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResul
     }
 }
 
+#[cfg(feature = "api_info")]
 #[derive(Default, Clone)]
 struct ProcessingPath {
     path: Vec<String>,
 }
 
+#[cfg(feature = "api_info")]
 impl ProcessingPath {
     fn append(&self, field_name: &str) -> Self {
         let mut path = self.path.clone();
@@ -91,6 +101,7 @@ impl ProcessingPath {
     }
 }
 
+#[cfg(feature = "api_info")]
 fn check_params_for_known_errors(
     path: &ProcessingPath,
     mut field: &Field,
@@ -128,6 +139,7 @@ fn check_params_for_known_errors(
     check_type(path, &class_name, &field.value, value, errors, suggest_use_helper_for);
 }
 
+#[cfg(feature = "api_info")]
 fn check_type(
     path: &ProcessingPath,
     class_name: &Option<&str>,
@@ -216,6 +228,7 @@ fn check_type(
     }
 }
 
+#[cfg(feature = "api_info")]
 fn get_incorrect_enum_errors(
     field_name: &str,
     class_name: &Option<&str>,

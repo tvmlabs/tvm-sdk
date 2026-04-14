@@ -48,4 +48,7 @@ pub enum ZkCryptoError {
     /// General opaque cryptographic error.
     #[error("General cryptographic error")]
     GeneralOpaqueError,
+
+    #[error("Unsupported platform")]
+    UnsupportedPlatform,
 }

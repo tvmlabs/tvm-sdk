@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.24.17] - 2026-04-13
+## [2.24.18] - 2026-04-13
 
 ### Added
 - `tvm_client`: retry with exponential backoff for `query_http`
@@ -11,6 +11,16 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - `tvm_client`: removed non-standard REST API port 8600, use standard HTTP/HTTPS ports
 - `tvm_cli`: console log output is suppressed in `--json` mode; default log level lowered from Warn to Error
+
+## [2.24.17] - 2026-04-07
+
+### Fixed
+- Fixed WASM web build compatibility and ZK dependency handling
+- Fixed `current_traceparent` function in endpoint.rs
+- Optimized dependencies: ZK deps behind feature gate, dependency deduplication, workspace consolidation
+
+### Changed
+- Removed redundant `compliant` flag from HD key derivation
 
 ## [2.24.16] - 2026-03-23
 
