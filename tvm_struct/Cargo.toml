@@ -11,7 +11,6 @@ license.workspace = true
 [dependencies]
 hex-literal = "0.4.1"
 thiserror.workspace = true
-failure.workspace = true
 #
 tvm_block.workspace = true
 tvm_types.workspace = true

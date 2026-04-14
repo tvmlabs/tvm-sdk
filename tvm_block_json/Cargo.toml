@@ -10,7 +10,6 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-failure.workspace = true
 hex.workspace = true
 lazy_static.workspace = true
 log.workspace = true
