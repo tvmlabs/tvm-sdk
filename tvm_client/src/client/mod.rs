@@ -51,6 +51,7 @@ pub use errors::Error;
 pub use errors::ErrorCode;
 
 use crate::error::ClientResult;
+#[cfg(feature = "api_info")]
 use crate::json_interface::runtime::Runtime;
 
 pub(crate) const LOCAL_STORAGE_DEFAULT_DIR_NAME: &str = ".tonclient";
@@ -106,7 +107,14 @@ pub struct ResultOfGetApiReference {
 /// Returns Core Library API reference
 #[api_function]
 pub fn get_api_reference(_context: Arc<ClientContext>) -> ClientResult<ResultOfGetApiReference> {
-    Ok(ResultOfGetApiReference { api: Runtime::api().clone() })
+    #[cfg(feature = "api_info")]
+    {
+        Ok(ResultOfGetApiReference { api: Runtime::api().clone() })
+    }
+    #[cfg(not(feature = "api_info"))]
+    {
+        Ok(ResultOfGetApiReference { api: API::default() })
+    }
 }
 
 #[derive(ApiType, Default, Serialize, Deserialize, Clone)]

@@ -216,7 +216,8 @@ fn prepare_to_convert(
 pub fn nacl_box_keypair(_context: std::sync::Arc<ClientContext>) -> ClientResult<KeyPair> {
     let mut sk = [0u8; 32];
     let mut pk = [0u8; 32];
-    sodalite::box_keypair(&mut pk, &mut sk);
+    let seed: [u8; 32] = rand::random();
+    sodalite::box_keypair_seed(&mut pk, &mut sk, &seed);
     Ok(KeyPair::new(hex::encode(pk), hex::encode(sk)))
 }
 

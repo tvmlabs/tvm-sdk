@@ -14,13 +14,14 @@ use std::sync::Arc;
 use aes::Aes128;
 use aes::Aes192;
 use aes::Aes256;
-use aes::BlockCipher;
-use aes::BlockDecrypt;
-use aes::BlockEncrypt;
-use aes::NewBlockCipher;
 use base64::Engine;
-use block_modes::BlockMode;
-use block_modes::Cbc;
+use cbc::cipher::BlockDecryptMut;
+use cbc::cipher::BlockEncryptMut;
+use cbc::cipher::KeyIvInit;
+use cbc::cipher::block_padding::NoPadding;
+
+/// AES block size in bytes (128 bits = 16 bytes), same for all AES variants.
+const AES_BLOCK_SIZE: usize = 16;
 use tvm_types::base64_encode;
 use zeroize::ZeroizeOnDrop;
 
@@ -74,10 +75,10 @@ impl AesEncryptionBox {
             .as_ref()
             .map(|string| {
                 let iv = hex_decode(string)?;
-                if iv.len() == aes::BLOCK_SIZE {
+                if iv.len() == AES_BLOCK_SIZE {
                     Ok(iv)
                 } else {
-                    Err(Error::invalid_iv_size(iv.len(), aes::BLOCK_SIZE))
+                    Err(Error::invalid_iv_size(iv.len(), AES_BLOCK_SIZE))
                 }
             })
             .transpose()?
@@ -86,38 +87,43 @@ impl AesEncryptionBox {
         Ok(Self { key, iv, mode: params.mode.clone() })
     }
 
-    fn create_block_mode<C, B>(key: &[u8], iv: &[u8]) -> ClientResult<B>
-    where
-        C: BlockCipher + BlockEncrypt + BlockDecrypt + NewBlockCipher,
-        B: BlockMode<C, block_modes::block_padding::ZeroPadding>,
-    {
-        B::new_from_slices(key, iv).map_err(Error::cannot_create_cipher)
-    }
-
-    fn encrypt_data<'a, C, B>(
+    fn encrypt_cbc<
+        C: cbc::cipher::BlockEncrypt + cbc::cipher::BlockCipher + cbc::cipher::KeyInit,
+    >(
         key: &[u8],
         iv: &[u8],
-        data: &'a mut [u8],
+        data: &mut Vec<u8>,
         size: usize,
-    ) -> ClientResult<&'a [u8]>
-    where
-        C: BlockCipher + BlockEncrypt + BlockDecrypt + NewBlockCipher,
-        B: BlockMode<C, block_modes::block_padding::ZeroPadding>,
-    {
-        Self::create_block_mode::<C, B>(key, iv)?
-            .encrypt(data, size)
-            .map_err(|err| Error::encrypt_data_error(format!("{:#?}", err)))
+    ) -> ClientResult<()> {
+        // Pad to block boundary with zeros (matching old ZeroPadding behavior)
+        let padded_size = if size % AES_BLOCK_SIZE == 0 {
+            size
+        } else {
+            (size / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE
+        };
+        data.resize(padded_size, 0);
+        let encryptor =
+            cbc::Encryptor::<C>::new_from_slices(key, iv).map_err(Error::cannot_create_cipher)?;
+        // encrypt_padded_mut with NoPadding since we already padded with zeros
+        encryptor
+            .encrypt_padded_mut::<NoPadding>(data, padded_size)
+            .map_err(|err| Error::encrypt_data_error(format!("{:#?}", err)))?;
+        Ok(())
     }
 
-    fn decrypt_data<C, B>(key: &[u8], iv: &[u8], data: &mut [u8]) -> ClientResult<()>
-    where
-        C: BlockCipher + BlockEncrypt + BlockDecrypt + NewBlockCipher,
-        B: BlockMode<C, block_modes::block_padding::ZeroPadding>,
-    {
-        Self::create_block_mode::<C, B>(key, iv)?
-            .decrypt(data)
-            .map_err(|err| Error::decrypt_data_error(format!("{:#?}", err)))
-            .map(|_| ())
+    fn decrypt_cbc<
+        C: cbc::cipher::BlockDecrypt + cbc::cipher::BlockCipher + cbc::cipher::KeyInit,
+    >(
+        key: &[u8],
+        iv: &[u8],
+        data: &mut [u8],
+    ) -> ClientResult<()> {
+        let decryptor =
+            cbc::Decryptor::<C>::new_from_slices(key, iv).map_err(Error::cannot_create_cipher)?;
+        decryptor
+            .decrypt_padded_mut::<NoPadding>(data)
+            .map_err(|err| Error::decrypt_data_error(format!("{:#?}", err)))?;
+        Ok(())
     }
 
     fn decode_base64_aligned(data: &str, align: usize) -> ClientResult<(Vec<u8>, usize)> {
@@ -152,35 +158,29 @@ impl EncryptionBox for AesEncryptionBox {
 
     /// Encrypts data
     async fn encrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
-        let (mut data, size) = Self::decode_base64_aligned(data, aes::BLOCK_SIZE)?;
-        let result = match (self.key.len(), &self.mode) {
+        let (mut data, size) = Self::decode_base64_aligned(data, AES_BLOCK_SIZE)?;
+        match (self.key.len(), &self.mode) {
             (16, CipherMode::CBC) => {
-                Self::encrypt_data::<Aes128, Cbc<Aes128, _>>(&self.key, &self.iv, &mut data, size)?
+                Self::encrypt_cbc::<Aes128>(&self.key, &self.iv, &mut data, size)?
             }
             (24, CipherMode::CBC) => {
-                Self::encrypt_data::<Aes192, Cbc<Aes192, _>>(&self.key, &self.iv, &mut data, size)?
+                Self::encrypt_cbc::<Aes192>(&self.key, &self.iv, &mut data, size)?
             }
             (32, CipherMode::CBC) => {
-                Self::encrypt_data::<Aes256, Cbc<Aes256, _>>(&self.key, &self.iv, &mut data, size)?
+                Self::encrypt_cbc::<Aes256>(&self.key, &self.iv, &mut data, size)?
             }
             _ => return Err(Error::unsupported_cipher_mode(&format!("{:?}", self.mode))),
         };
-        Ok(base64_encode(result))
+        Ok(base64_encode(&data))
     }
 
     /// Decrypts data
     async fn decrypt(&self, _context: Arc<ClientContext>, data: &String) -> ClientResult<String> {
         let mut data = base64_decode(data)?;
         match (self.key.len(), &self.mode) {
-            (16, CipherMode::CBC) => {
-                Self::decrypt_data::<Aes128, Cbc<Aes128, _>>(&self.key, &self.iv, &mut data)?
-            }
-            (24, CipherMode::CBC) => {
-                Self::decrypt_data::<Aes192, Cbc<Aes192, _>>(&self.key, &self.iv, &mut data)?
-            }
-            (32, CipherMode::CBC) => {
-                Self::decrypt_data::<Aes256, Cbc<Aes256, _>>(&self.key, &self.iv, &mut data)?
-            }
+            (16, CipherMode::CBC) => Self::decrypt_cbc::<Aes128>(&self.key, &self.iv, &mut data)?,
+            (24, CipherMode::CBC) => Self::decrypt_cbc::<Aes192>(&self.key, &self.iv, &mut data)?,
+            (32, CipherMode::CBC) => Self::decrypt_cbc::<Aes256>(&self.key, &self.iv, &mut data)?,
             _ => return Err(Error::unsupported_cipher_mode(&format!("{:?}", self.mode))),
         }
         Ok(base64_encode(&data))
