@@ -790,7 +790,11 @@ impl TestClient {
 
         let _ = self
             .net_process_message(
-                ParamsOfProcessMessage { message_encode_params: params, send_events: false, dst_dapp_id: None },
+                ParamsOfProcessMessage {
+                    message_encode_params: params,
+                    send_events: false,
+                    dst_dapp_id: None,
+                },
                 Self::default_callback,
             )
             .await

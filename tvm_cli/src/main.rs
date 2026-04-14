@@ -93,6 +93,8 @@ use crate::account::dump_accounts;
 use crate::config::FullConfig;
 use crate::config::resolve_net_name;
 use crate::getconfig::gen_update_config_message;
+use crate::helpers::AccountSource;
+use crate::helpers::SdkAddress;
 use crate::helpers::abi_from_matches_or_config;
 use crate::helpers::default_config_name;
 use crate::helpers::global_config_path;
@@ -101,7 +103,6 @@ use crate::helpers::load_params;
 use crate::helpers::parse_lifetime;
 use crate::helpers::unpack_alternative_params;
 use crate::helpers::wc_from_matches_or_config;
-use crate::helpers::{AccountSource, SdkAddress};
 use crate::message::generate_message;
 use crate::run::run_command;
 use crate::run::run_get_method;
@@ -1687,7 +1688,16 @@ async fn proposal_vote_command(matches: &ArgMatches, config: &Config) -> Result<
     let sdk_addr = SdkAddress::from_str(address.unwrap())?;
     let lifetime = parse_lifetime(lifetime, config)?;
 
-    vote(config, &sdk_addr.account_id, sdk_addr.dapp_id.as_deref(), keys, id.unwrap(), lifetime, offline).await?;
+    vote(
+        config,
+        &sdk_addr.account_id,
+        sdk_addr.dapp_id.as_deref(),
+        keys,
+        id.unwrap(),
+        lifetime,
+        offline,
+    )
+    .await?;
     println!("{{}}");
     Ok(())
 }

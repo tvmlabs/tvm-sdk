@@ -126,25 +126,22 @@ pub(crate) async fn resolve_error(
                     .map_err(crate::client::Error::cannot_serialize_result)?;
             } else {
                 original_error.data_mut()[EXIT_ARG_FIELD] = err.data()[EXIT_ARG_FIELD].clone();
-                original_error.data_mut()[CONTRACT_ERROR_FIELD] = err.data()[CONTRACT_ERROR_FIELD].clone();
+                original_error.data_mut()[CONTRACT_ERROR_FIELD] =
+                    err.data()[CONTRACT_ERROR_FIELD].clone();
             }
 
             match original_error.message().find("\nTip:") {
-                Some(insert_position) => {
-                    original_error.set_message(format!(
-                        "{}.\nPossible reason: {}.{}",
-                        &original_error.message()[..insert_position].trim_end().trim_end_matches('.'),
-                        remove_exit_code(&exit_code, err.message().trim_end_matches('.')),
-                        &original_error.message()[insert_position..],
-                    ))
-                }
-                None => {
-                    original_error.set_message(format!(
-                        "{}.\nPossible reason: {}",
-                        original_error.message().trim_end_matches('.'),
-                        remove_exit_code(&exit_code, err.message())),
-                    )
-                }
+                Some(insert_position) => original_error.set_message(format!(
+                    "{}.\nPossible reason: {}.{}",
+                    &original_error.message()[..insert_position].trim_end().trim_end_matches('.'),
+                    remove_exit_code(&exit_code, err.message().trim_end_matches('.')),
+                    &original_error.message()[insert_position..],
+                )),
+                None => original_error.set_message(format!(
+                    "{}.\nPossible reason: {}",
+                    original_error.message().trim_end_matches('.'),
+                    remove_exit_code(&exit_code, err.message())
+                )),
             }
 
             Err(original_error)
@@ -156,8 +153,8 @@ pub(crate) async fn resolve_error(
                 message,
             ));
             if original_error.code() == ErrorCode::MessageExpired as u32 {
-                original_error.set_message(
-                    format!("{}. Try to send it again", original_error.message()));
+                original_error
+                    .set_message(format!("{}. Try to send it again", original_error.message()));
             }
             Err(original_error)
         }

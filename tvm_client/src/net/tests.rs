@@ -565,7 +565,11 @@ async fn subscribe_for_transactions_with_addresses() {
     // deploy to create second transaction
     client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: deploy_params, send_events: false, dst_dapp_id: None },
+            ParamsOfProcessMessage {
+                message_encode_params: deploy_params,
+                send_events: false,
+                dst_dapp_id: None,
+            },
             TestClient::default_callback,
         )
         .await

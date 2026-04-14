@@ -334,11 +334,7 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     //_reward_last_time - time of last calculate
     let mbkt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
 
-    let rbkmin = if t < TTMT {
-        rbkprev / 3 * 2
-    } else {
-        0
-    };
+    let rbkmin = if t < TTMT { rbkprev / 3 * 2 } else { 0 };
     if drbkavg == 0 {
         drbkavg = 1;
     }
@@ -357,21 +353,15 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
     let mut drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
 
-    let rbmmin = if t < TTMT {
-        rbmprev / 3 * 2
-    } else {
-        0
-    };
+    let rbmmin = if t < TTMT { rbmprev / 3 * 2 } else { 0 };
 
     if drbmavg == 0 {
         drbmavg = 1;
     }
     let rbm = if is_bm {
-        (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev)
+        (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
     } else {
-        (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev)
+        (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
     };
     engine.cc.stack.push(int!(rbm));
     Ok(())
@@ -418,11 +408,8 @@ pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Sta
     let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let _pubkey_cell = engine.cmd.var(4).as_cell()?;
 
-    let reward = if mbm >= TOTALSUPPLY / 10 || count_bm == 0 {
-        0
-    } else {
-        radj * depoch / count_bm
-    };
+    let reward =
+        if mbm >= TOTALSUPPLY / 10 || count_bm == 0 { 0 } else { radj * depoch / count_bm };
     engine.cc.stack.push(int!(reward));
     Ok(())
 }
@@ -474,7 +461,7 @@ pub(super) fn execute_calculate_min_stake_bm(engine: &mut Engine) -> Status {
     let tstk = engine.cmd.var(0).as_integer()?.into(0..=u128::MAX)?; //time from network start
     let mbkav = engine.cmd.var(1).as_integer()?.into(0..=u128::MAX)?; //sum of reward token without slash tokens
     let one_minus_fstk_q32 = calc_one_minus_fstk_q32_int(tstk);
-    let sbkmin = (mbkav * one_minus_fstk_q32) >> 32 ;
+    let sbkmin = (mbkav * one_minus_fstk_q32) >> 32;
     engine.cc.stack.push(int!(sbkmin));
     Ok(())
 }
@@ -558,11 +545,7 @@ fn compute_rmv(rpc: i128, tap_num: i128, bclst: &[u64], mbi: u64, taplst: &[u64]
         return 0;
     }
 
-    let new_mbi = if mbi >= len as u64 {
-        len as u64 - 1
-    } else {
-        mbi
-    };
+    let new_mbi = if mbi >= len as u64 { len as u64 - 1 } else { mbi };
     let numer = rpc * tap_num * bclst[new_mbi as usize] as i128;
     numer / denom
 }

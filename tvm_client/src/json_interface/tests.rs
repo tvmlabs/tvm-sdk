@@ -112,9 +112,12 @@ fn check_client_error_msg(
     );
     for i in 0..expected_tips.len() {
         assert_eq!(
-            tips[i], expected_tips[i],
+            tips[i],
+            expected_tips[i],
             r#"Expected tip "{}" at position {}, but actual message is: "{}"."#,
-            expected_tips[i], i, error.message(),
+            expected_tips[i],
+            i,
+            error.message(),
         )
     }
     if !expected_helpers_suggestions.is_empty() {

@@ -13,7 +13,8 @@
 //
 
 use std::env;
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;

@@ -53,10 +53,8 @@ pub fn monitor_messages(
     params: ParamsOfMonitorMessages,
 ) -> ClientResult<()> {
     let monitor = context.message_monitor.clone();
-    monitor.monitor_messages(
-        &params.queue,
-        params.messages.into_iter().map(Into::into).collect(),
-    )?;
+    monitor
+        .monitor_messages(&params.queue, params.messages.into_iter().map(Into::into).collect())?;
     Ok(())
 }
 
@@ -90,9 +88,7 @@ pub async fn fetch_next_monitor_results(
             params.wait_mode.unwrap_or(MonitorFetchWaitMode::NoWait).into(),
         )
         .await?;
-    Ok(ResultOfFetchNextMonitorResults {
-        results: results.into_iter().map(Into::into).collect(),
-    })
+    Ok(ResultOfFetchNextMonitorResults { results: results.into_iter().map(Into::into).collect() })
 }
 
 #[derive(Deserialize, ApiType, Default)]

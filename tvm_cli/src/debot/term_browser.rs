@@ -36,9 +36,10 @@ use super::PipeChain;
 use super::SupportedInterfaces;
 use super::term_signing_box::TerminalSigningBox;
 use crate::config::Config;
+use crate::helpers::SdkAddress;
+use crate::helpers::TonClient;
 use crate::helpers::create_client;
 use crate::helpers::load_abi;
-use crate::helpers::{SdkAddress, TonClient};
 
 const BROWSER_ID: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 /// Stores Debot info needed for DBrowser.

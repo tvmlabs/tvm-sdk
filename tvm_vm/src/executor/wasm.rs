@@ -1997,9 +1997,7 @@ impl wasi::io::poll::HostPollable for MyState {
     #[doc = " "]
     #[doc = " This function is equivalent to calling `poll.poll` on a list"]
     #[doc = " containing only this pollable."]
-    fn block(&mut self, _self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) {
-        
-    }
+    fn block(&mut self, _self_: wasmtime::component::Resource<wasi::io::poll::Pollable>) {}
 
     fn drop(
         &mut self,
@@ -2035,11 +2033,7 @@ impl wasi::io::poll::Host for MyState {
             wasmtime::component::Resource<wasi::io::poll::Pollable>,
         >,
     ) -> wasmtime::component::__internal::Vec<u32> {
-        
-        (0..{
-            in_.len().try_into().unwrap_or(u32::MAX)
-        })
-            .collect()
+        (0..{ in_.len().try_into().unwrap_or(u32::MAX) }).collect()
     }
 }
 

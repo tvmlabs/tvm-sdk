@@ -56,7 +56,6 @@ pub enum MnemonicDictionary {
     Spanish = 8,
 }
 
-
 impl TryFrom<u8> for MnemonicDictionary {
     type Error = ClientError;
 

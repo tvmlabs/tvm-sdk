@@ -42,21 +42,13 @@ pub struct MessageMonitoringParams {
 
 impl From<tvm_client_processing::MessageMonitoringParams> for MessageMonitoringParams {
     fn from(value: tvm_client_processing::MessageMonitoringParams) -> Self {
-        Self {
-            message: value.message.into(),
-            wait_until: value.wait_until,
-            user_data: None,
-        }
+        Self { message: value.message.into(), wait_until: value.wait_until, user_data: None }
     }
 }
 
 impl From<MessageMonitoringParams> for tvm_client_processing::MessageMonitoringParams {
     fn from(value: MessageMonitoringParams) -> Self {
-        Self {
-            message: value.message.into(),
-            wait_until: value.wait_until,
-            user_data: None,
-        }
+        Self { message: value.message.into(), wait_until: value.wait_until, user_data: None }
     }
 }
 
@@ -123,21 +115,13 @@ pub struct MessageMonitoringTransaction {
 
 impl From<tvm_client_processing::MessageMonitoringTransaction> for MessageMonitoringTransaction {
     fn from(value: tvm_client_processing::MessageMonitoringTransaction) -> Self {
-        Self {
-            hash: value.hash,
-            aborted: value.aborted,
-            compute: value.compute.map(Into::into),
-        }
+        Self { hash: value.hash, aborted: value.aborted, compute: value.compute.map(Into::into) }
     }
 }
 
 impl From<MessageMonitoringTransaction> for tvm_client_processing::MessageMonitoringTransaction {
     fn from(value: MessageMonitoringTransaction) -> Self {
-        Self {
-            hash: value.hash,
-            aborted: value.aborted,
-            compute: value.compute.map(Into::into),
-        }
+        Self { hash: value.hash, aborted: value.aborted, compute: value.compute.map(Into::into) }
     }
 }
 

@@ -227,7 +227,11 @@ async fn test_process_message() {
 
     let output = client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: encode_params, send_events: true, dst_dapp_id: None },
+            ParamsOfProcessMessage {
+                message_encode_params: encode_params,
+                send_events: true,
+                dst_dapp_id: None,
+            },
             callback,
         )
         .await
@@ -458,7 +462,10 @@ async fn test_error_resolving() {
         assert_eq!(result.data()["exit_code"], 100);
     } else {
         assert_eq!(result.code(), original_code);
-        assert_eq!(result.data()["local_error"]["code"], TvmErrorCode::ContractExecutionError as u32);
+        assert_eq!(
+            result.data()["local_error"]["code"],
+            TvmErrorCode::ContractExecutionError as u32
+        );
         assert_eq!(result.data()["local_error"]["data"]["exit_code"], 100)
     }
 }
@@ -581,7 +588,11 @@ async fn test_fees() {
 
     let run_result = client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: params, send_events: false, dst_dapp_id: None },
+            ParamsOfProcessMessage {
+                message_encode_params: params,
+                send_events: false,
+                dst_dapp_id: None,
+            },
             TestClient::default_callback,
         )
         .await
@@ -648,7 +659,11 @@ async fn test_deploy_from_tvc_v1() {
 
     let _ = client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: encode_params, send_events: false, dst_dapp_id: None },
+            ParamsOfProcessMessage {
+                message_encode_params: encode_params,
+                send_events: false,
+                dst_dapp_id: None,
+            },
             |_: ProcessingEvent, _: ProcessingResponseType| async {},
         )
         .await

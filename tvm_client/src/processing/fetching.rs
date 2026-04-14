@@ -40,7 +40,8 @@ impl TransactionBoc {
     }
 }
 
-/// Polls `blockchain.transaction(hash)` until the transaction appears or timeout is reached.
+/// Polls `blockchain.transaction(hash)` until the transaction appears or
+/// timeout is reached.
 pub(crate) async fn fetch_transaction_by_hash(
     context: &Arc<ClientContext>,
     tx_hash: &str,
@@ -194,13 +195,7 @@ pub async fn fetch_transaction_result(
                 && (exit_code == crate::tvm::StdContractError::ReplayProtection as i32
                     || exit_code == crate::tvm::StdContractError::ExtMessageExpired as i32)
             {
-                Error::message_expired(
-                    message_id,
-                    "",
-                    expiration_time,
-                    block_time,
-                    &address,
-                )
+                Error::message_expired(message_id, "", expiration_time, block_time, &address)
             } else {
                 if let Some(Err(local_error)) = local_result {
                     if local_error.data()[EXIT_CODE_FIELD] == *exit_code {

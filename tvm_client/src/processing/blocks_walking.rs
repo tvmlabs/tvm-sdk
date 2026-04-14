@@ -142,4 +142,3 @@ pub(crate) async fn find_last_shard_block(
         }
     }
 }
-

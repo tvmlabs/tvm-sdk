@@ -8,11 +8,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+use std::collections::HashMap;
+
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
 use serde_json::json;
-use std::collections::HashMap;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::ParamsOfDecodeMessageBody;
 use tvm_client::abi::ParamsOfEncodeMessageBody;
@@ -26,6 +27,8 @@ use crate::config::Config;
 use crate::convert;
 use crate::depool_abi::DEPOOL_ABI;
 use crate::depool_abi::PARTICIPANT_ABI;
+use crate::helpers::SdkAddress;
+use crate::helpers::TonClient;
 use crate::helpers::answer_filter;
 use crate::helpers::create_client;
 use crate::helpers::create_client_local;
@@ -34,7 +37,6 @@ use crate::helpers::events_filter;
 use crate::helpers::load_abi;
 use crate::helpers::now;
 use crate::helpers::print_message;
-use crate::helpers::{SdkAddress, TonClient};
 use crate::multisig::CallArgs;
 use crate::multisig::MultisigArgs;
 use crate::print_args;
@@ -498,8 +500,8 @@ pub async fn depool_command(m: &ArgMatches, config: &mut Config) -> Result<(), S
         "depool address is not defined. Supply it in the config file or in command line."
             .to_string(),
     )?;
-    let depool = SdkAddress::validate(&depool)
-        .map_err(|e| format!("invalid depool address: {}", e))?;
+    let depool =
+        SdkAddress::validate(&depool).map_err(|e| format!("invalid depool address: {}", e))?;
 
     let mut set_wait_answer = |m: &ArgMatches| {
         if m.is_present("WAIT_ANSWER") {
@@ -580,8 +582,8 @@ async fn answer_command(m: &ArgMatches, config: &Config, depool: &str) -> Result
         .unwrap_or(0);
 
     let ton = create_client_verbose(config)?;
-    let wallet = SdkAddress::validate(&wallet)
-        .map_err(|e| format!("invalid depool address: {}", e))?;
+    let wallet =
+        SdkAddress::validate(&wallet).map_err(|e| format!("invalid depool address: {}", e))?;
 
     let messages = tvm_client::net::query_collection(
         ton.clone(),

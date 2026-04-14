@@ -846,7 +846,8 @@ fn test_tips() {
     ).expect_err("Error expected");
 
     assert!(
-        err.message().contains("Tip: Please check that you specified message's body, not full BOC."),
+        err.message()
+            .contains("Tip: Please check that you specified message's body, not full BOC."),
         "{}",
         err.message()
     );

@@ -28,10 +28,11 @@ use crate::config::Config;
 use crate::convert;
 use crate::crypto::load_keypair;
 use crate::deploy::prepare_deploy_message_params;
+use crate::helpers::SdkAddress;
+use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::load_file_with_url;
 use crate::helpers::now_ms;
-use crate::helpers::{SdkAddress, create_client_local};
 
 const SAFEMULTISIG_LINK: &str = "https://github.com/tonlabs/ton-labs-contracts/blob/master/solidity/safemultisig/SafeMultisigWallet.tvc?raw=true";
 const SETCODEMULTISIG_LINK: &str = "https://github.com/tonlabs/ton-labs-contracts/blob/master/solidity/setcodemultisig/SetcodeMultisigWallet.tvc?raw=true";
@@ -538,7 +539,9 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
         .await?;
     }
 
-    let res = call::process_message(ton.clone(), msg, config, args.dapp_id.as_deref()).await.map_err(|e| format!("{:#}", e));
+    let res = call::process_message(ton.clone(), msg, config, args.dapp_id.as_deref())
+        .await
+        .map_err(|e| format!("{:#}", e));
 
     if res.is_err() {
         if res.clone().err().unwrap().contains("Account does not exist.") {

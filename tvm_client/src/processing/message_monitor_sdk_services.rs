@@ -79,8 +79,8 @@ fn deserialize_subscription_data(
     })?;
     let result: ClientMessageMonitoringResult =
         serde_json::from_value::<GraphQLMessageMonitoringResult>(statuses.clone())
-        .map_err(crate::net::Error::invalid_server_response)?
-        .into();
+            .map_err(crate::net::Error::invalid_server_response)?
+            .into();
     Ok(vec![tvm_client_processing::MessageMonitoringResult::from(result)])
 }
 
@@ -89,7 +89,9 @@ impl MessageMonitorSdkServices for SdkServices {
     async fn subscribe_for_recent_ext_in_message_statuses<F: Future<Output = ()> + Send>(
         &self,
         messages: Vec<tvm_client_processing::MessageMonitoringParams>,
-        callback: impl Fn(tvm_client_processing::Result<Vec<tvm_client_processing::MessageMonitoringResult>>) -> F
+        callback: impl Fn(
+            tvm_client_processing::Result<Vec<tvm_client_processing::MessageMonitoringResult>>,
+        ) -> F
         + Send
         + Sync
         + 'static,
@@ -156,11 +158,7 @@ impl MessageMonitorSdkServices for SdkServices {
         self.net.env.now_ms()
     }
 
-    fn cell_from_boc(
-        &self,
-        boc: &str,
-        name: &str,
-    ) -> tvm_client_processing::Result<Cell> {
+    fn cell_from_boc(&self, boc: &str, name: &str) -> tvm_client_processing::Result<Cell> {
         let (_, cell): (_, Cell) = self.bocs.deserialize_cell(boc, name)?;
         Ok(cell)
     }
@@ -247,7 +245,9 @@ struct GraphQLMessageMonitoringTransactionCompute {
     pub exit_code: i32,
 }
 
-impl From<GraphQLMessageMonitoringTransactionCompute> for ClientMessageMonitoringTransactionCompute {
+impl From<GraphQLMessageMonitoringTransactionCompute>
+    for ClientMessageMonitoringTransactionCompute
+{
     fn from(value: GraphQLMessageMonitoringTransactionCompute) -> Self {
         Self { exit_code: value.exit_code }
     }
