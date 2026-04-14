@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - `tvm_cli`: `--log-path` and `--log-filter` options to redirect and filter log output to a file, keeping stdout/stderr clean for automation
 
 ### Changed
+- Removed `failure` crate dependency across all workspace crates in favor of `anyhow`
+- Replaced `anyhow::Error::msg` with `anyhow::anyhow!` macro for idiomatic error construction
 - `tvm_client`: removed non-standard REST API port 8600, use standard HTTP/HTTPS ports
 - `tvm_cli`: console log output is suppressed in `--json` mode; default log level lowered from Warn to Error
 

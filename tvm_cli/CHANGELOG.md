@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.24.17] - 2026-04-13
+## [2.24.18] - 2026-04-13
 
 ### Added
 - `--log-path` global option and `TVM_CLI_LOG_PATH` env var to redirect all log output to a file (append mode), keeping stdout/stderr clean for automation scripts
